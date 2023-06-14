@@ -1,0 +1,10 @@
+.. _tutorial:
+
+教程
+=========
+
+.. toctree::
+    :maxdepth: 2
+
+    run_secretflow_cn
+    security_plan_cn

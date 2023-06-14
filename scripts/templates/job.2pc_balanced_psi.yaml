@@ -1,0 +1,16 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: KusciaJob
+metadata:
+  name: {{.JOB_NAME}}
+spec:
+  initiator: {{.Initiator}}
+  scheduleMode: BestEffort
+  maxParallelism: 2
+  tasks:
+    - taskID: {{.JOB_NAME}}-single-psi
+      priority: 100
+      taskInputConfig: '{{.TASK_INPUT_CONFIG}}'
+      appImage: '{{.APP_IMAGE}}'
+      parties:
+        - domainID: alice
+        - domainID: bob

@@ -1,0 +1,6 @@
+.:53 {
+    kuscia {
+        fallthrough
+    }
+    forward . /home/kuscia/etc/resolv.conf
+}

@@ -1,0 +1,32 @@
+version = 2
+
+root = "{{.Root}}/containerd/root"
+state = "{{.Root}}/containerd/run"
+
+[grpc]
+  address = "{{.Socket}}"
+
+[plugins."io.containerd.internal.v1.opt"]
+  path = "{{.Root}}/containerd/root"
+
+[plugins."io.containerd.grpc.v1.cri"]
+  stream_server_address = "127.0.0.1"
+  stream_server_port = "9010"
+  enable_selinux = false
+  enable_unprivileged_ports = false
+  enable_unprivileged_icmp = false
+  sandbox_image = "secretflow/pause:3.6"
+
+[plugins."io.containerd.grpc.v1.cri".containerd]
+  snapshotter = "overlayfs"
+  disable_snapshot_annotations = true
+
+[plugins."io.containerd.grpc.v1.cri".cni]
+  bin_dir = "{{.Root}}/bin"
+  conf_dir = "{{.Root}}/etc/cni/net.d"
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+  runtime_type = "io.containerd.runc.v2"
+
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+  SystemdCgroup = false
