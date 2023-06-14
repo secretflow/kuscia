@@ -1,0 +1,95 @@
+{
+    "name": "internal-route",
+    "virtualHosts": [
+        {
+            "name": "handshake-virtual-host",
+            "domains": [
+                "kuscia-handshake.{{.Namespace}}.svc"
+            ],
+            "routes": [
+                {
+                    "match": {
+                        "prefix": "/"
+                    },
+                    "route": {
+                        "cluster": "handshake-cluster"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "default-virtual-host",
+            "domains": [
+                "*"
+            ],
+            "routes": [
+                 {
+                    "name": "handeshake-route",
+                    "match": {
+                        "prefix": "/",
+                        "headers": [
+                            {
+                                "name": "Kuscia-Handshake-Cluster",
+                                "present_match": true
+                            }
+                        ]
+                    },
+                    "route": {
+                        "cluster_header": "Kuscia-Handshake-Cluster",
+                        "auto_host_rewrite": true
+                    }
+                },
+                {
+                    "name": "zipkin",
+                    "match": {
+                        "prefix": "/zipkin"
+                    },
+                    "route": {
+                        "cluster": "central-gateway",
+                        "auto_host_rewrite": true
+                    }
+                },
+                {
+                    "name": "default-route",
+                    "match": {
+                        "prefix": "/"
+                    },
+                    "directResponse": {
+                        "status": 404
+                    },
+                    "response_headers_to_add": [
+                        {
+                            "header": {
+                                "key": "Kuscia-Error-Message-Internal",
+                                "value": "Service \"%REQ(:authority)%\" not found."
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "response_headers_to_add": [
+        {
+            "header": {
+                "key": "X-Accel-Buffering",
+                "value": "no"
+            },
+            "append_action": "OVERWRITE_IF_EXISTS_OR_ADD"
+        },
+        {
+            "header": {
+                "key": "x-b3-traceid",
+                "value": "%REQ(x-b3-traceid)%"
+            },
+            "append_action": "ADD_IF_ABSENT"
+        },
+        {
+            "header": {
+                "key": "x-b3-spanid",
+                "value": "%REQ(x-b3-spanid)%"
+            },
+            "append_action": "ADD_IF_ABSENT"
+        }
+    ]
+}

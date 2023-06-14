@@ -1,0 +1,86 @@
+{
+  "name": "external-route",
+  "virtualHosts": [
+    {
+      "name": "handshake-virtual-host",
+      "domains": [
+        "kuscia-handshake.{{.Namespace}}.svc"
+      ],
+      "routes": [
+        {
+          "match": {
+            "prefix": "/"
+          },
+          "route": {
+            "cluster": "handshake-cluster"
+          },
+          "typed_per_filter_config": {
+            "envoy.filters.http.kuscia_token_auth": {
+              "@type": "type.googleapis.com/envoy.extensions.filters.http.kuscia_token_auth.v3.FilterConfigPerRoute",
+              "disabled": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "default-virtual-host",
+      "domains": [
+        "*"
+      ],
+      "routes": [
+        {
+          "name": "default-route-gpc",
+          "match": {
+            "prefix": "/",
+            "headers": [
+              {
+                "name": "content-type",
+                "stringMatch": {
+                  "prefix": "application/grpc"
+                }
+              }
+            ]
+          },
+          "route": {
+            "cluster": "internal-cluster-grpc",
+            "host_rewrite_header": "Kuscia-Host"
+          }
+        },
+        {
+          "name": "default-route",
+          "match": {
+            "prefix": "/"
+          },
+          "route": {
+            "cluster": "internal-cluster",
+            "host_rewrite_header": "Kuscia-Host"
+          }
+        }
+      ]
+    }
+  ],
+  "response_headers_to_add": [
+    {
+      "header": {
+        "key": "X-Accel-Buffering",
+        "value": "no"
+      },
+      "append_action": "OVERWRITE_IF_EXISTS_OR_ADD"
+    },
+    {
+      "header": {
+        "key": "x-b3-traceid",
+        "value": "%REQ(x-b3-traceid)%"
+      },
+      "append_action": "ADD_IF_ABSENT"
+    },
+    {
+      "header": {
+        "key": "x-b3-spanid",
+        "value": "%REQ(x-b3-spanid)%"
+      },
+      "append_action": "ADD_IF_ABSENT"
+    }
+  ]
+}

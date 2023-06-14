@@ -1,0 +1,135 @@
+{
+  "sf_storage_config": {
+    "alice": {
+      "type": "local_fs",
+      "local_fs": {
+        "wd": "/home/kuscia/var/storage/data"
+      }
+    },
+    "bob": {
+      "type": "local_fs",
+      "local_fs": {
+        "wd": "/home/kuscia/var/storage/data"
+      }
+    }
+  },
+  "sf_cluster_desc": {
+    "parties": [
+      "alice",
+      "bob"
+    ],
+    "devices": [
+      {
+        "name": "spu",
+        "type": "spu",
+        "parties": [
+          "alice",
+          "bob"
+        ],
+        "config": "{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
+      }
+    ]
+  },
+  "sf_node_eval_param": {
+    "domain": "psi",
+    "name": "two_party_balanced_psi",
+    "version": "0.0.1",
+    "attr_paths": [
+      "protocol",
+      "receiver",
+      "precheck_input",
+      "sort",
+      "broadcast_result",
+      "bucket_size",
+      "curve_type",
+      "input/receiver_input/key",
+      "input/sender_input/key"
+    ],
+    "attrs": [
+      {
+        "s": "ECDH_PSI_2PC"
+      },
+      {
+        "s": "alice"
+      },
+      {
+        "b": true
+      },
+      {
+        "b": true
+      },
+      {
+        "b": true
+      },
+      {
+        "i64": 1048576
+      },
+      {
+        "s": "CURVE_FOURQ"
+      },
+      {
+        "ss": [
+          "id1"
+        ]
+      },
+      {
+        "ss": [
+          "id2"
+        ]
+      }
+    ],
+    "inputs": [
+      {
+        "type": "sf.table.individual",
+        "data_refs": [
+          {
+            "uri": "alice.csv",
+            "party": "alice",
+            "format": "csv"
+          }
+        ],
+        "meta": {
+          "@type": "type.googleapis.com/secretflow.component.IndividualTable",
+          "schema": {
+            "types": [
+              "str",
+              "str",
+              "str"
+            ],
+            "features": [
+              "id1",
+              "item",
+              "feature1"
+            ]
+          }
+        }
+      },
+      {
+        "type": "sf.table.individual",
+        "data_refs": [
+          {
+            "uri": "bob.csv",
+            "party": "bob",
+            "format": "csv"
+          }
+        ],
+        "meta": {
+          "@type": "type.googleapis.com/secretflow.component.IndividualTable",
+          "schema": {
+            "types": [
+              "str",
+              "str"
+            ],
+            "features": [
+              "id2",
+              "feature2"
+            ]
+          }
+        }
+      }
+    ],
+    "output_uris": [
+      "psi_output.csv"
+    ]
+  }
+}

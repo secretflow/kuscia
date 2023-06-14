@@ -1,0 +1,7 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: Domain
+metadata:
+  name: {{.DOMAIN_ID}}
+spec:
+  cert: {{.CERT}}
+  role: {{.ROLE}}

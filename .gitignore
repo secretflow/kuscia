@@ -1,0 +1,7 @@
+/.idea/
+/build/apps/
+/etc/certs/
+**.log
+.vscode
+/test-results/
+/docs/_build/

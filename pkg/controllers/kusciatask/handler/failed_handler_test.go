@@ -1,0 +1,63 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package handler
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	kubeinformers "k8s.io/client-go/informers"
+	kubefake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/kubernetes/scheme"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/tools/record"
+
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
+)
+
+func TestFailedHandler_Handle(t *testing.T) {
+	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
+
+	testKusciaTask := &kusciaapisv1alpha1.KusciaTask{
+		ObjectMeta: metav1.ObjectMeta{
+			UID: "abc",
+		},
+	}
+
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
+	go kubeInformersFactory.Start(wait.NeverStop)
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
+	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-task-controller"})
+	deps := &Dependencies{
+		KubeClient:      kubeClient,
+		KusciaClient:    kusciaClient,
+		PodsLister:      kubeInformersFactory.Core().V1().Pods().Lister(),
+		ConfigMapLister: kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
+		Recorder:        recorder,
+	}
+	finishHandler := NewFinishedHandler(deps)
+	failedHandler := NewFailedHandler(deps, finishHandler)
+	needUpdate, err := failedHandler.Handle(testKusciaTask)
+	assert.NoError(t, err)
+	assert.Equal(t, true, needUpdate)
+}

@@ -1,0 +1,2 @@
+runtime-endpoint: unix:///home/kuscia/containerd/run/containerd.sock
+image-endpoint: unix:///home/kuscia/containerd/run/containerd.sock
