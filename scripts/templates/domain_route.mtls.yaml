@@ -1,0 +1,22 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: DomainRoute
+metadata:
+  namespace: {{.SELF_DOMAIN}}
+  name: {{.SRC_DOMAIN}}-{{.DEST_DOMAIN}}
+spec:
+  source: {{.SRC_DOMAIN}}
+  destination: {{.DEST_DOMAIN}}
+  endpoint:
+    host: {{.HOST}}
+    ports:
+      - name: http
+        protocol: HTTP
+        isTLS: true
+        port: {{.PORT}}
+  authenticationType: MTLS
+  mTLSConfig:
+    tlsCA: {{.TLS_CA}}
+    sourceClientCert: {{.SRC_CERT}}
+    sourceClientPrivateKey: {{.SRC_KEY}}
+  requestHeadersToAdd:
+    Authorization: Bearer {{.TOKEN}}

@@ -1,0 +1,36 @@
+apiVersion: kubescheduler.config.k8s.io/v1
+kind: KubeSchedulerConfiguration
+leaderElection:
+  leaderElect: true
+clientConnection:
+  kubeconfig: "{{.Kubeconfig}}"
+profiles:
+- schedulerName: kuscia-scheduler
+  plugins:
+    queueSort:
+      enabled:
+      - name: KusciaSort
+      disabled:
+      - name: "*"
+    preFilter:
+      enabled:
+      - name: KusciaScheduling
+    postFilter:
+      enabled:
+      - name: KusciaScheduling
+    permit:
+      enabled:
+      - name: KusciaScheduling
+    reserve:
+      enabled:
+      - name: KusciaScheduling
+    preBind:
+      enabled:
+      - name: KusciaScheduling
+    postBind:
+      enabled:
+      - name: KusciaScheduling
+  pluginConfig:
+    - name: KusciaScheduling
+      args:
+        resourceReservedSeconds: 30

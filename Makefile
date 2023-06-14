@@ -1,0 +1,100 @@
+
+# Image URL to use all building image targets
+DATETIME = $(shell date +"%Y%m%d%H%M%S")
+KUSCIA_VERSION_TAG = $(shell git describe --abbrev=7 --always)
+COMMIT_ID = $(shell git log -1 --pretty="format:%h")
+TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}-${COMMIT_ID}
+IMG ?= secretflow/kuscia:${TAG}
+
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
+
+.PHONY: all
+all: build
+
+##@ General
+
+# The help target prints out all targets with their descriptions organized
+# beneath their categories. The categories are represented by '##@' and the
+# target descriptions by '##'. The awk commands is responsible for reading the
+# entire set of makefiles included in this invocation, looking for lines of the
+# file as xyz: ## something, and then pretty-format the target and help. Then,
+# if there's a line with ##@ something, that gets pretty-printed as a category.
+# More info on the usage of ANSI control characters for terminal formatting:
+# https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_parameters
+# More info on the awk command:
+# http://linuxcommand.org/lc3_adv_awk.php
+
+.PHONY: help
+help: ## Display this help.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Development
+
+.PHONY: manifests
+manifests: ## Generate CustomResourceDefinition objects.
+	sh hack/generate-crds.sh
+
+.PHONY: generate
+generate: gen-clientset gen-proto-code  ## Generate all code that Kuscia needs.
+
+.PHONY: gen-clientset
+gen-clientset:  # Generate CRD runtime.Object and Clientset\Informer|Listers.
+	sh hack/update-codegen.sh
+
+.PHONY: gen-proto-code
+gen-proto-code:  # Generate protobuf golang code that Kuscia needs.
+	sh hack/proto-to-go.sh
+
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet ./...
+
+.PHONY: test
+test: fmt vet ## Run tests.
+	rm -rf ./test-results
+	mkdir -p test-results
+	go test ./cmd/... -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
+	go test ./pkg/... -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
+
+	cat ./test-results/cmd.output.txt | go-junit-report > ./test-results/TEST-cmd.xml
+	cat ./test-results/pkg.output.txt | go-junit-report > ./test-results/TEST-pkg.xml
+
+	echo "mode: set" > ./test-results/coverage.out && cat ./test-results/*.covprofile.out | grep -v mode: | sort -r | awk '{if($$1 != last) {print $0;last=$$1}}' >> ./test-results/coverage.out
+	cat ./test-results/coverage.out | gocover-cobertura > ./test-results/coverage.xml
+
+.PHONY: clean
+clean: # clean build and test product.
+	-rm -rf ./test-results
+	-rm -rf ./build/apps
+	-rm -rf ./build/framework
+	-rm -rf ./tmp-crd-code
+
+##@ Build
+
+.PHONY: build
+build: fmt vet ## Build kuscia binary.
+	sh hack/build.sh
+
+.PHONY: docs
+docs: ## Build docs.
+	cd docs && pip install -r requirements.txt && make html
+
+.PHONY: image
+image: export GOOS=linux
+image: export GOARCH=amd64
+image: build ## Build docker image with the manager.
+	docker build -t ${IMG} -f ./build/dockerfile/kuscia-anolis.Dockerfile .

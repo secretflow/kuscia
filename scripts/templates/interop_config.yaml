@@ -1,0 +1,8 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: InteropConfig
+metadata:
+  name: {{.MEMBER_DOMAIN_ID}}-2-{{.HOST_DOMAIN_ID}}
+spec:
+  host: {{.HOST_DOMAIN_ID}}
+  members:
+    - {{.MEMBER_DOMAIN_ID}}

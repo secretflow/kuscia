@@ -1,0 +1,17 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: ClusterDomainRoute
+metadata:
+  name: {{.SRC_DOMAIN}}-{{.DEST_DOMAIN}}
+spec:
+  source: {{.SRC_DOMAIN}}
+  destination: {{.DEST_DOMAIN}}
+  endpoint:
+    host: {{.HOST}}
+    ports:
+      - name: http
+        protocol: HTTP
+        isTLS: false
+        port: {{.PORT}}
+  authenticationType: Token
+  tokenConfig:
+    tokenGenMethod: RSA-GEN

@@ -1,0 +1,105 @@
+admin:
+  access_log:
+    - name: "envoy.access_loggers.file"
+      typed_config:
+        "@type": "type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog"
+        path: "var/logs/envoy/envoy_admin.log"
+  address:
+    # It is critical that access to the administration interface is only allowed via a secure network.
+    # It is also critical that hosts that access the administration interface are only attached to the secure network
+    # (i.e., to avoid CSRF attacks).
+    # This involves setting up an appropriate firewall or optimally only allowing access to the administration listener via localhost.
+    socket_address:
+      address: 127.0.0.1
+      port_value: 10000
+
+layered_runtime:
+  layers:
+    - name: static_layer
+      static_layer:
+        re2:
+          max_program_size:
+            error_level: 512
+        overload:
+          global_downstream_max_connections: 32768
+
+dynamic_resources:
+  cds_config:
+    resource_api_version: V3
+    api_config_source:
+      api_type: GRPC
+      transport_api_version: V3
+      grpc_services:
+        - envoy_grpc:
+            cluster_name: xds-cluster
+      set_node_on_first_message_only: true
+  lds_config:
+    resource_api_version: V3
+    api_config_source:
+      api_type: GRPC
+      transport_api_version: V3
+      grpc_services:
+        - envoy_grpc:
+            cluster_name: xds-cluster
+      set_node_on_first_message_only: true
+
+static_resources:
+  clusters:
+    - name: xds-cluster
+      connect_timeout: 1s
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: xds-cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 10001
+    - name: handshake-cluster
+      connect_timeout: 1s
+      load_assignment:
+        cluster_name: handshake-cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 1054
+    - name: internal-cluster
+      connect_timeout: 1s
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          use_downstream_protocol_config: {}
+      load_assignment:
+        cluster_name: internal-cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 80
+    - name: internal-cluster-grpc
+      connect_timeout: 1s
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
+      load_assignment:
+        cluster_name: internal-cluster-grpc
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1
+                      port_value: 80
