@@ -5,7 +5,7 @@ version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
-  build-envoy:
+  build-kuscia:
     docker:
       - image: secretflow/kuscia-ci:latest
     resource_class: 2xlarge
@@ -21,4 +21,4 @@ jobs:
 workflows:
   build-workflow:
     jobs:
-      - build-envoy
+      - build-kuscia
