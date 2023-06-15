@@ -12,7 +12,7 @@ Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联
 
 ![Deployment Mode](../imgs/linkaged_network.png)
 
-## Kuscia组件
+## Kuscia 组件
 
 ### 控制平面
 
@@ -97,12 +97,16 @@ Data Proxy 主要用于数据代理，为应用屏蔽异构数据源的差异，
 
 Kuscia 支持两种组网模式：中心化组网模式和点对点组网模式。
 
+{#centralized}
+
 ### 中心化组网模式
 
 中心化组网模式下，多个节点共享控制平面，控制平面负责管理多个节点的资源和任务调度。这种模式下节点占用资源较少，称为 Lite 节点。
 中心化组网模式适合于大型机构内部的节点互联，通过统一的控制平面，可显著降低运维和资源成本，且便于快速新增节点。
 
 ![Centralized Network Mode](../imgs/centralized_network_mode.png)
+
+{#peer-to-peer}
 
 ### 点对点组网模式
 

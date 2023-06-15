@@ -125,13 +125,16 @@ myst_enable_extensions = [
     "strikethrough",
     "substitution",
     "tasklist",
+    "attrs_inline",
+    "attrs_block",
 ]
 
 suppress_warnings = ["myst.header"]
 
-myst_gfm_only = True
+myst_gfm_only = False
 myst_heading_anchors = 1
 myst_title_to_header = True
+
 
 # app setup hook
 def setup(app):
