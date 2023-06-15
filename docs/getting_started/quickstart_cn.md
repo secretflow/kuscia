@@ -6,8 +6,8 @@
 
 在部署时有两种组网模式可供选择：
 
-- [中心化组网模式](../reference/architecture_cn.html#id7)：启动一个控制平面（master）容器和两个 Lite 节点（alice 和 bob）容器
-- [点对点组网模式](../reference/architecture_cn.html#id8)：启动两个 Autonomy 节点（alice 和 bob）容器
+- [中心化组网模式](../reference/architecture_cn.md#centralized)：启动一个控制平面（master）容器和两个 Lite 节点（alice 和 bob）容器
+- [点对点组网模式](../reference/architecture_cn.md#peer-to-peer)：启动两个 Autonomy 节点（alice 和 bob）容器
 
 你可以选择其中任意一种或两种模式进行部署体验，在单台机器上可以同时部署两种模式。
 
@@ -114,11 +114,8 @@ K400,F,FFF
 K500,G,GGG
 ```
 
-
-
 ## 接下来
 
-如果你希望使用自己的数据来执行作业，请参考[如何运行一个 Secretflow 任务](../tutorial/run_secretflow_cn.html)。
+如果你希望使用自己的数据来执行作业，请参考[如何运行一个 Secretflow 任务](../tutorial/run_secretflow_cn.md)。
 
-如果你希望体验在安全沙箱中执行作业，请参考[如何启用安全沙箱](../tutorial/enable_security_sandbox_cn.html)。
-
+如果你希望体验在安全沙箱中执行作业，请参考[如何启用安全沙箱](../tutorial/security_plan_cn.md)。
