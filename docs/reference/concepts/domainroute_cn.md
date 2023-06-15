@@ -8,7 +8,7 @@ ClusterDomainRoute 用于在中心化网络中配置 Lite 节点之间的路由�
 以下是一些 DomainRoute 和 ClusterDomainRoute 的典型用例
 * 中心化集群配置 Lite 访问 Master 的授权
 * 中心化集群配置 Lite 节点之间的路由规则
-* 分布式集群配置 Autonomy 节点之间的路由规则
+* 点对点集群配置 Autonomy 节点之间的路由规则
 
 ## 中心化集群配置 Lite 访问 Master 的授权
 
@@ -146,9 +146,9 @@ status 的个字段含义如下：
 
 你还可以通过 kubectl 命令来修改、删除 ClusterDomainRoute。
 
-## 分布式集群配置 Autonomy 节点之间的路由规则
+## 点对点集群配置 Autonomy 节点之间的路由规则
 
-对于分布式集群的两个 Autonomy 节点，alice 访问 bob，需要分别在 alice 和 bob 的 Namespace 下各创建一条 DomainRoute。
+对于点对点集群的两个 Autonomy 节点，alice 访问 bob，需要分别在 alice 和 bob 的 Namespace 下各创建一条 DomainRoute。
 
 第一步，在目标节点 bob 的 Namespace 下创建 alice 访问 bob 的 DomainRoute：
 ```yaml
