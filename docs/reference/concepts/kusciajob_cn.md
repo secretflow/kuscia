@@ -9,21 +9,23 @@
 
 上面是一个典型的 KusciaJob 示例：
 
-* **隐私求交** 将参与方的数据作为输入，求出参与方的交集。
-* **随机分割** 将参与方的交集作为输入，切分成训练集和测试集。
-* **模型训练** 将参与方的训练集作为输入，训练出算法模型。
-* **预测** 将算法模型和测试集作为输入，计算出预测结果。
+- **隐私求交** 将参与方的数据作为输入，求出参与方的交集。
+- **随机分割** 将参与方的交集作为输入，切分成训练集和测试集。
+- **模型训练** 将参与方的训练集作为输入，训练出算法模型。
+- **预测** 将算法模型和测试集作为输入，计算出预测结果。
 
 ## 用例
 
 以下是一些 KusciaJob 的典型用例:
 
-* 创建 KusciaJob 以完成一个任务流程。例如你可以创建一个 KusciaJob 来描述 *隐私求交->随机分割->训练模型->预测* 这样的任务流程。
-* 区分任务类型 以及 为 KusciaJob 指定调度模式。
-    * 对于 KusciaJob 中那些即使失败也没关系的 KusciaTask， 通过`tasks[].tolerable`，你可以指定其为可容忍任务。
-    * 通过设置 KusciaJob 的`scheduleMode`， 你可以为 KusciaJob 指定不同的调度模式。目前支持 BestEffort 和 Strict 两种策略。
-* 暂停一个正在执行中的 KusciaJob 或者恢复一个正在执行中的 KusciaJob。这个功能暂不支持。
-* 清理 KusciaJob。
+- 创建 KusciaJob 以完成一个任务流程。例如你可以创建一个 KusciaJob 来描述 _隐私求交->随机分割->训练模型->预测_ 这样的任务流程。
+- 区分任务类型 以及 为 KusciaJob 指定调度模式。
+  - 对于 KusciaJob 中那些即使失败也没关系的 KusciaTask， 通过`tasks[].tolerable`，你可以指定其为可容忍任务。
+  - 通过设置 KusciaJob 的`scheduleMode`， 你可以为 KusciaJob 指定不同的调度模式。目前支持 BestEffort 和 Strict 两种策略。
+- 暂停一个正在执行中的 KusciaJob 或者恢复一个正在执行中的 KusciaJob。这个功能暂不支持。
+- 清理 KusciaJob。
+
+{#create-kuscia-job}
 
 ## 创建 KusciaJob
 
@@ -50,7 +52,7 @@ spec:
         - domainID: bob
     - taskID: job-split
       priority: 100
-      dependencies: [ "job-psi" ]
+      dependencies: ['job-psi']
       taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
       appImage: secretflow-image
       parties:
@@ -60,14 +62,14 @@ spec:
 
 在该例中：
 
-* 创建名为 job-best-effort-linear （由`.metadata.name`字段标明）的 KusciaJob。
-* 有两个 KusciaTask 将会被依次创建，分别是用于隐私求交的 job-psi 和用于随机分割的 job-split。 KusciaJob Controller 将会先创建 job-psi，
+- 创建名为 job-best-effort-linear （由`.metadata.name`字段标明）的 KusciaJob。
+- 有两个 KusciaTask 将会被依次创建，分别是用于隐私求交的 job-psi 和用于随机分割的 job-split。 KusciaJob Controller 将会先创建 job-psi，
   当 job-psi 任务成功后，job-split 才会被创建，这个依赖关系由 job-split 的`dependencies`指定。**创建的 KusciaTask 的`.metadata.name`将会由这里的
   `taskID`指定，你需要保证当前系统中没有同名的 KusciaTask ，你还需要保证所有的`taskID`满足
-  [DNS子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)**。
-* `parties`指定了任务参与方的 ID 和角色，这个字段说明了这个算子将会在哪些参与方以什么角色执行。
-* `appImage`用于表明 KusciaTask 在多方计算中执行的算法镜像。你可以通过查看 [AppImage](./appimage_cn.html) 获得更多的信息。
-* `taskInputConfig`用于指定 KusciaTask 在算子运行时使用的算子参数。其中 job-psi 将会分别读取 alice 和 bob 的 alice.csv 和 bob.csv 进行隐私求交，
+  [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)**。
+- `parties`指定了任务参与方的 ID 和角色，这个字段说明了这个算子将会在哪些参与方以什么角色执行。
+- `appImage`用于表明 KusciaTask 在多方计算中执行的算法镜像。你可以通过查看 [AppImage](./appimage_cn.md) 获得更多的信息。
+- `taskInputConfig`用于指定 KusciaTask 在算子运行时使用的算子参数。其中 job-psi 将会分别读取 alice 和 bob 的 alice.csv 和 bob.csv 进行隐私求交，
   计算出两方的交集数据并分别保存为 alice 和 bob 的 psi_out.csv ，而 job-split 将会读取新产生的两个求交数据，并进行随机分割，
   随机分割的结果也会保存在 alice 和 bob 两方。
 
@@ -82,10 +84,12 @@ spec:
 
 按照上述的情景，我们将任务分为了两种：
 
-* Critical Task: 关键任务，失败了会影响 KusciaJob 的调度逻辑和最终状态，如上例中的隐私求交任务。
-* Tolerable Task: 可容忍任务，失败了不会影响 KusciaJob 的调度逻辑和最终状态，如上例中的数据统计任务。
+- Critical Task: 关键任务，失败了会影响 KusciaJob 的调度逻辑和最终状态，如上例中的隐私求交任务。
+- Tolerable Task: 可容忍任务，失败了不会影响 KusciaJob 的调度逻辑和最终状态，如上例中的数据统计任务。
 
 字段`tasks[].tolerable`可以描述 KusciaJob 中的 Task 是否是容忍失败的， 默认值为 false。
+
+{#scheduling-mode}
 
 ### KusciaJob 的调度模式
 
@@ -104,9 +108,9 @@ Failed 状态。
 
 ### 理解 KusciaJob 调度的关键点
 
-* KusciaJob 最终状态取决于 是否有 Critical KusciaTask 失败，任意一个 Critical KusciaTask 失败，都会使得 KusciaJob 最终状态为 Failed。**Tolerable Task
+- KusciaJob 最终状态取决于 是否有 Critical KusciaTask 失败，任意一个 Critical KusciaTask 失败，都会使得 KusciaJob 最终状态为 Failed。**Tolerable Task
   并不参与 KusciaJob 最终状态的计算。**
-* KusciaJob 的 `scheduleMode`， 当某个 **Critical KusciaTask** 失败，对于剩下仍然可调度的任务是否继续进行调度。
+- KusciaJob 的 `scheduleMode`， 当某个 **Critical KusciaTask** 失败，对于剩下仍然可调度的任务是否继续进行调度。
 
 ### 可容忍任务示例
 
@@ -133,7 +137,7 @@ spec:
         - domainID: bob
     - taskID: job-split
       priority: 100
-      dependencies: [ "job-psi" ]
+      dependencies: ['job-psi']
       taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
       appImage: secretflow-image
       tolerable: true
@@ -142,11 +146,11 @@ spec:
         - domainID: bob
 ```
 
-这个叫做 job-best-effort-linear-tolerable 的 KusciaJob 和 [创建 KusciaJob](#id2) 中的示例 job-best-effort-linear 的区别在于， 这个
+这个叫做 job-best-effort-linear-tolerable 的 KusciaJob 和 [创建 KusciaJob](#create-kuscia-job) 中的示例 job-best-effort-linear 的区别在于， 这个
 KusciaJob 的 job-split 的`tolerable`字段是 true。
 
-* 对于 job-best-effort-linear ，如果 job-psi 成功 而 job-split 失败了，那么整个 KusciaJob 的状态将会是 Failed。
-* 对于 job-best-effort-linear-tolerable ，如果 job-psi 成功 而 job-split 失败了，那么整个 KusciaJob 的状态将会是 Succeed 。因为 job-split
+- 对于 job-best-effort-linear ，如果 job-psi 成功 而 job-split 失败了，那么整个 KusciaJob 的状态将会是 Failed。
+- 对于 job-best-effort-linear-tolerable ，如果 job-psi 成功 而 job-split 失败了，那么整个 KusciaJob 的状态将会是 Succeed 。因为 job-split
   是容忍失败的，所以它的状态不会影响整个 KusciaJob 的状态。
 
 ### BestEffort 和 Strict 示例
@@ -180,7 +184,7 @@ spec:
         - domainID: bob
     - taskID: job-split
       priority: 100
-      dependencies: [ "job-psi1" ]
+      dependencies: ['job-psi1']
       taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
       appImage: secretflow-image
       parties:
@@ -214,7 +218,7 @@ spec:
         - domainID: bob
     - taskID: job-split
       priority: 100
-      dependencies: [ "job-psi1" ]
+      dependencies: ['job-psi1']
       taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
       appImage: secretflow-image
       parties:
@@ -273,7 +277,7 @@ spec:
     - taskID: job-split
       priority: 100
       tolerable: true
-      dependencies: [ "job-psi" ]
+      dependencies: ['job-psi']
       taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
       appImage: secretflow-image
       parties:
@@ -284,48 +288,48 @@ status:
   taskStatus:
     job-psi: Succeeded
     job-split: Succeeded
-  startTime: "2023-03-30T12:11:41Z"
-  completionTime: "2023-03-30T12:12:07Z"
-  lastReconcileTime: "2023-03-30T12:12:07Z"
+  startTime: '2023-03-30T12:11:41Z'
+  completionTime: '2023-03-30T12:12:07Z'
+  lastReconcileTime: '2023-03-30T12:12:07Z'
 ```
 
 KusciaJob `metadata`的子字段详细介绍如下：
 
-* `name`：表示 KusciaTask 的名称。
+- `name`：表示 KusciaTask 的名称。
 
 KusciaJob `spec`的子字段详细介绍如下：
 
-* `initiator`：表示参与方中负责发起任务的节点标识。
-* `scheduleMode`：表示调度模式，枚举值，可选：`BestEffort`和`Strict`，大小写敏感，详见 [KusciaJob 的调度模式](#id4)。
-* `maxParallelism`：表示可以同时处于 Running 状态的任务的最大数量，可选，默认为 1，范围为 1-128。
-* `tasks`：表示要执行的任务列表，最多128个。
-    * `tasks[].taskID`
-      ：用作任务依赖标识，全局唯一，满足 [DNS子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
-      。
-    * `tasks[].priority`：表示任务优先级，根据 maxParallelism，当存在多个 KusciaTask 可以被创建时，该值较高的优先被创建，范围为 1-128。
-    * `tasks[].tolerable`：表示是否可以容忍任务失败，详见 [容忍失败的任务](#id3)。
-    * `tasks[].dependencies`：表示任务的前置依赖任务，每一个元素都是`tasks`列表中某一个任务的`taskID`。
-    * `tasks[].taskInputConfig`：表示任务参数配置。
-    * `tasks[].appImage`： 表示任务使用的 AppImage，详见 [AppImage](./appimage_cn.html)。
-    * `tasks[].parties`：表示任务参与方的信息。
-        * `tasks[].parties[].domainID`：表示任务参与方的 ID。
+- `initiator`：表示参与方中负责发起任务的节点标识。
+- `scheduleMode`：表示调度模式，枚举值，可选：`BestEffort`和`Strict`，大小写敏感，详见 [KusciaJob 的调度模式](#scheduling-mode)。
+- `maxParallelism`：表示可以同时处于 Running 状态的任务的最大数量，可选，默认为 1，范围为 1-128。
+- `tasks`：表示要执行的任务列表，最多 128 个。
+  - `tasks[].taskID`
+    ：用作任务依赖标识，全局唯一，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
+    。
+  - `tasks[].priority`：表示任务优先级，根据 maxParallelism，当存在多个 KusciaTask 可以被创建时，该值较高的优先被创建，范围为 1-128。
+  - `tasks[].tolerable`：表示是否可以容忍任务失败，详见 [容忍失败的任务](#id3)。
+  - `tasks[].dependencies`：表示任务的前置依赖任务，每一个元素都是`tasks`列表中某一个任务的`taskID`。
+  - `tasks[].taskInputConfig`：表示任务参数配置。
+  - `tasks[].appImage`： 表示任务使用的 AppImage，详见 [AppImage](./appimage_cn.md)。
+  - `tasks[].parties`：表示任务参与方的信息。
+    - `tasks[].parties[].domainID`：表示任务参与方的 ID。
 
 KusciaJob `status`的子字段详细介绍如下：
 
-* `phase`：表示 KusciaJob 当前所处的阶段。当前包括以下几种 Phase：
-    * `Pending`：表示 KusciaJob 刚刚被提交，还未进行过调度。
-    * `Running`：表示 至少有一个 KusciaTask 处于 Running 状态中。
-    * `Succeeded`：表示 所有 KusciaTask 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。
-    * `Failed`：所有 KusciaTask 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。
-* `taskStatus`：表示 KusciaJob 已经启动的 KusciaTask 状态信息， key 为 KusciaTask 的名称，value 为 KusciaTask 的状态。
-* `startTime`：表示 KusciaJob 第一次被 Kuscia 控制器处理的时间戳。
-* `completionTime`：表示 KusciaJob 运行完成的时间戳。
-* `lastReconcileTime`：表示 KusciaJob 上次更新的时间戳。
+- `phase`：表示 KusciaJob 当前所处的阶段。当前包括以下几种 Phase：
+  - `Pending`：表示 KusciaJob 刚刚被提交，还未进行过调度。
+  - `Running`：表示 至少有一个 KusciaTask 处于 Running 状态中。
+  - `Succeeded`：表示 所有 KusciaTask 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。
+  - `Failed`：所有 KusciaTask 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。
+- `taskStatus`：表示 KusciaJob 已经启动的 KusciaTask 状态信息， key 为 KusciaTask 的名称，value 为 KusciaTask 的状态。
+- `startTime`：表示 KusciaJob 第一次被 Kuscia 控制器处理的时间戳。
+- `completionTime`：表示 KusciaJob 运行完成的时间戳。
+- `lastReconcileTime`：表示 KusciaJob 上次更新的时间戳。
 
 ### 其它查看方式
 
-[//]: # (TODO: KusciaJob CRD在Github中的位置未确定)
+[//]: # 'TODO: KusciaJob CRD在Github中的位置未确定'
 
-1. 你可以直接查看完整CRD定义：[KusciaJob CRD]() 。
+1. 你可以直接查看完整 CRD 定义：[KusciaJob CRD]() 。
 
 2. 如果你已经部署了 Kuscia ，你也可以通过 kubectl 查看：`kubectl explain kj`。

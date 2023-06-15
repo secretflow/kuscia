@@ -14,8 +14,7 @@ docker ps -a
 - bob 节点容器
 - master 容器
 
-[//]: # (开源容器镜像地址替换)
-
+[//]: # '开源容器镜像地址替换'
 
 在中心化组网模式下会有单独的 master 容器：
 
@@ -100,7 +99,7 @@ kubectl get crd | grep kuscia.secretflow
 我们以 KusciaJob 为例：
 
 ```shell
-kubectl explain kj 
+kubectl explain kj
 ```
 
 或者
@@ -111,7 +110,7 @@ kubectl get crd kusciajobs.kuscia.secretflow -o yaml
 
 ##### 更多 Kubectl 使用
 
-如果你想了解 kubectl 命令的使用，你可以查阅 [Kubernetes官方文档](https://kubernetes.io/zh-cn/docs/reference/kubectl/) 。
+如果你想了解 kubectl 命令的使用，你可以查阅 [Kubernetes 官方文档](https://kubernetes.io/zh-cn/docs/reference/kubectl/) 。
 
 ### Domain
 
@@ -148,15 +147,15 @@ spec:
   cert: { cert_data }
 status:
   nodeStatuses:
-    - lastHeartbeatTime: "2023-04-04T08:47:56Z"
-      lastTransitionTime: "2023-03-30T09:44:45Z"
+    - lastHeartbeatTime: '2023-04-04T08:47:56Z'
+      lastTransitionTime: '2023-03-30T09:44:45Z'
       name: 9c3ee316d37e
       status: Ready
       version: a50f56e-a50f56e
 ```
 
 其中，我们需要关注`.status.nodeStatuses[].status`，这个字段记录了 Domain 下的节点是否正常。 有关 Domain
-的更多信息，请查看 [Domain](./concepts/domain_cn.html) 。
+的更多信息，请查看 [Domain](./concepts/domain_cn.md) 。
 
 ### DomainRoute
 
@@ -202,7 +201,7 @@ kubectl get dr {domain_router_name} -o yaml -n {domain_name}
 kubectl get dr alice-bob -o yaml -n alice
 ```
 
-有关 DomainRoute 的更多信息，请查看 [DomainRoute](./concepts/domainroute_clusterdomainroute_cn.html) 。
+有关 DomainRoute 的更多信息，请查看 [DomainRoute](./concepts/domainroute_cn.md) 。
 
 ### AppImage
 
@@ -228,12 +227,12 @@ kubectl get aimg {aimg-name} -o yaml
 kubectl get aimg secretflow-image -o yaml
 ```
 
-有关 AppImage 的更多信息，请查看 [AppImage](./concepts/appimage_cn.html) 。
+有关 AppImage 的更多信息，请查看 [AppImage](./concepts/appimage_cn.md) 。
 
 ### KusciaJob & KusciaTask
 
-关于如何配置、运行和查看 KusciaJob 和 KusciaTask，请参考 [如何运行一个 secretflow 任务](../tutorial/run_secretflow_cn.html)
-和 [KusciaJob](./concepts/kusciajob_cn.html) 。
+关于如何配置、运行和查看 KusciaJob 和 KusciaTask，请参考 [如何运行一个 secretflow 任务](../tutorial/run_secretflow_cn.md)
+和 [KusciaJob](./concepts/kusciajob_cn.md) 。
 
 ## 节点容器
 
@@ -246,7 +245,7 @@ docker exec -it ${USER}-kuscia-lite-alice bash
 ### 隐私计算任务
 
 隐私计算任务将会以容器的形式在 节点容器 内部运行。以 alice 节点容器为例，每当一个新的隐私计算任务分派到 alice 节点时，alice 节点容器都会启动一个容器来处理任务。
-这是一个容器嵌套容器的形式：宿主机上通过docker启动了 alice 节点容器，而在 alice 节点容器中，通过 crictl 启动了任务容器，理解这一点非常重要。
+这是一个容器嵌套容器的形式：宿主机上通过 docker 启动了 alice 节点容器，而在 alice 节点容器中，通过 crictl 启动了任务容器，理解这一点非常重要。
 
 #### 查看当前 Lite 节点上正在进行的任务
 
@@ -282,5 +281,7 @@ crictl exec -it {container_id} bash
 3. 进入任务容器，执行原来的 command 进行调试操作。
 
 ## 安全建议
+
 ### Envoy
+
 Envoy 的 Admin 端口仅用于本地监听，请勿将 Admin 端口暴露在非安全的网络中，防止信息泄露。
