@@ -25,7 +25,7 @@ CONTAINER ID   IMAGE                             COMMAND                  CREATE
 be9d3c84ac3f   secretflow/kuscia-anolis:latest   "tini -- test/script…"   4 days ago   Up 4 days             root-kuscia-master
 ```
 
-而在分布式模式下，master 在节点容器中：
+而在点对点组网模式下，master 在节点容器中：
 
 ```shell
 CONTAINER ID   IMAGE                             COMMAND                 CREATED      STATUS       PORTS     NAMES
