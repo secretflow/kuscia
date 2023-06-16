@@ -34,5 +34,8 @@ RUN git clone https://github.com/flannel-io/flannel.git && \
     CGO_ENABLED=1 make dist/flanneld && \
     cp dist/flanneld /image/home/kuscia/bin && \
     popd && \
-    rm -rf flannel
+    rm -rf flannel && \
+    go clean -modcache && \
+    rm -rf /usr/local/go/
+
 
