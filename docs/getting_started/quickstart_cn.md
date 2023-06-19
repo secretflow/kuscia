@@ -52,7 +52,7 @@ export KUSCIA_IMAGE=secretflow/kuscia
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```
-docker run --rm -v $(pwd):/tmp/kuscia $KUSCIA_IMAGE cp -f /home/kuscia/scripts/deploy/start_standalone.sh /tmp/kuscia
+docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
 ```
 
 ### 中心化组网模式
@@ -96,10 +96,14 @@ NAME                             STARTTIME   COMPLETIONTIME   LASTRECONCILETIME 
 secretflow-task-20230406162606   50s         50s              50s                 Succeeded
 ```
 
-同时，在 alice 和 bob 节点容器中能看到 PSI 结果输出文件，以中心化集群模式下的 alice 节点为例：
+同时，在 alice 和 bob 节点容器中能看到 PSI 结果输出文件：
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-alice cat var/storage/data/alice_psi_out.csv
+# 以中心化集群模式下的 alice 节点为例：
+docker exec -it ${USER}-kuscia-lite-alice cat var/storage/data/psi_output.csv
+
+# 以点对点集群模式下的 alice 节点为例：
+docker exec -it ${USER}-kuscia-autonomy-alice cat var/storage/data/psi_output.csv
 ```
 
 结果输出：
