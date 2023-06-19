@@ -15,7 +15,8 @@ RUN yum install -y openssl net-tools which jq && \
     mkdir -p ${ROOT_DIR}/bin && \
     mkdir -p /bin/aux && \
     mkdir -p ${ROOT_DIR}/scripts && \
-    mkdir -p ${ROOT_DIR}/var/storage
+    mkdir -p ${ROOT_DIR}/var/storage && \
+    mkdir -p ${ROOT_DIR}/pause
 
 COPY --from=deps /image/home/kuscia/bin ${ROOT_DIR}/bin
 COPY --from=deps /image/bin/aux /bin/aux
@@ -32,6 +33,7 @@ RUN pushd ${ROOT_DIR}/bin && \
     popd
 
 COPY build/apps/kuscia/kuscia ${ROOT_DIR}/bin
+COPY build/pause/pause.tar ${ROOT_DIR}/pause
 COPY crds/v1alpha1 ${ROOT_DIR}/crds/v1alpha1
 COPY etc ${ROOT_DIR}/etc
 COPY hack/entrypoint.sh ${ROOT_DIR}/bin

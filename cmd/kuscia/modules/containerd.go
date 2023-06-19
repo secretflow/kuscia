@@ -72,15 +72,37 @@ func (s *containerdModule) WaitReady(ctx context.Context) error {
 	for {
 		select {
 		case <-tickerReady.C:
-			if _, err := os.Stat(s.Socket); err == nil {
-				return nil
+			if _, err := os.Stat(s.Socket); err != nil {
+				continue
 			}
+			if err := s.importPauseImage(ctx); err != nil {
+				nlog.Errorf("Unable to import pause image: %v", err)
+				continue
+			}
+			return nil
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
 			return fmt.Errorf("wait containerd ready timeout")
 		}
 	}
+}
+
+func (s *containerdModule) importPauseImage(ctx context.Context) error {
+	args := []string{
+		fmt.Sprintf("-a=%s/containerd/run/containerd.sock", s.Root),
+		"-n=k8s.io",
+		"images",
+		"import",
+		fmt.Sprintf("%s/pause/pause.tar", s.Root),
+	}
+
+	cmd := exec.CommandContext(ctx, filepath.Join(s.Root, "bin/ctr"), args...)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to run command %q, detail-> %v", cmd, err)
+	}
+
+	return nil
 }
 
 func (s *containerdModule) Name() string {
