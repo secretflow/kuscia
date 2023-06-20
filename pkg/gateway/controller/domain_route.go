@@ -72,15 +72,16 @@ const (
 )
 
 type DomainRouteConfig struct {
-	Namespace string
-	Prikey    *rsa.PrivateKey
-
+	Namespace     string
+	Prikey        *rsa.PrivateKey
+	PrikeyData    []byte
 	HandshakePort uint32
 }
 
 type DomainRouteController struct {
-	gateway *kusciaapisv1alpha1.Gateway
-	prikey  *rsa.PrivateKey
+	gateway    *kusciaapisv1alpha1.Gateway
+	prikey     *rsa.PrivateKey
+	prikeyData []byte
 
 	kubeClient              kubernetes.Interface
 	kusciaClient            clientset.Interface
@@ -119,6 +120,7 @@ func NewDomainRouteController(
 	c := &DomainRouteController{
 		gateway:                 gateway,
 		prikey:                  config.Prikey,
+		prikeyData:              config.PrikeyData,
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
 		domainRouteLister:       DomainRouteInformer.Lister(),
@@ -322,15 +324,22 @@ func (c *DomainRouteController) addClusterWithEnvoy(dr *kusciaapisv1alpha1.Domai
 		if err != nil {
 			return err
 		}
-		srcPrivateKeydata, err := base64.StdEncoding.DecodeString(dr.Spec.MTLSConfig.SourceClientPrivateKey)
-		if err != nil {
-			return err
+
+		var srcPrivateKeyData []byte
+		if len(dr.Spec.MTLSConfig.SourceClientPrivateKey) > 0 {
+			srcPrivateKeyData, err = base64.StdEncoding.DecodeString(dr.Spec.MTLSConfig.SourceClientPrivateKey)
+			if err != nil {
+				return err
+			}
+		} else if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationMTLS {
+			srcPrivateKeyData = c.prikeyData
 		}
+
 		srcTLSCAdata, err := base64.StdEncoding.DecodeString(dr.Spec.MTLSConfig.TLSCA)
 		if err != nil {
 			return err
 		}
-		transportSocket, err = xds.GenerateUpstreamTLSConfigByCertStr(srcCertdata, srcPrivateKeydata, srcTLSCAdata)
+		transportSocket, err = xds.GenerateUpstreamTLSConfigByCertStr(srcCertdata, srcPrivateKeyData, srcTLSCAdata)
 		if err != nil {
 			return fmt.Errorf("verify mtls config of %s failed with %s", dr.Name, err.Error())
 		}

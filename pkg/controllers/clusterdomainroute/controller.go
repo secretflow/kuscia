@@ -524,49 +524,52 @@ func newDomainRoute(cdr *kusciaapisv1alpha1.ClusterDomainRoute, name, namespace 
 }
 
 func (c *Controller) updateClusterDomainRoute(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, srcdr, destdr *kusciaapisv1alpha1.DomainRoute) error {
-	rollingUpdatePeriod := time.Duration(cdr.Spec.TokenConfig.RollingUpdatePeriod) * time.Second
-	if cdr.Status.TokenStatus.Revision == 0 {
-		c.preRollingClusterDomainRoute(ctx, cdr, false)
-		return fmt.Errorf("clusterdomainroute %s token revision is 0, so prerolling clusterdomainroute and will retry", cdr.Name)
-	}
-	if rollingUpdatePeriod > 0 && time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > rollingUpdatePeriod {
-		oldtime := cdr.Status.TokenStatus.RevisionTime.Time
-		c.preRollingClusterDomainRoute(ctx, cdr, false)
-		return fmt.Errorf("clusterdomainroute %s token is out of time(rollingUpdatePeriod %s, rollingUpdatePeriod %ds), so prerolling clusterdomainroute and will retry", cdr.Name, oldtime.String(), cdr.Spec.TokenConfig.RollingUpdatePeriod)
-	}
-
-	if cdr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken || cdr.Spec.BodyEncryption != nil {
-		if cdr.Status.TokenStatus.Revision != srcdr.Status.TokenStatus.RevisionToken.Revision || cdr.Status.TokenStatus.Revision != destdr.Status.TokenStatus.RevisionToken.Revision {
-			// rolling to next revision to invalidate flying token negotiation
-			if time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > clusterDomainRouteSyncPeriod {
-				c.preRollingClusterDomainRoute(ctx, cdr, false)
-				return fmt.Errorf("clusterdomainroute %s token is out of clusterDomainRouteSyncPeriod, so prerolling clusterdomainroute and will retry", cdr.Name)
-			}
-
-			switch cdr.Spec.TokenConfig.TokenGenMethod {
-			case kusciaapisv1alpha1.TokenGenMethodRAND:
-				c.intraRollingClusterDomainRouteRand(ctx, cdr, srcdr, destdr)
-				return fmt.Errorf("%s intraRollingClusterDomainRouteRand and will retry", cdr.Name)
-			case kusciaapisv1alpha1.TokenGenMethodRSA:
-				c.intraRollingClusterDomainRouteRSA(ctx, cdr, srcdr, destdr)
-				return fmt.Errorf("%s intraRollingClusterDomainRouteRSA and will retry", cdr.Name)
-			default:
-				nlog.Warnf("Clusterdomainroute %s unexpected token generation method: %s", cdr.Name, cdr.Spec.TokenConfig.TokenGenMethod)
-				return nil
-			}
+	if cdr.Spec.TokenConfig != nil {
+		rollingUpdatePeriod := time.Duration(cdr.Spec.TokenConfig.RollingUpdatePeriod) * time.Second
+		if cdr.Status.TokenStatus.Revision == 0 {
+			c.preRollingClusterDomainRoute(ctx, cdr, false)
+			return fmt.Errorf("clusterdomainroute %s token revision is 0, so prerolling clusterdomainroute and will retry", cdr.Name)
+		}
+		if rollingUpdatePeriod > 0 && time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > rollingUpdatePeriod {
+			oldtime := cdr.Status.TokenStatus.RevisionTime.Time
+			c.preRollingClusterDomainRoute(ctx, cdr, false)
+			return fmt.Errorf("clusterdomainroute %s token is out of time(rollingUpdatePeriod %s, rollingUpdatePeriod %ds), so prerolling clusterdomainroute and will retry", cdr.Name, oldtime.String(), cdr.Spec.TokenConfig.RollingUpdatePeriod)
 		}
 
-		if srcdr.Status.TokenStatus.RevisionToken.Token == "" || destdr.Status.TokenStatus.RevisionToken.Token == "" {
-			// rolling to next revision to invalidate flying token negotiation
-			if time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > clusterDomainRouteSyncPeriod {
-				c.preRollingClusterDomainRoute(ctx, cdr, false)
-				return fmt.Errorf("clusterdomainroute %s token is out of clusterDomainRouteSyncPeriod, so prerolling clusterdomainroute and will retry", cdr.Name)
+		if cdr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken || cdr.Spec.BodyEncryption != nil {
+			if cdr.Status.TokenStatus.Revision != srcdr.Status.TokenStatus.RevisionToken.Revision || cdr.Status.TokenStatus.Revision != destdr.Status.TokenStatus.RevisionToken.Revision {
+				// rolling to next revision to invalidate flying token negotiation
+				if time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > clusterDomainRouteSyncPeriod {
+					c.preRollingClusterDomainRoute(ctx, cdr, false)
+					return fmt.Errorf("clusterdomainroute %s token is out of clusterDomainRouteSyncPeriod, so prerolling clusterdomainroute and will retry", cdr.Name)
+				}
+
+				switch cdr.Spec.TokenConfig.TokenGenMethod {
+				case kusciaapisv1alpha1.TokenGenMethodRAND:
+					c.intraRollingClusterDomainRouteRand(ctx, cdr, srcdr, destdr)
+					return fmt.Errorf("%s intraRollingClusterDomainRouteRand and will retry", cdr.Name)
+				case kusciaapisv1alpha1.TokenGenMethodRSA:
+					c.intraRollingClusterDomainRouteRSA(ctx, cdr, srcdr, destdr)
+					return fmt.Errorf("%s intraRollingClusterDomainRouteRSA and will retry", cdr.Name)
+				default:
+					nlog.Warnf("Clusterdomainroute %s unexpected token generation method: %s", cdr.Name, cdr.Spec.TokenConfig.TokenGenMethod)
+					return nil
+				}
 			}
 
-			return fmt.Errorf("clusterdomainroute %s is syncing, retry to wait", cdr.Name)
+			if srcdr.Status.TokenStatus.RevisionToken.Token == "" || destdr.Status.TokenStatus.RevisionToken.Token == "" {
+				// rolling to next revision to invalidate flying token negotiation
+				if time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > clusterDomainRouteSyncPeriod {
+					c.preRollingClusterDomainRoute(ctx, cdr, false)
+					return fmt.Errorf("clusterdomainroute %s token is out of clusterDomainRouteSyncPeriod, so prerolling clusterdomainroute and will retry", cdr.Name)
+				}
+
+				return fmt.Errorf("clusterdomainroute %s is syncing, retry to wait", cdr.Name)
+			}
+			return c.postRollingClusterDomainRoute(ctx, cdr, srcdr, destdr)
 		}
-		return c.postRollingClusterDomainRoute(ctx, cdr, srcdr, destdr)
 	}
+
 	nlog.Debugf("clusterdomainroute %s has nothing to do", cdr.Name)
 	return nil
 }

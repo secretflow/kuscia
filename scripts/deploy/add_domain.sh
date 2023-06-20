@@ -17,7 +17,7 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID SCENE(ct or p2p)"
+usage="$(basename "$0") DOMAIN_ID"
 
 DOMAIN_ID=$1
 if [[ ${DOMAIN_ID} == "" ]]; then

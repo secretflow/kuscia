@@ -27,6 +27,7 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
@@ -64,6 +65,11 @@ func getInitConfig(configFile, domainID string) *modules.Dependencies {
 		nlog.Fatal(err)
 	}
 	conf.ContainerdSock = filepath.Join(conf.RootDir, "containerd/run/containerd.sock")
+	conf.ExternalTLS = &kusciaconfig.TLSConfig{
+		CertFile: filepath.Join(conf.RootDir, modules.CertPrefix, "external_tls.crt"),
+		KeyFile:  filepath.Join(conf.RootDir, modules.CertPrefix, "external_tls.key"),
+		CAFile:   conf.CAFile,
+	}
 	return conf
 }
 

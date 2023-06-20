@@ -41,6 +41,8 @@ echo "nameserver ${IP}" > /etc/resolv.conf
 
 sh scripts/deploy/iptables_pre_detect.sh
 
+sh scripts/deploy/init_external_tls_cert.sh ${NAMESPACE}
+
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml
 echo "
 rootDir: ${ROOT}

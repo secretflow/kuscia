@@ -17,6 +17,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -81,7 +82,11 @@ func NewCommand(opts *Opts) *cobra.Command {
 
 func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients) error {
 	// parse private key
-	prikey, err := utils.ParsePKCS1PrivateKey(gwConfig.DomainKeyFile)
+	priKeyData, err := os.ReadFile(gwConfig.DomainKeyFile)
+	if err != nil {
+		return err
+	}
+	prikey, err := utils.ParsePKCS1PrivateKeyData(priKeyData)
 	if err != nil {
 		return fmt.Errorf("failed to add scheme, detail-> %v", err)
 	}
@@ -137,6 +142,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	drConfig := &controller.DomainRouteConfig{
 		Namespace:     gwConfig.Namespace,
 		Prikey:        prikey,
+		PrikeyData:    priKeyData,
 		HandshakePort: gwConfig.HandshakePort,
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
