@@ -189,28 +189,21 @@ function start_lite() {
   fi
 }
 
-function wait_token(){
-  local domain=$1
-  local drname=$2
-  local max_retry=60
-  local retry=0
-  while [ $retry -lt $max_retry ]; do
-    if [ $( docker exec -it ${MASTER_CTR} kubectl get dr -n $domain $drname  -ojsonpath='{.status.tokenStatus.tokens[0].token}' ) ]; then 
-      return 
-    fi 
-    sleep 1
-    retry=$((retry + 1))
-  done
-  echo "[Error] domainroute $drname generate token in namespace '$domain' failed. Please check the log" >&2
-  exit 1
-}
-
 function create_cluster_domain_route() {
   local src_domain=$1
   local dest_domain=$2
+  local src_ctr=${CTR_PREFIX}-lite-${src_domain}
+  local dest_ctr=${CTR_PREFIX}-lite-${dest_domain}
+  local src_domain_csr=${CTR_CERT_ROOT}/${src_domain}.domain.csr
+  local src_2_dest_cert=${CTR_CERT_ROOT}/${src_domain}-2-${dest_domain}.crt
+  local dest_ca=${CTR_CERT_ROOT}/${dest_domain}.ca.crt
 
-  docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} ${CTR_PREFIX}-lite-${dest_domain}:1080
-  wait_token $src_domain $src_domain-$dest_domain
+  copy_between_containers ${src_ctr}:${CTR_CERT_ROOT}/domain.csr ${dest_ctr}:${src_domain_csr}
+  docker exec -it ${dest_ctr} openssl x509 -req -in $src_domain_csr -CA ${CTR_CERT_ROOT}/ca.crt -CAkey ${CTR_CERT_ROOT}/ca.key -CAcreateserial -days 10000 -out ${src_2_dest_cert}
+  copy_between_containers ${dest_ctr}:${CTR_CERT_ROOT}/ca.crt ${MASTER_CTR}:${dest_ca}
+  copy_between_containers ${dest_ctr}:${src_2_dest_cert} ${MASTER_CTR}:${src_2_dest_cert}
+
+  docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} ${CTR_PREFIX}-lite-${dest_domain}:1080 ${dest_ca} ${src_2_dest_cert}
   echo -e "${GREEN}Cluster domain route from ${src_domain} to ${dest_domain} created successfully${NC}"
 }
 
