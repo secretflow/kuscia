@@ -15,13 +15,11 @@
 
 ### 机器
 
-操作系统：macOS, CentOS7, CentOS8
+操作系统：macOS, CentOS7, CentOS8, Ubuntu 16.04 及以上版本, Windows(Ubuntu on WSL2)
 
 资源：8 core / 16G memory / 200G hard disk
 
-### 关于 macOS
-
-macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
+CPU架构：x86
 
 ### 环境准备
 
@@ -39,14 +37,24 @@ yum install -y docker-ce docker-ce-cli containerd.io
 systemctl start docker
 ```
 
+### 关于 macOS
+
+macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
+
+此外，Kuscia 当前不支持 M1 芯片的 Mac。
+
 ## 部署体验
 
 ### 前置操作
 
-配置 Kuscia 镜像，以下示例选择使用 latest 版本镜像：
+配置 Kuscia 镜像，以下示例选择使用 latest 版本镜像（更多镜像版本请参考 [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)）：
 
 ```bash
+# Docker Hub 镜像
 export KUSCIA_IMAGE=secretflow/kuscia
+
+# 阿里云镜像（推荐国内用户使用）
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
 
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
