@@ -51,7 +51,7 @@ kind: ClusterDomainRoute
 metadata:
   name: alice-bob
 spec:
-  authenticationType: Token
+  authenticationType: MTLS
   source: alice
   destination: bob
   endpoint:
@@ -60,10 +60,10 @@ spec:
     - name: http
       port: 1080
       protocol: HTTP
-      isTLS: false
-  tokenConfig:
-    rollingUpdatePeriod: 0
-    tokenGenMethod: RSA-GEN
+      isTLS: true
+  mTLSConfig:
+    sourceClientCert: MIICqjCCAZICFEiujM
+    tlsCA: MIIEpAIBAAKCAQEAxK
 ```
 在示例中：
 * `.metadata.name`：表示路由规则的名称。
@@ -77,72 +77,14 @@ spec:
     * `port`: 表示目标端口号。
     * `protocol`: 表示端口协议，支持 HTTP 和 GRPC。
     * `isTLS`：表示是否开启 HTTPS 或 GRPCS。
-* `.spec.tokenConfig`：表示 Token 认证方式配置项，包括以下部分：
-  * `rollingUpdatePeriod`：Token 轮转周期，单位为S，0表示不轮转。
-  * `tokenGenMethod`：Token 生成方法，支持 RSA-GEN 和 RAND-GEN。
+* `.spec.mTLSConfig`：表示源节点作为客户端访问目标节点的 MTLS 配置，具体字段如下：
+  * `sourceClientCert`：表示源节点的客户端证书，value 值是经 BASE64 编码过的。
+  * `tlsCA`：表示校验服务端（目标节点）证书的 CA，value 值是经过 BASE64 编码过的。不配置则表示不校验服务端证书。
 
 通过 kubectl 命令来创建 ClusterDomainRoute：
 ```shell
 kubectl apply -f alice-bob-ClusterDomainRoute.yaml
 ```
-
-查看 ClusterDomainRoute 的状态：
-```shell
-kubectl get cdr alice-bob -o jsonpath='{.status}' | jq
-{
-  "conditions": [
-    {
-      "lastTransitionTime": "2023-03-30T12:02:33Z",
-      "lastUpdateTime": "2023-03-30T12:02:33Z",
-      "message": "clusterdomainroute finish rolling revision 1",
-      "reason": "PostRollingUpdate",
-      "status": "False",
-      "type": "Running"
-    },
-    {
-      "lastTransitionTime": "2023-03-30T12:02:33Z",
-      "lastUpdateTime": "2023-03-30T12:02:33Z",
-      "message": "clusterdomainroute finish rolling revision 1",
-      "reason": "PostRollingUpdate",
-      "status": "True",
-      "type": "Ready"
-    },
-    {
-      "lastTransitionTime": "2023-03-30T12:02:33Z",
-      "lastUpdateTime": "2023-03-30T12:02:33Z",
-      "message": "clusterdomainroute finish rolling revision 1",
-      "reason": "PostRollingUpdate",
-      "status": "True",
-      "type": "Pending"
-    }
-  ],
-  "TokenStatus": {
-    "destinationTokens": [
-      {
-        "revision": 1,
-        "revisionTime": "2023-03-30T12:02:32Z",
-        "Token": "GnwZ/JnL3G8N6Hksp8CJ4EG5le"
-      }
-    ],
-    "revision": 1,
-    "revisionTime": "2023-03-30T12:02:32Z",
-    "sourceTokens": [
-      {
-        "revision": 1,
-        "revisionTime": "2023-03-30T12:02:32Z",
-        "Token": "uqOzAo02NAmz1cffxACz15E"
-      }
-    ]
-  }
-}
-```
-status 的个字段含义如下：
-* `Conditions`：表示 ClusterDomainRoute 的状态，包括以下几种状态：
-  * `Ready`：表示链路是否可用，对于采用 Token 认证的 ClusterDomainRoute，Ready 为True，表示已经协商出了一个可用的 Token。
-  * `Running`：表示 ClusterDomainRoute 正在更新中，对于采用 Token 认证的 ClusterDomainRoute，DomainRouteController 
-  会按照`.spec.TokenConfig.rollingUpdatePeriod`配置的周期更新，并保留最新两个 revision的Token。
-  * `Pending`：表示 ClusterDomainRoute 等待轮转超时中。
-* `TokenStatus`：对于采用 Token 认证的 ClusterDomainRoute，`TokenStatus`下的`destinationTokens`和`sourceTokens`，是源节点和目标节点基于公私钥协商出来的。
 
 你还可以通过 kubectl 命令来修改、删除 ClusterDomainRoute。
 
