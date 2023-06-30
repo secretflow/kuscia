@@ -140,14 +140,11 @@ Kuscia 提供三种部署模式：Docker 模式、K8s 模式、K8s 控制器模�
 
 ![Deployment Mode](../imgs/job_schedule.png)
 
-<font size="1">
 其中 Job 中的一个 Task 调度流程如下:
-<ul style="display:flex;flex-wrap:wrap">
-<li>Task Controller 在各参与方节点的 Namespace 下分别创建 TaskResource 对象和 PodGroup（包含一组 Label 相同的任务 Pod）。</li>
-<li>任务参与方的 Interop Controller 从调度方集群中将本方的 TaskResource 和 PodGroup 同步到参与方集群中。参与方集群中的 TaskResource 和 PodGroup 的状态也会通过 Interop Controller 同步到调度方集群中。</li>
-<li>Kuscia Scheduler 为各 PodGroup 中的 Pod 预留资源，当 PodGroup 中资源预留成功的 Pod 数量满足 MinReservedPods
-阀值时，将 PodGroup 对应的 TaskResource 状态更新为 Reserved。在点对点（P2P）组网模式下，调度方的 Kuscia Scheduler 不会调度本集群中非本方的 Pod。</li>
-<li>Task Controller 监听到 TaskResource 预留成功的数量满足 MinReservedMembers 阈值时，则将各参与方的 TaskResource 的状态更新为 Schedulable。</li>
-<li>Kuscia Scheduler 监听到 TaskResource 的状态变为 Schedulable 后，绑定 PodGroup 中的任务 Pod 到已分配的节点上。 </li> 
-</ul>
-</font>
+- Task Controller 在各参与方节点的 Namespace 下分别创建 TaskResource 对象和 PodGroup（包含一组 Label 相同的任务 Pod）。
+- 任务参与方的 Interop Controller 从调度方集群中将本方的 TaskResource 和 PodGroup 同步到参与方集群中。参与方集群中的 TaskResource 和 PodGroup 的状态也会通过 
+  Interop Controller 同步到调度方集群中。
+- Kuscia Scheduler 为各 PodGroup 中的 Pod 预留资源，当 PodGroup 中资源预留成功的 Pod 数量满足 MinReservedPods
+阀值时，将 PodGroup 对应的 TaskResource 状态更新为 Reserved。在点对点（P2P）组网模式下，调度方的 Kuscia Scheduler 不会调度本集群中非本方的 Pod。
+- Task Controller 监听到 TaskResource 预留成功的数量满足 MinReservedMembers 阈值时，则将各参与方的 TaskResource 的状态更新为 Schedulable。
+- Kuscia Scheduler 监听到 TaskResource 的状态变为 Schedulable 后，绑定 PodGroup 中的任务 Pod 到已分配的节点上。
