@@ -23,7 +23,9 @@ import (
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -34,10 +36,11 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	clientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -67,30 +70,39 @@ type Controller struct {
 	// Handler Factory
 	handlerFactory *handler.KusciaJobPhaseHandlerFactory
 
-	// shared informer factory of kubernetes, kuscia
-	kusciaInformerFactory informers.SharedInformerFactory
+	kubeInformerFactory   kubeinformers.SharedInformerFactory
+	kusciaInformerFactory kusciainformers.SharedInformerFactory
 
 	// Lister and Synced of KusciaTask, KusciaJob
 	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
 	kusciaTaskSynced cache.InformerSynced
 	kusciaJobLister  kuscialistersv1alpha1.KusciaJobLister
 	kusciaJobSynced  cache.InformerSynced
+
+	namespaceLister listers.NamespaceLister
+	namespaceSynced cache.InformerSynced
 }
 
 // NewController is used to new kuscia job controller.
 func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
-	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 5*time.Minute)
 
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	kusciaJobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 
+	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
+
 	controller := &Controller{
 		kusciaClient:          kusciaClient,
+		kubeInformerFactory:   kubeInformerFactory,
 		kusciaInformerFactory: kusciaInformerFactory,
 		kusciaTaskLister:      kusciaTaskInformer.Lister(),
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		kusciaJobLister:       kusciaJobInformer.Lister(),
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
+		namespaceLister:       namespaceInformer.Lister(),
+		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kusciajob"),
 		recorder:              eventRecorder,
 	}
@@ -100,6 +112,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		KusciaClient:     kusciaClient,
 		Recorder:         eventRecorder,
 		KusciaTaskLister: kusciaTaskInformer.Lister(),
+		NamespaceLister:  namespaceInformer.Lister(),
 	})
 
 	// kuscia job event handler
@@ -131,17 +144,18 @@ func (c *Controller) Run(workers int) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	nlog.Info("Starting kuscia job controller")
+	nlog.Infof("Starting %v", c.Name())
 	c.kusciaInformerFactory.Start(c.ctx.Done())
+	c.kubeInformerFactory.Start(c.ctx.Done())
 
 	// Wait for the caches to be synced before starting workers
-	nlog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.kusciaTaskSynced, c.kusciaJobSynced); !ok {
+	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
+	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.kusciaTaskSynced, c.kusciaJobSynced, c.namespaceSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	nlog.Info("Starting workers")
 	// Launch workers to process KusciaTask resources
+	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())
 	for i := 0; i < workers; i++ {
 		go c.runWorker()
 	}
@@ -230,7 +244,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 		return nil
 	}
 	// Get the KusciaJob resource with this namespace/name.
-	sharedJob, err := c.kusciaJobLister.Get(name)
+	preJob, err := c.kusciaJobLister.Get(name)
 	if err != nil {
 		// The KusciaJob resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
@@ -244,34 +258,37 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance.
-	kusciaJob := sharedJob.DeepCopy()
+	curJob := preJob.DeepCopy()
 	// Set default for the new kusciaJob.
-	kusciaJobDefault(kusciaJob)
+	kusciaJobDefault(curJob)
 
 	defer func() {
 		if retErr != nil {
-			c.recorder.Event(kusciaJob, v1.EventTypeWarning, "ErrorHandleJob", retErr.Error())
+			c.recorder.Event(preJob, v1.EventTypeWarning, "ErrorHandleJob", retErr.Error())
 		}
 	}()
 
 	// For kusciaJob that should not reconcile again, just return.
-	if !handler.ShouldReconcile(kusciaJob) {
+	if !handler.ShouldReconcile(curJob) {
 		nlog.Infof("KusciaJob %q should not reconcile again, skipping", key)
 		return nil
 	}
 
 	// For kusciaJob, we set default value to field.
-	phase := kusciaJob.Status.Phase
+	phase := curJob.Status.Phase
+	if phase == "" {
+		curJob.Status.Phase = kusciaapisv1alpha1.KusciaJobPending
+	}
 
 	// Internal state machine flow.
-	needUpdate, err := c.handlerFactory.KusciaJobPhaseHandlerFor(phase).HandlePhase(kusciaJob)
+	needUpdate, err := c.handlerFactory.KusciaJobPhaseHandlerFor(phase).HandlePhase(curJob)
 	if err != nil {
 		metrics.JobSyncDurations.WithLabelValues(string(phase), metrics.Failed).Observe(time.Since(startTime).Seconds())
 		if c.workqueue.NumRequeues(key) <= maxBackoffLimit {
 			return fmt.Errorf("failed to handle condition for kusciaJob %q, detail-> %v", key, err)
 		}
 
-		c.failKusciaJob(kusciaJob, fmt.Errorf("KusciaJob failed after %vx retry, last error: %v", maxBackoffLimit, err))
+		c.failKusciaJob(curJob, fmt.Errorf("KusciaJob failed after %vx retry, last error: %v", maxBackoffLimit, err))
 		needUpdate = true
 	} else {
 		metrics.JobSyncDurations.WithLabelValues(string(phase), metrics.Succeeded).Observe(time.Since(startTime).Seconds())
@@ -281,51 +298,12 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 		return nil
 	}
 
-	err = c.updateKusciaStatus(sharedJob, kusciaJob)
-	if err != nil {
+	if err = utilsres.UpdateKusciaJobStatus(c.kusciaClient, preJob, curJob, statusUpdateRetries); err != nil {
 		return err
 	}
 
 	nlog.Infof("Finished syncing KusciaJob %q (%v)", key, time.Since(startTime))
-	c.recorder.Event(kusciaJob, v1.EventTypeNormal, "FinishedSyncKusciaJob",
-		fmt.Sprintf("%v -> %v", phase, kusciaJob.Status.Phase))
 	return nil
-}
-
-// updateKusciaStatus will update kuscia job status. The function will retry updating if failed.
-func (c *Controller) updateKusciaStatus(shared *kusciaapisv1alpha1.KusciaJob, kusciaJob *kusciaapisv1alpha1.KusciaJob) error {
-	if !handler.DiffStatus(shared.Status, kusciaJob.Status) {
-		nlog.Debugf("Status not change, dont update. job-name: %s", kusciaJob.Name)
-		return nil
-	}
-
-	var lastErr error
-	status := kusciaJob.Status
-	for i := 0; ; i++ {
-		kusciaJob.Status = status
-		_, err := c.kusciaClient.KusciaV1alpha1().KusciaJobs().UpdateStatus(c.ctx, kusciaJob, metav1.UpdateOptions{})
-		if err == nil {
-			return nil
-		}
-
-		nlog.Warnf("Failed to update kuscia job %q status, %v", kusciaJob.Name, err)
-		lastErr = err
-		if i >= statusUpdateRetries {
-			break
-		}
-
-		newJob, err := c.kusciaClient.KusciaV1alpha1().KusciaJobs().Get(c.ctx, kusciaJob.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		if !handler.DiffStatus(newJob.Status, kusciaJob.Status) {
-			nlog.Debugf("Status not change, dont update. job-name: %s", kusciaJob.Name)
-			return nil
-		}
-		kusciaJob = newJob
-	}
-	return lastErr
 }
 
 // kusciaJobDefault will set kuscia job default field.
@@ -346,8 +324,9 @@ func (c *Controller) failKusciaJob(kusciaJob *kusciaapisv1alpha1.KusciaJob, err 
 		kusciaJob.Status.StartTime = &now
 	}
 	kusciaJob.Status.Phase = kusciaapisv1alpha1.KusciaJobFailed
-	kusciaJob.Status.Reason = "KusciaJobFailed"
 	kusciaJob.Status.Message = err.Error()
+	kusciaJob.Status.CompletionTime = &now
+	kusciaJob.Status.LastReconcileTime = &now
 }
 
 // Name returns the controller name.

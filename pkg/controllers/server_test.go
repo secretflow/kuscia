@@ -105,7 +105,7 @@ func Test_server_run(t *testing.T) {
 		close(stopCh)
 	}()
 
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	select {
 	case <-stoppedChan:
 		assert.True(t, s.controllers == nil)

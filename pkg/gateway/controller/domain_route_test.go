@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	envoyroute "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -165,7 +166,7 @@ func (c *DomainRouteTestInfo) runMTLSCase(cases []DrTestCase, t *testing.T, add 
 			if !add && err == nil {
 				t.Fatal("delete route failed")
 			}
-			clusterName := fmt.Sprintf("%s-%s", vhName, string(tc.dr.Spec.Endpoint.Ports[0].Protocol))
+			clusterName := fmt.Sprintf("%s-%s", vhName, string(tc.dr.Spec.Endpoint.Ports[0].Name))
 			cluster, err := xds.QueryCluster(clusterName)
 			if add {
 				if err != nil || cluster == nil {
@@ -222,8 +223,9 @@ func TestTokenRSA(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "test",
-					Destination: "default",
+					Source:            "test",
+					Destination:       "default",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: EnvoyServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -262,8 +264,9 @@ func TestTokenRSA(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "default",
-					Destination: "test",
+					Source:            "default",
+					Destination:       "test",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: FakeServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -324,8 +327,9 @@ func TestTokenRand(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "test",
-					Destination: "default",
+					Source:            "test",
+					Destination:       "default",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: EnvoyServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -359,8 +363,9 @@ func TestTokenRand(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "default",
-					Destination: "test",
+					Source:            "default",
+					Destination:       "test",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: FakeServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -418,8 +423,9 @@ func TestTokenHandshake(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:      "default",
-			Destination: "default",
+			Source:            "default",
+			Destination:       "default",
+			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 				Host: "127.0.0.1",
 				Ports: []kusciaapisv1alpha1.DomainPort{
@@ -485,8 +491,9 @@ func TestMutualAuth(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "default",
-					Destination: "mutual",
+					Source:            "default",
+					Destination:       "mutual",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: EnvoyServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -494,6 +501,7 @@ func TestMutualAuth(t *testing.T) {
 								Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
 								IsTLS:    true,
 								Port:     1443,
+								Name:     "httptest",
 							},
 						},
 					},
@@ -512,8 +520,9 @@ func TestMutualAuth(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "mutual",
-					Destination: "default",
+					Source:            "mutual",
+					Destination:       "default",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: EnvoyServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -521,6 +530,7 @@ func TestMutualAuth(t *testing.T) {
 								Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
 								IsTLS:    true,
 								Port:     443,
+								Name:     "httptest",
 							},
 						},
 					},
@@ -561,8 +571,9 @@ func TestTransit(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "default",
-					Destination: "test",
+					Source:            "default",
+					Destination:       "test",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: FakeServerIP,
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -595,8 +606,9 @@ func TestTransit(t *testing.T) {
 					Namespace: "default",
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:      "default",
-					Destination: "foo",
+					Source:            "default",
+					Destination:       "foo",
+					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: "test",
 						Ports: []kusciaapisv1alpha1.DomainPort{
@@ -655,8 +667,9 @@ func TestAppendHeaders(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:      "test",
-			Destination: "default",
+			Source:            "test",
+			Destination:       "default",
+			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 				Host: EnvoyServerIP,
 				Ports: []kusciaapisv1alpha1.DomainPort{
@@ -736,4 +749,100 @@ func TestAppendHeaders(t *testing.T) {
 
 	stopCh <- struct{}{}
 	time.Sleep(time.Second)
+}
+
+func TestGenerateInternalRoute(t *testing.T) {
+	c := newDomainRouteTestInfo("default")
+	stopCh := make(chan struct{})
+	go c.Run(1, stopCh)
+	time.Sleep(200 * time.Millisecond)
+
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := base64.StdEncoding.EncodeToString(b)
+
+	dr := &kusciaapisv1alpha1.DomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "interconn",
+			Namespace: "default",
+		},
+		Spec: kusciaapisv1alpha1.DomainRouteSpec{
+			Source:            "default",
+			Destination:       "test",
+			InterConnProtocol: kusciaapisv1alpha1.InterConnBFIA,
+			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+				Host: EnvoyServerIP,
+				Ports: []kusciaapisv1alpha1.DomainPort{
+					{
+						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
+						Port:     ExternalServerPort,
+					},
+				},
+			},
+			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
+				TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
+			},
+		},
+		Status: kusciaapisv1alpha1.DomainRouteStatus{
+			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
+				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
+					{
+						Token: token,
+					},
+				},
+			},
+		},
+	}
+
+	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Create(context.Background(), dr, metav1.CreateOptions{})
+	time.Sleep(200 * time.Millisecond)
+
+	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, dr.Spec.Destination)
+	vh, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
+	assert.NoError(t, err)
+	routes := vh.GetRoutes()
+
+	findPushPrefix := false
+	findSchedulePrefix := false
+	for _, route := range routes {
+		val, ok := route.Match.PathSpecifier.(*envoyroute.RouteMatch_Prefix)
+		if !ok {
+			continue
+		}
+		if val.Prefix == "/v1/interconn/chan/push" {
+			findPushPrefix = true
+			assert.Equal(t, len(route.RequestHeadersToAdd), 3)
+			assert.True(t, route.RequestHeadersToAdd[1].Header.Key == "x-ptp-source-inst-id")
+			assert.True(t, route.RequestHeadersToAdd[2].Header.Key == "x-ptp-source-node-id")
+		}
+		if val.Prefix == "/v1/interconn/schedule/" {
+			findSchedulePrefix = true
+			assert.Equal(t, len(route.RequestHeadersToAdd), 1)
+		}
+		if findPushPrefix || findSchedulePrefix {
+			assert.True(t, route.RequestHeadersToAdd[0].Header.Key == "x-interconn-protocol")
+			assert.True(t, route.RequestHeadersToAdd[0].Header.Value == "bfia")
+		}
+	}
+	assert.True(t, findSchedulePrefix)
+	assert.True(t, findPushPrefix)
+
+	dr.Spec.InterConnProtocol = kusciaapisv1alpha1.InterConnKuscia
+	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(context.Background(), dr, metav1.UpdateOptions{})
+	time.Sleep(200 * time.Millisecond)
+	vh, err = xds.QueryVirtualHost(vhName, xds.InternalRoute)
+	assert.NoError(t, err)
+	routes = vh.GetRoutes()
+	assert.Equal(t, len(routes), 2)
+	route := routes[0]
+	val, ok := routes[0].Match.PathSpecifier.(*envoyroute.RouteMatch_Prefix)
+	assert.True(t, ok)
+	assert.NotNil(t, val)
+	assert.True(t, route.RequestHeadersToAdd[0].Header.Key == "x-interconn-protocol")
+	assert.True(t, route.RequestHeadersToAdd[0].Header.Value == "kuscia")
+	assert.Equal(t, len(route.RequestHeadersToAdd), 4)
 }

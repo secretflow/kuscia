@@ -288,7 +288,7 @@ func createPodWorkers() (*podWorkers, map[types.UID][]syncPodRecord) {
 			}()
 			return nil
 		},
-		func(pod *v1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error) {
+		func(ctx context.Context, pod *v1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error) {
 			return &pkgcontainer.PodStatus{}, nil
 		},
 		fakeRecorder,
@@ -1303,7 +1303,7 @@ func (kl *simpleFakeKubelet) syncTerminatedPod(ctx context.Context, pod *v1.Pod,
 	return nil
 }
 
-func (kl *simpleFakeKubelet) getPodStatus(pod *v1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error) {
+func (kl *simpleFakeKubelet) getPodStatus(ctx context.Context, pod *v1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error) {
 	return &pkgcontainer.PodStatus{}, nil
 }
 

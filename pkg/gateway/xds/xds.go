@@ -63,6 +63,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 
 	// kuscia extend plugins for Unmarshal listeners
+	_ "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	_ "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_gress/v3"
 )
 

@@ -15,25 +15,8 @@
 package handler
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
-
-// taskPhasePtr will d's pointer.
-func taskPhasePtr(d kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1alpha1.KusciaTaskPhase {
-	return &d
-}
-
-// intPtr will d's pointer.
-func int32Ptr(d int32) *int32 {
-	return &d
-}
-
-func intOrStringPtr(d intstr.IntOrString) *intstr.IntOrString {
-	return &d
-}
 
 func stringFilter(collection []string, predicate func(item string, index int) bool) []string {
 	var result []string
@@ -64,14 +47,4 @@ func stringAllMatch(collection []string, predicate func(item string) bool) bool 
 	}
 
 	return true
-}
-
-func rfc3339TimeEqual(t1, t2 *metav1.Time) bool {
-	if t1 == nil && t2 == nil {
-		return true
-	}
-	if t1 != nil && t2 != nil {
-		return t1.Rfc3339Copy() == t2.Rfc3339Copy()
-	}
-	return false
 }

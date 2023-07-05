@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/flowcontrol"
+	internalapi "k8s.io/cri-api/pkg/apis"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/kubernetes/pkg/credentialprovider"
 	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
@@ -43,18 +44,17 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
-	"github.com/secretflow/kuscia/pkg/agent/images"
-	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
-	"github.com/secretflow/kuscia/pkg/agent/utils/format"
-
 	"github.com/secretflow/kuscia/pkg/agent/framework"
 	"github.com/secretflow/kuscia/pkg/agent/framework/net"
+	"github.com/secretflow/kuscia/pkg/agent/images"
 	"github.com/secretflow/kuscia/pkg/agent/kuberuntime"
+	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/pleg"
 	"github.com/secretflow/kuscia/pkg/agent/prober"
 	proberesults "github.com/secretflow/kuscia/pkg/agent/prober/results"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/agent/status"
+	"github.com/secretflow/kuscia/pkg/agent/utils/format"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
@@ -114,6 +114,8 @@ type CRIProvider struct {
 
 	volumeManager *resource.VolumeManager
 
+	remoteImageService internalapi.ImageManagerService
+
 	// Handles container probing.
 	probeManager prober.Manager
 	// Manages container health check results.
@@ -166,7 +168,8 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 	if err != nil {
 		return nil, err
 	}
-	remoteImageService, err := remote.NewRemoteImageService(cfg.CRIProviderCfg.RemoteImageEndpoint, cfg.CRIProviderCfg.RuntimeRequestTimeout)
+	cp.remoteImageService, err = remote.NewRemoteImageService(cfg.CRIProviderCfg.RemoteImageEndpoint,
+		cfg.CRIProviderCfg.RuntimeRequestTimeout, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +202,7 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 		containerLogManager,
 		cp,
 		remoteRuntimeService,
-		remoteImageService,
+		cp.remoteImageService,
 		imageBackOff,
 		false,
 		0,
@@ -382,7 +385,8 @@ func (cp *CRIProvider) startGarbageCollection() {
 		MaxPerPodContainer: 1,
 	}
 	go wait.Until(func() {
-		if err := cp.containerRuntime.GarbageCollect(policy, true, false); err != nil {
+		ctx := context.Background()
+		if err := cp.containerRuntime.GarbageCollect(ctx, policy, true, false); err != nil {
 			nlog.Errorf("Container garbage collection failed: %v", err)
 		}
 	}, ContainerGCPeriod, wait.NeverStop)
@@ -469,6 +473,7 @@ func (cp *CRIProvider) GenerateRunContainerOptions(pod *v1.Pod, container *v1.Co
 		Opts:         opts,
 		PodIPs:       podIPs,
 		ContainerDir: cp.getPodContainerDir(pod.UID, container.Name),
+		ImageService: cp.remoteImageService,
 	}, hook.PointGenerateRunContainerOptions); err != nil {
 		return nil, nil, err
 	}
@@ -699,7 +704,7 @@ func (cp *CRIProvider) getRegistryAuth() *credentialprovider.AuthConfig {
 // This operation writes all events that are dispatched in order to provide
 // the most accurate information possible about an error situation to aid debugging.
 // Callers should not write an event if this operation returns an error.
-func (cp *CRIProvider) SyncPod(pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *framework.ReasonCache) error {
+func (cp *CRIProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *framework.ReasonCache) error {
 	nlog.Infof("CRIProvider start syncing pod %q", format.Pod(pod))
 
 	// Make data directories for the pod
@@ -720,7 +725,7 @@ func (cp *CRIProvider) SyncPod(pod *v1.Pod, podStatus *pkgcontainer.PodStatus, r
 	cp.probeManager.AddPod(pod)
 
 	// Call the container runtime's SyncPod callback
-	result := cp.containerRuntime.SyncPod(pod, podStatus, auth, cp.backOff)
+	result := cp.containerRuntime.SyncPod(ctx, pod, podStatus, auth, cp.backOff)
 	reasonCache.Update(pod.UID, result)
 	if err := result.Error(); err != nil {
 		// Do not return error if the only failures were pods in backoff
@@ -739,12 +744,12 @@ func (cp *CRIProvider) SyncPod(pod *v1.Pod, podStatus *pkgcontainer.PodStatus, r
 }
 
 // KillPod instructs the container runtime to kill the pod. It also clears probe resource.
-func (cp *CRIProvider) KillPod(pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
+func (cp *CRIProvider) KillPod(ctx context.Context, pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
 	nlog.Infof("CRIProvider start killing pod %q", format.Pod(pod))
 
 	cp.probeManager.StopLivenessAndStartup(pod)
 
-	if err := cp.containerRuntime.KillPod(pod, runningPod, gracePeriodOverride); err != nil {
+	if err := cp.containerRuntime.KillPod(ctx, pod, runningPod, gracePeriodOverride); err != nil {
 		return err
 	}
 
@@ -754,7 +759,7 @@ func (cp *CRIProvider) KillPod(pod *v1.Pod, runningPod pkgcontainer.Pod, gracePe
 	return nil
 }
 
-func (cp *CRIProvider) DeletePod(pod *v1.Pod) error {
+func (cp *CRIProvider) DeletePod(ctx context.Context, pod *v1.Pod) error {
 	nlog.Infof("CRIProvider start deleting pod %q", format.Pod(pod))
 
 	cp.volumeManager.UnmountVolumesForPod(pod.UID)
@@ -764,7 +769,7 @@ func (cp *CRIProvider) DeletePod(pod *v1.Pod) error {
 
 // CleanupPods removes the root directory of pods that should not be
 // running and that have no containers running.  Note that we roll up logs here since it runs in the main loop.
-func (cp *CRIProvider) CleanupPods(pods []*v1.Pod, runningPods []*pkgcontainer.Pod, possiblyRunningPods map[types.UID]sets.Empty) error {
+func (cp *CRIProvider) CleanupPods(ctx context.Context, pods []*v1.Pod, runningPods []*pkgcontainer.Pod, possiblyRunningPods map[types.UID]sets.Empty) error {
 	cp.probeManager.CleanupPods(possiblyRunningPods)
 
 	cp.backOff.GC()
@@ -809,8 +814,8 @@ func (cp *CRIProvider) CleanupPods(pods []*v1.Pod, runningPods []*pkgcontainer.P
 }
 
 // GetPods instructs the container runtime to get pods.
-func (cp *CRIProvider) GetPods(all bool) ([]*pkgcontainer.Pod, error) {
-	return cp.containerRuntime.GetPods(all)
+func (cp *CRIProvider) GetPods(ctx context.Context, all bool) ([]*pkgcontainer.Pod, error) {
+	return cp.containerRuntime.GetPods(ctx, all)
 }
 
 // UpdatePodStatus instructs the probeManager to update pod status.
@@ -819,8 +824,8 @@ func (cp *CRIProvider) UpdatePodStatus(podUID types.UID, podStatus *v1.PodStatus
 }
 
 // GetPodStatus instructs the container runtime to get pod status.
-func (cp *CRIProvider) GetPodStatus(pod *v1.Pod) (*pkgcontainer.PodStatus, error) {
-	return cp.containerRuntime.GetPodStatus(pod.UID, pod.Name, pod.Namespace)
+func (cp *CRIProvider) GetPodStatus(ctx context.Context, pod *v1.Pod) (*pkgcontainer.PodStatus, error) {
+	return cp.containerRuntime.GetPodStatus(ctx, pod.UID, pod.Name, pod.Namespace)
 }
 
 // listPodsFromDisk gets a list of pods that have data directories.

@@ -1,0 +1,92 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: DomainData
+metadata:
+  labels:
+    kuscia.secretflow/domaindata-type: table
+    kuscia.secretflow/domaindata-vendor: manual
+  name: alice-table
+  namespace: {{.DOMAIN_ID}}
+spec:
+  attributes:
+    description: "alice demo data"
+  columns:
+    - comment: ""
+      name: id1
+      type: str
+    - comment: ""
+      name: age
+      type: f32
+    - comment: ""
+      name: education
+      type: f32
+    - comment: ""
+      name: default
+      type: f32
+    - comment: ""
+      name: balance
+      type: f32
+    - comment: ""
+      name: housing
+      type: f32
+    - comment: ""
+      name: loan
+      type: f32
+    - comment: ""
+      name: day
+      type: f32
+    - comment: ""
+      name: duration
+      type: f32
+    - comment: ""
+      name: campaign
+      type: f32
+    - comment: ""
+      name: pdays
+      type: f32
+    - comment: ""
+      name: previous
+      type: f32
+    - comment: ""
+      name: job_blue-collar
+      type: f32
+    - comment: ""
+      name: job_entrepreneur
+      type: f32
+    - comment: ""
+      name: job_housemaid
+      type: f32
+    - comment: ""
+      name: job_management
+      type: f32
+    - comment: ""
+      name: job_retired
+      type: f32
+    - comment: ""
+      name: job_self-employed
+      type: f32
+    - comment: ""
+      name: job_services
+      type: f32
+    - comment: ""
+      name: job_student
+      type: f32
+    - comment: ""
+      name: job_technician
+      type: f32
+    - comment: ""
+      name: job_unemployed
+      type: f32
+    - comment: ""
+      name: marital_divorced
+      type: f32
+    - comment: ""
+      name: marital_married
+      type: f32
+    - comment: ""
+      name: marital_single
+      type: f32
+  dataSource: default-data-source
+  name: alice.csv
+  type: table
+  relativeURI: alice.csv
+  vendor: manual

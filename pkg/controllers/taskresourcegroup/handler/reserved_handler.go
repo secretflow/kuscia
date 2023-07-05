@@ -16,14 +16,16 @@
 package handler
 
 import (
+	"fmt"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // ReservedHandler is used to handle task resource group which phase is reserved.
@@ -41,22 +43,21 @@ func NewReservedHandler(deps *Dependencies) *ReservedHandler {
 }
 
 // Handle is used to perform the real logic.
-func (h *ReservedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool, error) {
-	reservedCond, found := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondReserved)
+func (h *ReservedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	cond, found := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesScheduled)
 	if found {
-		nlog.Infof("Task resource group status has reserved condition, skip to handle it")
+		nlog.Infof("Task resource group status has condition %v, skip to handle it", kusciaapisv1alpha1.TaskResourcesScheduled)
 		return false, nil
 	}
 
-	condReason := "Pods related to task resource can be scheduled"
-	if err := patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseSchedulable, kusciaapisv1alpha1.TaskResourceCondSchedulable, condReason, h.kusciaClient, h.trLister); err != nil {
-		return false, err
+	now := metav1.Now().Rfc3339Copy()
+	trCondReason := "Pods belonging to task resource group can be bound"
+	if err = patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseSchedulable, kusciaapisv1alpha1.TaskResourceCondSchedulable, trCondReason, h.kusciaClient, h.trLister); err != nil {
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Patch task resource status failed, %v", err.Error()))
+		return needUpdate, err
 	}
 
-	now := metav1.Now().Rfc3339Copy()
 	trg.Status.CompletionTime = &now
-	reservedCond.Status = v1.ConditionTrue
-	reservedCond.Reason = "Finish patch task resource status phase to schedulable"
-	reservedCond.LastTransitionTime = now
+	needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
 	return true, nil
 }

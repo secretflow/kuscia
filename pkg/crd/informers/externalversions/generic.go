@@ -55,16 +55,16 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().AppImages().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("clusterdomainroutes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().ClusterDomainRoutes().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("dataobjects"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DataObjects().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("datasources"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DataSources().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("datatables"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DataTables().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("domains"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().Domains().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("domainappimages"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DomainAppImages().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("domaindatas"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DomainDatas().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("domaindatagrants"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DomainDataGrants().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("domaindatasources"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DomainDataSources().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("domainroutes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().DomainRoutes().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("gateways"):

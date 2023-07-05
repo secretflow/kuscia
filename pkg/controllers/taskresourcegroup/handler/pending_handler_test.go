@@ -18,19 +18,51 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/informers"
+	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 )
 
 func TestNewPendingHandler(t *testing.T) {
-	h := NewPendingHandler()
+	kubeFakeClient := clientsetfake.NewSimpleClientset()
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	podInformer := informerFactory.Core().V1().Pods()
+	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
+
+	deps := &Dependencies{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+		PodLister:    podInformer.Lister(),
+		TrLister:     trInformer.Lister(),
+	}
+
+	h := NewPendingHandler(deps)
 	if h == nil {
 		t.Error("pending handler should not be nil")
 	}
 }
 
 func TestPendingHandlerHandle(t *testing.T) {
-	h := NewPendingHandler()
+	kubeFakeClient := clientsetfake.NewSimpleClientset()
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	podInformer := informerFactory.Core().V1().Pods()
+	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
+
+	deps := &Dependencies{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+		PodLister:    podInformer.Lister(),
+		TrLister:     trInformer.Lister(),
+	}
+
+	h := NewPendingHandler(deps)
 
 	tests := []struct {
 		name string
@@ -55,7 +87,7 @@ func TestPendingHandlerHandle(t *testing.T) {
 			want: kusciaapisv1alpha1.TaskResourceGroupPhaseFailed,
 		},
 		{
-			name: "succeed to handle trg2",
+			name: "handle trg2 successfully",
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg2",
@@ -64,7 +96,9 @@ func TestPendingHandlerHandle(t *testing.T) {
 					Initiator: "ns1",
 					Parties: []kusciaapisv1alpha1.TaskResourceGroupParty{
 						{
-							DomainID: "ns1",
+							DomainID:         "ns1",
+							MinReservedPods:  0,
+							TaskResourceName: "tr2",
 						},
 					},
 				},

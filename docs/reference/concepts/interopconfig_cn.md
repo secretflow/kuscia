@@ -1,15 +1,16 @@
 # InteropConfig
 
-点对点组网模式下，任务参与方通过 InteropController 将任务调度方集群中的任务参与方 Namespace 下任务相关的资源同步到到本集群中，从而协同完成联合计算。你可以通过 InteropConfig 配置任务调度方和参与方。具体用例请参考下文。
+点对点组网模式下，任务参与方通过 InteropController 将任务调度方集群中的任务参与方 Namespace 下任务相关的资源同步到到本集群中，从而协同完成联合计算。
+你可以通过 InteropConfig 配置任务调度方和参与方。具体用例请参考下文。
 
 ## 用例
 
 以下是一些 InteropConfig 的典型用例：
 
-* 创建 InteropConfig，你将体验如何使用 InteropConfig 从任务调度方同步任务相关资源。
-* 更新 InteropConfig，你将熟悉如何更新现有的 InteropConfig，从而变更从任务调度方同步任务相关资源。
-* 清理 InteropConfig，你将熟悉如何清理不需要的 InteropConfig。从而停止从任务调度方同步任务相关资源。
-* 参考 InteropConfig 对象定义，你将获取详细的 InteropConfig 描述信息。
+- 创建 InteropConfig，你将体验如何使用 InteropConfig 从任务调度方同步任务相关资源。
+- 更新 InteropConfig，你将熟悉如何更新现有的 InteropConfig，从而变更从任务调度方同步任务相关资源。
+- 清理 InteropConfig，你将熟悉如何清理不需要的 InteropConfig。从而停止从任务调度方同步任务相关资源。
+- 参考 InteropConfig 对象定义，你将获取详细的 InteropConfig 描述信息。
 
 ## 创建 InteropConfig
 
@@ -28,9 +29,9 @@ spec:
 
 在该示例中，表示将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。
 
-* `.metadata.name`：表示 InteropConfig 的名称，当前示例为`alice-2-bob`。
-* `.spec.host`：表示任务调度方的节点标识。当前示例为`bob`。
-* `.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`。
+- `.metadata.name`：表示 InteropConfig 的名称，当前示例为`alice-2-bob`。
+- `.spec.host`：表示任务调度方的节点标识。当前示例为`bob`。
+- `.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`。
 
 1. 在参与方集群中运行以下命令创建 InteropConfig。
 
@@ -83,7 +84,7 @@ spec:
 
 在该示例中:
 
-* 在`.spec.members`中新增一个节点标识为`alice-mock`的参与方。相应地，任务参与方通过 InteropController 将任务调度方`bob`集群中`alice-mock` Namespace 下任务相关的资源同步到任务参与方集群中的`alice-mock` Namespace 下。
+- 在`.spec.members`中新增一个节点标识为`alice-mock`的参与方。相应地，任务参与方通过 InteropController 将任务调度方`bob`集群中`alice-mock` Namespace 下任务相关的资源同步到任务参与方集群中的`alice-mock` Namespace 下。
 
 1. 在参与方集群中运行以下命令更新 InteropConfig。
 
@@ -134,9 +135,9 @@ spec:
 
 InteropConfig `metadata` 的子字段详细介绍如下：
 
-* `name`：表示 InteropConfig 的名称。
+- `name`：表示 InteropConfig 的名称。
 
 InteropConfig `spec` 的子字段详细介绍如下：
 
-* `host`：表示任务调度方的节点标识。
-* `members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`，相应地，任务参与方通过 InteropController 将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。
+- `host`：表示任务调度方的节点标识。
+- `members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`，相应地，任务参与方通过 InteropController 将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。

@@ -6,6 +6,7 @@ metadata:
 spec:
   source: {{.SRC_DOMAIN}}
   destination: {{.DEST_DOMAIN}}
+  interConnProtocol: {{.INTERCONN_PROTOCOL}}
   endpoint:
     host: {{.HOST}}
     ports:

@@ -16,6 +16,7 @@ package election
 
 import (
 	"context"
+	"time"
 
 	"go.uber.org/atomic"
 	"k8s.io/client-go/kubernetes"
@@ -30,9 +31,6 @@ type Elector interface {
 	GetLeader() string
 	MyIdentity() string
 	Run(ctx context.Context)
-	Elect(ctx context.Context)
-	Stop()
-	Stopped() <-chan struct{}
 }
 
 func NewElector(kubeClient kubernetes.Interface, name string, opt ...Option) Elector {
@@ -49,8 +47,7 @@ func NewElector(kubeClient kubernetes.Interface, name string, opt ...Option) Ele
 	}
 
 	e := k8sElector{
-		options:   options,
-		chStopped: make(chan struct{}),
+		options: options,
 	}
 
 	leaderElector, err := buildLeaderElector(options, e.onStartedLeading, e.onStoppedLeading, e.onNewLeader)
@@ -107,9 +104,6 @@ type k8sElector struct {
 	leaderID      atomic.String
 	isLeader      atomic.Bool
 	leaderElector *leaderelection.LeaderElector
-	electionCtx   context.Context
-	cancel        context.CancelFunc
-	stop          atomic.Bool
 	chStopped     chan struct{}
 }
 
@@ -123,21 +117,6 @@ func (e *k8sElector) GetLeader() string {
 
 func (e *k8sElector) MyIdentity() string {
 	return e.options.Identity
-}
-
-// Elect leader and wait for leader
-func (e *k8sElector) Elect(ctx context.Context) {
-	e.electionCtx, e.cancel = context.WithCancel(ctx)
-	go e.leaderElector.Run(e.electionCtx)
-}
-
-func (e *k8sElector) Stop() {
-	e.stop.Store(true)
-	e.cancel()
-}
-
-func (e *k8sElector) Stopped() <-chan struct{} {
-	return e.chStopped
 }
 
 func (e *k8sElector) onNewLeader(identity string) {
@@ -159,18 +138,21 @@ func (e *k8sElector) onStoppedLeading() {
 	if e.options.OnStoppedLeading != nil {
 		e.options.OnStoppedLeading()
 	}
-
-	if e.stop.Load() {
-		close(e.chStopped)
-		return
-	}
-	e.Elect(e.electionCtx)
 }
 
 func (e *k8sElector) Run(ctx context.Context) {
-	e.electionCtx, e.cancel = context.WithCancel(ctx)
-	e.leaderElector.Run(e.electionCtx)
-	<-e.electionCtx.Done()
-	e.stop.Store(true)
-	<-e.Stopped()
+	reSelectLeaderDuration := 3 * time.Second
+	for {
+		childCtx, childCancel := context.WithCancel(ctx)
+		select {
+		case <-ctx.Done():
+			childCancel()
+			return
+		default:
+			e.leaderElector.Run(childCtx)
+			childCancel()
+			nlog.Infof("Old leader %v stopped. sleep %v and retry to select new leader...", e.MyIdentity(), reSelectLeaderDuration)
+			time.Sleep(reSelectLeaderDuration)
+		}
+	}
 }

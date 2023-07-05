@@ -15,42 +15,66 @@
 package handler
 
 import (
+	"context"
 	"fmt"
+	"reflect"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
+)
+
+const (
+	statusUpdateRetries = 3
 )
 
 // PendingHandler is used to handle task resource group which phase is pending.
-type PendingHandler struct{}
+type PendingHandler struct {
+	kusciaClient kusciaclientset.Interface
+}
 
 // NewPendingHandler returns a PendingHandler instance.
-func NewPendingHandler() *PendingHandler {
-	return &PendingHandler{}
+func NewPendingHandler(deps *Dependencies) *PendingHandler {
+	return &PendingHandler{
+		kusciaClient: deps.KusciaClient,
+	}
 }
 
 // Handle is used to perform the real logic.
 func (h *PendingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool, error) {
 	now := metav1.Now().Rfc3339Copy()
+	trg.Status.StartTime = &now
+	trg.Status.LastTransitionTime = &now
 
-	trg.Status.StartTime = now
-	trg.Status.LastTransitionTime = now
-	pendingCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondPending)
-	pendingCond.Status = v1.ConditionTrue
-	pendingCond.LastTransitionTime = now
+	validatedCond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceGroupValidated)
+	utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionTrue, "")
 	if err := validate(trg); err != nil {
 		nlog.Error(err)
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
-		pendingCond.Reason = err.Error()
+		utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionFalse, fmt.Sprintf("Validate task resouce group failed, %v", err.Error()))
 		return true, nil
 	}
 
+	needUpdate, err := setTaskResourceName(h.kusciaClient, trg)
+	if err != nil {
+		generatedCond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceNameGenerated)
+		nlog.Error(err)
+		utilsres.SetTaskResourceGroupCondition(&now, generatedCond, v1.ConditionFalse, fmt.Sprintf("Generate task resource name failed, %v", err.Error()))
+		return true, err
+	}
+
+	if needUpdate {
+		generatedCond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceNameGenerated)
+		utilsres.SetTaskResourceGroupCondition(&now, generatedCond, v1.ConditionTrue, "")
+	}
+
 	trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseCreating
-	pendingCond.Reason = "Task resource group is created"
 	return true, nil
 }
 
@@ -61,15 +85,69 @@ func validate(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
 	}
 
 	if trg.Spec.Initiator == "" {
-		return fmt.Errorf("task resource group initiator %q should be one of parties", trg.Spec.Initiator)
+		return fmt.Errorf("task resource group initiator %v should be one of parties", trg.Spec.Initiator)
 	}
 
+	if len(trg.Spec.Parties) == 0 {
+		return fmt.Errorf("parties in task resource group %v can't be empty", trg.Name)
+	}
+
+	foundInitiator := false
 	for _, party := range trg.Spec.Parties {
 		if party.DomainID == trg.Spec.Initiator {
-			return nil
+			foundInitiator = true
+			break
+		}
+	}
+	if !foundInitiator {
+		return fmt.Errorf("task resource group initiator %v should be one of parties", trg.Spec.Initiator)
+	}
+
+	return nil
+}
+
+// setTaskResourceName sets task resource name.
+func setTaskResourceName(kusciaClient kusciaclientset.Interface, trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	for idx, party := range trg.Spec.Parties {
+		if party.TaskResourceName == "" {
+			needUpdate = true
+			trg.Spec.Parties[idx].TaskResourceName = generateTaskResourceName(trg.Name)
 		}
 	}
 
-	return fmt.Errorf("task resource group initiator %q should be one of parties", trg.Spec.Initiator)
+	if !needUpdate {
+		return false, nil
+	}
 
+	copyTrg := trg.DeepCopy()
+	for i, copyTrg := 0, copyTrg; ; i++ {
+		nlog.Infof("Start updating task resource group %q spec parties info", copyTrg.Name)
+		_, err = kusciaClient.KusciaV1alpha1().TaskResourceGroups().Update(context.Background(), copyTrg, metav1.UpdateOptions{})
+		if err == nil {
+			nlog.Infof("Finish updating task resource group %q spec parties info", copyTrg.Name)
+			return true, nil
+		}
+
+		nlog.Warnf("Failed to update task resource group %q spec parties info, %v", copyTrg.Name, err)
+		if i >= statusUpdateRetries {
+			break
+		}
+
+		if copyTrg, err = kusciaClient.KusciaV1alpha1().TaskResourceGroups().Get(context.Background(), copyTrg.Name, metav1.GetOptions{}); err != nil {
+			return false, err
+		}
+
+		if reflect.DeepEqual(copyTrg.Spec.Parties, trg.Spec.Parties) {
+			nlog.Infof("Task resource group %v spec parties info is already updated, skip to update it", copyTrg.Name)
+			return true, nil
+		}
+	}
+
+	return false, err
+}
+
+// generateTaskResourceName is used to generate task resource name.
+func generateTaskResourceName(prefix string) string {
+	uid := strings.Split(string(uuid.NewUUID()), "-")
+	return prefix + "-" + uid[len(uid)-1]
 }

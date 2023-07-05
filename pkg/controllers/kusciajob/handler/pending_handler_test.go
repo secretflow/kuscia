@@ -15,14 +15,15 @@
 package handler
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
@@ -30,10 +31,10 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 )
 
-func TestCreationHandler_HandlePhase(t *testing.T) {
+func TestPendingHandler_HandlePhase(t *testing.T) {
 	independentJob := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 	linearJob := makeKusciaJob(KusciaJobForShapeTree,
@@ -56,7 +57,7 @@ func TestCreationHandler_HandlePhase(t *testing.T) {
 		wantFinalTasks map[string]taskAssertionFunc
 	}{
 		{
-			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} maxParallelism=2 should return needUpdate{true} err{nil} phase{Running}",
+			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} maxParallelism=2 should return needUpdate{true} err{nil} phase{}",
 			fields: fields{
 				kubeClient:   kubefake.NewSimpleClientset(),
 				kusciaClient: kusciafake.NewSimpleClientset(),
@@ -66,16 +67,11 @@ func TestCreationHandler_HandlePhase(t *testing.T) {
 			},
 			wantNeedUpdate: true,
 			wantErr:        assert.NoError,
-			wantJobPhase:   kusciaapisv1alpha1.KusciaJobPending,
-			wantFinalTasks: map[string]taskAssertionFunc{
-				"a": taskExistAssertFunc,
-				"b": taskExistAssertFunc,
-			},
+			wantJobPhase:   "",
 		},
 		{
-			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{2} should return needUpdate{true} err{nil} phase{Running}",
+			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{2} should return needUpdate{true} err{nil} phase{}",
 			fields: fields{
-				kubeClient:   kubefake.NewSimpleClientset(),
 				kusciaClient: kusciafake.NewSimpleClientset(),
 			},
 			args: args{
@@ -83,20 +79,31 @@ func TestCreationHandler_HandlePhase(t *testing.T) {
 			},
 			wantNeedUpdate: true,
 			wantErr:        assert.NoError,
-			wantJobPhase:   kusciaapisv1alpha1.KusciaJobPending,
-			wantFinalTasks: map[string]taskAssertionFunc{
-				"a": taskExistAssertFunc,
-			},
+			wantJobPhase:   "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			kusciaInformerFactory := informers.NewSharedInformerFactory(tt.fields.kusciaClient, 5*time.Minute)
+			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(tt.fields.kusciaClient, 5*time.Minute)
+			kubeInformerFactory := informers.NewSharedInformerFactory(tt.fields.kubeClient, 5*time.Minute)
+			nsInformer := kubeInformerFactory.Core().V1().Namespaces()
+			aliceNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alice",
+				},
+			}
+			bobNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "bob",
+				},
+			}
+			nsInformer.Informer().GetStore().Add(aliceNs)
+			nsInformer.Informer().GetStore().Add(bobNs)
 
 			h := &PendingHandler{
-				jobScheduler: NewJobScheduler(tt.fields.kusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister()),
+				jobScheduler: NewJobScheduler(tt.fields.kusciaClient, nsInformer.Lister(), kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister()),
 			}
-			stopCh := make(<-chan struct{}, 0)
+			stopCh := make(<-chan struct{})
 			go kusciaInformerFactory.Start(stopCh)
 			cache.WaitForCacheSync(wait.NeverStop, kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Informer().HasSynced)
 
@@ -106,17 +113,6 @@ func TestCreationHandler_HandlePhase(t *testing.T) {
 			}
 			assert.Equalf(t, tt.wantNeedUpdate, gotNeedUpdate, "HandlePhase(%v)", tt.args.kusciaJob)
 			assert.Equalf(t, tt.wantJobPhase, tt.args.kusciaJob.Status.Phase, "HandlePhase(%v)", tt.args.kusciaJob)
-
-			if tt.wantFinalTasks != nil {
-				selector, _ := jobTaskSelector(tt.args.kusciaJob.Name)
-				subTasks, _ := tt.fields.kusciaClient.KusciaV1alpha1().KusciaTasks().List(context.TODO(), metav1.ListOptions{
-					LabelSelector: selector.String(),
-				})
-				assert.Equalf(t, true, len(subTasks.Items) == len(tt.wantFinalTasks), "HandlePhase(%v)", tt.args.kusciaJob)
-				for _, task := range subTasks.Items {
-					assert.Equalf(t, true, tt.wantFinalTasks[task.ObjectMeta.Name](&task), "HandlePhase(%v)", tt.args.kusciaJob)
-				}
-			}
 		})
 	}
 }

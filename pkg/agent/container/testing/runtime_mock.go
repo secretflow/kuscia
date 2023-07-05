@@ -21,6 +21,7 @@ limitations under the License.
 package testing
 
 import (
+	"context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -108,7 +109,7 @@ func (m *MockRuntime) EXPECT() *MockRuntimeMockRecorder {
 }
 
 // GarbageCollect mocks base method.
-func (m *MockRuntime) GarbageCollect(gcPolicy container.GCPolicy, allSourcesReady, evictNonDeletedPods bool) error {
+func (m *MockRuntime) GarbageCollect(ctx context.Context, gcPolicy container.GCPolicy, allSourcesReady, evictNonDeletedPods bool) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GarbageCollect", gcPolicy, allSourcesReady, evictNonDeletedPods)
 	ret0, _ := ret[0].(error)
@@ -122,7 +123,7 @@ func (mr *MockRuntimeMockRecorder) GarbageCollect(gcPolicy, allSourcesReady, evi
 }
 
 // GetImageRef mocks base method.
-func (m *MockRuntime) GetImageRef(image container.ImageSpec) (string, error) {
+func (m *MockRuntime) GetImageRef(ctx context.Context, image container.ImageSpec) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImageRef", image)
 	ret0, _ := ret[0].(string)
@@ -137,7 +138,7 @@ func (mr *MockRuntimeMockRecorder) GetImageRef(image interface{}) *gomock.Call {
 }
 
 // GetPodStatus mocks base method.
-func (m *MockRuntime) GetPodStatus(uid types.UID, name, namespace string) (*container.PodStatus, error) {
+func (m *MockRuntime) GetPodStatus(ctx context.Context, uid types.UID, name, namespace string) (*container.PodStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPodStatus", uid, name, namespace)
 	ret0, _ := ret[0].(*container.PodStatus)
@@ -152,7 +153,7 @@ func (mr *MockRuntimeMockRecorder) GetPodStatus(uid, name, namespace interface{}
 }
 
 // GetPods mocks base method.
-func (m *MockRuntime) GetPods(all bool) ([]*container.Pod, error) {
+func (m *MockRuntime) GetPods(ctx context.Context, all bool) ([]*container.Pod, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPods", all)
 	ret0, _ := ret[0].([]*container.Pod)
@@ -167,7 +168,7 @@ func (mr *MockRuntimeMockRecorder) GetPods(all interface{}) *gomock.Call {
 }
 
 // ImageStats mocks base method.
-func (m *MockRuntime) ImageStats() (*container.ImageStats, error) {
+func (m *MockRuntime) ImageStats(ctx context.Context) (*container.ImageStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ImageStats")
 	ret0, _ := ret[0].(*container.ImageStats)
@@ -182,7 +183,7 @@ func (mr *MockRuntimeMockRecorder) ImageStats() *gomock.Call {
 }
 
 // KillPod mocks base method.
-func (m *MockRuntime) KillPod(pod *v1.Pod, runningPod container.Pod, gracePeriodOverride *int64) error {
+func (m *MockRuntime) KillPod(ctx context.Context, pod *v1.Pod, runningPod container.Pod, gracePeriodOverride *int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "KillPod", pod, runningPod, gracePeriodOverride)
 	ret0, _ := ret[0].(error)
@@ -190,13 +191,13 @@ func (m *MockRuntime) KillPod(pod *v1.Pod, runningPod container.Pod, gracePeriod
 }
 
 // KillPod indicates an expected call of KillPod.
-func (mr *MockRuntimeMockRecorder) KillPod(pod, runningPod, gracePeriodOverride interface{}) *gomock.Call {
+func (mr *MockRuntimeMockRecorder) KillPod(ctx context.Context, pod, runningPod, gracePeriodOverride interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "KillPod", reflect.TypeOf((*MockRuntime)(nil).KillPod), pod, runningPod, gracePeriodOverride)
 }
 
 // ListImages mocks base method.
-func (m *MockRuntime) ListImages() ([]container.Image, error) {
+func (m *MockRuntime) ListImages(ctx context.Context) ([]container.Image, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListImages")
 	ret0, _ := ret[0].([]container.Image)
@@ -211,7 +212,7 @@ func (mr *MockRuntimeMockRecorder) ListImages() *gomock.Call {
 }
 
 // PullImage mocks base method.
-func (m *MockRuntime) PullImage(image container.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *v10.PodSandboxConfig) (string, error) {
+func (m *MockRuntime) PullImage(ctx context.Context, image container.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *v10.PodSandboxConfig) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PullImage", image, auth, podSandboxConfig)
 	ret0, _ := ret[0].(string)
@@ -226,7 +227,7 @@ func (mr *MockRuntimeMockRecorder) PullImage(image, auth, podSandboxConfig inter
 }
 
 // RemoveImage mocks base method.
-func (m *MockRuntime) RemoveImage(image container.ImageSpec) error {
+func (m *MockRuntime) RemoveImage(ctx context.Context, image container.ImageSpec) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveImage", image)
 	ret0, _ := ret[0].(error)
@@ -240,7 +241,7 @@ func (mr *MockRuntimeMockRecorder) RemoveImage(image interface{}) *gomock.Call {
 }
 
 // SyncPod mocks base method.
-func (m *MockRuntime) SyncPod(pod *v1.Pod, podStatus *container.PodStatus, auth *credentialprovider.AuthConfig, backOff *flowcontrol.Backoff) container.PodSyncResult {
+func (m *MockRuntime) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *container.PodStatus, auth *credentialprovider.AuthConfig, backOff *flowcontrol.Backoff) container.PodSyncResult {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SyncPod", pod, podStatus, auth, backOff)
 	ret0, _ := ret[0].(container.PodSyncResult)
@@ -268,7 +269,7 @@ func (mr *MockRuntimeMockRecorder) Type() *gomock.Call {
 }
 
 // Version mocks base method.
-func (m *MockRuntime) Version() (container.Version, error) {
+func (m *MockRuntime) Version(ctx context.Context) (container.Version, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Version")
 	ret0, _ := ret[0].(container.Version)
@@ -306,7 +307,7 @@ func (m *MockImageService) EXPECT() *MockImageServiceMockRecorder {
 }
 
 // GetImageRef mocks base method.
-func (m *MockImageService) GetImageRef(image container.ImageSpec) (string, error) {
+func (m *MockImageService) GetImageRef(ctx context.Context, image container.ImageSpec) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetImageRef", image)
 	ret0, _ := ret[0].(string)
@@ -321,7 +322,7 @@ func (mr *MockImageServiceMockRecorder) GetImageRef(image interface{}) *gomock.C
 }
 
 // ImageStats mocks base method.
-func (m *MockImageService) ImageStats() (*container.ImageStats, error) {
+func (m *MockImageService) ImageStats(ctx context.Context) (*container.ImageStats, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ImageStats")
 	ret0, _ := ret[0].(*container.ImageStats)

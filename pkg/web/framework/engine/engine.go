@@ -26,8 +26,6 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	cliflag "k8s.io/component-base/cli/flag"
 
-	"github.com/secretflow/kuscia/pkg/utils/signals"
-	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/beans"
@@ -44,9 +42,6 @@ type Engine struct {
 	beans         *beanContext
 	routers       router.Routers
 	groupsRouters router.GroupsRouters
-	versionFlag   bool
-	command       *cobra.Command
-	parentCtx     context.Context
 }
 
 // New returns a new blank Engine instance without any beans/config attached.
@@ -62,21 +57,10 @@ func New(conf *framework.AppConfig) *Engine {
 			Init:    map[string]bool{},
 			Context: map[string]framework.Bean{},
 		},
-		versionFlag: false,
 	}
 	// default app info config(without set order)
 	engine.configs.Context[framework.ConfName] = conf
-	// create command
-	engine.command = &cobra.Command{
-		Use:  engine.info.Name,
-		Long: engine.info.Usage,
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := engine.runCommand(cmd, args); err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
-		},
-	}
+
 	return engine
 }
 
@@ -93,25 +77,42 @@ func Default(conf *framework.AppConfig) *Engine {
 	return engine
 }
 
-// SetArgs set arguments to cobra.Command, default is os.Args.
-// This function should be called before engine.Run if you want to override os.Args.
-func (e *Engine) SetArgs(args []string) {
-	e.command.SetArgs(args)
-}
-
-func (e *Engine) SetPreRunFunc(f func(cmd *cobra.Command, args []string) error) {
-	e.command.PreRunE = f
-}
-
 // Run starts the Uitron framework.
 // Note: if there is no bean in beans, Run will not block the calling goroutine.
-func (e *Engine) Run(ctx ...context.Context) error {
-	if len(ctx) > 0 {
-		e.parentCtx = ctx[0]
+func (e *Engine) RunCommand(ctx context.Context) error {
+	// init pflag.CommandLine
+	if pflag.CommandLine == nil {
+		pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 	}
-	e.command = e.registerCommand()
 	pflag.CommandLine.SetNormalizeFunc(cliflag.WordSepNormalizeFunc)
-	return e.command.Execute()
+	cmd := e.GetCommand(ctx)
+	return cmd.Execute()
+}
+
+func (e *Engine) GetCommand(ctx context.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     e.info.Name,
+		Long:    e.info.Usage,
+		Version: e.info.Version,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := e.runCmd(ctx, cmd, args); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+				os.Exit(1)
+			}
+		},
+	}
+
+	// Set flags of each config.
+	fs := cmd.Flags()
+	var namedFlagSets = &cliflag.NamedFlagSets{}
+
+	// Register flags.
+	e.configs.flags(namedFlagSets.FlagSet(e.info.Name))
+	for _, f := range namedFlagSets.FlagSets {
+		fs.AddFlagSet(f)
+	}
+	cmd.MarkFlagFilename("config", "yaml", "yml", "json")
+	return cmd
 }
 
 func (e *Engine) UseConfig(name string, conf framework.Config) error {
@@ -169,38 +170,7 @@ func (e *Engine) GetBeanByName(name string) (framework.Bean, bool) {
 	return e.beans.getByName(name)
 }
 
-// registerCommand register common flags to cobra.Command
-func (e *Engine) registerCommand() *cobra.Command {
-	cmd := e.command
-	// Set flags of each config.
-	fs := cmd.Flags()
-	var namedFlagSets = &cliflag.NamedFlagSets{}
-	// Register flags.
-	e.configs.flags(namedFlagSets.FlagSet(e.info.Name))
-	// Version.
-	addVersionFlag(&e.versionFlag, namedFlagSets.FlagSet("global"))
-
-	// TLS cert config.
-	tls.InstallPFlags(namedFlagSets.FlagSet("global"))
-
-	for _, f := range namedFlagSets.FlagSets {
-		fs.AddFlagSet(f)
-	}
-	cmd.MarkFlagFilename("config", "yaml", "yml", "json")
-	return cmd
-}
-
-func (e *Engine) runCommand(cmd *cobra.Command, args []string) error {
-	if len(args) != 0 {
-		logs.GetLogger().Info("arguments are not supported")
-	}
-
-	// Version processing.
-	if e.versionFlag {
-		fmt.Printf("%s %s\n", e.info.Name, e.info.Version)
-		os.Exit(0)
-	}
-
+func (e *Engine) Run(ctx context.Context) error {
 	// 2. Config/flags processing and verification.
 	errs := &errorcode.Errs{}
 	e.configs.setValidate(errs)
@@ -235,11 +205,7 @@ func (e *Engine) runCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	// 5. Start all beans and execute Start.
-	parentctx := e.parentCtx
-	if parentctx == nil {
-		parentctx = signals.NewKusciaContextWithStopCh(signals.SetupSignalHandler())
-	}
-	ctx, cancel := context.WithCancel(parentctx)
+	engineCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	beanName, beanList := e.beans.listBeans()
@@ -256,7 +222,7 @@ func (e *Engine) runCommand(cmd *cobra.Command, args []string) error {
 					debug.PrintStack()
 				}
 			}()
-			errChan <- b.Start(ctx, e)
+			errChan <- b.Start(engineCtx, e)
 		}(b)
 	}
 
@@ -268,13 +234,15 @@ func (e *Engine) runCommand(cmd *cobra.Command, args []string) error {
 				cancel()
 				return err
 			}
-		case <-ctx.Done():
-			cancel()
+		case <-engineCtx.Done():
 			return nil
 		}
 	}
 }
 
-func addVersionFlag(v *bool, fs *pflag.FlagSet) {
-	fs.BoolVarP(v, "version", "v", false, "Print version information and quit")
+func (e *Engine) runCmd(ctx context.Context, cmd *cobra.Command, args []string) error {
+	if len(args) != 0 {
+		logs.GetLogger().Info("arguments are not supported")
+	}
+	return e.Run(ctx)
 }

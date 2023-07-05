@@ -122,20 +122,22 @@ func (c *ClusterMetricsCollector) collect() {
 				continue
 			}
 
-			total, ok := metrics[fmt.Sprintf("cluster.%s-to-%s.membership_total", dr.Spec.Source, dr.Spec.Destination)]
-			if !ok {
-				continue
+			for _, port := range dr.Spec.Endpoint.Ports {
+				total, ok := metrics[fmt.Sprintf("cluster.%s-to-%s-%s.membership_total", dr.Spec.Source, dr.Spec.Destination, port.Name)]
+				if !ok {
+					continue
+				}
+				healthy, ok := metrics[fmt.Sprintf("cluster.%s-to-%s-%s.membership_healthy", dr.Spec.Source, dr.Spec.Destination, port.Name)]
+				if !ok {
+					continue
+				}
+				networkStatus = append(networkStatus, &kusciaapisv1alpha1.GatewayEndpointStatus{
+					Name:                  fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, port.Name),
+					Type:                  "DomainRoute",
+					TotalEndpointsCount:   total,
+					HealthyEndpointsCount: healthy,
+				})
 			}
-			healthy, ok := metrics[fmt.Sprintf("cluster.%s-to-%s.membership_healthy", dr.Spec.Source, dr.Spec.Destination)]
-			if !ok {
-				continue
-			}
-			networkStatus = append(networkStatus, &kusciaapisv1alpha1.GatewayEndpointStatus{
-				Name:                  dr.Name,
-				Type:                  "DomainRoute",
-				TotalEndpointsCount:   total,
-				HealthyEndpointsCount: healthy,
-			})
 		}
 	}
 

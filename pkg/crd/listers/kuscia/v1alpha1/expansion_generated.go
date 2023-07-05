@@ -24,30 +24,6 @@ type AppImageListerExpansion interface{}
 // ClusterDomainRouteLister.
 type ClusterDomainRouteListerExpansion interface{}
 
-// DataObjectListerExpansion allows custom methods to be added to
-// DataObjectLister.
-type DataObjectListerExpansion interface{}
-
-// DataObjectNamespaceListerExpansion allows custom methods to be added to
-// DataObjectNamespaceLister.
-type DataObjectNamespaceListerExpansion interface{}
-
-// DataSourceListerExpansion allows custom methods to be added to
-// DataSourceLister.
-type DataSourceListerExpansion interface{}
-
-// DataSourceNamespaceListerExpansion allows custom methods to be added to
-// DataSourceNamespaceLister.
-type DataSourceNamespaceListerExpansion interface{}
-
-// DataTableListerExpansion allows custom methods to be added to
-// DataTableLister.
-type DataTableListerExpansion interface{}
-
-// DataTableNamespaceListerExpansion allows custom methods to be added to
-// DataTableNamespaceLister.
-type DataTableNamespaceListerExpansion interface{}
-
 // DomainListerExpansion allows custom methods to be added to
 // DomainLister.
 type DomainListerExpansion interface{}
@@ -59,6 +35,30 @@ type DomainAppImageListerExpansion interface{}
 // DomainAppImageNamespaceListerExpansion allows custom methods to be added to
 // DomainAppImageNamespaceLister.
 type DomainAppImageNamespaceListerExpansion interface{}
+
+// DomainDataListerExpansion allows custom methods to be added to
+// DomainDataLister.
+type DomainDataListerExpansion interface{}
+
+// DomainDataNamespaceListerExpansion allows custom methods to be added to
+// DomainDataNamespaceLister.
+type DomainDataNamespaceListerExpansion interface{}
+
+// DomainDataGrantListerExpansion allows custom methods to be added to
+// DomainDataGrantLister.
+type DomainDataGrantListerExpansion interface{}
+
+// DomainDataGrantNamespaceListerExpansion allows custom methods to be added to
+// DomainDataGrantNamespaceLister.
+type DomainDataGrantNamespaceListerExpansion interface{}
+
+// DomainDataSourceListerExpansion allows custom methods to be added to
+// DomainDataSourceLister.
+type DomainDataSourceListerExpansion interface{}
+
+// DomainDataSourceNamespaceListerExpansion allows custom methods to be added to
+// DomainDataSourceNamespaceLister.
+type DomainDataSourceNamespaceListerExpansion interface{}
 
 // DomainRouteListerExpansion allows custom methods to be added to
 // DomainRouteLister.

@@ -56,10 +56,15 @@ const (
 // DomainSpec defines the details of domain.
 type DomainSpec struct {
 	// Role is used to represent the role of domain. Default is omit empty.
-	// If it is used to represent a P2P domain, please set the value to partner.
-	// kuscia scheduler will check the role, if it is partner, pods will be ignored by scheduler.
+	// When the domain is for partner, please set the value to partner.
 	// +optional
 	Role DomainRole `json:"role,omitempty"`
+
+	// Interconnection Protocols
+	// If multiple protocols are specified, select the protocols in the order of configuration.
+	// +optional
+	InterConnProtocols []InterConnProtocolType `json:"interConnProtocols,omitempty"`
+
 	// +optional
 	Cert string `json:"cert,omitempty"`
 	// +optional

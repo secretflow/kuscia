@@ -15,29 +15,17 @@
 package beans
 
 import (
-	"fmt"
-
-	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/web/api"
 )
 
 func GinLogger(log *nlog.NLog, ginName string) gin.HandlerFunc {
-	// Create a new Node with a Node number of 1
-	// usage: https://github.com/bwmarrin/snowflake
-	node, _ := snowflake.NewNode(1)
 	if ginName == "" {
 		ginName = "default"
 	}
 
 	return func(c *gin.Context) {
-		traceID := c.DefaultQuery(api.TraceID, "")
-		if len(traceID) == 0 {
-			traceID = fmt.Sprintf("t%s", node.Generate())
-		}
-		c.Set(api.TraceID, traceID)
 		log.WithCtx(c).Info(ginName)
 	}
 }

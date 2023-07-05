@@ -17,6 +17,7 @@ limitations under the License.
 package container_test
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func TestGetPods(t *testing.T) {
 	expected := []*ctest.FakePod{{Pod: &Pod{ID: "1111"}}, {Pod: &Pod{ID: "2222"}}, {Pod: &Pod{ID: "3333"}}}
 	runtime.PodList = expected
 	cache := NewTestRuntimeCache(runtime)
-	actual, err := cache.GetPods()
+	actual, err := cache.GetPods(context.Background())
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
@@ -63,12 +64,12 @@ func TestForceUpdateIfOlder(t *testing.T) {
 	runtime.PodList = newpods
 
 	// An older timestamp should not force an update.
-	cache.ForceUpdateIfOlder(time.Now().Add(-20 * time.Minute))
+	cache.ForceUpdateIfOlder(context.Background(), time.Now().Add(-20*time.Minute))
 	actual := cache.GetCachedPods()
 	comparePods(t, oldpods, actual)
 
 	// A newer timestamp should force an update.
-	cache.ForceUpdateIfOlder(time.Now().Add(20 * time.Second))
+	cache.ForceUpdateIfOlder(context.Background(), time.Now().Add(20*time.Second))
 	actual = cache.GetCachedPods()
 	comparePods(t, newpods, actual)
 }

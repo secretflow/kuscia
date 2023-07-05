@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
@@ -44,6 +44,9 @@ type GatewayConfig struct {
 	ExternalTLS    *kusciaconfig.TLSConfig    `yaml:"externalTLS,omitempty"`
 	InnerServerTLS *kusciaconfig.TLSConfig    `yaml:"InnerServerTLS,omitempty"`
 	InnerClientTLS *kusciaconfig.TLSConfig    `yaml:"InnerClientTLS,omitempty"`
+
+	TransportConfig          *kusciaconfig.ServiceConfig `yaml:"transport,omitempty"`
+	InterConnSchedulerConfig *kusciaconfig.ServiceConfig `yaml:"interConnScheduler,omitempty"`
 }
 
 func DefaultStaticGatewayConfig() *GatewayConfig {
@@ -99,6 +102,18 @@ func (config *GatewayConfig) CheckConfig() error {
 	err = kusciaconfig.CheckTLSConfig(config.InnerClientTLS, "innerClientTLS")
 	if err != nil {
 		return err
+	}
+
+	if config.TransportConfig != nil {
+		if err := kusciaconfig.CheckServiceConfig(config.TransportConfig, "transport"); err != nil {
+			return err
+		}
+	}
+
+	if config.InterConnSchedulerConfig != nil {
+		if err := kusciaconfig.CheckServiceConfig(config.InterConnSchedulerConfig, "interConnScheduler"); err != nil {
+			return err
+		}
 	}
 
 	return kusciaconfig.CheckMasterConfig(config.MasterConfig)

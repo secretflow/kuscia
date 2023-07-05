@@ -1,0 +1,13 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: DomainDataSource
+metadata:
+  labels:
+    kuscia.secretflow/domaindatasource-type: localfs
+  name: default-data-source
+  namespace: {{.DOMAIN_ID}}
+spec:
+  data:
+    encryptInfo: '{"localfs":{"path":"/home/kuscia/var/storage/data"}}'
+  name: default-data-source
+  type: localfs
+  uri: /home/kuscia/var/storage/data

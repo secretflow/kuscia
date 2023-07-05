@@ -6,6 +6,9 @@ COMMIT_ID = $(shell git log -1 --pretty="format:%h")
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}-${COMMIT_ID}
 IMG ?= secretflow/kuscia:${TAG}
 
+ENVOY_IMAGE ?= secretflow/kuscia-envoy:0.2.0b0
+DEPS_IMAGE ?= secretflow/kuscia-deps:0.1.0b0
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -97,4 +100,4 @@ docs: ## Build docs.
 image: export GOOS=linux
 image: export GOARCH=amd64
 image: build ## Build docker image with the manager.
-	docker build -t ${IMG} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+	docker build -t ${IMG}  --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .

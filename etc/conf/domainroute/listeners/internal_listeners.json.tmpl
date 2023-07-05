@@ -48,6 +48,19 @@
                                     "self_namespace": "{{.Namespace}}",
                                     "instance": "{{.Instance}}",
                                     "add_origin_source": true,
+                                     "rewrite_host_config": [
+                                        {
+                                            "header": "x-ptp-target-node-id",
+                                            "rewrite_policy": "RewriteNamespaceWithHeader",
+                                            "path_matchers":[
+                                                {
+                                                   "path": {
+                                                        "prefix":  "/v1/interconn/chan/push"
+                                                   }
+                                                }
+                                            ]
+                                       }
+                                     ],
                                     "maxLoggingBodySizePerReqeuest": 1024
                                 }
                             },

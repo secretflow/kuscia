@@ -1,0 +1,64 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "kuscia/proto/api/v1/interconn/common.proto";
+
+package kuscia.proto.api.v1.interconn;
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1/interconn";
+
+// StartTaskRequest defines the request for starting task.
+message StartTaskRequest {
+    string task_id = 1;
+    string job_id = 2;
+    string task_name = 3;
+}
+
+// StartTaskRequest defines the request for stopping task.
+message StopTaskRequest {
+    string task_id = 1;
+}
+
+// PollTaskStatusRequest defines the request for polling task status.
+message PollTaskStatusRequest {
+    string task_id = 1;
+    string role = 2;
+}
+
+message PushTaskStatusRequest {
+    string task_id = 1;
+    string role = 2;
+    // Possible values include Pending,RUNNING,SUCCESS,FAILED
+    string status = 3;
+}
+
+// TaskInputConfig defines task input config info.
+message TaskInputConfig {
+    // Component name
+    string name = 1;
+    // Module name of component
+    string module_name = 2;
+    // Input of component
+    repeated ComponentIO input = 3;
+    // Output of component
+    repeated ComponentIO output = 4;
+    // Role of task
+    ConfigRole role = 5;
+    // Initiator of task
+    ConfigInitiator initiator = 6;
+    // Parameters of task
+    ConfigParams task_params = 7;
+}

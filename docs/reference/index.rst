@@ -8,4 +8,5 @@
 
     architecture_cn
     ./concepts/index
+    ./apis/index
     operation_cn

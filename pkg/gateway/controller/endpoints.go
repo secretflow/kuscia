@@ -28,7 +28,6 @@ import (
 	grpc_http1_reverse_bridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -43,6 +42,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -380,7 +380,7 @@ func generateVirtualHost(namespace string, name string, accessDomains string) (*
 								{
 									PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
 										Header: &route.RouteAction_HashPolicy_Header{
-											HeaderName: "Kuscia-Session-Id",
+											HeaderName: interconn.GetHashHeaderOfService(name),
 										},
 									},
 								},
@@ -480,7 +480,7 @@ func generateCluster(name string, protocol string, hosts map[string][]uint32,
 		return nil, err
 	}
 
-	cluster := addTCPHealthCheck(&envoycluster.Cluster{
+	cluster := xds.AddTCPHealthCheck(&envoycluster.Cluster{
 		Name:           fmt.Sprintf("service-%s", name),
 		ConnectTimeout: durationpb.New(10 * time.Second),
 		ClusterDiscoveryType: &envoycluster.Cluster_Type{
@@ -521,32 +521,4 @@ func generateCluster(name string, protocol string, hosts map[string][]uint32,
 		}
 	}
 	return cluster, nil
-}
-
-func addTCPHealthCheck(c *envoycluster.Cluster) *envoycluster.Cluster {
-	c.CommonLbConfig = &envoycluster.Cluster_CommonLbConfig{
-		HealthyPanicThreshold: &v3.Percent{
-			Value: 5,
-		},
-	}
-	c.HealthChecks = []*core.HealthCheck{
-		{
-			Timeout:            durationpb.New(time.Second),
-			Interval:           durationpb.New(15 * time.Second),
-			UnhealthyInterval:  durationpb.New(3 * time.Second),
-			UnhealthyThreshold: wrapperspb.UInt32(1),
-			HealthyThreshold:   wrapperspb.UInt32(1),
-			HealthChecker: &core.HealthCheck_TcpHealthCheck_{
-				TcpHealthCheck: &core.HealthCheck_TcpHealthCheck{},
-			},
-		},
-	}
-	c.OutlierDetection = &envoycluster.OutlierDetection{
-		EnforcingConsecutive_5Xx:       wrapperspb.UInt32(0), // disable this, we only count local origin failures
-		SplitExternalLocalOriginErrors: true,
-		ConsecutiveLocalOriginFailure:  wrapperspb.UInt32(1),
-		BaseEjectionTime:               durationpb.New(30 * time.Second),
-		MaxEjectionTime:                durationpb.New(30 * time.Second),
-	}
-	return c
 }

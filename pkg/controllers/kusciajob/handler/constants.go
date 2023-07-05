@@ -15,8 +15,6 @@
 package handler
 
 const (
-	// LabelKusciaJobOwner label that means which job the task belongs
-	LabelKusciaJobOwner = "job.kuscia.secretflow/owner"
 	// LabelControllerValueKusciaJob is the label value for common.LabelController with KusciaJob
 	LabelControllerValueKusciaJob = "kuscia-job"
 	// KusciaJobKind is KusciaJob CRD Kind

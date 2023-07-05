@@ -22,7 +22,7 @@ import (
 	"sync"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,12 +35,15 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/secretflow/kuscia/pkg/web/logs"
 )
 
 var (
 	defaultRootDir  = "/home/kuscia/"
 	defaultDomainID = "kuscia"
 	defaultEndpoint = "https://127.0.0.1:6443"
+
+	defaultInterConnSchedulerPort = 8084
 )
 
 func getInitConfig(flagConfigFile string, flagDomainID string) *modules.Dependencies {
@@ -66,6 +69,7 @@ func getInitConfig(flagConfigFile string, flagDomainID string) *modules.Dependen
 
 	conf.ApiserverEndpoint = defaultEndpoint
 	conf.KubeconfigFile = filepath.Join(conf.RootDir, "etc/kubeconfig")
+	conf.KusciaKubeConfig = filepath.Join(conf.RootDir, "etc/kuscia.kubeconfig")
 	conf.CAKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.key")
 	conf.CAFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.crt")
 	conf.DomainKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "domain.key")
@@ -91,6 +95,13 @@ func getInitConfig(flagConfigFile string, flagDomainID string) *modules.Dependen
 		nlog.Fatal(err)
 	}
 	conf.ContainerdSock = filepath.Join(conf.RootDir, "containerd/run/containerd.sock")
+
+	conf.TransportConfigFile = filepath.Join(conf.RootDir, "etc/conf/transport/transport.yaml")
+	conf.TransportPort, err = modules.GetTransportPort(conf.TransportConfigFile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
 	return conf
 }
 
@@ -116,6 +127,7 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 			nlog.Setup(nlog.SetWriter(zlog))
+			logs.Setup(nlog.SetWriter(zlog))
 			conf := getInitConfig(configFile, domainID)
 			_, _, err = modules.EnsureCaKeyAndCert(conf)
 			if err != nil {
@@ -177,7 +189,6 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 				if debug {
 					utils.SetupPprof(debugPort)
 				}
-
 			}
 			<-runctx.Done()
 			return nil

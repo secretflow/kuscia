@@ -1,0 +1,131 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.datamesh;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh";
+option java_package = "org.secretflow.v1alpha1.datamesh";
+
+service DomainDataSourceService {
+  rpc CreateDomainDataSource(CreateDomainDataSourceRequest) returns (CreateDomainDataSourceResponse);
+
+  rpc QueryDomainDataSource(QueryDomainDataSourceRequest) returns (QueryDomainDataSourceResponse);
+
+  rpc UpdateDomainDataSource(UpdateDomainDataSourceRequest) returns (UpdateDomainDataSourceResponse);
+
+  rpc DeleteDomainDataSource(DeleteDomainDataSourceRequest) returns (DeleteDomainDataSourceResponse);
+}
+
+message CreateDomainDataSourceRequest {
+  RequestHeader header = 1;
+  string datasource_id = 2;
+  string name = 3;
+  string type = 4;
+  DataSourceInfo info = 5;
+}
+
+message CreateDomainDataSourceResponse {
+  Status status = 1;
+  CreateDomainDataSourceResponseData data = 2;
+}
+
+message CreateDomainDataSourceResponseData {
+  // id of created datasource
+  string datasource_id = 1;
+}
+
+message UpdateDomainDataSourceRequest {
+  RequestHeader header = 1;
+  string datasource_id = 2;
+  string name = 3;
+  string type = 4;
+  DataSourceInfo info = 5;
+}
+
+message UpdateDomainDataSourceResponse {
+  Status status = 1;
+}
+
+message DeleteDomainDataSourceRequest {
+  RequestHeader header = 1;
+  // datasource id
+  string datasource_id = 2;
+}
+
+message DeleteDomainDataSourceResponse {
+  Status status = 1;
+}
+
+message QueryDomainDataSourceRequest {
+  RequestHeader header = 1;
+  string datasource_id = 2;
+}
+
+message QueryDomainDataSourceResponse {
+  Status   status = 1;
+  DomainDataSource data = 2;
+}
+
+message DomainDataSource {
+  // datasource id
+  string datasource_id = 1;
+  // datasource name
+  string name = 2;
+  // datasource type, enum [localfs, oss] , oss not support now
+  string type = 3;
+  // datasource status, enum [Available,Unavailable]
+  string status = 4;
+  // datasource info
+  DataSourceInfo info = 5;
+}
+
+message DataSourceInfo {
+  // there is only one of the localfs or the oss in the DataSourceInfo
+  // LocalDataSourceInfo is exist only if the type of datasource is localfs
+  // OssDataSourceInfo is exist only if the type of datasource is oss
+  LocalDataSourceInfo localfs = 1;
+  // oss not support now
+  OssDataSourceInfo oss = 2;
+}
+
+// datasource info for local path
+message LocalDataSourceInfo {
+  // the local path of datasource
+  string path = 1;
+}
+
+// datasource info for oss
+// oss not support now
+message OssDataSourceInfo {
+  // endpoint oss.xxx.cn-xxx.com or 127.0.0.1:9000
+  string endpoint = 1;
+  // the bucket name of the oss datasource
+  string bucket = 2;
+  // the prefix of the oss datasource. e.g.  data/traindata/
+  string prefix = 3;
+  // access key
+  string access_key_id = 4;
+  // access secret
+  string access_key_secret = 5;
+  // virtualhost is the same as AliyunOSS's virtualhost , default true
+  bool   virtualhost = 6;
+  // optional enum[s3v2,s3v4]
+  string version = 7;
+  // optional enum[oss,minio] , default oss
+  string storage_type = 8;
+}

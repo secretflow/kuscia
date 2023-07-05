@@ -29,16 +29,16 @@ type SucceededHandler struct {
 }
 
 // NewSucceededHandler return SucceededHandler to handle Succeeded kuscia job.
-func NewSucceededHandler(recorder record.EventRecorder) *SucceededHandler {
+func NewSucceededHandler(deps *Dependencies) *SucceededHandler {
 	return &SucceededHandler{
-		recorder: recorder,
+		recorder: deps.Recorder,
 	}
 }
 
 // HandlePhase implements the KusciaJobPhaseHandler interface.
 // It will do some tail-in work when the job phase is Succeeded.
-func (s *SucceededHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (bool, error) {
-	s.recorder.Event(kusciaJob, v1.EventTypeNormal, "KusciaJobSucceeded", "KusciaJob ran successfully")
+func (h *SucceededHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (bool, error) {
+	h.recorder.Event(kusciaJob, v1.EventTypeNormal, "KusciaJobSucceeded", "KusciaJob ran successfully")
 	now := metav1.Now()
 	kusciaJob.Status.CompletionTime = &now
 	kusciaJob.Status.LastReconcileTime = &now

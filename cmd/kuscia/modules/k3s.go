@@ -15,17 +15,25 @@
 package modules
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"github.com/google/uuid"
+
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
@@ -111,7 +119,7 @@ func NewK3s(i *Dependencies) Module {
 		kubeconfigFile: i.KubeconfigFile,
 		bindAddress:    "0.0.0.0",
 		listenPort:     "6443",
-		dataDir:        filepath.Join(i.RootDir, "var/k3s/"),
+		dataDir:        filepath.Join(i.RootDir, k3sDataDirPrefix),
 		enableAudit:    false,
 	}
 }
@@ -197,7 +205,10 @@ func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) 
 			nlog.Error(err)
 			cancel()
 		}
-
+		if err = genKusciaKubeConfig(conf); err != nil {
+			nlog.Error(err)
+			cancel()
+		}
 		nlog.Info("k3s is ready")
 	}
 
@@ -214,14 +225,98 @@ func applyCRD(conf *Dependencies) error {
 		if dir.IsDir() {
 			continue
 		}
-		cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", filepath.Join(dirPath, dir.Name()))
-		nlog.Infof("apply %s", filepath.Join(dirPath, dir.Name()))
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		if err != nil {
-			nlog.Errorf("apply %s err:%s", filepath.Join(dirPath, dir.Name()), err.Error())
+		file := filepath.Join(dirPath, dir.Name())
+		nlog.Infof("apply %s", file)
+		if err := applyFile(conf, file); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func genKusciaKubeConfig(conf *Dependencies) error {
+	c := &kusciaConfig{
+		serverCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/server-ca.crt"),
+		clientKeyFile:          filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.key"),
+		clientCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.crt"),
+		clusterRoleFile:        filepath.Join(conf.RootDir, ConfPrefix, "kuscia-clusterrole.yaml"),
+		clusterRoleBindingFile: filepath.Join(conf.RootDir, ConfPrefix, "kuscia-clusterrolebinding.yaml"),
+		kubeConfigTmplFile:     filepath.Join(conf.RootDir, ConfPrefix, "kuscia.kubeconfig.tmpl"),
+		kubeConfig:             conf.KusciaKubeConfig,
+	}
+
+	// generate kuscia client certs
+	serverCert, err := tlsutils.LoadCertFile(c.serverCertFile)
+	if err != nil {
+		return err
+	}
+	nlog.Info("load serverCertFile successfully")
+	rootCert, rootKey, err := tlsutils.LoadX509EcKeyPair(c.clientCertFile, c.clientKeyFile)
+	if err != nil {
+		return err
+	}
+	nlog.Info("load rootCert, rootKey successfully")
+	certTmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(int64(uuid.New().ID())),
+		Subject: pkix.Name{
+			CommonName: "kuscia",
+		},
+		NotBefore: time.Now(),
+		NotAfter:  time.Now().AddDate(10, 0, 0),
+		KeyUsage:  x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+	}
+	var certOut, keyOut bytes.Buffer
+	if err := tlsutils.GenerateX509KeyPair(rootCert, rootKey, certTmpl, &certOut, &keyOut); err != nil {
+		return err
+	}
+	nlog.Info("generate certOut, keyOut successfully")
+	// generate kuscia kubeconfig
+	s := struct {
+		ServerCert string
+		Endpoint   string
+		KusciaCert string
+		KusciaKey  string
+	}{
+		ServerCert: base64.StdEncoding.EncodeToString(serverCert),
+		Endpoint:   conf.ApiserverEndpoint,
+		KusciaCert: base64.StdEncoding.EncodeToString(certOut.Bytes()),
+		KusciaKey:  base64.StdEncoding.EncodeToString(keyOut.Bytes()),
+	}
+	if err := RenderConfig(c.kubeConfigTmplFile, c.kubeConfig, s); err != nil {
+		return err
+	}
+	nlog.Info("generate kuscia kubeconfig successfully")
+	// apply kuscia clusterRole and clusterRoleBinding
+	roleFiles := []string{
+		c.clusterRoleFile,
+		c.clusterRoleBindingFile,
+	}
+	for _, file := range roleFiles {
+		if err := applyFile(conf, file); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func applyFile(conf *Dependencies, file string) error {
+	cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", file)
+	nlog.Infof("apply %s", file)
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		nlog.Errorf("apply %s err:%s", file, err.Error())
+		return err
+	}
+	return nil
+}
+
+type kusciaConfig struct {
+	serverCertFile         string
+	clientKeyFile          string
+	clientCertFile         string
+	clusterRoleFile        string
+	clusterRoleBindingFile string
+	kubeConfigTmplFile     string
+	kubeConfig             string
 }

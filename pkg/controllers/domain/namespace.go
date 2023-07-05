@@ -54,6 +54,11 @@ func (c *Controller) createNamespace(domain *kusciaapisv1alpha1.Domain) error {
 		ns.Labels[common.LabelDomainRole] = string(domain.Spec.Role)
 	}
 
+	// Todo: Currently, only one protocol is supported, and in the future, multiple protocols will be supported
+	if len(domain.Spec.InterConnProtocols) > 0 && domain.Spec.InterConnProtocols[0] != "" {
+		ns.Labels[common.LabelInterConnProtocols] = string(domain.Spec.InterConnProtocols[0])
+	}
+
 	_, err = c.kubeClient.CoreV1().Namespaces().Create(context.Background(), ns, apismetav1.CreateOptions{})
 	if err != nil && k8serrors.IsAlreadyExists(err) {
 		nlog.Warnf("Namespace %v already exist for domain %v, skip to create it", ns.Name, domain.Name)
@@ -88,19 +93,13 @@ func (c *Controller) updateNamespace(domain *kusciaapisv1alpha1.Domain) error {
 		nsCopy.Labels[common.LabelDomainName] = domain.Name
 	}
 
-	newDomainRole := string(domain.Spec.Role)
-	oldDomainRole, exist := nsCopy.Labels[common.LabelDomainRole]
-	if !exist {
-		if newDomainRole != "" {
-			nsCopy.Labels[common.LabelDomainRole] = newDomainRole
-		}
-	} else {
-		if newDomainRole == "" {
-			delete(nsCopy.Labels, common.LabelDomainRole)
-		} else if oldDomainRole != newDomainRole {
-			nsCopy.Labels[common.LabelDomainRole] = newDomainRole
-		}
+	updateNamespaceLabel(nsCopy, string(domain.Spec.Role), common.LabelDomainRole)
+
+	newInterConnProtocols := ""
+	if len(domain.Spec.InterConnProtocols) > 0 && domain.Spec.InterConnProtocols[0] != "" {
+		newInterConnProtocols = string(domain.Spec.InterConnProtocols[0])
 	}
+	updateNamespaceLabel(nsCopy, newInterConnProtocols, common.LabelInterConnProtocols)
 
 	if !reflect.DeepEqual(ns.Labels, nsCopy.Labels) {
 		_, err = c.kubeClient.CoreV1().Namespaces().Update(context.Background(), nsCopy, apismetav1.UpdateOptions{})
@@ -108,6 +107,15 @@ func (c *Controller) updateNamespace(domain *kusciaapisv1alpha1.Domain) error {
 	}
 
 	return nil
+}
+
+func updateNamespaceLabel(ns *apicorev1.Namespace, newLabelValue string, labelName string) {
+	oldLabelValue := ns.Labels[labelName]
+	if newLabelValue != "" && newLabelValue != oldLabelValue {
+		ns.Labels[labelName] = newLabelValue
+	} else if newLabelValue == "" {
+		delete(ns.Labels, labelName)
+	}
 }
 
 // deleteNamespace is used to delete domain namespace.

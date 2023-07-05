@@ -21,6 +21,7 @@ package kuberuntime
 import (
 	"time"
 
+	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/flowcontrol"
@@ -81,7 +82,7 @@ func newFakeKubeRuntimeManager(runtimeService internalapi.RuntimeService, imageS
 		logManager:      logManager,
 	}
 
-	typedVersion, err := runtimeService.Version(kubeRuntimeAPIVersion)
+	typedVersion, err := runtimeService.Version(context.Background(), kubeRuntimeAPIVersion)
 	if err != nil {
 		return nil, err
 	}

@@ -26,13 +26,17 @@ import (
 
 // TODO: The definition of this function is very ugly, we need to reconsider it later
 func RunOperatorsAllinOne(runctx context.Context, cancel context.CancelFunc, conf *Dependencies, startAgent bool) error {
+	RunInterConn(runctx, cancel, conf)
 	RunController(runctx, cancel, conf)
 	RunScheduler(runctx, cancel, conf)
 	RunDomainRoute(runctx, cancel, conf)
+	RunKusciaAPI(runctx, cancel, conf)
 
 	if startAgent {
 		RunCoreDNS(runctx, cancel, conf)
 		RunAgent(runctx, cancel, conf)
+		RunDataMesh(runctx, cancel, conf)
+		RunTransport(runctx, cancel, conf)
 	}
 
 	return nil

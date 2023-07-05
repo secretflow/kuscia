@@ -1,0 +1,10 @@
+eggs/
+.eggs/
+build/
+deploy/
+develop-eggs/
+dist/
+wheels/
+*.egg-info/
+*.egg
+__pycache__/

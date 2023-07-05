@@ -108,6 +108,17 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		return fmt.Errorf("add master clusters fail, detail-> %v", err)
 	}
 
+	// add interconn cluster
+	interConnClusterConfig, err := config.LoadInterConnClusterConfig(gwConfig.TransportConfig,
+		gwConfig.InterConnSchedulerConfig)
+	if err != nil {
+		return fmt.Errorf("failed to load interConnClusterConfig, detail-> %v", err)
+	}
+	err = clusters.AddInterConnClusters(gwConfig.Namespace, interConnClusterConfig)
+	if err != nil {
+		return fmt.Errorf("add interConn clusters fail, detail-> %v", err)
+	}
+
 	// create informer factory
 	defaultResync := time.Duration(gwConfig.ResyncPeriod) * time.Second
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(clients.KubeClient, defaultResync,

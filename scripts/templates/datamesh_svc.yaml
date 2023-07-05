@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: datamesh
+  namespace: {{.DOMAIN_ID}}
+spec:
+  externalName: {{.DATAMESH_ENDPOINT}}
+  sessionAffinity: None
+  type: ExternalName

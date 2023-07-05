@@ -112,19 +112,29 @@ func (c *endpointController) runCase(t *testing.T, testCases []testCase) {
 					metav1.DeleteOptions{})
 			}
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(400 * time.Millisecond)
 
 		vhName1 := fmt.Sprintf("service-%s-internal", tc.Name())
 		vhName2 := fmt.Sprintf("service-%s-external", tc.Name())
 		internalVh, err1 := xds.QueryVirtualHost(vhName1, xds.InternalRoute)
 		externalVh, err2 := xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+
 		var vhs = []*routev3.VirtualHost{
 			internalVh,
 			externalVh,
 		}
 		if tc.add && tc.expectedExists {
+			for i := 0; i <= 5; i++ {
+				if err1 != nil || err2 != nil {
+					time.Sleep(600 * time.Millisecond)
+					internalVh, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
+					externalVh, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+				} else {
+					break
+				}
+			}
 			if err1 != nil || err2 != nil {
-				t.Fatal("add service failed")
+				t.Fatalf("Add service failed,err1: %v err2: %v", err1, err2)
 			}
 			if tc.expectedAccessDomain != "" {
 				for _, vh := range vhs {
@@ -139,6 +149,15 @@ func (c *endpointController) runCase(t *testing.T, testCases []testCase) {
 		}
 
 		if (!tc.add || !tc.expectedExists) && (err1 == nil || err2 == nil) {
+			for i := 0; i <= 5; i++ {
+				if err1 == nil || err2 == nil {
+					time.Sleep(600 * time.Millisecond)
+					internalVh, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
+					externalVh, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+				} else {
+					break
+				}
+			}
 			t.Fatal("delete service failed")
 		}
 	}
@@ -172,7 +191,7 @@ func TestEndpoints(t *testing.T) {
 	}
 
 	go c.Run(1, make(<-chan struct{}))
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	testCases := []testCase{
 		{

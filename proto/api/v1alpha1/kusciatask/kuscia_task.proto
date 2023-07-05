@@ -17,6 +17,7 @@ syntax = "proto3";
 package kuscia.proto.api.v1alpha1.kusciatask;
 
 option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciatask";
+option java_package = "com.secretflow.v1alpha1.kusciatask";
 
 // Service represents the service address corresponding to the port.
 message Service {

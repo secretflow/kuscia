@@ -17,13 +17,10 @@ package handler
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	quota "k8s.io/apiserver/pkg/quota/v1"
 	"k8s.io/client-go/kubernetes"
 	listers "k8s.io/client-go/listers/core/v1"
@@ -32,106 +29,89 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // CreatingHandler is used to handle task resource group which phase is creating.
 type CreatingHandler struct {
-	kubeClient   kubernetes.Interface
-	kusciaClient kusciaclientset.Interface
-	podLister    listers.PodLister
-	trLister     kuscialistersv1alpha1.TaskResourceLister
+	kubeClient      kubernetes.Interface
+	kusciaClient    kusciaclientset.Interface
+	namespaceLister listers.NamespaceLister
+	podLister       listers.PodLister
+	trLister        kuscialistersv1alpha1.TaskResourceLister
 }
 
 // NewCreatingHandler returns a CreatingHandler instance.
 func NewCreatingHandler(deps *Dependencies) *CreatingHandler {
 	return &CreatingHandler{
-		kubeClient:   deps.KubeClient,
-		kusciaClient: deps.KusciaClient,
-		podLister:    deps.PodLister,
-		trLister:     deps.TrLister,
+		kubeClient:      deps.KubeClient,
+		kusciaClient:    deps.KusciaClient,
+		namespaceLister: deps.NamespaceLister,
+		podLister:       deps.PodLister,
+		trLister:        deps.TrLister,
 	}
 }
 
 // Handle is used to perform the real logic.
-func (h *CreatingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool, error) {
-	var err error
-	creatingCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondCreating)
-	defer func() {
-		now := metav1.Now().Rfc3339Copy()
-		trg.Status.LastTransitionTime = now
-		creatingCond.LastTransitionTime = now
-		if err == nil {
-			trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseReserving
-			creatingCond.Status = v1.ConditionTrue
-			creatingCond.Reason = "Create party task resource"
-		} else {
-			creatingCond.Status = v1.ConditionFalse
-			creatingCond.Reason = fmt.Sprintf("Failed to create task resource, %v", err.Error())
-		}
-	}()
+func (h *CreatingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	now := metav1.Now().Rfc3339Copy()
+	trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseReserving
+	trg.Status.LastTransitionTime = &now
 
+	cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesCreated)
 	if err = h.createTaskResources(trg); err != nil {
-		return true, err
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Failed to create task resource, %v", err.Error()))
+		return needUpdate, err
 	}
 
-	return true, nil
+	needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
+	return needUpdate, nil
 }
 
 // createTaskResource is used to create task resources.
 func (h *CreatingHandler) createTaskResources(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
-	if len(trg.Spec.Parties) == 0 {
-		return fmt.Errorf("parties in task resource group %v can't be empty", trg.Name)
-	}
-
-	var (
-		err      error
-		pod      *v1.Pod
-		trs      []*kusciaapisv1alpha1.TaskResource
-		latestTr *kusciaapisv1alpha1.TaskResource
-		buildTr  *kusciaapisv1alpha1.TaskResource
-	)
-
 	for _, party := range trg.Spec.Parties {
-		trs, err = h.trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trg.Name}))
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
+		_, err := h.trLister.TaskResources(party.DomainID).Get(party.TaskResourceName)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				buildTr, err := h.buildTaskResource(&party, trg)
+				if err != nil {
+					return err
+				}
+
+				nlog.Infof("Create task resource %v of task resource group %v", party.TaskResourceName, trg.Name)
+				_, err = h.kusciaClient.KusciaV1alpha1().TaskResources(party.DomainID).Create(context.Background(), buildTr, metav1.CreateOptions{})
+				if err != nil && !k8serrors.IsAlreadyExists(err) {
+					return fmt.Errorf("create task resource %v/%v failed, %v", buildTr.Namespace, buildTr.Name, err)
+				}
+			} else {
+				return fmt.Errorf("failed to get task resource %v of task resource group %v", party.TaskResourceName, trg.Name)
+			}
 		}
 
-		latestTr = findPartyTaskResource(party, trs)
+		if !utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
+			for _, p := range party.Pods {
+				pod, err := h.podLister.Pods(party.DomainID).Get(p.Name)
+				if err != nil {
+					return err
+				}
 
-		if latestTr == nil {
-			buildTr, err = h.buildTaskResource(&party, trg)
-			if err != nil {
-				return err
-			}
+				if value, exist := pod.Labels[kusciaapisv1alpha1.LabelTaskResource]; exist && value == party.TaskResourceName {
+					continue
+				}
 
-			latestTr, err = h.kusciaClient.KusciaV1alpha1().TaskResources(party.DomainID).Create(context.Background(), buildTr, metav1.CreateOptions{})
-			if err != nil {
-				return fmt.Errorf("create task resource %v/%v failed, %v", buildTr.Namespace, buildTr.Name, err)
-			}
-		}
+				podCopy := pod.DeepCopy()
+				if podCopy.Labels == nil {
+					podCopy.Labels = map[string]string{}
+				}
 
-		for _, p := range party.Pods {
-			pod, err = h.podLister.Pods(party.DomainID).Get(p.Name)
-			if err != nil {
-				return err
-			}
-
-			if value, exist := pod.Labels[kusciaapisv1alpha1.LabelTaskResource]; exist && value == latestTr.Name {
-				continue
-			}
-
-			podCopy := pod.DeepCopy()
-			if podCopy.Labels == nil {
-				podCopy.Labels = map[string]string{}
-			}
-
-			podCopy.Labels[kusciaapisv1alpha1.LabelTaskResource] = latestTr.Name
-			oldExtractedPod := utilscommon.ExtractPodLabels(pod)
-			newExtractedPod := utilscommon.ExtractPodLabels(podCopy)
-			if err = utilscommon.PatchPod(context.Background(), h.kubeClient, oldExtractedPod, newExtractedPod); err != nil {
-				return fmt.Errorf("patch pod %v/%v label failed, %v", pod.Namespace, pod.Name, err)
+				podCopy.Labels[kusciaapisv1alpha1.LabelTaskResource] = party.TaskResourceName
+				oldExtractedPod := utilsres.ExtractPodLabels(pod)
+				newExtractedPod := utilsres.ExtractPodLabels(podCopy)
+				if err = utilsres.PatchPod(context.Background(), h.kubeClient, oldExtractedPod, newExtractedPod); err != nil {
+					return fmt.Errorf("patch pod %v/%v label failed, %v", pod.Namespace, pod.Name, err)
+				}
 			}
 		}
 	}
@@ -140,41 +120,70 @@ func (h *CreatingHandler) createTaskResources(trg *kusciaapisv1alpha1.TaskResour
 
 // buildTaskResource is used to build task resource.
 func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResourceGroupParty, trg *kusciaapisv1alpha1.TaskResourceGroup) (*kusciaapisv1alpha1.TaskResource, error) {
-	tPods, err := h.buildTaskResourcePods(party.DomainID, party.Pods)
+	var err error
+	var trPods []kusciaapisv1alpha1.TaskResourcePod
+	trPods, err = h.buildTaskResourcePods(party.DomainID, party.Pods)
 	if err != nil {
 		return nil, fmt.Errorf("build task resource %v/%v pods failed, %v", party.DomainID, trg.Name, err.Error())
+	}
+
+	var jobID, taskID, taskAlias, protocolType string
+	if trg.Labels != nil {
+		jobID = trg.Labels[common.LabelJobID]
+		taskID = trg.Labels[common.LabelTaskID]
+		taskAlias = trg.Labels[common.LabelTaskAlias]
+		protocolType = trg.Labels[common.LabelInterConnProtocolType]
+	}
+
+	phase := kusciaapisv1alpha1.TaskResourcePhaseReserving
+	condType := kusciaapisv1alpha1.TaskResourceCondReserving
+	condReason := "Create task resource from task resource group"
+	if !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, nil) &&
+		utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
+		phase = kusciaapisv1alpha1.TaskResourcePhaseReserved
+		condType = kusciaapisv1alpha1.TaskResourceCondReserved
+		condReason = "Create task resource for outer domain"
 	}
 
 	now := metav1.Now()
 	tr := &kusciaapisv1alpha1.TaskResource{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: party.DomainID,
-			Name:      generateTaskResourceName(trg.Name),
+			Name:      party.TaskResourceName,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(trg, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("TaskResourceGroup")),
 			},
 			Labels: map[string]string{
+				common.LabelJobID:             jobID,
+				common.LabelTaskID:            taskID,
+				common.LabelTaskAlias:         taskAlias,
 				common.LabelTaskResourceGroup: trg.Name,
 				common.LabelTaskInitiator:     trg.Spec.Initiator,
 			},
 		},
+
 		Spec: kusciaapisv1alpha1.TaskResourceSpec{
+			Role:                    party.Role,
 			MinReservedPods:         getMinReservedPods(party),
 			ResourceReservedSeconds: trg.Spec.ResourceReservedSeconds,
 			Initiator:               trg.Spec.Initiator,
-			Pods:                    tPods,
+			Pods:                    trPods,
 		},
 		Status: kusciaapisv1alpha1.TaskResourceStatus{
-			Phase:              kusciaapisv1alpha1.TaskResourcePhaseReserving,
-			StartTime:          now,
-			LastTransitionTime: now,
+			Phase:              phase,
+			StartTime:          &now,
+			LastTransitionTime: &now,
 			Conditions: []kusciaapisv1alpha1.TaskResourceCondition{{
-				LastTransitionTime: now,
+				LastTransitionTime: &now,
 				Status:             v1.ConditionTrue,
-				Reason:             "Create task resource from task resource group",
-				Type:               kusciaapisv1alpha1.TaskResourceCondReserving,
+				Reason:             condReason,
+				Type:               condType,
 			}},
 		},
+	}
+
+	if protocolType != "" {
+		tr.Labels[common.LabelInterConnProtocolType] = protocolType
 	}
 
 	return tr, nil
@@ -183,25 +192,35 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 // buildTaskResourcePods is used to build task resource pods info.
 func (h *CreatingHandler) buildTaskResourcePods(namespace string, ps []kusciaapisv1alpha1.TaskResourceGroupPartyPod) ([]kusciaapisv1alpha1.TaskResourcePod, error) {
 	tPods := make([]kusciaapisv1alpha1.TaskResourcePod, 0, len(ps))
-	for _, p := range ps {
-		pod, err := h.podLister.Pods(namespace).Get(p.Name)
-		if err != nil {
-			return nil, err
+	if utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, namespace) {
+		for _, p := range ps {
+			tPod := kusciaapisv1alpha1.TaskResourcePod{
+				Name: p.Name,
+			}
+			tPods = append(tPods, tPod)
 		}
+	} else {
+		for _, p := range ps {
+			pod, err := h.podLister.Pods(namespace).Get(p.Name)
+			if err != nil {
+				return nil, err
+			}
 
-		var resources v1.ResourceRequirements
-		for _, container := range pod.Spec.Containers {
-			resources.Requests = quota.Add(resources.Requests, container.Resources.Requests)
-			resources.Limits = quota.Add(resources.Limits, container.Resources.Limits)
+			var resources v1.ResourceRequirements
+			for _, container := range pod.Spec.Containers {
+				resources.Requests = quota.Add(resources.Requests, container.Resources.Requests)
+				resources.Limits = quota.Add(resources.Limits, container.Resources.Limits)
+			}
+
+			tPod := kusciaapisv1alpha1.TaskResourcePod{
+				Name:      p.Name,
+				Resources: resources,
+			}
+
+			tPods = append(tPods, tPod)
 		}
-
-		tPod := kusciaapisv1alpha1.TaskResourcePod{
-			Name:      p.Name,
-			Resources: resources,
-		}
-
-		tPods = append(tPods, tPod)
 	}
+
 	return tPods, nil
 }
 
@@ -234,10 +253,4 @@ func getMinReservedPods(party *kusciaapisv1alpha1.TaskResourceGroupParty) int {
 		return party.MinReservedPods
 	}
 	return len(party.Pods)
-}
-
-// generateTaskResourceName is used to generate task resource name.
-func generateTaskResourceName(prefix string) string {
-	uid := strings.Split(string(uuid.NewUUID()), "-")
-	return prefix + "-" + uid[len(uid)-1]
 }

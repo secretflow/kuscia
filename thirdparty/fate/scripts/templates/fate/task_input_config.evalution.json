@@ -1,0 +1,41 @@
+{
+    "runtime_conf": {
+        "dsl_version": 2,
+        "initiator": {
+            "role": "guest",
+            "party_id": 10000
+        },
+        "role": {
+            "guest": [
+                10000
+            ]
+        },
+        "component_parameters": {
+            "common": {
+                "{{.JOB_NAME}}-evaluation": {
+                    "eval_type": "binary"
+                }
+            },
+            "role": {}
+        }
+    },
+    "dsl": {
+        "components": {
+            "{{.JOB_NAME}}-evaluation": {
+                "module": "Evaluation",
+                "input": {
+                    "data": {
+                        "data": [
+                            "{{.JOB_NAME}}-hetero-lr.data"
+                        ]
+                    }
+                },
+                "output": {
+                    "data": [
+                        "data"
+                    ]
+                }
+            }
+        }
+    }
+}

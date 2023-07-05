@@ -53,13 +53,16 @@ type TaskResourceList struct {
 
 // TaskResourceSpec defines the details of TaskResource.
 type TaskResourceSpec struct {
+	// +optional
+	Role string `json:"role,omitempty"`
 	// +kubebuilder:validation:Minimum:=1
 	MinReservedPods int `json:"minReservedPods"`
 	// +optional
 	ResourceReservedSeconds int `json:"resourceReservedSeconds,omitempty"`
 	// +optional
-	Initiator string            `json:"initiator,omitempty"`
-	Pods      []TaskResourcePod `json:"pods"`
+	Initiator string `json:"initiator,omitempty"`
+	// +optional
+	Pods []TaskResourcePod `json:"pods,omitempty"`
 }
 
 // TaskResourcePod defines the details of task resource pod info.
@@ -93,11 +96,11 @@ type TaskResourceStatus struct {
 	// +optional
 	Conditions []TaskResourceCondition `json:"conditions,omitempty"`
 	// +optional
-	StartTime metav1.Time `json:"startTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
 	// +optional
-	CompletionTime metav1.Time `json:"completionTime,omitempty"`
+	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // TaskResourceConditionType is a valid value for a task resource condition type.
@@ -113,7 +116,7 @@ const (
 
 // TaskResourceCondition defines the details of task resource condition.
 type TaskResourceCondition struct {
-	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time           `json:"lastTransitionTime,omitempty"`
 	Status             corev1.ConditionStatus `json:"status"`
 	// +optional
 	Reason string                    `json:"reason,omitempty"`

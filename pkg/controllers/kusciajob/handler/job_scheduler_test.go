@@ -18,8 +18,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/informers"
+	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
@@ -42,6 +46,9 @@ func makeKusciaJob(shape string, mode kusciaapisv1alpha1.KusciaJobScheduleMode, 
 	kusciaJob := &kusciaapisv1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "secretflow-job",
+			Labels: map[string]string{
+				common.LabelSelfClusterAsInitiator: "true",
+			},
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
 			Initiator:      "alice",
@@ -49,6 +56,7 @@ func makeKusciaJob(shape string, mode kusciaapisv1alpha1.KusciaJobScheduleMode, 
 			MaxParallelism: &maxParallelism,
 			Tasks: []kusciaapisv1alpha1.KusciaTaskTemplate{
 				{
+					Alias:           "a",
 					TaskID:          "a",
 					Priority:        100,
 					TaskInputConfig: "meta://secretflow-1/task-input-config",
@@ -57,6 +65,7 @@ func makeKusciaJob(shape string, mode kusciaapisv1alpha1.KusciaJobScheduleMode, 
 					Dependencies:    []string{},
 				},
 				{
+					Alias:           "b",
 					TaskID:          "b",
 					Priority:        100,
 					TaskInputConfig: "meta://secretflow-1/task-input-config2",
@@ -65,6 +74,7 @@ func makeKusciaJob(shape string, mode kusciaapisv1alpha1.KusciaJobScheduleMode, 
 					Dependencies:    []string{},
 				},
 				{
+					Alias:           "c",
 					TaskID:          "c",
 					Priority:        50,
 					TaskInputConfig: "meta://secretflow-1/task-input-config3",
@@ -73,18 +83,31 @@ func makeKusciaJob(shape string, mode kusciaapisv1alpha1.KusciaJobScheduleMode, 
 					Dependencies:    []string{},
 				},
 				{
+					Alias:           "d",
 					TaskID:          "d",
 					Priority:        100,
-					TaskInputConfig: "meta://secretflow-1/task-input-config3",
+					TaskInputConfig: "meta://secretflow-1/task-input-config4",
 					AppImage:        "test-image-4",
 					Parties:         parties,
 					Dependencies:    []string{},
 				},
 			},
 		},
+		Status: kusciaapisv1alpha1.KusciaJobStatus{
+			Conditions: []kusciaapisv1alpha1.KusciaJobCondition{
+				{
+					Type:   kusciaapisv1alpha1.JobStartInitialized,
+					Status: corev1.ConditionTrue,
+				},
+				{
+					Type:   kusciaapisv1alpha1.JobStartSucceeded,
+					Status: corev1.ConditionTrue,
+				},
+			},
+		},
 	}
 	if tolerableProps != nil {
-		for i, _ := range kusciaJob.Spec.Tasks {
+		for i := range kusciaJob.Spec.Tasks {
 			kusciaJob.Spec.Tasks[i].Tolerable = &tolerableProps[i]
 		}
 	}
@@ -111,6 +134,22 @@ func Test_kusciaJobValidate(t *testing.T) {
 	type args struct {
 		kusciaJob *kusciaapisv1alpha1.KusciaJob
 	}
+
+	kubeFakeClient := clientsetfake.NewSimpleClientset()
+	kubeInformerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
+	nsInformer := kubeInformerFactory.Core().V1().Namespaces()
+	nsInformer.Informer().GetStore().Add(&corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "alice"},
+	})
+
+	nsInformer.Informer().GetStore().Add(&corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "bob"},
+	})
+
+	js := &JobScheduler{
+		namespaceLister: nsInformer.Lister(),
+	}
+
 	tests := []struct {
 		name    string
 		args    args
@@ -141,9 +180,10 @@ func Test_kusciaJobValidate(t *testing.T) {
 			wantErr: assert.Error,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if !tt.wantErr(t, kusciaJobValidate(tt.args.kusciaJob), "kusciaJobValidate(%v)", tt.args.kusciaJob) {
+			if !tt.wantErr(t, js.kusciaJobValidate(tt.args.kusciaJob), "kusciaJobValidate(%v)", tt.args.kusciaJob) {
 				return
 			}
 		})
@@ -170,7 +210,7 @@ func Test_readyTasksOf(t *testing.T) {
 				kusciaJob:    noDependencies,
 				currentTasks: nil,
 			},
-			want: noDependencies.Spec.Tasks,
+			want: append(noDependencies.Spec.Tasks[0:2], noDependencies.Spec.Tasks[3], noDependencies.Spec.Tasks[2]),
 		},
 		{
 			name: "BestEffort mode task{a,b,c,d} and succeeded{a,b} should return all {c,d}",
@@ -193,7 +233,7 @@ func Test_readyTasksOf(t *testing.T) {
 					"c": kusciaapisv1alpha1.TaskSucceeded,
 				},
 			},
-			want: noDependencies.Spec.Tasks[3:4],
+			want: noDependencies.Spec.Tasks[2:3],
 		},
 		{
 			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} and succeeded{} should return all {a,b,c,d}",
@@ -298,6 +338,17 @@ func Test_jobStatusPhaseFrom_BestEffort(t *testing.T) {
 				},
 			},
 			wantPhase: kusciaapisv1alpha1.KusciaJobRunning,
+		},
+		{
+			name: "BestEffort mode task{a,[a->b],[a->c],[c-d]} and failed{a} should Failed",
+			args: args{
+				job: makeKusciaJob(KusciaJobForShapeTree,
+					kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil),
+				currentSubTasksStatus: map[string]kusciaapisv1alpha1.KusciaTaskPhase{
+					"a": kusciaapisv1alpha1.TaskFailed,
+				},
+			},
+			wantPhase: kusciaapisv1alpha1.KusciaJobFailed,
 		},
 		{
 			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} and succeeded{a,b,c,d} should Succeeded",

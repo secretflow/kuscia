@@ -19,6 +19,7 @@ limitations under the License.
 package kuberuntime
 
 import (
+	"context"
 	"fmt"
 
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -30,7 +31,7 @@ import (
 
 // PullImage pulls an image from the network to local storage using the supplied
 // secrets if necessary.
-func (m *kubeGenericRuntimeManager) PullImage(image pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
+func (m *kubeGenericRuntimeManager) PullImage(ctx context.Context, image pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
 	imgSpec := toRuntimeAPIImageSpec(image)
 
 	withCredential := false
@@ -41,7 +42,7 @@ func (m *kubeGenericRuntimeManager) PullImage(image pkgcontainer.ImageSpec, auth
 	if !withCredential {
 		nlog.Infof("Pulling image %q without credential ...", image.Image)
 
-		imageRef, err := m.imageService.PullImage(imgSpec, nil, podSandboxConfig)
+		imageRef, err := m.imageService.PullImage(ctx, imgSpec, nil, podSandboxConfig)
 		if err != nil {
 			return "", fmt.Errorf("faile to pull image %q, detail-> %v", image.Image, err)
 		}
@@ -59,7 +60,7 @@ func (m *kubeGenericRuntimeManager) PullImage(image pkgcontainer.ImageSpec, auth
 	}
 
 	nlog.Infof("Pulling image %q ...", image.Image)
-	imageRef, err := m.imageService.PullImage(imgSpec, apiAuth, podSandboxConfig)
+	imageRef, err := m.imageService.PullImage(ctx, imgSpec, apiAuth, podSandboxConfig)
 	if err != nil {
 		return "", fmt.Errorf("faile to pull image %q with credentials, detail-> %v", image.Image, err)
 	}
@@ -70,8 +71,8 @@ func (m *kubeGenericRuntimeManager) PullImage(image pkgcontainer.ImageSpec, auth
 
 // GetImageRef gets the ID of the image which has already been in
 // the local storage. It returns ("", nil) if the image isn't in the local storage.
-func (m *kubeGenericRuntimeManager) GetImageRef(image pkgcontainer.ImageSpec) (string, error) {
-	resp, err := m.imageService.ImageStatus(toRuntimeAPIImageSpec(image), false)
+func (m *kubeGenericRuntimeManager) GetImageRef(ctx context.Context, image pkgcontainer.ImageSpec) (string, error) {
+	resp, err := m.imageService.ImageStatus(ctx, toRuntimeAPIImageSpec(image), false)
 	if err != nil {
 		nlog.Errorf("Failed to get image status %q: %v", image.Image, err)
 		return "", err
@@ -83,10 +84,10 @@ func (m *kubeGenericRuntimeManager) GetImageRef(image pkgcontainer.ImageSpec) (s
 }
 
 // ListImages gets all images currently on the machine.
-func (m *kubeGenericRuntimeManager) ListImages() ([]pkgcontainer.Image, error) {
+func (m *kubeGenericRuntimeManager) ListImages(ctx context.Context) ([]pkgcontainer.Image, error) {
 	var images []pkgcontainer.Image
 
-	allImages, err := m.imageService.ListImages(nil)
+	allImages, err := m.imageService.ListImages(ctx, nil)
 	if err != nil {
 		nlog.Errorf("Failed to list images: %v", err)
 		return nil, err
@@ -106,8 +107,8 @@ func (m *kubeGenericRuntimeManager) ListImages() ([]pkgcontainer.Image, error) {
 }
 
 // RemoveImage removes the specified image.
-func (m *kubeGenericRuntimeManager) RemoveImage(image pkgcontainer.ImageSpec) error {
-	err := m.imageService.RemoveImage(&runtimeapi.ImageSpec{Image: image.Image})
+func (m *kubeGenericRuntimeManager) RemoveImage(ctx context.Context, image pkgcontainer.ImageSpec) error {
+	err := m.imageService.RemoveImage(ctx, &runtimeapi.ImageSpec{Image: image.Image})
 	if err != nil {
 		nlog.Errorf("Failed to remove image %q: %v", image.Image, err)
 		return err
@@ -120,8 +121,8 @@ func (m *kubeGenericRuntimeManager) RemoveImage(image pkgcontainer.ImageSpec) er
 // Notice that current logic doesn't really work for images which share layers (e.g. docker image),
 // this is a known issue, and we'll address this by getting imagefs stats directly from CRI.
 // TODO: Get imagefs stats directly from CRI.
-func (m *kubeGenericRuntimeManager) ImageStats() (*pkgcontainer.ImageStats, error) {
-	allImages, err := m.imageService.ListImages(nil)
+func (m *kubeGenericRuntimeManager) ImageStats(ctx context.Context) (*pkgcontainer.ImageStats, error) {
+	allImages, err := m.imageService.ListImages(ctx, nil)
 	if err != nil {
 		nlog.Errorf("Failed to list images: %v", err)
 		return nil, err

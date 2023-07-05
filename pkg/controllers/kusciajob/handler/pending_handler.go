@@ -26,21 +26,12 @@ type PendingHandler struct {
 // NewPendingHandler return PendingHandler to handle Pending kuscia job.
 func NewPendingHandler(deps *Dependencies) *PendingHandler {
 	return &PendingHandler{
-		jobScheduler: NewJobScheduler(deps.KusciaClient, deps.KusciaTaskLister),
+		jobScheduler: NewJobScheduler(deps.KusciaClient, deps.NamespaceLister, deps.KusciaTaskLister),
 	}
 }
 
 // HandlePhase implements the KusciaJobPhaseHandler interface.
 // It will validate task and do the first scheduling when the job is committed(phase is "" or Pending).
-func (h *PendingHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (needUpdate bool, retErr error) {
-	// validate Kuscia Job. It will be moved to admission controller later.
-	// TODO(@jiezi):  moved to admission
-	if err := kusciaJobValidate(kusciaJob); err != nil {
-		kusciaJob.Status.Phase = kusciaapisv1alpha1.KusciaJobFailed
-		kusciaJob.Status.Reason = "KusciaJobValidateFailed"
-		kusciaJob.Status.Message = err.Error()
-		return true, nil
-	}
-
+func (h *PendingHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (needUpdate bool, err error) {
 	return h.jobScheduler.push(kusciaJob)
 }

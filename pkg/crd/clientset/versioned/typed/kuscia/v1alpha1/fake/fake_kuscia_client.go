@@ -34,24 +34,24 @@ func (c *FakeKusciaV1alpha1) ClusterDomainRoutes() v1alpha1.ClusterDomainRouteIn
 	return &FakeClusterDomainRoutes{c}
 }
 
-func (c *FakeKusciaV1alpha1) DataObjects(namespace string) v1alpha1.DataObjectInterface {
-	return &FakeDataObjects{c, namespace}
-}
-
-func (c *FakeKusciaV1alpha1) DataSources(namespace string) v1alpha1.DataSourceInterface {
-	return &FakeDataSources{c, namespace}
-}
-
-func (c *FakeKusciaV1alpha1) DataTables(namespace string) v1alpha1.DataTableInterface {
-	return &FakeDataTables{c, namespace}
-}
-
 func (c *FakeKusciaV1alpha1) Domains() v1alpha1.DomainInterface {
 	return &FakeDomains{c}
 }
 
 func (c *FakeKusciaV1alpha1) DomainAppImages(namespace string) v1alpha1.DomainAppImageInterface {
 	return &FakeDomainAppImages{c, namespace}
+}
+
+func (c *FakeKusciaV1alpha1) DomainDatas(namespace string) v1alpha1.DomainDataInterface {
+	return &FakeDomainDatas{c, namespace}
+}
+
+func (c *FakeKusciaV1alpha1) DomainDataGrants(namespace string) v1alpha1.DomainDataGrantInterface {
+	return &FakeDomainDataGrants{c, namespace}
+}
+
+func (c *FakeKusciaV1alpha1) DomainDataSources(namespace string) v1alpha1.DomainDataSourceInterface {
+	return &FakeDomainDataSources{c, namespace}
 }
 
 func (c *FakeKusciaV1alpha1) DomainRoutes(namespace string) v1alpha1.DomainRouteInterface {

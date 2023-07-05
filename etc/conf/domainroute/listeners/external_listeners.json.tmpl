@@ -46,7 +46,22 @@
                                     "@type": "type.googleapis.com/envoy.extensions.filters.http.kuscia_gress.v3.Gress",
                                     "self_namespace": "{{.Namespace}}",
                                     "instance": "{{.Instance}}",
-                                    "rewrite_host": true,
+                                    "rewrite_host_config": [
+                                        {
+                                            "header": "Kuscia-host",
+                                            "rewrite_policy": "RewriteHostWithHeader"
+                                        },
+                                        {
+                                            "header": "x-ptp-target-node-id",
+                                            "rewrite_policy": "RewriteHostWithSpecifiedHost",
+                                            "specified_host": "transport.{{.Namespace}}.svc"
+                                        },
+                                        {
+                                            "header": "x-node-id",
+                                            "rewrite_policy": "RewriteHostWithSpecifiedHost",
+                                            "specified_host": "interconn-scheduler.{{.Namespace}}.svc"
+                                        }
+                                    ],
                                     "maxLoggingBodySizePerReqeuest": 1024
                                 }
                             },
