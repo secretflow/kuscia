@@ -48,6 +48,7 @@ jobs:
             set +x
             python3 -m pip install -r requirements.txt
             python3 -m pip install twine
+            pwd
             python3 setup.py generate_py_protobufs
             python3 setup.py bdist_wheel
             ls dist/*.whl
