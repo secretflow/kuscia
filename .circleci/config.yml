@@ -42,6 +42,8 @@ jobs:
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   build-workflow:
+    when:
+      - not: << pipeline.parameters.GHA_Action >>
     jobs:
       - build-kuscia
   publish-workflow:
