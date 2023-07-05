@@ -17,13 +17,16 @@
 version: 2.1
 
 parameters:
-  GHA_Action:
+  GHA_Event:
     type: string
     default: ""
   GHA_Actor:
     type: string
     default: ""
-  GHA_Event:
+  GHA_Action:
+    type: string
+    default: ""
+  GHA_Meta:
     type: string
     default: ""
 
@@ -62,5 +65,6 @@ jobs:
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
   publish:
+    when: << pipeline.parameters.GHA_Action >>
     jobs:
       - linux_publish
