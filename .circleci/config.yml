@@ -2,6 +2,11 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
+setup: true
+
+orbs:
+  continuation: circleci/continuation@0.3.1
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
@@ -22,3 +27,9 @@ workflows:
   build-workflow:
     jobs:
       - build-kuscia
+
+  publish-workflow:
+    when: << pipeline.parameters.GHA_Action >>
+    jobs:
+      - continuation/continue:
+          configuration_path: .circleci/release-config.yml
