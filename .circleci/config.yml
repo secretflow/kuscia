@@ -7,6 +7,23 @@ setup: true
 orbs:
   continuation: circleci/continuation@0.3.1
 
+parameters:
+  GHA_Actor:
+    type: string
+    default: ""
+  GHA_Action:
+    type: string
+    default: ""
+  GHA_Event:
+    type: string
+    default: ""
+  GHA_Meta:
+    type: string
+    default: ""
+  run-schedule:
+    type: boolean
+    default: false
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
