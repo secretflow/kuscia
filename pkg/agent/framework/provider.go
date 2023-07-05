@@ -83,21 +83,21 @@ type NodeProvider interface { // nolint:golint
 // PodLifecycleHandler defines the interface used by the PodsController to react
 // to new and changed pods scheduled to the node that is being managed.
 type PodLifecycleHandler interface {
-	SyncPod(pod *corev1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *ReasonCache) error
+	SyncPod(ctx context.Context, pod *corev1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *ReasonCache) error
 
-	KillPod(pod *corev1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error
+	KillPod(ctx context.Context, pod *corev1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error
 
 	// DeletePod Pod object in master is gone, so just delete pod in provider and no need to call NotifyPods
 	// after deletion.
-	DeletePod(pod *corev1.Pod) error
+	DeletePod(ctx context.Context, pod *corev1.Pod) error
 
-	CleanupPods(pods []*corev1.Pod, runningPods []*pkgcontainer.Pod, possiblyRunningPods map[types.UID]sets.Empty) error
+	CleanupPods(ctx context.Context, pods []*corev1.Pod, runningPods []*pkgcontainer.Pod, possiblyRunningPods map[types.UID]sets.Empty) error
 
 	UpdatePodStatus(podUID types.UID, podStatus *corev1.PodStatus)
 
-	GetPodStatus(pod *corev1.Pod) (*pkgcontainer.PodStatus, error)
+	GetPodStatus(ctx context.Context, pod *corev1.Pod) (*pkgcontainer.PodStatus, error)
 
-	GetPods(all bool) ([]*pkgcontainer.Pod, error)
+	GetPods(ctx context.Context, all bool) ([]*pkgcontainer.Pod, error)
 
 	// Start sync loop
 	Start(ctx context.Context)

@@ -15,6 +15,7 @@
 package handler
 
 import (
+	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/record"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -27,6 +28,7 @@ type Dependencies struct {
 	Recorder         record.EventRecorder
 	KusciaClient     versioned.Interface
 	KusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
+	NamespaceLister  corelisters.NamespaceLister
 }
 
 // KusciaJobPhaseHandler defines that how to handle the kuscia job in each phase.
@@ -38,8 +40,8 @@ type KusciaJobPhaseHandler interface {
 func NewKusciaJobPhaseHandlerFactory(deps *Dependencies) *KusciaJobPhaseHandlerFactory {
 	createdHandler := NewPendingHandler(deps)
 	runningHandler := NewRunningHandler(deps)
-	succeededHandler := NewSucceededHandler(deps.Recorder)
-	failedHandler := NewFailedHandler(deps.Recorder)
+	succeededHandler := NewSucceededHandler(deps)
+	failedHandler := NewFailedHandler(deps)
 	KusciaJobStateHandlerMap := map[kusciaapisv1alpha1.KusciaJobPhase]KusciaJobPhaseHandler{
 		kusciaapisv1alpha1.KusciaJobPending:   createdHandler,
 		kusciaapisv1alpha1.KusciaJobRunning:   runningHandler,

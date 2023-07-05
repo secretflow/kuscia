@@ -1,0 +1,7 @@
+{
+    "file": "/data/projects/data/example/guest.csv",
+    "table_name": "lr_guest",
+    "namespace": "experiment",
+    "head": 1,
+    "partition": 16
+}

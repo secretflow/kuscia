@@ -72,7 +72,7 @@ spec:
 * `.spec.destination`：表示目标节点的 Namespace。
 * `.spec.endpoint`：表示目标节点的地址，具体字段包括：
   * `host`：表示目标节点域名或 IP。
-  * `ports`：表示目标节点的端口，以及该端口的协议，支持 HTTP 端口和 GRPC 端口。
+  * `ports`：表示目标节点的端口，以及该端口的协议，协议类型为 HTTP或 GRPC协议，节点网关可在不同端口上分别支持http协议和GRPC协议。当前仅支持一个端口。
     * `name`: 表示端口名称。
     * `port`: 表示目标端口号。
     * `protocol`: 表示端口协议，支持 HTTP 和 GRPC。
@@ -228,6 +228,7 @@ DomainRoute `spec` 的子字段详细介绍如下：
 * `authenticationType`：表示鉴权类型，支持`Token`、`MTLS`、`None`，其中 `Token` 类型仅支持在中心化组网模式下使用。
 * `source`：表示源节点的 Namespace。
 * `destination`：表示目标节点的 Namespace。
+* `interConnProtocol`：表示节点之间的互联互通协议，目前支持 `kuscia` 或 `bfia` 协议，默认为 `kuscia` 协议 。
 * `endpoint`：表示目标节点的访问地址。
   * `host`：表示目标节点的访问域名或 IP。
   * `ports`：表示目标节点的访问端口。

@@ -74,6 +74,36 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 	}, nil
 }
 
+func LoadInterConnClusterConfig(transportConfig, schedulerConfig *kusciaconfig.ServiceConfig) (*clusters.
+	InterConnClusterConfig, error) {
+	var transServiceConfig *clusters.ClusterConfig
+	var schedulerServiceConfig *clusters.ClusterConfig
+	var err error
+
+	if transportConfig != nil {
+		transServiceConfig, err = LoadServiceConfig(transportConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if schedulerConfig != nil {
+		schedulerServiceConfig, err = LoadServiceConfig(schedulerConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &clusters.InterConnClusterConfig{
+		TransportConfig: transServiceConfig,
+		SchedulerConfig: schedulerServiceConfig,
+	}, nil
+}
+
+func LoadServiceConfig(config *kusciaconfig.ServiceConfig) (*clusters.ClusterConfig, error) {
+	return LoadClusterConfig(config.TLSConfig, config.Endpoint)
+}
+
 func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*clusters.ClusterConfig, error) {
 	cert, err := LoadTLSCertByTLSConfig(config)
 	if err != nil {

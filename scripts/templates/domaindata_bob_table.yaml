@@ -1,0 +1,80 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: DomainData
+metadata:
+  labels:
+    kuscia.secretflow/domaindata-type: table
+    kuscia.secretflow/domaindata-vendor: manual
+  name: bob-table
+  namespace: {{.DOMAIN_ID}}
+spec:
+  attributes:
+    description: "bob demo data"
+  columns:
+    - comment: ""
+      name: id2
+      type: str
+    - comment: ""
+      name: contact_cellular
+      type: f32
+    - comment: ""
+      name: contact_telephone
+      type: f32
+    - comment: ""
+      name: contact_unknown
+      type: f32
+    - comment: ""
+      name: month_apr
+      type: f32
+    - comment: ""
+      name: month_aug
+      type: f32
+    - comment: ""
+      name: month_dec
+      type: f32
+    - comment: ""
+      name: month_feb
+      type: f32
+    - comment: ""
+      name: month_jan
+      type: f32
+    - comment: ""
+      name: month_jul
+      type: f32
+    - comment: ""
+      name: month_jun
+      type: f32
+    - comment: ""
+      name: month_mar
+      type: f32
+    - comment: ""
+      name: month_may
+      type: f32
+    - comment: ""
+      name: month_nov
+      type: f32
+    - comment: ""
+      name: month_oct
+      type: f32
+    - comment: ""
+      name: month_sep
+      type: f32
+    - comment: ""
+      name: poutcome_failure
+      type: f32
+    - comment: ""
+      name: poutcome_other
+      type: f32
+    - comment: ""
+      name: poutcome_success
+      type: f32
+    - comment: ""
+      name: poutcome_unknown
+      type: f32
+    - comment: ""
+      name: "y"
+      type: i32
+  dataSource: default-data-source
+  name: bob.csv
+  type: table
+  relativeURI: bob.csv
+  vendor: manual

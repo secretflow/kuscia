@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"text/template"
 
+	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
@@ -34,20 +35,26 @@ import (
 )
 
 var (
-	CertPrefix   = "etc/certs/"
-	LogPrefix    = "var/logs/"
-	StdoutPrefix = "var/stdout/"
-	ConfPrefix   = "etc/conf/"
+	CertPrefix       = "etc/certs/"
+	LogPrefix        = "var/logs/"
+	StdoutPrefix     = "var/stdout/"
+	ConfPrefix       = "etc/conf/"
+	k3sDataDirPrefix = "var/k3s/"
 )
 
 type Dependencies struct {
 	KusciaConfig
-	EnvoyIP           string
-	Clients           *kubeconfig.KubeClients
-	ApiserverEndpoint string
-	KubeconfigFile    string
-	ContainerdSock    string
-	ExternalTLS       *kusciaconfig.TLSConfig
+	EnvoyIP                string
+	Clients                *kubeconfig.KubeClients
+	ApiserverEndpoint      string
+	KubeconfigFile         string
+	ContainerdSock         string
+	ExternalTLS            *kusciaconfig.TLSConfig
+	TransportConfigFile    string
+	TransportPort          int
+	InterConnSchedulerPort int
+	IsMaster               bool
+	KusciaKubeConfig       string
 }
 
 type KusciaConfig struct {
@@ -59,11 +66,12 @@ type KusciaConfig struct {
 	CAFile         string                     `yaml:"caFile,omitempty"`
 	Agent          KusciaAgentConfig          `yaml:"agent,omitempty"`
 	Master         *kusciaconfig.MasterConfig `yaml:"master,omitempty"`
-	IsMaster       bool                       `yaml:"isMaster,omitempty"`
+	IsMaster       bool
 }
 
 type KusciaAgentConfig struct {
-	AllowPrivileged bool `yaml:"allowPrivileged,omitempty"`
+	AllowPrivileged bool               `yaml:"allowPrivileged,omitempty"`
+	Plugins         []config.PluginCfg `yaml:"plugins,omitempty"`
 }
 
 type Module interface {

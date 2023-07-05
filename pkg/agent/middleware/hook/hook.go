@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
+	internalapi "k8s.io/cri-api/pkg/apis"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -49,6 +50,7 @@ type RunContainerOptionsObj struct {
 	Opts         *pkgcontainer.RunContainerOptions
 	PodIPs       []string
 	ContainerDir string
+	ImageService internalapi.ImageManagerService
 }
 
 type Result struct {

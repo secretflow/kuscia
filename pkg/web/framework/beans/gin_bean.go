@@ -24,9 +24,9 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
-	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
+	"github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
 	"github.com/secretflow/kuscia/pkg/web/logs"
 	"github.com/secretflow/kuscia/pkg/web/metrics"
@@ -35,10 +35,11 @@ import (
 type GinBean struct {
 	framework.ConfigLoader
 	// Configs
-	Port    int    `name:"port" usage:"Server port" default:"8080"`
-	Debug   bool   `name:"debug" usage:"Debug mode"`
-	LogPath string `name:"logpath" usage:"Gin Log path"`
-	Logger  *nlog.NLog
+	Port      int    `name:"port" usage:"Server port" default:"8080"`
+	Debug     bool   `name:"debug" usage:"Debug mode"`
+	LogPath   string `name:"logpath" usage:"Gin Log path"`
+	TLSConfig *config.TLSConfig
+	GinBeanConfig
 	*gin.Engine
 }
 
@@ -103,24 +104,70 @@ func (b *GinBean) Init(e framework.ConfBeanRegistry) error {
 func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error {
 	mux := http.NewServeMux()
 	mux.Handle("/", b.Engine)
+	normalizeConfig(&b.GinBeanConfig)
 	s := &http.Server{
 		Addr:           fmt.Sprintf(":%d", b.Port),
 		Handler:        mux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-		IdleTimeout:    300 * time.Second,
+		ReadTimeout:    time.Duration(*b.ReadTimeout) * time.Second,
+		WriteTimeout:   time.Duration(*b.WriteTimeout) * time.Second,
+		MaxHeaderBytes: *b.MaxHeaderBytes,
+		IdleTimeout:    time.Duration(*b.IdleTimeout) * time.Second,
 	}
-
-	var err error
-	if tls.Enable() {
-		s.TLSConfig, err = tls.LoadServerTLSConfig()
+	addr := fmt.Sprintf(":%d", b.Port)
+	// init server tls config
+	if b.TLSConfig != nil && b.TLSConfig.EnableTLS {
+		serverTLSConfig, err := b.TLSConfig.LoadServerTLSConfig()
 		if err != nil {
+			nlog.Errorf(err.Error())
 			return err
 		}
-		logs.GetLogger().Infof("server started 0.0.0.0:%d", b.Port)
-		return s.ListenAndServeTLS("", "")
+		s.TLSConfig = serverTLSConfig
+		nlog.Infof("https server started on %s", addr)
+		return s.ListenAndServeTLS(b.TLSConfig.ServerCertPath, b.TLSConfig.ServerKeyPath)
 	}
-	logs.GetLogger().Infof("server started 0.0.0.0:%d", b.Port)
+
+	logs.GetLogger().Infof("server started %s", addr)
 	return s.ListenAndServe()
+}
+
+type GinBeanConfig struct {
+	Logger         *nlog.NLog
+	ReadTimeout    *int
+	WriteTimeout   *int
+	IdleTimeout    *int
+	MaxHeaderBytes *int
+	TLSConfig      *config.TLSConfig
+}
+
+var (
+	defaultReadTimeout    = 10      // seconds
+	defaultWriteTimeout   = 10      // seconds
+	defaultIdleTimeout    = 300     // seconds
+	defaultMaxHeaderBytes = 1 << 20 // 1MB
+)
+
+func defaultGinConfig() GinBeanConfig {
+	return GinBeanConfig{
+		Logger:         nil,
+		ReadTimeout:    &defaultReadTimeout,
+		WriteTimeout:   &defaultWriteTimeout,
+		IdleTimeout:    &defaultIdleTimeout,
+		MaxHeaderBytes: &defaultMaxHeaderBytes,
+		TLSConfig:      nil,
+	}
+}
+
+func normalizeConfig(conf *GinBeanConfig) {
+	if conf.ReadTimeout == nil {
+		conf.ReadTimeout = &defaultReadTimeout
+	}
+	if conf.WriteTimeout == nil {
+		conf.WriteTimeout = &defaultWriteTimeout
+	}
+	if conf.IdleTimeout == nil {
+		conf.IdleTimeout = &defaultIdleTimeout
+	}
+	if conf.MaxHeaderBytes == nil {
+		conf.MaxHeaderBytes = &defaultMaxHeaderBytes
+	}
 }

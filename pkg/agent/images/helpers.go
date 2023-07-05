@@ -19,6 +19,7 @@ limitations under the License.
 package images
 
 import (
+	"context"
 	"fmt"
 
 	"k8s.io/client-go/util/flowcontrol"
@@ -46,9 +47,9 @@ type throttledImageService struct {
 	limiter flowcontrol.RateLimiter
 }
 
-func (ts throttledImageService) PullImage(image pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
+func (ts throttledImageService) PullImage(ctx context.Context, image pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
 	if ts.limiter.TryAccept() {
-		return ts.ImageService.PullImage(image, auth, podSandboxConfig)
+		return ts.ImageService.PullImage(ctx, image, auth, podSandboxConfig)
 	}
 	return "", fmt.Errorf("pull QPS exceeded")
 }

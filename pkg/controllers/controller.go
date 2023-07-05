@@ -51,6 +51,5 @@ const (
 	CRDKusciaTasksName         = "kusciatasks.kuscia.secretflow"
 	CRDTaskResourcesGroupsName = "taskresourcegroups.kuscia.secretflow"
 	CRDTaskResourcesName       = "taskresources.kuscia.secretflow"
-	CRDInteropConfigsName      = "interopconfigs.kuscia.secretflow"
 	CRDKusciaJobsName          = "kusciajobs.kuscia.secretflow"
 )

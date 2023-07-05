@@ -24,9 +24,9 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
+	"golang.org/x/net/context"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
@@ -50,11 +50,9 @@ type prober struct {
 	// probe types needs different httpprobe instances so they don't
 	// share a connection pool which can cause collisions to the
 	// same host:port and transient failures. See #49740.
-	readinessHTTP httpprobe.Prober
-	livenessHTTP  httpprobe.Prober
-	startupHTTP   httpprobe.Prober
-	tcp           tcpprobe.Prober
-	grpc          grpcprobe.Prober
+	http httpprobe.Prober
+	tcp  tcpprobe.Prober
+	grpc grpcprobe.Prober
 
 	recorder record.EventRecorder
 }
@@ -66,12 +64,10 @@ func newProber(
 
 	const followNonLocalRedirects = false
 	return &prober{
-		readinessHTTP: httpprobe.New(followNonLocalRedirects),
-		livenessHTTP:  httpprobe.New(followNonLocalRedirects),
-		startupHTTP:   httpprobe.New(followNonLocalRedirects),
-		tcp:           tcpprobe.New(),
-		grpc:          grpcprobe.New(),
-		recorder:      recorder,
+		http:     httpprobe.New(followNonLocalRedirects),
+		tcp:      tcpprobe.New(),
+		grpc:     grpcprobe.New(),
+		recorder: recorder,
 	}
 }
 
@@ -86,7 +82,7 @@ func (pb *prober) recordContainerEvent(pod *v1.Pod, container *v1.Container, eve
 }
 
 // probe probes the container.
-func (pb *prober) probe(probeType probeType, pod *v1.Pod, status v1.PodStatus, container v1.Container, containerID pkgcontainer.CtrID) (results.Result, error) {
+func (pb *prober) probe(ctx context.Context, probeType probeType, pod *v1.Pod, status v1.PodStatus, container v1.Container, containerID pkgcontainer.CtrID) (results.Result, error) {
 	var probeSpec *v1.Probe
 	switch probeType {
 	case readiness:
@@ -104,7 +100,7 @@ func (pb *prober) probe(probeType probeType, pod *v1.Pod, status v1.PodStatus, c
 		return results.Success, nil
 	}
 
-	result, output, err := pb.runProbeWithRetries(probeType, probeSpec, pod, status, container, containerID, maxProbeRetries)
+	result, output, err := pb.runProbeWithRetries(ctx, probeType, probeSpec, pod, status, container, containerID, maxProbeRetries)
 	if err != nil || (result != probe.Success && result != probe.Warning) {
 		// Probe failed in one way or another.
 		if err != nil {
@@ -127,12 +123,12 @@ func (pb *prober) probe(probeType probeType, pod *v1.Pod, status v1.PodStatus, c
 
 // runProbeWithRetries tries to probe the container in a finite loop, it returns the last result
 // if it never succeeds.
-func (pb *prober) runProbeWithRetries(probeType probeType, p *v1.Probe, pod *v1.Pod, status v1.PodStatus, container v1.Container, containerID pkgcontainer.CtrID, retries int) (probe.Result, string, error) {
+func (pb *prober) runProbeWithRetries(ctx context.Context, probeType probeType, p *v1.Probe, pod *v1.Pod, status v1.PodStatus, container v1.Container, containerID pkgcontainer.CtrID, retries int) (probe.Result, string, error) {
 	var err error
 	var result probe.Result
 	var output string
 	for i := 0; i < retries; i++ {
-		result, output, err = pb.runProbe(probeType, p, pod, status, container, containerID)
+		result, output, err = pb.runProbe(ctx, probeType, p, pod, status, container, containerID)
 		if err == nil {
 			return result, output, nil
 		}
@@ -150,31 +146,17 @@ func buildHeader(headerList []v1.HTTPHeader) http.Header {
 	return headers
 }
 
-func (pb *prober) runProbe(probeType probeType, p *v1.Probe, pod *v1.Pod, status v1.PodStatus, container v1.Container, containerID pkgcontainer.CtrID) (probe.Result, string, error) {
+func (pb *prober) runProbe(ctx context.Context, probeType probeType, p *v1.Probe, pod *v1.Pod, status v1.PodStatus, container v1.Container, containerID pkgcontainer.CtrID) (probe.Result, string, error) {
 	timeout := time.Duration(p.TimeoutSeconds) * time.Second
 	if p.HTTPGet != nil {
-		scheme := strings.ToLower(string(p.HTTPGet.Scheme))
-		host := p.HTTPGet.Host
-		if host == "" {
-			host = status.PodIP
-		}
-		port, err := extractPort(p.HTTPGet.Port, container)
+		req, err := httpprobe.NewRequestForHTTPGetAction(p.HTTPGet, &container, status.PodIP, "probe")
 		if err != nil {
 			return probe.Unknown, "", err
 		}
-		path := p.HTTPGet.Path
-		url := formatURL(scheme, host, port, path)
-		headers := buildHeader(p.HTTPGet.HTTPHeaders)
-		nlog.Debugf("HTTP-Probe, scheme=%v, host=%v, port=%v, path=%v, timeout=%v, headers=%+v", scheme, host, port, path, timeout, headers)
-		switch probeType {
-		case liveness:
-			return pb.livenessHTTP.Probe(url, headers, timeout)
-		case startup:
-			return pb.startupHTTP.Probe(url, headers, timeout)
-		default:
-			return pb.readinessHTTP.Probe(url, headers, timeout)
-		}
+		nlog.Debugf("HTTP-Probe, scheme=%v, host=%v, port=%v, path=%v, timeout=%v, headers=%+v", req.URL.Scheme, req.URL.Hostname(), req.URL.Port(), req.URL.Path, timeout, p.HTTPGet.HTTPHeaders)
+		return pb.http.Probe(req, timeout)
 	}
+
 	if p.TCPSocket != nil {
 		port, err := extractPort(p.TCPSocket.Port, container)
 		if err != nil {
@@ -186,6 +168,16 @@ func (pb *prober) runProbe(probeType probeType, p *v1.Probe, pod *v1.Pod, status
 		}
 		nlog.Debugf("TCP-Probe, host=%v, port=%v, timeout=%v", host, port, timeout)
 		return pb.tcp.Probe(host, port, timeout)
+	}
+
+	if p.GRPC != nil {
+		host := status.PodIP
+		service := ""
+		if p.GRPC.Service != nil {
+			service = *p.GRPC.Service
+		}
+		nlog.Debugf("GRPC-Probe, host=%v, service=%v, port=%v, timeout=%v", host, service, p.GRPC.Port, timeout)
+		return pb.grpc.Probe(host, service, int(p.GRPC.Port), timeout)
 	}
 
 	nlog.Warnf("Failed to find probe builder for container %q", container.Name)

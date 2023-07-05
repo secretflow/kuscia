@@ -1,0 +1,10 @@
+include LICENSE CHANGES README.rst requirements.txt mutable-requirements.txt *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
+recursive-exclude * *.pyo
+recursive-exclude * *.orig
+recursive-exclude examples *
+recursive-exclude tests *
+
+prune tests/
+prune examples/

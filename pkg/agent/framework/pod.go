@@ -19,6 +19,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -603,7 +604,7 @@ func (pc *PodsController) isAdmittedPodTerminal(pod *corev1.Pod) bool {
 // is executing which means no new pods can appear.
 // NOTE: This function is executed by the main sync loop, so it
 // should not contain any blocking calls.
-func (pc *PodsController) HandlePodCleanups() error {
+func (pc *PodsController) HandlePodCleanups(ctx context.Context) error {
 	allPods, mirrorPods := pc.podManager.GetPodsAndMirrorPods()
 	// Pod phase progresses monotonically. Once a pod has reached a final state,
 	// it should never leave regardless of the restart policy. The statuses
@@ -644,7 +645,7 @@ func (pc *PodsController) HandlePodCleanups() error {
 		}
 	}
 
-	runningRuntimePods, err := pc.provider.GetPods(false)
+	runningRuntimePods, err := pc.provider.GetPods(ctx, false)
 	if err != nil {
 		return fmt.Errorf("failed to get pods, detail-> %v", err)
 	}
@@ -678,7 +679,7 @@ func (pc *PodsController) HandlePodCleanups() error {
 	pc.removeOrphanedPodStatuses(allPods, mirrorPods)
 
 	// Trigger provider to clean up pods
-	err = pc.provider.CleanupPods(allPods, runningRuntimePods, possiblyRunningPods)
+	err = pc.provider.CleanupPods(ctx, allPods, runningRuntimePods, possiblyRunningPods)
 	if err != nil {
 		nlog.Errorf("Failed cleaning up orphaned pod directories: %v", err)
 	}

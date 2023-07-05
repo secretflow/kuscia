@@ -77,7 +77,7 @@ type SyncHandler interface {
 	HandlePodReconcile(pods []*corev1.Pod)
 	HandlePodSyncs(pods []*corev1.Pod)
 	HandlePodSyncByUID(uid types.UID)
-	HandlePodCleanups() error
+	HandlePodCleanups(ctx context.Context) error
 }
 
 // PodsController is the controller implementation for Pod resources.
@@ -206,7 +206,7 @@ func (pc *PodsController) Run(ctx context.Context) error {
 
 	close(pc.chReady)
 
-	pc.syncLoop(pc, pc.chUpdates)
+	pc.syncLoop(ctx, pc, pc.chUpdates)
 
 	nlog.Info("Shutting down pods provider ...")
 	pc.provider.Stop()
@@ -240,7 +240,7 @@ func (pc *PodsController) RegisterProvider(provider PodProvider) {
 
 // syncLoopIteration reads from various channels and dispatches pods to the
 // given handler.
-func (pc *PodsController) syncLoopIteration(handler SyncHandler, configCh <-chan kubetypes.PodUpdate, housekeepingCh <-chan time.Time) bool {
+func (pc *PodsController) syncLoopIteration(ctx context.Context, handler SyncHandler, configCh <-chan kubetypes.PodUpdate, housekeepingCh <-chan time.Time) bool {
 	select {
 	case <-pc.chStopping:
 		return false
@@ -284,7 +284,7 @@ func (pc *PodsController) syncLoopIteration(handler SyncHandler, configCh <-chan
 			nlog.Info("SyncLoop (housekeeping, skipped): sources aren't ready yet")
 		} else {
 			start := time.Now()
-			if err := handler.HandlePodCleanups(); err != nil {
+			if err := handler.HandlePodCleanups(ctx); err != nil {
 				nlog.Errorf("Failed cleaning pods: %v", err)
 			}
 			duration := time.Since(start)
@@ -301,14 +301,14 @@ func (pc *PodsController) syncLoopIteration(handler SyncHandler, configCh <-chan
 // any new change seen, will run a sync against desired state and running state. If
 // no changes are seen to the configuration, will synchronize the last known desired
 // state every sync-frequency seconds. Never returns.
-func (pc *PodsController) syncLoop(handler SyncHandler, updates <-chan kubetypes.PodUpdate) {
+func (pc *PodsController) syncLoop(ctx context.Context, handler SyncHandler, updates <-chan kubetypes.PodUpdate) {
 	nlog.Info("Starting kubelet main sync loop")
 
 	housekeepingTicker := time.NewTicker(housekeepingPeriod)
 	defer housekeepingTicker.Stop()
 
 	for {
-		if !pc.syncLoopIteration(handler, updates, housekeepingTicker.C) {
+		if !pc.syncLoopIteration(ctx, handler, updates, housekeepingTicker.C) {
 			break
 		}
 	}
@@ -544,7 +544,7 @@ func (pc *PodsController) syncPod(ctx context.Context, updateType kubetypes.Sync
 	pc.constructPodImage(podCopy)
 
 	// Call the container runtime's SyncPod callback
-	if err = pc.provider.SyncPod(podCopy, podStatus, pc.reasonCache); err != nil {
+	if err = pc.provider.SyncPod(ctx, podCopy, podStatus, pc.reasonCache); err != nil {
 		return false, err
 	}
 
@@ -568,7 +568,7 @@ func (pc *PodsController) syncTerminatingPod(ctx context.Context, pod *corev1.Po
 		} else {
 			nlog.Debugf("Pod %q terminating with grace period nil", format.Pod(pod))
 		}
-		if err := pc.provider.KillPod(pod, *runningPod, gracePeriod); err != nil {
+		if err := pc.provider.KillPod(ctx, pod, *runningPod, gracePeriod); err != nil {
 			pc.recorder.Eventf(pod, corev1.EventTypeWarning, events.FailedToKillPod, "error killing pod: %v", err)
 			// there was an error killing the pod, so we return that error directly
 			utilruntime.HandleError(err)
@@ -591,7 +591,7 @@ func (pc *PodsController) syncTerminatingPod(ctx context.Context, pod *corev1.Po
 	}
 
 	p := pkgcontainer.ConvertPodStatusToRunningPod("", podStatus)
-	if err := pc.provider.KillPod(pod, p, gracePeriod); err != nil {
+	if err := pc.provider.KillPod(ctx, pod, p, gracePeriod); err != nil {
 		pc.recorder.Eventf(pod, corev1.EventTypeWarning, events.FailedToKillPod, "error killing pod: %v", err)
 		// there was an error killing the pod, so we return that error directly
 		utilruntime.HandleError(err)
@@ -603,7 +603,7 @@ func (pc *PodsController) syncTerminatingPod(ctx context.Context, pod *corev1.Po
 	// catch race conditions introduced by callers updating pod status out of order.
 	// TODO: have KillPod return the terminal status of stopped containers and write that into the
 	//  cache immediately
-	podStatus, err := pc.provider.GetPodStatus(pod)
+	podStatus, err := pc.provider.GetPodStatus(ctx, pod)
 	if err != nil {
 		return fmt.Errorf("unable to read pod %q status prior to final pod termination, detail-> %v", format.Pod(pod), err)
 	}
@@ -650,6 +650,6 @@ func (pc *PodsController) syncTerminatedPod(ctx context.Context, pod *corev1.Pod
 	return nil
 }
 
-func (pc *PodsController) getPodStatus(pod *corev1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error) {
-	return pc.provider.GetPodStatus(pod)
+func (pc *PodsController) getPodStatus(ctx context.Context, pod *corev1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error) {
+	return pc.provider.GetPodStatus(ctx, pod)
 }

@@ -31,13 +31,6 @@ type configContext struct {
 	Context map[string]framework.Config
 }
 
-func newConfigContext() *configContext {
-	return &configContext{
-		Order:   make([]string, 0),
-		Context: map[string]framework.Config{},
-	}
-}
-
 func (c *configContext) register(name string, conf framework.Config) error {
 	if len(name) == 0 || conf == nil {
 		return fmt.Errorf("invalidate name:'%s' config:%v", name, conf)

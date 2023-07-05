@@ -15,6 +15,7 @@
 package decorator
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -48,7 +49,7 @@ type BizFlow struct {
 // ValidateFailedHandler is processor when verification fails.
 type ValidateFailedHandler func(flow *BizFlow, errs *errorcode.Errs) api.ProtoResponse
 
-// UnexpectedErrorHandler is processor when the framework handles exceptions
+// UnexpectedErrorHandler is processor when the framework handles exceptions.
 type UnexpectedErrorHandler func(flow *BizFlow, errs *errorcode.Errs) api.ProtoResponse
 
 // PostProcessHandler is post processor after frame processing.
@@ -76,7 +77,6 @@ type ProtoDecoratorOptions struct {
 // During request processing, ProtoDecorator uses ShouldBindBodyWith of ginContext to read requests with contentType
 // of "text/plain", "application/json" and "", so that other middleware can use ShouldBindBodyWith to read the request body again.
 func ProtoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler, options *ProtoDecoratorOptions) gin.HandlerFunc {
-	// 获取RequestType
 	reqType, respType := handler.GetType()
 	if options.MarshalOptions == nil {
 		// if `MarshalOptions` not set, set it to default
@@ -85,19 +85,14 @@ func ProtoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler, opti
 			EmitUnpopulated: true,
 		}
 	}
+
 	return func(context *gin.Context) {
-		trace, exists := context.Get(api.TraceID)
-		if !exists {
-			trace = ""
-		}
-		traceID := fmt.Sprintf("%s", trace)
 		flow := &BizFlow{
 			handler:  handler,
 			RespType: &respType,
 			ReqType:  &reqType,
 			BizContext: &api.BizContext{
 				Context:          context,
-				TraceID:          traceID,
 				Store:            map[string]interface{}{},
 				ConfBeanRegistry: e,
 				Logger:           logs.GetLogger(),
@@ -105,17 +100,14 @@ func ProtoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler, opti
 		}
 		bizContext := flow.BizContext
 		errs := &errorcode.Errs{}
-		// get proto request
+
 		request, err := getProtoRequest(flow)
 		if err != nil {
-			bizContext.Logger.Error("getProtoRequest failed", err.Error())
+			bizContext.Logger.Errorf("get proto request failed, %v", err.Error())
 			errs.AppendErr(err)
 			renderResponse(bizContext, options.UnexpectedErrorHandler(flow, errs), options.PostProcessHandler, options.PreRenderHandler, *options.MarshalOptions)
 			return
 		}
-
-		// Print parsed request data only, not the raw request
-		bizContext.Logger.Info(REQUEST, messageToJSONString(request))
 
 		// preCheck
 		if doValidate(flow, request, errs); len(*errs) != 0 {
@@ -133,7 +125,7 @@ func ProtoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler, opti
 	}
 }
 
-// getProtoRequest gets structured request.
+// getProtoRequest gets proto structured request.
 func getProtoRequest(flow *BizFlow) (api.ProtoRequest, error) {
 	bizContext := flow.BizContext
 	if *flow.ReqType == reflect.TypeOf(api.AnyStringProto{}) {
@@ -141,13 +133,22 @@ func getProtoRequest(flow *BizFlow) (api.ProtoRequest, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		return &api.AnyStringProto{Content: string(c)}, nil
 	}
+
 	// Create pointer of ProtoRequest corresponding value object through reflection.
 	request, ok := reflect.New(*flow.ReqType).Interface().(api.ProtoRequest)
 	if !ok {
 		return nil, errors.New("invalidate proto type")
+	}
+
+	// Get request should define struct with gin form tag.
+	if bizContext.Request.Method == http.MethodGet {
+		bizContext.Logger.Info(REQUEST, bizContext.Request.RequestURI)
+		if err := bizContext.Context.ShouldBindQuery(request); err != nil {
+			return nil, err
+		}
+		return request, nil
 	}
 
 	// Automatic type conversion.
@@ -160,6 +161,8 @@ func getProtoRequest(flow *BizFlow) (api.ProtoRequest, error) {
 	} else if err := bizContext.Context.ShouldBind(request); err != nil {
 		return nil, err
 	}
+
+	bizContext.Logger.Info(REQUEST, fmt.Sprintf("  Path: %s  Content-Type: %s  Body: %s", bizContext.Request.RequestURI, contentType, messageToJSONString(request)))
 	return request, nil
 }
 
@@ -225,4 +228,60 @@ func renderResponse(ctx *api.BizContext, response api.ProtoResponse, postProcess
 	}
 
 	ctx.Context.Render(http.StatusOK, render)
+}
+
+// DefaultProtoDecoratorMaker returns default ProtoDecorator.
+func DefaultProtoDecoratorMaker(validateFailedCode int32, unexpectedECode int32) func(framework.ConfBeanRegistry, api.ProtoHandler) gin.HandlerFunc {
+	return func(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.HandlerFunc {
+		return ProtoDecorator(e, handler, &ProtoDecoratorOptions{
+			ValidateFailedHandler:   setDefaultErrorResp(validateFailedCode),
+			UnexpectedErrorHandler:  setDefaultErrorResp(unexpectedECode),
+			RenderJSONUseProtoNames: true,
+		})
+	}
+}
+
+// InterConnProtoDecoratorMaker returns inter connection ProtoDecorator.
+func InterConnProtoDecoratorMaker(validateFailedCode int32, unexpectedECode int32) func(framework.ConfBeanRegistry, api.ProtoHandler) gin.HandlerFunc {
+	return func(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.HandlerFunc {
+		return ProtoDecorator(e, handler, &ProtoDecoratorOptions{
+			ValidateFailedHandler:   setInterConnErrorResp(validateFailedCode),
+			UnexpectedErrorHandler:  setInterConnErrorResp(unexpectedECode),
+			RenderJSONUseProtoNames: true,
+		})
+	}
+}
+
+// setDefaultErrorResp sets default format error response with the error code.
+func setDefaultErrorResp(errCode int32) func(flow *BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
+	return func(flow *BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
+		wrappedErr := fmt.Errorf("%s", errs)
+		resp := map[string]map[string]interface{}{
+			"status": {
+				"code":    errCode,
+				"message": wrappedErr.Error(),
+			},
+		}
+		bytes, _ := json.Marshal(resp)
+		response = &api.AnyStringProto{
+			Content: string(bytes),
+		}
+		return response
+	}
+}
+
+// setInterConnErrorResp sets interconn format error response with the error code.
+func setInterConnErrorResp(errCode int32) func(flow *BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
+	return func(flow *BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
+		wrappedErr := fmt.Errorf("%s", errs)
+		resp := map[string]interface{}{
+			"code":    errCode,
+			"message": wrappedErr.Error(),
+		}
+		bytes, _ := json.Marshal(resp)
+		response = &api.AnyStringProto{
+			Content: string(bytes),
+		}
+		return response
+	}
 }

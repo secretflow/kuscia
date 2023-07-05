@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	k8sVersion = "v0.25.4" // k8s api version
+	k8sVersion = "v0.26.3"
 )
 
 type agentModule struct {
@@ -57,7 +57,7 @@ func NewAgent(i *Dependencies) Module {
 	conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
 	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
-	conf.Plugins = []config.PluginCfg{{Name: "config-render"}}
+	conf.Plugins = i.Agent.Plugins
 
 	return &agentModule{
 		conf:    conf,

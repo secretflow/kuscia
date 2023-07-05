@@ -16,6 +16,7 @@ package coredns
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/coredns/caddy"
@@ -38,6 +39,8 @@ func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes
 		Upstream:  upstream.New(),
 		Cache:     cache.New(defaultExpiration, cleanupInterval),
 	}
+
+	etc.Cache.Set(fmt.Sprintf("transport.%s", etc.Namespace), []string{etc.EnvoyIP}, -1)
 
 	if c.Next() {
 		etc.Zones = c.RemainingArgs()

@@ -1,0 +1,140 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service DomainRouteService {
+  rpc CreateDomainRoute(CreateDomainRouteRequest) returns (CreateDomainRouteResponse);
+  rpc DeleteDomainRoute(DeleteDomainRouteRequest) returns (DeleteDomainRouteResponse);
+  rpc QueryDomainRoute(QueryDomainRouteRequest) returns (QueryDomainRouteResponse);
+  rpc BatchQueryDomainRouteStatus(BatchQueryDomainRouteStatusRequest) returns (BatchQueryDomainRouteStatusResponse);
+}
+
+message CreateDomainRouteRequest {
+  RequestHeader header = 1;
+  string authentication_type = 2;
+  string destination = 3;
+  RouteEndpoint endpoint = 4;
+  string source = 5;
+  TokenConfig token_config = 6; // option
+  MTLSConfig mtls_config = 7; // option
+}
+
+enum AuthenticationType {
+  Token = 0;
+  MTLS = 1;
+}
+
+message RouteEndpoint {
+  string host = 1;
+  repeated EndpointPort ports = 2;
+}
+
+message EndpointPort {
+  string name = 1;
+  int32 port = 2;
+  string protocol = 3;
+}
+
+message TokenConfig {
+  string destination_public_key = 1;
+  int64 rolling_update_period = 2;
+  string source_public_key = 3;
+  string token_gen_method = 4;
+}
+
+message MTLSConfig {
+  string tls_ca = 1;
+  string source_client_private_key = 2;
+  string source_client_cert = 3;
+}
+
+message CreateDomainRouteResponse {
+  Status status = 1;
+  CreateDomainRouteResponseData data = 2;
+}
+
+message CreateDomainRouteResponseData {
+  string name = 1;
+}
+
+message DeleteDomainRouteRequest {
+  RequestHeader header = 1;
+  string destination = 3;
+  string source = 2;
+}
+
+message DeleteDomainRouteResponse {
+  Status status = 1;
+}
+
+message QueryDomainRouteRequest {
+  RequestHeader header = 1;
+  string destination = 2;
+  string source = 3;
+}
+
+message QueryDomainRouteResponse {
+  Status status = 1;
+  QueryDomainRouteResponseData data = 2;
+}
+
+message QueryDomainRouteResponseData {
+  string name = 1;
+  string authentication_type = 2;
+  string destination = 3;
+  RouteEndpoint endpoint = 4;
+  string source = 5;
+  TokenConfig token_config = 6;
+  MTLSConfig mtls_config = 7;
+  RouteStatus status = 8;
+}
+
+message RouteStatus {
+  string status = 1; // Succeeded or Failed
+  string reason = 2;
+}
+
+message BatchQueryDomainRouteStatusRequest {
+  RequestHeader header = 1;
+  repeated DomainRouteKey route_keys = 2;
+}
+
+message DomainRouteKey {
+  string source = 1;
+  string destination = 2;
+}
+
+message BatchQueryDomainRouteStatusResponse {
+  Status status = 1;
+  BatchQueryDomainRouteStatusResponseData data = 2;
+}
+
+message BatchQueryDomainRouteStatusResponseData {
+  repeated DomainRouteStatus routes = 1;
+}
+
+message DomainRouteStatus {
+  string name = 1;
+  string destination = 2;
+  string source = 3;
+  RouteStatus status = 4;
+}

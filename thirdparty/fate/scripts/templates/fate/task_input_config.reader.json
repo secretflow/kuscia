@@ -1,0 +1,57 @@
+{
+  "runtime_conf": {
+      "dsl_version": 2,
+      "initiator": {
+          "role": "guest",
+          "party_id": 10000
+      },
+      "role": {
+          "host": [
+              9999
+          ],
+          "guest": [
+              10000
+          ],
+          "arbiter": [
+              9999
+          ]
+      },
+      "component_parameters": {
+          "common": {},
+          "role": {
+              "guest": {
+                  "0": {
+                      "{{.JOB_NAME}}-data-reader": {
+                          "table": {
+                              "name": "lr_guest",
+                              "namespace": "experiment"
+                          }
+                      }
+                  }
+              },
+              "host": {
+                  "0": {
+                      "{{.JOB_NAME}}-data-reader": {
+                          "table": {
+                              "name": "lr_host",
+                              "namespace": "experiment"
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  },
+  "dsl": {
+      "components": {
+          "{{.JOB_NAME}}-data-reader": {
+              "module": "Reader",
+              "output": {
+                  "data": [
+                      "data"
+                  ]
+              }
+          }
+      }
+  }
+}

@@ -1,0 +1,66 @@
+{
+    "runtime_conf": {
+        "dsl_version": 2,
+        "initiator": {
+            "role": "guest",
+            "party_id": 10000
+        },
+        "role": {
+            "host": [
+                9999
+            ],
+            "guest": [
+                10000
+            ],
+            "arbiter": [
+                9999
+            ]
+        },
+        "component_parameters": {
+            "common": {},
+            "role": {
+                "guest": {
+                    "0": {
+                        "{{.JOB_NAME}}-data-transform": {
+                            "with_label": true,
+                            "label_name": "label",
+                            "with_match_id": true,
+                            "match_id_name": "id2"
+                        }
+                    }
+                },
+                "host": {
+                    "0": {
+                        "{{.JOB_NAME}}-data-transform": {
+                            "with_label": false,
+                            "with_match_id": true,
+                            "match_id_name": "id1"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "dsl": {
+        "components": {
+            "{{.JOB_NAME}}-data-transform": {
+                "module": "DataTransform",
+                "input": {
+                    "data": {
+                        "data": [
+                            "{{.JOB_NAME}}-data-reader.data"
+                        ]
+                    }
+                },
+                "output": {
+                    "data": [
+                        "data"
+                    ],
+                    "model": [
+                        "model"
+                    ]
+                }
+            }
+        }
+    }
+}

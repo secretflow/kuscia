@@ -30,6 +30,9 @@ if [[ $2 == p2p ]] ; then
   ROLE=partner
 fi
 
+INTERCONN_PROTOCOL=$3
+[ "${INTERCONN_PROTOCOL}" != "" ] || INTERCONN_PROTOCOL="kuscia"
+
 SELF_DOMAIN_ID=${NAMESPACE}
 if [[ $SELF_DOMAIN_ID == "" ]] ; then
   echo "can not get self domain id, please check NAMESPACE environment"
@@ -44,7 +47,14 @@ openssl x509 -req -in ${DOMAIN_ID}.domain.csr -CA ca.crt -CAkey ca.key -CAcreate
 CERT=$(base64 ${DOMAIN_CERT_FILE} | tr -d "\n")
 popd || exit
 
-DOMAIN_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;s/{{.CERT}}/${CERT}/g;s/{{.ROLE}}/${ROLE}/g" < "${ROOT}/scripts/templates/domain.yaml")
+DOMAIN_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;
+  s/{{.CERT}}/${CERT}/g;
+  s/{{.ROLE}}/${ROLE}/g" \
+  < "${ROOT}/scripts/templates/domain.yaml")
+if [ "$2" == "p2p" ]; then
+  APPEND_LINE=$(printf "\n%*sinterConnProtocols: [ '${INTERCONN_PROTOCOL}' ]" "2")
+  DOMAIN_TEMPLATE="${DOMAIN_TEMPLATE}${APPEND_LINE}"
+fi
 echo "${DOMAIN_TEMPLATE}" | kubectl apply -f -
 
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
@@ -54,6 +64,7 @@ TOKEN=$(${ROOT}/scripts/deploy/create_token.sh ${DOMAIN_ID} | tail -n 1)
 DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.SRC_DOMAIN}}/${DOMAIN_ID}/g;
   s/{{.DEST_DOMAIN}}/${SELF_DOMAIN_ID}/g;
+  s/{{.INTERCONN_PROTOCOL}}/${INTERCONN_PROTOCOL}/g;
   s/{{.HOST}}/${IP}/g;
   s/{{.PORT}}/1080/g;
   s/{{.TLS_CA}}//g;
@@ -62,5 +73,4 @@ DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.TOKEN}}/${TOKEN}/g" \
   < "${ROOT}/scripts/templates/domain_route.mtls.yaml")
 echo "${DOMAIN_ROUTE_TEMPLATE}" | kubectl apply -f -
-
 

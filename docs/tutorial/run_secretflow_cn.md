@@ -1,14 +1,14 @@
-# 如何运行一个 Secretflow 任务
+# 如何运行一个 Secretflow 作业
 
 ## 准备节点
 
-准备节点包含部署节点和创建授权两个步骤，请参考[快速入门](../getting_started/quickstart_cn.md) .
+准备节点请参考[快速入门](../getting_started/quickstart_cn.md)。
 
 ## 准备数据
 
 你可以使用 Kuscia 中自带的数据文件，或者使用你自己的数据文件。
 
-在 Kuscia 中， 节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，你可以在容器中查看这个数据文件。
+在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，你可以在容器中查看这个数据文件。
 
 ### 查看 Kuscia 示例数据
 
@@ -70,16 +70,18 @@ spec:
   maxParallelism: 2
   tasks:
     - taskID: job-psi
+      alias: job-psi
       priority: 100
-      taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"}]},"sf_node_eval_param":{"domain":"psi","name":"two_party_balanced_psi","version":"0.0.1","attr_paths":["protocol","receiver","precheck_input","sort","broadcast_result","bucket_size","curve_type","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"ECDH_PSI_2PC"},{"s":"alice"},{"b":true},{"b":true},{"b":true},{"i64":1048576},{"s":"CURVE_25519"},{"ss":["id1"]},{"ss":["id2"]}],"inputs":[{"type":"sf.table.individual","data_refs":[{"uri":"alice.csv","party":"alice","format":"csv"}],"meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"types":["str","str","str"],"features":["id1","item","feature1"]}}},{"type":"sf.table.individual","data_refs":[{"uri":"bob.csv","party":"bob","format":"csv"}],"meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"types":["str","str"],"features":["id2","feature2"]}}}],"output_uris":["psi_output.csv"]}}'
+      taskInputConfig: '{"sf_datasource_config":{"bob":{"id":"default-data-source"},"alice":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}],"inputs":[{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id1"],"features":["age","education","default","balance","housing","loan","day","duration","campaign","pdays","previous","job_blue-collar","job_entrepreneur","job_housemaid","job_management","job_retired","job_self-employed","job_services","job_student","job_technician","job_unemployed","marital_divorced","marital_married","marital_single"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32"]},"num_lines":"-1"},"data_refs":[{"uri":"alice.csv","party":"alice","format":"csv"}]},{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id2"],"features":["contact_cellular","contact_telephone","contact_unknown","month_apr","month_aug","month_dec","month_feb","month_jan","month_jul","month_jun","month_mar","month_may","month_nov","month_oct","month_sep","poutcome_failure","poutcome_other","poutcome_success","poutcome_unknown"],"labels":["y"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32"],"label_types":["i32"]},"num_lines":"-1"},"data_refs":[{"uri":"bob.csv","party":"bob","format":"csv"}]}]},"sf_output_uris":["psi-output.csv"],"sf_output_ids":["psi-output"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
         - domainID: bob
     - taskID: job-split
+      alias: job-split
       priority: 100
       dependencies: ['job-psi']
-      taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
+      taskInputConfig: '{"sf_datasource_config":{"bob":{"id":"default-data-source"},"alice":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["age","education","default","balance","housing","loan","day","duration","campaign","pdays","previous","job_blue-collar","job_entrepreneur","job_housemaid","job_management","job_retired","job_self-employed","job_services","job_student","job_technician","job_unemployed","marital_divorced","marital_married","marital_single"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32"]},{"ids":["id2"],"features":["contact_cellular","contact_telephone","contact_unknown","month_apr","month_aug","month_dec","month_feb","month_jan","month_jul","month_jun","month_mar","month_may","month_nov","month_oct","month_sep","poutcome_failure","poutcome_other","poutcome_success","poutcome_unknown","y"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","i32"]}]},"data_refs":[{"uri":"psi-output.csv","party":"alice","format":"csv"},{"uri":"psi-output.csv","party":"bob","format":"csv"}]}]},"sf_output_uris":["train-dataset.csv","test-dataset.csv"],"sf_output_ids":["train-dataset","test-dataset"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -152,7 +154,8 @@ spec:
     - domainID: bob
     priority: 100
     taskID: job-psi
-    taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"}]},"sf_node_eval_param":{"domain":"psi","name":"two_party_balanced_psi","version":"0.0.1","attr_paths":["protocol","receiver","precheck_input","sort","broadcast_result","bucket_size","curve_type","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"ECDH_PSI_2PC"},{"s":"alice"},{"b":true},{"b":true},{"b":true},{"i64":1048576},{"s":"CURVE_25519"},{"ss":["id1"]},{"ss":["id2"]}],"inputs":[{"type":"sf.table.individual","data_refs":[{"uri":"alice.csv","party":"alice","format":"csv"}],"meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"types":["str","str","str"],"features":["id1","item","feature1"]}}},{"type":"sf.table.individual","data_refs":[{"uri":"bob.csv","party":"bob","format":"csv"}],"meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"types":["str","str"],"features":["id2","feature2"]}}}],"output_uris":["psi_output.csv"]}}'
+    alias: job-psi
+    taskInputConfig: '{"sf_datasource_config":{"bob":{"id":"default-data-source"},"alice":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}],"inputs":[{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id1"],"features":["age","education","default","balance","housing","loan","day","duration","campaign","pdays","previous","job_blue-collar","job_entrepreneur","job_housemaid","job_management","job_retired","job_self-employed","job_services","job_student","job_technician","job_unemployed","marital_divorced","marital_married","marital_single"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32"]},"num_lines":"-1"},"data_refs":[{"uri":"alice.csv","party":"alice","format":"csv"}]},{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id2"],"features":["contact_cellular","contact_telephone","contact_unknown","month_apr","month_aug","month_dec","month_feb","month_jan","month_jul","month_jun","month_mar","month_may","month_nov","month_oct","month_sep","poutcome_failure","poutcome_other","poutcome_success","poutcome_unknown"],"labels":["y"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32"],"label_types":["i32"]},"num_lines":"-1"},"data_refs":[{"uri":"bob.csv","party":"bob","format":"csv"}]}]},"sf_output_uris":["psi-output.csv"],"sf_output_ids":["psi-output"]}'
     tolerable: false
   - appImage: secretflow-image
     dependencies:
@@ -162,10 +165,27 @@ spec:
     - domainID: bob
     priority: 100
     taskID: job-split
-    taskInputConfig: '{"sf_storage_config":{"alice":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}},"bob":{"type":"local_fs","local_fs":{"wd":"/home/kuscia/var/storage/data"}}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["item","feature1"],"types":["f32","f32"],"labels":["y"]},{"ids":["id2"],"features":["feature2"],"types":["f32"]}]},"data_refs":[{"uri":"psi_out.csv","party":"alice","format":"csv"},{"uri":"psi_out.csv","party":"bob","format":"csv"}]}],"output_uris":["train_dataset.csv","test_dataset.csv"]}}'
+    alias: job-split
+    taskInputConfig: '{"sf_datasource_config":{"bob":{"id":"default-data-source"},"alice":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}"}]},"sf_node_eval_param":{"domain":"preprocessing","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}],"inputs":[{"type":"sf.table.vertical_table","meta":{"@type":"type.googleapis.com/secretflow.component.VerticalTable","schemas":[{"ids":["id1"],"features":["age","education","default","balance","housing","loan","day","duration","campaign","pdays","previous","job_blue-collar","job_entrepreneur","job_housemaid","job_management","job_retired","job_self-employed","job_services","job_student","job_technician","job_unemployed","marital_divorced","marital_married","marital_single"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32"]},{"ids":["id2"],"features":["contact_cellular","contact_telephone","contact_unknown","month_apr","month_aug","month_dec","month_feb","month_jan","month_jul","month_jun","month_mar","month_may","month_nov","month_oct","month_sep","poutcome_failure","poutcome_other","poutcome_success","poutcome_unknown","y"],"id_types":["str"],"feature_types":["f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","f32","i32"]}]},"data_refs":[{"uri":"psi-output.csv","party":"alice","format":"csv"},{"uri":"psi-output.csv","party":"bob","format":"csv"}]}]},"sf_output_uris":["train-dataset.csv","test-dataset.csv"],"sf_output_ids":["train-dataset","test-dataset"]}'
     tolerable: false
 status:
   completionTime: "2023-03-30T12:12:07Z"
+  conditions:
+  - lastTransitionTime: "2023-03-30T12:11:41Z"
+     status: "True"
+    type: JobValidated
+  - lastTransitionTime: "2023-03-30T12:11:41Z"
+    status: "True"
+    type: JobCreateInitialized
+  - lastTransitionTime: "2023-03-30T12:11:42Z"
+    status: "True"
+    type: JobCreateSucceeded
+  - lastTransitionTime: "2023-03-30T12:11:44Z"
+    status: "True"
+    type: JobStartInitialized
+  - lastTransitionTime: "2023-03-30T12:11:44Z"
+    status: "True"
+    type: JobStartSucceeded
   lastReconcileTime: "2023-03-30T12:12:07Z"
   phase: Succeeded
   startTime: "2023-03-30T12:11:41Z"
@@ -189,7 +209,7 @@ KusciaTask 的信息这里不再赘述，请查看 [KusciaTask](../reference/con
 
 ## 删除 KusciaJob
 
-当你想取消或者清理这个 KusciaJob 时，你可以通过下面的命令完成：
+当你想清理这个 KusciaJob 时，你可以通过下面的命令完成：
 
 ```shell
 kubectl delete kj job-best-effort-linear
@@ -203,421 +223,5 @@ kubectl delete kj job-best-effort-linear
 
 KusciaJob 的算子参数由`taskInputConfig`字段定义，对于不同的算子，算子的参数不同。
 
-下面是一个隐私求交的算子示例。
-
-### TaskInputConfig 结构示例和定义
-
-#### 示例
-
-```json
-{
-  "sf_storage_config": {
-    "alice": {
-      "type": "local_fs",
-      "local_fs": {
-        "wd": "/home/kuscia/var/storage/data"
-      }
-    },
-    "bob": {
-      "type": "local_fs",
-      "local_fs": {
-        "wd": "/home/kuscia/var/storage/data"
-      }
-    }
-  },
-  "sf_cluster_desc": {
-    "parties": ["alice", "bob"],
-    "devices": [
-      {
-        "name": "spu",
-        "type": "spu",
-        "parties": ["alice", "bob"],
-        "config": "{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
-      }
-    ]
-  },
-  "sf_node_eval_param": {
-    "domain": "psi",
-    "name": "two_party_balanced_psi",
-    "version": "0.0.1",
-    "attr_paths": [
-      "protocol",
-      "receiver",
-      "precheck_input",
-      "sort",
-      "broadcast_result",
-      "bucket_size",
-      "curve_type",
-      "input/receiver_input/key",
-      "input/sender_input/key"
-    ],
-    "attrs": [
-      {
-        "s": "ECDH_PSI_2PC"
-      },
-      {
-        "s": "alice"
-      },
-      {
-        "b": true
-      },
-      {
-        "b": true
-      },
-      {
-        "b": true
-      },
-      {
-        "i64": 1048576
-      },
-      {
-        "s": "CURVE_25519"
-      },
-      {
-        "ss": ["id1"]
-      },
-      {
-        "ss": ["id2"]
-      }
-    ],
-    "inputs": [
-      {
-        "type": "sf.table.individual",
-        "data_refs": [
-          {
-            "uri": "alice.csv",
-            "party": "alice",
-            "format": "csv"
-          }
-        ],
-        "meta": {
-          "@type": "type.googleapis.com/secretflow.component.IndividualTable",
-          "schema": {
-            "types": ["str", "str", "str"],
-            "features": ["id1", "item", "feature1"]
-          }
-        }
-      },
-      {
-        "type": "sf.table.individual",
-        "data_refs": [
-          {
-            "uri": "bob.csv",
-            "party": "bob",
-            "format": "csv"
-          }
-        ],
-        "meta": {
-          "@type": "type.googleapis.com/secretflow.component.IndividualTable",
-          "schema": {
-            "types": ["str", "str"],
-            "features": ["id2", "feature2"]
-          }
-        }
-      }
-    ],
-    "output_uris": ["psi_output.csv"]
-  }
-}
-```
-
-#### TaskInputConfig 字段说明
-
-- `sf_storage_config`描述了两方数据存放的位置。
-- `sf_cluster_desc`描述了 secretflow 参与方和集群信息。
-- `sf_node_eval_param`描述了一个 Task 中的任务参数，其中`domain`、`name`、`version`确定一个算子及其版本。
-
-##### sf_storage_config 字段
-
-sf_storage_config 字段是一个 map 结构，其中 key 标识 party，value 的字段描述如下：
-
-| 参数名称    | 类型    | 描述                                |
-| ----------- | ------- | ----------------------------------- |
-| type        | string  | 数据配置类型，目前仅支持： local_fs |
-| local_fs    | object  | local_fs 类型的配置信息             |
-| local_fs.wd | integer | 工作目录                            |
-
-##### sf_cluster_desc 字段
-
-sf_storage_config 字段是一个 map 结构，其中 key 标识 party，value 的字段描述如下：
-
-| 参数名称 | 类型  | 描述                    |
-| -------- | ----- | ----------------------- |
-| parties  | array | 参与方列表              |
-| devices  | array | secretflow 集群配置信息 |
-
-##### sf_node_eval_param 字段
-
-| 参数名称                      | 类型    | 描述                                                          |
-| ----------------------------- | ------- | ------------------------------------------------------------- |
-| domain                        | string  | 算子的 Namespace                                              |
-| name                          | string  | 算子名称，和 domain 一起唯一确定一个算子                      |
-| version                       | integer | 算子的版本                                                    |
-| attr_paths                    | array   | 参数列表，和 attr 按数组位置对应                              |
-| attr                          | array   | 参数值，和 attr_paths 按数组位置对应                          |
-| inputs                        | array   | 任务输入                                                      |
-| inputs[].type                 | string  | 任务输入的类型                                                |
-| inputs[].data_refs            | object  | 任务输入数据引用                                              |
-| inputs[].data_refs.party      | string  | 任务输入参与方，会使用这个值指向 sf_storage_config 的数据配置 |
-| inputs[].data_refs.uri        | string  | 任务输入数据相对 sf_storage_config 的位置                     |
-| inputs[].data_refs.format     | string  | 任务输入数据格式                                              |
-| inputs[].meta                 | object  | 任务输入数据元信息                                            |
-| inputs[].meta.@type           | string  | 任务输入数据类型                                              |
-| inputs[].meta.schema          | object  | 任务输入数据模式信息                                          |
-| inputs[].meta.schema.types    | array   | 任务输入数据列类型                                            |
-| inputs[].meta.schema.features | array   | 任务输入数据列名                                              |
-| inputs[].meta.schema.ids      | array   | 任务输入数据 id 列，在多方表中作为关联列                      |
-| inputs[].meta.schema.labels   | array   | 任务输入数据 label 列，在模型训练和预测中用作标签             |
-| output_uris                   | array   | 任务输出列表，输出会保存在 sf_storage_config 的数据配置中     |
-
-##### attr 结构
-
-Atomic 类型用于泛化的参数值，对于不同的数据类型，请使用不同的字段，其中`s`、`i64`、`f`、`b`分别表示 string 、 integer 、 float 和
-bool 类型。
-而`ss`、`i64s`、`fs`、`bs`则表示上述类型的列表。
-
-```json
-{
-  "s": "abc",
-  "i64": 123,
-  "f": 12.3,
-  "b": true,
-  "ss": ["a"],
-  "i64s": [1],
-  "fs": [1.0],
-  "bs": [true]
-}
-```
-
-### 支持的算子、示例和参数
-
-#### 隐私求交
-
-隐私求交将会求出两方数据的交集。
-
-```json
-{
-  "sf_storage_config": {
-    "alice": {
-      "type": "local_fs",
-      "local_fs": {
-        "wd": "/home/kuscia/var/storage/data"
-      }
-    },
-    "bob": {
-      "type": "local_fs",
-      "local_fs": {
-        "wd": "/home/kuscia/var/storage/data"
-      }
-    }
-  },
-  "sf_cluster_desc": {
-    "parties": ["alice", "bob"],
-    "devices": [
-      {
-        "name": "spu",
-        "type": "spu",
-        "parties": ["alice", "bob"],
-        "config": "{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
-      }
-    ]
-  },
-  "sf_node_eval_param": {
-    "domain": "psi",
-    "name": "two_party_balanced_psi",
-    "version": "0.0.1",
-    "attr_paths": [
-      "protocol",
-      "receiver",
-      "precheck_input",
-      "sort",
-      "broadcast_result",
-      "bucket_size",
-      "curve_type",
-      "input/receiver_input/key",
-      "input/sender_input/key"
-    ],
-    "attrs": [
-      {
-        "s": "ECDH_PSI_2PC"
-      },
-      {
-        "s": "alice"
-      },
-      {
-        "b": true
-      },
-      {
-        "b": true
-      },
-      {
-        "b": true
-      },
-      {
-        "i64": 1048576
-      },
-      {
-        "s": "CURVE_25519"
-      },
-      {
-        "ss": ["id1"]
-      },
-      {
-        "ss": ["id2"]
-      }
-    ],
-    "inputs": [
-      {
-        "type": "sf.table.individual",
-        "data_refs": [
-          {
-            "uri": "alice.csv",
-            "party": "alice",
-            "format": "csv"
-          }
-        ],
-        "meta": {
-          "@type": "type.googleapis.com/secretflow.component.IndividualTable",
-          "schema": {
-            "types": ["str", "str", "str"],
-            "features": ["id1", "item", "feature1"]
-          }
-        }
-      },
-      {
-        "type": "sf.table.individual",
-        "data_refs": [
-          {
-            "uri": "bob.csv",
-            "party": "bob",
-            "format": "csv"
-          }
-        ],
-        "meta": {
-          "@type": "type.googleapis.com/secretflow.component.IndividualTable",
-          "schema": {
-            "types": ["str", "str"],
-            "features": ["id2", "feature2"]
-          }
-        }
-      }
-    ],
-    "output_uris": ["psi_output.csv"]
-  }
-}
-```
-
-参数如下：
-
-| 参数名称         | 类型    | 描述                        |
-| ---------------- | ------- | --------------------------- |
-| protocol         | string  | PSI 协议                    |
-| receiver         | string  | 哪方获得求交数据            |
-| precheck_input   | bool    | 求交前是否检查数据          |
-| sort             | bool    | 求交后是否排序              |
-| broadcast_result | bool    | 是否将求交结果广播给各方    |
-| bucket_size      | integer | 指定在 PSI 中的 hash 桶大小 |
-| curve_type       | string  | ECDH PSI 的曲线类型         |
-
-#### 随机分割
-
-随机分割将会将两方数据切分成训练集和测试集。
-
-```json
-{
-  "sf_storage_config": {
-    "alice": {
-      "type": "local_fs",
-      "local_fs": {
-        "wd": "/home/kuscia/var/storage/data"
-      }
-    },
-    "bob": {
-      "type": "local_fs",
-      "local_fs": {
-        "wd": "/home/kuscia/var/storage/data"
-      }
-    }
-  },
-  "sf_cluster_desc": {
-    "parties": ["alice", "bob"],
-    "devices": [
-      {
-        "name": "spu",
-        "type": "spu",
-        "parties": ["alice", "bob"],
-        "config": "{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
-      },
-      {
-        "name": "heu",
-        "type": "heu",
-        "parties": ["alice", "bob"],
-        "config": "{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"
-      }
-    ]
-  },
-  "sf_node_eval_param": {
-    "domain": "preprocessing",
-    "name": "train_test_split",
-    "version": "0.0.1",
-    "attr_paths": ["train_size", "test_size", "random_state", "shuffle"],
-    "attrs": [
-      {
-        "f": 0.75
-      },
-      {
-        "f": 0.25
-      },
-      {
-        "i64": 1234
-      },
-      {
-        "b": true
-      }
-    ],
-    "inputs": [
-      {
-        "type": "sf.table.vertical_table",
-        "meta": {
-          "@type": "type.googleapis.com/secretflow.component.VerticalTable",
-          "schemas": [
-            {
-              "ids": ["id1"],
-              "features": ["item", "feature1"],
-              "types": ["f32", "f32"],
-              "labels": ["y"]
-            },
-            {
-              "ids": ["id2"],
-              "features": ["feature2"],
-              "types": ["f32"]
-            }
-          ]
-        },
-        "data_refs": [
-          {
-            "uri": "psi_out.csv",
-            "party": "alice",
-            "format": "csv"
-          },
-          {
-            "uri": "psi_out.csv",
-            "party": "bob",
-            "format": "csv"
-          }
-        ]
-      }
-    ],
-    "output_uris": ["train_dataset.csv", "test_dataset.csv"]
-  }
-}
-```
-
-参数如下：
-
-| 参数名称     | 类型    | 描述       |
-| ------------ | ------- | ---------- |
-| train_size   | float   | 训练集占比 |
-| test_size    | float   | 测试集占比 |
-| random_state | integer | 随机种子   |
-| shuffle      | bool    | 是否清洗   |
+[//]: # (链接未就绪)
+对于 secretflow ，请参考：[Secretflow官网](https://www.secretflow.org.cn/)

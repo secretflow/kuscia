@@ -114,7 +114,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		if dr.Spec.Transit != nil {
 			ns = dr.Spec.Transit.Domain.DomainID
 		}
-		handshakeCluster := fmt.Sprintf("%s-to-%s-HTTP", dr.Spec.Source, ns)
+		handshakeCluster := fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name)
 		req.Header.Set("Kuscia-Handshake-Cluster", handshakeCluster)
 		req.Header.Set("kuscia-Host", fmt.Sprintf("kuscia-handshake.%s.svc", ns))
 

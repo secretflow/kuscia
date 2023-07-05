@@ -15,15 +15,12 @@
 package handler
 
 const (
-	labelKusciaTaskUID     = "task.kuscia.secretflow/task-uid"
 	labelKusciaTaskPodName = "task.kuscia.secretflow/pod-name"
 	labelKusciaTaskPodRole = "task.kuscia.secretflow/pod-role"
 
 	KusciaTaskLabelValue = "kusciatask"
 
 	configTemplateVolumeName = "config-template"
-
-	kusciaSchedulerName = "kuscia-scheduler"
 )
 
 const (
@@ -31,3 +28,5 @@ const (
 	defaultLifecycleSeconds        = 300
 	defaultRetryIntervalSeconds    = 30
 )
+
+const KusciaJobStopped = "KusciaJobStopped"

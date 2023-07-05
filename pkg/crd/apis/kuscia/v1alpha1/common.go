@@ -19,6 +19,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type InterConnProtocolType string
+
+const (
+	InterConnKuscia InterConnProtocolType = "kuscia"
+	InterConnBFIA   InterConnProtocolType = "bfia" // Beijing FinTech Industry Alliance
+)
+
 // DataStatus defines current data status.
 type DataStatus struct {
 	// +kubebuilder:validation:Enum=Available;Unavailable;Unknown

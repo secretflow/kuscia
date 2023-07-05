@@ -37,8 +37,8 @@ import (
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformer "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -345,12 +345,12 @@ func (trMgr *TaskResourceManager) patchTaskResource(phase kusciaapisv1alpha1.Tas
 
 	if tr.Status.Phase != trCopy.Status.Phase {
 		now := metav1.Now()
-		cond := utilscommon.GetTaskResourceCondition(&trCopy.Status, condType)
-		cond.LastTransitionTime = now
+		cond := utilsres.GetTaskResourceCondition(&trCopy.Status, condType)
+		cond.LastTransitionTime = &now
 		cond.Status = corev1.ConditionTrue
 		cond.Reason = reason
-		trCopy.Status.LastTransitionTime = now
-		if err := utilscommon.PatchTaskResource(context.Background(), trMgr.kusciaClient, utilscommon.ExtractTaskResourceStatus(tr), utilscommon.ExtractTaskResourceStatus(trCopy)); err != nil {
+		trCopy.Status.LastTransitionTime = &now
+		if err := utilsres.PatchTaskResource(context.Background(), trMgr.kusciaClient, utilsres.ExtractTaskResourceStatus(tr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
 			return fmt.Errorf("patch task resource %v/%v status failed, %v", tr.Namespace, tr.Name, err.Error())
 		}
 	}
@@ -383,10 +383,55 @@ func (trMgr *TaskResourceManager) isSchedulable(waitingTime time.Duration, tr *k
 	}
 
 	err := wait.PollImmediate(checkRetryInterval, waitingTime, checkFn)
+	if wait.ErrWaitTimeout == err {
+		siblingTrPhase := trMgr.getSiblingTaskResourcePhaseInfo(tr)
+		if siblingTrPhase != nil {
+			siblingTrPhaseInfo := ""
+			for name, phase := range siblingTrPhase {
+				siblingTrPhaseInfo += fmt.Sprintf("task resource %q phase is %q,", name, phase)
+			}
+			siblingTrPhaseInfo = strings.TrimSuffix(siblingTrPhaseInfo, ",")
+
+			trgName := tr.Labels[common.LabelTaskResourceGroup]
+			err = fmt.Errorf("reserved task resources belonging to the task resource group %q doesn't meet the minReservedMembers, %s", trgName, siblingTrPhaseInfo)
+		}
+	}
+
 	if schedulable {
 		return true, err
 	}
 	return false, err
+}
+
+// getSiblingTaskResourcePhaseInfo get sibling TaskResource phase info.
+func (trMgr *TaskResourceManager) getSiblingTaskResourcePhaseInfo(tr *kusciaapisv1alpha1.TaskResource) map[string]string {
+	if tr == nil || tr.Labels == nil {
+		return nil
+	}
+
+	trgName := tr.Labels[common.LabelTaskResourceGroup]
+	if trgName == "" {
+		return nil
+	}
+
+	selector := labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trgName})
+	trs, err := trMgr.trLister.List(selector)
+	if err != nil {
+		return nil
+	}
+
+	trPhaseInfo := make(map[string]string)
+	for _, item := range trs {
+		if item.Name == tr.Name {
+			continue
+		}
+
+		if item.Status.Phase != kusciaapisv1alpha1.TaskResourcePhaseReserved {
+			key := item.Namespace + "/" + item.Name
+			trPhaseInfo[key] = string(item.Status.Phase)
+		}
+	}
+	return trPhaseInfo
 }
 
 // getPatchTaskResourceInfos gets patch task resource infos.

@@ -1,0 +1,50 @@
+{
+    "runtime_conf": {
+        "dsl_version": 2,
+        "initiator": {
+            "role": "guest",
+            "party_id": 10000
+        },
+        "role": {
+            "host": [
+                9999
+            ],
+            "guest": [
+                10000
+            ],
+            "arbiter": [
+                9999
+            ]
+        },
+        "component_parameters": {
+            "common": {
+                "{{.JOB_NAME}}-intersection": {
+                    "intersect_method": "ecdh"
+                }
+            },
+            "role": {}
+        }
+    },
+    "dsl": {
+        "components": {
+            "{{.JOB_NAME}}-intersection": {
+                "module": "Intersection",
+                "input": {
+                    "data": {
+                        "data": [
+                            "{{.JOB_NAME}}-data-transform.data"
+                        ]
+                    }
+                },
+                "output": {
+                    "cache": [
+                        "cache"
+                    ],
+                    "data": [
+                        "data"
+                    ]
+                }
+            }
+        }
+    }
+}

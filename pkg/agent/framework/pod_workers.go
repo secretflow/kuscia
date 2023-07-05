@@ -245,7 +245,7 @@ type syncTerminatingPodFnType func(ctx context.Context, pod *v1.Pod, podStatus *
 // the function to invoke to cleanup a pod that is terminated
 type syncTerminatedPodFnType func(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus) error
 
-type getPodStatusFnType func(pod *v1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error)
+type getPodStatusFnType func(ctx context.Context, pod *v1.Pod, minTime time.Time) (*pkgcontainer.PodStatus, error)
 
 const (
 	// jitter factor for resyncInterval
@@ -612,7 +612,7 @@ func (p *podWorkers) UpdatePod(options UpdatePodOptions) {
 		if !isRuntimePod && (pod.Status.Phase == v1.PodFailed || pod.Status.Phase == v1.PodSucceeded) {
 			// check to see if the pod is not running and the pod is terminal.
 			// If this succeeds then record in the podWorker that it is terminated.
-			if statusCache, err := p.getPodStatusFn(pod, time.Time{}); err == nil {
+			if statusCache, err := p.getPodStatusFn(context.Background(), pod, time.Time{}); err == nil {
 				if isPodStatusCacheTerminal(statusCache) {
 					status = &podSyncStatus{
 						terminatedAt:       now,
@@ -942,7 +942,7 @@ func (p *podWorkers) managePodLoop(podUpdates <-chan podWork) {
 				//  Improving this latency also reduces the possibility that a terminated
 				//  container's status is garbage collected before we have a chance to update the
 				//  API server (thus losing the exit code).
-				status, err = p.getPodStatusFn(pod, lastSyncTime)
+				status, err = p.getPodStatusFn(context.Background(), pod, lastSyncTime)
 			}
 			if err != nil {
 				// This is the legacy event thrown by manage pod loop all other events are now dispatched

@@ -76,12 +76,16 @@ type ClusterDomainRouteStatus struct {
 // ClusterDomainRouteTokenStatus represents the status information related to token authentication.
 type ClusterDomainRouteTokenStatus struct {
 	// A sequence number representing a specific generation.
-	Revision int64 `json:"revision"`
+	// +optional
+	Revision int64 `json:"revision,omitempty"`
 	// Timestamp representing the time when this revision created.
-	RevisionTime metav1.Time `json:"revisionTime"`
+	// +optional
+	RevisionTime metav1.Time `json:"revisionTime,omitempty"`
 	// SourceTokens keeps the most recently two generated tokens.
+	// +optional
 	SourceTokens []DomainRouteToken `json:"sourceTokens,omitempty"`
 	// DestinationTokens keeps the most recently two generated tokens.
+	// +optional
 	DestinationTokens []DomainRouteToken `json:"destinationTokens,omitempty"`
 }
 
@@ -176,6 +180,8 @@ type DomainRouteSpec struct {
 	Source string `json:"source"`
 	// Destination namespace.
 	Destination string `json:"destination"`
+	// Interconnection Protocol
+	InterConnProtocol InterConnProtocolType `json:"interConnProtocol,omitempty"`
 	// Endpoint defines address for the source to access destination.
 	Endpoint DomainEndpoint `json:"endpoint"`
 	// Transit entity. If it is not empty, the requests between nodes need to be transferred through a third party.

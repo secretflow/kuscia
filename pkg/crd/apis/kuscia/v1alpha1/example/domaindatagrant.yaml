@@ -1,0 +1,15 @@
+apiVersion: nueva.oasis/v1alpha1
+kind: DomainDataGrant
+metadata:
+  name: DomainDataGrant-xxxx
+  namespace: alice-xxxx
+spec:
+  domainData: DomainData-xxxx
+  signature: xxxxxxxxxxxxxxxxxxxxxx
+  grantDomain: bob-xxxxxxxxxx
+  grantLevel :
+    - metadata
+    - file
+    - normal
+  description:
+    operator: alice

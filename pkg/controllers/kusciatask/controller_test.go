@@ -314,7 +314,7 @@ func TestProcessNextWorkItem(t *testing.T) {
 	}
 }
 
-func TestFillKusciaTaskStatus(t *testing.T) {
+func TestFailKusciaTask(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -325,12 +325,12 @@ func TestFillKusciaTaskStatus(t *testing.T) {
 
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
 
-	cc.fillKusciaTaskStatus(kt, fmt.Errorf("task failed"))
+	cc.failKusciaTask(kt, fmt.Errorf("task failed"))
 	assert.Equal(t, kusciaapisv1alpha1.TaskFailed, kt.Status.Phase)
 }
 
 func TestUpdateTaskStatus(t *testing.T) {
-	creatingKt := makeTestKusciaTask(kusciaapisv1alpha1.TaskCreating)
+	pendingKt := makeTestKusciaTask(kusciaapisv1alpha1.TaskPending)
 	runningKt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset(runningKt)
@@ -340,7 +340,7 @@ func TestUpdateTaskStatus(t *testing.T) {
 	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
 	cc := c.(*Controller)
 
-	got := cc.updateTaskStatus(creatingKt, runningKt)
+	got := cc.updateTaskStatus(pendingKt, runningKt)
 	assert.Nil(t, got)
 }
 

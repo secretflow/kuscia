@@ -23,18 +23,9 @@ import (
 	"sync"
 	"time"
 
-	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
-	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,6 +39,15 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
+	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
+	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerDecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
@@ -57,6 +57,7 @@ import (
 	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	kusciaextv1alpha1 "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -511,82 +512,42 @@ func updateDecryptFilter(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) er
 }
 
 func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string, isDefaultRoute bool,
-	grpcDegrade bool) *route.Route {
-	httpRoute := &route.Route{
-		Match: &route.RouteMatch{
-			PathSpecifier: &route.RouteMatch_Prefix{
-				Prefix: "/",
-			},
-		},
-		Action: &route.Route_Route{
-			Route: xds.AddDefaultTimeout(
-				&route.RouteAction{
-					ClusterSpecifier: &route.RouteAction_Cluster{
-						Cluster: fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Protocol),
-					},
-					HostRewriteSpecifier: &route.RouteAction_AutoHostRewrite{
-						AutoHostRewrite: wrapperspb.Bool(true),
-					},
-				},
-			),
-		},
-		RequestHeadersToAdd: []*core.HeaderValueOption{
-			{
-				Header: &core.HeaderValue{
-					Key:   "Kuscia-Host",
-					Value: "%REQ(:authority)%",
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-			{
-				Header: &core.HeaderValue{
-					Key:   "Kuscia-Source",
-					Value: dr.Spec.Source,
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-			{
-				Header: &core.HeaderValue{
-					Key:   "Kuscia-Token",
-					Value: token,
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-		},
-	}
-
-	if !isDefaultRoute && dp.Protocol == "GRPC" {
-		httpRoute.Match.Headers = []*route.HeaderMatcher{
-			{
-				Name: "content-type",
-				HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
-					StringMatch: &matcher.StringMatcher{
-						MatchPattern: &matcher.StringMatcher_Prefix{
-							Prefix: "application/grpc",
+	grpcDegrade bool) []*route.Route {
+	httpRoutes := interconn.Decorator.GenerateInternalRoute(dr, dp, token)
+	for _, httpRoute := range httpRoutes {
+		if !isDefaultRoute && dp.Protocol == "GRPC" {
+			httpRoute.Match.Headers = []*route.HeaderMatcher{
+				{
+					Name: "content-type",
+					HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
+						StringMatch: &matcher.StringMatcher{
+							MatchPattern: &matcher.StringMatcher_Prefix{
+								Prefix: "application/grpc",
+							},
 						},
 					},
 				},
-			},
+			}
 		}
-	}
 
-	if !grpcDegrade || dp.Protocol == "GRPC" {
-		disable := &grpcreversebridge.FilterConfigPerRoute{
-			Disabled: true,
-		}
-		b, err := proto.Marshal(disable)
-		if err != nil {
-			nlog.Errorf("Marshal grpc reverse bridge config failed with %v", err)
-		} else {
-			httpRoute.TypedPerFilterConfig = map[string]*anypb.Any{
-				"envoy.filters.http.grpc_http1_reverse_bridge": {
-					TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3.FilterConfigPerRoute",
-					Value:   b,
-				},
+		if !grpcDegrade || dp.Protocol == "GRPC" {
+			disable := &grpcreversebridge.FilterConfigPerRoute{
+				Disabled: true,
+			}
+			b, err := proto.Marshal(disable)
+			if err != nil {
+				nlog.Errorf("Marshal grpc reverse bridge config failed with %v", err)
+			} else {
+				httpRoute.TypedPerFilterConfig = map[string]*anypb.Any{
+					"envoy.filters.http.grpc_http1_reverse_bridge": {
+						TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3.FilterConfigPerRoute",
+						Value:   b,
+					},
+				}
 			}
 		}
 	}
-	return httpRoute
+	return httpRoutes
 }
 
 func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token string, grpcDegrade bool) *route.VirtualHost {
@@ -598,7 +559,7 @@ func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token strin
 		if n == 1 || dp.Protocol == "HTTP" {
 			isDefaultRoute = true
 		}
-		routes = append(routes, generateInternalRoute(dr, dp, token, isDefaultRoute, grpcDegrade))
+		routes = append(routes, generateInternalRoute(dr, dp, token, isDefaultRoute, grpcDegrade)...)
 	}
 
 	connectRoute := &route.Route{
@@ -664,13 +625,13 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 	}
 
 	cluster := &envoycluster.Cluster{
-		Name:           fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Protocol),
+		Name:           fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
 		ConnectTimeout: durationpb.New(10 * time.Second),
 		ClusterDiscoveryType: &envoycluster.Cluster_Type{
 			Type: envoycluster.Cluster_STRICT_DNS,
 		},
 		LoadAssignment: &endpoint.ClusterLoadAssignment{
-			ClusterName: fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Protocol),
+			ClusterName: fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
 			Endpoints: []*endpoint.LocalityLbEndpoints{
 				{
 					LbEndpoints: []*endpoint.LbEndpoint{
@@ -700,29 +661,6 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 				Value: 5,
 			},
 		},
-		HealthChecks: []*core.HealthCheck{
-			{
-				Timeout:            durationpb.New(time.Second),
-				Interval:           durationpb.New(15 * time.Second),
-				UnhealthyInterval:  durationpb.New(3 * time.Second),
-				UnhealthyThreshold: wrapperspb.UInt32(1),
-				HealthyThreshold:   wrapperspb.UInt32(1),
-				HealthChecker: &core.HealthCheck_HttpHealthCheck_{
-					HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
-						Host: dr.Spec.Endpoint.Host,
-						Path: "/",
-						RequestHeadersToAdd: []*core.HeaderValueOption{
-							{
-								Header: &core.HeaderValue{
-									Key:   "Kuscia-Host",
-									Value: fmt.Sprintf("kuscia-handshake.%s.svc", dr.Spec.Destination),
-								},
-							},
-						},
-					},
-				},
-			},
-		},
 		TypedExtensionProtocolOptions: map[string]*anypb.Any{
 			"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
 				TypeUrl: "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
@@ -738,6 +676,8 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 			Name: "envoy.transport_sockets.tls",
 		}
 	}
+
+	interconn.Decorator.UpdateDstCluster(dr, cluster)
 
 	return xds.AddOrUpdateCluster(cluster)
 }

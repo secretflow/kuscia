@@ -36,6 +36,11 @@ function build_kuscia() {
   build_exec go build -ldflags=\"$ldflags\" -o build/apps/kuscia/kuscia ./cmd/kuscia
 }
 
+function build_transport() {
+  mkdir -p build/apps/transport
+  build_exec go build -ldflags=\"$ldflags\" -o build/apps/transport/transport ./cmd/transport
+}
+
 usage="$(basename "$0") [OPTIONS]
 OPTIONS:
     -h          show this help text

@@ -50,10 +50,15 @@ type (
 
 // FlagEnvConfigLoader provides the function of obtaining config from command flags and environment variables.
 type FlagEnvConfigLoader struct {
-	// Config Source: env/flag
+	// Source: env/flag
 	Source SourceType
+	// EnableTLSFlag enables TLS flag
+	EnableTLSFlag bool
+	// TLSConfig can be overridden in the initial stage of a bean
+	TLSConfig
 }
 
+// RegisterFlags registers flags.
 func (c *FlagEnvConfigLoader) RegisterFlags(conf framework.Config, name string, fs *pflag.FlagSet) {
 	// Default source type - flag.
 	if c.Source == "" {
@@ -64,6 +69,10 @@ func (c *FlagEnvConfigLoader) RegisterFlags(conf framework.Config, name string, 
 	if c.Source == SourceFlag {
 		flags(name, conf, fs)
 	}
+
+	if c.EnableTLSFlag {
+		c.RegisterTLSFlag(name, fs)
+	}
 }
 
 // Process Configuration Load. The env/envflag type config is obtained from the environment variable,
@@ -72,6 +81,11 @@ func (c *FlagEnvConfigLoader) Process(conf framework.Config, name string, errs *
 	if c.Source == SourceEnv {
 		getFromEnv(name, conf, errs)
 	}
+}
+
+// RegisterTLSFlag registers TLS Flag.
+func (c *FlagEnvConfigLoader) RegisterTLSFlag(name string, fs *pflag.FlagSet) {
+	c.TLSConfig.InstallPFlags(name, fs)
 }
 
 // setDefaultValue get the value with "default" tag and put it into config
@@ -183,7 +197,6 @@ func flags(name string, config framework.Config, fs *pflag.FlagSet) {
 		case uint64:
 			funcName = "Uint64Var"
 		default:
-
 		}
 		if len(funcName) != 0 {
 			_, required := tag.Lookup("required")

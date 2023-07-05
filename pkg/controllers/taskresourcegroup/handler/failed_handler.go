@@ -16,14 +16,16 @@
 package handler
 
 import (
+	"fmt"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // FailedHandler is used to handle task resource group which phase is failed.
@@ -41,22 +43,21 @@ func NewFailedHandler(deps *Dependencies) *FailedHandler {
 }
 
 // Handle is used to perform the real logic.
-func (h *FailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool, error) {
-	failedCond, found := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondFailed)
+func (h *FailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	cond, found := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceGroupFailed)
 	if found {
-		nlog.Infof("Task resource group status has failed condition, skip to handle it")
+		nlog.Infof("Task resource group status has condition %v, skip to handle it", kusciaapisv1alpha1.TaskResourceGroupFailed)
 		return false, nil
 	}
 
-	condReason := "Task resource group state change to failed"
-	if err := patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, condReason, h.kusciaClient, h.trLister); err != nil {
-		return false, err
+	now := metav1.Now().Rfc3339Copy()
+	trCondReason := "Task resource group state change to failed，so set the sub task resource to failed"
+	if err = patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, trCondReason, h.kusciaClient, h.trLister); err != nil {
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Patch task resource status failed, %v", err.Error()))
+		return needUpdate, err
 	}
 
-	now := metav1.Now().Rfc3339Copy()
 	trg.Status.CompletionTime = &now
-	failedCond.Status = v1.ConditionTrue
-	failedCond.Reason = "Task resource group status phase is failed"
-	failedCond.LastTransitionTime = now
-	return true, nil
+	needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
+	return needUpdate, nil
 }

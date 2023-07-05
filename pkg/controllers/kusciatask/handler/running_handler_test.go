@@ -17,6 +17,7 @@ package handler
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -35,20 +36,20 @@ import (
 func TestRunningHandler_Handle(t *testing.T) {
 	trg1 := &kusciaapisv1alpha1.TaskResourceGroup{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "task",
+			Name: "task-1",
 		},
 	}
 
 	trg2 := &kusciaapisv1alpha1.TaskResourceGroup{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "task",
+			Name: "task-2",
 		},
 		Status: kusciaapisv1alpha1.TaskResourceGroupStatus{
 			Phase: kusciaapisv1alpha1.TaskResourceGroupPhaseFailed,
 		},
 	}
 
-	testPod1 := &v1.Pod{
+	pod1 := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    map[string]string{common.LabelTaskResourceGroup: "task"},
 			Name:      "pod-01",
@@ -59,7 +60,7 @@ func TestRunningHandler_Handle(t *testing.T) {
 		},
 	}
 
-	testPod2 := &v1.Pod{
+	pod2 := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    map[string]string{common.LabelTaskResourceGroup: "task"},
 			Name:      "pod-01",
@@ -70,9 +71,9 @@ func TestRunningHandler_Handle(t *testing.T) {
 		},
 	}
 
-	testKusciaTask := &kusciaapisv1alpha1.KusciaTask{
+	kt1 := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "task",
+			Name: "task-1",
 		},
 		Status: kusciaapisv1alpha1.KusciaTaskStatus{
 			PodStatuses: map[string]*kusciaapisv1alpha1.PodStatus{
@@ -85,30 +86,52 @@ func TestRunningHandler_Handle(t *testing.T) {
 					PodName:   "pod-01",
 				},
 			},
+			Phase: kusciaapisv1alpha1.TaskRunning,
+		},
+	}
+
+	kt2 := &kusciaapisv1alpha1.KusciaTask{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "task-2",
+		},
+		Status: kusciaapisv1alpha1.KusciaTaskStatus{
+			PodStatuses: map[string]*kusciaapisv1alpha1.PodStatus{
+				"ns-a/pod-01": {
+					Namespace: "ns-a",
+					PodName:   "pod-01",
+				},
+				"ns-b/pod-01": {
+					Namespace: "ns-b",
+					PodName:   "pod-01",
+				},
+			},
+			Phase: kusciaapisv1alpha1.TaskRunning,
 		},
 	}
 
 	tests := []struct {
+		name       string
 		kusciatask *kusciaapisv1alpha1.KusciaTask
 		trg        *kusciaapisv1alpha1.TaskResourceGroup
 		pods       []runtime.Object
 		wantPhase  kusciaapisv1alpha1.KusciaTaskPhase
 	}{
 		{
-			kusciatask: testKusciaTask,
+			name:       "update kuscia task ResourceReady condition",
+			kusciatask: kt1,
 			trg:        trg1,
 			pods: []runtime.Object{
-				testPod1,
-				testPod2,
+				pod1,
+				pod2,
 			},
 			wantPhase: kusciaapisv1alpha1.TaskRunning,
 		},
 		{
-			kusciatask: testKusciaTask,
+			kusciatask: kt2,
 			trg:        trg2,
 			pods: []runtime.Object{
-				testPod1,
-				testPod2,
+				pod1,
+				pod2,
 			},
 			wantPhase: kusciaapisv1alpha1.TaskFailed,
 		},
@@ -136,6 +159,505 @@ func TestRunningHandler_Handle(t *testing.T) {
 			_, err := h.Handle(tt.kusciatask)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantPhase, tt.kusciatask.Status.Phase)
+		})
+	}
+}
+
+func makeTaskResourceGroup(name string, partiesDomainID [2]string) *kusciaapisv1alpha1.TaskResourceGroup {
+	return &kusciaapisv1alpha1.TaskResourceGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
+			Initiator:          partiesDomainID[0],
+			MinReservedMembers: 2,
+			Parties: []kusciaapisv1alpha1.TaskResourceGroupParty{
+				{
+					Role:     "host",
+					DomainID: partiesDomainID[0],
+					Pods: []kusciaapisv1alpha1.TaskResourceGroupPartyPod{
+						{
+							Name: partiesDomainID[0],
+						},
+					},
+					TaskResourceName: partiesDomainID[0],
+				},
+				{
+					Role:     "guest",
+					DomainID: partiesDomainID[1],
+					Pods: []kusciaapisv1alpha1.TaskResourceGroupPartyPod{
+						{
+							Name: partiesDomainID[1],
+						},
+					},
+					TaskResourceName: partiesDomainID[1],
+				},
+			},
+		},
+	}
+}
+
+func makePod(name string, phase v1.PodPhase) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: name,
+		},
+		Status: v1.PodStatus{
+			Phase: phase,
+		},
+	}
+}
+
+func makeNamespace(name string, labels map[string]string) *v1.Namespace {
+	return &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+	}
+}
+
+func TestReconcileTaskStatus(t *testing.T) {
+	tests := []struct {
+		name       string
+		taskStatus *kusciaapisv1alpha1.KusciaTaskStatus
+		namespaces []*v1.Namespace
+		trg        *kusciaapisv1alpha1.TaskResourceGroup
+		pods       []*v1.Pod
+		wantPhase  kusciaapisv1alpha1.KusciaTaskPhase
+	}{
+		{
+			name: "all party are pending and task expired",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(-800 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodPending),
+				makePod("bob", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskFailed,
+		},
+		{
+			name: "all party are pending and task does not expired",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(-10 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodPending),
+				makePod("bob", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name:       "one party is running and another is pending",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{},
+			trg:        makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+				makePod("bob", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name:       "all party are running",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{},
+			trg:        makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+				makePod("bob", v1.PodRunning),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name:       "one party is succeeded and another is running",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{},
+			trg:        makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+				makePod("bob", v1.PodSucceeded),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name:       "all party are succeeded",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{},
+			trg:        makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodSucceeded),
+				makePod("bob", v1.PodSucceeded),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskSucceeded,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is pending, another is pending, task expired",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskPending,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(-800 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskFailed,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is pending, another is pending, task does not expired",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskPending,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(100 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is pending, another is running",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskPending,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(-800 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is running, another is running",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskRunning,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(-800 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is failed, another is running",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskFailed,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskFailed,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is failed, another is failed",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskFailed,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodFailed),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskFailed,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is running, another is succeeded",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskRunning,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodSucceeded),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name: "interconn task, self cluster as initiator, interconn party is succeeded, another is succeeded",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
+					{
+						DomainID: "bob",
+						Role:     "guest",
+						Phase:    kusciaapisv1alpha1.TaskSucceeded,
+					},
+				},
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodSucceeded),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskSucceeded,
+		},
+		{
+			name: "interconn task, self cluster is not initiator, self cluster task is pending, task expired",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(-800 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"bob", "alice"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskFailed,
+		},
+		{
+			name: "interconn task, self cluster is not initiator, self cluster task is pending, task does not expired",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"bob", "alice"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodPending),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name: "interconn task, self cluster is not initiator, self cluster task is running",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"bob", "alice"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodRunning),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskRunning,
+		},
+		{
+			name: "interconn task, self cluster is not initiator, self cluster task is succeeded",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"bob", "alice"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodSucceeded),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskSucceeded,
+		},
+		{
+			name: "interconn task, self cluster is not initiator, self cluster task is failed",
+			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
+				Phase: kusciaapisv1alpha1.TaskRunning,
+				StartTime: func() *metav1.Time {
+					now := metav1.Now().Add(200 * time.Second)
+					return &metav1.Time{Time: now}
+				}(),
+			},
+			namespaces: []*v1.Namespace{
+				makeNamespace("alice", nil),
+				makeNamespace("bob", map[string]string{
+					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
+					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
+			},
+			trg: makeTaskResourceGroup("trg-1", [2]string{"bob", "alice"}),
+			pods: []*v1.Pod{
+				makePod("alice", v1.PodFailed),
+			},
+			wantPhase: kusciaapisv1alpha1.TaskFailed,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kubeClient := kubefake.NewSimpleClientset()
+			kusciaClient := kusciafake.NewSimpleClientset()
+			kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
+			nsInformer := kubeInformersFactory.Core().V1().Namespaces()
+			podInformer := kubeInformersFactory.Core().V1().Pods()
+
+			h := &RunningHandler{
+				kusciaClient: kusciaClient,
+				podsLister:   podInformer.Lister(),
+				nsLister:     nsInformer.Lister(),
+			}
+
+			if tt.pods != nil {
+				for i := range tt.pods {
+					podInformer.Informer().GetStore().Add(tt.pods[i])
+				}
+			}
+
+			if tt.namespaces != nil {
+				for i := range tt.namespaces {
+					nsInformer.Informer().GetStore().Add(tt.namespaces[i])
+				}
+			}
+
+			h.reconcileTaskStatus(tt.taskStatus, tt.trg)
+			assert.Equal(t, tt.wantPhase, tt.taskStatus.Phase)
 		})
 	}
 }

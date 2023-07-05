@@ -86,7 +86,7 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	}
 	args := []string{
 		"-c",
-		filepath.Join(s.rootDir, ConfPrefix, "envoy/conf.yaml"),
+		filepath.Join(s.rootDir, ConfPrefix, "envoy.yaml"),
 		"--service-cluster",
 		s.cluster,
 		"--service-node",
@@ -104,8 +104,6 @@ func (s *envoyModule) Run(ctx context.Context) error {
 
 	sp := supervisor.NewSupervisor("envoy", nil, -1)
 
-	// set logrotate
-	s.setLogrotate(ctx)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/envoy"), args...)
 		cmd.Stdout = os.Stdout
@@ -113,27 +111,6 @@ func (s *envoyModule) Run(ctx context.Context) error {
 		cmd.Env = os.Environ()
 		return cmd
 	})
-}
-
-func (s *envoyModule) setLogrotate(ctx context.Context) {
-	go func() { //TODO: use supervisor later
-		for {
-			t := time.Now()
-			n := time.Date(t.Year(), t.Month(), t.Day(), 0, 1, 0, 0, t.Location())
-			d := n.Sub(t)
-			if d < 0 {
-				n = n.Add(24 * time.Hour)
-				d = n.Sub(t)
-			}
-
-			time.Sleep(d)
-
-			cmd := exec.CommandContext(ctx, "logrotate", filepath.Join(s.rootDir, ConfPrefix, "envoy/logrotate.conf"))
-			if err := cmd.Run(); err != nil {
-				nlog.Errorf("logrotate run error: %v", err)
-			}
-		}
-	}()
 }
 
 func (s *envoyModule) WaitReady(ctx context.Context) error {

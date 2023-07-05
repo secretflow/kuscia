@@ -19,6 +19,7 @@ limitations under the License.
 package kuberuntime
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -215,7 +216,7 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 }
 
 // createPodSandbox creates a pod sandbox and returns (podSandBoxID, message, error).
-func (m *kubeGenericRuntimeManager) createPodSandbox(pod *v1.Pod, attempt uint32) (string, string, error) {
+func (m *kubeGenericRuntimeManager) createPodSandbox(ctx context.Context, pod *v1.Pod, attempt uint32) (string, string, error) {
 	podSandboxConfig, err := m.generatePodSandboxConfig(pod, attempt)
 	if err != nil {
 		message := fmt.Sprintf("Failed to generate sandbox config for pod %q: %v", format.Pod(pod), err)
@@ -232,7 +233,7 @@ func (m *kubeGenericRuntimeManager) createPodSandbox(pod *v1.Pod, attempt uint32
 	}
 
 	runtimeHandler := ""
-	podSandBoxID, err := m.runtimeService.RunPodSandbox(podSandboxConfig, runtimeHandler)
+	podSandBoxID, err := m.runtimeService.RunPodSandbox(ctx, podSandboxConfig, runtimeHandler)
 	if err != nil {
 		message := fmt.Sprintf("Failed to create sandbox for pod %q: %v", format.Pod(pod), err)
 		nlog.Errorf("Failed to create sandbox for pod %q", format.Pod(pod))
@@ -276,7 +277,7 @@ func (m *kubeGenericRuntimeManager) determinePodSandboxIPs(podNamespace, podName
 
 // getPodSandboxID gets the sandbox id by podUID and returns ([]sandboxID, error).
 // Param state could be nil in order to get all sandboxes belonging to same pod.
-func (m *kubeGenericRuntimeManager) getSandboxIDByPodUID(podUID kubetypes.UID, state *runtimeapi.PodSandboxState) ([]string, error) {
+func (m *kubeGenericRuntimeManager) getSandboxIDByPodUID(ctx context.Context, podUID kubetypes.UID, state *runtimeapi.PodSandboxState) ([]string, error) {
 	filter := &runtimeapi.PodSandboxFilter{
 		LabelSelector: map[string]string{types.KubernetesPodUIDLabel: string(podUID)},
 	}
@@ -285,7 +286,7 @@ func (m *kubeGenericRuntimeManager) getSandboxIDByPodUID(podUID kubetypes.UID, s
 			State: *state,
 		}
 	}
-	sandboxes, err := m.runtimeService.ListPodSandbox(filter)
+	sandboxes, err := m.runtimeService.ListPodSandbox(ctx, filter)
 	if err != nil {
 		nlog.Errorf("Failed to list sandboxes for pod %q", podUID)
 		return nil, err
@@ -306,7 +307,7 @@ func (m *kubeGenericRuntimeManager) getSandboxIDByPodUID(podUID kubetypes.UID, s
 }
 
 // getSandboxes lists all (or just the running) sandboxes.
-func (m *kubeGenericRuntimeManager) getPodSandboxes(all bool) ([]*runtimeapi.PodSandbox, error) {
+func (m *kubeGenericRuntimeManager) getPodSandboxes(ctx context.Context, all bool) ([]*runtimeapi.PodSandbox, error) {
 	var filter *runtimeapi.PodSandboxFilter
 	if !all {
 		readyState := runtimeapi.PodSandboxState_SANDBOX_READY
@@ -317,7 +318,7 @@ func (m *kubeGenericRuntimeManager) getPodSandboxes(all bool) ([]*runtimeapi.Pod
 		}
 	}
 
-	resp, err := m.runtimeService.ListPodSandbox(filter)
+	resp, err := m.runtimeService.ListPodSandbox(ctx, filter)
 	if err != nil {
 		nlog.Errorf("Failed to list pod sandboxes")
 		return nil, err

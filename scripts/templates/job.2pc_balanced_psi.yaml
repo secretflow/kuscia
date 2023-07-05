@@ -8,6 +8,7 @@ spec:
   maxParallelism: 2
   tasks:
     - taskID: {{.JOB_NAME}}-single-psi
+      alias: single-psi
       priority: 100
       taskInputConfig: '{{.TASK_INPUT_CONFIG}}'
       appImage: '{{.APP_IMAGE}}'

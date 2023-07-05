@@ -21,7 +21,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
-	"github.com/secretflow/kuscia/pkg/controllers/interop"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
@@ -53,10 +52,6 @@ func NewControllersModule(i *Dependencies) Module {
 			{
 				NewControler: clusterdomainroute.NewController,
 				CheckCRD:     clusterdomainroute.CheckCRDExists,
-			},
-			{
-				NewControler: interop.NewController,
-				CheckCRD:     interop.CheckCRDExists,
 			},
 			{
 				NewControler: kusciajob.NewController,

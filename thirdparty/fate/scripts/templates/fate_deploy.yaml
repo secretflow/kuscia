@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fate-deploy-{{.PARTY}}
+  namespace: {{.PARTY}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fate-deploy-{{.PARTY}}
+  template:
+    metadata:
+      labels:
+        app: fate-deploy-{{.PARTY}}
+    spec:
+      containers:
+        - name: fate-deploy-{{.PARTY}}
+          image: {{.FATE_IMAGE}}
+          command:
+            - sh
+            - -c
+            - scripts/start_third_party.sh fate {{.PARTY_ID}} {{.OTHER_PARTY_ID}} {{.OTHER_PARTY_IP}}
+          resources:
+            requests:
+              memory: {{.MEMORY}}
+          terminationMessagePolicy: FallbackToLogsOnError
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          ports:
+            - containerPort: 9370
+              hostPort: 9370
+            - containerPort: 9380
+            - containerPort: 8080
+              hostPort: 32141
+      nodeSelector:
+        kuscia.secretflow/namespace: {{.PARTY}}
+      schedulerName: kuscia-scheduler
+      automountServiceAccountToken: false
+      tolerations:
+        - effect: NoSchedule
+          key: kuscia.secretflow/agent
+          operator: Exists

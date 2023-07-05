@@ -46,10 +46,12 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 			Name: "secretflow-job",
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
+			Stage:        kusciaapisv1alpha1.JobStartStage,
 			Initiator:    "alice",
 			ScheduleMode: kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort,
 			Tasks: []kusciaapisv1alpha1.KusciaTaskTemplate{
 				{
+					Alias:           "a",
 					TaskID:          "a",
 					Priority:        100,
 					TaskInputConfig: "meta://secretflow-1/task-input-config",
@@ -58,6 +60,7 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 					Dependencies:    []string{},
 				},
 				{
+					Alias:           "b",
 					TaskID:          "b",
 					Priority:        100,
 					TaskInputConfig: "meta://secretflow-1/task-input-config2",
@@ -67,14 +70,37 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 				},
 			},
 		},
+		Status: kusciaapisv1alpha1.KusciaJobStatus{
+			Phase: kusciaapisv1alpha1.KusciaJobRunning,
+			Conditions: []kusciaapisv1alpha1.KusciaJobCondition{
+				{
+					Type:   kusciaapisv1alpha1.JobStartInitialized,
+					Status: v1.ConditionTrue,
+				},
+				{
+					Type:   kusciaapisv1alpha1.JobStartSucceeded,
+					Status: v1.ConditionTrue,
+				},
+			},
+		},
 	}
 }
 
 func Test_KusciaJobControllerHandleTaskSucceed(t *testing.T) {
 	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 	testKusciaJob := makeKusciaJob()
+	aliceNs := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "alice",
+		},
+	}
 
-	kubeClient := kubefake.NewSimpleClientset()
+	bobNs := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "bob",
+		},
+	}
+	kubeClient := kubefake.NewSimpleClientset(aliceNs, bobNs)
 	kusciaClient := kusciafake.NewSimpleClientset(testKusciaJob)
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
@@ -104,7 +130,7 @@ func waitAndChangeKusciaTaskStatus(t *testing.T, c *Controller, expectTaskCount 
 		for _, t := range tasks {
 			tasksString = append(tasksString, fmt.Sprintf("%s", t.Status.Phase))
 		}
-		nlog.Infof("tasks: %s, err: %s", tasksString, err)
+		nlog.Infof("tasks: %s, err: %v", tasksString, err)
 		return len(tasks) == expectTaskCount, err
 	})
 	assert.NoError(t, err)
@@ -126,8 +152,18 @@ func waitAndChangeKusciaTaskStatus(t *testing.T, c *Controller, expectTaskCount 
 func Test_KusciaTaskControllerHandlerTaskFailed(t *testing.T) {
 	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 	testKusciaJob := makeKusciaJob()
+	aliceNs := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "alice",
+		},
+	}
 
-	kubeClient := kubefake.NewSimpleClientset()
+	bobNs := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "bob",
+		},
+	}
+	kubeClient := kubefake.NewSimpleClientset(aliceNs, bobNs)
 	kusciaClient := kusciafake.NewSimpleClientset(testKusciaJob)
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})

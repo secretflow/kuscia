@@ -231,7 +231,7 @@ kubectl get aimg secretflow-image -o yaml
 
 ### KusciaJob & KusciaTask
 
-关于如何配置、运行和查看 KusciaJob 和 KusciaTask，请参考 [如何运行一个 secretflow 任务](../tutorial/run_secretflow_cn.md)
+关于如何配置、运行和查看 KusciaJob 和 KusciaTask，请参考 [如何运行一个 secretflow 作业](../tutorial/run_secretflow_cn.md)
 和 [KusciaJob](./concepts/kusciajob_cn.md) 。
 
 ## 节点容器

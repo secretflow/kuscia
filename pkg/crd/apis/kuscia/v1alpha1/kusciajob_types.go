@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,17 +52,33 @@ type KusciaJobList struct {
 	Items           []KusciaJob `json:"items"`
 }
 
+type JobStage string
+
+const (
+	JobCreateStage JobStage = "Create"
+	JobStartStage  JobStage = "Start"
+	JobStopStage   JobStage = "Stop"
+)
+
 // KusciaJobSpec defines the information of kuscia job spec.
 type KusciaJobSpec struct {
-	// Initiator who submit this KusciaJob.
+	// Stage defines the current situation of a job.
+	// +optional
+	// +kubebuilder:default=Create
+	Stage JobStage `json:"stage,omitempty"`
+	// FlowID defines the id of flow
+	FlowID string `json:"flowID,omitempty"`
+	// Initiator who schedule this KusciaJob.
 	Initiator string `json:"initiator"`
 	// ScheduleMode defines how this job will be scheduled.
 	// In Strict, if any non-tolerable subtasks failed, Scheduling for this task stops immediately, and it immediately enters the final Failed state.
 	// In BestEffort, if any non-tolerable subtasks failed, Scheduling for this job will continue.
 	// But the successor subtask of the failed subtask stops scheduling, and the current state will be running.
 	// When all subtasks succeed or fail, the job will enter the Failed state.
+	// +optional
 	// +kubebuilder:validation:Enum=Strict;BestEffort
-	ScheduleMode KusciaJobScheduleMode `json:"scheduleMode"`
+	// +kubebuilder:default=Strict
+	ScheduleMode KusciaJobScheduleMode `json:"scheduleMode,omitempty"`
 	// MaxParallelism max parallelism of tasks, default 1.
 	// At a certain moment, there may be multiple subtasks that can be scheduled.
 	// this field defines the maximum number of tasks in the Running state.
@@ -79,10 +96,13 @@ type KusciaJobSpec struct {
 }
 
 type KusciaTaskTemplate struct {
-	// TaskID will be used as KusciaTask resource name, so it should match rfc1123 DNS_LABEL pattern.
+	// Alias represents KusciaTask alias.
+	Alias string `json:"alias"`
+	// TaskID represents KusciaTask id, it should match rfc1123 DNS_LABEL pattern.
 	// It will be used in Dependencies.
+	// +optional
 	// +kubebuilder:validation:Pattern=[a-z0-9]([-a-z0-9]*[a-z0-9])?
-	TaskID string `json:"taskID"`
+	TaskID string `json:"taskID,omitempty"`
 	// Dependencies defines the dependencies of this subtask.
 	// Only when the dependencies of this subtask are all in the Succeeded state, this subtask can be scheduled.
 	// +kubebuilder:validation:MaxItems=128
@@ -104,9 +124,8 @@ type KusciaTaskTemplate struct {
 	// Priority defines priority of ready subtask.
 	// When multiple subtasks are ready, which one is scheduled first.
 	// The larger the value of this field, the higher the priority.
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=128
-	Priority int `json:"priority"`
+	// +optional
+	Priority int `json:"priority,omitempty"`
 	// Parties defines participants and role in this KusciaTask
 	Parties []Party `json:"parties"`
 }
@@ -124,6 +143,10 @@ type KusciaJobStatus struct {
 	// +optional
 	Phase KusciaJobPhase `json:"phase,omitempty"`
 
+	// The latest available observations of an object's current state.
+	// +optional
+	Conditions []KusciaJobCondition `json:"conditions,omitempty"`
+
 	// A brief CamelCase message indicating details about why the job is in this state.
 	// +optional
 	Reason string `json:"reason,omitempty"`
@@ -135,7 +158,7 @@ type KusciaJobStatus struct {
 	// TaskStatus describes subtasks state. The key is taskId.
 	// Uncreated subtasks will not appear here.
 	// +optional
-	TaskStatus map[string]KusciaTaskPhase `json:"taskStatus"`
+	TaskStatus map[string]KusciaTaskPhase `json:"taskStatus,omitempty"`
 
 	// Represents time when the job was acknowledged by the job controller.
 	// It is not guaranteed to be set in happens-before order across separate operations.
@@ -169,12 +192,54 @@ const (
 	KusciaJobScheduleModeBestEffort KusciaJobScheduleMode = "BestEffort"
 )
 
+// KusciaJobConditionType is a valid value for a kuscia job condition type.
+type KusciaJobConditionType string
+
+// These are built-in conditions of kuscia job.
+const (
+	// JobValidated represents job is validated.
+	JobValidated KusciaJobConditionType = "JobValidated"
+	// JobCreateInitialized represents job-create stage is initialized.
+	JobCreateInitialized KusciaJobConditionType = "JobCreateInitialized"
+	// JobCreateSucceeded represents job-create stage is succeeded.
+	JobCreateSucceeded KusciaJobConditionType = "JobCreateSucceeded"
+	// JobStartInitialized represents job-start stage is initialized.
+	JobStartInitialized KusciaJobConditionType = "JobStartInitialized"
+	// JobStartSucceeded represents job-start stage is succeeded.
+	JobStartSucceeded KusciaJobConditionType = "JobStartSucceeded"
+	// JobStopInitialized represents job-stop stage is initialized.
+	JobStopInitialized KusciaJobConditionType = "JobStopInitialized"
+	// JobStopSucceeded represents job-stop stage is succeeded.
+	JobStopSucceeded KusciaJobConditionType = "JobStopSucceeded"
+	// TaskStopped represents condition of stopping task.
+	TaskStopped KusciaJobConditionType = "TaskStopped"
+	// JobStatusSynced represents condition of syncing job status.
+	JobStatusSynced KusciaJobConditionType = "JobStatusSynced"
+)
+
+// KusciaJobCondition describes current state of a kuscia job.
+type KusciaJobCondition struct {
+	// Type of job condition.
+	Type KusciaJobConditionType `json:"type"`
+	// Status of the condition, one of True, False, Unknown.
+	Status corev1.ConditionStatus `json:"status"`
+	// The reason for the condition's last transition.
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// A human-readable message indicating details about the transition.
+	// +optional
+	Message string `json:"message,omitempty"`
+	// Last time the condition transitioned from one status to another.
+	// +optional
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
+}
+
 // KusciaJobPhase defines current status of this kuscia job.
 type KusciaJobPhase string
 
-// These are valid statuses of kuscia task.
+// These are valid statuses of kuscia job.
 const (
-	// KusciaJobPending means the task has been accepted by the controller,
+	// KusciaJobPending means the job has been accepted by the controller,
 	// but no kuscia task has not been created.
 	KusciaJobPending KusciaJobPhase = "Pending"
 

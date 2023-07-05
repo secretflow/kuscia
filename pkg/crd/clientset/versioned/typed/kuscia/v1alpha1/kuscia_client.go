@@ -28,11 +28,11 @@ type KusciaV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AppImagesGetter
 	ClusterDomainRoutesGetter
-	DataObjectsGetter
-	DataSourcesGetter
-	DataTablesGetter
 	DomainsGetter
 	DomainAppImagesGetter
+	DomainDatasGetter
+	DomainDataGrantsGetter
+	DomainDataSourcesGetter
 	DomainRoutesGetter
 	GatewaysGetter
 	InteropConfigsGetter
@@ -55,24 +55,24 @@ func (c *KusciaV1alpha1Client) ClusterDomainRoutes() ClusterDomainRouteInterface
 	return newClusterDomainRoutes(c)
 }
 
-func (c *KusciaV1alpha1Client) DataObjects(namespace string) DataObjectInterface {
-	return newDataObjects(c, namespace)
-}
-
-func (c *KusciaV1alpha1Client) DataSources(namespace string) DataSourceInterface {
-	return newDataSources(c, namespace)
-}
-
-func (c *KusciaV1alpha1Client) DataTables(namespace string) DataTableInterface {
-	return newDataTables(c, namespace)
-}
-
 func (c *KusciaV1alpha1Client) Domains() DomainInterface {
 	return newDomains(c)
 }
 
 func (c *KusciaV1alpha1Client) DomainAppImages(namespace string) DomainAppImageInterface {
 	return newDomainAppImages(c, namespace)
+}
+
+func (c *KusciaV1alpha1Client) DomainDatas(namespace string) DomainDataInterface {
+	return newDomainDatas(c, namespace)
+}
+
+func (c *KusciaV1alpha1Client) DomainDataGrants(namespace string) DomainDataGrantInterface {
+	return newDomainDataGrants(c, namespace)
+}
+
+func (c *KusciaV1alpha1Client) DomainDataSources(namespace string) DomainDataSourceInterface {
+	return newDomainDataSources(c, namespace)
 }
 
 func (c *KusciaV1alpha1Client) DomainRoutes(namespace string) DomainRouteInterface {

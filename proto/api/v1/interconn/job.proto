@@ -1,0 +1,73 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "kuscia/proto/api/v1/interconn/common.proto";
+
+package kuscia.proto.api.v1.interconn;
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1/interconn";
+
+// CreateJobAllRequest defines the request for creating job all.
+message CreateJobAllRequest {
+    string job_id = 1;
+    string flow_id = 2;
+    DAG dag = 3;
+    Config config = 4;
+}
+
+// CreateJobRequest defines the request for creating job.
+message CreateJobRequest {
+    string job_id = 1;
+    string flow_id = 2;
+    DAG dag = 3;
+    Config config = 4;
+}
+
+// StartJobRequest defines the request for starting job.
+message StartJobRequest {
+    string job_id = 1;
+}
+
+// StopJobAllRequest defines the request for stopping job all.
+message StopJobAllRequest {
+    string job_id = 1;
+}
+
+// StopJobRequest defines the request for stopping job.
+message StopJobRequest {
+    string job_id = 1;
+}
+
+// QueryJobStatusAllRequest defines the request for querying job all status.
+message QueryJobStatusAllRequest {
+    string job_id = 1;
+}
+
+// DAG represents direct Acyclic Graph which is used to describe dependencies between components.
+message DAG {
+    string version = 1;
+    repeated Component components = 2;
+}
+
+// Component represents functional module units for independently computing privacy tasks.
+message Component {
+    string code = 1;
+    string name = 2;
+    string module_name = 3;
+    string version = 4;
+    repeated ComponentIO input = 5;
+    repeated ComponentIO output = 6;
+}

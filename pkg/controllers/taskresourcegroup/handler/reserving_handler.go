@@ -27,8 +27,8 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // ReservingHandler is used to handle task resource group which phase is reserving.
@@ -50,20 +50,34 @@ func NewReservingHandler(deps *Dependencies) *ReservingHandler {
 }
 
 // Handle is used to perform the real logic.
-func (h *ReservingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool, error) {
-	var err error
-	if err = updatePodAnnotations(trg.Name, h.podLister, h.kubeClient); err != nil {
-		return false, fmt.Errorf("update pod annotation failed, %v", err.Error())
+func (h *ReservingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	now := metav1.Now().Rfc3339Copy()
+	if needUpdate, err = h.updatePodAnnotations(now, trg); err != nil {
+		nlog.Error(err)
+		return true, err
 	}
 
-	var (
-		now                        = metav1.Now().Rfc3339Copy()
-		reservedCount, failedCount int
-		trs                        []*kusciaapisv1alpha1.TaskResource
-	)
+	return h.summarizeTaskResourcesInfo(now, trg)
+}
 
-	// check whether the count of parties failed or successfully reserved.
-	trsCount := 0
+func (h *ReservingHandler) updatePodAnnotations(now metav1.Time, trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	if err = updatePodAnnotations(trg.Name, h.podLister, h.kubeClient); err != nil {
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.PodAnnotationUpdated)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Update pod annotation failed, %v", err.Error()))
+		return needUpdate, err
+	}
+
+	if utilsres.IsExistingTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.PodAnnotationUpdated, v1.ConditionFalse) {
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.PodAnnotationUpdated)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
+		return needUpdate, nil
+	}
+	return false, nil
+}
+
+func (h *ReservingHandler) summarizeTaskResourcesInfo(now metav1.Time, trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	var trs []*kusciaapisv1alpha1.TaskResource
+	var trsCount, reservedCount, failedCount int
 	partySet := make(map[string]struct{})
 	for _, party := range trg.Spec.Parties {
 		if _, exist := partySet[party.DomainID]; exist {
@@ -72,8 +86,9 @@ func (h *ReservingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bo
 
 		trs, err = h.trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trg.Name}))
 		if err != nil {
-			nlog.Warnf("List party %v task resource of task resource group %v failed, %v", party.DomainID, trg.Name, err)
-			continue
+			cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed)
+			needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("List task resources failed, %v", err.Error()))
+			return needUpdate, err
 		}
 
 		for _, tr := range trs {
@@ -89,51 +104,51 @@ func (h *ReservingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bo
 		partySet[party.DomainID] = struct{}{}
 	}
 
+	if utilsres.IsExistingTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed, v1.ConditionFalse) {
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
+	}
+
 	if trg.Spec.MinReservedMembers > len(trg.Spec.Parties) {
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
-		trg.Status.LastTransitionTime = now
-		reservingCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondReserving)
-		reservingCond.Status = v1.ConditionTrue
-		reservingCond.Reason = "task resource group min reserved member is greater than total parties number"
-		reservingCond.LastTransitionTime = now
-		return true, nil
+		trg.Status.LastTransitionTime = &now
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesReserved)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Task resource group min reserved member %v is greater than total parties number %v", trg.Spec.MinReservedMembers, len(trg.Spec.Parties)))
+		return needUpdate, nil
 	}
 
 	if trg.Spec.MinReservedMembers > trsCount {
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
-		trg.Status.LastTransitionTime = now
-		reservingCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondReserving)
-		reservingCond.Status = v1.ConditionTrue
-		reservingCond.Reason = "task resource group min reserved member is greater than task resource count"
-		reservingCond.LastTransitionTime = now
-		return true, nil
+		trg.Status.LastTransitionTime = &now
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesReserved)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Task resource group min reserved member %v is greater than task resources count %v", trg.Spec.MinReservedMembers, trsCount))
+		return needUpdate, nil
 	}
 
 	if reservedCount >= trg.Spec.MinReservedMembers {
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseReserved
-		trg.Status.LastTransitionTime = now
-		reservingCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondReserving)
-		reservingCond.Status = v1.ConditionTrue
-		reservingCond.Reason = "Min member pods reserve resource"
-		reservingCond.LastTransitionTime = now
-		return true, nil
+		trg.Status.LastTransitionTime = &now
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesReserved)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
+		return needUpdate, nil
 	}
 
 	if trg.Spec.MinReservedMembers > len(trg.Spec.Parties)-failedCount {
-		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseReserveFailed
-		trg.Status.LastTransitionTime = now
-		reservingCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondReserving)
-		reservingCond.Status = v1.ConditionTrue
-		reservingCond.Reason = "The count of failed reserved parties exceeds the schedulable threshold"
-		reservingCond.LastTransitionTime = now
-
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesReserved)
 		// patch all party status phase to failed.
-		condReason := "Task resource group state is reserve failed and change the task resource state to failed"
-		if err = patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, condReason, h.kusciaClient, h.trLister); err != nil {
-			return false, err
+		trCondReason := "Task resource group state changed to reserve-failed, so set the task resource status to failed"
+		if err = patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, trCondReason, h.kusciaClient, h.trLister); err != nil {
+			needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Patch task resoueces status failed, %v", err.Error()))
+			return needUpdate, err
 		}
-		return true, nil
-	}
 
-	return false, nil
+		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseReserveFailed
+		if trg.Labels != nil && trg.Labels[common.LabelInterConnProtocolType] == string(kusciaapisv1alpha1.InterConnBFIA) {
+			trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
+		}
+		trg.Status.LastTransitionTime = &now
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("The remaining number of parties %v is less than the schedulable threshold %v", len(trg.Spec.Parties)-failedCount, trg.Spec.MinReservedMembers))
+		return needUpdate, nil
+	}
+	return needUpdate, nil
 }

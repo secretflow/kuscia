@@ -78,9 +78,14 @@ type TaskResourceGroupSpec struct {
 
 // TaskResourceGroupParty defines the details of task resource group party.
 type TaskResourceGroupParty struct {
-	DomainID        string                      `json:"domainID"`
+	// +optional
+	Role     string `json:"role,omitempty"`
+	DomainID string `json:"domainID"`
+	// +optional
 	MinReservedPods int                         `json:"minReservedPods,omitempty"`
 	Pods            []TaskResourceGroupPartyPod `json:"pods"`
+	// +optional
+	TaskResourceName string `json:"taskResourceName,omitempty"`
 }
 
 // TaskResourceGroupPartyPod defines the details of task resource group party pod.
@@ -114,28 +119,32 @@ type TaskResourceGroupStatus struct {
 	// +optional
 	Conditions []TaskResourceGroupCondition `json:"conditions,omitempty"`
 	// +optional
-	StartTime metav1.Time `json:"startTime,omitempty"`
+	StartTime *metav1.Time `json:"startTime,omitempty"`
 	// +optional
 	CompletionTime *metav1.Time `json:"completionTime,omitempty"`
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // TaskResourceGroupConditionType is a valid value for a task resource group condition type.
 type TaskResourceGroupConditionType string
 
 const (
-	TaskResourcesGroupCondPending       TaskResourceGroupConditionType = "Pending"
-	TaskResourcesGroupCondCreating      TaskResourceGroupConditionType = "Creating"
-	TaskResourcesGroupCondReserving     TaskResourceGroupConditionType = "Reserving"
-	TaskResourcesGroupCondReserved      TaskResourceGroupConditionType = "Reserved"
-	TaskResourcesGroupCondReserveFailed TaskResourceGroupConditionType = "ReserveFailed"
-	TaskResourcesGroupCondFailed        TaskResourceGroupConditionType = "Failed"
+	TaskResourceGroupValidated TaskResourceGroupConditionType = "TaskResourceGroupValidated"
+	TaskResourceNameGenerated  TaskResourceGroupConditionType = "TaskResourceNameGenerated"
+	TaskResourcesCreated       TaskResourceGroupConditionType = "TaskResourcesCreated"
+	PodAnnotationUpdated       TaskResourceGroupConditionType = "PodAnnotationUpdated"
+	TaskResourcesListed        TaskResourceGroupConditionType = "TaskResourcesListed"
+	TaskResourcesReserved      TaskResourceGroupConditionType = "TaskResourcesReserved"
+	TaskResourceGroupExpired   TaskResourceGroupConditionType = "TaskResourceGroupExpired"
+	TaskResourcesScheduled     TaskResourceGroupConditionType = "TaskResourcesScheduled"
+	TaskResourceGroupFailed    TaskResourceGroupConditionType = "TaskResourceGroupFailed"
+	DependentTaskFailed        TaskResourceGroupConditionType = "DependentTaskFailed"
 )
 
 // TaskResourceGroupCondition defines the details of task resource group condition.
 type TaskResourceGroupCondition struct {
-	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time           `json:"lastTransitionTime,omitempty"`
 	Status             corev1.ConditionStatus `json:"status"`
 	// +optional
 	Reason string                         `json:"reason,omitempty"`

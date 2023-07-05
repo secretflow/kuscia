@@ -15,34 +15,91 @@
 package handler
 
 import (
+	"context"
+
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // FailedHandler is used to handle kuscia task which phase is failed.
 type FailedHandler struct {
 	*FinishedHandler
-	recorder record.EventRecorder
+	kusciaClient kusciaclientset.Interface
+	trgLister    kuscialistersv1alpha1.TaskResourceGroupLister
+	recorder     record.EventRecorder
 }
 
 // NewFailedHandler returns a FailedHandler instance.
 func NewFailedHandler(deps *Dependencies, finishedHandler *FinishedHandler) *FailedHandler {
 	return &FailedHandler{
 		FinishedHandler: finishedHandler,
+		kusciaClient:    deps.KusciaClient,
 		recorder:        deps.Recorder,
+		trgLister:       deps.TrgLister,
 	}
 }
 
 // Handle is used to perform the real logic.
-func (s *FailedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
-	needUpdate, err := s.FinishedHandler.Handle(kusciaTask)
+func (h *FailedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
+	h.setTaskResourceGroupFailed(kusciaTask)
+	updateStatuses(kusciaTask)
+	needUpdate, err := h.FinishedHandler.Handle(kusciaTask)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
-	s.recorder.Event(kusciaTask, v1.EventTypeWarning, "KusciaTaskFailed", "KusciaTask failed to run")
+	h.recorder.Event(kusciaTask, v1.EventTypeWarning, "KusciaTaskFailed", "KusciaTask failed to run")
 	metrics.TaskResultStats.WithLabelValues(metrics.Failed).Inc()
 	return needUpdate, nil
+}
+
+func (h *FailedHandler) setTaskResourceGroupFailed(kusciaTask *kusciaapisv1alpha1.KusciaTask) {
+	trg, err := h.trgLister.Get(kusciaTask.Name)
+	if err != nil {
+		nlog.Warnf("Get task resource group %v failed, skip setting its status to failed, %v", kusciaTask.Name, err)
+		return
+	}
+
+	if trg.Status.Phase != kusciaapisv1alpha1.TaskResourceGroupPhaseFailed &&
+		trg.Status.Phase != kusciaapisv1alpha1.TaskResourceGroupPhaseReserved {
+		now := metav1.Now().Rfc3339Copy()
+		trgCopy := trg.DeepCopy()
+		trgCopy.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
+		trgCopy.Status.LastTransitionTime = &now
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trgCopy.Status, kusciaapisv1alpha1.DependentTaskFailed)
+		utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")
+
+		err = utilsres.PatchTaskResourceGroupStatus(context.Background(), h.kusciaClient, trg, trgCopy)
+		if err != nil {
+			nlog.Warnf("Failed to set task resource group %v to failed and retry, %v", trgCopy.Name, err)
+		}
+	}
+}
+
+func updateStatuses(kusciaTask *kusciaapisv1alpha1.KusciaTask) {
+	// if task failed, set the all party task status to failed
+	for idx, status := range kusciaTask.Status.PartyTaskStatus {
+		if status.Phase == kusciaapisv1alpha1.TaskPending || status.Phase == kusciaapisv1alpha1.TaskRunning {
+			kusciaTask.Status.PartyTaskStatus[idx].Phase = kusciaapisv1alpha1.TaskFailed
+			if kusciaTask.Status.Reason == KusciaJobStopped {
+				kusciaTask.Status.PartyTaskStatus[idx].Message = "Kuscia job stopped"
+			} else {
+				kusciaTask.Status.PartyTaskStatus[idx].Message = "Kuscia task failed"
+			}
+		}
+	}
+
+	// if task failed, set the all pods status to failed
+	for _, status := range kusciaTask.Status.PodStatuses {
+		if status.PodPhase == v1.PodPending || status.PodPhase == v1.PodRunning {
+			status.PodPhase = v1.PodFailed
+		}
+	}
 }

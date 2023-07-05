@@ -31,8 +31,7 @@ type Interface interface {
 	KusciaV1alpha1() kusciav1alpha1.KusciaV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	kusciaV1alpha1 *kusciav1alpha1.KusciaV1alpha1Client
