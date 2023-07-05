@@ -17,14 +17,12 @@ package kusciatask
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -39,9 +37,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -75,9 +74,10 @@ type Controller struct {
 
 	// shared informer factory of kubernetes, kuscia
 	kubeInformerFactory   kubeinformers.SharedInformerFactory
-	kusciaInformerFactory informers.SharedInformerFactory
+	kusciaInformerFactory kusciainformers.SharedInformerFactory
 
-	// Lister and Synced of pod, KusciaTask, svc
+	namespaceLister  corelisters.NamespaceLister
+	namespaceSynced  cache.InformerSynced
 	podsLister       corelisters.PodLister
 	podsSynced       cache.InformerSynced
 	servicesSynced   cache.InformerSynced
@@ -87,63 +87,51 @@ type Controller struct {
 	appImageSynced   cache.InformerSynced
 	trgSynced        cache.InformerSynced
 	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
-	trSynced         cache.InformerSynced
-	trLister         kuscialistersv1alpha1.TaskResourceLister
 }
 
 // NewController returns a controller instance.
 func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
-	return newctr(ctx, kubeClient, kusciaClient, eventRecorder)
-}
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 5*time.Minute)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 
-// NewController is used to new controller.
-func newctr(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) *Controller {
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
-		kubeClient, 5*time.Minute,
-		kubeinformers.WithTweakListOptions(func(options *metav1.ListOptions) {
-			options.LabelSelector = fields.OneTermEqualSelector(
-				common.LabelController, handler.KusciaTaskLabelValue).String()
-		}))
-	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
-
+	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 	podInformer := kubeInformerFactory.Core().V1().Pods()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	configMapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
-	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 
 	controller := &Controller{
 		kubeClient:            kubeClient,
 		kusciaClient:          kusciaClient,
 		kubeInformerFactory:   kubeInformerFactory,
 		kusciaInformerFactory: kusciaInformerFactory,
+		namespaceLister:       namespaceInformer.Lister(),
+		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		podsLister:            podInformer.Lister(),
 		podsSynced:            podInformer.Informer().HasSynced,
 		servicesSynced:        serviceInformer.Informer().HasSynced,
 		configMapSynced:       configMapInformer.Informer().HasSynced,
 		kusciaTaskLister:      kusciaTaskInformer.Lister(),
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
-		appImageSynced:        kusciaTaskInformer.Informer().HasSynced,
+		appImageSynced:        appImageInformer.Informer().HasSynced,
 		trgLister:             trgInformer.Lister(),
 		trgSynced:             trgInformer.Informer().HasSynced,
-		trLister:              trInformer.Lister(),
-		trSynced:              trInformer.Informer().HasSynced,
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kusciatask"),
 		recorder:              eventRecorder,
 	}
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&handler.Dependencies{
-		KubeClient:      kubeClient,
-		KusciaClient:    kusciaClient,
-		TrgLister:       trgInformer.Lister(),
-		TrLister:        trInformer.Lister(),
-		PodsLister:      controller.podsLister,
-		ServicesLister:  serviceInformer.Lister(),
-		ConfigMapLister: configMapInformer.Lister(),
-		AppImagesLister: appImageInformer.Lister(),
-		Recorder:        eventRecorder,
+		KubeClient:       kubeClient,
+		KusciaClient:     kusciaClient,
+		TrgLister:        trgInformer.Lister(),
+		NamespacesLister: namespaceInformer.Lister(),
+		PodsLister:       controller.podsLister,
+		ServicesLister:   serviceInformer.Lister(),
+		ConfigMapLister:  configMapInformer.Lister(),
+		AppImagesLister:  appImageInformer.Lister(),
+		Recorder:         eventRecorder,
 	})
 
 	// kuscia task event handler
@@ -200,17 +188,19 @@ func (c *Controller) Run(workers int) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	nlog.Info("Starting kuscia task controller")
+	nlog.Infof("Starting %v", c.Name())
 
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 	c.kubeInformerFactory.Start(c.ctx.Done())
 
 	// Wait for the caches to be synced before starting workers
-	nlog.Info("Waiting for informer caches to sync")
-	if !cache.WaitForCacheSync(c.ctx.Done(), c.podsSynced, c.servicesSynced, c.configMapSynced, c.kusciaTaskSynced, c.appImageSynced, c.trgSynced, c.trSynced) {
+	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
+	if !cache.WaitForCacheSync(c.ctx.Done(), c.namespaceSynced, c.podsSynced, c.servicesSynced, c.configMapSynced,
+		c.kusciaTaskSynced, c.appImageSynced, c.trgSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
+	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())
 	// Launch workers to process KusciaTask resources
 	for i := 0; i < workers; i++ {
 		go c.runWorker()
@@ -274,7 +264,7 @@ func (c *Controller) handleTaskResourceGroupObject(obj interface{}) {
 		return
 	}
 	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskRunning {
-		nlog.Debugf("KusciaTask %q status is not running, skip task resource group %q event", kusciaTask.Name, object.GetName())
+		nlog.Debugf("KusciaTask %q status is %v, skip task resource group %q event", kusciaTask.Name, kusciaTask.Status.Phase, object.GetName())
 		return
 	}
 
@@ -425,6 +415,14 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 		}
 	}()
 
+	// Return if the task's unschedulable tag is true.
+	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskFailed &&
+		kusciaTask.Labels != nil &&
+		kusciaTask.Labels[common.LabelTaskUnschedulable] == common.True {
+		nlog.Infof("KusciaTask %q is unschedulable, skipping", key)
+		return nil
+	}
+
 	// For kusciaTask that is terminating, just return.
 	if kusciaTask.DeletionTimestamp != nil {
 		nlog.Infof("KusciaTask %q is terminating, skipping", key)
@@ -447,10 +445,10 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	if err != nil {
 		metrics.SyncDurations.WithLabelValues(string(phase), metrics.Failed).Observe(time.Since(startTime).Seconds())
 		if c.workqueue.NumRequeues(key) <= maxBackoffLimit {
-			return fmt.Errorf("failed to handle condition for kusciaTask %q, %v", key, err)
+			return fmt.Errorf("failed to handle condition for kusciaTask %q, %v, retry", key, err)
 		}
 
-		c.fillKusciaTaskStatus(kusciaTask, fmt.Errorf("KusciaTask failed after %vx retry, last error: %v", maxBackoffLimit, err))
+		c.failKusciaTask(kusciaTask, fmt.Errorf("KusciaTask failed after %vx retry, last error: %v", maxBackoffLimit, err))
 		needUpdate = true
 	} else {
 		metrics.SyncDurations.WithLabelValues(string(phase), metrics.Succeeded).Observe(time.Since(startTime).Seconds())
@@ -472,22 +470,16 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	return nil
 }
 
-func (c *Controller) fillKusciaTaskStatus(kusciaTask *kusciaapisv1alpha1.KusciaTask, err error) {
+func (c *Controller) failKusciaTask(kusciaTask *kusciaapisv1alpha1.KusciaTask, err error) {
+	now := metav1.Now().Rfc3339Copy()
 	kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskFailed
-	kusciaTask.Status.Reason = "KusciaTaskFailed"
 	kusciaTask.Status.Message = err.Error()
+	kusciaTask.Status.LastReconcileTime = &now
 }
 
 // updateTaskStatus attempts to update the Status.KusciaTask of the given KusciaTask, with a single GET/PUT retry.
-func (c *Controller) updateTaskStatus(oldKusciaTask, newKusciaTask *kusciaapisv1alpha1.KusciaTask) error {
-	if reflect.DeepEqual(oldKusciaTask.Status, newKusciaTask.Status) {
-		nlog.Debugf("Task %v status is already updated, skip to update it", oldKusciaTask.Name)
-		return nil
-	}
-
-	var err error
+func (c *Controller) updateTaskStatus(rawKusciaTask, curKusciaTask *kusciaapisv1alpha1.KusciaTask) (err error) {
 	startTime := time.Now()
-	newStatus := newKusciaTask.Status
 	defer func() {
 		status := metrics.Succeeded
 		if err != nil {
@@ -496,32 +488,7 @@ func (c *Controller) updateTaskStatus(oldKusciaTask, newKusciaTask *kusciaapisv1
 		metrics.SyncDurations.WithLabelValues("UpdateStatus", status).Observe(time.Since(startTime).Seconds())
 	}()
 
-	kusciaTask := newKusciaTask
-	for i, kusciaTask := 0, kusciaTask; ; i++ {
-		nlog.Infof("Start updating kuscia task %q status phase to %v", kusciaTask.Name, kusciaTask.Status.Phase)
-		kusciaTask.Status = newStatus
-		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks().UpdateStatus(context.Background(), kusciaTask, metav1.UpdateOptions{}); err == nil {
-			nlog.Infof("Finish updating kuscia task %q status phase to %v", kusciaTask.Name, kusciaTask.Status.Phase)
-			return nil
-		}
-
-		nlog.Warnf("Failed to update kuscia task %q status, %v", kusciaTask.Name, err)
-		if i >= statusUpdateRetries {
-			break
-		}
-
-		kusciaTask, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), kusciaTask.Name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to get the newest kuscia task %q, %v", kusciaTask.Name, err)
-		}
-
-		if reflect.DeepEqual(kusciaTask.Status, newStatus) {
-			nlog.Infof("Task %v status is already updated, skip to update it", kusciaTask.Name)
-			return nil
-		}
-	}
-
-	return err
+	return utilsres.UpdateKusciaTaskStatus(c.kusciaClient, rawKusciaTask, curKusciaTask, statusUpdateRetries)
 }
 
 // Name returns controller name.

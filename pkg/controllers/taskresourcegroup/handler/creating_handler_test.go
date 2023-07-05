@@ -59,6 +59,7 @@ func TestCreatingHandlerHandle(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	podInformer := informerFactory.Core().V1().Pods()
+	nsInformer := informerFactory.Core().V1().Namespaces()
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
@@ -68,31 +69,19 @@ func TestCreatingHandlerHandle(t *testing.T) {
 	trInformer.Informer().GetStore().Add(tr)
 
 	deps := &Dependencies{
-		KubeClient:   kubeFakeClient,
-		KusciaClient: kusciaFakeClient,
-		PodLister:    podInformer.Lister(),
-		TrLister:     trInformer.Lister(),
+		KubeClient:      kubeFakeClient,
+		KusciaClient:    kusciaFakeClient,
+		NamespaceLister: nsInformer.Lister(),
+		PodLister:       podInformer.Lister(),
+		TrLister:        trInformer.Lister(),
 	}
 
 	h := NewCreatingHandler(deps)
-
 	tests := []struct {
 		name    string
 		trg     *kusciaapisv1alpha1.TaskResourceGroup
 		wantErr bool
 	}{
-		{
-			name: "task resource group is invalid",
-			trg: &kusciaapisv1alpha1.TaskResourceGroup{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "trg",
-				},
-				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
-					Initiator: "ns1",
-				},
-			},
-			wantErr: true,
-		},
 		{
 			name: "task resource group is valid",
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
@@ -130,6 +119,7 @@ func TestCreateTaskResources(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	podInformer := informerFactory.Core().V1().Pods()
+	nsInformer := informerFactory.Core().V1().Namespaces()
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 
 	podInformer.Informer().GetStore().Add(pod)
@@ -141,10 +131,11 @@ func TestCreateTaskResources(t *testing.T) {
 	trInformer.Informer().GetStore().Add(tr)
 
 	deps := &Dependencies{
-		KubeClient:   kubeFakeClient,
-		KusciaClient: kusciaFakeClient,
-		PodLister:    podInformer.Lister(),
-		TrLister:     trInformer.Lister(),
+		KubeClient:      kubeFakeClient,
+		KusciaClient:    kusciaFakeClient,
+		NamespaceLister: nsInformer.Lister(),
+		PodLister:       podInformer.Lister(),
+		TrLister:        trInformer.Lister(),
 	}
 
 	h := NewCreatingHandler(deps)
@@ -154,18 +145,6 @@ func TestCreateTaskResources(t *testing.T) {
 		trg     *kusciaapisv1alpha1.TaskResourceGroup
 		wantErr bool
 	}{
-		{
-			name: "task resource group parties are empty",
-			trg: &kusciaapisv1alpha1.TaskResourceGroup{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "trg",
-				},
-				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
-					Initiator: "ns1",
-				},
-			},
-			wantErr: true,
-		},
 		{
 			name: "task resource is not exist",
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
@@ -207,6 +186,7 @@ func TestBuildTaskResource(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	podInformer := informerFactory.Core().V1().Pods()
+	nsInformer := informerFactory.Core().V1().Namespaces()
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 	containers := []v1.Container{
 		{
@@ -227,10 +207,11 @@ func TestBuildTaskResource(t *testing.T) {
 	podInformer.Informer().GetStore().Add(pod1)
 
 	deps := &Dependencies{
-		KubeClient:   kubeFakeClient,
-		KusciaClient: kusciaFakeClient,
-		PodLister:    podInformer.Lister(),
-		TrLister:     trInformer.Lister(),
+		KubeClient:      kubeFakeClient,
+		KusciaClient:    kusciaFakeClient,
+		NamespaceLister: nsInformer.Lister(),
+		PodLister:       podInformer.Lister(),
+		TrLister:        trInformer.Lister(),
 	}
 
 	h := NewCreatingHandler(deps)

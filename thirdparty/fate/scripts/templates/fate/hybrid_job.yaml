@@ -1,0 +1,84 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: KusciaJob
+metadata:
+  name: hybrid-job
+spec:
+  initiator: alice
+  scheduleMode: Strict
+  maxParallelism: 1
+  tasks:
+    - taskID: hybrid-job-secretflow-data-reader-alice
+      alias: hybrid-job-secretflow-data-reader-alice
+      priority: 100
+      taskInputConfig: '{{.READER_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: bob
+    - taskID: hybrid-job-secretflow-data-reader-bob
+      alias: hybrid-job-secretflow-data-reader-bob
+      priority: 100
+      taskInputConfig: '{{.READER_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: bob
+    - taskID: hybrid-job-secretflow-psi
+      alias: hybrid-job-secretflow-psi
+      dependencies: [ "hybrid-job-secretflow-data-reader-alice", "hybrid-job-secretflow-data-reader-bob" ]
+      priority: 100
+      taskInputConfig: '{{.PSI_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: alice
+        - domainID: bob
+    - taskID: hybrid-job-secretflow-data-split
+      alias: hybrid-job-secretflow-data-split
+      dependencies: [ "hybrid-job-secretflow-psi" ]
+      priority: 100
+      taskInputConfig: '{{.DATA_SPLIT_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: alice
+        - domainID: bob
+    - taskID: hybrid-job-secretflow-LR
+      alias: hybrid-job-secretflow-LR
+      dependencies: [ "hybrid-job-secretflow-data-split" ]
+      priority: 100
+      taskInputConfig: '{{.LR_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: alice
+        - domainID: bob
+    - taskID: hybrid-job-secretflow-predict
+      alias: hybrid-job-secretflow-predict
+      dependencies: [ "hybrid-job-secretflow-LR" ]
+      priority: 100
+      taskInputConfig: '{{.PREDICT_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: alice
+        - domainID: bob
+    - taskID: hybrid-job-secretflow-evaluation
+      alias: hybrid-job-secretflow-evaluation
+      dependencies: [ "hybrid-job-secretflow-predict" ]
+      priority: 100
+      taskInputConfig: '{{.EVALUATION_CONFIG}}'
+      appImage: secret-flow
+      parties:
+        - domainID: alice
+        - domainID: bob
+    - taskID: hybrid-job-fate-hetero-lr
+      alias: hybrid-job-fate-hetero-lr
+      dependencies: [ "hybrid-job-secretflow-data-split" ]
+      priority: 100
+      taskInputConfig: '{{.HETERO_LR_CONFIG}}'
+      appImage: fate-adapter
+      parties:
+        - domainID: alice
+    - taskID: hybrid-job-fate-evaluation
+      alias: hybrid-job-fate-evaluation
+      dependencies: [ "hybrid-job-fate-hetero-lr" ]
+      priority: 100
+      taskInputConfig: '{{.EVALUATION_CONFIG}}'
+      appImage: fate-adapter
+      parties:
+        - domainID: alice

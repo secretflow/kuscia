@@ -26,15 +26,15 @@ import (
 
 // Dependencies defines some parameter dependencies of functions.
 type Dependencies struct {
-	KubeClient      kubernetes.Interface
-	KusciaClient    kusciaclientset.Interface
-	TrgLister       kuscialistersv1alpha1.TaskResourceGroupLister
-	TrLister        kuscialistersv1alpha1.TaskResourceLister
-	PodsLister      corelisters.PodLister
-	ServicesLister  corelisters.ServiceLister
-	ConfigMapLister corelisters.ConfigMapLister
-	AppImagesLister kuscialistersv1alpha1.AppImageLister
-	Recorder        record.EventRecorder
+	KubeClient       kubernetes.Interface
+	KusciaClient     kusciaclientset.Interface
+	TrgLister        kuscialistersv1alpha1.TaskResourceGroupLister
+	NamespacesLister corelisters.NamespaceLister
+	PodsLister       corelisters.PodLister
+	ServicesLister   corelisters.ServiceLister
+	ConfigMapLister  corelisters.ConfigMapLister
+	AppImagesLister  kuscialistersv1alpha1.AppImageLister
+	Recorder         record.EventRecorder
 }
 
 // KusciaTaskPhaseHandler is an interface to handle kuscia task.
@@ -45,19 +45,17 @@ type KusciaTaskPhaseHandler interface {
 // NewKusciaTaskPhaseHandlerFactory returns a KusciaTaskPhaseHandlerFactory instance.
 func NewKusciaTaskPhaseHandlerFactory(deps *Dependencies) *KusciaTaskPhaseHandlerFactory {
 	finishedHandler := NewFinishedHandler(deps)
-	pendingHandler := NewPendingHandler()
-	creatingHandler := NewCreatingHandler(deps)
 	runningHandler := NewRunningHandler(deps)
+	pendingHandler := NewPendingHandler(deps)
 	succeededHandler := NewSucceededHandler(deps, finishedHandler)
 	failedHandler := NewFailedHandler(deps, finishedHandler)
-	KusciaTaskStateHandlerMap := map[kusciaapisv1alpha1.KusciaTaskPhase]KusciaTaskPhaseHandler{
+	kusciaTaskStateHandlerMap := map[kusciaapisv1alpha1.KusciaTaskPhase]KusciaTaskPhaseHandler{
 		kusciaapisv1alpha1.TaskPending:   pendingHandler,
-		kusciaapisv1alpha1.TaskCreating:  creatingHandler,
 		kusciaapisv1alpha1.TaskRunning:   runningHandler,
 		kusciaapisv1alpha1.TaskSucceeded: succeededHandler,
 		kusciaapisv1alpha1.TaskFailed:    failedHandler,
 	}
-	return &KusciaTaskPhaseHandlerFactory{KusciaTaskStateHandlerMap: KusciaTaskStateHandlerMap}
+	return &KusciaTaskPhaseHandlerFactory{KusciaTaskStateHandlerMap: kusciaTaskStateHandlerMap}
 }
 
 // KusciaTaskPhaseHandlerFactory is a factory to get phase handler by task resource group phase.
@@ -66,20 +64,6 @@ type KusciaTaskPhaseHandlerFactory struct {
 }
 
 // GetKusciaTaskPhaseHandler is used to get KusciaTaskPhaseHandler by KusciaTaskPhase.
-func (m *KusciaTaskPhaseHandlerFactory) GetKusciaTaskPhaseHandler(conditionType kusciaapisv1alpha1.KusciaTaskPhase) KusciaTaskPhaseHandler {
-	return m.KusciaTaskStateHandlerMap[conditionType]
-}
-
-func getKusciaTaskCondition(kusciaTaskStatus *kusciaapisv1alpha1.KusciaTaskStatus, conditionType kusciaapisv1alpha1.KusciaTaskConditionType) *kusciaapisv1alpha1.KusciaTaskCondition {
-	for i, condition := range kusciaTaskStatus.Conditions {
-		if condition.Type == conditionType {
-			return &kusciaTaskStatus.Conditions[i]
-		}
-	}
-
-	kusciaTaskStatus.Conditions = append(kusciaTaskStatus.Conditions, kusciaapisv1alpha1.KusciaTaskCondition{
-		Type: conditionType,
-	})
-
-	return &kusciaTaskStatus.Conditions[len(kusciaTaskStatus.Conditions)-1]
+func (m *KusciaTaskPhaseHandlerFactory) GetKusciaTaskPhaseHandler(condType kusciaapisv1alpha1.KusciaTaskPhase) KusciaTaskPhaseHandler {
+	return m.KusciaTaskStateHandlerMap[condType]
 }

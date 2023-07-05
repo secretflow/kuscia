@@ -58,6 +58,18 @@ master:
     caFile: ${ROOT}/etc/certs/master.ca.crt
 agent:
   allowPrivileged: ${ALLOW_PRIVILEGED}
+  plugins:
+  - name: config-render
+  - name: env-import
+    config:
+      usePodLabels: false
+      envList:
+      - envs:
+        - name: image
+          value: secretflow-anolis8
+        selectors:
+        - key: maintainer
+          value: secretflow-contact@service.alipay.com
 " > etc/kuscia.yaml
 bin/kuscia lite -c etc/kuscia.yaml --log.path var/logs/kuscia.log
 

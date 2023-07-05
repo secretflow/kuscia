@@ -91,12 +91,27 @@ type PartyTemplate struct {
 	Spec     PodSpec `json:"spec"`
 }
 
+// PartyTaskStatus defines party task status.
+type PartyTaskStatus struct {
+	DomainID string `json:"domainID"`
+	// +optional
+	Role string `json:"role,omitempty"`
+	// +optional
+	Phase KusciaTaskPhase `json:"phase,omitempty"`
+	// +optional
+	Message string `json:"message,omitempty"`
+}
+
 // KusciaTaskStatus defines the observed state of kuscia task.
 type KusciaTaskStatus struct {
 	// The phase of a KusciaTask is a simple, high-level summary of
 	// where the task is in its lifecycle.
 	// +optional
 	Phase KusciaTaskPhase `json:"phase,omitempty"`
+
+	// PartyTaskStatus defines task status for all party.
+	// +optional
+	PartyTaskStatus []PartyTaskStatus `json:"partyTaskStatus,omitempty"`
 
 	// A brief CamelCase message indicating details about why the task is in this state.
 	// +optional
@@ -143,10 +158,6 @@ const (
 	// but some initialization work has not yet been completed.
 	TaskPending KusciaTaskPhase = "Pending"
 
-	// TaskCreating means the task has been accepted by the controller,
-	// but one or more of the pods/services has not been created.
-	TaskCreating KusciaTaskPhase = "Creating"
-
 	// TaskRunning means all sub-resources (e.g. services/pods) of this task
 	// have been successfully scheduled and launched.
 	TaskRunning KusciaTaskPhase = "Running"
@@ -165,16 +176,14 @@ type KusciaTaskConditionType string
 
 // These are built-in conditions of kuscia task.
 const (
-	// TaskInitialized means all initialization work has been completed.
-	TaskInitialized KusciaTaskConditionType = "Initialized"
-	// ResourceCreated means all sub-resources (e.g. services/pods) of the task has been created.
-	ResourceCreated KusciaTaskConditionType = "ResourceCreated"
-	// TaskIsRunning means task is running.
-	TaskIsRunning KusciaTaskConditionType = "TaskIsRunning"
-	// TaskRunSuccess means task run success.
-	TaskRunSuccess KusciaTaskConditionType = "TaskRunSuccess"
-	// TaskRunFailed means task run failed.
-	TaskRunFailed KusciaTaskConditionType = "TaskRunFailed"
+	// KusciaTaskCondResourceCreated means all sub-resources (e.g. services/pods) of the task has been created.
+	KusciaTaskCondResourceCreated KusciaTaskConditionType = "ResourceCreated"
+	// KusciaTaskCondRunning means task is running.
+	KusciaTaskCondRunning KusciaTaskConditionType = "Running"
+	// KusciaTaskCondSuccess means task run success.
+	KusciaTaskCondSuccess KusciaTaskConditionType = "Success"
+	// KusciaTaskCondStatusSynced represents condition of syncing task status.
+	KusciaTaskCondStatusSynced KusciaTaskConditionType = "StatusSynced"
 )
 
 // KusciaTaskCondition describes current state of a kuscia task.
@@ -191,7 +200,7 @@ type KusciaTaskCondition struct {
 	Message string `json:"message,omitempty"`
 	// Last time the condition transitioned from one status to another.
 	// +optional
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
 // PodStatus describes pod status.

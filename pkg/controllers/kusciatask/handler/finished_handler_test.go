@@ -26,6 +26,7 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 )
@@ -33,8 +34,9 @@ import (
 func TestFinishedHandler_Handle(t *testing.T) {
 	testKusciaTask := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			UID: "abc",
+			Name: "abc",
 		},
+		Status: kusciaapisv1alpha1.KusciaTaskStatus{Phase: kusciaapisv1alpha1.TaskSucceeded},
 	}
 
 	testPod1 := &v1.Pod{
@@ -42,9 +44,10 @@ func TestFinishedHandler_Handle(t *testing.T) {
 			Namespace: "ns-a",
 			Name:      "pod-01",
 			Labels: map[string]string{
-				labelKusciaTaskUID: "abc",
+				common.LabelTaskID: "abc",
 			},
 		},
+		Status: v1.PodStatus{Phase: v1.PodSucceeded},
 	}
 
 	testPod2 := &v1.Pod{
@@ -59,7 +62,7 @@ func TestFinishedHandler_Handle(t *testing.T) {
 			Namespace: "ns-a",
 			Name:      "cm-01",
 			Labels: map[string]string{
-				labelKusciaTaskUID: "abc",
+				common.LabelTaskID: "abc",
 			},
 		},
 	}

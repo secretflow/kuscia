@@ -35,13 +35,15 @@ func TestNewTaskResourceGroupPhaseHandlerFactory(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	podInformer := informerFactory.Core().V1().Pods()
+	nsInformer := informerFactory.Core().V1().Namespaces()
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 
 	deps := &Dependencies{
-		KubeClient:   kubeFakeClient,
-		KusciaClient: kusciaFakeClient,
-		PodLister:    podInformer.Lister(),
-		TrLister:     trInformer.Lister(),
+		KubeClient:      kubeFakeClient,
+		KusciaClient:    kusciaFakeClient,
+		NamespaceLister: nsInformer.Lister(),
+		PodLister:       podInformer.Lister(),
+		TrLister:        trInformer.Lister(),
 	}
 
 	f := NewTaskResourceGroupPhaseHandlerFactory(deps)

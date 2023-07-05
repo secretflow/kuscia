@@ -110,9 +110,6 @@ func (c *GatewayController) Run(threadiness int, stopCh <-chan struct{}) {
 func (c *GatewayController) syncHandler() error {
 	client := c.kusciaClient.KusciaV1alpha1().Gateways(c.namespace)
 
-	lock.Lock()
-	defer lock.Unlock()
-
 	status := kusciaapisv1alpha1.GatewayStatus{
 		Address: c.address,
 		UpTime: metav1.Time{
@@ -121,9 +118,16 @@ func (c *GatewayController) syncHandler() error {
 		HeartbeatTime: metav1.Time{
 			Time: time.Now(),
 		},
-		PublicKey:     base64.StdEncoding.EncodeToString(c.publicKey),
-		Version:       meta.KusciaVersionString(),
-		NetworkStatus: networkStatus,
+		PublicKey: base64.StdEncoding.EncodeToString(c.publicKey),
+		Version:   meta.KusciaVersionString(),
+	}
+
+	{
+		lock.Lock()
+		defer lock.Unlock()
+
+		status.NetworkStatus = make([]kusciaapisv1alpha1.GatewayEndpointStatus, len(networkStatus))
+		status.NetworkStatus = append(status.NetworkStatus, networkStatus...)
 	}
 
 	gateway, err := c.gatewayLister.Gateways(c.namespace).Get(c.hostname)
@@ -139,8 +143,9 @@ func (c *GatewayController) syncHandler() error {
 		_, err = client.Create(context.Background(), gateway, metav1.CreateOptions{})
 		if err != nil {
 			nlog.Errorf("create gateway(name:%s namespace:%s) fail: %v", c.hostname, c.namespace, err)
+		} else {
+			nlog.Infof("create gateway(name:%s namespace:%s) success", c.hostname, c.namespace)
 		}
-		nlog.Infof("create gateway(name:%s namespace:%s) success", c.hostname, c.namespace)
 		return err
 	}
 

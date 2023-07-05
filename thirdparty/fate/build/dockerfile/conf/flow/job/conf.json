@@ -1,0 +1,85 @@
+{
+    "dsl_version": 2,
+    "initiator": {
+        "role": "guest",
+        "party_id": 10000
+    },
+    "role": {
+        "host": [
+            9999
+        ],
+        "guest": [
+            10000
+        ],
+        "arbiter": [
+            9999
+        ]
+    },
+    "component_parameters": {
+        "common": {
+            "evaluation_0": {
+                "eval_type": "binary"
+            },
+            "intersection_0": {
+                "intersect_method": "ecdh"
+            },
+            "hetero_lr_0": {
+                "alpha": 0.01,
+                "batch_size": -1,
+                "cv_param": {
+                    "n_splits": 5,
+                    "need_cv": false,
+                    "random_seed": 103,
+                    "shuffle": false
+                },
+                "early_stop": "diff",
+                "encrypt_param": {
+                    "key_length": 1024
+                },
+                "init_param": {
+                    "fit_intercept": true,
+                    "init_method": "zeros"
+                },
+                "learning_rate": 0.15,
+                "max_iter": 30,
+                "optimizer": "rmsprop",
+                "penalty": "L2",
+                "tol": 0.0001,
+                "validation_freqs": 3
+            }
+        },
+        "role": {
+            "guest": {
+                "0": {
+                    "reader_0": {
+                        "table": {
+                            "name": "lr_guest",
+                            "namespace": "experiment"
+                        }
+                    },
+                    "data_transform_0": {
+                        "with_label": true,
+                        "label_name": "label",
+                        "with_match_id": true,
+                        "match_id_name": "id2"
+                    }
+                }
+            },
+            "host": {
+                "0": {
+                    "reader_0": {
+                        "table": {
+                            "name": "lr_host",
+                            "namespace": "experiment"
+                        }
+                    },
+                    "data_transform_0": {
+                        "with_label": false,
+                        "with_match_id": true,
+                        "match_id_name": "id1"
+                    }
+                }
+            }
+        }
+    }
+}

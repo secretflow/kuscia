@@ -28,10 +28,21 @@ const (
 	LabelNodeNamespace                   = "kuscia.secretflow/namespace"
 	LabelDomainDeleted                   = "kuscia.secretflow/deleted"
 	LabelDomainRole                      = "kuscia.secretflow/role"
+	LabelInterConnProtocols              = "kuscia.secretflow/interconn-protocols"
 	LabelResourceVersionUnderHostCluster = "kuscia.secretflow/resource-version-under-host-cluster"
 	LabelTaskResourceGroup               = "kuscia.secretflow/task-resource-group"
 	LabelTaskInitiator                   = "kuscia.secretflow/initiator"
+	LabelTaskUnschedulable               = "kuscia.secretflow/task-unschedulable"
 	LabelPodHasSynced                    = "kuscia.secretflow/has-synced"
+	LabelDomainDataType                  = "kuscia.secretflow/domaindata-type"
+	LabelDomainDataVendor                = "kuscia.secretflow/domaindata-vendor"
+	LabelDomainDataSourceType            = "kuscia.secretflow/domaindatasource-type"
+
+	LabelSelfClusterAsInitiator = "kuscia.secretflow/self-cluster-as-initiator"
+	LabelInterConnProtocolType  = "kuscia.secretflow/interconn-protocol-type"
+	LabelJobID                  = "kuscia.secretflow/job-id"
+	LabelTaskID                 = "kuscia.secretflow/task-id"
+	LabelTaskAlias              = "kuscia.secretflow/task-alias"
 )
 
 type LoadBalancerType string
@@ -52,6 +63,8 @@ const (
 	ConfigTemplateVolumesAnnotationKey = "kuscia.secretflow/config-template-volumes"
 
 	TaskResourceReservingTimestamp = "kuscia.secretflow/task-resource-reserving-timestamp"
+
+	ComponentSpecAnnotationKey = "kuscia.secretflow/component-spec"
 )
 
 // Environment variables issued to the task pod.
@@ -82,5 +95,11 @@ const (
 	// PodIdentityGroupExternal means the pod is created remotely, usually apiserver.
 	PodIdentityGroupExternal = "external"
 
-	True = "true"
+	True  = "true"
+	False = "false"
+)
+
+const (
+	DefaultDataSourceID     = "default-data-source"
+	DefaultDomainDataVendor = "manual"
 )

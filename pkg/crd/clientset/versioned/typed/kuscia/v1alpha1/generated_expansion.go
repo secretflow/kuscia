@@ -20,15 +20,15 @@ type AppImageExpansion interface{}
 
 type ClusterDomainRouteExpansion interface{}
 
-type DataObjectExpansion interface{}
-
-type DataSourceExpansion interface{}
-
-type DataTableExpansion interface{}
-
 type DomainExpansion interface{}
 
 type DomainAppImageExpansion interface{}
+
+type DomainDataExpansion interface{}
+
+type DomainDataGrantExpansion interface{}
+
+type DomainDataSourceExpansion interface{}
 
 type DomainRouteExpansion interface{}
 

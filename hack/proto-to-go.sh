@@ -21,10 +21,10 @@ set -o pipefail
 
 PROTOC=protoc
 
-KUSCIA_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+KUSCIA_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 echo "${KUSCIA_ROOT}"
 
-PROTO_ROOT_PATH=${KUSCIA_ROOT}/proto
+PROTO_ROOT_PATH=${KUSCIA_ROOT}/kuscia/proto
 
 function pre_install() {
   # install protoc-gen-go tool if not exist
@@ -61,9 +61,11 @@ function generate_golang_code() {
 
 function main() {
   pre_install
-  generate_golang_code "${PROTO_ROOT_PATH}"
   pushd "${KUSCIA_ROOT}"
+  generate_golang_code "${PROTO_ROOT_PATH}"
+  pushd "${KUSCIA_ROOT}/kuscia"
   go mod tidy
+  popd
   popd
 }
 

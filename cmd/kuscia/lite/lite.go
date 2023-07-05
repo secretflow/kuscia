@@ -70,6 +70,12 @@ func getInitConfig(configFile, domainID string) *modules.Dependencies {
 		KeyFile:  filepath.Join(conf.RootDir, modules.CertPrefix, "external_tls.key"),
 		CAFile:   conf.CAFile,
 	}
+
+	conf.TransportConfigFile = filepath.Join(conf.RootDir, "etc/conf/transport/transport.yaml")
+	conf.TransportPort, err = modules.GetTransportPort(conf.TransportConfigFile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
 	return conf
 }
 
@@ -109,7 +115,7 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 			modules.RunContainerd(runCtx, cancel, conf)
 			modules.RunCoreDNS(runCtx, cancel, conf)
 			wg := sync.WaitGroup{}
-			wg.Add(2)
+			wg.Add(3)
 			go func() {
 				defer wg.Done()
 				modules.RunDomainRoute(runCtx, cancel, conf)
@@ -118,9 +124,14 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 				defer wg.Done()
 				modules.RunEnvoy(runCtx, cancel, conf)
 			}()
+			go func() {
+				defer wg.Done()
+				modules.RunTransport(runCtx, cancel, conf)
+			}()
 			wg.Wait()
 
 			modules.RunAgent(runCtx, cancel, conf)
+			modules.RunDataMesh(runCtx, cancel, conf)
 			if debug {
 				utils.SetupPprof(debugPort)
 			}

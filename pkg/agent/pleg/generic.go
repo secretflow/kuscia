@@ -19,6 +19,7 @@ limitations under the License.
 package pleg
 
 import (
+	"context"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -204,8 +205,9 @@ func (g *GenericPLEG) relist() {
 		metrics.PLEGRelistDuration.Observe(metrics.SinceInSeconds(timestamp))
 	}()
 
+	ctx := context.Background()
 	// Get all the pods.
-	podList, err := g.runtime.GetPods(true)
+	podList, err := g.runtime.GetPods(ctx, true)
 	if err != nil {
 		nlog.Errorf("GenericPLEG: Unable to retrieve pods: %v", err)
 		return
@@ -252,7 +254,7 @@ func (g *GenericPLEG) relist() {
 			// inspecting the pod and getting the PodStatus to update the cache
 			// serially may take a while. We should be aware of this and
 			// parallelize if needed.
-			if err := g.updateCache(pod, pid); err != nil {
+			if err := g.updateCache(ctx, pod, pid); err != nil {
 				// Rely on updateCache calling GetPodStatus to log the actual error.
 				nlog.Errorf("PLEG: Ignoring events for pod %v/%v: %v", pod.Namespace, pod.Name, err)
 
@@ -310,7 +312,7 @@ func (g *GenericPLEG) relist() {
 		if len(g.podsToReinspect) > 0 {
 			nlog.Debug("GenericPLEG: Reinspecting pods that previously failed inspection")
 			for pid, pod := range g.podsToReinspect {
-				if err := g.updateCache(pod, pid); err != nil {
+				if err := g.updateCache(ctx, pod, pid); err != nil {
 					// Rely on updateCache calling GetPodStatus to log the actual error.
 					nlog.Errorf("PLEG: pod %v/%v failed reinspection: %v", pod.Namespace, pod.Name, err)
 					needsReinspection[pid] = pod
@@ -399,7 +401,7 @@ func (g *GenericPLEG) getPodIPs(pid types.UID, status *pkgcontainer.PodStatus) [
 	return oldStatus.IPs
 }
 
-func (g *GenericPLEG) updateCache(pod *pkgcontainer.Pod, pid types.UID) error {
+func (g *GenericPLEG) updateCache(ctx context.Context, pod *pkgcontainer.Pod, pid types.UID) error {
 	if pod == nil {
 		// The pod is missing in the current relist. This means that
 		// the pod has no visible (active or inactive) containers.
@@ -411,7 +413,7 @@ func (g *GenericPLEG) updateCache(pod *pkgcontainer.Pod, pid types.UID) error {
 	// TODO: Consider adding a new runtime method
 	// GetPodStatus(pod *pkgcontainer.Pod) so that Docker can avoid listing
 	// all containers again.
-	status, err := g.runtime.GetPodStatus(pod.ID, pod.Name, pod.Namespace)
+	status, err := g.runtime.GetPodStatus(ctx, pod.ID, pod.Name, pod.Namespace)
 	if err == nil {
 		status.IPs = g.getPodIPs(pid, status)
 	}

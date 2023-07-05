@@ -21,15 +21,19 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 )
 
 type taskAssertionFunc func(task *kusciaapisv1alpha1.KusciaTask) bool
@@ -44,14 +48,19 @@ func taskSucceededAssertFunc(t *kusciaapisv1alpha1.KusciaTask) bool {
 func TestRunningHandler_HandlePhase(t *testing.T) {
 	bestEffortIndependent := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
+	bestEffortIndependent.Spec.Stage = kusciaapisv1alpha1.JobStartStage
 	bestEffortLinear := makeKusciaJob(KusciaJobForShapeTree,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
+	bestEffortLinear.Spec.Stage = kusciaapisv1alpha1.JobStartStage
 	strictLinear := makeKusciaJob(KusciaJobForShapeTree,
 		kusciaapisv1alpha1.KusciaJobScheduleModeStrict, 2, nil)
+	strictLinear.Spec.Stage = kusciaapisv1alpha1.JobStartStage
 	strictTolerableBLinear := makeKusciaJob(KusciaJobForShapeTree,
 		kusciaapisv1alpha1.KusciaJobScheduleModeStrict, 2, &[4]bool{false, true, false, false})
+	strictTolerableBLinear.Spec.Stage = kusciaapisv1alpha1.JobStartStage
 
 	type fields struct {
+		kubeClient   kubernetes.Interface
 		kusciaClient versioned.Interface
 	}
 	type args struct {
@@ -70,7 +79,9 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} and succeeded{a} should return needUpdate{true} err{nil} phase{Running}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded))),
+					makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					bestEffortIndependent.DeepCopy()),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: bestEffortIndependent.DeepCopy(),
@@ -81,18 +92,20 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			wantFinalTasks: map[string]taskAssertionFunc{
 				"a": taskSucceededAssertFunc,
 				"b": taskExistAssertFunc,
-				"c": taskExistAssertFunc,
+				"d": taskExistAssertFunc,
 			},
 		},
 		{
 			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} and succeeded{a,b,c,d} should return needUpdate{true} err{nil} phase{Succeeded}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("c", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("d", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
+					makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("c", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("d", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					bestEffortIndependent.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: bestEffortIndependent.DeepCopy(),
@@ -111,10 +124,12 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} and succeeded{a,b,c} should return needUpdate{true} err{nil} phase{Running}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("c", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
+					makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("c", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					bestEffortIndependent.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: bestEffortIndependent.DeepCopy(),
@@ -133,11 +148,13 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} and succeeded{a,c,d} failed{b} should return needUpdate{true} err{nil} phase{Failed}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskFailed)),
-					makeTestKusciaTask("c", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("d", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
+					makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskFailed),
+					makeTestKusciaTask("c", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("d", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					bestEffortIndependent.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: bestEffortIndependent.DeepCopy(),
@@ -156,10 +173,12 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{1} and succeeded{a} failed{b} running{c} should return needUpdate{true} err{nil} phase{Running}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", bestEffortLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", bestEffortLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskFailed)),
-					makeTestKusciaTask("c", bestEffortLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskRunning)),
+					makeTestKusciaTask("a", bestEffortLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", bestEffortLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					makeTestKusciaTask("c", bestEffortLinear.Name, kusciaapisv1alpha1.TaskRunning),
+					bestEffortLinear.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: bestEffortLinear.DeepCopy(),
@@ -177,10 +196,12 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{2} and succeeded{a,b,c,d} needUpdate{true} err{nil} phase{Failed}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskFailed)),
-					makeTestKusciaTask("c", bestEffortIndependent.Name, taskPhasePtr(kusciaapisv1alpha1.TaskFailed)),
+					makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskFailed),
+					makeTestKusciaTask("c", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskFailed),
+					bestEffortLinear.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: bestEffortLinear.DeepCopy(),
@@ -198,9 +219,11 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "Strict mode task{a,[a->b],[a->c],[c->d]} maxParallelism{2} and succeeded{a} failed{b} needUpdate{true} err{nil} phase{Failed}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", strictLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", strictLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskFailed)),
+					makeTestKusciaTask("a", strictLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictLinear.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: strictLinear.DeepCopy(),
@@ -217,9 +240,11 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			name: "Strict mode task{a,[a->b'],[a->c],[c->d]} maxParallelism{2} and succeeded{a} failed{b'} needUpdate{true} err{nil} phase{Running}",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
-					makeTestKusciaTask("a", strictTolerableBLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskSucceeded)),
-					makeTestKusciaTask("b", strictTolerableBLinear.Name, taskPhasePtr(kusciaapisv1alpha1.TaskFailed)),
+					makeTestKusciaTask("a", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictTolerableBLinear.DeepCopy(),
 				),
+				kubeClient: kubefake.NewSimpleClientset(),
 			},
 			args: args{
 				kusciaJob: strictTolerableBLinear.DeepCopy(),
@@ -236,12 +261,26 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			kusciaInformerFactory := informers.NewSharedInformerFactory(tt.fields.kusciaClient, 5*time.Minute)
+			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(tt.fields.kusciaClient, 5*time.Minute)
+			kubeInformerFactory := informers.NewSharedInformerFactory(tt.fields.kubeClient, 5*time.Minute)
+			nsInformer := kubeInformerFactory.Core().V1().Namespaces()
+			aliceNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alice",
+				},
+			}
+			bobNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "bob",
+				},
+			}
+			nsInformer.Informer().GetStore().Add(aliceNs)
+			nsInformer.Informer().GetStore().Add(bobNs)
 
 			h := &RunningHandler{
-				jobScheduler: NewJobScheduler(tt.fields.kusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister()),
+				jobScheduler: NewJobScheduler(tt.fields.kusciaClient, nsInformer.Lister(), kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister()),
 			}
-			stopCh := make(<-chan struct{}, 0)
+			stopCh := make(<-chan struct{})
 			go kusciaInformerFactory.Start(stopCh)
 			cache.WaitForCacheSync(wait.NeverStop, kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Informer().HasSynced)
 
@@ -262,13 +301,13 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 	}
 }
 
-func makeTestKusciaTask(name string, jobName string, phase *kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1alpha1.KusciaTask {
+func makeTestKusciaTask(name string, jobName string, phase kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1alpha1.KusciaTask {
 	k := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Labels: map[string]string{
 				common.LabelController: LabelControllerValueKusciaJob,
-				LabelKusciaJobOwner:    jobName,
+				common.LabelJobID:      jobName,
 			},
 		},
 		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
@@ -276,13 +315,8 @@ func makeTestKusciaTask(name string, jobName string, phase *kusciaapisv1alpha1.K
 			Parties:         makeMockParties(),
 		},
 		Status: kusciaapisv1alpha1.KusciaTaskStatus{
-			Phase: *phase,
+			Phase: phase,
 		},
-	}
-	if phase != nil {
-		k.Status = kusciaapisv1alpha1.KusciaTaskStatus{
-			Phase: *phase,
-		}
 	}
 	return k
 }

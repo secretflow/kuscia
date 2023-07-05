@@ -1,0 +1,11 @@
+msqConfig:
+  SessionExpireSeconds: 600
+  DeadSessionIDExpireSeconds: 1800
+  TotalByteSizeLimit: 17179869184 # 16GB
+  PerSessionByteSizeLimit: 62914560 # 60MB
+httpConfig:
+  port: 8081
+  ReadTimeout: 300 # seconds
+  WriteTimeout: 300 # seconds
+  IdleTimeout: 60 # seconds
+  ReqBodyMaxSize: 134217728 # 128MB

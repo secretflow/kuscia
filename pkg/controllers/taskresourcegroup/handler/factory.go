@@ -29,7 +29,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // TaskResourceGroupPhaseHandler is an interface to handle task resource group.
@@ -39,10 +39,11 @@ type TaskResourceGroupPhaseHandler interface {
 
 // Dependencies defines some parameter dependencies of functions.
 type Dependencies struct {
-	KubeClient   kubernetes.Interface
-	KusciaClient kusciaclientset.Interface
-	PodLister    listers.PodLister
-	TrLister     kuscialistersv1alpha1.TaskResourceLister
+	KubeClient      kubernetes.Interface
+	KusciaClient    kusciaclientset.Interface
+	NamespaceLister listers.NamespaceLister
+	PodLister       listers.PodLister
+	TrLister        kuscialistersv1alpha1.TaskResourceLister
 }
 
 // TaskResourceGroupPhaseHandlerFactory is a factory to get phase handler by task resource group phase.
@@ -52,7 +53,7 @@ type TaskResourceGroupPhaseHandlerFactory struct {
 
 // NewTaskResourceGroupPhaseHandlerFactory returns a TaskResourceGroupPhaseHandlerFactory instance.
 func NewTaskResourceGroupPhaseHandlerFactory(deps *Dependencies) *TaskResourceGroupPhaseHandlerFactory {
-	pendingHandler := NewPendingHandler()
+	pendingHandler := NewPendingHandler(deps)
 	creatingHandler := NewCreatingHandler(deps)
 	reservingHandler := NewReservingHandler(deps)
 	reserveFailedHandler := NewReserveFailedHandler(deps)
@@ -89,9 +90,9 @@ func updatePodAnnotations(trgName string, podLister listers.PodLister, kubeClien
 			podCopy.Annotations = make(map[string]string)
 		}
 		podCopy.Annotations[common.TaskResourceReservingTimestamp] = metav1.Now().Format(time.RFC3339)
-		oldExtractedPod := utilscommon.ExtractPodAnnotations(pods[i])
-		newExtractedPod := utilscommon.ExtractPodAnnotations(podCopy)
-		if err = utilscommon.PatchPod(context.Background(), kubeClient, oldExtractedPod, newExtractedPod); err != nil {
+		oldExtractedPod := utilsres.ExtractPodAnnotations(pods[i])
+		newExtractedPod := utilsres.ExtractPodAnnotations(podCopy)
+		if err = utilsres.PatchPod(context.Background(), kubeClient, oldExtractedPod, newExtractedPod); err != nil {
 			return err
 		}
 	}
@@ -120,18 +121,18 @@ func patchTaskResourceStatus(trg *kusciaapisv1alpha1.TaskResourceGroup,
 		for _, tr := range trs {
 			trCopy := tr.DeepCopy()
 			trCopy.Status.Phase = trPhase
-			trCopy.Status.LastTransitionTime = now
-			trCond := utilscommon.GetTaskResourceCondition(&trCopy.Status, trCondType)
-			trCond.LastTransitionTime = now
+			trCopy.Status.LastTransitionTime = &now
+			trCond := utilsres.GetTaskResourceCondition(&trCopy.Status, trCondType)
+			trCond.LastTransitionTime = &now
 			trCond.Status = corev1.ConditionTrue
 			trCond.Reason = condReason
 
-			if trPhase == kusciaapisv1alpha1.TaskResourcePhaseSchedulable {
-				trCopy.Status.CompletionTime = now
+			if trPhase == kusciaapisv1alpha1.TaskResourcePhaseSchedulable || trPhase == kusciaapisv1alpha1.TaskResourcePhaseFailed {
+				trCopy.Status.CompletionTime = &now
 			}
 
-			if err = utilscommon.PatchTaskResource(context.Background(), kusciaClient, utilscommon.ExtractTaskResourceStatus(tr), utilscommon.ExtractTaskResourceStatus(trCopy)); err != nil {
-				return fmt.Errorf("patch task resource %v/%v status failed, %v", party.DomainID, trg.Name, err.Error())
+			if err = utilsres.PatchTaskResource(context.Background(), kusciaClient, utilsres.ExtractTaskResourceStatus(tr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
+				return fmt.Errorf("patch task resource %v/%v status failed, %v", party.DomainID, trCopy.Name, err.Error())
 			}
 		}
 		partySet[party.DomainID] = struct{}{}

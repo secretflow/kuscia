@@ -1,5 +1,5 @@
 ARG DEPS_IMAGE="secretflow/kuscia-deps:0.1.0b0"
-ARG KUSCIA_ENVOY_IMAGE="secretflow/kuscia-envoy:0.1.0b0"
+ARG KUSCIA_ENVOY_IMAGE="secretflow/kuscia-envoy:0.2.0b0"
 
 FROM ${DEPS_IMAGE} as deps
 
@@ -40,7 +40,9 @@ COPY hack/entrypoint.sh ${ROOT_DIR}/bin
 COPY testdata ${ROOT_DIR}/var/storage/data
 COPY scripts ${ROOT_DIR}/scripts
 
-COPY --from=kuscia_envoy /home/admin/envoy ${ROOT_DIR}/bin
+COPY thirdparty/*/scripts ${ROOT_DIR}/scripts
+
+COPY --from=kuscia_envoy /home/kuscia/bin/envoy ${ROOT_DIR}/bin
 
 ENV PATH="${PATH}:${ROOT_DIR}/bin:/bin/aux"
 

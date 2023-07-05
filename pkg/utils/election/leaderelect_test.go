@@ -25,47 +25,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/signals"
 )
 
-func Test_k8sElector_Elect(t *testing.T) {
-	kubeClient := kubefake.NewSimpleClientset()
-
-	newLeaderCh := make(chan struct{})
-	startedLeadingCh := make(chan struct{})
-	stoppedLeadingCh := make(chan struct{})
-	onNewLeader := func(identity string) {
-		close(newLeaderCh)
-	}
-	onStartedLeading := func(ctx context.Context) {
-		close(startedLeadingCh)
-	}
-	onStoppedLeading := func() {
-		close(stoppedLeadingCh)
-	}
-
-	elector := NewElector(
-		kubeClient,
-		"test",
-		WithOnNewLeader(onNewLeader),
-		WithOnStartedLeading(onStartedLeading),
-		WithOnStoppedLeading(onStoppedLeading))
-
-	elector.Elect(context.Background())
-
-	ticker := time.NewTicker(time.Second)
-	go func() {
-		<-newLeaderCh
-		<-startedLeadingCh
-		elector.Stop()
-		<-stoppedLeadingCh
-	}()
-
-	select {
-	case <-elector.Stopped():
-		return
-	case <-ticker.C:
-		t.Fatal("Timeout")
-	}
-}
-
 func Test_k8sElector_Run(t *testing.T) {
 	kubeClient := kubefake.NewSimpleClientset()
 	stopCh := make(chan struct{})
@@ -97,5 +56,5 @@ func Test_k8sElector_Run(t *testing.T) {
 	elector.Run(ctx)
 	assert.Equal(t, newLeaderCh, 1)
 	assert.Equal(t, startedLeadingCh, 1)
-	assert.True(t, stoppedLeadingCh > 1)
+	assert.Equal(t, stoppedLeadingCh, 1)
 }

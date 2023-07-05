@@ -23,6 +23,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/commands"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -39,6 +40,18 @@ func NewDomainRoute(i *Dependencies) Module {
 	conf.DomainKeyFile = i.DomainKeyFile
 	conf.MasterConfig = i.Master
 	conf.ExternalTLS = i.ExternalTLS
+
+	if i.TransportPort > 0 {
+		conf.TransportConfig = &kusciaconfig.ServiceConfig{
+			Endpoint: fmt.Sprintf("http://127.0.0.1:%d", i.TransportPort),
+		}
+	}
+	if i.InterConnSchedulerPort > 0 {
+		conf.InterConnSchedulerConfig = &kusciaconfig.ServiceConfig{
+			Endpoint: fmt.Sprintf("http://127.0.0.1:%d", i.InterConnSchedulerPort),
+		}
+	}
+
 	return &domainRouteModule{
 		conf:    conf,
 		clients: i.Clients,

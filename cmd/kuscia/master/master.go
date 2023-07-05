@@ -22,7 +22,7 @@ import (
 	"sync"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,11 +33,14 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/secretflow/kuscia/pkg/web/logs"
 )
 
 var (
 	defaultEndpoint = "https://127.0.0.1:6443"
 	defaultRootDir  = "/home/kuscia/"
+
+	defaultInterConnSchedulerPort = 8084
 )
 
 func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies {
@@ -59,6 +62,7 @@ func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies
 	}
 	conf.ApiserverEndpoint = defaultEndpoint
 	conf.KubeconfigFile = filepath.Join(conf.RootDir, "etc/kubeconfig")
+	conf.KusciaKubeConfig = filepath.Join(conf.RootDir, "etc/kuscia.kubeconfig")
 	if conf.CAKeyFile == "" {
 		conf.CAKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.key")
 	}
@@ -84,6 +88,7 @@ func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies
 	if err != nil {
 		nlog.Fatal(err)
 	}
+	conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
 	return conf
 }
 
@@ -109,6 +114,7 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 			nlog.Setup(nlog.SetWriter(zlog))
+			logs.Setup(nlog.SetWriter(zlog))
 			conf := getInitConfig(configFile, domainID)
 			conf.IsMaster = true
 

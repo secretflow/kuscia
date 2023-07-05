@@ -103,11 +103,11 @@ func NewFakeRuntimeCache(getter podsGetter) pkgcontainer.RuntimeCache {
 	return &FakeRuntimeCache{getter}
 }
 
-func (f *FakeRuntimeCache) GetPods() ([]*pkgcontainer.Pod, error) {
+func (f *FakeRuntimeCache) GetPods(ctx context.Context) ([]*pkgcontainer.Pod, error) {
 	return f.getter.GetPods(false)
 }
 
-func (f *FakeRuntimeCache) ForceUpdateIfOlder(time.Time) error {
+func (f *FakeRuntimeCache) ForceUpdateIfOlder(ctx context.Context, t time.Time) error {
 	return nil
 }
 
@@ -180,7 +180,7 @@ func (f *FakeRuntime) Type() string {
 	return f.RuntimeType
 }
 
-func (f *FakeRuntime) Version() (pkgcontainer.Version, error) {
+func (f *FakeRuntime) Version(ctx context.Context) (pkgcontainer.Version, error) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -204,7 +204,7 @@ func (f *FakeRuntime) Status() (*pkgcontainer.RuntimeStatus, error) {
 	return f.RuntimeStatus, f.StatusErr
 }
 
-func (f *FakeRuntime) GetPods(all bool) ([]*pkgcontainer.Pod, error) {
+func (f *FakeRuntime) GetPods(ctx context.Context, all bool) ([]*pkgcontainer.Pod, error) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -223,7 +223,7 @@ func (f *FakeRuntime) GetPods(all bool) ([]*pkgcontainer.Pod, error) {
 	return pods, f.Err
 }
 
-func (f *FakeRuntime) SyncPod(pod *v1.Pod, _ *pkgcontainer.PodStatus, _ *credentialprovider.AuthConfig, backOff *flowcontrol.Backoff) (result pkgcontainer.PodSyncResult) {
+func (f *FakeRuntime) SyncPod(ctx context.Context, pod *v1.Pod, _ *pkgcontainer.PodStatus, _ *credentialprovider.AuthConfig, backOff *flowcontrol.Backoff) (result pkgcontainer.PodSyncResult) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -239,7 +239,7 @@ func (f *FakeRuntime) SyncPod(pod *v1.Pod, _ *pkgcontainer.PodStatus, _ *credent
 	return
 }
 
-func (f *FakeRuntime) KillPod(pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
+func (f *FakeRuntime) KillPod(ctx context.Context, pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
 	f.Lock()
 	defer f.Unlock()
 
@@ -268,7 +268,7 @@ func (f *FakeRuntime) RunContainerInPod(container v1.Container, pod *v1.Pod, vol
 	return f.Err
 }
 
-func (f *FakeRuntime) KillContainerInPod(container v1.Container, pod *v1.Pod) error {
+func (f *FakeRuntime) KillContainerInPod(ctx context.Context, container v1.Container, pod *v1.Pod) error {
 	f.Lock()
 	defer f.Unlock()
 
@@ -277,7 +277,7 @@ func (f *FakeRuntime) KillContainerInPod(container v1.Container, pod *v1.Pod) er
 	return f.Err
 }
 
-func (f *FakeRuntime) GetPodStatus(uid types.UID, name, namespace string) (*pkgcontainer.PodStatus, error) {
+func (f *FakeRuntime) GetPodStatus(ctx context.Context, uid types.UID, name, namespace string) (*pkgcontainer.PodStatus, error) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -294,7 +294,7 @@ func (f *FakeRuntime) GetContainerLogs(_ context.Context, pod *v1.Pod, container
 	return f.Err
 }
 
-func (f *FakeRuntime) PullImage(image pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
+func (f *FakeRuntime) PullImage(ctx context.Context, image pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -309,7 +309,7 @@ func (f *FakeRuntime) PullImage(image pkgcontainer.ImageSpec, auth *credentialpr
 	return image.Image, f.Err
 }
 
-func (f *FakeRuntime) GetImageRef(image pkgcontainer.ImageSpec) (string, error) {
+func (f *FakeRuntime) GetImageRef(ctx context.Context, image pkgcontainer.ImageSpec) (string, error) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -322,7 +322,7 @@ func (f *FakeRuntime) GetImageRef(image pkgcontainer.ImageSpec) (string, error) 
 	return "", f.InspectErr
 }
 
-func (f *FakeRuntime) ListImages() ([]pkgcontainer.Image, error) {
+func (f *FakeRuntime) ListImages(ctx context.Context) ([]pkgcontainer.Image, error) {
 	f.Lock()
 	defer f.Unlock()
 
@@ -330,7 +330,7 @@ func (f *FakeRuntime) ListImages() ([]pkgcontainer.Image, error) {
 	return f.ImageList, f.Err
 }
 
-func (f *FakeRuntime) RemoveImage(image pkgcontainer.ImageSpec) error {
+func (f *FakeRuntime) RemoveImage(ctx context.Context, image pkgcontainer.ImageSpec) error {
 	f.Lock()
 	defer f.Unlock()
 
@@ -347,7 +347,7 @@ func (f *FakeRuntime) RemoveImage(image pkgcontainer.ImageSpec) error {
 	return f.Err
 }
 
-func (f *FakeRuntime) GarbageCollect(gcPolicy pkgcontainer.GCPolicy, ready bool, evictNonDeletedPods bool) error {
+func (f *FakeRuntime) GarbageCollect(ctx context.Context, gcPolicy pkgcontainer.GCPolicy, ready bool, evictNonDeletedPods bool) error {
 	f.Lock()
 	defer f.Unlock()
 
@@ -355,7 +355,7 @@ func (f *FakeRuntime) GarbageCollect(gcPolicy pkgcontainer.GCPolicy, ready bool,
 	return f.Err
 }
 
-func (f *FakeRuntime) DeleteContainer(containerID pkgcontainer.CtrID) error {
+func (f *FakeRuntime) DeleteContainer(ctx context.Context, containerID pkgcontainer.CtrID) error {
 	f.Lock()
 	defer f.Unlock()
 
@@ -363,7 +363,7 @@ func (f *FakeRuntime) DeleteContainer(containerID pkgcontainer.CtrID) error {
 	return f.Err
 }
 
-func (f *FakeRuntime) ImageStats() (*pkgcontainer.ImageStats, error) {
+func (f *FakeRuntime) ImageStats(ctx context.Context) (*pkgcontainer.ImageStats, error) {
 	f.Lock()
 	defer f.Unlock()
 

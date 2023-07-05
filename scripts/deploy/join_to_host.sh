@@ -21,6 +21,10 @@ usage="$(basename "$0") HOST_DOMAIN_ID HOST_ENDPOINT(ip:port)"
 
 HOST_DOMAIN_ID=$1
 HOST_ENDPOINT=$2
+INTERCONN_PROTOCOL=$3
+
+[ "${INTERCONN_PROTOCOL}" != "" ] || INTERCONN_PROTOCOL="kuscia"
+
 if [[ ${HOST_DOMAIN_ID} == "" || ${HOST_ENDPOINT} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
@@ -54,6 +58,7 @@ popd || exit
 DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.SRC_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.DEST_DOMAIN}}/${HOST_DOMAIN_ID}/g;
+  s/{{.INTERCONN_PROTOCOL}}/${INTERCONN_PROTOCOL}/g;
   s/{{.HOST}}/${HOST}/g;
   s/{{.PORT}}/${PORT}/g;
   s/{{.TLS_CA}}/${TLS_CA}/g;
@@ -62,7 +67,10 @@ DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   < "${ROOT}/scripts/templates/domain_route.mtls.yaml")
 echo "${DOMAIN_ROUTE_TEMPLATE}" | kubectl apply -f -
 
-INTEROP_CONFIG_TEMPLATE=$(sed "s/{{.MEMBER_DOMAIN_ID}}/${SELF_DOMAIN_ID}/g;
-  s/{{.HOST_DOMAIN_ID}}/${HOST_DOMAIN_ID}/g" \
-  < "${ROOT}/scripts/templates/interop_config.yaml")
-echo "${INTEROP_CONFIG_TEMPLATE}" | kubectl apply -f -
+if [[ ${INTERCONN_PROTOCOL} == "kuscia" ]]; then
+   INTEROP_CONFIG_TEMPLATE=$(sed "s/{{.MEMBER_DOMAIN_ID}}/${SELF_DOMAIN_ID}/g;
+     s/{{.HOST_DOMAIN_ID}}/${HOST_DOMAIN_ID}/g" \
+     < "${ROOT}/scripts/templates/interop_config.yaml")
+   echo "${INTEROP_CONFIG_TEMPLATE}" | kubectl apply -f -
+fi
+

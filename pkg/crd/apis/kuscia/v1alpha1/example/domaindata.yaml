@@ -1,0 +1,34 @@
+apiVersion: nueva.oasis/v1alpha1
+kind: DomainData
+metadata:
+  name: DomainDataxxxx
+  namespace: alice-xxxx
+  annotations:
+    originDomain: bob-xxxx
+    originName: domaindata-bobxxx
+  labels:
+    from: manual
+spec:
+  uri: local://ab/c/alice_lr.csv
+  type: table
+  datasource: xxxxxxxxxxxxxxxxxxx
+  attributes:
+    rows: 10000
+  partitions:
+    type: path
+    fields:
+      - type: string
+        name: date
+        comment: yyyymmdd
+  columns:
+    - type: string
+      name: userid
+      comment: id of user
+    - type: string
+      name: x1
+    - type: string
+      name: x2
+    - type: string
+      name: x3
+    - type: string
+      name: x4

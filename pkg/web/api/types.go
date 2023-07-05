@@ -31,14 +31,11 @@ type ProtoResponse = proto.Message
 
 type BizContext struct {
 	*gin.Context
-	TraceID          string
 	Store            map[string]interface{}
 	ConfBeanRegistry framework.ConfBeanRegistry
 	BizType          string
 	Logger           *nlog.NLog
 }
-
-const TraceID = "trace_id"
 
 // ProtoHandler Is the service handler interface.
 type ProtoHandler interface {

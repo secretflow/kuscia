@@ -20,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -37,6 +38,9 @@ func TestFailedHandler_HandlePhase(t *testing.T) {
 		&typedcorev1.EventSinkImpl{Interface: kubefake.NewSimpleClientset().CoreV1().Events("default")})
 	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-job-controller"})
+	kubeFakeClient := kubefake.NewSimpleClientset()
+	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeFakeClient, 0)
+	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
 	type fields struct {
 		recorder record.EventRecorder
 	}
@@ -51,7 +55,7 @@ func TestFailedHandler_HandlePhase(t *testing.T) {
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
-			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{1} and succeeded{a,b,c,d} should return needUpdate{false} err{nil}",
+			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{1} and succeeded{a,b,c,d} should return needUpdate{true} err{nil}",
 			fields: fields{
 				recorder: recorder,
 			},
@@ -66,7 +70,8 @@ func TestFailedHandler_HandlePhase(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &FailedHandler{
-				recorder: tt.fields.recorder,
+				namespaceLister: nsInformer.Lister(),
+				recorder:        tt.fields.recorder,
 			}
 			got, err := s.HandlePhase(tt.args.kusciaJob)
 			if !tt.wantErr(t, err, fmt.Sprintf("HandlePhase(%v)", tt.args.kusciaJob)) {

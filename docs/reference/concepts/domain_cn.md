@@ -7,10 +7,10 @@
 
 以下是一些 Domain 的典型用例：
 
-* 创建 Domain，你将体验如何使用 Domain 创建隐私计算节点相关的 Namespace, ResourceQuota 资源。
-* 更新 Domain，你将熟悉如何更新现有的 Domain，从而变更隐私计算节点相关的 Namespace, ResourceQuota 资源。
-* 清理 Domain，你将熟悉如何清理不需要的 Domain。在 Kuscia 中，清理 Domain 并不会真正的删除 Domain 相关的 Namespace, ResourceQuota 资源，而是会在节点相关的 Namespace 资源上添加标记 Domain 被删除相关标签。
-* 参考 Domain 对象定义，你将获取详细的 Domain 描述信息。
+- 创建 Domain，你将体验如何使用 Domain 创建隐私计算节点相关的 Namespace, ResourceQuota 资源。
+- 更新 Domain，你将熟悉如何更新现有的 Domain，从而变更隐私计算节点相关的 Namespace, ResourceQuota 资源。
+- 清理 Domain，你将熟悉如何清理不需要的 Domain。在 Kuscia 中，清理 Domain 并不会真正的删除 Domain 相关的 Namespace, ResourceQuota 资源，而是会在节点相关的 Namespace 资源上添加标记 Domain 被删除相关标签。
+- 参考 Domain 对象定义，你将获取详细的 Domain 描述信息。
 
 ## 创建 Domain
 
@@ -30,12 +30,12 @@ spec:
 
 在该示例中:
 
-* `.metadata.name`：表示隐私计算节点 Domain 名称，当前示例为`alice`。相应地，Kuscia 控制器会创建名称和 Domain 同名的`alice` Namespace 资源。在 Kuscia 中，通过 Namespace 资源对不同机构用户进行资源隔离。
-* `.spec.role`：表示隐私计算节点 Domain 的角色，默认为`""`。支持两种取值：`partner`和`""`。
-  * `partner`：表示协作方，用在点对点组网模式下的协作方节点。点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该 Domain 时，需要将`role`的值设置为`partner`。
-  * `""`：表示空，用在中心化组网模式下的节点。
-* `.spec.cert`：表示 BASE64 编码格式的隐私计算节点证书。
-* `.spec.resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为`100`。
+- `.metadata.name`：表示隐私计算节点 Domain 名称，当前示例为`alice`。相应地，Kuscia 控制器会创建名称和 Domain 同名的`alice` Namespace 资源。在 Kuscia 中，通过 Namespace 资源对不同机构用户进行资源隔离。
+- `.spec.role`：表示隐私计算节点 Domain 的角色，默认为`""`。支持两种取值：`partner`和`""`。
+  - `partner`：表示外部节点，用在点对点组网模式下的协作方节点。点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该 Domain 时，需要将`role`的值设置为`partner`。
+  - `""`：表示内部节点。
+- `.spec.cert`：表示 BASE64 编码格式的隐私计算节点证书。
+- `.spec.resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为`100`。
 
 
 1. 运行以下命令创建 Domain。
@@ -82,7 +82,7 @@ spec:
 
 在该示例中:
 
-* 将`.spec.resourceQuota.podMaxCount`的值调整为`200`。
+- 将`.spec.resourceQuota.podMaxCount`的值调整为`200`。
 
 1. 运行以下命令更新 Domain。
 
@@ -147,6 +147,8 @@ metadata:
 spec:
   role: partner
   cert: base64<certificate>
+  interConnProtocols: 
+  - kuscia
   resourceQuota:
     podMaxCount: 100
 status:
@@ -160,23 +162,26 @@ status:
 
 Domain `metadata` 的子字段详细介绍如下：
 
-* `name`：表示隐私计算节点 Domain 的名称，当前示例为`domain-template`。相应地，Kuscia 控制器会创建名称和 Domain 同名的`domain-template` Namespace 资源。在 Kuscia 中，通过 Namespace 资源对不同机构用户进行资源隔离。
+- `name`：表示隐私计算节点 Domain 的名称，当前示例为`domain-template`。相应地，Kuscia 控制器会创建名称和 Domain 同名的`domain-template` Namespace 资源。在 Kuscia 中，通过 Namespace 资源对不同机构用户进行资源隔离。
 
 Domain `spec` 的子字段详细介绍如下：
 
-* `role`：表示隐私计算节点 Domain 的角色，默认为`""`。支持两种取值：`partner`和`""`。
-  * `partner`：表示协作方，用在点对点组网模式下的协作方节点。 点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该 Domain 时，需要将`role`的值设置为`partner`。 
-  * `""`：表示空，用在中心化组网模式下的所有节点。
-* `cert`：表示 BASE64 编码格式的隐私计算节点证书。用于节点之间 Token 协商或 TLS 认证。
-* `resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点 Namespace 下所允许创建的最大 Pod 数量，当前示例为`100`。相应地，Kuscia 控制器会在`domain-template` Namespace 下创建名称为`resource-limitation`的 ResourceQuota 资源。
+- `role`：表示隐私计算节点 Domain 的角色，默认为`""`。支持两种取值：`partner`和`""`。
+  - `partner`：表示外部节点，用在点对点组网模式下的协作方节点。 点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该 Domain 时，需要将`role`的值设置为`partner`。 
+  - `""`：表示内部节点。
+- `cert`：表示 BASE64 编码格式的隐私计算节点证书。用于节点之间 Token 协商或 TLS 认证。
+- `interConnProtocols`：表示外部隐私计算节点支持的互联互通作业协议类型，默认为`""`。支持两种取值：`kuscia`和`bfia`。当前该字段只支持配置一种协议，若配置多个协议，则会选择第一个协议作为互联互通作业的协议类型。未来会支持多种协议。
+  - `kuscia`：表示该外部节点参与隐私计算任务时，会使用互联互通蚂蚁`kuscia`协议运行隐私计算任务。
+  - `bfia`：表示该外部节点参与隐私计算任务时，会使用互联互通银联`bfia`协议运行隐私计算任务。
+- `resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点 Namespace 下所允许创建的最大 Pod 数量，当前示例为`100`。相应地，Kuscia 控制器会在`domain-template` Namespace 下创建名称为`resource-limitation`的 ResourceQuota 资源。
 
 Domain `status` 的子字段详细介绍如下：
 
-* `nodeStatuses`：表示隐私计算节点 Domain 下所有 Kuscia Agent 的状态信息。
-  * `nodeStatuses[].lastHeartbeatTime`：表示 Kuscia Agent 最近一次上报心跳的时间。
-  * `nodeStatuses[].lastTransitionTime`：表示 Kuscia Agent 最近一次发生更新的时间。
-  * `nodeStatuses[].name`：表示 Kuscia Agent 的名称。
-  * `nodeStatuses[].status`：表示 Kuscia Agent 的状态。支持两种取值`Ready`、`NotReady`。
-    * `Ready`：表示 Kusica Agent 状态正常。 
-    * `NotReady`：表示 Kusica Agent 状态异常。 
-  * `nodeStatuses[].version`：表示 Kuscia Agent 的版本。
+- `nodeStatuses`：表示隐私计算节点 Domain 下所有 Kuscia Agent 的状态信息。
+  - `nodeStatuses[].lastHeartbeatTime`：表示 Kuscia Agent 最近一次上报心跳的时间。
+  - `nodeStatuses[].lastTransitionTime`：表示 Kuscia Agent 最近一次发生更新的时间。
+  - `nodeStatuses[].name`：表示 Kuscia Agent 的名称。
+  - `nodeStatuses[].status`：表示 Kuscia Agent 的状态。支持两种取值`Ready`、`NotReady`。
+    - `Ready`：表示 Kusica Agent 状态正常。 
+    - `NotReady`：表示 Kusica Agent 状态异常。 
+  - `nodeStatuses[].version`：表示 Kuscia Agent 的版本。

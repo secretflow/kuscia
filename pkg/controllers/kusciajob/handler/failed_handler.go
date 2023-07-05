@@ -17,31 +17,76 @@ package handler
 import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/record"
 
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // FailedHandler will handle kuscia job in Failed phase.
 type FailedHandler struct {
-	recorder record.EventRecorder
+	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
+	namespaceLister  corelisters.NamespaceLister
+	recorder         record.EventRecorder
 }
 
 // NewFailedHandler return FailedHandler to handle Failed kuscia job.
-func NewFailedHandler(recorder record.EventRecorder) *FailedHandler {
+func NewFailedHandler(deps *Dependencies) *FailedHandler {
 	return &FailedHandler{
-		recorder: recorder,
+		recorder:         deps.Recorder,
+		kusciaTaskLister: deps.KusciaTaskLister,
+		namespaceLister:  deps.NamespaceLister,
 	}
 }
 
 // HandlePhase implements the KusciaJobPhaseHandler interface.
 // It will do some tail-in work when the job phase is failed.
-func (s *FailedHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (bool, error) {
-	s.recorder.Event(kusciaJob, v1.EventTypeWarning, "KusciaJobFailed", "KusciaJob failed to run")
-	now := metav1.Now()
-	kusciaJob.Status.CompletionTime = &now
-	kusciaJob.Status.LastReconcileTime = &now
+func (h *FailedHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (needUpdate bool, err error) {
+	now := metav1.Now().Rfc3339Copy()
+	asInitiator := false
+	if utilsres.SelfClusterAsInitiator(h.namespaceLister, kusciaJob.Spec.Initiator, kusciaJob.Labels) {
+		asInitiator = true
+	}
+
+	allTaskFinished := true
+	for taskID, phase := range kusciaJob.Status.TaskStatus {
+		if phase != kusciaapisv1alpha1.TaskFailed && phase != kusciaapisv1alpha1.TaskSucceeded {
+			if !asInitiator {
+				kusciaJob.Status.TaskStatus[taskID] = kusciaapisv1alpha1.TaskFailed
+				continue
+			}
+
+			task, err := h.kusciaTaskLister.Get(taskID)
+			if err != nil {
+				nlog.Warnf("Get kuscia task %v failed, %v", taskID, err)
+				kusciaJob.Status.TaskStatus[taskID] = kusciaapisv1alpha1.TaskFailed
+				needUpdate = true
+				continue
+			}
+
+			if task.Status.Phase != kusciaapisv1alpha1.TaskFailed && task.Status.Phase != kusciaapisv1alpha1.TaskSucceeded {
+				allTaskFinished = false
+			}
+
+			if phase != task.Status.Phase {
+				kusciaJob.Status.TaskStatus[taskID] = task.Status.Phase
+				needUpdate = true
+			}
+		}
+	}
+
+	if allTaskFinished {
+		if kusciaJob.Status.CompletionTime == nil || !kusciaJob.Status.CompletionTime.Equal(&now) {
+			kusciaJob.Status.CompletionTime = &now
+			needUpdate = true
+		}
+	}
+
+	h.recorder.Event(kusciaJob, v1.EventTypeWarning, "KusciaJobFailed", "KusciaJob failed to run")
 	metrics.JobResultStats.WithLabelValues(metrics.Failed).Inc()
-	return true, nil
+	return needUpdate, nil
 }

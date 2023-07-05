@@ -17,6 +17,7 @@ limitations under the License.
 package kuberuntime
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -176,13 +177,14 @@ func TestSandboxGC(t *testing.T) {
 			fakeRuntime.SetFakeSandboxes(fakeSandboxes)
 			fakeRuntime.SetFakeContainers(fakeContainers)
 
-			err := m.containerGC.evictSandboxes(test.evictTerminatingPods)
+			ctx := context.Background()
+			err := m.containerGC.evictSandboxes(ctx, test.evictTerminatingPods)
 			assert.NoError(t, err)
-			realRemain, err := fakeRuntime.ListPodSandbox(nil)
+			realRemain, err := fakeRuntime.ListPodSandbox(ctx, nil)
 			assert.NoError(t, err)
 			assert.Len(t, realRemain, len(test.remain))
 			for _, remain := range test.remain {
-				resp, err := fakeRuntime.PodSandboxStatus(fakeSandboxes[remain].Id, false)
+				resp, err := fakeRuntime.PodSandboxStatus(ctx, fakeSandboxes[remain].Id, false)
 				assert.NoError(t, err)
 				assert.Equal(t, &fakeSandboxes[remain].PodSandboxStatus, resp.Status)
 			}
@@ -404,13 +406,15 @@ func TestContainerGC(t *testing.T) {
 			if test.policy == nil {
 				test.policy = &defaultGCPolicy
 			}
-			err := m.containerGC.evictContainers(*test.policy, test.allSourcesReady, test.evictTerminatingPods)
+
+			ctx := context.Background()
+			err := m.containerGC.evictContainers(ctx, *test.policy, test.allSourcesReady, test.evictTerminatingPods)
 			assert.NoError(t, err)
-			realRemain, err := fakeRuntime.ListContainers(nil)
+			realRemain, err := fakeRuntime.ListContainers(context.Background(), nil)
 			assert.NoError(t, err)
 			assert.Len(t, realRemain, len(test.remain))
 			for _, remain := range test.remain {
-				resp, err := fakeRuntime.ContainerStatus(fakeContainers[remain].Id, false)
+				resp, err := fakeRuntime.ContainerStatus(ctx, fakeContainers[remain].Id, false)
 				assert.NoError(t, err)
 				assert.Equal(t, &fakeContainers[remain].ContainerStatus, resp.Status)
 			}
@@ -439,24 +443,25 @@ func TestPodLogDirectoryGC(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	fakeOS.ReadDirFn = func(string) ([]os.FileInfo, error) {
-		var fileInfos []os.FileInfo
+	fakeOS.ReadDirFn = func(string) ([]os.DirEntry, error) {
+		var dirEntries []os.DirEntry
 		for _, file := range files {
-			mockFI := containertest.NewMockFileInfo(ctrl)
-			mockFI.EXPECT().Name().Return(file)
-			fileInfos = append(fileInfos, mockFI)
+			mockDE := containertest.NewMockDirEntry(ctrl)
+			mockDE.EXPECT().Name().Return(file)
+			dirEntries = append(dirEntries, mockDE)
 		}
-		return fileInfos, nil
+		return dirEntries, nil
 	}
 
+	ctx := context.Background()
 	// allSourcesReady == true, pod log directories without corresponding pod should be removed.
-	err = m.containerGC.evictPodLogsDirectories(m.podStdoutRootDirectory, true)
+	err = m.containerGC.evictPodLogsDirectories(ctx, m.podStdoutRootDirectory, true)
 	assert.NoError(t, err)
 	assert.Equal(t, removed, fakeOS.Removes)
 
 	// allSourcesReady == false, pod log directories should not be removed.
 	fakeOS.Removes = []string{}
-	err = m.containerGC.evictPodLogsDirectories(m.podStdoutRootDirectory, false)
+	err = m.containerGC.evictPodLogsDirectories(ctx, m.podStdoutRootDirectory, false)
 	assert.NoError(t, err)
 	assert.Empty(t, fakeOS.Removes)
 }
@@ -473,13 +478,14 @@ func TestUnknownStateContainerGC(t *testing.T) {
 	})
 	fakeRuntime.SetFakeContainers(fakeContainers)
 
-	err = m.containerGC.evictContainers(defaultGCPolicy, true, false)
+	ctx := context.Background()
+	err = m.containerGC.evictContainers(ctx, defaultGCPolicy, true, false)
 	assert.NoError(t, err)
 
 	assert.Contains(t, fakeRuntime.GetCalls(), "StopContainer", "RemoveContainer",
 		"container in unknown state should be stopped before being removed")
 
-	remain, err := fakeRuntime.ListContainers(nil)
+	remain, err := fakeRuntime.ListContainers(ctx, nil)
 	assert.NoError(t, err)
 	assert.Empty(t, remain)
 }

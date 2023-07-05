@@ -39,23 +39,36 @@ echo "nameserver ${IP}" > /etc/resolv.conf
 
 sh scripts/deploy/iptables_pre_detect.sh
 
+sh scripts/deploy/init_kusciaapi_cert.sh
 sh scripts/deploy/init_external_tls_cert.sh ${NAMESPACE}
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml
-echo "
-kuscia:
-  rootDir: ${ROOT}
-  domainID: ${NAMESPACE}
-  caKeyFile: etc/certs/ca.key
-  caFile: etc/certs/ca.crt
-  domainKeyFile: etc/certs/domain.key
-  master:
-    endpoint: ${MASTER_ENDPOINT}
-    tls:
-      certFile: ${ROOT}/etc/certs/domain.crt
-      keyFile: ${ROOT}/etc/certs/domain.key
-      caFile: ${ROOT}/etc/certs/master.ca.crt
-  agent:
-    allowPrivileged: ${ALLOW_PRIVILEGED}
+echo "rootDir: ${ROOT}
+domainID: ${NAMESPACE}
+caKeyFile: etc/certs/ca.key
+caFile: etc/certs/ca.crt
+domainKeyFile: etc/certs/domain.key
+master:
+  endpoint: ${MASTER_ENDPOINT}
+  tls:
+    certFile: ${ROOT}/etc/certs/domain.crt
+    keyFile: ${ROOT}/etc/certs/domain.key
+    caFile: ${ROOT}/etc/certs/master.ca.crt
+agent:
+  allowPrivileged: true
+  plugins:
+  - name: env-import
+    config:
+      usePodLabels: false
+      envList:
+      - envs:
+        - name: system.transport
+          value: transport.${NAMESPACE}.svc
+        - name: system.storage
+          value: file:///home/kuscia/var/storage
+        selectors:
+        - key: maintainer
+          value: secretflow-contact@service.alipay.com
+  - name: config-render
 " > etc/kuscia.yaml
 bin/kuscia autonomy -c etc/kuscia.yaml -d ${NAMESPACE} --log.path var/logs/kuscia.log
 

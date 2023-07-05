@@ -1,0 +1,32 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: AppImage
+metadata:
+  name: fate-image
+spec:
+  configTemplates:
+    task-config.conf: |
+      {
+        "task_id": "{{.TASK_ID}}",
+        "task_input_config": "{{.TASK_INPUT_CONFIG}}",
+        "task_input_cluster_def": "{{.TASK_CLUSTER_DEFINE}}",
+        "allocated_ports": "{{.ALLOCATED_PORTS}}"
+      }
+  deployTemplates:
+    - name: secretflow
+      replicas: 1
+      spec:
+        containers:
+          - name: fate-adapter
+            command:
+              - sh
+              - -c
+              - fate job -c /home/kuscia/etc/kuscia/task-config.conf -a {{.CLUSTER_IP}}
+            configVolumeMounts:
+              - mountPath: /home/kuscia/etc/kuscia/task-config.conf
+                subPath: task-config.conf
+        restartPolicy: Never
+  image:
+    id: fate-adapter
+    name: secretflow/fate-adapter
+    sign: fate-adapter
+    tag: "0.0.1"

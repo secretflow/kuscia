@@ -172,7 +172,7 @@ func (c *Controller) Run(threadiness int) error {
 	}
 
 	mrand.Seed(time.Now().UnixNano())
-	go wait.Until(c.Monitorcdrstatus, time.Minute*3, c.ctx.Done())
+	go wait.Until(c.Monitorcdrstatus, time.Minute, c.ctx.Done())
 
 	nlog.Info("Starting workers")
 	// Launch two workers to process ClusterDomainRoute resources

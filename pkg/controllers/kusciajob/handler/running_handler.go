@@ -26,7 +26,7 @@ type RunningHandler struct {
 // NewRunningHandler return RunningHandler to handle Running kuscia job.
 func NewRunningHandler(deps *Dependencies) *RunningHandler {
 	return &RunningHandler{
-		jobScheduler: NewJobScheduler(deps.KusciaClient, deps.KusciaTaskLister),
+		jobScheduler: NewJobScheduler(deps.KusciaClient, deps.NamespaceLister, deps.KusciaTaskLister),
 	}
 }
 

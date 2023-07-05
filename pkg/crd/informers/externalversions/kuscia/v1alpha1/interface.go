@@ -26,16 +26,16 @@ type Interface interface {
 	AppImages() AppImageInformer
 	// ClusterDomainRoutes returns a ClusterDomainRouteInformer.
 	ClusterDomainRoutes() ClusterDomainRouteInformer
-	// DataObjects returns a DataObjectInformer.
-	DataObjects() DataObjectInformer
-	// DataSources returns a DataSourceInformer.
-	DataSources() DataSourceInformer
-	// DataTables returns a DataTableInformer.
-	DataTables() DataTableInformer
 	// Domains returns a DomainInformer.
 	Domains() DomainInformer
 	// DomainAppImages returns a DomainAppImageInformer.
 	DomainAppImages() DomainAppImageInformer
+	// DomainDatas returns a DomainDataInformer.
+	DomainDatas() DomainDataInformer
+	// DomainDataGrants returns a DomainDataGrantInformer.
+	DomainDataGrants() DomainDataGrantInformer
+	// DomainDataSources returns a DomainDataSourceInformer.
+	DomainDataSources() DomainDataSourceInformer
 	// DomainRoutes returns a DomainRouteInformer.
 	DomainRoutes() DomainRouteInformer
 	// Gateways returns a GatewayInformer.
@@ -73,21 +73,6 @@ func (v *version) ClusterDomainRoutes() ClusterDomainRouteInformer {
 	return &clusterDomainRouteInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// DataObjects returns a DataObjectInformer.
-func (v *version) DataObjects() DataObjectInformer {
-	return &dataObjectInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// DataSources returns a DataSourceInformer.
-func (v *version) DataSources() DataSourceInformer {
-	return &dataSourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// DataTables returns a DataTableInformer.
-func (v *version) DataTables() DataTableInformer {
-	return &dataTableInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // Domains returns a DomainInformer.
 func (v *version) Domains() DomainInformer {
 	return &domainInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
@@ -96,6 +81,21 @@ func (v *version) Domains() DomainInformer {
 // DomainAppImages returns a DomainAppImageInformer.
 func (v *version) DomainAppImages() DomainAppImageInformer {
 	return &domainAppImageInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// DomainDatas returns a DomainDataInformer.
+func (v *version) DomainDatas() DomainDataInformer {
+	return &domainDataInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// DomainDataGrants returns a DomainDataGrantInformer.
+func (v *version) DomainDataGrants() DomainDataGrantInformer {
+	return &domainDataGrantInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// DomainDataSources returns a DomainDataSourceInformer.
+func (v *version) DomainDataSources() DomainDataSourceInformer {
+	return &domainDataSourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // DomainRoutes returns a DomainRouteInformer.

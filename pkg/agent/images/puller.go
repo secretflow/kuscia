@@ -19,6 +19,7 @@ limitations under the License.
 package images
 
 import (
+	"context"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -34,7 +35,7 @@ type pullResult struct {
 }
 
 type imagePuller interface {
-	pullImage(pkgcontainer.ImageSpec, *credentialprovider.AuthConfig, chan<- pullResult, *runtimeapi.PodSandboxConfig)
+	pullImage(context.Context, pkgcontainer.ImageSpec, *credentialprovider.AuthConfig, chan<- pullResult, *runtimeapi.PodSandboxConfig)
 }
 
 var _, _ imagePuller = &parallelImagePuller{}, &serialImagePuller{}
@@ -47,9 +48,9 @@ func newParallelImagePuller(imageService pkgcontainer.ImageService) imagePuller 
 	return &parallelImagePuller{imageService}
 }
 
-func (pip *parallelImagePuller) pullImage(spec pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, pullChan chan<- pullResult, podSandboxConfig *runtimeapi.PodSandboxConfig) {
+func (pip *parallelImagePuller) pullImage(ctx context.Context, spec pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, pullChan chan<- pullResult, podSandboxConfig *runtimeapi.PodSandboxConfig) {
 	go func() {
-		imageRef, err := pip.imageService.PullImage(spec, auth, podSandboxConfig)
+		imageRef, err := pip.imageService.PullImage(ctx, spec, auth, podSandboxConfig)
 		pullChan <- pullResult{
 			imageRef: imageRef,
 			err:      err,
@@ -72,14 +73,16 @@ func newSerialImagePuller(imageService pkgcontainer.ImageService) imagePuller {
 }
 
 type imagePullRequest struct {
+	ctx              context.Context
 	spec             pkgcontainer.ImageSpec
 	auth             *credentialprovider.AuthConfig
 	pullChan         chan<- pullResult
 	podSandboxConfig *runtimeapi.PodSandboxConfig
 }
 
-func (sip *serialImagePuller) pullImage(spec pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, pullChan chan<- pullResult, podSandboxConfig *runtimeapi.PodSandboxConfig) {
+func (sip *serialImagePuller) pullImage(ctx context.Context, spec pkgcontainer.ImageSpec, auth *credentialprovider.AuthConfig, pullChan chan<- pullResult, podSandboxConfig *runtimeapi.PodSandboxConfig) {
 	sip.pullRequests <- &imagePullRequest{
+		ctx:              ctx,
 		spec:             spec,
 		auth:             auth,
 		pullChan:         pullChan,
@@ -89,7 +92,7 @@ func (sip *serialImagePuller) pullImage(spec pkgcontainer.ImageSpec, auth *crede
 
 func (sip *serialImagePuller) processImagePullRequests() {
 	for pullRequest := range sip.pullRequests {
-		imageRef, err := sip.imageService.PullImage(pullRequest.spec, pullRequest.auth, pullRequest.podSandboxConfig)
+		imageRef, err := sip.imageService.PullImage(pullRequest.ctx, pullRequest.spec, pullRequest.auth, pullRequest.podSandboxConfig)
 		pullRequest.pullChan <- pullResult{
 			imageRef: imageRef,
 			err:      err,

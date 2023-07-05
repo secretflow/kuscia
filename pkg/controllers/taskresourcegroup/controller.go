@@ -40,9 +40,9 @@ import (
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -60,9 +60,9 @@ const (
 )
 
 const (
-	controllerName            = "task-resource-group-controller"
-	trgReserveFailedQueueName = "task-resource-group-reserve-failed-queue"
-	trgLifecycleQueueName     = "task-resource-group-lifecycle-queue"
+	controllerName            = "taskresourcegroup-controller"
+	trgReserveFailedQueueName = "taskresourcegroup-reserve-failed-queue"
+	trgLifecycleQueueName     = "taskresourcegroup-lifecycle-queue"
 )
 
 // Controller is the implementation for managing resources.
@@ -73,6 +73,8 @@ type Controller struct {
 	kusciaClient          kusciaclientset.Interface
 	kubeInformerFactory   informers.SharedInformerFactory
 	kusciaInformerFactory kusciainformers.SharedInformerFactory
+	namespaceLister       listers.NamespaceLister
+	namespaceSynced       cache.InformerSynced
 	podLister             listers.PodLister
 	podSynced             cache.InformerSynced
 	trLister              kuscialistersv1alpha1.TaskResourceLister
@@ -90,6 +92,7 @@ type Controller struct {
 func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
 	kubeInformerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient, 5*time.Minute)
 	podInformer := kubeInformerFactory.Core().V1().Pods()
+	nsInformer := kubeInformerFactory.Core().V1().Namespaces()
 
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
@@ -99,6 +102,8 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		kusciaClient:          kusciaClient,
 		kubeInformerFactory:   kubeInformerFactory,
 		kusciaInformerFactory: kusciaInformerFactory,
+		namespaceLister:       nsInformer.Lister(),
+		namespaceSynced:       nsInformer.Informer().HasSynced,
 		podLister:             podInformer.Lister(),
 		podSynced:             podInformer.Informer().HasSynced,
 		trLister:              trInformer.Lister(),
@@ -113,10 +118,11 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 	controller.handlerFactory = handler.NewTaskResourceGroupPhaseHandlerFactory(&handler.Dependencies{
-		KubeClient:   controller.kubeClient,
-		KusciaClient: controller.kusciaClient,
-		PodLister:    controller.podLister,
-		TrLister:     controller.trLister,
+		KubeClient:      controller.kubeClient,
+		KusciaClient:    controller.kusciaClient,
+		NamespaceLister: controller.namespaceLister,
+		PodLister:       controller.podLister,
+		TrLister:        controller.trLister,
 	})
 
 	trgInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -310,16 +316,16 @@ func (c *Controller) Run(workers int) error {
 		c.trgLifecycleQueue.ShutDown()
 	}()
 
-	nlog.Info("Starting task resource group controller")
+	nlog.Infof("Starting %v", c.Name())
 	c.kubeInformerFactory.Start(c.ctx.Done())
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 
-	nlog.Info("Waiting for informer cache to sync")
-	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.podSynced, c.trSynced, c.trgSynced); !ok {
+	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
+	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.namespaceSynced, c.podSynced, c.trSynced, c.trgSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	nlog.Infof("Starting %v workers to handle object", workers)
+	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(c.ctx, c.runWorker, time.Second)
 		go wait.Until(c.handleExpiredTrg, time.Second, c.ctx.Done())
@@ -390,10 +396,9 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 	}
 
 	needUpdate, err := c.handlerFactory.GetTaskResourceGroupPhaseHandler(phase).Handle(trg)
-	if err != nil {
+	if err != nil && c.trgQueue.NumRequeues(key) < maxRetries {
 		return err
 	}
-
 	if needUpdate {
 		err = c.updateTaskResourceGroupStatus(ctx, rawTrg, trg)
 	}
@@ -408,7 +413,7 @@ func (c *Controller) needHandleExpiredTrg(trg *kusciaapisv1alpha1.TaskResourceGr
 		return false
 	}
 
-	now := metav1.Now()
+	now := metav1.Now().Rfc3339Copy()
 	offset := time.Duration(trg.Spec.LifecycleSeconds) * time.Second
 	expiredTime := trg.GetCreationTimestamp().Add(offset)
 	if !now.After(expiredTime) {
@@ -418,23 +423,24 @@ func (c *Controller) needHandleExpiredTrg(trg *kusciaapisv1alpha1.TaskResourceGr
 	nlog.Infof("Task resource group %v is expired, patch the status phase %q to %q", trg.Name, trg.Status.Phase, kusciaapisv1alpha1.TaskResourceGroupPhaseFailed)
 	trgCopy := trg.DeepCopy()
 	trgCopy.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
-	trgCopy.Status.LastTransitionTime = now
-	trgFailedCond, _ := utilscommon.GetTaskResourceGroupCondition(&trgCopy.Status, kusciaapisv1alpha1.TaskResourcesGroupCondFailed)
-	trgFailedCond.LastTransitionTime = now
-	trgFailedCond.Status = corev1.ConditionTrue
-	trgFailedCond.Reason = "task resource group exceed it's lifecycle"
+	trgCopy.Status.LastTransitionTime = &now
+	cond, _ := utilsres.GetTaskResourceGroupCondition(&trgCopy.Status, kusciaapisv1alpha1.TaskResourceGroupExpired)
+	utilsres.SetTaskResourceGroupCondition(&now, cond, corev1.ConditionTrue, "Task resource group exceed it's lifecycle")
 
-	err := utilscommon.PatchTaskResourceGroupStatus(context.Background(), c.kusciaClient, trg, trgCopy)
+	err := utilsres.PatchTaskResourceGroupStatus(context.Background(), c.kusciaClient, trg, trgCopy)
 	if err != nil {
 		nlog.Errorf("Failed to handle expired task resource group %v and retry, %v", trgCopy.Name, err)
 		c.trgQueue.AddRateLimited(trgCopy.Name)
-		return true
 	}
 	return true
 }
 
 // needHandleReserveFailedTrg is used to check if trg should be handled when the status phase is reserve failed.
 func (c *Controller) needHandleReserveFailedTrg(trg *kusciaapisv1alpha1.TaskResourceGroup) bool {
+	if trg.Labels != nil && trg.Labels[common.LabelInterConnProtocolType] == string(kusciaapisv1alpha1.InterConnBFIA) {
+		return false
+	}
+
 	now := metav1.Now()
 	offset := time.Duration(trg.Spec.RetryIntervalSeconds) * time.Second
 	retryTime := trg.Status.LastTransitionTime.Add(offset)

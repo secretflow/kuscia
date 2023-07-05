@@ -49,7 +49,6 @@ if [[ $SELF_DOMAIN_ID == bob ]]; then
   INITIATOR=bob
 fi
 
-kubectl apply -f scripts/templates/app_image.secretflow.yaml
 
 JOB_NAME=secretflow-task-$(date +"%Y%m%d%H%M%S")
 TASK_INPUT_CONFIG=$(jq -c . <"scripts/templates/task_input_config.2pc_balanced_psi.json")

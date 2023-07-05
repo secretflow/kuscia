@@ -56,8 +56,9 @@ func RunServer(ctx context.Context, opts *Options, clients *kubeconfig.KubeClien
 	return nil
 }
 
-// server defines server detailed info which used to run server.
+// server defines detailed info which used to run server.
 type server struct {
+	ctx                     context.Context
 	mutex                   sync.Mutex
 	options                 *Options
 	eventRecorder           record.EventRecorder
@@ -77,7 +78,7 @@ func buildEventRecorder(kubeClient kubernetes.Interface, name string) record.Eve
 	return eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: name})
 }
 
-// newServer returns a server instance.
+// NewServer returns a server instance.
 func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstructions []ControllerConstruction) *server {
 	s := &server{
 		options:                 opts,
@@ -96,14 +97,15 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 		election.WithOnStartedLeading(s.onStartedLeading),
 		election.WithOnStoppedLeading(s.onStoppedLeading))
 	if leaderElector == nil {
-		nlog.Fatal("leaderelect new failed")
+		nlog.Fatal("failed to new leader elector")
 	}
 	s.leaderElector = leaderElector
 	return s
 }
 
-// run is used to run server.
+// Run is used to run server.
 func (s *server) Run(ctx context.Context) error {
+	s.ctx = ctx
 	for _, cc := range s.controllerConstructions {
 		if err := cc.CheckCRD(ctx, s.extensionClient); err != nil {
 			return fmt.Errorf("check crd whether exist failed: %v", err.Error())
@@ -123,10 +125,15 @@ func (s *server) Run(ctx context.Context) error {
 
 // onNewLeader is executed when leader is changed.
 func (s *server) onNewLeader(identity string) {
+	nlog.Info("On new leader")
 	if s.leaderElector == nil {
 		return
 	}
+
 	if identity == s.leaderElector.MyIdentity() {
+		if s.controllersIsEmpty() {
+			s.onStartedLeading(s.ctx)
+		}
 		return
 	}
 	nlog.Infof("New leader has been elected: %s", identity)
@@ -134,32 +141,46 @@ func (s *server) onNewLeader(identity string) {
 
 // onStartedLeading is executed when leader started.
 func (s *server) onStartedLeading(ctx context.Context) {
-	nlog.Info("start leading")
+	nlog.Info("Start leading")
+	if !s.controllersIsEmpty() {
+		nlog.Info("Controllers already is running, skip initialized new controller")
+		return
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	for _, cc := range s.controllerConstructions {
 		controller := cc.NewControler(ctx, s.kubeClient, s.kusciaClient, s.eventRecorder)
-		nlog.Info("Run ", controller.Name())
+		nlog.Infof("Run controller %v ", controller.Name())
 		go func(controller IController) {
 			if err := controller.Run(s.options.Workers); err != nil {
-				nlog.Fatalf("Error running controller: %s", err.Error())
+				nlog.Fatalf("Error running controller %v: %v", controller.Name(), err)
 			} else {
-				nlog.Info("Run ", controller.Name(), " over")
+				nlog.Infof("Run controller %v successfully", controller.Name())
 			}
 		}(controller)
-		s.mutex.Lock()
 		s.controllers = append(s.controllers, controller)
-		s.mutex.Unlock()
 	}
 }
 
 // onStoppedLeading is executed when leader stopped.
 func (s *server) onStoppedLeading() {
-	nlog.Warn("Leading stopped")
+	nlog.Warnf("Server %v Leading stopped", s.Name())
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	for _, c := range s.controllers {
 		c.Stop()
 	}
 	s.controllers = nil
+}
+
+func (s *server) controllersIsEmpty() bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if s.controllers == nil {
+		return true
+	}
+	return false
 }
 
 // runHealthCheckServer runs health check server.

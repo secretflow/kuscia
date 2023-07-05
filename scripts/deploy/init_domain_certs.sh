@@ -29,6 +29,12 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 mkdir -p ${ROOT}/etc/certs
 pushd ${ROOT}/etc/certs || exit
+
+if [ -e ca.key ]; then
+   popd
+   exit
+fi
+
 openssl genrsa -out ca.key 2048
 openssl req -x509 -new -nodes -key ca.key -subj "/CN=Kuscia" -days 10000 -out ca.crt
 

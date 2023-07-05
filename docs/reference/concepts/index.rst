@@ -8,6 +8,7 @@
 
     domain_cn
     domainroute_cn
+    domaindata_cn
     kusciajob_cn
     kusciatask_cn
     interopconfig_cn

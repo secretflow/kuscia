@@ -122,7 +122,7 @@ func TestSupervisorRun_FirstStartFailed(t *testing.T) {
 
 func TestSupervisorRun_MaxFailedCount(t *testing.T) {
 	sp := NewSupervisor("MaxFailedCount", []int{0, 100}, 3)
-	sp.minRunningTimeMS = 100
+	sp.minRunningTimeMS = 1000
 	ctx := context.Background()
 
 	count := 0
@@ -130,7 +130,7 @@ func TestSupervisorRun_MaxFailedCount(t *testing.T) {
 		return newMockCmd(nil, func() error {
 			count++
 			if count == 1 {
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(1100 * time.Millisecond)
 			} else {
 				time.Sleep(10 * time.Millisecond)
 			}
@@ -145,15 +145,15 @@ func TestSupervisorRun_MaxFailedCount(t *testing.T) {
 
 func TestSupervisorRun_RestartAlways(t *testing.T) {
 	sp := NewSupervisor("RestartAlways", []int{0, 100}, 3)
-	sp.minRunningTimeMS = 100
+	sp.minRunningTimeMS = 1000
 	ctx := context.Background()
 
 	count := 0
 	err := sp.Run(ctx, func(ctx context.Context) Cmd {
 		return newMockCmd(nil, func() error {
 			count++
-			if count <= 3 {
-				time.Sleep(200 * time.Millisecond)
+			if count <= 2 {
+				time.Sleep(1100 * time.Millisecond)
 			} else {
 				time.Sleep(10 * time.Millisecond)
 			}
@@ -163,7 +163,7 @@ func TestSupervisorRun_RestartAlways(t *testing.T) {
 	})
 
 	assert.NotNil(t, err)
-	assert.Equal(t, 7, count)
+	assert.Equal(t, 6, count)
 }
 
 func TestSupervisorRun_WaitFailed(t *testing.T) {

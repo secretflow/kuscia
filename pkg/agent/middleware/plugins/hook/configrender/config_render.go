@@ -69,7 +69,6 @@ func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.Plug
 // It returns true if point is equal to PointMakeMounts and obj.Mount.Name is equal to
 // configTemplateVolumesAnnotation value.
 func (cr *configRender) CanExec(obj interface{}, point hook.Point) bool {
-	nlog.Infof("")
 	if point != hook.PointMakeMounts {
 		return false
 	}

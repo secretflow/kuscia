@@ -25,7 +25,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,9 +71,6 @@ func TestEngine(t *testing.T) {
 		},
 	})
 
-	r.SetArgs([]string{"test"})
-	r.SetPreRunFunc(func(cmd *cobra.Command, args []string) error { return nil })
-
 	stopCh := make(chan struct{}, 1)
 	ctx := signals.NewKusciaContextWithStopCh(stopCh)
 	go func() {
@@ -82,7 +78,7 @@ func TestEngine(t *testing.T) {
 		close(stopCh)
 	}()
 
-	assert.NoError(t, r.Run(ctx))
+	assert.NoError(t, r.RunCommand(ctx))
 	_, ok = r.GetBeanByName("test")
 	assert.True(t, ok)
 }

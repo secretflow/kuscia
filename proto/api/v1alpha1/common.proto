@@ -19,20 +19,36 @@ package kuscia.proto.api.v1alpha1;
 import "google/protobuf/any.proto";
 
 option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1";
+option java_package = "org.secretflow.v1alpha1.common";
 
 // RequestHeader carries the user custom headers.
 message RequestHeader {
-    // Custom headers used to record custom information.
-    map<string, string> custom_headers = 1;
+  // Custom headers used to record custom information.
+  map<string, string> custom_headers = 1;
 }
 
 // Status carries the response status information.
 // Reference: https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto
 message Status {
-    // The status code, which should be one of google rpc code or custom code.
-    int32 code = 1;
-    // Message for recording the error information.
-    string message = 2;
-    // A list of messages that carry the additional supplementary error details.
-    repeated google.protobuf.Any details = 3;
+  // The status code, which should be one of google rpc code or custom code.
+  int32 code = 1;
+  // Message for recording the error information.
+  string message = 2;
+  // A list of messages that carry the additional supplementary error details.
+  repeated google.protobuf.Any details = 3;
+}
+
+message Partition {
+    // enum path, odps
+	string   type = 1;
+	repeated DataColumn fields = 2;
+}
+
+// DataColumn defines the column of data.
+message DataColumn {
+	string name = 1;
+	// enum: string integer float datetime timestamp
+	string type = 2;
+	// The description of column
+	string comment = 3;
 }

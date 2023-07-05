@@ -30,3 +30,22 @@ func (errs *Errs) Assert(err error) {
 		panic(errs)
 	}
 }
+
+func (errs *Errs) String() string {
+	if errs == nil || len(*errs) == 0 {
+		return ""
+	}
+
+	if len(*errs) == 1 {
+		return (*errs)[0].Error()
+	}
+
+	ret := ""
+	for i, err := range *errs {
+		ret += err.Error()
+		if i != len(*errs)-1 {
+			ret += ";"
+		}
+	}
+	return ret
+}

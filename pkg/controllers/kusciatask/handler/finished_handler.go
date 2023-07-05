@@ -18,12 +18,14 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 
@@ -44,14 +46,14 @@ func NewFinishedHandler(deps *Dependencies) *FinishedHandler {
 		kubeClient:      deps.KubeClient,
 		kusciaClient:    deps.KusciaClient,
 		podsLister:      deps.PodsLister,
-		configMapLister: deps.ConfigMapLister}
+		configMapLister: deps.ConfigMapLister,
+	}
 }
 
 // Handle is used to perform the real logic.
 func (h *FinishedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
-	err := h.DeleteTaskResources(kusciaTask)
-	if err != nil {
-		return false, fmt.Errorf("failed to delete all pods of kusciatask '%s'", kusciaTask.Name)
+	if err := h.DeleteTaskResources(kusciaTask); err != nil {
+		return false, fmt.Errorf("failed to delete all pods of kusciatask %q", kusciaTask.Name)
 	}
 
 	now := metav1.Now().Rfc3339Copy()
@@ -61,11 +63,14 @@ func (h *FinishedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (boo
 
 // DeleteTaskResources is used to delete task resources.
 func (h *FinishedHandler) DeleteTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
-	pods, _ := h.podsLister.List(labels.SelectorFromSet(labels.Set{labelKusciaTaskUID: string(kusciaTask.UID)}))
+	pods, _ := h.podsLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskID: kusciaTask.Name}))
 	for _, pod := range pods {
+		if pod.Status.Phase == corev1.PodFailed {
+			continue
+		}
+
 		ns := pod.Namespace
 		name := pod.Name
-
 		e := h.kubeClient.CoreV1().Pods(ns).Delete(context.Background(), name, metav1.DeleteOptions{})
 		if e != nil {
 			if k8serrors.IsNotFound(e) {
@@ -77,7 +82,11 @@ func (h *FinishedHandler) DeleteTaskResources(kusciaTask *kusciaapisv1alpha1.Kus
 		nlog.Infof("Delete the pod '%v/%v' belonging to kusciatask %q successfully", ns, name, kusciaTask.Name)
 	}
 
-	configMaps, _ := h.configMapLister.List(labels.SelectorFromSet(labels.Set{labelKusciaTaskUID: string(kusciaTask.UID)}))
+	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskSucceeded {
+		return nil
+	}
+
+	configMaps, _ := h.configMapLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskID: kusciaTask.Name}))
 	for _, configMap := range configMaps {
 		ns := configMap.Namespace
 		name := configMap.Name

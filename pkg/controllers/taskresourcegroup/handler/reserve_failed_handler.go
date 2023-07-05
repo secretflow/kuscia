@@ -28,7 +28,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // ReserveFailedHandler is used to handle task resource group which phase is reserve failed.
@@ -50,7 +50,8 @@ func NewReserveFailedHandler(deps *Dependencies) *ReserveFailedHandler {
 }
 
 // Handle is used to perform the real logic.
-func (h *ReserveFailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool, error) {
+func (h *ReserveFailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
+	var trs []*kusciaapisv1alpha1.TaskResource
 	now := metav1.Now().Rfc3339Copy()
 	partySet := make(map[string]struct{})
 	for _, party := range trg.Spec.Parties {
@@ -58,21 +59,22 @@ func (h *ReserveFailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup)
 			continue
 		}
 
-		trs, err := h.trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trg.Name}))
+		trs, err = h.trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trg.Name}))
 		if err != nil {
-			err = fmt.Errorf("get task resource group %v party %v task resource failed, %v", trg.Name, party.DomainID, err.Error())
-			return false, err
+			cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed)
+			needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, corev1.ConditionFalse, fmt.Sprintf("List task resources failed, %v", err.Error()))
+			return true, err
 		}
 
 		for _, tr := range trs {
 			trCopy := tr.DeepCopy()
 			trCopy.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserving
-			trCopy.Status.LastTransitionTime = now
-			trReservingCond := utilscommon.GetTaskResourceCondition(&trCopy.Status, kusciaapisv1alpha1.TaskResourceCondReserving)
-			trReservingCond.Status = corev1.ConditionTrue
-			trReservingCond.LastTransitionTime = now
-			trReservingCond.Reason = "Retry to reserve resource"
-			if err = utilscommon.PatchTaskResource(context.Background(), h.kusciaClient, utilscommon.ExtractTaskResourceStatus(tr), utilscommon.ExtractTaskResourceStatus(trCopy)); err != nil {
+			trCopy.Status.LastTransitionTime = &now
+			trCond := utilsres.GetTaskResourceCondition(&trCopy.Status, kusciaapisv1alpha1.TaskResourceCondReserving)
+			trCond.Status = corev1.ConditionTrue
+			trCond.LastTransitionTime = &now
+			trCond.Reason = "Retry to reserve resource"
+			if err = utilsres.PatchTaskResource(context.Background(), h.kusciaClient, utilsres.ExtractTaskResourceStatus(tr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
 				err = fmt.Errorf("patch party task resource %v/%v failed, %v", trCopy.Namespace, trCopy.Name, err.Error())
 				return false, err
 			}
@@ -80,16 +82,19 @@ func (h *ReserveFailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup)
 		partySet[party.DomainID] = struct{}{}
 	}
 
-	if err := updatePodAnnotations(trg.Name, h.podLister, h.kubeClient); err != nil {
-		err = fmt.Errorf("update task resource group %v pod annotation failed, %v", trg.Name, err.Error())
-		return false, err
+	if utilsres.IsExistingTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed, corev1.ConditionFalse) {
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, corev1.ConditionTrue, "")
+	}
+
+	if err = updatePodAnnotations(trg.Name, h.podLister, h.kubeClient); err != nil {
+		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.PodAnnotationUpdated)
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, corev1.ConditionFalse, fmt.Sprintf("Update pod annotation failed, %v", err.Error()))
+		return needUpdate, err
 	}
 
 	trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseReserving
 	trg.Status.RetryCount++
-	trgReserveFailedCond, _ := utilscommon.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesGroupCondReserveFailed)
-	trgReserveFailedCond.Status = corev1.ConditionTrue
-	trgReserveFailedCond.LastTransitionTime = now
-	trgReserveFailedCond.Reason = "Retry to reserve resource"
+	trg.Status.LastTransitionTime = &now
 	return true, nil
 }

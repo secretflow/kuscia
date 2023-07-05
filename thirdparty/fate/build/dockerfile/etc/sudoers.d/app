@@ -1,0 +1,3 @@
+app ALL=(ALL) ALL
+
+app ALL=(ALL) NOPASSWD: ALL
