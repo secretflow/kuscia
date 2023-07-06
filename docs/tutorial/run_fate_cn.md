@@ -55,8 +55,8 @@ bash ./thirdparty/fate/scripts/deploy/start_fate.sh ${USER}-kuscia-master ${USER
 # 查看 Alice 的 FATE 服务是否启动（能看到名为 fate-alice 的容器）
 docker ps
 
-# 进入 Bob 容器，确认 Bob 机构的 FATE 启动完成（能看到 fate-deploy-bob 开头的 Pod 启动正常）
-docker exec -it ${USER}-kuscia-lite-bob bash
+# 进入 Master 容器，确认 Bob 机构的 FATE 启动完成（能看到 fate-deploy-bob 开头的 Pod 启动正常）
+docker exec -it ${USER}-kuscia-master bash
 kubectl get pods -A
 ```
 脚本将在 Bob Lite 中部署 Bob 命名空间下的 FATE 集群以及 Kuscia 节点外 Alice 机构的 fate-alice FATE 集群。
