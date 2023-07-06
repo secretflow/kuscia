@@ -64,8 +64,8 @@ Status 携带请求响应的状态信息。
 
 Kuscia 部署完成之后，会默认生成一个 kuscia API client证书，你可以通过一下命令获取：
 ```shell
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/apilite-client.key .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/apilite-client.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.key .
+docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.crt .
 docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/ca.crt .
 docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/token .
 ```
@@ -90,7 +90,7 @@ GRPC 端点默认在：kuscia-master 的 8083 端口。
 
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如curl，你需要替换 {} 中的内容：
 ```shell
-curl --cert apilite-client.crt --key apilite-client.key --cacert ca.crt -X POST 'https://{root-kuscia-master}:8082/api/v1/domain/query' --header 'Token: {token}' --header 'Content-Type: application/json' -d '{
+curl --cert kusciaapi-client.crt --key kusciaapi-client.key --cacert ca.crt -X POST 'https://{root-kuscia-master}:8082/api/v1/domain/query' --header 'Token: {token}' --header 'Content-Type: application/json' -d '{
   "domain_id": "alice"
 }'
 ```
