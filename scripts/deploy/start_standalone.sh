@@ -217,8 +217,7 @@ function generate_secretpad_serverkey() {
   local tmp_volume=$1
   local password=$2
   # generate server key in secretPad container
-  docker run -it --rm --entrypoint /bin/bash --volume=${tmp_volume}/:/tmp/temp ${SECRETPAD_IMAGE} -c "scripts/gen_secretpad_serverkey.sh ${password} /tmp/temp"
-  cp ${tmp_volume}/server.jks ${tmp_volume}/secretpad/config/
+  docker run -it --rm --entrypoint /bin/bash --volume=${tmp_volume}/secretpad/config/:/tmp/temp ${SECRETPAD_IMAGE} -c "scripts/gen_secretpad_serverkey.sh ${password} /tmp/temp"
   rm -rf ${tmp_volume}/server.jks
   log "generate webserver server key done"
 }
@@ -242,16 +241,21 @@ function create_secretpad_user_password() {
 function copy_kuscia_api_client_certs() {
   local volume_path=$1
   # copy result
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/ca.crt ${volume_path}/secretpad/config/certs/ca.crt
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.crt  ${volume_path}/secretpad/config/certs/client.crt
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.key  ${volume_path}/secretpad/config/certs/client.pem
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/token  ${volume_path}/secretpad/config/certs/token
+  tmp_path=${volume_path}/temp/certs
+  mkdir -p ${tmp_path}
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/ca.crt ${tmp_path}/ca.crt
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.crt  ${tmp_path}/client.crt
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.key  ${tmp_path}/client.pem
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/token  ${tmp_path}/token
+  docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
+  docker cp -a ${tmp_path} ${CTR_PREFIX}-dummy:/tmp/temp/
+  docker rm -f ${CTR_PREFIX}-dummy
+  rm -rf ${volume_path}/temp
   log "copy kuscia api client certs to web server container done"
 }
 
 function render_secretpad_config() {
   local volume_path=$1
-  local conf_path=${volume_path}/secretpad/config/application.yaml
   local tmpl_path=${volume_path}/secretpad/config/template/application.yaml.tmpl
   local store_key_password=$2
   #local default_login_password
@@ -261,7 +265,11 @@ function render_secretpad_config() {
   sed "s/{{.KUSCIA_API_ADDRESS}}/${MASTER_CTR}/g" ${tmpl_path} > ${volume_path}/application_01.yaml
   # render store password
   sed "s/{{.PASSWORD}}/${store_key_password}/g" ${volume_path}/application_01.yaml > ${volume_path}/application.yaml
-  cp  ${volume_path}/application.yaml ${conf_path}
+  # cp file to secretpad's config path
+  docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
+  docker cp ${volume_path}/application.yaml ${CTR_PREFIX}-dummy:/tmp/temp/
+  docker rm -f ${CTR_PREFIX}-dummy
+  # rm temp file
   rm -rf ${volume_path}/application_01.yaml ${volume_path}/application.yaml
   # render default_login_password
   log "render webserver config done"
