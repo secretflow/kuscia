@@ -51,7 +51,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="latest"
+SF_IMAGE_TAG="0.8.3b2"
 SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
 NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
@@ -362,6 +362,7 @@ including uppercase and lowercase letters, numbers, and special characters.${NC}
     if [ "${RET}" -eq 0 ]; then
       local CONFIRM_PASSWD
       read -r -p "Confirm password again: " CONFIRM_PASSWD
+      echo ""
       if [ "${CONFIRM_PASSWD}" == "${SECRETPAD_PASSWORD}" ]; then
         break
       else
@@ -374,6 +375,7 @@ including uppercase and lowercase letters, numbers, and special characters.${NC}
   done
   set -e
   stty echo # enable display
+  log "The user and password have been set up successfully."
 }
 
 function probe_secret_pad() {

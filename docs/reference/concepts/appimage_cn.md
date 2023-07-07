@@ -61,7 +61,7 @@ spec:
     id: d4ffa123aa45mnkj
     name: secretflow/secretflow-lite-anolis8
     sign: abc13mnjh1olkkp1
-    tag: "latest"
+    tag: "0.8.3b2"
 ```
 
 在该示例中:
@@ -156,7 +156,7 @@ spec:
     id: d4ffa123aa45mnkj
     name: secretflow/secretflow-lite-anolis8
     sign: abc13mnjh1olkkp1
-    tag: "latest"
+    tag: "0.8.3b2"
 ```
 
 在该示例中，将 ports 下 name 为`global`的 port 端口号改为`8082`。

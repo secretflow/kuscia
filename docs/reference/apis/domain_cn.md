@@ -143,11 +143,11 @@
 
 ### NodeStatus
 
-| 字段                   | 类型     | 可选 | 描述        |
-|----------------------|--------|----|-----------|
-| name                 | string | 否  | 节点名称      |
-| status               | string | 否  | 节点状态      |
-| version              | string | 否  | 节点Agent版本 |
-| last_heartbeat_time  | int64  | 否  | 最后心跳时间    |
-| last_transition_time | int64  | 否  | 最后更新时间    |
+| 字段                   | 类型     | 可选 | 描述                                           |
+|----------------------|--------|----|----------------------------------------------|
+| name                 | string | 否  | 节点名称                                         |
+| status               | string | 否  | 节点状态                                         |
+| version              | string | 否  | 节点Agent版本                                    |
+| last_heartbeat_time  | string  | 否  | 最后心跳时间, RFC3339格式（e.g. 2006-01-02T15:04:05Z） |
+| last_transition_time | string  | 否  | 最后更新时间，RFC3339格式（e.g. 2006-01-02T15:04:05Z）  |
 

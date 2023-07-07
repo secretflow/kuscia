@@ -1,7 +1,7 @@
 # DomainRoute
 
 DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路由规则、Lite 节点之间的路由规则，以及点对点（P2P）网络中 Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domainroute_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domainroute.proto) 找到 Domain 对应的 protobuf 文件。
+你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domainroute.proto) 找到 DomainRoute 对应的 protobuf 文件。
 
 ## 接口总览
 

@@ -1,7 +1,7 @@
 # 如何运行一个 FATE 作业
 本教程介绍了如何通过 Kuscia 运行一个 LR 流程的 [FATE](https://fate.readthedocs.io) Pipeline 作业。
 
-**注： 该模式目前还处于研发阶段，在体验的时候，需要依赖源代码。**
+**注： 该模式目前还处于研发阶段，在体验的时候，需要依赖源代码进行编译。**
 
 ## 准备节点
 
@@ -73,10 +73,53 @@ docker ps
 docker exec -it ${USER}-kuscia-autonomy-bob bash
 kubectl get pods -A
 ```
-脚本将在 Bob Autonomy 中部署 Bob 命名空间下的 FATE 集群以及 Kuscia 节点外 Alice 机构的 fate-alice FATE 集群。
+脚本将在 Bob Autonomy 中部署 Bob 命名空间下的 FATE 集群，以及 Kuscia 节点外 Alice 机构的 fate-alice FATE 集群。
 
 
-整个部署时长与部署的目标机器配置相关。在 4C16G 的节点上时间花销为 20 min 左右。
+整个部署时长与部署的目标机器配置相关。在 4C16G 的节点上时间花销为 20 min 左右。可以登入对应的 节点|Pod 中查看 FATE 的部署日志，当打印出 **HAVE FUN** 则表明当前环境的 FATE 部署成功：
+
+![FATE deploy successfully](../imgs/fate_deploy_success.png)
+
+**中心化组网下 Bob Lite 中 FATE in Kuscia 部署日志：**
+```shell
+# 登入 Bob lite 容器
+docker exec -it ${USER}-fate-kuscia-lite-bob bash
+
+# 查看正在运行的 container，找到部署 FATE 的 container：fate-deploy-bob，复制其 CONTAINER-ID
+crictl ps
+
+# 通过 CONTAINER-ID 登入 container
+crictl exec -it ${CONTAINER-ID} bash
+
+# 查看 FATE 部署日志
+tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
+```
+
+**P2P 组网下 Bob Autonomy 中 FATE in Kuscia 部署日志：**
+```shell
+# 登入 Bob Autonomy 容器
+docker exec -it ${USER}-kuscia-autonomy-bob bash
+
+# 查看正在运行的 container，找到部署 FATE 的 container：fate-deploy-bob，复制其 CONTAINER-ID
+crictl ps
+
+# 通过 CONTAINER-ID 登入 container
+crictl exec -it ${CONTAINER-ID} bash
+
+# 查看 FATE 部署日志
+tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
+```
+
+**Kuscia 节点外 Alice 机构的 fate-alice 部署日志：**
+```shell
+# 登入 fate-alice 容器
+docker exec -it fate-alice bash
+
+# 查看 FATE 部署日志
+tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
+```
+
+当 FATE 集群部署成功后，就可以通过 Kuscia 去运行 FATE 作业了。
 
 ## 准备数据
 FATE 镜像中带有两份测试数据，分别为 10 维 1W 行不带 label 的 lr_host 与 4 维 1W 行带 label 的 lr_guest。当然你也可以参考 FATE 文档将自己的数据导入到 FATE 集群中。
