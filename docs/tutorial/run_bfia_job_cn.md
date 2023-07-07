@@ -299,10 +299,10 @@ job-ss-lr   13s         2s               2s                  Succeeded
 
 ```shell
 # 在 alice 容器中查看输出结果
-more /home/kuscia/var/storage/job-ss-lr-host-0/job-ss-lr-26e3489ac66e-result
+more /home/kuscia/var/storage/job-ss-lr-host-0/job-ss-lr-{random-id}-result
 
 # 在 bob 容器中查看输出结果
-more /home/kuscia/var/storage/job-ss-lr-guest-0/job-ss-lr-26e3489ac66e-result
+more /home/kuscia/var/storage/job-ss-lr-guest-0/job-ss-lr-{random-id}-result
 ```
 
 ## 删除 KusciaJob

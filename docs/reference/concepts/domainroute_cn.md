@@ -236,11 +236,11 @@ DomainRoute `spec` 的子字段详细介绍如下：
     * `port`：表示端口号。
     * `protocol`：表示端口协议，支持`HTTP`或`GRPC`。
     * `isTLS`：表示是否开启`HTTPS`或`GRPCS`。
-* `mTLSConfig`：表示 MTLS 配置，authenticationTyp 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。
+* `mTLSConfig`：表示 MTLS 配置，authenticationType 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。
   * `sourceClientCert`：表示 BASE64 编码格式的源节点的客户端证书。
   * `sourceClientPrivateKey`：表示 BASE64 编码格式的源节点的客户端私钥。
   * `tlsCA`：表示 BASE64 编码格式的目标节点的服务端 CA，为空则表示不校验服务端证书。
-* `tokenConfig`：表示 Token 配置，authenticationTyp 为`Token`或 bodyEncryption 非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。
+* `tokenConfig`：表示 Token 配置，authenticationType 为`Token`或 bodyEncryption 非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。
   * `rollingUpdatePeriod`：表示 Token 轮转周期，默认值为 0。
   * `destinationPublicKey`：表示目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充。
   * `sourcePublicKey`：表示源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充。
@@ -352,11 +352,11 @@ ClusterDomainRoute `spec` 的子字段详细介绍如下：
     * `port`：表示端口号。
     * `protocol`：表示端口协议，支持`HTTP`或`GRPC`。
     * `isTLS`：表示是否开启`HTTPS`或`GRPCS`。
-* `mTLSConfig`：表示 MTLS 配置，authenticationTyp 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。
+* `mTLSConfig`：表示 MTLS 配置，authenticationType 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。
   * `sourceClientCert`：表示 BASE64 编码格式的源节点的客户端证书。
   * `sourceClientPrivateKey`：表示 BASE64 编码格式的源节点的客户端私钥。
   * `tlsCA`：表示 BASE64 编码格式的目标节点的服务端 CA，为空则表示不校验服务端证书。
-* `tokenConfig`：表示 Token 配置，authenticationTyp 为`Token`或 bodyEncryption 非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。
+* `tokenConfig`：表示 Token 配置，authenticationType 为`Token`或 bodyEncryption 非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。
   * `rollingUpdatePeriod`：表示 Token 轮转周期，默认值为 0。
   * `destinationPublicKey`：表示目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充。
   * `sourcePublicKey`：表示源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充。

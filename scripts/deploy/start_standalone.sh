@@ -362,6 +362,7 @@ including uppercase and lowercase letters, numbers, and special characters.${NC}
     if [ "${RET}" -eq 0 ]; then
       local CONFIRM_PASSWD
       read -r -p "Confirm password again: " CONFIRM_PASSWD
+      echo ""
       if [ "${CONFIRM_PASSWD}" == "${SECRETPAD_PASSWORD}" ]; then
         break
       else
@@ -374,6 +375,7 @@ including uppercase and lowercase letters, numbers, and special characters.${NC}
   done
   set -e
   stty echo # enable display
+  log "The user and password have been set up successfully."
 }
 
 function probe_secret_pad() {

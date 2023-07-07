@@ -54,9 +54,9 @@ Kuscia 提供了 Makefile 来构建镜像，你可以通过`make help`命令查�
 
 ### 构建 Kuscia-Envoy Image
 
-Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 Kuscia-Envoy 镜像。如果你选择使用默认的 Kuscia-Envoy 镜像，那么你可以跳过这一步。
+Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kuscia-Envoy 镜像](https://hub.docker.com/r/secretflow/kuscia-envoy/tags)。如果你选择使用默认的 Kuscia-Envoy 镜像，那么你可以跳过这一步。
 
-如果你选择自行构建 Kuscia-Envoy 镜像，请在 Kuscia-Envoy 项目的根目录下执行 `make image` 命令。 而后你可以用 `docker images | grep kuscia-envoy` 来查看 
+如果你选择自行构建 Kuscia-Envoy 镜像，请在 [Kuscia-Envoy](https://github.com/secretflow/kuscia-envoy) 项目的根目录下执行 `make image` 命令。 而后你可以用 `docker images | grep kuscia-envoy` 来查看 
 构建产出的 Kuscia-Envoy 镜像名称。
 
 ### 构建 Kuscia Image
