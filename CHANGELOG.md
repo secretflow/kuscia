@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.2.0b1] - 2023-7-7
+### Fixed
+- Fix document typo.
+- Fix errors when installing secretpad using non-root user.
+- Fix the issue of token failure after restarting Kuscia.
+
 ## [0.2.0b0] - 2023-7-6
 ### Added
-- Kuscia init release
+- Kuscia init release.
