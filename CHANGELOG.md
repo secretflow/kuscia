@@ -12,6 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
-## [0.2.0b0] - 2023-6-30
+## [0.2.0b0] - 2023-7-6
 ### Added
 - Kuscia init release

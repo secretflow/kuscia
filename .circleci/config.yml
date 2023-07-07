@@ -2,6 +2,25 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
+setup: true
+
+orbs:
+  continuation: circleci/continuation@0.3.1
+
+parameters:
+  GHA_Actor:
+    type: string
+    default: ""
+  GHA_Action:
+    type: string
+    default: ""
+  GHA_Event:
+    type: string
+    default: ""
+  GHA_Meta:
+    type: string
+    default: ""
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
@@ -20,5 +39,12 @@ jobs:
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   build-workflow:
+    when:
+      not: << pipeline.parameters.GHA_Action >>
     jobs:
       - build-kuscia
+  publish-workflow:
+    when: << pipeline.parameters.GHA_Action >>
+    jobs:
+      - continuation/continue:
+          configuration_path: .circleci/release-config.yml
