@@ -6,7 +6,7 @@
 <a href="./README.zh-CN.md">简体中文</a>｜<a href="./README.md">English</a>
 </p>
 
-Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的隐私计算应用编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。通过 Kuscia：
+Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。通过 Kuscia：
 
 * 你可以快速体验隐私计算功能。
 * 你可以获得完整的隐私计算生产能力。

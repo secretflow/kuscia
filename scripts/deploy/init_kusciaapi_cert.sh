@@ -58,8 +58,10 @@ openssl x509  -req -in ${CLIENT}.csr \
     -out ${CLIENT}.crt
 
 #generate token file
-openssl rand -base64 8 |xargs echo -n > /tmp/token
-sha256sum /tmp/token | cut -d' ' -f1 |xargs echo -n > token
-rm -rf /tmp/token
+if [ ! -e token ]; then # token not exists
+  openssl rand -base64 8 |xargs echo -n > /tmp/token
+  sha256sum /tmp/token | cut -d' ' -f1 |xargs echo -n > token
+  rm -rf /tmp/token
+fi
 
 popd || exit

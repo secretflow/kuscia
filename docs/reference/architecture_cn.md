@@ -1,6 +1,6 @@
 # 架构
 
-Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的隐私计算应用编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia 提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。
+Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia 提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。
 
 Kuscia 集群由控制平面（俗称调度面、Master）和节点组成。控制平面负责调度，节点负责计算。
 
@@ -8,7 +8,7 @@ Kuscia 集群由控制平面（俗称调度面、Master）和节点组成。控�
 
 ![Kuscia Architecture](../imgs/kuscia_architecture.png)
 
-Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联互通，并计划支持与第三方产商的节点互联互通，从而构建更大的隐私计算网络。
+Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联互通，并支持与第三方产商的节点互联互通，从而构建更大的隐私计算网络。
 
 ![Deployment Mode](../imgs/linkaged_network.png)
 

@@ -6,7 +6,7 @@
 该任务结束后，会在参与方生成新的隐私求交结果表，即生成`type`为`table`的 DomainData，参与方可以通过这个 DomainData 获取到文件地址或者将这个 DomainData 用于下次计算任务。
 
 值得注意的是：无论是创建、更新、清理 DomainData，都不会对真实的数据内容产生影响，Kuscia 仅仅记录数据的 meta 信息，用于在计算任务中协助应用算法组件读取数据。
-当前版本 Kuscia 暂未支持检查真实的数据内容是否满足 DomainData 的提交的 meta 信息定义，后续 Kuscia 会增加对提交的 meta 信息的验证。
+当前版本 Kuscia 暂未支持检查真实的数据内容是否满足 DomainData 中提交的 meta 信息定义，后续 Kuscia 会增加对提交的 meta 信息的验证。
 
 如上所述，你可以通过创建一个 DomainData 将你自己的数据加入 Kuscia 的管理，也可以通过任务生成一个新的 DomainData 。
 
@@ -55,7 +55,7 @@ spec:
 
 在该示例中:
 
-- `.metadata.labels`：标签在 K8S 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
+- `.metadata.labels`：标签在 K8s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
 - `.metadata.name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
 - `.metadata.namespace`: 表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
 - `.spec.attributes`：表示 DomainData 的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，详细请查看 [参考](#refer)。
@@ -136,7 +136,7 @@ kubectl get domaindata alice-table -n alice
 ## 清理 DomainData
 
 下面以 DomainData `alice-table.yaml` 为例，介绍清理 DomainData。
-注意：清理 DomainData 并不会清除真实的数据内容，只是从 Kuscia 中删除 DomainData 中所记录的 mate 信息。
+注意：清理 DomainData 并不会清除真实的数据内容，只是从 Kuscia 中删除 DomainData 中所记录的 meta 信息。
 
 1. 运行以下命令清理 DomainData。
 ```shell
@@ -188,7 +188,7 @@ spec:
 
 DomainData `metadata` 的子字段详细介绍如下：
 
-- `labels`：标签在 K8S 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
+- `labels`：标签在 K8s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
 - `name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
 - `namespace`：表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
 

@@ -108,7 +108,7 @@ KusciaTask 将会继续进行调度， 此时整个 KusciaJob 的状态仍处于
 
 #### Strict
 
-而在 Strict 模式下，当 KusciaJob 中的某个 Critical KusciaTask 失败后，整个 KusciaJob 的所有 Task 都不在进行调度，并且 KusciaJob 的状态立即变更为
+而在 Strict 模式下，当 KusciaJob 中的某个 Critical KusciaTask 失败后，整个 KusciaJob 的所有 Task 都不再进行调度，并且 KusciaJob 的状态立即变更为
 Failed 状态。
 
 ### 理解 KusciaJob 调度的关键点
