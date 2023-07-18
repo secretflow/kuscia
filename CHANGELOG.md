@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.2.0b2] - 2023-7-18
+### Fixed
+- Correct datamesh service name for p2p
+
 ## [0.2.0b1] - 2023-7-7
 ### Fixed
 - Fix document typo.
