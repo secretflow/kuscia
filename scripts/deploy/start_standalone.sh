@@ -278,11 +278,12 @@ function render_secretpad_config() {
 function create_domain_datamesh_svc() {
   local ctr=$1
   local domain_id=$2
+  local endpoint=$3
   #local domain_ip
   # create data mesh service
   #domain_ip=$(docker container inspect -f '{{ .NetworkSettings.IPAddress }}' ${CTR_PREFIX}-lite-${domain_id})
   #echo "domain : '${domain_id}' ip: '${domain_ip}'"
-  docker exec -it ${ctr} scripts/deploy/create_datamesh_svc.sh ${domain_id} ${CTR_PREFIX}-lite-${domain_id}
+  docker exec -it ${ctr} scripts/deploy/create_datamesh_svc.sh ${domain_id} ${endpoint}
   log "create datamesh service '${domain_id}' done"
 }
 
@@ -571,13 +572,14 @@ function run_centralized() {
   check_sf_image $BOB_DOMAIN ${CTR_PREFIX}-lite-${BOB_DOMAIN} ${volume_path}
 
   # create datamesh svc
-  create_domain_datamesh_svc ${MASTER_CTR} ${ALICE_DOMAIN}
-  create_domain_datamesh_svc ${MASTER_CTR} ${BOB_DOMAIN}
+  create_domain_datamesh_svc ${MASTER_CTR} ${ALICE_DOMAIN} ${CTR_PREFIX}-lite-${ALICE_DOMAIN}
+  create_domain_datamesh_svc ${MASTER_CTR} ${BOB_DOMAIN} ${CTR_PREFIX}-lite-${BOB_DOMAIN}
 
   # create demo data
   create_domaindata_alice_table ${MASTER_CTR} ${ALICE_DOMAIN}
   create_domaindata_bob_table ${MASTER_CTR} ${BOB_DOMAIN}
 
+  # create secretflow app image
   create_secretflow_app_image ${MASTER_CTR}
 
   echo -e "${GREEN}Kuscia centralized cluster started successfully${NC}"
@@ -654,8 +656,8 @@ function run_p2p() {
   create_secretflow_app_image ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
 
   # create datamesh svc
-  create_domain_datamesh_svc ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN}
-  create_domain_datamesh_svc ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN}
+  create_domain_datamesh_svc ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN} ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}
+  create_domain_datamesh_svc ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN} ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
 
   # create demo data
   create_domaindata_alice_table ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN}
