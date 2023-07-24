@@ -45,18 +45,18 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: ## Generate CustomResourceDefinition objects.
-	sh hack/generate-crds.sh
+	bash hack/generate-crds.sh
 
 .PHONY: generate
 generate: gen-clientset gen-proto-code  ## Generate all code that Kuscia needs.
 
 .PHONY: gen-clientset
 gen-clientset:  # Generate CRD runtime.Object and Clientset\Informer|Listers.
-	sh hack/update-codegen.sh
+	bash hack/update-codegen.sh
 
 .PHONY: gen-proto-code
 gen-proto-code:  # Generate protobuf golang code that Kuscia needs.
-	sh hack/proto-to-go.sh
+	bash hack/proto-to-go.sh
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -90,7 +90,7 @@ clean: # clean build and test product.
 
 .PHONY: build
 build: fmt vet ## Build kuscia binary.
-	sh hack/build.sh
+	bash hack/build.sh
 
 .PHONY: docs
 docs: ## Build docs.
