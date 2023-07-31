@@ -27,23 +27,24 @@
 Kuscia 提供了 Makefile 来构建镜像，你可以通过`make help`命令查看命令帮助，其中 Build 部分提供了构建能力：
 
 ```shell
-    Usage:
-        make <target>
+Usage:
+  make <target>
 
-    General
-        help             Display this help.
+General
+  help              Display this help.
 
-    Development
-        manifests        Generate CustomResourceDefinition objects.
-        generate         Generate all code that Kuscia needs.
-        fmt              Run go fmt against code.
-        vet              Run go vet against code.
-        test             Run tests.
+Development
+  manifests         Generate CustomResourceDefinition objects.
+  generate          Generate all code that Kuscia needs.
+  fmt               Run go fmt against code.
+  vet               Run go vet against code.
+  test              Run tests.
 
-    Build
-        build            Build kuscia binary.
-        docs             Build docs.
-        image            Build docker image with the manager.
+Build
+  build             Build kuscia binary.
+  docs              Build docs.
+  image             Build docker image with the manager.
+  integration_test  Run Integration Test
 ```
 
 ### 构建可执行文件
@@ -76,3 +77,45 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 执行`make docs`命令，该命令会生成 Kuscia 文档，生成的文档会放在 `docs/_build/html` 目录，用浏览器打开 `docs/_build/html/index.html` 就可以查看文档。
 
 该命令依赖于 python 环境，并且已经安装了 pip 工具；编译文档前请提前安装，否则会执行错误。
+
+### 集成测试
+
+#### 对已存在的镜像进行集成测试
+
+Kuscia 的集成测试可以对 Kuscia 镜像进行测试，创建测试目录 test 并获取 Kuscia 集成测试脚本，集成测试脚本会下载到当前目录：
+
+```shell
+export KUSCIA_IMAGE={YOUR_KUSCIA_IMAGE}
+mkdir -p test
+docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
+```
+
+然后执行集成测试，第一个参数用于选择测试集合。
+
+目前支持：\[all，center.base，p2p.base，center.example\]，不填写则默认为 all。
+```shell
+./test/integration_test.sh all
+```
+
+在集成脚本执行的过程中，会自动安装依赖：[grpcurl](https://github.com/fullstorydev/grpcurl/releases) 和 [jq](https://jqlang.github.io/jq/download/) 在宿主机上。
+
+如果宿主机已经安装了并且可以通过 `PATH` 环境变量发现，则不会重复安装。 对于 `x86_64` 架构的 `maxOS` 和 `Linux` 系统，如果你没有安装，会自动安装在 `test/test_run/bin` 目录下。
+对于其他系统，你需要手动安装，然后将其配置到 `PATH` 环境变量中，或者放置在 `test/test_run/bin` 目录下。
+
+#### 使用 make 命令
+
+如果你正在参与 Kuscia 的开发工作，你也可以通过 `make integration_test` 来进行测试，该命令会编译你当前的代码并构建 Kuscia 镜像，然后进行集成测试。
+
+#### 新增测试用例
+
+如果你希望为 Kuscia 新增更多的测试用例，你可以在 Kuscia 项目的 `scripts/test/suite/center` 和 `scripts/test/suite/center/p2p` 下添加你的测试用例代码。
+你可以参考 `scripts/test/suite/center/basic.sh` 和 `scripts/test/suite/center/example.sh` 来编写你的测试用例。
+Kuscia 使用 [shunit2](https://github.com/kward/shunit2) 作为测试框架，安装在 `scripts/test/vendor` 下，你可以使用其中的断言函数。
+Kuscia 也准备了一些常用的函数，你可以在 `scripts/test/suite/core` 下找到。
+
+下面是详细步骤：
+1. 对于中心化模式，在 `scripts/test/suite/center/` 下新建您的测试用例集文件，对于 P2P 模式，在 `scripts/test/suite/p2p/` 下新建您的测试用例文件。
+2. 编写您的测试用例集，确保你的测试用例集文件包含 `. ./test/vendor/shunit2`，具体请参考 [shunit2](https://github.com/kward/shunit2)。
+3. 为你的测试用例集文件添加可执行权限：`chmod a+x {YOUR_TEST_SUITE_FILE}`。
+4. 在 `scripts/test/integration_test.sh` 文件中注册您的测试用例集。如 `TEST_SUITES["center.example"]="./test/suite/center/example.sh"`。变量 `TEST_SUITES` 的 key 为你的测试用例集的名称。
+5. 运行你的测试用例集，如上例：`./test/integration_test.sh center.example`。

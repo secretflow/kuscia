@@ -16,6 +16,7 @@ package common
 
 import (
 	"regexp"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -24,11 +25,16 @@ func GenDomainDataID(dataName string) (dataID string) {
 	// reserve the valid characters in the string
 	reg, _ := regexp.Compile("[^a-zA-Z0-9/-]+")
 	s1 := reg.ReplaceAllString(dataName, "")
-	// remove the invalid characters ['0-9' and '-'] at the begin of the string
+	// remove the invalid characters ['0-9' and '-'] at the beginning of the string
 	reg, _ = regexp.Compile("^[0-9/-]+")
 	prefix := reg.ReplaceAllString(s1, "")
 	if len(prefix) > 16 {
 		prefix = prefix[:16]
 	}
+
+	if !strings.HasSuffix(prefix, "-") {
+		prefix = prefix + "-"
+	}
+
 	return prefix + uuid.NewString()
 }

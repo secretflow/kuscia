@@ -55,9 +55,13 @@ bash ./thirdparty/fate/scripts/deploy/start_fate.sh ${USER}-kuscia-master ${USER
 # 查看 Alice 的 FATE 服务是否启动（能看到名为 fate-alice 的容器）
 docker ps
 
-# 进入 Master 容器，确认 Bob 机构的 FATE 启动完成（能看到 fate-deploy-bob 开头的 Pod 启动正常）
+# 进入 Master 容器，确认 Bob 机构的 FATE 启动完成（确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running）
 docker exec -it ${USER}-kuscia-master bash
-kubectl get pods -A
+kubectl get pods -n bob
+## 输出示例:
+NAME                               READY   STATUS    RESTARTS   AGE
+fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
+
 ```
 脚本将在 Bob Lite 中部署 Bob 命名空间下的 FATE 集群以及 Kuscia 节点外 Alice 机构的 fate-alice FATE 集群。
 
@@ -69,9 +73,12 @@ bash ./thirdparty/fate/scripts/deploy/start_fate.sh ${USER}-kuscia-autonomy-bob 
 # 查看 Alice 的 FATE 服务是否启动（能看到名为 fate-alice 的容器）
 docker ps
 
-# 进入 Bob 容器，确认 Bob 机构的 FATE 启动完成（能看到 fate-deploy-bob 开头的 Pod 启动正常）
+# 进入 Bob 容器，确认 Bob 机构的 FATE 启动完成（确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running）
 docker exec -it ${USER}-kuscia-autonomy-bob bash
-kubectl get pods -A
+kubectl get pods -n bob
+## 输出示例:
+NAME                               READY   STATUS    RESTARTS   AGE
+fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
 ```
 脚本将在 Bob Autonomy 中部署 Bob 命名空间下的 FATE 集群，以及 Kuscia 节点外 Alice 机构的 fate-alice FATE 集群。
 
@@ -83,7 +90,7 @@ kubectl get pods -A
 **中心化组网下 Bob Lite 中 FATE in Kuscia 部署日志：**
 ```shell
 # 登入 Bob lite 容器
-docker exec -it ${USER}-fate-kuscia-lite-bob bash
+docker exec -it ${USER}-kuscia-lite-bob bash
 
 # 查看正在运行的 container，找到部署 FATE 的 container：fate-deploy-bob，复制其 CONTAINER-ID
 crictl ps

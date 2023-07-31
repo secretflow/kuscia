@@ -24,6 +24,10 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
+const (
+	dataReportType = "report"
+)
+
 type createDomainDataHandler struct {
 	domainDataService service.IDomainDataService
 }
@@ -36,9 +40,10 @@ func NewCreateDomainDataHandler(domainDataService service.IDomainDataService) ap
 
 func (h *createDomainDataHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 	createReq, _ := request.(*datamesh.CreateDomainDataRequest)
-	if createReq.RelativeUri == "" {
+	if createReq.Type != dataReportType && createReq.RelativeUri == "" {
 		errs.AppendErr(errors.New("relative uri should not be empty"))
 	}
+
 	if createReq.Type == "" {
 		errs.AppendErr(errors.New("type should not be empty"))
 	}

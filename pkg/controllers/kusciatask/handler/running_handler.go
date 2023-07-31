@@ -444,21 +444,20 @@ func isPodFailed(ps *v1.PodStatus) bool {
 
 func fillTaskCondition(status *kusciaapisv1alpha1.KusciaTaskStatus) {
 	var cond *kusciaapisv1alpha1.KusciaTaskCondition
+	condExist := false
 	switch status.Phase {
 	case kusciaapisv1alpha1.TaskRunning:
-		cond, _ = utilsres.GetKusciaTaskCondition(status, kusciaapisv1alpha1.KusciaTaskCondRunning, true)
+		cond, condExist = utilsres.GetKusciaTaskCondition(status, kusciaapisv1alpha1.KusciaTaskCondRunning, true)
 		cond.Status = v1.ConditionTrue
 	case kusciaapisv1alpha1.TaskFailed:
-		cond, _ = utilsres.GetKusciaTaskCondition(status, kusciaapisv1alpha1.KusciaTaskCondSuccess, true)
+		cond, condExist = utilsres.GetKusciaTaskCondition(status, kusciaapisv1alpha1.KusciaTaskCondSuccess, true)
 		cond.Status = v1.ConditionFalse
 	case kusciaapisv1alpha1.TaskSucceeded:
-		cond, _ = utilsres.GetKusciaTaskCondition(status, kusciaapisv1alpha1.KusciaTaskCondSuccess, true)
+		cond, condExist = utilsres.GetKusciaTaskCondition(status, kusciaapisv1alpha1.KusciaTaskCondSuccess, true)
 		cond.Status = v1.ConditionTrue
 	}
 
-	if status.LastReconcileTime != nil {
-		cond.LastTransitionTime = status.LastReconcileTime
-	} else {
+	if !condExist {
 		now := metav1.Now().Rfc3339Copy()
 		cond.LastTransitionTime = &now
 	}

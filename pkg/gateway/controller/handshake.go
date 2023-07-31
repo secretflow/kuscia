@@ -256,8 +256,7 @@ func (c *DomainRouteController) DestReplyHandshake(drs, drd *kusciaapisv1alpha1.
 
 	drd = drd.DeepCopy()
 	drd.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
-	if drd, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(drd.Namespace).UpdateStatus(context.Background(), drd,
-		metav1.UpdateOptions{}); err != nil {
+	if drd, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(drd.Namespace).UpdateStatus(context.Background(), drd, metav1.UpdateOptions{}); err != nil {
 		return nil, err
 	}
 
@@ -364,8 +363,7 @@ func (c *DomainRouteController) checkAndUpdateTokenInstances(dr *kusciaapisv1alp
 	}
 
 	if updated {
-		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr,
-			metav1.UpdateOptions{}); err != nil {
+		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
 			nlog.Error(err)
 			return err
 		}

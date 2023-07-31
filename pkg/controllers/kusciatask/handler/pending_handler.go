@@ -16,11 +16,11 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -751,12 +751,13 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			})
 		}
 
-		taskClusterDefine, err := json.Marshal(podKit.clusterDef)
+		protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}
+		taskClusterDefine, err := protoJSONOptions.Marshal(podKit.clusterDef)
 		if err != nil {
 			return nil, err
 		}
 
-		allocatedPorts, err := json.Marshal(podKit.allocatedPorts)
+		allocatedPorts, err := protoJSONOptions.Marshal(podKit.allocatedPorts)
 		if err != nil {
 			return nil, err
 		}

@@ -26,8 +26,6 @@ service JobService {
 
   rpc QueryJob(QueryJobRequest) returns (QueryJobResponse);
 
-  rpc QueryJobStatus(QueryJobRequest) returns (JobStatusResponse);
-
   rpc BatchQueryJobStatus(BatchQueryJobStatusRequest) returns (BatchQueryJobStatusResponse);
 
   rpc StopJob(StopJobRequest)returns (StopJobResponse);

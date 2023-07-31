@@ -38,7 +38,6 @@ import (
 type IJobService interface {
 	CreateJob(ctx context.Context, request *kusciaapi.CreateJobRequest) *kusciaapi.CreateJobResponse
 	QueryJob(ctx context.Context, request *kusciaapi.QueryJobRequest) *kusciaapi.QueryJobResponse
-	QueryJobStatus(ctx context.Context, request *kusciaapi.QueryJobRequest) *kusciaapi.JobStatusResponse
 	BatchQueryJobStatus(ctx context.Context, request *kusciaapi.BatchQueryJobStatusRequest) *kusciaapi.BatchQueryJobStatusResponse
 	StopJob(ctx context.Context, request *kusciaapi.StopJobRequest) *kusciaapi.StopJobResponse
 	DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) *kusciaapi.DeleteJobResponse
@@ -218,30 +217,6 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 		},
 	}
 	return jobResponse
-}
-
-func (h *jobService) QueryJobStatus(ctx context.Context, request *kusciaapi.QueryJobRequest) *kusciaapi.JobStatusResponse {
-	// do validate
-	jobID := request.JobId
-	if jobID == "" {
-		return &kusciaapi.JobStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
-		}
-	}
-	// build job status response
-	_, jobStatusDetail, err := h.buildJobStatusByID(ctx, jobID)
-	if err != nil {
-		return &kusciaapi.JobStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrQueryJobStatus, err.Error()),
-		}
-	}
-	return &kusciaapi.JobStatusResponse{
-		Status: utils2.BuildSuccessResponseStatus(),
-		Data: &kusciaapi.JobStatusResponseData{
-			JobId:  jobID,
-			Status: jobStatusDetail,
-		},
-	}
 }
 
 func (h *jobService) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) *kusciaapi.DeleteJobResponse {
@@ -448,7 +423,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 
 		task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(ctx, taskID, metav1.GetOptions{})
 		if err != nil {
-			nlog.Errorf("found task [%s] occurs error: %v", taskID, err.Error())
+			nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
 		} else {
 			taskStatus := task.Status
 			ts.ErrMsg = taskStatus.Message

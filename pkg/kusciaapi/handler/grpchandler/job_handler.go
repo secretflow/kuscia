@@ -42,11 +42,6 @@ func (h jobHandler) QueryJob(ctx context.Context, request *kusciaapi.QueryJobReq
 	return res, nil
 }
 
-func (h jobHandler) QueryJobStatus(ctx context.Context, request *kusciaapi.QueryJobRequest) (*kusciaapi.JobStatusResponse, error) {
-	res := h.jobService.QueryJobStatus(ctx, request)
-	return res, nil
-}
-
 func (h jobHandler) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) (*kusciaapi.DeleteJobResponse, error) {
 	res := h.jobService.DeleteJob(ctx, request)
 	return res, nil
