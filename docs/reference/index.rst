@@ -10,3 +10,4 @@
     ./concepts/index
     ./apis/index
     operation_cn
+    faq_cn

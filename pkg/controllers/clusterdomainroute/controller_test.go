@@ -36,6 +36,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	dv1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -96,7 +97,7 @@ func Test_controller_with_token_rand(t *testing.T) {
 			},
 		}
 		kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testcdr, metav1.CreateOptions{})
-		time.Sleep(time.Second)
+		time.Sleep(100 * time.Millisecond)
 		testgateway := &dv1.Gateway{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "testgw",
@@ -116,8 +117,8 @@ func Test_controller_with_token_rand(t *testing.T) {
 		testdr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Get(ctx, testcdr.Name, metav1.GetOptions{})
 		assert.NoError(t, err)
 		testdr.Status.TokenStatus.Tokens[0].EffectiveInstances = []string{"testgw"}
-		kusciaClient.KusciaV1alpha1().DomainRoutes(bob).UpdateStatus(ctx, testdr, metav1.UpdateOptions{})
-		time.Sleep(time.Second)
+		kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Update(ctx, testdr, metav1.UpdateOptions{})
+		time.Sleep(100 * time.Millisecond)
 		cdr, err := kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(context.Background(), testcdr.Name, metav1.GetOptions{})
 		assert.NoError(t, err)
 		srcdr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(context.Background(), testcdr.Name, metav1.GetOptions{})
@@ -304,23 +305,23 @@ func Test_controller_with_token_rsa(t *testing.T) {
 		_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testcdr, metav1.CreateOptions{})
 		assert.NoError(t, err)
 		nlog.Debug("create ", testcdr.Name)
-		time.Sleep(time.Second)
+		time.Sleep(100 * time.Millisecond)
 
 		srcdr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, testcdr.Name, metav1.GetOptions{})
 		assert.NoError(t, err)
 		srcdr.Status.TokenStatus.RevisionToken.Token = "alicetestToken"
 		srcdr.Status.TokenStatus.RevisionToken.EffectiveInstances = []string{alicegateway.Name}
-		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).UpdateStatus(ctx, srcdr, metav1.UpdateOptions{})
+		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Update(ctx, srcdr, metav1.UpdateOptions{})
 		assert.NoError(t, err)
 
 		destdr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Get(ctx, testcdr.Name, metav1.GetOptions{})
 		assert.NoError(t, err)
 		destdr.Status.TokenStatus.RevisionToken.Token = "bobtestToken"
 		destdr.Status.TokenStatus.RevisionToken.EffectiveInstances = []string{bobgateway.Name}
-		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(bob).UpdateStatus(ctx, destdr, metav1.UpdateOptions{})
+		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Update(ctx, destdr, metav1.UpdateOptions{})
 		assert.NoError(t, err)
 		nlog.Debug("update " + alice + "-" + bob)
-		time.Sleep(2 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 
 		cdr, err := kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(context.Background(), testcdr.Name, metav1.GetOptions{})
 		assert.NoError(t, err)
@@ -397,7 +398,7 @@ func Test_controller_add_label(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testcdr2, metav1.CreateOptions{})
 		assert.NoError(t, err)
-		time.Sleep(time.Second)
+		time.Sleep(100 * time.Millisecond)
 		close(chStop)
 	}()
 	ic.Run(4)
@@ -447,6 +448,7 @@ func Test_doValidate(t *testing.T) {
 		SourceClientCert: "",
 	}
 	assert.Equal(t, fmt.Sprintf("clusterdomainroute %s Spec.MTLSConfig.SourceClientCert is null", testcdr.Name), c.doValidate(context.Background(), testcdr).Error())
+
 	testcdr.Spec.MTLSConfig.SourceClientCert = createCrtString(t)
 	assert.NoError(t, c.doValidate(context.Background(), testcdr))
 
@@ -490,30 +492,37 @@ func Test_doValidate_NoDomain(t *testing.T) {
 
 	chStop := make(chan struct{})
 	kusciaClient := kusciafake.NewSimpleClientset()
-
+	kubeClient := kubefake.NewSimpleClientset()
 	ctx := signals.NewKusciaContextWithStopCh(chStop)
 	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, time.Second*30)
 	clusterDomainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
+	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
 	c := &Controller{
 		kusciaClient:                   kusciaClient,
 		domainLister:                   domainInformer.Lister(),
 		domainListerSynced:             domainInformer.Informer().HasSynced,
 		clusterDomainRouteLister:       clusterDomainRouteInformer.Lister(),
 		clusterDomainRouteListerSynced: clusterDomainRouteInformer.Informer().HasSynced,
+		recorder:                       eventRecorder,
 		workqueue:                      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusterDomainRoutes"),
 	}
 	domainInformer.Informer().AddEventHandler(
 		cache.ResourceEventHandlerFuncs{
-			UpdateFunc: func(oldone, newone interface{}) {
-				c.syncClusterDomainRoute(oldone, newone)
+			UpdateFunc: func(_, newOne interface{}) {
+				newNS, ok := newOne.(*kusciaapisv1alpha1.Domain)
+				if !ok {
+					return
+				}
+				c.syncClusterDomainRoute(newNS.Name)
 			},
 		},
 	)
 	kusciaInformerFactory.Start(ctx.Done())
 	cache.WaitForCacheSync(ctx.Done(), c.domainListerSynced, c.clusterDomainRouteListerSynced)
-
-	assert.Equal(t, `domain.kuscia.secretflow "`+alice+`" not found`, c.doValidate(ctx, testcdr).Error())
+	assert.Equal(t, alice+`-`+bob+`'s source or destination public key is nil, try to sync from domain cert and wait retry`, c.doValidate(context.Background(), testcdr).Error())
 	kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testcdr, metav1.CreateOptions{})
 	domain := &dv1.Domain{
 		ObjectMeta: metav1.ObjectMeta{
@@ -525,13 +534,14 @@ func Test_doValidate_NoDomain(t *testing.T) {
 	}
 	kusciaClient.KusciaV1alpha1().Domains().Create(ctx, domain, metav1.CreateOptions{})
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, fmt.Sprintf(`domain %s cert is nil`, domain.Name), c.doValidate(ctx, testcdr).Error())
+
+	assert.Equal(t, alice+`-`+bob+`'s source or destination public key is nil, try to sync from domain cert and wait retry`, c.doValidate(ctx, testcdr).Error())
 	domain.Spec.Cert = createCrtString(t)
 	kusciaClient.KusciaV1alpha1().Domains().Update(ctx, domain, metav1.UpdateOptions{})
 	domain.Name = bob
 	kusciaClient.KusciaV1alpha1().Domains().Create(ctx, domain, metav1.CreateOptions{})
 	time.Sleep(100 * time.Millisecond)
-	assert.Equal(t, c.doValidate(ctx, testcdr).Error(), "sync domain aliceNodomain-bobNodomain cert with clusterdomainroute, will retry")
+	assert.Equal(t, alice+`-`+bob+`'s source or destination public key is nil, try to sync from domain cert and wait retry`, c.doValidate(ctx, testcdr).Error())
 }
 
 func Test_Name(t *testing.T) {

@@ -15,64 +15,64 @@ spec:
       type: str
     - comment: ""
       name: contact_cellular
-      type: f32
+      type: float
     - comment: ""
       name: contact_telephone
-      type: f32
+      type: float
     - comment: ""
       name: contact_unknown
-      type: f32
+      type: float
     - comment: ""
       name: month_apr
-      type: f32
+      type: float
     - comment: ""
       name: month_aug
-      type: f32
+      type: float
     - comment: ""
       name: month_dec
-      type: f32
+      type: float
     - comment: ""
       name: month_feb
-      type: f32
+      type: float
     - comment: ""
       name: month_jan
-      type: f32
+      type: float
     - comment: ""
       name: month_jul
-      type: f32
+      type: float
     - comment: ""
       name: month_jun
-      type: f32
+      type: float
     - comment: ""
       name: month_mar
-      type: f32
+      type: float
     - comment: ""
       name: month_may
-      type: f32
+      type: float
     - comment: ""
       name: month_nov
-      type: f32
+      type: float
     - comment: ""
       name: month_oct
-      type: f32
+      type: float
     - comment: ""
       name: month_sep
-      type: f32
+      type: float
     - comment: ""
       name: poutcome_failure
-      type: f32
+      type: float
     - comment: ""
       name: poutcome_other
-      type: f32
+      type: float
     - comment: ""
       name: poutcome_success
-      type: f32
+      type: float
     - comment: ""
       name: poutcome_unknown
-      type: f32
+      type: float
     - comment: ""
       name: "y"
-      type: i32
+      type: int
   dataSource: default-data-source
   name: bob.csv
   type: table

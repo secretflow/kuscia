@@ -68,29 +68,6 @@
 | data.tasks           | [TaskConfig](#task-config)[]          | 否  | 任务列表  |
 | data.status          | [JobStatusDetail](#job-status-detail) | 否  | Job状态 |
 
-{#query-job-status}
-
-### 查询Job状态
-
-#### HTTP路径
-/api/v1/job/query
-
-#### 请求（QueryJobRequest）
-
-| 字段     | 类型                                            | 可选 | 描述      |
-|--------|-----------------------------------------------|----|---------|
-| header | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容 |
-| job_id | string                                        | 否  | JobID   |
-
-#### 响应（JobStatusResponse
-
-| 字段          | 类型                                    | 可选 | 描述    |
-|-------------|---------------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status)        | 否  | 状态信息  |
-| data        | JobStatusResponseData                 |    |       |
-| data.job_id | string                                | 否  | JobID |
-| data.status | [JobStatusDetail](#job-status-detail) | 否  | Job状态 |
-
 
 {#batch-query-job-status}
 

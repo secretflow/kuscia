@@ -1,5 +1,5 @@
 ARG ARCH=amd64
-ARG K3S_VER=v1.26.5
+ARG K3S_VER=v1.26.6
 ARG K3S_IMAGE=rancher/k3s:${K3S_VER}-k3s1-${ARCH}
 FROM ${K3S_IMAGE} as k3s-image
 
@@ -19,7 +19,7 @@ COPY --from=k3s-image /bin/aux /image/bin/aux
 RUN wget https://github.com/krallin/tini/releases/download/v0.19.0/tini -O /image/home/kuscia/bin/tini && \
     chmod +x /image/home/kuscia/bin/tini
 
-ARG GO_VER=1.19.7
+ARG GO_VER=1.19.10
 RUN wget https://go.dev/dl/go${GO_VER}.linux-amd64.tar.gz && \
     tar -C /usr/local -zxvf go${GO_VER}.linux-amd64.tar.gz && \
     rm -rf go${GO_VER}.linux-amd64.tar.gz
