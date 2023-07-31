@@ -435,7 +435,7 @@ function start_secretpad() {
       	${SECRETPAD_IMAGE}
       probe_secret_pad ${CTR_PREFIX}-secretpad
       echo -e "${GREEN}web server started successfully${NC}"
-      echo -e "${GREEN}Please visit the website http://127.0.0.1:8088 to experience the Kuscia web's functions .${NC}"
+      echo -e "${GREEN}Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions .${NC}"
       echo -e "${GREEN}The login name:${SECRETPAD_USER_NAME} ,The login password:${SECRETPAD_PASSWORD} .${NC}"
       echo -e "${GREEN}The demo data would be stored in the path: ${VOLUME_PATH} .${NC}"
   fi
@@ -458,7 +458,7 @@ function start_lite() {
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     copy_volume_file_to_container $certs_volume domain.csr ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.csr
     docker exec -it ${MASTER_CTR} kubectl create ns $domain_id
-    docker exec -it ${MASTER_CTR} scripts/deploy/add_domain.sh $domain_id
+    docker exec -it ${MASTER_CTR} scripts/deploy/add_domain.sh $domain_id ${MASTER_CTR}
 
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.crt $certs_volume domain.crt
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
@@ -632,7 +632,7 @@ function build_interconn() {
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.csr ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.csr
-  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
+  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain ${host_ctr} p2p ${interconn_protocol}
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 

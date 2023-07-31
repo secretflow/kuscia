@@ -31,18 +31,22 @@ import (
 )
 
 const (
-	preRollingUpdateReason    = "PreRollingUpdate"
-	intraRollingUpdateReason  = "IntraRollingUpdate"
-	postRollingUpdateReason   = "PostRollingUpdate"
-	specificationUpdateReason = "SpecificationUpdate"
+	doValidateReason             = "DoValidate"
+	syncDomainPubKeyReason       = "SyncDomainPubKey"
+	specificationUpdateReason    = "SpecificationUpdate"
+	preRollingUpdateReason       = "PreRollingUpdate"
+	intraRollingUpdateReason     = "IntraRollingUpdate"
+	postRollingUpdateReason      = "PostRollingUpdate"
+	sourceTokenUpdateReason      = "SoureceTokenUpdate"
+	destinationTokenUpdateReason = "DestinationTokenUpdate"
 )
 
-func (c *Controller) preRollingClusterDomainRoute(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, force bool) {
+func (c *Controller) preRollingClusterDomainRoute(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, force bool) error {
 	cdr = cdr.DeepCopy()
 	cdr.Status.TokenStatus.Revision = cdr.Status.TokenStatus.Revision + 1
 	cdr.Status.TokenStatus.RevisionTime = metav1.Time{Time: time.Now()}
 
-	msg := fmt.Sprintf("clusterdomainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
+	msg := fmt.Sprintf("Clusterdomainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
 	setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteRunning, corev1.ConditionTrue, preRollingUpdateReason, msg))
 
 	// Reset ready condition to false if specification has changed.
@@ -51,13 +55,13 @@ func (c *Controller) preRollingClusterDomainRoute(ctx context.Context, cdr *kusc
 		setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, specificationUpdateReason, msg))
 	}
 
-	nlog.Infof("Pre rolling update clusterdomainroute %s, new revision %d", cdr.Name, cdr.Status.TokenStatus.Revision)
+	nlog.Infof("PreRollingClusterDomainRoute %s, new revision %d", cdr.Name, cdr.Status.TokenStatus.Revision)
 	if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(ctx, cdr, metav1.UpdateOptions{}); err != nil {
-		nlog.Errorf("preRollingClusterDomainRoute failed when update status, err: %v", err)
-		return
+		return err
 	}
 
 	c.recorder.Event(cdr, corev1.EventTypeNormal, preRollingUpdateReason, msg)
+	return nil
 }
 
 func (c *Controller) intraRollingClusterDomainRouteRand(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, sourcedr, destdr *kusciaapisv1alpha1.DomainRoute) error {
@@ -68,12 +72,14 @@ func (c *Controller) intraRollingClusterDomainRouteRand(ctx context.Context, cdr
 
 	// randomly generate token for this revision
 	if cdr.Status.TokenStatus.Revision != sourcedr.Status.TokenStatus.RevisionToken.Revision && cdr.Status.TokenStatus.Revision != destdr.Status.TokenStatus.RevisionToken.Revision {
+		begin := time.Now()
 		b := make([]byte, 32)
 		_, err := crand.Read(b)
 		if err != nil {
 			return err
 		}
 		revisionToken.Token = base64.StdEncoding.EncodeToString(b)
+		nlog.Infof("ClusterDomain %s generate new token, use:%s", cdr.Name, time.Since(begin).String())
 	} else if cdr.Status.TokenStatus.Revision == sourcedr.Status.TokenStatus.RevisionToken.Revision {
 		revisionToken.Token = sourcedr.Status.TokenStatus.RevisionToken.Token
 	} else {
@@ -84,7 +90,7 @@ func (c *Controller) intraRollingClusterDomainRouteRand(ctx context.Context, cdr
 		sourcedr = sourcedr.DeepCopy()
 		sourcedr.Status.TokenStatus.RevisionToken = revisionToken
 		nlog.Debugf("Intra rolling update domainroute %s/%s", sourcedr.Namespace, sourcedr.Name)
-		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(cdr.Spec.Source).UpdateStatus(ctx, sourcedr, metav1.UpdateOptions{}); err != nil {
+		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(sourcedr.Namespace).UpdateStatus(ctx, sourcedr, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
@@ -93,14 +99,15 @@ func (c *Controller) intraRollingClusterDomainRouteRand(ctx context.Context, cdr
 		destdr = destdr.DeepCopy()
 		destdr.Status.TokenStatus.RevisionToken = revisionToken
 		nlog.Debugf("Intra rolling update domainroute %s/%s", destdr.Namespace, destdr.Name)
-		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(cdr.Spec.Destination).UpdateStatus(ctx, destdr, metav1.UpdateOptions{}); err != nil {
+		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(destdr.Namespace).UpdateStatus(ctx, destdr, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
 
-	msg := fmt.Sprintf("source and destination domainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
+	msg := fmt.Sprintf("Source and destination domainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
 	c.recorder.Event(cdr, corev1.EventTypeNormal, intraRollingUpdateReason, msg)
-	return fmt.Errorf(msg)
+	nlog.Info(msg)
+	return nil
 }
 
 func (c *Controller) intraRollingClusterDomainRouteRSA(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, sourcedr, destdr *kusciaapisv1alpha1.DomainRoute) error {
@@ -121,17 +128,16 @@ func (c *Controller) intraRollingClusterDomainRouteRSA(ctx context.Context, cdr 
 		}
 	}
 	if len(liveGateways) == 0 {
-		nlog.Errorf("No available gateway in source namespace %s", cdr.Spec.Source)
+		nlog.Warnf("No available gateway in source namespace %s", cdr.Spec.Source)
 		return nil
 	}
 	initializer := liveGateways[mrand.Intn(len(liveGateways))]
-	nlog.Debugf("Clusterdomainroute %s, revision: %d, initializer: %s/%s", cdr.Name, cdr.Status.TokenStatus.Revision, cdr.Spec.Source, initializer)
 
 	if cdr.Status.TokenStatus.Revision != sourcedr.Status.TokenStatus.RevisionToken.Revision {
 		sourcedr = sourcedr.DeepCopy()
 		sourcedr.Status.TokenStatus.RevisionToken = revisionToken
 		sourcedr.Status.TokenStatus.RevisionInitializer = initializer
-		nlog.Debugf("Intra rolling update domainroute %s/%s", sourcedr.Namespace, sourcedr.Name)
+		nlog.Infof("Intra rolling update domainroute %s/%s, revision: %d, initializer: %s", sourcedr.Namespace, sourcedr.Name, cdr.Status.TokenStatus.Revision, initializer)
 		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(cdr.Spec.Source).UpdateStatus(ctx, sourcedr, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
@@ -140,15 +146,16 @@ func (c *Controller) intraRollingClusterDomainRouteRSA(ctx context.Context, cdr 
 	if cdr.Status.TokenStatus.Revision != destdr.Status.TokenStatus.RevisionToken.Revision {
 		destdr = destdr.DeepCopy()
 		destdr.Status.TokenStatus.RevisionToken = revisionToken
-		nlog.Debugf("Intra rolling update domainroute %s/%s", destdr.Namespace, destdr.Name)
+		nlog.Infof("Intra rolling update domainroute %s/%s, revision: %d", destdr.Namespace, destdr.Name, cdr.Status.TokenStatus.Revision)
 		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(cdr.Spec.Destination).UpdateStatus(ctx, destdr, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
 
-	msg := fmt.Sprintf("source and destination domainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
+	msg := fmt.Sprintf("Source and destination domainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
 	c.recorder.Event(cdr, corev1.EventTypeNormal, intraRollingUpdateReason, msg)
-	return fmt.Errorf(msg)
+	nlog.Info(msg)
+	return nil
 }
 
 func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, sourcedr, destdr *kusciaapisv1alpha1.DomainRoute) error {
@@ -166,7 +173,7 @@ func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kus
 		cdr.Status.TokenStatus.SourceTokens = sourceTokens
 		cdr.Status.TokenStatus.DestinationTokens = destinationTokens
 
-		msg := fmt.Sprintf("clusterdomainroute finish rolling revision %d", cdr.Status.TokenStatus.Revision)
+		msg := fmt.Sprintf("Clusterdomainroute finish rolling revision %d", cdr.Status.TokenStatus.Revision)
 		setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRoutePending, corev1.ConditionTrue, postRollingUpdateReason, msg))
 		setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionTrue, postRollingUpdateReason, msg))
 
@@ -184,11 +191,13 @@ func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kus
 	if !compareTokens(cdr.Status.TokenStatus.DestinationTokens, destdr.Status.TokenStatus.Tokens) {
 		destdr = destdr.DeepCopy()
 		destdr.Status.TokenStatus.Tokens = cdr.Status.TokenStatus.DestinationTokens
-		nlog.Debugf("Post rolling update destination domainroute %s/%s, revision %d", destdr.Namespace, destdr.Name, destdr.Status.TokenStatus.RevisionToken.Revision)
+		msg := fmt.Sprintf("Post rolling update destination domainroute %s/%s, revision %d", destdr.Namespace, destdr.Name, destdr.Status.TokenStatus.RevisionToken.Revision)
+		nlog.Debug(msg)
 		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(cdr.Spec.Destination).UpdateStatus(ctx, destdr, metav1.UpdateOptions{}); err != nil {
 			nlog.Error(err)
 			return err
 		}
+		c.recorder.Event(cdr, corev1.EventTypeNormal, destinationTokenUpdateReason, msg)
 	}
 
 	if c.checkEffectiveInstances(destdr) {
@@ -196,14 +205,14 @@ func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kus
 		if !compareTokens(cdr.Status.TokenStatus.SourceTokens, sourcedr.Status.TokenStatus.Tokens) {
 			sourcedr = sourcedr.DeepCopy()
 			sourcedr.Status.TokenStatus.Tokens = cdr.Status.TokenStatus.SourceTokens
-			nlog.Debugf("Post rolling update source domainroute %s/%s, revision %d", sourcedr.Namespace, sourcedr.Name, sourcedr.Status.TokenStatus.RevisionToken.Revision)
+			msg := fmt.Sprintf("Post rolling update source domainroute %s/%s, revision %d", sourcedr.Namespace, sourcedr.Name, sourcedr.Status.TokenStatus.RevisionToken.Revision)
+			nlog.Debug(msg)
 			if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(cdr.Spec.Source).UpdateStatus(ctx, sourcedr, metav1.UpdateOptions{}); err != nil {
 				nlog.Error(err)
 				return err
 			}
+			c.recorder.Event(cdr, corev1.EventTypeNormal, sourceTokenUpdateReason, msg)
 		}
-	} else {
-		return fmt.Errorf("destination not ready, waiting for next period")
 	}
 
 	return nil

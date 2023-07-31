@@ -466,11 +466,11 @@ func (c *Controller) updateTaskResourceGroupStatus(ctx context.Context, oldTrg, 
 	}
 
 	var err error
-	newStatus := newTrg.Status
+	newStatus := newTrg.Status.DeepCopy()
 	trg := newTrg
 	for i, trg := 0, trg; ; i++ {
 		nlog.Infof("Start updating task resource group %q status phase %q to %q", newTrg.Name, oldTrg.Status.Phase, newTrg.Status.Phase)
-		trg.Status = newStatus
+		trg.Status = *newStatus
 		_, err = c.kusciaClient.KusciaV1alpha1().TaskResourceGroups().UpdateStatus(ctx, trg, metav1.UpdateOptions{})
 		if err == nil {
 			nlog.Infof("Finish updating task resource group %q status phase %q to %q", newTrg.Name, oldTrg.Status.Phase, newTrg.Status.Phase)
@@ -486,7 +486,7 @@ func (c *Controller) updateTaskResourceGroupStatus(ctx context.Context, oldTrg, 
 			return err
 		}
 
-		if reflect.DeepEqual(trg.Status, newStatus) {
+		if reflect.DeepEqual(trg.Status, *newStatus) {
 			nlog.Infof("Task resource group %v status is already updated, skip to update it", trg.Name)
 			return nil
 		}

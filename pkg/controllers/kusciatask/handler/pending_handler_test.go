@@ -355,9 +355,9 @@ spec:
     - name: TASK_ID
       value: kusciatask-001
     - name: TASK_CLUSTER_DEFINE
-      value: '{}'
+      value: "{\"parties\":[], \"selfPartyIdx\":0, \"selfEndpointIdx\":0}"
     - name: ALLOCATED_PORTS
-      value: '{}'
+      value: "{\"ports\":[]}"
     - name: TASK_INPUT_CONFIG
       value: task input config
     image: test-image:0.0.1

@@ -47,7 +47,7 @@
           "ids": ["id1"],
           "features": ["age", "education", "default", "balance", "housing", "loan", "day", "duration", "campaign", "pdays", "previous", "job_blue-collar", "job_entrepreneur", "job_housemaid", "job_management", "job_retired", "job_self-employed", "job_services", "job_student", "job_technician", "job_unemployed", "marital_divorced", "marital_married", "marital_single"],
           "id_types": ["str"],
-          "feature_types": ["f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32"]
+          "feature_types": ["float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float"]
         },
         "num_lines": "-1"
       },
@@ -65,8 +65,8 @@
           "features": ["contact_cellular", "contact_telephone", "contact_unknown", "month_apr", "month_aug", "month_dec", "month_feb", "month_jan", "month_jul", "month_jun", "month_mar", "month_may", "month_nov", "month_oct", "month_sep", "poutcome_failure", "poutcome_other", "poutcome_success", "poutcome_unknown"],
           "labels": ["y"],
           "id_types": ["str"],
-          "feature_types": ["f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32", "f32"],
-          "label_types": ["i32"]
+          "feature_types": ["float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float", "float"],
+          "label_types": ["int"]
         },
         "num_lines": "-1"
       },
