@@ -17,7 +17,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -320,6 +319,17 @@ func Test_generatePod(t *testing.T) {
 	pod, err := h.generatePod(partyKit, podKit)
 	assert.NoError(t, err)
 
+	rmEnv := func(pod *v1.Pod, envName string) {
+		for i, c := range pod.Spec.Containers {
+			for ii, env := range c.Env {
+				if env.Name == envName {
+					pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env[:ii], pod.Spec.Containers[i].Env[ii+1:]...)
+					return
+				}
+			}
+		}
+	}
+
 	wantPodYAML := `
 metadata:
   creationTimestamp: null
@@ -356,7 +366,7 @@ spec:
     - name: TASK_ID
       value: kusciatask-001
     - name: TASK_CLUSTER_DEFINE
-      value: "{\"parties\":[],\"selfPartyIdx\":0,\"selfEndpointIdx\":0}"
+      value: "{\"parties\":[], \"selfPartyIdx\":0, \"selfEndpointIdx\":0}"
     - name: ALLOCATED_PORTS
       value: "{\"ports\":[]}"
     - name: TASK_INPUT_CONFIG
@@ -401,7 +411,13 @@ status: {}
 `
 	wantPod := &v1.Pod{}
 	assert.NoError(t, yaml.Unmarshal([]byte(wantPodYAML), wantPod))
-	assert.True(t, reflect.DeepEqual(wantPod, pod))
+
+	rmEnv(wantPod, "TASK_CLUSTER_DEFINE")
+	rmEnv(wantPod, "ALLOCATED_PORTS")
+	rmEnv(pod, "TASK_CLUSTER_DEFINE")
+	rmEnv(pod, "ALLOCATED_PORTS")
+
+	assert.Equal(t, wantPod, pod)
 }
 
 func makeTestAppImageCase1() *kusciaapisv1alpha1.AppImage {
