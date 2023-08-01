@@ -35,7 +35,6 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	JobService_CreateJob_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/CreateJob"
 	JobService_QueryJob_FullMethodName            = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/QueryJob"
-	JobService_QueryJobStatus_FullMethodName      = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/QueryJobStatus"
 	JobService_BatchQueryJobStatus_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/BatchQueryJobStatus"
 	JobService_StopJob_FullMethodName             = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/StopJob"
 	JobService_DeleteJob_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/DeleteJob"
@@ -48,7 +47,6 @@ const (
 type JobServiceClient interface {
 	CreateJob(ctx context.Context, in *CreateJobRequest, opts ...grpc.CallOption) (*CreateJobResponse, error)
 	QueryJob(ctx context.Context, in *QueryJobRequest, opts ...grpc.CallOption) (*QueryJobResponse, error)
-	QueryJobStatus(ctx context.Context, in *QueryJobRequest, opts ...grpc.CallOption) (*JobStatusResponse, error)
 	BatchQueryJobStatus(ctx context.Context, in *BatchQueryJobStatusRequest, opts ...grpc.CallOption) (*BatchQueryJobStatusResponse, error)
 	StopJob(ctx context.Context, in *StopJobRequest, opts ...grpc.CallOption) (*StopJobResponse, error)
 	DeleteJob(ctx context.Context, in *DeleteJobRequest, opts ...grpc.CallOption) (*DeleteJobResponse, error)
@@ -75,15 +73,6 @@ func (c *jobServiceClient) CreateJob(ctx context.Context, in *CreateJobRequest, 
 func (c *jobServiceClient) QueryJob(ctx context.Context, in *QueryJobRequest, opts ...grpc.CallOption) (*QueryJobResponse, error) {
 	out := new(QueryJobResponse)
 	err := c.cc.Invoke(ctx, JobService_QueryJob_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *jobServiceClient) QueryJobStatus(ctx context.Context, in *QueryJobRequest, opts ...grpc.CallOption) (*JobStatusResponse, error) {
-	out := new(JobStatusResponse)
-	err := c.cc.Invoke(ctx, JobService_QueryJobStatus_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +144,6 @@ func (x *jobServiceWatchJobClient) Recv() (*WatchJobEventResponse, error) {
 type JobServiceServer interface {
 	CreateJob(context.Context, *CreateJobRequest) (*CreateJobResponse, error)
 	QueryJob(context.Context, *QueryJobRequest) (*QueryJobResponse, error)
-	QueryJobStatus(context.Context, *QueryJobRequest) (*JobStatusResponse, error)
 	BatchQueryJobStatus(context.Context, *BatchQueryJobStatusRequest) (*BatchQueryJobStatusResponse, error)
 	StopJob(context.Context, *StopJobRequest) (*StopJobResponse, error)
 	DeleteJob(context.Context, *DeleteJobRequest) (*DeleteJobResponse, error)
@@ -172,9 +160,6 @@ func (UnimplementedJobServiceServer) CreateJob(context.Context, *CreateJobReques
 }
 func (UnimplementedJobServiceServer) QueryJob(context.Context, *QueryJobRequest) (*QueryJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryJob not implemented")
-}
-func (UnimplementedJobServiceServer) QueryJobStatus(context.Context, *QueryJobRequest) (*JobStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryJobStatus not implemented")
 }
 func (UnimplementedJobServiceServer) BatchQueryJobStatus(context.Context, *BatchQueryJobStatusRequest) (*BatchQueryJobStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchQueryJobStatus not implemented")
@@ -233,24 +218,6 @@ func _JobService_QueryJob_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(JobServiceServer).QueryJob(ctx, req.(*QueryJobRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _JobService_QueryJobStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryJobRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(JobServiceServer).QueryJobStatus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: JobService_QueryJobStatus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(JobServiceServer).QueryJobStatus(ctx, req.(*QueryJobRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -344,10 +311,6 @@ var JobService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryJob",
 			Handler:    _JobService_QueryJob_Handler,
-		},
-		{
-			MethodName: "QueryJobStatus",
-			Handler:    _JobService_QueryJobStatus_Handler,
 		},
 		{
 			MethodName: "BatchQueryJobStatus",
