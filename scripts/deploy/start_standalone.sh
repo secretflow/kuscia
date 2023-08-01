@@ -535,7 +535,10 @@ function check_sf_image() {
   fi
 
   echo -e "${GREEN}Start importing image '${sf_image}' ...${NC}"
-  local image_tar=/tmp/$(echo ${sf_image} | sed 's/\//_/g' ).tar
+  local image_id
+  image_id=$(docker images --filter="reference=${sf_image}" --format "{{.ID}}")
+  local image_tar
+  image_tar=/tmp/$(echo ${sf_image} | sed 's/\//_/g' ).${image_id}.tar
   if [ ! -e $image_tar ] ; then
     docker save $sf_image -o $image_tar
   fi
@@ -611,6 +614,7 @@ function start_autonomy() {
     echo -e "${GREEN}Starting container $domain_ctr ...${NC}"
     env_flag=$(generate_env_flag $domain_id)
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
+    docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
@@ -636,7 +640,7 @@ function build_interconn() {
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 
-  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $host_domain ${host_ctr}:1080 ${interconn_protocol}
+  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain ${host_ctr}:1080 -p ${interconn_protocol}
 }
 
 function run_p2p() {
@@ -673,7 +677,7 @@ function build_kuscia_network() {
 }
 
 usage() {
-  echo "$(basename "$0") [NETWORK_MODE] [OPTIONS]
+  echo "$(basename "$0") NETWORK_MODE [OPTIONS]
 NETWORK_MODE:
     center,centralized       centralized network mode (default)
     p2p                      p2p network mode

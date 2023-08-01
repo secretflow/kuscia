@@ -17,12 +17,41 @@
 
 set -e
 
+usage="$(basename "$0") DOMAIN_ID [EXTRA_SUBJECT_ALT_NAME]"
+
+DOMAIN_ID=$1
+SUBJECT_ALT_NAME=$2
+
+if [[ ${DOMAIN_ID} == "" ]]; then
+  echo "missing argument: $usage"
+  exit 1
+fi
+
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 
+SUBJECT_ALT_NAME="IP:127.0.0.1,IP:${IP},DNS:localhost"
+
+if [[ ${EXTRA_SUBJECT_ALT_NAME} != "" ]]; then
+  SUBJECT_ALT_NAME="${SUBJECT_ALT_NAME},${EXTRA_SUBJECT_ALT_NAME}"
+fi
+echo "subjectAltName=${SUBJECT_ALT_NAME}" > /tmp/external_tls_openssh.conf
+
+#create a PKCS#1 key for tls
 pushd $ROOT/etc/certs || exit
 openssl genrsa -out external_tls.key 2048
-openssl req -new -nodes -key external_tls.key -subj "/CN=${IP}" -out external_tls.csr
-openssl x509 -req -in external_tls.csr -CA ca.crt -CAkey ca.key -CAcreateserial -days 10000 -out external_tls.crt
+
+#generate the Certificate Signing Request
+openssl req -new -key external_tls.key -out external_tls.csr -subj "/CN=${DOMAIN_ID}_ENVOY_EXTERNAL"
+
+#sign it with Root CA
+openssl x509  -req -in external_tls.csr \
+    -extfile /tmp/external_tls_openssh.conf \
+    -CA ca.crt -CAkey ca.key  \
+    -days 10000 -sha256 -CAcreateserial \
+    -out external_tls.crt
+
+rm -rf /tmp/external_tls_openssh.conf
+
 popd || exit

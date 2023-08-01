@@ -419,25 +419,24 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {
 			ts.State = string(phase)
-		}
-
-		task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(ctx, taskID, metav1.GetOptions{})
-		if err != nil {
-			nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
-		} else {
-			taskStatus := task.Status
-			ts.ErrMsg = taskStatus.Message
-			ts.CreateTime = utils.TimeRfc3339String(&task.CreationTimestamp)
-			ts.StartTime = utils.TimeRfc3339String(taskStatus.StartTime)
-			ts.EndTime = utils.TimeRfc3339String(taskStatus.CompletionTime)
-			podStatuses := taskStatus.PodStatuses
-			ts.Parties = make([]*kusciaapi.PartyStatus, 0)
-			for _, podStatus := range podStatuses {
-				ts.Parties = append(ts.Parties, &kusciaapi.PartyStatus{
-					DomainId: podStatus.Namespace,
-					State:    string(podStatus.PodPhase),
-					ErrMsg:   podStatus.TerminationLog,
-				})
+			task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(ctx, taskID, metav1.GetOptions{})
+			if err != nil {
+				nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
+			} else {
+				taskStatus := task.Status
+				ts.ErrMsg = taskStatus.Message
+				ts.CreateTime = utils.TimeRfc3339String(&task.CreationTimestamp)
+				ts.StartTime = utils.TimeRfc3339String(taskStatus.StartTime)
+				ts.EndTime = utils.TimeRfc3339String(taskStatus.CompletionTime)
+				podStatuses := taskStatus.PodStatuses
+				ts.Parties = make([]*kusciaapi.PartyStatus, 0)
+				for _, podStatus := range podStatuses {
+					ts.Parties = append(ts.Parties, &kusciaapi.PartyStatus{
+						DomainId: podStatus.Namespace,
+						State:    string(podStatus.PodPhase),
+						ErrMsg:   podStatus.TerminationLog,
+					})
+				}
 			}
 		}
 

@@ -17,7 +17,7 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID"
+usage="$(basename "$0") DOMAIN_ID [HOST] [ROLE] [INTERCONN_PROTOCOL]"
 
 DOMAIN_ID=$1
 if [[ ${DOMAIN_ID} == "" ]]; then
