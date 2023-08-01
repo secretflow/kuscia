@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -355,7 +356,7 @@ spec:
     - name: TASK_ID
       value: kusciatask-001
     - name: TASK_CLUSTER_DEFINE
-      value: "{\"parties\":[], \"selfPartyIdx\":0, \"selfEndpointIdx\":0}"
+      value: "{\"parties\":[],\"selfPartyIdx\":0,\"selfEndpointIdx\":0}"
     - name: ALLOCATED_PORTS
       value: "{\"ports\":[]}"
     - name: TASK_INPUT_CONFIG
@@ -400,7 +401,7 @@ status: {}
 `
 	wantPod := &v1.Pod{}
 	assert.NoError(t, yaml.Unmarshal([]byte(wantPodYAML), wantPod))
-	assert.Equal(t, wantPod, pod)
+	assert.True(t, reflect.DeepEqual(wantPod, pod))
 }
 
 func makeTestAppImageCase1() *kusciaapisv1alpha1.AppImage {
