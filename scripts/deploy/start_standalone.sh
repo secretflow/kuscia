@@ -301,7 +301,7 @@ function create_domaindata_alice_table() {
   docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
   # create domain data alice table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_alice_table.sh ${domain_id}
-  log "create domaindata alice's table done default stored in the path: ${data_path}"
+  log "create domaindata alice's table done default stored path: ${data_path}"
 }
 
 function create_domaindata_bob_table() {
@@ -312,7 +312,7 @@ function create_domaindata_bob_table() {
   docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
-  log "create domaindata bob's table done default stored in the path: ${data_path}"
+  log "create domaindata bob's table done default stored path: ${data_path}"
 }
 
 function check_user_name(){
