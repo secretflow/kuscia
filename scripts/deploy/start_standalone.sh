@@ -284,7 +284,7 @@ function create_domain_datamesh_svc() {
   #domain_ip=$(docker container inspect -f '{{ .NetworkSettings.IPAddress }}' ${CTR_PREFIX}-lite-${domain_id})
   #echo "domain : '${domain_id}' ip: '${domain_ip}'"
   docker exec -it ${ctr} scripts/deploy/create_datamesh_svc.sh ${domain_id} ${endpoint}
-  log "create datamesh service domain_id: '${domain_id}' endpoint: '${endpoint}' done"
+  log "create datamesh service done domain_id: '${domain_id}' endpoint: '${endpoint}'"
 }
 
 function create_secretflow_app_image() {
@@ -481,7 +481,6 @@ function start_lite() {
 }
 
 function create_cluster_domain_route() {
-  echo -e "${GREEN}Starting create cluster domain route from $1 to $2${NC}"
   local src_domain=$1
   local dest_domain=$2
   local src_ctr=${CTR_PREFIX}-lite-${src_domain}
@@ -490,6 +489,7 @@ function create_cluster_domain_route() {
   local src_2_dest_cert=${CTR_CERT_ROOT}/${src_domain}-2-${dest_domain}.crt
   local dest_ca=${CTR_CERT_ROOT}/${dest_domain}.ca.crt
 
+  echo -e "${GREEN}Starting create cluster domain route from ${src_domain} to ${dest_domain}${NC}"
   copy_between_containers ${src_ctr}:${CTR_CERT_ROOT}/domain.csr ${dest_ctr}:${src_domain_csr}
   docker exec -it ${dest_ctr} openssl x509 -req -in $src_domain_csr -CA ${CTR_CERT_ROOT}/ca.crt -CAkey ${CTR_CERT_ROOT}/ca.key -CAcreateserial -days 10000 -out ${src_2_dest_cert}
   copy_between_containers ${dest_ctr}:${CTR_CERT_ROOT}/ca.crt ${MASTER_CTR}:${dest_ca}
@@ -540,7 +540,7 @@ function check_sf_image() {
     docker pull ${sf_image}
   fi
 
-  echo -e "${GREEN}Start importing image '${sf_image}' ...${NC}"
+  echo -e "${GREEN}Start importing image '${sf_image}' Please be patient...${NC}"
   local image_id
   image_id=$(docker images --filter="reference=${sf_image}" --format "{{.ID}}")
   local image_tar
@@ -619,9 +619,10 @@ function start_autonomy() {
   if need_start_docker_container $domain_ctr; then
     echo -e "${GREEN}Starting container $domain_ctr ...${NC}"
     env_flag=$(generate_env_flag $domain_id)
+    echo -e "${GREEN}Starting init domain $domain_id certs${NC}"
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
-
+    echo -e "${GREEN}Init domain $domain_id certs successfully${NC}"
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
@@ -641,12 +642,14 @@ function build_interconn() {
   local member_ctr=${CTR_PREFIX}-autonomy-${member_domain}
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
+  echo -e "${GREEN}Starting build internet connect from ${member_domain} to ${host_domain}${NC}"
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.csr ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.csr
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain ${host_ctr} p2p ${interconn_protocol}
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain ${host_ctr}:1080 -p ${interconn_protocol}
+  echo -e "${GREEN}Build internet connect from ${member_domain} to ${host_domain} successfully protocol: ${interconn_protocol} dest host: ${host_ctr}:1080${NC}"
 }
 
 function run_p2p() {
