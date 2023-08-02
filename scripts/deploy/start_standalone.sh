@@ -284,7 +284,7 @@ function create_domain_datamesh_svc() {
   #domain_ip=$(docker container inspect -f '{{ .NetworkSettings.IPAddress }}' ${CTR_PREFIX}-lite-${domain_id})
   #echo "domain : '${domain_id}' ip: '${domain_ip}'"
   docker exec -it ${ctr} scripts/deploy/create_datamesh_svc.sh ${domain_id} ${endpoint}
-  log "create datamesh service '${domain_id}' done"
+  log "create datamesh service domain_id: '${domain_id}' endpoint: '${endpoint}' done"
 }
 
 function create_secretflow_app_image() {
@@ -296,21 +296,23 @@ function create_secretflow_app_image() {
 function create_domaindata_alice_table() {
   local ctr=$1
   local domain_id=$2
+  local data_path="/home/kuscia/var/storage/data"
   # create domain datasource
   docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
   # create domain data alice table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_alice_table.sh ${domain_id}
-  log "create domaindata alice's table done"
+  log "create domaindata alice's table done default stored in the path: ${data_path}"
 }
 
 function create_domaindata_bob_table() {
   local ctr=$1
   local domain_id=$2
+  local data_path="/home/kuscia/var/storage/data"
   # create domain datasource
   docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
-  log "create domaindata bob's table done"
+  log "create domaindata bob's table done default stored in the path: ${data_path}"
 }
 
 function check_user_name(){
@@ -455,6 +457,8 @@ function start_lite() {
     if [ "$volume_path" != "" ] ; then
       mount_volume_param="-v /tmp:/tmp  -v ${volume_path}/data/${domain_id}:/home/kuscia/var/storage/data "
     fi
+
+    echo -e "${GREEN}Starting init domain $domain_id certs${NC}"
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     copy_volume_file_to_container $certs_volume domain.csr ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.csr
     docker exec -it ${MASTER_CTR} kubectl create ns $domain_id
@@ -462,7 +466,8 @@ function start_lite() {
 
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.crt $certs_volume domain.crt
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
-  
+    echo -e "${GREEN}Init domain $domain_id certs successfully${NC}"
+
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
@@ -476,6 +481,7 @@ function start_lite() {
 }
 
 function create_cluster_domain_route() {
+  echo -e "${GREEN}Starting create cluster domain route from $1 to $2${NC}"
   local src_domain=$1
   local dest_domain=$2
   local src_ctr=${CTR_PREFIX}-lite-${src_domain}
@@ -490,7 +496,7 @@ function create_cluster_domain_route() {
   copy_between_containers ${dest_ctr}:${src_2_dest_cert} ${MASTER_CTR}:${src_2_dest_cert}
 
   docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} ${CTR_PREFIX}-lite-${dest_domain}:1080 ${dest_ca} ${src_2_dest_cert}
-  echo -e "${GREEN}Cluster domain route from ${src_domain} to ${dest_domain} created successfully${NC}"
+  echo -e "${GREEN}Cluster domain route from ${src_domain} to ${dest_domain} created successfully dest_endpoint: ${CTR_PREFIX}-lite-${dest_domain}:1080${NC}"
 }
 
 function check_sf_image() {
