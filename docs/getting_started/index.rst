@@ -10,6 +10,7 @@
     :maxdepth: 2
 
     quickstart_cn
+    ./deploy/index
 
 
 
