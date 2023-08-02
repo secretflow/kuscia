@@ -49,7 +49,6 @@ type Dependencies struct {
 	ApiserverEndpoint      string
 	KubeconfigFile         string
 	ContainerdSock         string
-	ExternalTLS            *kusciaconfig.TLSConfig
 	TransportConfigFile    string
 	TransportPort          int
 	InterConnSchedulerPort int
@@ -66,6 +65,7 @@ type KusciaConfig struct {
 	CAFile         string                     `yaml:"caFile,omitempty"`
 	Agent          KusciaAgentConfig          `yaml:"agent,omitempty"`
 	Master         *kusciaconfig.MasterConfig `yaml:"master,omitempty"`
+	ExternalTLS    *kusciaconfig.TLSConfig    `yaml:"externalTLS,omitempty"`
 	IsMaster       bool
 }
 

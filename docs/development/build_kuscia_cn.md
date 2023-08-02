@@ -94,7 +94,7 @@ docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/test/integration_test.s
 
 目前支持：\[all，center.base，p2p.base，center.example\]，不填写则默认为 all。
 ```shell
-./test/integration_test.sh all
+./test/integration_test.sh all 
 ```
 
 在集成脚本执行的过程中，会自动安装依赖：[grpcurl](https://github.com/fullstorydev/grpcurl/releases) 和 [jq](https://jqlang.github.io/jq/download/) 在宿主机上。
@@ -119,3 +119,4 @@ Kuscia 也准备了一些常用的函数，你可以在 `scripts/test/suite/core
 3. 为你的测试用例集文件添加可执行权限：`chmod a+x {YOUR_TEST_SUITE_FILE}`。
 4. 在 `scripts/test/integration_test.sh` 文件中注册您的测试用例集。如 `TEST_SUITES["center.example"]="./test/suite/center/example.sh"`。变量 `TEST_SUITES` 的 key 为你的测试用例集的名称。
 5. 运行你的测试用例集，如上例：`./test/integration_test.sh center.example`。
+   
