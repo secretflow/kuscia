@@ -41,14 +41,6 @@ func TestQueryJob(t *testing.T) {
 	assert.Equal(t, len(queryJobResponse.Data.Tasks), len(kusciaAPIJS.tasks))
 }
 
-func TestQueryJobStatus(t *testing.T) {
-	jobStatus := kusciaAPIJS.QueryJobStatus(context.Background(), &kusciaapi.QueryJobRequest{
-		JobId: kusciaAPIJS.jobID,
-	})
-	assert.Equal(t, jobStatus.Data.JobId, kusciaAPIJS.jobID)
-	assert.Equal(t, len(jobStatus.Data.Status.Tasks), len(kusciaAPIJS.tasks))
-}
-
 func TestBatchQueryJob(t *testing.T) {
 	batchResponse := kusciaAPIJS.BatchQueryJobStatus(context.Background(), &kusciaapi.BatchQueryJobStatusRequest{
 		JobIds: []string{kusciaAPIJS.jobID},

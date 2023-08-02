@@ -54,7 +54,7 @@ func (c *Controller) syncDomainStatus() {
 		oldStatus := dm.Status
 		newStatus := c.getDomainStatus(nodes)
 		if !c.isDomainStatusEqual(oldStatus, newStatus) {
-			nlog.Infof("Updating domain %v status", dm.Name)
+			nlog.Infof("Update domain %v status", dm.Name)
 			dm.Status = newStatus
 			if err = c.updateDomainStatus(dm); err != nil {
 				nlog.Warnf("Update domain node status failed, %v", err.Error())

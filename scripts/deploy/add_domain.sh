@@ -17,7 +17,7 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID"
+usage="$(basename "$0") DOMAIN_ID [HOST] [ROLE] [INTERCONN_PROTOCOL]"
 
 DOMAIN_ID=$1
 if [[ ${DOMAIN_ID} == "" ]]; then
@@ -25,12 +25,17 @@ if [[ ${DOMAIN_ID} == "" ]]; then
   exit 1
 fi
 
+HOST=$2
+if [[ ${HOST} == "" ]]; then
+  HOST=$(hostname)
+fi
+
 ROLE=
-if [[ $2 == p2p ]] ; then
+if [[ $3 == p2p ]] ; then
   ROLE=partner
 fi
 
-INTERCONN_PROTOCOL=$3
+INTERCONN_PROTOCOL=$4
 [ "${INTERCONN_PROTOCOL}" != "" ] || INTERCONN_PROTOCOL="kuscia"
 
 SELF_DOMAIN_ID=${NAMESPACE}
@@ -57,15 +62,13 @@ if [ "$2" == "p2p" ]; then
 fi
 echo "${DOMAIN_TEMPLATE}" | kubectl apply -f -
 
-IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-
 TOKEN=$(${ROOT}/scripts/deploy/create_token.sh ${DOMAIN_ID} | tail -n 1)
 
 DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.SRC_DOMAIN}}/${DOMAIN_ID}/g;
   s/{{.DEST_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.INTERCONN_PROTOCOL}}/${INTERCONN_PROTOCOL}/g;
-  s/{{.HOST}}/${IP}/g;
+  s/{{.HOST}}/${HOST}/g;
   s/{{.PORT}}/1080/g;
   s/{{.TLS_CA}}//g;
   s/{{.SRC_CERT}}//g;

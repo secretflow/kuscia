@@ -19,13 +19,15 @@ set -e
 
 GREEN='\033[0;32m'
 NC='\033[0m'
+SUB_HOST_REGEXP="^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
 
-USAGE="$(basename "$0") [JOB_EXAMPLE]
+USAGE="$(basename "$0") [JOB_EXAMPLE] [JOB_NAME]
 JOB_EXAMPLE:
     PSI                 run psi (default)
     NSJAIL_PSI          run psi via nsjail
 "
 JOB_EXAMPLE=$1
+JOB_NAME=$2
 
 if [[ ${JOB_EXAMPLE} == "" ]]; then
   JOB_EXAMPLE="PSI"
@@ -49,8 +51,13 @@ if [[ $SELF_DOMAIN_ID == bob ]]; then
   INITIATOR=bob
 fi
 
-
-JOB_NAME=secretflow-task-$(date +"%Y%m%d%H%M%S")
+if [[ $JOB_NAME == "" ]]; then
+  JOB_NAME=secretflow-task-$(date +"%Y%m%d%H%M%S")
+fi
+if [[ ! $JOB_NAME =~ ${SUB_HOST_REGEXP} ]]; then
+  echo "job name should match ${SUB_HOST_REGEXP}"
+  exit 1
+fi
 TASK_INPUT_CONFIG=$(jq -c . <"scripts/templates/task_input_config.2pc_balanced_psi.json")
 ESCAPE_TASK_INPUT_CONFIG=$(echo $TASK_INPUT_CONFIG | sed "s~[\]~\\\&~g")
 

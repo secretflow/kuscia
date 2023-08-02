@@ -42,10 +42,10 @@ spec:
       type: str
     - comment: ""
       name: age
-      type: f32
+      type: float
     - comment: ""
       name: education
-      type: f32
+      type: float
   dataSource: default-data-source
   name: alice.csv
   relativeURI: alice.csv
@@ -107,10 +107,10 @@ spec:
       type: str
     - comment: ""
       name: age
-      type: f32
+      type: float
     - comment: ""
       name: education
-      type: f32
+      type: float
   dataSource: default-data-source
   name: alice.csv
   relativeURI: alice.csv
@@ -175,10 +175,10 @@ spec:
       type: str
     - comment: ""
       name: age
-      type: f32
+      type: float
     - comment: ""
       name: education
-      type: f32
+      type: float
   dataSource: default-data-source
   name: alice.csv
   relativeURI: alice.csv

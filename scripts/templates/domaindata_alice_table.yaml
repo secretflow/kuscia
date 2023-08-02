@@ -15,76 +15,76 @@ spec:
       type: str
     - comment: ""
       name: age
-      type: f32
+      type: float
     - comment: ""
       name: education
-      type: f32
+      type: float
     - comment: ""
       name: default
-      type: f32
+      type: float
     - comment: ""
       name: balance
-      type: f32
+      type: float
     - comment: ""
       name: housing
-      type: f32
+      type: float
     - comment: ""
       name: loan
-      type: f32
+      type: float
     - comment: ""
       name: day
-      type: f32
+      type: float
     - comment: ""
       name: duration
-      type: f32
+      type: float
     - comment: ""
       name: campaign
-      type: f32
+      type: float
     - comment: ""
       name: pdays
-      type: f32
+      type: float
     - comment: ""
       name: previous
-      type: f32
+      type: float
     - comment: ""
       name: job_blue-collar
-      type: f32
+      type: float
     - comment: ""
       name: job_entrepreneur
-      type: f32
+      type: float
     - comment: ""
       name: job_housemaid
-      type: f32
+      type: float
     - comment: ""
       name: job_management
-      type: f32
+      type: float
     - comment: ""
       name: job_retired
-      type: f32
+      type: float
     - comment: ""
       name: job_self-employed
-      type: f32
+      type: float
     - comment: ""
       name: job_services
-      type: f32
+      type: float
     - comment: ""
       name: job_student
-      type: f32
+      type: float
     - comment: ""
       name: job_technician
-      type: f32
+      type: float
     - comment: ""
       name: job_unemployed
-      type: f32
+      type: float
     - comment: ""
       name: marital_divorced
-      type: f32
+      type: float
     - comment: ""
       name: marital_married
-      type: f32
+      type: float
     - comment: ""
       name: marital_single
-      type: f32
+      type: float
   dataSource: default-data-source
   name: alice.csv
   type: table

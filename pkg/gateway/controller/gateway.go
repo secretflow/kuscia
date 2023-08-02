@@ -93,7 +93,10 @@ func (c *GatewayController) Run(threadiness int, stopCh <-chan struct{}) {
 	if ok := cache.WaitForCacheSync(stopCh, c.gatewayListerSynced); !ok {
 		nlog.Fatal("failed to wait for caches to sync")
 	}
-
+	// Update gateway heartbeat immediately
+	if err := c.syncHandler(); err != nil {
+		nlog.Errorf("sync gateway error: %v", err)
+	}
 	ticker := time.NewTicker(heartbeatPeriod)
 	for {
 		select {

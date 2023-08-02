@@ -51,9 +51,8 @@ type DomainDataSpec struct {
 	// the URI of domaindata, the relative URI to the datasource
 	RelativeURI string `json:"relativeURI"`
 	Name        string `json:"name"`
-	//
-	Type       string `json:"type"`
-	DataSource string `json:"dataSource"`
+	Type        string `json:"type"`
+	DataSource  string `json:"dataSource"`
 	// +optional
 	Attributes map[string]string `json:"attributes,omitempty"`
 	// +optional

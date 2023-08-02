@@ -658,6 +658,8 @@ func jobStatusPhaseFrom(job *kusciaapisv1alpha1.KusciaJob, currentSubTasksStatus
 	// Ready task means it can be scheduled but not scheduled.
 	criticalTasks := tasks.criticalTaskMap()
 	readyTasks := tasks.readyTaskMap()
+	nlog.Infof("jobStatusPhaseFrom readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
+		readyTasks.ToShortString(), tasks.ToShortString(), job.Name)
 
 	// all subtasks succeed and all critical subtasks succeeded means the job is succeeded.
 	if tasks.AllMatch(taskFinished) && criticalTasks.AllMatch(taskSucceeded) {
@@ -674,6 +676,8 @@ func jobStatusPhaseFrom(job *kusciaapisv1alpha1.KusciaJob, currentSubTasksStatus
 		// in BestEffort mode, has no readyTask subtasks and running subtasks, and least one critical subtasks is failed.
 		if len(readyTasks) == 0 && !tasks.AnyMatch(taskRunning) &&
 			criticalTasks.AnyMatch(taskFailed) {
+			nlog.Infof("jobStatusPhaseFrom failed readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
+				readyTasks.ToShortString(), tasks.ToShortString(), job.Name)
 			return kusciaapisv1alpha1.KusciaJobFailed
 		}
 	default:
@@ -895,6 +899,24 @@ func (c currentTaskMap) readyTaskMap() currentTaskMap {
 	return readyTaskMap
 }
 
+func (c currentTaskMap) ToShortString() string {
+	var taskString = make([]string, 0)
+	for _, t := range c {
+		var phase = "nil"
+		if t.Phase != nil {
+			phase = string(*t.Phase)
+		}
+		tolerable := false
+		if t.Tolerable != nil {
+			tolerable = *t.Tolerable
+		}
+		taskString = append(taskString, fmt.Sprintf(
+			"{taskId=%s, dependencies=%+v, tolerable=%+v, phase=%s}",
+			t.TaskID, t.Dependencies, tolerable, phase))
+	}
+	return "{" + strings.Join(taskString, ",") + "}"
+}
+
 // AllMatch will return true if every item match predicate.
 func (c currentTaskMap) AllMatch(p func(v currentTask) bool) bool {
 	for _, v := range c {
@@ -932,7 +954,7 @@ func taskFailed(v currentTask) bool {
 }
 
 func taskRunning(v currentTask) bool {
-	return v.Phase != nil && (*v.Phase == kusciaapisv1alpha1.TaskRunning || *v.Phase == kusciaapisv1alpha1.TaskPending)
+	return v.Phase != nil && (*v.Phase == kusciaapisv1alpha1.TaskRunning || *v.Phase == kusciaapisv1alpha1.TaskPending || *v.Phase == "")
 }
 
 // currentTaskMapFrom make currentTaskMap from the kuscia job and current task status.

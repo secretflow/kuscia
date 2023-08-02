@@ -437,7 +437,7 @@ function start_secretpad() {
       	${SECRETPAD_IMAGE}
       probe_secret_pad ${CTR_PREFIX}-secretpad
       echo -e "${GREEN}web server started successfully${NC}"
-      echo -e "${GREEN}Please visit the website http://127.0.0.1:8088 to experience the Kuscia web's functions .${NC}"
+      echo -e "${GREEN}Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions .${NC}"
       echo -e "${GREEN}The login name:${SECRETPAD_USER_NAME} ,The login password:${SECRETPAD_PASSWORD} .${NC}"
       echo -e "${GREEN}The demo data would be stored in the path: ${VOLUME_PATH} .${NC}"
   fi
@@ -462,7 +462,7 @@ function start_lite() {
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     copy_volume_file_to_container $certs_volume domain.csr ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.csr
     docker exec -it ${MASTER_CTR} kubectl create ns $domain_id
-    docker exec -it ${MASTER_CTR} scripts/deploy/add_domain.sh $domain_id
+    docker exec -it ${MASTER_CTR} scripts/deploy/add_domain.sh $domain_id ${MASTER_CTR}
 
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.crt $certs_volume domain.crt
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
@@ -541,7 +541,10 @@ function check_sf_image() {
   fi
 
   echo -e "${GREEN}Start importing image '${sf_image}' ...${NC}"
-  local image_tar=/tmp/$(echo ${sf_image} | sed 's/\//_/g' ).tar
+  local image_id
+  image_id=$(docker images --filter="reference=${sf_image}" --format "{{.ID}}")
+  local image_tar
+  image_tar=/tmp/$(echo ${sf_image} | sed 's/\//_/g' ).${image_id}.tar
   if [ ! -e $image_tar ] ; then
     docker save $sf_image -o $image_tar
   fi
@@ -617,6 +620,7 @@ function start_autonomy() {
     echo -e "${GREEN}Starting container $domain_ctr ...${NC}"
     env_flag=$(generate_env_flag $domain_id)
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
+    docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
@@ -638,11 +642,11 @@ function build_interconn() {
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.csr ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.csr
-  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
+  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain ${host_ctr} p2p ${interconn_protocol}
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 
-  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $host_domain ${host_ctr}:1080 ${interconn_protocol}
+  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain ${host_ctr}:1080 -p ${interconn_protocol}
 }
 
 function run_p2p() {
@@ -679,7 +683,7 @@ function build_kuscia_network() {
 }
 
 usage() {
-  echo "$(basename "$0") [NETWORK_MODE] [OPTIONS]
+  echo "$(basename "$0") NETWORK_MODE [OPTIONS]
 NETWORK_MODE:
     center,centralized       centralized network mode (default)
     p2p                      p2p network mode
