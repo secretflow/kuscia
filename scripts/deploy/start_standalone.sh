@@ -91,7 +91,7 @@ function need_start_docker_container() {
   fi
 
   if $FORCE_START ; then
-    echo -e "${GREEN}Remove container ${ctr} ...${NC}"
+    log "Remove container '${ctr}' ..."
     docker rm -f $ctr
     # need start your container
     return 0
@@ -100,7 +100,7 @@ function need_start_docker_container() {
   read -rp "$(echo -e ${GREEN}The container \'${ctr}\' already exists. Do you need to recreate it? [y/n]: ${NC})" yn
   case $yn in
     [Yy]* )
-      echo -e "${GREEN}Remove container ${ctr} ...${NC}"
+      log "Remove container '${ctr}' ..."
       docker rm -f $ctr
       # need start your container
       return 0 ;;
@@ -260,7 +260,7 @@ function render_secretpad_config() {
   local store_key_password=$2
   #local default_login_password
   # create data mesh service
-  echo "kuscia_master_ip: '${MASTER_CTR}'"
+  log "kuscia_master_ip: '${MASTER_CTR}'"
   # render kuscia api address
   sed "s/{{.KUSCIA_API_ADDRESS}}/${MASTER_CTR}/g" ${tmpl_path} > ${volume_path}/application_01.yaml
   # render store password
@@ -301,7 +301,7 @@ function create_domaindata_alice_table() {
   docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
   # create domain data alice table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_alice_table.sh ${domain_id}
-  log "create domaindata alice's table done default stored path: ${data_path}"
+  log "create domaindata alice's table done default stored path: '${data_path}'"
 }
 
 function create_domaindata_bob_table() {
@@ -312,7 +312,7 @@ function create_domaindata_bob_table() {
   docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
-  log "create domaindata bob's table done default stored path: ${data_path}"
+  log "create domaindata bob's table done default stored path: '${data_path}'"
 }
 
 function check_user_name(){
@@ -350,9 +350,9 @@ function check_user_passwd(){
 function account_settings(){
   local RET
   set +e
-  echo -e "${GREEN}Please set the username and the password used to login the KUSCIA-WEB.\n\
+  log "Please set the username and the password used to login the KUSCIA-WEB.\n\
 The username requires a length greater than 4, The password requires a length greater than 8,\n\
-including uppercase and lowercase letters, numbers, and special characters.${NC}"
+including uppercase and lowercase letters, numbers, and special characters."
   for (( i = 0; i < 1; i++ )); do
     read -r -p "Enter username(admin):" SECRETPAD_USER_NAME
     check_user_name "${SECRETPAD_USER_NAME}"
@@ -413,7 +413,7 @@ function start_secretpad() {
   local password=$3
   local secretpad_ctr=${CTR_PREFIX}-secretpad
   if need_start_docker_container $secretpad_ctr ; then
-      echo -e "${GREEN}Starting container $secretpad_ctr ...${NC}"
+      log "Starting container '$secretpad_ctr' ..."
       secretpad_key_pass="secretpad"
       # copy db,config,demodata from secretpad image
       copy_secretpad_file_to_volume ${volume_path}
@@ -436,10 +436,10 @@ function start_secretpad() {
       	-p 8088:8080 \
       	${SECRETPAD_IMAGE}
       probe_secret_pad ${CTR_PREFIX}-secretpad
-      echo -e "${GREEN}web server started successfully${NC}"
-      echo -e "${GREEN}Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions .${NC}"
-      echo -e "${GREEN}The login name:${SECRETPAD_USER_NAME} ,The login password:${SECRETPAD_PASSWORD} .${NC}"
-      echo -e "${GREEN}The demo data would be stored in the path: ${VOLUME_PATH} .${NC}"
+      log "web server started successfully"
+      log "Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions ."
+      log "The login name:'${SECRETPAD_USER_NAME}' ,The login password:'${SECRETPAD_PASSWORD}' ."
+      log "The demo data would be stored in the path: ${VOLUME_PATH} ."
   fi
 }
 
@@ -450,7 +450,7 @@ function start_lite() {
   local volume_path=$3
 
   if need_start_docker_container $domain_ctr ; then
-    echo -e "${GREEN}Starting container $domain_ctr ...${NC}"
+    log "Starting container '$domain_ctr' ..."
     local certs_volume=${domain_ctr}-certs
     env_flag=$(generate_env_flag $domain_id)
     local mount_volume_param="-v /tmp:/tmp"
@@ -458,7 +458,7 @@ function start_lite() {
       mount_volume_param="-v /tmp:/tmp  -v ${volume_path}/data/${domain_id}:/home/kuscia/var/storage/data "
     fi
 
-    echo -e "${GREEN}Starting init domain $domain_id certs${NC}"
+    log "Starting init domain '$domain_id' certs"
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     copy_volume_file_to_container $certs_volume domain.csr ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.csr
     docker exec -it ${MASTER_CTR} kubectl create ns $domain_id
@@ -466,7 +466,7 @@ function start_lite() {
 
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.crt $certs_volume domain.crt
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
-    echo -e "${GREEN}Init domain $domain_id certs successfully${NC}"
+    log "Init domain '$domain_id' certs successfully"
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
@@ -476,7 +476,7 @@ function start_lite() {
       --entrypoint bin/entrypoint.sh \
       ${IMAGE} tini -- scripts/deploy/start_lite.sh ${domain_id} ${MASTER_DOMAIN} ${master_endpoint} ${ALLOW_PRIVILEGED}
     probe_gateway_crd ${MASTER_CTR} ${domain_id} ${domain_ctr} 60
-    echo -e "${GREEN}Lite domain '${domain_id}' started successfully${NC}"
+    log "Lite domain '${domain_id}' started successfully"
   fi
 }
 
@@ -489,14 +489,14 @@ function create_cluster_domain_route() {
   local src_2_dest_cert=${CTR_CERT_ROOT}/${src_domain}-2-${dest_domain}.crt
   local dest_ca=${CTR_CERT_ROOT}/${dest_domain}.ca.crt
 
-  echo -e "${GREEN}Starting create cluster domain route from ${src_domain} to ${dest_domain}${NC}"
+  log "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
   copy_between_containers ${src_ctr}:${CTR_CERT_ROOT}/domain.csr ${dest_ctr}:${src_domain_csr}
   docker exec -it ${dest_ctr} openssl x509 -req -in $src_domain_csr -CA ${CTR_CERT_ROOT}/ca.crt -CAkey ${CTR_CERT_ROOT}/ca.key -CAcreateserial -days 10000 -out ${src_2_dest_cert}
   copy_between_containers ${dest_ctr}:${CTR_CERT_ROOT}/ca.crt ${MASTER_CTR}:${dest_ca}
   copy_between_containers ${dest_ctr}:${src_2_dest_cert} ${MASTER_CTR}:${src_2_dest_cert}
 
   docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} ${CTR_PREFIX}-lite-${dest_domain}:1080 ${dest_ca} ${src_2_dest_cert}
-  echo -e "${GREEN}Cluster domain route from ${src_domain} to ${dest_domain} created successfully dest_endpoint: ${CTR_PREFIX}-lite-${dest_domain}:1080${NC}"
+  log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${CTR_PREFIX}'-lite-'${dest_domain}':1080"
 }
 
 function check_sf_image() {
@@ -520,7 +520,7 @@ function check_sf_image() {
   fi
 
   if docker exec -it $domain_ctr crictl inspecti $sf_image > /dev/null 2>&1 ; then
-    echo -e "${GREEN}Image '${sf_image}' already exists in domain '${domain_id}'${NC}"
+    log "Image '${sf_image}' already exists in domain '${domain_id}'"
     return
   fi
 
@@ -530,17 +530,17 @@ function check_sf_image() {
   fi
 
   if [ "$has_sf_image" == true ] ; then
-    echo -e "Found the secretflow image '${sf_image}' on host"
+    log "Found the secretflow image '${sf_image}' on host"
   else
-    echo -e "Not found the secretflow image '${sf_image}' on host"
+    log "Not found the secretflow image '${sf_image}' on host"
     if [ "$repo" != "" ] ; then
       docker login $repo
     fi
-    echo -e "${GREEN}Start pulling image '${sf_image}' ...${NC}"
+    log "Start pulling image '${sf_image}' ..."
     docker pull ${sf_image}
   fi
 
-  echo -e "${GREEN}Start importing image '${sf_image}' Please be patient...${NC}"
+  log "Start importing image '${sf_image}' Please be patient..."
   local image_id
   image_id=$(docker images --filter="reference=${sf_image}" --format "{{.ID}}")
   local image_tar
@@ -549,14 +549,14 @@ function check_sf_image() {
     docker save $sf_image -o $image_tar
   fi
   docker exec -it $domain_ctr ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import $image_tar
-  echo -e "${GREEN}Successfully imported image '${sf_image}' to container '${domain_ctr}' ...${NC}"
+  log "Successfully imported image '${sf_image}' to container '${domain_ctr}' ..."
 }
 
 function run_centralized() {
   build_kuscia_network
   local volume_path=$1
   if need_start_docker_container $MASTER_CTR; then
-    echo -e "${GREEN}Starting container $MASTER_CTR ...${NC}"
+    log "Starting container '$MASTER_CTR' ..."
     local certs_volume=${MASTER_CTR}-certs
     env_flag=$(generate_env_flag $MASTER_DOMAIN)
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${MASTER_DOMAIN}
@@ -567,7 +567,7 @@ function run_centralized() {
       -v /tmp:/tmp \
       ${IMAGE} scripts/deploy/start_master.sh ${MASTER_DOMAIN} ${MASTER_CTR}
     probe_gateway_crd ${MASTER_CTR} ${MASTER_DOMAIN} ${MASTER_CTR} 60
-    echo -e "${GREEN}Master '${MASTER_DOMAIN}' started successfully${NC}"
+    log "Master '${MASTER_DOMAIN}' started successfully"
     FORCE_START=true
   fi
 
@@ -591,7 +591,7 @@ function run_centralized() {
   # create secretflow app image
   create_secretflow_app_image ${MASTER_CTR}
 
-  echo -e "${GREEN}Kuscia centralized cluster started successfully${NC}"
+  log "Kuscia centralized cluster started successfully"
 }
 
 function run_centralized_all() {
@@ -617,12 +617,12 @@ function start_autonomy() {
   local domain_id=$1
   local domain_ctr=${CTR_PREFIX}-autonomy-${domain_id}
   if need_start_docker_container $domain_ctr; then
-    echo -e "${GREEN}Starting container $domain_ctr ...${NC}"
+    log "Starting container '$domain_ctr' ..."
     env_flag=$(generate_env_flag $domain_id)
-    echo -e "${GREEN}Starting init domain $domain_id certs${NC}"
+    log "Starting init domain '$domain_id' certs"
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
-    echo -e "${GREEN}Init domain $domain_id certs successfully${NC}"
+    log "Init domain '$domain_id' certs successfully"
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
@@ -631,7 +631,7 @@ function start_autonomy() {
       --entrypoint bin/entrypoint.sh \
       ${IMAGE} tini -- scripts/deploy/start_autonomy.sh ${domain_id} ${ALLOW_PRIVILEGED}
     probe_gateway_crd ${domain_ctr} ${domain_id} ${domain_ctr} 60
-    echo -e "${GREEN}Autonomy domain '${domain_id}' started successfully${NC}"
+    log "Autonomy domain '${domain_id}' started successfully"
   fi
 }
 
@@ -642,14 +642,14 @@ function build_interconn() {
   local member_ctr=${CTR_PREFIX}-autonomy-${member_domain}
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
-  echo -e "${GREEN}Starting build internet connect from ${member_domain} to ${host_domain}${NC}"
+  log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.csr ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.csr
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain ${host_ctr} p2p ${interconn_protocol}
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain ${host_ctr}:1080 -p ${interconn_protocol}
-  echo -e "${GREEN}Build internet connect from ${member_domain} to ${host_domain} successfully protocol: ${interconn_protocol} dest host: ${host_ctr}:1080${NC}"
+  log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
 }
 
 function run_p2p() {
@@ -676,7 +676,7 @@ function run_p2p() {
   create_domaindata_alice_table ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN}
   create_domaindata_bob_table ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN}
 
-  echo -e "${GREEN}Kuscia p2p cluster started successfully${NC}"
+  log "Kuscia p2p cluster started successfully"
 }
 
 function build_kuscia_network() {
