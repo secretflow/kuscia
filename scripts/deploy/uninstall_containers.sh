@@ -112,10 +112,24 @@ function check_running_containers() {
   container_list=$(get_running_container_list "$container_type")
 
   if [ -n "$container_list" ]; then
-      log_error "There are still running $container_type containers:"
-      echo "$container_list"
-      log_error "Please stop $container_type containers first!"
-      exit 1
+    log_hint "There are still running $container_type containers:"
+    echo "$container_list"
+    read -rp "$(echo -e ${GREEN} Do you want to stop them now? [y/N]: ${NC})" choice
+    case "$choice" in 
+      y|Y )
+        log "Stopping $container_type containers ..."
+        docker stop $container_list
+        log "Kuscia $container_type containers stopped successfully!"
+        ;;
+      n|N )
+        log_error "Please manually stop them before uninstalling!"
+        exit 1
+        ;;
+      * )
+        log_error "Invalid choice"
+        exit 1
+        ;;
+    esac
   fi
 
   return 0
