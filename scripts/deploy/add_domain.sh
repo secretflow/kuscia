@@ -56,7 +56,7 @@ DOMAIN_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;
   s/{{.CERT}}/${CERT}/g;
   s/{{.ROLE}}/${ROLE}/g" \
   < "${ROOT}/scripts/templates/domain.yaml")
-if [ "$2" == "p2p" ]; then
+if [ "$3" == "p2p" ]; then
   APPEND_LINE=$(printf "\n%*sinterConnProtocols: [ '${INTERCONN_PROTOCOL}' ]" "2")
   DOMAIN_TEMPLATE="${DOMAIN_TEMPLATE}${APPEND_LINE}"
 fi
