@@ -22,6 +22,7 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 self_domain_id=$1
 host_domain_id=$2
 host_endpoint=$3
+shift
 interconn_protocol=kuscia
 auth_type=MTLS
 token=
