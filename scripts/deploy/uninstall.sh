@@ -196,9 +196,19 @@ function remove_network() {
       return 0
   fi
 
+  CONTAINERS_USING_NETWORK=$(docker ps -a --filter "network=${NETWORK_NAME}" --format "{{.Names}}")
+
+  if [ -n "$CONTAINERS_USING_NETWORK" ]; then
+    log_hint "There are containers still using the $NETWORK_NAME network:"
+    echo "$CONTAINERS_USING_NETWORK"
+    log_hint "Please remove them before removing the $NETWORK_NAME network!"
+    return 1
+  fi
+
   log "Removing $NETWORK_NAME network ..."
   if ! docker network rm $NETWORK_NAME; then
       log_hint "Kuscia $NETWORK_NAME network removed failed!"
+      return 1
   else
       log "Kuscia $NETWORK_NAME network removed successfully!"
   fi
@@ -237,4 +247,5 @@ else
       ;;
   esac
 fi
+
 
