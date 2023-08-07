@@ -22,7 +22,8 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 self_domain_id=$1
 host_domain_id=$2
 host_endpoint=$3
-shift
+# If new independent parameters are added, please set a reasonable shift
+shift 3
 interconn_protocol=kuscia
 auth_type=MTLS
 token=
@@ -129,7 +130,6 @@ while getopts 'p:a:t:kh' option; do
     ;;
   esac
 done
-shift $((OPTIND - 1))
 
 if [[ $auth_type == "Token" && $token == "" ]]; then
   printf "missing argument -t {{token}}\n" >&2
