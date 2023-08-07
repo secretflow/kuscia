@@ -39,7 +39,7 @@ function join_to_host() {
     port=${host_endpoint##*:}
   fi
 
-  pushd $ROOT/etc/certs || exit
+  pushd $ROOT/etc/certs >/dev/null || exit
 
   if [[ ${insecure} != "true" ]]; then
     local tls_ca_file=${host_domain_id}.host.ca.crt
@@ -53,7 +53,7 @@ function join_to_host() {
     src_key=$(base64 ${src_key_file} | tr -d "\n")
   fi
 
-  popd || exit
+  popd >/dev/null || exit
 
   local domain_route_template
   domain_route_template=$(sed "s/{{.SELF_DOMAIN}}/${self_domain_id}/g;

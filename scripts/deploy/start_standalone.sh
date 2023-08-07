@@ -92,7 +92,7 @@ function need_start_docker_container() {
 
   if $FORCE_START ; then
     log "Remove container '${ctr}' ..."
-    docker rm -f $ctr
+    docker rm -f $ctr >/dev/null 2>&1
     # need start your container
     return 0
   fi
@@ -101,7 +101,7 @@ function need_start_docker_container() {
   case $yn in
     [Yy]* )
       log "Remove container '${ctr}' ..."
-      docker rm -f $ctr
+      docker rm -f $ctr >/dev/null 2>&1
       # need start your container
       return 0 ;;
     * )
@@ -174,11 +174,13 @@ function generate_env_flag() {
 function copy_between_containers() {
   local src_file=$1
   local dest_file=$2
+  local dest_volume=$3
   local temp_file
   temp_file=$(basename $dest_file)
-  docker cp $src_file /tmp/${temp_file}
-  docker cp /tmp/${temp_file} $dest_file
+  docker cp $src_file /tmp/${temp_file} >/dev/null 2>&1
+  docker cp /tmp/${temp_file} $dest_file >/dev/null 2>&1
   rm /tmp/${temp_file}
+  echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_file'"
 }
 
 function copy_container_file_to_volume() {
@@ -186,8 +188,9 @@ function copy_container_file_to_volume() {
   local dest_volume=$2
   local dest_file=$3
   docker run -d --rm --name ${CTR_PREFIX}-dummy --mount source=${dest_volume},target=/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
-  copy_between_containers ${src_file} ${CTR_PREFIX}-dummy:/tmp/kuscia/${dest_file}
-  docker rm -f ${CTR_PREFIX}-dummy
+  copy_between_containers ${src_file} ${CTR_PREFIX}-dummy:/tmp/kuscia/${dest_file} >/dev/null 2>&1
+  docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
+  echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_volume:$CTR_CERT_ROOT/$dest_file'"
 }
 
 function copy_volume_file_to_container() {
@@ -195,8 +198,9 @@ function copy_volume_file_to_container() {
   local src_file=$2
   local dest_file=$3
   docker run -d --rm --name ${CTR_PREFIX}-dummy --mount source=${src_volume},target=/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
-  copy_between_containers ${CTR_PREFIX}-dummy:/tmp/kuscia/${src_file} ${dest_file}
-  docker rm -f ${CTR_PREFIX}-dummy
+  copy_between_containers ${CTR_PREFIX}-dummy:/tmp/kuscia/${src_file} ${dest_file} >/dev/null 2>&1
+  docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
+  echo "Copy file successfully src_file:'$src_volume/$src_file' to dest_file:'$dest_file'"
 }
 
 # secretpad
@@ -249,7 +253,7 @@ function copy_kuscia_api_client_certs() {
   docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/token  ${tmp_path}/token
   docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
   docker cp -a ${tmp_path} ${CTR_PREFIX}-dummy:/tmp/temp/
-  docker rm -f ${CTR_PREFIX}-dummy
+  docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
   rm -rf ${volume_path}/temp
   log "copy kuscia api client certs to web server container done"
 }
@@ -268,7 +272,7 @@ function render_secretpad_config() {
   # cp file to secretpad's config path
   docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
   docker cp ${volume_path}/application.yaml ${CTR_PREFIX}-dummy:/tmp/temp/
-  docker rm -f ${CTR_PREFIX}-dummy
+  docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
   # rm temp file
   rm -rf ${volume_path}/application_01.yaml ${volume_path}/application.yaml
   # render default_login_password
@@ -458,7 +462,6 @@ function start_lite() {
       mount_volume_param="-v /tmp:/tmp  -v ${volume_path}/data/${domain_id}:/home/kuscia/var/storage/data "
     fi
 
-    log "Starting init domain '$domain_id' certs"
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     copy_volume_file_to_container $certs_volume domain.csr ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.csr
     docker exec -it ${MASTER_CTR} kubectl create ns $domain_id
@@ -466,7 +469,6 @@ function start_lite() {
 
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/${domain_id}.domain.crt $certs_volume domain.crt
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
-    log "Init domain '$domain_id' certs successfully"
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
@@ -476,7 +478,7 @@ function start_lite() {
       --entrypoint bin/entrypoint.sh \
       ${IMAGE} tini -- scripts/deploy/start_lite.sh ${domain_id} ${MASTER_DOMAIN} ${master_endpoint} ${ALLOW_PRIVILEGED}
     probe_gateway_crd ${MASTER_CTR} ${domain_id} ${domain_ctr} 60
-    log "Lite domain '${domain_id}' started successfully"
+    log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}', crt path: '${CTR_CERT_ROOT}'"
   fi
 }
 
@@ -619,10 +621,8 @@ function start_autonomy() {
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
     env_flag=$(generate_env_flag $domain_id)
-    log "Starting init domain '$domain_id' certs"
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
     docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
-    log "Init domain '$domain_id' certs successfully"
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
@@ -631,7 +631,7 @@ function start_autonomy() {
       --entrypoint bin/entrypoint.sh \
       ${IMAGE} tini -- scripts/deploy/start_autonomy.sh ${domain_id} ${ALLOW_PRIVILEGED}
     probe_gateway_crd ${domain_ctr} ${domain_id} ${domain_ctr} 60
-    log "Autonomy domain '${domain_id}' started successfully"
+    log "Autonomy domain '${domain_id}' started successfully docker container name: '${domain_ctr}' crt path:'${CTR_CERT_ROOT}'"
   fi
 }
 

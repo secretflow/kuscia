@@ -39,7 +39,7 @@ fi
 echo "subjectAltName=${SUBJECT_ALT_NAME}" > /tmp/external_tls_openssh.conf
 
 #create a PKCS#1 key for tls
-pushd $ROOT/etc/certs || exit
+pushd $ROOT/etc/certs >/dev/null || exit
 openssl genrsa -out external_tls.key 2048
 
 #generate the Certificate Signing Request
@@ -54,4 +54,4 @@ openssl x509  -req -in external_tls.csr \
 
 rm -rf /tmp/external_tls_openssh.conf
 
-popd || exit
+popd >/dev/null || exit

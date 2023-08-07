@@ -46,11 +46,11 @@ fi
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
-pushd $ROOT/etc/certs || exit
+pushd $ROOT/etc/certs >/dev/null || exit
 DOMAIN_CERT_FILE=${DOMAIN_ID}.domain.crt
 openssl x509 -req -in ${DOMAIN_ID}.domain.csr -CA ca.crt -CAkey ca.key -CAcreateserial -days 10000 -out ${DOMAIN_CERT_FILE}
 CERT=$(base64 ${DOMAIN_CERT_FILE} | tr -d "\n")
-popd || exit
+popd >/dev/null || exit
 
 DOMAIN_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;
   s/{{.CERT}}/${CERT}/g;
