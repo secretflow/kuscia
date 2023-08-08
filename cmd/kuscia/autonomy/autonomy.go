@@ -17,12 +17,9 @@ package autonomy
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"sync"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,74 +28,10 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
-	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/web/logs"
 )
-
-var (
-	defaultRootDir  = "/home/kuscia/"
-	defaultDomainID = "kuscia"
-	defaultEndpoint = "https://127.0.0.1:6443"
-
-	defaultInterConnSchedulerPort = 8084
-)
-
-func getInitConfig(flagConfigFile string, flagDomainID string) *modules.Dependencies {
-	conf := &modules.Dependencies{}
-	if flagConfigFile != "" {
-		if content, err := os.ReadFile(flagConfigFile); err != nil {
-			nlog.Error(err)
-		} else {
-			if err = yaml.Unmarshal(content, &conf.KusciaConfig); err != nil {
-				nlog.Fatal(err)
-			}
-		}
-	}
-	if conf.RootDir == "" {
-		conf.RootDir = defaultRootDir
-	}
-	if flagDomainID != "" {
-		conf.DomainID = flagDomainID
-	}
-	if conf.DomainID == "" {
-		conf.DomainID = defaultDomainID
-	}
-
-	conf.ApiserverEndpoint = defaultEndpoint
-	conf.KubeconfigFile = filepath.Join(conf.RootDir, "etc/kubeconfig")
-	conf.KusciaKubeConfig = filepath.Join(conf.RootDir, "etc/kuscia.kubeconfig")
-	conf.CAKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.key")
-	conf.CAFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.crt")
-	conf.DomainKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "domain.key")
-	conf.Master = &kusciaconfig.MasterConfig{
-		APIServer: &kusciaconfig.APIServerConfig{
-			KubeConfig: conf.KubeconfigFile,
-			Endpoint:   conf.ApiserverEndpoint,
-		},
-	}
-
-	hostIP, err := network.GetHostIP()
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.EnvoyIP = hostIP
-	err = modules.EnsureDir(conf)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.ContainerdSock = filepath.Join(conf.RootDir, "containerd/run/containerd.sock")
-
-	conf.TransportConfigFile = filepath.Join(conf.RootDir, "etc/conf/transport/transport.yaml")
-	conf.TransportPort, err = modules.GetTransportPort(conf.TransportConfigFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
-	return conf
-}
 
 func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 	configFile := ""
@@ -123,7 +56,7 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 			}
 			nlog.Setup(nlog.SetWriter(zlog))
 			logs.Setup(nlog.SetWriter(zlog))
-			conf := getInitConfig(configFile, domainID)
+			conf := utils.GetInitConfig(configFile, domainID, "")
 			_, _, err = modules.EnsureCaKeyAndCert(conf)
 			if err != nil {
 				nlog.Error(err)
