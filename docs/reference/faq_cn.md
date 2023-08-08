@@ -16,7 +16,7 @@ Error response from daemon: mkdir /var/lib/docker/temp/docker-export-709988460:r
 mklink /J "C:\Program Files\Docker" "D:\Docker"
 ```
 这样创建链接之后，按正常步骤安装 docker 就会安装在 D 盘里了。
-2. 安装（参考 Docker官方安装文档 [Install Docker Desktop on Windows](https://docs.docker.com/desktop/install/windows-install/)）
+2. 安装（参考 Docker 官方安装文档 [Install Docker Desktop on Windows](https://docs.docker.com/desktop/install/windows-install/)）
 
 从 Docker 官网下载 [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/);
 
@@ -29,7 +29,7 @@ mklink /J "C:\Program Files\Docker" "D:\Docker"
 安装成功后，单击"关闭"完成安装过程;
 3. 建议修改镜像保存路径
 
-Docker 镜像默认保存在C盘， FATE 作业镜像很大，如果要[部署和运行 FATE 作业](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/tutorial/run_fate_cn)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
+Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE 作业](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/tutorial/run_fate_cn)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
 ![docker_settings.png](../imgs/docker_settings.png)
 
 ## 部署失败
