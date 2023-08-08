@@ -25,7 +25,7 @@ AUTH_TYPE=$3
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 echo "${ROOT}"
 
-pushd ${ROOT} || exit
+pushd ${ROOT} >/dev/null || exit
 
 EXTERNAL_TLS_CA_FILE=${ROOT}/etc/certs/ca.crt
 EXTERNAL_TLS_CERT_FILE=${ROOT}/etc/certs/external_tls.crt
@@ -102,7 +102,7 @@ spec:
   cert:
 " | kubectl apply -f -
 
-popd || exit
+popd >/dev/null || exit
 
 tail -f /dev/null
 

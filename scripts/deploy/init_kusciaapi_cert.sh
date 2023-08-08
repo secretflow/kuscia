@@ -16,7 +16,7 @@
 SERVICE_NAME=$1
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-pushd ${ROOT}/etc/certs || exit
+pushd ${ROOT}/etc/certs >/dev/null || exit
 
 DAYS=1000
 SERVER=kusciaapi-server
@@ -64,4 +64,4 @@ if [ ! -e token ]; then # token not exists
   rm -rf /tmp/token
 fi
 
-popd || exit
+popd >/dev/null || exit
