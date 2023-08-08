@@ -177,8 +177,8 @@ function copy_between_containers() {
   local dest_volume=$3
   local temp_file
   temp_file=$(basename $dest_file)
-  docker cp $src_file /tmp/${temp_file} >/dev/null 2>&1
-  docker cp /tmp/${temp_file} $dest_file >/dev/null 2>&1
+  docker cp $src_file /tmp/${temp_file} >/dev/null
+  docker cp /tmp/${temp_file} $dest_file >/dev/null
   rm /tmp/${temp_file}
   echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_file'"
 }
@@ -188,7 +188,7 @@ function copy_container_file_to_volume() {
   local dest_volume=$2
   local dest_file=$3
   docker run -d --rm --name ${CTR_PREFIX}-dummy --mount source=${dest_volume},target=/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
-  copy_between_containers ${src_file} ${CTR_PREFIX}-dummy:/tmp/kuscia/${dest_file} >/dev/null 2>&1
+  copy_between_containers ${src_file} ${CTR_PREFIX}-dummy:/tmp/kuscia/${dest_file} >/dev/null
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
   echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_volume:$CTR_CERT_ROOT/$dest_file'"
 }
@@ -198,7 +198,7 @@ function copy_volume_file_to_container() {
   local src_file=$2
   local dest_file=$3
   docker run -d --rm --name ${CTR_PREFIX}-dummy --mount source=${src_volume},target=/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
-  copy_between_containers ${CTR_PREFIX}-dummy:/tmp/kuscia/${src_file} ${dest_file} >/dev/null 2>&1
+  copy_between_containers ${CTR_PREFIX}-dummy:/tmp/kuscia/${src_file} ${dest_file} >/dev/null
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
   echo "Copy file successfully src_file:'$src_volume/$src_file' to dest_file:'$dest_file'"
 }
