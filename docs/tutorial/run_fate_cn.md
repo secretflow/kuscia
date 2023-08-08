@@ -3,31 +3,6 @@
 
 **注： 该模式目前还处于研发阶段，在体验的时候，需要依赖源代码进行编译。**
 
-## 使用WSL注意事项
-
-### WSL启动Docker
-**WSL中想要使用Docker，必须安装docker desktop**，具体安装步骤如下：
-
-1. 从Docker官网下载[Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
-2. **修改默认安装路径**
-
-    Docker Desktop默认安装在"C:\Program Files\Docker"，该路径是一个只读路径，如果不修改，将无法进行写操作(比如创建或修改文件/文件夹)，在部署时可能报错：
-```shell
-Error response from daemon: mkdir /var/lib/docker/temp/docker-export-709988460:read-only file system
-```
-需要在非只读目录(如D盘)下创建Docker Desktop默认安装路径(如D：\Docker)，然后以管理员身份运行cmd，通过以下命令创建链接:
-```shell
-mklink /J "C:\Program Files\Docker" "D:\Docker"
-```
-这样创建链接之后，正常安装docker就会安装在D盘里了。
-3. 安装
-
-使用官方建议的WSL2方式安装(勾选："Use the WSL 2 based engine")
-4. 建议修改镜像保存路径
-
-Docker镜像默认保存在C盘，FATE作业镜像很大，可能导致C盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开Docker Desktop，找到Settings->Resources->Browse，修改镜像保存路径。
-![docker_settings.png](docker_settings.png)
-
 ## 准备节点
 
 准备 Kuscia 节点请参考 [快速入门](../getting_started/quickstart_cn.md)。
