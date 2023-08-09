@@ -4,7 +4,7 @@
 
 准备节点请参考[快速入门](../getting_started/quickstart_cn.md)。
 
-本示例在中心化组网模式下完成。经测试，在点对点组网模式下同样有效，可在任意一个节点中执行。
+本示例在中心化组网模式下完成。在点对点组网模式下，证书的配置会有所不同。
 
 {#cert-and-token}
 
@@ -12,14 +12,32 @@
 
 Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HTTPS 配置。
 
+### 中心化组网模式
+
 证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/etc/certs/`目录下：
+
 
 | 文件名                                         | 文件功能                           |
 |------------------------------------------------|-----------------------------------|
-| kusciaapi-client.key                   |SSL私钥文件                                 |
+| kusciaapi-client.key                   |客户端私钥文件                                 |
 | kusciaapi-client.crt                   |客户端证书文件                               |
-| ca.crt                                 |CA证书文件                                  |
-| token                                  |认证token，在headers中添加Token: {token文件内容} |
+| ca.crt                                 |CA 证书文件                                  |
+| token                                  |认证 token ，在 headers 中添加 Token: { token 文件内容} |
+
+### 点对点组网模式
+
+证书的配置参考[配置授权](../getting_started/deploy/deploy_p2p_cn)
+
+这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/etc/certs/`目录下：
+
+| 文件名                                         | 文件功能                           |
+|------------------------------------------------|-----------------------------------|
+| kusciaapi-client.key                   |客户端私钥文件                                 |
+| kusciaapi-client.crt                   |客户端证书文件                               |
+| ca.crt                                 |CA 证书文件                                  |
+| token                                  |认证 token ，在 headers 中添加 Token: { token 文件内容} |
+
+同时，还要保证节点间的授权证书配置正确，alice 节点和 bob 节点要完成授权的建立，否则双方无法共同参与计算任务。
 
 
 ## 准备数据
@@ -67,6 +85,14 @@ docker cp {your_alice_data} ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/d
 ```shell
 docker exec -it ${USER}-kuscia-master bash
 ```
+
+如果是点对点组网模式，则需要进入任务发起方节点容器，以 alice 节点为例：
+
+```shell
+docker exec -it ${USER}-kuscia-autonomy-alice
+```
+
+注意，你只能向已和 alice 节点建立了授权的节点发布计算任务。
 
 ### 使用 Kuscia 示例数据配置 KusciaJob
 
