@@ -109,7 +109,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/create' \
---header 'Token: 28377e6078b335b530c1e7841971aae2b88aef7ffcdab7cbed491b72ffb667f6' \
+--header "Token: $(cat /home/kuscia/etc/certs/token)" \
 --header 'Content-Type: application/json' \
 --cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
 --key '/home/kuscia/etc/certs/kusciaapi-client.key' \
@@ -174,7 +174,7 @@ job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
---header 'Token: 28377e6078b335b530c1e7841971aae2b88aef7ffcdab7cbed491b72ffb667f6' \
+--header "Token: $(cat /home/kuscia/etc/certs/token)" \
 --header 'Content-Type: application/json' \
 --cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
 --key '/home/kuscia/etc/certs/kusciaapi-client.key' \
@@ -264,7 +264,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/delete' \
---header 'Token: 28377e6078b335b530c1e7841971aae2b88aef7ffcdab7cbed491b72ffb667f6' \
+--header "Token: $(cat /home/kuscia/etc/certs/token)" \
 --header 'Content-Type: application/json' \
 --cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
 --key '/home/kuscia/etc/certs/kusciaapi-client.key' \
