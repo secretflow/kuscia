@@ -47,7 +47,7 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 			nlog.Setup(nlog.SetWriter(zlog))
-			conf := utils.GetInitConfig(configFile, domainID, "lite")
+			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeLite)
 			_, _, err = modules.EnsureCaKeyAndCert(conf)
 			if err != nil {
 				nlog.Error(err)

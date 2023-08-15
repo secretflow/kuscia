@@ -56,7 +56,7 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 			}
 			nlog.Setup(nlog.SetWriter(zlog))
 			logs.Setup(nlog.SetWriter(zlog))
-			conf := utils.GetInitConfig(configFile, domainID, "autonomy")
+			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeAutonomy)
 			_, _, err = modules.EnsureCaKeyAndCert(conf)
 			if err != nil {
 				nlog.Error(err)

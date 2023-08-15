@@ -55,7 +55,7 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 			}
 			nlog.Setup(nlog.SetWriter(zlog))
 			logs.Setup(nlog.SetWriter(zlog))
-			conf := utils.GetInitConfig(configFile, domainID, "master")
+			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeMaster)
 			conf.IsMaster = true
 
 			if onlyControllers {

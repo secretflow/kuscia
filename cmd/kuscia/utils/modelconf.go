@@ -1,3 +1,18 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//nolint:dulp
 package utils
 
 import (
@@ -17,6 +32,12 @@ var (
 	defaultEndpoint               = "https://127.0.0.1:6443"
 	defaultInterConnSchedulerPort = 8084
 	liteDefaultEndpoint           = "http://apiserver.master.svc"
+)
+
+const (
+	RunModeMaster   = "master"
+	RunModeAutonomy = "autonomy"
+	RunModeLite     = "lite"
 )
 
 func GetInitConfig(configFile string, flagDomainID string, runmodel string) *modules.Dependencies {
@@ -43,7 +64,7 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 		conf.DomainID = defaultDomainID
 	}
 	conf.ApiserverEndpoint = defaultEndpoint
-	if runmodel == "master" || runmodel == "autonomy" {
+	if runmodel == RunModeMaster || runmodel == RunModeAutonomy {
 		conf.KubeconfigFile = filepath.Join(conf.RootDir, "etc/kubeconfig")
 		conf.KusciaKubeConfig = filepath.Join(conf.RootDir, "etc/kuscia.kubeconfig")
 		if conf.CAKeyFile == "" {
@@ -64,8 +85,8 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 		conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
 	}
 
-	if runmodel == "master" || runmodel == "lite" {
-		if runmodel == "lite" {
+	if runmodel == RunModeMaster || runmodel == RunModeLite {
+		if runmodel == RunModeLite {
 			conf.ApiserverEndpoint = liteDefaultEndpoint
 			clients, err := kubeconfig.CreateClientSetsFromKubeconfig("", conf.ApiserverEndpoint)
 			if err != nil {
@@ -80,7 +101,7 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 		}
 	}
 
-	if runmodel == "autonomy" || runmodel == "lite" {
+	if runmodel == RunModeAutonomy || runmodel == RunModeLite {
 		hostIP, err := network.GetHostIP()
 		if err != nil {
 			nlog.Fatal(err)
