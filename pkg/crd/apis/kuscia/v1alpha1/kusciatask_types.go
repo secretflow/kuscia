@@ -233,13 +233,19 @@ type PodStatus struct {
 	// be set in happens-before order across separate operations.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
-	CreatedTime *metav1.Time `json:"createdTime,omitempty"`
+	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
 	// Represents time when the pod was scheduled. It is not guaranteed to
 	// be set in happens-before order across separate operations.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
-	ScheduledTime *metav1.Time `json:"scheduledTime,omitempty"`
+	ScheduleTime *metav1.Time `json:"scheduleTime,omitempty"`
+
+	// Represents time when the pod was accepted by the agent. It is not guaranteed to
+	// be set in happens-before order across separate operations.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	StartTime *metav1.Time `json:"startTime,omitempty"`
 
 	// Represents time when the pod was ready. It is not guaranteed to
 	// be set in happens-before order across separate operations.
@@ -265,7 +271,7 @@ type ServiceStatus struct {
 	// be set in happens-before order across separate operations.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
-	CreatedTime *metav1.Time `json:"createdTime,omitempty"`
+	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
 	// Represents time when the service was ready. It is not guaranteed to
 	// be set in happens-before order across separate operations.

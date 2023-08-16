@@ -384,13 +384,17 @@ func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1
 			return
 		}
 
-		st.CreatedTime = func() *metav1.Time {
-			createdTime := pod.GetCreationTimestamp()
-			return &createdTime
+		// podStatus createTime
+		st.CreateTime = func() *metav1.Time {
+			createTime := pod.GetCreationTimestamp()
+			return &createTime
 		}()
 
+		// podStatus startTime
+		st.StartTime = pod.Status.StartTime
+
 		// Check if the pod has been scheduled
-		// set scheduledTime、readyTime
+		// set scheduleTime、readyTime
 		for _, cond := range pod.Status.Conditions {
 			if cond.Type == v1.PodScheduled && cond.Status == v1.ConditionFalse {
 				if st.Reason == "" {
@@ -402,12 +406,7 @@ func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1
 				}
 				return
 			}
-			if cond.Type == v1.PodScheduled {
-				st.ScheduledTime = func() *metav1.Time {
-					scheduledTime := cond.LastTransitionTime
-					return &scheduledTime
-				}()
-			} else if cond.Type == v1.PodReady {
+			if cond.Type == v1.PodReady {
 				st.ReadyTime = func() *metav1.Time {
 					readyTime := cond.LastTransitionTime
 					return &readyTime
@@ -455,9 +454,9 @@ func (h *RunningHandler) refreshServiceStatuses(serviceStatuses map[string]*kusc
 			}
 			continue
 		}
-		st.CreatedTime = func() *metav1.Time {
-			createdTime := srv.GetCreationTimestamp()
-			return &createdTime
+		st.CreateTime = func() *metav1.Time {
+			createTime := srv.GetCreationTimestamp()
+			return &createTime
 		}()
 
 		// set readyTime
