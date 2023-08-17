@@ -31,7 +31,7 @@ var (
 	defaultDomainID               = "kuscia"
 	defaultEndpoint               = "https://127.0.0.1:6443"
 	defaultInterConnSchedulerPort = 8084
-	liteDefaultEndpoint           = "http://apiserver.master.svc"
+	defaultEndpointForLite        = "http://apiserver.master.svc"
 )
 
 const (
@@ -87,7 +87,7 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 
 	if runmodel == RunModeMaster || runmodel == RunModeLite {
 		if runmodel == RunModeLite {
-			conf.ApiserverEndpoint = liteDefaultEndpoint
+			conf.ApiserverEndpoint = defaultEndpointForLite
 			clients, err := kubeconfig.CreateClientSetsFromKubeconfig("", conf.ApiserverEndpoint)
 			if err != nil {
 				nlog.Fatal(err)
