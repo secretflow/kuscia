@@ -119,15 +119,16 @@ func (m dataMeshModule) readyZ() bool {
 		nlog.Errorf("read response body error: %v", err)
 		return false
 	}
-	if err := json.Unmarshal(respBytes, healthResp); err != nil {
+	if err = json.Unmarshal(respBytes, healthResp); err != nil {
 		nlog.Errorf("Unmarshal health response error: %v", err)
 		return false
 	}
-	if !healthResp.Data.Ready {
+
+	if healthResp.Data == nil || !healthResp.Data.Ready {
 		return false
 	}
-	nlog.Infof("http server is ready")
 
+	nlog.Infof("http server is ready")
 	return true
 }
 

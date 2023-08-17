@@ -28,10 +28,10 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 mkdir -p ${ROOT}/etc/certs
-pushd ${ROOT}/etc/certs || exit
+pushd ${ROOT}/etc/certs >/dev/null || exit
 
 if [ -e ca.key ]; then
-   popd
+   popd >/dev/null
    exit
 fi
 
@@ -41,4 +41,4 @@ openssl req -x509 -new -nodes -key ca.key -subj "/CN=Kuscia" -days 10000 -out ca
 openssl genrsa -out domain.key 2048
 openssl req -new -nodes -key domain.key -subj "/CN=${DOMAIN_ID}" -out domain.csr
 
-popd || exit
+popd >/dev/null || exit

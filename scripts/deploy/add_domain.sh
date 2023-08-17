@@ -17,7 +17,7 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID"
+usage="$(basename "$0") DOMAIN_ID [HOST] [ROLE] [INTERCONN_PROTOCOL]"
 
 DOMAIN_ID=$1
 if [[ ${DOMAIN_ID} == "" ]]; then
@@ -25,12 +25,17 @@ if [[ ${DOMAIN_ID} == "" ]]; then
   exit 1
 fi
 
+HOST=$2
+if [[ ${HOST} == "" ]]; then
+  HOST=$(hostname)
+fi
+
 ROLE=
-if [[ $2 == p2p ]] ; then
+if [[ $3 == p2p ]] ; then
   ROLE=partner
 fi
 
-INTERCONN_PROTOCOL=$3
+INTERCONN_PROTOCOL=$4
 [ "${INTERCONN_PROTOCOL}" != "" ] || INTERCONN_PROTOCOL="kuscia"
 
 SELF_DOMAIN_ID=${NAMESPACE}
@@ -41,23 +46,21 @@ fi
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
-pushd $ROOT/etc/certs || exit
+pushd $ROOT/etc/certs >/dev/null || exit
 DOMAIN_CERT_FILE=${DOMAIN_ID}.domain.crt
 openssl x509 -req -in ${DOMAIN_ID}.domain.csr -CA ca.crt -CAkey ca.key -CAcreateserial -days 10000 -out ${DOMAIN_CERT_FILE}
 CERT=$(base64 ${DOMAIN_CERT_FILE} | tr -d "\n")
-popd || exit
+popd >/dev/null || exit
 
 DOMAIN_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;
   s/{{.CERT}}/${CERT}/g;
   s/{{.ROLE}}/${ROLE}/g" \
   < "${ROOT}/scripts/templates/domain.yaml")
-if [ "$2" == "p2p" ]; then
+if [ "$3" == "p2p" ]; then
   APPEND_LINE=$(printf "\n%*sinterConnProtocols: [ '${INTERCONN_PROTOCOL}' ]" "2")
   DOMAIN_TEMPLATE="${DOMAIN_TEMPLATE}${APPEND_LINE}"
 fi
 echo "${DOMAIN_TEMPLATE}" | kubectl apply -f -
-
-IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
 
 TOKEN=$(${ROOT}/scripts/deploy/create_token.sh ${DOMAIN_ID} | tail -n 1)
 
@@ -65,7 +68,7 @@ DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.SRC_DOMAIN}}/${DOMAIN_ID}/g;
   s/{{.DEST_DOMAIN}}/${SELF_DOMAIN_ID}/g;
   s/{{.INTERCONN_PROTOCOL}}/${INTERCONN_PROTOCOL}/g;
-  s/{{.HOST}}/${IP}/g;
+  s/{{.HOST}}/${HOST}/g;
   s/{{.PORT}}/1080/g;
   s/{{.TLS_CA}}//g;
   s/{{.SRC_CERT}}//g;

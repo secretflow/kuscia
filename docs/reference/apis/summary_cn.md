@@ -90,7 +90,7 @@ GRPC 端点默认在：kuscia-master 的 8083 端口。
 
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：
 ```shell
-curl --cert kusciaapi-client.crt --key kusciaapi-client.key --cacert ca.crt -X POST 'https://{root-kuscia-master}:8082/api/v1/domain/query' --header 'Token: {token}' --header 'Content-Type: application/json' -d '{
+curl --cert kusciaapi-client.crt --key kusciaapi-client.key --cacert ca.crt -X POST 'https://{{USER}-kuscia-master}:8082/api/v1/domain/query' --header 'Token: {token}' --header 'Content-Type: application/json' -d '{
   "domain_id": "alice"
 }'
 ```

@@ -20,7 +20,7 @@ set -e
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 CRD_DIR=${ROOT}/crds/v1alpha1
 
-pushd $CRD_DIR || exit
+pushd $CRD_DIR >/dev/null || exit
 for file in *.yaml
 do
   while :
@@ -32,4 +32,4 @@ do
   done
 done
 
-popd || exit
+popd >/dev/null || exit

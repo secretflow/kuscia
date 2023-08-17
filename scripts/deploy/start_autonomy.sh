@@ -17,9 +17,20 @@
 
 set -e
 
-usage="$(basename "$0") NAMESPACE"
+usage="$(basename "$0") NAMESPACE [ALLOW_PRIVILEGED] [AUTH_TYPE](default MTLS)"
 NAMESPACE=$1
 ALLOW_PRIVILEGED=$2
+AUTH_TYPE=$3
+
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+echo "${ROOT}"
+
+pushd ${ROOT} >/dev/null || exit
+
+EXTERNAL_TLS_CA_FILE=${ROOT}/etc/certs/ca.crt
+EXTERNAL_TLS_CERT_FILE=${ROOT}/etc/certs/external_tls.crt
+EXTERNAL_TLS_KEY_FILE=${ROOT}/etc/certs/external_tls.key
+
 if [[ ${NAMESPACE} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
@@ -28,10 +39,16 @@ if [[ ${ALLOW_PRIVILEGED} != "false"  && ${ALLOW_PRIVILEGED} != "true" ]]; then
   ALLOW_PRIVILEGED="false"
 fi
 
-ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-echo "${ROOT}"
+if [[ ${AUTH_TYPE} == "None" ]]; then
+  EXTERNAL_TLS_CA_FILE=""
+elif [[ ${AUTH_TYPE} == "Token" ]]; then
+  EXTERNAL_TLS_CA_FILE=""
+fi
 
-pushd ${ROOT} || exit
+if [[ ! -f ${EXTERNAL_TLS_CERT_FILE} || ! -f ${EXTERNAL_TLS_KEY_FILE} ]]; then
+  EXTERNAL_TLS_CERT_FILE=""
+  EXTERNAL_TLS_KEY_FILE=""
+fi
 
 cp /etc/resolv.conf etc/resolv.conf
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
@@ -53,6 +70,10 @@ master:
     certFile: ${ROOT}/etc/certs/domain.crt
     keyFile: ${ROOT}/etc/certs/domain.key
     caFile: ${ROOT}/etc/certs/master.ca.crt
+externalTLS:
+  certFile: ${EXTERNAL_TLS_CERT_FILE}
+  keyFile: ${EXTERNAL_TLS_KEY_FILE}
+  caFile: ${EXTERNAL_TLS_CA_FILE}
 agent:
   allowPrivileged: true
   plugins:
@@ -81,7 +102,7 @@ spec:
   cert:
 " | kubectl apply -f -
 
-popd || exit
+popd >/dev/null || exit
 
 tail -f /dev/null
 

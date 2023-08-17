@@ -39,24 +39,24 @@ all: build
 
 .PHONY: help
 help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
 
 .PHONY: manifests
 manifests: ## Generate CustomResourceDefinition objects.
-	sh hack/generate-crds.sh
+	bash hack/generate-crds.sh
 
 .PHONY: generate
 generate: gen-clientset gen-proto-code  ## Generate all code that Kuscia needs.
 
 .PHONY: gen-clientset
 gen-clientset:  # Generate CRD runtime.Object and Clientset\Informer|Listers.
-	sh hack/update-codegen.sh
+	bash hack/update-codegen.sh
 
 .PHONY: gen-proto-code
 gen-proto-code:  # Generate protobuf golang code that Kuscia needs.
-	sh hack/proto-to-go.sh
+	bash hack/proto-to-go.sh
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -90,7 +90,7 @@ clean: # clean build and test product.
 
 .PHONY: build
 build: fmt vet ## Build kuscia binary.
-	sh hack/build.sh
+	bash hack/build.sh
 
 .PHONY: docs
 docs: ## Build docs.
@@ -101,3 +101,9 @@ image: export GOOS=linux
 image: export GOARCH=amd64
 image: build ## Build docker image with the manager.
 	docker build -t ${IMG}  --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+
+.PHONY: integration_test
+integration_test: image ## Run Integration Test
+	mkdir -p run/test
+	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
+	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh
