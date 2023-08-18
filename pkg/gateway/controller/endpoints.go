@@ -270,7 +270,7 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 	hosts[service.Spec.ExternalName] = ports
 	err = AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
-	updateServiceAfterEnvoy(ec.kubeClient, service, err)
+	updateService(ec.kubeClient, service, err)
 	return err
 }
 
