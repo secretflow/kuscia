@@ -83,6 +83,10 @@ func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.S
 	for k, v := range at {
 		service.Annotations[k] = v
 	}
-	_, err = kubeClient.CoreV1().Services(service.GetNamespace()).Update(context.Background(), service, metav1.UpdateOptions{})
-	return err
+	updateFn := func() error {
+		_, err = kubeClient.CoreV1().Services(service.GetNamespace()).Update(context.Background(), service, metav1.UpdateOptions{})
+		return err
+	}
+
+	return retry.OnError(retry.DefaultBackoff, net.IsConnectionRefused, updateFn)
 }

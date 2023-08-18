@@ -406,7 +406,8 @@ func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1
 				}
 				return
 			}
-			if cond.Type == v1.PodReady {
+			// cond.Status=True indicates complete availability
+			if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
 				st.ReadyTime = func() *metav1.Time {
 					readyTime := cond.LastTransitionTime
 					return &readyTime
@@ -460,7 +461,7 @@ func (h *RunningHandler) refreshServiceStatuses(serviceStatuses map[string]*kusc
 		}()
 
 		// set readyTime
-		if v, ok := srv.Annotations[common.ServiceEnvoyReadyTimeKey]; ok {
+		if v, ok := srv.Annotations[common.ReadyTimeAnnotationKey]; ok {
 			st.ReadyTime = func() *metav1.Time {
 				readyTime := &metav1.Time{}
 				readyTime.UnmarshalQueryParameter(v)
