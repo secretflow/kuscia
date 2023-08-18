@@ -59,13 +59,13 @@ const (
 const (
 	AccessDomainAnnotationKey = "kuscia.secretflow/access-domain"
 	ProtocolAnnotationKey     = "kuscia.secretflow/protocol"
+	ReadyTimeAnnotationKey    = "kuscia.secretflow/ready-time"
 
 	ConfigTemplateVolumesAnnotationKey = "kuscia.secretflow/config-template-volumes"
 
 	TaskResourceReservingTimestamp = "kuscia.secretflow/task-resource-reserving-timestamp"
 
 	ComponentSpecAnnotationKey = "kuscia.secretflow/component-spec"
-	ServiceEnvoyReadyTimeKey   = "kuscia.secretflow/ready-time"
 )
 
 // Environment variables issued to the task pod.

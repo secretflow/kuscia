@@ -270,7 +270,7 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 	hosts[service.Spec.ExternalName] = ports
 	err = AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
-	updateServiceAfterEnvoy(ec.kubeClient, service, err)
+	updateService(ec.kubeClient, service, err)
 	return err
 }
 
@@ -299,20 +299,22 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 
 	err := AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
-	updateServiceAfterEnvoy(ec.kubeClient, service, err)
+	updateService(ec.kubeClient, service, err)
 	return err
 }
 
-func updateServiceAfterEnvoy(kubeClient kubernetes.Interface, service *v1.Service, err error) {
+func updateService(kubeClient kubernetes.Interface, service *v1.Service, err error) {
 	if err == nil {
 		if ownerRef := metav1.GetControllerOf(service); ownerRef != nil && ownerRef.Kind == "Pod" {
-			now := metav1.Now().Rfc3339Copy()
-			at := map[string]string{
-				common.ServiceEnvoyReadyTimeKey: apiutils.TimeRfc3339String(&now),
-			}
-			err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
-			if err != nil {
-				nlog.Errorf("update service envoy add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
+			if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
+				now := metav1.Now().Rfc3339Copy()
+				at := map[string]string{
+					common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
+				}
+				err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
+				if err != nil {
+					nlog.Errorf("update service envoy add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
+				}
 			}
 		}
 	}

@@ -229,26 +229,22 @@ type PodStatus struct {
 	// +optional
 	Reason string `json:"reason,omitempty"`
 
-	// Represents time when the pod was created. It is not guaranteed to
-	// be set in happens-before order across separate operations.
+	// Represents time when the pod was created.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
-	// Represents time when the pod was scheduled. It is not guaranteed to
-	// be set in happens-before order across separate operations.
+	// Represents time when the pod was scheduled.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	ScheduleTime *metav1.Time `json:"scheduleTime,omitempty"`
 
-	// Represents time when the pod was accepted by the agent. It is not guaranteed to
-	// be set in happens-before order across separate operations.
+	// Represents time when the pod was accepted by the agent.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	StartTime *metav1.Time `json:"startTime,omitempty"`
 
-	// Represents time when the pod was ready. It is not guaranteed to
-	// be set in happens-before order across separate operations.
+	// Represents time when the pod was ready.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	ReadyTime *metav1.Time `json:"readyTime,omitempty"`
@@ -267,14 +263,12 @@ type ServiceStatus struct {
 	// A human-readable message indicating details about why the service is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`
-	// Represents time when the service was created. It is not guaranteed to
-	// be set in happens-before order across separate operations.
+	// Represents time when the service was created.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	CreateTime *metav1.Time `json:"createTime,omitempty"`
 
-	// Represents time when the service was ready. It is not guaranteed to
-	// be set in happens-before order across separate operations.
+	// Represents time when the service was ready.
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	ReadyTime *metav1.Time `json:"readyTime,omitempty"`
