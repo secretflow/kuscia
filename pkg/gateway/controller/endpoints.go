@@ -270,8 +270,11 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 	hosts[service.Spec.ExternalName] = ports
 	err = AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
-	updateService(ec.kubeClient, service, err)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return updateService(ec.kubeClient, service)
 }
 
 func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, endpoints *v1.Endpoints, protocol string, namespace string,
@@ -299,25 +302,28 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 
 	err := AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
-	updateService(ec.kubeClient, service, err)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return updateService(ec.kubeClient, service)
 }
 
-func updateService(kubeClient kubernetes.Interface, service *v1.Service, err error) {
-	if err == nil {
-		if ownerRef := metav1.GetControllerOf(service); ownerRef != nil && ownerRef.Kind == "Pod" {
-			if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
-				now := metav1.Now().Rfc3339Copy()
-				at := map[string]string{
-					common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
-				}
-				err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
-				if err != nil {
-					nlog.Errorf("update service envoy add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
-				}
+func updateService(kubeClient kubernetes.Interface, service *v1.Service) error {
+	var err error
+	if ownerRef := metav1.GetControllerOf(service); ownerRef != nil && ownerRef.Kind == "Pod" {
+		if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
+			now := metav1.Now().Rfc3339Copy()
+			at := map[string]string{
+				common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
+			}
+			err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
+			if err != nil {
+				nlog.Errorf("update service add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
 			}
 		}
 	}
+	return err
 }
 
 func deleteService(name string) error {
