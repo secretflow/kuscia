@@ -469,12 +469,22 @@ func (pc *PodsController) constructPodImage(pod *corev1.Pod) {
 	if pc.registryCfg.Default.Repository == "" {
 		return
 	}
+
+	trimRepo := strings.TrimRight(pc.registryCfg.Default.Repository, "/")
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-		imageSlice := strings.Split(strings.Trim(container.Image, "/"), "/")
-		image := imageSlice[len(imageSlice)-1]
-		container.Image = fmt.Sprintf("%v/%v", strings.TrimRight(pc.registryCfg.Default.Repository, "/"), image)
-		nlog.Debugf("Replace image %q with %q, container=%v, pod=%v", image, container.Image, container.Name, format.Pod(pod))
+		switch strings.Count(container.Image, "/") {
+		case 1:
+			oldImage := container.Image
+			imageSlice := strings.Split(strings.Trim(container.Image, "/"), "/")
+			container.Image = fmt.Sprintf("%v/%v", trimRepo, imageSlice[len(imageSlice)-1])
+			nlog.Debugf("Replace image %q with %q, container=%v, pod=%v", oldImage, container.Image, container.Name, format.Pod(pod))
+		case 0:
+			oldImage := container.Image
+			container.Image = fmt.Sprintf("%v/%v", trimRepo, container.Image)
+			nlog.Debugf("Replace image %q with %q, container=%v, pod=%v", oldImage, container.Image, container.Name, format.Pod(pod))
+		default:
+		}
 	}
 }
 
