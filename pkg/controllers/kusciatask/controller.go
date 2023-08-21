@@ -365,7 +365,7 @@ func (c *Controller) handleServiceObject(obj interface{}) {
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
 		// If this object is not owned by a pod, we should not do anything more with it.
 		if ownerRef.Kind != "Pod" {
-			nlog.Debugf("Pod %v/%v not belong to this controller, ignore", object.GetNamespace(), object.GetName())
+			nlog.Debugf("Service %v/%v not belong to this controller, ignore", object.GetNamespace(), object.GetName())
 			return
 		}
 		pod, err := c.podsLister.Pods(object.GetNamespace()).Get(ownerRef.Name)
