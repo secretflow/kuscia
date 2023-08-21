@@ -141,7 +141,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return fmt.Errorf("load innerClientTLS fail, detail-> %v", err)
 	}
-	ec, err := controller.NewEndpointsController(serviceInformer, endpointsInformer, gwConfig.WhiteListFile,
+	ec, err := controller.NewEndpointsController(clients.KubeClient, serviceInformer, endpointsInformer, gwConfig.WhiteListFile,
 		clientCert)
 	if err != nil {
 		return fmt.Errorf("failed to new endpoints controller, detail-> %v", err)
