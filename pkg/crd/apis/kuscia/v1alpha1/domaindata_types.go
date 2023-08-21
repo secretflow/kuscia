@@ -25,6 +25,8 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:path=domaindatas
+// +kubebuilder:resource:singular=domaindata
 // +kubebuilder:resource:shortName=kdd
 
 // DomainData include feature table,model,rule,report .etc
