@@ -34,9 +34,11 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	corev1informers "k8s.io/client-go/informers/core/v1"
+	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -45,8 +47,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
+	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -87,9 +91,11 @@ type EndpointsController struct {
 	queue                 workqueue.RateLimitingInterface
 	whitelistChecker      utils.WhitelistChecker
 	clientCert            *xds.TLSCert
+	// kubeClient is a standard kubernetes clientset
+	kubeClient kubernetes.Interface
 }
 
-func NewEndpointsController(serviceInformer corev1informers.ServiceInformer,
+func NewEndpointsController(kubeClient kubernetes.Interface, serviceInformer corev1informers.ServiceInformer,
 	endpointsInformer corev1informers.EndpointsInformer, whitelistFile string,
 	clientCert *xds.TLSCert) (*EndpointsController, error) {
 	whitelistChecker, err := utils.NewWhitelistChecker(whitelistFile)
@@ -106,6 +112,7 @@ func NewEndpointsController(serviceInformer corev1informers.ServiceInformer,
 		queue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "endpoints"),
 		whitelistChecker:      whitelistChecker,
 		clientCert:            clientCert,
+		kubeClient:            kubeClient,
 	}
 
 	ec.addServiceEventHandler(serviceInformer)
@@ -244,7 +251,7 @@ func (ec *EndpointsController) syncHandler(ctx context.Context, key string) erro
 		return deleteService(name)
 	}
 
-	return ec.AddEnvoyClusterByEndpoints(endpoints, protocol, namespace, name, accessDomains)
+	return ec.AddEnvoyClusterByEndpoints(service, endpoints, protocol, namespace, name, accessDomains)
 }
 
 func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service, protocol string, namespace string,
@@ -261,10 +268,16 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 
 	hosts := make(map[string][]uint32)
 	hosts[service.Spec.ExternalName] = ports
-	return AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+	err = AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+
+	if err != nil {
+		return err
+	}
+
+	return updateService(ec.kubeClient, service)
 }
 
-func (ec *EndpointsController) AddEnvoyClusterByEndpoints(endpoints *v1.Endpoints, protocol string, namespace string,
+func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, endpoints *v1.Endpoints, protocol string, namespace string,
 	name string, accessDomains string) error {
 	hosts := make(map[string][]uint32)
 	for _, subset := range endpoints.Subsets {
@@ -287,7 +300,30 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(endpoints *v1.Endpoint
 		return nil
 	}
 
-	return AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+	err := AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+
+	if err != nil {
+		return err
+	}
+
+	return updateService(ec.kubeClient, service)
+}
+
+func updateService(kubeClient kubernetes.Interface, service *v1.Service) error {
+	var err error
+	if ownerRef := metav1.GetControllerOf(service); ownerRef != nil && ownerRef.Kind == "Pod" {
+		if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
+			now := metav1.Now().Rfc3339Copy()
+			at := map[string]string{
+				common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
+			}
+			err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
+			if err != nil {
+				nlog.Errorf("update service add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
+			}
+		}
+	}
+	return err
 }
 
 func deleteService(name string) error {

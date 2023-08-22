@@ -59,6 +59,7 @@ const (
 const (
 	AccessDomainAnnotationKey = "kuscia.secretflow/access-domain"
 	ProtocolAnnotationKey     = "kuscia.secretflow/protocol"
+	ReadyTimeAnnotationKey    = "kuscia.secretflow/ready-time"
 
 	ConfigTemplateVolumesAnnotationKey = "kuscia.secretflow/config-template-volumes"
 

@@ -72,25 +72,25 @@ secretflow-task-psi   7s          7s               7s                  Succeeded
 ```shell
 kubectl get kt secretflow-task-psi -o jsonpath={.status} | jq
 {
-  "completionTime": "2023-06-26T03:46:58Z",
+  "completionTime": "2023-08-21T07:43:34Z",
   "conditions": [
     {
-      "lastTransitionTime": "2023-06-26T03:46:38Z",
+      "lastTransitionTime": "2023-08-21T07:43:15Z",
       "status": "True",
       "type": "ResourceCreated"
     },
     {
-      "lastTransitionTime": "2023-06-26T03:46:52Z",
+      "lastTransitionTime": "2023-08-21T07:43:15Z",
       "status": "True",
       "type": "Running"
     },
     {
-      "lastTransitionTime": "2023-06-26T03:46:58Z",
+      "lastTransitionTime": "2023-08-21T07:43:34Z",
       "status": "True",
       "type": "Success"
     }
   ],
-  "lastReconcileTime": "2023-06-26T03:46:58Z",
+  "lastReconcileTime": "2023-08-21T07:43:34Z",
   "partyTaskStatus": [
     {
       "domainID": "alice",
@@ -104,21 +104,65 @@ kubectl get kt secretflow-task-psi -o jsonpath={.status} | jq
   "phase": "Succeeded",
   "podStatuses": {
     "alice/secretflow-task-psi-0": {
+      "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
       "nodeName": "070a9fc7ff24",
       "podName": "secretflow-task-psi-0",
       "podPhase": "Succeeded",
-      "reason": "Completed"
+      "readyTime": "2023-08-21T07:43:18Z",
+      "reason": "Completed",
+      "startTime": "2023-08-21T07:43:17Z"
     },
     "bob/secretflow-task-psi-0": {
+      "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
       "nodeName": "dd3bdda2b853",
       "podName": "secretflow-task-psi-0",
       "podPhase": "Succeeded",
-      "reason": "Completed"
+      "readyTime": "2023-08-21T07:43:18Z",
+      "reason": "Completed",
+      "startTime": "2023-08-21T07:43:17Z"
     }
   },
-  "startTime": "2023-06-26T03:46:38Z"
+  "serviceStatuses": {
+    "alice/secretflow-task-psi-0-fed": {
+      "createTime": "2023-08-21T07:43:15Z",
+      "namespace": "alice",
+      "readyTime": "2023-08-21T07:43:18Z",
+      "serviceName": "secretflow-task-psi-0-fed"
+    },
+    "alice/secretflow-task-psi-0-global": {
+      "createTime": "2023-08-21T07:43:15Z",
+      "namespace": "alice",
+      "readyTime": "2023-08-21T07:43:18Z",
+      "serviceName": "secretflow-task-psi-0-global"
+    },
+    "alice/secretflow-task-psi-0-spu": {
+      "createTime": "2023-08-21T07:43:15Z",
+      "namespace": "alice",
+      "readyTime": "2023-08-21T07:43:18Z",
+      "serviceName": "secretflow-task-psi-0-spu"
+    },
+    "bob/secretflow-task-psi-0-fed": {
+      "createTime": "2023-08-21T07:43:15Z",
+      "namespace": "bob",
+      "readyTime": "2023-08-21T07:43:18Z",
+      "serviceName": "secretflow-task-psi-0-fed"
+    },
+    "bob/secretflow-task-psi-0-global": {
+      "createTime": "2023-08-21T07:43:15Z",
+      "namespace": "bob",
+      "readyTime": "2023-08-21T07:43:18Z",
+      "serviceName": "secretflow-task-psi-0-global"
+    },
+    "bob/secretflow-task-psi-0-spu": {
+      "createTime": "2023-08-21T07:43:15Z",
+      "namespace": "bob",
+      "readyTime": "2023-08-21T07:43:18Z",
+      "serviceName": "secretflow-task-psi-0-spu"
+    }
+  },
+  "startTime": "2023-08-21T07:43:15Z"
 }
 ```
 
