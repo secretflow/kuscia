@@ -31,7 +31,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.1.0.dev230811
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 

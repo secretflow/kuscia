@@ -80,17 +80,15 @@ type PartyInfo struct {
 	// +optional
 	Role string `json:"role,omitempty"`
 	// +optional
-	MinReservedPods int `json:"minReservedPods,omitempty"`
-	// +optional
-	Template PartyTemplate `json:"template,omitempty"`
+	MinReservedPods int           `json:"minReservedPods,omitempty"`
+	Template        PartyTemplate `json:"template"`
 }
 
 // PartyTemplate defines the specific info for party.
 type PartyTemplate struct {
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
-	// +optional
-	Spec PodSpec `json:"spec,omitempty"`
+	Replicas *int32  `json:"replicas,omitempty"`
+	Spec     PodSpec `json:"spec"`
 }
 
 // PartyTaskStatus defines party task status.
