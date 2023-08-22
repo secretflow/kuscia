@@ -78,6 +78,7 @@ func getInitConfig(flagConfigFile string, flagDomainID string) *modules.Dependen
 			KubeConfig: conf.KubeconfigFile,
 			Endpoint:   conf.ApiserverEndpoint,
 		},
+		ApiWhitelist: conf.KusciaConfig.Master.ApiWhitelist,
 	}
 
 	hostIP, err := network.GetHostIP()
