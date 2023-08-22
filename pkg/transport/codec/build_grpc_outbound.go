@@ -15,7 +15,7 @@
 package codec
 
 import (
-	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcPtp"
+	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcptp"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 )
 
