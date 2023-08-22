@@ -4,7 +4,7 @@
 // - protoc             v4.23.4
 // source: grpc_ptp.proto
 
-package grpcPtp
+package grpcptp
 
 import (
 	context "context"

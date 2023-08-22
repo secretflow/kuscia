@@ -19,7 +19,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
-	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcPtp"
+	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcptp"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"golang.org/x/net/context"

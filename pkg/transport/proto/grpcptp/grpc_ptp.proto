@@ -17,7 +17,7 @@ syntax = "proto3";
 
 package org.ppc.grpc_ptp;
 
-option go_package = "github.com/secretflow/kuscia/transport/proto/grpcPtp";
+option go_package = "github.com/secretflow/kuscia/transport/proto/grpcptp";
 
 message TransportOutbound {
   bytes payload = 1;                  // 二进制报文
