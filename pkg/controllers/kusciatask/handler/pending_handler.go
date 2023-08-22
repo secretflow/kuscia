@@ -128,13 +128,12 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	}
 
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
-	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
 	for _, partyKitInfo := range partyKitInfos {
 		if utilsres.IsOuterBFIAInterConnDomain(h.namespacesLister, partyKitInfo.domainID) {
 			continue
 		}
 
-		ps, ss, err := h.createResourceForParty(partyKitInfo)
+		ps, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
 			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
 		}
@@ -142,13 +141,8 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 		for key, v := range ps {
 			podStatuses[key] = v
 		}
-
-		for key, v := range ss {
-			serviceStatuses[key] = v
-		}
 	}
 	kusciaTask.Status.PodStatuses = podStatuses
-	kusciaTask.Status.ServiceStatuses = serviceStatuses
 
 	if err := h.createTaskResourceGroup(kusciaTask, partyKitInfos); err != nil {
 		return fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
@@ -480,26 +474,25 @@ func fillPodAllocatedPorts(pod *PodKitInfo) {
 	pod.allocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
 }
 
-func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[string]*kusciaapisv1alpha1.PodStatus, map[string]*kusciaapisv1alpha1.ServiceStatus, error) {
+func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[string]*kusciaapisv1alpha1.PodStatus, error) {
 	podStatuses := map[string]*kusciaapisv1alpha1.PodStatus{}
-	serviceStatuses := map[string]*kusciaapisv1alpha1.ServiceStatus{}
 
 	if len(partyKit.configTemplates) > 0 {
 		configMap := generateConfigMap(partyKit)
 		if err := h.submitConfigMap(configMap, partyKit.kusciaTask); err != nil {
-			return nil, nil, fmt.Errorf("failed to submit configmap %q, %v", configMap.Name, err)
+			return nil, fmt.Errorf("failed to submit configmap %q, %v", configMap.Name, err)
 		}
 	}
 
 	for _, podKit := range partyKit.pods {
 		pod, err := h.generatePod(partyKit, podKit)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to generate pod %q spec, %v", podKit.podName, err)
+			return nil, fmt.Errorf("failed to generate pod %q spec, %v", podKit.podName, err)
 		}
 
 		pod, err = h.submitPod(partyKit, pod)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to submit pod %q, %v", podKit.podName, err)
+			return nil, fmt.Errorf("failed to submit pod %q, %v", podKit.podName, err)
 		}
 
 		podStatuses[pod.Namespace+"/"+pod.Name] = &kusciaapisv1alpha1.PodStatus{
@@ -514,26 +507,21 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 		for portName, serviceName := range podKit.portService {
 			ctrPort, ok := podKit.ports[portName]
 			if !ok {
-				return nil, nil, fmt.Errorf("not found container port %q in pod %q", portName, podKit.podName)
+				return nil, fmt.Errorf("not found container port %q in pod %q", portName, podKit.podName)
 			}
 
 			service, err := generateServices(partyKit, pod, serviceName, ctrPort)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to generate service %q, %v", serviceName, err)
+				return nil, fmt.Errorf("failed to generate service %q, %v", serviceName, err)
 			}
 
 			if err := h.submitService(service, pod); err != nil {
-				return nil, nil, fmt.Errorf("failed to submit service %q, %v", serviceName, err)
-			}
-
-			serviceStatuses[service.Namespace+"/"+service.Name] = &kusciaapisv1alpha1.ServiceStatus{
-				Namespace:   service.GetNamespace(),
-				ServiceName: service.Name,
+				return nil, fmt.Errorf("failed to submit service %q, %v", serviceName, err)
 			}
 		}
 	}
 
-	return podStatuses, serviceStatuses, nil
+	return podStatuses, nil
 }
 
 func (h *PendingHandler) createTaskResourceGroup(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitInfos map[string]*PartyKitInfo) error {

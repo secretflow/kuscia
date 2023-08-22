@@ -46,7 +46,7 @@ func newEndpointController() (*endpointController, error) {
 	serviceInformer := informerFactory.Core().V1().Services()
 	endpointInformer := informerFactory.Core().V1().Endpoints()
 
-	c, err := NewEndpointsController(client, serviceInformer, endpointInformer, "", nil)
+	c, err := NewEndpointsController(serviceInformer, endpointInformer, "", nil)
 	if err != nil {
 		return nil, err
 	}

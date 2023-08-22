@@ -26,7 +26,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
-	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -68,23 +67,21 @@ const (
 
 // RunningHandler is used to handle kuscia task which phase is running.
 type RunningHandler struct {
-	kubeClient     kubernetes.Interface
-	kusciaClient   kusciaclientset.Interface
-	trgLister      kuscialistersv1alpha1.TaskResourceGroupLister
-	podsLister     corelisters.PodLister
-	servicesLister corelisters.ServiceLister
-	nsLister       corelisters.NamespaceLister
+	kubeClient   kubernetes.Interface
+	kusciaClient kusciaclientset.Interface
+	trgLister    kuscialistersv1alpha1.TaskResourceGroupLister
+	podsLister   corelisters.PodLister
+	nsLister     corelisters.NamespaceLister
 }
 
 // NewRunningHandler returns a RunningHandler instance.
 func NewRunningHandler(deps *Dependencies) *RunningHandler {
 	return &RunningHandler{
-		kubeClient:     deps.KubeClient,
-		kusciaClient:   deps.KusciaClient,
-		trgLister:      deps.TrgLister,
-		podsLister:     deps.PodsLister,
-		servicesLister: deps.ServicesLister,
-		nsLister:       deps.NamespacesLister,
+		kubeClient:   deps.KubeClient,
+		kusciaClient: deps.KusciaClient,
+		trgLister:    deps.TrgLister,
+		podsLister:   deps.PodsLister,
+		nsLister:     deps.NamespacesLister,
 	}
 }
 
@@ -111,7 +108,6 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserved {
 		h.reconcileTaskStatus(taskStatus, trg)
 		h.refreshPodStatuses(taskStatus.PodStatuses)
-		h.refreshServiceStatuses(taskStatus.ServiceStatuses)
 		if !reflect.DeepEqual(taskStatus, kusciaTask.Status) {
 			taskStatus.LastReconcileTime = &now
 			fillTaskCondition(taskStatus)
@@ -120,7 +116,6 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 		}
 	} else {
 		h.refreshPodStatuses(taskStatus.PodStatuses)
-		h.refreshServiceStatuses(taskStatus.ServiceStatuses)
 		if !reflect.DeepEqual(taskStatus, kusciaTask.Status) {
 			taskStatus.LastReconcileTime = &now
 			fillTaskCondition(taskStatus)
@@ -384,17 +379,7 @@ func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1
 			return
 		}
 
-		// podStatus createTime
-		st.CreateTime = func() *metav1.Time {
-			createTime := pod.GetCreationTimestamp()
-			return &createTime
-		}()
-
-		// podStatus startTime
-		st.StartTime = pod.Status.StartTime
-
 		// Check if the pod has been scheduled
-		// set scheduleTime、readyTime
 		for _, cond := range pod.Status.Conditions {
 			if cond.Type == v1.PodScheduled && cond.Status == v1.ConditionFalse {
 				if st.Reason == "" {
@@ -405,13 +390,6 @@ func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1
 					st.Message = cond.Message
 				}
 				return
-			}
-			// cond.Status=True indicates complete availability
-			if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
-				st.ReadyTime = func() *metav1.Time {
-					readyTime := cond.LastTransitionTime
-					return &readyTime
-				}()
 			}
 		}
 
@@ -430,43 +408,6 @@ func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1
 			if st.Message != "" {
 				return
 			}
-		}
-	}
-}
-
-func (h *RunningHandler) refreshServiceStatuses(serviceStatuses map[string]*kusciaapisv1alpha1.ServiceStatus) {
-	for _, st := range serviceStatuses {
-		ns := st.Namespace
-		name := st.ServiceName
-		srv, err := h.servicesLister.Services(ns).Get(name)
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				srv, err = h.kubeClient.CoreV1().Services(ns).Get(context.Background(), name, metav1.GetOptions{})
-				if k8serrors.IsNotFound(err) {
-					st.Reason = "ServiceNotExist"
-					st.Message = "Does not find the service"
-					continue
-				}
-			}
-
-			if err != nil {
-				st.Reason = "GetServiceFailed"
-				st.Message = err.Error()
-			}
-			continue
-		}
-		st.CreateTime = func() *metav1.Time {
-			createTime := srv.GetCreationTimestamp()
-			return &createTime
-		}()
-
-		// set readyTime
-		if v, ok := srv.Annotations[common.ReadyTimeAnnotationKey]; ok {
-			st.ReadyTime = func() *metav1.Time {
-				readyTime := &metav1.Time{}
-				readyTime.UnmarshalQueryParameter(v)
-				return readyTime
-			}()
 		}
 	}
 }

@@ -77,16 +77,3 @@ func ExtractService(p *corev1.Service) *corev1.Service {
 	}
 	return pp
 }
-
-// UpdateServiceAnnotations updates service nnotations.
-func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.Service, at map[string]string) (err error) {
-	for k, v := range at {
-		service.Annotations[k] = v
-	}
-	updateFn := func() error {
-		_, err = kubeClient.CoreV1().Services(service.GetNamespace()).Update(context.Background(), service, metav1.UpdateOptions{})
-		return err
-	}
-
-	return retry.OnError(retry.DefaultBackoff, net.IsConnectionRefused, updateFn)
-}
