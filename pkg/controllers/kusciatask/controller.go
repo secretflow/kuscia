@@ -81,6 +81,7 @@ type Controller struct {
 	podsLister       corelisters.PodLister
 	podsSynced       cache.InformerSynced
 	servicesSynced   cache.InformerSynced
+	servicesLister   corelisters.ServiceLister
 	configMapSynced  cache.InformerSynced
 	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
 	kusciaTaskSynced cache.InformerSynced
@@ -112,6 +113,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		podsLister:            podInformer.Lister(),
 		podsSynced:            podInformer.Informer().HasSynced,
 		servicesSynced:        serviceInformer.Informer().HasSynced,
+		servicesLister:        serviceInformer.Lister(),
 		configMapSynced:       configMapInformer.Informer().HasSynced,
 		kusciaTaskLister:      kusciaTaskInformer.Lister(),
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
@@ -175,6 +177,31 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 			controller.handlePodObject(newObj)
 		},
 		DeleteFunc: controller.handlePodObject,
+	})
+
+	// service event handler
+	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handleServiceObject,
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			newService, ok := newObj.(*v1.Service)
+			if !ok {
+				nlog.Errorf("Unable convert object to service")
+				return
+			}
+			oldService, ok := oldObj.(*v1.Service)
+			if !ok {
+				nlog.Errorf("Unable convert object to service")
+				return
+			}
+			if newService.ResourceVersion == oldService.ResourceVersion {
+				// Periodic re-sync will send update events for all known
+				// Services. Two different versions of the same Service
+				// will always have different RVs.
+				return
+			}
+			controller.handleServiceObject(newObj)
+		},
+		DeleteFunc: controller.handleServiceObject,
 	})
 
 	return controller
@@ -310,6 +337,44 @@ func (c *Controller) handlePodObject(obj interface{}) {
 		}
 
 		c.enqueueKusciaTask(kusciaTask)
+		return
+	}
+}
+
+// handleServiceObject enqueue the KusciaTask which the service belongs.
+func (c *Controller) handleServiceObject(obj interface{}) {
+	var (
+		object metav1.Object
+		ok     bool
+	)
+
+	if object, ok = obj.(metav1.Object); !ok {
+		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			nlog.Error("Error decoding object, invalid type")
+			return
+		}
+		object, ok = tombstone.Obj.(metav1.Object)
+		if !ok {
+			nlog.Errorf("Error decoding object tombstone, invalid type")
+			return
+		}
+		nlog.Debugf("Recovered deleted object %q from tombstone", object.GetName())
+	}
+
+	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
+		// If this object is not owned by a pod, we should not do anything more with it.
+		if ownerRef.Kind != "Pod" {
+			nlog.Debugf("Service %v/%v not belong to this controller, ignore", object.GetNamespace(), object.GetName())
+			return
+		}
+		pod, err := c.podsLister.Pods(object.GetNamespace()).Get(ownerRef.Name)
+		if err != nil {
+			nlog.Debugf("Ignoring orphaned object %q of pod %q", object.GetSelfLink(), ownerRef.Name)
+			return
+		}
+
+		c.handlePodObject(pod)
 		return
 	}
 }

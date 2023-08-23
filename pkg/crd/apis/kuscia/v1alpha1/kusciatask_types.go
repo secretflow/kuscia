@@ -80,15 +80,17 @@ type PartyInfo struct {
 	// +optional
 	Role string `json:"role,omitempty"`
 	// +optional
-	MinReservedPods int           `json:"minReservedPods,omitempty"`
-	Template        PartyTemplate `json:"template"`
+	MinReservedPods int `json:"minReservedPods,omitempty"`
+	// +optional
+	Template PartyTemplate `json:"template,omitempty"`
 }
 
 // PartyTemplate defines the specific info for party.
 type PartyTemplate struct {
 	// +optional
-	Replicas *int32  `json:"replicas,omitempty"`
-	Spec     PodSpec `json:"spec"`
+	Replicas *int32 `json:"replicas,omitempty"`
+	// +optional
+	Spec PodSpec `json:"spec,omitempty"`
 }
 
 // PartyTaskStatus defines party task status.
@@ -129,6 +131,11 @@ type KusciaTaskStatus struct {
 	// specifies the status of each pod.
 	// +optional
 	PodStatuses map[string]*PodStatus `json:"podStatuses,omitempty"`
+
+	// ServiceStatuses is map of ns/name and ServiceStatus,
+	// specifies the status of each service.
+	// +optional
+	ServiceStatuses map[string]*ServiceStatus `json:"serviceStatuses,omitempty"`
 
 	// Represents time when the task was acknowledged by the task controller.
 	// It is not guaranteed to be set in happens-before order across separate operations.
@@ -223,4 +230,48 @@ type PodStatus struct {
 	// e.g. 'Evicted'
 	// +optional
 	Reason string `json:"reason,omitempty"`
+
+	// Represents time when the pod was created.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	CreateTime *metav1.Time `json:"createTime,omitempty"`
+
+	// Represents time when the pod was scheduled.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	ScheduleTime *metav1.Time `json:"scheduleTime,omitempty"`
+
+	// Represents time when the pod was accepted by the agent.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	StartTime *metav1.Time `json:"startTime,omitempty"`
+
+	// Represents time when the pod was ready.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	ReadyTime *metav1.Time `json:"readyTime,omitempty"`
+}
+
+// ServiceStatus describes service status.
+type ServiceStatus struct {
+	// Service's namespace.
+	Namespace string `json:"namespace"`
+	// Service name.
+	ServiceName string `json:"serviceName"`
+	// A brief CamelCase message indicating details about why the service is in this state.
+	// e.g. 'Evicted'
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// A human-readable message indicating details about why the service is in this condition.
+	// +optional
+	Message string `json:"message,omitempty"`
+	// Represents time when the service was created.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	CreateTime *metav1.Time `json:"createTime,omitempty"`
+
+	// Represents time when the service was ready.
+	// It is represented in RFC3339 form and is in UTC.
+	// +optional
+	ReadyTime *metav1.Time `json:"readyTime,omitempty"`
 }

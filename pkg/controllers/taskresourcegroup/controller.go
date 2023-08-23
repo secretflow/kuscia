@@ -413,9 +413,10 @@ func (c *Controller) needHandleExpiredTrg(trg *kusciaapisv1alpha1.TaskResourceGr
 		return false
 	}
 
-	now := metav1.Now().Rfc3339Copy()
+	now := metav1.Now()
 	offset := time.Duration(trg.Spec.LifecycleSeconds) * time.Second
 	expiredTime := trg.GetCreationTimestamp().Add(offset)
+	nlog.Debugf("Task resource group expiredTime: %v, currentTime: %v", expiredTime, now)
 	if !now.After(expiredTime) {
 		return false
 	}
@@ -444,6 +445,7 @@ func (c *Controller) needHandleReserveFailedTrg(trg *kusciaapisv1alpha1.TaskReso
 	now := metav1.Now()
 	offset := time.Duration(trg.Spec.RetryIntervalSeconds) * time.Second
 	retryTime := trg.Status.LastTransitionTime.Add(offset)
+	nlog.Debugf("Task resource group retryTime: %v, currentTime: %v", retryTime, now)
 	if now.After(retryTime) {
 		return true
 	}

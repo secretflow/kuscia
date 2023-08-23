@@ -54,7 +54,7 @@ clean: # clean build and test product.
 
 .PHONY: build
 build: fmt vet ## Build kuscia binary.
-	sh ./hack/build.sh
+	bash ./hack/build.sh
 
 
 .PHONY: fate-adaptor-app-image

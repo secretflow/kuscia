@@ -28,7 +28,7 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 echo "${ROOT}"
 
-pushd ${ROOT} || exit
+pushd ${ROOT} >/dev/null || exit
 
 cp /etc/resolv.conf ${ROOT}/etc/resolv.conf
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
@@ -47,7 +47,7 @@ spec:
   cert:
 " | kubectl apply -f -
 
-popd || exit
+popd >/dev/null || exit
 
 tail -f /dev/null
 
