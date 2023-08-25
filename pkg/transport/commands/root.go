@@ -28,7 +28,7 @@ import (
 func NewCommand(opts *Opts) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "transport",
-		Long:         "transport data for interconnection with third party privacy computing platform",
+		Long:         "transport data for interconnection with third party privacy-preserving computing platform",
 		Version:      meta.KusciaVersionString(),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
