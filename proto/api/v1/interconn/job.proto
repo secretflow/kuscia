@@ -62,7 +62,7 @@ message DAG {
     repeated Component components = 2;
 }
 
-// Component represents functional module units for independently computing privacy tasks.
+// Component represents functional module units for independently computing privacy-preserving tasks.
 message Component {
     string code = 1;
     string name = 2;
