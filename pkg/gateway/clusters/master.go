@@ -187,7 +187,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 		if len(regex) > 0 {
 			virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
 				SafeRegex: &matcherv3.RegexMatcher{
-					Regex: getMasterApiWhitelistRegex(apiWhitelist),
+					Regex: regex,
 				},
 			}
 		}
