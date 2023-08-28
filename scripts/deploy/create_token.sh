@@ -52,4 +52,4 @@ fi
 kubectl create token $DOMAIN_ID --duration 87600h -n $DOMAIN_ID
 
 # test
-# curl https://127.0.0.1:6443/api/v1/namespaces/${DOMAIN_ID}/pods -H'Authorization: Bearer ${TOKEN}'
+# curl https://127.0.0.1:6443/api/v1/namespaces/${DOMAIN_ID}/pods -H"Authorization: Bearer ${TOKEN}"

@@ -4,7 +4,7 @@ DATETIME = $(shell date +"%Y%m%d%H%M%S")
 KUSCIA_VERSION_TAG = $(shell git describe --abbrev=7 --always)
 COMMIT_ID = $(shell git log -1 --pretty="format:%h")
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}-${COMMIT_ID}
-IMG ?= secretflow/kuscia:${TAG}
+IMG := secretflow/kuscia:${TAG}
 
 ENVOY_IMAGE ?= secretflow/kuscia-envoy:0.2.0b0
 DEPS_IMAGE ?= secretflow/kuscia-deps:0.1.0b0
