@@ -158,7 +158,6 @@ func addMasterProxyVirtualHost(cluster, service, namespace string) error {
 }
 
 func generateMasterInternalVirtualHost(cluster, service string, domains []string, apiWhitelist []string) *route.VirtualHost {
-
 	virtualHost := &route.VirtualHost{
 		Name:    fmt.Sprintf("%s-internal", cluster),
 		Domains: domains,
@@ -192,7 +191,6 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 			}
 		}
 	}
-
 	return virtualHost
 }
 
