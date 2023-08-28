@@ -183,10 +183,18 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 	}
 
 	if service == serviceAPIServer {
-		virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
-			SafeRegex: &matcherv3.RegexMatcher{
-				Regex: getMasterApiWhitelistRegex(apiWhitelist),
-			},
+		regex := getMasterApiWhitelistRegex(apiWhitelist)
+		if len(regex >0) {
+			virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
+				SafeRegex: &matcherv3.RegexMatcher{
+					Regex: "/(api(s)?(/[0-9A-Za-z_.-]+)?/v1(alpha1)?/namespaces/[0-9A-Za-z_.-]+" +
+					"/(pods|gateways|domainroutes|endpoints|services|events|configmaps|leases|taskresources|secrets|domaindatas|domaindatagrants|domaindatasources)" +
+					"(/[0-9A-Za-z_.-]+(/status$)?)?)|(/api/v1/namespaces/[0-9A-Za-z_.-]+)|(" +
+					"/api/v1/nodes(/.*)?)",
+					Regex: getMasterApiWhitelistRegex(apiWhitelist),
+					},
+				}
+			}
 		}
 	}
 	return virtualHost
