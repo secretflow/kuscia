@@ -61,6 +61,7 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 				TLSCert:  apiCert,
 			},
 			KusciaStorage: storageCluster,
+			ApiWhitelist:  masterConfig.ApiWhitelist,
 		}, nil
 	}
 
