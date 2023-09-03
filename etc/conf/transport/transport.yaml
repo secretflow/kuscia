@@ -10,9 +10,8 @@ httpConfig:
   IdleTimeout: 60 # seconds
   ReqBodyMaxSize: 134217728 # 128MB
 grpcConfig:
-  port: 9090
+  port: 9091
   MaxConns: 32
   MaxConcurrentStreams: 128
-  MaxReadFrameSize: 4194304 # 4MB
-  #MaxUploadBufferPerConnection: 4194304 # 4MB
-  #MaxUploadBufferPerStream: 4194304 # 4MB
+  MaxRecvMsgSize : 4194304 # 4MB
+  MaxSendMsgSize : 4194304 # 4MB

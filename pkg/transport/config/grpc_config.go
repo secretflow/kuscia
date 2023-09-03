@@ -20,19 +20,29 @@ import (
 	"os"
 )
 
+const (
+	defaultGrpcPort             = 9090
+	defaultMaxConns             = 32
+	defaultMaxConcurrentStreams = 128
+	defaultMaxRecvMsgSize       = 4194304
+	defaultMaxSendMsgSize       = 4194304
+)
+
 type GRPCConfig struct {
 	Port                 int    `yaml:"port,omitempty"`
 	MaxConns             int    `yaml:"maxConns,omitempty"`
 	MaxConcurrentStreams uint32 `yaml:"maxConcurrentStreams,omitempty"`
-	MaxReadFrameSize     int    `yaml:"maxReadFrameSize,omitempty"`
+	MaxRecvMsgSize       int    `yaml:"maxRecvMsgSize,omitempty"`
+	MaxSendMsgSize       int    `yaml:"maxSendMsgSize,omitempty"`
 }
 
 func DefaultGrpcConfig() *GRPCConfig {
 	return &GRPCConfig{
-		Port:                 9090,
-		MaxConns:             32,
-		MaxConcurrentStreams: 128,
-		MaxReadFrameSize:     134217728,
+		Port:                 defaultGrpcPort,
+		MaxConns:             defaultMaxConns,
+		MaxConcurrentStreams: defaultMaxConcurrentStreams,
+		MaxRecvMsgSize:       defaultMaxRecvMsgSize,
+		MaxSendMsgSize:       defaultMaxSendMsgSize,
 	}
 }
 
@@ -48,7 +58,7 @@ func DefaultGrpcTransConfig() *GrpcTransConfig {
 	}
 }
 
-func LoadOverrideGrpcTransConfig(config *TransConfig, configPath string) (*TransConfig, error) {
+func LoadOverrideGrpcTransConfig(config *GrpcTransConfig, configPath string) (*GrpcTransConfig, error) {
 	if configPath == "" {
 		return config, nil // no need to load config file
 	}

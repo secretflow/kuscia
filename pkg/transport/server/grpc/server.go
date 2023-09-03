@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gprc
+package grpc
 
 import (
 	"fmt"
@@ -49,8 +49,8 @@ func NewServer(grpcConfig *config.GRPCConfig, sm *msq.SessionManager) *Server {
 func (s *Server) Start(ctx context.Context) error {
 	opts := []grpc.ServerOption{
 		grpc.MaxConcurrentStreams(s.grpcConfig.MaxConcurrentStreams),
-		grpc.MaxRecvMsgSize(s.grpcConfig.MaxReadFrameSize),
-		grpc.MaxSendMsgSize(s.grpcConfig.MaxReadFrameSize),
+		grpc.MaxRecvMsgSize(s.grpcConfig.MaxRecvMsgSize),
+		grpc.MaxSendMsgSize(s.grpcConfig.MaxSendMsgSize),
 	}
 	gs := grpc.NewServer(opts...)
 
@@ -138,7 +138,7 @@ func (s *Server) Release(ctx context.Context, inbound *pb.TransportInbound) (*pb
 func (s *Server) readMessage(inbound *pb.InvokeTransportInbound) (*msq.Message, *transerr.TransError) {
 	if int64(len(inbound.GetMsg())) == 0 {
 		nlog.Warnf("Empty request body")
-		return nil, transerr.NewTransError(transerr.BodyTooLarge)
+		return nil, transerr.NewTransError(transerr.InvalidRequest)
 	}
 	return msq.NewMessage(inbound.GetMsg()), nil
 }

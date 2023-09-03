@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package gprc
+package grpc
 
 import (
 	"context"
@@ -406,4 +406,81 @@ func TestPerformance(t *testing.T) {
 	fmt.Printf("pushSucceedCount=%d pushFailCount=%d\n", pushSucceedCount, pushFailCount)
 	fmt.Printf("popSucceedCount=%d popFailCount=%d leftCount=%d totalRecvCount=%d\n",
 		popSucceedCount, popFailCount, leftCount, leftCount+popSucceedCount)
+}
+
+func TestBuildGrpcOutboundByErr(t *testing.T) {
+	md1 := metadata.New(map[string]string{
+		codec.PtpSessionID: "session10",
+	})
+	ctx1 := metadata.NewOutgoingContext(context.Background(), md1)
+	verifyInvokeResponse(t, ctx1, &pb.InvokeTransportInbound{Msg: NewStr("123456789")}, transerr.InvalidRequest)
+
+	md2 := metadata.New(map[string]string{
+		codec.PtpTopicID:      "topic1",
+		codec.PtpSessionID:    "session10",
+		codec.PtpSourceNodeID: "node0",
+	})
+	ctx2 := metadata.NewOutgoingContext(context.Background(), md2)
+	verifyInvokeResponse(t, ctx2, &pb.InvokeTransportInbound{}, transerr.InvalidRequest)
+
+	md3 := metadata.New(map[string]string{
+		codec.PtpTopicID:      "topic2",
+		codec.PtpSourceNodeID: "node1",
+	})
+
+	ctx3 := metadata.NewOutgoingContext(context.Background(), md3)
+	verifyInvokeResponse(t, ctx3, &pb.InvokeTransportInbound{}, transerr.InvalidRequest)
+}
+
+func TestLoadOverrideGrpcTransConfig(t *testing.T) {
+	grpcTransConfig := config.DefaultGrpcTransConfig()
+	newGrpcTransConfig, err := config.LoadOverrideGrpcTransConfig(grpcTransConfig,
+		"../../../../etc/conf/transport/transport.yaml")
+	assert.NoError(t, err)
+
+	newGrpcConfig := newGrpcTransConfig.GrpcConfig
+	newMsqConfig := newGrpcTransConfig.MsqConfig
+	msq.Init(newMsqConfig)
+
+	newServer := NewServer(newGrpcConfig, msq.NewSessionManager())
+	go newServer.Start(context.Background())
+
+	dial, err := grpc.Dial("127.0.0.1:9091",
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.NoError(t, err)
+
+	defer func(dial *grpc.ClientConn) {
+		err := dial.Close()
+		assert.NoError(t, err)
+	}(dial)
+
+	client := pb.NewTransportClient(dial)
+	var out *pb.TransportOutbound
+
+	invokeInbound := &pb.InvokeTransportInbound{
+		Msg: []byte("123456789"),
+	}
+
+	md := metadata.New(map[string]string{
+		codec.PtpTopicID:      "topic1",
+		codec.PtpSessionID:    "session11",
+		codec.PtpSourceNodeID: "node0",
+	})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	out, err = client.Invoke(ctx, invokeInbound)
+	assert.NoError(t, err)
+	assert.Equal(t, out.Code, string(transerr.Success))
+
+	popMd := metadata.New(map[string]string{
+		codec.PtpTopicID:      "topic1",
+		codec.PtpSessionID:    "session11",
+		codec.PtpTargetNodeID: "node0",
+	})
+	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
+
+	out, err = client.Pop(popCtx, &pb.TransportInbound{})
+	assert.NoError(t, err)
+
+	assert.Equal(t, string(out.Payload), "123456789")
 }
