@@ -12,8 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controller
+package config
 
-var (
-	InternalServer = "http://127.0.0.1:80"
+import (
+	"github.com/secretflow/kuscia/pkg/gateway/xds"
 )
+
+type ClusterConfig struct {
+	Host     string
+	Port     uint32
+	Protocol string
+
+	TLSCert *xds.TLSCert
+}
+
+type InterConnClusterConfig struct {
+	TransportConfig *ClusterConfig
+	SchedulerConfig *ClusterConfig
+}
+
+type MasterConfig struct {
+	Master        bool
+	MasterProxy   *ClusterConfig
+	APIServer     *ClusterConfig
+	KusciaStorage *ClusterConfig
+	ApiWhitelist  []string
+}

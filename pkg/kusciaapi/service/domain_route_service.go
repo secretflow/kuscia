@@ -130,7 +130,7 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 	_, err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, clusterDomainRoute, metav1.CreateOptions{})
 	if err != nil {
 		return &kusciaapi.CreateDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomainRoute, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrCreateDomainRoute), err.Error()),
 		}
 	}
 	return &kusciaapi.CreateDomainRouteResponse{
@@ -157,7 +157,7 @@ func (s domainRouteService) DeleteDomainRoute(ctx context.Context, request *kusc
 	err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainRoute, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrDeleteDomainRoute), err.Error()),
 		}
 	}
 	return &kusciaapi.DeleteDomainRouteResponse{
@@ -184,7 +184,7 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 	cdr, err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.QueryDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainRoute, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrQueryDomainRoute), err.Error()),
 		}
 	}
 	cdrSpec := cdr.Spec
@@ -262,7 +262,7 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 		cdr, err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainRouteStatus, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrQueryDomainRouteStatus), err.Error()),
 			}
 		}
 		routeStatuses[i] = &kusciaapi.DomainRouteStatus{
@@ -282,8 +282,8 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 
 func buildRouteStatus(cdr *v1alpha1.ClusterDomainRoute) *kusciaapi.RouteStatus {
 	cdrTokenStatus := cdr.Status.TokenStatus
-	status := ""
-	if len(cdrTokenStatus.DestinationTokens) >= 0 && len(cdrTokenStatus.SourceTokens) >= 0 {
+	status := constants.RouteFailed
+	if len(cdrTokenStatus.DestinationTokens) > 0 && len(cdrTokenStatus.SourceTokens) > 0 {
 		status = constants.RouteSucceeded
 	}
 	return &kusciaapi.RouteStatus{

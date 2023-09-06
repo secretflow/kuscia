@@ -24,6 +24,9 @@ import (
 type Options struct {
 	Kubeconfig string
 	MasterURL  string
+	IsMaster   bool
+	Namespace  string
+	RootDir    string
 	Workers    int
 	// QPS indicates the maximum QPS to the master from this client.
 	// If it's zero, the created RESTClient will use DefaultQPS: 5

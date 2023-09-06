@@ -149,8 +149,16 @@ func (s *server) onStartedLeading(ctx context.Context) {
 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+	config := ControllerConfig{
+		IsMaster:      s.options.IsMaster,
+		Namespace:     s.options.Namespace,
+		RootDir:       s.options.RootDir,
+		KubeClient:    s.kubeClient,
+		KusciaClient:  s.kusciaClient,
+		EventRecorder: s.eventRecorder,
+	}
 	for _, cc := range s.controllerConstructions {
-		controller := cc.NewControler(ctx, s.kubeClient, s.kusciaClient, s.eventRecorder)
+		controller := cc.NewControler(ctx, config)
 		nlog.Infof("Run controller %v ", controller.Name())
 		go func(controller IController) {
 			if err := controller.Run(s.options.Workers); err != nil {

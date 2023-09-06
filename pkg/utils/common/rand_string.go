@@ -18,7 +18,7 @@ import (
 	"math/rand"
 )
 
-var letters = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letters = []byte("23456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
 
 func GenerateRandomBytes(l int) []byte {
 	b := make([]byte, l)

@@ -156,7 +156,7 @@ enum TaskState {
 }
 
 message BatchQueryJobStatusRequest {
-  Status status = 1;
+  RequestHeader header = 1;
   repeated string job_ids = 2;
 }
 

@@ -80,5 +80,5 @@ func TestDeleteRoute(t *testing.T) {
 		Source:      kusciaAPIDR.source,
 		Destination: kusciaAPIDR.destination,
 	})
-	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrQueryDomainRoute))
+	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrDomainRouteNotExists))
 }

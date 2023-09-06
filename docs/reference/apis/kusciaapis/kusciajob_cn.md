@@ -1,7 +1,8 @@
 # KusciaJob
 
-在 Kuscia 中，你可以使用 KusciaJob 来表示一个任务流程。请参考 [KusciaJob](../concepts/kusciajob_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/job.proto) 找到 Domain 对应的 protobuf 文件。
+在 Kuscia 中，你可以使用 KusciaJob 来表示一个任务流程。请参考 [KusciaJob](../../concepts/kusciajob_cn.md) 。
+你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/job.proto) 找到对应的
+protobuf 文件。
 
 ## 接口总览
 
@@ -30,7 +31,7 @@
 | header          | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容                                                                                                                    |
 | job_id          | string                                        | 否  | JobID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
 | initiator       | string                                        | 否  | 发起方节点ID                                                                                                                    |
-| max_parallelism | int32                                         | 是  | 并发度，参考 [KusciaJob概念](../concepts/kusciajob_cn.md)                                                                          |
+| max_parallelism | int32                                         | 是  | 并发度，参考 [KusciaJob概念](../../concepts/kusciajob_cn.md)                                                                       |
 | tasks           | [Task](#task)[]                               | 否  | 任务参数                                                                                                                       |
 
 #### 响应（CreateJobResponse）

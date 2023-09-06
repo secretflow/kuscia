@@ -1,0 +1,7 @@
+args:
+  - --log-level
+  - info
+  - --component-log-level
+  - config:info
+  - --drain-time-s
+  - 60

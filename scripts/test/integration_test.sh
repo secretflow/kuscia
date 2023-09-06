@@ -25,6 +25,9 @@ center_base="./test/suite/center/basic.sh"
 p2p_base="./test/suite/p2p/basic.sh"
 center_example="./test/suite/center/example.sh"
 
+TEST_SUITES["p2p.base"]="./test/suite/p2p/base.sh"
+TEST_SUITES["p2p.nsjail"]="./test/suite/p2p/nsjail.sh"
+
 TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 TEST_BIN_DIR=${TEST_ROOT}/test_run/bin
 TEST_RUN_ROOT_DIR=${TEST_ROOT}/test_run

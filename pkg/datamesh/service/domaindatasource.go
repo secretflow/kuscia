@@ -60,7 +60,12 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 	}
 	data := make(map[string]string)
 	data["encryptInfo"] = string(encryptInfo(jsonBytes))
-	dsID := common.GenDomainDataID(request.Name)
+	var dsID string
+	if request.DatasourceId != "" {
+		dsID = request.GetDatasourceId()
+	} else {
+		dsID = common.GenDomainDataID(request.Name)
+	}
 	// build kuscia domain DataSource
 	Labels := make(map[string]string)
 	Labels[common.LabelDomainDataSourceType] = request.Type
@@ -73,6 +78,7 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 			URI:  uri,
 			Data: data,
 			Type: request.Type,
+			Name: dsID,
 		},
 	}
 	// create kuscia domain datasource
@@ -80,7 +86,7 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 	if err != nil {
 		nlog.Errorf("CreateDomainDataSource failed, error:%s", err.Error())
 		return &datamesh.CreateDomainDataSourceResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomainDataSource, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, errorcode.ErrCreateDomainDataSource), err.Error()),
 		}
 	}
 	return &datamesh.CreateDomainDataSourceResponse{

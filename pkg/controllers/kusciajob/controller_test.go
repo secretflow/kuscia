@@ -30,6 +30,7 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
@@ -105,7 +106,11 @@ func Test_KusciaJobControllerHandleTaskSucceed(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciajobcontroller"})
-	c := NewController(context.TODO(), kubeClient, kusciaClient, eventRecorder)
+	c := NewController(context.TODO(), controllers.ControllerConfig{
+		KubeClient:    kubeClient,
+		KusciaClient:  kusciaClient,
+		EventRecorder: eventRecorder,
+	})
 
 	go func() {
 		assert.NoError(t, c.Run(3))
@@ -168,7 +173,11 @@ func Test_KusciaTaskControllerHandlerTaskFailed(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-job-controller"})
-	c := NewController(context.TODO(), kubeClient, kusciaClient, eventRecorder)
+	c := NewController(context.TODO(), controllers.ControllerConfig{
+		KubeClient:    kubeClient,
+		KusciaClient:  kusciaClient,
+		EventRecorder: eventRecorder,
+	})
 
 	go func() {
 		assert.NoError(t, c.Run(3))

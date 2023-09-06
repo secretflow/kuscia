@@ -131,7 +131,70 @@ tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
 ## 准备数据
 FATE 镜像中带有两份测试数据，分别为 10 维 1W 行不带 label 的 lr_host 与 4 维 1W 行带 label 的 lr_guest。当然你也可以参考 FATE 文档将自己的数据导入到 FATE 集群中。
 
+镜像自带测试数据会在 FATE 部署成功后自动上传到 FATE 集群，数据上传的作业信息会在日志中打印。以 ``fate-alice`` 为例：
+```shell
+docker logs -f fate-alice
+
+wait to upload data, sleep 10
+...
+wait to upload data, sleep 10
+/data/projects
+upload guest data
+{
+    "data": {
+        "board_url": "http://xxx.xxx.xxx.xxx:8080/index.html#/dashboard?job_id={jobId}&role=local&party_id=0",
+        "code": 0,
+        "dsl_path": "/data/projects/fate/fateflow/jobs/{jobId}/job_dsl.json",
+        "job_id": "{jobId}",
+        "logs_directory": "/data/projects/fate/fateflow/logs/{jobId}",
+        "message": "success",
+        "model_info": {
+            "model_id": "local-0#model",
+            "model_version": "{jobId}"
+        },
+        "namespace": "experiment",
+        "pipeline_dsl_path": "/data/projects/fate/fateflow/jobs/{jobId}/pipeline_dsl.json",
+        "runtime_conf_on_party_path": "/data/projects/fate/fateflow/jobs/{jobId}/local/0/job_runtime_on_party_conf.json",
+        "runtime_conf_path": "/data/projects/fate/fateflow/jobs/{jobId}/job_runtime_conf.json",
+        "table_name": "lr_guest",
+        "train_runtime_conf_path": "/data/projects/fate/fateflow/jobs/{jobId}/train_runtime_conf.json"
+    },
+    "jobId": "{jobId}",
+    "retcode": 0,
+    "retmsg": "success"
+}
+
+sleep 30
+upload host data
+{
+    "data": {
+        "board_url": "http://xxx.xxx.xxx.xxx:8080/index.html#/dashboard?job_id={jobId}&role=local&party_id=0",
+        "code": 0,
+        "dsl_path": "/data/projects/fate/fateflow/jobs/{jobId}/job_dsl.json",
+        "job_id": "{jobId}",
+        "logs_directory": "/data/projects/fate/fateflow/logs/{jobId}",
+        "message": "success",
+        "model_info": {
+            "model_id": "local-0#model",
+            "model_version": "{jobId}"
+        },
+        "namespace": "experiment",
+        "pipeline_dsl_path": "/data/projects/fate/fateflow/jobs/{jobId}/pipeline_dsl.json",
+        "runtime_conf_on_party_path": "/data/projects/fate/fateflow/jobs/{jobId}/local/0/job_runtime_on_party_conf.json",
+        "runtime_conf_path": "/data/projects/fate/fateflow/jobs/{jobId}/job_runtime_conf.json",
+        "table_name": "lr_host",
+        "train_runtime_conf_path": "/data/projects/fate/fateflow/jobs/{jobId}/train_runtime_conf.json"
+    },
+    "jobId": "{jobId}",
+    "retcode": 0,
+    "retmsg": "success"
+}
+```
+下文中的示例 FATE 作业会使用此处上传的测试数据。如要运行示例作业，需等待其上传成功后再发起作业。
+
 ## 运行示例 FATE 作业
+确保 FATE 部署完毕后，就可以运行 FATE 作业了。
+
 Kuscia 中已经内置了一份 FATE 示例作业，可以登入对应的管控容器去执行。
 ```shell
 # 登入中心化组网的管控容器
