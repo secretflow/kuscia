@@ -48,7 +48,7 @@ const (
 	virtualHostHandshake = "handshake-virtual-host"
 )
 
-func AddMasterClusters(ctx context.Context, namespace string, config *MasterConfig) error {
+func AddMasterClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
 	if !config.Master {
 		masterProxyCluster, err := generateDefaultCluster(serviceMasterProxy, config.MasterProxy)
 		if err != nil {
@@ -82,7 +82,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *MasterConf
 	return nil
 }
 
-func addMasterCluster(service, namespace string, config *ClusterConfig, apiWhitelist []string) error {
+func addMasterCluster(service, namespace string, config *config.ClusterConfig, apiWhitelist []string) error {
 	localCluster, err := generateDefaultCluster(service, config)
 	if err != nil {
 		return fmt.Errorf("generate %s Cluster fail, %v", service, err)
