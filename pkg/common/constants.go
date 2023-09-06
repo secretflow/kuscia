@@ -25,6 +25,7 @@ const (
 	LabelCommunicationRoleServer         = "kuscia.secretflow/communication-role-server"
 	LabelCommunicationRoleClient         = "kuscia.secretflow/communication-role-client"
 	LabelDomainName                      = "kuscia.secretflow/domain-name"
+	LabelDomainAuth                      = "kuscia.secretflow/domain-auth"
 	LabelNodeNamespace                   = "kuscia.secretflow/namespace"
 	LabelDomainDeleted                   = "kuscia.secretflow/deleted"
 	LabelDomainRole                      = "kuscia.secretflow/role"

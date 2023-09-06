@@ -16,7 +16,6 @@
 package modules
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -25,7 +24,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"text/template"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
@@ -146,28 +144,6 @@ func EnsureDomainKey(conf *Dependencies) error {
 		}
 	}
 
-	return nil
-}
-
-func RenderConfig(configPathTmpl, configPath string, s interface{}) error {
-	configTmpl, err := template.ParseFiles(configPathTmpl)
-	if err != nil {
-		return err
-	}
-	var configContent bytes.Buffer
-	if err := configTmpl.Execute(&configContent, s); err != nil {
-		return err
-	}
-
-	f, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.WriteString(configContent.String())
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

@@ -15,6 +15,7 @@
 package common
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -37,4 +38,8 @@ func GenDomainDataID(dataName string) (dataID string) {
 	}
 
 	return prefix + uuid.NewString()
+}
+
+func GenDomainRouteName(src, dest string) string {
+	return fmt.Sprintf("%s-%s", src, dest)
 }

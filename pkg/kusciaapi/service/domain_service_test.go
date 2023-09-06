@@ -61,5 +61,5 @@ func TestDeleteDomain(t *testing.T) {
 	queryRes := kusciaAPIDS.QueryDomain(context.Background(), &kusciaapi.QueryDomainRequest{
 		DomainId: kusciaAPIDS.domainID,
 	})
-	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrQueryDomain))
+	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrDomainNotExists))
 }

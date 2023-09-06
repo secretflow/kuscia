@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/secretflow/kuscia/pkg/utils/common"
 )
 
 func Test_EnsureCaKeyAndCert(t *testing.T) {
@@ -59,7 +61,7 @@ func Test_RenderConfig(t *testing.T) {
 	file, _ := os.Create(configPathTmpl)
 	file.WriteString(`{{.alice}}`)
 	file.Close()
-	err := RenderConfig(configPathTmpl, configPath, map[string]string{"alice": "bob"})
+	err := common.RenderConfig(configPathTmpl, configPath, map[string]string{"alice": "bob"})
 	assert.NoError(t, err)
 }
 

@@ -25,17 +25,22 @@ import (
 	"path/filepath"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
 
 type envoyModule struct {
-	rootDir       string
-	envoyLogLevel string
-	concurrency   int
-	cluster       string
-	id            string
+	rootDir               string
+	cluster               string
+	id                    string
+	commandLineConfigFile string
+}
+
+type EnvoyCommandLineConfig struct {
+	Args []string `yaml:"args,omitempty"`
 }
 
 func (s *envoyModule) readyz(host string) error {
@@ -73,10 +78,10 @@ func getEnvoyCluster(domain string) string {
 
 func NewEnvoy(i *Dependencies) Module {
 	return &envoyModule{
-		rootDir:       i.RootDir,
-		cluster:       getEnvoyCluster(i.DomainID),
-		id:            fmt.Sprintf("%s-%s", getEnvoyCluster(i.DomainID), utils.GetHostname()),
-		envoyLogLevel: "config:info",
+		rootDir:               i.RootDir,
+		cluster:               getEnvoyCluster(i.DomainID),
+		id:                    fmt.Sprintf("%s-%s", getEnvoyCluster(i.DomainID), utils.GetHostname()),
+		commandLineConfigFile: "envoy/command-line.yaml",
 	}
 }
 
@@ -84,23 +89,22 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	if err := os.MkdirAll(filepath.Join(s.rootDir, LogPrefix, "envoy/"), 0755); err != nil {
 		return err
 	}
+	deltaArgs, err := s.readCommandArgs()
+	if err != nil {
+		return err
+	}
+
 	args := []string{
 		"-c",
-		filepath.Join(s.rootDir, ConfPrefix, "envoy.yaml"),
+		filepath.Join(s.rootDir, ConfPrefix, "envoy/envoy.yaml"),
 		"--service-cluster",
 		s.cluster,
 		"--service-node",
 		s.id,
 		"--log-path",
 		filepath.Join(s.rootDir, LogPrefix, "envoy/envoy.log"),
-		"--log-level",
-		"info",
-		"--component-log-level",
-		s.envoyLogLevel,
 	}
-	if s.concurrency > 0 {
-		args = append(args, "--concurrency", fmt.Sprintf("%d", s.concurrency))
-	}
+	args = append(args, deltaArgs.Args...)
 
 	sp := supervisor.NewSupervisor("envoy", nil, -1)
 
@@ -132,6 +136,17 @@ func (s *envoyModule) WaitReady(ctx context.Context) error {
 
 func (s *envoyModule) Name() string {
 	return "envoy"
+}
+
+func (s *envoyModule) readCommandArgs() (*EnvoyCommandLineConfig, error) {
+	configPath := filepath.Join(s.rootDir, ConfPrefix, s.commandLineConfigFile)
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	var config EnvoyCommandLineConfig
+	err = yaml.Unmarshal(data, &config)
+	return &config, err
 }
 
 func RunEnvoy(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {

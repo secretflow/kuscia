@@ -35,8 +35,9 @@ func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaCli
 		Version: meta.KusciaVersionString(),
 	})
 
-	// create informer factory
 	kusciaAPIConfig.KusciaClient = kusciaClient
+
+	// create informer factory
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
 	kusciaInformerFactory.Start(ctx.Done())
 

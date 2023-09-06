@@ -6,6 +6,9 @@ COMMIT_ID = $(shell git log -1 --pretty="format:%h")
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}-${COMMIT_ID}
 IMG := secretflow/kuscia:${TAG}
 
+# TEST_SUITE used by integration test
+TEST_SUITE ?= all
+
 ENVOY_IMAGE ?= secretflow/kuscia-envoy:0.2.0b0
 DEPS_IMAGE ?= secretflow/kuscia-deps:0.1.0b0
 
@@ -106,4 +109,4 @@ image: build ## Build docker image with the manager.
 integration_test: image ## Run Integration Test
 	mkdir -p run/test
 	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
-	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh
+	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh {TEST_SUITE}

@@ -22,7 +22,6 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -41,7 +40,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciaFake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
@@ -64,6 +66,8 @@ var (
 )
 
 func newDomainRouteTestInfo(namespace string) *DomainRouteTestInfo {
+	logger, _ := zlogwriter.New(nil)
+	nlog.Setup(nlog.SetWriter(logger))
 	kusciaClient := kusciaFake.NewSimpleClientset()
 	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, controller.NoResyncPeriodFunc())
 	domainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
@@ -71,22 +75,33 @@ func newDomainRouteTestInfo(namespace string) *DomainRouteTestInfo {
 	// parse rsa private key
 	priKey, err := rsa.GenerateKey(cryptrand.Reader, 2048)
 	if err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 	token, err := base64.StdEncoding.DecodeString(fakeToken)
 	if err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 
 	fakeRevisionToken, err = encryptToken(&priKey.PublicKey, token)
 	if err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
-
+	dir, err := os.MkdirTemp("", "testnewdomainroute")
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	cafile := filepath.Join(dir, "ca.key")
+	cacrt := filepath.Join(dir, "ca.crt")
+	err = tlsutils.CreateCAFile(namespace, cacrt, cafile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
 	config := &DomainRouteConfig{
 		Namespace:     namespace,
 		Prikey:        priKey,
 		HandshakePort: 1054,
+		CAFile:        cacrt,
+		CAKeyFile:     cafile,
 	}
 	c := NewDomainRouteController(config, fake.NewSimpleClientset(), kusciaClient, domainRouteInformer)
 	kusciaInformerFactory.Start(wait.NeverStop)
@@ -406,12 +421,12 @@ func TestTokenHandshake(t *testing.T) {
 	go c.Run(1, stopCh)
 	time.Sleep(1000 * time.Millisecond)
 
-	realInternalServer := InternalServer
+	realInternalServer := config.InternalServer
 	defer func() {
-		InternalServer = realInternalServer
+		config.InternalServer = realInternalServer
 	}()
 
-	InternalServer = "http://localhost:1054"
+	config.InternalServer = "http://localhost:1054"
 	block := &pem.Block{
 		Type:  "RSA PUBLIC KEY",
 		Bytes: x509.MarshalPKCS1PublicKey(&c.prikey.PublicKey),
@@ -419,7 +434,7 @@ func TestTokenHandshake(t *testing.T) {
 	pubPemData := pem.EncodeToMemory(block)
 	dr := &kusciaapisv1alpha1.DomainRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "handshake",
+			Name:      "default-default",
 			Namespace: "default",
 		},
 		Spec: kusciaapisv1alpha1.DomainRouteSpec{
@@ -432,6 +447,7 @@ func TestTokenHandshake(t *testing.T) {
 					{
 						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
 						Port:     1054,
+						Name:     "http",
 					},
 				},
 			},
@@ -704,7 +720,7 @@ func TestAppendHeaders(t *testing.T) {
 
 	decorator, err := xds.GetHeaderDecorator()
 	if err != nil {
-		log.Fatal("get header decorator filter fail")
+		nlog.Fatal("get header decorator filter fail")
 	}
 
 	foundSource := false
@@ -719,7 +735,7 @@ func TestAppendHeaders(t *testing.T) {
 					}
 				}
 				if !foundEntry {
-					log.Fatalf("expected header entry(%s, %s) unexist", k, v)
+					nlog.Fatalf("expected header entry(%s, %s) unexist", k, v)
 				}
 			}
 			foundSource = true
@@ -727,7 +743,7 @@ func TestAppendHeaders(t *testing.T) {
 		}
 	}
 	if !foundSource {
-		log.Fatalf("add sourceHeader(test) fail")
+		nlog.Fatalf("add sourceHeader(test) fail")
 	}
 
 	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Delete(context.Background(), dr.Name, metav1.DeleteOptions{})
@@ -735,7 +751,7 @@ func TestAppendHeaders(t *testing.T) {
 
 	decorator, err = xds.GetHeaderDecorator()
 	if err != nil {
-		log.Fatal("get header decorator filter fail")
+		nlog.Fatal("get header decorator filter fail")
 	}
 	foundSource = false
 	for _, entry := range decorator.AppendHeaders {
@@ -744,7 +760,7 @@ func TestAppendHeaders(t *testing.T) {
 		}
 	}
 	if foundSource {
-		log.Fatalf("deleted sourceHeader(test) fail")
+		nlog.Fatalf("deleted sourceHeader(test) fail")
 	}
 
 	stopCh <- struct{}{}

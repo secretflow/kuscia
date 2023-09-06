@@ -1,19 +1,20 @@
 #
 # Copyright 2023 Ant Group Co., Ltd.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# export variable
+
+# Exported Variable
 MASTER_CONTAINER=${USER}-kuscia-master
 LITE_ALICE_CONTAINER=${USER}-kuscia-lite-alice
 LITE_BOB_CONTAINER=${USER}-kuscia-lite-bob
@@ -34,17 +35,19 @@ function wait_kuscia_job_until() {
   local ctr=$1
   local timeout_seconds=$2
   local job_id=$3
-  local times=$(("${timeout_seconds}" / "${TIMEOUT_DURATION_SECONDS}"))
+  local times=$((${timeout_seconds} / ${TIMEOUT_DURATION_SECONDS}))
   local current=0
   while [ "${current}" -lt "${times}" ]; do
     local job_phase=$(docker exec -it "${ctr}" kubectl get kj "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
     case "${job_phase}" in
     Succeeded)
       echo "Succeeded"
+      unset ctr timeout_seconds job_id times  current
       return
       ;;
     Failed)
       echo "Failed"
+      unset ctr timeout_seconds job_id times  current
       return
       ;;
     Pending | Running | "" )
@@ -52,6 +55,7 @@ function wait_kuscia_job_until() {
     *)
       # unexpected
       echo "unexpected: ${job_phase}"
+      unset ctr timeout_seconds job_id times  current
       return 100
       ;;
     esac
@@ -59,6 +63,7 @@ function wait_kuscia_job_until() {
     sleep "${TIMEOUT_DURATION_SECONDS}"
   done
   echo "Timeout"
+  unset ctr timeout_seconds job_id times  current
 }
 
 # Get kuscia api http code on http for healrhZ
@@ -75,6 +80,8 @@ function get_kuscia_api_healthz_http_status_code() {
   curl --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
     --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${ip}:8082/api/v1/domain/query" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
     --header 'Content-Type: application/json' -s -o /dev/null --write-out '%{http_code}' -d '{"domain_id": "alice"}'
+
+  unset ip kuscia_cert_dir
 }
 
 # Get kuscia api grpc status message on http for healrhZ
@@ -93,6 +100,8 @@ function get_kuscia_api_healthz_grpc_status_message() {
   ${bin} --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
     --cacert "${kuscia_cert_dir}"/ca.crt -H "Token: $(cat "${kuscia_cert_dir}"/token)" -d '{}' \
     "${ip}":8083 kuscia.proto.api.v1alpha1.kusciaapi.HealthService.healthZ
+
+  unset bin ip kuscia_cert_dir
 }
 
 # Get container state, the state is from jsonpath=.state
@@ -103,7 +112,9 @@ function get_kuscia_api_healthz_grpc_status_message() {
 #   state: string
 function get_container_state() {
   local container_name=$1
-  docker container ls --filter name="${container_name}" --format='{{json .State}}' | sed -e 's/"//g'
+  docker inspect "${container_name}" --format='{{ .State.Status }}' | sed -e 's/"//g'
+
+  unset container_name
 }
 
 # Exist container file
@@ -117,6 +128,8 @@ function exist_container_file() {
   local ctr=$1
   local file_path=$2
   docker exec -it "${ctr}" test -e "${file_path}" && echo "Y" || echo "N"
+
+  unset ctr file_path
 }
 
 # Get container ip
@@ -128,6 +141,8 @@ function exist_container_file() {
 function get_container_ip() {
   local ctr=$1
   docker inspect "${ctr}" --format '{{ (index .NetworkSettings.Networks "kuscia-exchange").IPAddress }}'
+
+  unset ctr
 }
 
 # Start center mode

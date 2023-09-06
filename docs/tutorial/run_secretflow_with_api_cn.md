@@ -103,7 +103,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`job_id`指定。
 
-我们请求[创建 Job](../reference/apis/kusciajob_cn#create-job) 接口来创建并运行这个 KusciaJob。
+我们请求[创建 Job](../reference/apis/kusciaapis/kusciajob_cn.md#create-job) 接口来创建并运行这个 KusciaJob。
 
 在 kuscia-master 容器终端中，执行以下命令，内容如下：
 
@@ -138,7 +138,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
 }'
 ```
 
-具体字段数据格式和含义请参考[创建 Job](../reference/apis/kusciajob_cn#create-job) ，本文不再赘述。
+具体字段数据格式和含义请参考[创建 Job](../reference/apis/kusciaapis/kusciajob_cn.md#create-job) ，本文不再赘述。
 
 如果你成功了，你将得到如下返回：
 ```json
@@ -168,7 +168,8 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
 
 job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
 
-我们请求[批量查询 Job 状态](../reference/apis/kusciajob_cn#batch-query-job-status)接口来批量查询 KusciaJob 的状态。
+我们请求[批量查询 Job 状态](../reference/apis/kusciaapis/kusciajob_cn.md#batch-query-job-status)接口来批量查询 KusciaJob
+的状态。
 
 请求参数`job_ids`是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。
 
@@ -256,11 +257,13 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 
 `data.jobs.status.state`字段记录了 KusciaJob 的运行状态，`data.jobs.status.tasks.state`则记录了每个 KusciaTask 的运行状态。
 
-详细信息请参考 [KusciaJob](../reference/concepts/kusciajob_cn.md) 和[批量查询 Job 状态](../reference/apis/kusciajob_cn#batch-query-job-status)
+详细信息请参考 [KusciaJob](../reference/concepts/kusciajob_cn.md)
+和[批量查询 Job 状态](../reference/apis/kusciaapis/kusciajob_cn.md#batch-query-job-status)
 
 ## 删除 KusciaJob
 
-当你想清理这个 KusciaJob 时，我们请求[删除 Job](../reference/apis/kusciajob_cn#delete-job) 接口来删除这个 KusciaJob.
+当你想清理这个 KusciaJob 时，我们请求[删除 Job](../reference/apis/kusciaapis/kusciajob_cn.md#delete-job) 接口来删除这个
+KusciaJob.
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/delete' \
@@ -294,7 +297,7 @@ KusciaJob 的算子参数由`taskInputConfig`字段定义，对于不同的算�
 
 ## HTTP 客户端错误处理
 
-### curl: (56) 
+### curl: (56)
 
 curl: (56) OpenSSL SSL_read: error:14094412:SSL routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0
 

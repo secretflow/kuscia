@@ -13,19 +13,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 SERVICE_NAME=$1
+HOST_IP=$2
+EXTRA_SUBJECT_ALTNAME=$3
+
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+
 pushd ${ROOT}/etc/certs >/dev/null || exit
 
 DAYS=1000
 SERVER=kusciaapi-server
 CLIENT=kusciaapi-client
-DNS_SERVICE_NAME=""
-if [ ${SERVICE_NAME} != "" ] ; then
-    DNS_SERVICE_NAME=",DNS:${SERVICE_NAME}"
+
+#set DNS subjectAltName
+DNS_SERVICE_NAME="DNS:localhost"
+if [[ ${SERVICE_NAME} != "" ]]; then
+    DNS_SERVICE_NAME="${DNS_SERVICE_NAME},DNS:${SERVICE_NAME}"
 fi
-subjectAltName="IP:127.0.0.1,IP:${IP},DNS:localhost${DNS_SERVICE_NAME}"
+
+#set IP subjectAltName
+IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+IP_ADDRESS="IP:127.0.0.1,IP:${IP}"
+if [[ ${HOST_IP} != "" ]]; then
+    IP_ADDRESS="${IP_ADDRESS},IP:${HOST_IP}"
+fi
+
+subjectAltName="${IP_ADDRESS},${DNS_SERVICE_NAME}"
+#set extra subjectAltName
+if [[ ${EXTRA_SUBJECT_ALTNAME} != "" ]]; then
+    subjectAltName="${subjectAltName},${EXTRA_SUBJECT_ALTNAME}"
+fi
+
 echo "subjectAltName=${subjectAltName}" > /tmp/openssh.conf
 
 #create a PKCS#1 key for server, default is PKCS#1

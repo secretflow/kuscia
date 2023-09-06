@@ -110,7 +110,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 		Data: &datamesh.DomainData{
 			DomaindataId: kusciaDomainData.Name,
 			Name:         kusciaDomainData.Spec.Name,
-			Type:         string(kusciaDomainData.Spec.Type),
+			Type:         kusciaDomainData.Spec.Type,
 			RelativeUri:  kusciaDomainData.Spec.RelativeURI,
 			DatasourceId: kusciaDomainData.Spec.DataSource,
 			Attributes:   kusciaDomainData.Spec.Attributes,

@@ -32,6 +32,9 @@ func NewControllersModule(i *Dependencies) Module {
 		ControllerName:  "kuscia-controller-manager",
 		HealthCheckPort: 8090,
 		Workers:         4,
+		IsMaster:        i.IsMaster,
+		Namespace:       i.DomainID,
+		RootDir:         i.RootDir,
 	}
 
 	return controllers.NewServer(

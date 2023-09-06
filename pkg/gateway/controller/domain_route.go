@@ -17,9 +17,11 @@ package controller
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -47,6 +49,7 @@ import (
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerDecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
@@ -57,6 +60,7 @@ import (
 	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	kusciaextv1alpha1 "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -74,15 +78,22 @@ const (
 
 type DomainRouteConfig struct {
 	Namespace     string
+	MasterConfig  *config.MasterConfig
+	CAKeyFile     string
+	CAFile        string
 	Prikey        *rsa.PrivateKey
 	PrikeyData    []byte
 	HandshakePort uint32
 }
 
 type DomainRouteController struct {
-	gateway    *kusciaapisv1alpha1.Gateway
-	prikey     *rsa.PrivateKey
-	prikeyData []byte
+	gateway      *kusciaapisv1alpha1.Gateway
+	masterConfig *config.MasterConfig
+	CaCertData   []byte
+	CaCert       *x509.Certificate
+	CaKey        *rsa.PrivateKey
+	prikey       *rsa.PrivateKey
+	prikeyData   []byte
 
 	kubeClient              kubernetes.Interface
 	kusciaClient            clientset.Interface
@@ -98,37 +109,52 @@ type DomainRouteController struct {
 
 // NewDomainRouteController create a new endpoints controller.
 func NewDomainRouteController(
-	config *DomainRouteConfig,
+	drConfig *DomainRouteConfig,
 	kubeClient kubernetes.Interface,
 	kusciaClient clientset.Interface,
 	DomainRouteInformer kusciaextv1alpha1.DomainRouteInformer) *DomainRouteController {
 	// Create event broadcaster, add kuscia types to the default Kubernetes Scheme so Events can be logged for kuscia types.
-	recorder := createEventRecorder(kubeClient, config.Namespace)
+	recorder := createEventRecorder(kubeClient, drConfig.Namespace)
 
 	hostname := utils.GetHostname()
-	pubPem := utils.EncodePKCS1PublicKey(config.Prikey)
+	pubPem := utils.EncodePKCS1PublicKey(drConfig.Prikey)
 
 	gateway := &kusciaapisv1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hostname,
-			Namespace: config.Namespace,
+			Namespace: drConfig.Namespace,
 		},
 		Status: kusciaapisv1alpha1.GatewayStatus{
 			PublicKey: base64.StdEncoding.EncodeToString(pubPem),
 		},
 	}
-
+	caCert, err := utils.ParsePKCS1CertFromFile(drConfig.CAFile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	caKey, err := utils.ParsePKCS1PrivateKey(drConfig.CAKeyFile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	certContent, err := os.ReadFile(drConfig.CAFile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
 	c := &DomainRouteController{
 		gateway:                 gateway,
-		prikey:                  config.Prikey,
-		prikeyData:              config.PrikeyData,
+		CaCertData:              certContent,
+		CaCert:                  caCert,
+		CaKey:                   caKey,
+		masterConfig:            drConfig.MasterConfig,
+		prikey:                  drConfig.Prikey,
+		prikeyData:              drConfig.PrikeyData,
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
 		domainRouteLister:       DomainRouteInformer.Lister(),
 		domainRouteListerSynced: DomainRouteInformer.Informer().HasSynced,
 		workqueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), domainRouteQueueName),
 		recorder:                recorder,
-		handshakePort:           config.HandshakePort,
+		handshakePort:           drConfig.HandshakePort,
 	}
 
 	DomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
@@ -216,12 +242,17 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 	}
 
 	if (dr.Spec.BodyEncryption != nil || dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken) &&
-		dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA {
+		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		if dr.Spec.Source == c.gateway.Namespace &&
 			dr.Status.TokenStatus.RevisionToken.Token == "" &&
 			dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
 			nlog.Infof("DomainRoute %s starts handshake at revision: %d", key,
 				dr.Status.TokenStatus.RevisionToken.Revision)
+			if dr.Spec.Transit == nil {
+				if err := setKeepAliveForDstClusters(dr, false); err != nil {
+					return fmt.Errorf("disable keep-alive fail for DomainRoute: %s err: %v", key, err)
+				}
+			}
 			return c.sourceInitiateHandShake(dr)
 		}
 	}
@@ -378,8 +409,11 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 		}
 
 		// case2: direct route, add virtualhost: source-to-dest-Protocol
-		return xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, token.Token, grpcDegrade), xds.InternalRoute)
-
+		if err := xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, token.Token, grpcDegrade),
+			xds.InternalRoute); err != nil {
+			return err
+		}
+		return setKeepAliveForDstClusters(dr, true)
 	} else if dr.Spec.Destination == c.gateway.Namespace { // external
 		if dr.Spec.Transit == nil {
 			var tokenVals []string
@@ -597,6 +631,72 @@ func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token strin
 	return vh
 }
 
+func generateClusterName(source, dest, portName string) string {
+	return fmt.Sprintf("%s-to-%s-%s", source, dest, portName)
+}
+
+func setKeepAliveForDstClusters(dr *kusciaapisv1alpha1.DomainRoute, enable bool) error {
+	for _, dp := range dr.Spec.Endpoint.Ports {
+		if err := setKeepAliveForDstCluster(dr, dp, enable); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setKeepAliveForDstCluster(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
+	enable bool) error {
+	clusterName := generateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
+
+	cluster, err := xds.QueryCluster(clusterName)
+	if err != nil {
+		return err
+	}
+
+	optionName := "envoy.extensions.upstreams.http.v3.HttpProtocolOptions"
+	option, ok := cluster.TypedExtensionProtocolOptions[optionName]
+	if !ok {
+		return nil
+	}
+	var protocolOptions envoyhttp.HttpProtocolOptions
+	if err := proto.Unmarshal(option.Value, &protocolOptions); err != nil {
+		return err
+	}
+
+	var action string
+	if enable {
+		if protocolOptions.CommonHttpProtocolOptions == nil || protocolOptions.CommonHttpProtocolOptions.
+			MaxRequestsPerConnection == nil {
+			return nil
+		}
+		protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = nil
+		action = "enable"
+	} else {
+		if protocolOptions.CommonHttpProtocolOptions == nil {
+			protocolOptions.CommonHttpProtocolOptions = &core.HttpProtocolOptions{}
+		}
+		if protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection != nil && protocolOptions.
+			CommonHttpProtocolOptions.MaxRequestsPerConnection.Value == uint32(1) {
+			return nil
+		}
+		protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = &wrapperspb.UInt32Value{
+			Value: uint32(1),
+		}
+		action = "disable"
+	}
+
+	b, err := proto.Marshal(&protocolOptions)
+	if err != nil {
+		nlog.Errorf("Marshal protocolOptions failed with %s", err.Error())
+		return err
+	}
+
+	nlog.Infof("%s keep-alive for cluster:%s ", action, clusterName)
+	option.Value = b
+	cluster.TypedExtensionProtocolOptions[optionName] = option
+	return xds.AddOrUpdateCluster(cluster)
+}
+
 func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
 	transportSocket *core.TransportSocket) error {
 	var protocolOptions *envoyhttp.HttpProtocolOptions
@@ -618,6 +718,25 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 		}
 	}
 
+	clusterName := generateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
+
+	// before token take effect, we disable keep-alive for DstEnvoy
+	if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken {
+		preProtocolOptions, preCluster, _ := xds.GetClusterHTTPProtocolOptions(clusterName)
+		if preCluster == nil {
+			// next action is handshake
+			protocolOptions.CommonHttpProtocolOptions = &core.HttpProtocolOptions{
+				MaxRequestsPerConnection: &wrapperspb.UInt32Value{
+					Value: uint32(1),
+				},
+			}
+			nlog.Infof("disable keep-alive for cluster:%s ", clusterName)
+		} else if preProtocolOptions != nil && preProtocolOptions.CommonHttpProtocolOptions != nil {
+			// do not change keep-alive options when changing cluster
+			protocolOptions.CommonHttpProtocolOptions = preProtocolOptions.CommonHttpProtocolOptions
+		}
+	}
+
 	b, err := proto.Marshal(protocolOptions)
 	if err != nil {
 		nlog.Errorf("Marshal protocolOptions failed with %s", err.Error())
@@ -625,7 +744,7 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 	}
 
 	cluster := &envoycluster.Cluster{
-		Name:           fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
+		Name:           clusterName,
 		ConnectTimeout: durationpb.New(10 * time.Second),
 		ClusterDiscoveryType: &envoycluster.Cluster_Type{
 			Type: envoycluster.Cluster_STRICT_DNS,

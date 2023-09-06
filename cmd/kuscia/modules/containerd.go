@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
@@ -41,7 +42,7 @@ func NewContainerd(i *Dependencies) Module {
 func (s *containerdModule) Run(ctx context.Context) error {
 	configPath := filepath.Join(s.Root, ConfPrefix, "containerd.toml")
 	configPathTmpl := filepath.Join(s.Root, ConfPrefix, "containerd.toml.tmpl")
-	if err := RenderConfig(configPathTmpl, configPath, s); err != nil {
+	if err := common.RenderConfig(configPathTmpl, configPath, s); err != nil {
 		return err
 	}
 

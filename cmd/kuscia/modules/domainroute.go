@@ -40,6 +40,9 @@ func NewDomainRoute(i *Dependencies) Module {
 	conf.DomainKeyFile = i.DomainKeyFile
 	conf.MasterConfig = i.Master
 	conf.ExternalTLS = i.ExternalTLS
+	conf.CAFile = i.CAFile
+	conf.CsrFile = filepath.Join(i.RootDir, CertPrefix, "domain.csr")
+	conf.CAKeyFile = i.CAKeyFile
 
 	if i.TransportPort > 0 {
 		conf.TransportConfig = &kusciaconfig.ServiceConfig{

@@ -28,7 +28,7 @@ mkdir -p "${TEST_SUITE_CENTER_TEST_RUN_DIR}"
 . ./test/suite/core/functions.sh
 
 function oneTimeSetUp() {
-  start_center_mode "${TEST_SUITE_RUN_KUSCIA_DIR}"
+  ALLOW_PRIVILEGED=true start_center_mode "${TEST_SUITE_RUN_KUSCIA_DIR}"
 }
 
 # Note: This will be call twice on master, because of a bug: https://github.com/kward/shunit2/issues/112. And it is open now.
@@ -38,23 +38,13 @@ function oneTimeTearDown() {
 }
 
 function test_centralized_example_kuscia_job() {
-  local job_id=secretflow-psi
-  docker exec -it "${MASTER_CONTAINER}" scripts/user/create_example_job.sh PSI ${job_id}
+  local job_id=secretflow-psi-nsjail
+  docker exec -it "${MASTER_CONTAINER}" scripts/user/create_example_job.sh NSJAIL_PSI ${job_id}
 
   assertEquals "Kuscia job failed" "Succeeded" "$(wait_kuscia_job_until "${MASTER_CONTAINER}" 600 ${job_id})"
   assertEquals "Kuscia job output file not exist" "Y" "$(exist_container_file "${LITE_ALICE_CONTAINER}" var/storage/data/psi-output.csv)"
-}
 
-function test_centralized_kuscia_api_http_available() {
-  local master_container_ip=$(get_container_ip "${MASTER_CONTAINER}")
-  local http_status_code=$(get_kuscia_api_healthz_http_status_code "${master_container_ip}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
-  assertEquals "KusciaApi healthZ http code" "200" "${http_status_code}"
-}
-
-function test_centralized_kuscia_api_grpc_available() {
-  local master_container_ip=$(get_container_ip "${MASTER_CONTAINER}")
-  local status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${master_container_ip}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
-  assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
+  unset job_id
 }
 
 . ./test/vendor/shunit2

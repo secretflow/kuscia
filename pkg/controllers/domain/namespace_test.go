@@ -25,6 +25,7 @@ import (
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 )
@@ -62,7 +63,10 @@ func TestCreateNamespace(t *testing.T) {
 
 	nsInformer.Informer().GetStore().Add(ns1)
 
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 	cc.namespaceLister = nsInformer.Lister()
 
@@ -108,7 +112,10 @@ func TestUpdateNamespace(t *testing.T) {
 	nsInformer.Informer().GetStore().Add(ns1)
 	nsInformer.Informer().GetStore().Add(ns2)
 
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 	cc.namespaceLister = nsInformer.Lister()
 
@@ -161,7 +168,10 @@ func TestDeleteNamespace(t *testing.T) {
 	nsInformer.Informer().GetStore().Add(ns2)
 	nsInformer.Informer().GetStore().Add(ns3)
 
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 	cc.namespaceLister = nsInformer.Lister()
 

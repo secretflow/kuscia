@@ -17,16 +17,16 @@
 
 set -e
 
-USAGE="$(basename "$0") NAMESPACE CENTRAL_NAMESPACE MASTER_ENDPOINT ALLOW_PRIVILEGED"
+USAGE="$(basename "$0") NAMESPACE MASTER_ENDPOINT [ALLOW_PRIVILEGED] [MASTER_CA]"
 NAMESPACE=$1
-CENTRAL_NAMESPACE=$2
-MASTER_ENDPOINT=$3
-ALLOW_PRIVILEGED=$4
-if [[ ${NAMESPACE} == "" || ${CENTRAL_NAMESPACE} == "" || ${MASTER_ENDPOINT} == "" ]]; then
+MASTER_ENDPOINT=$2
+ALLOW_PRIVILEGED=$3
+MASTER_CA=$4
+if [[ ${NAMESPACE} == "" || ${MASTER_ENDPOINT} == "" ]]; then
   echo "missing argument: ${USAGE}"
   exit 1
 fi
-if [[ ${ALLOW_PRIVILEGED} != "false"  && ${ALLOW_PRIVILEGED} != "true" ]]; then
+if [[ ${ALLOW_PRIVILEGED} != "false" && ${ALLOW_PRIVILEGED} != "true" ]]; then
   ALLOW_PRIVILEGED="false"
 fi
 
@@ -37,11 +37,9 @@ pushd ${ROOT} >/dev/null || exit
 
 cp /etc/resolv.conf ${ROOT}/etc/resolv.conf
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-echo "nameserver ${IP}" > /etc/resolv.conf
+echo "nameserver ${IP}" >/etc/resolv.conf
 
 sh scripts/deploy/iptables_pre_detect.sh
-
-sh scripts/deploy/init_external_tls_cert.sh ${NAMESPACE}
 
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml
 echo "
@@ -53,9 +51,7 @@ domainKeyFile: etc/certs/domain.key
 master:
   endpoint: ${MASTER_ENDPOINT}
   tls:
-    certFile: ${ROOT}/etc/certs/domain.crt
-    keyFile: ${ROOT}/etc/certs/domain.key
-    caFile: ${ROOT}/etc/certs/master.ca.crt
+    caFile: ${MASTER_CA}
 agent:
   allowPrivileged: ${ALLOW_PRIVILEGED}
   plugins:
@@ -70,10 +66,9 @@ agent:
         selectors:
         - key: maintainer
           value: secretflow-contact@service.alipay.com
-" > etc/kuscia.yaml
+" >etc/kuscia.yaml
 bin/kuscia lite -c etc/kuscia.yaml --log.path var/logs/kuscia.log
 
 popd >/dev/null || exit
 
 tail -f /dev/null
-
