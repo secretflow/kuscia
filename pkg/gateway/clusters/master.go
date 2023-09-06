@@ -65,13 +65,13 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 		waitMasterProxyReady(ctx)
 	} else {
 		if config.APIServer != nil {
-			if err := addMasterCluster(serviceAPIServer, namespace, config.APIServer, config.ApiWhitelist); err != nil {
+			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.ApiWhitelist); err != nil {
 				return err
 			}
 		}
 
 		if config.KusciaStorage != nil {
-			if err := addMasterCluster(serviceKusciaStorage, namespace, config.APIServer, nil); err != nil {
+			if err := addMasterCluster(ServiceKusciaStorage, namespace, config.APIServer, nil); err != nil {
 				return err
 			}
 		}
@@ -172,7 +172,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 			},
 		},
 	}
-	if service == serviceAPIServer {
+	if service == ServiceAPIServer {
 		regex := getMasterApiWhitelistRegex(apiWhitelist)
 		if len(regex) > 0 {
 			virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
