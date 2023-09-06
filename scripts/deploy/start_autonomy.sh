@@ -68,6 +68,10 @@ master:
     certFile: ${ROOT}/etc/certs/domain.crt
     keyFile: ${ROOT}/etc/certs/domain.key
     caFile: ${ROOT}/etc/certs/master.ca.crt
+  api-whitelist:
+    - /(api(s)?(/[0-9A-Za-z_.-]+)?/v1(alpha1)?/namespaces/[0-9A-Za-z_.-]+/(pods|gateways|domainroutes|endpoints|services|events|configmaps|leases|taskresources|secrets|domaindatas|domaindatagrants|domaindatasources)(/[0-9A-Za-z_.-]+(/status$)?)?)
+    - /api/v1/namespaces/[0-9A-Za-z_.-]+
+    - /api/v1/nodes(/.*)?
 externalTLS:
   certFile: ${EXTERNAL_TLS_CERT_FILE}
   keyFile: ${EXTERNAL_TLS_KEY_FILE}

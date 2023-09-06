@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -47,7 +48,7 @@ const (
 	virtualHostHandshake = "handshake-virtual-host"
 )
 
-func AddMasterClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
+func AddMasterClusters(ctx context.Context, namespace string, config *MasterConfig) error {
 	if !config.Master {
 		masterProxyCluster, err := generateDefaultCluster(serviceMasterProxy, config.MasterProxy)
 		if err != nil {
@@ -64,13 +65,13 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 		waitMasterProxyReady(ctx)
 	} else {
 		if config.APIServer != nil {
-			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer); err != nil {
+			if err := addMasterCluster(serviceAPIServer, namespace, config.APIServer, config.ApiWhitelist); err != nil {
 				return err
 			}
 		}
 
 		if config.KusciaStorage != nil {
-			if err := addMasterCluster(ServiceKusciaStorage, namespace, config.APIServer); err != nil {
+			if err := addMasterCluster(serviceKusciaStorage, namespace, config.APIServer, nil); err != nil {
 				return err
 			}
 		}
@@ -81,7 +82,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 	return nil
 }
 
-func addMasterCluster(service, namespace string, config *config.ClusterConfig) error {
+func addMasterCluster(service, namespace string, config *ClusterConfig, apiWhitelist []string) error {
 	localCluster, err := generateDefaultCluster(service, config)
 	if err != nil {
 		return fmt.Errorf("generate %s Cluster fail, %v", service, err)
@@ -91,14 +92,14 @@ func addMasterCluster(service, namespace string, config *config.ClusterConfig) e
 		return err
 	}
 
-	if err := addMasterServiceVirtualHost(localCluster.Name, namespace, service); err != nil {
+	if err := addMasterServiceVirtualHost(localCluster.Name, namespace, service, apiWhitelist); err != nil {
 		return err
 	}
 	return nil
 }
 
-func addMasterServiceVirtualHost(cluster, namespace, service string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterServiceDomains(namespace, service))
+func addMasterServiceVirtualHost(cluster, namespace, service string, apiWhitelist []string) error {
+	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterServiceDomains(namespace, service), apiWhitelist)
 	if err := xds.AddOrUpdateVirtualHost(internalVh, xds.InternalRoute); err != nil {
 		return err
 	}
@@ -127,7 +128,7 @@ func addMasterServiceVirtualHost(cluster, namespace, service string) error {
 }
 
 func addMasterProxyVirtualHost(cluster, service, namespace string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterProxyDomains())
+	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterProxyDomains(), nil)
 	internalVh.Routes[0].RequestHeadersToAdd = []*core.HeaderValueOption{
 		{
 			Header: &core.HeaderValue{
@@ -148,7 +149,7 @@ func addMasterProxyVirtualHost(cluster, service, namespace string) error {
 	return xds.AddOrUpdateVirtualHost(internalVh, xds.InternalRoute)
 }
 
-func generateMasterInternalVirtualHost(cluster, service string, domains []string) *route.VirtualHost {
+func generateMasterInternalVirtualHost(cluster, service string, domains []string, apiWhitelist []string) *route.VirtualHost {
 	virtualHost := &route.VirtualHost{
 		Name:    fmt.Sprintf("%s-internal", cluster),
 		Domains: domains,
@@ -171,15 +172,14 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 			},
 		},
 	}
-
-	if service == ServiceAPIServer {
-		virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
-			SafeRegex: &matcherv3.RegexMatcher{
-				Regex: "/(api(s)?(/[0-9A-Za-z_.-]+)?/v1(alpha1)?/namespaces/[0-9A-Za-z_.-]+" +
-					"/(pods|gateways|domainroutes|endpoints|services|events|configmaps|leases|taskresources|secrets|domaindatas|domaindatagrants|domaindatasources)" +
-					"(/[0-9A-Za-z_.-]+(/status$)?)?)|(/api/v1/namespaces/[0-9A-Za-z_.-]+)|(" +
-					"/api/v1/nodes(/.*)?)",
-			},
+	if service == serviceAPIServer {
+		regex := getMasterApiWhitelistRegex(apiWhitelist)
+		if len(regex) > 0 {
+			virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
+				SafeRegex: &matcherv3.RegexMatcher{
+					Regex: regex,
+				},
+			}
 		}
 	}
 	return virtualHost
@@ -326,4 +326,12 @@ func addMasterHandshakeRoute(routeName string) {
 	if err := xds.AddOrUpdateVirtualHost(vh, routeName); err != nil {
 		nlog.Fatalf("%v", err)
 	}
+}
+
+func getMasterApiWhitelistRegex(apiWhitelist []string) string {
+	var result = ""
+	if len(apiWhitelist) > 0 {
+		result = "(" + strings.Join(apiWhitelist, ")|(") + ")"
+	}
+	return result
 }

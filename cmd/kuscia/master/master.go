@@ -78,6 +78,7 @@ func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies
 			KubeConfig: conf.KubeconfigFile,
 			Endpoint:   conf.ApiserverEndpoint,
 		},
+		ApiWhitelist: conf.KusciaConfig.Master.ApiWhitelist,
 	}
 	err = modules.EnsureDir(conf)
 	if err != nil {
