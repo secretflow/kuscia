@@ -17,19 +17,21 @@
 
 set -e
 
-ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-CRD_DIR=${ROOT}/crds/v1alpha1
+RESULT=$(curl -k -s -H "Content-Type: application/json" \
+  http://localhost:8070/api/v1/datamesh/domaindatasource/create \
+  -d '{
+             "datasource_id": "default-data-source",
+             "type": "localfs",
+             "info": {
+               "localfs": {
+                  "path": "/home/kuscia/var/storage/data"
+               }
+             }
+           }')
 
-pushd $CRD_DIR >/dev/null || exit
-for file in *.yaml
-do
-  while :
-  do
-    if kubectl apply -f "$file" --timeout 10s --wait; then
-      break
-    fi
-    sleep 1
-  done
-done
-
-popd >/dev/null || exit
+STATUS_CODE=$(echo ${RESULT} | jq '.status.code')
+if [[ "$STATUS_CODE" != "0" && "$STATUS_CODE" != "1112" ]]; then
+  ERR_MEG=$(echo ${RESULT} | jq '.status.message')
+  echo "create datasource error: ${ERR_MEG}"
+  exit 1
+fi

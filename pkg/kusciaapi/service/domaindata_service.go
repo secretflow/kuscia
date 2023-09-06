@@ -122,7 +122,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	if err != nil {
 		nlog.Errorf("CreateDomainData failed, error:%s", err.Error())
 		return &kusciaapi.CreateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrCreateDomainDataFailed), err.Error()),
 		}
 	}
 	return &kusciaapi.CreateDomainDataResponse{
@@ -210,7 +210,7 @@ func (s domainDataService) DeleteDomainData(ctx context.Context, request *kuscia
 	if err != nil {
 		nlog.Errorf("delete domainData:%s failed, detail:%s", request.DomaindataId, err.Error())
 		return &kusciaapi.DeleteDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrDeleteDomainDataFailed), err.Error()),
 		}
 	}
 	return &kusciaapi.DeleteDomainDataResponse{
@@ -230,7 +230,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaa
 	if err != nil {
 		nlog.Errorf("QueryDomainData failed, error:%s", err.Error())
 		return &kusciaapi.QueryDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrGetDomainDataFailed), err.Error()),
 		}
 	}
 	// build domain response

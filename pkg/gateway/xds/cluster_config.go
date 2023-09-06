@@ -19,7 +19,9 @@ import (
 
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -50,4 +52,22 @@ func AddTCPHealthCheck(c *envoycluster.Cluster) *envoycluster.Cluster {
 		MaxEjectionTime:                durationpb.New(30 * time.Second),
 	}
 	return c
+}
+
+func GetClusterHTTPProtocolOptions(clusterName string) (*envoyhttp.HttpProtocolOptions, *envoycluster.Cluster, error) {
+	cluster, err := QueryCluster(clusterName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	option, ok := cluster.TypedExtensionProtocolOptions["envoy.extensions.upstreams.http.v3.HttpProtocolOptions"]
+	if !ok {
+		return nil, cluster, err
+	}
+
+	var protocolOptions envoyhttp.HttpProtocolOptions
+	if err := proto.Unmarshal(option.Value, &protocolOptions); err != nil {
+		return nil, cluster, err
+	}
+	return &protocolOptions, cluster, nil
 }

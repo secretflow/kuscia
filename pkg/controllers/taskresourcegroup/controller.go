@@ -89,7 +89,10 @@ type Controller struct {
 }
 
 // NewController returns a controller instance.
-func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
+func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kubeClient := config.KubeClient
+	kusciaClient := config.KusciaClient
+	eventRecorder := config.EventRecorder
 	kubeInformerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient, 5*time.Minute)
 	podInformer := kubeInformerFactory.Core().V1().Pods()
 	nsInformer := kubeInformerFactory.Core().V1().Namespaces()

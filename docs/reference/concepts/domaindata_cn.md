@@ -18,6 +18,7 @@
 - 创建 DomainData，你将体验如何使用通过创建一个 DomainData 将你自己的数据加入 Kuscia 的管理。
 - 更新 DomainData，你将熟悉如何更新现有的 DomainData，从而变更 DomainData 的信息。
 - 清理 DomainData，你将熟悉如何清理不需要的 DomainData。删除 DomainData 并不会删除真实的数据，只是 Kuscia 不再管理这些数据。
+- 在 Domain 侧管理 DomainData，你将熟悉如何通过 Data Mesh API 来在 Domain 侧管理 DomainData。
 - 参考 DomainData 对象定义，你将获取详细的 DomainData 描述信息。
 
 ## 创建 DomainData
@@ -73,14 +74,14 @@ mv {YOUR_CSV_DATA_FILE} alice.csv
 docker cp alice.csv ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
 ```
 
-2. 进入master容器即`${USER}-kuscia-master`容器，创建示例中的`alice-table.yaml`并根据你的 CSV文件 的列字段信息，调整上述示例中的`.spec.columns`字段。
+2. 进入 master 容器即 `${USER}-kuscia-master` 容器，创建示例中的`alice-table.yaml`并根据你的 CSV文件 的列字段信息，调整上述示例中的`.spec.columns`字段。
 
-3. 在master容器即`${USER}-kuscia-master`容器中，运行以下命令创建 DomainData。
+3. 在 master 容器即 `${USER}-kuscia-master` 容器中，运行以下命令创建 DomainData。
 ```shell
 kubectl apply -f alice-table.yaml
 ```
 
-4. 在master容器即`${USER}-kuscia-master`容器中，检查 DomainData 是否创建成功。
+4. 在 master 容器即 `${USER}-kuscia-master` 容器中，检查 DomainData 是否创建成功。
 ```shell
 kubectl get domaindata alice-table -n alice
 ```
@@ -148,6 +149,22 @@ kubectl delete domaindata alice-table -n alice
 ```shell
 kubectl get domaindata alice-table -n alice
 Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not found
+```
+
+{#data-mesh}
+## 在 Domain 侧管理 DomainData
+
+如 上文所述，DomainData 属于节点内资源，每一个 DomainData 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
+你可以在 Domain 侧管理属于该 Domain 的 DomainData。Kuscia 在 Domain 侧提供了的 DataMesh API 来管理 DomainData。
+
+Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 8071
+端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api)。
+
+1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainData。
+```shell
+curl -X POST 'http://{{USER-kuscia-lite-alice}:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
+  "domaindata_id": "alice"
+}'
 ```
 
 

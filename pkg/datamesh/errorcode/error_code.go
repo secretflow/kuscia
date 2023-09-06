@@ -15,23 +15,36 @@
 package errorcode
 
 import (
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 )
 
-const dataMeshErrorCode = errorcode.KusciaErrorCode(1000)
-const errorCodeInterval = 100
 const (
-	ErrRequestInvalidate = dataMeshErrorCode + iota
-	ErrForUnexpected
+	ErrRequestInvalidate = 12100
+	ErrForUnexpected     = 12101
 
-	ErrCreateDomainData = dataMeshErrorCode + errorCodeInterval + iota
-	ErrQueryDomainData
-	ErrGetDomainDataFromKubeFailed
-	ErrMergeDomainDataFailed
-	ErrPatchDomainDataFailed
-	ErrDeleteDomainDataFailed
-	ErrCreateDomainDataSource
-	ErrParseDomainDataSourceFailed
-	ErrQueryDomainDataSource
-	ErrDeleteDomainDataSourceFailed
+	ErrCreateDomainData            = 12200
+	ErrQueryDomainData             = 12201
+	ErrGetDomainDataFromKubeFailed = 12202
+	ErrMergeDomainDataFailed       = 12203
+	ErrPatchDomainDataFailed       = 12204
+	ErrDeleteDomainDataFailed      = 12205
+
+	ErrCreateDomainDataSource       = 12300
+	ErrParseDomainDataSourceFailed  = 12301
+	ErrQueryDomainDataSource        = 12302
+	ErrDeleteDomainDataSourceFailed = 12303
+	ErrDomainDataSourceExists       = 12304
+	ErrDomainDataSourceNotExists    = 12305
 )
+
+func GetDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataSourceNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataSourceExists
+	}
+	return defaultErrorCode
+}

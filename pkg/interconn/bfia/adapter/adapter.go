@@ -209,7 +209,7 @@ func buildInterConnJobParamsResources(appImageLister kuscialistersv1alpha1.AppIm
 		resourceCPU    float64 = -1
 	)
 
-	foundTpl := true
+	foundTpl := false
 	for _, deployTpl := range appImage.Spec.DeployTemplates {
 		if deployTpl.Role == role {
 			foundTpl = true
@@ -238,37 +238,31 @@ func buildJobParams(role *interconn.ConfigRole) (*interconn.ConfigParams, error)
 	jobParams := &interconn.ConfigParams{}
 	roleMap := make(map[string]interface{})
 	emptyStruct, _ := structpb.NewStruct(roleMap)
-	if len(role.Arbiter) > 0 {
-		for idx := range role.Arbiter {
-			a, err := structpb.NewStruct(roleMap)
-			if err != nil {
-				return nil, err
-			}
-			a.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
-			jobParams.Arbiter = a
+	for idx := range role.Arbiter {
+		a, err := structpb.NewStruct(roleMap)
+		if err != nil {
+			return nil, err
 		}
+		a.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
+		jobParams.Arbiter = a
 	}
 
-	if len(role.Host) > 0 {
-		for idx := range role.Host {
-			h, err := structpb.NewStruct(roleMap)
-			if err != nil {
-				return nil, err
-			}
-			h.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
-			jobParams.Host = h
+	for idx := range role.Host {
+		h, err := structpb.NewStruct(roleMap)
+		if err != nil {
+			return nil, err
 		}
+		h.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
+		jobParams.Host = h
 	}
 
-	if len(role.Guest) > 0 {
-		for idx := range role.Host {
-			g, err := structpb.NewStruct(roleMap)
-			if err != nil {
-				return nil, err
-			}
-			g.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
-			jobParams.Guest = g
+	for idx := range role.Guest {
+		g, err := structpb.NewStruct(roleMap)
+		if err != nil {
+			return nil, err
 		}
+		g.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
+		jobParams.Guest = g
 	}
 
 	return jobParams, nil

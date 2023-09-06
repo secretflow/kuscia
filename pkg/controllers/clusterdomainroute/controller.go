@@ -76,12 +76,10 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(
-	ctx context.Context,
-	kubeClient kubernetes.Interface,
-	kusciaClient kusciaclientset.Interface,
-	eventRecorder record.EventRecorder,
-) controllers.IController {
+func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kubeClient := config.KubeClient
+	kusciaClient := config.KusciaClient
+	eventRecorder := config.EventRecorder
 	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, clusterDomainRouteSyncPeriod)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
@@ -392,7 +390,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	}
 	c.recorder.Event(cdr, corev1.EventTypeNormal, doValidateReason, "Success")
 
-	drName := fmt.Sprintf("%s-%s", cdr.Spec.Source, cdr.Spec.Destination)
+	drName := common.GenDomainRouteName(cdr.Spec.Source, cdr.Spec.Destination)
 
 	// Create domainroute in source namespace
 	srcDr, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Source, drName)

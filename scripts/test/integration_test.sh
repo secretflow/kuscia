@@ -21,9 +21,12 @@ SELECTED_TEST_SUITE=${1}
 
 # TEST_SUITES hold all test suites.
 declare -A TEST_SUITES
-TEST_SUITES["center.base"]="./test/suite/center/basic.sh"
-TEST_SUITES["p2p.base"]="./test/suite/p2p/basic.sh"
+TEST_SUITES["center.base"]="./test/suite/center/base.sh"
+TEST_SUITES["center.nsjail"]="./test/suite/center/nsjail.sh"
 TEST_SUITES["center.example"]="./test/suite/center/example.sh"
+
+TEST_SUITES["p2p.base"]="./test/suite/p2p/base.sh"
+TEST_SUITES["p2p.nsjail"]="./test/suite/p2p/nsjail.sh"
 
 TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 TEST_BIN_DIR=${TEST_ROOT}/test_run/bin
@@ -112,7 +115,7 @@ if [ "${SELECTED_TEST_SUITE}" == "" ]; then
   SELECTED_TEST_SUITE="all"
 fi
 if [ "${SELECTED_TEST_SUITE}" != "all" ] && [ -z "${TEST_SUITES[${SELECTED_TEST_SUITE}]}" ] ; then
-  echo "can't find test suite: ${SELECTED_TEST_SUITE}"
+  echo "can't find test suite: ${SELECTED_TEST_SUITE}, suite option: [" "${!TEST_SUITES[@]}" "all ]"
   exit 1
 fi
 

@@ -42,6 +42,8 @@ function test_p2p_kuscia_job() {
   docker exec -it "${AUTONOMY_ALICE_CONTAINER}" scripts/user/create_example_job.sh PSI ${alice_job_id}
   assertEquals "Kuscia job failed" "Succeeded" "$(wait_kuscia_job_until "${AUTONOMY_ALICE_CONTAINER}" 600 ${alice_job_id})"
   assertEquals "Kuscia data file exist" "Y" "$(exist_container_file "${AUTONOMY_ALICE_CONTAINER}" var/storage/data/psi-output.csv)"
+
+  unset alice_job_id
 }
 
 function test_p2p_kuscia_api_http_available() {
@@ -49,9 +51,13 @@ function test_p2p_kuscia_api_http_available() {
   local alice_http_status_code=$(get_kuscia_api_healthz_http_status_code "${autonomy_alice_container_ip}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
   assertEquals "KusciaApi healthZ http code" "200" "${alice_http_status_code}"
 
+  unset autonomy_alice_container_ip alice_http_status_code
+
   local autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
   local bob_http_status_code=$(get_kuscia_api_healthz_http_status_code "${autonomy_bob_container_ip}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
   assertEquals "KusciaApi healthZ http code" "200" "${bob_http_status_code}"
+
+  unset autonomy_bob_container_ip bob_http_status_code
 }
 
 function test_p2p_kuscia_api_grpc_available() {
@@ -59,9 +65,13 @@ function test_p2p_kuscia_api_grpc_available() {
   local alice_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${autonomy_alice_container_ip}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${alice_status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
+  unset autonomy_alice_container_ip alice_status_message
+
   local autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
   local bob_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${autonomy_bob_container_ip}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${bob_status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
+
+  unset autonomy_bob_container_ip bob_status_message
 }
 
 . ./test/vendor/shunit2

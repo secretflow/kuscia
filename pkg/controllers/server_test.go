@@ -25,13 +25,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	extensionfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
-	"k8s.io/client-go/kubernetes"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
-	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/utils/election"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
@@ -67,7 +65,7 @@ func (t *testcontroller) Name() string {
 	return "testcontroller"
 }
 
-func testNewControllerFunc(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) IController {
+func testNewControllerFunc(ctx context.Context, config ControllerConfig) IController {
 	t := &testcontroller{stoppedCh: make(chan struct{})}
 	t.ctx, t.cancel = context.WithCancel(ctx)
 	return t

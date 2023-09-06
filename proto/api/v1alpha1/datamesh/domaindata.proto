@@ -67,7 +67,7 @@ message CreateDomainDataResponse {
 }
 
 message CreateDomainDataResponseData {
-  // ID of created datasource
+  // ID of created domaindata
   string domaindata_id = 1;
 }
 

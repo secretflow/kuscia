@@ -24,6 +24,9 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/upstream"
 	"github.com/patrickmn/go-cache"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 const (
@@ -41,7 +44,11 @@ func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes
 	}
 
 	etc.Cache.Set(fmt.Sprintf("transport.%s", etc.Namespace), []string{etc.EnvoyIP}, -1)
-
+	hostIP, err := network.GetHostIP()
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	etc.Cache.Set("datamesh", []string{hostIP}, -1)
 	if c.Next() {
 		etc.Zones = c.RemainingArgs()
 		if len(etc.Zones) == 0 {

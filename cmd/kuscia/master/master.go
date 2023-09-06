@@ -73,11 +73,6 @@ func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies
 		conf.DomainKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "domain.key")
 	}
 
-	conf.ExternalTLS = &kusciaconfig.TLSConfig{
-		CertFile: filepath.Join(conf.RootDir, modules.CertPrefix, "external_tls.crt"),
-		KeyFile:  filepath.Join(conf.RootDir, modules.CertPrefix, "external_tls.key"),
-		CAFile:   conf.CAFile,
-	}
 	conf.Master = &kusciaconfig.MasterConfig{
 		APIServer: &kusciaconfig.APIServerConfig{
 			KubeConfig: conf.KubeconfigFile,

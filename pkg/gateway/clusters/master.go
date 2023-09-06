@@ -33,7 +33,7 @@ import (
 
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
-	"github.com/secretflow/kuscia/pkg/gateway/controller"
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -41,20 +41,13 @@ import (
 const (
 	DomainAPIServer      = "apiserver.master.svc"
 	serviceMasterProxy   = "masterproxy"
-	serviceAPIServer     = "apiserver"
-	serviceKusciaStorage = "kusciastorage"
-	serviceHandshake     = "kuscia-handshake"
+	ServiceAPIServer     = "apiserver"
+	ServiceKusciaStorage = "kusciastorage"
+	ServiceHandshake     = "kuscia-handshake"
 	virtualHostHandshake = "handshake-virtual-host"
 )
 
-type MasterConfig struct {
-	Master        bool
-	MasterProxy   *ClusterConfig
-	APIServer     *ClusterConfig
-	KusciaStorage *ClusterConfig
-}
-
-func AddMasterClusters(ctx context.Context, namespace string, config *MasterConfig) error {
+func AddMasterClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
 	if !config.Master {
 		masterProxyCluster, err := generateDefaultCluster(serviceMasterProxy, config.MasterProxy)
 		if err != nil {
@@ -71,13 +64,13 @@ func AddMasterClusters(ctx context.Context, namespace string, config *MasterConf
 		waitMasterProxyReady(ctx)
 	} else {
 		if config.APIServer != nil {
-			if err := addMasterCluster(serviceAPIServer, namespace, config.APIServer); err != nil {
+			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer); err != nil {
 				return err
 			}
 		}
 
 		if config.KusciaStorage != nil {
-			if err := addMasterCluster(serviceKusciaStorage, namespace, config.APIServer); err != nil {
+			if err := addMasterCluster(ServiceKusciaStorage, namespace, config.APIServer); err != nil {
 				return err
 			}
 		}
@@ -88,7 +81,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *MasterConf
 	return nil
 }
 
-func addMasterCluster(service, namespace string, config *ClusterConfig) error {
+func addMasterCluster(service, namespace string, config *config.ClusterConfig) error {
 	localCluster, err := generateDefaultCluster(service, config)
 	if err != nil {
 		return fmt.Errorf("generate %s Cluster fail, %v", service, err)
@@ -179,7 +172,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 		},
 	}
 
-	if service == serviceAPIServer {
+	if service == ServiceAPIServer {
 		virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
 			SafeRegex: &matcherv3.RegexMatcher{
 				Regex: "/(api(s)?(/[0-9A-Za-z_.-]+)?/v1(alpha1)?/namespaces/[0-9A-Za-z_.-]+" +
@@ -201,13 +194,13 @@ func generateMasterServiceDomains(namespace, service string) []string {
 
 func generateMasterProxyDomains() []string {
 	return []string{
-		fmt.Sprintf("%s.master.svc", serviceHandshake),
-		fmt.Sprintf("%s.master.svc", serviceAPIServer),
-		fmt.Sprintf("%s.master.svc", serviceKusciaStorage),
+		fmt.Sprintf("%s.master.svc", ServiceHandshake),
+		fmt.Sprintf("%s.master.svc", ServiceAPIServer),
+		fmt.Sprintf("%s.master.svc", ServiceKusciaStorage),
 	}
 }
 
-func generateDefaultCluster(name string, config *ClusterConfig) (*envoycluster.Cluster, error) {
+func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycluster.Cluster, error) {
 	cluster := &envoycluster.Cluster{
 		Name:           fmt.Sprintf("service-%s", name),
 		ConnectTimeout: durationpb.New(time.Second),
@@ -261,14 +254,14 @@ func generateDefaultCluster(name string, config *ClusterConfig) (*envoycluster.C
 
 func getMasterNamespace() (string, error) {
 	var namespace string
-
-	req, err := http.NewRequest("GET", controller.InternalServer, nil)
+	req, err := http.NewRequest("GET", config.InternalServer+"/handshake", nil)
 	if err != nil {
 		return namespace, fmt.Errorf("new http request failed with (%s)", err.Error())
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Host = fmt.Sprintf("%s.master.svc", serviceHandshake)
+	req.Header.Set("kuscia-Host", fmt.Sprintf("%s.master.svc", ServiceHandshake))
+	req.Host = fmt.Sprintf("%s.master.svc", ServiceHandshake)
 
 	client := &http.Client{}
 	res, err := client.Do(req)
@@ -302,7 +295,6 @@ func getMasterNamespace() (string, error) {
 }
 
 func waitMasterProxyReady(ctx context.Context) {
-
 	timestick := time.NewTicker(2 * time.Second)
 	timeout, timeoutCancel := context.WithTimeout(ctx, time.Second*300)
 	defer timeoutCancel()
@@ -329,7 +321,7 @@ func addMasterHandshakeRoute(routeName string) {
 		nlog.Fatalf("%v", err)
 	}
 
-	vh.Domains = append(vh.Domains, fmt.Sprintf("%s.master.svc", serviceHandshake))
+	vh.Domains = append(vh.Domains, fmt.Sprintf("%s.master.svc", ServiceHandshake))
 
 	if err := xds.AddOrUpdateVirtualHost(vh, routeName); err != nil {
 		nlog.Fatalf("%v", err)

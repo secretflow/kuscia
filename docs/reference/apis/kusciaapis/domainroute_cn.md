@@ -1,7 +1,9 @@
 # DomainRoute
 
-DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路由规则、Lite 节点之间的路由规则，以及点对点（P2P）网络中 Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domainroute_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domainroute.proto) 找到 DomainRoute 对应的 protobuf 文件。
+DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路由规则、Lite 节点之间的路由规则，以及点对点（P2P）网络中
+Autonomy 节点之间的路由规则。请参考 [DomainRoute](../../concepts/domainroute_cn.md) 。
+你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domainroute.proto) 找到对应的
+protobuf 文件。
 
 ## 接口总览
 
@@ -9,7 +11,7 @@ DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路
 |-----------------------------------------------------------------|------------------------------------|-------------------------------------|------------|
 | [CreateDomainRoute](#create-domain-route)                       | CreateDomainRouteRequest           | CreateDomainRouteResponse           | 创建节点路由     |
 | [DeleteDomainRoute](#delete-domain-route)                       | DeleteDomainRouteRequest           | DeleteDomainRouteResponse           | 查询节点路由     |
-| [QueryDomainRoute](#query-domain-route)                         | QueryDomainRouteRequest            | QueryDomainRouteResponse            | 更新节点路由     |
+| [QueryDomainRoute](#query-domain-route)                         | QueryDomainRouteRequest            | QueryDomainRouteResponse            | 查询节点路由     |
 | [BatchQueryDomainRouteStatus](#batch-query-domain-route-status) | BatchQueryDomainRouteStatusRequest | BatchQueryDomainRouteStatusResponse | 批量查询节点路由状态 |
 
 ## 接口详情
@@ -23,13 +25,13 @@ DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路
 
 #### 请求（CreateDomainRouteRequest）
 
-| 字段                  | 类型                                            | 可选 | 描述                                                                        |
-|---------------------|-----------------------------------------------|----|---------------------------------------------------------------------------|
-| header              | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容                                                                   |
-| authentication_type | string                                        | 否  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute概念](../concepts/domainroute_cn.md) |
-| destination         | string                                        | 否  | 目标节点                                                                      |
-| endpoint            | [RouteEndpoint](#route-endpoint)              | 否  | 目标节点的地址                                                                   |
-| source              | string                                        | 否  | 源节点                                                                       |
+| 字段                  | 类型                                            | 可选 | 描述                                                                           |
+|---------------------|-----------------------------------------------|----|------------------------------------------------------------------------------|
+| header              | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容                                                                      |
+| authentication_type | string                                        | 否  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute概念](../../concepts/domainroute_cn.md) |
+| destination         | string                                        | 否  | 目标节点                                                                         |
+| endpoint            | [RouteEndpoint](#route-endpoint)              | 否  | 目标节点的地址                                                                      |
+| source              | string                                        | 否  | 源节点                                                                          |
 
 #### 响应（CreateDomainRouteResponse）
 
@@ -78,18 +80,18 @@ DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路
 
 #### 响应（QueryDomainRouteResponse）
 
-| 字段                       | 类型                               | 可选 | 描述                                                                        |
-|--------------------------|----------------------------------|----|---------------------------------------------------------------------------|
-| status                   | [Status](./summary.html#status)  | 否  | 状态信息                                                                      |
-| data                     | QueryDomainRouteResponseData     | 否  |                                                                           |
-| data.name                | string                           | 否  | 节点名称                                                                      |
-| data.authentication_type | string                           | 否  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute概念](../concepts/domainroute_cn.md) |
-| data.destination         | string                           | 否  | 目标节点                                                                      |
-| data.endpoint            | [RouteEndpoint](#route-endpoint) | 否  | 目标节点的地址，参考 [DomainRoute概念](../concepts/domainroute_cn.md)                 |
-| data.source              | string                           | 否  | 源节点                                                                       |
-| data.token_config        | [TokenConfig](#token-config)     | 是  | Token配置                                                                   |
-| data.mtls_config         | [MTLSConfig](#mtls-config)       | 是  | MTLS配置                                                                    |
-| data.status              | [RouteStatus](#route-status)     | 否  | 状态                                                                        |
+| 字段                       | 类型                               | 可选 | 描述                                                                           |
+|--------------------------|----------------------------------|----|------------------------------------------------------------------------------|
+| status                   | [Status](./summary.html#status)  | 否  | 状态信息                                                                         |
+| data                     | QueryDomainRouteResponseData     | 否  |                                                                              |
+| data.name                | string                           | 否  | 节点名称                                                                         |
+| data.authentication_type | string                           | 否  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute概念](../../concepts/domainroute_cn.md) |
+| data.destination         | string                           | 否  | 目标节点                                                                         |
+| data.endpoint            | [RouteEndpoint](#route-endpoint) | 否  | 目标节点的地址，参考 [DomainRoute概念](../../concepts/domainroute_cn.md)                 |
+| data.source              | string                           | 否  | 源节点                                                                          |
+| data.token_config        | [TokenConfig](#token-config)     | 是  | Token配置                                                                      |
+| data.mtls_config         | [MTLSConfig](#mtls-config)       | 是  | MTLS配置                                                                       |
+| data.status              | [RouteStatus](#route-status)     | 否  | 状态                                                                           |
 
 {#batch-query-domain-route-status}
 
@@ -166,7 +168,7 @@ DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路
 
 ### MTLSConfig
 
-详细参考 [DomainRoute概念](../concepts/domainroute_cn.md) 。
+详细参考 [DomainRoute概念](../../concepts/domainroute_cn.md) 。
 
 | 字段                        | 类型     | 可选 | 描述       |
 |---------------------------|--------|----|----------|
@@ -178,7 +180,7 @@ DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路
 
 ### TokenConfig
 
-详细参考 [DomainRoute概念](../concepts/domainroute_cn.md) 。
+详细参考 [DomainRoute概念](../../concepts/domainroute_cn.md) 。
 
 | 字段                     | 类型     | 可选 | 描述                        |
 |------------------------|--------|----|---------------------------|

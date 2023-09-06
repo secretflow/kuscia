@@ -14,3 +14,6 @@ master:
     endpoint:  http://127.0.0.1:1080
 agent:
   allowPrivileged: false
+externalTLS:
+  certFile: etc/certs/external_tls.crt
+  keyFile: etc/certs/external_tls.key

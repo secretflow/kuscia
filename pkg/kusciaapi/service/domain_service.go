@@ -20,12 +20,11 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
-
-	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -68,15 +67,16 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 			Name: domainID,
 		},
 		Spec: v1alpha1.DomainSpec{
-			Cert: request.Cert,
-			Role: v1alpha1.DomainRole(request.Role),
+			Cert:       request.Cert,
+			Role:       v1alpha1.DomainRole(request.Role),
+			AuthCenter: authCenterConverter(request.AuthCenter),
 		},
 	}
 	// create kuscia domain
 	_, err := s.kusciaClient.KusciaV1alpha1().Domains().Create(ctx, kusciaDomain, metav1.CreateOptions{})
 	if err != nil {
 		return &kusciaapi.CreateDomainResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomain, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrCreateDomain), err.Error()),
 		}
 	}
 	return &kusciaapi.CreateDomainResponse{
@@ -96,18 +96,30 @@ func (s domainService) QueryDomain(ctx context.Context, request *kusciaapi.Query
 	kusciaDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.QueryDomainResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomain, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrQueryDomain), err.Error()),
 		}
 	}
 	// build domain response
-	domainStatus := buildDomainStatus(kusciaDomain)
+	domainStatus := s.buildDomainStatus(kusciaDomain)
+	// build authCenter
+	var authCenter *kusciaapi.AuthCenter
+	kusciaAuthCenter := kusciaDomain.Spec.AuthCenter
+	if kusciaAuthCenter != nil {
+		authCenter = &kusciaapi.AuthCenter{
+			AuthenticationType: string(kusciaAuthCenter.AuthenticationType),
+			TokenGenMethod:     string(kusciaAuthCenter.TokenGenMethod),
+		}
+	}
 	return &kusciaapi.QueryDomainResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 		Data: &kusciaapi.QueryDomainResponseData{
-			DomainId:     domainID,
-			Cert:         kusciaDomain.Spec.Cert,
-			Role:         string(kusciaDomain.Spec.Role),
-			NodeStatuses: domainStatus.NodeStatuses,
+			DomainId:            domainID,
+			Cert:                kusciaDomain.Spec.Cert,
+			Role:                string(kusciaDomain.Spec.Role),
+			NodeStatuses:        domainStatus.NodeStatuses,
+			DeployTokenStatuses: domainStatus.DeployTokenStatuses,
+			Annotations:         kusciaDomain.Annotations,
+			AuthCenter:          authCenter,
 		},
 	}
 }
@@ -130,7 +142,7 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 	latestDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.UpdateDomainResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrUpdateDomain, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrUpdateDomain), err.Error()),
 		}
 	}
 	// build kuscia domain
@@ -140,8 +152,9 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			ResourceVersion: latestDomain.ResourceVersion,
 		},
 		Spec: v1alpha1.DomainSpec{
-			Cert: request.Cert,
-			Role: v1alpha1.DomainRole(role),
+			Cert:       request.Cert,
+			Role:       v1alpha1.DomainRole(role),
+			AuthCenter: authCenterConverter(request.AuthCenter),
 		},
 	}
 	// update kuscia domain
@@ -168,7 +181,7 @@ func (s domainService) DeleteDomain(ctx context.Context, request *kusciaapi.Dele
 	err := s.kusciaClient.KusciaV1alpha1().Domains().Delete(ctx, domainID, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteDomainResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomain, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrDeleteDomain), err.Error()),
 		}
 	}
 	return &kusciaapi.DeleteDomainResponse{
@@ -197,10 +210,10 @@ func (s domainService) BatchQueryDomainStatus(ctx context.Context, request *kusc
 		kusciaDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 		if err != nil {
 			return &kusciaapi.BatchQueryDomainStatusResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainStatus, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrQueryDomainStatus), err.Error()),
 			}
 		}
-		domainStatuses[i] = buildDomainStatus(kusciaDomain)
+		domainStatuses[i] = s.buildDomainStatus(kusciaDomain)
 	}
 	return &kusciaapi.BatchQueryDomainStatusResponse{
 		Status: utils.BuildSuccessResponseStatus(),
@@ -210,7 +223,7 @@ func (s domainService) BatchQueryDomainStatus(ctx context.Context, request *kusc
 	}
 }
 
-func buildDomainStatus(kusciaDomain *v1alpha1.Domain) *kusciaapi.DomainStatus {
+func (s domainService) buildDomainStatus(kusciaDomain *v1alpha1.Domain) *kusciaapi.DomainStatus {
 	domainStatus := &kusciaapi.DomainStatus{}
 	if kusciaDomain == nil {
 		return domainStatus
@@ -222,16 +235,37 @@ func buildDomainStatus(kusciaDomain *v1alpha1.Domain) *kusciaapi.DomainStatus {
 		return domainStatus
 	}
 	kds := kusciaDomainStatus.NodeStatuses
-	nodeStatuses := make([]*kusciaapi.NodeStatus, len(kds))
-	for i, node := range kds {
-		nodeStatuses[i] = &kusciaapi.NodeStatus{
+	nodeStatuses := make([]*kusciaapi.NodeStatus, 0)
+	for _, node := range kds {
+		nodeStatuses = append(nodeStatuses, &kusciaapi.NodeStatus{
 			Name:               node.Name,
 			Status:             node.Status,
 			Version:            node.Version,
 			LastHeartbeatTime:  apiutils.TimeRfc3339String(&node.LastHeartbeatTime),
 			LastTransitionTime: apiutils.TimeRfc3339String(&node.LastTransitionTime),
-		}
+		})
 	}
 	domainStatus.NodeStatuses = nodeStatuses
+	// build deploy token status
+	dts := kusciaDomainStatus.DeployTokenStatuses
+	tokenStatuses := make([]*kusciaapi.DeployTokenStatus, 0)
+	for _, token := range dts {
+		tokenStatuses = append(tokenStatuses, &kusciaapi.DeployTokenStatus{
+			Token:              token.Token,
+			State:              token.State,
+			LastTransitionTime: apiutils.TimeRfc3339String(&token.LastTransitionTime),
+		})
+	}
+	domainStatus.DeployTokenStatuses = tokenStatuses
 	return domainStatus
+}
+
+func authCenterConverter(authCenter *kusciaapi.AuthCenter) *v1alpha1.AuthCenter {
+	if authCenter != nil {
+		return &v1alpha1.AuthCenter{
+			AuthenticationType: v1alpha1.DomainAuthenticationType(authCenter.AuthenticationType),
+			TokenGenMethod:     v1alpha1.TokenGenMethodType(authCenter.TokenGenMethod),
+		}
+	}
+	return nil
 }

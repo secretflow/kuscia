@@ -36,6 +36,10 @@ func makeTestDomain(name string) *kusciaapisv1alpha1.Domain {
 			ResourceQuota: &kusciaapisv1alpha1.DomainResourceQuota{
 				PodMaxCount: &count,
 			},
+			AuthCenter: &kusciaapisv1alpha1.AuthCenter{
+				AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+				TokenGenMethod:     kusciaapisv1alpha1.TokenGenUIDRSA,
+			},
 		},
 		Status: &kusciaapisv1alpha1.DomainStatus{
 			NodeStatuses: []kusciaapisv1alpha1.NodeStatus{
@@ -54,7 +58,7 @@ func TestGetDomainStatus(t *testing.T) {
 	testCases := []struct {
 		name           string
 		nodes          []*apicorev1.Node
-		expectedStatus *kusciaapisv1alpha1.DomainStatus
+		expectedStatus []kusciaapisv1alpha1.NodeStatus
 	}{
 		{
 			name:           "want status is nil",
@@ -81,13 +85,11 @@ func TestGetDomainStatus(t *testing.T) {
 					},
 				},
 			},
-			expectedStatus: &kusciaapisv1alpha1.DomainStatus{
-				NodeStatuses: []kusciaapisv1alpha1.NodeStatus{
-					{
-						Name:    "node-1",
-						Version: "v1.0.0",
-						Status:  "Ready",
-					},
+			expectedStatus: []kusciaapisv1alpha1.NodeStatus{
+				{
+					Name:    "node-1",
+					Version: "v1.0.0",
+					Status:  "Ready",
 				},
 			},
 		},
@@ -95,7 +97,7 @@ func TestGetDomainStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			status := c.getDomainStatus(tc.nodes)
+			status := c.getDomainNodeStatus(tc.nodes)
 			assert.Equal(t, tc.expectedStatus, status)
 		})
 	}
@@ -186,6 +188,16 @@ func TestIsDomainStatusEqual(t *testing.T) {
 				},
 			},
 			want: true,
+		},
+		{
+			name: "empty array and nil array are not equal",
+			oldStatus: &kusciaapisv1alpha1.DomainStatus{
+				NodeStatuses: make([]kusciaapisv1alpha1.NodeStatus, 0),
+			},
+			newStatus: &kusciaapisv1alpha1.DomainStatus{
+				NodeStatuses: nil,
+			},
+			want: false,
 		},
 	}
 

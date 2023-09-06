@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/spf13/cobra"
 	kubeinformers "k8s.io/client-go/informers"
 
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -32,10 +31,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
-	"github.com/secretflow/kuscia/pkg/utils/signals"
 )
 
 const (
@@ -46,39 +42,6 @@ const (
 var (
 	ReadyChan = make(chan struct{})
 )
-
-func NewCommand(opts *Opts) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          gatewayName,
-		Long:         gatewayName + ` set route rules for ingress and egress netflow, and Responsible for authentication.`,
-		Version:      meta.KusciaVersionString(),
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			zLogWriter, err := zlogwriter.New(opts.logCfg)
-			if err != nil {
-				return err
-			}
-			nlog.Setup(nlog.SetWriter(zLogWriter))
-			conf := opts.Config()
-			err = conf.CheckConfig()
-			if err != nil {
-				return err
-			}
-			// create clientset
-			clients, err := createClientSets(conf)
-			if err != nil {
-				return fmt.Errorf("failed to create clientSets, detail-> %v", err)
-			}
-			err = Run(signals.NewKusciaContextWithStopCh(signals.SetupSignalHandler()), conf, clients)
-			if err != nil {
-				nlog.Fatalf("failed to start gateway, %v", err)
-			}
-			return err
-		},
-	}
-
-	return cmd
-}
 
 func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients) error {
 	// parse private key
@@ -106,6 +69,16 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	err = clusters.AddMasterClusters(ctx, gwConfig.Namespace, masterConfig)
 	if err != nil {
 		return fmt.Errorf("add master clusters fail, detail-> %v", err)
+	}
+	if !masterConfig.Master {
+		err = controller.RegisterDomain(gwConfig.Namespace, gwConfig.CsrFile, prikey)
+		if err != nil {
+			return fmt.Errorf("RegisterDomain err:%s", err.Error())
+		}
+		err = controller.HandshakeToMaster(gwConfig.Namespace, prikey)
+		if err != nil {
+			return fmt.Errorf("HandshakeToMaster err:%s", err.Error())
+		}
 	}
 
 	// add interconn cluster
@@ -152,6 +125,9 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	drConfig := &controller.DomainRouteConfig{
 		Namespace:     gwConfig.Namespace,
+		MasterConfig:  masterConfig,
+		CAKeyFile:     gwConfig.CAKeyFile,
+		CAFile:        gwConfig.CAFile,
 		Prikey:        prikey,
 		PrikeyData:    priKeyData,
 		HandshakePort: gwConfig.HandshakePort,

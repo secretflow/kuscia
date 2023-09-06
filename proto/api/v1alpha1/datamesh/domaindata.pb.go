@@ -232,7 +232,7 @@ type CreateDomainDataResponseData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of created datasource
+	// ID of created domaindata
 	DomaindataId string `protobuf:"bytes,1,opt,name=domaindata_id,json=domaindataId,proto3" json:"domaindata_id,omitempty"`
 }
 
