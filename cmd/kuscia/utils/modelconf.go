@@ -83,10 +83,11 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 				KubeConfig: conf.KubeconfigFile,
 				Endpoint:   conf.ApiserverEndpoint,
 			},
-			ApiWhitelist: conf.KusciaConfig.Master.ApiWhitelist,
+			ApiWhitelist: kusciaconfig.MasterConfig{}.ApiWhitelist,
+			//ApiWhitelist: conf.KusciaConfig.Master.ApiWhitelist,
 		}
-		conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
 	}
+	conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
 
 	if runmodel == RunModeMaster || runmodel == RunModeLite {
 		if runmodel == RunModeLite {

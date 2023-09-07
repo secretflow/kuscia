@@ -16,23 +16,27 @@
 package utils
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestGetInitConfig(t *testing.T) {
-	defaultConfTest(RunModeMaster, t)
-	defaultConfTest(RunModeLite, t)
-	defaultConfTest(RunModeAutonomy, t)
+func TestGetInitConfMaster(t *testing.T) {
+
+	conf := GetInitConfig("", "", RunModeMaster)
+	assert.Equal(t, conf.RootDir, defaultRootDir, "GetInitConfig test failed")
+	assert.Equal(t, conf.DomainID, defaultDomainID, "GetInitConfig test failed")
+	assert.Equal(t, conf.ApiserverEndpoint, defaultEndpoint, "GetInitConfig test failed")
 }
-func defaultConfTest(runMode string, t *testing.T) {
-	conf := GetInitConfig("", "", runMode)
-	if conf.RootDir != defaultRootDir {
-		t.Errorf("%v GetInitConfig test failed: RootDir expected %v but got %v", runMode, defaultRootDir, conf.RootDir)
-	}
-	if conf.DomainID != defaultDomainID {
-		t.Errorf("%v GetInitConfig test failed: DomainID expected %v but got %v", runMode, defaultDomainID, conf.DomainID)
-	}
-	if conf.ApiserverEndpoint != defaultEndpoint {
-		t.Errorf("%v GetInitConfig test failed: ApiserverEndpoint expected %v but got %v", runMode, defaultEndpoint, conf.ApiserverEndpoint)
-	}
+func TestGetInitConfLite(t *testing.T) {
+
+	conf := GetInitConfig("", "", RunModeLite)
+	assert.Equal(t, conf.RootDir, defaultRootDir, "GetInitConfig test failed")
+	assert.Equal(t, conf.DomainID, defaultDomainID, "GetInitConfig test failed")
+	assert.Equal(t, conf.ApiserverEndpoint, defaultEndpoint, "GetInitConfig test failed")
+}
+func TestGetInitConfAutonomy(t *testing.T) {
+	conf := GetInitConfig("", "", RunModeAutonomy)
+	assert.Equal(t, conf.RootDir, defaultRootDir, "GetInitConfig test failed")
+	assert.Equal(t, conf.DomainID, defaultDomainID, "GetInitConfig test failed")
+	assert.Equal(t, conf.ApiserverEndpoint, defaultEndpoint, "GetInitConfig test failed")
 }
