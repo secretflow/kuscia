@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.3.0b0] - 2023-9-7
+### Added
+- Support the deployment of new lite domain in centralized clusters.
+- Support non MTLS network communication in centralized networking mode.
+- Supports the deployment of an autonomy domain across machines.
+- Add Integration Test.
+
 ## [0.2.0b2] - 2023-7-18
 ### Fixed
 - Correct datamesh service name for p2p
