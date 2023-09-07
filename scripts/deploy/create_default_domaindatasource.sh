@@ -17,21 +17,34 @@
 
 set -e
 
-RESULT=$(curl -k -s -H "Content-Type: application/json" \
-  http://localhost:8070/api/v1/datamesh/domaindatasource/create \
-  -d '{
-             "datasource_id": "default-data-source",
-             "type": "localfs",
-             "info": {
-               "localfs": {
-                  "path": "/home/kuscia/var/storage/data"
+retry=0
+max_retry=3
+success=false
+while [ $retry -lt "$max_retry" ]; do
+  RESULT=$(curl -k -s -H "Content-Type: application/json" \
+    http://localhost:8070/api/v1/datamesh/domaindatasource/create \
+    -d '{
+               "datasource_id": "default-data-source",
+               "type": "localfs",
+               "info": {
+                 "localfs": {
+                    "path": "/home/kuscia/var/storage/data"
+                 }
                }
-             }
-           }')
+             }')
 
-STATUS_CODE=$(echo ${RESULT} | jq '.status.code')
-if [[ "$STATUS_CODE" != "0" && "$STATUS_CODE" != "1112" ]]; then
+  STATUS_CODE=$(echo ${RESULT} | jq '.status.code')
+  if [[ "$STATUS_CODE" == "0" || "$STATUS_CODE" == "12304" ]]; then
+    success=true
+    break
+  fi
   ERR_MEG=$(echo ${RESULT} | jq '.status.message')
-  echo "create datasource error: ${ERR_MEG}"
+  echo "Create datasource error: ${ERR_MEG}"
+  sleep 1
+  retry=$((retry + 1))
+done
+
+if [[ $success == "false" ]]; then
+  echo "Create datasource error with $max_retry maxRetry"
   exit 1
 fi
