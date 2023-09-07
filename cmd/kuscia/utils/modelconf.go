@@ -41,19 +41,21 @@ const (
 )
 
 func GetInitConfig(configFile string, flagDomainID string, runmodel string) *modules.Dependencies {
-	content, err := os.ReadFile(configFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
 	conf := &modules.Dependencies{}
-	err = yaml.Unmarshal(content, &conf.KusciaConfig)
-	if err != nil {
-		nlog.Fatal(err)
+	if configFile != "" {
+		content, err := os.ReadFile(configFile)
+		if err != nil {
+			nlog.Fatal(err)
+		}
+		err = yaml.Unmarshal(content, &conf.KusciaConfig)
+		if err != nil {
+			nlog.Fatal(err)
+		}
 	}
 	if conf.RootDir == "" {
 		conf.RootDir = defaultRootDir
 	}
-	err = modules.EnsureDir(conf)
+	err := modules.EnsureDir(conf)
 	if err != nil {
 		nlog.Fatal(err)
 	}
