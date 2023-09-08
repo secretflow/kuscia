@@ -109,4 +109,4 @@ image: build ## Build docker image with the manager.
 integration_test: image ## Run Integration Test
 	mkdir -p run/test
 	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
-	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh {TEST_SUITE}
+	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh ${TEST_SUITE}
