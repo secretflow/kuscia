@@ -123,7 +123,7 @@ func (c *Controller) intraRollingClusterDomainRouteRSA(ctx context.Context, cdr 
 	}
 	var liveGateways []string
 	for i := range gateways {
-		if time.Since(gateways[i].Status.HeartbeatTime.Time) < gatewayLiveTimeout {
+		if time.Since(gateways[i].Status.HeartbeatTime.Time) < gatewayLiveTimeout || gateways[i].Status.HeartbeatTime.Time.IsZero() {
 			liveGateways = append(liveGateways, gateways[i].Name)
 		}
 	}
