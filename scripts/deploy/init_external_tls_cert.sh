@@ -20,7 +20,7 @@ set -e
 usage="$(basename "$0") DOMAIN_ID [EXTRA_SUBJECT_ALT_NAME]"
 
 DOMAIN_ID=$1
-SUBJECT_ALT_NAME=$2
+EXTRA_SUBJECT_ALT_NAME=$2
 
 if [[ ${DOMAIN_ID} == "" ]]; then
   echo "missing argument: $usage"

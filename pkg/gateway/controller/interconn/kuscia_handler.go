@@ -26,6 +26,7 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 )
 
@@ -89,13 +90,20 @@ func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRout
 			HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 				HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 					Host: dr.Spec.Endpoint.Host,
-					Path: "/",
+					Path: "/handshake",
 					RequestHeadersToAdd: []*core.HeaderValueOption{
 						{
 							Header: &core.HeaderValue{
 								Key:   "Kuscia-Host",
-								Value: fmt.Sprintf("kuscia-handshake.%s.svc", dr.Spec.Destination),
+								Value: fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, dr.Spec.Destination),
 							},
+						},
+						{
+							Header: &core.HeaderValue{
+								Key:   "Kuscia-Source",
+								Value: dr.Spec.Source,
+							},
+							AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 						},
 					},
 				},

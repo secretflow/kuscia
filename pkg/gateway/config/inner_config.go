@@ -20,13 +20,12 @@ import (
 
 	restclient "k8s.io/client-go/rest"
 
-	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 )
 
-func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restclient.Config) (*clusters.MasterConfig, error) {
+func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restclient.Config) (*MasterConfig, error) {
 	isMaster := false
 	if masterConfig.APIServer != nil {
 		isMaster = true
@@ -43,7 +42,7 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 			return nil, err
 		}
 
-		var storageCluster *clusters.ClusterConfig
+		var storageCluster *ClusterConfig
 		if masterConfig.KusciaStorage != nil {
 			storageCluster, err = LoadClusterConfig(masterConfig.KusciaStorage.TLSConfig,
 				masterConfig.KusciaStorage.Endpoint)
@@ -52,9 +51,9 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 			}
 		}
 
-		return &clusters.MasterConfig{
+		return &MasterConfig{
 			Master: true,
-			APIServer: &clusters.ClusterConfig{
+			APIServer: &ClusterConfig{
 				Host:     host,
 				Port:     port,
 				Protocol: protocol,
@@ -69,16 +68,15 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 	if err != nil {
 		return nil, err
 	}
-	return &clusters.MasterConfig{
+	return &MasterConfig{
 		Master:      false,
 		MasterProxy: proxyCluster,
 	}, nil
 }
 
-func LoadInterConnClusterConfig(transportConfig, schedulerConfig *kusciaconfig.ServiceConfig) (*clusters.
-	InterConnClusterConfig, error) {
-	var transServiceConfig *clusters.ClusterConfig
-	var schedulerServiceConfig *clusters.ClusterConfig
+func LoadInterConnClusterConfig(transportConfig, schedulerConfig *kusciaconfig.ServiceConfig) (*InterConnClusterConfig, error) {
+	var transServiceConfig *ClusterConfig
+	var schedulerServiceConfig *ClusterConfig
 	var err error
 
 	if transportConfig != nil {
@@ -95,17 +93,17 @@ func LoadInterConnClusterConfig(transportConfig, schedulerConfig *kusciaconfig.S
 		}
 	}
 
-	return &clusters.InterConnClusterConfig{
+	return &InterConnClusterConfig{
 		TransportConfig: transServiceConfig,
 		SchedulerConfig: schedulerServiceConfig,
 	}, nil
 }
 
-func LoadServiceConfig(config *kusciaconfig.ServiceConfig) (*clusters.ClusterConfig, error) {
+func LoadServiceConfig(config *kusciaconfig.ServiceConfig) (*ClusterConfig, error) {
 	return LoadClusterConfig(config.TLSConfig, config.Endpoint)
 }
 
-func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*clusters.ClusterConfig, error) {
+func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*ClusterConfig, error) {
 	cert, err := LoadTLSCertByTLSConfig(config)
 	if err != nil {
 		return nil, err
@@ -116,7 +114,7 @@ func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*cluste
 		return nil, err
 	}
 
-	return &clusters.ClusterConfig{
+	return &ClusterConfig{
 		Host:     host,
 		Port:     port,
 		Protocol: protocol,

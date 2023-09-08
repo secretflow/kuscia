@@ -62,6 +62,8 @@ if [ "$3" == "p2p" ]; then
 fi
 echo "${DOMAIN_TEMPLATE}" | kubectl apply -f -
 
+kubectl annotate domain/${DOMAIN_ID} "kuscia.secretflow/domain-type=embedded"
+
 TOKEN=$(${ROOT}/scripts/deploy/create_token.sh ${DOMAIN_ID} | tail -n 1)
 
 DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SELF_DOMAIN}}/${SELF_DOMAIN_ID}/g;

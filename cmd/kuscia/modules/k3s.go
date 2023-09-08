@@ -33,6 +33,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/secretflow/kuscia/pkg/utils/common"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -205,6 +206,10 @@ func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) 
 			nlog.Error(err)
 			cancel()
 		}
+		if err = applyKusciaResources(conf); err != nil {
+			nlog.Error(err)
+			cancel()
+		}
 		if err = genKusciaKubeConfig(conf); err != nil {
 			nlog.Error(err)
 			cancel()
@@ -226,7 +231,6 @@ func applyCRD(conf *Dependencies) error {
 			continue
 		}
 		file := filepath.Join(dirPath, dir.Name())
-		nlog.Infof("apply %s", file)
 		if err := applyFile(conf, file); err != nil {
 			return err
 		}
@@ -282,7 +286,7 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		KusciaCert: base64.StdEncoding.EncodeToString(certOut.Bytes()),
 		KusciaKey:  base64.StdEncoding.EncodeToString(keyOut.Bytes()),
 	}
-	if err := RenderConfig(c.kubeConfigTmplFile, c.kubeConfig, s); err != nil {
+	if err := common.RenderConfig(c.kubeConfigTmplFile, c.kubeConfig, s); err != nil {
 		return err
 	}
 	nlog.Info("generate kuscia kubeconfig successfully")
@@ -299,6 +303,18 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 	return nil
 }
 
+func applyKusciaResources(conf *Dependencies) error {
+	// apply kuscia clusterRole
+	resourceFiles := []string{
+		filepath.Join(conf.RootDir, ConfPrefix, "domain-cluster-res.yaml"),
+	}
+	for _, file := range resourceFiles {
+		if err := applyFile(conf, file); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func applyFile(conf *Dependencies, file string) error {
 	cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", file)
 	nlog.Infof("apply %s", file)

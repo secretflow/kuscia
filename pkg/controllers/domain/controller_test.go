@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/utils/signals"
@@ -43,7 +44,11 @@ func TestNewController(t *testing.T) {
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, apicorev1.EventSource{Component: "domain-controller"})
 
-	c := NewController(signals.NewKusciaContextWithStopCh(stopCh), kubeClient, kusciaClient, eventRecorder)
+	c := NewController(signals.NewKusciaContextWithStopCh(stopCh), controllers.ControllerConfig{
+		KubeClient:    kubeClient,
+		KusciaClient:  kusciaClient,
+		EventRecorder: eventRecorder,
+	})
 	go func() {
 		time.Sleep(1 * time.Second)
 		close(stopCh)
@@ -91,7 +96,10 @@ func TestMatchLabels(t *testing.T) {
 func TestEnqueueDomain(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	domain := makeTestDomain("ns1")
@@ -102,7 +110,10 @@ func TestEnqueueDomain(t *testing.T) {
 func TestEnqueueResourceQuota(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	rq := makeTestResourceQuota("ns1")
@@ -113,7 +124,10 @@ func TestEnqueueResourceQuota(t *testing.T) {
 func TestEnqueueNamespace(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	rq := makeTestNamespace("ns1")
@@ -124,7 +138,10 @@ func TestEnqueueNamespace(t *testing.T) {
 func TestStop(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	cc.Stop()
@@ -138,20 +155,22 @@ func TestSyncHandler(t *testing.T) {
 	ns1 := makeTestNamespace("ns1")
 	ns3 := makeTestNamespace("ns3")
 
-	kusciaFakeClient := kusciafake.NewSimpleClientset(domain1)
+	kusciaFakeClient := kusciafake.NewSimpleClientset(domain1, domain2)
 	kubeFakeClient := kubefake.NewSimpleClientset(ns1)
 	kubeInformerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 
 	dmInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
-	dmInformer.Informer().GetStore().Add(domain1)
-	dmInformer.Informer().GetStore().Add(domain2)
 
 	nsInformer := kubeInformerFactory.Core().V1().Namespaces()
 	nsInformer.Informer().GetStore().Add(ns1)
 	nsInformer.Informer().GetStore().Add(ns3)
 
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: record.NewFakeRecorder(2),
+	})
 	cc := c.(*Controller)
 	cc.domainLister = dmInformer.Lister()
 	cc.namespaceLister = nsInformer.Lister()
@@ -193,7 +212,10 @@ func TestSyncHandler(t *testing.T) {
 func TestName(t *testing.T) {
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	kubeFakeClient := kubefake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	got := c.Name()
 	assert.Equal(t, controllerName, got)
 }

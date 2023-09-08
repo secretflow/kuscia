@@ -35,7 +35,7 @@ if [[ ${NAMESPACE} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
 fi
-if [[ ${ALLOW_PRIVILEGED} != "false"  && ${ALLOW_PRIVILEGED} != "true" ]]; then
+if [[ ${ALLOW_PRIVILEGED} != "false" && ${ALLOW_PRIVILEGED} != "true" ]]; then
   ALLOW_PRIVILEGED="false"
 fi
 
@@ -52,12 +52,10 @@ fi
 
 cp /etc/resolv.conf etc/resolv.conf
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-echo "nameserver ${IP}" > /etc/resolv.conf
+echo "nameserver ${IP}" >/etc/resolv.conf
 
 sh scripts/deploy/iptables_pre_detect.sh
 
-sh scripts/deploy/init_kusciaapi_cert.sh
-sh scripts/deploy/init_external_tls_cert.sh ${NAMESPACE}
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml
 echo "rootDir: ${ROOT}
 domainID: ${NAMESPACE}
@@ -94,7 +92,7 @@ agent:
         - key: maintainer
           value: secretflow-contact@service.alipay.com
   - name: config-render
-" > etc/kuscia.yaml
+" >etc/kuscia.yaml
 bin/kuscia autonomy -c etc/kuscia.yaml -d ${NAMESPACE} --log.path var/logs/kuscia.log
 
 echo "
@@ -109,4 +107,3 @@ spec:
 popd >/dev/null || exit
 
 tail -f /dev/null
-

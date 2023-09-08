@@ -36,9 +36,6 @@ func GenerateUpstreamTLSConfigByCert(cert *TLSCert) (*core.TransportSocket, erro
 }
 
 func GenerateUpstreamTLSConfigByCertStr(cert, key, ca []byte) (*core.TransportSocket, error) {
-	if len(ca) == 0 && (len(cert) == 0 || len(key) == 0) {
-		return nil, fmt.Errorf("invalid upstream tls config, cert:(%s) key:(%s) ca:(%s)", cert, key, ca)
-	}
 	if err := checkTLSConfig(cert, key, ca); err != nil {
 		return nil, err
 	}

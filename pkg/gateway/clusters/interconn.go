@@ -21,6 +21,7 @@ import (
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -30,12 +31,7 @@ const (
 	schedulerService = "interconn-scheduler"
 )
 
-type InterConnClusterConfig struct {
-	TransportConfig *ClusterConfig
-	SchedulerConfig *ClusterConfig
-}
-
-func AddInterConnClusters(namespace string, config *InterConnClusterConfig) error {
+func AddInterConnClusters(namespace string, config *config.InterConnClusterConfig) error {
 	if config.TransportConfig != nil {
 		if err := addTransportCluster(namespace, config.TransportConfig); err != nil {
 			return err
@@ -49,7 +45,7 @@ func AddInterConnClusters(namespace string, config *InterConnClusterConfig) erro
 	return nil
 }
 
-func addTransportCluster(namespace string, clusterConfig *ClusterConfig) error {
+func addTransportCluster(namespace string, clusterConfig *config.ClusterConfig) error {
 	cluster, err := generateDefaultCluster(transportService, clusterConfig)
 	if err != nil {
 		return fmt.Errorf("generate %s cluster err: %v", transportService, err)
@@ -75,7 +71,7 @@ func addTransportCluster(namespace string, clusterConfig *ClusterConfig) error {
 	return nil
 }
 
-func addSchedulerCluster(namespace string, clusterConfig *ClusterConfig) error {
+func addSchedulerCluster(namespace string, clusterConfig *config.ClusterConfig) error {
 	cluster, err := generateDefaultCluster(schedulerService, clusterConfig)
 	if err != nil {
 		return fmt.Errorf("generate %s cluster err: %v", schedulerService, err)

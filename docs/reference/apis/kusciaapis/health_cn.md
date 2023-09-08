@@ -1,7 +1,7 @@
 # Health
 
 Health 提供了服务的健康检查，你可以借助这些 API 了解服务的健康状态。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto) 找到 Domain 对应的 protobuf 文件。
+你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 

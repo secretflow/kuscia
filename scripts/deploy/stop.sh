@@ -71,7 +71,7 @@ function get_running_container_list() {
 
 function stop_container() {
   local container_type=$1
-  
+
   container_list=$(get_running_container_list "$container_type")
 
   if [ -z "$container_list" ]; then
@@ -94,7 +94,7 @@ function stop_container() {
 }
 
 if [ $# -eq 0 ]; then
-  stop_container "all" 
+  stop_container "all"
 elif [ "$1" == "-h" ]; then
   print_usage
   exit 0
@@ -116,4 +116,3 @@ else
       ;;
   esac
 fi
-

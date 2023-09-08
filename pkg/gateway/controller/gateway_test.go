@@ -18,7 +18,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +38,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
@@ -47,23 +48,25 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	logger, _ := zlogwriter.New(nil)
+	nlog.Setup(nlog.SetWriter(logger))
 	dir, err := os.MkdirTemp("", "test")
 	if err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 	if err := os.Chmod(dir, 0755); err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 
 	if err := paths.CopyDirectory("../../../etc/conf/domainroute", filepath.Join(dir, "conf")); err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
-	if err := paths.CreateIfNotExists(filepath.Join(dir, "logs"), 0755); err != nil {
-		log.Fatal(err)
+	if err := paths.CreateIfNotExists(filepath.Join(dir, "nlogs"), 0755); err != nil {
+		nlog.Fatal(err)
 	}
 	if err := os.Chdir(dir); err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 
 	os.Setenv("NAMESPACE", "default")

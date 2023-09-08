@@ -17,9 +17,8 @@
 
 set -e
 
-usage="$(basename "$0") NAMESPACE [SERVICE_NAME]"
+usage="$(basename "$0") NAMESPACE"
 NAMESPACE=$1
-SERVICE_NAME=$2
 if [[ ${NAMESPACE} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
@@ -32,10 +31,8 @@ pushd ${ROOT} >/dev/null || exit
 
 cp /etc/resolv.conf ${ROOT}/etc/resolv.conf
 IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-echo "nameserver ${IP}" > /etc/resolv.conf
+echo "nameserver ${IP}" >/etc/resolv.conf
 
-sh scripts/deploy/init_kusciaapi_cert.sh ${SERVICE_NAME}
-sh scripts/deploy/init_external_tls_cert.sh ${NAMESPACE}
 bin/kuscia master -c etc/kuscia.yaml -d ${NAMESPACE} --log.path var/logs/kuscia.log
 
 echo "
@@ -50,4 +47,3 @@ spec:
 popd >/dev/null || exit
 
 tail -f /dev/null
-

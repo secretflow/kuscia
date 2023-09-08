@@ -25,6 +25,7 @@ import (
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -34,7 +35,10 @@ import (
 func TestNewController(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	if c == nil {
 		t.Error("controller instance should not be nil")
 	}
@@ -43,7 +47,10 @@ func TestNewController(t *testing.T) {
 func TestHandleAddedTaskResourceGroup(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	trg := &kusciaapisv1alpha1.TaskResourceGroup{
@@ -97,7 +104,10 @@ func TestHandleAddedTaskResourceGroup(t *testing.T) {
 func TestHandleUpdatedTaskResourceGroup(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	trg1 := &kusciaapisv1alpha1.TaskResourceGroup{
@@ -176,7 +186,10 @@ func TestHandleUpdatedTaskResourceGroup(t *testing.T) {
 func TestHandleDeletedTaskResourceGroup(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	trg := &kusciaapisv1alpha1.TaskResourceGroup{
@@ -241,7 +254,10 @@ func TestHandleDeletedTaskResourceGroup(t *testing.T) {
 func TestResourceFilter(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	pod1 := st.MakePod().Name("pod1").Namespace("ns1").Obj()
@@ -289,7 +305,10 @@ func TestResourceFilter(t *testing.T) {
 func TestHandleAddedTaskResource(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	tr := &kusciaapisv1alpha1.TaskResource{
@@ -341,7 +360,10 @@ func TestHandleAddedTaskResource(t *testing.T) {
 func TestHandleUpdatedTaskResource(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	tr1 := &kusciaapisv1alpha1.TaskResource{
@@ -423,7 +445,10 @@ func TestHandleAddedPod(t *testing.T) {
 		common.LabelTaskResourceGroup: "trg1",
 	}
 	trInformer.Informer().GetStore().Add(tr1)
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 	cc.trLister = trInformer.Lister()
 
@@ -437,7 +462,10 @@ func TestHandleAddedPod(t *testing.T) {
 func TestControllerStop(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	cc.Stop()
@@ -475,7 +503,11 @@ func TestSyncHandler(t *testing.T) {
 	trgInformer.Informer().GetStore().Add(trg1)
 	trgInformer.Informer().GetStore().Add(trg2)
 
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, record.NewFakeRecorder(2))
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: record.NewFakeRecorder(2),
+	})
 	cc := c.(*Controller)
 	cc.trgLister = trgInformer.Lister()
 
@@ -548,7 +580,11 @@ func TestHandleReserveFailedTrg(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, record.NewFakeRecorder(2))
+			c := NewController(context.Background(), controllers.ControllerConfig{
+				KubeClient:    kubeFakeClient,
+				KusciaClient:  kusciaFakeClient,
+				EventRecorder: record.NewFakeRecorder(2),
+			})
 			cc := c.(*Controller)
 			if tt.queueShutdown {
 				cc.trgReserveFailedQueue.ShutDown()
@@ -568,7 +604,10 @@ func TestHandleReserveFailedTrg(t *testing.T) {
 func TestName(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	got := c.Name()
 	if got != controllerName {
 		t.Error("controller name is wrong")

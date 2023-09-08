@@ -27,6 +27,7 @@ import (
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 )
@@ -46,7 +47,10 @@ func makeTestResourceQuota(namespace string) *apicorev1.ResourceQuota {
 func TestCreateResourceQuota(t *testing.T) {
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 
 	domain1 := makeTestDomain("ns1")
@@ -102,7 +106,10 @@ func TestUpdateResourceQuota(t *testing.T) {
 	rqInformer.Informer().GetStore().Add(rq3)
 	rqInformer.Informer().GetStore().Add(rq4)
 
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeFakeClient,
+		KusciaClient: kusciaFakeClient,
+	})
 	cc := c.(*Controller)
 	cc.namespaceLister = nsInformer.Lister()
 	cc.resourceQuotaLister = rqInformer.Lister()

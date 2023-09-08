@@ -15,11 +15,13 @@
 package node
 
 import (
+	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type PodsAuditor struct {
@@ -28,6 +30,9 @@ type PodsAuditor struct {
 
 	memTotal     resource.Quantity
 	memAvailable resource.Quantity
+
+	storageTotal     resource.Quantity
+	storageAvailable resource.Quantity
 
 	podTotal     resource.Quantity
 	podAvailable resource.Quantity
@@ -45,6 +50,9 @@ func NewPodsAuditor(config *config.AgentConfig) *PodsAuditor {
 	}
 
 	// calc memory
+	if asInt64, ok := pa.memTotal.AsInt64(); ok {
+		pa.memTotal = *resource.NewQuantity(asInt64, resource.BinarySI)
+	}
 	if memstat, err := mem.VirtualMemory(); err == nil {
 		pa.memAvailable = *resource.NewQuantity(int64(memstat.Available), resource.BinarySI)
 	} else {
@@ -56,22 +64,32 @@ func NewPodsAuditor(config *config.AgentConfig) *PodsAuditor {
 		pa.memAvailable = pa.memTotal.DeepCopy()
 	}
 
+	// calc storage
+	if storageStat, err := disk.Usage(config.RootDir); err == nil {
+		pa.storageAvailable = *resource.NewQuantity(int64(storageStat.Free), resource.BinarySI)
+		pa.storageTotal = *resource.NewQuantity(int64(storageStat.Total), resource.BinarySI)
+	} else {
+		nlog.Errorf("Stat disk usage error: %v", err)
+	}
+
 	return pa
 }
 
 // Capacity returns a resource list containing the capacity limits.
 func (pa *PodsAuditor) Capacity() v1.ResourceList {
 	return v1.ResourceList{
-		"cpu":    pa.cpuTotal,
-		"memory": pa.memTotal,
-		"pods":   pa.podTotal,
+		"cpu":     pa.cpuTotal,
+		"memory":  pa.memTotal,
+		"storage": pa.storageTotal,
+		"pods":    pa.podTotal,
 	}
 }
 
 func (pa *PodsAuditor) Allocatable() v1.ResourceList {
 	return v1.ResourceList{
-		"cpu":    pa.cpuAvailable,
-		"memory": pa.memAvailable,
-		"pods":   pa.podAvailable,
+		"cpu":     pa.cpuAvailable,
+		"memory":  pa.memAvailable,
+		"storage": pa.storageAvailable,
+		"pods":    pa.podAvailable,
 	}
 }

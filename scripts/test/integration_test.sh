@@ -20,9 +20,11 @@ set -e
 SELECTED_TEST_SUITE=${1}
 
 # TEST_SUITES hold all test suites.
-TEST_SUITES="center.base p2p.base center.example"
-center_base="./test/suite/center/basic.sh"
-p2p_base="./test/suite/p2p/basic.sh"
+TEST_SUITES="center.base p2p.base center.example center.nsjail p2p.nsjail"
+center_base="./test/suite/center/base.sh"
+p2p_base="./test/suite/p2p/base.sh"
+center_nsjail="./test/suite/center/nsjail.sh"
+p2p_nsjail="./test/suite/p2p/nsjail.sh"
 center_example="./test/suite/center/example.sh"
 
 TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)

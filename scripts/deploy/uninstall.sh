@@ -115,7 +115,7 @@ function check_running_containers() {
     log_hint "There are still running $container_type containers:"
     echo "$container_list"
     read -rp "$(echo -e ${GREEN} Do you want to stop them now? [y/N]: ${NC})" choice
-    case "$choice" in 
+    case "$choice" in
       y|Y )
         log "Stopping $container_type containers ..."
         docker stop $container_list
@@ -221,7 +221,7 @@ function uninstall() {
 
   remove_containers "$network_mode"
   remove_volumes "$network_mode"
-  remove_network 
+  remove_network
 }
 
 if [ $# -eq 0 ]; then
@@ -247,5 +247,3 @@ else
       ;;
   esac
 fi
-
-

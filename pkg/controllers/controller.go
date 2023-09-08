@@ -35,7 +35,7 @@ type ControllerConstruction struct {
 	CheckCRD     CheckCRDExistsFunc
 }
 
-type NewControllerFunc func(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) IController
+type NewControllerFunc func(ctx context.Context, config ControllerConfig) IController
 type CheckCRDExistsFunc func(ctx context.Context, extensionClient apiextensionsclientset.Interface) error
 
 const (
@@ -53,3 +53,12 @@ const (
 	CRDTaskResourcesName       = "taskresources.kuscia.secretflow"
 	CRDKusciaJobsName          = "kusciajobs.kuscia.secretflow"
 )
+
+type ControllerConfig struct {
+	IsMaster      bool
+	Namespace     string
+	RootDir       string
+	KubeClient    kubernetes.Interface
+	KusciaClient  kusciaclientset.Interface
+	EventRecorder record.EventRecorder
+}

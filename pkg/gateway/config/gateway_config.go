@@ -25,11 +25,18 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
+var (
+	InternalServer = "http://127.0.0.1:80"
+)
+
 type GatewayConfig struct {
 	RootDir       string `yaml:"rootdir,omitempty"`
 	Namespace     string `yaml:"namespace,omitempty"`
+	CAKeyFile     string `yaml:"caKeyFile,omitempty"`
+	CAFile        string `yaml:"caFile,omitempty"`
 	ConfBasedir   string `yaml:"confBasedir,omitempty"`
 	DomainKeyFile string `yaml:"domainKeyFile,omitempty"`
+	CsrFile       string `yaml:"csrFile,omitempty"`
 	WhiteListFile string `yaml:"whiteListFile,omitempty"`
 
 	ExternalPort   uint32 `yaml:"externalPort,omitempty"`

@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers"
 	dv1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -69,7 +70,11 @@ func Test_controller_with_token_rand(t *testing.T) {
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
 	goroutineNumBegin := runtime.NumGoroutine()
 	ctx := signals.NewKusciaContextWithStopCh(chStop)
-	ic := NewController(ctx, kubeClient, kusciaClient, eventRecorder)
+	ic := NewController(ctx, controllers.ControllerConfig{
+		KubeClient:    kubeClient,
+		KusciaClient:  kusciaClient,
+		EventRecorder: eventRecorder,
+	})
 	alice := "alicetoken"
 	bob := "bobtoken"
 	go func() {
@@ -220,7 +225,11 @@ func Test_controller_with_token_rsa(t *testing.T) {
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
 	goroutineNumBegin := runtime.NumGoroutine()
 	ctx := signals.NewKusciaContextWithStopCh(chStop)
-	ic := NewController(ctx, kubeClient, kusciaClient, eventRecorder)
+	ic := NewController(ctx, controllers.ControllerConfig{
+		KubeClient:    kubeClient,
+		KusciaClient:  kusciaClient,
+		EventRecorder: eventRecorder,
+	})
 	alice := "alicersa"
 	bob := "bobrsa"
 	go func() {
@@ -348,7 +357,11 @@ func Test_controller_add_label(t *testing.T) {
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
 	goroutineNumBegin := runtime.NumGoroutine()
 	ctx := signals.NewKusciaContextWithStopCh(chStop)
-	ic := NewController(ctx, kubeClient, kusciaClient, eventRecorder)
+	ic := NewController(ctx, controllers.ControllerConfig{
+		KubeClient:    kubeClient,
+		KusciaClient:  kusciaClient,
+		EventRecorder: eventRecorder,
+	})
 	alice := "aliceaddlabel"
 	bob := "bobaddlabel"
 	charlie := "charlieaddlabel"
