@@ -78,17 +78,19 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 		if conf.DomainKeyFile == "" {
 			conf.DomainKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "domain.key")
 		}
+		var apiWhiteList []string
+		if conf.KusciaConfig.Master != nil {
+			apiWhiteList = conf.KusciaConfig.Master.ApiWhitelist
+		}
 		conf.Master = &kusciaconfig.MasterConfig{
 			APIServer: &kusciaconfig.APIServerConfig{
 				KubeConfig: conf.KubeconfigFile,
 				Endpoint:   conf.ApiserverEndpoint,
 			},
-			ApiWhitelist: kusciaconfig.MasterConfig{}.ApiWhitelist,
-			//ApiWhitelist: conf.KusciaConfig.Master.ApiWhitelist,
+			ApiWhitelist: apiWhiteList,
 		}
+		conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
 	}
-	conf.InterConnSchedulerPort = defaultInterConnSchedulerPort
-
 	if runmodel == RunModeMaster || runmodel == RunModeLite {
 		if runmodel == RunModeLite {
 			conf.ApiserverEndpoint = defaultEndpointForLite
