@@ -15,9 +15,11 @@
 package config
 
 import (
-	"github.com/secretflow/kuscia/pkg/transport/msq"
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/secretflow/kuscia/pkg/transport/msq"
 )
 
 const (

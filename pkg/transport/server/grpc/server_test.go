@@ -17,22 +17,24 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"github.com/secretflow/kuscia/pkg/transport/codec"
-	"github.com/secretflow/kuscia/pkg/transport/config"
-	"github.com/secretflow/kuscia/pkg/transport/msq"
-	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcptp"
-	"github.com/secretflow/kuscia/pkg/transport/transerr"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"math/rand"
 	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	
+	"github.com/secretflow/kuscia/pkg/transport/codec"
+	"github.com/secretflow/kuscia/pkg/transport/config"
+	"github.com/secretflow/kuscia/pkg/transport/msq"
+	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcptp"
+	"github.com/secretflow/kuscia/pkg/transport/transerr"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 const (
@@ -58,7 +60,7 @@ func NewStr(str string) []byte {
 	return []byte(str)
 }
 
-func verifyResponse(t *testing.T, ctx context.Context, in *pb.TransportInbound, code transerr.ErrorCode, method string) *pb.TransportOutbound {
+func verifyPopResponse(t *testing.T, ctx context.Context, in *pb.PopInbound, code transerr.ErrorCode) *pb.TransportOutbound {
 	dial, err := grpc.Dial(testServer,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
@@ -66,23 +68,44 @@ func verifyResponse(t *testing.T, ctx context.Context, in *pb.TransportInbound, 
 		err := dial.Close()
 		assert.NoError(t, err)
 	}(dial)
-
-	client := pb.NewTransportClient(dial)
-	var out *pb.TransportOutbound
-	switch method {
-	case "Pop":
-		out, err = client.Pop(ctx, in)
-	case "Peek":
-		out, err = client.Peek(ctx, in)
-	case "Release":
-		out, err = client.Release(ctx, in)
-	}
+	client := pb.NewPrivateTransferTransportClient(dial)
+	out, err := client.Pop(ctx, in)
 	assert.NoError(t, err)
 	assert.Equal(t, out.Code, string(code))
 	return out
 }
 
-func verifyInvokeResponse(t *testing.T, ctx context.Context, in *pb.InvokeTransportInbound, code transerr.ErrorCode) *pb.TransportOutbound {
+func verifyPeekResponse(t *testing.T, ctx context.Context, in *pb.PeekInbound, code transerr.ErrorCode) *pb.TransportOutbound {
+	dial, err := grpc.Dial(testServer,
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.NoError(t, err)
+	defer func(dial *grpc.ClientConn) {
+		err := dial.Close()
+		assert.NoError(t, err)
+	}(dial)
+	client := pb.NewPrivateTransferTransportClient(dial)
+	out, err := client.Peek(ctx, in)
+	assert.NoError(t, err)
+	assert.Equal(t, out.Code, string(code))
+	return out
+}
+
+func verifyReleaseResponse(t *testing.T, ctx context.Context, in *pb.ReleaseInbound, code transerr.ErrorCode) *pb.TransportOutbound {
+	dial, err := grpc.Dial(testServer,
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.NoError(t, err)
+	defer func(dial *grpc.ClientConn) {
+		err := dial.Close()
+		assert.NoError(t, err)
+	}(dial)
+	client := pb.NewPrivateTransferTransportClient(dial)
+	out, err := client.Release(ctx, in)
+	assert.NoError(t, err)
+	assert.Equal(t, out.Code, string(code))
+	return out
+}
+
+func verifyInvokeResponse(t *testing.T, ctx context.Context, in *pb.Inbound, code transerr.ErrorCode) *pb.Outbound {
 	dial, err := grpc.Dial(testServer,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
@@ -91,9 +114,8 @@ func verifyInvokeResponse(t *testing.T, ctx context.Context, in *pb.InvokeTransp
 		assert.NoError(t, err)
 	}(dial)
 
-	client := pb.NewTransportClient(dial)
-	var out *pb.TransportOutbound
-	out, err = client.Invoke(ctx, in)
+	client := pb.NewPrivateTransferProtocolClient(dial)
+	out, err := client.Invoke(ctx, in)
 	assert.NoError(t, err)
 	assert.Equal(t, out.Code, string(code))
 	return out
@@ -112,8 +134,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestTransportAndPop(t *testing.T) {
-	invokeInbound := &pb.InvokeTransportInbound{
-		Msg: NewStr("123456789"),
+	in := &pb.Inbound{
+		Payload: NewStr("123456789"),
 	}
 
 	md := metadata.New(map[string]string{
@@ -122,7 +144,7 @@ func TestTransportAndPop(t *testing.T) {
 		codec.PtpSourceNodeID: "node0",
 	})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	verifyInvokeResponse(t, ctx, invokeInbound, transerr.Success)
+	verifyInvokeResponse(t, ctx, in, transerr.Success)
 
 	popMd := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic1",
@@ -130,8 +152,8 @@ func TestTransportAndPop(t *testing.T) {
 		codec.PtpTargetNodeID: "node0",
 	})
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
-	outbound := verifyResponse(t, popCtx, &pb.TransportInbound{}, transerr.Success, "Pop")
-	assert.Equal(t, string(outbound.Payload), "123456789")
+	outbound := verifyPopResponse(t, popCtx, &pb.PopInbound{}, transerr.Success)
+	assert.Equal(t, string(outbound.GetPayload()), "123456789")
 }
 
 func TestPeek(t *testing.T) {
@@ -141,7 +163,7 @@ func TestPeek(t *testing.T) {
 		codec.PtpTargetNodeID: "node0",
 	})
 	peekCtx := metadata.NewOutgoingContext(context.Background(), peekMd)
-	outbound := verifyResponse(t, peekCtx, &pb.TransportInbound{}, transerr.Success, "Peek")
+	outbound := verifyPeekResponse(t, peekCtx, &pb.PeekInbound{}, transerr.Success)
 	assert.Equal(t, string(outbound.Payload), "")
 }
 
@@ -162,7 +184,7 @@ func TestPopWithData(t *testing.T) {
 
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 	start := time.Now()
-	outbound := verifyResponse(t, popCtx, &pb.TransportInbound{}, transerr.Success, "Pop")
+	outbound := verifyPopResponse(t, popCtx, &pb.PopInbound{}, transerr.Success)
 	assert.Equal(t, len(outbound.Payload), 10)
 	processTime := time.Now().Sub(start)
 	assert.True(t, processTime > time.Second)
@@ -179,7 +201,7 @@ func TestPopTimeout(t *testing.T) {
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 
 	start := time.Now()
-	outbound := verifyResponse(t, popCtx, &pb.TransportInbound{}, transerr.Success, "Pop")
+	outbound := verifyPopResponse(t, popCtx, &pb.PopInbound{}, transerr.Success)
 	assert.True(t, outbound.Payload == nil)
 
 	processTime := time.Now().Sub(start)
@@ -197,7 +219,7 @@ func TestReleaseTopic(t *testing.T) {
 	})
 
 	releaseCtx := metadata.NewOutgoingContext(context.Background(), releaseMd)
-	verifyResponse(t, releaseCtx, &pb.TransportInbound{}, transerr.Success, "Release")
+	verifyReleaseResponse(t, releaseCtx, &pb.ReleaseInbound{}, transerr.Success)
 
 	msg, err := server.sm.Peek("session5", "-topic3")
 	assert.Nil(t, err)
@@ -219,7 +241,7 @@ func TestReleaseSession(t *testing.T) {
 	})
 	releaseCtx := metadata.NewOutgoingContext(context.Background(), releaseMd)
 
-	verifyResponse(t, releaseCtx, &pb.TransportInbound{}, transerr.Success, "Release")
+	verifyReleaseResponse(t, releaseCtx, &pb.ReleaseInbound{}, transerr.Success)
 	_, err := server.sm.Peek("session6", "node0-topic3")
 	assert.NotNil(t, err)
 
@@ -229,7 +251,7 @@ func TestReleaseSession(t *testing.T) {
 		codec.PtpSourceNodeID: "node0",
 	})
 	releaseCtx2 := metadata.NewOutgoingContext(context.Background(), releaseMd2)
-	verifyInvokeResponse(t, releaseCtx2, &pb.InvokeTransportInbound{Msg: NewStr("123456789")}, transerr.SessionReleased)
+	verifyInvokeResponse(t, releaseCtx2, &pb.Inbound{Payload: NewStr("123456789")}, transerr.SessionReleased)
 }
 
 func TestPushWait(t *testing.T) {
@@ -248,7 +270,7 @@ func TestPushWait(t *testing.T) {
 	pushMd.Append("timeout", "2")
 	start := time.Now()
 	pushCtx := metadata.NewOutgoingContext(context.Background(), pushMd)
-	verifyInvokeResponse(t, pushCtx, &pb.InvokeTransportInbound{Msg: NewStr("123456789")}, transerr.Success)
+	verifyInvokeResponse(t, pushCtx, &pb.Inbound{Payload: NewStr("123456789")}, transerr.Success)
 	processTime := time.Now().Sub(start)
 	assert.True(t, processTime >= time.Second && processTime <= time.Second*2)
 }
@@ -258,7 +280,7 @@ func TestBadRequestParam(t *testing.T) {
 		codec.PtpSessionID: "session9",
 	})
 	pushCtx := metadata.NewOutgoingContext(context.Background(), pushMd)
-	verifyInvokeResponse(t, pushCtx, &pb.InvokeTransportInbound{Msg: NewStr("123456789")}, transerr.InvalidRequest)
+	verifyInvokeResponse(t, pushCtx, &pb.Inbound{Payload: NewStr("123456789")}, transerr.InvalidRequest)
 }
 
 var sessionCount int = 10
@@ -289,9 +311,9 @@ func producer(t *testing.T, pushSucceedCount, pushFailCount *int64) {
 		assert.NoError(t, err)
 	}(dial)
 
-	client := pb.NewTransportClient(dial)
-	var outbound *pb.TransportOutbound
-	outbound, err = client.Invoke(pushCtx, &pb.InvokeTransportInbound{Msg: content})
+	client := pb.NewPrivateTransferProtocolClient(dial)
+
+	outbound, err := client.Invoke(pushCtx, &pb.Inbound{Payload: content})
 
 	//assert.NoError(t, err)
 
@@ -326,10 +348,10 @@ func consumer(t *testing.T, popSucceedCount, popFailCount *int64) {
 		assert.NoError(t, err)
 	}(dial)
 
-	client := pb.NewTransportClient(dial)
+	client := pb.NewPrivateTransferTransportClient(dial)
 
 	var outbound *pb.TransportOutbound
-	outbound, err = client.Pop(popCtx, &pb.TransportInbound{})
+	outbound, err = client.Pop(popCtx, &pb.PopInbound{})
 
 	//assert.NoError(t, err)
 
@@ -413,7 +435,7 @@ func TestBuildGrpcOutboundByErr(t *testing.T) {
 		codec.PtpSessionID: "session10",
 	})
 	ctx1 := metadata.NewOutgoingContext(context.Background(), md1)
-	verifyInvokeResponse(t, ctx1, &pb.InvokeTransportInbound{Msg: NewStr("123456789")}, transerr.InvalidRequest)
+	verifyInvokeResponse(t, ctx1, &pb.Inbound{Payload: NewStr("123456789")}, transerr.InvalidRequest)
 
 	md2 := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic1",
@@ -421,7 +443,7 @@ func TestBuildGrpcOutboundByErr(t *testing.T) {
 		codec.PtpSourceNodeID: "node0",
 	})
 	ctx2 := metadata.NewOutgoingContext(context.Background(), md2)
-	verifyInvokeResponse(t, ctx2, &pb.InvokeTransportInbound{}, transerr.InvalidRequest)
+	verifyInvokeResponse(t, ctx2, &pb.Inbound{}, transerr.InvalidRequest)
 
 	md3 := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic2",
@@ -429,7 +451,7 @@ func TestBuildGrpcOutboundByErr(t *testing.T) {
 	})
 
 	ctx3 := metadata.NewOutgoingContext(context.Background(), md3)
-	verifyInvokeResponse(t, ctx3, &pb.InvokeTransportInbound{}, transerr.InvalidRequest)
+	verifyInvokeResponse(t, ctx3, &pb.Inbound{}, transerr.InvalidRequest)
 }
 
 func TestLoadOverrideGrpcTransConfig(t *testing.T) {
@@ -454,12 +476,7 @@ func TestLoadOverrideGrpcTransConfig(t *testing.T) {
 		assert.NoError(t, err)
 	}(dial)
 
-	client := pb.NewTransportClient(dial)
-	var out *pb.TransportOutbound
-
-	invokeInbound := &pb.InvokeTransportInbound{
-		Msg: []byte("123456789"),
-	}
+	invokeClient := pb.NewPrivateTransferProtocolClient(dial)
 
 	md := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic1",
@@ -468,9 +485,11 @@ func TestLoadOverrideGrpcTransConfig(t *testing.T) {
 	})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-	out, err = client.Invoke(ctx, invokeInbound)
+	invokeOut, err := invokeClient.Invoke(ctx, &pb.Inbound{Payload: []byte("123456789")})
 	assert.NoError(t, err)
-	assert.Equal(t, out.Code, string(transerr.Success))
+	assert.Equal(t, invokeOut.Code, string(transerr.Success))
+
+	transportClient := pb.NewPrivateTransferTransportClient(dial)
 
 	popMd := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic1",
@@ -479,8 +498,8 @@ func TestLoadOverrideGrpcTransConfig(t *testing.T) {
 	})
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 
-	out, err = client.Pop(popCtx, &pb.TransportInbound{})
+	popOut, err := transportClient.Pop(popCtx, &pb.PopInbound{})
 	assert.NoError(t, err)
 
-	assert.Equal(t, string(out.Payload), "123456789")
+	assert.Equal(t, string(popOut.Payload), "123456789")
 }

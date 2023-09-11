@@ -19,21 +19,37 @@ import (
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 )
 
-//type Outbound grpcPtp.TransportOutbound
-
-func BuildGrpcOutboundByErr(err *transerr.TransError) *pb.TransportOutbound {
+func BuildInvokeOutboundByErr(err *transerr.TransError) *pb.Outbound {
 	if err == nil {
-		return BuildGrpcOutboundByPayload(nil)
+		return BuildInvokeOutboundByPayload(nil)
 	}
 
-	return &pb.TransportOutbound{
-		Payload: nil,
+	return &pb.Outbound{
 		Code:    err.Error(),
 		Message: err.ErrorInfo(),
 	}
 }
 
-func BuildGrpcOutboundByPayload(payload []byte) *pb.TransportOutbound {
+func BuildInvokeOutboundByPayload(payload []byte) *pb.Outbound {
+	return &pb.Outbound{
+		Payload: payload,
+		Code:    string(transerr.Success),
+		Message: transerr.GetErrorInfo(transerr.Success),
+	}
+}
+
+func BuildTransportOutboundByErr(err *transerr.TransError) *pb.TransportOutbound {
+	if err == nil {
+		return BuildTransportOutboundByPayload(nil)
+	}
+
+	return &pb.TransportOutbound{
+		Code:    err.Error(),
+		Message: err.ErrorInfo(),
+	}
+}
+
+func BuildTransportOutboundByPayload(payload []byte) *pb.TransportOutbound {
 	return &pb.TransportOutbound{
 		Payload: payload,
 		Code:    string(transerr.Success),
