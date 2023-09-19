@@ -469,6 +469,7 @@ function start_lite() {
     csrToken=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
     docker run -it --rm --mount source="${certs_volume}",target="${CTR_CERT_ROOT}" "${IMAGE}" scripts/deploy/init_domain_certs.sh "${domain_id}" "${csrToken}"
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
+    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_confmanager_cert.sh
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
@@ -567,6 +568,7 @@ function run_centralized() {
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${MASTER_DOMAIN} ${csrToken}
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${MASTER_DOMAIN}
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} --network=${NETWORK_NAME} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh ${MASTER_CTR} ${host_ip}
+    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_confmanager_cert.sh
     docker run -dit --name=${MASTER_CTR} --hostname=${MASTER_CTR} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
       -p 18080:1080 \
       -p 18082:8082 \

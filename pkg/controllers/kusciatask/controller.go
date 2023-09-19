@@ -477,12 +477,6 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	// Set default for the new kusciaTask.
 	scheme.Scheme.Default(kusciaTask)
 
-	defer func() {
-		if retErr != nil {
-			c.recorder.Event(kusciaTask, v1.EventTypeWarning, "ErrorHandleTask", retErr.Error())
-		}
-	}()
-
 	// Return if the task's unschedulable tag is true.
 	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskFailed &&
 		kusciaTask.Labels != nil &&
@@ -533,8 +527,6 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 
 	nlog.Infof("Finished syncing kusciatask %q (%v)", key, time.Since(startTime))
 
-	c.recorder.Event(kusciaTask, v1.EventTypeNormal, kusciaTask.Status.Reason,
-		fmt.Sprintf("%v -> %v, %v", phase, kusciaTask.Status.Phase, kusciaTask.Status.Message))
 	return nil
 }
 

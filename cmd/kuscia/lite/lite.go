@@ -125,6 +125,7 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 			wg.Wait()
 
 			modules.RunAgent(runCtx, cancel, conf)
+			modules.RunConfManager(runCtx, cancel, conf)
 			modules.RunDataMesh(runCtx, cancel, conf)
 			if debug {
 				utils.SetupPprof(debugPort)

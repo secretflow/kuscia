@@ -93,8 +93,7 @@ func (m kusciaAPIModule) Name() string {
 func (m kusciaAPIModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
-	host := "127.0.0.1"
-	schema := "http"
+	schema := constants.SchemaHTTP
 	// init client tls config
 	tlsConfig := m.conf.TLSConfig
 	if tlsConfig != nil {
@@ -103,7 +102,7 @@ func (m kusciaAPIModule) readyZ() bool {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
 		}
-		schema = "https"
+		schema = constants.SchemaHTTPS
 	}
 
 	// token auth
@@ -121,7 +120,7 @@ func (m kusciaAPIModule) readyZ() bool {
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, host, m.conf.HTTPPort, constants.HealthAPI)
+	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
 	body, err := json.Marshal(&kusciaapi.HealthRequest{})
 	if err != nil {
 		nlog.Errorf("marshal health request error: %v", err)
@@ -174,7 +173,7 @@ func (m kusciaAPIModule) readyZ() bool {
 		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(interceptor.GrpcClientTokenInterceptor(token)))
 	}
 
-	grpcAddr := fmt.Sprintf("%s:%d", host, m.conf.GRPCPort)
+	grpcAddr := fmt.Sprintf("%s:%d", constants.LocalhostIP, m.conf.GRPCPort)
 	grpcConn, err := grpc.Dial(grpcAddr, dialOpts...)
 	if err != nil {
 		nlog.Fatalf("did not connect: %v", err)

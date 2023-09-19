@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	cmconf "github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
@@ -63,6 +64,7 @@ type KusciaConfig struct {
 	CAFile         string                     `yaml:"caFile,omitempty"`
 	Agent          KusciaAgentConfig          `yaml:"agent,omitempty"`
 	Master         *kusciaconfig.MasterConfig `yaml:"master,omitempty"`
+	ConfManager    cmconf.ConfManagerConfig   `yaml:"confManager,omitempty"`
 	ExternalTLS    *kusciaconfig.TLSConfig    `yaml:"externalTLS,omitempty"`
 	IsMaster       bool
 }

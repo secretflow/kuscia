@@ -33,7 +33,7 @@ import (
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
-	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciatask"
+	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
 func makeTestPendingHandler() *PendingHandler {

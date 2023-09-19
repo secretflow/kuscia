@@ -16,6 +16,13 @@ package errorcode
 
 type Errs []error
 
+func NoError(errs *Errs) bool {
+	if errs == nil || len(*errs) == 0 {
+		return true
+	}
+	return false
+}
+
 func (errs *Errs) AppendErr(err error) {
 	if err != nil {
 		newErrs := append(*errs, err)

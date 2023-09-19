@@ -129,11 +129,12 @@ myst_enable_extensions = [
     "attrs_block",
 ]
 
-suppress_warnings = ["myst.header"]
+suppress_warnings = ["autosectionlabel", "myst.header"]
 
+# Enable all MyST features
 myst_gfm_only = False
-myst_heading_anchors = 1
-myst_title_to_header = True
+# Enable anchors for heading level h1 through h6
+myst_heading_anchors = 6
 
 
 # app setup hook

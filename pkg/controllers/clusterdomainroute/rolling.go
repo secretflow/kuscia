@@ -60,7 +60,6 @@ func (c *Controller) preRollingClusterDomainRoute(ctx context.Context, cdr *kusc
 		return err
 	}
 
-	c.recorder.Event(cdr, corev1.EventTypeNormal, preRollingUpdateReason, msg)
 	return nil
 }
 
@@ -105,7 +104,6 @@ func (c *Controller) intraRollingClusterDomainRouteRand(ctx context.Context, cdr
 	}
 
 	msg := fmt.Sprintf("Source and destination domainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
-	c.recorder.Event(cdr, corev1.EventTypeNormal, intraRollingUpdateReason, msg)
 	nlog.Info(msg)
 	return nil
 }
@@ -153,7 +151,6 @@ func (c *Controller) intraRollingClusterDomainRouteRSA(ctx context.Context, cdr 
 	}
 
 	msg := fmt.Sprintf("Source and destination domainroute rolling to next revision %d", cdr.Status.TokenStatus.Revision)
-	c.recorder.Event(cdr, corev1.EventTypeNormal, intraRollingUpdateReason, msg)
 	nlog.Info(msg)
 	return nil
 }
@@ -184,7 +181,6 @@ func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kus
 			return err
 		}
 
-		c.recorder.Event(cdr, corev1.EventTypeNormal, postRollingUpdateReason, msg)
 	}
 
 	// update destination in advance
@@ -197,7 +193,6 @@ func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kus
 			nlog.Error(err)
 			return err
 		}
-		c.recorder.Event(cdr, corev1.EventTypeNormal, destinationTokenUpdateReason, msg)
 	}
 
 	if c.checkEffectiveInstances(destdr) {
@@ -211,7 +206,6 @@ func (c *Controller) postRollingClusterDomainRoute(ctx context.Context, cdr *kus
 				nlog.Error(err)
 				return err
 			}
-			c.recorder.Event(cdr, corev1.EventTypeNormal, sourceTokenUpdateReason, msg)
 		}
 	}
 

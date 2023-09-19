@@ -387,12 +387,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 		return nil
 	}
 
-	defer func() {
-		if err != nil {
-			c.recorder.Event(trg, corev1.EventTypeWarning, "ErrorHandleTaskResourceGroup", err.Error())
-		}
-	}()
-
 	phase := trg.Status.Phase
 	if phase == "" {
 		phase = kusciaapisv1alpha1.TaskResourceGroupPhasePending

@@ -69,39 +69,39 @@ function wait_kuscia_job_until() {
 # Get kuscia api http code on http for healrhZ
 #
 # Args:
-#   ip: the kuscia api ip.
+#   addr: the kuscia api ip.
 #   kuscia_cert_dir: cert and key location.
 # Return:
 #   http_code: string
 function get_kuscia_api_healthz_http_status_code() {
-  local ip=$1
+  local addr=$1
   local kuscia_cert_dir=$2
 
   curl --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
-    --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${ip}:8082/api/v1/domain/query" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
+    --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${addr}/api/v1/domain/query" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
     --header 'Content-Type: application/json' -s -o /dev/null --write-out '%{http_code}' -d '{"domain_id": "alice"}'
 
-  unset ip kuscia_cert_dir
+  unset addr kuscia_cert_dir
 }
 
 # Get kuscia api grpc status message on http for healrhZ
 #
 # Args:
 #   grpcurl_path: grpcurl bin path.
-#   ip: the kuscia api ip.
+#   addr: the kuscia api ip.
 #   kuscia_cert_dir: cert and key location.
 # Return:
 #   status_message: string
 function get_kuscia_api_healthz_grpc_status_message() {
   local bin=$1
-  local ip=$2
+  local addr=$2
   local kuscia_cert_dir=$3
 
   ${bin} --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
     --cacert "${kuscia_cert_dir}"/ca.crt -H "Token: $(cat "${kuscia_cert_dir}"/token)" -d '{}' \
-    "${ip}":8083 kuscia.proto.api.v1alpha1.kusciaapi.HealthService.healthZ
+    "${addr}" kuscia.proto.api.v1alpha1.kusciaapi.HealthService.healthZ
 
-  unset bin ip kuscia_cert_dir
+  unset bin addr kuscia_cert_dir
 }
 
 # Get container state, the state is from jsonpath=.state
@@ -156,7 +156,7 @@ function start_center_mode() {
   # Run as Center
   ./start_standalone.sh center
 
-    # Check centralized container Up
+  # Check centralized container Up
   local master_container_state=$(get_container_state "${MASTER_CONTAINER}")
   assertEquals "Container ${MASTER_CONTAINER} not running}" running "${master_container_state}"
   local lite_alice_container_state=$(get_container_state "${LITE_ALICE_CONTAINER}")
@@ -217,4 +217,19 @@ function start_p2p_mode() {
 function stop_p2p_mode() {
   docker stop "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}"
   docker rm "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}"
+}
+
+# Get IpV4 Address
+function get_ipv4_address() {
+  local ipv4=""
+  arch=$(uname -s || true)
+  case $arch in
+  "Linux")
+    ipv4=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}') || true
+    ;;
+  "Darwin")
+    ipv4=$(ipconfig getifaddr en0) || true
+    ;;
+  esac
+  echo $ipv4
 }
