@@ -18,14 +18,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/tools/record"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -47,9 +44,6 @@ func TestSucceededHandler_Handle(t *testing.T) {
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	go kubeInformersFactory.Start(wait.NeverStop)
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-task-controller"})
 
 	deps := Dependencies{
 		KubeClient:      kubeClient,
@@ -60,7 +54,7 @@ func TestSucceededHandler_Handle(t *testing.T) {
 	}
 
 	finishHandler := NewFinishedHandler(&deps)
-	succeededHandler := NewSucceededHandler(&Dependencies{Recorder: recorder}, finishHandler)
+	succeededHandler := NewSucceededHandler(finishHandler)
 	needUpdate, err := succeededHandler.Handle(testKusciaTask)
 	assert.NoError(t, err)
 	assert.Equal(t, true, needUpdate)

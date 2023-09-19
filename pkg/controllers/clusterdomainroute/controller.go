@@ -24,7 +24,6 @@ import (
 	mrand "math/rand"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -346,7 +345,6 @@ func (c *Controller) checkDomainRoute(ctx context.Context, cdr *kusciaapisv1alph
 
 	if !metav1.IsControlledBy(dr, cdr) {
 		msg := fmt.Sprintf("DomainRoute %s already exists in namespace %s and is not managed by ClusterDomainRoute", drName, namespace)
-		c.recorder.Event(cdr, corev1.EventTypeWarning, errErrResourceExists, msg)
 		return nil, fmt.Errorf("%s", msg)
 	}
 
@@ -385,10 +383,8 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 
 	if err := c.doValidate(ctx, cdr); err != nil {
 		nlog.Error(err.Error())
-		c.recorder.Event(cdr, corev1.EventTypeNormal, doValidateReason, err.Error())
 		return nil
 	}
-	c.recorder.Event(cdr, corev1.EventTypeNormal, doValidateReason, "Success")
 
 	drName := common.GenDomainRouteName(cdr.Spec.Source, cdr.Spec.Destination)
 
@@ -454,16 +450,13 @@ func (c *Controller) syncDomainPubKey(ctx context.Context, cdr *kusciaapisv1alph
 	srcRsaPubData, err := c.getPublicKeyFromDomain(ctx, cdr.Name, cdr.Spec.Source)
 	if err != nil {
 		nlog.Warn(err)
-		c.recorder.Event(cdr, corev1.EventTypeNormal, syncDomainPubKeyReason, cdr.Spec.Source+":"+err.Error())
 		return
 	}
 	destRsaPubData, err := c.getPublicKeyFromDomain(ctx, cdr.Name, cdr.Spec.Destination)
 	if err != nil {
 		nlog.Warn(err)
-		c.recorder.Event(cdr, corev1.EventTypeNormal, syncDomainPubKeyReason, cdr.Spec.Destination+":"+err.Error())
 		return
 	}
-	c.recorder.Event(cdr, corev1.EventTypeNormal, syncDomainPubKeyReason, "Success")
 	cdrCopy := cdr.DeepCopy()
 	cdrCopy.Spec.TokenConfig.SourcePublicKey = base64.StdEncoding.EncodeToString(srcRsaPubData)
 	cdrCopy.Spec.TokenConfig.DestinationPublicKey = base64.StdEncoding.EncodeToString(destRsaPubData)

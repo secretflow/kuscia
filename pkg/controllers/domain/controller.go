@@ -327,11 +327,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 
 	domain := rawDomain.DeepCopy()
 	scheme.Scheme.Default(domain)
-	defer func() {
-		if err != nil {
-			c.recorder.Event(domain, apicorev1.EventTypeWarning, "ErrorHandleDomain", err.Error())
-		}
-	}()
 
 	if _, err = c.namespaceLister.Get(key); err != nil {
 		if k8serrors.IsNotFound(err) {

@@ -1,7 +1,5 @@
-.. _concepts:
-
-概念
-=========
+Kuscia 概念
+===============
 
 .. toctree::
     :maxdepth: 2

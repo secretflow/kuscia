@@ -35,10 +35,9 @@ import (
 type GinBean struct {
 	framework.ConfigLoader
 	// Configs
-	Port      int    `name:"port" usage:"Server port" default:"8080"`
-	Debug     bool   `name:"debug" usage:"Debug mode"`
-	LogPath   string `name:"logpath" usage:"Gin Log path"`
-	TLSConfig *config.TLSConfig
+	Port    int    `name:"port" usage:"Server port" default:"8080"`
+	Debug   bool   `name:"debug" usage:"Debug mode"`
+	LogPath string `name:"logpath" usage:"Gin Log path"`
 	GinBeanConfig
 	*gin.Engine
 }
@@ -126,7 +125,7 @@ func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error
 		return s.ListenAndServeTLS(b.TLSConfig.ServerCertPath, b.TLSConfig.ServerKeyPath)
 	}
 
-	logs.GetLogger().Infof("server started %s", addr)
+	logs.GetLogger().Infof("http server started %s", addr)
 	return s.ListenAndServe()
 }
 

@@ -19,14 +19,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/tools/record"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -49,15 +46,11 @@ func TestFailedHandler_Handle(t *testing.T) {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
 	go kubeInformersFactory.Start(wait.NeverStop)
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-task-controller"})
 	deps := &Dependencies{
 		KubeClient:      kubeClient,
 		KusciaClient:    kusciaClient,
 		PodsLister:      kubeInformersFactory.Core().V1().Pods().Lister(),
 		ConfigMapLister: kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
-		Recorder:        recorder,
 		TrgLister:       trgInformer.Lister(),
 	}
 

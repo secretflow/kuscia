@@ -37,6 +37,8 @@ message CreateDomainDataSourceRequest {
   string name = 3;
   string type = 4;
   DataSourceInfo info = 5;
+  string info_key = 6;
+  bool access_directly = 7;
 }
 
 message CreateDomainDataSourceResponse {
@@ -55,6 +57,8 @@ message UpdateDomainDataSourceRequest {
   string name = 3;
   string type = 4;
   DataSourceInfo info = 5;
+  string info_key = 6;
+  bool access_directly = 7;
 }
 
 message UpdateDomainDataSourceResponse {
@@ -86,12 +90,23 @@ message DomainDataSource {
   string datasource_id = 1;
   // datasource name
   string name = 2;
-  // datasource type, enum [localfs, oss] , oss not support now
+  // datasource type, enum [localfs, oss, mysql]
   string type = 3;
   // datasource status, enum [Available,Unavailable]
   string status = 4;
-  // datasource info
+
+  // datasource info, for domain secretBackend which support set interface in clientSDK, you can set info directly when
+  // create or update domainDataSource, you can also set an info_key already existed in secretBackend instead.
+  // if you set info and info_key simultaneously, only info_key will take effect.
   DataSourceInfo info = 5;
+
+  // datasource info key, for domain secretBackend which nonsupport set interface in clientSDK, use an secret key
+  // instead of info when create or update DomainDataSource, the value refers to info_key is a json format string of
+  // DataSourceInfo varies by datasource type
+  string info_key = 6;
+
+  // access directly to datasource or proxy_pass to DataProxy, default is false
+  bool access_directly = 7;
 }
 
 message DataSourceInfo {
@@ -101,6 +116,9 @@ message DataSourceInfo {
   LocalDataSourceInfo localfs = 1;
   // oss not support now
   OssDataSourceInfo oss = 2;
+
+  // Relational database info, such as Mysql/oracle/postgres
+  DatabaseDataSourceInfo database = 3;
 }
 
 // datasource info for local path
@@ -128,4 +146,14 @@ message OssDataSourceInfo {
   string version = 7;
   // optional enum[oss,minio] , default oss
   string storage_type = 8;
+}
+
+// datasource info for mysql/oracle/postgres
+message DatabaseDataSourceInfo {
+  // endpoint for database, such as localhost:3306
+  string endpoint = 1;
+  // user name of account to access database
+  string user = 2;
+  // password of account to access database
+  string password = 3;
 }

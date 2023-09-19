@@ -48,19 +48,19 @@ function test_centralized_example_kuscia_job() {
 }
 
 function test_centralized_kuscia_api_http_available() {
-  local master_container_ip=$(get_container_ip "${MASTER_CONTAINER}")
-  local http_status_code=$(get_kuscia_api_healthz_http_status_code "${master_container_ip}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
+  local ipv4=($(get_ipv4_address))
+  local http_status_code=$(get_kuscia_api_healthz_http_status_code "${ipv4}":18082 "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
   assertEquals "KusciaApi healthZ http code" "200" "${http_status_code}"
 
-  unset master_container_ip http_status_code
+  unset ipv4 http_status_code
 }
 
 function test_centralized_kuscia_api_grpc_available() {
-  local master_container_ip=$(get_container_ip "${MASTER_CONTAINER}")
-  local status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${master_container_ip}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
+  local ipv4=($(get_ipv4_address))
+  local status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${ipv4}":18083 "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
-  unset master_container_ip status_message
+  unset ipv4 status_message
 }
 
 . ./test/vendor/shunit2

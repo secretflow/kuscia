@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+proto_library(
+    name = "app_config_proto",
+    srcs = ["app_config.proto"],
+    import_prefix = "kuscia",
+)
+
+cc_proto_library(
+    name = "app_config_cc_proto",
+    deps = [":app_config_proto"],
+)

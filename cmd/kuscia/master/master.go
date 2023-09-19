@@ -78,7 +78,7 @@ func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies
 			KubeConfig: conf.KubeconfigFile,
 			Endpoint:   conf.ApiserverEndpoint,
 		},
-		ApiWhitelist: conf.KusciaConfig.Master.ApiWhitelist,
+		APIWhitelist: conf.KusciaConfig.Master.APIWhitelist,
 	}
 	err = modules.EnsureDir(conf)
 	if err != nil {
@@ -128,6 +128,7 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 				// wait any controller failed
 			} else {
 				modules.RunK3s(runctx, cancel, conf)
+				modules.RunConfManager(runctx, cancel, conf)
 
 				// use the current context in kubeconfig
 				clients, err := kubeconfig.CreateClientSetsFromKubeconfig(conf.KubeconfigFile, conf.ApiserverEndpoint)

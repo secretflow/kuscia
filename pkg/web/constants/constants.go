@@ -15,6 +15,9 @@
 package constants
 
 const (
+	LocalhostIP            = "127.0.0.1"
+	SchemaHTTPS            = "https"
+	SchemaHTTP             = "http"
 	HealthAPI              = "/healthZ"
 	TokenHeader            = "Token"
 	ContentTypeHeader      = "Content-Type"
