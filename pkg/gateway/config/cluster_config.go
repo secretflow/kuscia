@@ -36,5 +36,5 @@ type MasterConfig struct {
 	MasterProxy   *ClusterConfig
 	APIServer     *ClusterConfig
 	KusciaStorage *ClusterConfig
-	ApiWhitelist  []string
+	APIWhitelist  []string
 }

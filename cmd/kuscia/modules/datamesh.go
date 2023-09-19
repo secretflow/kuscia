@@ -82,8 +82,7 @@ func (m dataMeshModule) Name() string {
 func (m dataMeshModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
-	host := "127.0.0.1"
-	schema := "http"
+	schema := constants.SchemaHTTP
 	// init client tls config
 	tlsConfig := m.conf.TLSConfig
 	if tlsConfig != nil {
@@ -92,12 +91,12 @@ func (m dataMeshModule) readyZ() bool {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
 		}
-		schema = "https"
+		schema = constants.SchemaHTTPS
 	}
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, host, m.conf.HTTPPort, constants.HealthAPI)
+	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
 	body, err := json.Marshal(&kusciaapi.HealthRequest{})
 	if err != nil {
 		nlog.Errorf("marshal health request error: %v", err)

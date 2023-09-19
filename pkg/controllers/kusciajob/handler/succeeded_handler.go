@@ -15,7 +15,6 @@
 package handler
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 
@@ -38,7 +37,6 @@ func NewSucceededHandler(deps *Dependencies) *SucceededHandler {
 // HandlePhase implements the KusciaJobPhaseHandler interface.
 // It will do some tail-in work when the job phase is Succeeded.
 func (h *SucceededHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (bool, error) {
-	h.recorder.Event(kusciaJob, v1.EventTypeNormal, "KusciaJobSucceeded", "KusciaJob ran successfully")
 	now := metav1.Now()
 	kusciaJob.Status.CompletionTime = &now
 	kusciaJob.Status.LastReconcileTime = &now

@@ -51,4 +51,12 @@ message DataColumn {
 	string type = 2;
 	// The description of column
 	string comment = 3;
+	// can the column could be nullable, default is false; note that nullable column is common case, which you
+	// should set explicitly
+	bool nullable = 4;
+}
+
+enum FileFormat {
+	UNKNOWN = 0;
+	CSV     = 1;
 }

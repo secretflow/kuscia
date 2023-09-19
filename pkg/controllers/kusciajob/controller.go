@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -262,12 +261,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 	curJob := preJob.DeepCopy()
 	// Set default for the new kusciaJob.
 	kusciaJobDefault(curJob)
-
-	defer func() {
-		if retErr != nil {
-			c.recorder.Event(preJob, v1.EventTypeWarning, "ErrorHandleJob", retErr.Error())
-		}
-	}()
 
 	// For kusciaJob that should not reconcile again, just return.
 	if !handler.ShouldReconcile(curJob) {

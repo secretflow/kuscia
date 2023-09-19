@@ -65,7 +65,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 		waitMasterProxyReady(ctx)
 	} else {
 		if config.APIServer != nil {
-			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.ApiWhitelist); err != nil {
+			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.APIWhitelist); err != nil {
 				return err
 			}
 		}
@@ -173,7 +173,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 		},
 	}
 	if service == ServiceAPIServer {
-		regex := getMasterApiWhitelistRegex(apiWhitelist)
+		regex := getMasterAPIWhitelistRegex(apiWhitelist)
 		if len(regex) > 0 {
 			virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
 				SafeRegex: &matcherv3.RegexMatcher{
@@ -328,7 +328,7 @@ func addMasterHandshakeRoute(routeName string) {
 	}
 }
 
-func getMasterApiWhitelistRegex(apiWhitelist []string) string {
+func getMasterAPIWhitelistRegex(apiWhitelist []string) string {
 	var result = ""
 	if len(apiWhitelist) > 0 {
 		result = "(" + strings.Join(apiWhitelist, ")|(") + ")"

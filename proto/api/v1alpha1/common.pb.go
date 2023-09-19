@@ -35,6 +35,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type FileFormat int32
+
+const (
+	FileFormat_UNKNOWN FileFormat = 0
+	FileFormat_CSV     FileFormat = 1
+)
+
+// Enum value maps for FileFormat.
+var (
+	FileFormat_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "CSV",
+	}
+	FileFormat_value = map[string]int32{
+		"UNKNOWN": 0,
+		"CSV":     1,
+	}
+)
+
+func (x FileFormat) Enum() *FileFormat {
+	p := new(FileFormat)
+	*p = x
+	return p
+}
+
+func (x FileFormat) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FileFormat) Descriptor() protoreflect.EnumDescriptor {
+	return file_kuscia_proto_api_v1alpha1_common_proto_enumTypes[0].Descriptor()
+}
+
+func (FileFormat) Type() protoreflect.EnumType {
+	return &file_kuscia_proto_api_v1alpha1_common_proto_enumTypes[0]
+}
+
+func (x FileFormat) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FileFormat.Descriptor instead.
+func (FileFormat) EnumDescriptor() ([]byte, []int) {
+	return file_kuscia_proto_api_v1alpha1_common_proto_rawDescGZIP(), []int{0}
+}
+
 // RequestHeader carries the user custom headers.
 type RequestHeader struct {
 	state         protoimpl.MessageState
@@ -219,6 +265,9 @@ type DataColumn struct {
 	Type string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
 	// The description of column
 	Comment string `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
+	// can the column could be nullable, default is false; note that nullable column is common case, which you
+	// should set explicitly
+	Nullable bool `protobuf:"varint,4,opt,name=nullable,proto3" json:"nullable,omitempty"`
 }
 
 func (x *DataColumn) Reset() {
@@ -274,6 +323,13 @@ func (x *DataColumn) GetComment() string {
 	return ""
 }
 
+func (x *DataColumn) GetNullable() bool {
+	if x != nil {
+		return x.Nullable
+	}
+	return false
+}
+
 var File_kuscia_proto_api_v1alpha1_common_proto protoreflect.FileDescriptor
 
 var file_kuscia_proto_api_v1alpha1_common_proto_rawDesc = []byte{
@@ -306,12 +362,16 @@ var file_kuscia_proto_api_v1alpha1_common_proto_rawDesc = []byte{
 	0x3d, 0x0a, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x25, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x61,
 	0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x44, 0x61, 0x74, 0x61,
-	0x43, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x52, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x22, 0x4e,
+	0x43, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x52, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x22, 0x6a,
 	0x0a, 0x0a, 0x44, 0x61, 0x74, 0x61, 0x43, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x12, 0x12, 0x0a, 0x04,
 	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
 	0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
 	0x74, 0x79, 0x70, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x42, 0x51,
+	0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x74, 0x12, 0x1a,
+	0x0a, 0x08, 0x6e, 0x75, 0x6c, 0x6c, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08,
+	0x52, 0x08, 0x6e, 0x75, 0x6c, 0x6c, 0x61, 0x62, 0x6c, 0x65, 0x2a, 0x22, 0x0a, 0x0a, 0x46, 0x69,
+	0x6c, 0x65, 0x46, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e,
+	0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x43, 0x53, 0x56, 0x10, 0x01, 0x42, 0x51,
 	0x0a, 0x1e, 0x6f, 0x72, 0x67, 0x2e, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77,
 	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e,
 	0x5a, 0x2f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x65, 0x63,
@@ -332,19 +392,21 @@ func file_kuscia_proto_api_v1alpha1_common_proto_rawDescGZIP() []byte {
 	return file_kuscia_proto_api_v1alpha1_common_proto_rawDescData
 }
 
+var file_kuscia_proto_api_v1alpha1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_kuscia_proto_api_v1alpha1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_kuscia_proto_api_v1alpha1_common_proto_goTypes = []interface{}{
-	(*RequestHeader)(nil), // 0: kuscia.proto.api.v1alpha1.RequestHeader
-	(*Status)(nil),        // 1: kuscia.proto.api.v1alpha1.Status
-	(*Partition)(nil),     // 2: kuscia.proto.api.v1alpha1.Partition
-	(*DataColumn)(nil),    // 3: kuscia.proto.api.v1alpha1.DataColumn
-	nil,                   // 4: kuscia.proto.api.v1alpha1.RequestHeader.CustomHeadersEntry
-	(*anypb.Any)(nil),     // 5: google.protobuf.Any
+	(FileFormat)(0),       // 0: kuscia.proto.api.v1alpha1.FileFormat
+	(*RequestHeader)(nil), // 1: kuscia.proto.api.v1alpha1.RequestHeader
+	(*Status)(nil),        // 2: kuscia.proto.api.v1alpha1.Status
+	(*Partition)(nil),     // 3: kuscia.proto.api.v1alpha1.Partition
+	(*DataColumn)(nil),    // 4: kuscia.proto.api.v1alpha1.DataColumn
+	nil,                   // 5: kuscia.proto.api.v1alpha1.RequestHeader.CustomHeadersEntry
+	(*anypb.Any)(nil),     // 6: google.protobuf.Any
 }
 var file_kuscia_proto_api_v1alpha1_common_proto_depIdxs = []int32{
-	4, // 0: kuscia.proto.api.v1alpha1.RequestHeader.custom_headers:type_name -> kuscia.proto.api.v1alpha1.RequestHeader.CustomHeadersEntry
-	5, // 1: kuscia.proto.api.v1alpha1.Status.details:type_name -> google.protobuf.Any
-	3, // 2: kuscia.proto.api.v1alpha1.Partition.fields:type_name -> kuscia.proto.api.v1alpha1.DataColumn
+	5, // 0: kuscia.proto.api.v1alpha1.RequestHeader.custom_headers:type_name -> kuscia.proto.api.v1alpha1.RequestHeader.CustomHeadersEntry
+	6, // 1: kuscia.proto.api.v1alpha1.Status.details:type_name -> google.protobuf.Any
+	4, // 2: kuscia.proto.api.v1alpha1.Partition.fields:type_name -> kuscia.proto.api.v1alpha1.DataColumn
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -412,13 +474,14 @@ func file_kuscia_proto_api_v1alpha1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_kuscia_proto_api_v1alpha1_common_proto_rawDesc,
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_kuscia_proto_api_v1alpha1_common_proto_goTypes,
 		DependencyIndexes: file_kuscia_proto_api_v1alpha1_common_proto_depIdxs,
+		EnumInfos:         file_kuscia_proto_api_v1alpha1_common_proto_enumTypes,
 		MessageInfos:      file_kuscia_proto_api_v1alpha1_common_proto_msgTypes,
 	}.Build()
 	File_kuscia_proto_api_v1alpha1_common_proto = out.File

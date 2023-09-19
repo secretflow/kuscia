@@ -15,9 +15,9 @@ protobuf
 
 ### 请求和响应约定
 
-请求总是携带会一个 header 字段，类型为 [RequestHeader](#request-header) ， 如 [CreateDomainDataRequest](domaindata_cn.md#create-domain-data-request) ， 该字段可以携带你自定义的一些数据。
+请求总是携带会一个 header 字段，类型为 [RequestHeader](#request-header) ， 如 [CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， 该字段可以携带你自定义的一些数据。
 
-响应总是携带一个 status 字段，类型为 [Status](#status) ， 如 [CreateDomainDataResponse](domaindata_cn.md#create-domain-data-response) ， 该字段描述了响应的状态信息。
+响应总是携带一个 status 字段，类型为 [Status](#status) ， 如 [CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ， 该字段描述了响应的状态信息。
 
 
 {#request-header}

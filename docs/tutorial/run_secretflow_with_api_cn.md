@@ -1,4 +1,4 @@
-# 如何使用 Kuscia API 运行一个 Secretflow 作业
+# 如何使用 Kuscia API 运行一个 SecretFlow 作业
 
 ## 准备节点
 
@@ -16,29 +16,27 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/etc/certs/`目录下：
 
-
-| 文件名                                         | 文件功能                           |
-|------------------------------------------------|-----------------------------------|
-| kusciaapi-client.key                   |客户端私钥文件                                 |
-| kusciaapi-client.crt                   |客户端证书文件                               |
-| ca.crt                                 |CA 证书文件                                  |
-| token                                  |认证 token ，在 headers 中添加 Token: { token 文件内容} |
+| 文件名               | 文件功能                                                |
+| -------------------- | ------------------------------------------------------- |
+| kusciaapi-client.key | 客户端私钥文件                                          |
+| kusciaapi-client.crt | 客户端证书文件                                          |
+| ca.crt               | CA 证书文件                                             |
+| token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
 
 ### 点对点组网模式
 
-证书的配置参考[配置授权](../getting_started/deploy/deploy_p2p_cn)
+证书的配置参考[配置授权](../deployment/deploy_p2p_cn.md#配置授权)
 
 这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/etc/certs/`目录下：
 
-| 文件名                                         | 文件功能                           |
-|------------------------------------------------|-----------------------------------|
-| kusciaapi-client.key                   |客户端私钥文件                                 |
-| kusciaapi-client.crt                   |客户端证书文件                               |
-| ca.crt                                 |CA 证书文件                                  |
-| token                                  |认证 token ，在 headers 中添加 Token: { token 文件内容} |
+| 文件名               | 文件功能                                                |
+| -------------------- | ------------------------------------------------------- |
+| kusciaapi-client.key | 客户端私钥文件                                          |
+| kusciaapi-client.crt | 客户端证书文件                                          |
+| ca.crt               | CA 证书文件                                             |
+| token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
 
 同时，还要保证节点间的授权证书配置正确，alice 节点和 bob 节点要完成授权的建立，否则双方无法共同参与计算任务。
-
 
 ## 准备数据
 
@@ -103,7 +101,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`job_id`指定。
 
-我们请求[创建 Job](../reference/apis/kusciaapis/kusciajob_cn.md#create-job) 接口来创建并运行这个 KusciaJob。
+我们请求[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) 接口来创建并运行这个 KusciaJob。
 
 在 kuscia-master 容器终端中，执行以下命令，内容如下：
 
@@ -138,17 +136,17 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
 }'
 ```
 
-具体字段数据格式和含义请参考[创建 Job](../reference/apis/kusciaapis/kusciajob_cn.md#create-job) ，本文不再赘述。
+具体字段数据格式和含义请参考[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) ，本文不再赘述。
 
 如果你成功了，你将得到如下返回：
+
 ```json
-{"status":{"code":0, "message":"success", "details":[]}, "data":{"job_id":"job-best-effort-linear"}}
+{ "status": { "code": 0, "message": "success", "details": [] }, "data": { "job_id": "job-best-effort-linear" } }
 ```
 
 恭喜，这说明 KusciaJob 已经成功创建并运行。
 
 如果遇到 HTTP 错误（即 HTTP Code 不为 200），请参考 [HTTP Error Code 处理](#http-error-code)。
-
 
 ### 使用你自己的数据配置 KusciaJob
 
@@ -161,14 +159,13 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
 
 ## 查看 KusciaJob 运行状态
 
-
 {#job-query}
 
 ### 查看运行中的 KusciaJob 的详细状态
 
 job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
 
-我们请求[批量查询 Job 状态](../reference/apis/kusciaapis/kusciajob_cn.md#batch-query-job-status)接口来批量查询 KusciaJob
+我们请求[批量查询 Job 状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)接口来批量查询 KusciaJob
 的状态。
 
 请求参数`job_ids`是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。
@@ -189,80 +186,78 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 
 ```json
 {
-    "status":{
-        "code":0,
-        "message":"success",
-        "details":[
-
-        ]
-    },
-    "data":{
-        "jobs":[
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "jobs": [
+      {
+        "job_id": "job-best-effort-linear",
+        "status": {
+          "state": "Succeeded",
+          "err_msg": "",
+          "create_time": "2023-07-27T01:55:46Z",
+          "start_time": "2023-07-27T01:55:46Z",
+          "end_time": "2023-07-27T01:56:19Z",
+          "tasks": [
             {
-                "job_id":"job-best-effort-linear",
-                "status":{
-                    "state":"Succeeded",
-                    "err_msg":"",
-                    "create_time":"2023-07-27T01:55:46Z",
-                    "start_time":"2023-07-27T01:55:46Z",
-                    "end_time":"2023-07-27T01:56:19Z",
-                    "tasks":[
-                        {
-                            "task_id":"job-psi",
-                            "state":"Succeeded",
-                            "err_msg":"",
-                            "create_time":"2023-07-27T01:55:46Z",
-                            "start_time":"2023-07-27T01:55:46Z",
-                            "end_time":"2023-07-27T01:56:05Z",
-                            "parties":[
-                                {
-                                    "domain_id":"alice",
-                                    "state":"Succeeded",
-                                    "err_msg":""
-                                },
-                                {
-                                    "domain_id":"bob",
-                                    "state":"Succeeded",
-                                    "err_msg":""
-                                }
-                            ]
-                        },
-                        {
-                            "task_id":"job-split",
-                            "state":"Succeeded",
-                            "err_msg":"",
-                            "create_time":"2023-07-27T01:56:05Z",
-                            "start_time":"2023-07-27T01:56:05Z",
-                            "end_time":"2023-07-27T01:56:19Z",
-                            "parties":[
-                                {
-                                    "domain_id":"alice",
-                                    "state":"Succeeded",
-                                    "err_msg":""
-                                },
-                                {
-                                    "domain_id":"bob",
-                                    "state":"Succeeded",
-                                    "err_msg":""
-                                }
-                            ]
-                        }
-                    ]
+              "task_id": "job-psi",
+              "state": "Succeeded",
+              "err_msg": "",
+              "create_time": "2023-07-27T01:55:46Z",
+              "start_time": "2023-07-27T01:55:46Z",
+              "end_time": "2023-07-27T01:56:05Z",
+              "parties": [
+                {
+                  "domain_id": "alice",
+                  "state": "Succeeded",
+                  "err_msg": ""
+                },
+                {
+                  "domain_id": "bob",
+                  "state": "Succeeded",
+                  "err_msg": ""
                 }
+              ]
+            },
+            {
+              "task_id": "job-split",
+              "state": "Succeeded",
+              "err_msg": "",
+              "create_time": "2023-07-27T01:56:05Z",
+              "start_time": "2023-07-27T01:56:05Z",
+              "end_time": "2023-07-27T01:56:19Z",
+              "parties": [
+                {
+                  "domain_id": "alice",
+                  "state": "Succeeded",
+                  "err_msg": ""
+                },
+                {
+                  "domain_id": "bob",
+                  "state": "Succeeded",
+                  "err_msg": ""
+                }
+              ]
             }
-        ]
-    }
+          ]
+        }
+      }
+    ]
+  }
 }
 ```
 
 `data.jobs.status.state`字段记录了 KusciaJob 的运行状态，`data.jobs.status.tasks.state`则记录了每个 KusciaTask 的运行状态。
 
 详细信息请参考 [KusciaJob](../reference/concepts/kusciajob_cn.md)
-和[批量查询 Job 状态](../reference/apis/kusciaapis/kusciajob_cn.md#batch-query-job-status)
+和[批量查询 Job 状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)
 
 ## 删除 KusciaJob
 
-当你想清理这个 KusciaJob 时，我们请求[删除 Job](../reference/apis/kusciaapis/kusciajob_cn.md#delete-job) 接口来删除这个
+当你想清理这个 KusciaJob 时，我们请求[删除 Job](../reference/apis/kusciajob_cn.md#删除-job) 接口来删除这个
 KusciaJob.
 
 ```shell
@@ -280,7 +275,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/delete' \
 如果任务成功了，你可以得到如下返回：
 
 ```json
-{"status":{"code":0, "message":"success", "details":[]}, "data":{"job_id":"job-best-effort-linear"}}
+{ "status": { "code": 0, "message": "success", "details": [] }, "data": { "job_id": "job-best-effort-linear" } }
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。
@@ -291,7 +286,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/delete' \
 
 KusciaJob 的算子参数由`taskInputConfig`字段定义，对于不同的算子，算子的参数不同。
 
-对于 secretflow ，请参考：[Secretflow官网](https://www.secretflow.org.cn/)。
+对于 secretflow ，请参考：[Secretflow 官网](https://www.secretflow.org.cn/)。
 
 {#http-client-error}
 

@@ -158,7 +158,7 @@ Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not fo
 你可以在 Domain 侧管理属于该 Domain 的 DomainData。Kuscia 在 Domain 侧提供了的 DataMesh API 来管理 DomainData。
 
 Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 8071
-端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api)。
+端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api-约定)。
 
 1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainData。
 ```shell

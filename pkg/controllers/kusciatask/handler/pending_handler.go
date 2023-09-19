@@ -34,7 +34,7 @@ import (
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
-	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciatask"
+	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
 // PendingHandler is used to handle kuscia task which phase is creating.

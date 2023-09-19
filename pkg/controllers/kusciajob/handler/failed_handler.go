@@ -15,7 +15,6 @@
 package handler
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -86,7 +85,6 @@ func (h *FailedHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (ne
 		}
 	}
 
-	h.recorder.Event(kusciaJob, v1.EventTypeWarning, "KusciaJobFailed", "KusciaJob failed to run")
 	metrics.JobResultStats.WithLabelValues(metrics.Failed).Inc()
 	return needUpdate, nil
 }
