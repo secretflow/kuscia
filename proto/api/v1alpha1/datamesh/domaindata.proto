@@ -148,4 +148,7 @@ message DomainData {
     // The vendor is the one who outputs the domain data, it may be the SecretFlow engine,
     // another vendor's engine, or manually registered. it's could be manual, secretflow or other vendor string.
     string vendor = 9;
+
+    // if the data is stored with file format, file_format describe file format
+    FileFormat file_format = 10;
 }

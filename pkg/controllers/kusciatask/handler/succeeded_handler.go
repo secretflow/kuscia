@@ -15,9 +15,6 @@
 package handler
 
 import (
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
-
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
@@ -25,14 +22,12 @@ import (
 // SucceededHandler is used to handle kuscia task which phase is Succeeded.
 type SucceededHandler struct {
 	*FinishedHandler
-	recorder record.EventRecorder
 }
 
 // NewSucceededHandler returns a SucceededHandler instance.
-func NewSucceededHandler(deps *Dependencies, finishedHandler *FinishedHandler) *SucceededHandler {
+func NewSucceededHandler(finishedHandler *FinishedHandler) *SucceededHandler {
 	return &SucceededHandler{
 		FinishedHandler: finishedHandler,
-		recorder:        deps.Recorder,
 	}
 }
 
@@ -42,7 +37,6 @@ func (s *SucceededHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bo
 	if err != nil {
 		return false, nil
 	}
-	s.recorder.Event(kusciaTask, v1.EventTypeNormal, "KusciaTaskSucceeded", "KusciaTask ran successfully")
 	metrics.TaskResultStats.WithLabelValues(metrics.Succeeded).Inc()
 	return needUpdate, nil
 }

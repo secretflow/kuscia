@@ -31,8 +31,8 @@ type APIServerConfig struct {
 type MasterConfig struct {
 	ServiceConfig `yaml:",inline"`
 	APIServer     *APIServerConfig `yaml:"apiserver,omitempty"`
-	KusciaStorage *ServiceConfig   `yaml:"kusciastorage,omitempty"`
-	ApiWhitelist  []string         `yaml:"api-whitelist,omitempty"`
+	KusciaStorage *ServiceConfig   `yaml:"kusciaStorage,omitempty"`
+	APIWhitelist  []string         `yaml:"apiWhitelist,omitempty"`
 }
 
 func CheckServiceConfig(config *ServiceConfig, name string) error {

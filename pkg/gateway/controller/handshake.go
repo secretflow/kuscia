@@ -33,7 +33,6 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,6 +40,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
@@ -430,7 +430,6 @@ func (c *DomainRouteController) parseTokenRSA(dr *kusciaapisv1alpha1.DomainRoute
 	if (c.gateway.Namespace == dr.Spec.Source && dr.Spec.TokenConfig.SourcePublicKey != c.gateway.Status.PublicKey) ||
 		(c.gateway.Namespace == dr.Spec.Destination && dr.Spec.TokenConfig.DestinationPublicKey != c.gateway.Status.PublicKey) {
 		err := fmt.Errorf("DomainRoute %s mismatch public key", key)
-		c.recorder.Event(c.gateway, corev1.EventTypeWarning, syncFailed, err.Error())
 		return tokens, err
 	}
 

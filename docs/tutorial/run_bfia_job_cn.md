@@ -10,7 +10,7 @@
 
 ### 准备运行银联 BFIA 协议的节点
 
-部署运行银联 BFIA 协议的节点，请参考 [快速入门点对点组网模式](../getting_started/quickstart_cn.md/#p2p-network-mode)。
+部署运行银联 BFIA 协议的节点，请参考 [快速入门点对点组网模式](../getting_started/quickstart_cn.md/#点对点组网模式)。
 
 在执行启动集群命令时，需要新增一个命令行参数`-p bfia`，详细命令如下：
 

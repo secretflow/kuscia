@@ -1,0 +1,139 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.datamesh;
+
+import "kuscia/proto/api/v1alpha1/datamesh/domaindata.proto";
+import "kuscia/proto/api/v1alpha1/datamesh/domaindatasource.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh";
+option java_package = "org.secretflow.v1alpha1.datamesh";
+
+// write options of csv file
+message CSVWriteOptions {
+  // field delimiter of csv file, default is comma
+  string field_delimiter = 1;
+}
+
+// write options varies by file format
+message  FileWriteOptions {
+  oneof Options {
+    CSVWriteOptions csv_options = 1;
+  }
+}
+
+// ContentFormat describe the schema of ArrowRecordBatch response from DataProxy
+// Only for Table Type, the schema is defined by DomainData's columns
+// And for rest types, the schema is a dummy schema which only contains one column of arrow::Binary type
+message ContentFormat {
+  enum Type {
+    Table = 0;
+    // read raw data from datasource
+    RAW = 1;
+    // convert data to csv file format, and return file content as dummy schema
+    CSV = 2;
+  }
+  Type type = 1;
+  FileWriteOptions file_write_options = 2;
+}
+
+// call with GetSchema, return SchemaResult, extension attributes are set with metadata
+message CommandGetDomainDataSchema {
+  string domaindata_id = 1;
+}
+
+// call GetFlightInfo with CommandDomainDataQuery, return TicketDomainDataQuery
+// and then call DoGet with TicketDomainDataQuery
+message CommandDomainDataQuery {
+  string domaindata_id = 1;
+  // column name of DomainData's columns
+  repeated string columns = 2;
+  // expected result format
+  ContentFormat result_format = 3;
+}
+
+// call GetFlightInfo with CommandDomainDataUpdate, return TicketDomainDataQuery which is an update query
+// and then call DoPut with TicketDomainDataQuery
+message CommandDomainDataUpdate {
+  string domaindata_id = 1;
+  // create an nonexistent domaindata and get a update ticket
+  CreateDomainDataRequest domaindata_request = 2;
+  // for domaindata stored with file format , you can specify file_write_options
+  FileWriteOptions file_write_options = 3;
+  // extra options varies by datasource type
+  map<string, string> extra_options = 4;
+}
+
+message TicketDomainDataQuery {
+  // a unique identifier related to a DomainData query
+  string domaindata_handle = 1;
+}
+
+// call DoAction with ActionCreateDomainDataRequest, return ActionCreateDomainDataResponse
+message ActionCreateDomainDataRequest {
+  CreateDomainDataRequest request = 1;
+}
+
+message ActionCreateDomainDataResponse {
+  CreateDomainDataResponse response = 1;
+}
+
+// call DoAction with ActionQueryDomainDataRequest, return ActionQueryDomainDataResponse
+message ActionQueryDomainDataRequest {
+  QueryDomainDataRequest request = 1;
+}
+
+message ActionQueryDomainDataResponse {
+  QueryDomainDataResponse response = 1;
+}
+
+// call DoAction with ActionUpdateDomainDataRequest, return ActionUpdateDomainDataResponse
+message ActionUpdateDomainDataRequest {
+    UpdateDomainDataRequest request = 1;
+}
+
+message ActionUpdateDomainDataResponse {
+  UpdateDomainDataResponse response = 1;
+}
+
+// call DoAction with ActionDeleteDomainDataRequest, return ActionDeleteDomainDataResponse
+message ActionDeleteDomainDataRequest {
+    DeleteDomainDataRequest request = 1;
+    // not supported now
+    bool physical_deletion = 2;
+}
+
+message ActionDeleteDomainDataResponse {
+  DeleteDomainDataResponse response = 1;
+}
+
+// call DoAction with ActionCreateDomainDataSourceRequest, return ActionCreateDomainDataSourceResponse
+message ActionCreateDomainDataSourceRequest {
+  CreateDomainDataSourceRequest request = 1;
+}
+
+message ActionCreateDomainDataSourceResponse {
+  CreateDomainDataSourceResponse response = 1;
+}
+
+// call DoAction with ActionQueryDomainDataSourceRequest, return ActionQueryDomainDataSourceResponse
+message ActionQueryDomainDataSourceRequest {
+  QueryDomainDataSourceRequest request = 1;
+}
+
+message ActionQueryDomainDataSourceResponse {
+  QueryDomainDataSourceResponse response = 1;
+}
