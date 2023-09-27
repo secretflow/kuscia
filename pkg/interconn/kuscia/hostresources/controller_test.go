@@ -109,7 +109,7 @@ func TestResourceFilter(t *testing.T) {
 					Name:      "pod",
 					Namespace: "ns2",
 					Labels: map[string]string{
-						common.LabelTaskInitiator:            "ns3",
+						common.LabelInitiator:                "ns3",
 						kusciaapisv1alpha1.LabelTaskResource: "tr1",
 					},
 				},
@@ -123,7 +123,7 @@ func TestResourceFilter(t *testing.T) {
 					Name:      "pod",
 					Namespace: "ns2",
 					Labels: map[string]string{
-						common.LabelTaskInitiator:            "ns1",
+						common.LabelInitiator:                "ns1",
 						kusciaapisv1alpha1.LabelTaskResource: "tr1",
 						common.LabelInterConnProtocolType:    string(kusciaapisv1alpha1.InterConnKuscia),
 					},
@@ -148,7 +148,7 @@ func TestResourceFilter(t *testing.T) {
 					Name:      "svc",
 					Namespace: "ns2",
 					Labels: map[string]string{
-						common.LabelTaskInitiator:         "ns1",
+						common.LabelInitiator:             "ns1",
 						common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnKuscia),
 					},
 				},
@@ -172,7 +172,7 @@ func TestResourceFilter(t *testing.T) {
 					Name:      "cm",
 					Namespace: "ns2",
 					Labels: map[string]string{
-						common.LabelTaskInitiator:         "ns1",
+						common.LabelInitiator:             "ns1",
 						common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnKuscia),
 					},
 				},
@@ -196,7 +196,7 @@ func TestResourceFilter(t *testing.T) {
 					Name:      "tr",
 					Namespace: "ns2",
 					Labels: map[string]string{
-						common.LabelTaskInitiator:         "ns1",
+						common.LabelInitiator:             "ns1",
 						common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnKuscia),
 					},
 				},
@@ -220,7 +220,7 @@ func TestResourceFilter(t *testing.T) {
 						Name:      "pod",
 						Namespace: "ns2",
 						Labels: map[string]string{
-							common.LabelTaskInitiator:            "ns1",
+							common.LabelInitiator:                "ns1",
 							kusciaapisv1alpha1.LabelTaskResource: "tr1",
 							common.LabelInterConnProtocolType:    string(kusciaapisv1alpha1.InterConnKuscia),
 						},

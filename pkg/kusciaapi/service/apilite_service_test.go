@@ -18,6 +18,11 @@ import (
 	"context"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
@@ -41,15 +46,23 @@ type kusciaAPIJobService struct {
 	tasks []*kusciaapi.Task
 }
 
+type kusciaAPIServingService struct {
+	IServingService
+	servingID string
+	parties   []*kusciaapi.ServingParty
+}
+
 var kusciaAPIJS *kusciaAPIJobService
 
 var kusciaAPIDS *kusciaAPIDomainService
 
 var kusciaAPIDR *kusciaAPIDomainRoute
 
+var kusciaAPISS *kusciaAPIServingService
+
 func TestServiceMain(t *testing.T) {
 	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig("")
-	kusciaClient := kusciafake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage())
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
 	kusciaAPIConfig.KusciaClient = kusciaClient
 	kusciaInformerFactory.Start(context.Background().Done())
@@ -85,5 +98,56 @@ func TestServiceMain(t *testing.T) {
 		IJobService: NewJobService(*kusciaAPIConfig),
 		jobID:       "test",
 		tasks:       tasks,
+	}
+
+	replicas := int32(1)
+	parties := []*kusciaapi.ServingParty{
+		{
+			AppImage: "mockImageName",
+			Role:     "client",
+			DomainId: "alice",
+			Replicas: &replicas,
+		},
+	}
+	kusciaAPISS = &kusciaAPIServingService{
+		IServingService: NewServingService(*kusciaAPIConfig),
+		servingID:       "test",
+		parties:         parties,
+	}
+}
+
+func makeMockAppImage() *v1alpha1.AppImage {
+	replicas := int32(1)
+	return &v1alpha1.AppImage{
+		ObjectMeta: metav1.ObjectMeta{Name: "mockImageName"},
+		Spec: v1alpha1.AppImageSpec{
+			Image: v1alpha1.AppImageInfo{
+				Name: "mock",
+				Tag:  "latest",
+			},
+			DeployTemplates: []v1alpha1.DeployTemplate{
+				{
+					Name:     "mock",
+					Replicas: &replicas,
+					Spec: v1alpha1.PodSpec{
+						Containers: []v1alpha1.Container{
+							{
+								Name: "mock",
+								Resources: corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceMemory: resource.MustParse("100Mi"),
+										corev1.ResourceCPU:    resource.MustParse("1"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceMemory: resource.MustParse("10Mi"),
+										corev1.ResourceCPU:    resource.MustParse("10m"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }

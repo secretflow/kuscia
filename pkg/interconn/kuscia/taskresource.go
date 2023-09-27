@@ -68,7 +68,7 @@ func (c *Controller) handleDeletedTaskResource(obj interface{}) {
 		return
 	}
 
-	host := tr.Labels[common.LabelTaskInitiator]
+	host := tr.Labels[common.LabelInitiator]
 	hra := c.hostResourceManager.GetHostResourceAccessor(host, tr.Namespace)
 	if hra == nil {
 		nlog.Warnf("Host resource accessor for task resource %v is empty of host/member %v/%v, skip this event...", tr.Name, host, tr.Namespace)
@@ -98,7 +98,7 @@ func (c *Controller) syncTaskResourceHandler(ctx context.Context, key string) (e
 		return err
 	}
 
-	host := mTr.Labels[common.LabelTaskInitiator]
+	host := mTr.Labels[common.LabelInitiator]
 	hra := c.hostResourceManager.GetHostResourceAccessor(host, namespace)
 	if hra == nil {
 		nlog.Warnf("Host resource accessor for task resource %v is empty of host/member %v/%v, skip this event", key, host, namespace)
@@ -126,6 +126,8 @@ func (c *Controller) syncTaskResourceHandler(ctx context.Context, key string) (e
 
 	hExtractedTrStatus := utilsres.ExtractTaskResourceStatus(hTr.DeepCopy())
 	mExtractedTrStatus := utilsres.ExtractTaskResourceStatus(mTr.DeepCopy())
+
+	nlog.Infof("Patch member task resource %v/%v status to host %v cluster", hExtractedTrStatus.Namespace, hExtractedTrStatus.Name, host)
 	if err = utilsres.PatchTaskResource(ctx, hra.HostKusciaClient(), hExtractedTrStatus, mExtractedTrStatus); err != nil {
 		return fmt.Errorf("patch member task resource  %v status to host cluster failed, %v", key, err.Error())
 	}

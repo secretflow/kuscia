@@ -17,6 +17,8 @@ package config
 import (
 	"path"
 
+	"k8s.io/client-go/kubernetes"
+
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 )
@@ -33,6 +35,7 @@ type KusciaAPIConfig struct {
 	TLSConfig      *TLSConfig
 	TokenConfig    *TokenConfig
 	KusciaClient   kusciaclientset.Interface
+	KubeClient     kubernetes.Interface
 }
 
 type TLSConfig struct {

@@ -55,7 +55,7 @@ type Server struct {
 }
 
 // NewServer returns a Server instance.
-func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
+func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) (*Server, error) {
 	s := &Server{
 		ctx:             ctx,
 		kubeClient:      clients.KubeClient,
@@ -66,6 +66,7 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
 	bfiaServer, err := bfia.NewServer(ctx, clients)
 	if err != nil {
 		nlog.Fatalf("new bfia Server failed, %v", err.Error())
+		return nil, err
 	}
 	s.bfiaServer = bfiaServer
 	s.kusciaServer = kuscia.NewServer(clients)
@@ -90,9 +91,10 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
 		election.WithOnStoppedLeading(s.onStoppedLeading))
 	if leaderElector == nil {
 		nlog.Fatal("failed to new leader elector")
+		return nil, err
 	}
 	s.leaderElector = leaderElector
-	return s
+	return s, nil
 }
 
 // onNewLeader is executed when leader is changed.

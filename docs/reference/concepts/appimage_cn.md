@@ -194,6 +194,8 @@ kubectl get appimage secretflow-image
 Error from server (NotFound): appimages.kuscia.secretflow "secretflow-image" not found
 ```
 
+{#appimage-ref}
+
 ## 参考
 
 下面以 `app-template` 模版为例，介绍 AppImage 所包含的完整字段。

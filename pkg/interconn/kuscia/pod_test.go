@@ -54,7 +54,7 @@ func TestHandleUpdatedPod(t *testing.T) {
 	cc := c.(*Controller)
 
 	pod1 := st.MakePod().Name("pod1").Namespace("test-1").Obj()
-	pod2 := st.MakePod().Name("pod1").Namespace("test-1").Label(common.LabelTaskInitiator, "task-1").Obj()
+	pod2 := st.MakePod().Name("pod1").Namespace("test-1").Label(common.LabelInitiator, "task-1").Obj()
 	pod1.ResourceVersion = "1"
 	pod2.ResourceVersion = "2"
 
@@ -98,12 +98,12 @@ func TestSyncPodHandler(t *testing.T) {
 	ctx := context.Background()
 
 	hostPod2 := st.MakePod().Namespace("ns1").Name("pod2").Labels(map[string]string{
-		common.LabelTaskInitiator: "ns2",
+		common.LabelInitiator: "ns2",
 	}).Obj()
 	hostPod2.ResourceVersion = "10"
 
 	hostPod3 := st.MakePod().Namespace("ns1").Name("pod3").Labels(map[string]string{
-		common.LabelTaskInitiator: "ns2",
+		common.LabelInitiator: "ns2",
 	}).Obj()
 	hostPod3.ResourceVersion = "1"
 
@@ -128,22 +128,22 @@ func TestSyncPodHandler(t *testing.T) {
 
 	pod1 := st.MakePod().Namespace("ns1").Name("pod1").Labels(map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "2",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 	}).Obj()
 
 	pod2 := st.MakePod().Namespace("ns1").Name("pod2").Labels(map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 	}).Obj()
 
 	pod3 := st.MakePod().Namespace("ns1").Name("pod3").Labels(map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 	}).Obj()
 
 	pod4 := st.MakePod().Namespace("ns1").Name("pod4").Labels(map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelTaskInitiator:                   "ns3",
+		common.LabelInitiator:                       "ns3",
 	}).Obj()
 
 	podInformer.Informer().GetStore().Add(pod1)

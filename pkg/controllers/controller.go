@@ -49,6 +49,7 @@ const (
 	CRDDomainsName             = "domains.kuscia.secretflow"
 	CRDGatewaysName            = "gateways.kuscia.secretflow"
 	CRDKusciaTasksName         = "kusciatasks.kuscia.secretflow"
+	CRDKusciaDeploymentsName   = "kusciadeployments.kuscia.secretflow"
 	CRDTaskResourcesGroupsName = "taskresourcegroups.kuscia.secretflow"
 	CRDTaskResourcesName       = "taskresources.kuscia.secretflow"
 	CRDKusciaJobsName          = "kusciajobs.kuscia.secretflow"

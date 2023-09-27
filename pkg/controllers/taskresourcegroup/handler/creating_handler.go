@@ -158,7 +158,7 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 				common.LabelTaskID:            taskID,
 				common.LabelTaskAlias:         taskAlias,
 				common.LabelTaskResourceGroup: trg.Name,
-				common.LabelTaskInitiator:     trg.Spec.Initiator,
+				common.LabelInitiator:         trg.Spec.Initiator,
 			},
 		},
 

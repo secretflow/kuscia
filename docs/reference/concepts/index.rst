@@ -9,5 +9,6 @@ Kuscia 概念
     domaindata_cn
     kusciajob_cn
     kusciatask_cn
+    kusciadeployment_cn
     interopconfig_cn
     appimage_cn

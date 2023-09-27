@@ -54,6 +54,7 @@ const (
 const (
 	controllerName         = "interconn-kuscia"
 	podQueueName           = "interconn-kuscia-pod-queue"
+	serviceQueueName       = "interconn-kuscia-service-queue"
 	taskResourceQueueName  = "interconn-kuscia-taskresource-queue"
 	interopConfigQueueName = "interconn-kuscia-interopconfig-queue"
 )
@@ -83,6 +84,7 @@ type Controller struct {
 	interopConfigLister   kuscialistersv1alpha1.InteropConfigLister
 	interopConfigQueue    workqueue.RateLimitingInterface
 	podQueue              workqueue.RateLimitingInterface
+	serviceQueue          workqueue.RateLimitingInterface
 	taskResourceQueue     workqueue.RateLimitingInterface
 }
 
@@ -133,6 +135,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		interopConfigLister:   interopConfigInformer.Lister(),
 		interopConfigQueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), interopConfigQueueName),
 		podQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), podQueueName),
+		serviceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), serviceQueueName),
 		taskResourceQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskResourceQueueName),
 	}
 
@@ -153,6 +156,15 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
+	serviceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.resourceFilter,
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc:    controller.handleAddedService,
+			UpdateFunc: controller.handleUpdatedService,
+			DeleteFunc: controller.handleDeletedService,
+		},
+	})
+
 	taskResourceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
@@ -170,6 +182,8 @@ func (c *Controller) resourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
 		switch t := obj.(type) {
 		case *corev1.Pod:
+			return c.matchLabels(t)
+		case *corev1.Service:
 			return c.matchLabels(t)
 		case *kusciaapisv1alpha1.TaskResource:
 			return c.matchLabels(t)
@@ -213,7 +227,7 @@ func (c *Controller) matchLabels(obj metav1.Object) bool {
 		return false
 	}
 
-	initiator := labels[common.LabelTaskInitiator]
+	initiator := labels[common.LabelInitiator]
 	if initiator == "" || initiator == ns.Name {
 		return false
 	}
@@ -234,6 +248,7 @@ func (c *Controller) Run(workers int) error {
 	defer func() {
 		c.interopConfigQueue.ShutDown()
 		c.podQueue.ShutDown()
+		c.serviceQueue.ShutDown()
 		c.taskResourceQueue.ShutDown()
 	}()
 
@@ -255,6 +270,7 @@ func (c *Controller) Run(workers int) error {
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(c.ctx, c.runInteropConfigWorker, time.Second)
 		go wait.UntilWithContext(c.ctx, c.runPodWorker, time.Second)
+		go wait.UntilWithContext(c.ctx, c.runServiceWorker, time.Second)
 		go wait.UntilWithContext(c.ctx, c.runTaskResourceWorker, time.Second)
 	}
 
@@ -273,7 +289,7 @@ func (c *Controller) Stop() {
 
 // cleanupResidualResources is used to clean up residual resources.
 func (c *Controller) cleanupResidualResources() {
-	reqForInitiator, err := labels.NewRequirement(common.LabelTaskInitiator, selection.Exists, nil)
+	reqForInitiator, err := labels.NewRequirement(common.LabelInitiator, selection.Exists, nil)
 	if err != nil {
 		nlog.Warnf("New label requirement failed, %v", err.Error())
 		return
@@ -301,7 +317,7 @@ func (c *Controller) cleanupResidualPods(selector labels.Selector) {
 	}
 
 	for _, pod := range pods {
-		initiator := pod.Labels[common.LabelTaskInitiator]
+		initiator := pod.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, pod.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual pod %v/%v", pod.Namespace, pod.Name)
@@ -334,7 +350,7 @@ func (c *Controller) cleanupResidualServices(selector labels.Selector) {
 	}
 
 	for _, service := range services {
-		initiator := service.Labels[common.LabelTaskInitiator]
+		initiator := service.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, service.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual service %v/%v", service.Namespace, service.Name)
@@ -367,7 +383,7 @@ func (c *Controller) cleanupResidualConfigmaps(selector labels.Selector) {
 	}
 
 	for _, configmap := range configmaps {
-		initiator := configmap.Labels[common.LabelTaskInitiator]
+		initiator := configmap.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, configmap.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual configmap %v/%v", configmap.Namespace, configmap.Name)
@@ -400,7 +416,7 @@ func (c *Controller) cleanupResidualTaskResources(selector labels.Selector) {
 	}
 
 	for _, tr := range trs {
-		initiator := tr.Labels[common.LabelTaskInitiator]
+		initiator := tr.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, tr.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual task resource %v/%v", tr.Namespace, tr.Name)

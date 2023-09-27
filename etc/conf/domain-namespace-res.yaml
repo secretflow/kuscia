@@ -48,6 +48,7 @@ rules:
   - get
   - list
   - watch
+  - patch
   - update
 - apiGroups:
   - kuscia.secretflow

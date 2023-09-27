@@ -66,6 +66,10 @@ func (c *FakeKusciaV1alpha1) InteropConfigs() v1alpha1.InteropConfigInterface {
 	return &FakeInteropConfigs{c}
 }
 
+func (c *FakeKusciaV1alpha1) KusciaDeployments() v1alpha1.KusciaDeploymentInterface {
+	return &FakeKusciaDeployments{c}
+}
+
 func (c *FakeKusciaV1alpha1) KusciaJobs() v1alpha1.KusciaJobInterface {
 	return &FakeKusciaJobs{c}
 }

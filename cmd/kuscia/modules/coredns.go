@@ -15,9 +15,12 @@
 package modules
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
@@ -25,7 +28,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/secretflow/kuscia/pkg/coredns"
+	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
 var directives = []string{
@@ -136,6 +141,11 @@ func (s *corednsModule) Name() string {
 
 func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
 	m := NewCoredns(conf)
+	if err := prepareResolvConf(conf.RootDir); err != nil {
+		nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
+		cancel()
+	}
+
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
@@ -150,4 +160,82 @@ func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *Dependenci
 	}
 
 	return m
+}
+
+func prepareResolvConf(rootDir string) error {
+	nlog.Infof("Start preparing coredns resolv.conf, root dir %v", rootDir)
+	hostIP, err := network.GetHostIP()
+	if err != nil {
+		return err
+	}
+
+	resolvConf := "/etc/resolv.conf"
+	backupResolvConf := filepath.Join(rootDir, resolvConf)
+	exist := paths.CheckFileExist(backupResolvConf)
+	if !exist {
+		if err = paths.CopyFile(resolvConf, backupResolvConf); err != nil {
+			return err
+		}
+
+		if err = updateResolvConf(backupResolvConf, hostIP, false); err != nil {
+			return err
+		}
+	}
+	if err = updateResolvConf(resolvConf, hostIP, true); err != nil {
+		return err
+	}
+
+	nlog.Info("Finish preparing coredns resolv.conf")
+	return nil
+}
+
+func updateResolvConf(fileName, hostIP string, add bool) error {
+	lines, err := getFileContent(fileName)
+	if err != nil {
+		return err
+	}
+	var finalContent []string
+	content := fmt.Sprintf("nameserver %s", hostIP)
+	switch add {
+	// add specific content
+	case true:
+		if len(lines) != 0 && strings.Contains(lines[0], content) {
+			return nil
+		}
+		finalContent = append(finalContent, content)
+		finalContent = append(finalContent, lines...)
+	// delete specific content
+	default:
+		for i := range lines {
+			if !strings.Contains(lines[i], content) {
+				finalContent = append(finalContent, lines[i])
+			}
+		}
+	}
+
+	file, err := os.OpenFile(fileName, os.O_WRONLY, 0644)
+	for _, c := range finalContent {
+		if _, err = fmt.Fprintln(file, c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getFileContent(fileName string) ([]string, error) {
+	var lines []string
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if scanner.Err() != nil {
+		return nil, err
+	}
+	return lines, nil
 }

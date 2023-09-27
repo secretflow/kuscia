@@ -19,6 +19,7 @@ set -e
 
 GREEN='\033[0;32m'
 NC='\033[0m'
+RED='\033[31m'
 
 function log() {
   local log_content=$1
@@ -31,7 +32,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.1.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.2.0.dev20230926
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
@@ -266,6 +267,7 @@ function deploy_autonomy() {
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}"
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 
@@ -296,14 +298,25 @@ function deploy_autonomy() {
 
 function deploy_lite() {
   local domain_ctr=${USER}-kuscia-lite-${DOMAIN_ID}
+  local HttpResponseCode=$(curl -k -s -o /dev/null -w "%{http_code}" ${MASTER_ENDPOINT})
   if need_start_docker_container "$domain_ctr"; then
     log "Starting container $domain_ctr ..."
 
     env_flag=$(generate_env_flag)
     mount_flag=$(generate_mount_flag)
 
+    if [[ $HttpResponseCode = "401" ]]; then
+      echo -e "${GREEN}Communication with master is normal, response code is 401${NC}"
+    else
+      echo -e "${RED}Failed to connect to the master. Please check if the network link to the master is normal. Please refer to the kuscia documentation (https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/deploy_master_lite_cn) for the correct return results${NC}"
+      curl -kv ${MASTER_ENDPOINT}
+      exit 1
+    fi
+
+
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}" "${DOMAIN_TOKEN}"
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     # TODO end
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
@@ -337,6 +350,7 @@ function deploy_master() {
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${master_domain_id}" "${DOMAIN_TOKEN}"
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 

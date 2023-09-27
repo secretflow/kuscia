@@ -19,8 +19,10 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilstrings "k8s.io/utils/strings"
 
@@ -230,7 +232,22 @@ func (vm *VolumeManager) mountLiteralVolume(targetPath string,
 }
 
 func (vm *VolumeManager) mountConfigMap(pod *v1.Pod, volume *v1.ConfigMapVolumeSource) (*VolumeInfo, error) {
-	cmap, err := vm.ResourceManager.GetConfigMap(volume.Name)
+	var (
+		cmap *v1.ConfigMap
+		err  error
+	)
+
+	// TODO temporary solution
+	for i := 0; i < 20; i++ {
+		cmap, err = vm.ResourceManager.GetConfigMap(volume.Name)
+		if err == nil {
+			break
+		}
+		if !errors.IsNotFound(err) {
+			return nil, err
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 	if err != nil {
 		return nil, err
 	}

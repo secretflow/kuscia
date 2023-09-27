@@ -42,6 +42,8 @@ type Interface interface {
 	Gateways() GatewayInformer
 	// InteropConfigs returns a InteropConfigInformer.
 	InteropConfigs() InteropConfigInformer
+	// KusciaDeployments returns a KusciaDeploymentInformer.
+	KusciaDeployments() KusciaDeploymentInformer
 	// KusciaJobs returns a KusciaJobInformer.
 	KusciaJobs() KusciaJobInformer
 	// KusciaTasks returns a KusciaTaskInformer.
@@ -111,6 +113,11 @@ func (v *version) Gateways() GatewayInformer {
 // InteropConfigs returns a InteropConfigInformer.
 func (v *version) InteropConfigs() InteropConfigInformer {
 	return &interopConfigInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// KusciaDeployments returns a KusciaDeploymentInformer.
+func (v *version) KusciaDeployments() KusciaDeploymentInformer {
+	return &kusciaDeploymentInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // KusciaJobs returns a KusciaJobInformer.

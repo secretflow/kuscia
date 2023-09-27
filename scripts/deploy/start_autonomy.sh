@@ -50,10 +50,6 @@ if [[ ! -f ${EXTERNAL_TLS_CERT_FILE} || ! -f ${EXTERNAL_TLS_KEY_FILE} ]]; then
   EXTERNAL_TLS_KEY_FILE=""
 fi
 
-cp /etc/resolv.conf etc/resolv.conf
-IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-echo "nameserver ${IP}" >/etc/resolv.conf
-
 sh scripts/deploy/iptables_pre_detect.sh
 
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml

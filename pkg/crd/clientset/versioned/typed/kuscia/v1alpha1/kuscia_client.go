@@ -36,6 +36,7 @@ type KusciaV1alpha1Interface interface {
 	DomainRoutesGetter
 	GatewaysGetter
 	InteropConfigsGetter
+	KusciaDeploymentsGetter
 	KusciaJobsGetter
 	KusciaTasksGetter
 	TaskResourcesGetter
@@ -85,6 +86,10 @@ func (c *KusciaV1alpha1Client) Gateways(namespace string) GatewayInterface {
 
 func (c *KusciaV1alpha1Client) InteropConfigs() InteropConfigInterface {
 	return newInteropConfigs(c)
+}
+
+func (c *KusciaV1alpha1Client) KusciaDeployments() KusciaDeploymentInterface {
+	return newKusciaDeployments(c)
 }
 
 func (c *KusciaV1alpha1Client) KusciaJobs() KusciaJobInterface {

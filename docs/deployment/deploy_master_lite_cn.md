@@ -18,7 +18,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
 ```
 
 启动 master，默认会在当前目录下创建 kuscia-master-kuscia-system-certs 目录用来存放 master 的公私钥和证书：
@@ -29,8 +29,51 @@ docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy
 # -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh master -i 1.1.1.1 -p 18080 -k 18082
 ```
+`注意：如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/networkrequirements)`
 
-
+建议使用 curl -kv https://ip:port; 检查一下是否访问能通，正常情况下返回的 http 错误码是401，内容是：unauthorized。
+示例如下：
+```bash
+*   Trying 127.0.0.1:18080...
+* Connected to 127.0.0.1 (127.0.0.1) port 18080 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server did not agree to a protocol
+* Server certificate:
+*  subject: CN=kuscia-system_ENVOY_EXTERNAL
+*  start date: Sep 14 07:42:47 2023 GMT
+*  expire date: Jan 30 07:42:47 2051 GMT
+*  issuer: CN=Kuscia
+*  SSL certificate verify result: unable to get local issuer certificate (20), continuing anyway.
+> GET / HTTP/1.1
+> Host: 127.0.0.1:18080
+> User-Agent: curl/7.82.0
+> Accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 401 Unauthorized
+< x-accel-buffering: no
+< content-length: 13
+< content-type: text/plain
+< kuscia-error-message: Domain kuscia-system.root-kuscia-master<--127.0.0.1 return http code 401.
+< date: Fri, 15 Sep 2023 02:50:39 GMT
+< server: kuscia-gateway
+<
+* Connection #0 to host 127.0.0.1 left intact
+unauthorized
+```
 #### Tips
 本文后续还会经常使用到 docker exec -it ${USER}-kuscia-master xxxxx 类似的命令。建议以如下方式简化输入。
 ```bash
@@ -65,7 +108,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
 ```
 
 启动 alice。默认会在当前目录下创建 kuscia-lite-alice-certs 目录用来存放 alice 的公私钥和证书。默认会在当前目录下创建 kuscia-lite-alice-data 目录用来存放 alice 的数据：
@@ -102,7 +145,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
 ```
 
 启动 bob。默认会在当前目录下创建 kuscia-lite-bob-certs 目录用来存放 bob 的公私钥和证书。默认会在当前目录下创建 kuscia-lite-bob-data 目录用来存放 bob 的数据：
@@ -138,6 +181,7 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr alice-bob -o=jsonpath="{.s
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
 ```
+`注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/networkrequirements)`
 
 ### 运行任务
 接下来，我们运行一个测试任务以验证部署是否成功。
@@ -147,13 +191,13 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr bob-alice -o=jsonpath="{.s
 登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的kuscia-lite-alice-data下
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-lite-alice-data/alice.csv
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-lite-alice-data/alice.csv
 ```
 
 登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的kuscia-lite-bob-data下
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-lite-bob-data/bob.csv
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-lite-bob-data/bob.csv
 ```
 
 ##### 创建测试数据表
