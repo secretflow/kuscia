@@ -23,7 +23,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
 ```
 
 启动节点，默认会在当前目录下创建 kuscia-autonomy-alice-certs 目录用来存放 alice 节点的公私钥和证书。默认会在当前目录下创建 kuscia-autonomy-alice-data 目录用来存放 alice 的数据：：
@@ -103,7 +103,7 @@ alice 建立到 bob 的通信：
 # 2.2.2.2是上文中 bob 的访问 ip，8082 是上文中 bob 的访问端口
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh alice bob 2.2.2.2:8082
 ```
-
+`注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/networkrequirements)`
 
 
 #### 创建 bob 到 alice 的授权
@@ -152,13 +152,13 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob a
 登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-alice-data下
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-autonomy-alice-data/alice.csv
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-autonomy-alice-data/alice.csv
 ```
 
 登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-bob-data下
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-autonomy-bob-data/bob.csv
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-autonomy-bob-data/bob.csv
 ```
 
 #### 执行作业

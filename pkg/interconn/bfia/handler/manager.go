@@ -97,11 +97,11 @@ func NewResourcesManager(ctx context.Context, kusciaClient kusciaclientset.Inter
 	})
 
 	kusciaInformerFactory.Start(m.ctx.Done())
-	nlog.Infof("Waiting for informer cache to sync for bfia resources manager")
+	nlog.Info("Waiting for informer cache to sync for bfia resources manager")
 	if ok := cache.WaitForCacheSync(m.ctx.Done(), kjSynced, ktSynced, appImageSynced); !ok {
 		return nil, fmt.Errorf("failed to wait for caches to sync for bfia resources manager")
 	}
-	nlog.Infof("Finish Waiting for informer cache to sync for bfia resources manager")
+	nlog.Info("Finish Waiting for informer cache to sync for bfia resources manager")
 	return m, nil
 }
 

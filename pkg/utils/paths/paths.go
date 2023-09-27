@@ -53,7 +53,6 @@ func CheckFileOrDirExist(path string) bool {
 }
 
 func CheckFileExist(path string) bool {
-
 	if src, err := os.Stat(path); err == nil {
 		// exist
 		return !src.IsDir()

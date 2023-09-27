@@ -26,6 +26,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"k8s.io/client-go/kubernetes"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/commands"
@@ -43,6 +44,7 @@ import (
 type kusciaAPIModule struct {
 	conf         *config.KusciaAPIConfig
 	kusciaClient kusciaclientset.Interface
+	kubeClient   kubernetes.Interface
 }
 
 func NewKusciaAPI(i *Dependencies) (Module, error) {
@@ -59,14 +61,16 @@ func NewKusciaAPI(i *Dependencies) (Module, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &kusciaAPIModule{
 		conf:         kusciaAPIConfig,
 		kusciaClient: clients.KusciaClient,
+		kubeClient:   clients.KubeClient,
 	}, nil
 }
 
 func (m kusciaAPIModule) Run(ctx context.Context) error {
-	return commands.Run(ctx, m.conf, m.kusciaClient)
+	return commands.Run(ctx, m.conf, m.kusciaClient, m.kubeClient)
 }
 
 func (m kusciaAPIModule) WaitReady(ctx context.Context) error {

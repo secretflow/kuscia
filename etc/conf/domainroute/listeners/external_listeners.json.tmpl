@@ -6,6 +6,15 @@
             "port_value": {{.ExternalPort}}
         }
     },
+    "socket_options": [
+           {
+             "description": "support tcp keep alive",
+             "state": 0,
+             "level": 1,
+             "name": 9,
+             "int_value": 1
+           }
+    ],
     "filter_chains": [
         {
             "filters": [

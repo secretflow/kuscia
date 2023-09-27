@@ -21,12 +21,18 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func NewInterConn(ctx context.Context, deps *Dependencies) Module {
+func NewInterConn(ctx context.Context, deps *Dependencies) (Module, error) {
 	return interconn.NewServer(ctx, deps.Clients)
 }
 
 func RunInterConn(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) {
-	m := NewInterConn(ctx, conf)
+	m, err := NewInterConn(ctx, conf)
+	if err != nil {
+		nlog.Error(err)
+		cancel()
+		return
+	}
+
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)

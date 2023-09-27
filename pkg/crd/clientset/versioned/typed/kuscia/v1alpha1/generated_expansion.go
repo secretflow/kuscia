@@ -36,6 +36,8 @@ type GatewayExpansion interface{}
 
 type InteropConfigExpansion interface{}
 
+type KusciaDeploymentExpansion interface{}
+
 type KusciaJobExpansion interface{}
 
 type KusciaTaskExpansion interface{}

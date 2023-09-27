@@ -52,6 +52,7 @@ type ResourcesAccessor interface {
 	HostTaskResourceLister() kuscialistersv1alpha1.TaskResourceLister
 	EnqueueTaskResource(string)
 	EnqueuePod(string)
+	EnqueueService(string)
 }
 
 // hostResourcesController is used to manage host resources.
@@ -219,16 +220,9 @@ func (c *hostResourcesController) matchLabels(obj metav1.Object) bool {
 		return false
 	}
 
-	value, exist := labels[common.LabelTaskInitiator]
+	value, exist := labels[common.LabelInitiator]
 	if !exist || value != c.host {
 		return false
-	}
-
-	pod, ok := obj.(*corev1.Pod)
-	if ok {
-		if _, exist = pod.Labels[kusciaapisv1alpha1.LabelTaskResource]; !exist {
-			return false
-		}
 	}
 
 	return true
@@ -316,6 +310,11 @@ func (c *hostResourcesController) EnqueueTaskResource(key string) {
 // EnqueuePod is used to put pod key into host pods queue.
 func (c *hostResourcesController) EnqueuePod(key string) {
 	c.podsQueue.Add(key)
+}
+
+// EnqueueService is used to put service key into host services queue.
+func (c *hostResourcesController) EnqueueService(key string) {
+	c.servicesQueue.Add(key)
 }
 
 // GetHostClient returns kubeClient and kusciaClient of host cluster.

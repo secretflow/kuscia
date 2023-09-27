@@ -59,7 +59,7 @@ func TestResourceFilter(t *testing.T) {
 	tr1 := util.MakeTaskResource("ns1", "tr2", 2, nil)
 	tr1.Labels = map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "1",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 		common.LabelInterConnProtocolType:           string(kusciaapisv1alpha1.InterConnKuscia),
 	}
 
@@ -94,14 +94,14 @@ func TestResourceFilter(t *testing.T) {
 		},
 		{
 			name: "obj is pod and pod belong to initiator",
-			obj:  st.MakePod().Name("pod1").Namespace("ns1").Label(common.LabelTaskInitiator, "ns1").Obj(),
+			obj:  st.MakePod().Name("pod1").Namespace("ns1").Label(common.LabelInitiator, "ns1").Obj(),
 			want: false,
 		},
 		{
 			name: "obj is pod and pod label is valid",
 			obj: st.MakePod().Name("pod1").Namespace("ns1").Labels(map[string]string{
 				common.LabelResourceVersionUnderHostCluster: "1",
-				common.LabelTaskInitiator:                   "ns2",
+				common.LabelInitiator:                       "ns2",
 				common.LabelInterConnProtocolType:           string(kusciaapisv1alpha1.InterConnKuscia),
 			}).Obj(),
 			want: true,
@@ -135,16 +135,16 @@ func TestStop(t *testing.T) {
 
 func TestCleanupResidualResources(t *testing.T) {
 	pod1 := st.MakePod().Namespace("ns1").Name("pod1").Obj()
-	pod2 := st.MakePod().Namespace("ns1").Name("pod2").Labels(map[string]string{common.LabelTaskInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}).Obj()
+	pod2 := st.MakePod().Namespace("ns1").Name("pod2").Labels(map[string]string{common.LabelInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}).Obj()
 
 	service1 := &v1.Service{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "svc1"}}
-	service2 := &v1.Service{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "svc2", Labels: map[string]string{common.LabelTaskInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}}}
+	service2 := &v1.Service{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "svc2", Labels: map[string]string{common.LabelInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}}}
 
 	cm1 := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "cm1"}}
-	cm2 := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "cm2", Labels: map[string]string{common.LabelTaskInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}}}
+	cm2 := &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "cm2", Labels: map[string]string{common.LabelInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}}}
 
 	tr1 := &kusciaapisv1alpha1.TaskResource{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "tr1"}}
-	tr2 := &kusciaapisv1alpha1.TaskResource{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "tr2", Labels: map[string]string{common.LabelTaskInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}}}
+	tr2 := &kusciaapisv1alpha1.TaskResource{ObjectMeta: metav1.ObjectMeta{Namespace: "ns1", Name: "tr2", Labels: map[string]string{common.LabelInitiator: "test", common.LabelResourceVersionUnderHostCluster: "1"}}}
 
 	kubeFakeClient := clientsetfake.NewSimpleClientset(pod1, pod2, service1, service2, cm1, cm2)
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(tr1, tr2)
