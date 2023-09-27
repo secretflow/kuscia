@@ -244,7 +244,7 @@ func (cs *KusciaScheduling) Permit(ctx context.Context, state *framework.CycleSt
 func (cs *KusciaScheduling) PreBind(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodeName string) *framework.Status {
 	code, err := cs.trMgr.PreBind(ctx, pod)
 	if err != nil {
-		nlog.Errorf("PreBind pod %v/%v failed, %v", pod.Namespace, pod.Name, err)
+		nlog.Warnf("PreBind pod %v/%v failed, %v", pod.Namespace, pod.Name, err)
 		return framework.NewStatus(code, err.Error())
 	}
 	return framework.NewStatus(code, "")

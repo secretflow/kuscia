@@ -29,6 +29,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domainroute"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/job"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/serving"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -141,6 +142,7 @@ func (s *httpServerBean) registerGroupRoutes(eg *engine.Engine, httpEg *gin.Engi
 	domainService := service.NewDomainService(*s.config)
 	routeService := service.NewDomainRouteService(*s.config)
 	domainDataService := service.NewDomainDataService(*s.config)
+	servingService := service.NewServingService(*s.config)
 	healthSerice := service.NewHealthService()
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
@@ -265,6 +267,37 @@ func (s *httpServerBean) registerGroupRoutes(eg *engine.Engine, httpEg *gin.Engi
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "list",
 					Handlers:     []gin.HandlerFunc{protoDecorator(eg, domaindata.NewListDomainDataHandler(domainDataService))},
+				},
+			},
+		},
+		// serving group routes
+		{
+			Group: "api/v1/serving",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "create",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, serving.NewCreateServingHandler(servingService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "update",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, serving.NewUpdateServingHandler(servingService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "delete",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, serving.NewDeleteServingHandler(servingService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, serving.NewQueryServingHandler(servingService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "status/batchQuery",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, serving.NewBatchQueryServingStatusHandler(servingService))},
 				},
 			},
 		},

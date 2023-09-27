@@ -64,6 +64,7 @@ type KusciaTaskSpec struct {
 // ScheduleConfig defines the config for scheduling.
 type ScheduleConfig struct {
 	// +kubebuilder:validation:Minimum:=1
+	// +optional
 	MinReservedMembers int `json:"minReservedMembers,omitempty"`
 	// +optional
 	ResourceReservedSeconds int `json:"resourceReservedSeconds,omitempty"`

@@ -89,7 +89,7 @@ func updatePodAnnotations(trgName string, podLister listers.PodLister, kubeClien
 		if podCopy.Annotations == nil {
 			podCopy.Annotations = make(map[string]string)
 		}
-		podCopy.Annotations[common.TaskResourceReservingTimestamp] = metav1.Now().Format(time.RFC3339)
+		podCopy.Annotations[common.TaskResourceReservingTimestampAnnotationKey] = metav1.Now().Format(time.RFC3339)
 		oldExtractedPod := utilsres.ExtractPodAnnotations(pods[i])
 		newExtractedPod := utilsres.ExtractPodAnnotations(podCopy)
 		if err = utilsres.PatchPod(context.Background(), kubeClient, oldExtractedPod, newExtractedPod); err != nil {

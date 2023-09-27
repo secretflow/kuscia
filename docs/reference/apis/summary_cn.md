@@ -87,8 +87,48 @@ docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/token .
 3. 在初始化 GRPC 客户端时，读取 token 文件内容，设置 Metadata：Token={token}。
 4. 使用 GRPC 客户端发起请求。
 
-GRPC 容器内端点默认在：kuscia-master 或者 autonomy 节点的 8083 端口。
-GRPC 主机上端点：kuscia-master 或者 autonomy 可以通过 docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名} 获得 8082 端口的主机映射
+```python
+# Python 示例 #
+
+import os
+import grpc
+from kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2_grpc import (
+    DomainServiceStub,
+)
+from kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2 import (
+    QueryDomainRequest,
+)
+
+def query_domain():
+    client_cert_file = "kusciaapi-client.crt"
+    client_key_file = "kusciaapi-client.key"
+    trusted_ca_file = "ca.crt"
+    token_file = "token"
+    address = "root-kuscia-master:8083"
+    with open(client_cert_file, 'rb') as client_cert, open(
+         client_key_file, 'rb'
+    ) as client_key, open(trusted_ca_file, 'rb') as trusted_ca, open(token_file, 'rb') as token:
+       credentials = grpc.ssl_channel_credentials(trusted_ca.read(), client_key.read(), client_cert.read())
+       channel = grpc.secure_channel(address, credentials)
+       domainStub = DomainServiceStub(channel)
+       metadata = [('token', token.read())]
+       ret = domainStub.QueryDomain(request=QueryDomainRequest(domain_id="alice"),metadata=metadata)
+       print(ret)
+```
+
+你也可以使用 GRPC 的客户端工具连接上 Kuscia API，如 [grpcurl](https://github.com/fullstorydev/grpcurl/releases)，你需要替换 {} 中的内容：
+
+```shell
+grpcurl --cert kusciaapi-client.crt \
+        --key kusciaapi-client.key \
+        --cacert ca.crt \
+        --header 'Token: {token}' \
+        -d '{"domain_id": "alice"}' \
+        ${USER}-kuscia-master:8083 kuscia.proto.api.v1alpha1.kusciaapi.DomainService.QueryDomain
+```
+
+GRPC 容器内端点默认在：master 或者 autonomy 节点的 8083 端口。
+GRPC 主机上端点：master 或者 autonomy 可以通过 docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名} 获得 8082 端口的主机映射。
 
 ### HTTPS
 
@@ -102,10 +142,13 @@ GRPC 主机上端点：kuscia-master 或者 autonomy 可以通过 docker inspect
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：
 
 ```shell
-curl --cert kusciaapi-client.crt --key kusciaapi-client.key --cacert ca.crt -X POST 'https://{{USER}-kuscia-master}:8082/api/v1/domain/query' --header 'Token: {token}' --header 'Content-Type: application/json' -d '{
-  "domain_id": "alice"
-}'
+curl --cert kusciaapi-client.crt \
+     --key kusciaapi-client.key \
+     --cacert ca.crt \
+     --header 'Token: {token}' --header 'Content-Type: application/json' \
+     'https://{{USER}-kuscia-master}:8082/api/v1/domain/query' \
+     -d '{"domain_id": "alice"}'
 ```
 
-HTTPS 容器内端点默认在：kuscia-master 或者 autonomy 节点的 8082 端口。
-HTTPS 主机上端点：kuscia-master 或者 autonomy 可以通过 docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名} 获得 8083 端口的主机映射
+HTTPS 容器内端点默认在：master 或者 autonomy 节点的 8082 端口。
+HTTPS 主机上端点：master 或者 autonomy 可以通过 docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名} 获得 8083 端口的主机映射

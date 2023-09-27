@@ -22,7 +22,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的�
 理解 Kuscia 架构以及重要概念。
 
 - [架构总览][architecture]
-- Kuscia 概念：[Domain][concept-domain] | [DomainRoute][concept-domainroute] | [DomainData][concept-domaindata] | [KusciaJob][concept-kusciajob] | [KusciaTask][concept-kusciatask] | [AppImage][concept-appimage] | [InteropConfig][concept-interopconfig]
+- Kuscia 概念：[Domain][concept-domain] | [DomainRoute][concept-domainroute] | [DomainData][concept-domaindata] | [KusciaJob][concept-kusciajob] | [KusciaTask][concept-kusciatask] | [KusciaDeployment][concept-kusciadeployment] | [AppImage][concept-appimage] | [InteropConfig][concept-interopconfig]
 
 [architecture]: ./reference/architecture_cn.md
 [concept-domain]: ./reference/concepts/domain_cn.md
@@ -30,13 +30,14 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的�
 [concept-domaindata]: ./reference/concepts/domaindata_cn.md
 [concept-kusciajob]: ./reference/concepts/kusciajob_cn.md
 [concept-kusciatask]: ./reference/concepts/kusciatask_cn.md
+[concept-kusciadeployment]: ./reference/concepts/kusciadeployment_cn.md
 [concept-appimage]: ./reference/concepts/appimage_cn.md
 [concept-interopconfig]: ./reference/concepts/interopconfig_cn.md
 
 ## Kuscia API
 
 - [Kuscia API 介绍][api-overview] | [教程：用 Kuscia API 运行 SecretFlow 作业][api-tutorial]
-- API 参考：[请求和响应][api-request-and-response] | [Domain][api-domain] | [DomainRoute][api-domainroute] | [DomainData][api-domaindata] | [KusciaJob][api-kusciajob] | [Health][api-health]
+- API 参考：[请求和响应][api-request-and-response] | [Domain][api-domain] | [DomainRoute][api-domainroute] | [DomainData][api-domaindata] | [KusciaJob][api-kusciajob] | [Serving][api-serving] | [Health][api-health]
 
 [api-overview]: ./reference/apis/summary_cn.md
 [api-tutorial]: ./tutorial/run_secretflow_with_api_cn.md
@@ -45,6 +46,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的�
 [api-domainroute]: ./reference/apis/domainroute_cn.md
 [api-domaindata]: ./reference/apis/domaindata_cn.md
 [api-kusciajob]: ./reference/apis/kusciajob_cn.md
+[api-serving]: ./reference/apis/serving_cn.md
 [api-health]: ./reference/apis/health_cn.md
 
 ## 部署
@@ -52,10 +54,12 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的�
 - [指南：多机器部署中心化集群][deploy-p2p]
 - [指南：多机器部署点对点集群][deploy-master-lite]
 - [常见运维操作][ops-cheatsheet]
+- [网络要求][deploy-networkrequirements]
 
 [deploy-master-lite]: ./deployment/deploy_master_lite_cn.md
 [deploy-p2p]: ./deployment/deploy_p2p_cn.md
 [ops-cheatsheet]: ./deployment/operation_cn.md
+[deploy-networkrequirements]: ./deployment/networkrequirements.md
 
 ## 更多指南
 

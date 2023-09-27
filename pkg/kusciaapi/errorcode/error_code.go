@@ -53,6 +53,12 @@ const (
 	ErrPatchDomainDataFailed  = 11505
 	ErrDomainDataNotExists    = 11506
 	ErrDomainDataExists       = 11507
+
+	ErrCreateServing      = 11600
+	ErrQueryServing       = 11601
+	ErrQueryServingStatus = 11602
+	ErrUpdateServing      = 11603
+	ErrDeleteServing      = 11604
 )
 
 func GetDomainErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {

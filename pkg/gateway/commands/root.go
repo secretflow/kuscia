@@ -60,8 +60,10 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		return fmt.Errorf("start xds server fail with err: %v", err)
 	}
 
-	// add master Clusters
+	// add master config
 	masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
+	nlog.Infof("masterConfig is: %v", masterConfig)
+
 	if err != nil {
 		return fmt.Errorf("failed to load masterConfig, detail-> %v", err)
 	}

@@ -9,6 +9,7 @@ Kuscia API
     domainroute_cn
     domaindata_cn
     kusciajob_cn
+    serving_cn
     health_cn
 
 .. Hide DataMesh-related docs until we figure out where to put them
