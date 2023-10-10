@@ -34,7 +34,15 @@ jobs:
       - run:
           name: Test Kuscia
           command: make test
-
+      - run:
+          name: Login to kuscia Aliyun Registry
+          command: docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
+      - run: 
+          name: Build image and publish
+          command: |
+          docker tag secretflow/kuscia-ci:latest secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+          docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+          
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
