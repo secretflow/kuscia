@@ -31,15 +31,10 @@ jobs:
     shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Test Kuscia
           command: make test
-      - run:
-          name: Install Docker
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo systemctl restart docker
       - run:
           name: Login to kuscia Aliyun Registry
           command: docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
