@@ -46,7 +46,8 @@ jobs:
       - run: 
           name: Build image and publish
           command: |
-            docker build -t secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yujuntest  -f /kuscia/build/dockerfile/kuscia-anolis.Dockerfile .
+            cd /build/dockerfile/
+            docker build -t secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yujuntest  -f kuscia-anolis.Dockerfile .
             docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yujuntest
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
