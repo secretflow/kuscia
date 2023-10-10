@@ -56,7 +56,7 @@ workflows:
       not: << pipeline.parameters.GHA_Action >>
     jobs:
       - build-kuscia
-  publish-workflow:
+  image_publish:
     jobs:
       - docker_image_publish
   publish-workflow:
