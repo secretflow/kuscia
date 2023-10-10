@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Test Kuscia
           command: make test 
-  docker_image_publish:
+  image_publish:
     docker:
       - image: cimg/deploy:2023.06.1
     steps:
@@ -54,7 +54,7 @@ workflows:
   build-workflow:
     jobs:
       - build-kuscia
-      - docker_image_publish
+      - image_publish
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
