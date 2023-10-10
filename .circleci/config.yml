@@ -37,10 +37,9 @@ jobs:
       - run:
           name: Install Docker
           command: |
-            yum install -y yum-utils
-            yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-            yum install -y docker-ce docker-ce-cli containerd.io
-            systemctl restart docker
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl restart docker
       - run:
           name: Login to kuscia Aliyun Registry
           command: docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
