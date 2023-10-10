@@ -31,10 +31,15 @@ jobs:
     shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
-      - setup_remote_docker
       - run:
           name: Test Kuscia
-          command: make test
+          command: make test 
+  docker_image_publish:
+    docker:
+      - image: cimg/deploy:2023.06.1
+    steps:
+      - checkout
+      - setup_remote_docker
       - run:
           name: Login to kuscia Aliyun Registry
           command: docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
@@ -43,7 +48,6 @@ jobs:
           command: |
             docker tag secretflow/kuscia-ci:latest secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yujuntest
             docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yujuntest
-          
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
@@ -52,6 +56,7 @@ workflows:
       not: << pipeline.parameters.GHA_Action >>
     jobs:
       - build-kuscia
+      - docker_image_publish
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
