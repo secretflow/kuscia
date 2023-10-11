@@ -47,9 +47,9 @@ jobs:
           name: Build image and publish
           command: |
             sudo apt-get update && sudo apt-get install -y golang
-            ENV PATH="/usr/lib/go/bin:${PATH}"
-            ENV GOPATH="/go"
-            ENV PATH="${GOPATH}/bin:${PATH}"
+            echo "export PATH=/usr/lib/go/bin:${PATH}" >> ~/.bashrc
+            echo "export GOPATH=/go" >> ~/.bashrc
+            echo "export PATH=\$GOPATH/bin:\${PATH}" >> ~/.bashrc
             go version
             make image
 
