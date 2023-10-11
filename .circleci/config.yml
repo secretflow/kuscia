@@ -46,12 +46,12 @@ jobs:
       - run: 
           name: Build image and publish
           command: |
-          sudo apt-get update && sudo apt-get install -y golang
-          ENV PATH="/usr/lib/go/bin:${PATH}"
-          ENV GOPATH="/go"
-          ENV PATH="${GOPATH}/bin:${PATH}"
-          go version
-          make image
+            sudo apt-get update && sudo apt-get install -y golang
+            ENV PATH="/usr/lib/go/bin:${PATH}"
+            ENV GOPATH="/go"
+            ENV PATH="${GOPATH}/bin:${PATH}"
+            go version
+            make image
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
