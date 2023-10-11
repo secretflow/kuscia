@@ -45,7 +45,7 @@ jobs:
           command: docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
       - run: 
           name: Build image and publish
-          command: make test
+          command: make image
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
