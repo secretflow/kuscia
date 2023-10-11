@@ -46,11 +46,12 @@ jobs:
       - run: 
           name: Build image and publish
           command: |
-            sudo curl -LO "https://golang.org/dl/go1.19.linux-amd64.tar.gz"
-            sudo tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz
+            wget https://golang.google.cn/dl/go1.19.linux-amd64.tar.gz
+            sudo tar -xvzf go1.19.linux-amd64.tar.gz -C /usr/local/
             echo "export PATH=/usr/lib/go/bin:${PATH}" >> ~/.bashrc
             echo "export GOPATH=/go" >> ~/.bashrc
             echo "export PATH=\$GOPATH/bin:\${PATH}" >> ~/.bashrc
+            source ~/.bashrc
             go version
             make image
 
