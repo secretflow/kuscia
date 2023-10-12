@@ -24,11 +24,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
+	resourcetest "github.com/secretflow/kuscia/pkg/agent/resource/testing"
 )
 
 func setupTestConfigRender(t *testing.T) *configRender {
@@ -52,7 +54,7 @@ config:
 	return r
 }
 
-func TestConfigRender_ExecHook(t *testing.T) {
+func TestConfigRender_ExecHookWithMakeMountsContext(t *testing.T) {
 	rootDir := t.TempDir()
 	hostPath := filepath.Join(rootDir, "test.conf")
 	templateData := "{{.KEY_A}}-{{.KEY_B}}"
@@ -67,7 +69,7 @@ func TestConfigRender_ExecHook(t *testing.T) {
 
 	mount := corev1.VolumeMount{Name: "config-template", SubPath: "test.conf"}
 
-	obj := &hook.MakeMountsObj{
+	ctx := &hook.MakeMountsContext{
 		Pod:           pod,
 		Container:     &container,
 		HostPath:      &hostPath,
@@ -77,11 +79,79 @@ func TestConfigRender_ExecHook(t *testing.T) {
 	}
 
 	cr := setupTestConfigRender(t)
-	assert.Equal(t, true, cr.CanExec(obj, hook.PointMakeMounts))
-	_, err := cr.ExecHook(obj, hook.PointMakeMounts)
+	assert.Equal(t, true, cr.CanExec(ctx))
+	_, err := cr.ExecHook(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, filepath.Join(rootDir, "config-render", container.Name, mount.Name, mount.SubPath), hostPath)
 	assertFileContent(t, hostPath, "aaa-bbb")
+}
+
+func TestConfigRender_ExecHookWithSyncPodContext(t *testing.T) {
+	podConfig := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "config-template",
+			Namespace: "test-namespace",
+		},
+		Data: map[string]string{
+			"config.yaml": "aa={{.AA}}",
+		},
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			UID:       "abc",
+			Name:      "pod01",
+			Namespace: "test-namespace",
+			Annotations: map[string]string{
+				"kuscia.secretflow/config-template-volumes": "config-template",
+			},
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:    "ctr01",
+					Command: []string{"sleep 60"},
+					Image:   "aa/bb:001",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "AA",
+							Value: "BB",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "config-template",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "config-template",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	rm := resourcetest.FakeResourceManager("test-namespace", podConfig)
+
+	bkPod := pod.DeepCopy()
+	bkPod.Namespace = "bk-namespace"
+	ctx := &hook.K8sProviderSyncPodContext{
+		Pod:             pod,
+		BkPod:           bkPod,
+		ResourceManager: rm,
+	}
+
+	cr := setupTestConfigRender(t)
+	assert.Equal(t, true, cr.CanExec(ctx))
+	_, err := cr.ExecHook(ctx)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(ctx.Configmaps))
+	assert.Equal(t, "aa=BB", ctx.Configmaps[0].Data["config.yaml"])
 }
 
 func TestConfigRender_renderConfigDirectory(t *testing.T) {

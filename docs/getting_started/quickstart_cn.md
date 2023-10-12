@@ -43,7 +43,7 @@ systemctl start docker
 
 macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
 
-此外，Kuscia 当前不支持 M1 芯片的 Mac。
+此外，Kuscia 当前不支持 M1/M2 芯片的 Mac。
 
 ## 部署体验
 

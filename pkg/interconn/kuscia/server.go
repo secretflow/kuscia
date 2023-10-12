@@ -24,14 +24,14 @@ import (
 // Server implements the inter connection with bfia protocol.
 type Server struct {
 	NewController common.NewControllerFunc
-	CheckCRD      common.CheckCRDExistsFunc
+	CRDNames      []string
 }
 
 // NewServer returns a server instance.
 func NewServer(clients *kubeconfig.KubeClients) *Server {
 	s := &Server{
 		NewController: NewController,
-		CheckCRD:      CheckCRDExists,
+		CRDNames:      []string{crdInteropConfigsName},
 	}
 	return s
 }

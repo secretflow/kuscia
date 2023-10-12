@@ -29,7 +29,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 # -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh master -i 1.1.1.1 -p 18080 -k 18082
 ```
-`注意：如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/networkrequirements)`
+<span style="color:red;">注意：如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 建议使用 curl -kv https://ip:port; 检查一下是否访问能通，正常情况下返回的 http 错误码是401，内容是：unauthorized。
 示例如下：
@@ -97,6 +97,7 @@ abcdefg
 docker exec -it ${USER}-kuscia-master kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
 abcdefg
 ```
+<span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
 
 接下来，登录到安装 alice 的机器上，假设对外ip是2.2.2.2。
 指定 kuscia 版本：
@@ -141,6 +142,7 @@ hijklmn
 # 使用的 Kuscia 镜像，这里使用 latest 版本镜像
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
+<span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
 
 获取部署脚本，部署脚本会下载到当前目录：
 
@@ -181,7 +183,7 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr alice-bob -o=jsonpath="{.s
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
 ```
-`注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/networkrequirements)`
+<span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 ### 运行任务
 接下来，我们运行一个测试任务以验证部署是否成功。

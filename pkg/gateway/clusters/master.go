@@ -235,7 +235,6 @@ func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycl
 		},
 	}
 	if config.TLSCert != nil {
-		nlog.Infof("generate tls for %s：%v", name, config.TLSCert)
 		transportSocket, err := xds.GenerateUpstreamTLSConfigByCert(config.TLSCert)
 		if err != nil {
 			return nil, err

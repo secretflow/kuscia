@@ -30,9 +30,9 @@ const (
 )
 
 // Start create and run controllers to list-watch resources.
-func (n *KusciaCoreDNS) Start(ctx context.Context, kubeClient kubernetes.Interface) error {
-	go startEndpointsController(ctx, kubeClient, n, n.Namespace)
-	go startPodController(ctx, kubeClient, n, n.Namespace)
+func (e *KusciaCoreDNS) Start(ctx context.Context, kubeClient kubernetes.Interface) error {
+	go startEndpointsController(ctx, kubeClient, e, e.Namespace)
+	go startPodController(ctx, kubeClient, e, e.Namespace)
 	return nil
 }
 

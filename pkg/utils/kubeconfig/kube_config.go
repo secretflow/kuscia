@@ -85,6 +85,28 @@ func CreateClientSetsFromKubeconfigWithOptions(kubeconfigPath, masterURL string,
 	return CreateClientSets(kubeConfig)
 }
 
+func CreateKubeClientFromKubeconfigWithOptions(kubeconfigPath, masterURL string, QPS float32, Burst int, Timeout time.Duration) (kubernetes.Interface, error) {
+	kubeConfig, err := BuildClientConfigFromKubeconfig(kubeconfigPath, masterURL)
+	if err != nil {
+		return nil, fmt.Errorf("error building kubernetes client config from token, detail-> %v", err)
+	}
+	if QPS != 0 {
+		kubeConfig.QPS = QPS
+	}
+	if Burst != 0 {
+		kubeConfig.Burst = Burst
+	}
+	if Timeout != 0 {
+		kubeConfig.Timeout = Timeout
+	}
+	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("error building kubernetes client set, detail-> %v", err)
+	}
+
+	return kubeClient, nil
+}
+
 func BuildClientConfigFromKubeconfig(kubeconfigPath, masterURL string) (*restclient.Config, error) {
 	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 	if err != nil {

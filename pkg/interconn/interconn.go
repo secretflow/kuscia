@@ -75,7 +75,7 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) (*Server, e
 	})
 	s.controllerConstructions = append(s.controllerConstructions, iccommon.ControllerConstruction{
 		NewControler: s.kusciaServer.NewController,
-		CheckCRD:     s.kusciaServer.CheckCRD,
+		CRDNames:     s.kusciaServer.CRDNames,
 	})
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -167,10 +167,8 @@ func (s *Server) Name() string {
 // Run starts the inter connection service.
 func (s *Server) Run(ctx context.Context) error {
 	for _, cc := range s.controllerConstructions {
-		if cc.CheckCRD != nil {
-			if err := cc.CheckCRD(ctx, s.extensionClient); err != nil {
-				return fmt.Errorf("check crd whether exist failed, %v", err)
-			}
+		if err := iccommon.CheckCRDExists(ctx, s.extensionClient, cc.CRDNames); err != nil {
+			return fmt.Errorf("check crd whether exist failed, %v", err)
 		}
 	}
 

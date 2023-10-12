@@ -64,6 +64,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
@@ -115,7 +116,7 @@ func NewDomainRouteController(
 	recorder := createEventRecorder(kubeClient, drConfig.Namespace)
 
 	hostname := utils.GetHostname()
-	pubPem := utils.EncodePKCS1PublicKey(drConfig.Prikey)
+	pubPem := tlsutils.EncodePKCS1PublicKey(drConfig.Prikey)
 
 	gateway := &kusciaapisv1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -126,11 +127,11 @@ func NewDomainRouteController(
 			PublicKey: base64.StdEncoding.EncodeToString(pubPem),
 		},
 	}
-	caCert, err := utils.ParsePKCS1CertFromFile(drConfig.CAFile)
+	caCert, err := tlsutils.ParsePKCS1CertFromFile(drConfig.CAFile)
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	caKey, err := utils.ParsePKCS1PrivateKey(drConfig.CAKeyFile)
+	caKey, err := tlsutils.ParsePKCS1PrivateKey(drConfig.CAKeyFile)
 	if err != nil {
 		nlog.Fatal(err)
 	}

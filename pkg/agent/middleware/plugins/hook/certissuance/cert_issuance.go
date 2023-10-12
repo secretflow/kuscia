@@ -15,6 +15,7 @@
 package certissuance
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
@@ -49,6 +51,8 @@ const (
 
 	communicationRoleServer = "server"
 	communicationRoleClient = "client"
+
+	certsVolumeName = "certs"
 )
 
 func Register() {
@@ -93,21 +97,28 @@ func (ci *certIssuance) Init(dependencies *plugin.Dependencies, cfg *config.Plug
 }
 
 // CanExec implements the hook.Handler interface.
-func (ci *certIssuance) CanExec(obj interface{}, point hook.Point) bool {
+func (ci *certIssuance) CanExec(ctx hook.Context) bool {
 	if !ci.initialized {
 		return false
 	}
 
-	if point != hook.PointGenerateRunContainerOptions {
-		return false
+	var pod *corev1.Pod
+	switch ctx.Point() {
+	case hook.PointGenerateContainerOptions:
+		rObj, ok := ctx.(*hook.GenerateContainerOptionContext)
+		if !ok {
+			return false
+		}
+		pod = rObj.Pod
+	case hook.PointK8sProviderSyncPod:
+		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
+		if !ok {
+			return false
+		}
+		pod = syncPodCtx.Pod
 	}
 
-	rObj, ok := obj.(*hook.RunContainerOptionsObj)
-	if !ok {
-		return false
-	}
-
-	if rObj.Pod.Labels[common.LabelCommunicationRoleServer] != common.True && rObj.Pod.Labels[common.LabelCommunicationRoleClient] != common.True {
+	if pod.Labels[common.LabelCommunicationRoleServer] != common.True && pod.Labels[common.LabelCommunicationRoleClient] != common.True {
 		return false
 	}
 
@@ -117,52 +128,180 @@ func (ci *certIssuance) CanExec(obj interface{}, point hook.Point) bool {
 // ExecHook implements the hook.Handler interface.
 // It renders the configuration template and writes the generated real configuration content to a new file/directory.
 // The value of hostPath will be replaced by the new file/directory path.
-func (ci *certIssuance) ExecHook(obj interface{}, point hook.Point) (*hook.Result, error) {
+func (ci *certIssuance) ExecHook(ctx hook.Context) (*hook.Result, error) {
 	if !ci.initialized {
 		return nil, fmt.Errorf("plugin cert-issuance is not initialized")
 	}
 
-	rObj, ok := obj.(*hook.RunContainerOptionsObj)
-	if !ok {
-		return nil, fmt.Errorf("can't convert object to pod")
+	switch ctx.Point() {
+	case hook.PointGenerateContainerOptions:
+		gCtx, ok := ctx.(*hook.GenerateContainerOptionContext)
+		if !ok {
+			return nil, fmt.Errorf("invalid context type %T", ctx)
+		}
+
+		if err := ci.handleGenerateOptionContext(gCtx); err != nil {
+			return nil, err
+		}
+	case hook.PointK8sProviderSyncPod:
+		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
+		if !ok {
+			return nil, fmt.Errorf("invalid context type %T", ctx)
+		}
+
+		if err := ci.handleSyncPodContext(syncPodCtx); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("invalid point %v", ctx.Point())
 	}
 
-	issueServerCert := rObj.Pod.Labels[common.LabelCommunicationRoleServer] == common.True
-	issueClientCert := rObj.Pod.Labels[common.LabelCommunicationRoleClient] == common.True
+	return &hook.Result{}, nil
+}
+
+func (ci *certIssuance) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) error {
+	issueServerCert := ctx.Pod.Labels[common.LabelCommunicationRoleServer] == common.True
+	issueClientCert := ctx.Pod.Labels[common.LabelCommunicationRoleClient] == common.True
 
 	if !issueServerCert && !issueClientCert {
-		nlog.Infof("No certificate needs to be issued to the pod %q", format.Pod(rObj.Pod))
-		return &hook.Result{}, nil
+		nlog.Infof("No certificate needs to be issued to the pod %q", format.Pod(ctx.Pod))
+		return nil
 	}
 
-	hostCertsDir := filepath.Join(rObj.ContainerDir, defaultCertsDirName)
-	if err := paths.EnsureDirectory(hostCertsDir, true); err != nil {
-		return nil, err
+	certsSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-certs", ctx.BkPod.Name),
+			Namespace: ctx.BkPod.Namespace,
+		},
+		StringData: map[string]string{},
 	}
 
 	// issue server certificate.
 	if issueServerCert {
-		if err := ci.issueCertificate(rObj, hostCertsDir, communicationRoleServer); err != nil {
-			return nil, err
+		if err := ci.issueCertificateSecret(ctx, communicationRoleServer, certsSecret); err != nil {
+			return err
 		}
 	}
 
 	// issue client certificate.
 	if issueClientCert {
-		if err := ci.issueCertificate(rObj, hostCertsDir, communicationRoleClient); err != nil {
-			return nil, err
+		if err := ci.issueCertificateSecret(ctx, communicationRoleClient, certsSecret); err != nil {
+			return err
+		}
+	}
+
+	// inject ca.
+	caCertData, err := os.ReadFile(ci.signingCertFile)
+	if err != nil {
+		return err
+	}
+	injectCertificateSecret(ctx.BkPod, certsSecret, "ca.crt", string(caCertData), common.EnvTrustedCAFile, filepath.Join(defaultContainerCertsPath, "ca.crt"))
+
+	ctx.Secrets = append(ctx.Secrets, certsSecret)
+	mountCertificateSecret(ctx.BkPod, certsSecret)
+
+	nlog.Infof("Successfully issued certificate(server=%v,client=%v) for pod %q", issueServerCert, issueClientCert, format.Pod(ctx.Pod))
+	return nil
+}
+
+func (ci *certIssuance) issueCertificateSecret(ctx *hook.K8sProviderSyncPodContext, role string, secret *corev1.Secret) error {
+	certName := role + ".crt"
+	keyName := role + ".key"
+
+	var certBuf, keyBuf bytes.Buffer
+
+	var envCertFile, envKeyFile string
+	if role == communicationRoleServer {
+		if err := ci.createServerCertificate([]string{"0.0.0.0"}, &certBuf, &keyBuf); err != nil {
+			return fmt.Errorf("failed to create server certificate, detail-> %v", err)
+		}
+		envCertFile = common.EnvServerCertFile
+		envKeyFile = common.EnvServerKeyFile
+	} else {
+		if err := ci.createClientCertificate(ctx.BkPod, &certBuf, &keyBuf); err != nil {
+			return fmt.Errorf("failed to create client certificate, detail-> %v", err)
+		}
+		envCertFile = common.EnvClientCertFile
+		envKeyFile = common.EnvClientKeyFile
+	}
+
+	ctrCertFile := filepath.Join(defaultContainerCertsPath, certName)
+	ctrKeyFile := filepath.Join(defaultContainerCertsPath, keyName)
+
+	injectCertificateSecret(ctx.BkPod, secret, certName, certBuf.String(), envCertFile, ctrCertFile)
+	injectCertificateSecret(ctx.BkPod, secret, keyName, keyBuf.String(), envKeyFile, ctrKeyFile)
+
+	return nil
+}
+
+func injectCertificateSecret(bkPod *corev1.Pod, secret *corev1.Secret, dataName, dataValue, envKey, containerPath string) {
+	for i := range bkPod.Spec.Containers {
+		c := &bkPod.Spec.Containers[i]
+		c.Env = append(c.Env, corev1.EnvVar{
+			Name:  envKey,
+			Value: containerPath,
+		})
+	}
+
+	secret.StringData[dataName] = dataValue
+}
+
+func mountCertificateSecret(bkPod *corev1.Pod, secret *corev1.Secret) {
+	bkPod.Spec.Volumes = append(bkPod.Spec.Volumes, corev1.Volume{
+		Name: certsVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secret.Name,
+			},
+		},
+	})
+
+	for i := range bkPod.Spec.Containers {
+		c := &bkPod.Spec.Containers[i]
+		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+			Name:      certsVolumeName,
+			MountPath: defaultContainerCertsPath,
+		})
+	}
+}
+
+func (ci *certIssuance) handleGenerateOptionContext(ctx *hook.GenerateContainerOptionContext) error {
+	issueServerCert := ctx.Pod.Labels[common.LabelCommunicationRoleServer] == common.True
+	issueClientCert := ctx.Pod.Labels[common.LabelCommunicationRoleClient] == common.True
+
+	if !issueServerCert && !issueClientCert {
+		nlog.Infof("No certificate needs to be issued to the pod %q", format.Pod(ctx.Pod))
+		return nil
+	}
+
+	hostCertsDir := filepath.Join(ctx.ContainerDir, defaultCertsDirName)
+	if err := paths.EnsureDirectory(hostCertsDir, true); err != nil {
+		return err
+	}
+
+	// issue server certificate.
+	if issueServerCert {
+		if err := ci.issueCertificateLocal(ctx, hostCertsDir, communicationRoleServer); err != nil {
+			return err
+		}
+	}
+
+	// issue client certificate.
+	if issueClientCert {
+		if err := ci.issueCertificateLocal(ctx, hostCertsDir, communicationRoleClient); err != nil {
+			return err
 		}
 	}
 
 	// inject ca file.
-	injectCertificate(rObj, "trusted-ca", common.EnvTrustedCAFile, ci.signingCertFile, filepath.Join(defaultContainerCertsPath, "ca.crt"))
+	injectCertificateLocal(ctx, "trusted-ca", common.EnvTrustedCAFile, ci.signingCertFile, filepath.Join(defaultContainerCertsPath, "ca.crt"))
 
-	nlog.Infof("Successfully issued certificate(server=%v,client=%v) for container %q in pod %q", issueServerCert, issueClientCert, rObj.Container.Name, format.Pod(rObj.Pod))
+	nlog.Infof("Successfully issued certificate(server=%v,client=%v) for container %q in pod %q", issueServerCert, issueClientCert, ctx.Container.Name, format.Pod(ctx.Pod))
 
-	return &hook.Result{}, nil
+	return nil
 }
 
-func (ci *certIssuance) issueCertificate(obj *hook.RunContainerOptionsObj, hostCertsDir, role string) error {
+func (ci *certIssuance) issueCertificateLocal(obj *hook.GenerateContainerOptionContext, hostCertsDir, role string) error {
 	certName := role + ".crt"
 	keyName := role + ".key"
 
@@ -198,13 +337,13 @@ func (ci *certIssuance) issueCertificate(obj *hook.RunContainerOptionsObj, hostC
 	ctrCertFile := filepath.Join(defaultContainerCertsPath, certName)
 	ctrKeyFile := filepath.Join(defaultContainerCertsPath, keyName)
 
-	injectCertificate(obj, role+"-cert", envCertFile, hostCertFile, ctrCertFile)
-	injectCertificate(obj, role+"-key", envKeyFile, hostKeyFile, ctrKeyFile)
+	injectCertificateLocal(obj, role+"-cert", envCertFile, hostCertFile, ctrCertFile)
+	injectCertificateLocal(obj, role+"-key", envKeyFile, hostKeyFile, ctrKeyFile)
 
 	return nil
 }
 
-func injectCertificate(obj *hook.RunContainerOptionsObj, name, envKey, hostPath, containerPath string) {
+func injectCertificateLocal(obj *hook.GenerateContainerOptionContext, name, envKey, hostPath, containerPath string) {
 	obj.Opts.Envs = append(obj.Opts.Envs, container.EnvVar{
 		Name:  envKey,
 		Value: containerPath,

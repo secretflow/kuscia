@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -33,7 +34,7 @@ var (
 )
 
 func TestCreateDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -73,7 +74,7 @@ func TestCreateDomainData(t *testing.T) {
 }
 
 func TestQueryDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -108,7 +109,7 @@ func TestQueryDomainData(t *testing.T) {
 }
 
 func TestUpdateDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -148,7 +149,7 @@ func TestUpdateDomainData(t *testing.T) {
 }
 
 func TestDeleteDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -181,7 +182,7 @@ func TestDeleteDomainData(t *testing.T) {
 }
 
 func TestBatchQueryDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -236,7 +237,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 }
 
 func TestListDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)

@@ -18,6 +18,7 @@ import (
 	"context"
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 
@@ -26,11 +27,20 @@ import (
 
 type ControllerConstruction struct {
 	NewControler NewControllerFunc
-	CheckCRD     CheckCRDExistsFunc
+	CRDNames     []string
 }
 
 type NewControllerFunc func(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) IController
-type CheckCRDExistsFunc func(ctx context.Context, extensionClient apiextensionsclientset.Interface) error
+
+// CheckCRDExists is used to check if crd exist.
+func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface, crdNames []string) error {
+	for _, crdName := range crdNames {
+		if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crdName, v1.GetOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 type IController interface {
 	Run(int) error

@@ -24,6 +24,8 @@ import (
 	"strings"
 	"text/template"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
@@ -37,6 +39,8 @@ const (
 	pluginNameConfigRender = "config-render"
 
 	KubeStorageConfigDataAnnotation = "config-data.kuscia.secretflow/kube-storage"
+
+	defaultTemplateRenderOption = "missingkey=zero"
 )
 
 func Register() {
@@ -68,68 +72,172 @@ func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.Plug
 // CanExec implements the hook.Handler interface.
 // It returns true if point is equal to PointMakeMounts and obj.Mount.Name is equal to
 // configTemplateVolumesAnnotation value.
-func (cr *configRender) CanExec(obj interface{}, point hook.Point) bool {
-	if point != hook.PointMakeMounts {
+func (cr *configRender) CanExec(ctx hook.Context) bool {
+	switch ctx.Point() {
+	case hook.PointMakeMounts:
+		mCtx, ok := ctx.(*hook.MakeMountsContext)
+		if !ok {
+			return false
+		}
+
+		if mCtx.Mount.Name != mCtx.Pod.Annotations[common.ConfigTemplateVolumesAnnotationKey] {
+			return false
+		}
+
+		return true
+	case hook.PointK8sProviderSyncPod:
+		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
+		if !ok {
+			return false
+		}
+
+		if syncPodCtx.BkPod.Annotations[common.ConfigTemplateVolumesAnnotationKey] == "" {
+			return false
+		}
+
+		return true
+	default:
 		return false
 	}
-
-	mObj, ok := obj.(*hook.MakeMountsObj)
-	if !ok {
-		return false
-	}
-
-	if mObj.Mount.Name != mObj.Pod.Annotations[common.ConfigTemplateVolumesAnnotationKey] {
-		return false
-	}
-
-	return true
 }
 
 // ExecHook implements the hook.Handler interface.
 // It renders the configuration template and writes the generated real configuration content to a new file/directory.
 // The value of hostPath will be replaced by the new file/directory path.
-func (cr *configRender) ExecHook(obj interface{}, point hook.Point) (*hook.Result, error) {
+func (cr *configRender) ExecHook(ctx hook.Context) (*hook.Result, error) {
 	result := &hook.Result{}
 
-	mObj, ok := obj.(*hook.MakeMountsObj)
-	if !ok {
-		return nil, fmt.Errorf("can't convert object to MakeMountsObj")
+	switch ctx.Point() {
+	case hook.PointMakeMounts:
+		mCtx, ok := ctx.(*hook.MakeMountsContext)
+		if !ok {
+			return nil, fmt.Errorf("invalid context type %T", ctx)
+		}
+
+		if err := cr.handleMakeMountsContext(mCtx); err != nil {
+			return nil, fmt.Errorf("failed to handle make mounts context: %v", err)
+		}
+
+		return result, nil
+	case hook.PointK8sProviderSyncPod:
+		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
+		if !ok {
+			return nil, fmt.Errorf("invalid context type %T", ctx)
+		}
+
+		if err := cr.handleSyncPodContext(syncPodCtx); err != nil {
+			return nil, fmt.Errorf("failed to handle sync pod context: %v", err)
+		}
+
+		return result, nil
+	default:
+		return nil, fmt.Errorf("invalid point %v", ctx.Point())
+	}
+}
+
+func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) error {
+	pod := ctx.BkPod
+	var configVolume *v1.Volume
+	for _, volume := range pod.Spec.Volumes {
+		if volume.Name == pod.Annotations[common.ConfigTemplateVolumesAnnotationKey] {
+			configVolume = &volume
+			break
+		}
 	}
 
+	if configVolume == nil || configVolume.ConfigMap == nil {
+		nlog.Warnf("Config template volume not found in pod %q", format.Pod(pod))
+		return nil
+	}
+
+	srcConfigMap, err := ctx.ResourceManager.GetConfigMap(configVolume.ConfigMap.Name)
+	if err != nil {
+		return fmt.Errorf("failed to get config map %q, detail-> %v", configVolume.ConfigMap.Name, err)
+	}
+
+	// TODO Let's assume that the environment variables of each container are not conflicting
 	envs := map[string]string{}
-	for _, env := range mObj.Envs {
+	for _, c := range pod.Spec.Containers {
+		for _, env := range c.Env {
+			if _, ok := envs[env.Name]; !ok {
+				envs[env.Name] = env.Value
+			}
+		}
+	}
+
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, envs)
+	if err != nil {
+		return err
+	}
+
+	dstConfigMap, err := cr.renderConfigMap(srcConfigMap, data)
+	if err != nil {
+		return fmt.Errorf("failed to render config map %q, detail-> %v", srcConfigMap.Name, err)
+	}
+
+	ctx.Configmaps = append(ctx.Configmaps, dstConfigMap)
+
+	nlog.Infof("Render config template k8s pod %q succeed, configMap=%v", format.Pod(ctx.Pod), dstConfigMap.Name)
+
+	return nil
+}
+
+func (cr *configRender) renderConfigMap(srcConfigMap *v1.ConfigMap, data map[string]string) (*v1.ConfigMap, error) {
+	dstConfigMap := srcConfigMap.DeepCopy()
+	newData := map[string]string{}
+
+	for key, value := range srcConfigMap.Data {
+		tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Parse(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse config template, detail-> %v", err)
+		}
+
+		var buf bytes.Buffer
+		if err = tmpl.Execute(&buf, data); err != nil {
+			return nil, fmt.Errorf("failed to execute config template, detail-> %v", err)
+		}
+		newData[key] = buf.String()
+	}
+
+	dstConfigMap.Data = newData
+	return dstConfigMap, nil
+}
+
+func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) error {
+	envs := map[string]string{}
+	for _, env := range ctx.Envs {
 		envs[env.Name] = env.Value
 	}
 
-	data, err := cr.makeDataMap(mObj.Pod.Annotations, envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, envs)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	configPath := filepath.Join(mObj.PodVolumesDir, "config-render", mObj.Container.Name, mObj.Mount.Name, mObj.Mount.SubPath)
+	configPath := filepath.Join(ctx.PodVolumesDir, "config-render", ctx.Container.Name, ctx.Mount.Name, ctx.Mount.SubPath)
 
-	hostPath := *mObj.HostPath
+	hostPath := *ctx.HostPath
 	info, err := os.Stat(hostPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if info.IsDir() {
 		if err := cr.renderConfigDirectory(hostPath, configPath, data); err != nil {
-			return nil, fmt.Errorf("failed to render config templates in %q, detail-> %v", hostPath, err)
+			return fmt.Errorf("failed to render config templates in %q, detail-> %v", hostPath, err)
 		}
 	} else {
 		if err := cr.renderConfigFile(hostPath, configPath, data); err != nil {
-			return nil, fmt.Errorf("failed to render config template file %q, detail-> %v", hostPath, err)
+			return fmt.Errorf("failed to render config template file %q, detail-> %v", hostPath, err)
 		}
 	}
 
-	*mObj.HostPath = configPath
+	*ctx.HostPath = configPath
 
 	nlog.Infof("Render config template for container %q in pod %q succeed, templatePath=%v, configPath=%v",
-		mObj.Container.Name, format.Pod(mObj.Pod), hostPath, configPath)
+		ctx.Container.Name, format.Pod(ctx.Pod), hostPath, configPath)
 
-	return result, nil
+	return nil
 }
 
 func (cr *configRender) renderConfigDirectory(templateDir, configDir string, data map[string]string) error {
@@ -178,7 +286,7 @@ func (cr *configRender) renderConfigFile(templateFile, configFile string, data m
 		return err
 	}
 
-	tmpl, err := template.New("config-template").Option("missingkey=zero").Parse(string(templateContent))
+	tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Parse(string(templateContent))
 	if err != nil {
 		return fmt.Errorf("failed to parse config template, detail-> %v", err)
 	}

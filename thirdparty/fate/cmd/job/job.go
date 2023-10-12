@@ -46,7 +46,7 @@ func getInitConfig(taskConfigPath string) *modules.FateJobConfig {
 func NewFateJobCommand(ctx context.Context) *cobra.Command {
 	taskConfigPath := ""
 	clusterAddress := ""
-	var logConfig *zlogwriter.LogConfig
+	var logConfig *nlog.LogConfig
 	cmd := &cobra.Command{
 		Use:          "job",
 		Short:        "Run fate kuscia job",

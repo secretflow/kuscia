@@ -52,6 +52,7 @@ type DomainDataList struct {
 type DomainDataSpec struct {
 	// the URI of domaindata, the relative URI to the datasource
 	RelativeURI string `json:"relativeURI"`
+	Author      string `json:"author"`
 	Name        string `json:"name"`
 	Type        string `json:"type"`
 	DataSource  string `json:"dataSource"`

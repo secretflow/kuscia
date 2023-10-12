@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -42,33 +43,11 @@ type IDomainDataService interface {
 	ListDomainData(ctx context.Context, request *kusciaapi.ListDomainDataRequest) *kusciaapi.ListDomainDataResponse
 }
 
-type DomainDataRequest interface {
-	GetDomaindataId() string
-
-	GetName() string
-
-	GetType() string
-
-	GetRelativeUri() string
-
-	GetDomainId() string
-
-	GetDatasourceId() string
-
-	GetAttributes() map[string]string
-
-	GetPartition() *v1alpha1.Partition
-
-	GetColumns() []*v1alpha1.DataColumn
-
-	GetVendor() string
-}
-
 type domainDataService struct {
-	conf config.KusciaAPIConfig
+	conf *config.KusciaAPIConfig
 }
 
-func NewDomainDataService(config config.KusciaAPIConfig) IDomainDataService {
+func NewDomainDataService(config *config.KusciaAPIConfig) IDomainDataService {
 	return &domainDataService{
 		conf: config,
 	}
@@ -95,12 +74,15 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			return convert2CreateResp(resp, request.DomaindataId)
 		}
 	}
+
 	// normalization request
 	s.normalizationCreateRequest(request)
 	// build kuscia domain
 	Labels := make(map[string]string)
 	Labels[LabelDomainDataType] = request.Type
 	Labels[LabelDomainDataVendor] = request.Vendor
+	Labels[common.LabelInterConnProtocolType] = "kuscia"
+	Labels[common.LabelInitiator] = request.DomaindataId
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   request.DomaindataId,
@@ -115,6 +97,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			Author:      request.DomainId,
 		},
 	}
 	// create kuscia domain
@@ -168,6 +151,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			Author:      request.DomainId,
 		},
 	}
 	// merge modifiedDomainData to originalDomainData
@@ -248,6 +232,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaa
 			Columns:      common.Convert2PbColumn(kusciaDomainData.Spec.Columns),
 			Vendor:       kusciaDomainData.Spec.Vendor,
 			Status:       constants.DomainDataStatusAvailable,
+			Author:       kusciaDomainData.Spec.Author,
 		},
 	}
 }
@@ -278,6 +263,7 @@ func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *ku
 			Columns:      common.Convert2PbColumn(kusciaDomainData.Spec.Columns),
 			Vendor:       kusciaDomainData.Spec.Vendor,
 			Status:       constants.DomainDataStatusAvailable,
+			Author:       kusciaDomainData.Spec.Author,
 		}
 		respDatas = append(respDatas, &domainData)
 	}
@@ -345,6 +331,7 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 			Columns:      common.Convert2PbColumn(v.Spec.Columns),
 			Vendor:       v.Spec.Vendor,
 			Status:       constants.DomainDataStatusAvailable,
+			Author:       v.Spec.Author,
 		}
 		respDatas[i] = &domaindata
 	}

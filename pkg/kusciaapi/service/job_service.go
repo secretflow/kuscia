@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -49,7 +50,7 @@ type jobService struct {
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewJobService(config config.KusciaAPIConfig) IJobService {
+func NewJobService(config *config.KusciaAPIConfig) IJobService {
 	return &jobService{
 		Initiator:    config.Initiator,
 		kusciaClient: config.KusciaClient,

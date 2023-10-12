@@ -57,7 +57,7 @@ func NewConfManager(d *Dependencies) Module {
 	if d.ConfManager.IdleTimeout != 0 {
 		conf.IdleTimeout = d.ConfManager.IdleTimeout
 	}
-	if d.ConfManager.EnableConfAuth != false {
+	if !d.ConfManager.EnableConfAuth {
 		conf.EnableConfAuth = d.ConfManager.EnableConfAuth
 	}
 	if d.ConfManager.TLSConfig != nil {

@@ -28,17 +28,17 @@ func Test_EnsureCaKeyAndCert(t *testing.T) {
 	rootDir := t.TempDir()
 	_, _, err := EnsureCaKeyAndCert(&Dependencies{
 		KusciaConfig: KusciaConfig{
-			CAKeyFile: filepath.Join(rootDir, "ca.key"),
-			CAFile:    filepath.Join(rootDir, "ca.crt"),
-			DomainID:  "alice",
+			CAKeyFile:  filepath.Join(rootDir, "ca.key"),
+			CACertFile: filepath.Join(rootDir, "ca.crt"),
+			DomainID:   "alice",
 		},
 	})
 	assert.NoError(t, err)
 	_, _, err = EnsureCaKeyAndCert(&Dependencies{
 		KusciaConfig: KusciaConfig{
-			CAKeyFile: filepath.Join(rootDir, "ca.key"),
-			CAFile:    filepath.Join(rootDir, "ca.crt"),
-			DomainID:  "alice",
+			CAKeyFile:  filepath.Join(rootDir, "ca.key"),
+			CACertFile: filepath.Join(rootDir, "ca.crt"),
+			DomainID:   "alice",
 		},
 	})
 	assert.NoError(t, err)

@@ -63,13 +63,6 @@ func (t *transportModule) runAsSubProcess(ctx context.Context) error {
 	}
 
 	logPath := filepath.Join(LogDir, fmt.Sprintf("%s/%s.log", transportModuleName, transportModuleName))
-	fileOut, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-
-	defer fileOut.Close()
-
 	args := []string{
 		"--transport-config=" + t.configPath,
 		"--log.path=" + logPath,
@@ -78,8 +71,6 @@ func (t *transportModule) runAsSubProcess(ctx context.Context) error {
 	sp := supervisor.NewSupervisor(transportModuleName, nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(t.rootDir, transportBinPath), args...)
-		cmd.Stdout = fileOut
-		cmd.Stderr = fileOut
 		cmd.Env = os.Environ()
 		return cmd
 	})

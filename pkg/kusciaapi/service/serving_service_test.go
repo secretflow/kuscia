@@ -33,9 +33,10 @@ import (
 
 func TestCreateServing(t *testing.T) {
 	res := kusciaAPISS.CreateServing(context.Background(), &kusciaapi.CreateServingRequest{
-		ServingId: kusciaAPISS.servingID,
-		Initiator: "alice",
-		Parties:   kusciaAPISS.parties,
+		ServingId:          kusciaAPISS.servingID,
+		ServingInputConfig: "test",
+		Initiator:          "alice",
+		Parties:            kusciaAPISS.parties,
 	})
 	assert.Equal(t, res.Status.Code, int32(0))
 }
@@ -251,7 +252,7 @@ func TestBuildKusciaDeploymentPartyResources(t *testing.T) {
 		},
 	}
 
-	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage())
+	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
 	s := servingService{kusciaClient: kusciaClient}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -262,6 +263,13 @@ func TestBuildKusciaDeploymentPartyResources(t *testing.T) {
 }
 
 func TestBuildServingResources(t *testing.T) {
+	kd := &v1alpha1.KusciaDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "serving-1",
+		},
+		Spec: v1alpha1.KusciaDeploymentSpec{},
+	}
+
 	tests := []struct {
 		name          string
 		kdParty       *v1alpha1.KusciaDeploymentParty
@@ -363,7 +371,7 @@ func TestBuildServingResources(t *testing.T) {
 	s := servingService{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := s.buildServingResources(tt.kdParty, tt.partyTemplate)
+			got, _ := s.buildServingResources(context.Background(), kd, tt.kdParty, tt.partyTemplate)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -504,7 +512,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 					Parties: []v1alpha1.KusciaDeploymentParty{
 						{
 							DomainID:    "alice",
-							AppImageRef: "mockImage",
+							AppImageRef: "mockImageName",
 							Template: v1alpha1.KusciaDeploymentPartyTemplate{
 								Replicas: &replicas,
 							},
@@ -516,11 +524,42 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 				},
 			},
 			party: &kusciaapi.ServingParty{
-				AppImage: "mockImage1",
+				AppImage: "mockImageName2",
 				DomainId: "alice",
 				Replicas: &replicas,
 			},
 			want: true,
+		},
+		{
+			name:      "party alice appimage is updated, but can not find the appimage",
+			servingID: "serving-1",
+			kd: &v1alpha1.KusciaDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "serving-1",
+				},
+				Spec: v1alpha1.KusciaDeploymentSpec{
+					Initiator:   "alice",
+					InputConfig: "123456",
+					Parties: []v1alpha1.KusciaDeploymentParty{
+						{
+							DomainID:    "alice",
+							AppImageRef: "mockImageName",
+							Template: v1alpha1.KusciaDeploymentPartyTemplate{
+								Replicas: &replicas,
+							},
+						},
+						{
+							DomainID: "bob",
+						},
+					},
+				},
+			},
+			party: &kusciaapi.ServingParty{
+				AppImage: "mockImageName3",
+				DomainId: "alice",
+				Replicas: &replicas,
+			},
+			want: false,
 		},
 		{
 			name:      "party alice replicas is updated",
@@ -535,7 +574,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 					Parties: []v1alpha1.KusciaDeploymentParty{
 						{
 							DomainID:    "alice",
-							AppImageRef: "mockImage",
+							AppImageRef: "mockImageName",
 							Template: v1alpha1.KusciaDeploymentPartyTemplate{
 								Replicas: &replicas,
 							},
@@ -547,7 +586,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 				},
 			},
 			party: &kusciaapi.ServingParty{
-				AppImage: "mockImage",
+				AppImage: "mockImageName",
 				DomainId: "alice",
 				Replicas: &replicasTwo,
 			},
@@ -566,7 +605,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 					Parties: []v1alpha1.KusciaDeploymentParty{
 						{
 							DomainID:    "alice",
-							AppImageRef: "mockImage",
+							AppImageRef: "mockImageName",
 							Template: v1alpha1.KusciaDeploymentPartyTemplate{
 								Replicas: &replicas,
 								Strategy: &appsv1.DeploymentStrategy{
@@ -581,7 +620,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 				},
 			},
 			party: &kusciaapi.ServingParty{
-				AppImage: "mockImage",
+				AppImage: "mockImageName",
 				DomainId: "alice",
 				Replicas: &replicas,
 				UpdateStrategy: &kusciaapi.UpdateStrategy{
@@ -652,7 +691,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 		},
 	}
 
-	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage())
+	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"), makeMockAppImage("mockImageName2"))
 	s := servingService{kusciaClient: kusciaClient}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -35,12 +35,12 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
-	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 var (
@@ -132,7 +132,7 @@ func newFixture(t testing.TB) *fixture {
 	}
 	f.prikey = prikey
 
-	pubPemData := utils.EncodePKCS1PublicKey(prikey)
+	pubPemData := tlsutils.EncodePKCS1PublicKey(prikey)
 	f.pubkey = string(pubPemData)
 
 	f.objects = []runtime.Object{}
