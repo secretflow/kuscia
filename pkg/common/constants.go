@@ -36,8 +36,11 @@ const (
 	LabelInitiator                       = "kuscia.secretflow/initiator"
 	LabelHasSynced                       = "kuscia.secretflow/has-synced"
 	LabelDomainDataType                  = "kuscia.secretflow/domaindata-type"
+	LabelDomainDataID                    = "kuscia.secretflow/domaindataid"
 	LabelDomainDataVendor                = "kuscia.secretflow/domaindata-vendor"
 	LabelDomainDataSourceType            = "kuscia.secretflow/domaindatasource-type"
+	LabelDomainDataGrantVendor           = "kuscia.secretflow/domaindatagrant-vendor"
+	LabelDomainDataGrantDomain           = "kuscia.secretflow/domaindatagrant-domain"
 
 	LabelSelfClusterAsInitiator = "kuscia.secretflow/self-cluster-as-initiator"
 	LabelInterConnProtocolType  = "kuscia.secretflow/interconn-protocol-type"
@@ -49,6 +52,10 @@ const (
 	LabelKusciaDeploymentUID      = "kuscia.secretflow/kd-uid"
 	LabelKusciaDeploymentName     = "kuscia.secretflow/kd-name"
 	LabelKubernetesDeploymentName = "kuscia.secretflow/deployment-name"
+
+	LabelNodeName        = "kuscia.secretflow/node"
+	LabelPodUID          = "kuscia.secretflow/pod-uid"
+	LabelOwnerReferences = "kuscia.secretflow/owner-references"
 )
 
 type LoadBalancerType string
@@ -118,4 +125,9 @@ const (
 const (
 	DefaultDataSourceID     = "default-data-source"
 	DefaultDomainDataVendor = "manual"
+)
+
+const (
+	DomainDataSourceTypeLocalFS        = "localfs"
+	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )

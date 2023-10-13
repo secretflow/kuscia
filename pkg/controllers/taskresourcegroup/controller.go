@@ -21,7 +21,6 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -533,17 +532,4 @@ func (c *Controller) handleDelayingTrg(item interface{}) {
 // Name returns controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists is used to check if crd exist.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDTaskResourcesGroupsName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDTaskResourcesName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-
-	return nil
 }

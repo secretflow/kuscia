@@ -17,12 +17,9 @@ package nlog
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 )
 
 func logTest(ctx context.Context, log *NLog) {
@@ -49,9 +46,7 @@ func TestNewNLogWithNilOption(t *testing.T) {
 
 func TestNewNLogWithNilContext(t *testing.T) {
 	ctx := context.Background()
-	logger, err := zlogwriter.New(&zlogwriter.LogConfig{LogPath: filepath.Join(t.TempDir(), "context.log")})
-	assert.NoError(t, err)
-	log := NewNLog(SetWriter(logger), SetFormatter(NewDefaultFormatter()))
+	log := NewNLog(SetFormatter(NewDefaultFormatter()))
 	assert.True(t, log != nil)
 	logTest(ctx, log)
 }
@@ -96,18 +91,14 @@ func (t *testSpaceFormatter) Format(ctx context.Context, log string) string {
 
 func TestNewNLogWithVerticalBarFormatter(t *testing.T) {
 	ctx := &testContext{Context: context.Background(), values: map[interface{}]interface{}{"trace_id": "test_trace", "tags": "alice bob"}}
-	logger, err := zlogwriter.New(&zlogwriter.LogConfig{LogPath: filepath.Join(t.TempDir(), "context.log")})
-	assert.NoError(t, err)
-	log := NewNLog(SetWriter(logger), SetFormatter(&testVerticalBarFormatter{}))
+	log := NewNLog(SetFormatter(&testVerticalBarFormatter{}))
 	assert.True(t, log != nil)
 	logTest(ctx, log)
 }
 
 func TestNewNLogWithSpaceFormatter(t *testing.T) {
 	ctx := &testContext{Context: context.Background(), values: map[interface{}]interface{}{"trace_id": 33, "tags": 44}}
-	logger, err := zlogwriter.New(&zlogwriter.LogConfig{LogPath: filepath.Join(t.TempDir(), "context.log")})
-	assert.NoError(t, err)
-	log := NewNLog(SetWriter(logger), SetFormatter(&testSpaceFormatter{}))
+	log := NewNLog(SetFormatter(&testSpaceFormatter{}))
 	assert.True(t, log != nil)
 	logTest(ctx, log)
 }

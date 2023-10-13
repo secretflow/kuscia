@@ -24,18 +24,21 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
 
 type containerdModule struct {
-	Socket string
-	Root   string
+	Socket    string
+	Root      string
+	LogConfig nlog.LogConfig
 }
 
 func NewContainerd(i *Dependencies) Module {
 	return &containerdModule{
-		Root:   i.RootDir,
-		Socket: i.ContainerdSock,
+		Root:      i.RootDir,
+		Socket:    i.ContainerdSock,
+		LogConfig: *i.LogConfig,
 	}
 }
 
@@ -52,17 +55,13 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	}
 
 	sp := supervisor.NewSupervisor("containerd", nil, -1)
-	fout, err := os.OpenFile(filepath.Join(s.Root, LogPrefix, "containerd.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		nlog.Warnf("open containerd stdout logfile failed with %v", err)
-		return nil
-	}
-	defer fout.Close()
+	s.LogConfig.LogPath = filepath.Join(s.Root, LogPrefix, "containerd.log")
+	lj, _ := ljwriter.New(&s.LogConfig)
+	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.Root, "bin/containerd"), args...)
-		cmd.Stderr = fout
-		cmd.Stdout = fout
-
+		cmd.Stderr = n
+		cmd.Stdout = n
 		return cmd
 	})
 }

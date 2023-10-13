@@ -151,4 +151,5 @@ message DomainData {
 
     // if the data is stored with file format, file_format describe file format
     FileFormat file_format = 10;
+    string author = 11;
 }

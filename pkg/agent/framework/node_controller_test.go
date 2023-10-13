@@ -24,9 +24,14 @@ import (
 	coord "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	clientset "k8s.io/client-go/kubernetes"
 	testclient "k8s.io/client-go/kubernetes/fake"
+
+	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/agent/utils/nodeutils"
 )
 
 // mockNodeProvider is a basic node provider that only uses the passed in context
@@ -41,15 +46,13 @@ func (mockNodeProvider) Ping(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (p mockNodeProvider) ConfigureNode(context.Context) *corev1.Node {
+func (p mockNodeProvider) ConfigureNode(context.Context, string) *corev1.Node {
 	return p.node
 }
 
 // This mockNodeProvider does not support updating node status and so this
 // function is a no-op.
 func (mockNodeProvider) SetStatusUpdateCallback(ctx context.Context, f func(*corev1.Node)) {}
-
-func (p mockNodeProvider) SetAgentReady(context.Context, bool, string) {}
 
 func (mockNodeProvider) RefreshNodeStatus(ctx context.Context, nodeStatus *corev1.NodeStatus) bool {
 	return false
@@ -70,7 +73,8 @@ func TestNodeRun(t *testing.T) {
 	// We have to refer to testNodeCopy during the course of the test. testNode is modified by the node controller
 	// so it will trigger the race detector.
 	testNodeCopy := testNode.DeepCopy()
-	node, err := NewNodeController(testP, nodes, leases, true)
+	ndoeCfg := &config.NodeCfg{}
+	node, err := NewNodeController(corev1.NamespaceDefault, testP, nodes, leases, ndoeCfg)
 	assert.NoError(t, err)
 
 	interval := 1 * time.Millisecond
@@ -104,6 +108,8 @@ func TestNodeRun(t *testing.T) {
 		iters         = 50
 		expectAtLeast = iters / 5
 	)
+
+	node.NotifyAgentReady()
 
 	timeout := time.After(30 * time.Second)
 	for i := 0; i < iters; i++ {
@@ -184,6 +190,63 @@ func TestNodeRun(t *testing.T) {
 	}
 }
 
+func TestNodeController_RunAndStop(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := testclient.NewSimpleClientset()
+
+	nodeCfg := &config.NodeCfg{NodeName: "aaa", EnableNodeReuse: true}
+	runAndStopTestNodeController(t, c, nodeCfg)
+
+	masterNode, err := c.CoreV1().Nodes().Get(ctx, "aaa", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, masterNode.Spec.Unschedulable, true)
+	assert.True(t, nodeutils.IsNodeReady(masterNode))
+	assert.True(t, masterNode.Labels[labelNodeStopTimestamp] != "")
+
+	nodeCfg = &config.NodeCfg{NodeName: "bbb", EnableNodeReuse: true, KeepNodeOnExit: false}
+	runAndStopTestNodeController(t, c, nodeCfg)
+	masterNode, err = c.CoreV1().Nodes().Get(ctx, "aaa", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, masterNode.Spec.Unschedulable, true)
+	assert.True(t, nodeutils.IsNodeReady(masterNode))
+	assert.True(t, masterNode.Labels[labelNodeStopTimestamp] != "")
+	_, err = c.CoreV1().Nodes().Get(ctx, "bbb", metav1.GetOptions{})
+	assert.True(t, k8serrors.IsNotFound(err))
+
+	nodeCfg = &config.NodeCfg{NodeName: "ccc", EnableNodeReuse: false, KeepNodeOnExit: true}
+	runAndStopTestNodeController(t, c, nodeCfg)
+	masterNode, err = c.CoreV1().Nodes().Get(ctx, "ccc", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, masterNode.Spec.Unschedulable, true)
+	assert.False(t, nodeutils.IsNodeReady(masterNode))
+	assert.True(t, masterNode.Labels[labelNodeStopTimestamp] == "")
+
+	nodeCfg = &config.NodeCfg{NodeName: "ddd", EnableNodeReuse: false, KeepNodeOnExit: false}
+	runAndStopTestNodeController(t, c, nodeCfg)
+	masterNode, err = c.CoreV1().Nodes().Get(ctx, "ddd", metav1.GetOptions{})
+	assert.True(t, k8serrors.IsNotFound(err))
+}
+
+func runAndStopTestNodeController(t *testing.T, client clientset.Interface, nodeCfg *config.NodeCfg) {
+	tNode := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeCfg.NodeName}}
+	testP := &testNodeProvider{NodeProvider: &mockNodeProvider{node: tNode}}
+
+	nodes := client.CoreV1().Nodes()
+	leases := client.CoordinationV1().Leases(corev1.NamespaceNodeLease)
+
+	nc, err := NewNodeController(corev1.NamespaceDefault, testP, nodes, leases, nodeCfg)
+	assert.NoError(t, err)
+
+	go func() {
+		assert.NoError(t, nc.Run(context.Background()))
+	}()
+
+	nc.NotifyAgentReady()
+	nc.Stop()
+}
+
 func TestUpdateNodeStatus(t *testing.T) {
 	n := testNode(t)
 	n.Status.Conditions = append(n.Status.Conditions, corev1.NodeCondition{
@@ -253,7 +316,8 @@ func TestPingAfterStatusUpdate(t *testing.T) {
 	// We have to refer to testNodeCopy during the course of the test. testNode is modified by the node controller
 	// so it will trigger the race detector.
 	testNodeCopy := testNode.DeepCopy()
-	node, err := NewNodeController(testP, nodes, leases, true)
+	cfgNode := &config.NodeCfg{}
+	node, err := NewNodeController(corev1.NamespaceDefault, testP, nodes, leases, cfgNode)
 	assert.NoError(t, err)
 	node.nmt = testNode
 
@@ -267,6 +331,7 @@ func TestPingAfterStatusUpdate(t *testing.T) {
 	go func() {
 		chErr <- node.Run(ctx)
 	}()
+	node.NotifyAgentReady()
 
 	timer := time.NewTimer(10 * time.Second)
 	defer timer.Stop()

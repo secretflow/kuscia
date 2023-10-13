@@ -80,11 +80,12 @@ func (b *GinBean) Init(e framework.ConfBeanRegistry) error {
 	}
 	if b.LogPath != "" {
 		logger, err := zlogwriter.New(
-			&zlogwriter.LogConfig{
+			&nlog.LogConfig{
 				LogPath:       b.LogPath,
 				LogLevel:      "INFO",
-				MaxFileSizeMB: 50,
+				MaxFileSizeMB: 512,
 				MaxFiles:      10,
+				Compress:      true,
 			})
 		if err != nil {
 			return err

@@ -1,6 +1,6 @@
 # 架构
 
-Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia 提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。
+Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia 提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。
 
 Kuscia 集群由控制平面（俗称调度面、Master）和节点组成。控制平面负责调度，节点负责计算。
 
@@ -24,7 +24,7 @@ Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联
 
 #### Kuscia Controllers
 
-Kuscia 扩展了一组 Kubernetes 控制器，用于处理 Kuscia 的自定义资源，这些控制器包括：
+Kuscia 扩展了一组 K3s 控制器，用于处理 Kuscia 的自定义资源，这些控制器包括：
 
 - Job Controller：作业控制器，负责解析作业 DAG 的描述信息，进行 DAG 的编排与多任务调度、采集任务状态。
 - Task Controller：任务控制器，负责解析任务的描述信息，实现多方任务的 Co-Scheduling 调度，对应作业 DAG 中的顶点。
@@ -37,7 +37,7 @@ Kuscia 扩展了一组 Kubernetes 控制器，用于处理 Kuscia 的自定义�
 
 #### Kuscia Storage
 
-Kuscia Storage 是对 Kubernetes 原生集群存储的补充。Kubernetes 原生集群存储不适合存储大 value，因此对于大 value 的资源属性，如作业配置等，将存储在 Kuscia Storage
+Kuscia Storage 是对 K3s 原生集群存储的补充。K3s 原生集群存储不适合存储大 value，因此对于大 value 的资源属性，如作业配置等，将存储在 Kuscia Storagee
 中。该模块暂未开源。
 
 #### Envoy
@@ -61,7 +61,7 @@ Lite 节点主要由 Agent、NetworkMesh、DataMesh（功能暂不完备），�
 
 #### Agent
 
-Agent 主要负责节点实例注册和容器管理。将节点实例注册为 Kubernetes 集群的工作节点后，用于管理 Kubernetes 集群下发的任务 Pod，并对 Pod 生命周期和节点实例生命周期进行管理。
+Agent 主要负责节点实例注册和容器管理。将节点实例注册为 K3s 集群的工作节点后，用于管理 K3s 集群下发的任务 Pod，并对 Pod 生命周期和节点实例生命周期进行管理。
 
 Agent 当前支持 RunC 运行时，后续还将支持 RunP 和 RunK 模式：
 

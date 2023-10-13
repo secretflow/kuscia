@@ -22,21 +22,45 @@ option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh";
 option java_package = "org.secretflow.v1alpha1.datamesh";
 
 service DomainDataGrantService {
-  rpc CreateDomainDataGrant(CreateDomainDataGrantRequest) returns (CreateDomainDataGrantResponse);
+  rpc CreateDomainDataGrant(CreateDomainDataGrantRequest)
+      returns (CreateDomainDataGrantResponse);
 
-  rpc QueryDomainDataGrant(QueryDomainDataGrantRequest) returns (QueryDomainDataGrantResponse);
+  rpc QueryDomainDataGrant(QueryDomainDataGrantRequest)
+      returns (QueryDomainDataGrantResponse);
 
-  rpc UpdateDomainDataGrant(UpdateDomainDataGrantRequest) returns (UpdateDomainDataGrantResponse);
+  rpc UpdateDomainDataGrant(UpdateDomainDataGrantRequest)
+      returns (UpdateDomainDataGrantResponse);
 
-  rpc DeleteDomainDataGrant(DeleteDomainDataGrantRequest) returns (DeleteDomainDataGrantResponse);
+  rpc DeleteDomainDataGrant(DeleteDomainDataGrantRequest)
+      returns (DeleteDomainDataGrantResponse);
+}
+
+message GrantLimit {
+  int64 expiration_time = 1;
+  int32 use_count = 2;
+  string flow_id = 3;
+  repeated string componets = 4;
+  string initiator = 5;
+  string input_config = 6;
+}
+
+message DomainDataGrantData {
+  string domaindatagrant_id = 1;
+  string author = 2;
+  string domaindata_id = 3;
+  string grant_domain = 4;
+  GrantLimit limit = 5;
+  map<string, string> description = 6;
+  string signature = 7;
 }
 
 message CreateDomainDataGrantRequest {
   RequestHeader header = 1;
-  string domaindata_id = 2;
-  string grant_domain = 3;
-  repeated string grant_mode = 4; // Enum: normal,metadata,file
-  string description = 5;
+  string domaindatagrant_id = 2;
+  string domaindata_id = 3;
+  string grant_domain = 4;
+  GrantLimit limit = 5;
+  map<string, string> description = 6;
 }
 
 message CreateDomainDataGrantResponse {
@@ -54,22 +78,18 @@ message UpdateDomainDataGrantRequest {
   string domaindatagrant_id = 2;
   string domaindata_id = 3;
   string grant_domain = 4;
-  repeated string grant_mode = 5;
-  string description = 6;
+  GrantLimit limit = 5;
+  map<string, string> description = 6;
 }
 
-message UpdateDomainDataGrantResponse {
-  Status status = 1;
-}
+message UpdateDomainDataGrantResponse { Status status = 1; }
 
 message DeleteDomainDataGrantRequest {
   RequestHeader header = 1;
   string domaindatagrant_id = 2;
 }
 
-message DeleteDomainDataGrantResponse {
-  Status status = 1;
-}
+message DeleteDomainDataGrantResponse { Status status = 1; }
 
 message QueryDomainDataGrantRequest {
   RequestHeader header = 1;
@@ -77,14 +97,6 @@ message QueryDomainDataGrantRequest {
 }
 
 message QueryDomainDataGrantResponse {
-  Status   status = 1;
-  DomainDataGrant data = 2;
-}
-
-message DomainDataGrant {
-  string domaindatagrant_id = 1;
-  string domaindata_id = 2;
-  string grant_domain = 3;
-  repeated string grant_mode = 4;
-  string description = 5;
+  Status status = 1;
+  DomainDataGrantData data = 2;
 }

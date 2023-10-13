@@ -73,6 +73,10 @@ func (n *NLog) Fatal(args ...interface{}) {
 	n.logWriter.Fatal(n.formatter.Format(n.ctx, fmt.Sprint(args...)))
 }
 
+func (n *NLog) Write(p []byte) (int, error) {
+	return n.logWriter.Write(p)
+}
+
 func NewNLog(ops ...Option) *NLog {
 	n := &NLog{logWriter: GetDefaultLogWriter(), formatter: NewDefaultFormatter(), ctx: context.Background()}
 	for _, o := range ops {

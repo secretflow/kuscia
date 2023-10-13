@@ -8,11 +8,11 @@ Kuscia 提供了两套 API 接口，分别是 K8s API 和 Kuscia API。
 
 K8s API 是基于 K8s 接口，以 CRD 的形式提供，请参考 [概念](../concepts/index) 。
 你可以通过 kubectl 或 类似于 [client-go](https://github.com/kubernetes/client-go) 这样的 Go 客户端 进行接入。
-其他语言的接入方式，可以参考其他 K8s SDK 开源项目。
+其他语言的接入方式，可以参考[这里](https://kubernetes.io/docs/reference/using-api/client-libraries/)。
 
 Kuscia API 是在 K8s API 上的一层封装，提供了更加上层的逻辑，你可以通过 GRPC 或者 HTTPS 进行接入。
 
-当前我们推荐基于 Kuscia API 接入隐语能力；仅当业务方对 K8s 非常熟悉，并且有很多 Kuscia API 无法满足的复杂功能需要实现，才推荐基于
+当前我们推荐基于 Kuscia API 接入隐语能力；仅当业务方对 K3s 非常熟悉，并且有很多 Kuscia API 无法满足的复杂功能需要实现，才推荐基于
 K8s API 接入。
 
 {#kuscia-api}

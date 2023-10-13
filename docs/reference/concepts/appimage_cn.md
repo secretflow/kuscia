@@ -367,9 +367,9 @@ AppImage `spec` 的子字段详细介绍如下：
         - `.spec.deployTemplates[].spec.containers[].ports[].port`：表示应用容器的端口号。
         - `.spec.deployTemplates[].spec.containers[].ports[].protocol`：表示应用容器的端口使用的协议类型。支持两种类型：`HTTP`、`GRPC`。
         - `.spec.deployTemplates[].spec.containers[].ports[].scope`：表示应用端口使用范围。支持三种模式：`Cluster`、`Domain`、`Local`。Kuscia 会根据 scope 取值的不同，限制 port 的网络访问策略。具体含义如下所示：
-          - `Cluster`：表示该 port 用于节点外部和节点内部访问，Kuscia 会给该 port 创建相对应的 k8s service 资源。
-          - `Domain`：表示该 port 用于节点内部访问，Kuscia 会给该 port 创建相对应的 k8s service 资源。
-          - `Local`：表示该 port 用于 Pod 内部容器本地访问，Kuscia 不会给该 port 创建相对应的 k8s service 资源。
+          - `Cluster`：表示该 port 用于节点外部和节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。
+          - `Domain`：表示该 port 用于节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。
+          - `Local`：表示该 port 用于 Pod 内部容器本地访问，Kuscia 不会给该 port 创建相对应的 K3s service 资源。
       - `deployTemplates[].spec.containers[].envFrom`：表示使用`envFrom`为应用容器设置环境变量。
       - `deployTemplates[].spec.containers[].env`：表示使用`env`为应用容器设置环境变量。
       - `deployTemplates[].spec.containers[].resources`：表示应用容器申请的资源配置。

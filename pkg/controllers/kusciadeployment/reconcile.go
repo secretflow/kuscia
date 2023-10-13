@@ -36,49 +36,20 @@ const (
 	kusciaDeploymentName     = "KusciaDeployment"
 )
 
-type KdStatusReason string
-
-const (
-	BuildPartyKitInfoFailed KdStatusReason = "BuildPartyKitInfoFailed"
-	CreateConfigMapFailed   KdStatusReason = "CreateConfigMapFailed"
-	CreateServiceFailed     KdStatusReason = "CreateServiceFailed"
-	CreateDeploymentFailed  KdStatusReason = "CreateDeploymentFailed"
-)
-
 // ProcessKusciaDeployment processes kuscia deployment resource.
 func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment) (err error) {
+	preKdStatus := kd.Status.DeepCopy()
 	partyKitInfos, err := c.buildPartyKitInfos(kd)
 	if err != nil {
-		return c.handleError(ctx, kd, err)
+		return c.handleError(ctx, preKdStatus, kd, err)
 	}
 
 	if err = c.syncResources(ctx, partyKitInfos); err != nil {
-		return c.handleError(ctx, kd, err)
+		return c.handleError(ctx, preKdStatus, kd, err)
 	}
 
 	if c.refreshPartyDeploymentStatuses(kd, partyKitInfos) {
 		return c.updateKusciaDeploymentStatus(ctx, kd)
-	}
-
-	return nil
-}
-
-func (c *Controller) handleError(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment, err error) error {
-	if kd.Status.Phase == kusciav1alpha1.KusciaDeploymentPhaseFailed {
-		return c.updateKusciaDeploymentStatus(ctx, kd)
-	}
-	return err
-}
-
-func (c *Controller) updateKusciaDeploymentStatus(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment) (err error) {
-	now := metav1.Now()
-	kd.Status.LastReconcileTime = &now
-	if kd.Status.TotalParties == 0 {
-		kd.Status.TotalParties = len(kd.Spec.Parties)
-	}
-
-	if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments().UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
-		return fmt.Errorf("error updating kuscia deployment %v status, %v", kd.Name, err)
 	}
 
 	return nil
@@ -133,8 +104,11 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 
 	if kd.Status.Phase != kdStatusPhase {
 		kd.Status.Phase = kdStatusPhase
+		kd.Status.Reason = ""
+		kd.Status.Message = ""
 		updated = true
 	}
+
 	return updated
 }
 
@@ -208,7 +182,7 @@ func (c *Controller) syncService(ctx context.Context, partyKitInfos map[string]*
 				if k8serrors.IsNotFound(err) {
 					if err = c.createService(ctx, partyKitInfo, portName, serviceName); err != nil {
 						partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
-						partyKitInfo.kd.Status.Reason = string(CreateServiceFailed)
+						partyKitInfo.kd.Status.Reason = string(createServiceFailed)
 						partyKitInfo.kd.Status.Message = err.Error()
 						return err
 					}
@@ -311,7 +285,7 @@ func (c *Controller) syncConfigMap(ctx context.Context, partyKitInfos map[string
 				if k8serrors.IsNotFound(err) {
 					if err = c.createConfigMap(ctx, partyKitInfo); err != nil {
 						partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
-						partyKitInfo.kd.Status.Reason = string(CreateConfigMapFailed)
+						partyKitInfo.kd.Status.Reason = string(createConfigMapFailed)
 						partyKitInfo.kd.Status.Message = err.Error()
 						return err
 					}
@@ -374,7 +348,7 @@ func (c *Controller) syncDeployment(ctx context.Context, partyKitInfos map[strin
 			if k8serrors.IsNotFound(err) {
 				if err = c.createDeployment(ctx, partyKitInfo); err != nil {
 					partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
-					partyKitInfo.kd.Status.Reason = string(CreateDeploymentFailed)
+					partyKitInfo.kd.Status.Reason = string(createDeploymentFailed)
 					partyKitInfo.kd.Status.Message = err.Error()
 					return err
 				}

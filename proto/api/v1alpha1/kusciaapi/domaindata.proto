@@ -200,4 +200,5 @@ message DomainData {
     string vendor = 10;
     // The status of the domaindata , enum: Available,Unavailable
     string status = 11;
+    string author = 12;
 }

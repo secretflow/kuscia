@@ -934,14 +934,6 @@ func (p *podWorkers) managePodLoop(podUpdates <-chan podWork) {
 			case update.Options.RunningPod != nil:
 				// when we receive a running pod, we don't need status at all
 			default:
-				// wait until we see the next refresh from the PLEG via the cache (max 2s)
-				// TODO: this adds ~1s of latency on all transitions from sync to terminating
-				//  to terminated, and on all termination retries (including evictions). We should
-				//  improve latency by making the the pleg continuous and by allowing pod status
-				//  changes to be refreshed when key events happen (killPod, sync->terminating).
-				//  Improving this latency also reduces the possibility that a terminated
-				//  container's status is garbage collected before we have a chance to update the
-				//  API server (thus losing the exit code).
 				status, err = p.getPodStatusFn(context.Background(), pod, lastSyncTime)
 			}
 			if err != nil {

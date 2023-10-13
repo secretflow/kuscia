@@ -52,10 +52,13 @@ func NewKusciaAPI(i *Dependencies) (Module, error) {
 	if !i.IsMaster {
 		kusciaAPIConfig.Initiator = i.DomainID
 	}
-	rootCAFile := i.CAFile
+	rootCAFile := i.CACertFile
 	if rootCAFile != "" && kusciaAPIConfig.TLSConfig != nil {
-		kusciaAPIConfig.TLSConfig.RootCAFile = rootCAFile
+		kusciaAPIConfig.TLSConfig.RootCACertFile = rootCAFile
 	}
+
+	kusciaAPIConfig.DomainKeyFile = i.DomainKeyFile
+
 	// init clients with kuscia kubeconfig
 	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(i.KusciaKubeConfig, i.ApiserverEndpoint)
 	if err != nil {
@@ -101,7 +104,7 @@ func (m kusciaAPIModule) readyZ() bool {
 	// init client tls config
 	tlsConfig := m.conf.TLSConfig
 	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCACertFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
 		if err != nil {
 			nlog.Errorf("local tls config error: %v", err)
 			return false

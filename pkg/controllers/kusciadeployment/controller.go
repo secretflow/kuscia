@@ -21,7 +21,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
@@ -141,7 +140,7 @@ func (c *Controller) resourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
 		switch t := obj.(type) {
 		case *kusciav1alpha1.KusciaDeployment:
-			if t.DeletionTimestamp != nil || t.Status.Phase == kusciav1alpha1.KusciaDeploymentPhaseFailed {
+			if t.DeletionTimestamp != nil {
 				return false
 			}
 			return true
@@ -384,16 +383,20 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	}
 
 	kd := kusciaDeployment.DeepCopy()
-	return c.ProcessKusciaDeployment(ctx, kd)
+	if err = c.ProcessKusciaDeployment(ctx, kd); err != nil {
+		if c.kdQueue.NumRequeues(key) == maxRetries {
+			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
+			kd.Status.Reason = string(retryProcessingFailed)
+			kd.Status.Message = fmt.Sprintf("process failed after retrying %v times, %v", maxRetries, err)
+			err = c.handleError(ctx, &kusciaDeployment.Status, kd, err)
+		}
+		return err
+	}
+
+	return nil
 }
 
 // Name returns controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists check whether KusciaDeployment crd exists.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	_, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDKusciaDeploymentsName, metav1.GetOptions{})
-	return err
 }

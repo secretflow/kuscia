@@ -26,6 +26,7 @@ import (
 	apicode "github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domain"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindata"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindatagrant"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domainroute"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/job"
@@ -68,7 +69,7 @@ func (s *httpServerBean) Init(e framework.ConfBeanRegistry) error {
 	if tlsConfig != nil {
 		// override tls flags by config
 		s.TLSConfig.EnableTLS = true
-		s.TLSConfig.CAPath = tlsConfig.RootCAFile
+		s.TLSConfig.CAPath = tlsConfig.RootCACertFile
 		s.TLSConfig.ServerCertPath = tlsConfig.ServerCertFile
 		s.TLSConfig.ServerKeyPath = tlsConfig.ServerKeyFile
 	}
@@ -138,11 +139,12 @@ func (s *httpServerBean) ServerName() string {
 }
 
 func (s *httpServerBean) registerGroupRoutes(eg *engine.Engine, httpEg *gin.Engine) {
-	jobService := service.NewJobService(*s.config)
-	domainService := service.NewDomainService(*s.config)
-	routeService := service.NewDomainRouteService(*s.config)
-	domainDataService := service.NewDomainDataService(*s.config)
-	servingService := service.NewServingService(*s.config)
+	jobService := service.NewJobService(s.config)
+	domainService := service.NewDomainService(s.config)
+	routeService := service.NewDomainRouteService(s.config)
+	domainDataService := service.NewDomainDataService(s.config)
+	domainDataGrantService := service.NewDomainDataGrantService(s.config)
+	servingService := service.NewServingService(s.config)
 	healthSerice := service.NewHealthService()
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
@@ -298,6 +300,36 @@ func (s *httpServerBean) registerGroupRoutes(eg *engine.Engine, httpEg *gin.Engi
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "status/batchQuery",
 					Handlers:     []gin.HandlerFunc{protoDecorator(eg, serving.NewBatchQueryServingStatusHandler(servingService))},
+				},
+			},
+		},
+		{
+			Group: "api/v1/domaindatagrant",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "create",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, domaindatagrant.NewCreateDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "update",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, domaindatagrant.NewUpdateDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "delete",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, domaindatagrant.NewDeleteDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, domaindatagrant.NewQueryDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "batchQuery",
+					Handlers:     []gin.HandlerFunc{protoDecorator(eg, domaindatagrant.NewBatchQueryDomainDataGrantHandler(domainDataGrantService))},
 				},
 			},
 		},

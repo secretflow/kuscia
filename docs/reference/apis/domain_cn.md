@@ -1,6 +1,6 @@
 # Domain
 
-在 Kuscia 中将隐私计算的节点称为 Domain，一个 Domain 中可以包含多个 K8s
+在 Kuscia 中将隐私计算的节点称为 Domain，一个 Domain 中可以包含多个 K3s
 的工作节点（Node）。详情请参考 [Domain](../concepts/domain_cn.md) 。
 你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto) 找到对应的
 protobuf 文件。
@@ -30,7 +30,7 @@ protobuf 文件。
 | 字段        | 类型                                         | 可选 | 描述                                                                 |
 | ----------- | -------------------------------------------- | ---- | -------------------------------------------------------------------- |
 | header      | [RequestHeader](summary_cn.md#requestheader) | 是   | 自定义请求内容                                                       |
-| domain_id   | string                                       | 否   | 节点 ID                                                              |
+| domain_id   | string                                       | 否   | 节点 ID 需要符合 DNS 子域名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)                                                             |
 | role        | string                                       | 是   | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
 | cert        | string                                       | 是   | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)  |
 | auth_center | [AuthCenter](#auth-center)                   | 是   | 节点到中心的授权模式                                                 |

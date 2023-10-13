@@ -76,7 +76,7 @@ func TestSourceRun(t *testing.T) {
 		Namespace: "default",
 		NodeName:  "test-node",
 		SourceCfg: &config.SourceCfg{
-			Apiserver: config.ApiserverSourceCfg{KubeconfigFile: "/tmp/kubeconfig"},
+			Apiserver: config.ApiserverSourceCfg{KubeConnCfg: config.KubeConnCfg{KubeconfigFile: "/tmp/kubeconfig"}},
 			File:      config.FileSourceCfg{Enable: true, Path: dirName, Period: time.Second * 30},
 		},
 		KubeClient: kubeClient,

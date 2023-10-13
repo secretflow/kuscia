@@ -40,7 +40,7 @@ func NewDomainRoute(i *Dependencies) Module {
 	conf.DomainKeyFile = i.DomainKeyFile
 	conf.MasterConfig = i.Master
 	conf.ExternalTLS = i.ExternalTLS
-	conf.CAFile = i.CAFile
+	conf.CAFile = i.CACertFile
 	conf.CsrFile = filepath.Join(i.RootDir, CertPrefix, "domain.csr")
 	conf.CAKeyFile = i.CAKeyFile
 

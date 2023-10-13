@@ -134,10 +134,12 @@ message ServingStatus {
 
 message ServingStatusDetail {
   string state = 1;
-  int32 total_parties = 2;
-  int32 available_parties = 3;
-  string create_time = 4;
-  repeated PartyServingStatus party_statuses = 5;
+  string reason = 2;
+  string message = 3;
+  int32 total_parties = 4;
+  int32 available_parties = 5;
+  string create_time = 6;
+  repeated PartyServingStatus party_statuses = 7;
 }
 
 message PartyServingStatus {
@@ -149,7 +151,7 @@ message PartyServingStatus {
   int32 unavailable_replicas = 6;
   int32 updatedReplicas = 7;
   string create_time = 8;
-  // only contain domain scope service
+  // only contain cluster scope service
   repeated Endpoint endpoints = 9;
 }
 

@@ -21,6 +21,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,7 +59,7 @@ type servingService struct {
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewServingService(config config.KusciaAPIConfig) IServingService {
+func NewServingService(config *config.KusciaAPIConfig) IServingService {
 	return &servingService{
 		Initiator:    config.Initiator,
 		kubeClient:   config.KubeClient,
@@ -70,6 +71,12 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 	if request.ServingId == "" {
 		return &kusciaapi.CreateServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "serving id can not be empty"),
+		}
+	}
+
+	if request.ServingInputConfig == "" {
+		return &kusciaapi.CreateServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "serving input config can not be empty"),
 		}
 	}
 
@@ -314,9 +321,9 @@ func (s *servingService) fillKusciaDeploymentContainerResourceList(resource core
 }
 
 func (s *servingService) getAppImageTemplate(ctx context.Context, appImageName, role string) (*v1alpha1.DeployTemplate, error) {
-	appImage, err := s.kusciaClient.KusciaV1alpha1().AppImages().Get(ctx, appImageName, metav1.GetOptions{})
+	appImage, err := s.getAppImage(ctx, appImageName)
 	if err != nil {
-		return nil, fmt.Errorf("can not get appimage %v from cluster, %v", appImageName, err)
+		return nil, err
 	}
 
 	partyTemplate, err := resources.SelectDeployTemplate(appImage.Spec.DeployTemplates, role)
@@ -324,6 +331,14 @@ func (s *servingService) getAppImageTemplate(ctx context.Context, appImageName, 
 		return nil, fmt.Errorf("can not get deploy template from appimage %v", appImage)
 	}
 	return partyTemplate.DeepCopy(), nil
+}
+
+func (s *servingService) getAppImage(ctx context.Context, name string) (*v1alpha1.AppImage, error) {
+	appImage, err := s.kusciaClient.KusciaV1alpha1().AppImages().Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("can not get appimage %v from cluster, %v", name, err)
+	}
+	return appImage, nil
 }
 
 func (s *servingService) buildServingPartyContainerResources(party *kusciaapi.ServingParty) (*kusciaapi.Resource, map[string]*kusciaapi.Resource) {
@@ -359,55 +374,88 @@ func (s *servingService) buildServingUpdateStrategy(kdParty *v1alpha1.KusciaDepl
 	return updateStrategy
 }
 
-func (s *servingService) buildServingResources(kdParty *v1alpha1.KusciaDeploymentParty, partyTemplate *v1alpha1.DeployTemplate) []*kusciaapi.Resource {
+func (s *servingService) buildServingResources(ctx context.Context, kd *v1alpha1.KusciaDeployment, kdParty *v1alpha1.KusciaDeploymentParty, partyTemplate *v1alpha1.DeployTemplate) ([]*kusciaapi.Resource, error) {
 	var resources []*kusciaapi.Resource
 	for i := range kdParty.Template.Spec.Containers {
-		resources = append(resources, s.buildServingResource(kdParty.Template.Spec.Containers[i]))
+		resources = s.buildServingResource(kdParty.Template.Spec.Containers[i].Name, kdParty.Template.Spec.Containers[i].Resources, resources)
 	}
-
 	if len(resources) == len(partyTemplate.Spec.Containers) {
-		return resources
+		return resources, nil
 	}
 
-	for i, ctr := range partyTemplate.Spec.Containers {
-		found := false
-		for _, res := range resources {
-			if ctr.Name == res.ContainerName {
-				found = true
-				break
-			}
-		}
-		if found {
-			continue
-		}
-		resources = append(resources, s.buildServingResource(partyTemplate.Spec.Containers[i]))
+	deployment, err := s.getPartyDeployment(ctx, kd, kdParty.DomainID, kdParty.Role)
+	if err != nil {
+		return nil, err
 	}
-	return resources
+	if deployment != nil {
+		for _, ctr := range deployment.Spec.Template.Spec.Containers {
+			resources = s.buildServingResource(ctr.Name, ctr.Resources, resources)
+		}
+		if len(resources) == len(partyTemplate.Spec.Containers) {
+			return resources, nil
+		}
+	}
+
+	for _, ctr := range partyTemplate.Spec.Containers {
+		resources = s.buildServingResource(ctr.Name, ctr.Resources, resources)
+	}
+	return resources, nil
 }
 
-func (s *servingService) buildServingResource(ctr v1alpha1.Container) *kusciaapi.Resource {
-	sr := &kusciaapi.Resource{}
-	sr.ContainerName = ctr.Name
-	for k, v := range ctr.Resources.Requests {
+func (s *servingService) getPartyDeployment(ctx context.Context, kd *v1alpha1.KusciaDeployment, domainID, role string) (*appsv1.Deployment, error) {
+	if kd.Status.PartyDeploymentStatuses == nil {
+		return nil, nil
+	}
+
+	partyDeployStatus, ok := kd.Status.PartyDeploymentStatuses[domainID]
+	if !ok {
+		return nil, nil
+	}
+
+	for deployName, status := range partyDeployStatus {
+		if status.Role == role {
+			deployment, err := s.kubeClient.AppsV1().Deployments(domainID).Get(ctx, deployName, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					return nil, nil
+				}
+				return nil, err
+			}
+			return deployment, nil
+		}
+	}
+	return nil, nil
+}
+
+func (s *servingService) buildServingResource(ctrName string, ctrResources corev1.ResourceRequirements, resources []*kusciaapi.Resource) []*kusciaapi.Resource {
+	for _, res := range resources {
+		if res.ContainerName == ctrName {
+			return resources
+		}
+	}
+
+	res := &kusciaapi.Resource{}
+	res.ContainerName = ctrName
+	for k, v := range ctrResources.Requests {
 		switch k {
 		case corev1.ResourceCPU:
-			sr.MinCpu = v.String()
+			res.MinCpu = v.String()
 		case corev1.ResourceMemory:
-			sr.MinMemory = v.String()
+			res.MinMemory = v.String()
 		default:
 		}
 	}
 
-	for k, v := range ctr.Resources.Limits {
+	for k, v := range ctrResources.Limits {
 		switch k {
 		case corev1.ResourceCPU:
-			sr.MaxCpu = v.String()
+			res.MaxCpu = v.String()
 		case corev1.ResourceMemory:
-			sr.MaxMemory = v.String()
+			res.MaxMemory = v.String()
 		default:
 		}
 	}
-	return sr
+	return append(resources, res)
 }
 
 func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alpha1.KusciaDeployment) (*kusciaapi.ServingStatusDetail, error) {
@@ -446,6 +494,8 @@ func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alp
 
 	return &kusciaapi.ServingStatusDetail{
 		State:            string(kd.Status.Phase),
+		Message:          kd.Status.Message,
+		Reason:           kd.Status.Reason,
 		TotalParties:     int32(kd.Status.TotalParties),
 		AvailableParties: int32(kd.Status.AvailableParties),
 		CreateTime:       utils.TimeRfc3339String(&kd.ObjectMeta.CreationTimestamp),
@@ -477,13 +527,19 @@ func (s *servingService) QueryServing(ctx context.Context, request *kusciaapi.Qu
 			}
 		}
 
+		resources, err := s.buildServingResources(ctx, kd, &kd.Spec.Parties[i], partyTemplate)
+		if err != nil {
+			return &kusciaapi.QueryServingResponse{
+				Status: utils2.BuildErrorResponseStatus(errorcode.ErrQueryServing, err.Error()),
+			}
+		}
 		servingParties[i] = &kusciaapi.ServingParty{
 			AppImage:       party.AppImageRef,
 			Role:           party.Role,
 			DomainId:       party.DomainID,
 			Replicas:       party.Template.Replicas,
 			UpdateStrategy: s.buildServingUpdateStrategy(&kd.Spec.Parties[i]),
-			Resources:      s.buildServingResources(&kd.Spec.Parties[i], partyTemplate),
+			Resources:      resources,
 		}
 	}
 
@@ -625,6 +681,9 @@ func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servin
 			if party.AppImage != "" && party.AppImage != kdParty.AppImageRef {
 				nlog.Infof("Serving %v party domainID/role %v/%v appimage updated from %v to %v", servingID, kdParty.DomainID,
 					kdParty.Role, kdParty.AppImageRef, party.AppImage)
+				if _, err := s.getAppImage(ctx, party.AppImage); err != nil {
+					return false, err
+				}
 				needUpdate = true
 				kd.Spec.Parties[i].AppImageRef = party.AppImage
 			}

@@ -34,7 +34,8 @@ rootDir: %s
 
 func TestLoadConfig(t *testing.T) {
 	rootDir := t.TempDir()
-	cfg, err := LoadAgentConfig(generateTestConfig(t, rootDir))
+	configPath := generateTestConfig(t, rootDir)
+	cfg, err := LoadAgentConfig(configPath)
 	assert.NoError(t, err)
 
 	assert.Equal(t, cfg.LogsPath, filepath.Join(rootDir, "kuscia", "var/logs"))
