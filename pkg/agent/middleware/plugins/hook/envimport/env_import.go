@@ -78,6 +78,7 @@ func (ci *envImport) Type() string {
 func (ci *envImport) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
 	ci.initialized = true
 	hook.Register(pluginNameEnv, ci)
+	ci.EnvConfig.UsePodLabels = true
 	if err := cfg.Config.Decode(&ci.EnvConfig); err != nil {
 		return err
 	}
@@ -85,17 +86,16 @@ func (ci *envImport) Init(dependencies *plugin.Dependencies, cfg *config.PluginC
 }
 
 // CanExec implements the hook.Handler interface.
-func (ci *envImport) CanExec(obj interface{}, point hook.Point) bool {
+func (ci *envImport) CanExec(ctx hook.Context) bool {
 	if !ci.initialized {
 		return false
 	}
 
-	if point != hook.PointGenerateRunContainerOptions {
+	if ctx.Point() != hook.PointGenerateContainerOptions && ctx.Point() != hook.PointK8sProviderSyncPod {
 		return false
 	}
 
-	_, ok := obj.(*hook.RunContainerOptionsObj)
-	return ok
+	return true
 }
 
 func matchImageMeta(imageMeta *ImageMeta, s Selector) bool {
@@ -117,25 +117,48 @@ func matchPodLabels(pod *corev1.Pod, s Selector) bool {
 // ExecHook implements the hook.Handler interface.
 // It renders the configuration template and writes the generated real configuration content to a new file/directory.
 // The value of hostPath will be replaced by the new file/directory path.
-func (ci *envImport) ExecHook(obj interface{}, point hook.Point) (*hook.Result, error) {
+func (ci *envImport) ExecHook(ctx hook.Context) (*hook.Result, error) {
 	if !ci.initialized {
 		return nil, fmt.Errorf("plugin cert-issuance is not initialized")
 	}
 
-	rObj, ok := obj.(*hook.RunContainerOptionsObj)
-	if !ok {
-		return nil, fmt.Errorf("can't convert object to pod")
+	switch ctx.Point() {
+	case hook.PointGenerateContainerOptions:
+		gCtx, ok := ctx.(*hook.GenerateContainerOptionContext)
+		if !ok {
+			return nil, fmt.Errorf("invalid context type %T", ctx)
+		}
+
+		if err := ci.handleGenerateOptionContext(gCtx); err != nil {
+			return nil, err
+		}
+	case hook.PointK8sProviderSyncPod:
+		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
+		if !ok {
+			return nil, fmt.Errorf("invalid context type %T", ctx)
+		}
+
+		if err := ci.handleSyncPodContext(syncPodCtx); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("invalid point %v", ctx.Point())
 	}
 
+	return &hook.Result{}, nil
+
+}
+
+func (ci *envImport) handleGenerateOptionContext(ctx *hook.GenerateContainerOptionContext) error {
 	imageMeta := &ImageMeta{}
-	resp, err := rObj.ImageService.ImageStatus(context.Background(), &runtimeapi.ImageSpec{Image: rObj.Container.
+	resp, err := ctx.ImageService.ImageStatus(context.Background(), &runtimeapi.ImageSpec{Image: ctx.Container.
 		Image}, true)
 	if err != nil {
-		nlog.Warn("can't get image meta info, image name is", rObj.Container.Image)
+		nlog.Warn("can't get image meta info, image name is", ctx.Container.Image)
 	} else {
 		infos := resp.GetInfo()["info"]
 		if err = json.Unmarshal([]byte(infos), &imageMeta); err != nil {
-			nlog.Warn("can't get image meta info, image name is", rObj.Container.Image)
+			nlog.Warn("can't get image meta info, image name is", ctx.Container.Image)
 		}
 	}
 
@@ -144,16 +167,39 @@ func (ci *envImport) ExecHook(obj interface{}, point hook.Point) (*hook.Result, 
 		for _, s := range env.Selectors {
 			match = matchImageMeta(imageMeta, s)
 			if ci.EnvConfig.UsePodLabels && !match {
-				match = matchPodLabels(rObj.Pod, s)
+				match = matchPodLabels(ctx.Pod, s)
 			}
 			if !match {
 				break
 			}
 		}
 		if match {
-			rObj.Opts.Envs = append(rObj.Opts.Envs, env.Envs...)
+			ctx.Opts.Envs = append(ctx.Opts.Envs, env.Envs...)
 		}
 	}
 
-	return &hook.Result{}, nil
+	return nil
+}
+
+func (ci *envImport) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) error {
+	pod := ctx.BkPod
+	for _, envs := range ci.EnvConfig.EnvList {
+		match := true
+		for _, s := range envs.Selectors {
+			match = matchPodLabels(pod, s)
+			if !match {
+				break
+			}
+		}
+		if match {
+			for i := range pod.Spec.Containers {
+				ctr := &pod.Spec.Containers[i]
+				for _, e := range envs.Envs {
+					ctr.Env = append(ctr.Env, corev1.EnvVar{Name: e.Name, Value: e.Value})
+				}
+			}
+		}
+	}
+
+	return nil
 }

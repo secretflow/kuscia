@@ -16,13 +16,28 @@
 package kusciadeployment
 
 import (
+	"context"
 	"fmt"
+	"reflect"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
+)
+
+type KdStatusReason string
+
+const (
+	buildPartyKitInfoFailed       KdStatusReason = "BuildPartyKitInfoFailed"
+	fillPartyClusterDefinesFailed KdStatusReason = "FillPartyClusterDefinesFailed"
+	createConfigMapFailed         KdStatusReason = "CreateConfigMapFailed"
+	createServiceFailed           KdStatusReason = "CreateServiceFailed"
+	createDeploymentFailed        KdStatusReason = "CreateDeploymentFailed"
+	retryProcessingFailed         KdStatusReason = "RetryProcessingFailed"
 )
 
 // PartyKitInfo defines kit for party.
@@ -59,7 +74,7 @@ func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (ma
 		kitInfo, err := c.buildPartyKitInfo(kd, &kd.Spec.Parties[i])
 		if err != nil {
 			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
-			kd.Status.Reason = string(BuildPartyKitInfoFailed)
+			kd.Status.Reason = string(buildPartyKitInfoFailed)
 			kd.Status.Message = fmt.Sprintf("failed to build domain %v kit info, %v", party.DomainID, err)
 			return nil, err
 		}
@@ -68,6 +83,9 @@ func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (ma
 	}
 
 	if err := fillPartyClusterDefines(partyKitInfos); err != nil {
+		kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
+		kd.Status.Reason = string(fillPartyClusterDefinesFailed)
+		kd.Status.Message = fmt.Sprintf("failed to fill party cluster defines, %v", err)
 		return nil, err
 	}
 
@@ -339,4 +357,28 @@ func generateDeploymentName(kdName, role string) string {
 		return fmt.Sprintf("%s", kdName)
 	}
 	return fmt.Sprintf("%s-%s", kdName, role)
+}
+
+func (c *Controller) handleError(ctx context.Context, preKdStatus *kusciav1alpha1.KusciaDeploymentStatus, kd *kusciav1alpha1.KusciaDeployment, err error) error {
+	if kd.Status.Phase == kusciav1alpha1.KusciaDeploymentPhaseFailed {
+		if !reflect.DeepEqual(preKdStatus, kd.Status) {
+			return c.updateKusciaDeploymentStatus(ctx, kd)
+		}
+		return nil
+	}
+	return err
+}
+
+func (c *Controller) updateKusciaDeploymentStatus(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment) (err error) {
+	now := metav1.Now()
+	kd.Status.LastReconcileTime = &now
+	if kd.Status.TotalParties == 0 {
+		kd.Status.TotalParties = len(kd.Spec.Parties)
+	}
+
+	if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments().UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
+		return fmt.Errorf("error updating kuscia deployment %v status, %v", kd.Name, err)
+	}
+
+	return nil
 }

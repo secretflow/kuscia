@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package tls
 
 import (
 	"crypto/rand"
@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func ParsePKCS1PrivateKeyData(data []byte) (*rsa.PrivateKey, error) {
@@ -123,7 +121,6 @@ func VerifySSLKey(key []byte) bool {
 		return true
 	}
 
-	nlog.Errorf("invalid block type:%v", block.Type)
 	return false
 }
 

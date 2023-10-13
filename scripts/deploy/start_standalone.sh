@@ -22,6 +22,7 @@ mkdir -p $ROOT
 
 GREEN='\033[0;32m'
 NC='\033[0m'
+RED='\033[31m'
 
 IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 if [ "${KUSCIA_IMAGE}" != "" ]; then
@@ -61,6 +62,26 @@ VOLUME_PATH="${ROOT}"
 function log() {
   local log_content=$1
   echo -e "${GREEN}${log_content}${NC}"
+}
+
+function arch_check() {
+   local arch=$(uname -m)
+   case $arch in
+    *"arm"*)
+        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+        exit 1
+        ;;
+    "x86_64")
+        echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
+        ;;
+    "amd64")
+        echo "Warning: amd64 architecture. Continuing..."
+        ;;
+    *)
+        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+        exit 1
+        ;;
+    esac
 }
 
 function init_sf_image_info() {
@@ -300,23 +321,31 @@ function create_secretflow_app_image() {
   log "create secretflow app image done"
 }
 
+function create_domaindatagrant_alice2bob() {
+  local ctr=$1
+  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}'
+}
+
 function create_domaindata_alice_table() {
   local ctr=$1
   local domain_id=$2
   local data_path="/home/kuscia/var/storage/data"
-  # create domain datasource
-  docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
+
   # create domain data alice table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_alice_table.sh ${domain_id}
   log "create domaindata alice's table done default stored path: '${data_path}'"
+}
+
+function create_domaindatagrant_bob2alice() {
+  local ctr=$1
+  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}'
 }
 
 function create_domaindata_bob_table() {
   local ctr=$1
   local domain_id=$2
   local data_path="/home/kuscia/var/storage/data"
-  # create domain datasource
-  docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
+
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
   log "create domaindata bob's table done default stored path: '${data_path}'"
@@ -448,7 +477,6 @@ function start_secretpad() {
     log "The demo data would be stored in the path: ${VOLUME_PATH} ."
   fi
 }
-
 
 function start_lite() {
   local domain_id=$1
@@ -594,7 +622,8 @@ function run_centralized() {
   # create demo data
   create_domaindata_alice_table ${MASTER_CTR} ${ALICE_DOMAIN}
   create_domaindata_bob_table ${MASTER_CTR} ${BOB_DOMAIN}
-
+  create_domaindatagrant_alice2bob ${CTR_PREFIX}-lite-${ALICE_DOMAIN}
+  create_domaindatagrant_bob2alice ${CTR_PREFIX}-lite-${BOB_DOMAIN}
   # create secretflow app image
   create_secretflow_app_image ${MASTER_CTR}
 
@@ -603,6 +632,7 @@ function run_centralized() {
 
 function run_centralized_all() {
   ui_flag=$1
+  arch_check
   if [ "${ui_flag}" == "cli" ]; then
     run_centralized
     exit 0
@@ -667,6 +697,7 @@ function build_interconn() {
 function run_p2p() {
   local p2p_protocol=$1
   build_kuscia_network
+  arch_check
 
   start_autonomy ${ALICE_DOMAIN} 11082 11083
   start_autonomy ${BOB_DOMAIN} 12082 12083
@@ -683,7 +714,8 @@ function run_p2p() {
   # create demo data
   create_domaindata_alice_table ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN}
   create_domaindata_bob_table ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN}
-
+  create_domaindatagrant_alice2bob ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}
+  create_domaindatagrant_bob2alice ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
   log "Kuscia p2p cluster started successfully"
 }
 

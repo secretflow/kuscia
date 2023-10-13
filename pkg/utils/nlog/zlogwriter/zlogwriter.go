@@ -15,28 +15,17 @@
 package zlogwriter
 
 import (
+	"bytes"
 	"flag"
 	"os"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
-
-type LogConfig struct {
-	LogLevel string
-	LogPath  string
-
-	// MaxFileSizeMB is the maximum size in megabytes of the log file before it gets
-	// rotated. It defaults to 100 megabytes.
-	MaxFileSizeMB int
-
-	// MaxFiles is the maximum number of old log files to retain.  The default
-	// is to retain all old log files
-	MaxFiles int
-}
 
 // Writer is the zap.SugaredLogger implementation of nlog.LogWriter interface.
 type Writer struct {
@@ -49,37 +38,37 @@ type WriterWrapper struct {
 }
 
 // InstallFlags defines log flags with flag.FlagSet.
-func InstallFlags(flagset *flag.FlagSet) *LogConfig {
+func InstallFlags(flagset *flag.FlagSet) *nlog.LogConfig {
 	if flagset == nil {
 		flagset = flag.CommandLine
 	}
 
-	var c LogConfig
+	c := &nlog.LogConfig{}
 	flagset.StringVar(&c.LogLevel, "log.level", "INFO", "Logs of this level or above will be output")
 	flagset.StringVar(&c.LogPath, "log.path", "", "Also output logs to this file, empty means only output to stdout")
 	flagset.IntVar(&c.MaxFileSizeMB, "log.file_size", 512, "Maximum size in megabytes of the log file before it gets rotated")
 	flagset.IntVar(&c.MaxFiles, "log.max_files", 10, "Maximum number of old log files to retain")
-	return &c
+	return c
 }
 
 // InstallPFlags defines log flags with pflag.FlagSet.
-func InstallPFlags(flagset *pflag.FlagSet) *LogConfig {
+func InstallPFlags(flagset *pflag.FlagSet) *nlog.LogConfig {
 	if flagset == nil {
 		flagset = pflag.CommandLine
 	}
 
-	var c LogConfig
+	c := &nlog.LogConfig{}
 	flagset.StringVar(&c.LogLevel, "log.level", "INFO", "Logs of this level or above will be output")
 	flagset.StringVar(&c.LogPath, "log.path", "", "Also output logs to this file, empty means only output to stdout")
 	flagset.IntVar(&c.MaxFileSizeMB, "log.file_size", 512, "Maximum size in megabytes of the log file before it gets rotated")
 	flagset.IntVar(&c.MaxFiles, "log.max_files", 10, "Maximum number of old log files to retain")
-	return &c
+	return c
 }
 
 // New creates a new writer with config.
-func New(config *LogConfig) (*Writer, error) {
+func New(config *nlog.LogConfig) (nlog.LogWriter, error) {
 	if config == nil {
-		config = &LogConfig{
+		config = &nlog.LogConfig{
 			LogLevel: "Debug",
 		}
 	}
@@ -112,13 +101,14 @@ func New(config *LogConfig) (*Writer, error) {
 }
 
 // newZapLogger creates a *zap.SugaredLogger object.
-func newZapLogger(config *LogConfig, encoderConfig *zapcore.EncoderConfig, atomicLevel zap.AtomicLevel) (*zap.SugaredLogger, error) {
+func newZapLogger(config *nlog.LogConfig, encoderConfig *zapcore.EncoderConfig, atomicLevel zap.AtomicLevel) (*zap.SugaredLogger, error) {
 	syncer := zapcore.AddSync(os.Stdout)
 	if config.LogPath != "" {
 		syncer = zapcore.NewMultiWriteSyncer(syncer, zapcore.AddSync(&lumberjack.Logger{
 			Filename:   config.LogPath,
 			MaxSize:    config.MaxFileSizeMB, // megabytes
 			MaxBackups: config.MaxFiles,
+			Compress:   config.Compress,
 		}))
 	}
 
@@ -150,4 +140,10 @@ func (w *Writer) ChangeLogLevel(newLevel string) error {
 // Flush flushes any buffered log entries.
 func (w *Writer) Flush() error {
 	return w.Sync()
+}
+
+func (w *Writer) Write(p []byte) (int, error) {
+	p = bytes.TrimSpace(p)
+	w.Info(string(p))
+	return len(p), nil
 }

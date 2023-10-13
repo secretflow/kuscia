@@ -57,7 +57,7 @@ func (f *fakeImageManagerService) ImageFsInfo(ctx context.Context) ([]*runtimeap
 	return nil, nil
 }
 
-func TestEnvImport(t *testing.T) {
+func TestEnvImport_ExecHookWithGenerateOptionContext(t *testing.T) {
 	pod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "pod-0",
@@ -203,6 +203,7 @@ envList:
 			},
 		},
 	}
+
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("Case-%d", i), func(t *testing.T) {
 			pluginCfg := config.PluginCfg{
@@ -215,17 +216,115 @@ envList:
 			err = ci.Init(nil, &pluginCfg)
 			assert.NoError(t, err)
 
-			obj := &hook.RunContainerOptionsObj{
+			ctx := &hook.GenerateContainerOptionContext{
 				Pod:          &pod,
 				Container:    &pod.Spec.Containers[0],
 				Opts:         &pkgcontainer.RunContainerOptions{},
 				ImageService: &fakeImageManagerService{},
 			}
-			assert.True(t, ci.CanExec(obj, hook.PointGenerateRunContainerOptions))
+			assert.True(t, ci.CanExec(ctx))
 
-			_, err = ci.ExecHook(obj, hook.PointGenerateRunContainerOptions)
+			_, err = ci.ExecHook(ctx)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.envs, obj.Opts.Envs)
+			assert.Equal(t, tt.envs, ctx.Opts.Envs)
+		})
+	}
+}
+
+func TestEnvImport_ExecHookWithSyncPodContext(t *testing.T) {
+	tests := []struct {
+		data string
+		envs []corev1.EnvVar
+	}{
+		{
+			data: `
+envList:
+- envs:
+  - name: test
+    value: test
+  selectors:
+  - key: name
+    type: pod
+    value: alice`,
+			envs: []corev1.EnvVar{
+				{
+					Name:  "test",
+					Value: "test",
+				},
+			},
+		},
+		{
+			data: `
+envList:
+- envs:
+  - name: test
+    value: test
+  selectors:
+  - key: name
+    type: pod
+    value: bob`,
+			envs: nil,
+		},
+		{
+			data: `
+envList:
+- envs:
+  - name: test
+    value: test
+  - name: image
+    value: secretflow`,
+			envs: []corev1.EnvVar{
+				{
+					Name:  "test",
+					Value: "test",
+				},
+				{
+					Name:  "image",
+					Value: "secretflow",
+				},
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("Case-%d", i), func(t *testing.T) {
+			pluginCfg := config.PluginCfg{
+				Name: "env-import",
+			}
+			err := yaml.Unmarshal([]byte(tt.data), &pluginCfg.Config)
+			assert.NoError(t, err)
+
+			ci := &envImport{}
+			err = ci.Init(nil, &pluginCfg)
+			assert.NoError(t, err)
+
+			pod := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "pod-0",
+					Namespace: "test-namespace",
+					Labels: map[string]string{
+						"name": "alice",
+						"role": "test",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "default-container",
+							Image: "secretflow-anolis8",
+						},
+					},
+				},
+			}
+			ctx := &hook.K8sProviderSyncPodContext{
+				Pod:   &pod,
+				BkPod: &pod,
+			}
+			assert.True(t, ci.CanExec(ctx))
+
+			_, err = ci.ExecHook(ctx)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.envs, ctx.BkPod.Spec.Containers[0].Env)
 		})
 	}
 }

@@ -24,7 +24,6 @@ import (
 	mrand "math/rand"
 	"time"
 
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -565,20 +564,4 @@ func (c *Controller) updateClusterDomainRoute(ctx context.Context, cdr *kusciaap
 
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainsName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDClusterDomainRoutesName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainRoutesName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDGatewaysName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	return nil
 }

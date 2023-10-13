@@ -154,13 +154,15 @@
 
 ### ServingStatusDetail
 
-| 字段                | 类型                                            | 可选 | 描述        |
-|-------------------|-----------------------------------------------|----|-----------|
-| state             | string                                        | 否  | Serving状态 |
-| total_parties     | int32                                         | 否  | 参与方总数     |
-| available_parties | int32                                         | 否  | 可用参与方数量   |
-| create_time       | string                                        | 否  | 创建时间      |
-| party_statuses    | [PartyServingStatus](#party-serving-status)[] | 否  | 参与方状态     |
+| 字段                | 类型                                            | 可选 | 描述                            |
+|-------------------|-----------------------------------------------|--|-------------------------------|
+| state             | string                                        | 否 | Serving状态                     |
+| reason            | string                                        | 是 | Serving处于该状态的原因，一般用于描述失败的状态   |
+| message           | string                                        | 是 | Serving处于该状态的详细信息，一般用于描述失败的状态 |
+| total_parties     | int32                                         | 否 | 参与方总数                         |
+| available_parties | int32                                         | 否 | 可用参与方数量                       |
+| create_time       | string                                        | 否 | 创建时间                          |
+| party_statuses    | [PartyServingStatus](#party-serving-status)[] | 否 | 参与方状态                         |
 
 
 {#party-serving-status}
@@ -193,14 +195,14 @@
 
 ### ServingParty
 
-| 字段            | 类型                               | 可选 | 描述     |
-| ----------------- | ------------------------------------ | ------ |--------|
-| domain_id       | string                             | 否   | 节点ID   |
-| app_image       | string                             | 否   | 应用镜像   |
-| role            | string                             | 是   | 角色     |
-| replicas        | int32                              | 是   | 应用总副本数 |
-| update_strategy | [UpdateStrategy](#update-strategy) | 是   | 应用更新策略 |
-| resources       | [Resource](#resource)[]            | 是   | 应用运行资源 |
+| 字段            | 类型                               | 可选 | 描述                                                                                                         |
+| ----------------- | ------------------------------------ | ------ |------------------------------------------------------------------------------------------------------------|
+| domain_id       | string                             | 否   | 节点ID                                                                                                       |
+| app_image       | string                             | 否   | 应用镜像，对应[AppImage](../concepts/appimage_cn.md)资源名称。<br/>在调用更新接口时，如果更新该字段，当前仅会使用新的[AppImage](../concepts/appimage_cn.md)资源中的应用镜像Name和Tag信息，更新预测应用。 |
+| role            | string                             | 是   | 角色                                                                                                         |
+| replicas        | int32                              | 是   | 应用总副本数                                                                                                     |
+| update_strategy | [UpdateStrategy](#update-strategy) | 是   | 应用更新策略                                                                                                     |
+| resources       | [Resource](#resource)[]            | 是   | 应用运行资源                                                                                                     |
 
 
 {#update-strategy}

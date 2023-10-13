@@ -76,3 +76,30 @@ func (h *domainDataSourceHandler) UpdateDomainData(ctx context.Context, request 
 func (h *domainDataSourceHandler) DeleteDomainData(ctx context.Context, request *datamesh.DeleteDomainDataSourceRequest) (*datamesh.DeleteDomainDataSourceResponse, error) {
 	return h.domainDataSourceService.DeleteDomainDataSource(ctx, request), nil
 }
+
+type domainDataGrantHandler struct {
+	domainDataGrantService service.IDomainDataGrantService
+	datamesh.UnimplementedDomainDataGrantServiceServer
+}
+
+func NewDomainDataGrantHandler(domaindataSourceService service.IDomainDataGrantService) datamesh.DomainDataGrantServiceServer {
+	return &domainDataGrantHandler{
+		domainDataGrantService: domaindataSourceService,
+	}
+}
+
+func (h *domainDataGrantHandler) CreateDomainDataGrant(ctx context.Context, request *datamesh.CreateDomainDataGrantRequest) (*datamesh.CreateDomainDataGrantResponse, error) {
+	return h.domainDataGrantService.CreateDomainDataGrant(ctx, request), nil
+}
+
+func (h *domainDataGrantHandler) QueryDomainDataGrant(ctx context.Context, request *datamesh.QueryDomainDataGrantRequest) (*datamesh.QueryDomainDataGrantResponse, error) {
+	return h.domainDataGrantService.QueryDomainDataGrant(ctx, request), nil
+}
+
+func (h *domainDataGrantHandler) UpdateDomainDataGrant(ctx context.Context, request *datamesh.UpdateDomainDataGrantRequest) (*datamesh.UpdateDomainDataGrantResponse, error) {
+	return h.domainDataGrantService.UpdateDomainDataGrant(ctx, request), nil
+}
+
+func (h *domainDataGrantHandler) DeleteDomainDataGrant(ctx context.Context, request *datamesh.DeleteDomainDataGrantRequest) (*datamesh.DeleteDomainDataGrantResponse, error) {
+	return h.domainDataGrantService.DeleteDomainDataGrant(ctx, request), nil
+}

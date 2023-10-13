@@ -107,7 +107,7 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 func (s *server) Run(ctx context.Context) error {
 	s.ctx = ctx
 	for _, cc := range s.controllerConstructions {
-		if err := cc.CheckCRD(ctx, s.extensionClient); err != nil {
+		if err := CheckCRDExists(ctx, s.extensionClient, cc.CRDNames); err != nil {
 			return fmt.Errorf("check crd whether exist failed: %v", err.Error())
 		}
 	}

@@ -17,15 +17,14 @@ package master
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	v1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
@@ -33,7 +32,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
-	"github.com/secretflow/kuscia/pkg/web/logs"
 )
 
 var (
@@ -66,13 +64,15 @@ func getInitConfig(configFile string, flagDomainID string) *modules.Dependencies
 	if conf.CAKeyFile == "" {
 		conf.CAKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.key")
 	}
-	if conf.CAFile == "" {
-		conf.CAFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.crt")
+	if conf.CACertFile == "" {
+		conf.CACertFile = filepath.Join(conf.RootDir, modules.CertPrefix, "ca.crt")
 	}
 	if conf.DomainKeyFile == "" {
 		conf.DomainKeyFile = filepath.Join(conf.RootDir, modules.CertPrefix, "domain.key")
 	}
-
+	if conf.DomainCertFile == "" {
+		conf.DomainCertFile = filepath.Join(conf.RootDir, modules.CertPrefix, "domain.crt")
+	}
 	conf.Master = &kusciaconfig.MasterConfig{
 		APIServer: &kusciaconfig.APIServerConfig{
 			KubeConfig: conf.KubeconfigFile,
@@ -94,7 +94,7 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 	debug := false
 	debugPort := 28080
 	onlyControllers := false
-	var logConfig *zlogwriter.LogConfig
+	var logConfig *nlog.LogConfig
 	cmd := &cobra.Command{
 		Use:          "master",
 		Short:        "Master means only running as master",
@@ -105,15 +105,14 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 			defer func() {
 				cancel()
 			}()
-			zlog, err := zlogwriter.New(logConfig)
+			err := modules.InitLogs(logConfig)
 			if err != nil {
+				fmt.Println(err)
 				return err
 			}
-			nlog.Setup(nlog.SetWriter(zlog))
-			logs.Setup(nlog.SetWriter(zlog))
 			conf := getInitConfig(configFile, domainID)
 			conf.IsMaster = true
-
+			conf.LogConfig = logConfig
 			if onlyControllers {
 				// only for demo, remove later
 				// use the current context in kubeconfig
@@ -121,15 +120,13 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 					nlog.Error(err)
 					return err
 				}
-
 				modules.RunOperatorsAllinOne(runctx, cancel, conf, false)
 
 				nlog.Info("Scheduler and controllers are all started")
 				// wait any controller failed
 			} else {
+				coreDnsModule := modules.RunCoreDNS(runctx, cancel, conf)
 				modules.RunK3s(runctx, cancel, conf)
-				modules.RunConfManager(runctx, cancel, conf)
-
 				// use the current context in kubeconfig
 				clients, err := kubeconfig.CreateClientSetsFromKubeconfig(conf.KubeconfigFile, conf.ApiserverEndpoint)
 				if err != nil {
@@ -137,7 +134,31 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 					return err
 				}
 				conf.Clients = clients
-				if err = createDefaultNamespace(ctx, conf); err != nil {
+				cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
+				if !ok {
+					return errors.New("coredns module type is invalid")
+				}
+				cdsModule.StartControllers(runctx, clients.KubeClient)
+
+				modules.RunConfManager(runctx, cancel, conf)
+
+				_, _, err = modules.EnsureCaKeyAndCert(conf)
+				if err != nil {
+					nlog.Error(err)
+					return err
+				}
+				err = modules.EnsureDomainKey(conf)
+				if err != nil {
+					nlog.Error(err)
+					return err
+				}
+				err = modules.EnsureDomainCert(conf)
+				if err != nil {
+					nlog.Error(err)
+					return err
+				}
+
+				if err = modules.CreateDefaultDomain(ctx, conf); err != nil {
 					nlog.Error(err)
 					return err
 				}
@@ -170,14 +191,4 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&onlyControllers, "controllers", false, "only run controllers and scheduler, will remove later")
 	logConfig = zlogwriter.InstallPFlags(cmd.Flags())
 	return cmd
-}
-
-func createDefaultNamespace(ctx context.Context, conf *modules.Dependencies) error {
-	nlog.Infof("create domain namespace %s for master", conf.DomainID)
-	_, err := conf.Clients.KubeClient.CoreV1().Namespaces().Create(ctx, &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: conf.DomainID}}, metav1.CreateOptions{})
-	if k8serrors.IsAlreadyExists(err) {
-		return nil
-	}
-
-	return err
 }

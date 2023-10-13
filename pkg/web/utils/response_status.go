@@ -19,6 +19,10 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 )
 
+const (
+	ResponseCodeSuccess = 0
+)
+
 func BuildErrorResponseStatus(errCode errorcode.KusciaErrorCode, msg string) *v1alpha1.Status {
 	return &v1alpha1.Status{
 		Code:    int32(errCode),
@@ -28,7 +32,7 @@ func BuildErrorResponseStatus(errCode errorcode.KusciaErrorCode, msg string) *v1
 
 func BuildSuccessResponseStatus() *v1alpha1.Status {
 	return &v1alpha1.Status{
-		Code:    0,
+		Code:    ResponseCodeSuccess,
 		Message: "success",
 	}
 }

@@ -77,28 +77,34 @@ const (
 	serverType = "dns"
 )
 
-type corednsModule struct {
-	kubeclient kubernetes.Interface
-	rootDir    string
-	namespace  string
-	envoyIP    string
+type CorednsModule struct {
+	rootDir         string
+	namespace       string
+	envoyIP         string
+	readyChan       chan struct{}
+	coreDNSInstance *coredns.KusciaCoreDNS
 }
 
-func NewCoredns(i *Dependencies) Module {
-	namespace := i.DomainID
-	return &corednsModule{
-		rootDir:    i.RootDir,
-		namespace:  namespace,
-		envoyIP:    i.EnvoyIP,
-		kubeclient: i.Clients.KubeClient,
+func NewCoreDNS(i *Dependencies) Module {
+	return &CorednsModule{
+		rootDir:   i.RootDir,
+		namespace: i.DomainID,
+		envoyIP:   i.EnvoyIP,
+		readyChan: make(chan struct{}),
 	}
 }
 
-func (s *corednsModule) Run(ctx context.Context) error {
+func (s *CorednsModule) Run(ctx context.Context) error {
+	defer close(s.readyChan)
+	if err := prepareResolvConf(s.rootDir); err != nil {
+		nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
+		return err
+	}
+
 	plugin.Register(
 		"kuscia",
 		func(c *caddy.Controller) error {
-			e, err := coredns.KusciaParse(ctx, c, s.kubeclient, s.namespace, s.envoyIP)
+			e, err := coredns.KusciaParse(c, s.namespace, s.envoyIP)
 			if err != nil {
 				return plugin.Error("kuscia", err)
 			}
@@ -107,7 +113,7 @@ func (s *corednsModule) Run(ctx context.Context) error {
 				e.Next = next
 				return e
 			})
-
+			s.coreDNSInstance = e
 			return nil
 		},
 	)
@@ -126,32 +132,34 @@ func (s *corednsModule) Run(ctx context.Context) error {
 		return err
 	}
 
+	s.readyChan <- struct{}{}
 	// Twiddle your thumbs
 	instance.Wait()
 	return nil
 }
 
-func (s *corednsModule) WaitReady(ctx context.Context) error {
-	return ctx.Err()
+func (s *CorednsModule) WaitReady(ctx context.Context) error {
+	select {
+	case <-s.readyChan:
+		return ctx.Err()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
-func (s *corednsModule) Name() string {
+func (s *CorednsModule) Name() string {
 	return "coredns"
 }
 
 func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewCoredns(conf)
-	if err := prepareResolvConf(conf.RootDir); err != nil {
-		nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
-		cancel()
-	}
-
+	m := NewCoreDNS(conf)
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
+
 	if err := m.WaitReady(ctx); err != nil {
 		nlog.Error(err)
 		cancel()
@@ -160,6 +168,10 @@ func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *Dependenci
 	}
 
 	return m
+}
+
+func (s *CorednsModule) StartControllers(ctx context.Context, kubeclient kubernetes.Interface) {
+	s.coreDNSInstance.StartControllers(ctx, kubeclient)
 }
 
 func prepareResolvConf(rootDir string) error {
@@ -181,6 +193,7 @@ func prepareResolvConf(rootDir string) error {
 			return err
 		}
 	}
+
 	if err = updateResolvConf(resolvConf, hostIP, true); err != nil {
 		return err
 	}
@@ -199,11 +212,10 @@ func updateResolvConf(fileName, hostIP string, add bool) error {
 	switch add {
 	// add specific content
 	case true:
-		if len(lines) != 0 && strings.Contains(lines[0], content) {
+		if len(lines) == 1 && strings.Contains(lines[0], content) {
 			return nil
 		}
 		finalContent = append(finalContent, content)
-		finalContent = append(finalContent, lines...)
 	// delete specific content
 	default:
 		for i := range lines {
@@ -213,7 +225,11 @@ func updateResolvConf(fileName, hostIP string, add bool) error {
 		}
 	}
 
-	file, err := os.OpenFile(fileName, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 	for _, c := range finalContent {
 		if _, err = fmt.Fprintln(file, c); err != nil {
 			return err

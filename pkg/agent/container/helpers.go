@@ -370,3 +370,23 @@ func MakePortMappings(container *v1.Container) (ports []PortMapping) {
 	}
 	return
 }
+
+// ConvertPodStatusToRunningPod returns Pod given PodStatus and container runtime string.
+// TODO(random-liu): Convert PodStatus to running Pod, should be deprecated soon
+func ConvertAPIPodToRunningPod(pod *v1.Pod) *Pod {
+	runningPod := &Pod{
+		ID:        pod.UID,
+		Name:      pod.Name,
+		Namespace: pod.Namespace,
+	}
+
+	for _, c := range pod.Spec.Containers {
+		container := &Container{
+			Name:  c.Name,
+			Image: c.Image,
+		}
+		runningPod.Containers = append(runningPod.Containers, container)
+	}
+
+	return runningPod
+}

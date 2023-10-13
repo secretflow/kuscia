@@ -21,6 +21,7 @@ import (
 )
 
 type DataMeshConfig struct {
+	RootDir        string
 	HTTPPort       int32
 	GRPCPort       int32
 	Debug          bool
@@ -30,6 +31,7 @@ type DataMeshConfig struct {
 	IdleTimeout    int
 	Initiator      string
 	FlagSet        *pflag.FlagSet
+	DomainKeyFile  string
 	TLSConfig      *TLSConfig
 	KusciaClient   kusciaclientset.Interface
 	KubeNamespace  string
@@ -60,7 +62,7 @@ type DbTableAlias struct {
 }
 
 type TLSConfig struct {
-	RootCAFile     string
+	RootCACertFile string
 	ServerCertFile string
 	ServerKeyFile  string
 }

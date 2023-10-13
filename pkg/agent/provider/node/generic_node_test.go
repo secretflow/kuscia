@@ -21,32 +21,27 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/common"
 )
 
-func TestConfigNode(t *testing.T) {
-	agentCfg := config.DefaultAgentConfig()
-	agentCfg.RootDir = t.TempDir()
-
-	cfg := &GenericNodeConfig{
-		Namespace:    "namespace1",
-		NodeName:     "node1",
-		NodeIP:       "1.1.1.1",
-		APIVersion:   "0.2",
-		AgentVersion: "0.3",
-		PodsAuditor:  NewPodsAuditor(agentCfg),
-		AgentConfig:  agentCfg,
+func TestGenericNode_ConfigureNode(t *testing.T) {
+	agentConfig := config.DefaultStaticAgentConfig()
+	agentConfig.RootDir = t.TempDir()
+	capacityManager, err := NewCapacityManager(&agentConfig.Capacity, ".", true)
+	assert.NoError(t, err)
+	dep := &GenericNodeDependence{
+		BaseNodeDependence: BaseNodeDependence{
+			Runtime:         config.ContainerRuntime,
+			Namespace:       "test-namespace",
+			Address:         "1.1.1.1",
+			CapacityManager: capacityManager,
+		},
+		RootDir: agentConfig.RootDir,
 	}
 
-	np, err := NewNodeProvider(cfg)
-	assert.NoError(t, err)
-	assert.NoError(t, np.Ping(context.Background()))
+	n := NewGenericNodeProvider(dep)
+	node := n.ConfigureNode(context.Background(), "test-name")
+	assert.Equal(t, "test-name", node.Name)
+	assert.Equal(t, n.runtime, node.Labels[labelRuntime])
+	assert.Equal(t, 5, len(node.Status.Conditions))
 
-	nmt := np.ConfigureNode(context.Background())
-	assert.Equal(t, nmt.Name, cfg.NodeName)
-	assert.Equal(t, nmt.Status.NodeInfo.KubeletVersion, cfg.AgentVersion)
-	assert.Equal(t, nmt.Labels["kubernetes.io/apiVersion"], cfg.APIVersion)
-	assert.Equal(t, nmt.Labels[common.LabelNodeNamespace], cfg.Namespace)
-
-	assert.True(t, len(nmt.Status.Conditions) > 0)
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -41,7 +42,7 @@ type domainService struct {
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewDomainService(config config.KusciaAPIConfig) IDomainService {
+func NewDomainService(config *config.KusciaAPIConfig) IDomainService {
 	return &domainService{
 		kusciaClient: config.KusciaClient,
 	}

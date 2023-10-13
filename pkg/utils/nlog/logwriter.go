@@ -36,6 +36,7 @@ type LogWriter interface {
 	Fatal(args ...interface{})
 
 	Sync() error
+	Write(p []byte) (int, error)
 }
 
 type defaultLogWriter struct {
@@ -81,6 +82,10 @@ func (d *defaultLogWriter) Fatal(args ...interface{}) {
 
 func (d *defaultLogWriter) Sync() error {
 	return nil
+}
+
+func (d *defaultLogWriter) Write(p []byte) (int, error) {
+	return len(p), nil
 }
 
 func GetDefaultLogWriter() LogWriter {

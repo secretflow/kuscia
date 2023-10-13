@@ -40,11 +40,14 @@ type dataMeshModule struct {
 
 func NewDataMesh(d *Dependencies) Module {
 	conf := config.NewDefaultDataMeshConfig()
-
-	rootCAFile := d.CAFile
-	if rootCAFile != "" && conf.TLSConfig != nil {
-		conf.TLSConfig.RootCAFile = rootCAFile
+	conf.RootDir = d.RootDir
+	rootCACertFile := d.CACertFile
+	if rootCACertFile != "" && conf.TLSConfig != nil {
+		conf.TLSConfig.RootCACertFile = rootCACertFile
 	}
+
+	conf.DomainKeyFile = d.DomainKeyFile
+
 	// set namespace
 	conf.KubeNamespace = d.DomainID
 	nlog.Infof("Datamesh namespace:%s.", d.DomainID)
@@ -86,7 +89,7 @@ func (m dataMeshModule) readyZ() bool {
 	// init client tls config
 	tlsConfig := m.conf.TLSConfig
 	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCACertFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
 		if err != nil {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
