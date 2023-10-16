@@ -36,7 +36,7 @@ jobs:
           command: make test 
   image_publish:
     docker:
-      - image: cimg/deploy:2023.06.1
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:2023.06.1.go
     steps:
       - checkout
       - setup_remote_docker
@@ -46,14 +46,8 @@ jobs:
       - run: 
           name: Build image and publish
           command: |
-            wget https://golang.google.cn/dl/go1.19.linux-amd64.tar.gz
-            sudo tar -xvzf go1.19.linux-amd64.tar.gz -C /usr/local/
-            echo "export PATH=/usr/lib/go/bin:${PATH}" >> ~/.bashrc
-            echo "export GOPATH=/go" >> ~/.bashrc
-            echo "export PATH=\$GOPATH/bin:\${PATH}" >> ~/.bashrc
-            source ~/.bashrc
-            go version
             make image
+            docker images
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
