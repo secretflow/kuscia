@@ -56,7 +56,7 @@ workflows:
   build-workflow:
     jobs:
       - build-kuscia
-      - image_publish
+      - image_publish:
           filters:
             tags:
               only: /^v.*/
