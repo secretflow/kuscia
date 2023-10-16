@@ -2,13 +2,6 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
-on:
-  push:
-    tags:
-      - '*'
-    branches:
-      - main
-
 setup: true
 
 orbs:
@@ -62,8 +55,18 @@ jobs:
 workflows:
   build-workflow:
     jobs:
-      - build-kuscia
-      - image_publish
+      - build-kuscia:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only: main
+      - image_publish:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only: main
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
