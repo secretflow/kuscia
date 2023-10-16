@@ -57,9 +57,7 @@ workflows:
     jobs:
       - build-kuscia
       - image_publish:
-          filters:
-            tags:
-              only: /^v.*/
+          if: startsWith(github.ref, 'refs/tags/v')
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
