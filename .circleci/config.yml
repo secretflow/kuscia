@@ -23,6 +23,10 @@ parameters:
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
+on:
+  push:
+    tags:
+      - '*'
 jobs:
   build-kuscia:
     docker:
@@ -47,9 +51,8 @@ jobs:
           name: Build image and publish
           command: |
             make image
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yjtest
-            docker images
-            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yjtest
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/yj:latest
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/yj:latest
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
