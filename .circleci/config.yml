@@ -24,9 +24,9 @@ parameters:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 on:
-  push:
+  create:
     tags:
-      - '*'
+      - 'v*'
 jobs:
   build-kuscia:
     docker:
