@@ -23,11 +23,6 @@ parameters:
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
-filters:
-  branches:
-    ignore: /.*/
-  tags:
-    only: '*'
 jobs:
   build-kuscia:
     docker:
@@ -62,6 +57,9 @@ workflows:
     jobs:
       - build-kuscia
       - image_publish
+          filters:
+            tags:
+              only: /^v.*/
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
