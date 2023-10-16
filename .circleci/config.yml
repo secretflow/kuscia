@@ -55,13 +55,13 @@ jobs:
 workflows:
   build-workflow:
     jobs:
-      - build-kuscia:
+      - build-kuscia
+      - image_publish:
           filters:
             tags:
               only: /^v.*/
             branches:
               only: main
-      - image_publish
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
