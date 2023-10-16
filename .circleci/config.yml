@@ -47,7 +47,9 @@ jobs:
           name: Build image and publish
           command: |
             make image
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yjtest
             docker images
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:yjtest
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
