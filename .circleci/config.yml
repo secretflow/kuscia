@@ -42,7 +42,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Login to kuscia docker registry
-          command: 
+          command: |
             # login kuscia dockerhub registry
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
             # login kuscia aliyun registry
