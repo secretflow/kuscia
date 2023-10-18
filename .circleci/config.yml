@@ -23,6 +23,10 @@ parameters:
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
+on:
+  create:
+    tags:
+      - v*
 jobs:
   unit-test:
     docker:
@@ -62,10 +66,6 @@ workflows:
     jobs:
       - unit-test
       - image_publish:
-          filters:
-            create:
-              tags:
-                only: /^v.*/ 
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
