@@ -43,6 +43,7 @@ jobs:
       - run:
           name: Login to kuscia docker registry
           command: |
+            make image
             # login kuscia dockerhub registry
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
             # login kuscia aliyun registry
