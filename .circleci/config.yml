@@ -39,10 +39,10 @@ jobs:
       - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.2.docker
     steps:
       - checkout
-      - setup_remote_docker
       - run:
           name: Login to kuscia docker registry
           command: |
+            make image
             # login kuscia dockerhub registry
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
             # login kuscia aliyun registry
