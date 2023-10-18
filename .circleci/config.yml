@@ -37,6 +37,7 @@ jobs:
   image_publish:
     docker:
       - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.2.docker
+    shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
       - run:
