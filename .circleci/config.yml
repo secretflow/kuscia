@@ -50,6 +50,7 @@ jobs:
       - run: 
           name: Build image and publish
           command: |
+            go version
             make image
             docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:citest
             docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:citest
