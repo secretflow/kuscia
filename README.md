@@ -6,13 +6,13 @@
 <a href="./README.zh-CN.md">简体中文</a>｜<a href="./README.md">English</a>
 </p>
 
-Kuscia(Kubernetes-based Secure Collaborative InfrA) is a K8s-based privacy-preserving computing task orchestration framework.
+Kuscia(Kubernetes-based Secure Collaborative InfrA) is a K3s-based privacy-preserving computing task orchestration framework.
 It provides a unified privacy-preserving computing foundation that can abstract away heterogeneous infrastructure and protocols.
 With Kuscia:
 
-* You can quickly experience privacy computation functions.
+* You can quickly experience privacy-preserving computing functions.
 * You can have full production-level privacy-preserving computing capabilities.
-* You can interconnect with various privacy computation systems in the industry.
+* You can interconnect with various privacy-preserving computing systems in the industry.
 * You can use different centralized or peer-to-peer business networking modes.
 
 ![Kuscia](./docs/imgs/kuscia_architecture.png)

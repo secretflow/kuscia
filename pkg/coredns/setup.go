@@ -35,7 +35,7 @@ const (
 	defaultExpiration = 30 * time.Minute
 )
 
-func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes.Interface, namespace, envoyIP string) (*KusciaCoreDNS, error) {
+func KusciaParse(c *caddy.Controller, namespace, envoyIP string) (*KusciaCoreDNS, error) {
 	etc := KusciaCoreDNS{
 		EnvoyIP:   envoyIP,
 		Namespace: namespace,
@@ -72,11 +72,15 @@ func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes
 			}
 		}
 
-		err := etc.Start(ctx, kubeclient)
-		if err != nil {
-			return &KusciaCoreDNS{}, err
-		}
 		return &etc, nil
 	}
 	return &KusciaCoreDNS{}, nil
+}
+
+func (e *KusciaCoreDNS) StartControllers(ctx context.Context, kubeclient kubernetes.Interface) error {
+	err := e.Start(ctx, kubeclient)
+	if err != nil {
+		return fmt.Errorf("start coredns controller failed, %v", err)
+	}
+	return nil
 }

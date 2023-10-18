@@ -40,11 +40,14 @@ type dataMeshModule struct {
 
 func NewDataMesh(d *Dependencies) Module {
 	conf := config.NewDefaultDataMeshConfig()
-
-	rootCAFile := d.CAFile
-	if rootCAFile != "" && conf.TLSConfig != nil {
-		conf.TLSConfig.RootCAFile = rootCAFile
+	conf.RootDir = d.RootDir
+	rootCACertFile := d.CACertFile
+	if rootCACertFile != "" && conf.TLSConfig != nil {
+		conf.TLSConfig.RootCACertFile = rootCACertFile
 	}
+
+	conf.DomainKeyFile = d.DomainKeyFile
+
 	// set namespace
 	conf.KubeNamespace = d.DomainID
 	nlog.Infof("Datamesh namespace:%s.", d.DomainID)
@@ -82,22 +85,21 @@ func (m dataMeshModule) Name() string {
 func (m dataMeshModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
-	host := "127.0.0.1"
-	schema := "http"
+	schema := constants.SchemaHTTP
 	// init client tls config
 	tlsConfig := m.conf.TLSConfig
 	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCACertFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
 		if err != nil {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
 		}
-		schema = "https"
+		schema = constants.SchemaHTTPS
 	}
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, host, m.conf.HTTPPort, constants.HealthAPI)
+	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
 	body, err := json.Marshal(&kusciaapi.HealthRequest{})
 	if err != nil {
 		nlog.Errorf("marshal health request error: %v", err)

@@ -38,26 +38,25 @@ type agentModule struct {
 }
 
 func NewAgent(i *Dependencies) Module {
-	conf := config.DefaultAgentConfig()
+	conf := &i.Agent.AgentConfig
 	conf.Namespace = i.DomainID
 	hostname, err := os.Hostname()
 	if err != nil {
 		nlog.Fatalf("Get hostname fail: %v", err)
 	}
 	conf.StdoutPath = filepath.Join(i.RootDir, StdoutPrefix)
-	conf.NodeName = hostname
+	if conf.Node.NodeName == "" {
+		conf.Node.NodeName = hostname
+	}
 	conf.APIVersion = k8sVersion
 	conf.AgentVersion = fmt.Sprintf("%v", meta.AgentVersionString())
-	conf.DomainCAFile = i.CAFile
+	conf.DomainCAFile = i.CACertFile
 	conf.DomainCAKeyFile = i.CAKeyFile
-	conf.AllowPrivileged = i.Agent.AllowPrivileged
-	conf.KeepNodeOnExit = true
 	conf.Provider.CRI.RemoteImageEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Provider.CRI.RemoteRuntimeEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
 	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
-	conf.Plugins = i.Agent.Plugins
 
 	return &agentModule{
 		conf:    conf,

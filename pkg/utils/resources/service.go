@@ -64,6 +64,10 @@ func ExtractService(p *corev1.Service) *corev1.Service {
 	pp.Name = p.Name
 	pp.Labels = p.Labels
 	pp.Annotations = p.Annotations
+
+	if p.Spec.ClusterIP == "None" {
+		pp.Spec.ClusterIP = "None"
+	}
 	pp.Spec.Type = p.Spec.Type
 	pp.Spec.Selector = p.Spec.Selector
 	pp.Spec.SessionAffinity = p.Spec.SessionAffinity
@@ -78,8 +82,21 @@ func ExtractService(p *corev1.Service) *corev1.Service {
 	return pp
 }
 
-// UpdateServiceAnnotations updates service nnotations.
+// ExtractServiceLabels is used to extract service labels.
+func ExtractServiceLabels(p *corev1.Service) *corev1.Service {
+	pp := &corev1.Service{}
+	pp.Namespace = p.Namespace
+	pp.Name = p.Name
+	pp.Labels = p.Labels
+	return pp
+}
+
+// UpdateServiceAnnotations updates service annotations.
 func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.Service, at map[string]string) (err error) {
+	if service.Annotations == nil {
+		service.Annotations = make(map[string]string)
+	}
+
 	for k, v := range at {
 		service.Annotations[k] = v
 	}

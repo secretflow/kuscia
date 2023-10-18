@@ -86,10 +86,29 @@ const (
 	defaultContainerStoragePath = "/var/kuscia/storage"
 )
 
+// ProviderConfig is the config passed to initialize a registered provider.
+type CRIProviderDependence struct {
+	Namespace       string
+	NodeIP          string
+	RootDirectory   string
+	StdoutDirectory string
+	AllowPrivileged bool
+
+	NodeName        string
+	EventRecorder   record.EventRecorder
+	ResourceManager *resource.KubeResourceManager
+
+	PodStateProvider framework.PodStateProvider
+	PodSyncHandler   framework.SyncHandler
+	StatusManager    status.Manager
+
+	CRIProviderCfg *config.CRIProviderCfg
+	RegistryCfg    *config.RegistryCfg
+}
+
 // CRIProvider implements the kubelet interface and stores pods in memory.
 type CRIProvider struct {
 	// static info
-	nodeName       string
 	nodeIPs        []net.IP
 	ns             string
 	rootDirectory  string
@@ -136,22 +155,21 @@ type CRIProvider struct {
 }
 
 // NewCRIProvider creates a new CRIProvider, which implements the PodNotifier interface
-func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error) {
+func NewCRIProvider(dep *CRIProviderDependence) (framework.PodProvider, error) {
 	realOS := pkgcontainer.RealOS{}
 
 	cp := &CRIProvider{
-		nodeName:       cfg.NodeName,
-		nodeIPs:        []net.IP{net.IP(cfg.NodeIP)},
-		ns:             cfg.Namespace,
-		registryConfig: cfg.RegistryCfg,
-		rootDirectory:  cfg.RootDirectory,
+		nodeIPs:        []net.IP{net.IP(dep.NodeIP)},
+		ns:             dep.Namespace,
+		registryConfig: dep.RegistryCfg,
+		rootDirectory:  dep.RootDirectory,
 
-		eventRecorder:   cfg.EventRecorder,
-		resourceManager: cfg.ResourceManager,
+		eventRecorder:   dep.EventRecorder,
+		resourceManager: dep.ResourceManager,
 
-		podStateProvider: cfg.PodStateProvider,
-		podSyncHandler:   cfg.PodSyncHandler,
-		statusManager:    cfg.StatusManager,
+		podStateProvider: dep.PodStateProvider,
+		podSyncHandler:   dep.PodSyncHandler,
+		statusManager:    dep.StatusManager,
 
 		chStopping: make(chan struct{}),
 		chStopped:  make(chan struct{}),
@@ -160,16 +178,16 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 		backOff:  flowcontrol.NewBackOff(backOffPeriod, maxContainerBackOff),
 	}
 
-	cp.rootDirectory = cfg.RootDirectory
+	cp.rootDirectory = dep.RootDirectory
 
 	imageBackOff := flowcontrol.NewBackOff(backOffPeriod, maxContainerBackOff)
 
-	remoteRuntimeService, err := remote.NewRemoteRuntimeService(cfg.CRIProviderCfg.RemoteRuntimeEndpoint, cfg.CRIProviderCfg.RuntimeRequestTimeout, nil)
+	remoteRuntimeService, err := remote.NewRemoteRuntimeService(dep.CRIProviderCfg.RemoteRuntimeEndpoint, dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
 	if err != nil {
 		return nil, err
 	}
-	cp.remoteImageService, err = remote.NewRemoteImageService(cfg.CRIProviderCfg.RemoteImageEndpoint,
-		cfg.CRIProviderCfg.RuntimeRequestTimeout, nil)
+	cp.remoteImageService, err = remote.NewRemoteImageService(dep.CRIProviderCfg.RemoteImageEndpoint,
+		dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -178,8 +196,8 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 	containerLogManager, err := logs.NewContainerLogManager(
 		remoteRuntimeService,
 		realOS,
-		cfg.CRIProviderCfg.ContainerLogMaxSize,
-		cfg.CRIProviderCfg.ContainerLogMaxFiles,
+		dep.CRIProviderCfg.ContainerLogMaxSize,
+		dep.CRIProviderCfg.ContainerLogMaxFiles,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize container log manager: %v", err)
@@ -191,13 +209,13 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 	cp.startupManager = proberesults.NewManager()
 	cp.probeManager = prober.NewManager(cp.statusManager, cp.livenessManager, cp.readinessManager, cp.startupManager, cp.eventRecorder)
 
-	podsStdoutDirectory := filepath.Join(cfg.StdoutDirectory, defaultPodsDirName)
+	podsStdoutDirectory := filepath.Join(dep.StdoutDirectory, defaultPodsDirName)
 	cp.containerRuntime, err = kuberuntime.NewManager(
-		cfg.EventRecorder,
+		dep.EventRecorder,
 		cp.livenessManager,
 		cp.readinessManager,
 		cp.startupManager,
-		cfg.PodStateProvider,
+		dep.PodStateProvider,
 		realOS,
 		containerLogManager,
 		cp,
@@ -209,7 +227,7 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 		0,
 		true,
 		podsStdoutDirectory,
-		cfg.AllowPrivileged,
+		dep.AllowPrivileged,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize kuberuntime manager")
@@ -222,13 +240,13 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 	// construct a node reference used for events
 	nodeRef := &v1.ObjectReference{
 		Kind:      "Node",
-		Name:      cfg.NodeName,
-		UID:       types.UID(cfg.NodeName),
-		Namespace: cfg.Namespace,
+		Name:      dep.NodeName,
+		UID:       types.UID(dep.NodeName),
+		Namespace: dep.Namespace,
 	}
 
-	clusterDNS := make([]net.IP, 0, len(cfg.CRIProviderCfg.ClusterDNS))
-	for _, ipEntry := range cfg.CRIProviderCfg.ClusterDNS {
+	clusterDNS := make([]net.IP, 0, len(dep.CRIProviderCfg.ClusterDNS))
+	for _, ipEntry := range dep.CRIProviderCfg.ClusterDNS {
 		ip := netutils.ParseIPSloppy(ipEntry)
 		if ip == nil {
 			nlog.Errorf("Invalid clusterDNS IP: %+v", ipEntry)
@@ -237,12 +255,12 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 		}
 	}
 	cp.dnsConfigurer = dns.NewConfigurer(
-		cfg.EventRecorder,
+		dep.EventRecorder,
 		nodeRef,
 		cp.nodeIPs,
 		clusterDNS,
-		cfg.CRIProviderCfg.ClusterDomain,
-		cfg.CRIProviderCfg.ResolverConfig)
+		dep.CRIProviderCfg.ClusterDomain,
+		dep.CRIProviderCfg.ResolverConfig)
 
 	cp.runtimeCache, err = pkgcontainer.NewRuntimeCache(cp.containerRuntime)
 	if err != nil {
@@ -260,8 +278,8 @@ func NewCRIProvider(cfg *framework.ProviderConfig) (framework.PodProvider, error
 }
 
 // Start cri provider
-func (cp *CRIProvider) Start(ctx context.Context) {
-	nlog.Info("Starting Pods provider ...")
+func (cp *CRIProvider) Start(ctx context.Context) error {
+	nlog.Info("Starting CRI provider ...")
 
 	cp.pleg.Start()
 
@@ -270,6 +288,8 @@ func (cp *CRIProvider) Start(ctx context.Context) {
 	cp.syncLoopIteration()
 
 	close(cp.chStopped)
+
+	return nil
 }
 
 // Stop cri provider
@@ -440,14 +460,14 @@ func (cp *CRIProvider) makeMounts(pod *v1.Pod, container *v1.Container, podVolum
 			}
 		}
 
-		if err := hook.Execute(&hook.MakeMountsObj{
+		if err := hook.Execute(&hook.MakeMountsContext{
 			Pod:           pod,
 			Container:     container,
 			HostPath:      &hostPath,
 			Mount:         &mount,
 			Envs:          envs,
 			PodVolumesDir: cp.GetPodVolumesDir(pod.UID),
-		}, hook.PointMakeMounts); err != nil {
+		}); err != nil {
 			return nil, err
 		}
 
@@ -467,14 +487,14 @@ func (cp *CRIProvider) makeMounts(pod *v1.Pod, container *v1.Container, podVolum
 // the container runtime to set parameters for launching a container.
 func (cp *CRIProvider) GenerateRunContainerOptions(pod *v1.Pod, container *v1.Container, podIP string, podIPs []string) (*pkgcontainer.RunContainerOptions, func(), error) {
 	opts := &pkgcontainer.RunContainerOptions{}
-	if err := hook.Execute(&hook.RunContainerOptionsObj{
+	if err := hook.Execute(&hook.GenerateContainerOptionContext{
 		Pod:          pod,
 		Container:    container,
 		Opts:         opts,
 		PodIPs:       podIPs,
 		ContainerDir: cp.getPodContainerDir(pod.UID, container.Name),
 		ImageService: cp.remoteImageService,
-	}, hook.PointGenerateRunContainerOptions); err != nil {
+	}); err != nil {
 		return nil, nil, err
 	}
 
@@ -819,8 +839,8 @@ func (cp *CRIProvider) GetPods(ctx context.Context, all bool) ([]*pkgcontainer.P
 }
 
 // UpdatePodStatus instructs the probeManager to update pod status.
-func (cp *CRIProvider) UpdatePodStatus(podUID types.UID, podStatus *v1.PodStatus) {
-	cp.probeManager.UpdatePodStatus(podUID, podStatus)
+func (cp *CRIProvider) RefreshPodStatus(pod *v1.Pod, podStatus *v1.PodStatus) {
+	cp.probeManager.UpdatePodStatus(pod.UID, podStatus)
 }
 
 // GetPodStatus instructs the container runtime to get pod status.

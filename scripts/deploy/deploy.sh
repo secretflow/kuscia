@@ -19,10 +19,31 @@ set -e
 
 GREEN='\033[0;32m'
 NC='\033[0m'
+RED='\033[31m'
 
 function log() {
   local log_content=$1
   echo -e "${GREEN}${log_content}${NC}"
+}
+
+function arch_check() {
+   local arch=$(uname -m)
+   case $arch in
+    *"arm"*)
+        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+        exit 1
+        ;;
+    "x86_64")
+        echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
+        ;;
+    "amd64")
+        echo "Warning: amd64 architecture. Continuing..."
+        ;;
+    *)
+        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+        exit 1
+        ;;
+    esac
 }
 
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
@@ -31,7 +52,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.1.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.2.0.dev20230926
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
@@ -203,20 +224,18 @@ function create_secretflow_app_image() {
   log "Create secretflow app image done"
 }
 
-function create_default_domain_datasource() {
+function probe_datamesh() {
   local domain_ctr=$1
-  if ! do_http_probe "$domain_ctr" "http://127.0.0.1:8070/healthZ" 60; then
-    echo "[Error] Probe datamesh in container '$domain_ctr' failed. Please check the log" >&2
-    exit 1
+  if ! do_http_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30; then
+    echo "[Error] Probe datamesh in container '$domain_ctr' failed." >&2
+    echo "You cloud run command that 'docker logs $domain_ctr' to check the log" >&2
   fi
-  docker exec -it "${domain_ctr}" scripts/deploy/create_default_domaindatasource.sh
-  log "Create default domain datasource done"
+  log "Probe datamesh successfully"
 }
 
 function create_domaindata_table() {
   local ctr=$1
-  # create domain datasource
-  docker exec -it "${ctr}" scripts/deploy/create_domain_datasource.sh "${DOMAIN_ID}"
+
   # create domain data table
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_table.sh "${DOMAIN_ID}"
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_table.sh "${DOMAIN_ID}"
@@ -258,6 +277,7 @@ function generate_mount_flag() {
 
 function deploy_autonomy() {
   local domain_ctr=${USER}-kuscia-autonomy-${DOMAIN_ID}
+  arch_check
   if need_start_docker_container "$domain_ctr"; then
     log "Starting container $domain_ctr ..."
     env_flag=$(generate_env_flag)
@@ -266,6 +286,7 @@ function deploy_autonomy() {
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}"
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 
@@ -296,14 +317,27 @@ function deploy_autonomy() {
 
 function deploy_lite() {
   local domain_ctr=${USER}-kuscia-lite-${DOMAIN_ID}
+  local HttpResponseCode=$(curl -k -s -o /dev/null -w "%{http_code}" ${MASTER_ENDPOINT})
+  arch_check
+
   if need_start_docker_container "$domain_ctr"; then
     log "Starting container $domain_ctr ..."
 
     env_flag=$(generate_env_flag)
     mount_flag=$(generate_mount_flag)
 
+    if [[ $HttpResponseCode = "401" ]]; then
+      echo -e "${GREEN}Communication with master is normal, response code is 401${NC}"
+    else
+      echo -e "${RED}Failed to connect to the master. Please check if the network link to the master is normal. Please refer to the kuscia documentation (https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/deploy_master_lite_cn) for the correct return results${NC}"
+      curl -kv ${MASTER_ENDPOINT}
+      exit 1
+    fi
+
+
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}" "${DOMAIN_TOKEN}"
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     # TODO end
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
@@ -314,7 +348,7 @@ function deploy_lite() {
       --entrypoint bin/entrypoint.sh \
       "${KUSCIA_IMAGE}" tini -- scripts/deploy/start_lite.sh "${DOMAIN_ID}" "${MASTER_ENDPOINT}" "${ALLOW_PRIVILEGED}" "${MASTER_CA}"
 
-    create_default_domain_datasource "$domain_ctr"
+    probe_datamesh "$domain_ctr"
 
     log "Lite domain '${DOMAIN_ID}' started successfully$"
   fi
@@ -326,6 +360,8 @@ function deploy_lite() {
 function deploy_master() {
   local domain_ctr=${USER}-kuscia-master
   local master_domain_id=kuscia-system
+  arch_check
+
   if need_start_docker_container "${domain_ctr}"; then
     log "Starting container ${domain_ctr} ..."
 
@@ -337,6 +373,7 @@ function deploy_master() {
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${master_domain_id}" "${DOMAIN_TOKEN}"
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 

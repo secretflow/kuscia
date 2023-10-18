@@ -10,7 +10,7 @@ FROM openanolis/anolisos:8.8
 ENV TZ=Asia/Shanghai
 
 ARG ROOT_DIR="/home/kuscia"
-RUN yum install -y openssl net-tools which jq && \
+RUN yum install -y openssl net-tools which jq logrotate && \
     yum clean all && \
     mkdir -p ${ROOT_DIR}/bin && \
     mkdir -p /bin/aux && \

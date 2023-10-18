@@ -20,16 +20,26 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
+
 	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/gateway/utils"
+	cmconf "github.com/secretflow/kuscia/pkg/confmanager/config"
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
-	"github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/pkg/web/logs"
 )
 
 var (
@@ -52,6 +62,8 @@ type Dependencies struct {
 	InterConnSchedulerPort int
 	IsMaster               bool
 	KusciaKubeConfig       string
+	EnableContainerd       bool
+	LogConfig              *nlog.LogConfig
 }
 
 type KusciaConfig struct {
@@ -60,16 +72,16 @@ type KusciaConfig struct {
 	DomainKeyFile  string                     `yaml:"domainKeyFile,omitempty"`
 	DomainCertFile string                     `yaml:"domainCertFile,omitempty"`
 	CAKeyFile      string                     `yaml:"caKeyFile,omitempty"`
-	CAFile         string                     `yaml:"caFile,omitempty"`
+	CACertFile     string                     `yaml:"caFile,omitempty"`
 	Agent          KusciaAgentConfig          `yaml:"agent,omitempty"`
 	Master         *kusciaconfig.MasterConfig `yaml:"master,omitempty"`
+	ConfManager    cmconf.ConfManagerConfig   `yaml:"confManager,omitempty"`
 	ExternalTLS    *kusciaconfig.TLSConfig    `yaml:"externalTLS,omitempty"`
 	IsMaster       bool
 }
 
 type KusciaAgentConfig struct {
-	AllowPrivileged bool               `yaml:"allowPrivileged,omitempty"`
-	Plugins         []config.PluginCfg `yaml:"plugins,omitempty"`
+	config.AgentConfig `yaml:",inline"`
 }
 
 type Module interface {
@@ -80,7 +92,7 @@ type Module interface {
 
 func EnsureCaKeyAndCert(conf *Dependencies) (*rsa.PrivateKey, *x509.Certificate, error) {
 	if _, err := os.Stat(conf.CAKeyFile); os.IsNotExist(err) {
-		caKey, caCertBytes, err := tls.CreateCA(conf.DomainID)
+		caKey, caCertBytes, err := tlsutils.CreateCA(conf.DomainID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -98,7 +110,7 @@ func EnsureCaKeyAndCert(conf *Dependencies) (*rsa.PrivateKey, *x509.Certificate,
 			return nil, nil, err
 		}
 
-		caOut, err := os.Create(conf.CAFile)
+		caOut, err := os.Create(conf.CACertFile)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -113,11 +125,11 @@ func EnsureCaKeyAndCert(conf *Dependencies) (*rsa.PrivateKey, *x509.Certificate,
 		caCert, _ := x509.ParseCertificate(caCertBytes)
 		return caKey, caCert, nil
 	} else {
-		caKey, err := utils.ParsePKCS1PrivateKey(conf.CAKeyFile)
+		caKey, err := tlsutils.ParsePKCS1PrivateKey(conf.CAKeyFile)
 		if err != nil {
 			return nil, nil, err
 		}
-		caCert, err := utils.ParsePKCS1CertFromFile(conf.CAFile)
+		caCert, err := tlsutils.ParsePKCS1CertFromFile(conf.CACertFile)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -147,6 +159,46 @@ func EnsureDomainKey(conf *Dependencies) error {
 	return nil
 }
 
+func EnsureDomainCert(conf *Dependencies) error {
+	caKey, err := tlsutils.ParsePKCS1PrivateKey(conf.CAKeyFile)
+	if err != nil {
+		return err
+	}
+	caCert, err := tlsutils.ParsePKCS1CertFromFile(conf.CACertFile)
+	if err != nil {
+		return err
+	}
+	domainKey, err := tlsutils.ParsePKCS1PrivateKey(conf.DomainKeyFile)
+	if err != nil {
+		return err
+	}
+	domainCrt := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               caCert.Subject,
+		PublicKeyAlgorithm:    caCert.PublicKeyAlgorithm,
+		PublicKey:             domainKey.PublicKey,
+		NotBefore:             caCert.NotBefore,
+		NotAfter:              caCert.NotAfter,
+		ExtKeyUsage:           caCert.ExtKeyUsage,
+		KeyUsage:              caCert.KeyUsage,
+		BasicConstraintsValid: caCert.BasicConstraintsValid,
+	}
+	domainCrtRaw, err := x509.CreateCertificate(rand.Reader, domainCrt, caCert, &domainKey.PublicKey, caKey)
+	if err != nil {
+		return err
+	}
+	certOut, err := os.Create(conf.DomainCertFile)
+	if err != nil {
+		return err
+	}
+	defer certOut.Close()
+
+	return pem.Encode(certOut, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: domainCrtRaw,
+	})
+}
+
 func EnsureDir(conf *Dependencies) error {
 	if err := os.MkdirAll(filepath.Join(conf.RootDir, CertPrefix), 0755); err != nil {
 		return err
@@ -157,5 +209,36 @@ func EnsureDir(conf *Dependencies) error {
 	if err := os.MkdirAll(filepath.Join(conf.RootDir, StdoutPrefix), 0755); err != nil {
 		return err
 	}
+	return nil
+}
+
+func CreateDefaultDomain(ctx context.Context, conf *Dependencies) error {
+	certStr, err := os.ReadFile(conf.DomainCertFile)
+	if err != nil {
+		return err
+	}
+	_, err = conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Create(ctx, &kusciaapisv1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: conf.DomainID,
+		},
+		Spec: kusciaapisv1alpha1.DomainSpec{
+			Cert: base64.StdEncoding.EncodeToString(certStr),
+		}}, metav1.CreateOptions{})
+	if k8serrors.IsAlreadyExists(err) {
+		return nil
+	}
+
+	return err
+}
+
+func InitLogs(logConfig *nlog.LogConfig) error {
+	zlog, err := zlogwriter.New(logConfig)
+	if err != nil {
+		return err
+	}
+	nlog.Setup(nlog.SetWriter(zlog))
+	logs.Setup(nlog.SetWriter(zlog))
+	klog.SetOutput(nlog.DefaultLogger())
+	klog.LogToStderr(false)
 	return nil
 }

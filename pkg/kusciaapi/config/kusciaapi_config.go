@@ -17,6 +17,8 @@ package config
 import (
 	"path"
 
+	"k8s.io/client-go/kubernetes"
+
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 )
@@ -30,13 +32,15 @@ type KusciaAPIConfig struct {
 	WriteTimeout   int64
 	IdleTimeout    int64
 	Initiator      string
+	DomainKeyFile  string
 	TLSConfig      *TLSConfig
 	TokenConfig    *TokenConfig
 	KusciaClient   kusciaclientset.Interface
+	KubeClient     kubernetes.Interface
 }
 
 type TLSConfig struct {
-	RootCAFile     string
+	RootCACertFile string
 	ServerCertFile string
 	ServerKeyFile  string
 }
@@ -54,7 +58,7 @@ func NewDefaultKusciaAPIConfig(rootDir string) *KusciaAPIConfig {
 		WriteTimeout:   20,
 		IdleTimeout:    300,
 		TLSConfig: &TLSConfig{
-			RootCAFile:     path.Join(rootDir, constants.CertPathPrefix, "ca.crt"),
+			RootCACertFile: path.Join(rootDir, constants.CertPathPrefix, "ca.crt"),
 			ServerKeyFile:  path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.key"),
 			ServerCertFile: path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.crt"),
 		},

@@ -61,5 +61,12 @@ func injectBean(conf *config.DataMeshConfig, appEngine *engine.Engine) error {
 	if err != nil {
 		return fmt.Errorf("inject bean %s failed: %v", serverName, err.Error())
 	}
+	// inject operator bean
+	opServer := bean.NewOperatorBean(conf)
+	serverName = opServer.ServerName()
+	err = appEngine.UseBeanWithConfig(serverName, opServer)
+	if err != nil {
+		return fmt.Errorf("inject bean %s failed: %v", serverName, err.Error())
+	}
 	return nil
 }

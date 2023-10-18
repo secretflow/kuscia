@@ -32,24 +32,42 @@ const (
 	LabelInterConnProtocols              = "kuscia.secretflow/interconn-protocols"
 	LabelResourceVersionUnderHostCluster = "kuscia.secretflow/resource-version-under-host-cluster"
 	LabelTaskResourceGroup               = "kuscia.secretflow/task-resource-group"
-	LabelTaskInitiator                   = "kuscia.secretflow/initiator"
 	LabelTaskUnschedulable               = "kuscia.secretflow/task-unschedulable"
-	LabelPodHasSynced                    = "kuscia.secretflow/has-synced"
+	LabelInitiator                       = "kuscia.secretflow/initiator"
+	LabelHasSynced                       = "kuscia.secretflow/has-synced"
 	LabelDomainDataType                  = "kuscia.secretflow/domaindata-type"
+	LabelDomainDataID                    = "kuscia.secretflow/domaindataid"
 	LabelDomainDataVendor                = "kuscia.secretflow/domaindata-vendor"
 	LabelDomainDataSourceType            = "kuscia.secretflow/domaindatasource-type"
+	LabelDomainDataGrantVendor           = "kuscia.secretflow/domaindatagrant-vendor"
+	LabelDomainDataGrantDomain           = "kuscia.secretflow/domaindatagrant-domain"
 
 	LabelSelfClusterAsInitiator = "kuscia.secretflow/self-cluster-as-initiator"
 	LabelInterConnProtocolType  = "kuscia.secretflow/interconn-protocol-type"
 	LabelJobID                  = "kuscia.secretflow/job-id"
 	LabelTaskID                 = "kuscia.secretflow/task-id"
 	LabelTaskAlias              = "kuscia.secretflow/task-alias"
+
+	LabelKusciaDeploymentAppType  = "kuscia.secretflow/app-type"
+	LabelKusciaDeploymentUID      = "kuscia.secretflow/kd-uid"
+	LabelKusciaDeploymentName     = "kuscia.secretflow/kd-name"
+	LabelKubernetesDeploymentName = "kuscia.secretflow/deployment-name"
+
+	LabelNodeName        = "kuscia.secretflow/node"
+	LabelPodUID          = "kuscia.secretflow/pod-uid"
+	LabelOwnerReferences = "kuscia.secretflow/owner-references"
 )
 
 type LoadBalancerType string
 
 const (
 	DomainRouteLoadBalancer LoadBalancerType = "domainroute"
+)
+
+type KusciaDeploymentAppType string
+
+const (
+	ServingAppType KusciaDeploymentAppType = "serving"
 )
 
 const (
@@ -64,7 +82,7 @@ const (
 
 	ConfigTemplateVolumesAnnotationKey = "kuscia.secretflow/config-template-volumes"
 
-	TaskResourceReservingTimestamp = "kuscia.secretflow/task-resource-reserving-timestamp"
+	TaskResourceReservingTimestampAnnotationKey = "kuscia.secretflow/taskresource-reserving-timestamp"
 
 	ComponentSpecAnnotationKey = "kuscia.secretflow/component-spec"
 )
@@ -72,6 +90,9 @@ const (
 // Environment variables issued to the task pod.
 const (
 	EnvTaskID            = "TASK_ID"
+	EnvServingID         = "SERVING_ID"
+	EnvInputConfig       = "INPUT_CONFIG"
+	EnvClusterDefine     = "CLUSTER_DEFINE"
 	EnvTaskInputConfig   = "TASK_INPUT_CONFIG"
 	EnvTaskClusterDefine = "TASK_CLUSTER_DEFINE"
 	EnvAllocatedPorts    = "ALLOCATED_PORTS"
@@ -104,4 +125,9 @@ const (
 const (
 	DefaultDataSourceID     = "default-data-source"
 	DefaultDomainDataVendor = "manual"
+)
+
+const (
+	DomainDataSourceTypeLocalFS        = "localfs"
+	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )

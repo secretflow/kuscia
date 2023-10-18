@@ -30,7 +30,7 @@ import (
 	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
@@ -58,6 +58,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 		if err := xds.AddOrUpdateCluster(masterProxyCluster); err != nil {
 			return err
 		}
+		nlog.Infof("add Master cluster:%s", serviceMasterProxy)
 		if err := addMasterProxyVirtualHost(masterProxyCluster.Name, serviceMasterProxy, namespace); err != nil {
 			return err
 		}
@@ -65,7 +66,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 		waitMasterProxyReady(ctx)
 	} else {
 		if config.APIServer != nil {
-			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.ApiWhitelist); err != nil {
+			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.APIWhitelist); err != nil {
 				return err
 			}
 		}
@@ -166,6 +167,9 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 							ClusterSpecifier: &route.RouteAction_Cluster{
 								Cluster: cluster,
 							},
+							HostRewriteSpecifier: &route.RouteAction_AutoHostRewrite{
+								AutoHostRewrite: wrapperspb.Bool(true),
+							},
 						},
 					),
 				},
@@ -173,7 +177,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 		},
 	}
 	if service == ServiceAPIServer {
-		regex := getMasterApiWhitelistRegex(apiWhitelist)
+		regex := getMasterAPIWhitelistRegex(apiWhitelist)
 		if len(regex) > 0 {
 			virtualHost.Routes[0].Match.PathSpecifier = &route.RouteMatch_SafeRegex{
 				SafeRegex: &matcherv3.RegexMatcher{
@@ -202,11 +206,7 @@ func generateMasterProxyDomains() []string {
 
 func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycluster.Cluster, error) {
 	cluster := &envoycluster.Cluster{
-		Name:           fmt.Sprintf("service-%s", name),
-		ConnectTimeout: durationpb.New(time.Second),
-		ClusterDiscoveryType: &envoycluster.Cluster_Type{
-			Type: envoycluster.Cluster_STRICT_DNS,
-		},
+		Name: fmt.Sprintf("service-%s", name),
 		LoadAssignment: &endpoint.ClusterLoadAssignment{
 			ClusterName: name,
 			Endpoints: []*endpoint.LocalityLbEndpoints{
@@ -234,20 +234,16 @@ func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycl
 			},
 		},
 	}
-
 	if config.TLSCert != nil {
 		transportSocket, err := xds.GenerateUpstreamTLSConfigByCert(config.TLSCert)
 		if err != nil {
 			return nil, err
 		}
 		cluster.TransportSocket = transportSocket
-		return cluster, nil
 	}
 
-	if config.Protocol == "https" {
-		cluster.TransportSocket = &core.TransportSocket{
-			Name: "envoy.transport_sockets.tls",
-		}
+	if err := xds.DecorateRemoteUpstreamCluster(cluster, config.Protocol); err != nil {
+		return nil, err
 	}
 	return cluster, nil
 }
@@ -328,7 +324,7 @@ func addMasterHandshakeRoute(routeName string) {
 	}
 }
 
-func getMasterApiWhitelistRegex(apiWhitelist []string) string {
+func getMasterAPIWhitelistRegex(apiWhitelist []string) string {
 	var result = ""
 	if len(apiWhitelist) > 0 {
 		result = "(" + strings.Join(apiWhitelist, ")|(") + ")"

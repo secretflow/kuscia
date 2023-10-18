@@ -1,7 +1,5 @@
-.. _concepts:
-
-概念
-=========
+Kuscia 概念
+===============
 
 .. toctree::
     :maxdepth: 2
@@ -11,5 +9,6 @@
     domaindata_cn
     kusciajob_cn
     kusciatask_cn
+    kusciadeployment_cn
     interopconfig_cn
     appimage_cn

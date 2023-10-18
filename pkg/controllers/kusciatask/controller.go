@@ -20,7 +20,6 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
@@ -477,12 +476,6 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	// Set default for the new kusciaTask.
 	scheme.Scheme.Default(kusciaTask)
 
-	defer func() {
-		if retErr != nil {
-			c.recorder.Event(kusciaTask, v1.EventTypeWarning, "ErrorHandleTask", retErr.Error())
-		}
-	}()
-
 	// Return if the task's unschedulable tag is true.
 	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskFailed &&
 		kusciaTask.Labels != nil &&
@@ -533,8 +526,6 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 
 	nlog.Infof("Finished syncing kusciatask %q (%v)", key, time.Since(startTime))
 
-	c.recorder.Event(kusciaTask, v1.EventTypeNormal, kusciaTask.Status.Reason,
-		fmt.Sprintf("%v -> %v, %v", phase, kusciaTask.Status.Phase, kusciaTask.Status.Message))
 	return nil
 }
 
@@ -562,15 +553,4 @@ func (c *Controller) updateTaskStatus(rawKusciaTask, curKusciaTask *kusciaapisv1
 // Name returns controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists check whether KusciaTask and AppImage crd exists.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDKusciaTasksName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDAppImagesName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	return nil
 }

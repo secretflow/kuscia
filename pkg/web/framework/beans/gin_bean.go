@@ -35,10 +35,9 @@ import (
 type GinBean struct {
 	framework.ConfigLoader
 	// Configs
-	Port      int    `name:"port" usage:"Server port" default:"8080"`
-	Debug     bool   `name:"debug" usage:"Debug mode"`
-	LogPath   string `name:"logpath" usage:"Gin Log path"`
-	TLSConfig *config.TLSConfig
+	Port    int    `name:"port" usage:"Server port" default:"8080"`
+	Debug   bool   `name:"debug" usage:"Debug mode"`
+	LogPath string `name:"logpath" usage:"Gin Log path"`
 	GinBeanConfig
 	*gin.Engine
 }
@@ -81,11 +80,12 @@ func (b *GinBean) Init(e framework.ConfBeanRegistry) error {
 	}
 	if b.LogPath != "" {
 		logger, err := zlogwriter.New(
-			&zlogwriter.LogConfig{
+			&nlog.LogConfig{
 				LogPath:       b.LogPath,
 				LogLevel:      "INFO",
-				MaxFileSizeMB: 50,
+				MaxFileSizeMB: 512,
 				MaxFiles:      10,
+				Compress:      true,
 			})
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error
 		return s.ListenAndServeTLS(b.TLSConfig.ServerCertPath, b.TLSConfig.ServerKeyPath)
 	}
 
-	logs.GetLogger().Infof("server started %s", addr)
+	logs.GetLogger().Infof("http server started %s", addr)
 	return s.ListenAndServe()
 }
 

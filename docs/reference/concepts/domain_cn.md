@@ -1,7 +1,7 @@
 # Domain
 
-在 Kuscia 中将隐私计算的节点称为 Domain，一个 Domain 中可以包含多个 K8s 的工作节点（Node）。Kuscia 
-复用了 K8s 的 Namespace 机制来管理节点权限，一个 Domain 对应 K8s 中的一个 Namespace。你可以使用 Domain 来管理和维护隐私计算节点。具体用例请参考下文。
+在 Kuscia 中将隐私计算的节点称为 Domain，一个 Domain 中可以包含多个 K3s 的工作节点（Node）。Kuscia
+复用了 K3s 的 Namespace 机制来管理节点权限，一个 Domain 对应 K3s 中的一个 Namespace。你可以使用 Domain 来管理和维护隐私计算节点。具体用例请参考下文。
 
 ## 用例
 

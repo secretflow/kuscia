@@ -54,7 +54,7 @@ type Opts struct {
 	Timeout       int
 
 	Address string
-	logCfg  *zlogwriter.LogConfig
+	logCfg  *nlog.LogConfig
 }
 
 type TransClient struct {

@@ -30,7 +30,7 @@ var (
 )
 
 func TestCreateDomainData(t *testing.T) {
-	conf := config.DataMeshConfig{
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
 	}
@@ -70,7 +70,7 @@ func TestCreateDomainData(t *testing.T) {
 
 func TestQueryDomainData(t *testing.T) {
 
-	conf := config.DataMeshConfig{
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
 	}
@@ -102,7 +102,7 @@ func TestQueryDomainData(t *testing.T) {
 }
 
 func TestUpdateDomainData(t *testing.T) {
-	conf := config.DataMeshConfig{
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
 	}
@@ -141,7 +141,7 @@ func TestUpdateDomainData(t *testing.T) {
 }
 
 func TestDeleteDomainData(t *testing.T) {
-	conf := config.DataMeshConfig{
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
 	}

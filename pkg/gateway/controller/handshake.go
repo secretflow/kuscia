@@ -33,7 +33,6 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,13 +40,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
-	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
 )
 
@@ -200,7 +200,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			nlog.Errorf("DomainRoute %s: destination public key format error, must be base64 encoded", dr.Name)
 			return err
 		}
-		destPubKey, err := utils.ParsePKCS1PublicKey(destPub)
+		destPubKey, err := tlsutils.ParsePKCS1PublicKey(destPub)
 		if err != nil {
 			return err
 		}
@@ -298,7 +298,7 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 	if err != nil {
 		return nil, err
 	}
-	sourcePubKey, err := utils.ParsePKCS1PublicKey(srcPub)
+	sourcePubKey, err := tlsutils.ParsePKCS1PublicKey(srcPub)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,6 @@ func (c *DomainRouteController) parseTokenRSA(dr *kusciaapisv1alpha1.DomainRoute
 	if (c.gateway.Namespace == dr.Spec.Source && dr.Spec.TokenConfig.SourcePublicKey != c.gateway.Status.PublicKey) ||
 		(c.gateway.Namespace == dr.Spec.Destination && dr.Spec.TokenConfig.DestinationPublicKey != c.gateway.Status.PublicKey) {
 		err := fmt.Errorf("DomainRoute %s mismatch public key", key)
-		c.recorder.Event(c.gateway, corev1.EventTypeWarning, syncFailed, err.Error())
 		return tokens, err
 	}
 
@@ -469,11 +468,11 @@ func (c *DomainRouteController) checkAndUpdateTokenInstances(dr *kusciaapisv1alp
 }
 
 func encryptToken(pub *rsa.PublicKey, key []byte) (string, error) {
-	return utils.EncryptPKCS1v15(pub, key)
+	return tlsutils.EncryptPKCS1v15(pub, key)
 }
 
 func decryptToken(priv *rsa.PrivateKey, ciphertext string, keysize int) ([]byte, error) {
-	return utils.DecryptPKCS1v15(priv, ciphertext, keysize)
+	return tlsutils.DecryptPKCS1v15(priv, ciphertext, keysize)
 }
 
 func exists(slice []string, val string) bool {

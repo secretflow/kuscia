@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -34,10 +34,10 @@ import (
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
-	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciatask"
+	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
-// PendingHandler is used to handle kuscia task which phase is creating.
+// PendingHandler is used to handle kuscia task which phase is pending.
 type PendingHandler struct {
 	kubeClient       kubernetes.Interface
 	kusciaClient     kusciaclientset.Interface
@@ -115,7 +115,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	for i, party := range kusciaTask.Spec.Parties {
 		kit, err := h.buildPartyKitInfo(kusciaTask, &kusciaTask.Spec.Parties[i])
 		if err != nil {
-			return fmt.Errorf("failed to build domin kit info, %v", err)
+			return fmt.Errorf("failed to build domain %v kit info, %v", party.DomainID, err)
 		}
 
 		partyKitInfos[party.DomainID+party.Role] = kit
@@ -163,7 +163,7 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 		return nil, fmt.Errorf("failed to get appImage %q from cache, %v", party.AppImageRef, err)
 	}
 
-	baseDeployTemplate, err := selectDeployTemplate(appImage.Spec.DeployTemplates, party.Role)
+	baseDeployTemplate, err := utilsres.SelectDeployTemplate(appImage.Spec.DeployTemplates, party.Role)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select appropriate deploy template from appImage %q for party %v/%v, %v", appImage.Name, party.DomainID, party.Role, err)
 	}
@@ -216,42 +216,6 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 	}
 
 	return kit, nil
-}
-
-// selectDeployTemplate selects a matching template according to the role.
-// value of templates[i].Role may have the following values: 'client', 'server', 'client,server', ...
-// Matching process:
-//  1. if role [in] template role list, matched.
-//  2. if template role list is empty，template is universal.
-//  3. if role is empty，select the first template.
-func selectDeployTemplate(templates []kusciaapisv1alpha1.DeployTemplate, role string) (*kusciaapisv1alpha1.DeployTemplate, error) {
-	if len(templates) == 0 {
-		return nil, errors.New("deploy templates are empty")
-	}
-
-	var defaultTemplate *kusciaapisv1alpha1.DeployTemplate
-	for _, template := range templates {
-		templateRoles := strings.Split(strings.Trim(template.Role, ","), ",")
-		for _, tRole := range templateRoles {
-			if tRole == role {
-				return &template, nil
-			}
-		}
-
-		if template.Role == "" {
-			defaultTemplate = &template
-		}
-	}
-
-	if defaultTemplate != nil {
-		return defaultTemplate, nil
-	}
-
-	if role == "" {
-		return &templates[0], nil
-	}
-
-	return nil, fmt.Errorf("not found deploy template for role %q", role)
 }
 
 func generatePodName(taskName string, role string, index int) string {
@@ -619,9 +583,9 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 
 func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 	labels := map[string]string{
-		common.LabelController:    KusciaTaskLabelValue,
-		common.LabelTaskInitiator: partyKit.kusciaTask.Spec.Initiator,
-		common.LabelTaskID:        partyKit.kusciaTask.Name,
+		common.LabelController: KusciaTaskLabelValue,
+		common.LabelInitiator:  partyKit.kusciaTask.Spec.Initiator,
+		common.LabelTaskID:     partyKit.kusciaTask.Name,
 	}
 
 	var protocolType string
@@ -677,7 +641,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		labelKusciaTaskPodRole:               partyKit.role,
 		common.LabelTaskResourceGroup:        partyKit.kusciaTask.Name,
 		kusciaapisv1alpha1.LabelTaskResource: "",
-		common.LabelTaskInitiator:            partyKit.kusciaTask.Spec.Initiator,
+		common.LabelInitiator:                partyKit.kusciaTask.Spec.Initiator,
 	}
 
 	var protocolType string
@@ -694,12 +658,12 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		restartPolicy = partyKit.deployTemplate.Spec.RestartPolicy
 	}
 
-	schedulerName := common.KusciaSchedulerName
 	ns, err := h.namespacesLister.Get(partyKit.domainID)
 	if err != nil {
 		return nil, err
 	}
 
+	schedulerName := common.KusciaSchedulerName
 	if ns.Labels != nil && ns.Labels[common.LabelDomainRole] == string(kusciaapisv1alpha1.Partner) {
 		schedulerName = fmt.Sprintf("%v-%v", partyKit.domainID, schedulerName)
 	}
@@ -878,8 +842,8 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 	}
 
 	svc.Labels = map[string]string{
-		common.LabelPortScope:     string(port.Scope),
-		common.LabelTaskInitiator: partyKit.kusciaTask.Spec.Initiator,
+		common.LabelPortScope: string(port.Scope),
+		common.LabelInitiator: partyKit.kusciaTask.Spec.Initiator,
 	}
 
 	var protocolType string

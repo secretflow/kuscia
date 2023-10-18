@@ -81,6 +81,10 @@ func Fatal(args ...interface{}) {
 	defaultLogger.logWriter.Fatal(defaultLogger.formatter.Format(defaultLogger.ctx, fmt.Sprint(args...)))
 }
 
+func Write(p []byte) (int, error) {
+	return defaultLogger.logWriter.Write(p)
+}
+
 func Sync() error {
 	return defaultLogger.logWriter.Sync()
 }

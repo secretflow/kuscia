@@ -24,7 +24,7 @@ parameters:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
-  build-kuscia:
+  unit-test:
     docker:
       - image: secretflow/kuscia-ci:latest
     resource_class: 2xlarge
@@ -33,16 +33,45 @@ jobs:
       - checkout
       - run:
           name: Test Kuscia
-          command: make test
+          command: make test 
+  image_publish:
+    docker:
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:2023.06.1.go
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Login to kuscia docker registry
+          command: |
+            # login kuscia dockerhub registry
+            docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
+            # login kuscia aliyun registry
+            docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
+      - run: 
+          name: Build image and publish
+          command: |
+            make image
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:latest
+            docker push secretflow/kuscia:latest
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLE_TAG}
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLE_TAG}
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:${CIRCLE_TAG}
+            docker push secretflow/kuscia:${CIRCLE_TAG}
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   build-workflow:
-    when:
-      not: << pipeline.parameters.GHA_Action >>
     jobs:
-      - build-kuscia
+      - unit-test
+      - image_publish:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only: main
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:

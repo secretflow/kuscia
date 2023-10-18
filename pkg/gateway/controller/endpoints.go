@@ -26,11 +26,9 @@ import (
 	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	grpc_http1_reverse_bridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
-	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -65,20 +63,13 @@ const (
 	portScopeLocal   = "Local"
 )
 
-const (
-	protocolHTTP  = "HTTP"
-	protocolHTTPS = "HTTPS"
-	protocolGRPC  = "GRPC"
-	protocolGRPCS = "GRPCS"
-)
-
 var (
 	keyFunc         = cache.DeletionHandlingMetaNamespaceKeyFunc
 	serviceProtocol = map[string]bool{
-		protocolHTTP:  true,
-		protocolHTTPS: true,
-		protocolGRPC:  true,
-		protocolGRPCS: true,
+		xds.ProtocolHTTP:  true,
+		xds.ProtocolHTTPS: true,
+		xds.ProtocolGRPC:  true,
+		xds.ProtocolGRPCS: true,
 	}
 )
 
@@ -311,16 +302,14 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 
 func updateService(kubeClient kubernetes.Interface, service *v1.Service) error {
 	var err error
-	if ownerRef := metav1.GetControllerOf(service); ownerRef != nil && ownerRef.Kind == "Pod" {
-		if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
-			now := metav1.Now().Rfc3339Copy()
-			at := map[string]string{
-				common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
-			}
-			err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
-			if err != nil {
-				nlog.Errorf("update service add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
-			}
+	if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
+		now := metav1.Now().Rfc3339Copy()
+		at := map[string]string{
+			common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
+		}
+		err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
+		if err != nil {
+			nlog.Errorf("update service add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
 		}
 	}
 	return err
@@ -350,7 +339,7 @@ func (ec *EndpointsController) validateAddress(address string, ports []uint32) e
 
 func parseAndValidateProtocol(protocol string, service string) (string, error) {
 	if protocol == "" {
-		protocol = protocolHTTP
+		protocol = xds.ProtocolHTTP
 	}
 	if !serviceProtocol[protocol] {
 		err := fmt.Errorf("unsupported service protocol: %s, service: %s", protocol, service)
@@ -493,41 +482,8 @@ func generateCluster(name string, protocol string, hosts map[string][]uint32,
 		}
 	}
 
-	var protocolOptions *envoyhttp.HttpProtocolOptions
-	if protocol == protocolGRPC || protocol == protocolGRPCS {
-		protocolOptions = &envoyhttp.HttpProtocolOptions{
-			UpstreamProtocolOptions: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig_{
-				ExplicitHttpConfig: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig{
-					ProtocolConfig: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig_Http2ProtocolOptions{},
-				},
-			},
-		}
-	} else {
-		protocolOptions = &envoyhttp.HttpProtocolOptions{
-			UpstreamProtocolOptions: &envoyhttp.HttpProtocolOptions_UseDownstreamProtocolConfig{
-				UseDownstreamProtocolConfig: &envoyhttp.HttpProtocolOptions_UseDownstreamHttpConfig{},
-			},
-		}
-	}
-
-	b, err := proto.Marshal(protocolOptions)
-	if err != nil {
-		nlog.Errorf("Marshal protocolOptions failed with %s", err.Error())
-		return nil, err
-	}
-
 	cluster := xds.AddTCPHealthCheck(&envoycluster.Cluster{
-		Name:           fmt.Sprintf("service-%s", name),
-		ConnectTimeout: durationpb.New(10 * time.Second),
-		ClusterDiscoveryType: &envoycluster.Cluster_Type{
-			Type: envoycluster.Cluster_STRICT_DNS,
-		},
-		LbPolicy: envoycluster.Cluster_RING_HASH,
-		LbConfig: &envoycluster.Cluster_RingHashLbConfig_{
-			RingHashLbConfig: &envoycluster.Cluster_RingHashLbConfig{
-				HashFunction: envoycluster.Cluster_RingHashLbConfig_MURMUR_HASH_2,
-			},
-		},
+		Name: fmt.Sprintf("service-%s", name),
 		LoadAssignment: &endpoint.ClusterLoadAssignment{
 			ClusterName: fmt.Sprintf("service-%s", name),
 			Endpoints: []*endpoint.LocalityLbEndpoints{
@@ -536,25 +492,18 @@ func generateCluster(name string, protocol string, hosts map[string][]uint32,
 				},
 			},
 		},
-		TypedExtensionProtocolOptions: map[string]*anypb.Any{
-			"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
-				TypeUrl: "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
-				Value:   b,
-			},
-		},
 	})
-
 	if clientCert != nil {
+		var err error
 		cluster.TransportSocket, err = xds.GenerateUpstreamTLSConfigByCert(clientCert)
 		if err != nil {
 			return cluster, err
 		}
 	}
-
-	if protocol == protocolHTTPS || protocol == protocolGRPCS {
-		cluster.TransportSocket = &core.TransportSocket{
-			Name: "envoy.transport_sockets.tls",
-		}
+	if err := xds.DecorateLocalUpstreamCluster(cluster, protocol); err != nil {
+		nlog.Warnf("DecorateLocalUpstreamCluster %s fail: %v", cluster.Name, err)
+		return nil, err
 	}
+
 	return cluster, nil
 }

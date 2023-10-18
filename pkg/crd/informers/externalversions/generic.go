@@ -71,6 +71,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().Gateways().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("interopconfigs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().InteropConfigs().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("kusciadeployments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaDeployments().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("kusciajobs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaJobs().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("kusciatasks"):

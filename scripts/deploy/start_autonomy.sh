@@ -50,10 +50,6 @@ if [[ ! -f ${EXTERNAL_TLS_CERT_FILE} || ! -f ${EXTERNAL_TLS_KEY_FILE} ]]; then
   EXTERNAL_TLS_KEY_FILE=""
 fi
 
-cp /etc/resolv.conf etc/resolv.conf
-IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-echo "nameserver ${IP}" >/etc/resolv.conf
-
 sh scripts/deploy/iptables_pre_detect.sh
 
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml
@@ -68,7 +64,7 @@ master:
     certFile: ${ROOT}/etc/certs/domain.crt
     keyFile: ${ROOT}/etc/certs/domain.key
     caFile: ${ROOT}/etc/certs/master.ca.crt
-  api-whitelist:
+  apiWhitelist:
     - /(api(s)?(/[0-9A-Za-z_.-]+)?/v1(alpha1)?/namespaces/[0-9A-Za-z_.-]+/(pods|gateways|domainroutes|endpoints|services|events|configmaps|leases|taskresources|secrets|domaindatas|domaindatagrants|domaindatasources)(/[0-9A-Za-z_.-]+(/status$)?)?)
     - /api/v1/namespaces/[0-9A-Za-z_.-]+
     - /api/v1/nodes(/.*)?

@@ -22,6 +22,7 @@ mkdir -p $ROOT
 
 GREEN='\033[0;32m'
 NC='\033[0m'
+RED='\033[31m'
 
 IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 if [ "${KUSCIA_IMAGE}" != "" ]; then
@@ -51,7 +52,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.1.0b0"
+SF_IMAGE_TAG="1.2.0.dev20230926"
 SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
 NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
@@ -61,6 +62,26 @@ VOLUME_PATH="${ROOT}"
 function log() {
   local log_content=$1
   echo -e "${GREEN}${log_content}${NC}"
+}
+
+function arch_check() {
+   local arch=$(uname -m)
+   case $arch in
+    *"arm"*)
+        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+        exit 1
+        ;;
+    "x86_64")
+        echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
+        ;;
+    "amd64")
+        echo "Warning: amd64 architecture. Continuing..."
+        ;;
+    *)
+        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+        exit 1
+        ;;
+    esac
 }
 
 function init_sf_image_info() {
@@ -300,23 +321,31 @@ function create_secretflow_app_image() {
   log "create secretflow app image done"
 }
 
+function create_domaindatagrant_alice2bob() {
+  local ctr=$1
+  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}'
+}
+
 function create_domaindata_alice_table() {
   local ctr=$1
   local domain_id=$2
   local data_path="/home/kuscia/var/storage/data"
-  # create domain datasource
-  docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
+
   # create domain data alice table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_alice_table.sh ${domain_id}
   log "create domaindata alice's table done default stored path: '${data_path}'"
+}
+
+function create_domaindatagrant_bob2alice() {
+  local ctr=$1
+  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}'
 }
 
 function create_domaindata_bob_table() {
   local ctr=$1
   local domain_id=$2
   local data_path="/home/kuscia/var/storage/data"
-  # create domain datasource
-  docker exec -it ${ctr} scripts/deploy/create_domain_datasource.sh ${domain_id}
+
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
   log "create domaindata bob's table done default stored path: '${data_path}'"
@@ -449,7 +478,6 @@ function start_secretpad() {
   fi
 }
 
-
 function start_lite() {
   local domain_id=$1
   local master_endpoint=$2
@@ -469,6 +497,7 @@ function start_lite() {
     csrToken=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
     docker run -it --rm --mount source="${certs_volume}",target="${CTR_CERT_ROOT}" "${IMAGE}" scripts/deploy/init_domain_certs.sh "${domain_id}" "${csrToken}"
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
+    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_confmanager_cert.sh
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
@@ -567,6 +596,7 @@ function run_centralized() {
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${MASTER_DOMAIN} ${csrToken}
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${MASTER_DOMAIN}
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} --network=${NETWORK_NAME} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh ${MASTER_CTR} ${host_ip}
+    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_confmanager_cert.sh
     docker run -dit --name=${MASTER_CTR} --hostname=${MASTER_CTR} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
       -p 18080:1080 \
       -p 18082:8082 \
@@ -592,7 +622,8 @@ function run_centralized() {
   # create demo data
   create_domaindata_alice_table ${MASTER_CTR} ${ALICE_DOMAIN}
   create_domaindata_bob_table ${MASTER_CTR} ${BOB_DOMAIN}
-
+  create_domaindatagrant_alice2bob ${CTR_PREFIX}-lite-${ALICE_DOMAIN}
+  create_domaindatagrant_bob2alice ${CTR_PREFIX}-lite-${BOB_DOMAIN}
   # create secretflow app image
   create_secretflow_app_image ${MASTER_CTR}
 
@@ -601,6 +632,7 @@ function run_centralized() {
 
 function run_centralized_all() {
   ui_flag=$1
+  arch_check
   if [ "${ui_flag}" == "cli" ]; then
     run_centralized
     exit 0
@@ -665,6 +697,7 @@ function build_interconn() {
 function run_p2p() {
   local p2p_protocol=$1
   build_kuscia_network
+  arch_check
 
   start_autonomy ${ALICE_DOMAIN} 11082 11083
   start_autonomy ${BOB_DOMAIN} 12082 12083
@@ -681,7 +714,8 @@ function run_p2p() {
   # create demo data
   create_domaindata_alice_table ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN}
   create_domaindata_bob_table ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN}
-
+  create_domaindatagrant_alice2bob ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}
+  create_domaindatagrant_bob2alice ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
   log "Kuscia p2p cluster started successfully"
 }
 

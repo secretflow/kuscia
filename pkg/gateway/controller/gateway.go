@@ -35,6 +35,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
@@ -66,7 +67,7 @@ func NewGatewayController(namespace string, prikey *rsa.PrivateKey, kusciaClient
 		return nil, err
 	}
 
-	pubPemData := utils.EncodePKCS1PublicKey(prikey)
+	pubPemData := tlsutils.EncodePKCS1PublicKey(prikey)
 
 	controller := &GatewayController{
 		namespace:           namespace,

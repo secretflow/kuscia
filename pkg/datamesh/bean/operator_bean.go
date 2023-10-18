@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
+	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
@@ -29,7 +30,8 @@ import (
 // 2 check the status of domain data periodically
 type operatorBean struct {
 	frameworkconfig.FlagEnvConfigLoader
-	config config.DataMeshConfig
+	config      *config.DataMeshConfig
+	operatorSvc service.IOperatorService
 }
 
 func NewOperatorBean(config *config.DataMeshConfig) *operatorBean { // nolint: golint
@@ -37,26 +39,27 @@ func NewOperatorBean(config *config.DataMeshConfig) *operatorBean { // nolint: g
 		FlagEnvConfigLoader: frameworkconfig.FlagEnvConfigLoader{
 			EnableTLSFlag: true,
 		},
-		config: *config,
+		config: config,
 	}
 }
 
-func (s *operatorBean) Validate(errs *errorcode.Errs) {
+func (b *operatorBean) Validate(errs *errorcode.Errs) {
 
 }
 
-func (s *operatorBean) Init(e framework.ConfBeanRegistry) error {
+func (b *operatorBean) Init(e framework.ConfBeanRegistry) error {
 	// tls config from config file
 	nlog.Infof("operatorBean init")
+	b.operatorSvc = service.NewOperatorService(b.config)
 	return nil
 }
 
 // Start grpcServerBean
-func (s *operatorBean) Start(ctx context.Context, e framework.ConfBeanRegistry) (err error) {
-
+func (b *operatorBean) Start(ctx context.Context, e framework.ConfBeanRegistry) (err error) {
+	b.operatorSvc.Start(ctx)
 	return
 }
 
-func (s *operatorBean) ServerName() string {
+func (b *operatorBean) ServerName() string {
 	return "DataMeshOperator"
 }

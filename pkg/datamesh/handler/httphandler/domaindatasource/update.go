@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package domaindatasource
 
 import (
@@ -48,31 +49,4 @@ func (h *updateDomainDataSourceHandler) Handle(context *api.BizContext, request 
 
 func (h *updateDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
 	return reflect.TypeOf(datamesh.UpdateDomainDataSourceRequest{}), reflect.TypeOf(datamesh.UpdateDomainDataSourceResponse{})
-}
-
-// Delete handler
-type deleteDomainDataSourceHandler struct {
-	domainDataSourceService service.IDomainDataSourceService
-}
-
-func NewDeleteDomainDataSourceHandler(domainDataSourceService service.IDomainDataSourceService) api.ProtoHandler {
-	return &deleteDomainDataSourceHandler{
-		domainDataSourceService: domainDataSourceService,
-	}
-}
-
-func (h *deleteDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	deleteReq, _ := request.(*datamesh.DeleteDomainDataSourceRequest)
-	if deleteReq.DatasourceId == "" {
-		errs.AppendErr(errors.New("datasource id should not be empty"))
-	}
-}
-
-func (h *deleteDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	deleteRequest, _ := request.(*datamesh.DeleteDomainDataSourceRequest)
-	return h.domainDataSourceService.DeleteDomainDataSource(context.Context, deleteRequest)
-}
-
-func (h *deleteDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(datamesh.DeleteDomainDataSourceRequest{}), reflect.TypeOf(datamesh.DeleteDomainDataSourceResponse{})
 }

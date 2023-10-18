@@ -11,7 +11,7 @@ spec:
     ports:
       - name: http
         protocol: HTTP
-        isTLS: false
+        isTLS: {{.PROTOCOL}}
         port: {{.PORT}}
   authenticationType: Token
   tokenConfig:

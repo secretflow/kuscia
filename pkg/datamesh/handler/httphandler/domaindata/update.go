@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package domaindata
 
 import (
@@ -49,31 +50,4 @@ func (h *updateDomainDataHandler) Handle(context *api.BizContext, request api.Pr
 
 func (h *updateDomainDataHandler) GetType() (reqType, respType reflect.Type) {
 	return reflect.TypeOf(datamesh.UpdateDomainDataRequest{}), reflect.TypeOf(datamesh.UpdateDomainDataResponse{})
-}
-
-// Delete handler
-type deleteDomainDataHandler struct {
-	domainDataService service.IDomainDataService
-}
-
-func NewDeleteDomainDataHandler(domainDataService service.IDomainDataService) api.ProtoHandler {
-	return &deleteDomainDataHandler{
-		domainDataService: domainDataService,
-	}
-}
-
-func (h *deleteDomainDataHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	deleteReq, _ := request.(*datamesh.DeleteDomainDataRequest)
-	if deleteReq.DomaindataId == "" {
-		errs.AppendErr(errors.New("domaindata id should not be empty"))
-	}
-}
-
-func (h *deleteDomainDataHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	deleteRequest, _ := request.(*datamesh.DeleteDomainDataRequest)
-	return h.domainDataService.DeleteDomainData(context.Context, deleteRequest)
-}
-
-func (h *deleteDomainDataHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(datamesh.DeleteDomainDataRequest{}), reflect.TypeOf(datamesh.DeleteDomainDataResponse{})
 }

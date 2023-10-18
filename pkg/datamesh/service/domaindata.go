@@ -38,10 +38,10 @@ type IDomainDataService interface {
 }
 
 type domainDataService struct {
-	conf config.DataMeshConfig
+	conf *config.DataMeshConfig
 }
 
-func NewDomainDataService(config config.DataMeshConfig) IDomainDataService {
+func NewDomainDataService(config *config.DataMeshConfig) IDomainDataService {
 	return &domainDataService{
 		conf: config,
 	}
@@ -57,12 +57,15 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 			return convert2CreateResp(resp, request.DomaindataId)
 		}
 	}
+
 	// normalization request
 	s.normalizationCreateRequest(request)
 	// build kuscia domain
 	Labels := make(map[string]string)
 	Labels[common.LabelDomainDataType] = request.Type
 	Labels[common.LabelDomainDataVendor] = request.Vendor
+	Labels[common.LabelInterConnProtocolType] = "kuscia"
+	Labels[common.LabelInitiator] = request.DomaindataId
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   request.DomaindataId,
@@ -77,6 +80,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			Author:      s.conf.KubeNamespace,
 		},
 	}
 	// create kuscia domain
@@ -117,6 +121,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 			Partition:    common.Convert2PbPartition(kusciaDomainData.Spec.Partition),
 			Columns:      common.Convert2PbColumn(kusciaDomainData.Spec.Columns),
 			Vendor:       kusciaDomainData.Spec.Vendor,
+			Author:       kusciaDomainData.Spec.Author,
 		},
 	}
 }
@@ -147,6 +152,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			Author:      s.conf.KubeNamespace,
 		},
 	}
 	// merge modifiedDomainData to originalDomainData

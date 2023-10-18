@@ -80,6 +80,10 @@ type GatewayNamespaceListerExpansion interface{}
 // InteropConfigLister.
 type InteropConfigListerExpansion interface{}
 
+// KusciaDeploymentListerExpansion allows custom methods to be added to
+// KusciaDeploymentLister.
+type KusciaDeploymentListerExpansion interface{}
+
 // KusciaJobListerExpansion allows custom methods to be added to
 // KusciaJobLister.
 type KusciaJobListerExpansion interface{}

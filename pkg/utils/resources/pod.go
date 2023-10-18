@@ -74,7 +74,7 @@ func PatchPodStatus(ctx context.Context, kubeClient kubernetes.Interface, oldPod
 		return fmt.Errorf("failed to create merge patch for pod %v/%v, %v", newPod.Namespace, newPod.Name, err)
 	}
 
-	if "{}" == string(patchBytes) {
+	if string(patchBytes) == "{}" {
 		return nil
 	}
 

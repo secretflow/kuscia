@@ -29,7 +29,7 @@ protobuf 文件。
 
 | 字段            | 类型                                            | 可选 | 描述                                                                                                                               |
 |---------------|-----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容                                                                                                                          |
+| header        | [RequestHeader](summary_cn.md#requestheader) | 是  | 自定义请求内容                                                                                                                          |
 | domaindata_id | string                                        | 是  | 数据对象ID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)      |
 | name          | string                                        | 否  | 名称                                                                                                                               |
 | type          | string                                        | 否  | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                      |
@@ -61,7 +61,7 @@ protobuf 文件。
 
 | 字段            | 类型                                            | 可选 | 描述                                                                                                                                 |
 |---------------|-----------------------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容                                                                                                                            |
+| header        | [RequestHeader](summary_cn.md#请求和响应约定) | 是  | 自定义请求内容                                                                                                                            |
 | domaindata_id | string                                        | 否  | 数据对象ID                                                                                                                             |
 | name          | string                                        | 否  | 名称                                                                                                                                 |
 | type          | string                                        | 否  | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                        |
@@ -89,7 +89,7 @@ protobuf 文件。
 
 | 字段            | 类型                                            | 可选 | 描述      |
 |---------------|-----------------------------------------------|----|---------|
-| header        | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容 |
+| header        | [RequestHeader](summary_cn.md#requestheader) | 是  | 自定义请求内容 |
 | domaindata_id | string                                        | 否  | 数据对象ID  |
 
 #### 响应（DeleteDomainDataResponse）
@@ -109,7 +109,7 @@ protobuf 文件。
 
 | 字段            | 类型                                            | 可选 | 描述      |
 |---------------|-----------------------------------------------|----|---------|
-| header        | [RequestHeader](summary_cn.md#request-header) | 是  | 自定义请求内容 |
+| header        | [RequestHeader](summary_cn.md#requestheader) | 是  | 自定义请求内容 |
 | domaindata_id | string                                        | 否  | 查询内容    |
 
 #### 响应（QueryDomainResponse）

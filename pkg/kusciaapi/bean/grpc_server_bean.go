@@ -39,7 +39,7 @@ import (
 
 type grpcServerBean struct {
 	frameworkconfig.FlagEnvConfigLoader
-	config config.KusciaAPIConfig
+	config *config.KusciaAPIConfig
 }
 
 func NewGrpcServerBean(config *config.KusciaAPIConfig) *grpcServerBean { // nolint: golint
@@ -47,7 +47,7 @@ func NewGrpcServerBean(config *config.KusciaAPIConfig) *grpcServerBean { // noli
 		FlagEnvConfigLoader: frameworkconfig.FlagEnvConfigLoader{
 			EnableTLSFlag: true,
 		},
-		config: *config,
+		config: config,
 	}
 }
 
@@ -60,7 +60,7 @@ func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
 	if tlsConfig != nil {
 		// override tls flags by config
 		s.TLSConfig.EnableTLS = true
-		s.TLSConfig.CAPath = tlsConfig.RootCAFile
+		s.TLSConfig.CAPath = tlsConfig.RootCACertFile
 		s.TLSConfig.ServerCertPath = tlsConfig.ServerCertFile
 		s.TLSConfig.ServerKeyPath = tlsConfig.ServerKeyFile
 	}
@@ -109,6 +109,9 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterDomainRouteServiceServer(server, grpchandler.NewDomainRouteHandler(service.NewDomainRouteService(s.config)))
 	kusciaapi.RegisterHealthServiceServer(server, grpchandler.NewHealthHandler(service.NewHealthService()))
 	kusciaapi.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
+	kusciaapi.RegisterServingServiceServer(server, grpchandler.NewServingHandler(service.NewServingService(s.config)))
+	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
+
 	reflection.Register(server)
 	nlog.Infof("grpc server listening on %s", addr)
 

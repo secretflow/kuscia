@@ -84,11 +84,11 @@ func TestSyncTaskResourceHandler(t *testing.T) {
 	ctx := context.Background()
 
 	hostTr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
-	hostTr2.Labels = map[string]string{common.LabelTaskInitiator: "ns2"}
+	hostTr2.Labels = map[string]string{common.LabelInitiator: "ns2"}
 	hostTr2.ResourceVersion = "10"
 
 	hostTr3 := util.MakeTaskResource("ns1", "tr3", 2, nil)
-	hostTr3.Labels = map[string]string{common.LabelTaskInitiator: "ns2"}
+	hostTr3.Labels = map[string]string{common.LabelInitiator: "ns2"}
 	hostTr3.ResourceVersion = "1"
 
 	hostKubeFakeClient := clientsetfake.NewSimpleClientset()
@@ -113,25 +113,25 @@ func TestSyncTaskResourceHandler(t *testing.T) {
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
 	tr1.Labels = map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "2",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 	}
 
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
 	tr2.Labels = map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 	}
 
 	tr3 := util.MakeTaskResource("ns1", "tr3", 2, nil)
 	tr3.Labels = map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelTaskInitiator:                   "ns2",
+		common.LabelInitiator:                       "ns2",
 	}
 
 	tr4 := util.MakeTaskResource("ns1", "tr4", 2, nil)
 	tr4.Labels = map[string]string{
 		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelTaskInitiator:                   "ns3",
+		common.LabelInitiator:                       "ns3",
 	}
 
 	trInformer.Informer().GetStore().Add(tr1)

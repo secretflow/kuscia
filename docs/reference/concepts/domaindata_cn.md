@@ -56,7 +56,7 @@ spec:
 
 在该示例中:
 
-- `.metadata.labels`：标签在 K8s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
+- `.metadata.labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
 - `.metadata.name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
 - `.metadata.namespace`: 表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
 - `.spec.attributes`：表示 DomainData 的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，详细请查看 [参考](#refer)。
@@ -158,7 +158,7 @@ Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not fo
 你可以在 Domain 侧管理属于该 Domain 的 DomainData。Kuscia 在 Domain 侧提供了的 DataMesh API 来管理 DomainData。
 
 Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 8071
-端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api)。
+端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api-约定)。
 
 1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainData。
 ```shell
@@ -205,7 +205,7 @@ spec:
 
 DomainData `metadata` 的子字段详细介绍如下：
 
-- `labels`：标签在 K8s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
+- `labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
 - `name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
 - `namespace`：表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
 

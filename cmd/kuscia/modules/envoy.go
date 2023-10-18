@@ -56,7 +56,7 @@ func (s *envoyModule) readyz(host string) error {
 		return err
 	}
 	if resp == nil || resp.Body == nil {
-		nlog.Error("resp must has body")
+		nlog.Error("Resp must has body")
 		return fmt.Errorf("resp must has body")
 	}
 	defer resp.Body.Close()
@@ -105,9 +105,8 @@ func (s *envoyModule) Run(ctx context.Context) error {
 		filepath.Join(s.rootDir, LogPrefix, "envoy/envoy.log"),
 	}
 	args = append(args, deltaArgs.Args...)
-
 	sp := supervisor.NewSupervisor("envoy", nil, -1)
-
+	go s.logRotate(ctx)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/envoy"), args...)
 		cmd.Stdout = os.Stdout
@@ -115,6 +114,25 @@ func (s *envoyModule) Run(ctx context.Context) error {
 		cmd.Env = os.Environ()
 		return cmd
 	})
+}
+
+func (s *envoyModule) logRotate(ctx context.Context) {
+	for {
+		t := time.Now()
+		n := time.Date(t.Year(), t.Month(), t.Day(), 0, 1, 0, 0, t.Location())
+		d := n.Sub(t)
+		if d < 0 {
+			n = n.Add(24 * time.Hour)
+			d = n.Sub(t)
+		}
+
+		time.Sleep(d)
+
+		cmd := exec.Command("logrotate", filepath.Join(s.rootDir, ConfPrefix, "logrotate.conf"))
+		if err := cmd.Run(); err != nil {
+			nlog.Errorf("Logrotate run error: %v", err)
+		}
+	}
 }
 
 func (s *envoyModule) WaitReady(ctx context.Context) error {
@@ -161,7 +179,7 @@ func RunEnvoy(ctx context.Context, cancel context.CancelFunc, conf *Dependencies
 		nlog.Error(err)
 		cancel()
 	} else {
-		nlog.Info("envoy is ready")
+		nlog.Info("Envoy is ready")
 	}
 	return m
 }

@@ -6,3 +6,10 @@
 /test-results/
 /docs/_build/
 /thirdparty/fate/build/apps/
+/vendor/
+# bazel
+bazel-*
+
+# Python virtualenv
+.venv
+.DS_Store

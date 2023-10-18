@@ -508,7 +508,7 @@ func (pc *PodsController) generateAPIPodStatus(pod *corev1.Pod, podStatus *pkgco
 	}
 
 	// ensure the probe managers have up to date status for containers
-	pc.provider.UpdatePodStatus(pod.UID, s)
+	pc.provider.RefreshPodStatus(pod, s)
 
 	// preserve all conditions not owned by the kubelet
 	s.Conditions = make([]corev1.PodCondition, 0, len(pod.Status.Conditions)+1)

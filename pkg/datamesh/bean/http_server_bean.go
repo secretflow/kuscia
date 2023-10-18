@@ -23,6 +23,7 @@ import (
 	dmconfig "github.com/secretflow/kuscia/pkg/datamesh/config"
 	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindata"
+	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindatagrant"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
@@ -78,8 +79,9 @@ func (s *httpServerBean) ServerName() string {
 }
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
-	domainDataService := service.NewDomainDataService(*s.config)
-	domainDataSourceService := service.NewDomainDataSourceService(*s.config)
+	domainDataService := service.NewDomainDataService(s.config)
+	domainDataSourceService := service.NewDomainDataSourceService(s.config)
+	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	healthService := apisvc.NewHealthService()
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
@@ -135,6 +137,31 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 				},
 			},
 		},
+		{
+			Group: "api/v1/datamesh/domaindatagrant",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "create",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewCreateDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "delete",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewDeleteDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewQueryDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "update",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewUpdateDomainSourceHandler(domainDataGrantService))},
+				},
+			},
+		},
 		// health group routes
 		{
 			Group: "",
@@ -164,7 +191,7 @@ func convertToGinConf(conf *dmconfig.DataMeshConfig) beans.GinBeanConfig {
 		// override tls flags by config
 		tlsConf = &frameworkconfig.TLSConfig{
 			EnableTLS:      true,
-			CAPath:         conf.TLSConfig.RootCAFile,
+			CAPath:         conf.TLSConfig.RootCACertFile,
 			ServerCertPath: conf.TLSConfig.ServerCertFile,
 			ServerKeyPath:  conf.TLSConfig.ServerKeyFile,
 		}

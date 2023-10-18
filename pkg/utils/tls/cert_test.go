@@ -50,7 +50,9 @@ func TestGenerateAndLoadX509KeyPair(t *testing.T) {
 	keyFile := filepath.Join(rootDir, "test.key")
 
 	certOut, err := os.Create(certFile)
+	assert.NoError(t, err)
 	keyOut, err := os.Create(keyFile)
+	assert.NoError(t, err)
 	assert.NoError(t, GenerateX509KeyPair(caCert, caKey, cert, certOut, keyOut))
 
 	_, _, err = LoadX509KeyPair(certFile, keyFile)

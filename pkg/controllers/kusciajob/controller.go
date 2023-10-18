@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
@@ -263,12 +261,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 	// Set default for the new kusciaJob.
 	kusciaJobDefault(curJob)
 
-	defer func() {
-		if retErr != nil {
-			c.recorder.Event(preJob, v1.EventTypeWarning, "ErrorHandleJob", retErr.Error())
-		}
-	}()
-
 	// For kusciaJob that should not reconcile again, just return.
 	if !handler.ShouldReconcile(curJob) {
 		nlog.Infof("KusciaJob %q should not reconcile again, skipping", key)
@@ -333,12 +325,4 @@ func (c *Controller) failKusciaJob(kusciaJob *kusciaapisv1alpha1.KusciaJob, err 
 // Name returns the controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists is used to check if crd exist.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDKusciaJobsName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	return nil
 }

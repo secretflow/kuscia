@@ -27,7 +27,6 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,7 +47,6 @@ import (
 	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
@@ -66,6 +64,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
@@ -117,7 +116,7 @@ func NewDomainRouteController(
 	recorder := createEventRecorder(kubeClient, drConfig.Namespace)
 
 	hostname := utils.GetHostname()
-	pubPem := utils.EncodePKCS1PublicKey(drConfig.Prikey)
+	pubPem := tlsutils.EncodePKCS1PublicKey(drConfig.Prikey)
 
 	gateway := &kusciaapisv1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -128,11 +127,11 @@ func NewDomainRouteController(
 			PublicKey: base64.StdEncoding.EncodeToString(pubPem),
 		},
 	}
-	caCert, err := utils.ParsePKCS1CertFromFile(drConfig.CAFile)
+	caCert, err := tlsutils.ParsePKCS1CertFromFile(drConfig.CAFile)
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	caKey, err := utils.ParsePKCS1PrivateKey(drConfig.CAKeyFile)
+	caKey, err := tlsutils.ParsePKCS1PrivateKey(drConfig.CAKeyFile)
 	if err != nil {
 		nlog.Fatal(err)
 	}
@@ -673,7 +672,7 @@ func setKeepAliveForDstCluster(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapis
 		action = "enable"
 	} else {
 		if protocolOptions.CommonHttpProtocolOptions == nil {
-			protocolOptions.CommonHttpProtocolOptions = &core.HttpProtocolOptions{}
+			xds.SetCommonHTTPProtocolOptions(&protocolOptions)
 		}
 		if protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection != nil && protocolOptions.
 			CommonHttpProtocolOptions.MaxRequestsPerConnection.Value == uint32(1) {
@@ -700,22 +699,15 @@ func setKeepAliveForDstCluster(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapis
 func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
 	transportSocket *core.TransportSocket) error {
 	var protocolOptions *envoyhttp.HttpProtocolOptions
+	var protocol string
 	if dr.Labels[grpcDegradeLabel] == "True" && dp.Protocol == kusciaapisv1alpha1.DomainRouteProtocolGRPC {
 		// use http1.1
-		protocolOptions = &envoyhttp.HttpProtocolOptions{
-			UpstreamProtocolOptions: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig_{
-				ExplicitHttpConfig: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig{
-					ProtocolConfig: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
-				},
-			},
-		}
+		protocolOptions = xds.GenerateHTTP2UpstreamHTTPOptions(true)
+		protocol = xds.GenerateProtocol(dp.IsTLS, true)
 	} else {
 		// use same protocol with downstream
-		protocolOptions = &envoyhttp.HttpProtocolOptions{
-			UpstreamProtocolOptions: &envoyhttp.HttpProtocolOptions_UseDownstreamProtocolConfig{
-				UseDownstreamProtocolConfig: &envoyhttp.HttpProtocolOptions_UseDownstreamHttpConfig{},
-			},
-		}
+		protocolOptions = xds.GenerateSimpleUpstreamHTTPOptions(true)
+		protocol = xds.GenerateProtocol(dp.IsTLS, false)
 	}
 
 	clusterName := generateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
@@ -725,10 +717,8 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 		preProtocolOptions, preCluster, _ := xds.GetClusterHTTPProtocolOptions(clusterName)
 		if preCluster == nil {
 			// next action is handshake
-			protocolOptions.CommonHttpProtocolOptions = &core.HttpProtocolOptions{
-				MaxRequestsPerConnection: &wrapperspb.UInt32Value{
-					Value: uint32(1),
-				},
+			protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = &wrapperspb.UInt32Value{
+				Value: uint32(1),
 			}
 			nlog.Infof("disable keep-alive for cluster:%s ", clusterName)
 		} else if preProtocolOptions != nil && preProtocolOptions.CommonHttpProtocolOptions != nil {
@@ -744,11 +734,7 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 	}
 
 	cluster := &envoycluster.Cluster{
-		Name:           clusterName,
-		ConnectTimeout: durationpb.New(10 * time.Second),
-		ClusterDiscoveryType: &envoycluster.Cluster_Type{
-			Type: envoycluster.Cluster_STRICT_DNS,
-		},
+		Name: clusterName,
 		LoadAssignment: &endpoint.ClusterLoadAssignment{
 			ClusterName: fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
 			Endpoints: []*endpoint.LocalityLbEndpoints{
@@ -775,25 +761,17 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 				},
 			},
 		},
-		CommonLbConfig: &envoycluster.Cluster_CommonLbConfig{
-			HealthyPanicThreshold: &v3.Percent{
-				Value: 5,
-			},
-		},
 		TypedExtensionProtocolOptions: map[string]*anypb.Any{
 			"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
 				TypeUrl: "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
 				Value:   b,
 			},
 		},
+		TransportSocket: transportSocket,
 	}
 
-	if transportSocket != nil {
-		cluster.TransportSocket = transportSocket
-	} else if dp.IsTLS {
-		cluster.TransportSocket = &core.TransportSocket{
-			Name: "envoy.transport_sockets.tls",
-		}
+	if err := xds.DecorateRemoteUpstreamCluster(cluster, protocol); err != nil {
+		return err
 	}
 
 	interconn.Decorator.UpdateDstCluster(dr, cluster)

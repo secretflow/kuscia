@@ -37,15 +37,17 @@ func FakeResourceManager(namespace string, objects ...runtime.Object) *resource.
 	// Grab informers for configmaps and secrets.
 	mInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	sInformer := kubeInformerFactory.Core().V1().Secrets()
+	pInformer := kubeInformerFactory.Core().V1().Pods()
 
 	// Start all the required informers.
 	go mInformer.Informer().Run(wait.NeverStop)
 	go sInformer.Informer().Run(wait.NeverStop)
+	go pInformer.Informer().Run(wait.NeverStop)
 	// Wait for the caches to be synced.
-	if !cache.WaitForCacheSync(wait.NeverStop, mInformer.Informer().HasSynced, sInformer.Informer().HasSynced) {
+	if !cache.WaitForCacheSync(wait.NeverStop, mInformer.Informer().HasSynced, sInformer.Informer().HasSynced, pInformer.Informer().HasSynced) {
 		panic("failed to wait for caches to be synced")
 	}
 	// Create a new instance of the resource manager using the listers for configmaps and secrets.
-	rm := resource.NewResourceManager(sInformer.Lister().Secrets(namespace), mInformer.Lister().ConfigMaps(namespace))
+	rm := resource.NewResourceManager(kubeClient, pInformer.Lister().Pods(namespace), sInformer.Lister().Secrets(namespace), mInformer.Lister().ConfigMaps(namespace))
 	return rm
 }

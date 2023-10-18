@@ -132,7 +132,7 @@ func TestSyncPodHandler(t *testing.T) {
 			Name:            "pod1",
 			ResourceVersion: "1",
 			Labels: map[string]string{
-				common.LabelTaskInitiator: "ns2",
+				common.LabelInitiator: "ns2",
 			},
 		},
 	}
@@ -143,7 +143,7 @@ func TestSyncPodHandler(t *testing.T) {
 			Name:            "pod2",
 			ResourceVersion: "1",
 			Labels: map[string]string{
-				common.LabelTaskInitiator: "ns2",
+				common.LabelInitiator: "ns2",
 			},
 		},
 	}
@@ -154,7 +154,7 @@ func TestSyncPodHandler(t *testing.T) {
 			Name:            "pod3",
 			ResourceVersion: "10",
 			Labels: map[string]string{
-				common.LabelTaskInitiator: "ns2",
+				common.LabelInitiator: "ns2",
 			},
 		},
 	}
@@ -172,7 +172,7 @@ func TestSyncPodHandler(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "pod2",
 			Labels: map[string]string{
-				common.LabelTaskInitiator:                   "ns2",
+				common.LabelInitiator:                       "ns2",
 				common.LabelResourceVersionUnderHostCluster: "10",
 			},
 		},
@@ -183,7 +183,7 @@ func TestSyncPodHandler(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "pod3",
 			Labels: map[string]string{
-				common.LabelTaskInitiator:                   "ns2",
+				common.LabelInitiator:                       "ns2",
 				common.LabelResourceVersionUnderHostCluster: "1",
 			},
 		},

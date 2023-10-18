@@ -17,6 +17,8 @@ package lite
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
@@ -31,7 +33,7 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 	domainID := ""
 	debug := false
 	debugPort := 28080
-	var logConfig *zlogwriter.LogConfig
+	var logConfig *nlog.LogConfig
 	cmd := &cobra.Command{
 		Use:          "lite",
 		Short:        "Lite means only running as a node",
@@ -42,12 +44,13 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 			defer func() {
 				cancel()
 			}()
-			zlog, err := zlogwriter.New(logConfig)
+			err := modules.InitLogs(logConfig)
 			if err != nil {
+				fmt.Println(err)
 				return err
 			}
-			nlog.Setup(nlog.SetWriter(zlog))
 			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeLite)
+			conf.LogConfig = logConfig
 			_, _, err = modules.EnsureCaKeyAndCert(conf)
 			if err != nil {
 				nlog.Error(err)
@@ -59,8 +62,11 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 
-			modules.RunContainerd(runCtx, cancel, conf)
-			modules.RunCoreDNS(runCtx, cancel, conf)
+			if conf.EnableContainerd {
+				modules.RunContainerd(runCtx, cancel, conf)
+			}
+			coreDnsModule := modules.RunCoreDNS(runCtx, cancel, conf)
+
 			wg := sync.WaitGroup{}
 			wg.Add(3)
 			go func() {
@@ -77,7 +83,14 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 			}()
 			wg.Wait()
 
+			cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
+			if !ok {
+				return errors.New("coredns module type is invalid")
+			}
+			cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
+
 			modules.RunAgent(runCtx, cancel, conf)
+			modules.RunConfManager(runCtx, cancel, conf)
 			modules.RunDataMesh(runCtx, cancel, conf)
 			if debug {
 				utils.SetupPprof(debugPort)

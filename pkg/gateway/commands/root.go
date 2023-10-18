@@ -32,6 +32,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
@@ -49,7 +50,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return err
 	}
-	prikey, err := utils.ParsePKCS1PrivateKeyData(priKeyData)
+	prikey, err := tlsutils.ParsePKCS1PrivateKeyData(priKeyData)
 	if err != nil {
 		return fmt.Errorf("failed to add scheme, detail-> %v", err)
 	}
@@ -60,7 +61,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		return fmt.Errorf("start xds server fail with err: %v", err)
 	}
 
-	// add master Clusters
+	// add master config
 	masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
 	if err != nil {
 		return fmt.Errorf("failed to load masterConfig, detail-> %v", err)

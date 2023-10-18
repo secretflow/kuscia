@@ -26,6 +26,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"k8s.io/client-go/kubernetes"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/commands"
@@ -43,6 +44,7 @@ import (
 type kusciaAPIModule struct {
 	conf         *config.KusciaAPIConfig
 	kusciaClient kusciaclientset.Interface
+	kubeClient   kubernetes.Interface
 }
 
 func NewKusciaAPI(i *Dependencies) (Module, error) {
@@ -50,23 +52,28 @@ func NewKusciaAPI(i *Dependencies) (Module, error) {
 	if !i.IsMaster {
 		kusciaAPIConfig.Initiator = i.DomainID
 	}
-	rootCAFile := i.CAFile
+	rootCAFile := i.CACertFile
 	if rootCAFile != "" && kusciaAPIConfig.TLSConfig != nil {
-		kusciaAPIConfig.TLSConfig.RootCAFile = rootCAFile
+		kusciaAPIConfig.TLSConfig.RootCACertFile = rootCAFile
 	}
+
+	kusciaAPIConfig.DomainKeyFile = i.DomainKeyFile
+
 	// init clients with kuscia kubeconfig
 	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(i.KusciaKubeConfig, i.ApiserverEndpoint)
 	if err != nil {
 		return nil, err
 	}
+
 	return &kusciaAPIModule{
 		conf:         kusciaAPIConfig,
 		kusciaClient: clients.KusciaClient,
+		kubeClient:   clients.KubeClient,
 	}, nil
 }
 
 func (m kusciaAPIModule) Run(ctx context.Context) error {
-	return commands.Run(ctx, m.conf, m.kusciaClient)
+	return commands.Run(ctx, m.conf, m.kusciaClient, m.kubeClient)
 }
 
 func (m kusciaAPIModule) WaitReady(ctx context.Context) error {
@@ -93,17 +100,16 @@ func (m kusciaAPIModule) Name() string {
 func (m kusciaAPIModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
-	host := "127.0.0.1"
-	schema := "http"
+	schema := constants.SchemaHTTP
 	// init client tls config
 	tlsConfig := m.conf.TLSConfig
 	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCACertFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
 		if err != nil {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
 		}
-		schema = "https"
+		schema = constants.SchemaHTTPS
 	}
 
 	// token auth
@@ -121,7 +127,7 @@ func (m kusciaAPIModule) readyZ() bool {
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, host, m.conf.HTTPPort, constants.HealthAPI)
+	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
 	body, err := json.Marshal(&kusciaapi.HealthRequest{})
 	if err != nil {
 		nlog.Errorf("marshal health request error: %v", err)
@@ -174,7 +180,7 @@ func (m kusciaAPIModule) readyZ() bool {
 		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(interceptor.GrpcClientTokenInterceptor(token)))
 	}
 
-	grpcAddr := fmt.Sprintf("%s:%d", host, m.conf.GRPCPort)
+	grpcAddr := fmt.Sprintf("%s:%d", constants.LocalhostIP, m.conf.GRPCPort)
 	grpcConn, err := grpc.Dial(grpcAddr, dialOpts...)
 	if err != nil {
 		nlog.Fatalf("did not connect: %v", err)
