@@ -39,7 +39,8 @@ jobs:
       - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.2.docker
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          go-version: 1.19.10
       - run:
           name: Login to kuscia docker registry
           command: |
@@ -50,7 +51,6 @@ jobs:
       - run: 
           name: Build image and publish
           command: |
-            go version
             make image
             docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:citest
             docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:citest
