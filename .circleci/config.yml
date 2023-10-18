@@ -36,11 +36,10 @@ jobs:
           command: make test 
   image_publish:
     docker:
-      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.2
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.2.docker
     steps:
       - checkout
       - setup_remote_docker:
-          version: 19.03.13
       - run:
           name: Login to kuscia docker registry
           command: |
