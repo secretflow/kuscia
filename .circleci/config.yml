@@ -56,14 +56,15 @@ jobs:
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
+on:
+  create:
+    tags:
+      - 'v*' 
 workflows:
   build-workflow:
     jobs:
-      - image_publish:
-          filters:
-            tags:
-              only: /^x\d+\.\d+\.\d+$/  
       - unit-test
+      - image_publish
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
