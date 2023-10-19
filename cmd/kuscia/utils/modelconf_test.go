@@ -53,6 +53,7 @@ func TestGetInitConfAutonomy(t *testing.T) {
 	assert.Equal(t, false, d.EnableContainerd)
 	assert.Equal(t, "alice1", d.DomainID)
 	assert.Equal(t, defaultEndpoint, d.ApiserverEndpoint)
+	assert.Equal(t, defaultInterConnSchedulerPort, d.InterConnSchedulerPort)
 }
 
 func newTestConfigFile(t *testing.T) string {

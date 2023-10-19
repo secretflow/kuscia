@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	defaultRootDir                = "/Users/fangaochang/kuscia/"
+	defaultRootDir                = "/home/kuscia/"
 	defaultDomainID               = "kuscia"
 	defaultEndpoint               = "https://127.0.0.1:6443"
 	defaultInterConnSchedulerPort = 8084
@@ -70,9 +70,7 @@ func GetInitConfig(configFile string, flagDomainID string, runmodel string) *mod
 		conf.DomainID = defaultDomainID
 	}
 	if runmodel == RunModeMaster || runmodel == RunModeAutonomy {
-		if conf.ApiserverEndpoint == "" {
-			conf.ApiserverEndpoint = defaultEndpoint
-		}
+		conf.ApiserverEndpoint = defaultEndpoint
 		conf.KubeconfigFile = filepath.Join(conf.RootDir, "etc/kubeconfig")
 		conf.KusciaKubeConfig = filepath.Join(conf.RootDir, "etc/kuscia.kubeconfig")
 		if conf.CAKeyFile == "" {
