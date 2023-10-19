@@ -65,6 +65,7 @@ workflows:
     jobs:
       - unit-test
       - image_publish
+          if: startsWith(github.ref, 'refs/tags/x')
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
