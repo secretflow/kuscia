@@ -61,6 +61,9 @@ workflows:
     jobs:
       - unit-test
       - image_publish:
+          filters:
+            tags:
+              only: /^v\d+\.\d+\.\d+$/  
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
