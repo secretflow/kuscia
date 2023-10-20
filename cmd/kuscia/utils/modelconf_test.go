@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,16 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package lite
+//nolint:dulp
+package utils
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
+
+func TestGetInitConfMaster(t *testing.T) {
+	configFile := newTestConfigFile(t)
+	conf := GetInitConfig(configFile, "alice", RunModeMaster)
+	assert.Equal(t, conf.InterConnSchedulerPort, defaultInterConnSchedulerPort, "GetInitConfig test failed")
+	assert.Equal(t, "runk", conf.Agent.Provider.Runtime)
+	assert.Equal(t, true, conf.Agent.Node.EnableNodeReuse)
+	assert.Equal(t, false, conf.EnableContainerd)
+	assert.Equal(t, "alice", conf.DomainID)
+	assert.Equal(t, defaultEndpoint, conf.ApiserverEndpoint)
+}
+
+func TestGetInitConfLite(t *testing.T) {
+	configFile := newTestConfigFile(t)
+
+	d := GetInitConfig(configFile, "alice1", RunModeLite)
+	assert.Equal(t, "runk", d.Agent.Provider.Runtime)
+	assert.Equal(t, true, d.Agent.Node.EnableNodeReuse)
+	assert.Equal(t, false, d.EnableContainerd)
+	assert.Equal(t, "alice1", d.DomainID)
+	assert.Equal(t, defaultEndpointForLite, d.ApiserverEndpoint)
+}
+
+func TestGetInitConfAutonomy(t *testing.T) {
+	configFile := newTestConfigFile(t)
+	d := GetInitConfig(configFile, "alice1", RunModeAutonomy)
+	assert.Equal(t, "runk", d.Agent.Provider.Runtime)
+	assert.Equal(t, true, d.Agent.Node.EnableNodeReuse)
+	assert.Equal(t, false, d.EnableContainerd)
+	assert.Equal(t, "alice1", d.DomainID)
+	assert.Equal(t, defaultEndpoint, d.ApiserverEndpoint)
+	assert.Equal(t, defaultInterConnSchedulerPort, d.InterConnSchedulerPort)
+}
 
 func newTestConfigFile(t *testing.T) string {
 	root := t.TempDir()
@@ -68,11 +101,4 @@ httpConfig:
 	assert.NoError(t, os.WriteFile(transportFile, []byte(transportFileContent), 0644))
 
 	return path
-}
-
-func TestGetInitConfig(t *testing.T) {
-	configFile := newTestConfigFile(t)
-
-	d := getInitConfig(configFile, "alice")
-	assert.Equal(t, "runk", d.Agent.Provider.Runtime)
 }
