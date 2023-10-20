@@ -65,6 +65,15 @@ message Task {
 message Party {
   string domain_id = 1;
   string role = 2; // server or client
+  repeated Resource resources = 3; // resources
+}
+
+message Resource {
+  string container_name = 1;
+  string min_cpu = 2;
+  string max_cpu = 3;
+  string min_memory = 4;
+  string max_memory = 5;
 }
 
 message DeleteJobRequest {

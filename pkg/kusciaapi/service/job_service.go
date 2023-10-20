@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"reflect"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -114,13 +116,99 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 
 	// convert createJobRequest to kuscia job
 	kusciaTasks := make([]v1alpha1.KusciaTaskTemplate, len(tasks))
+
+	var commonResource *kusciaapi.Resource
+	resourceConfigs := make(map[string]*kusciaapi.Resource)
+
+	for _, task := range tasks {
+		for _, party := range task.Parties {
+			resources := party.Resources
+			if len(resources) > 0 {
+				for k, resource := range resources {
+					// General Config
+					if resource.ContainerName == "" {
+						if commonResource == nil {
+							commonResource = &kusciaapi.Resource{}
+						}
+						commonResource = resources[k]
+						continue
+					}
+					// Specific Config
+					resourceConfigs[resource.ContainerName] = resources[k]
+				}
+			}
+		}
+	}
+
 	for i, task := range tasks {
 		// build kuscia task parties
 		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
+
+		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(ctx, task.AppImage, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf("can not get appimage %v from cluster, %v", task.AppImage, err)
+			return &kusciaapi.CreateJobResponse{
+				Status: utils2.BuildErrorResponseStatus(errorcode.ErrCreateJob, "can not get appimage"),
+			}
+		}
+		containerNameInAppImageDeploymentTemplate := appImage.Spec.DeployTemplates[0].Spec.Containers[0].Name
+
 		for j, party := range task.Parties {
+
+			var template *v1alpha1.PartyTemplate
+
+			if config, ok := resourceConfigs[containerNameInAppImageDeploymentTemplate]; ok != false {
+				if commonResource == nil {
+					return &kusciaapi.CreateJobResponse{
+						Status: utils2.BuildErrorResponseStatus(errorcode.ErrCreateJob, "can not get corresponding container"),
+					}
+				} else {
+					template = &v1alpha1.PartyTemplate{
+						Spec: v1alpha1.PodSpec{
+							Containers: []v1alpha1.Container{
+								{
+									Name: containerNameInAppImageDeploymentTemplate,
+									Resources: corev1.ResourceRequirements{
+										Limits: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse(commonResource.MinCpu),
+											corev1.ResourceMemory: resource.MustParse(commonResource.MinMemory),
+										},
+										Requests: corev1.ResourceList{
+											corev1.ResourceCPU:    resource.MustParse(commonResource.MaxCpu),
+											corev1.ResourceMemory: resource.MustParse(commonResource.MaxMemory),
+										},
+									},
+								},
+							},
+						},
+					}
+				}
+
+				template = &v1alpha1.PartyTemplate{
+					Spec: v1alpha1.PodSpec{
+						Containers: []v1alpha1.Container{
+							{
+								Name: containerNameInAppImageDeploymentTemplate,
+								Resources: corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse(config.MinCpu),
+										corev1.ResourceMemory: resource.MustParse(config.MinMemory),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse(config.MaxCpu),
+										corev1.ResourceMemory: resource.MustParse(config.MaxMemory),
+									},
+								},
+							},
+						},
+					},
+				}
+			}
+
 			kusicaParties[j] = v1alpha1.Party{
 				DomainID: party.DomainId,
 				Role:     party.Role,
+				Template: *template,
 			}
 		}
 		// build kuscia task

@@ -134,6 +134,8 @@ type Party struct {
 	DomainID string `json:"domainID"`
 	// +optional
 	Role string `json:"role,omitempty"`
+	// +optional
+	Template PartyTemplate `json:"template,omitempty"`
 }
 
 // KusciaJobStatus defines the observed state of kuscia job.
