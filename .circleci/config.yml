@@ -52,20 +52,27 @@ jobs:
           name: Build image and publish
           command: |
             make image
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:citest
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:latest
+            docker push secretflow/kuscia:latest
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLE_TAG}
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLE_TAG}
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:${CIRCLE_TAG}
+            docker push secretflow/kuscia:${CIRCLE_TAG}
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
-on:
-  create:
-    tags:
-      - 'v*' 
 workflows:
   build-workflow:
     jobs:
       - unit-test
-      - image_publish
-        if: startsWith(github.ref, 'refs/tags/v')
+      - image_publish:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
   publish-workflow:
     when: << pipeline.parameters.GHA_Action >>
     jobs:
