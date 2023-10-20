@@ -19,68 +19,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sync"
-
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/spf13/cobra"
 )
-
-var (
-	defaultEndpoint = "http://apiserver.master.svc"
-)
-
-func getInitConfig(configFile, domainID string) *modules.Dependencies {
-	content, err := os.ReadFile(configFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf := &modules.Dependencies{}
-	conf.ApiserverEndpoint = defaultEndpoint
-	conf.Agent.AgentConfig = *config.DefaultAgentConfig()
-	err = yaml.Unmarshal(content, &conf.KusciaConfig)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	hostIP, err := network.GetHostIP()
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.EnvoyIP = hostIP
-
-	// use the current context in kubeconfig
-	clients, err := kubeconfig.CreateClientSetsFromKubeconfig("", conf.ApiserverEndpoint)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.Clients = clients
-	err = modules.EnsureDir(conf)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.ContainerdSock = filepath.Join(conf.RootDir, "containerd/run/containerd.sock")
-
-	conf.TransportConfigFile = filepath.Join(conf.RootDir, "etc/conf/transport/transport.yaml")
-	conf.TransportPort, err = modules.GetTransportPort(conf.TransportConfigFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	conf.EnableContainerd = true
-	if conf.Agent.Provider.Runtime == config.K8sRuntime {
-		conf.EnableContainerd = false
-	}
-
-	return conf
-}
 
 func NewLiteCommand(ctx context.Context) *cobra.Command {
 	configFile := ""
@@ -103,7 +49,7 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 				fmt.Println(err)
 				return err
 			}
-			conf := getInitConfig(configFile, domainID)
+			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeLite)
 			conf.LogConfig = logConfig
 			_, _, err = modules.EnsureCaKeyAndCert(conf)
 			if err != nil {
