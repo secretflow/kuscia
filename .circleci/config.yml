@@ -26,11 +26,12 @@ parameters:
 jobs:
   unit-test:
     docker:
-      - image: secretflow/kuscia-ci:latest
+      - image: secretflow/kuscia-ci:0.3
     resource_class: 2xlarge
     shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Test Kuscia
           command: make test 
