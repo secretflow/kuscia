@@ -54,6 +54,7 @@ function generate_golang_code() {
       ${PROTOC} --proto_path="${KUSCIA_ROOT}" \
                 --go_opt=paths=source_relative --go_out=./ \
                 --go-grpc_opt=paths=source_relative --go-grpc_out=./ \
+                --experimental_allow_proto3_optional \
                 "${path}"
     fi
   done
