@@ -26,17 +26,19 @@ parameters:
 jobs:
   unit-test:
     docker:
-      - image: secretflow/kuscia-ci:latest
+      - image: secretflow/kuscia-ci:0.4
     resource_class: 2xlarge
     shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: Test Kuscia
           command: make test 
   image_publish:
     docker:
-      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:2023.06.1.go
+      - image: secretflow/kuscia-ci:0.4
+    shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
       - setup_remote_docker
@@ -51,31 +53,26 @@ jobs:
           name: Build image and publish
           command: |
             make image
+            CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
             docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
-            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
             docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:latest
-            docker push secretflow/kuscia:latest
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLE_TAG}
-            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLE_TAG}
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:${CIRCLE_TAG}
-            docker push secretflow/kuscia:${CIRCLE_TAG}
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
+            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
+            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:${CIRCLETAG}
+            docker push secretflow/kuscia:${CIRCLETAG}
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   build-workflow:
-    when:
-      and:
-        - not: << pipeline.parameters.GHA_Action >>
-        - not: << pipeline.parameters.GHA_Meta >>
     jobs:
       - unit-test
       - image_publish:
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
-            branches:
-              only: main
   publish-workflow:
     when:
       equal: ["publish_pypi", << pipeline.parameters.GHA_Meta >>]
