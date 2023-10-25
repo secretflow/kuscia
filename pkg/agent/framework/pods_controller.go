@@ -50,7 +50,7 @@ import (
 const (
 
 	// Period for performing global cleanup tasks.
-	housekeepingPeriod = time.Second * 2
+	housekeepingPeriod = time.Second * 5
 
 	// Duration at which housekeeping failed to satisfy the invariant that
 	// housekeeping should be fast to avoid blocking pod config (while
@@ -201,7 +201,11 @@ func (pc *PodsController) Run(ctx context.Context) error {
 
 	nlog.Info("Starting Pods controller ...")
 
-	go pc.provider.Start(ctx)
+	go func() {
+		if err := pc.provider.Start(ctx); err != nil {
+			nlog.Fatalf("Failed to start pod provider: %v", err)
+		}
+	}()
 	pc.statusManager.Start()
 
 	close(pc.chReady)
@@ -492,9 +496,9 @@ func (pc *PodsController) constructPodImage(pod *corev1.Pod) {
 // a pod. This method is reentrant and expected to converge a pod towards the
 // desired state of the spec.
 func (pc *PodsController) syncPod(ctx context.Context, updateType kubetypes.SyncPodType, pod, mirrorPod *corev1.Pod, podStatus *pkgcontainer.PodStatus) (isTerminal bool, err error) {
-	nlog.Debugf("Sync pod %q enter", format.Pod(pod))
+	nlog.Infof("Sync pod %q enter", format.Pod(pod))
 	defer func() {
-		nlog.Debugf("Sync pod %q exit, isTerminal=%v", format.Pod(pod), isTerminal)
+		nlog.Infof("Sync pod %q exit, isTerminal=%v", format.Pod(pod), isTerminal)
 	}()
 
 	// Generate final API pod status with pod and status manager status
@@ -555,6 +559,7 @@ func (pc *PodsController) syncPod(ctx context.Context, updateType kubetypes.Sync
 
 	// Call the container runtime's SyncPod callback
 	if err = pc.provider.SyncPod(ctx, podCopy, podStatus, pc.reasonCache); err != nil {
+		nlog.Errorf("Failed to sync pod: %v", err)
 		return false, err
 	}
 
@@ -565,8 +570,8 @@ func (pc *PodsController) syncPod(ctx context.Context, updateType kubetypes.Sync
 // returns without error, the pod's local state can be safely cleaned up. If runningPod is passed,
 // we perform no status updates.
 func (pc *PodsController) syncTerminatingPod(ctx context.Context, pod *corev1.Pod, podStatus *pkgcontainer.PodStatus, runningPod *pkgcontainer.Pod, gracePeriod *int64, podStatusFn func(*corev1.PodStatus)) error {
-	nlog.Debugf("Sync terminating pod %q enter", format.Pod(pod))
-	defer nlog.Debugf("Sync terminating pod %q exit", format.Pod(pod))
+	nlog.Infof("Sync terminating pod %q enter", format.Pod(pod))
+	defer nlog.Infof("Sync terminating pod %q exit", format.Pod(pod))
 
 	// when we receive a runtime only pod (runningPod != nil) we don't need to update the status
 	// manager or refresh the status of the cache, because a successful killPod will ensure we do
@@ -645,13 +650,17 @@ func (pc *PodsController) syncTerminatingPod(ctx context.Context, pod *corev1.Po
 // gates pod deletion). When this method exits the pod is expected to be ready for cleanup.
 // TODO: make this method take a context and exit early
 func (pc *PodsController) syncTerminatedPod(ctx context.Context, pod *corev1.Pod, podStatus *pkgcontainer.PodStatus) error {
-	nlog.Debugf("Sync terminated pod %q enter", format.Pod(pod))
-	defer nlog.Debugf("Sync terminated pod %q exit", format.Pod(pod))
+	nlog.Infof("Sync terminated pod %q enter", format.Pod(pod))
+	defer nlog.Infof("Sync terminated pod %q exit", format.Pod(pod))
 
 	// generate the final status of the pod
 	// TODO: should we simply fold this into TerminatePod? that would give a single pod update
 	apiPodStatus := pc.generateAPIPodStatus(pod, podStatus)
 	pc.statusManager.SetPodStatus(pod, apiPodStatus)
+
+	if err := pc.provider.DeletePod(ctx, pod); err != nil {
+		nlog.Errorf("Provider failed to cleanup pod %q: %v", format.Pod(pod), err)
+	}
 
 	// mark the final pod status
 	pc.statusManager.TerminatePod(pod)

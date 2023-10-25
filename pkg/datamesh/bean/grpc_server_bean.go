@@ -36,7 +36,7 @@ import (
 
 type grpcServerBean struct {
 	frameworkconfig.FlagEnvConfigLoader
-	config config.DataMeshConfig
+	config *config.DataMeshConfig
 }
 
 func NewGrpcServerBean(config *config.DataMeshConfig) *grpcServerBean { // nolint: golint
@@ -44,7 +44,7 @@ func NewGrpcServerBean(config *config.DataMeshConfig) *grpcServerBean { // nolin
 		FlagEnvConfigLoader: frameworkconfig.FlagEnvConfigLoader{
 			EnableTLSFlag: true,
 		},
-		config: *config,
+		config: config,
 	}
 }
 
@@ -58,7 +58,7 @@ func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
 	if tlsConfig != nil {
 		// override tls flags by config
 		s.TLSConfig.EnableTLS = true
-		s.TLSConfig.CAPath = tlsConfig.RootCAFile
+		s.TLSConfig.CAPath = tlsConfig.RootCACertFile
 		s.TLSConfig.ServerCertPath = tlsConfig.ServerCertFile
 		s.TLSConfig.ServerKeyPath = tlsConfig.ServerKeyFile
 	}
@@ -94,6 +94,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	//
 	datamesh.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
 	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config)))
+	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 	reflection.Register(server)
 	nlog.Infof("Grpc server listening on %s", addr)
 

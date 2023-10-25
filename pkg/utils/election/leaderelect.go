@@ -63,7 +63,7 @@ func NewElector(kubeClient kubernetes.Interface, name string, opt ...Option) Ele
 
 func buildLeaderElector(options *Options, onStartedLeading func(context.Context), onStoppedLeading func(), onNewLeader func(string)) (*leaderelection.LeaderElector, error) {
 	rl, err := resourcelock.New(
-		resourcelock.LeasesResourceLock,
+		options.LockType,
 		options.Namespace,
 		options.Name,
 		options.KubeClient.CoreV1(),

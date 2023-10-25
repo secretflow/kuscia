@@ -18,6 +18,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/miekg/dns v1.1.50
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/opencontainers/selinux v1.10.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

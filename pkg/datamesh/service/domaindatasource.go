@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -40,17 +39,16 @@ type IDomainDataSourceService interface {
 }
 
 type domainDataSourceService struct {
-	conf config.DataMeshConfig
+	conf *config.DataMeshConfig
 }
 
-func NewDomainDataSourceService(config config.DataMeshConfig) IDomainDataSourceService {
+func NewDomainDataSourceService(config *config.DataMeshConfig) IDomainDataSourceService {
 	return &domainDataSourceService{
 		conf: config,
 	}
 }
 
 func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, request *datamesh.CreateDomainDataSourceRequest) *datamesh.CreateDomainDataSourceResponse {
-
 	// parse DataSource
 	uri, jsonBytes, err := parseDataSource(request.Type, request.GetInfo())
 	if err != nil {
@@ -160,24 +158,12 @@ func parseDataSource(sourceType string, info *datamesh.DataSourceInfo) (uri stri
 		errMsg := fmt.Sprintf("Datasource type:%s not support, only support [localfs,oss]", sourceType)
 		nlog.Error(errMsg)
 		err = errors.New(errMsg)
+		return
 	}
 	infoJSON, err = json.Marshal(info)
 	if err != nil {
 		nlog.Errorf("Marshal info:%+v failed,error:%s", info, err.Error())
 	}
-	return
-}
-
-func mergeDomainDataSource(originalDomainData, modifiedDomainData *v1alpha1.DomainData) (patchBytes, originalJSON, modifiedJSON []byte, err error) {
-	originalJSON, err = json.Marshal(originalDomainData)
-	if err != nil {
-		return
-	}
-	modifiedJSON, err = json.Marshal(modifiedDomainData)
-	if err != nil {
-		return
-	}
-	patchBytes, err = strategicpatch.CreateTwoWayMergePatch(originalJSON, modifiedJSON, &v1alpha1.DomainData{})
 	return
 }
 

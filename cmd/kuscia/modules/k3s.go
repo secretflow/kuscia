@@ -34,6 +34,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/secretflow/kuscia/pkg/utils/common"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -47,6 +48,7 @@ type k3sModule struct {
 	listenPort     string
 	dataDir        string
 
+	LogConfig   nlog.LogConfig
 	enableAudit bool
 }
 
@@ -122,6 +124,7 @@ func NewK3s(i *Dependencies) Module {
 		listenPort:     "6443",
 		dataDir:        filepath.Join(i.RootDir, k3sDataDirPrefix),
 		enableAudit:    false,
+		LogConfig:      *i.LogConfig,
 	}
 }
 
@@ -155,16 +158,14 @@ func (s *k3sModule) Run(ctx context.Context) error {
 	}
 
 	sp := supervisor.NewSupervisor("k3s", nil, -1)
-	fout, err := os.OpenFile(filepath.Join(s.rootDir, LogPrefix, "k3s.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		nlog.Warnf("open k3s stdout logfile failed")
-		return nil
-	}
-	defer fout.Close()
+	s.LogConfig.LogPath = filepath.Join(s.rootDir, LogPrefix, "k3s.log")
+	lj, _ := ljwriter.New(&s.LogConfig)
+	n := nlog.NewNLog(nlog.SetWriter(lj))
+
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/k3s"), args...)
-		cmd.Stderr = fout
-		cmd.Stdout = fout
+		cmd.Stderr = n
+		cmd.Stdout = n
 		return cmd
 	})
 }

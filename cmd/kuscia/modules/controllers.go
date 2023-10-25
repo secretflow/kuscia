@@ -21,6 +21,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
+	"github.com/secretflow/kuscia/pkg/controllers/domaindata"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciadeployment"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
@@ -43,27 +44,31 @@ func NewControllersModule(i *Dependencies) Module {
 		[]controllers.ControllerConstruction{
 			{
 				NewControler: taskresourcegroup.NewController,
-				CheckCRD:     taskresourcegroup.CheckCRDExists,
+				CRDNames:     []string{controllers.CRDTaskResourcesGroupsName, controllers.CRDTaskResourcesName},
 			},
 			{
 				NewControler: domain.NewController,
-				CheckCRD:     domain.CheckCRDExists,
+				CRDNames:     []string{controllers.CRDDomainsName},
 			},
 			{
 				NewControler: kusciatask.NewController,
-				CheckCRD:     kusciatask.CheckCRDExists,
+				CRDNames:     []string{controllers.CRDKusciaTasksName, controllers.CRDAppImagesName},
 			},
 			{
 				NewControler: clusterdomainroute.NewController,
-				CheckCRD:     clusterdomainroute.CheckCRDExists,
+				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDClusterDomainRoutesName, controllers.CRDDomainRoutesName, controllers.CRDGatewaysName},
 			},
 			{
 				NewControler: kusciajob.NewController,
-				CheckCRD:     kusciajob.CheckCRDExists,
+				CRDNames:     []string{controllers.CRDKusciaJobsName},
 			},
 			{
 				NewControler: kusciadeployment.NewController,
-				CheckCRD:     kusciadeployment.CheckCRDExists,
+				CRDNames:     []string{controllers.CRDKusciaDeploymentsName},
+			},
+			{
+				NewControler: domaindata.NewController,
+				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDDomainDataGrantsName},
 			},
 		},
 	)

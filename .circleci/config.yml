@@ -74,7 +74,8 @@ workflows:
             tags:
               only: /^v.*/
   publish-workflow:
-    when: << pipeline.parameters.GHA_Action >>
+    when:
+      equal: ["publish_pypi", << pipeline.parameters.GHA_Meta >>]
     jobs:
       - continuation/continue:
           configuration_path: .circleci/release-config.yml

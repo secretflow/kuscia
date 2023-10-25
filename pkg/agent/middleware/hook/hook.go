@@ -21,12 +21,14 @@ import (
 	internalapi "k8s.io/cri-api/pkg/apis"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
+	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 const (
 	PointMakeMounts = iota + 1
-	PointGenerateRunContainerOptions
+	PointGenerateContainerOptions
+	PointK8sProviderSyncPod
 )
 
 const (
@@ -35,7 +37,23 @@ const (
 
 type Point int
 
-type MakeMountsObj struct {
+type Context interface {
+	Point() Point
+}
+
+type K8sProviderSyncPodContext struct {
+	Pod             *v1.Pod
+	BkPod           *v1.Pod
+	ResourceManager *resource.KubeResourceManager
+	Configmaps      []*v1.ConfigMap
+	Secrets         []*v1.Secret
+}
+
+func (c *K8sProviderSyncPodContext) Point() Point {
+	return PointK8sProviderSyncPod
+}
+
+type MakeMountsContext struct {
 	Pod           *v1.Pod
 	Container     *v1.Container
 	HostPath      *string
@@ -44,7 +62,11 @@ type MakeMountsObj struct {
 	PodVolumesDir string
 }
 
-type RunContainerOptionsObj struct {
+func (c *MakeMountsContext) Point() Point {
+	return PointMakeMounts
+}
+
+type GenerateContainerOptionContext struct {
 	Pod          *v1.Pod
 	Container    *v1.Container
 	Opts         *pkgcontainer.RunContainerOptions
@@ -53,14 +75,18 @@ type RunContainerOptionsObj struct {
 	ImageService internalapi.ImageManagerService
 }
 
+func (c *GenerateContainerOptionContext) Point() Point {
+	return PointGenerateContainerOptions
+}
+
 type Result struct {
 	Terminated bool
 	Msg        string
 }
 
 type Handler interface {
-	CanExec(obj interface{}, point Point) bool
-	ExecHook(obj interface{}, point Point) (*Result, error)
+	CanExec(ctx Context) bool
+	ExecHook(ctx Context) (*Result, error)
 }
 
 var (
@@ -79,14 +105,14 @@ func Register(name string, h Handler) {
 }
 
 // Execute traverse all handlers according to priority to execute the hook function.
-func Execute(obj interface{}, point Point) error {
+func Execute(ctx Context) error {
 	for _, name := range orders {
 		h := handlers[name]
-		if ok := h.CanExec(obj, point); !ok {
+		if ok := h.CanExec(ctx); !ok {
 			continue
 		}
 
-		result, err := h.ExecHook(obj, point)
+		result, err := h.ExecHook(ctx)
 		if err != nil {
 			return fmt.Errorf("plugin hook.%v execute failed, detail-> %v", name, err)
 		}

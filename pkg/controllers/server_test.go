@@ -23,7 +23,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	extensionfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -71,10 +70,6 @@ func testNewControllerFunc(ctx context.Context, config ControllerConfig) IContro
 	return t
 }
 
-func testCheckCRDExistsFunc(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	return nil
-}
-
 func Test_server_run(t *testing.T) {
 	opts := &Options{Workers: 3, HealthCheckPort: 28081, ControllerName: "test"}
 	kubeClient := kubefake.NewSimpleClientset()
@@ -82,7 +77,7 @@ func Test_server_run(t *testing.T) {
 	extensionClient := extensionfake.NewSimpleClientset()
 	stopCh := make(chan struct{})
 	ctx := signals.NewKusciaContextWithStopCh(stopCh)
-	s := NewServer(opts, &kubeconfig.KubeClients{KubeClient: kubeClient, KusciaClient: kusciaClient, ExtensionsClient: extensionClient}, []ControllerConstruction{{testNewControllerFunc, testCheckCRDExistsFunc}})
+	s := NewServer(opts, &kubeconfig.KubeClients{KubeClient: kubeClient, KusciaClient: kusciaClient, ExtensionsClient: extensionClient}, []ControllerConstruction{{testNewControllerFunc, nil}})
 
 	stoppedChan := make(chan struct{})
 
@@ -127,7 +122,7 @@ func Test_server_restartLeading(t *testing.T) {
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
 		options:                 opts,
-		controllerConstructions: []ControllerConstruction{{testNewControllerFunc, testCheckCRDExistsFunc}},
+		controllerConstructions: []ControllerConstruction{{testNewControllerFunc, nil}},
 	}
 	goroutineNumBegin := runtime.NumGoroutine()
 	go s.onStartedLeading(context.Background())
@@ -161,7 +156,7 @@ func Test_server_NewLeading(t *testing.T) {
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
 		options:                 opts,
-		controllerConstructions: []ControllerConstruction{{testNewControllerFunc, testCheckCRDExistsFunc}},
+		controllerConstructions: []ControllerConstruction{{testNewControllerFunc, nil}},
 	}
 
 	s.onNewLeader("test")
@@ -195,6 +190,6 @@ func Test_server_runserver(t *testing.T) {
 			KusciaClient:     kusciaClient,
 			ExtensionsClient: extensionClient,
 		},
-		[]ControllerConstruction{{testNewControllerFunc, testCheckCRDExistsFunc}})
+		[]ControllerConstruction{{testNewControllerFunc, nil}})
 	assert.NoError(t, err)
 }

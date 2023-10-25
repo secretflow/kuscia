@@ -17,12 +17,13 @@ package commands
 import (
 	"github.com/spf13/pflag"
 
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 )
 
 type Opts struct {
 	configFile string
-	logCfg     *zlogwriter.LogConfig
+	logCfg     *nlog.LogConfig
 }
 
 // AddFlags adds flags for a specific server to the specified FlagSet.

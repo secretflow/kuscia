@@ -1,7 +1,7 @@
 # KusciaDeployment
 
 在 Kuscia 中，常驻服务是通过 KusciaDeployment 进行管理的。例如，可以通过 KusciaDeployment 管理联合预测服务。
-如果要运行常驻服务，那么仅需创建一个 KusciaDeployment。KusciaDeployment Controller 将会根据 KusciaDeployment 的描述信息，在参与方节点下创建与常驻服务有关的 K8s 内置资源，例如 Service, Deployment 等。
+如果要运行常驻服务，那么仅需创建一个 KusciaDeployment。KusciaDeployment Controller 将会根据 KusciaDeployment 的描述信息，在参与方节点下创建与常驻服务有关的 K3s 内置资源，例如 Service, Deployment 等。
 
 基于 KusciaDeployment，你可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。
 
@@ -144,7 +144,7 @@ kubectl get kd secretflow-serving -o jsonpath={.status} | jq
 }
 ```
 
-3. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 Service 资源。
+3. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Service 资源。
 
 下面以 alice 节点为例：
 
@@ -156,7 +156,7 @@ secretflow-serving-service        ClusterIP   None         <none>        53509/T
 secretflow-serving-brpc-builtin   ClusterIP   None         <none>        53511/TCP   89m
 ```
 
-4. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 ConfigMap 资源。
+4. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 ConfigMap 资源。
 
 下面以 alice 节点为例：
 
@@ -166,7 +166,7 @@ NAME                                DATA   AGE
 secretflow-serving-configtemplate   1      89m
 ```
 
-5. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 Deployment 资源。
+5. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Deployment 资源。
 
 下面以 alice 节点为例：
 
@@ -176,7 +176,7 @@ NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
 secretflow-serving   1/1     1            1           89m
 ```
 
-6. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 Pod 资源。
+6. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Pod 资源。
 
 下面以 alice 节点为例：
 
@@ -295,7 +295,7 @@ status:
 
 KusciaDeployment `metadata` 的子字段详细介绍如下：
 
-- `labels`：表示 KusciaDeployment 的标签。当配置`kuscia.secretflow/app-type: serving`标签时，KusciaDeployment Controller 在创建 K8s 内置的 Deployment 资源时，会新增环境变量`SERVING_ID`，
+- `labels`：表示 KusciaDeployment 的标签。当配置`kuscia.secretflow/app-type: serving`标签时，KusciaDeployment Controller 在创建 K3s 内置的 Deployment 资源时，会新增环境变量`SERVING_ID`，
 该环境变量的值为 KusciaDeployment 资源的名称。
 - `name`：表示 KusciaDeployment 的名称。
 
@@ -330,7 +330,7 @@ KusciaDeployment `status` 的子字段详细介绍如下：
   - `alice.secretflow-serving.conditions`：表示名称为`secretflow-serving`的 Deployment 资源的详细状况信息。
   - `alice.secretflow-serving.creationTimestamp`：表示名称为`secretflow-serving`的 Deployment 资源的创建时间。
   - `alice.secretflow-serving.phase`：表示名称为`secretflow-serving`的 Deployment 资源的状态。当前包括以下几种 PHASE：
-    - `Progressing`：表示该资源正在被 K8s Deployment Controller 处理。
+    - `Progressing`：表示该资源正在被 K3s Deployment Controller 处理。
     - `PartialAvailable`：表示该参与方下的应用部分可用，即应用可用副本数小于期望副本数。
     - `Available`：表示该参与方下的应用全部可用，即应用可用副本数等于期望副本数。
   - `alice.secretflow-serving.replicas`：表示应用期望副本数。

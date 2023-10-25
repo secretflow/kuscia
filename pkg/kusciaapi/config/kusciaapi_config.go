@@ -32,6 +32,7 @@ type KusciaAPIConfig struct {
 	WriteTimeout   int64
 	IdleTimeout    int64
 	Initiator      string
+	DomainKeyFile  string
 	TLSConfig      *TLSConfig
 	TokenConfig    *TokenConfig
 	KusciaClient   kusciaclientset.Interface
@@ -39,7 +40,7 @@ type KusciaAPIConfig struct {
 }
 
 type TLSConfig struct {
-	RootCAFile     string
+	RootCACertFile string
 	ServerCertFile string
 	ServerKeyFile  string
 }
@@ -57,7 +58,7 @@ func NewDefaultKusciaAPIConfig(rootDir string) *KusciaAPIConfig {
 		WriteTimeout:   20,
 		IdleTimeout:    300,
 		TLSConfig: &TLSConfig{
-			RootCAFile:     path.Join(rootDir, constants.CertPathPrefix, "ca.crt"),
+			RootCACertFile: path.Join(rootDir, constants.CertPathPrefix, "ca.crt"),
 			ServerKeyFile:  path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.key"),
 			ServerCertFile: path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.crt"),
 		},

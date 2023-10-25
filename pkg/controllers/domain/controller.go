@@ -20,7 +20,6 @@ import (
 	"time"
 
 	apicorev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -395,9 +394,4 @@ func (c *Controller) delete(name string) error {
 
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	_, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainsName, apismetav1.GetOptions{})
-	return err
 }

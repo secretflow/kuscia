@@ -22,6 +22,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 var onlyOneSignalHandler = make(chan struct{})
@@ -36,7 +38,8 @@ func SetupSignalHandler() (stopCh <-chan struct{}) {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, shutdownSignals...)
 	go func() {
-		<-c
+		sig := <-c
+		nlog.Infof("Caught signal %v. Shutting down...", sig.String())
 		close(stop)
 		<-c
 		os.Exit(1) // second signal. Exit directly.
