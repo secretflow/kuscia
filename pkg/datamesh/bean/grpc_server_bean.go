@@ -20,30 +20,28 @@ import (
 	"net"
 	"time"
 
+	"github.com/apache/arrow/go/v13/arrow/flight"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
+	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/grpchandler"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
-	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
 type grpcServerBean struct {
-	frameworkconfig.FlagEnvConfigLoader
 	config *config.DataMeshConfig
 }
 
 func NewGrpcServerBean(config *config.DataMeshConfig) *grpcServerBean { // nolint: golint
 	return &grpcServerBean{
-		FlagEnvConfigLoader: frameworkconfig.FlagEnvConfigLoader{
-			EnableTLSFlag: true,
-		},
 		config: config,
 	}
 }
@@ -53,15 +51,6 @@ func (s *grpcServerBean) Validate(errs *errorcode.Errs) {
 }
 
 func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
-	// tls config from config file
-	tlsConfig := s.config.TLSConfig
-	if tlsConfig != nil {
-		// override tls flags by config
-		s.TLSConfig.EnableTLS = true
-		s.TLSConfig.CAPath = tlsConfig.RootCACertFile
-		s.TLSConfig.ServerCertPath = tlsConfig.ServerCertFile
-		s.TLSConfig.ServerKeyPath = tlsConfig.ServerKeyFile
-	}
 	return nil
 }
 
@@ -71,15 +60,14 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	opts := []grpc.ServerOption{
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeOut) * time.Second),
 	}
-	if s.EnableTLS {
-		// tls enabled
-		serverTLSConfig, err := s.LoadServerTLSConfig()
-		if err != nil {
-			nlog.Fatalf("Failed to init server tls config: %v", err)
-		}
-		creds := credentials.NewTLS(serverTLSConfig)
-		opts = append(opts, grpc.Creds(creds))
+
+	serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA,
+		s.config.TLS.ServerCert, s.config.TLS.ServerKey)
+	if err != nil {
+		nlog.Fatalf("Failed to init server tls config: %v", err)
 	}
+	creds := credentials.NewTLS(serverTLSConfig)
+	opts = append(opts, grpc.Creds(creds))
 
 	// listen on grpc port
 	addr := fmt.Sprintf(":%d", s.config.GRPCPort)
@@ -91,11 +79,27 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	// register grpc server
 	server := grpc.NewServer(opts...)
 	// get operator bean
-	//
-	datamesh.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
-	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config)))
+	domainDataService := service.NewDomainDataService(s.config)
+	datasourceService := service.NewDomainDataSourceService(s.config)
+	datamesh.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(domainDataService))
+	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(datasourceService))
 	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
+
+	// register flight service
+	if s.config.EnableDataProxy {
+		dpConf := &flight2.DataProxyConfig{
+			Addr:            s.config.DataProxyEndpoint,
+			ClientTLSConfig: s.config.DataProxyTLSConfig,
+		}
+		metaSrv, err := flight2.NewMetaServer(domainDataService, datasourceService, dpConf)
+		if err != nil {
+			nlog.Fatalf("Failed to create meta server: %v", err)
+		}
+		flight.RegisterFlightServiceServer(server, grpchandler.NewFlightMetaHandler(metaSrv))
+	}
+
 	reflection.Register(server)
+
 	nlog.Infof("Grpc server listening on %s", addr)
 
 	// serve grpc

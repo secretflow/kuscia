@@ -22,6 +22,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
 	"github.com/secretflow/kuscia/pkg/controllers/domaindata"
+	"github.com/secretflow/kuscia/pkg/controllers/domainroute"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciadeployment"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
@@ -34,7 +35,7 @@ func NewControllersModule(i *Dependencies) Module {
 		ControllerName:  "kuscia-controller-manager",
 		HealthCheckPort: 8090,
 		Workers:         4,
-		IsMaster:        i.IsMaster,
+		RunMode:         i.RunMode,
 		Namespace:       i.DomainID,
 		RootDir:         i.RootDir,
 	}
@@ -53,6 +54,10 @@ func NewControllersModule(i *Dependencies) Module {
 			{
 				NewControler: kusciatask.NewController,
 				CRDNames:     []string{controllers.CRDKusciaTasksName, controllers.CRDAppImagesName},
+			},
+			{
+				NewControler: domainroute.NewController,
+				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDDomainRoutesName, controllers.CRDGatewaysName},
 			},
 			{
 				NewControler: clusterdomainroute.NewController,

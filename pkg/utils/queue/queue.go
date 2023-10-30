@@ -102,7 +102,9 @@ func HandleQueueItem(ctx context.Context, queueID string, q workqueue.RateLimiti
 		}
 
 		nlog.Infof("Start processing item: queue id[%v], key[%v]", queueID, key)
-		defer nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
+		defer func() {
+			nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
+		}()
 
 		// Run the handler, passing it the namespace/name string of the Pod resource to be synced.
 		if err := handler(ctx, key); err != nil {
@@ -162,7 +164,9 @@ func HandleQueueItemWithAlwaysRetry(ctx context.Context, queueID string, q workq
 		}
 
 		nlog.Infof("Start processing item: queue id[%v], key[%v]", queueID, key)
-		defer nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
+		defer func() {
+			nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
+		}()
 
 		// Run the handler, passing it the namespace/name string of the Pod resource to be synced.
 		if err := handler(ctx, key); err != nil {

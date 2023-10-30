@@ -98,7 +98,9 @@ ls ${PWD}/kuscia-autonomy-alice-certs/bob.host.ca.crt
 alice 建立到 bob 的通信：
 
 ```bash 
-# [alice 机器] 
+# [alice 机器]
+# 为了减少授权错误的排查成本，建议在 alice 容器内(curl)访问 bob 地址判定是否能联通，之后再授权
+# 示例：curl -vvv http://2.2.2.2:8082 返回正常的HTTP错误码是401
 # 2.2.2.2是上文中 bob 的访问 ip，8082 是上文中 bob 的访问端口
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh alice bob 2.2.2.2:8082
 ```
@@ -142,12 +144,14 @@ bob 建立到 alice 的通信：
 
 ```bash 
 # [bob 机器] 
+# 为了减少授权错误的排查成本，建议在 bob 容器内(curl)访问 alice 地址判定是否能联通，之后再授权
+# 示例：curl -vvv http://1.1.1.1:8081 返回正常的HTTP错误码是401
 # 1.1.1.1 是上文中 alice 的访问 ip，8081 是上文中 alice 的访问端口
 docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob alice 1.1.1.1:8081
 ```
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
-##### 获取测试数据集
+#### 获取测试数据集
 登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-alice-data下
 
 ```bash

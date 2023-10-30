@@ -93,6 +93,7 @@ func (o *operatorService) registerDefaultDatasource() bool {
 					},
 					Oss: nil,
 				},
+				AccessDirectly: true,
 			}
 			nlog.Infof("Create default datasource.")
 			resp := o.datasourceSvc.CreateDomainDataSource(context.Background(), req)

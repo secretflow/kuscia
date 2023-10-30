@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func ParsePKCS1PrivateKeyData(data []byte) (*rsa.PrivateKey, error) {
@@ -51,16 +53,21 @@ func ParsePKCS1PublicKey(der []byte) (*rsa.PublicKey, error) {
 	return x509.ParsePKCS1PublicKey(block.Bytes)
 }
 
+func ParsePKCS1CertData(data []byte) (*x509.Certificate, error) {
+	certBlock, _ := pem.Decode(data)
+	if certBlock == nil {
+		return nil, fmt.Errorf("format error, must be cert")
+	}
+	return x509.ParseCertificate(certBlock.Bytes)
+}
+
 func ParsePKCS1CertFromFile(caFilePath string) (*x509.Certificate, error) {
 	certContent, err := os.ReadFile(caFilePath)
 	if err != nil {
 		return nil, err
 	}
-	certBlock, _ := pem.Decode(certContent)
-	if certBlock == nil {
-		return nil, fmt.Errorf("%s format error, must be cert", caFilePath)
-	}
-	return x509.ParseCertificate(certBlock.Bytes)
+
+	return ParsePKCS1CertData(certContent)
 }
 
 func EncodePKCS1PublicKey(priKey *rsa.PrivateKey) []byte {
@@ -134,4 +141,49 @@ func VerifyCert(cert []byte) bool {
 	}
 
 	return true
+}
+
+func ParseKey(keyData []byte, keyFile string) (key *rsa.PrivateKey, err error) {
+	if len(keyData) == 0 && keyFile == "" {
+		return nil, fmt.Errorf("init key failed: should not all empty")
+	}
+	// Make key: keyData's priority is higher than keyFile
+	if len(keyData) != 0 {
+		key, err = ParsePKCS1PrivateKeyData(keyData)
+		if err == nil {
+			return key, nil
+		}
+		nlog.Errorf("load key data failed: %s, try key file", err)
+	}
+	if key == nil && keyFile != "" {
+		key, err = ParsePKCS1PrivateKey(keyFile)
+		if err == nil {
+			return key, nil
+		}
+		nlog.Errorf("load key file failed: %s", err)
+	}
+	return nil, fmt.Errorf("can't parse key")
+}
+
+func ParseCert(certData []byte, certFile string) (cert *x509.Certificate, err error) {
+	if len(certData) == 0 && certFile == "" {
+		return nil, fmt.Errorf("init cert failed: should not all empty")
+	}
+	// Make cert:  certData's priority is higher than certFile
+	if len(certData) != 0 {
+		cert, err = ParsePKCS1CertData(certData)
+		if err == nil {
+			return cert, nil
+		}
+		nlog.Errorf("load cert data failed: %s, try cert file", err)
+	}
+	if cert == nil && certFile != "" {
+		cert, err = ParsePKCS1CertFromFile(certFile)
+		if err == nil {
+			return cert, nil
+		}
+		nlog.Errorf("load cert file failed: %s", err)
+	}
+
+	return nil, fmt.Errorf("can't parse cert")
 }

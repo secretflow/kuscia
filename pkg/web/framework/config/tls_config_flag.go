@@ -77,5 +77,5 @@ func (c *TLSConfig) TLSEnabled() bool {
 
 // LoadServerTLSConfig loads server tls config.
 func (c *TLSConfig) LoadServerTLSConfig() (*tls.Config, error) {
-	return ktls.BuildServerTLSConfig(c.CAPath, c.ServerCertPath, c.ServerKeyPath)
+	return ktls.BuildServerTLSConfigFromPath(c.CAPath, c.ServerCertPath, c.ServerKeyPath)
 }

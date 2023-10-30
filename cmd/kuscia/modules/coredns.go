@@ -27,6 +27,7 @@ import (
 	"github.com/coredns/coredns/plugin"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/coredns"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -74,7 +75,8 @@ var directives = []string{
 }
 
 const (
-	serverType = "dns"
+	serverType   = "dns"
+	tmpDirPrefix = "var/tmp/"
 )
 
 type CorednsModule struct {
@@ -85,11 +87,11 @@ type CorednsModule struct {
 	coreDNSInstance *coredns.KusciaCoreDNS
 }
 
-func NewCoreDNS(i *Dependencies) Module {
+func NewCoreDNS(conf *confloader.KusciaConfig) Module {
 	return &CorednsModule{
-		rootDir:   i.RootDir,
-		namespace: i.DomainID,
-		envoyIP:   i.EnvoyIP,
+		rootDir:   conf.RootDir,
+		namespace: conf.DomainID,
+		envoyIP:   conf.EnvoyIP,
 		readyChan: make(chan struct{}),
 	}
 }
@@ -151,7 +153,7 @@ func (s *CorednsModule) Name() string {
 	return "coredns"
 }
 
-func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *confloader.KusciaConfig) Module {
 	m := NewCoreDNS(conf)
 	go func() {
 		if err := m.Run(ctx); err != nil {
@@ -182,7 +184,7 @@ func prepareResolvConf(rootDir string) error {
 	}
 
 	resolvConf := "/etc/resolv.conf"
-	backupResolvConf := filepath.Join(rootDir, resolvConf)
+	backupResolvConf := filepath.Join(rootDir, tmpDirPrefix, "resolv.conf")
 	exist := paths.CheckFileExist(backupResolvConf)
 	if !exist {
 		if err = paths.CopyFile(resolvConf, backupResolvConf); err != nil {
@@ -222,6 +224,21 @@ func updateResolvConf(fileName, hostIP string, add bool) error {
 			if !strings.Contains(lines[i], content) {
 				finalContent = append(finalContent, lines[i])
 			}
+		}
+
+		// Coredns server would check whether the nameserver exist in backup resolv.conf.
+		// If not, the coredns server will crash.
+		// So if finalContent doesn't include nameserver, skip updating the file.
+		foundNameserver := false
+		for _, c := range finalContent {
+			if strings.Contains(c, "nameserver") {
+				foundNameserver = true
+				break
+			}
+		}
+		if !foundNameserver {
+			nlog.Warnf("Due to the backup resolv.conf content %v doesn't include nameserver after removing %q, skip updating it", lines, content)
+			return nil
 		}
 	}
 

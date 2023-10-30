@@ -38,15 +38,29 @@ type dataMeshModule struct {
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewDataMesh(d *Dependencies) Module {
+func NewDataMesh(d *Dependencies) (Module, error) {
 	conf := config.NewDefaultDataMeshConfig()
 	conf.RootDir = d.RootDir
-	rootCACertFile := d.CACertFile
-	if rootCACertFile != "" && conf.TLSConfig != nil {
-		conf.TLSConfig.RootCACertFile = rootCACertFile
+
+	// override data proxy config
+	if d.DataMesh != nil && d.DataMesh.EnableDataProxy {
+		conf.EnableDataProxy = d.DataMesh.EnableDataProxy
+		dpTLS := d.DataMesh.DataProxyTLSConfig
+		if dpTLS != nil && (dpTLS.KeyFile != "" || dpTLS.CAFile != "") {
+			conf.DataProxyTLSConfig = dpTLS
+		}
+		if len(d.DataMesh.DataProxyEndpoint) > 0 {
+			conf.DataProxyEndpoint = d.DataMesh.DataProxyEndpoint
+		}
 	}
 
 	conf.DomainKeyFile = d.DomainKeyFile
+
+	conf.TLS.RootCA = d.CACert
+	conf.TLS.RootCAKey = d.CAKey
+	if err := conf.TLS.GenerateServerKeyCerts("DataMesh", nil, []string{"datamesh"}); err != nil {
+		return nil, err
+	}
 
 	// set namespace
 	conf.KubeNamespace = d.DomainID
@@ -54,7 +68,7 @@ func NewDataMesh(d *Dependencies) Module {
 	return &dataMeshModule{
 		conf:         conf,
 		kusciaClient: d.Clients.KusciaClient,
-	}
+	}, nil
 }
 
 func (m dataMeshModule) Run(ctx context.Context) error {
@@ -87,15 +101,13 @@ func (m dataMeshModule) readyZ() bool {
 	var err error
 	schema := constants.SchemaHTTP
 	// init client tls config
-	tlsConfig := m.conf.TLSConfig
-	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCACertFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
-		if err != nil {
-			nlog.Errorf("local tls config error: %v", err)
-			return false
-		}
-		schema = constants.SchemaHTTPS
+	tlsConfig := m.conf.TLS
+	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
+	if err != nil {
+		nlog.Errorf("local tls config error: %v", err)
+		return false
 	}
+	schema = constants.SchemaHTTPS
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
@@ -135,7 +147,12 @@ func (m dataMeshModule) readyZ() bool {
 }
 
 func RunDataMesh(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewDataMesh(conf)
+	m, err := NewDataMesh(conf)
+	if err != nil {
+		nlog.Error(err)
+		cancel()
+		return m
+	}
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)

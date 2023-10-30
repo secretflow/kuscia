@@ -56,6 +56,8 @@ const (
 	LabelNodeName        = "kuscia.secretflow/node"
 	LabelPodUID          = "kuscia.secretflow/pod-uid"
 	LabelOwnerReferences = "kuscia.secretflow/owner-references"
+
+	LabelDomainRouteCreateInteropConfig = "kuscia.secertflow/domainroute-create-interopconfig"
 )
 
 type LoadBalancerType string
@@ -125,9 +127,18 @@ const (
 const (
 	DefaultDataSourceID     = "default-data-source"
 	DefaultDomainDataVendor = "manual"
+	DomainDataVendorGrant   = "grant"
 )
 
 const (
 	DomainDataSourceTypeLocalFS        = "localfs"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
+)
+
+type RunModeType = string
+
+const (
+	RunModeMaster   = "master"
+	RunModeAutonomy = "autonomy"
+	RunModeLite     = "lite"
 )

@@ -259,7 +259,8 @@ func TestListDomainData(t *testing.T) {
 			Type:   "path",
 			Fields: col[1:],
 		},
-		Columns: col,
+		Columns:    col,
+		FileFormat: v1alpha1.FileFormat_CSV,
 	})
 	_ = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
@@ -274,8 +275,9 @@ func TestListDomainData(t *testing.T) {
 			Type:   "path",
 			Fields: col[1:],
 		},
-		Columns: col,
-		Vendor:  "manual",
+		Columns:    col,
+		Vendor:     "manual",
+		FileFormat: v1alpha1.FileFormat_CSV,
 	})
 	res2 := domainDataService.ListDomainData(context.Background(), &kusciaapi.ListDomainDataRequest{
 		Header: nil,

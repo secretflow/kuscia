@@ -52,8 +52,7 @@ echo "subjectAltName=${subjectAltName}" > /tmp/openssh.conf
 openssl genrsa -out ${SERVER}.key 2048
 
 #generate the Certificate Signing Request
-openssl req -new -key ${SERVER}.key -days ${DAYS} -out ${SERVER}.csr \
-    -subj "/CN=KusciaAPI"
+openssl req -new -key ${SERVER}.key -out ${SERVER}.csr -subj "/CN=KusciaAPI"
 
 #sign it with Root CA
 openssl x509  -req -in ${SERVER}.csr \
@@ -68,8 +67,7 @@ rm -rf /tmp/openssh.conf
 openssl genpkey -out ${CLIENT}.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048
 
 #generate the Certificate Signing Request for client
-openssl req -new -key ${CLIENT}.key -days ${DAYS} -out ${CLIENT}.csr \
-    -subj "/CN=KusciaAPIClient"
+openssl req -new -key ${CLIENT}.key -out ${CLIENT}.csr -subj "/CN=KusciaAPIClient"
 
 #sign it with Root CA for client
 openssl x509  -req -in ${CLIENT}.csr \

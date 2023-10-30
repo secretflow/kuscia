@@ -52,11 +52,26 @@ func TestQueryDomainDataSource(t *testing.T) {
 		KubeNamespace: "DomainDataUnitTestNamespace",
 	}
 	domainDataService := NewDomainDataSourceService(conf)
-	res := domainDataService.QueryDomainDataSource(context.Background(), &datamesh.QueryDomainDataSourceRequest{
+	res := domainDataService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Name:         "default-datasource",
+		Type:         "localfs",
+		Info: &datamesh.DataSourceInfo{
+			Localfs: &datamesh.LocalDataSourceInfo{
+				Path: "./data",
+			},
+			Oss: nil,
+		},
+	})
+	assert.NotNil(t, res)
+	queryRes := domainDataService.QueryDomainDataSource(context.Background(), &datamesh.QueryDomainDataSourceRequest{
 		Header:       nil,
 		DatasourceId: dsID,
 	})
-	assert.NotNil(t, res)
+	assert.NotNil(t, queryRes)
+	assert.Equal(t, queryRes.Data.Type, "localfs")
+	assert.Equal(t, queryRes.Data.Info.Localfs.Path, "./data")
 }
 
 func TestUpdateDomainDataSource(t *testing.T) {
@@ -65,14 +80,44 @@ func TestUpdateDomainDataSource(t *testing.T) {
 		KubeNamespace: "DomainDataUnitTestNamespace",
 	}
 	domainDataService := NewDomainDataSourceService(conf)
-	res := domainDataService.UpdateDomainDataSource(context.Background(), &datamesh.UpdateDomainDataSourceRequest{
+	res := domainDataService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
 		Header:       nil,
 		DatasourceId: dsID,
-		Name:         "default-ds-id",
-		Type:         "localfs",
-		Info:         nil,
+		Name:         "default-datasource",
+		Type:         "mysql",
+		Info: &datamesh.DataSourceInfo{
+			Database: &datamesh.DatabaseDataSourceInfo{
+				Endpoint: "127.0.0.1:3306",
+				User:     "root",
+				Password: "passwd",
+			},
+		},
 	})
 	assert.NotNil(t, res)
+
+	updateRes := domainDataService.UpdateDomainDataSource(context.Background(), &datamesh.UpdateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Type:         "mysql",
+		Info: &datamesh.DataSourceInfo{
+			Database: &datamesh.DatabaseDataSourceInfo{
+				Endpoint: "127.0.0.1:3306",
+				User:     "root1",
+				Password: "passwd1",
+			},
+		},
+	})
+	assert.NotNil(t, updateRes)
+
+	queryRes := domainDataService.QueryDomainDataSource(context.Background(), &datamesh.QueryDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+	})
+	assert.NotNil(t, queryRes)
+	assert.Equal(t, "mysql", queryRes.Data.Type)
+	assert.Equal(t, "root1", queryRes.Data.Info.Database.User)
+	assert.Equal(t, "passwd1", queryRes.Data.Info.Database.Password)
+	assert.Equal(t, false, queryRes.Data.AccessDirectly)
 }
 
 func TestDeleteDomainDataSource(t *testing.T) {

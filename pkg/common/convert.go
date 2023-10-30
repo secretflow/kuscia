@@ -17,9 +17,15 @@ package common
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	k8sv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	pbv1alpha1 "github.com/secretflow/kuscia/proto/api/v1alpha1"
+)
+
+const (
+	fileFormatCSV     = "csv"
+	fileFormatUnKnown = "unknown"
 )
 
 func Convert2PbPartition(partition *k8sv1alpha1.Partition) (pbPartition *pbv1alpha1.Partition) {
@@ -44,9 +50,10 @@ func Convert2PbColumn(cols []k8sv1alpha1.DataColumn) []*pbv1alpha1.DataColumn {
 	colsV1 := make([]*pbv1alpha1.DataColumn, len(cols))
 	for i, v := range cols {
 		colsV1[i] = &pbv1alpha1.DataColumn{
-			Name:    v.Name,
-			Type:    v.Type,
-			Comment: v.Comment,
+			Name:        v.Name,
+			Type:        v.Type,
+			Comment:     v.Comment,
+			NotNullable: v.NotNullable,
 		}
 	}
 	return colsV1
@@ -74,12 +81,28 @@ func Convert2KubeColumn(cols []*pbv1alpha1.DataColumn) []k8sv1alpha1.DataColumn 
 	colsV1 := make([]k8sv1alpha1.DataColumn, len(cols))
 	for i, v := range cols {
 		colsV1[i] = k8sv1alpha1.DataColumn{
-			Name:    v.Name,
-			Type:    v.Type,
-			Comment: v.Comment,
+			Name:        v.Name,
+			Type:        v.Type,
+			Comment:     v.Comment,
+			NotNullable: v.NotNullable,
 		}
 	}
 	return colsV1
+}
+func Convert2KubeFileFormat(format pbv1alpha1.FileFormat) string {
+	switch format {
+	case pbv1alpha1.FileFormat_CSV:
+		return fileFormatCSV
+	}
+	return fileFormatUnKnown
+}
+
+func Convert2PbFileFormat(format string) pbv1alpha1.FileFormat {
+	switch strings.ToLower(format) {
+	case fileFormatCSV:
+		return pbv1alpha1.FileFormat_CSV
+	}
+	return pbv1alpha1.FileFormat_UNKNOWN
 }
 
 func CopySameMemberTypeStruct(dst, src interface{}) error {

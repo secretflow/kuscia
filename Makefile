@@ -93,17 +93,21 @@ clean: # clean build and test product.
 
 .PHONY: build
 build: fmt vet ## Build kuscia binary.
-	bash hack/build.sh
+	bash hack/build.sh -t kuscia
 
 .PHONY: docs
 docs: ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
 
+.PHONY: deps-image
+deps-image:
+	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+
 .PHONY: image
 image: export GOOS=linux
 image: export GOARCH=amd64
 image: build ## Build docker image with the manager.
-	docker build -t ${IMG}  --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 
 .PHONY: integration_test
 integration_test: image ## Run Integration Test

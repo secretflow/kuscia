@@ -16,6 +16,7 @@ WORKDIR /tmp
 COPY --from=k3s-image /bin/k3s /bin/containerd /bin/containerd-shim-runc-v2 /bin/runc /bin/cni /image/home/kuscia/bin/
 COPY --from=k3s-image /bin/aux /image/bin/aux
 
+
 RUN wget https://github.com/krallin/tini/releases/download/v0.19.0/tini -O /image/home/kuscia/bin/tini && \
     chmod +x /image/home/kuscia/bin/tini
 

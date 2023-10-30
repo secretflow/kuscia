@@ -21,11 +21,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/spf13/cobra"
+
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
-	"github.com/spf13/cobra"
 )
 
 func NewLiteCommand(ctx context.Context) *cobra.Command {
@@ -49,24 +52,25 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 				fmt.Println(err)
 				return err
 			}
-			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeLite)
+
+			kusciaConf := confloader.ReadConfig(configFile, domainID, common.RunModeLite)
+			nlog.Infof("Read kuscia config: %+v", kusciaConf)
+
+			// dns must start before dependencies because that dependencies init process may access network.
+			coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
+
+			conf := modules.InitDependencies(ctx, kusciaConf)
 			conf.LogConfig = logConfig
-			_, _, err = modules.EnsureCaKeyAndCert(conf)
+			err = modules.LoadCaDomainKeyAndCert(conf)
 			if err != nil {
 				nlog.Error(err)
 				return err
 			}
-			err = modules.EnsureDomainKey(conf)
-			if err != nil {
-				nlog.Error(err)
-				return err
-			}
+			conf.MakeClients()
 
 			if conf.EnableContainerd {
 				modules.RunContainerd(runCtx, cancel, conf)
 			}
-			coreDnsModule := modules.RunCoreDNS(runCtx, cancel, conf)
-
 			wg := sync.WaitGroup{}
 			wg.Add(3)
 			go func() {
@@ -90,8 +94,9 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 			cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
 
 			modules.RunAgent(runCtx, cancel, conf)
-			modules.RunConfManager(runCtx, cancel, conf)
 			modules.RunDataMesh(runCtx, cancel, conf)
+			modules.RunConfManager(runCtx, cancel, conf)
+			modules.RunKusciaAPI(runCtx, cancel, conf)
 			if debug {
 				utils.SetupPprof(debugPort)
 			}

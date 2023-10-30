@@ -17,7 +17,6 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -32,7 +31,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
@@ -44,35 +43,32 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients) error {
-	// parse private key
-	priKeyData, err := os.ReadFile(gwConfig.DomainKeyFile)
-	if err != nil {
-		return err
-	}
-	prikey, err := tlsutils.ParsePKCS1PrivateKeyData(priKeyData)
-	if err != nil {
-		return fmt.Errorf("failed to add scheme, detail-> %v", err)
-	}
+func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients, afterRegisterHook controller.AfterRegisterDomainHook) error {
+	prikey := gwConfig.DomainKey
+	priKeyData := tls.EncodePKCS1PublicKey(gwConfig.DomainKey)
 
 	// start xds server and envoy
-	err = StartXds(gwConfig)
+	err := StartXds(gwConfig)
 	if err != nil {
 		return fmt.Errorf("start xds server fail with err: %v", err)
 	}
+	nlog.Infof("Start xds success")
 
 	// add master config
 	masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
+	nlog.Infof("masterConfig is: %v", masterConfig)
+
 	if err != nil {
 		return fmt.Errorf("failed to load masterConfig, detail-> %v", err)
 	}
 
+	// add master Clusters
 	err = clusters.AddMasterClusters(ctx, gwConfig.Namespace, masterConfig)
 	if err != nil {
 		return fmt.Errorf("add master clusters fail, detail-> %v", err)
 	}
 	if !masterConfig.Master {
-		err = controller.RegisterDomain(gwConfig.Namespace, gwConfig.CsrFile, prikey)
+		err = controller.RegisterDomain(gwConfig.Namespace, gwConfig.CsrFile, prikey, afterRegisterHook)
 		if err != nil {
 			return fmt.Errorf("RegisterDomain err:%s", err.Error())
 		}
@@ -81,6 +77,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 			return fmt.Errorf("HandshakeToMaster err:%s", err.Error())
 		}
 	}
+	nlog.Infof("Add master clusters success")
 
 	// add interconn cluster
 	interConnClusterConfig, err := config.LoadInterConnClusterConfig(gwConfig.TransportConfig,
@@ -92,6 +89,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return fmt.Errorf("add interConn clusters fail, detail-> %v", err)
 	}
+	nlog.Infof("Add interconn clusters success")
 
 	// create informer factory
 	defaultResync := time.Duration(gwConfig.ResyncPeriod) * time.Second
@@ -115,7 +113,9 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return fmt.Errorf("load innerClientTLS fail, detail-> %v", err)
 	}
-	ec, err := controller.NewEndpointsController(clients.KubeClient, serviceInformer, endpointsInformer, gwConfig.WhiteListFile,
+	ec, err := controller.NewEndpointsController(masterConfig.Master, clients.KubeClient, serviceInformer,
+		endpointsInformer,
+		gwConfig.WhiteListFile,
 		clientCert)
 	if err != nil {
 		return fmt.Errorf("failed to new endpoints controller, detail-> %v", err)
@@ -127,8 +127,8 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	drConfig := &controller.DomainRouteConfig{
 		Namespace:     gwConfig.Namespace,
 		MasterConfig:  masterConfig,
-		CAKeyFile:     gwConfig.CAKeyFile,
-		CAFile:        gwConfig.CAFile,
+		CAKey:         gwConfig.CAKey,
+		CACert:        gwConfig.CACert,
 		Prikey:        prikey,
 		PrikeyData:    priKeyData,
 		HandshakePort: gwConfig.HandshakePort,

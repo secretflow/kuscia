@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -38,7 +39,7 @@ type agentModule struct {
 }
 
 func NewAgent(i *Dependencies) Module {
-	conf := &i.Agent.AgentConfig
+	conf := &i.Agent
 	conf.Namespace = i.DomainID
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -50,13 +51,21 @@ func NewAgent(i *Dependencies) Module {
 	}
 	conf.APIVersion = k8sVersion
 	conf.AgentVersion = fmt.Sprintf("%v", meta.AgentVersionString())
-	conf.DomainCAFile = i.CACertFile
-	conf.DomainCAKeyFile = i.CAKeyFile
+	conf.DomainCACert = i.CACert
+	conf.DomainCAKey = i.CAKey
+	conf.DomainCACertFile = i.CACertFile
+	if !path.IsAbs(conf.DomainCACertFile) {
+		conf.DomainCACertFile = filepath.Join(i.RootDir, i.CACertFile)
+	}
+	conf.AllowPrivileged = i.Agent.AllowPrivileged
 	conf.Provider.CRI.RemoteImageEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Provider.CRI.RemoteRuntimeEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
 	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
+	conf.Plugins = i.Agent.Plugins
+
+	nlog.Infof("Agent config is %+v", conf)
 
 	return &agentModule{
 		conf:    conf,

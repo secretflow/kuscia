@@ -186,22 +186,17 @@ func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.
 }
 
 func convertToGinConf(conf *dmconfig.DataMeshConfig) beans.GinBeanConfig {
-	var tlsConf *frameworkconfig.TLSConfig
-	if conf.TLSConfig != nil {
-		// override tls flags by config
-		tlsConf = &frameworkconfig.TLSConfig{
-			EnableTLS:      true,
-			CAPath:         conf.TLSConfig.RootCACertFile,
-			ServerCertPath: conf.TLSConfig.ServerCertFile,
-			ServerKeyPath:  conf.TLSConfig.ServerKeyFile,
-		}
+	var tlsConf = &beans.TLSServerConfig{
+		CACert:     conf.TLS.RootCA,
+		ServerCert: conf.TLS.ServerCert,
+		ServerKey:  conf.TLS.ServerKey,
 	}
 	return beans.GinBeanConfig{
-		Logger:         nil,
-		ReadTimeout:    &conf.ReadTimeout,
-		WriteTimeout:   &conf.WriteTimeout,
-		IdleTimeout:    &conf.IdleTimeout,
-		MaxHeaderBytes: nil,
-		TLSConfig:      tlsConf,
+		Logger:          nil,
+		ReadTimeout:     &conf.ReadTimeout,
+		WriteTimeout:    &conf.WriteTimeout,
+		IdleTimeout:     &conf.IdleTimeout,
+		MaxHeaderBytes:  nil,
+		TLSServerConfig: tlsConf,
 	}
 }

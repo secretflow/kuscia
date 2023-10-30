@@ -391,6 +391,8 @@ func (c *Controller) ensureDomainData(dg *v1alpha1.DomainDataGrant) error {
 		ddCopy := resources.ExtractDomainDataSpec(dd)
 		ddCopy.Namespace = dg.Spec.GrantDomain
 		ddCopy.Labels[common.LabelOwnerReferences] = dd.Name
+		ddCopy.Labels[common.LabelDomainDataVendor] = common.DomainDataVendorGrant
+		ddCopy.Spec.Vendor = common.DomainDataVendorGrant
 		_, err = c.kusciaClient.KusciaV1alpha1().DomainDatas(dg.Spec.GrantDomain).Create(c.ctx, ddCopy, metav1.CreateOptions{})
 		nlog.Infof("Create DomainData %s/%s, because grant %s to %s", dg.Spec.GrantDomain, dg.Spec.DomainDataID, dg.Spec.Author, dg.Spec.GrantDomain)
 		return err

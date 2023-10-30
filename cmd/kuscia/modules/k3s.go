@@ -47,6 +47,8 @@ type k3sModule struct {
 	bindAddress    string
 	listenPort     string
 	dataDir        string
+	datastore      string
+	token          string
 
 	LogConfig   nlog.LogConfig
 	enableAudit bool
@@ -124,12 +126,13 @@ func NewK3s(i *Dependencies) Module {
 		listenPort:     "6443",
 		dataDir:        filepath.Join(i.RootDir, k3sDataDirPrefix),
 		enableAudit:    false,
+		datastore:      i.Master.Datastore,
+		token:          i.Master.Token,
 		LogConfig:      *i.LogConfig,
 	}
 }
 
 func (s *k3sModule) Run(ctx context.Context) error {
-
 	args := []string{
 		"server",
 		"-v=5",
@@ -147,6 +150,12 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable=servicelb",
 		"--disable=local-storage",
 		"--disable=metrics-server",
+	}
+	if s.datastore != "" {
+		args = append(args, "--datastore-endpoint="+s.datastore)
+	}
+	if s.token != "" {
+		args = append(args, "--token="+s.token)
 	}
 	if s.enableAudit {
 		args = append(args,

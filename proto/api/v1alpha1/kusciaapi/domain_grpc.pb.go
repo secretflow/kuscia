@@ -33,11 +33,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	DomainService_CreateDomain_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/CreateDomain"
-	DomainService_QueryDomain_FullMethodName            = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/QueryDomain"
-	DomainService_UpdateDomain_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/UpdateDomain"
-	DomainService_DeleteDomain_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/DeleteDomain"
-	DomainService_BatchQueryDomainStatus_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/BatchQueryDomainStatus"
+	DomainService_CreateDomain_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/CreateDomain"
+	DomainService_QueryDomain_FullMethodName      = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/QueryDomain"
+	DomainService_UpdateDomain_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/UpdateDomain"
+	DomainService_DeleteDomain_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/DeleteDomain"
+	DomainService_BatchQueryDomain_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/BatchQueryDomain"
 )
 
 // DomainServiceClient is the client API for DomainService service.
@@ -48,7 +48,7 @@ type DomainServiceClient interface {
 	QueryDomain(ctx context.Context, in *QueryDomainRequest, opts ...grpc.CallOption) (*QueryDomainResponse, error)
 	UpdateDomain(ctx context.Context, in *UpdateDomainRequest, opts ...grpc.CallOption) (*UpdateDomainResponse, error)
 	DeleteDomain(ctx context.Context, in *DeleteDomainRequest, opts ...grpc.CallOption) (*DeleteDomainResponse, error)
-	BatchQueryDomainStatus(ctx context.Context, in *BatchQueryDomainStatusRequest, opts ...grpc.CallOption) (*BatchQueryDomainStatusResponse, error)
+	BatchQueryDomain(ctx context.Context, in *BatchQueryDomainRequest, opts ...grpc.CallOption) (*BatchQueryDomainResponse, error)
 }
 
 type domainServiceClient struct {
@@ -95,9 +95,9 @@ func (c *domainServiceClient) DeleteDomain(ctx context.Context, in *DeleteDomain
 	return out, nil
 }
 
-func (c *domainServiceClient) BatchQueryDomainStatus(ctx context.Context, in *BatchQueryDomainStatusRequest, opts ...grpc.CallOption) (*BatchQueryDomainStatusResponse, error) {
-	out := new(BatchQueryDomainStatusResponse)
-	err := c.cc.Invoke(ctx, DomainService_BatchQueryDomainStatus_FullMethodName, in, out, opts...)
+func (c *domainServiceClient) BatchQueryDomain(ctx context.Context, in *BatchQueryDomainRequest, opts ...grpc.CallOption) (*BatchQueryDomainResponse, error) {
+	out := new(BatchQueryDomainResponse)
+	err := c.cc.Invoke(ctx, DomainService_BatchQueryDomain_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ type DomainServiceServer interface {
 	QueryDomain(context.Context, *QueryDomainRequest) (*QueryDomainResponse, error)
 	UpdateDomain(context.Context, *UpdateDomainRequest) (*UpdateDomainResponse, error)
 	DeleteDomain(context.Context, *DeleteDomainRequest) (*DeleteDomainResponse, error)
-	BatchQueryDomainStatus(context.Context, *BatchQueryDomainStatusRequest) (*BatchQueryDomainStatusResponse, error)
+	BatchQueryDomain(context.Context, *BatchQueryDomainRequest) (*BatchQueryDomainResponse, error)
 	mustEmbedUnimplementedDomainServiceServer()
 }
 
@@ -132,8 +132,8 @@ func (UnimplementedDomainServiceServer) UpdateDomain(context.Context, *UpdateDom
 func (UnimplementedDomainServiceServer) DeleteDomain(context.Context, *DeleteDomainRequest) (*DeleteDomainResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDomain not implemented")
 }
-func (UnimplementedDomainServiceServer) BatchQueryDomainStatus(context.Context, *BatchQueryDomainStatusRequest) (*BatchQueryDomainStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BatchQueryDomainStatus not implemented")
+func (UnimplementedDomainServiceServer) BatchQueryDomain(context.Context, *BatchQueryDomainRequest) (*BatchQueryDomainResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchQueryDomain not implemented")
 }
 func (UnimplementedDomainServiceServer) mustEmbedUnimplementedDomainServiceServer() {}
 
@@ -220,20 +220,20 @@ func _DomainService_DeleteDomain_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DomainService_BatchQueryDomainStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BatchQueryDomainStatusRequest)
+func _DomainService_BatchQueryDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchQueryDomainRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DomainServiceServer).BatchQueryDomainStatus(ctx, in)
+		return srv.(DomainServiceServer).BatchQueryDomain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DomainService_BatchQueryDomainStatus_FullMethodName,
+		FullMethod: DomainService_BatchQueryDomain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DomainServiceServer).BatchQueryDomainStatus(ctx, req.(*BatchQueryDomainStatusRequest))
+		return srv.(DomainServiceServer).BatchQueryDomain(ctx, req.(*BatchQueryDomainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -262,8 +262,8 @@ var DomainService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _DomainService_DeleteDomain_Handler,
 		},
 		{
-			MethodName: "BatchQueryDomainStatus",
-			Handler:    _DomainService_BatchQueryDomainStatus_Handler,
+			MethodName: "BatchQueryDomain",
+			Handler:    _DomainService_BatchQueryDomain_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

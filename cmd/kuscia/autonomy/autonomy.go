@@ -21,9 +21,10 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/spf13/cobra"
@@ -52,14 +53,20 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 				fmt.Println(err)
 				return err
 			}
-			conf := utils.GetInitConfig(configFile, domainID, utils.RunModeAutonomy)
-			conf.LogConfig = logConfig
-			_, _, err = modules.EnsureCaKeyAndCert(conf)
-			if err != nil {
-				nlog.Error(err)
-				return err
+
+			kusciaConf := confloader.ReadConfig(configFile, domainID, common.RunModeAutonomy)
+			nlog.Infof("Read kuscia config: %+v", kusciaConf)
+
+			// dns must start before dependencies because that dependencies init process may access network.
+			var coreDnsModule modules.Module
+			if !onlyControllers {
+				coreDnsModule = modules.RunCoreDNS(runctx, cancel, &kusciaConf)
 			}
-			err = modules.EnsureDomainKey(conf)
+
+			conf := modules.InitDependencies(ctx, kusciaConf)
+
+			conf.LogConfig = logConfig
+			err = modules.LoadCaDomainKeyAndCert(conf)
 			if err != nil {
 				nlog.Error(err)
 				return err
@@ -70,31 +77,21 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 				return err
 			}
 			if onlyControllers {
-				// only for demo, remove later
-				// use the current context in kubeconfig
-				if conf.Clients, err = kubeconfig.CreateClientSetsFromKubeconfig(conf.KubeconfigFile, conf.ApiserverEndpoint); err != nil {
-					nlog.Error(err)
-					return err
-				}
+				conf.MakeClients()
 				modules.RunOperatorsAllinOne(runctx, cancel, conf, true)
 
 				nlog.Info("Scheduler and controllers are all started")
 				// wait any controller failed
 			} else {
-				coreDnsModule := modules.RunCoreDNS(runctx, cancel, conf)
 				modules.RunK3s(runctx, cancel, conf)
-				// use the current context in kubeconfig
-				clients, err := kubeconfig.CreateClientSetsFromKubeconfig(conf.KubeconfigFile, conf.ApiserverEndpoint)
-				if err != nil {
-					nlog.Error(err)
-					return err
-				}
-				conf.Clients = clients
+				// make clients after k3s start
+				conf.MakeClients()
+
 				cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
 				if !ok {
 					return errors.New("coredns module type is invalid")
 				}
-				cdsModule.StartControllers(runctx, clients.KubeClient)
+				cdsModule.StartControllers(runctx, conf.Clients.KubeClient)
 
 				if err = modules.CreateDefaultDomain(ctx, conf); err != nil {
 					nlog.Error(err)

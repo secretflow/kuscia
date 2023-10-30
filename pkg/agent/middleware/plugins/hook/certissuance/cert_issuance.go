@@ -73,22 +73,14 @@ func (ci *certIssuance) Type() string {
 
 // Init implements the plugin.Plugin interface.
 func (ci *certIssuance) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
-	signingKeyFile := dependencies.AgentConfig.DomainCAKeyFile
-	signingCertFile := dependencies.AgentConfig.DomainCAFile
-
-	if signingKeyFile == "" || signingCertFile == "" {
-		nlog.Infof("Plugin cert-issuance will not be registered, signingCertFile=%v, signingKeyFile=%v", signingCertFile, signingKeyFile)
+	if dependencies.AgentConfig.DomainCAKey == nil || dependencies.AgentConfig.DomainCACert == nil {
+		nlog.Infof("Plugin cert-issuance will not be registered, signingCert=%v, signingKey=%v", dependencies.AgentConfig.DomainCACert, dependencies.AgentConfig.DomainCAKey)
 		return nil
 	}
 
-	cert, key, err := tls.LoadX509KeyPair(signingCertFile, signingKeyFile)
-	if err != nil {
-		return err
-	}
-
-	ci.signingCertFile = signingCertFile
-	ci.caCert = cert
-	ci.caKey = key
+	ci.signingCertFile = dependencies.AgentConfig.DomainCACertFile
+	ci.caCert = dependencies.AgentConfig.DomainCACert
+	ci.caKey = dependencies.AgentConfig.DomainCAKey
 	ci.initialized = true
 
 	hook.Register(pluginNameCertIssuance, ci)
@@ -116,9 +108,24 @@ func (ci *certIssuance) CanExec(ctx hook.Context) bool {
 			return false
 		}
 		pod = syncPodCtx.Pod
+	default:
+		return false
 	}
 
-	if pod.Labels[common.LabelCommunicationRoleServer] != common.True && pod.Labels[common.LabelCommunicationRoleClient] != common.True {
+	if pod == nil {
+		nlog.Warnf("find pod == nil on certIssuance.CanExec, plugin will not exec")
+		return false
+	}
+
+	nlog.Infof("get pod is %+v", pod)
+	nlog.Infof("get labels is %+v", pod.Labels)
+	for l, v := range pod.Labels {
+		nlog.Infof("get pod.Labels[%s] is %+v", l, v)
+	}
+
+	if pod == nil || pod.Labels == nil ||
+		(pod.Labels[common.LabelCommunicationRoleServer] != common.True &&
+			pod.Labels[common.LabelCommunicationRoleClient] != common.True) {
 		return false
 	}
 

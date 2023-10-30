@@ -1231,6 +1231,7 @@ func (in *DomainRouteStatus) DeepCopy() *DomainRouteStatus {
 func (in *DomainRouteToken) DeepCopyInto(out *DomainRouteToken) {
 	*out = *in
 	in.RevisionTime.DeepCopyInto(&out.RevisionTime)
+	in.ExpirationTime.DeepCopyInto(&out.ExpirationTime)
 	if in.EffectiveInstances != nil {
 		in, out := &in.EffectiveInstances, &out.EffectiveInstances
 		*out = make([]string, len(*in))

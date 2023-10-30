@@ -113,13 +113,19 @@ func TestCertIssuanceWithGenerateOptCtx(t *testing.T) {
 	certsDir := filepath.Join(rootDir, "certs")
 	signingCertFile := filepath.Join(certsDir, "ca.crt")
 	signingKeyFile := filepath.Join(certsDir, "ca.key")
+
 	assert.NoError(t, paths.EnsureDirectory(certsDir, true))
 	assert.NoError(t, tls.CreateCAFile("testca", signingCertFile, signingKeyFile))
 
+	signingCert, err := tls.ParseCert(nil, signingCertFile)
+	assert.NoError(t, err)
+	signingKey, err := tls.ParseKey(nil, signingKeyFile)
+	assert.NoError(t, err)
+
 	dep := &plugin.Dependencies{
 		AgentConfig: &config.AgentConfig{
-			DomainCAFile:    signingCertFile,
-			DomainCAKeyFile: signingKeyFile,
+			DomainCACert: signingCert,
+			DomainCAKey:  signingKey,
 		},
 	}
 
@@ -243,10 +249,16 @@ func TestCertIssuanceWithSyncPodContext(t *testing.T) {
 	assert.NoError(t, paths.EnsureDirectory(certsDir, true))
 	assert.NoError(t, tls.CreateCAFile("testca", signingCertFile, signingKeyFile))
 
+	signingCert, err := tls.ParseCert(nil, signingCertFile)
+	assert.NoError(t, err)
+	signingKey, err := tls.ParseKey(nil, signingKeyFile)
+	assert.NoError(t, err)
+
 	dep := &plugin.Dependencies{
 		AgentConfig: &config.AgentConfig{
-			DomainCAFile:    signingCertFile,
-			DomainCAKeyFile: signingKeyFile,
+			DomainCACert:     signingCert,
+			DomainCAKey:      signingKey,
+			DomainCACertFile: signingCertFile,
 		},
 	}
 

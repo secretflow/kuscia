@@ -17,29 +17,17 @@ package controller
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io"
-	"math/big"
 	"net/http"
-	"os"
-	"reflect"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v5"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/tools/cache"
-
-	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -57,13 +45,6 @@ const (
 )
 
 const (
-	syncUpdate  = "DomainRouteSyncUpdate"
-	syncDelete  = "DomainRouteSyncDelete"
-	syncSucceed = "DomainRouteSyncSucceed"
-	syncFailed  = "DomainRouteSyncFailed"
-)
-
-const (
 	handShakeTypeUID   = "UID"
 	handShakeTypeTOKEN = "TOKEN"
 )
@@ -76,6 +57,8 @@ type Token struct {
 	Token   string
 	Version int64
 }
+
+type AfterRegisterDomainHook func(response *handshake.RegisterResponse)
 
 func (c *DomainRouteController) startHandShakeServer(port uint32) {
 	mux := http.NewServeMux()
@@ -94,15 +77,14 @@ func (c *DomainRouteController) startHandShakeServer(port uint32) {
 
 func doHTTP(in interface{}, out interface{}, path, host string, headers map[string]string) error {
 	maxRetryTimes := 5
-	var statusCode int
-	var body []byte
+
 	for i := 0; i < maxRetryTimes; i++ {
 		inbody, err := json.Marshal(in)
 		if err != nil {
 			nlog.Errorf("new handshake request fail:%v", err)
 			return err
 		}
-		req, err := http.NewRequest("POST", config.InternalServer+path, bytes.NewBuffer(inbody))
+		req, err := http.NewRequest(http.MethodPost, config.InternalServer+path, bytes.NewBuffer(inbody))
 		if err != nil {
 			nlog.Errorf("new handshake request fail:%v", err)
 			return err
@@ -116,37 +98,87 @@ func doHTTP(in interface{}, out interface{}, path, host string, headers map[stri
 		resp, err := client.Do(req)
 		if err != nil {
 			nlog.Errorf("do http request fail:%v", err)
-			if i == maxRetryTimes-1 {
-				return err
-			}
 			time.Sleep(time.Second)
 			continue
 		}
 
 		defer resp.Body.Close()
-		body, err = io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
 
-		statusCode = resp.StatusCode
-		if statusCode != http.StatusOK {
-			nlog.Warnf("Request error, path: %s, code: %d, message: %s", path, statusCode, string(body))
+		if resp.StatusCode != http.StatusOK {
+			nlog.Warnf("Request error, path: %s, code: %d, message: %s", path, resp.StatusCode, string(body))
 			time.Sleep(time.Second)
 			continue
-		} else {
-			break
+		}
+		if err := json.Unmarshal(body, out); err != nil {
+			nlog.Errorf("Json unmarshal failed, err:%s, body:%s", err.Error(), string(body))
+			time.Sleep(time.Second)
+			continue
+		}
+		return nil
+	}
+
+	return fmt.Errorf("request error, retry at maxtimes:%d, path: %s", maxRetryTimes, path)
+}
+
+func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) error {
+	maxRetryTimes := 60
+	i := 0
+	t := time.NewTicker(time.Second)
+	for {
+		i++
+		if i == maxRetryTimes {
+			return fmt.Errorf("do http request fail, at max retry times:%d", maxRetryTimes)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-t.C:
+			req, err := http.NewRequest(http.MethodGet, config.InternalServer+"/handshake", nil)
+			if err != nil {
+				nlog.Errorf("new handshake request fail:%v", err)
+				return err
+			}
+			ns := dr.Spec.Destination
+			if dr.Spec.Transit != nil {
+				ns = dr.Spec.Transit.Domain.DomainID
+			}
+			req.Host = fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake), fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name))
+			req.Header.Set("Kuscia-Source", dr.Spec.Source)
+			req.Header.Set("kuscia-Host", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns))
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				nlog.Errorf("do http request fail:%v, retry:%d", err, i)
+				continue
+			}
+
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
+			}
+			if resp.StatusCode != http.StatusOK {
+				if len(body) > 200 {
+					body = body[:200]
+				}
+				nlog.Errorf("Request error(%d), path: %s, code: %d, message: %s", i, fmt.Sprintf("%s.%s.svc/handshake", clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
+				continue
+			}
+			out := &getResponse{}
+			if err := json.Unmarshal(body, out); err == nil && out.TokenReady {
+				dr = dr.DeepCopy()
+				dr.Status.TokenStatus.RevisionToken.IsReady = true
+				_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+				return err
+			}
 		}
 	}
-
-	if statusCode != http.StatusOK {
-		return fmt.Errorf("request status code: %d", statusCode)
-	}
-
-	if err := json.Unmarshal(body, out); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.DomainRoute) error {
@@ -165,9 +197,9 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	//   The local token is encrypted with the peer's public key and then sent.
 	//   The peer token is encrypted with the local public key and returned.
 	var token []byte
+	resp := &handshake.HandShakeResponse{}
 	if dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
 		handshankeReq.Type = handShakeTypeUID
-		resp := &handshake.HandShakeResponse{}
 		ns := dr.Spec.Destination
 		if dr.Spec.Transit != nil {
 			ns = dr.Spec.Transit.Domain.DomainID
@@ -175,10 +207,11 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		headers := map[string]string{
 			fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name),
 			"Kuscia-Source": dr.Spec.Source,
-			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, dr.Spec.Destination),
+			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
 		}
-		err := doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, dr.Spec.Destination), headers)
+		err := doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
 		if err != nil {
+			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
 		}
 
@@ -212,7 +245,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			Token:    sourceTokenEnc,
 			Revision: dr.Status.TokenStatus.RevisionToken.Revision,
 		}
-		resp := &handshake.HandShakeResponse{}
+
 		ns := dr.Spec.Destination
 		if dr.Spec.Transit != nil {
 			ns = dr.Spec.Transit.Domain.DomainID
@@ -220,11 +253,12 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		headers := map[string]string{
 			fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name),
 			"Kuscia-Source": dr.Spec.Source,
-			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, dr.Spec.Destination),
+			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
 		}
 
-		err = doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, dr.Spec.Destination), headers)
+		err = doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
 		if err != nil {
+			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
 		}
 		destToken, err := decryptToken(c.prikey, resp.Token.Token, tokenByteSize/2)
@@ -243,15 +277,41 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	}
 
 	dr = dr.DeepCopy()
+	tn := metav1.Now()
 	dr.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
+	dr.Status.TokenStatus.RevisionToken.Revision = int64(resp.Token.Revision)
+	dr.Status.TokenStatus.RevisionToken.IsReady = false
+	dr.Status.TokenStatus.RevisionToken.RevisionTime = tn
+	if dr.Spec.TokenConfig.RollingUpdatePeriod == 0 {
+		dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
+	} else {
+		tTx := time.Unix(resp.Token.ExpirationTime/int64(time.Second), resp.Token.ExpirationTime%int64(time.Second))
+		dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tTx)
+	}
 	_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 	return err
 }
 
+type getResponse struct {
+	Namespace  string `json:"namespace"`
+	TokenReady bool   `json:"tokenReady"`
+}
+
 func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
+		resp := &getResponse{
+			Namespace:  c.gateway.Namespace,
+			TokenReady: false,
+		}
+
+		domainID := r.Header.Get("Kuscia-Source")
+		drName := common.GenDomainRouteName(domainID, c.gateway.Namespace)
+		if dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName); err == nil {
+			resp.TokenReady = dr.Status.TokenStatus.RevisionToken.IsReady
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		_, err := w.Write([]byte(fmt.Sprintf("{\"namespace\":\"%s\"}", c.gateway.Namespace)))
+		err := json.NewEncoder(w).Encode(resp)
 		if err != nil {
 			nlog.Errorf("write handshake response fail, detail-> %v", err)
 		}
@@ -323,10 +383,6 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 
 		token = respToken
 	} else if req.Type == handShakeTypeTOKEN {
-		if dstRevisionToken.Revision != req.TokenConfig.Revision {
-			return nil, fmt.Errorf("[token-handshake] mismatch revision, source: %d, destination: %d",
-				req.TokenConfig.Revision, dstRevisionToken.Revision)
-		}
 		sourceToken, err := decryptToken(c.prikey, req.TokenConfig.Token, tokenByteSize/2)
 		if err != nil {
 			return nil, err
@@ -346,21 +402,20 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 
 	if dr.Status.TokenStatus.RevisionToken.Token != tokenEncrypted {
 		dr = dr.DeepCopy()
-
-		// to be deleted
-		dr.Spec.TokenConfig.DestinationPublicKey = c.gateway.Status.PublicKey
-		if dr, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
-			return nil, err
+		tn := metav1.Now()
+		dr.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
+		dr.Status.TokenStatus.RevisionToken.Revision++
+		dr.Status.TokenStatus.RevisionToken.RevisionTime = tn
+		dr.Status.TokenStatus.RevisionToken.IsReady = false
+		if dr.Spec.TokenConfig.RollingUpdatePeriod == 0 {
+			dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
+		} else {
+			dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.Add(2 * time.Duration(dr.Spec.TokenConfig.RollingUpdatePeriod) * time.Second))
 		}
-
-		dr = dr.DeepCopy()
-		dr.Status.TokenStatus.RevisionToken.Token = tokenEncrypted // necessary
-		dr.Status.TokenStatus.Tokens = append(dr.Status.TokenStatus.Tokens, kusciaapisv1alpha1.DomainRouteToken{Token: tokenEncrypted})
 		if _, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
 			return nil, err
 		}
 		nlog.Infof("Update domainroute %s status", dr.Name)
-		// to be deleted
 	}
 
 	respTokenEncrypted, err := encryptToken(sourcePubKey, respToken)
@@ -370,7 +425,9 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 
 	return &handshake.HandShakeResponse{
 		Token: &handshake.Token{
-			Token: respTokenEncrypted,
+			Token:          respTokenEncrypted,
+			ExpirationTime: dr.Status.TokenStatus.RevisionToken.ExpirationTime.UnixNano(),
+			Revision:       int32(dr.Status.TokenStatus.RevisionToken.Revision),
 		},
 	}, nil
 }
@@ -392,8 +449,6 @@ func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, r
 	}
 
 	switch dr.Spec.TokenConfig.TokenGenMethod {
-	case kusciaapisv1alpha1.TokenGenMethodRAND:
-		tokens, err = c.parseTokenRand(dr)
 	case kusciaapisv1alpha1.TokenGenMethodRSA, kusciaapisv1alpha1.TokenGenUIDRSA:
 		tokens, err = c.parseTokenRSA(dr)
 	default:
@@ -401,22 +456,6 @@ func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, r
 			dr.Spec.TokenConfig.TokenGenMethod)
 	}
 	return tokens, err
-}
-
-func (c *DomainRouteController) parseTokenRand(dr *kusciaapisv1alpha1.DomainRoute) ([]*Token, error) {
-	key, _ := cache.MetaNamespaceKeyFunc(dr)
-
-	var tokens []*Token
-	n := len(dr.Status.TokenStatus.Tokens)
-	if n == 0 {
-		return tokens, fmt.Errorf("DomainRoute %s has no avaliable token", key)
-	}
-
-	for _, token := range dr.Status.TokenStatus.Tokens {
-		tokens = append(tokens, &Token{Token: token.Token, Version: token.Revision})
-	}
-
-	return tokens, nil
 }
 
 func (c *DomainRouteController) parseTokenRSA(dr *kusciaapisv1alpha1.DomainRoute) ([]*Token, error) {
@@ -484,307 +523,6 @@ func exists(slice []string, val string) bool {
 	return false
 }
 
-func getRegisterRequestHash(regReq *handshake.RegisterRequest) [16]byte {
-	return md5.Sum([]byte(fmt.Sprintf("%s_%s_%d", regReq.DomainId, regReq.Csr, regReq.RequestTime)))
-}
-
-type RegisterJwtClaims struct {
-	ReqHash [16]byte `json:"req"`
-	jwt.RegisteredClaims
-}
-
-func RegisterDomain(namespace string, csrPath string, prikey *rsa.PrivateKey) error {
-	csrRaw, err := os.ReadFile(csrPath)
-	if err != nil {
-		return err
-	}
-
-	regReq := &handshake.RegisterRequest{
-		DomainId:    namespace,
-		Csr:         base64.StdEncoding.EncodeToString(csrRaw),
-		RequestTime: int64(time.Now().Nanosecond()),
-	}
-
-	rjc := &RegisterJwtClaims{
-		ReqHash: getRegisterRequestHash(regReq),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    namespace,
-			Subject:   namespace,
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, rjc)
-	tokenstr, err := token.SignedString(prikey)
-	if err != nil {
-		return err
-	}
-	regResp := &handshake.RegisterResponse{}
-	headers := map[string]string{
-		"Kuscia-Source": namespace,
-		"kuscia-Host":   fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
-		"jwt-token":     tokenstr,
-	}
-	err = doHTTP(regReq, regResp, "/register", fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	req := handshake.RegisterRequest{}
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		nlog.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Csr in request must be base64 encoded string
-	// Raw data must be pem format
-	csr, err := parseCsr(req.Csr)
-	if err != nil {
-		nlog.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Use jwt verify first.
-	// Jwt's token must be signed by domain's private key.
-	// This handler will verify it by public key in csr.
-	err = c.registerVerify(r.Header.Get("jwt-token"), csr.PublicKey, &req)
-	if err != nil {
-		err = fmt.Errorf(`request jwt verify error: %s`, err.Error())
-		nlog.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// create domain certificate
-	t := time.Unix(req.RequestTime/int64(time.Second), req.RequestTime%int64(time.Second))
-	domainCrt := &x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               csr.Subject,
-		PublicKeyAlgorithm:    csr.PublicKeyAlgorithm,
-		PublicKey:             csr.PublicKey,
-		NotBefore:             t,
-		NotAfter:              t.AddDate(10, 0, 0),
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		BasicConstraintsValid: true,
-	}
-	domainCrtRaw, err := x509.CreateCertificate(rand.Reader, domainCrt, c.CaCert, csr.PublicKey, c.CaKey)
-	if err != nil {
-		nlog.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	domainCrtStr := base64.StdEncoding.EncodeToString(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: domainCrtRaw}))
-
-	do, err := c.kusciaClient.KusciaV1alpha1().Domains().Get(context.Background(), req.DomainId, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			err = fmt.Errorf("domain not found %s", req.DomainId)
-			nlog.Error(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		} else {
-			nlog.Error(err)
-			http.Error(w, "", http.StatusInternalServerError)
-		}
-		return
-	}
-	if do.Status == nil {
-		err = fmt.Errorf("%s", "not found deploytokenstatus in domain")
-		nlog.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	regToken := getTokenFromCsr(csr)
-	if regToken == "" {
-		err = fmt.Errorf("%s", "token not found in csr")
-		nlog.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	match := false
-
-	// Check whether the token in the csr matches and set it to used
-	for i, dts := range do.Status.DeployTokenStatuses {
-		if dts.State == "unused" && dts.Token == regToken {
-			match = true
-			do = do.DeepCopy()
-			do.Status.DeployTokenStatuses[i].State = "used"
-			do, err = c.kusciaClient.KusciaV1alpha1().Domains().UpdateStatus(context.Background(), do, metav1.UpdateOptions{})
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					err = fmt.Errorf("domain not found %s,may be deleted", req.DomainId)
-					nlog.Error(err)
-					http.Error(w, err.Error(), http.StatusBadRequest)
-				} else {
-					nlog.Error(err)
-					http.Error(w, "", http.StatusInternalServerError)
-				}
-				return
-			}
-			nlog.Infof("Domain %s update status success", do.Name)
-		}
-	}
-
-	// If the tokens match and the cert in the domain does not match the cert in the request, the domain is updated
-	if !isCertMatch(do.Spec.Cert, domainCrt) {
-		if match {
-			do = do.DeepCopy()
-			oldData, _ := json.Marshal(kusciaapisv1alpha1.Domain{Spec: do.Spec})
-			do.Spec.Cert = domainCrtStr
-			newData, _ := json.Marshal(kusciaapisv1alpha1.Domain{Spec: do.Spec})
-			patchBytes, _ := strategicpatch.CreateTwoWayMergePatch(oldData, newData, &kusciaapisv1alpha1.Domain{})
-			_, err = c.kusciaClient.KusciaV1alpha1().Domains().Patch(context.Background(), do.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					err = fmt.Errorf("domain not found %s,may be deleted", req.DomainId)
-					nlog.Error(err)
-					http.Error(w, err.Error(), http.StatusBadRequest)
-				} else {
-					nlog.Error(err)
-					http.Error(w, "", http.StatusInternalServerError)
-				}
-				return
-			}
-			nlog.Infof("Domain %s update success", do.Name)
-		} else {
-			errmsg := fmt.Errorf("domain %s register failed(token match error)", req.DomainId)
-			nlog.Error(errmsg)
-			http.Error(w, errmsg.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
-	//to be deleted
-	drName := common.GenDomainRouteName(req.DomainId, c.gateway.Namespace)
-	dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName)
-	if err != nil {
-		msg := fmt.Sprintf("DomainRoute %s get error: %v", drName, err)
-		nlog.Error(msg)
-		http.Error(w, msg, http.StatusNotFound)
-		return
-	}
-	block := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(csr.PublicKey.(*rsa.PublicKey)),
-	}
-	dr.Spec.TokenConfig.SourcePublicKey = base64.StdEncoding.EncodeToString(pem.EncodeToMemory(block))
-	c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(context.Background(), dr, metav1.UpdateOptions{})
-	//to be deleted
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(&handshake.RegisterResponse{
-		Cert: domainCrtStr,
-	})
-	if err != nil {
-		nlog.Errorf("encode register response for(%s) fail, detail-> %v", req.DomainId, err)
-	} else {
-		nlog.Infof("Domain register %s handle success", req.DomainId)
-	}
-}
-
-func isCertMatch(certString string, c *x509.Certificate) bool {
-	if certString == "" {
-		return false
-	}
-	certPem, err := base64.StdEncoding.DecodeString(certString)
-	if err != nil {
-		return false
-	}
-	certData, _ := pem.Decode(certPem)
-	if certData == nil {
-		return false
-	}
-	cert, err := x509.ParseCertificate(certData.Bytes)
-	if err != nil {
-		return false
-	}
-	if !reflect.DeepEqual(cert.PublicKey, c.PublicKey) {
-		nlog.Error("public not match")
-		return false
-	}
-	if !reflect.DeepEqual(cert.Subject, c.Subject) {
-		nlog.Error("subject not match")
-		return false
-	}
-	if !reflect.DeepEqual(cert.PublicKeyAlgorithm, c.PublicKeyAlgorithm) {
-		nlog.Error("PublicKeyAlgorithm not match")
-		return false
-	}
-	return true
-}
-
-func (c *DomainRouteController) registerVerify(jwtTokenStr string, pubKey interface{}, req *handshake.RegisterRequest) error {
-	rjc := &RegisterJwtClaims{}
-	jwtToken, err := jwt.ParseWithClaims(jwtTokenStr, rjc, func(token *jwt.Token) (interface{}, error) {
-		return pubKey, nil
-	})
-	if err != nil {
-		return err
-	}
-	if !jwtToken.Valid {
-		return fmt.Errorf("%s", "jwt token decrpted fail")
-	}
-	if time.Since(rjc.ExpiresAt.Time) > 0 {
-		return fmt.Errorf("%s", "jwt verify error, token expired")
-	}
-	hash := getRegisterRequestHash(req)
-	if len(hash) != len(rjc.ReqHash) {
-		return fmt.Errorf("%s", "request body verify error, hash not match")
-	}
-	for i := 0; i < len(hash); i++ {
-		if hash[i] != rjc.ReqHash[i] {
-			return fmt.Errorf("%s", "request body verify error, hash not match")
-		}
-	}
-	return nil
-}
-
-// The token in the csr file must be in the extension field and its id must be 1.2.3.4
-func getTokenFromCsr(csr *x509.CertificateRequest) string {
-	for _, e := range csr.Extensions {
-		if e.Id.String() == "1.2.3.4" {
-			// The token value in the csr file starts with \r\n by default, and these two characters need to be removed
-			return string(csr.Extensions[0].Value[2:])
-		}
-	}
-	return ""
-}
-
-func parseCsr(csrStr string) (*x509.CertificateRequest, error) {
-	csrRawPem, err := base64.StdEncoding.DecodeString(csrStr)
-	if err != nil {
-		err = fmt.Errorf("base64 decode csr error: %s", err.Error())
-		return nil, err
-	}
-	p, _ := pem.Decode(csrRawPem)
-	if p == nil {
-		err = fmt.Errorf("%s", "pem decode csr error")
-		return nil, err
-	}
-	if p.Type != "CERTIFICATE REQUEST" {
-		err = fmt.Errorf(`csr pem data type is %s, must be "CERTIFICATE REQUEST"`, p.Type)
-		return nil, err
-	}
-	csr, err := x509.ParseCertificateRequest(p.Bytes)
-	if err != nil {
-		err = fmt.Errorf(`csr pem data parse err, %s`, err.Error())
-		return nil, err
-	}
-	return csr, nil
-}
-
 func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 	handshankeReq := &handshake.HandShakeRequest{
 		DomainId:    domainID,
@@ -800,7 +538,8 @@ func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 
 	headers := map[string]string{
 		"Kuscia-Source": domainID,
-		"kuscia-Host":   fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
+		fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): clusters.GetMasterClusterName(),
+		"kuscia-Host": fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
 	}
 	err := doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
 	if err != nil {
@@ -813,13 +552,20 @@ func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 		nlog.Error(err)
 		return err
 	}
-
-	tokenVals := []string{base64.StdEncoding.EncodeToString(token)}
-	sourceToken := &kusciatokenauth.TokenAuth_SourceToken{
-		Source: domainID,
-		Tokens: tokenVals,
+	c, err := xds.QueryCluster(clusters.GetMasterClusterName())
+	if err != nil {
+		nlog.Error(err)
+		return err
 	}
-	if err = xds.UpdateTokenAuthAndHeaderDecorator(sourceToken, nil, true); err != nil {
+	if err := clusters.AddMasterProxyVirtualHost(c.Name, clusters.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	if err = xds.SetKeepAliveForDstCluster(c, true); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	if err = xds.AddOrUpdateCluster(c); err != nil {
 		nlog.Error(err)
 		return err
 	}

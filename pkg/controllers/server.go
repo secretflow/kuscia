@@ -106,12 +106,19 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 // Run is used to run server.
 func (s *server) Run(ctx context.Context) error {
 	s.ctx = ctx
+	crdNames := []string{}
+	crdNamesMap := map[string]bool{}
 	for _, cc := range s.controllerConstructions {
-		if err := CheckCRDExists(ctx, s.extensionClient, cc.CRDNames); err != nil {
-			return fmt.Errorf("check crd whether exist failed: %v", err.Error())
+		for _, name := range cc.CRDNames {
+			if _, ok := crdNamesMap[name]; !ok {
+				crdNames = append(crdNames, name)
+				crdNamesMap[name] = true
+			}
 		}
 	}
-
+	if err := CheckCRDExists(ctx, s.extensionClient, crdNames); err != nil {
+		return fmt.Errorf("check crd whether exist failed: %v", err.Error())
+	}
 	if err := kusciascheme.AddToScheme(scheme.Scheme); err != nil {
 		return fmt.Errorf("failed to add scheme, detail-> %v", err)
 	}
@@ -150,7 +157,7 @@ func (s *server) onStartedLeading(ctx context.Context) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	config := ControllerConfig{
-		IsMaster:      s.options.IsMaster,
+		RunMode:       s.options.RunMode,
 		Namespace:     s.options.Namespace,
 		RootDir:       s.options.RootDir,
 		KubeClient:    s.kubeClient,

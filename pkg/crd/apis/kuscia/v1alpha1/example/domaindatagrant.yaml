@@ -1,4 +1,4 @@
-apiVersion: nueva.oasis/v1alpha1
+apiVersion: kuscia.secretflow/v1alpha1
 kind: DomainDataGrant
 metadata:
   name: DomainDataGrant-xxxx

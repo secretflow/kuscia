@@ -59,6 +59,9 @@ message CreateDomainDataRequest {
     // Optional , The vendor is the one who outputs the domain data, it may be the SecretFlow engine,
     // another vendor's engine, or manually registered. it's could be manual, secretflow or other vendor string.
     string vendor = 10;
+
+    // file-format only takes effect when the data source type is  localfs or oss. default value is csv
+    FileFormat file_format = 11;
 }
 
 message CreateDomainDataResponse {
@@ -97,6 +100,8 @@ message UpdateDomainDataRequest {
     // The vendor is the one who outputs the domain data, it may be the secretFlow engine,
     // another vendor's engine, or manually registered.  enum manual,secretflow.
     string vendor = 10;
+
+    FileFormat file_format = 11;
 }
 
 message UpdateDomainDataResponse {
