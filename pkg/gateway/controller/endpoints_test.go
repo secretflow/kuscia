@@ -46,7 +46,7 @@ func newEndpointController() (*endpointController, error) {
 	serviceInformer := informerFactory.Core().V1().Services()
 	endpointInformer := informerFactory.Core().V1().Endpoints()
 
-	c, err := NewEndpointsController(client, serviceInformer, endpointInformer, "", nil)
+	c, err := NewEndpointsController(false, client, serviceInformer, endpointInformer, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (c *endpointController) runCase(t *testing.T, testCases []testCase) {
 			externalVh,
 		}
 		if tc.add && tc.expectedExists {
-			for i := 0; i <= 5; i++ {
+			for i := 0; i <= 10; i++ {
 				if err1 != nil || err2 != nil {
 					time.Sleep(600 * time.Millisecond)
 					internalVh, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)

@@ -81,12 +81,13 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
 			Author:      s.conf.KubeNamespace,
+			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
 	}
 	// create kuscia domain
 	_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Create(ctx, kusciaDomainData, metav1.CreateOptions{})
 	if err != nil {
-		nlog.Errorf("CreateDomainData failed, error:%s", err.Error())
+		nlog.Errorf("CreateDomainData failed, error: %s", err.Error())
 		return &datamesh.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomainData, err.Error()),
 		}
@@ -103,7 +104,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 	// get kuscia domain
 	kusciaDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
-		nlog.Errorf("QueryDomainData failed, error:%s", err.Error())
+		nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
 		return &datamesh.QueryDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainData, err.Error()),
 		}
@@ -121,6 +122,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 			Partition:    common.Convert2PbPartition(kusciaDomainData.Spec.Partition),
 			Columns:      common.Convert2PbColumn(kusciaDomainData.Spec.Columns),
 			Vendor:       kusciaDomainData.Spec.Vendor,
+			FileFormat:   common.Convert2PbFileFormat(kusciaDomainData.Spec.FileFormat),
 			Author:       kusciaDomainData.Spec.Author,
 		},
 	}
@@ -130,7 +132,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 	// get original domainData from k8s
 	originalDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
-		nlog.Errorf("UpdateDomainData failed, error:%s", err.Error())
+		nlog.Errorf("UpdateDomainData failed, error: %s", err.Error())
 		return &datamesh.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFromKubeFailed, err.Error()),
 		}
@@ -152,25 +154,26 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 			Author:      s.conf.KubeNamespace,
 		},
 	}
 	// merge modifiedDomainData to originalDomainData
 	patchBytes, originalBytes, modifiedBytes, err := common.MergeDomainData(originalDomainData, modifiedDomainData)
 	if err != nil {
-		nlog.Errorf("Merge DomainData failed,request:%+v,error:%s.",
+		nlog.Errorf("Merge DomainData failed, request: %+v,error: %s.",
 			request, err.Error())
 		return &datamesh.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrMergeDomainDataFailed, err.Error()),
 		}
 	}
-	nlog.Debugf("Update DomainData request:%+v, patchBytes:%s,originalDomainData:%s,modifiedDomainData:%s",
+	nlog.Debugf("Update DomainData request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s",
 		request, patchBytes, originalBytes, modifiedBytes)
 	// patch the merged domainData
 	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(originalDomainData.Namespace).Patch(ctx, originalDomainData.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
 		// todo: retry if conflict
-		nlog.Debugf("Patch DomainData failed, request:%+v, patchBytes:%s,originalDomainData:%s,modifiedDomainData:%s,error:%s",
+		nlog.Debugf("Patch DomainData failed, request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s, error: %s",
 			request, patchBytes, originalBytes, modifiedBytes, err.Error())
 		return &datamesh.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrPatchDomainDataFailed, err.Error()),
@@ -188,7 +191,7 @@ func (s domainDataService) DeleteDomainData(ctx context.Context, request *datame
 	// delete kuscia domainData
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
-		nlog.Errorf("Delete domainData:%s failed, detail:%s", request.DomaindataId, err.Error())
+		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
 		return &datamesh.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainDataFailed, err.Error()),
 		}

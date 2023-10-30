@@ -69,7 +69,7 @@ const (
 type Controller struct {
 	ctx                   context.Context
 	cancel                context.CancelFunc
-	IsMaster              bool
+	RunMode               common.RunModeType
 	Namespace             string
 	RootDir               string
 	kubeClient            kubernetes.Interface
@@ -105,7 +105,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		nodeInformer.Informer().HasSynced,
 	}
 	controller := &Controller{
-		IsMaster:              config.IsMaster,
+		RunMode:               config.RunMode,
 		Namespace:             config.Namespace,
 		RootDir:               config.RootDir,
 		kubeClient:            kubeClient,

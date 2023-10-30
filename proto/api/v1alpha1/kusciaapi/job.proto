@@ -199,4 +199,5 @@ enum EventType {
   MODIFIED = 1;
   DELETED = 2;
   ERROR = 3;
+  HEARTBEAT = 4;
 }

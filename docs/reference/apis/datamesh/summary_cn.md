@@ -26,9 +26,9 @@ protobuf
 
 RequestHeader 可以携带自定义的信息。
 
-| 字段             | 类型                  | 可选 | 描述      |
+| 字段             | 类型                  | 选填 | 描述      |
 |----------------|---------------------|----|---------|
-| custom_headers | map<string, string> | 是  | 自定义的键值对 |
+| custom_headers | map<string, string> | 可选 | 自定义的键值对 |
 
 {#status}
 
@@ -38,11 +38,11 @@ Status 携带请求响应的状态信息。
 
 参考: [GRPC 的 Status 定义](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)
 
-| 字段      | 类型                                                                            | 可选 | 描述     |
+| 字段      | 类型                                                                            | 选填 | 描述     |
 |---------|-------------------------------------------------------------------------------|----|--------|
-| code    | int32                                                                         |    | 错误码    |
-| message | string                                                                        |    | 错误信息   |
-| details | [google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[] |    | 错误详细描述 |
+| code    | int32                                                                         | 必填 | 错误码    |
+| message | string                                                                        | 必填 | 错误信息   |
+| details | [google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[] | 可选 | 错误详细描述 |
 
 
 {#data-mesh-api}
@@ -58,7 +58,7 @@ Data Mesh API 用于在 Domain 侧管理 DomainData，提供了 HTTP 和 GRPC �
    生成对应编程语言的客户端桩代码。 关于如何生成客户端桩代码，请参看 [Protobuf官方教程](https://protobuf.dev/getting-started/)。
 2. 使用 GRPC 客户端发起请求。
 
-GRPC 端点默认在：Domain 的 8071 端口。
+GRPC 端口默认在：Domain 的 8071。
 
 ### HTTP
 
@@ -69,4 +69,4 @@ curl -X POST 'http://{{USER-kuscia-lite-alice}:8070/api/v1/datamesh/domaindata/q
 }'
 ```
 
-HTTP 端点默认在：Domain 的 8070 端口。
+HTTP 端口默认在：Domain 的 8070。

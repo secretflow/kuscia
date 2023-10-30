@@ -18,6 +18,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/secretflow/kuscia/pkg/web/constants"
 )
@@ -30,6 +32,22 @@ func HTTPTokenAuthInterceptor(tokenData string) func(c *gin.Context) {
 			c.AbortWithError(http.StatusUnauthorized, err)
 			return
 		}
+		c.Set(constants.AuthRole, constants.AuthRoleMaster)
+		c.Set(constants.SourceDomainKey, constants.AuthRoleMaster)
+		c.Next()
+	}
+}
+
+func HTTPSourceAuthInterceptor() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		source := c.GetHeader(constants.SourceDomainHeader)
+		if source == "" {
+			err := status.Errorf(codes.Unauthenticated, "source domain header not found")
+			c.AbortWithError(http.StatusUnauthorized, err)
+			return
+		}
+		c.Set(constants.AuthRole, constants.AuthRoleDomain)
+		c.Set(constants.SourceDomainKey, source)
 		c.Next()
 	}
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clusterdomainroute
+package domainroute
 
 import (
 	"context"
@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
@@ -28,40 +27,6 @@ import (
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 )
-
-func Test_compareSpec(t *testing.T) {
-	testcdr := &kusciaapisv1alpha1.ClusterDomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				"auth": "test",
-			},
-		},
-		Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
-			DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
-				AuthenticationType: "Token",
-			},
-		},
-	}
-	testdr := &kusciaapisv1alpha1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				"auth": "test",
-			},
-		},
-		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			AuthenticationType: "Token",
-		},
-	}
-	assert.True(t, compareSpec(testcdr, testdr))
-	testcdr.Labels["auth2"] = "test"
-	assert.False(t, compareSpec(testcdr, testdr))
-	delete(testcdr.Labels, "auth2")
-	assert.True(t, compareSpec(testcdr, testdr))
-	testcdr.Spec.Destination = "alice"
-	assert.False(t, compareSpec(testcdr, testdr))
-	testcdr.Spec.Destination = ""
-	assert.True(t, compareSpec(testcdr, testdr))
-}
 
 func Test_compareTokens(t *testing.T) {
 	testdr1 := &kusciaapisv1alpha1.DomainRoute{
@@ -109,27 +74,6 @@ func Test_compareTokens(t *testing.T) {
 	assert.False(t, compareTokens(testdr1.Status.TokenStatus.Tokens, testdr2.Status.TokenStatus.Tokens))
 }
 
-func Test_checkReadyCondition(t *testing.T) {
-	testcdr := &kusciaapisv1alpha1.ClusterDomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				"auth": "test",
-			},
-		},
-		Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
-			DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
-				AuthenticationType: "Token",
-			},
-		},
-		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
-			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{},
-		},
-	}
-	assert.False(t, checkReadyCondition(testcdr))
-	testcdr.Status.Conditions = append(testcdr.Status.Conditions, kusciaapisv1alpha1.ClusterDomainRouteCondition{Type: kusciaapisv1alpha1.ClusterDomainRouteReady, Status: corev1.ConditionTrue})
-	assert.True(t, checkReadyCondition(testcdr))
-}
-
 func Test_checkEffectiveInstances(t *testing.T) {
 	testNamespace := "test"
 	testdr := &kusciaapisv1alpha1.DomainRoute{
@@ -164,7 +108,7 @@ func Test_checkEffectiveInstances(t *testing.T) {
 	kusciaClient := kusciafake.NewSimpleClientset()
 	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, time.Second*30)
 	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
-	controller := &Controller{
+	controller := &controller{
 		gatewayLister:       gatewayInformer.Lister(),
 		gatewayListerSynced: gatewayInformer.Informer().HasSynced,
 	}
@@ -181,4 +125,51 @@ func Test_checkEffectiveInstances(t *testing.T) {
 	assert.False(t, controller.checkEffectiveInstances(testdr))
 	testdr.Status.TokenStatus.Tokens[1].EffectiveInstances = []string{"testgw"}
 	assert.True(t, controller.checkEffectiveInstances(testdr))
+}
+
+func Test_doValidate(t *testing.T) {
+	alice := "alicedovallidate"
+	bob := "bobdovalidate"
+	testcdr := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: alice + "-" + bob,
+			Labels: map[string]string{
+				"auth": "test",
+			},
+		},
+		Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
+			DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
+				AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+			},
+		},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{},
+		},
+	}
+	assert.Equal(t, "source or destination is null", DoValidate(&testcdr.Spec.DomainRouteSpec).Error())
+
+	testcdr.Spec.Source = alice
+	testcdr.Spec.Destination = bob
+	assert.Equal(t, "field TokenConfig is null", DoValidate(&testcdr.Spec.DomainRouteSpec).Error())
+
+	testcdr.Spec.AuthenticationType = kusciaapisv1alpha1.DomainAuthenticationMTLS
+	assert.Equal(t, "field MTLSConfig is null", DoValidate(&testcdr.Spec.DomainRouteSpec).Error())
+
+	testcdr.Spec.MTLSConfig = &kusciaapisv1alpha1.DomainRouteMTLSConfig{
+		SourceClientCert: "",
+	}
+	assert.Equal(t, "field SourceClientCert is null", DoValidate(&testcdr.Spec.DomainRouteSpec).Error())
+
+	testcdr.Spec.MTLSConfig.SourceClientCert = createCrtString(t)
+	assert.NoError(t, DoValidate(&testcdr.Spec.DomainRouteSpec))
+
+	testcdr.Spec.BodyEncryption = &kusciaapisv1alpha1.BodyEncryption{
+		Algorithm: kusciaapisv1alpha1.BodyEncryptionAlgorithmAES,
+	}
+	assert.Equal(t, "field TokenConfig is null", DoValidate(&testcdr.Spec.DomainRouteSpec).Error())
+
+	testcdr.Spec.TokenConfig = &kusciaapisv1alpha1.TokenConfig{
+		TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
+	}
+	assert.NoError(t, DoValidate(&testcdr.Spec.DomainRouteSpec))
 }

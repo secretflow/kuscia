@@ -15,6 +15,8 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"os"
 
@@ -32,12 +34,12 @@ var (
 type GatewayConfig struct {
 	RootDir       string `yaml:"rootdir,omitempty"`
 	Namespace     string `yaml:"namespace,omitempty"`
-	CAKeyFile     string `yaml:"caKeyFile,omitempty"`
-	CAFile        string `yaml:"caFile,omitempty"`
 	ConfBasedir   string `yaml:"confBasedir,omitempty"`
-	DomainKeyFile string `yaml:"domainKeyFile,omitempty"`
 	CsrFile       string `yaml:"csrFile,omitempty"`
 	WhiteListFile string `yaml:"whiteListFile,omitempty"`
+	DomainKey     *rsa.PrivateKey
+	CACert        *x509.Certificate
+	CAKey         *rsa.PrivateKey
 
 	ExternalPort   uint32 `yaml:"externalPort,omitempty"`
 	HandshakePort  uint32 `yaml:"handshakePort,omitempty"`
@@ -60,7 +62,6 @@ func DefaultStaticGatewayConfig() *GatewayConfig {
 	g := &GatewayConfig{
 		Namespace:     "default",
 		ConfBasedir:   "./conf",
-		DomainKeyFile: "",
 		WhiteListFile: "",
 
 		ExternalPort:   1080,

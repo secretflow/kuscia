@@ -21,7 +21,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -64,13 +63,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
 	controllerName        = "domain-route-controller"
-	maxRetries            = 15
-	domainRouteSyncPeriod = 30 * time.Minute
+	maxRetries            = 16
+	domainRouteSyncPeriod = 10 * time.Minute
 	domainRouteQueueName  = "domain-route-queue"
 	grpcDegradeLabel      = "kuscia.secretflow/grpc-degrade"
 )
@@ -78,8 +77,8 @@ const (
 type DomainRouteConfig struct {
 	Namespace     string
 	MasterConfig  *config.MasterConfig
-	CAKeyFile     string
-	CAFile        string
+	CAKey         *rsa.PrivateKey
+	CACert        *x509.Certificate
 	Prikey        *rsa.PrivateKey
 	PrikeyData    []byte
 	HandshakePort uint32
@@ -116,7 +115,7 @@ func NewDomainRouteController(
 	recorder := createEventRecorder(kubeClient, drConfig.Namespace)
 
 	hostname := utils.GetHostname()
-	pubPem := tlsutils.EncodePKCS1PublicKey(drConfig.Prikey)
+	pubPem := tls.EncodePKCS1PublicKey(drConfig.Prikey)
 
 	gateway := &kusciaapisv1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -127,23 +126,11 @@ func NewDomainRouteController(
 			PublicKey: base64.StdEncoding.EncodeToString(pubPem),
 		},
 	}
-	caCert, err := tlsutils.ParsePKCS1CertFromFile(drConfig.CAFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	caKey, err := tlsutils.ParsePKCS1PrivateKey(drConfig.CAKeyFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
-	certContent, err := os.ReadFile(drConfig.CAFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
 	c := &DomainRouteController{
 		gateway:                 gateway,
-		CaCertData:              certContent,
-		CaCert:                  caCert,
-		CaKey:                   caKey,
+		CaCertData:              drConfig.CACert.Raw,
+		CaCert:                  drConfig.CACert,
+		CaKey:                   drConfig.CAKey,
 		masterConfig:            drConfig.MasterConfig,
 		prikey:                  drConfig.Prikey,
 		prikeyData:              drConfig.PrikeyData,
@@ -242,17 +229,21 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 
 	if (dr.Spec.BodyEncryption != nil || dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken) &&
 		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
-		if dr.Spec.Source == c.gateway.Namespace &&
-			dr.Status.TokenStatus.RevisionToken.Token == "" &&
-			dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
-			nlog.Infof("DomainRoute %s starts handshake at revision: %d", key,
-				dr.Status.TokenStatus.RevisionToken.Revision)
-			if dr.Spec.Transit == nil {
-				if err := setKeepAliveForDstClusters(dr, false); err != nil {
-					return fmt.Errorf("disable keep-alive fail for DomainRoute: %s err: %v", key, err)
+		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
+			if dr.Status.TokenStatus.RevisionToken.Token == "" {
+				nlog.Infof("DomainRoute %s starts handshake at revision: %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
+				if dr.Spec.Transit == nil {
+					if err := setKeepAliveForDstClusters(dr, false); err != nil {
+						return fmt.Errorf("disable keep-alive fail for DomainRoute: %s err: %v", key, err)
+					}
 				}
+				return c.sourceInitiateHandShake(dr)
+			} else if !dr.Status.TokenStatus.RevisionToken.IsReady {
+				if err = c.waitTokenReady(ctx, dr); err != nil {
+					return err
+				}
+				nlog.Infof("DomainRoute %s wait token ready at revision: %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
 			}
-			return c.sourceInitiateHandShake(dr)
 		}
 	}
 
@@ -308,7 +299,7 @@ func (c *DomainRouteController) addDomainRoute(obj interface{}) {
 
 func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainRoute) error {
 	key, _ := cache.MetaNamespaceKeyFunc(dr)
-	nlog.Infof("Update DomainRoute %s", key)
+	nlog.Infof("Update DomainRoute %s revision:%s", key, dr.ResourceVersion)
 
 	var tokens []*Token
 	// for non-token author
@@ -636,64 +627,18 @@ func generateClusterName(source, dest, portName string) string {
 
 func setKeepAliveForDstClusters(dr *kusciaapisv1alpha1.DomainRoute, enable bool) error {
 	for _, dp := range dr.Spec.Endpoint.Ports {
-		if err := setKeepAliveForDstCluster(dr, dp, enable); err != nil {
+		c, err := xds.QueryCluster(generateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name))
+		if err != nil {
+			return err
+		}
+		if err := xds.SetKeepAliveForDstCluster(c, enable); err != nil {
+			return err
+		}
+		if err := xds.AddOrUpdateCluster(c); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func setKeepAliveForDstCluster(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
-	enable bool) error {
-	clusterName := generateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
-
-	cluster, err := xds.QueryCluster(clusterName)
-	if err != nil {
-		return err
-	}
-
-	optionName := "envoy.extensions.upstreams.http.v3.HttpProtocolOptions"
-	option, ok := cluster.TypedExtensionProtocolOptions[optionName]
-	if !ok {
-		return nil
-	}
-	var protocolOptions envoyhttp.HttpProtocolOptions
-	if err := proto.Unmarshal(option.Value, &protocolOptions); err != nil {
-		return err
-	}
-
-	var action string
-	if enable {
-		if protocolOptions.CommonHttpProtocolOptions == nil || protocolOptions.CommonHttpProtocolOptions.
-			MaxRequestsPerConnection == nil {
-			return nil
-		}
-		protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = nil
-		action = "enable"
-	} else {
-		if protocolOptions.CommonHttpProtocolOptions == nil {
-			xds.SetCommonHTTPProtocolOptions(&protocolOptions)
-		}
-		if protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection != nil && protocolOptions.
-			CommonHttpProtocolOptions.MaxRequestsPerConnection.Value == uint32(1) {
-			return nil
-		}
-		protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = &wrapperspb.UInt32Value{
-			Value: uint32(1),
-		}
-		action = "disable"
-	}
-
-	b, err := proto.Marshal(&protocolOptions)
-	if err != nil {
-		nlog.Errorf("Marshal protocolOptions failed with %s", err.Error())
-		return err
-	}
-
-	nlog.Infof("%s keep-alive for cluster:%s ", action, clusterName)
-	option.Value = b
-	cluster.TypedExtensionProtocolOptions[optionName] = option
-	return xds.AddOrUpdateCluster(cluster)
 }
 
 func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,

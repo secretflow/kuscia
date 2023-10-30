@@ -41,6 +41,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 				Prefix: "/",
 			},
 		},
+
 		Action: &route.Route_Route{
 			Route: xds.AddDefaultTimeout(generateDefaultRouteAction(dr, dp)),
 		},

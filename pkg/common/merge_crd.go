@@ -33,3 +33,17 @@ func MergeDomainData(originalDomainData, modifiedDomainData *v1alpha1.DomainData
 	patchBytes, err = strategicpatch.CreateTwoWayMergePatch(originalJSON, modifiedJSON, &v1alpha1.DomainData{})
 	return
 }
+
+func MergeDomainDataSource(originalDomainDataSource, modifiedDomainDataSource *v1alpha1.DomainDataSource) (patchBytes, originalJSON,
+	modifiedJSON []byte, err error) {
+	originalJSON, err = json.Marshal(originalDomainDataSource)
+	if err != nil {
+		return
+	}
+	modifiedJSON, err = json.Marshal(modifiedDomainDataSource)
+	if err != nil {
+		return
+	}
+	patchBytes, err = strategicpatch.CreateTwoWayMergePatch(originalJSON, modifiedJSON, &v1alpha1.DomainDataSource{})
+	return
+}

@@ -31,15 +31,14 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 HOST=${DEST_ENDPOINT}
 PORT=80
+PROTOCOL_TLS=false
 
 if [[ "${DEST_ENDPOINT}" == *"://"* ]]; then
   HOST=${DEST_ENDPOINT##*://}
-fi
-
-PROTOCOL_TLS=false
-if [[ "${DEST_ENDPOINT}" == https://* ]]; then
-  PROTOCOL_TLS=true
-  PORT=443
+  if [[ "${DEST_ENDPOINT}" == https://* ]]; then
+    PROTOCOL_TLS=true
+    PORT=443
+  fi
 fi
 
 if [[ "${HOST}" == *":"* ]]; then
@@ -47,11 +46,10 @@ if [[ "${HOST}" == *":"* ]]; then
   HOST=${HOST%%:*}
 fi
 
-
 CLUSTER_DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SRC_DOMAIN}}/${SRC_DOMAIN}/g;
   s/{{.DEST_DOMAIN}}/${DEST_DOMAIN}/g;
   s/{{.HOST}}/${HOST}/g;
-  s/{{.PROTOCOL}}/${PROTOCOL_TLS}/g;
+  s/{{.ISTLS}}/${PROTOCOL_TLS}/g;
   s/{{.PORT}}/${PORT}/g" \
   <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
 echo "${CLUSTER_DOMAIN_ROUTE_TEMPLATE}" | kubectl apply -f -

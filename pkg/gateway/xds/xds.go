@@ -193,6 +193,7 @@ func InitSnapshot(ns, instance string, initConfig *InitConfig) {
 }
 
 func generateListeners(configTemplate ConfigTemplate, config *InitConfig) []types.Resource {
+
 	listenerConfPath := path.Join(config.Basedir, "listeners")
 	dir, err := os.ReadDir(listenerConfPath)
 	if err != nil {

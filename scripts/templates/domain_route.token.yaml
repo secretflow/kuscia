@@ -12,8 +12,10 @@ spec:
     ports:
       - name: http
         protocol: HTTP
-        isTLS: true
+        isTLS: {{.ISTLS}}
         port: {{.PORT}}
   authenticationType: Token
   tokenConfig:
-    tokenGenMethod: UID-GEN
+    tokenGenMethod: RSA-GEN
+  requestHeadersToAdd:
+    Authorization: Bearer {{.TOKEN}}

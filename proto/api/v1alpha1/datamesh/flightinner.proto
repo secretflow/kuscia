@@ -15,6 +15,7 @@
 syntax = "proto3";
 
 package kuscia.proto.api.v1alpha1.datamesh;
+
 import "kuscia/proto/api/v1alpha1/datamesh/domaindata.proto";
 import "kuscia/proto/api/v1alpha1/datamesh/domaindatasource.proto";
 import "kuscia/proto/api/v1alpha1/datamesh/flightdm.proto";

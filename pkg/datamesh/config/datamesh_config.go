@@ -18,6 +18,8 @@ import (
 	"github.com/spf13/pflag"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
+	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
 type DataMeshConfig struct {
@@ -32,9 +34,13 @@ type DataMeshConfig struct {
 	Initiator      string
 	FlagSet        *pflag.FlagSet
 	DomainKeyFile  string
-	TLSConfig      *TLSConfig
+	TLS            config.TLSServerConfig
 	KusciaClient   kusciaclientset.Interface
 	KubeNamespace  string
+
+	EnableDataProxy    bool                    `yaml:"enableDataProxy,omitempty"`
+	DataProxyEndpoint  string                  `yaml:"dataProxyEndpoint,omitempty"`
+	DataProxyTLSConfig *kusciaconfig.TLSConfig `yaml:"dataProxyTLSConfig,omitempty"`
 }
 
 type DbConfig struct {
@@ -61,19 +67,14 @@ type DbTableAlias struct {
 	DataObject string `mapstructure:"data_object"`
 }
 
-type TLSConfig struct {
-	RootCACertFile string
-	ServerCertFile string
-	ServerKeyFile  string
-}
-
 func NewDefaultDataMeshConfig() *DataMeshConfig {
 	return &DataMeshConfig{
-		HTTPPort:       8070,
-		GRPCPort:       8071,
-		ConnectTimeOut: 5,
-		ReadTimeout:    20,
-		WriteTimeout:   20,
-		IdleTimeout:    300,
+		HTTPPort:        8070,
+		GRPCPort:        8071,
+		ConnectTimeOut:  5,
+		ReadTimeout:     20,
+		WriteTimeout:    20,
+		IdleTimeout:     300,
+		EnableDataProxy: false,
 	}
 }

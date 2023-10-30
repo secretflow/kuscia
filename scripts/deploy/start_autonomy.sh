@@ -68,13 +68,11 @@ master:
     - /(api(s)?(/[0-9A-Za-z_.-]+)?/v1(alpha1)?/namespaces/[0-9A-Za-z_.-]+/(pods|gateways|domainroutes|endpoints|services|events|configmaps|leases|taskresources|secrets|domaindatas|domaindatagrants|domaindatasources)(/[0-9A-Za-z_.-]+(/status$)?)?)
     - /api/v1/namespaces/[0-9A-Za-z_.-]+
     - /api/v1/nodes(/.*)?
-externalTLS:
-  certFile: ${EXTERNAL_TLS_CERT_FILE}
-  keyFile: ${EXTERNAL_TLS_KEY_FILE}
-  caFile: ${EXTERNAL_TLS_CA_FILE}
 agent:
   allowPrivileged: true
   plugins:
+  - name: cert-issuance
+  - name: config-render
   - name: env-import
     config:
       usePodLabels: false
@@ -87,18 +85,11 @@ agent:
         selectors:
         - key: maintainer
           value: secretflow-contact@service.alipay.com
-  - name: config-render
+externalTLS:
+  certFile: etc/certs/external_tls.crt
+  keyFile: etc/certs/external_tls.key
 " >etc/kuscia.yaml
 bin/kuscia autonomy -c etc/kuscia.yaml -d ${NAMESPACE} --log.path var/logs/kuscia.log
-
-echo "
-apiVersion: kuscia.secretflow/v1alpha1
-kind: Domain
-metadata:
-  name: ${NAMESPACE}
-spec:
-  cert:
-" | kubectl apply -f -
 
 popd >/dev/null || exit
 

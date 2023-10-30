@@ -26,4 +26,6 @@ const (
 
 	ErrCreateConfiguration = confManagerErrorCode + errorCodeInterval + iota
 	ErrQueryConfiguration
+
+	ErrGenerateKeyCerts = confManagerErrorCode + 2*errorCodeInterval
 )

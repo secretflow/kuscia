@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +37,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/agent/source"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -46,54 +44,8 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-// NewCommand creates a new top-level command.
-// This command is used to start the agent daemon
-func NewCommand(ctx context.Context, opts *Opts) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "agent",
-		Short: "Agent is a node instance in the kubernetes cluster.",
-		Long: `Agent reuses some core capabilities of kubelet, such as node registration, pod management, 
-CRI support, etc. In addition, agent has strengthened the security of pod and implemented various extension
-functions through plug-ins. Supporting multiple runtimes is also a goal of agent.`,
-		Version:      opts.AgentVersion,
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			nlog.Infof("Agent is starting...")
-			agentConfig, err := config.LoadAgentConfig(opts.AgentConfigFile)
-			if err != nil {
-				return err
-			}
-			nlog.Infof("Agent config=%+v", agentConfig)
-
-			kubeClient, err := newKubeClient(&agentConfig.Source.Apiserver)
-			if err != nil {
-				nlog.Fatalf("Error loading kube config, detail-> %v", err)
-			}
-			agentConfig.Namespace = opts.Namespace
-			agentConfig.Node.NodeName = opts.NodeName
-			agentConfig.NodeIP, err = network.GetHostIP()
-			if err != nil {
-				nlog.Fatalf("Get host IP fail: %v", err)
-			}
-			agentConfig.APIVersion = opts.APIVersion
-			agentConfig.AgentVersion = opts.AgentVersion
-			agentConfig.Node.KeepNodeOnExit = opts.KeepNodeOnExit
-			if err = RunRootCommand(ctx, agentConfig, kubeClient); err != nil {
-				nlog.Fatal(err.Error())
-			}
-			return err
-		},
-	}
-
-	installFlags(cmd.Flags(), opts)
-	return cmd
-}
-
 func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeClient kubernetes.Interface) error {
 	nlog.Infof("Run root command, Namespace=%v", agentConfig.Namespace)
-
-	nlog.Infof("Agent config=%+v", agentConfig)
-
 	if agentConfig.Namespace == "" {
 		return fmt.Errorf("agent can not start with an empty domain id, you must restart agent with flag --namespace=DOMAIN_ID")
 	}

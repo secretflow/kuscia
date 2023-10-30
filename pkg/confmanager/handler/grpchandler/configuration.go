@@ -24,7 +24,7 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 )
 
-// ConfigurationHandler GRPC Handler
+// configurationHandler GRPC Handler
 type configurationHandler struct {
 	configurationService service.IConfigurationService
 	confmanager.UnimplementedConfigurationServiceServer

@@ -18,13 +18,15 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+
+	"github.com/secretflow/kuscia/pkg/common"
 )
 
 // Options is the main context object for the domain controller.
 type Options struct {
 	Kubeconfig string
 	MasterURL  string
-	IsMaster   bool
+	RunMode    common.RunModeType
 	Namespace  string
 	RootDir    string
 	Workers    int

@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 )
 
@@ -65,6 +66,7 @@ const (
 
 type ControllerConfig struct {
 	IsMaster      bool
+	RunMode       common.RunModeType
 	Namespace     string
 	RootDir       string
 	KubeClient    kubernetes.Interface

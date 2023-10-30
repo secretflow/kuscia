@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	cmconfig "github.com/secretflow/kuscia/pkg/confmanager/config"
+	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/configuration"
 	"github.com/secretflow/kuscia/pkg/confmanager/interceptor"
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
@@ -32,7 +33,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/beans"
-	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
 
 	"github.com/gin-gonic/gin"
@@ -76,6 +76,13 @@ func (s *httpServerBean) ServerName() string {
 }
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
+	certificateService, err := service.NewCertificateService(service.CertConfig{
+		CertValue:  s.config.DomainCertValue,
+		PrivateKey: s.config.DomainKey,
+	})
+	if err != nil {
+		nlog.Fatalf("Failed to init certificate service : %v", err)
+	}
 	configurationService, err := service.NewConfigurationService(s.config)
 	if err != nil {
 		nlog.Fatalf("Failed to init configuration service : %v", err)
@@ -97,6 +104,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "query",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, configuration.NewQueryConfigurationHandler(configurationService))},
+				},
+			},
+			GroupMiddleware: []gin.HandlerFunc{interceptor.HTTPTLSCertInfoInterceptor},
+		},
+		{
+			Group: "api/v1/cm/certificate",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "generate",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, certificate.NewGenerateKeyCertsHandler(certificateService))},
 				},
 			},
 			GroupMiddleware: []gin.HandlerFunc{interceptor.HTTPTLSCertInfoInterceptor},
@@ -125,18 +143,16 @@ func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.
 }
 
 func convertToGinConf(conf *cmconfig.ConfManagerConfig) beans.GinBeanConfig {
-	tlsConf := &frameworkconfig.TLSConfig{
-		EnableTLS:      true,
-		CAPath:         conf.TLSConfig.RootCAFile,
-		ServerCertPath: conf.TLSConfig.ServerCertFile,
-		ServerKeyPath:  conf.TLSConfig.ServerKeyFile,
-	}
 	return beans.GinBeanConfig{
 		Logger:         nil,
 		ReadTimeout:    &conf.ReadTimeout,
 		WriteTimeout:   &conf.WriteTimeout,
 		IdleTimeout:    &conf.IdleTimeout,
 		MaxHeaderBytes: nil,
-		TLSConfig:      tlsConf,
+		TLSServerConfig: &beans.TLSServerConfig{
+			CACert:     conf.TLS.RootCA,
+			ServerCert: conf.TLS.ServerCert,
+			ServerKey:  conf.TLS.ServerKey,
+		},
 	}
 }

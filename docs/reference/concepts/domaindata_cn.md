@@ -164,7 +164,7 @@ Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 80
 ```shell
 curl -X POST 'http://{{USER-kuscia-lite-alice}:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
   "domaindata_id": "alice"
-}'
+}' --cacert /home/kuscia/etc/certs/ca.crt --cert /home/kuscia/etc/certs/ca.crt --key /home/kuscia/etc/certs/ca.key
 ```
 
 

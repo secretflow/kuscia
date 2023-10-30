@@ -31,12 +31,17 @@ const (
 	ErrPatchDomainDataFailed       = 12204
 	ErrDeleteDomainDataFailed      = 12205
 
-	ErrCreateDomainDataSource       = 12300
-	ErrParseDomainDataSourceFailed  = 12301
-	ErrQueryDomainDataSource        = 12302
-	ErrDeleteDomainDataSourceFailed = 12303
-	ErrDomainDataSourceExists       = 12304
-	ErrDomainDataSourceNotExists    = 12305
+	ErrCreateDomainDataSource            = 12300
+	ErrParseDomainDataSourceFailed       = 12301
+	ErrQueryDomainDataSource             = 12302
+	ErrDeleteDomainDataSourceFailed      = 12303
+	ErrDomainDataSourceExists            = 12304
+	ErrDomainDataSourceNotExists         = 12305
+	ErrGetDomainDataSourceFromKubeFailed = 12306
+	ErrDecodeDomainDataSourceInfoFailed  = 12307
+	ErrEncodeDomainDataSourceInfoFailed  = 12308
+	ErrMergeDomainDataSourceFailed       = 12309
+	ErrPatchDomainDataSourceFailed       = 12310
 
 	ErrCreateDomainDataGrant    = 12400
 	ErrUpdateDomainDataGrant    = 12401

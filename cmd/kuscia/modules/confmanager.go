@@ -23,6 +23,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/confmanager/commands"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -36,9 +37,9 @@ type confManagerModule struct {
 	conf *config.ConfManagerConfig
 }
 
-func NewConfManager(d *Dependencies) Module {
+func NewConfManager(d *Dependencies) (Module, error) {
 	// overwrite config
-	conf := config.NewDefaultConfManagerConfig(d.RootDir)
+	conf := config.NewDefaultConfManagerConfig()
 	if d.ConfManager.HTTPPort != 0 {
 		conf.HTTPPort = d.ConfManager.HTTPPort
 	}
@@ -60,18 +61,41 @@ func NewConfManager(d *Dependencies) Module {
 	if !d.ConfManager.EnableConfAuth {
 		conf.EnableConfAuth = d.ConfManager.EnableConfAuth
 	}
-	if d.ConfManager.TLSConfig != nil {
-		conf.TLSConfig = d.ConfManager.TLSConfig
+	if d.ConfManager.IsMaster {
+		conf.IsMaster = d.ConfManager.IsMaster
 	}
-	if d.ConfManager.SecretBackend != nil && d.ConfManager.SecretBackend.Driver != "" {
-		conf.SecretBackend = d.ConfManager.SecretBackend
+	conf.DomainID = d.DomainID
+	conf.DomainKey = d.DomainKey
+	conf.TLS.RootCA = d.CACert
+	conf.TLS.RootCAKey = d.CAKey
+	conf.DomainCertValue = &d.DomainCertByMasterValue
+	if d.ConfManager.Backend != "" {
+		if secretBackend := findSecretBackend(d.SecretBackends, d.ConfManager.Backend); secretBackend != nil {
+			conf.SetSecretBackend(d.ConfManager.Backend, *secretBackend)
+		}
+	}
+	if d.ConfManager.SAN != nil {
+		conf.SAN = d.ConfManager.SAN
+	}
+	nlog.Infof("Conf manager config is %+v", conf)
+
+	ips, dnsNames := config.MakeConfManagerSAN(conf.SAN, "confmanager")
+	if err := conf.TLS.GenerateServerKeyCerts("ConfManager", ips, dnsNames); err != nil {
+		return nil, err
 	}
 
-	// set namespace
-	nlog.Infof("ConfManager namespace:%s.", d.DomainID)
 	return &confManagerModule{
 		conf: conf,
+	}, nil
+}
+
+func findSecretBackend(s []confloader.SecretBackendConfig, name string) *config.SecretBackendConfig {
+	for _, b := range s {
+		if b.Name == name {
+			return &b.SecretBackendConfig
+		}
 	}
+	return nil
 }
 
 func (m confManagerModule) Run(ctx context.Context) error {
@@ -103,8 +127,8 @@ func (m confManagerModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
 	// init client tls config
-	tlsConfig := m.conf.TLSConfig
-	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+	tlsConfig := m.conf.TLS
+	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
 	if err != nil {
 		nlog.Errorf("local tls config error: %v", err)
 		return false
@@ -141,12 +165,17 @@ func (m confManagerModule) readyZ() bool {
 	if healthResp.Data == nil || !healthResp.Data.Ready {
 		return false
 	}
-	nlog.Infof("http server is ready")
+	nlog.Infof("http/https server is ready")
 	return true
 }
 
 func RunConfManager(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewConfManager(conf)
+	m, err := NewConfManager(conf)
+	if err != nil {
+		nlog.Error(err)
+		cancel()
+		return m
+	}
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)

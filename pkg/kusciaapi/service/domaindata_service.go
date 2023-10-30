@@ -17,6 +17,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +31,9 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
+	pbv1alpha1 "github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -65,6 +68,11 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id can not be empty"),
 		}
 	}
+	if err := s.validateRequestWhenLite(request); err != nil {
+		return &kusciaapi.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
 	// check whether domainData  is existed
 	if request.DomaindataId != "" {
 		domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
@@ -74,7 +82,12 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			return convert2CreateResp(resp, request.DomaindataId)
 		}
 	}
-
+	// auth pre handler
+	if err := s.authHandler(ctx, request); err != nil {
+		return &kusciaapi.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
 	// normalization request
 	s.normalizationCreateRequest(request)
 	// build kuscia domain
@@ -98,12 +111,13 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
 			Author:      request.DomainId,
+			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
 	}
 	// create kuscia domain
 	_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Create(ctx, kusciaDomainData, metav1.CreateOptions{})
 	if err != nil {
-		nlog.Errorf("CreateDomainData failed, error:%s", err.Error())
+		nlog.Errorf("CreateDomainData failed, error: %s", err.Error())
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrCreateDomainDataFailed), err.Error()),
 		}
@@ -123,10 +137,21 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+	if err := s.validateRequestWhenLite(request); err != nil {
+		return &kusciaapi.UpdateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+	// auth pre handler
+	if err := s.authHandler(ctx, request); err != nil {
+		return &kusciaapi.UpdateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
 	// get original domainData from k8s
 	originalDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
-		nlog.Errorf("UpdateDomainData failed, error:%s", err.Error())
+		nlog.Errorf("UpdateDomainData failed, error: %s", err.Error())
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFailed, err.Error()),
 		}
@@ -152,23 +177,24 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
 			Author:      request.DomainId,
+			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
 	}
 	// merge modifiedDomainData to originalDomainData
 	patchBytes, originalBytes, modifiedBytes, err := common.MergeDomainData(originalDomainData, modifiedDomainData)
 	if err != nil {
-		nlog.Errorf("merge DomainData failed,request:%+v,error:%s.",
+		nlog.Errorf("Merge DomainData failed, request: %+v,error: %s.",
 			request, err.Error())
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrMergeDomainDataFailed, err.Error()),
 		}
 	}
-	nlog.Debugf("update DomainData request:%+v, patchBytes:%s,originalDomainData:%s,modifiedDomainData:%s",
+	nlog.Debugf("Update DomainData request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s.",
 		request, patchBytes, originalBytes, modifiedBytes)
 	// patch the merged domainData
 	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(originalDomainData.Namespace).Patch(ctx, originalDomainData.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
-		nlog.Debugf("patch DomainData failed, request:%+v, patchBytes:%s,originalDomainData:%s,modifiedDomainData:%s,error:%s",
+		nlog.Debugf("Patch DomainData failed, request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s, error: %s.",
 			request, patchBytes, originalBytes, modifiedBytes, err.Error())
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrPatchDomainDataFailed, err.Error()),
@@ -187,12 +213,23 @@ func (s domainDataService) DeleteDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+	if err := s.validateRequestWhenLite(request); err != nil {
+		return &kusciaapi.DeleteDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+	// auth pre handler
+	if err := s.authHandler(ctx, request); err != nil {
+		return &kusciaapi.DeleteDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
 	// record the delete operation
-	nlog.Warnf("delete domainID:%s domainDataID:%s", request.DomainId, request.DomaindataId)
+	nlog.Warnf("Delete domainID: %s domainDataID: %s", request.DomainId, request.DomaindataId)
 	// delete kuscia domainData
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
-		nlog.Errorf("delete domainData:%s failed, detail:%s", request.DomaindataId, err.Error())
+		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrDeleteDomainDataFailed), err.Error()),
 		}
@@ -209,10 +246,21 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaa
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+	if err := s.validateRequestWhenLite(request.Data); err != nil {
+		return &kusciaapi.QueryDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+	// auth pre handler
+	if err := s.authHandler(ctx, request.Data); err != nil {
+		return &kusciaapi.QueryDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
 	// get kuscia domain
 	kusciaDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.Data.DomainId).Get(ctx, request.Data.DomaindataId, metav1.GetOptions{})
 	if err != nil {
-		nlog.Errorf("QueryDomainData failed, error:%s", err.Error())
+		nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
 		return &kusciaapi.QueryDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrGetDomainDataFailed), err.Error()),
 		}
@@ -233,11 +281,32 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaa
 			Vendor:       kusciaDomainData.Spec.Vendor,
 			Status:       constants.DomainDataStatusAvailable,
 			Author:       kusciaDomainData.Spec.Author,
+			FileFormat:   common.Convert2PbFileFormat(kusciaDomainData.Spec.FileFormat),
 		},
 	}
 }
 
 func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *kusciaapi.BatchQueryDomainDataRequest) *kusciaapi.BatchQueryDomainDataResponse {
+	// do validate
+	for _, v := range request.Data {
+		if v.GetDomainId() == "" || v.GetDomaindataId() == "" {
+			return &kusciaapi.BatchQueryDomainDataResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id and domaindata id can not be empty"),
+			}
+		}
+		// check the request when this is kuscia lite api
+		if err := s.validateRequestWhenLite(v); err != nil {
+			return &kusciaapi.BatchQueryDomainDataResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			}
+		}
+		// auth pre handler
+		if err := s.authHandler(ctx, v); err != nil {
+			return &kusciaapi.BatchQueryDomainDataResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			}
+		}
+	}
 	// get kuscia domain
 	respDatas := make([]*kusciaapi.DomainData, 0, len(request.Data))
 	for _, v := range request.Data {
@@ -246,7 +315,7 @@ func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *ku
 			if k8serrors.IsNotFound(err) {
 				continue
 			}
-			nlog.Errorf("QueryDomainData failed, error:%s", err.Error())
+			nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
 			return &kusciaapi.BatchQueryDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFailed, err.Error()),
 			}
@@ -264,6 +333,7 @@ func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *ku
 			Vendor:       kusciaDomainData.Spec.Vendor,
 			Status:       constants.DomainDataStatusAvailable,
 			Author:       kusciaDomainData.Spec.Author,
+			FileFormat:   common.Convert2PbFileFormat(kusciaDomainData.Spec.FileFormat),
 		}
 		respDatas = append(respDatas, &domainData)
 	}
@@ -281,6 +351,17 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 	if request.Data == nil || request.Data.DomainId == "" {
 		return &kusciaapi.ListDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id can not be empty"),
+		}
+	}
+	if err := s.validateRequestWhenLite(request.Data); err != nil {
+		return &kusciaapi.ListDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+	// auth pre handler
+	if err := s.authHandler(ctx, request.Data); err != nil {
+		return &kusciaapi.ListDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
 	// construct label selector
@@ -312,7 +393,7 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 		Continue:       "",
 	})
 	if err != nil {
-		nlog.Errorf("List DomainData failed, error:%s", err.Error())
+		nlog.Errorf("List DomainData failed, error: %s", err.Error())
 		return &kusciaapi.ListDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrListDomainDataFailed, err.Error()),
 		}
@@ -332,6 +413,7 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 			Vendor:       v.Spec.Vendor,
 			Status:       constants.DomainDataStatusAvailable,
 			Author:       v.Spec.Author,
+			FileFormat:   common.Convert2PbFileFormat(v.Spec.FileFormat),
 		}
 		respDatas[i] = &domaindata
 	}
@@ -357,6 +439,7 @@ func convert2UpdateReq(createReq *kusciaapi.CreateDomainDataRequest) (updateReq 
 		Partition:    createReq.Partition,
 		Columns:      createReq.Columns,
 		Vendor:       createReq.Vendor,
+		FileFormat:   createReq.FileFormat,
 	}
 	return
 }
@@ -417,4 +500,22 @@ func (s domainDataService) normalizationUpdateRequest(request *kusciaapi.UpdateD
 	if request.Vendor == "" {
 		request.Vendor = data.Vendor
 	}
+	if request.FileFormat == pbv1alpha1.FileFormat_UNKNOWN {
+		request.FileFormat = common.Convert2PbFileFormat(data.FileFormat)
+	}
+}
+
+func (s domainDataService) authHandler(ctx context.Context, request RequestWithDomainID) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain && request.GetDomainId() != domainId {
+		return fmt.Errorf("domain's kusciaAPI could only operate its own DomainData, request.DomainID must be %s not %s", domainId, request.GetDomainId())
+	}
+	return nil
+}
+
+func (s domainDataService) validateRequestWhenLite(request RequestWithDomainID) error {
+	if s.conf.RunMode == common.RunModeLite && request.GetDomainId() != s.conf.Initiator {
+		return fmt.Errorf("kuscia lite api could only operate it's own domaindata, the domainid of request must be %s, not %s", s.conf.Initiator, request.GetDomainId())
+	}
+	return nil
 }

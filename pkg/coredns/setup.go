@@ -35,6 +35,8 @@ const (
 	defaultExpiration = 30 * time.Minute
 )
 
+var localService = []string{"datamesh", "confmanager", "dataproxy"}
+
 func KusciaParse(c *caddy.Controller, namespace, envoyIP string) (*KusciaCoreDNS, error) {
 	etc := KusciaCoreDNS{
 		EnvoyIP:   envoyIP,
@@ -48,7 +50,10 @@ func KusciaParse(c *caddy.Controller, namespace, envoyIP string) (*KusciaCoreDNS
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	etc.Cache.Set("datamesh", []string{hostIP}, -1)
+
+	for _, svc := range localService {
+		etc.Cache.Set(svc, []string{hostIP}, -1)
+	}
 	if c.Next() {
 		etc.Zones = c.RemainingArgs()
 		if len(etc.Zones) == 0 {

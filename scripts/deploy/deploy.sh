@@ -127,7 +127,7 @@ function probe_k3s() {
   local domain_ctr=$1
 
   if ! do_http_probe "$domain_ctr" "https://127.0.0.1:6443" 60; then
-    echo "[Error] Probe k3s in container '$domain_ctr' failed. Please check the log" >&2
+    echo "[Error] Probe k3s in container '$domain_ctr' failed. Please check k3s log in container, path: /home/kuscia/var/logs/k3s.log" >&2
     exit 1
   fi
 }
@@ -149,7 +149,7 @@ function probe_gateway_crd() {
     sleep 1
     retry=$((retry + 1))
   done
-  echo "[Error] Probe gateway in namespace '$domain' failed. Please check the log" >&2
+  echo "[Error] Probe gateway in namespace '$domain' failed. Please check envoy log in container, path: /home/kuscia/var/logs/envoy" >&2
   exit 1
 }
 
@@ -236,6 +236,7 @@ function probe_datamesh() {
 function create_domaindata_table() {
   local ctr=$1
 
+
   # create domain data table
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_table.sh "${DOMAIN_ID}"
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_table.sh "${DOMAIN_ID}"
@@ -286,7 +287,6 @@ function deploy_autonomy() {
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}"
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 
@@ -334,15 +334,17 @@ function deploy_lite() {
       exit 1
     fi
 
-
+    host_ip=$(getIPV4Address)
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}" "${DOMAIN_TOKEN}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
+    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
       --env NAMESPACE="${DOMAIN_ID}" \
       -p "${DOMAIN_HOST_PORT}":1080 \
+      -p "${KUSCIAAPI_HTTP_PORT}":8082 \
+      -p "${KUSCIAAPI_GRPC_PORT}":8083 \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
       ${env_flag} ${mount_flag} \
       --entrypoint bin/entrypoint.sh \
@@ -360,6 +362,7 @@ function deploy_lite() {
 function deploy_master() {
   local domain_ctr=${USER}-kuscia-master
   local master_domain_id=kuscia-system
+  local deploy_secretpad=${DEPLOY_SECRETPAD}
   arch_check
 
   if need_start_docker_container "${domain_ctr}"; then
@@ -373,7 +376,6 @@ function deploy_master() {
     # TODO: to be remove
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${master_domain_id}" "${DOMAIN_TOKEN}"
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_confmanager_cert.sh
     docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
     # TODO end
 
@@ -389,6 +391,17 @@ function deploy_master() {
   fi
   create_secretflow_app_image "${domain_ctr}"
   log "Master deployed successfully"
+
+  if [[ ${deploy_secretpad} = "web" ]]; then
+    source ./start_secretpad.sh
+  fi
+}
+
+function deploy_secretpad() {
+  local deploy_secretpad=${DEPLOY_SECRETPAD}
+  if [[ ${deploy_secretpad} = "web" ]]; then
+    source ./start_secretpad.sh
+  fi
 }
 
 usage() {
@@ -397,6 +410,7 @@ DEPLOY_MODE:
     autonomy        Deploy a autonomy domain.
     lite            Deploy a lite domain.
     master          Deploy a master.
+    secretpad       Deploy a webui.
 
 OPTIONS:
     -c              The host directory used to store domain certificates. It will be mounted into the domain container.
@@ -414,12 +428,13 @@ OPTIONS:
     -k              (Only used in autonomy or master mode)The http port exposed by KusciaAPI , default is 13082. You can set Env 'KUSCIAAPI_HTTP_PORT' instead.
     -g              (Only used in autonomy or master mode)The grpc port exposed by KusciaAPI, default is 13083. You can set Env 'KUSCIAAPI_GRPC_PORT' instead.
     -e              (Only used in autonomy or master mode)The extra subjectAltName for KusciaAPI server cert.
+    -u              'web' means install kuscia with web UI, user could access the website (http://127.0.0.1:8088) to experience the web features via the webui.
     "
 }
 
 deploy_mode=
 case "$1" in
-autonomy | lite | master)
+autonomy | lite | master | secretpad)
   deploy_mode=$1
   shift
   ;;
@@ -428,13 +443,13 @@ autonomy | lite | master)
   exit
   ;;
 *)
-  echo "deploy_mode is invalid, must be autonomy, lite or master"
+  echo "deploy_mode is invalid, must be autonomy, lite, secretpad or master"
   usage
   exit 1
   ;;
 esac
 
-while getopts 'c:i:n:p:m:t:r:d:k:g:e:h' option; do
+while getopts 'c:i:n:p:m:t:r:d:k:g:e:u:h' option; do
   case "$option" in
   c)
     DOMAIN_CERTS_DIR=$OPTARG
@@ -468,6 +483,9 @@ while getopts 'c:i:n:p:m:t:r:d:k:g:e:h' option; do
     ;;
   e)
     KUSCIAAPI_EXTRA_SUBJECT_ALTNAME=$OPTARG
+    ;;
+  u)
+    DEPLOY_SECRETPAD=$OPTARG
     ;;
   h)
     usage
@@ -551,6 +569,9 @@ master)
   DOMAIN_ID=kuscia-system
   init ${deploy_mode}
   deploy_master
+  ;;
+secretpad)
+  deploy_secretpad
   ;;
 *)
   printf "unsupported network mode: %s\n" "$deploy_mode" >&2

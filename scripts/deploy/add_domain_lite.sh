@@ -17,9 +17,10 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID"
+usage="$(basename "$0") DOMAIN_ID "
 
 DOMAIN_ID=$1
+
 if [[ ${DOMAIN_ID} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
