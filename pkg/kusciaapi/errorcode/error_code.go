@@ -21,8 +21,11 @@ import (
 )
 
 const (
-	ErrRequestValidate = 11100
-	ErrForUnexpected   = 11101
+	ErrRequestValidate     = 11100
+	ErrForUnexpected       = 11101
+	ErrAuthFailed          = 11102
+	ErrRequestMasterFailed = 11103
+	ErrLiteAPINotSupport   = 11104
 
 	ErrCreateJob      = 11201
 	ErrQueryJob       = 11202

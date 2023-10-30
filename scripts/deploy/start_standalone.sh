@@ -157,7 +157,7 @@ function probe_k3s() {
   local domain_ctr=$1
 
   if ! do_http_probe $domain_ctr "https://127.0.0.1:6443" 60; then
-    echo "[Error] Probe k3s in container '$domain_ctr' failed. Please check the log" >&2
+    echo "[Error] Probe k3s in container '$domain_ctr' failed. Please check k3s log in container, path: /home/kuscia/var/logs/k3s.log" >&2
     exit 1
   fi
 }
@@ -178,7 +178,7 @@ function probe_gateway_crd() {
     sleep 1
     retry=$((retry + 1))
   done
-  echo "[Error] Probe gateway in namespace '$domain' failed. Please check the log" >&2
+  echo "[Error] Probe gateway in namespace '$domain' failed. Please check envoy log in container, path: /home/kuscia/var/logs/envoy" >&2
   exit 1
 }
 
@@ -323,7 +323,8 @@ function create_secretflow_app_image() {
 
 function create_domaindatagrant_alice2bob() {
   local ctr=$1
-  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}'
+  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
+      --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 }
 
 function create_domaindata_alice_table() {
@@ -338,7 +339,8 @@ function create_domaindata_alice_table() {
 
 function create_domaindatagrant_bob2alice() {
   local ctr=$1
-  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}'
+  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
+    --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 }
 
 function create_domaindata_bob_table() {
@@ -424,10 +426,17 @@ including uppercase and lowercase letters, numbers, and special characters."
   log "The user and password have been set up successfully."
 }
 
+function create_secretpad_svc() {
+  local ctr=$1
+  local secretpad_ctr=$2
+  # create domain data alice table
+  docker exec -it ${ctr} scripts/deploy/create_secretpad_svc.sh ${secretpad_ctr}
+}
+
 function probe_secret_pad() {
   local secretpad_ctr=$1
   if ! do_http_probe $secretpad_ctr "http://127.0.0.1:8080" 60; then
-    echo "[Error] Probe secret pad in container '$secretpad_ctr' failed. Please check the log" >&2
+    echo "[Error] Probe secret pad in container '$secretpad_ctr' failed. Please check secretpad log use command 'docker logs container_id'" >&2
     exit 1
   fi
 }
@@ -470,6 +479,7 @@ function start_secretpad() {
       --workdir=/app \
       -p 8088:8080 \
       ${SECRETPAD_IMAGE}
+    create_secretpad_svc ${MASTER_CTR} ${CTR_PREFIX}-secretpad
     probe_secret_pad ${CTR_PREFIX}-secretpad
     log "web server started successfully"
     log "Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions ."
@@ -483,7 +493,9 @@ function start_lite() {
   local master_endpoint=$2
   local domain_ctr=${CTR_PREFIX}-lite-${domain_id}
   local port=$3
-  local volume_path=$4
+  local httpPort=$4
+  local grpcPort=$5
+  local volume_path=$6
 
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
@@ -494,10 +506,11 @@ function start_lite() {
       mount_volume_param="-v /tmp:/tmp  -v ${volume_path}/data/${domain_id}:/home/kuscia/var/storage/data "
     fi
 
+    host_ip=$(getIPV4Address)
     csrToken=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
     docker run -it --rm --mount source="${certs_volume}",target="${CTR_CERT_ROOT}" "${IMAGE}" scripts/deploy/init_domain_certs.sh "${domain_id}" "${csrToken}"
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_confmanager_cert.sh
+    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" ""
     copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
@@ -506,6 +519,8 @@ function start_lite() {
       --mount source=${certs_volume},target=${CTR_CERT_ROOT} \
       ${mount_volume_param} \
       -p $port:1080 \
+      -p "${httpPort}":8082 \
+      -p "${grpcPort}":8083 \
       --entrypoint bin/entrypoint.sh \
       ${IMAGE} tini -- scripts/deploy/start_lite.sh ${domain_id} ${master_endpoint} "${ALLOW_PRIVILEGED}" ""
     probe_gateway_crd ${MASTER_CTR} ${domain_id} ${domain_ctr} 60
@@ -528,7 +543,7 @@ function create_cluster_domain_route() {
   copy_between_containers ${dest_ctr}:${CTR_CERT_ROOT}/ca.crt ${MASTER_CTR}:${dest_ca}
   copy_between_containers ${dest_ctr}:${src_2_dest_cert} ${MASTER_CTR}:${src_2_dest_cert}
 
-  docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} http://${CTR_PREFIX}-lite-${dest_domain}:1080 ${dest_ca} ${src_2_dest_cert}
+  docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} http://${CTR_PREFIX}-lite-${dest_domain}:1080
   log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${CTR_PREFIX}'-lite-'${dest_domain}':1080"
 }
 
@@ -596,7 +611,6 @@ function run_centralized() {
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${MASTER_DOMAIN} ${csrToken}
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${MASTER_DOMAIN}
     docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} --network=${NETWORK_NAME} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh ${MASTER_CTR} ${host_ip}
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_confmanager_cert.sh
     docker run -dit --name=${MASTER_CTR} --hostname=${MASTER_CTR} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
       -p 18080:1080 \
       -p 18082:8082 \
@@ -610,8 +624,8 @@ function run_centralized() {
     FORCE_START=true
   fi
 
-  start_lite ${ALICE_DOMAIN} https://${MASTER_CTR}:1080 28080 ${volume_path}
-  start_lite ${BOB_DOMAIN} https://${MASTER_CTR}:1080 38080 ${volume_path}
+  start_lite ${ALICE_DOMAIN} https://${MASTER_CTR}:1080 28080 28082 28083 ${volume_path}
+  start_lite ${BOB_DOMAIN} https://${MASTER_CTR}:1080 38080 38082 38083 ${volume_path}
 
   create_cluster_domain_route ${ALICE_DOMAIN} ${BOB_DOMAIN}
   create_cluster_domain_route ${BOB_DOMAIN} ${ALICE_DOMAIN}
@@ -686,11 +700,11 @@ function build_interconn() {
 
   log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.csr ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.csr
-  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain ${host_ctr} p2p ${interconn_protocol}
+  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
   copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 
-  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain ${host_ctr}:1080 -p ${interconn_protocol}
+  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}
   log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
 }
 

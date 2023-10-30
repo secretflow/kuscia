@@ -48,7 +48,7 @@ message QueryConfigurationResponse {
 }
 
 message QueryConfigurationResult {
-  bool success=1;
-  string err_msg=2;
-  string content=3;
+  bool success = 1;
+  string err_msg = 2;
+  string content = 3;
 }

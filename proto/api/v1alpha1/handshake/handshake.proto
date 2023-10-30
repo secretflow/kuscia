@@ -39,6 +39,7 @@ message HandShakeRequest {
 message Token {
     string token = 1;
     int64 expiration_time = 2;
+    int32 revision = 3;
 }
 
 message HandShakeResponse {

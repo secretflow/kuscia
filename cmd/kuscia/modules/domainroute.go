@@ -16,20 +16,25 @@ package modules
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/gateway/commands"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
+	"github.com/secretflow/kuscia/pkg/gateway/controller"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
 )
 
 type domainRouteModule struct {
-	conf    *config.GatewayConfig
-	clients *kubeconfig.KubeClients
+	conf              *config.GatewayConfig
+	clients           *kubeconfig.KubeClients
+	afterRegisterHook controller.AfterRegisterDomainHook
 }
 
 func NewDomainRoute(i *Dependencies) Module {
@@ -37,12 +42,12 @@ func NewDomainRoute(i *Dependencies) Module {
 	conf.RootDir = i.RootDir
 	conf.ConfBasedir = filepath.Join(i.RootDir, ConfPrefix, "domainroute")
 	conf.Namespace = i.DomainID
-	conf.DomainKeyFile = i.DomainKeyFile
-	conf.MasterConfig = i.Master
+	conf.DomainKey = i.DomainKey
+	conf.MasterConfig = &i.Master
 	conf.ExternalTLS = i.ExternalTLS
-	conf.CAFile = i.CACertFile
 	conf.CsrFile = filepath.Join(i.RootDir, CertPrefix, "domain.csr")
-	conf.CAKeyFile = i.CAKeyFile
+	conf.CACert = i.CACert
+	conf.CAKey = i.CAKey
 
 	if i.TransportPort > 0 {
 		conf.TransportConfig = &kusciaconfig.ServiceConfig{
@@ -58,11 +63,26 @@ func NewDomainRoute(i *Dependencies) Module {
 	return &domainRouteModule{
 		conf:    conf,
 		clients: i.Clients,
+		afterRegisterHook: func(response *handshake.RegisterResponse) {
+			if response.Cert == "" {
+				return
+			}
+			certBytes, err := base64.StdEncoding.DecodeString(response.Cert)
+			if err != nil {
+				nlog.Warnf("decode domain cert base64 failed")
+				return
+			}
+			domainCert, err := tlsutils.DecodeCert(certBytes)
+			if err != nil {
+				nlog.Warnf("decode domain cert failed")
+			}
+			i.DomainCertByMasterValue.Store(domainCert)
+		},
 	}
 }
 
 func (d *domainRouteModule) Run(ctx context.Context) error {
-	return commands.Run(ctx, d.conf, d.clients)
+	return commands.Run(ctx, d.conf, d.clients, d.afterRegisterHook)
 }
 
 func (d *domainRouteModule) WaitReady(ctx context.Context) error {

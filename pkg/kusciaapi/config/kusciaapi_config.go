@@ -15,34 +15,37 @@
 package config
 
 import (
+	"crypto/rsa"
 	"path"
+	"sync/atomic"
 
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
+	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
 type KusciaAPIConfig struct {
-	HTTPPort       int32
-	GRPCPort       int32
-	Debug          bool
-	ConnectTimeOut int64
-	ReadTimeout    int64
-	WriteTimeout   int64
-	IdleTimeout    int64
-	Initiator      string
-	DomainKeyFile  string
-	TLSConfig      *TLSConfig
-	TokenConfig    *TokenConfig
-	KusciaClient   kusciaclientset.Interface
-	KubeClient     kubernetes.Interface
-}
+	HTTPPort         int32        `yaml:"HTTPPort,omitempty"`
+	HTTPInternalPort int32        `yaml:"HTTPInternalPort,omitempty"`
+	GRPCPort         int32        `yaml:"GRPCPort,omitempty"`
+	Debug            bool         `yaml:"debug,omitempty"`
+	ConnectTimeout   int          `yaml:"connectTimeout,omitempty"`
+	ReadTimeout      int          `yaml:"readTimeout,omitempty"`
+	WriteTimeout     int          `yaml:"-"`
+	IdleTimeout      int          `yaml:"idleTimeout,omitempty"`
+	Initiator        string       `yaml:"initiator,omitempty"`
+	Token            *TokenConfig `yaml:"token"`
 
-type TLSConfig struct {
-	RootCACertFile string
-	ServerCertFile string
-	ServerKeyFile  string
+	TLS             *config.TLSServerConfig   `yaml:"-"`
+	DomainKey       *rsa.PrivateKey           `yaml:"-"`
+	KusciaClient    kusciaclientset.Interface `yaml:"-"`
+	KubeClient      kubernetes.Interface      `yaml:"-"`
+	RunMode         common.RunModeType        `yaml:"-"`
+	DomainCertValue *atomic.Value             `yaml:"-"`
+	ConfDir         string                    `yaml:"-"`
 }
 
 type TokenConfig struct {
@@ -51,19 +54,20 @@ type TokenConfig struct {
 
 func NewDefaultKusciaAPIConfig(rootDir string) *KusciaAPIConfig {
 	return &KusciaAPIConfig{
-		HTTPPort:       8082,
-		GRPCPort:       8083,
-		ConnectTimeOut: 5,
-		ReadTimeout:    20,
-		WriteTimeout:   20,
-		IdleTimeout:    300,
-		TLSConfig: &TLSConfig{
-			RootCACertFile: path.Join(rootDir, constants.CertPathPrefix, "ca.crt"),
+		HTTPPort:         8082,
+		GRPCPort:         8083,
+		HTTPInternalPort: 8092,
+		ConnectTimeout:   5,
+		ReadTimeout:      20,
+		WriteTimeout:     0, // WriteTimeout must be 0 , To support http stream
+		IdleTimeout:      300,
+		TLS: &config.TLSServerConfig{
 			ServerKeyFile:  path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.key"),
 			ServerCertFile: path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.crt"),
 		},
-		TokenConfig: &TokenConfig{
+		Token: &TokenConfig{
 			TokenFile: path.Join(rootDir, constants.CertPathPrefix, "token"),
 		},
+		ConfDir: path.Join(rootDir, constants.ConfPathPrefix),
 	}
 }

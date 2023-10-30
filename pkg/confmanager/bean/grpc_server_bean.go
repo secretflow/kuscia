@@ -55,9 +55,19 @@ func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
 
 // Start grpcServerBean
 func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error {
+	certificateService, err := service.NewCertificateService(service.CertConfig{
+		CertValue:  s.config.DomainCertValue,
+		PrivateKey: s.config.DomainKey,
+	})
+	if err != nil {
+		nlog.Fatalf("Failed to init certificate service : %v", err)
+		return err
+	}
+
 	configurationService, err := service.NewConfigurationService(s.config)
 	if err != nil {
 		nlog.Fatalf("Failed to init configuration service : %v", err)
+		return err
 	}
 
 	// init grpc server opts
@@ -66,8 +76,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.UnaryInterceptor(interceptor.GRPCTLSCertInfoInterceptor),
 	}
 	// tls must enabled
-	serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLSConfig.RootCAFile,
-		s.config.TLSConfig.ServerCertFile, s.config.TLSConfig.ServerKeyFile)
+	serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA,
+		s.config.TLS.ServerCert, s.config.TLS.ServerKey)
 	if err != nil {
 		nlog.Fatalf("Failed to init server tls config: %v", err)
 	}
@@ -84,6 +94,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	// register grpc server
 	server := grpc.NewServer(opts...)
 	confmanager.RegisterConfigurationServiceServer(server, grpchandler.NewConfigurationHandler(configurationService))
+	confmanager.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(certificateService))
 	reflection.Register(server)
 	nlog.Infof("Grpc server listening on %s", addr)
 

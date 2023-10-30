@@ -15,6 +15,8 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"errors"
 	"os"
 	"path/filepath"
@@ -215,8 +217,9 @@ type AgentConfig struct {
 	StdoutPath string `yaml:"stdoutPath,omitempty"`
 
 	// CA configuration.
-	DomainCAKeyFile string `yaml:"domainCAKeyFile,omitempty"`
-	DomainCAFile    string `yaml:"domainCAFile,omitempty"`
+	DomainCACertFile string
+	DomainCAKey      *rsa.PrivateKey
+	DomainCACert     *x509.Certificate
 
 	// AllowPrivileged if true, securityContext.Privileged will work for container.
 	AllowPrivileged bool `yaml:"allowPrivileged,omitempty"`

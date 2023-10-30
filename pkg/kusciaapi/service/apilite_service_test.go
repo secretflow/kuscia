@@ -36,6 +36,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 	"github.com/stretchr/testify/assert"
 )
@@ -94,9 +95,11 @@ func TestServiceMain(t *testing.T) {
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 	assert.NoError(t, err)
+	caKey, err := tls.ParsePKCS1PrivateKey(cafile)
+	assert.NoError(t, err)
 	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig("")
 	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
-	kusciaAPIConfig.DomainKeyFile = cafile
+	kusciaAPIConfig.DomainKey = caKey
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
 	kusciaAPIConfig.KusciaClient = kusciaClient
 	kusciaInformerFactory.Start(context.Background().Done())

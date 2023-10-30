@@ -2,18 +2,18 @@ package service
 
 import (
 	"context"
-	_ "github.com/secretflow/kuscia/pkg/confmanager/secretbackend/mem"
-	"github.com/secretflow/kuscia/pkg/web/asserts"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	"reflect"
 	"testing"
 
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	"github.com/secretflow/kuscia/pkg/web/asserts"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 )
 
 func newMemDriverConfigurationService() (IConfigurationService, error) {
 	srv, err := NewConfigurationService(config.ConfManagerConfig{
-		SecretBackend: &config.SecretBackendConfig{
+		BackendConfig: &config.SecretBackendConfig{
 			Driver: "mem",
 			Params: map[string]any{},
 		},

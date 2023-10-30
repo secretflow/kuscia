@@ -29,6 +29,12 @@ echo "${ROOT}"
 
 pushd ${ROOT} >/dev/null || exit
 
+# k3s need default route in the container
+if [[ $(ip route | grep -w default) == "" ]]; then
+  IP_ADDR=$(hostname -I | awk '{print $1}')
+  ip route add default via $IP_ADDR
+fi
+
 bin/kuscia master -c etc/kuscia.yaml -d ${NAMESPACE} --log.path var/logs/kuscia.log
 
 echo "

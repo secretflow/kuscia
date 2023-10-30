@@ -1,6 +1,6 @@
 # Kuscia
 
-Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。通过 Kuscia：
+Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的轻量级隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。通过 Kuscia：
 
 - 你可以快速体验隐私计算功能。
 - 你可以获得完整的隐私计算生产能力。
@@ -51,15 +51,17 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 ## 部署
 
-- [指南：多机器部署中心化集群][deploy-p2p]
-- [指南：多机器部署点对点集群][deploy-master-lite]
+- [指南：多机器部署中心化集群][deploy-master-lite]
+- [指南：多机器部署点对点集群][deploy-p2p]
 - [常见运维操作][ops-cheatsheet]
 - [网络要求][deploy-networkrequirements]
+- [日志说明][deploy-logdescription]
 
 [deploy-master-lite]: ./deployment/deploy_master_lite_cn.md
 [deploy-p2p]: ./deployment/deploy_p2p_cn.md
 [ops-cheatsheet]: ./deployment/operation_cn.md
 [deploy-networkrequirements]: ./deployment/networkrequirements.md
+[deploy-logdescription]: ./deployment/logdescription.md
 
 ## 更多指南
 

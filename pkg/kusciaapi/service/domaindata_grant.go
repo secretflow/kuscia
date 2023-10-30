@@ -34,7 +34,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -54,14 +53,10 @@ type domainDataGrantService struct {
 }
 
 func NewDomainDataGrantService(config *config.KusciaAPIConfig) IDomainDataGrantService {
-	priKey, err := tlsutils.ParsePKCS1PrivateKey(config.DomainKeyFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
 
 	return &domainDataGrantService{
 		conf:   config,
-		priKey: priKey,
+		priKey: config.DomainKey,
 	}
 }
 

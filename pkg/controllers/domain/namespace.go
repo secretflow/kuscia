@@ -85,9 +85,7 @@ func (c *Controller) updateNamespace(domain *kusciaapisv1alpha1.Domain) error {
 		nsCopy.Labels = make(map[string]string)
 	}
 
-	if _, exist := nsCopy.Labels[common.LabelDomainDeleted]; exist {
-		delete(nsCopy.Labels, common.LabelDomainDeleted)
-	}
+	delete(nsCopy.Labels, common.LabelDomainDeleted)
 
 	if _, exist := nsCopy.Labels[common.LabelDomainName]; !exist {
 		nsCopy.Labels[common.LabelDomainName] = domain.Name

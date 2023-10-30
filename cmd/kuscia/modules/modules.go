@@ -22,20 +22,21 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/agent/config"
-	cmconf "github.com/secretflow/kuscia/pkg/confmanager/config"
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
@@ -43,45 +44,41 @@ import (
 )
 
 var (
-	CertPrefix       = "etc/certs/"
-	LogPrefix        = "var/logs/"
-	StdoutPrefix     = "var/stdout/"
-	ConfPrefix       = "etc/conf/"
-	k3sDataDirPrefix = "var/k3s/"
+	CertPrefix                    = "etc/certs/"
+	LogPrefix                     = "var/logs/"
+	StdoutPrefix                  = "var/stdout/"
+	ConfPrefix                    = "etc/conf/"
+	k3sDataDirPrefix              = "var/k3s/"
+	defaultInterConnSchedulerPort = 8084
+	defaultEndpointForLite        = "http://apiserver.master.svc"
 )
 
 type Dependencies struct {
-	KusciaConfig
-	EnvoyIP                string
-	Clients                *kubeconfig.KubeClients
-	ApiserverEndpoint      string
-	KubeconfigFile         string
-	ContainerdSock         string
-	TransportConfigFile    string
-	TransportPort          int
-	InterConnSchedulerPort int
-	IsMaster               bool
-	KusciaKubeConfig       string
-	EnableContainerd       bool
-	LogConfig              *nlog.LogConfig
+	confloader.KusciaConfig
+	CAKey                   *rsa.PrivateKey
+	CACert                  *x509.Certificate
+	DomainKey               *rsa.PrivateKey
+	DomainCert              *x509.Certificate
+	Clients                 *kubeconfig.KubeClients
+	ApiserverEndpoint       string
+	KubeconfigFile          string
+	ContainerdSock          string
+	TransportConfigFile     string
+	TransportPort           int
+	InterConnSchedulerPort  int
+	KusciaKubeConfig        string
+	EnableContainerd        bool
+	SecretBackendHolder     *secretbackend.Holder
+	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
+	LogConfig               *nlog.LogConfig
 }
 
-type KusciaConfig struct {
-	RootDir        string                     `yaml:"rootDir,omitempty"`
-	DomainID       string                     `yaml:"domainID,omitempty"`
-	DomainKeyFile  string                     `yaml:"domainKeyFile,omitempty"`
-	DomainCertFile string                     `yaml:"domainCertFile,omitempty"`
-	CAKeyFile      string                     `yaml:"caKeyFile,omitempty"`
-	CACertFile     string                     `yaml:"caFile,omitempty"`
-	Agent          KusciaAgentConfig          `yaml:"agent,omitempty"`
-	Master         *kusciaconfig.MasterConfig `yaml:"master,omitempty"`
-	ConfManager    cmconf.ConfManagerConfig   `yaml:"confManager,omitempty"`
-	ExternalTLS    *kusciaconfig.TLSConfig    `yaml:"externalTLS,omitempty"`
-	IsMaster       bool
-}
-
-type KusciaAgentConfig struct {
-	config.AgentConfig `yaml:",inline"`
+func (d *Dependencies) MakeClients() {
+	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(d.KubeconfigFile, d.ApiserverEndpoint)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+	d.Clients = clients
 }
 
 type Module interface {
@@ -90,88 +87,38 @@ type Module interface {
 	Name() string
 }
 
-func EnsureCaKeyAndCert(conf *Dependencies) (*rsa.PrivateKey, *x509.Certificate, error) {
-	if _, err := os.Stat(conf.CAKeyFile); os.IsNotExist(err) {
-		caKey, caCertBytes, err := tlsutils.CreateCA(conf.DomainID)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		caKeyOut, err := os.Create(conf.CAKeyFile)
-		if err != nil {
-			return nil, nil, err
-		}
-		defer caKeyOut.Close()
-
-		if err = pem.Encode(caKeyOut, &pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(caKey),
-		}); err != nil {
-			return nil, nil, err
-		}
-
-		caOut, err := os.Create(conf.CACertFile)
-		if err != nil {
-			return nil, nil, err
-		}
-		defer caOut.Close()
-
-		if err = pem.Encode(caOut, &pem.Block{
-			Type:  "CERTIFICATE",
-			Bytes: caCertBytes,
-		}); err != nil {
-			return nil, nil, err
-		}
-		caCert, _ := x509.ParseCertificate(caCertBytes)
-		return caKey, caCert, nil
-	} else {
-		caKey, err := tlsutils.ParsePKCS1PrivateKey(conf.CAKeyFile)
-		if err != nil {
-			return nil, nil, err
-		}
-		caCert, err := tlsutils.ParsePKCS1CertFromFile(conf.CACertFile)
-		if err != nil {
-			return nil, nil, err
-		}
-		return caKey, caCert, nil
+func LoadCaDomainKeyAndCert(dependencies *Dependencies) error {
+	var err error
+	if dependencies.CAKey, err = tlsutils.ParseKey([]byte(dependencies.CAKeyData),
+		dependencies.CAKeyFile); err != nil {
+		nlog.Errorf("load key failed: key: %t, file: %s", len(dependencies.CAKeyData) == 0, dependencies.CAKeyFile)
+		return err
 	}
-}
 
-func EnsureDomainKey(conf *Dependencies) error {
-	if _, err := os.Stat(conf.DomainKeyFile); os.IsNotExist(err) {
-		keyOut, err := os.OpenFile(conf.DomainKeyFile, os.O_CREATE|os.O_RDWR, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to open %s, err: %v", conf.DomainKeyFile, err)
-		}
-		defer keyOut.Close()
-		key, err := rsa.GenerateKey(rand.Reader, 2048)
-		if err != nil {
-			return fmt.Errorf("failed to generate rsa key, detail-> %v", err)
-		}
-		if err = pem.Encode(keyOut, &pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(key),
-		}); err != nil {
-			return fmt.Errorf("failed to encode key, detail-> %v", err)
-		}
+	if dependencies.CACertFile == "" {
+		nlog.Errorf("load cert failed: ca cert must be file, ca file should not be empty")
+		return err
+	}
+
+	if dependencies.CACert, err = tlsutils.ParseCert(nil,
+		dependencies.CACertFile); err != nil {
+		nlog.Errorf("load cert failed: file: %s", dependencies.CACertFile)
+		return err
+	}
+
+	if dependencies.DomainKey, err = tlsutils.ParseKey([]byte(dependencies.DomainKeyData),
+		dependencies.DomainKeyFile); err != nil {
+		nlog.Errorf("load key failed: key: %t, file: %s", len(dependencies.CAKeyData) == 0, dependencies.DomainKeyFile)
+		return err
 	}
 
 	return nil
 }
 
 func EnsureDomainCert(conf *Dependencies) error {
-	caKey, err := tlsutils.ParsePKCS1PrivateKey(conf.CAKeyFile)
-	if err != nil {
-		return err
-	}
-	caCert, err := tlsutils.ParsePKCS1CertFromFile(conf.CACertFile)
-	if err != nil {
-		return err
-	}
-	domainKey, err := tlsutils.ParsePKCS1PrivateKey(conf.DomainKeyFile)
-	if err != nil {
-		return err
-	}
+	caKey := conf.CAKey
+	caCert := conf.CACert
+	domainKey := conf.DomainKey
 	domainCrt := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
 		Subject:               caCert.Subject,
@@ -185,6 +132,9 @@ func EnsureDomainCert(conf *Dependencies) error {
 	}
 	domainCrtRaw, err := x509.CreateCertificate(rand.Reader, domainCrt, caCert, &domainKey.PublicKey, caKey)
 	if err != nil {
+		return err
+	}
+	if conf.DomainCert, err = x509.ParseCertificate(domainCrtRaw); err != nil {
 		return err
 	}
 	certOut, err := os.Create(conf.DomainCertFile)
@@ -241,4 +191,59 @@ func InitLogs(logConfig *nlog.LogConfig) error {
 	klog.SetOutput(nlog.DefaultLogger())
 	klog.LogToStderr(false)
 	return nil
+}
+
+func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *Dependencies {
+	dependencies := &Dependencies{
+		KusciaConfig: kusciaConf,
+	}
+
+	// run config loader
+	dependencies.SecretBackendHolder = secretbackend.NewHolder()
+	for _, sbc := range dependencies.SecretBackends {
+		if err := dependencies.SecretBackendHolder.Init(sbc.Name, sbc.Driver, sbc.Params); err != nil {
+			nlog.Fatalf("Init secret backend name=%s params=%+v failed: %s", sbc.Name, sbc.Params, err)
+		}
+	}
+	configLoaders, err := confloader.NewConfigLoaderChain(ctx, dependencies.KusciaConfig.ConfLoaders, dependencies.SecretBackendHolder)
+	if err != nil {
+		nlog.Fatalf("Init config loader failed: %s", err)
+	}
+	if err = configLoaders.Load(ctx, &dependencies.KusciaConfig); err != nil {
+		nlog.Errorf("Load config by configloader failed: %s", err)
+	}
+
+	nlog.Infof("After config loader handle, kuscia config is %+v", dependencies.KusciaConfig)
+
+	// make runtime dir
+	err = EnsureDir(dependencies)
+	if err != nil {
+		nlog.Fatal(err)
+	}
+
+	// for master and autonomy, get k3s backend config.
+	if dependencies.RunMode == common.RunModeMaster || dependencies.RunMode == common.RunModeAutonomy {
+		dependencies.ApiserverEndpoint = dependencies.Master.APIServer.Endpoint
+		dependencies.KubeconfigFile = dependencies.Master.APIServer.KubeConfig
+		dependencies.KusciaKubeConfig = filepath.Join(dependencies.RootDir, "etc/kuscia.kubeconfig")
+		dependencies.InterConnSchedulerPort = defaultInterConnSchedulerPort
+	}
+	// for autonomy and lite
+	if dependencies.RunMode == common.RunModeAutonomy || dependencies.RunMode == common.RunModeLite {
+		dependencies.ContainerdSock = filepath.Join(dependencies.RootDir, "containerd/run/containerd.sock")
+		dependencies.TransportConfigFile = filepath.Join(dependencies.RootDir, "etc/conf/transport/transport.yaml")
+		dependencies.TransportPort, err = GetTransportPort(dependencies.TransportConfigFile)
+		if err != nil {
+			nlog.Fatal(err)
+		}
+		dependencies.EnableContainerd = true
+		if dependencies.Agent.Provider.Runtime == config.K8sRuntime {
+			dependencies.EnableContainerd = false
+		}
+	}
+	if dependencies.RunMode == common.RunModeLite {
+		dependencies.ApiserverEndpoint = defaultEndpointForLite
+	}
+
+	return dependencies
 }

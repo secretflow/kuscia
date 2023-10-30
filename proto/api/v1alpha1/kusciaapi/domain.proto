@@ -30,7 +30,7 @@ service DomainService {
 
   rpc DeleteDomain(DeleteDomainRequest) returns (DeleteDomainResponse);
 
-  rpc BatchQueryDomainStatus(BatchQueryDomainStatusRequest) returns (BatchQueryDomainStatusResponse);
+  rpc BatchQueryDomain(BatchQueryDomainRequest) returns (BatchQueryDomainResponse);
 }
 
 message CreateDomainRequest {
@@ -94,24 +94,25 @@ message UpdateDomainResponse {
   Status status = 1;
 }
 
-message BatchQueryDomainStatusRequest {
+message BatchQueryDomainRequest {
   RequestHeader header = 1;
   repeated string domain_ids = 2;
 }
 
-message BatchQueryDomainStatusResponse {
+message BatchQueryDomainResponse {
   Status status = 1;
-  BatchQueryDomainStatusResponseData data = 2;
+  BatchQueryDomainResponseData data = 2;
 }
 
-message BatchQueryDomainStatusResponseData {
-  repeated DomainStatus domains = 1;
+message BatchQueryDomainResponseData {
+  repeated Domain domains = 1;
 }
 
-message DomainStatus {
+message Domain {
   string domain_id = 1;
-  repeated NodeStatus node_statuses = 2;
-  repeated DeployTokenStatus deploy_token_statuses = 3;
+  string role = 2;
+  string cert = 3;
+  repeated NodeStatus node_statuses = 4;
 }
 
 message DeployTokenStatus {

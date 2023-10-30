@@ -232,3 +232,48 @@ func GetClusterHTTPProtocolOptions(clusterName string) (*envoyhttp.HttpProtocolO
 	}
 	return &protocolOptions, cluster, nil
 }
+
+func SetKeepAliveForDstCluster(c *envoycluster.Cluster, enable bool) error {
+	optionName := "envoy.extensions.upstreams.http.v3.HttpProtocolOptions"
+	option, ok := c.TypedExtensionProtocolOptions[optionName]
+	if !ok {
+		return nil
+	}
+	var protocolOptions envoyhttp.HttpProtocolOptions
+	if err := proto.Unmarshal(option.Value, &protocolOptions); err != nil {
+		return err
+	}
+
+	var action string
+	if enable {
+		if protocolOptions.CommonHttpProtocolOptions == nil || protocolOptions.CommonHttpProtocolOptions.
+			MaxRequestsPerConnection == nil {
+			return nil
+		}
+		protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = nil
+		action = "enable"
+	} else {
+		if protocolOptions.CommonHttpProtocolOptions == nil {
+			SetCommonHTTPProtocolOptions(&protocolOptions)
+		}
+		if protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection != nil && protocolOptions.
+			CommonHttpProtocolOptions.MaxRequestsPerConnection.Value == uint32(1) {
+			return nil
+		}
+		protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = &wrapperspb.UInt32Value{
+			Value: uint32(1),
+		}
+		action = "disable"
+	}
+
+	b, err := proto.Marshal(&protocolOptions)
+	if err != nil {
+		nlog.Errorf("Marshal protocolOptions failed with %s", err.Error())
+		return err
+	}
+
+	nlog.Infof("%s keep-alive for cluster:%s ", action, c.Name)
+	option.Value = b
+	c.TypedExtensionProtocolOptions[optionName] = option
+	return nil
+}

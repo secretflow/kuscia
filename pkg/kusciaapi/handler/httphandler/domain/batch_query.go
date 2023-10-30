@@ -23,24 +23,24 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
-type batchQueryDomainStatusHandler struct {
+type batchQueryDomainHandler struct {
 	domainService service.IDomainService
 }
 
-func NewBatchQueryDomainStatusHandler(domainService service.IDomainService) api.ProtoHandler {
-	return &batchQueryDomainStatusHandler{
+func NewBatchQueryDomainHandler(domainService service.IDomainService) api.ProtoHandler {
+	return &batchQueryDomainHandler{
 		domainService: domainService,
 	}
 }
 
-func (h batchQueryDomainStatusHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
+func (h batchQueryDomainHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 }
 
-func (h batchQueryDomainStatusHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	batchRequest, _ := request.(*kusciaapi.BatchQueryDomainStatusRequest)
-	return h.domainService.BatchQueryDomainStatus(context.Context, batchRequest)
+func (h batchQueryDomainHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	batchRequest, _ := request.(*kusciaapi.BatchQueryDomainRequest)
+	return h.domainService.BatchQueryDomain(context.Context, batchRequest)
 }
 
-func (h batchQueryDomainStatusHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(kusciaapi.BatchQueryDomainStatusRequest{}), reflect.TypeOf(kusciaapi.BatchQueryDomainStatusResponse{})
+func (h batchQueryDomainHandler) GetType() (reqType, respType reflect.Type) {
+	return reflect.TypeOf(kusciaapi.BatchQueryDomainRequest{}), reflect.TypeOf(kusciaapi.BatchQueryDomainResponse{})
 }

@@ -129,7 +129,7 @@ func (c *Controller) isDomainStatusEqual(oldStatus, newStatus *kusciaapisv1alpha
 		return false
 	}
 
-	if len(oldStatus.DeployTokenStatuses) != len(oldStatus.DeployTokenStatuses) {
+	if len(oldStatus.DeployTokenStatuses) != len(newStatus.DeployTokenStatuses) {
 		return false
 	}
 

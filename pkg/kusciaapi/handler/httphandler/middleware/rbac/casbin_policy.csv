@@ -1,0 +1,28 @@
+p, domain, /api/v1/job/create, POST
+p, domain, /api/v1/job/delete, POST
+p, domain, /api/v1/job/query, POST
+p, domain, /api/v1/job/stop, POST
+p, domain, /api/v1/job/watch, POST
+p, domain, /api/v1/job/status/batchQuery, POST
+
+p, domain, /api/v1/domain/update, POST
+p, domain, /api/v1/domain/query, POST
+p, domain, /api/v1/domain/batchQuery, POST
+
+p, domain, /api/v1/route/create, POST
+p, domain, /api/v1/route/delete, POST
+p, domain, /api/v1/route/query, POST
+p, domain, /api/v1/route/status/batchQuery, POST
+
+p, domain, /api/v1/domaindata/create, POST
+p, domain, /api/v1/domaindata/update, POST
+p, domain, /api/v1/domaindata/delete, POST
+p, domain, /api/v1/domaindata/query, POST
+p, domain, /api/v1/domaindata/batchQuery, POST
+p, domain, /api/v1/domaindata/list, POST
+
+p, domain, /api/v1/serving/create, POST
+p, domain, /api/v1/serving/update, POST
+p, domain, /api/v1/serving/delete, POST
+p, domain, /api/v1/serving/query, POST
+p, domain, /api/v1/serving/status/batchQuery, POST

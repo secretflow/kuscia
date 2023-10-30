@@ -17,15 +17,29 @@ package mem
 import (
 	"fmt"
 
-	"github.com/secretflow/kuscia/pkg/confmanager/secretbackend"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type Mem struct {
 	confs map[string]string
 }
 
+type Config struct {
+	Preset map[string]string `mapstructure:"preset"`
+}
+
 func NewMem(configMap map[string]any) (secretbackend.SecretDriver, error) {
-	return &Mem{confs: map[string]string{}}, nil
+	config := Config{}
+	if err := mapstructure.Decode(configMap, &config); err != nil {
+		return nil, err
+	}
+	confs := map[string]string{}
+	for k, v := range config.Preset {
+		confs[k] = v
+	}
+	return &Mem{confs: confs}, nil
 }
 
 func (m *Mem) Set(confID string, value string) error {

@@ -23,6 +23,8 @@
 
 CPU 架构：x86
 
+> 单机体验版需要部署多个节点和平台，且要预留资源运行各类隐私计算任务，所以这里的资源需求要比节点最低资源大一些
+
 ### 环境准备
 
 Kuscia 的部署需要依赖 docker 环境，docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 docker 的示例：

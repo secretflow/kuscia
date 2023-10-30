@@ -22,4 +22,9 @@ const (
 	TokenHeader            = "Token"
 	ContentTypeHeader      = "Content-Type"
 	HTTPDefaultContentType = "application/json"
+	SourceDomainHeader     = "Kuscia-Source"
+	SourceDomainKey        = "source-domain"
+	AuthRole               = "AuthRole"
+	AuthRoleMaster         = "master"
+	AuthRoleDomain         = "domain"
 )

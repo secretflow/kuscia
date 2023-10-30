@@ -19,4 +19,5 @@ const (
 	DomainDataURIDelimiter      = "/"
 	DomainDataSourceTypeOSS     = "oss"
 	DomainDataSourceTypeLocalFS = "localfs"
+	DomainDataSourceTypeMysql   = "mysql"
 )

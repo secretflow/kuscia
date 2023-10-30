@@ -32,30 +32,20 @@ insecure="false"
 function join_to_host() {
   local host=${host_endpoint}
   local port=80
-  local tls_ca
-  local src_cert
-  local src_key
 
-  if [[ "${host_endpoint}" == *":"* ]]; then
-    host=${host_endpoint%%:*}
-    port=${host_endpoint##*:}
+  istls="false"
+  if [[ "${host_endpoint}" == *"://"* ]]; then
+    host=${host_endpoint##*://}
+    protocol=${host_endpoint%%://*}
+    if [ "${protocol}" == "https" ]; then
+      istls="true"
+    fi
   fi
 
-  pushd $ROOT/etc/certs >/dev/null || exit
-
-  if [[ ${insecure} != "true" ]]; then
-    local tls_ca_file=${host_domain_id}.host.ca.crt
-    tls_ca=$(base64 ${tls_ca_file} | tr -d "\n")
+  if [[ "${host}" == *":"* ]]; then
+    port=${host##*:}
+    host=${host%%:*}
   fi
-
-  if [[ ${auth_type} == "MTLS" ]]; then
-    local src_cert_file=domain-2-${host_domain_id}.crt
-    src_cert=$(base64 ${src_cert_file} | tr -d "\n")
-    local src_key_file=domain.key
-    src_key=$(base64 ${src_key_file} | tr -d "\n")
-  fi
-
-  popd >/dev/null || exit
 
   local domain_route_template
   domain_route_template=$(sed "s/{{.SELF_DOMAIN}}/${self_domain_id}/g;
@@ -64,17 +54,16 @@ function join_to_host() {
     s/{{.INTERCONN_PROTOCOL}}/${interconn_protocol}/g;
     s/{{.HOST}}/${host}/g;
     s/{{.PORT}}/${port}/g;
-    s/{{.TLS_CA}}/${tls_ca}/g;
-    s/{{.SRC_CERT}}/${src_cert}/g;
-    s/{{.SRC_KEY}}/${src_key}/g" \
-    < "${ROOT}/scripts/templates/domain_route.mtls.yaml")
+    s/{{.ISTLS}}/${istls}/g;
+    s/{{.TOKEN}}/${token}/g" \
+    <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
   echo "${domain_route_template}" | kubectl apply -f -
 
   if [[ ${interconn_protocol} == "kuscia" ]]; then
-     INTEROP_CONFIG_TEMPLATE=$(sed "s/{{.MEMBER_DOMAIN_ID}}/${self_domain_id}/g;
+    INTEROP_CONFIG_TEMPLATE=$(sed "s/{{.MEMBER_DOMAIN_ID}}/${self_domain_id}/g;
        s/{{.HOST_DOMAIN_ID}}/${host_domain_id}/g" \
-       < "${ROOT}/scripts/templates/interop_config.yaml")
-     echo "${INTEROP_CONFIG_TEMPLATE}" | kubectl apply -f -
+      <"${ROOT}/scripts/templates/interop_config.yaml")
+    echo "${INTEROP_CONFIG_TEMPLATE}" | kubectl apply -f -
   fi
 }
 

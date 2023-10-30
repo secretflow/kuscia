@@ -55,6 +55,7 @@ const (
 	processPeriod      = time.Second
 	defaultSyncPeriod  = 10 * time.Minute
 	endpointsQueueName = "endpoints-queue"
+	masterNs           = "master"
 )
 
 const (
@@ -74,6 +75,7 @@ var (
 )
 
 type EndpointsController struct {
+	isMaster            bool
 	serviceLister       corelisters.ServiceLister
 	serviceListerSynced cache.InformerSynced
 
@@ -86,7 +88,8 @@ type EndpointsController struct {
 	kubeClient kubernetes.Interface
 }
 
-func NewEndpointsController(kubeClient kubernetes.Interface, serviceInformer corev1informers.ServiceInformer,
+func NewEndpointsController(isMaster bool, kubeClient kubernetes.Interface,
+	serviceInformer corev1informers.ServiceInformer,
 	endpointsInformer corev1informers.EndpointsInformer, whitelistFile string,
 	clientCert *xds.TLSCert) (*EndpointsController, error) {
 	whitelistChecker, err := utils.NewWhitelistChecker(whitelistFile)
@@ -96,6 +99,7 @@ func NewEndpointsController(kubeClient kubernetes.Interface, serviceInformer cor
 	}
 
 	ec := &EndpointsController{
+		isMaster:              isMaster,
 		serviceLister:         serviceInformer.Lister(),
 		serviceListerSynced:   serviceInformer.Informer().HasSynced,
 		endpointsLister:       endpointsInformer.Lister(),
@@ -259,7 +263,7 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 
 	hosts := make(map[string][]uint32)
 	hosts[service.Spec.ExternalName] = ports
-	err = AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+	err = ec.AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
 	if err != nil {
 		return err
@@ -291,7 +295,7 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 		return nil
 	}
 
-	err := AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
+	err := ec.AddEnvoyCluster(namespace, name, protocol, hosts, accessDomains, ec.clientCert)
 
 	if err != nil {
 		return err
@@ -348,9 +352,9 @@ func parseAndValidateProtocol(protocol string, service string) (string, error) {
 	return protocol, nil
 }
 
-func AddEnvoyCluster(namespace string, name string, protocol string, hosts map[string][]uint32,
+func (ec *EndpointsController) AddEnvoyCluster(namespace string, name string, protocol string, hosts map[string][]uint32,
 	accessDomains string, clientCert *xds.TLSCert) error {
-	internalVh, err := generateVirtualHost(namespace, name, accessDomains)
+	internalVh, err := ec.generateVirtualHost(namespace, name, accessDomains)
 	if err != nil {
 		return err
 	}
@@ -382,9 +386,18 @@ func AddEnvoyCluster(namespace string, name string, protocol string, hosts map[s
 	return nil
 }
 
-func generateVirtualHost(namespace string, name string, accessDomains string) (*route.VirtualHost, error) {
+func (ec *EndpointsController) generateDomains(namespace, name string) []string {
+	domains := []string{fmt.Sprintf("%s.%s.svc", name, namespace), name}
+	if ec.isMaster && namespace != masterNs {
+		dupDomain := fmt.Sprintf("%s.%s.svc", name, masterNs)
+		domains = append(domains, dupDomain)
+	}
+	return domains
+}
+
+func (ec *EndpointsController) generateVirtualHost(namespace string, name string, accessDomains string) (*route.VirtualHost, error) {
 	virtualHost := &route.VirtualHost{
-		Domains: []string{fmt.Sprintf("%s.%s.svc", name, namespace), name},
+		Domains: ec.generateDomains(namespace, name),
 		Routes: []*route.Route{
 			{
 				Match: &route.RouteMatch{

@@ -15,43 +15,29 @@
 package modules
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 
 	"github.com/secretflow/kuscia/pkg/utils/common"
 )
 
-func Test_EnsureCaKeyAndCert(t *testing.T) {
+func Test_LoadCaDomainKeyAndCert(t *testing.T) {
 	rootDir := t.TempDir()
-	_, _, err := EnsureCaKeyAndCert(&Dependencies{
-		KusciaConfig: KusciaConfig{
-			CAKeyFile:  filepath.Join(rootDir, "ca.key"),
-			CACertFile: filepath.Join(rootDir, "ca.crt"),
-			DomainID:   "alice",
-		},
-	})
-	assert.NoError(t, err)
-	_, _, err = EnsureCaKeyAndCert(&Dependencies{
-		KusciaConfig: KusciaConfig{
-			CAKeyFile:  filepath.Join(rootDir, "ca.key"),
-			CACertFile: filepath.Join(rootDir, "ca.crt"),
-			DomainID:   "alice",
-		},
-	})
-	assert.NoError(t, err)
-}
-
-func Test_EnsureDomainKey(t *testing.T) {
-	rootDir := t.TempDir()
-	err := EnsureDomainKey(&Dependencies{
-		KusciaConfig: KusciaConfig{
+	err := LoadCaDomainKeyAndCert(&Dependencies{
+		KusciaConfig: confloader.KusciaConfig{
+			CAKeyFile:     filepath.Join(rootDir, "ca.key"),
+			CACertFile:    filepath.Join(rootDir, "ca.crt"),
 			DomainKeyFile: filepath.Join(rootDir, "domain.key"),
+			DomainID:      "alice",
 		},
 	})
-	assert.NoError(t, err)
+	assert.NotEmpty(t, err)
 }
 
 func Test_RenderConfig(t *testing.T) {
@@ -68,9 +54,40 @@ func Test_RenderConfig(t *testing.T) {
 func Test_EnsureDir(t *testing.T) {
 	rootDir := t.TempDir()
 	err := EnsureDir(&Dependencies{
-		KusciaConfig: KusciaConfig{
+		KusciaConfig: confloader.KusciaConfig{
 			RootDir: rootDir,
 		},
 	})
 	assert.NoError(t, err)
+}
+
+func Test_LoadKusciaConfig(t *testing.T) {
+	config := &confloader.KusciaConfig{}
+	content := fmt.Sprintf(`
+rootDir: /home/kuscia
+domainID: kuscia
+caKeyFile: etc/certs/ca.key
+caFile: etc/certs/ca.crt
+domainKeyFile: etc/certs/domain.key
+master:
+  endpoint: http://127.0.0.1:1080
+  tls:
+    certFile: etc/certs/client-admin.crt
+    keyFile: etc/certs/client-admin.key
+    caFile: etc/certs/server-ca.crt
+  apiserver:
+    kubeconfigFile: etc/kubeconfig
+    endpoint:  http://127.0.0.1:1080
+agent:
+  allowPrivileged: false
+externalTLS:
+  certFile: etc/certs/external_tls.crt
+  keyFile: etc/certs/external_tls.key
+dataMesh:
+  enableDataProxy : true
+`)
+	err := yaml.Unmarshal([]byte(content), config)
+	assert.NoError(t, err)
+	assert.True(t, config.DataMesh.EnableDataProxy)
+
 }

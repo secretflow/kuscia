@@ -37,6 +37,8 @@ pushd ${ROOT} >/dev/null || exit
 
 sh scripts/deploy/iptables_pre_detect.sh
 
+HOSTNAME=$(hostname)
+
 cp ${ROOT}/etc/conf/crictl.yaml /etc/crictl.yaml
 echo "
 rootDir: ${ROOT}
@@ -51,6 +53,7 @@ master:
 agent:
   allowPrivileged: ${ALLOW_PRIVILEGED}
   plugins:
+  - name: cert-issuance
   - name: config-render
   - name: env-import
     config:
@@ -62,6 +65,12 @@ agent:
         selectors:
         - key: maintainer
           value: secretflow-contact@service.alipay.com
+confmanager:
+  san:
+    dnsNames:
+    - ${HOSTNAME}
+dataMesh:
+  enableDataProxy: false
 " >etc/kuscia.yaml
 bin/kuscia lite -c etc/kuscia.yaml --log.path var/logs/kuscia.log
 

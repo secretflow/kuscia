@@ -17,15 +17,23 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/pem"
+	"errors"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
+	consts "github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -35,17 +43,27 @@ type IDomainService interface {
 	QueryDomain(ctx context.Context, request *kusciaapi.QueryDomainRequest) *kusciaapi.QueryDomainResponse
 	UpdateDomain(ctx context.Context, request *kusciaapi.UpdateDomainRequest) *kusciaapi.UpdateDomainResponse
 	DeleteDomain(ctx context.Context, request *kusciaapi.DeleteDomainRequest) *kusciaapi.DeleteDomainResponse
-	BatchQueryDomainStatus(ctx context.Context, request *kusciaapi.BatchQueryDomainStatusRequest) *kusciaapi.BatchQueryDomainStatusResponse
+	BatchQueryDomain(ctx context.Context, request *kusciaapi.BatchQueryDomainRequest) *kusciaapi.BatchQueryDomainResponse
 }
 
 type domainService struct {
 	kusciaClient kusciaclientset.Interface
+	conf         *config.KusciaAPIConfig
 }
 
 func NewDomainService(config *config.KusciaAPIConfig) IDomainService {
-	return &domainService{
-		kusciaClient: config.KusciaClient,
+	switch config.RunMode {
+	case common.RunModeLite:
+		return &domainServiceLite{
+			kusciaAPIClient: proxy.NewKusciaAPIClient(""),
+		}
+	default:
+		return &domainService{
+			kusciaClient: config.KusciaClient,
+			conf:         config,
+		}
 	}
+
 }
 
 func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.CreateDomainRequest) *kusciaapi.CreateDomainResponse {
@@ -73,6 +91,14 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 			AuthCenter: authCenterConverter(request.AuthCenter),
 		},
 	}
+
+	// currently just support kuscia protocol
+	if role == string(v1alpha1.Partner) {
+		kusciaDomain.Spec.InterConnProtocols = []v1alpha1.InterConnProtocolType{
+			v1alpha1.InterConnKuscia,
+		}
+	}
+
 	// create kuscia domain
 	_, err := s.kusciaClient.KusciaV1alpha1().Domains().Create(ctx, kusciaDomain, metav1.CreateOptions{})
 	if err != nil {
@@ -93,6 +119,15 @@ func (s domainService) QueryDomain(ctx context.Context, request *kusciaapi.Query
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id can not be empty"),
 		}
 	}
+	if request.GetDomainId() == consts.KusciaMasterDomain {
+		return s.queryKusciaMasterDomain()
+	}
+	// Auth Handler
+	if err := s.authHandler(ctx, request); err != nil {
+		return &kusciaapi.QueryDomainResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
 	// get kuscia domain
 	kusciaDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 	if err != nil {
@@ -101,7 +136,7 @@ func (s domainService) QueryDomain(ctx context.Context, request *kusciaapi.Query
 		}
 	}
 	// build domain response
-	domainStatus := s.buildDomainStatus(kusciaDomain)
+	domainStatus, deployToken := s.buildDomain(kusciaDomain)
 	// build authCenter
 	var authCenter *kusciaapi.AuthCenter
 	kusciaAuthCenter := kusciaDomain.Spec.AuthCenter
@@ -118,11 +153,37 @@ func (s domainService) QueryDomain(ctx context.Context, request *kusciaapi.Query
 			Cert:                kusciaDomain.Spec.Cert,
 			Role:                string(kusciaDomain.Spec.Role),
 			NodeStatuses:        domainStatus.NodeStatuses,
-			DeployTokenStatuses: domainStatus.DeployTokenStatuses,
+			DeployTokenStatuses: deployToken,
 			Annotations:         kusciaDomain.Annotations,
 			AuthCenter:          authCenter,
 		},
 	}
+}
+
+func (s domainService) queryKusciaMasterDomain() *kusciaapi.QueryDomainResponse {
+	caCert, err := s.queryKusciaMasterCert()
+	if err != nil {
+		return &kusciaapi.QueryDomainResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomain, err.Error()),
+		}
+	}
+	return &kusciaapi.QueryDomainResponse{
+		Status: utils.BuildSuccessResponseStatus(),
+		Data: &kusciaapi.QueryDomainResponseData{
+			DomainId: consts.KusciaMasterDomain,
+			Cert:     caCert,
+		},
+	}
+}
+
+func (s domainService) queryKusciaMasterCert() (string, error) {
+	if s.conf.TLS == nil || s.conf.TLS.RootCA == nil {
+		errMsg := fmt.Sprintf("master ca cert is nil")
+		nlog.Errorf("Query kuscia-master cert failed, error: %s.", errMsg)
+		return "", errors.New(errMsg)
+	}
+	caCert := base64.StdEncoding.EncodeToString(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: s.conf.TLS.RootCA.Raw}))
+	return caCert, nil
 }
 
 func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.UpdateDomainRequest) *kusciaapi.UpdateDomainResponse {
@@ -137,6 +198,12 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 	if role != "" && role != string(v1alpha1.Partner) {
 		return &kusciaapi.UpdateDomainResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("role is invalid, must be empty or %s", v1alpha1.Partner)),
+		}
+	}
+	// Auth Handler
+	if err := s.authHandler(ctx, request); err != nil {
+		return &kusciaapi.UpdateDomainResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
 	// get latest domain from k8s
@@ -190,50 +257,65 @@ func (s domainService) DeleteDomain(ctx context.Context, request *kusciaapi.Dele
 	}
 }
 
-func (s domainService) BatchQueryDomainStatus(ctx context.Context, request *kusciaapi.BatchQueryDomainStatusRequest) *kusciaapi.BatchQueryDomainStatusResponse {
+func (s domainService) BatchQueryDomain(ctx context.Context, request *kusciaapi.BatchQueryDomainRequest) *kusciaapi.BatchQueryDomainResponse {
 	// do validate
 	domainIDs := request.DomainIds
 	if len(domainIDs) == 0 {
-		return &kusciaapi.BatchQueryDomainStatusResponse{
+		return &kusciaapi.BatchQueryDomainResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain ids can not be empty"),
 		}
 	}
 	for i, domainID := range domainIDs {
 		if domainID == "" {
-			return &kusciaapi.BatchQueryDomainStatusResponse{
+			return &kusciaapi.BatchQueryDomainResponse{
 				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("domain id can not be empty on index %d", i)),
 			}
 		}
 	}
 	// build domain statuses
-	domainStatuses := make([]*kusciaapi.DomainStatus, len(domainIDs))
+	domains := make([]*kusciaapi.Domain, len(domainIDs))
 	for i, domainID := range domainIDs {
+		if domainID == consts.KusciaMasterDomain {
+			caCert, err := s.queryKusciaMasterCert()
+			if err != nil {
+				return &kusciaapi.BatchQueryDomainResponse{
+					Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrQueryDomainStatus), err.Error()),
+				}
+			}
+			domains[i] = &kusciaapi.Domain{
+				DomainId: consts.KusciaMasterDomain,
+				Cert:     caCert,
+			}
+			continue
+		}
 		kusciaDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 		if err != nil {
-			return &kusciaapi.BatchQueryDomainStatusResponse{
+			return &kusciaapi.BatchQueryDomainResponse{
 				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, errorcode.ErrQueryDomainStatus), err.Error()),
 			}
 		}
-		domainStatuses[i] = s.buildDomainStatus(kusciaDomain)
+		domains[i], _ = s.buildDomain(kusciaDomain)
 	}
-	return &kusciaapi.BatchQueryDomainStatusResponse{
+	return &kusciaapi.BatchQueryDomainResponse{
 		Status: utils.BuildSuccessResponseStatus(),
-		Data: &kusciaapi.BatchQueryDomainStatusResponseData{
-			Domains: domainStatuses,
+		Data: &kusciaapi.BatchQueryDomainResponseData{
+			Domains: domains,
 		},
 	}
 }
 
-func (s domainService) buildDomainStatus(kusciaDomain *v1alpha1.Domain) *kusciaapi.DomainStatus {
-	domainStatus := &kusciaapi.DomainStatus{}
+func (s domainService) buildDomain(kusciaDomain *v1alpha1.Domain) (*kusciaapi.Domain, []*kusciaapi.DeployTokenStatus) {
+	domain := &kusciaapi.Domain{}
 	if kusciaDomain == nil {
-		return domainStatus
+		return domain, nil
 	}
-	domainStatus.DomainId = kusciaDomain.Name
+	domain.DomainId = kusciaDomain.Name
+	domain.Role = string(kusciaDomain.Spec.Role)
+	domain.Cert = kusciaDomain.Spec.Cert
 	// build node status
 	kusciaDomainStatus := kusciaDomain.Status
 	if kusciaDomainStatus == nil {
-		return domainStatus
+		return domain, nil
 	}
 	kds := kusciaDomainStatus.NodeStatuses
 	nodeStatuses := make([]*kusciaapi.NodeStatus, 0)
@@ -246,7 +328,7 @@ func (s domainService) buildDomainStatus(kusciaDomain *v1alpha1.Domain) *kusciaa
 			LastTransitionTime: apiutils.TimeRfc3339String(&node.LastTransitionTime),
 		})
 	}
-	domainStatus.NodeStatuses = nodeStatuses
+	domain.NodeStatuses = nodeStatuses
 	// build deploy token status
 	dts := kusciaDomainStatus.DeployTokenStatuses
 	tokenStatuses := make([]*kusciaapi.DeployTokenStatus, 0)
@@ -257,8 +339,7 @@ func (s domainService) buildDomainStatus(kusciaDomain *v1alpha1.Domain) *kusciaa
 			LastTransitionTime: apiutils.TimeRfc3339String(&token.LastTransitionTime),
 		})
 	}
-	domainStatus.DeployTokenStatuses = tokenStatuses
-	return domainStatus
+	return domain, tokenStatuses
 }
 
 func authCenterConverter(authCenter *kusciaapi.AuthCenter) *v1alpha1.AuthCenter {
@@ -266,6 +347,20 @@ func authCenterConverter(authCenter *kusciaapi.AuthCenter) *v1alpha1.AuthCenter 
 		return &v1alpha1.AuthCenter{
 			AuthenticationType: v1alpha1.DomainAuthenticationType(authCenter.AuthenticationType),
 			TokenGenMethod:     v1alpha1.TokenGenMethodType(authCenter.TokenGenMethod),
+		}
+	}
+	return nil
+}
+
+type RequestWithDomainID interface {
+	GetDomainId() string
+}
+
+func (s domainService) authHandler(ctx context.Context, request RequestWithDomainID) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == constants.AuthRoleDomain {
+		if request.GetDomainId() != domainId {
+			return fmt.Errorf("domain's kusciaAPI could only operate its own Domain, request.DomainID must be %s not %s", domainId, request.GetDomainId())
 		}
 	}
 	return nil

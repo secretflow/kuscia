@@ -28,11 +28,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/commands"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
-	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
@@ -47,28 +47,27 @@ type kusciaAPIModule struct {
 	kubeClient   kubernetes.Interface
 }
 
-func NewKusciaAPI(i *Dependencies) (Module, error) {
-	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig(i.RootDir)
-	if !i.IsMaster {
-		kusciaAPIConfig.Initiator = i.DomainID
-	}
-	rootCAFile := i.CACertFile
-	if rootCAFile != "" && kusciaAPIConfig.TLSConfig != nil {
-		kusciaAPIConfig.TLSConfig.RootCACertFile = rootCAFile
+func NewKusciaAPI(d *Dependencies) (Module, error) {
+	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig(d.RootDir)
+	if d.RunMode != common.RunModeMaster {
+		kusciaAPIConfig.Initiator = d.DomainID
 	}
 
-	kusciaAPIConfig.DomainKeyFile = i.DomainKeyFile
-
-	// init clients with kuscia kubeconfig
-	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(i.KusciaKubeConfig, i.ApiserverEndpoint)
-	if err != nil {
+	kusciaAPIConfig.DomainKey = d.DomainKey
+	kusciaAPIConfig.TLS.RootCA = d.CACert
+	kusciaAPIConfig.TLS.RootCAKey = d.CAKey
+	kusciaAPIConfig.RunMode = d.RunMode
+	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
+	if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(); err != nil {
 		return nil, err
 	}
 
+	nlog.Infof("Kuscia api config is %+v", kusciaAPIConfig)
+
 	return &kusciaAPIModule{
 		conf:         kusciaAPIConfig,
-		kusciaClient: clients.KusciaClient,
-		kubeClient:   clients.KubeClient,
+		kusciaClient: d.Clients.KusciaClient,
+		kubeClient:   d.Clients.KubeClient,
 	}, nil
 }
 
@@ -102,9 +101,9 @@ func (m kusciaAPIModule) readyZ() bool {
 	var err error
 	schema := constants.SchemaHTTP
 	// init client tls config
-	tlsConfig := m.conf.TLSConfig
+	tlsConfig := m.conf.TLS
 	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCACertFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
 		if err != nil {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
@@ -115,7 +114,7 @@ func (m kusciaAPIModule) readyZ() bool {
 	// token auth
 	var token string
 	var tokenAuth bool
-	tokenConfig := m.conf.TokenConfig
+	tokenConfig := m.conf.Token
 	if tokenConfig != nil {
 		token, err = apiutils.ReadToken(*tokenConfig)
 		if err != nil {

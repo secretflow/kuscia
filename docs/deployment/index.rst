@@ -8,3 +8,4 @@
     deploy_master_lite_cn
     operation_cn
     networkrequirements
+    logdescription

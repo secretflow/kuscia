@@ -30,8 +30,11 @@ type APIServerConfig struct {
 
 type MasterConfig struct {
 	ServiceConfig `yaml:",inline"`
+	Datastore     string           `yaml:"datastore,omitempty"`
+	Token         string           `yaml:"token,omitempty"`
 	APIServer     *APIServerConfig `yaml:"apiserver,omitempty"`
 	KusciaStorage *ServiceConfig   `yaml:"kusciaStorage,omitempty"`
+	KusciaAPI     *ServiceConfig   `yaml:"kusciaAPI,omitempty"`
 	APIWhitelist  []string         `yaml:"apiWhitelist,omitempty"`
 }
 

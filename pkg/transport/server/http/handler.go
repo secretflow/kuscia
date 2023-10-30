@@ -151,7 +151,7 @@ func (s *Server) readMessage(r *http.Request) (*msq.Message, *transerr.TransErro
 
 	if int64(len(body)) == 0 {
 		nlog.Warnf("Empty request body")
-		return nil, transerr.NewTransError(transerr.BodyTooLarge)
+		return nil, transerr.NewTransError(transerr.InvalidRequest)
 	}
 
 	return msq.NewMessage(body), nil

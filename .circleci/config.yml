@@ -34,7 +34,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Test Kuscia
-          command: make test 
+          command: make test
   image_publish:
     docker:
       - image: secretflow/kuscia-ci:0.4
@@ -49,7 +49,7 @@ jobs:
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
             # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
-      - run: 
+      - run:
           name: Build image and publish
           command: |
             make image
@@ -75,7 +75,7 @@ workflows:
               only: /^v.*/
   publish-workflow:
     when:
-      equal: ["publish_pypi", << pipeline.parameters.GHA_Meta >>]
+      equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:
       - continuation/continue:
           configuration_path: .circleci/release-config.yml

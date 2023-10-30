@@ -90,13 +90,21 @@ alias km="docker exec -it ${USER}-kuscia-master"
 执行以下命令，完成节点注册并从返回中得到 token （下文将以abcdefg为例）。
 ```bash
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh alice
+```
+输出示例：
+```bash
 abcdefg
 ```
+
 如果token遗忘了，可以通过该命令重新获取
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
+```
+输出示例：
+```bash
 abcdefg
 ```
+
 <span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
 
 接下来，登录到安装 alice 的机器上，假设对外ip是2.2.2.2。
@@ -128,11 +136,18 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 执行以下命令，完成节点注册并从返回中得到 token （下文将以hijklmn为例）。
 ```bash
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh bob
+```
+输出示例：
+```bash
 hijklmn
 ```
+
 如果token遗忘了，可以通过该命令重新获取
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get domain bob -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
+```
+输出示例：
+```bash
 hijklmn
 ```
 
@@ -168,6 +183,8 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 
 在 master 机器上执行创建授权的命令
 ```bash
+# 为了减少授权错误的排查成本，建议在alice/bob容器内分别（curl）访问的对方地址判定是否能联通，之后再授权
+# 示例：curl -vvv http://ip:port 返回正常的HTTP错误码是401
 # bob 节点的访问地址，一般是 bob 的 http://ip:port，如上文，bob 的 ip 是 3.3.3.3 ，port 如上文为 38080.
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/create_cluster_domain_route.sh alice bob http://3.3.3.3:38080
 # alice 节点的访问地址，一般是 alice 的 http://ip:port，如上文，alice 的 ip 是 3.3.3.3，port 如上文为 28080.
@@ -223,4 +240,23 @@ docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 查看作业状态
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get kj
+```
+### 部署 secretpad
+> 注意：secretpad 的部署依赖 master 的证书与 token，必须与 master 部署在同一台物理机上
+
+指定 secretpad 版本：
+```bash
+# 使用的 secretpad 镜像，这里使用 latest 版本镜像
+export SECRETPAD_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretpad:latest
+```
+
+获取部署脚本，部署脚本会下载到当前目录：
+
+```bash
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_secretpad.sh > start_secretpad.sh && chmod u+x start_secretpad.sh
+```
+
+执行以下命令部署secretpad
+```bash
+./start_secretpad.sh
 ```
