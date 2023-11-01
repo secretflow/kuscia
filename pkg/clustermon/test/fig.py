@@ -8,8 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 period = "5"
-lab_id = "1"
-metric_num = ""
+lab_id = "3"
+metric_num = "20"
 linewidth=5
 dpi=100
 markersize=12
@@ -34,7 +34,7 @@ send_data = []
 recv_data = []
 net_data = []
 cpu_data = []
-f = open("/home/kuscia/E2EMon/exp/exp" + lab_id + "/sysdata")
+f = open("/home/kuscia/E2EMon-1.0/exp/exp" + lab_id + "/sysdata")
 timestamp = 0
 while True:
     line = f.readline()
@@ -59,8 +59,8 @@ plt.ylabel("Memory Usage (MB)", fontsize=fontsize)
 # plt.legend(bbox_to_anchor=(0.1, 1.02, 1, 0.2), fontsize=fontsize-2, ncol=5)
 plt.legend(loc="best", fontsize=fontsize, ncol=2, frameon=False)
 plt.tick_params(labelsize=ticksize)
-plt.savefig('/home/kuscia/E2EMon/exp/exp' + lab_id + '/mem-' + period + "-" + metric_num + '.pdf')
-plt.savefig('/home/kuscia/E2EMon/exp/exp' + lab_id + '/mem-' + period + "-" + metric_num + '.png')
+plt.savefig('/home/kuscia/E2EMon-1.0/exp/exp' + lab_id + '/mem-' + period + "-" + metric_num + '.pdf')
+plt.savefig('/home/kuscia/E2EMon-1.0/exp/exp' + lab_id + '/mem-' + period + "-" + metric_num + '.png')
 fig = plt.figure(figsize=(width,height),dpi=dpi)
 fig.subplots_adjust(bottom=0.15,left=0.15)
 
@@ -72,8 +72,8 @@ plt.xlabel("Time (s)", fontsize=fontsize)
 plt.ylabel("NetIO (MB)", fontsize=fontsize)
 plt.legend(loc="best", fontsize=fontsize, ncol=2, frameon=False)
 plt.tick_params(labelsize=ticksize)
-plt.savefig('/home/kuscia/E2EMon/exp/exp' + lab_id + '/net-' + period + "-" + metric_num  + '.pdf')
-plt.savefig('/home/kuscia/E2EMon/exp/exp' + lab_id + '/net-' + period + "-" + metric_num  + '.png')
+plt.savefig('/home/kuscia/E2EMon-1.0/exp/exp' + lab_id + '/net-' + period + "-" + metric_num  + '.pdf')
+plt.savefig('/home/kuscia/E2EMon-1.0/exp/exp' + lab_id + '/net-' + period + "-" + metric_num  + '.png')
 
 
 label = ["Mem", "CPU"]
@@ -85,5 +85,5 @@ plt.xlabel("Time (s)", fontsize=fontsize)
 plt.ylabel("Usage (%)", fontsize=fontsize)
 plt.legend(loc="best", fontsize=fontsize, ncol=2, frameon=False)
 plt.tick_params(labelsize=ticksize)
-plt.savefig('/home/kuscia/E2EMon/exp/exp' + lab_id + '/usage-' + period + "-" + metric_num + '.pdf')
-plt.savefig('/home/kuscia/E2EMon/exp/exp' + lab_id + '/usage-' + period + "-" + metric_num + '.png')
+plt.savefig('/home/kuscia/E2EMon-1.0/exp/exp' + lab_id + '/usage-' + period + "-" + metric_num + '.pdf')
+plt.savefig('/home/kuscia/E2EMon-1.0/exp/exp' + lab_id + '/usage-' + period + "-" + metric_num + '.png')

@@ -28,6 +28,8 @@ func GetStatisticFromSs() []map[string]string {
 	lines := strings.Split(string(output), "\n")
 	var tcpStatisticList []map[string]string
 	ssMetrics := make(map[string]string)
+	ssMetrics["total_connections"] = "0"
+	ssMetrics["retrans"] = "0"
 	for idx, line := range lines {
 		if idx < 1 {
 			continue
@@ -37,6 +39,10 @@ func GetStatisticFromSs() []map[string]string {
 			if len(fields) < 5 {
 				continue
 			}
+			if len(fields) == 6 {
+                                ssMetrics["retrans"] = strings.Split(strings.Split(fields[5], ",")[2], ")")[0]
+                                ssMetrics["total_connections"] = "1"
+                        }
 			ssMetrics["localAddr"] = fields[3]
 			ssMetrics["peerAddr"] = fields[4]
 		} else {
@@ -53,6 +59,8 @@ func GetStatisticFromSs() []map[string]string {
 			ssMetrics["min_rtt"] = strings.Split(fields[32], ":")[1]
 			tcpStatisticList = append(tcpStatisticList, ssMetrics)
 			ssMetrics = make(map[string]string)
+			ssMetrics["total_connections"] = "0"
+			ssMetrics["retrans"] = "0"
 		}
 	}
 	return tcpStatisticList
@@ -81,6 +89,7 @@ func GetStatisticFromEnvoy(metrics []string) map[string]float64 {
 	if err != nil {
 		log.Fatalln("Fail to parse the results of envoy", err)
 	}
+	// fmt.Println(statsData)
 	stats := make(map[string]float64)
 	metricSet := make(map[string]bool)
 	for _, metric := range metrics {
@@ -146,12 +155,9 @@ func Filter(ssMetrics []map[string]string, srcIP string, dstIP string, srcPort s
 func Sum(metrics []map[string]string, key string) float64 {
 	sum := 0.0
 	for _, metric := range metrics {
-		if key == "deliveryRate" && metric[key] == "delivery_rate" {
-			continue
-		}
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			log.Fatalln("fail to parse float", metric[key])
+			log.Fatalln("fail to parse float", metric[key],"key:",key)
 		}
 		sum += val
 	}
@@ -167,9 +173,6 @@ func Avg(metrics []map[string]string, key string) float64 {
 func Max(metrics []map[string]string, key string) float64 {
 	max := math.MaxFloat64 * (-1)
 	for _, metric := range metrics {
-		if key == "deliveryRate" && metric[key] == "delivery_rate" {
-			continue
-		}
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
 			log.Fatalln("fail to parse float")
@@ -185,9 +188,6 @@ func Max(metrics []map[string]string, key string) float64 {
 func Min(metrics []map[string]string, key string) float64 {
 	min := math.MaxFloat64
 	for _, metric := range metrics {
-		if key == "deliveryRate" && metric[key] == "delivery_rate" {
-			continue
-		}
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
 			log.Fatalln("fail to parse float")
@@ -213,29 +213,39 @@ func Alert(metric float64, threshold float64) bool {
 }
 
 // AggregateStatistics aggregate statistics using an aggregation function
-func AggregateStatistics(clusterResult map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string) map[string]float64 {
+func AggregateStatistics(clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods int) map[string]float64 {
+	if(len(networkResults) == 0){
+		return clusterResults
+	}
 	for metric := range networkResults[0] {
 		aggFunc := aggregationMetrics[metric]
 		if metric != "localAddr" && metric != "peerAddr" {
+			fmt.Println(metric)
+			if metric == "retrans" {
+				threshold := 0.0
+				clusterResults["cluster." + dstDomain + "." + "retran_rate"] = Rate(Sum(networkResults, "retrans") - threshold, Sum(networkResults, "total_connections"))
+				fmt.Println("Sum(networkResults, \"retrans\")", Sum(networkResults, "retrans"), "Sum(networkResults, \"total_connections\")", Sum(networkResults, "total_connections"))
+				continue
+			}
 			if aggFunc == "sum" {
-				clusterResult[metric] = Sum(networkResults, metric)
+				clusterResults["cluster." + dstDomain + "." + metric] = Sum(networkResults, metric)
 			} else if aggFunc == "avg" {
-				clusterResult[metric] = Avg(networkResults, metric)
+				clusterResults["cluster." + dstDomain + "." + metric] = Avg(networkResults, metric)
 			} else if aggFunc == "max" {
-				clusterResult[metric] = Max(networkResults, metric)
+				clusterResults["cluster." + dstDomain + "." + metric] = Max(networkResults, metric)
 			} else if aggFunc == "min" {
-				clusterResult[metric] = Min(networkResults, metric)
+				clusterResults["cluster." + dstDomain + "." + metric] = Min(networkResults, metric)
+			}
+			if metric == "bytes_send" || metric == "bytes_received" {
+				clusterResults["cluster." + dstDomain + "." + metric] = Rate(clusterResults["cluster." + dstDomain + "." + metric], float64(MonitorPeriods))
 			}
 		}
 	}
-	return clusterResult
-}
-func GetRetrainRate(clusterResult map[string]float64) float64 {
-	return Rate(clusterResult["upstream_cx_total"], clusterResult["upstream_rq_retry"])
+	return clusterResults
 }
 
 // GetClusterMetricResults Get the results of cluster statistics after filtering
-func GetClusterMetricResults(clusterName string, destinationAddress []string, clusterMetrics []string, AggregationMetrics map[string]string) map[string]map[string]float64 {
+func GetClusterMetricResults(clusterName string, destinationAddress []string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]map[string]float64 {
 	//_, addrToPort := parse.GetRemoteAddrAndPort()
 	// get the statistics from SS
 	ssMetrics := GetStatisticFromSs()
@@ -255,35 +265,39 @@ func GetClusterMetricResults(clusterName string, destinationAddress []string, cl
 	for metric, value := range clusterStatistics {
 		clusterResults[clusterName][metric] = value
 	}
-	clusterResults[clusterName]["cluster." + clusterName + ".retrain_rate"] = GetRetrainRate(clusterResults[clusterName])
-	if Alert(clusterResults[clusterName]["cluster." + clusterName + ".retrain_rate"], 0.1) {
-		clusterResults[clusterName]["cluster." + clusterName + ".retrain_rate_alert"] = 1
-	} else {
-		clusterResults[clusterName]["cluster." + clusterName + ".retrain_rate_alert"] = 0
-	}
-	for _, dstDomain := range destinationAddress {
+	for _, dstAddr := range destinationAddress {
 		// get the connection name
+		dstDomain := strings.Split(dstAddr, ":")[0]
 		clusterResults[dstDomain] = make(map[string]float64)
 		var networkResults []map[string]string
-		dstPort := strings.Split(dstDomain, ":")[1]
+		dstPort := strings.Split(dstAddr, ":")[1]
 		for _, srcIP := range sourceIP {
-			for _, dstIP := range destinationIP[dstDomain] {
+			for _, dstIP := range destinationIP[dstAddr] {
 				networkResult := Filter(ssMetrics, srcIP, dstIP, "*", dstPort, "*")
 				networkResults = append(networkResults, networkResult...)
 			}
 		}
-		clusterResults[dstDomain] = AggregateStatistics(clusterResults[dstDomain], networkResults, AggregationMetrics)
+		clusterResults[dstDomain] = AggregateStatistics(clusterResults[dstDomain], networkResults, AggregationMetrics, dstDomain, MonitorPeriods)
 	}
 	return clusterResults
 }
 
 // GetMetricChange get the change values of metrics
-func GetMetricChange(lastMetrics map[string]float64, currentMetrics map[string]float64) (map[string]float64, map[string]float64) {
-	for metric, value := range currentMetrics {
-		currentMetrics[metric] = currentMetrics[metric] - lastMetrics[metric]
-		currentMetrics[metric] = value
+func GetMetricChange(MetricTypes map[string]string, lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
+	for metric, value := range currentMetricValues {
+		formalizeMetric := strings.Join(strings.Split(metric, ".")[2:], "__")
+		if (MetricTypes[formalizeMetric] == "Gauge"){
+			continue
+		}
+		currentMetricValues[metric] = currentMetricValues[metric] - lastMetricValues[metric]
+		if(currentMetricValues[metric] < 0){
+			currentMetricValues[metric] = 0
+		}
+
+		lastMetricValues[metric] = value
+
 	}
-	return lastMetrics, currentMetrics
+	return lastMetricValues, currentMetricValues
 }
 
 // LogClusterMetricResults write the results of cluster statistics into a file
@@ -293,6 +307,7 @@ func LogClusterMetricResults(clusterOutput *os.File, clusterResults map[string]m
 		for metric, val := range clusterResult {
 			clusterOutput.WriteString(metric + ":" + fmt.Sprintf("%f", val) + ";\n")
 		}
-		clusterOutput.WriteString("\n")
+		// clusterOutput.WriteString("\n")
 	}
 }
+

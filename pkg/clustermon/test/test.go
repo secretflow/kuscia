@@ -1,5 +1,4 @@
 package main
-
 import (
 	"fmt"
 	"log"
@@ -20,7 +19,7 @@ import (
 
 func main() {
 	// initialize the output file
-	clusterOutput, err := os.OpenFile("./monitor_data", os.O_CREATE|os.O_RDWR|os.O_TRUNC|os.O_APPEND, 777)
+	clusterOutput, err := os.OpenFile("./../exp/exp3/monitoringdata", os.O_CREATE|os.O_RDWR|os.O_TRUNC|os.O_APPEND, 777)
 	if err != nil {
 		log.Fatalln("Fail to open the file", "monitor_data", err)
 	}
@@ -31,12 +30,11 @@ func main() {
 		}
 	}(clusterOutput)
 	// read the config file
-	NetworkMetrics, AggregationMetrics, ClusterMetrics, MonitorPeriods := parse.ReadConfig("config.yaml")
+	NetworkMetrics, AggregationMetrics, ClusterMetrics, MonitorPeriods := parse.ReadConfig("config_test.yaml")
 	// get clusterName and destinationAddress
-	clusterName, destinationAddress := parse.GetDestinationAddress()
+        clusterName, destinationAddress := parse.GetDestinationAddress()
 	// get the cluster metrics to be monitored
-	clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
-
+        clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
 	var MetricTypes = metric_types.NewMetricTypes()
 	// get the pid
 	pid := fmt.Sprintf("%d", os.Getpid())
@@ -61,26 +59,56 @@ func main() {
 	go func(ClusterMetrics []string, MetricTypes map[string]string, MonitorPeriods int) {
 		for {
 			// get clusterName and destinationAddress
-			clusterName, destinationAddress := parse.GetDestinationAddress()
-			// get the cluster metrics to be monitored
-			clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
-			// get cluster metrics
-			clusterMetricResults := netmon.GetClusterMetricResults(clusterName, destinationAddress, clusterMetrics, AggregationMetrics) //netmon.Get_stats(cluMetrics)
-			// calculate the change values of cluster metrics
-			clusterMetricValues[clusterName], clusterMetricResults[clusterName] = netmon.GetMetricChange(clusterMetricValues[clusterName], clusterMetricResults[clusterName])
-			for _, dstAddr := range destinationAddress {
-				clusterMetricValues[dstAddr], clusterMetricResults[dstAddr] = netmon.GetMetricChange(clusterMetricValues[dstAddr], clusterMetricResults[dstAddr])
+        		_, destinationAddress := parse.GetDestinationAddress()
+			var clusterNames []string
+			var clusterMetrics []string
+			clusterNames = append(clusterNames, "alice-to-bob-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob1-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob2-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob3-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob4-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob5-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob6-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob7-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob8-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob9-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob10-HTTP")
+			clusterNames = append(clusterNames, "alice-to-bob11-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob12-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob13-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob14-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob15-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob16-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob17-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob18-HTTP")
+                        clusterNames = append(clusterNames, "alice-to-bob19-HTTP")
+			for _, clusterName := range clusterNames{
+				clusterMetric := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
+				for _, metric := range clusterMetric{
+					clusterMetrics = append(clusterMetrics, metric)
+				}
 			}
-			// update cluster metrics in prometheus
+			clusterMetricResults := netmon.GetClusterMetricResults(clusterNames, destinationAddress, clusterMetrics, AggregationMetrics)
+			for _, clusterName := range clusterNames{
+				// get cluster metrics
+				//clusterMetricResults := netmon.GetClusterMetricResults(clusterName, destinationAddress, clusterMetrics, AggregationMetrics)
+				// calculate the change values of cluster metrics
+				clusterMetricValues[clusterName], clusterMetricResults[clusterName] = netmon.GetMetricChange(clusterMetricValues[clusterName], clusterMetricResults[clusterName])
+				for _, dstAddr := range destinationAddress {
+					clusterMetricValues[dstAddr], clusterMetricResults[dstAddr] = netmon.GetMetricChange(clusterMetricValues[dstAddr], clusterMetricResults[dstAddr])
+				}
+				// update cluster metrics in prometheus
+				// metric_export.UpdateMetrics(clusterMetricResults, MetricTypes)
+				// records the cluster metric results
+			}
 			metric_export.UpdateMetrics(clusterMetricResults, MetricTypes)
-			// records the cluster metric results
 			netmon.LogClusterMetricResults(clusterOutput, clusterMetricResults)
 			time.Sleep(time.Duration(MonitorPeriods) * time.Second)
 		}
-	}(clusterMetrics, MetricTypes, MonitorPeriods)
+	}(ClusterMetrics, MetricTypes, MonitorPeriods)
 
 	// get the usage of system resources
-	sysOutput, err := os.OpenFile("./sysdata", os.O_CREATE|os.O_RDWR|os.O_TRUNC|os.O_APPEND, 777)
+	sysOutput, err := os.OpenFile("./../exp/exp3/sysdata", os.O_CREATE|os.O_RDWR|os.O_TRUNC|os.O_APPEND, 777)
 	if err != nil {
 		log.Fatalln("Cannot open the file of sysdata", err)
 	}

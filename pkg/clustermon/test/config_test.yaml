@@ -1,10 +1,16 @@
 net_metrics:
   - rto
   - rtt
-  - delivery_rate
   - bytes_send
   - bytes_received
   - min_rtt
+
+agg_metrics:
+  - avg
+  - avg
+  - avg
+  - avg
+  - avg
 
 clu_metrics:
   - assignment_stale
@@ -118,23 +124,5 @@ clu_metrics:
   - upstream_rq_total
   - upstream_rq_tx_reset
   - version
-
-cpu_metrics:
-  - user
-  - nice
-  - system
-  - iowait
-  - irq
-  - soft_irq
-  - steal
-  - guest
-  - idle 
-
-mem_metrics:
-  - TotalAlloc
-  - Alloc
-  - Sys
-  - Mallocs
-  - Frees
 
 mon_periods: 5

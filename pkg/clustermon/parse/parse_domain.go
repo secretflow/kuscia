@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	//"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,7 +14,7 @@ import (
 
 // GetDomainName get the name of a local domain
 func GetDomainName() string {
-	resp, err := http.Get("http://localhost:1054")
+	resp, err := http.Get("http://localhost:1054/handshake")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,6 +72,7 @@ func GetDestinationAddress() (string, []string) {
 	if err != nil {
 		log.Fatalln("Fail to parse the results of config_dump", err)
 	}
+	//fmt.Println(configDumpData)
 	configData := configDumpData["configs"].([]interface{})
 	configData1 := configData[1].(map[string]interface{})
 	configData2 := configData1["dynamic_active_clusters"].([]interface{})

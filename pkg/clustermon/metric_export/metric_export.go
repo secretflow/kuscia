@@ -3,11 +3,7 @@ package metric_export
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"strings"
-	//"fmt"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-	//"E2EMon/metric_types"
-	// "github.com/prometheus/client_golang/prometheus/promhttp"
-	// "net/http"
 )
 
 func ProduceCounter(namespace string, name string, help string) prometheus.Counter {
@@ -58,22 +54,32 @@ var summarys = make(map[string]prometheus.Summary)
 
 func ProduceMetric(reg *prometheus.Registry,
 	metricType string, nameSpace string, name string, help string) *prometheus.Registry {
+	metricId := nameSpace + "_" + name
 	if metricType == "Counter" {
-		counters[name] = ProduceCounter(nameSpace, name, help)
-		reg.MustRegister(counters[name])
+		gauges[metricId] = ProduceGauge(nameSpace, name, help)
+                reg.MustRegister(gauges[metricId])
+		//counters[name] = ProduceCounter(nameSpace, name, help)
+		//reg.MustRegister(counters[name])
 	} else if metricType == "Gauge" {
-		gauges[name] = ProduceGauge(nameSpace, name, help)
-		reg.MustRegister(gauges[name])
+		gauges[metricId] = ProduceGauge(nameSpace, name, help)
+		reg.MustRegister(gauges[metricId])
 	} else if metricType == "Histogram" {
-		histograms[name] = ProduceHistogram(nameSpace, name, help)
-		reg.MustRegister(histograms[name])
+		histograms[metricId] = ProduceHistogram(nameSpace, name, help)
+		reg.MustRegister(histograms[metricId])
 	} else if metricType == "Summary" {
-		summarys[name] = ProduceSummary(nameSpace, name, help)
-		reg.MustRegister(summarys[name])
+		summarys[metricId] = ProduceSummary(nameSpace, name, help)
+		reg.MustRegister(summarys[metricId])
 	}
 	return reg
 }
+func Formalize(metric string) string{
+	metric = strings.Replace(metric, "-", "_", -1)
+	metric = strings.Replace(metric, ".", "__", -1)
+	metric = strings.ToLower(metric)
+	return metric
+}
 func ProduceMetrics(clusterName string,
+	destinationAddress []string,
 	netMetrics []string,
 	cluMetrics []string,
 	MetricTypes map[string]string) *prometheus.Registry {
@@ -82,36 +88,36 @@ func ProduceMetrics(clusterName string,
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
+	clusterName = Formalize(clusterName)
+	for _, dstAddr := range destinationAddress {
+                dstDomain := Formalize(strings.Split(dstAddr, ":")[0])
+                for _, metric := range netMetrics {
+			metric = Formalize(metric)
+			reg = ProduceMetric(reg, MetricTypes[metric], "cluster__" + dstDomain+"_", metric, metric)
+		}
+        }
 
-	clusterName = strings.Replace(clusterName, "-", "_", -1)
-	for _, metric := range netMetrics {
-		reg = ProduceMetric(reg, MetricTypes[metric], clusterName, metric, metric)
-	}
 	for _, metric := range cluMetrics {
-		str := strings.Replace(metric, ".", "_", -1)
-		str = strings.ToLower(str)
-		reg = ProduceMetric(reg, MetricTypes[metric], clusterName, str, str)
+		metric = Formalize(metric)
+		reg = ProduceMetric(reg, MetricTypes[metric], "cluster__" + clusterName+"_", metric, metric)
 	}
-
 	return reg
 }
 
-func UpdateMetrics( /*counters map[string]prometheus.Counter,
-	  gauges map[string]prometheus.Gauge,
-	  histograms map[string]prometheus.Histogram,
-	  summarys map[string]prometheus.Summary,*/
-	clusterResults map[string]map[string]float64, MetricTypes map[string]string) {
+func UpdateMetrics(clusterResults map[string]map[string]float64, MetricTypes map[string]string) {
 	for _, clusterResult := range clusterResults {
 		for metric, val := range clusterResult {
-			switch MetricTypes[metric] {
+			metricId := Formalize(metric)
+			switch MetricTypes[strings.Join(strings.Split(metric, ".")[2:], "__")] {
 			case "Counter":
-				counters[metric].Add(val)
+				gauges[metricId].Set(val)
+				//counters[metric].Add(val)
 			case "Gauge":
-				gauges[metric].Set(val)
+				gauges[metricId].Set(val)
 			case "Histogram":
-				histograms[metric].Observe(val)
+				histograms[metricId].Observe(val)
 			case "Summary":
-				summarys[metric].Observe(val)
+				summarys[metricId].Observe(val)
 			}
 		}
 	}

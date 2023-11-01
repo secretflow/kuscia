@@ -18,14 +18,14 @@ import (
 
 func main() {
 	// initialize the output file
-	clusterOutput, err := os.OpenFile("./monitor_data", os.O_CREATE|os.O_RDWR|os.O_TRUNC|os.O_APPEND, 777)
+	clusterOutput, err := os.OpenFile("./monitoringdata", os.O_CREATE|os.O_RDWR|os.O_TRUNC|os.O_APPEND, 777)
 	if err != nil {
-		log.Fatalln("Fail to open the file", "monitor_data", err)
+		log.Fatalln("Fail to open the file", "monitoringdata", err)
 	}
 	defer func(clusterOutput *os.File) {
 		err := clusterOutput.Close()
 		if err != nil {
-			log.Fatalln("Fail to close the file", "monitor_data", err)
+			log.Fatalln("Fail to close the file", "monitoringdata", err)
 		}
 	}(clusterOutput)
 	// read the config file
@@ -36,44 +36,40 @@ func main() {
 	clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
 
 	var MetricTypes = metric_types.NewMetricTypes()
-	// report to prometheus
-	reg := metric_export.ProduceMetrics(clusterName, NetworkMetrics, ClusterMetrics, MetricTypes)
-	clusterName = strings.Replace(clusterName, "-", "_", -1)
-
-	// get cluster metric value to calculate metric change
-	var clusterMetricValues = make(map[string]map[string]float64)
-	for _, dstAddr := range destinationAddress {
-		clusterMetricValues[strings.Split(dstAddr, ":")[0]] = make(map[string]float64)
-	}
-	// initialize the cluster metric value to calculate change
-	for _, clusterMetricValue := range clusterMetricValues {
-		clusterMetricValue = make(map[string]float64)
-		for _, metric := range clusterMetrics {
-			clusterMetricValue[metric] = 0
-		}
-	}
+	// register metrics for prometheus and initialize the calculation of change values
+	reg := metric_export.ProduceMetrics(clusterName, destinationAddress, NetworkMetrics, ClusterMetrics, MetricTypes)
+	lastClusterMetricValues := netmon.GetClusterMetricResults(clusterName, destinationAddress, clusterMetrics, AggregationMetrics, MonitorPeriods)
 	fmt.Println("Start to monitor the cluster metrics...")
 	// monitor the cluster metrics
-	go func(ClusterMetrics []string, MetricTypes map[string]string, MonitorPeriods int) {
+	go func(ClusterMetrics []string, MetricTypes map[string]string, MonitorPeriods int, lastClusterMetricValues map[string]map[string]float64) {
 		for {
 			// get clusterName and destinationAddress
 			clusterName, destinationAddress := parse.GetDestinationAddress()
 			// get the cluster metrics to be monitored
 			clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
 			// get cluster metrics
-			clusterMetricResults := netmon.GetClusterMetricResults(clusterName, destinationAddress, clusterMetrics, AggregationMetrics) //netmon.Get_stats(cluMetrics)
+			currentClusterMetricValues := netmon.GetClusterMetricResults(clusterName, destinationAddress, clusterMetrics, AggregationMetrics, MonitorPeriods) //netmon.Get_stats(cluMetrics)
 			// calculate the change values of cluster metrics
-			clusterMetricValues[clusterName], clusterMetricResults[clusterName] = netmon.GetMetricChange(clusterMetricValues[clusterName], clusterMetricResults[clusterName])
+			lastClusterMetricValues[clusterName], currentClusterMetricValues[clusterName] = netmon.GetMetricChange(MetricTypes, lastClusterMetricValues[clusterName], currentClusterMetricValues[clusterName])
 			for _, dstAddr := range destinationAddress {
-				clusterMetricValues[dstAddr], clusterMetricResults[dstAddr] = netmon.GetMetricChange(clusterMetricValues[dstAddr], clusterMetricResults[dstAddr])
+				dstDomain := strings.Split(dstAddr, ":")[0]
+				lastClusterMetricValues[dstDomain], currentClusterMetricValues[dstDomain] = netmon.GetMetricChange(MetricTypes, lastClusterMetricValues[dstDomain], currentClusterMetricValues[dstDomain])
 			}
 			// update cluster metrics in prometheus
-			metric_export.UpdateMetrics(clusterMetricResults, MetricTypes)
+			metric_export.UpdateMetrics(currentClusterMetricValues, MetricTypes)
+			/*for clusterName, metricValues:= range currentClusterMetricValues{
+			fmt.Println(clusterName)
+				for metric,value := range metricValues{
+			fmt.Println(metric, value)
+				}	
+			}*/
+
 			// records the cluster metric results
-			netmon.LogClusterMetricResults(clusterOutput, clusterMetricResults)
+			//fmt.Println(currentClusterMetricValues)
+			netmon.LogClusterMetricResults(clusterOutput, currentClusterMetricValues)
 			time.Sleep(time.Duration(MonitorPeriods) * time.Second)
 		}
-	}(clusterMetrics, MetricTypes, MonitorPeriods)
+	}(ClusterMetrics, MetricTypes, MonitorPeriods, lastClusterMetricValues)
 
 	// export to the prometheus
 	http.Handle(
