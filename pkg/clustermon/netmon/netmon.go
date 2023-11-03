@@ -89,7 +89,6 @@ func GetStatisticFromEnvoy(metrics []string) map[string]float64 {
 	if err != nil {
 		log.Fatalln("Fail to parse the results of envoy", err)
 	}
-	// fmt.Println(statsData)
 	stats := make(map[string]float64)
 	metricSet := make(map[string]bool)
 	for _, metric := range metrics {
@@ -220,11 +219,9 @@ func AggregateStatistics(clusterResults map[string]float64, networkResults []map
 	for metric := range networkResults[0] {
 		aggFunc := aggregationMetrics[metric]
 		if metric != "localAddr" && metric != "peerAddr" {
-			fmt.Println(metric)
 			if metric == "retrans" {
 				threshold := 0.0
 				clusterResults["cluster." + dstDomain + "." + "retran_rate"] = Rate(Sum(networkResults, "retrans") - threshold, Sum(networkResults, "total_connections"))
-				fmt.Println("Sum(networkResults, \"retrans\")", Sum(networkResults, "retrans"), "Sum(networkResults, \"total_connections\")", Sum(networkResults, "total_connections"))
 				continue
 			}
 			if aggFunc == "sum" {
@@ -245,19 +242,19 @@ func AggregateStatistics(clusterResults map[string]float64, networkResults []map
 }
 
 // GetClusterMetricResults Get the results of cluster statistics after filtering
-func GetClusterMetricResults(clusterName string, destinationAddress []string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]map[string]float64 {
+func GetClusterMetricResults(clusterName string, remoteAddress []string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]map[string]float64 {
 	//_, addrToPort := parse.GetRemoteAddrAndPort()
 	// get the statistics from SS
 	ssMetrics := GetStatisticFromSs()
 	// get the statistics from envoy
 	clusterStatistics := GetStatisticFromEnvoy(clusterMetrics)
 	// get the source domain name
-	sourceDomain := parse.GetDomainName()
+	localDomain := parse.GetLocalDomainName()
 	// get the source/destination IP from domain names
-	sourceIP := parse.GetIpFromDomain("root-kuscia-lite-" + sourceDomain)
+	sourceIP := parse.GetIpFromDomain("root-kuscia-lite-" + localDomain)
 	destinationIP := make(map[string][]string)
-	for _, domainName := range destinationAddress {
-		destinationIP[domainName] = parse.GetIpFromDomain(strings.Split(domainName, ":")[0])
+	for _, remoteDomainName := range remoteAddress {
+		destinationIP[remoteDomainName] = parse.GetIpFromDomain(strings.Split(remoteDomainName, ":")[0])
 	}
 	// group metrics by the domain name
 	clusterResults := make(map[string]map[string]float64)
@@ -265,7 +262,7 @@ func GetClusterMetricResults(clusterName string, destinationAddress []string, cl
 	for metric, value := range clusterStatistics {
 		clusterResults[clusterName][metric] = value
 	}
-	for _, dstAddr := range destinationAddress {
+	for _, dstAddr := range remoteAddress {
 		// get the connection name
 		dstDomain := strings.Split(dstAddr, ":")[0]
 		clusterResults[dstDomain] = make(map[string]float64)
@@ -285,15 +282,10 @@ func GetClusterMetricResults(clusterName string, destinationAddress []string, cl
 // GetMetricChange get the change values of metrics
 func GetMetricChange(MetricTypes map[string]string, lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
 	for metric, value := range currentMetricValues {
-		formalizeMetric := strings.Join(strings.Split(metric, ".")[2:], "__")
-		if (MetricTypes[formalizeMetric] == "Gauge"){
-			continue
-		}
 		currentMetricValues[metric] = currentMetricValues[metric] - lastMetricValues[metric]
 		if(currentMetricValues[metric] < 0){
 			currentMetricValues[metric] = 0
 		}
-
 		lastMetricValues[metric] = value
 
 	}

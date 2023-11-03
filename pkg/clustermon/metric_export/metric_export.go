@@ -56,10 +56,8 @@ func ProduceMetric(reg *prometheus.Registry,
 	metricType string, nameSpace string, name string, help string) *prometheus.Registry {
 	metricId := nameSpace + "_" + name
 	if metricType == "Counter" {
-		gauges[metricId] = ProduceGauge(nameSpace, name, help)
-                reg.MustRegister(gauges[metricId])
-		//counters[name] = ProduceCounter(nameSpace, name, help)
-		//reg.MustRegister(counters[name])
+		counters[metricId] = ProduceCounter(nameSpace, name, help)
+		reg.MustRegister(counters[metricId])
 	} else if metricType == "Gauge" {
 		gauges[metricId] = ProduceGauge(nameSpace, name, help)
 		reg.MustRegister(gauges[metricId])
@@ -110,8 +108,7 @@ func UpdateMetrics(clusterResults map[string]map[string]float64, MetricTypes map
 			metricId := Formalize(metric)
 			switch MetricTypes[strings.Join(strings.Split(metric, ".")[2:], "__")] {
 			case "Counter":
-				gauges[metricId].Set(val)
-				//counters[metric].Add(val)
+				counters[metricId].Add(val)
 			case "Gauge":
 				gauges[metricId].Set(val)
 			case "Histogram":
