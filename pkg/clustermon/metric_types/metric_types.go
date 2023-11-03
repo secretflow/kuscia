@@ -120,6 +120,8 @@ func NewMetricTypes() map[string]string {
 	MetricTypes["upstream_rq_total"] = "Gauge"
 	MetricTypes["upstream_rq_tx_reset"] = "Gauge"
 	MetricTypes["version"] = "Gauge"
-	MetricTypes["retrain_rate"] = "Gauge"
+	MetricTypes["retran_rate"] = "Gauge"
+	MetricTypes["total_connections"] = "Gauge"
+	MetricTypes["retrans"] = "Gauge"
 	return MetricTypes
 }

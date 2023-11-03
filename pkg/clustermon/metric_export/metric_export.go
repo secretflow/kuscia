@@ -1,8 +1,8 @@
 package metric_export
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"strings"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 )
 
@@ -76,11 +76,13 @@ func Formalize(metric string) string{
 	metric = strings.ToLower(metric)
 	return metric
 }
-func ProduceMetrics(clusterName string,
+func ProduceMetrics(localDomainName string,
+	clusterName string,
 	destinationAddress []string,
 	netMetrics []string,
 	cluMetrics []string,
-	MetricTypes map[string]string) *prometheus.Registry {
+	MetricTypes map[string]string,
+	aggregationMetrics map[string]string) *prometheus.Registry {
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(
 		collectors.NewGoCollector(),
@@ -91,7 +93,7 @@ func ProduceMetrics(clusterName string,
                 dstDomain := Formalize(strings.Split(dstAddr, ":")[0])
                 for _, metric := range netMetrics {
 			metric = Formalize(metric)
-			reg = ProduceMetric(reg, MetricTypes[metric], "cluster__" + dstDomain+"_", metric, metric)
+			reg = ProduceMetric(reg, MetricTypes[metric], localDomainName + "__" + dstDomain+"_", metric + "__" + aggregationMetrics[metric], metric + "with aggregation function " + aggregationMetrics[metric] )
 		}
         }
 
@@ -106,7 +108,14 @@ func UpdateMetrics(clusterResults map[string]map[string]float64, MetricTypes map
 	for _, clusterResult := range clusterResults {
 		for metric, val := range clusterResult {
 			metricId := Formalize(metric)
-			switch MetricTypes[strings.Join(strings.Split(metric, ".")[2:], "__")] {
+			metricTypeId := strings.Join(strings.Split(metric, ".")[2: 3], "__")
+			/*var metricTypeId string
+			if strings.Split(metric, ".")[0] == "cluster"{
+				metricTypeId = strings.Join(strings.Split(metric, ".")[2:], "__")
+			}else{
+				metricTypeId = strings.Join(strings.Split(metric, ".")[2: 3], "__")
+			}*/
+			switch MetricTypes[metricTypeId] {
 			case "Counter":
 				counters[metricId].Add(val)
 			case "Gauge":

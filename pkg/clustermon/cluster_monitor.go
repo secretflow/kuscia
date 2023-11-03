@@ -33,14 +33,15 @@ func main() {
 	NetworkMetrics, AggregationMetrics, ClusterMetrics, MonitorPeriods := parse.ReadConfig("config.yaml")
 	// get clusterName and clusterAddress
 	clusterName, clusterAddress := parse.GetClusterAddress()
-	//localDomain := "root-kuscia-lite-" + parse.GetLocalDomainName()
+	localDomainName := parse.GetLocalDomainName()
 	// get the cluster metrics to be monitored
 	clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
 
 	var MetricTypes = metric_types.NewMetricTypes()
 	// register metrics for prometheus and initialize the calculation of change values
-	reg := metric_export.ProduceMetrics(clusterName, clusterAddress, NetworkMetrics, ClusterMetrics, MetricTypes)
-	lastClusterMetricValues := netmon.GetClusterMetricResults(clusterName, clusterAddress, clusterMetrics, AggregationMetrics, MonitorPeriods)
+	reg := metric_export.ProduceMetrics(localDomainName, clusterName, clusterAddress, NetworkMetrics, ClusterMetrics, MetricTypes, AggregationMetrics)
+	lastClusterMetricValues := netmon.GetClusterMetricResults(localDomainName, clusterName, clusterAddress, clusterMetrics, AggregationMetrics, MonitorPeriods)
+
 	fmt.Println("Start to monitor the cluster...")
 	// monitor the cluster metrics
 	go func(ClusterMetrics []string, MetricTypes map[string]string, MonitorPeriods int, lastClusterMetricValues map[string]map[string]float64) {
@@ -50,7 +51,7 @@ func main() {
 			// get the cluster metrics to be monitored
 			clusterMetrics := netmon.ConvertClusterMetrics(ClusterMetrics, clusterName)
 			// get cluster metrics
-			currentClusterMetricValues := netmon.GetClusterMetricResults(clusterName, clusterAddress, clusterMetrics, AggregationMetrics, MonitorPeriods)
+			currentClusterMetricValues := netmon.GetClusterMetricResults(localDomainName, clusterName, clusterAddress, clusterMetrics, AggregationMetrics, MonitorPeriods)
 			// calculate the change values of cluster metrics
 			lastClusterMetricValues[clusterName], currentClusterMetricValues[clusterName] = netmon.GetMetricChange(MetricTypes, lastClusterMetricValues[clusterName], currentClusterMetricValues[clusterName])
 			for _, dstAddr := range clusterAddress {

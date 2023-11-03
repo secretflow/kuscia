@@ -212,29 +212,27 @@ func Alert(metric float64, threshold float64) bool {
 }
 
 // AggregateStatistics aggregate statistics using an aggregation function
-func AggregateStatistics(clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods int) map[string]float64 {
+func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods int) map[string]float64 {
 	if(len(networkResults) == 0){
 		return clusterResults
 	}
-	for metric := range networkResults[0] {
-		aggFunc := aggregationMetrics[metric]
+	for metric, aggFunc := range aggregationMetrics {
 		if metric != "localAddr" && metric != "peerAddr" {
-			if metric == "retrans" {
-				threshold := 0.0
-				clusterResults["cluster." + dstDomain + "." + "retran_rate"] = Rate(Sum(networkResults, "retrans") - threshold, Sum(networkResults, "total_connections"))
-				continue
-			}
-			if aggFunc == "sum" {
-				clusterResults["cluster." + dstDomain + "." + metric] = Sum(networkResults, metric)
+			if aggFunc == "rate" {
+				if metric == "retran_rate"{
+					threshold := 0.0
+					clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Rate(Sum(networkResults, "retrans") - threshold, Sum(networkResults, "total_connections"))}
+			} else if aggFunc == "sum" {
+				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Sum(networkResults, metric)
 			} else if aggFunc == "avg" {
-				clusterResults["cluster." + dstDomain + "." + metric] = Avg(networkResults, metric)
+				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Avg(networkResults, metric)
 			} else if aggFunc == "max" {
-				clusterResults["cluster." + dstDomain + "." + metric] = Max(networkResults, metric)
+				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Max(networkResults, metric)
 			} else if aggFunc == "min" {
-				clusterResults["cluster." + dstDomain + "." + metric] = Min(networkResults, metric)
+				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Min(networkResults, metric)
 			}
 			if metric == "bytes_send" || metric == "bytes_received" {
-				clusterResults["cluster." + dstDomain + "." + metric] = Rate(clusterResults["cluster." + dstDomain + "." + metric], float64(MonitorPeriods))
+				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Rate(clusterResults[localDomainName + "." + dstDomain + "." + metric], float64(MonitorPeriods))
 			}
 		}
 	}
@@ -242,16 +240,13 @@ func AggregateStatistics(clusterResults map[string]float64, networkResults []map
 }
 
 // GetClusterMetricResults Get the results of cluster statistics after filtering
-func GetClusterMetricResults(clusterName string, remoteAddress []string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]map[string]float64 {
-	//_, addrToPort := parse.GetRemoteAddrAndPort()
+func GetClusterMetricResults(localDomainName string, clusterName string, remoteAddress []string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]map[string]float64 {
 	// get the statistics from SS
 	ssMetrics := GetStatisticFromSs()
 	// get the statistics from envoy
 	clusterStatistics := GetStatisticFromEnvoy(clusterMetrics)
-	// get the source domain name
-	localDomain := parse.GetLocalDomainName()
 	// get the source/destination IP from domain names
-	sourceIP := parse.GetIpFromDomain("root-kuscia-lite-" + localDomain)
+	sourceIP := parse.GetIpFromDomain("root-kuscia-lite-" + localDomainName)
 	destinationIP := make(map[string][]string)
 	for _, remoteDomainName := range remoteAddress {
 		destinationIP[remoteDomainName] = parse.GetIpFromDomain(strings.Split(remoteDomainName, ":")[0])
@@ -274,7 +269,7 @@ func GetClusterMetricResults(clusterName string, remoteAddress []string, cluster
 				networkResults = append(networkResults, networkResult...)
 			}
 		}
-		clusterResults[dstDomain] = AggregateStatistics(clusterResults[dstDomain], networkResults, AggregationMetrics, dstDomain, MonitorPeriods)
+		clusterResults[dstDomain] = AggregateStatistics(localDomainName, clusterResults[dstDomain], networkResults, AggregationMetrics, dstDomain, MonitorPeriods)
 	}
 	return clusterResults
 }
@@ -299,7 +294,5 @@ func LogClusterMetricResults(clusterOutput *os.File, clusterResults map[string]m
 		for metric, val := range clusterResult {
 			clusterOutput.WriteString(metric + ":" + fmt.Sprintf("%f", val) + ";\n")
 		}
-		// clusterOutput.WriteString("\n")
 	}
 }
-
