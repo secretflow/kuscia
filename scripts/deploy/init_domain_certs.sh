@@ -32,15 +32,15 @@ mkdir -p ${ROOT}/etc/certs
 pushd ${ROOT}/etc/certs >/dev/null || exit
 
 if [ ! -f domain.key ]; then
-  openssl genrsa -out domain.key 2048
+  openssl genrsa -out domain.key 2048 >/dev/null 2>&1
 fi
 
-openssl req -new -nodes -key domain.key -subj "/CN=${DOMAIN_ID}" -addext "1.2.3.4=ASN1:UTF8String:${CSR_TOKEN}" -out domain.csr
+openssl req -new -nodes -key domain.key -subj "/CN=${DOMAIN_ID}" -addext "1.2.3.4=ASN1:UTF8String:${CSR_TOKEN}" -out domain.csr >/dev/null 2>&1
 
 if [ ! -f ca.key ]; then
-  openssl genrsa -out ca.key 2048
+  openssl genrsa -out ca.key 2048 >/dev/null 2>&1
 fi
 
-openssl req -x509 -new -nodes -key ca.key -subj "/CN=Kuscia" -days 10000 -out ca.crt
+openssl req -x509 -new -nodes -key ca.key -subj "/CN=Kuscia" -days 10000 -out ca.crt >/dev/null 2>&1
 
 popd >/dev/null || exit

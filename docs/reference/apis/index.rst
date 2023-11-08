@@ -8,6 +8,7 @@ Kuscia API
     domain_cn
     domainroute_cn
     domaindata_cn
+    domaindatagrant_cn
     kusciajob_cn
     serving_cn
     health_cn

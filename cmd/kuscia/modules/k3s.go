@@ -29,6 +29,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -236,15 +237,19 @@ func applyCRD(conf *Dependencies) error {
 	if err != nil {
 		return err
 	}
+	sw := sync.WaitGroup{}
 	for _, dir := range dirs {
 		if dir.IsDir() {
 			continue
 		}
 		file := filepath.Join(dirPath, dir.Name())
-		if err := applyFile(conf, file); err != nil {
-			return err
-		}
+		sw.Add(1)
+		go func(f string) {
+			applyFile(conf, f)
+			sw.Done()
+		}(file)
 	}
+	sw.Wait()
 	return nil
 }
 
@@ -305,11 +310,15 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		c.clusterRoleFile,
 		c.clusterRoleBindingFile,
 	}
+	sw := sync.WaitGroup{}
 	for _, file := range roleFiles {
-		if err := applyFile(conf, file); err != nil {
-			return err
-		}
+		sw.Add(1)
+		go func(f string) {
+			applyFile(conf, f)
+			sw.Done()
+		}(file)
 	}
+	sw.Wait()
 	return nil
 }
 
@@ -318,22 +327,27 @@ func applyKusciaResources(conf *Dependencies) error {
 	resourceFiles := []string{
 		filepath.Join(conf.RootDir, ConfPrefix, "domain-cluster-res.yaml"),
 	}
+	sw := sync.WaitGroup{}
 	for _, file := range resourceFiles {
-		if err := applyFile(conf, file); err != nil {
-			return err
-		}
+		sw.Add(1)
+		go func(f string) {
+			applyFile(conf, f)
+			sw.Done()
+		}(file)
 	}
+	sw.Wait()
 	return nil
 }
+
 func applyFile(conf *Dependencies, file string) error {
 	cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", file)
-	nlog.Infof("apply %s", file)
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		nlog.Errorf("apply %s err:%s", file, err.Error())
+		nlog.Fatalf("apply %s err:%s", file, err.Error())
 		return err
 	}
+	nlog.Infof("apply %s", file)
 	return nil
 }
 

@@ -35,7 +35,7 @@ func EnqueueObjectWithKey(obj interface{}, queue workqueue.Interface) {
 	}
 
 	queue.Add(key)
-	nlog.Infof("Enqueue key: %q", key)
+	nlog.Debugf("Enqueue key: %q", key)
 }
 
 // EnqueueObjectWithKeyName is used to enqueue object key name.
@@ -53,7 +53,7 @@ func EnqueueObjectWithKeyName(obj interface{}, queue workqueue.Interface) {
 	}
 
 	queue.Add(keyName)
-	nlog.Infof("Enqueue key %q name: %q", key, keyName)
+	nlog.Debugf("Enqueue key %q name: %q", key, keyName)
 }
 
 // EnqueueObjectWithKeyNamespace is used to enqueue object key namespace.
@@ -71,7 +71,7 @@ func EnqueueObjectWithKeyNamespace(obj interface{}, queue workqueue.Interface) {
 	}
 
 	queue.Add(keyNamespace)
-	nlog.Infof("Enqueue key %q namespace: %q", key, keyNamespace)
+	nlog.Debugf("Enqueue key %q namespace: %q", key, keyNamespace)
 }
 
 // HandleQueueItem is used to handle queue item with retrying when error happened.
@@ -101,29 +101,27 @@ func HandleQueueItem(ctx context.Context, queueID string, q workqueue.RateLimiti
 			return
 		}
 
-		nlog.Infof("Start processing item: queue id[%v], key[%v]", queueID, key)
-		defer func() {
-			nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
-		}()
-
+		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, key)
 		// Run the handler, passing it the namespace/name string of the Pod resource to be synced.
 		if err := handler(ctx, key); err != nil {
 			if q.NumRequeues(key) < maxRetries {
 				// Put the item back on the work queue to handle any transient errors.
-				nlog.Warnf("Error syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing", queueID, q.NumRequeues(key), key, err.Error())
+				nlog.Warnf("Error syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing   (%v)", queueID, q.NumRequeues(key), key, err.Error(), time.Since(startTime))
 				q.AddRateLimited(key)
 				return
 			}
 			// We've exceeded the maximum retries, so we must forget the key.
 			q.Forget(key)
-			nlog.Warnf("Forgetting: queue id[%v], key[%v], due to maximum retries[%v] reached, last error: %q",
-				queueID, key, maxRetries, err.Error())
+			nlog.Warnf("Forgetting: queue id[%v], key[%v]  (%v), due to maximum retries[%v] reached, last error: %q",
+				queueID, key, time.Since(startTime), maxRetries, err.Error())
 			return
 		}
 
 		// Finally, if no error occurs we Forget this item so it does not get queued again until
 		// another change happens.
 		q.Forget(obj)
+
+		nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
 	}
 	select {
 	case <-ctx.Done():
@@ -163,15 +161,12 @@ func HandleQueueItemWithAlwaysRetry(ctx context.Context, queueID string, q workq
 			return
 		}
 
-		nlog.Infof("Start processing item: queue id[%v], key[%v]", queueID, key)
-		defer func() {
-			nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
-		}()
+		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, key)
 
 		// Run the handler, passing it the namespace/name string of the Pod resource to be synced.
 		if err := handler(ctx, key); err != nil {
 			// Put the item back on the work queue to handle any transient errors.
-			nlog.Warnf("Error syncing: queue id[%v], key[%v]: %q, re-queuing", queueID, key, err.Error())
+			nlog.Warnf("Error syncing: queue id[%v], key[%v]: %q, re-queuing (%v)", queueID, key, err.Error(), time.Since(startTime))
 			q.AddRateLimited(key)
 			return
 		}
@@ -179,6 +174,8 @@ func HandleQueueItemWithAlwaysRetry(ctx context.Context, queueID string, q workq
 		// Finally, if no error occurs we Forget this item so it does not get queued again until
 		// another change happens.
 		q.Forget(obj)
+
+		nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
 	}
 	select {
 	case <-ctx.Done():
@@ -199,6 +196,7 @@ func HandleQueueItemWithoutRetry(ctx context.Context, queueID string, q workqueu
 	}
 
 	run := func(obj interface{}) {
+		startTime := time.Now()
 		// We call Done here so the work queue knows we have finished processing this item.
 		defer q.Done(obj)
 
@@ -212,12 +210,12 @@ func HandleQueueItemWithoutRetry(ctx context.Context, queueID string, q workqueu
 			return
 		}
 
-		nlog.Infof("Start processing item: queue id[%v], key[%v]", queueID, key)
-		defer nlog.Infof("Finish processing item: queue id[%v], key[%v]", queueID, key)
-
+		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, key)
 		// Run the handler, passing it the namespace/name string of the Pod resource to be synced.
 		if err := handler(ctx, key); err != nil {
-			nlog.Warnf("Handle queue id[%v] key[%v] failed: %v", queueID, key, err.Error())
+			nlog.Warnf("Handle queue id[%v] key[%v]  (%v) failed: %v", queueID, key, time.Since(startTime), err.Error())
+		} else {
+			nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
 		}
 	}
 	select {

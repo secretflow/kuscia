@@ -138,7 +138,7 @@ func (s *Supervisor) runProcess(ctx context.Context, cmd Cmd) error {
 	if err != nil { // process exit failed
 		nlog.Warnf("Process(%d) exit with error: %v", getCmdProcessID(cmd), err)
 	} else {
-		nlog.Infof("Process(%d) exit normaly", getCmdProcessID(cmd))
+		nlog.Infof("Process(%d) exit normally", getCmdProcessID(cmd))
 	}
 
 	if dt := time.Since(stime); dt.Milliseconds() <= int64(s.minRunningTimeMS) {

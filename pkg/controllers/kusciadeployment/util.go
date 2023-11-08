@@ -176,6 +176,10 @@ func mergeDeployTemplate(appImageTemplate *kusciav1alpha1.DeployTemplate, partyT
 			}
 		}
 	}
+
+	if partyTemplate.Spec.Affinity != nil {
+		template.Spec.Affinity = partyTemplate.Spec.Affinity.DeepCopy()
+	}
 	return template
 }
 

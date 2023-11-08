@@ -327,13 +327,10 @@ func (c *Controller) getOwnerRef(obj metav1.Object) (string, error) {
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Run(workers int) error {
-	defer func() {
-		c.kdQueue.ShutDown()
-	}()
+	defer c.kdQueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
 	nlog.Infof("Starting %v", c.Name())
-
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 	c.kubeInformerFactory.Start(c.ctx.Done())
 
@@ -360,7 +357,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.kdQueue.ShutDown()
 }
 
 // runWorkerForKdQueue is a long-running function that will continually process item from kd wwork queue.

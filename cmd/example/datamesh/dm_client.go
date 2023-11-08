@@ -39,8 +39,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
 	"github.com/secretflow/kuscia/pkg/datamesh/flight/example"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -50,8 +50,8 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
-const (
-	metaServerEndpoint = "localhost:8071"
+var (
+	metaServerEndpoint = fmt.Sprintf("%s:8071", dataMeshHost)
 )
 
 type MockFlightClient struct {
@@ -75,14 +75,28 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 		err          error
 		datasourceID string
 		domainDataID string
+
+		localDatasourceID string
+		ossDatasourceID   string
+		mysqlDatasourceID string
 	)
 
 	m.flightClient, err = createFlightClient(metaServerEndpoint, config)
 
-	if datasourceID, err = m.createDataSource(); err != nil {
+	if localDatasourceID, err = m.createLocalFsDataSource(); err != nil {
 		return err
 	}
 
+	if ossDatasourceID, err = m.createOSSDataSource(); err != nil {
+		return err
+	}
+
+	if mysqlDatasourceID, err = m.createMysqlDataSource(); err != nil {
+		return err
+	}
+	nlog.Infof("LocalFsID:%s ossID:%s mysqlID:%s", localDatasourceID, ossDatasourceID, mysqlDatasourceID)
+
+	datasourceID = localDatasourceID
 	if err := m.QueryDataSource(datasourceID); err != nil {
 		nlog.Warnf("Query datasource info fail: %v", err)
 		return err
@@ -105,7 +119,7 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 	return m.flightClient.Close()
 }
 
-func (m *MockFlightClient) createDataSource() (string, error) {
+func (m *MockFlightClient) createLocalFsDataSource() (string, error) {
 	// CreateDataSource
 	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
 		Request: &datamesh.CreateDomainDataSourceRequest{
@@ -120,6 +134,54 @@ func (m *MockFlightClient) createDataSource() (string, error) {
 			AccessDirectly: false,
 		},
 	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createOSSDataSource() (string, error) {
+	// CreateDataSource
+	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
+		Request: &datamesh.CreateDomainDataSourceRequest{
+			DatasourceId: "",
+			Name:         "oss-ds",
+			Type:         "oss",
+			Info: &datamesh.DataSourceInfo{
+				Oss: &datamesh.OssDataSourceInfo{
+					Endpoint:        fmt.Sprintf("%s:9000", dataMeshHost),
+					Bucket:          "testBucket",
+					Prefix:          "/xxx/",
+					AccessKeyId:     "ak",
+					AccessKeySecret: "sk",
+					StorageType:     "minio",
+				},
+			},
+			AccessDirectly: false,
+		},
+	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createMysqlDataSource() (string, error) {
+	// CreateDataSource
+	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
+		Request: &datamesh.CreateDomainDataSourceRequest{
+			DatasourceId: "",
+			Name:         "mysql-ds",
+			Type:         "mysql",
+			Info: &datamesh.DataSourceInfo{
+				Database: &datamesh.DatabaseDataSourceInfo{
+					Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),
+					User:     "root",
+					Password: "passwd",
+					Database: "demo",
+				},
+			},
+			AccessDirectly: false,
+		},
+	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createDataSource(createDatasourceReq *datamesh.ActionCreateDomainDataSourceRequest) (string, error) {
 	msg, err := proto.Marshal(createDatasourceReq)
 	if err != nil {
 		return "", err
@@ -139,16 +201,12 @@ func (m *MockFlightClient) createDataSource() (string, error) {
 		nlog.Warnf("Receive ActionCreateDomainDataSourceResponse err: %v", err)
 	}
 
-	var anyCmd anypb.Any
 	var createDatasourceResp datamesh.ActionCreateDomainDataSourceResponse
-	if err := proto.Unmarshal(result.Body, &anyCmd); err != nil {
+	if err := proto.Unmarshal(result.Body, &createDatasourceResp); err != nil {
 		nlog.Warnf("Unmarshal ActionCreateDomainDataSourceResponse err: %v", err)
-	}
-	if err := anyCmd.UnmarshalTo(&createDatasourceResp); err != nil {
-		nlog.Warnf("Unmarshal ActionCreateDomainDataSourceResponse err: %v", err)
-		return "", err
 	}
 	datasourceID := createDatasourceResp.Response.Data.DatasourceId
+	nlog.Infof("data-source-id:%s, type is:%s", datasourceID, createDatasourceReq.Request.Type)
 	return datasourceID, nil
 }
 
@@ -177,12 +235,8 @@ func (m *MockFlightClient) QueryDataSource(datasourceID string) error {
 		return err
 	}
 
-	var anyCmd anypb.Any
 	var queryDatasourceResp datamesh.ActionQueryDomainDataSourceResponse
-	if err := proto.Unmarshal(result.Body, &anyCmd); err != nil {
-		nlog.Warnf("Unmarshal ActionQueryDomainDataSourceResponse err: %v", err)
-	}
-	if err := anyCmd.UnmarshalTo(&queryDatasourceResp); err != nil {
+	if err := proto.Unmarshal(result.Body, &queryDatasourceResp); err != nil {
 		nlog.Warnf("Unmarshal ActionQueryDomainDataSourceResponse err: %v", err)
 		return err
 	}
@@ -193,17 +247,18 @@ func (m *MockFlightClient) QueryDataSource(datasourceID string) error {
 }
 
 func (m *MockFlightClient) createDomainData(datasourceID string) (string, error) {
-	cols, err := flight2.ArrowSchema2DataMeshColumns(example.Records[m.testDataType][0].Schema())
+	cols, err := common.ArrowSchema2DataMeshColumns(example.Records[m.testDataType][0].Schema())
+	nlog.Infof("DomainData Cols:%v", cols)
 	if err != nil {
 		return "", err
 	}
 	createDomainDataReq := &datamesh.ActionCreateDomainDataRequest{
 		Request: &datamesh.CreateDomainDataRequest{
 			Header:       nil,
-			DomaindataId: m.testDataType,
+			DomaindataId: fmt.Sprintf("%s-%d", m.testDataType, time.Now().UnixNano()),
 			Name:         m.testDataType,
 			Type:         "table",
-			RelativeUri:  "/b.csv", // for mysql table, RelativeUri should be "dbName.tableName"
+			RelativeUri:  "b.csv", // for mysql table, RelativeUri should be "dbName.tableName"
 			DatasourceId: datasourceID,
 			Columns:      cols,
 			FileFormat:   v1alpha1.FileFormat_CSV,
@@ -229,12 +284,8 @@ func (m *MockFlightClient) createDomainData(datasourceID string) (string, error)
 		nlog.Warnf("Recv ActionCreateDomainDataResponse err: %v", err)
 	}
 
-	var anyCmd anypb.Any
 	var createDomainDataResp datamesh.ActionCreateDomainDataResponse
-	if err := proto.Unmarshal(result.Body, &anyCmd); err != nil {
-		nlog.Warnf("Unmarshal ActionCreateDomainDataResponse err: %v", err)
-	}
-	if err := anyCmd.UnmarshalTo(&createDomainDataResp); err != nil {
+	if err := proto.Unmarshal(result.Body, &createDomainDataResp); err != nil {
 		nlog.Warnf("Unmarshal ActionCreateDomainDataResponse err: %v", err)
 		return "", err
 	}
@@ -334,8 +385,10 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 	defer flightClient.Close()
 	var records []arrow.Record
 	if m.testDataType == binaryTestData {
+		nlog.Infof("MakeBinaryRecords ")
 		records = example.MakeBinaryRecords()
 	} else {
+		nlog.Infof("MakePrimitiveRecords ")
 		records = example.MakePrimitiveRecords()
 	}
 

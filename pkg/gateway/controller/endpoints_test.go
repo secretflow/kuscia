@@ -127,8 +127,8 @@ func (c *endpointController) runCase(t *testing.T, testCases []testCase) {
 			for i := 0; i <= 10; i++ {
 				if err1 != nil || err2 != nil {
 					time.Sleep(600 * time.Millisecond)
-					internalVh, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
-					externalVh, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+					_, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
+					_, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
 				} else {
 					break
 				}
@@ -152,8 +152,8 @@ func (c *endpointController) runCase(t *testing.T, testCases []testCase) {
 			for i := 0; i <= 5; i++ {
 				if err1 == nil || err2 == nil {
 					time.Sleep(600 * time.Millisecond)
-					internalVh, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
-					externalVh, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+					_, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
+					_, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
 				} else {
 					break
 				}

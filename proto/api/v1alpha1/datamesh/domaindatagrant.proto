@@ -39,7 +39,7 @@ message GrantLimit {
   int64 expiration_time = 1;
   int32 use_count = 2;
   string flow_id = 3;
-  repeated string componets = 4;
+  repeated string components = 4;
   string initiator = 5;
   string input_config = 6;
 }

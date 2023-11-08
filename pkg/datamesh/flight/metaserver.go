@@ -28,6 +28,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
@@ -77,7 +78,7 @@ func (s *DomainDataMetaServer) GetSchema(ctx context.Context, query *datamesh.Co
 
 	var fields []arrow.Field
 	for _, column := range domainData.Columns {
-		colType := Convert2ArrowColumnType(column.Type)
+		colType := common.Convert2ArrowColumnType(column.Type)
 		if colType == nil {
 			return nil, buildGrpcErrorf(nil, codes.FailedPrecondition, "invalid column(%s）with type(%s)", column.Name,
 				column.Type)
@@ -111,6 +112,10 @@ func (s *DomainDataMetaServer) GetFlightInfoDomainDataQuery(ctx context.Context,
 	// adjust ContentType
 	if strings.ToLower(domainDataResp.Data.Type) != "table" {
 		query.ContentType = datamesh.ContentType_RAW
+	}
+
+	if err := service.CheckColType(domainDataResp.Data.Columns, datasource.Type); err != nil {
+		return nil, buildGrpcErrorf(nil, codes.FailedPrecondition, err.Error())
 	}
 
 	dpQuery := &datamesh.CommandDataMeshQuery{
@@ -148,6 +153,10 @@ func (s *DomainDataMetaServer) GetFlightInfoDomainDataUpdate(ctx context.Context
 
 	if datasource, err = s.getDataSource(ctx, domainData.GetDatasourceId()); err != nil {
 		return nil, err
+	}
+
+	if err := service.CheckColType(domainDataResp.Data.Columns, datasource.Type); err != nil {
+		return nil, buildGrpcErrorf(nil, codes.FailedPrecondition, err.Error())
 	}
 
 	// adjust ContentType
@@ -333,19 +342,13 @@ func buildGrpcErrorf(appStatus *v1alpha1.Status, code codes.Code, format string,
 
 func packActionResult(msg proto.Message) (*flight.Result, error) {
 	var (
-		anyCmd anypb.Any
-		err    error
+		err error
 	)
 
-	if err = anyCmd.MarshalFrom(msg); err != nil {
-		nlog.Warnf("unable to marshal final response: %v", err)
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("%v: unable to marshal final response", err))
-	}
-
 	ret := &flight.Result{}
-	if ret.Body, err = proto.Marshal(&anyCmd); err != nil {
-		nlog.Warnf("unable to marshal final response: %v", err)
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("%v: unable to marshal final response", err))
+	if ret.Body, err = proto.Marshal(msg); err != nil {
+		nlog.Warnf("unable to marshal msg to flight.Result.Body: %v", err)
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Unable to marshal final response: %v", err))
 	}
 	return ret, nil
 }

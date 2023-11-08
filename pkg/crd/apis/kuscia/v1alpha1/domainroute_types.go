@@ -285,7 +285,7 @@ type TokenConfig struct {
 	// +optional
 	RollingUpdatePeriod int `json:"rollingUpdatePeriod"`
 	// Token generation method.
-	// +kubebuilder:validation:Enum=RSA-GEN;RAND-GEN;UID-RSA-GEN
+	// +kubebuilder:validation:Enum=RSA-GEN;UID-RSA-GEN
 	TokenGenMethod TokenGenMethodType `json:"tokenGenMethod"`
 }
 
@@ -326,6 +326,7 @@ type DomainRouteMTLSConfig struct {
 
 // DomainRouteStatus represents information about the status of DomainRoute.
 type DomainRouteStatus struct {
+	IsDestinationAuthrized bool `json:"isDestinationAuthrized"`
 	// +optional
 	TokenStatus DomainRouteTokenStatus `json:"tokenStatus,omitempty"`
 }

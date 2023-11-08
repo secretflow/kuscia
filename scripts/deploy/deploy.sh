@@ -27,23 +27,23 @@ function log() {
 }
 
 function arch_check() {
-   local arch=$(uname -m)
-   case $arch in
-    *"arm"*)
-        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
-        exit 1
-        ;;
-    "x86_64")
-        echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
-        ;;
-    "amd64")
-        echo "Warning: amd64 architecture. Continuing..."
-        ;;
-    *)
-        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
-        exit 1
-        ;;
-    esac
+  local arch=$(uname -m)
+  case $arch in
+  *"arm"*)
+    echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+    exit 1
+    ;;
+  "x86_64")
+    echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
+    ;;
+  "amd64")
+    echo "Warning: amd64 architecture. Continuing..."
+    ;;
+  *)
+    echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+    exit 1
+    ;;
+  esac
 }
 
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
@@ -52,7 +52,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.2.0.dev20230926
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.2.0.dev20231025
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
@@ -113,6 +113,24 @@ function do_http_probe() {
   while [ $retry -lt "$max_retry" ]; do
     local status_code
     status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}")
+    if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
+      return 0
+    fi
+    sleep 1
+    retry=$((retry + 1))
+  done
+
+  return 1
+}
+
+function do_https_probe() {
+  local ctr=$1
+  local endpoint=$2
+  local max_retry=$3
+  local retry=0
+  while [ $retry -lt "$max_retry" ]; do
+    local status_code
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}"   --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key )
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -226,7 +244,7 @@ function create_secretflow_app_image() {
 
 function probe_datamesh() {
   local domain_ctr=$1
-  if ! do_http_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30; then
+  if ! do_https_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30; then
     echo "[Error] Probe datamesh in container '$domain_ctr' failed." >&2
     echo "You cloud run command that 'docker logs $domain_ctr' to check the log" >&2
   fi
@@ -235,7 +253,6 @@ function probe_datamesh() {
 
 function create_domaindata_table() {
   local ctr=$1
-
 
   # create domain data table
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_table.sh "${DOMAIN_ID}"
@@ -269,7 +286,7 @@ function getIPV4Address() {
 }
 
 function generate_mount_flag() {
-  local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data "
+  local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data  "
   if [ -e "${KUSCIA_CONFIG_FILE}" ]; then
     mount_flag=$mount_flag+"-v ${KUSCIA_CONFIG_FILE}:/home/kuscia/etc/kuscia.yaml"
   fi
@@ -521,7 +538,7 @@ function init() {
   [[ ${ROOT} == "" ]] && ROOT=${PWD}
   [[ ${DOMAIN_CERTS_DIR} == "" ]] && DOMAIN_CERTS_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-certs"
   [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-data"
-  [[ ${DOMAIN_HOST_IP} == "" ]] && DOMAIN_HOST_IP=$(ifconfig eth0 | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' || true)
+  [[ ${DOMAIN_HOST_IP} == "" ]] && DOMAIN_HOST_IP=$(getIPV4Address)
 
   log "ROOT=${ROOT}"
   log "DOMAIN_ID=${DOMAIN_ID}"

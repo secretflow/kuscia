@@ -117,12 +117,6 @@ func (ci *certIssuance) CanExec(ctx hook.Context) bool {
 		return false
 	}
 
-	nlog.Infof("get pod is %+v", pod)
-	nlog.Infof("get labels is %+v", pod.Labels)
-	for l, v := range pod.Labels {
-		nlog.Infof("get pod.Labels[%s] is %+v", l, v)
-	}
-
 	if pod == nil || pod.Labels == nil ||
 		(pod.Labels[common.LabelCommunicationRoleServer] != common.True &&
 			pod.Labels[common.LabelCommunicationRoleClient] != common.True) {

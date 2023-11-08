@@ -52,7 +52,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.2.0.dev20230926"
+SF_IMAGE_TAG="1.2.0.dev20231025"
 SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
 NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
@@ -323,7 +323,7 @@ function create_secretflow_app_image() {
 
 function create_domaindatagrant_alice2bob() {
   local ctr=$1
-  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
+  docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
       --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 }
 
@@ -339,7 +339,7 @@ function create_domaindata_alice_table() {
 
 function create_domaindatagrant_bob2alice() {
   local ctr=$1
-  docker exec -it ${ctr} curl 127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
+  docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
     --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 }
 
@@ -539,7 +539,7 @@ function create_cluster_domain_route() {
 
   log "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
   copy_between_containers ${src_ctr}:${CTR_CERT_ROOT}/domain.csr ${dest_ctr}:${src_domain_csr}
-  docker exec -it ${dest_ctr} openssl x509 -req -in $src_domain_csr -CA ${CTR_CERT_ROOT}/ca.crt -CAkey ${CTR_CERT_ROOT}/ca.key -CAcreateserial -days 10000 -out ${src_2_dest_cert}
+  docker exec -it ${dest_ctr} openssl x509 -req -in $src_domain_csr -CA ${CTR_CERT_ROOT}/ca.crt -CAkey ${CTR_CERT_ROOT}/ca.key -CAcreateserial -days 10000 -out ${src_2_dest_cert}  >/dev/null 2>&1
   copy_between_containers ${dest_ctr}:${CTR_CERT_ROOT}/ca.crt ${MASTER_CTR}:${dest_ca}
   copy_between_containers ${dest_ctr}:${src_2_dest_cert} ${MASTER_CTR}:${src_2_dest_cert}
 
@@ -699,10 +699,8 @@ function build_interconn() {
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
   log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
-  copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.csr ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.csr
+  copy_between_containers ${member_ctr}:${CTR_ROOT}/var/tmp/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
-  copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt ${member_ctr}:${CTR_CERT_ROOT}/domain-2-${host_domain}.crt
-  copy_between_containers ${host_ctr}:${CTR_CERT_ROOT}/ca.crt ${member_ctr}:${CTR_CERT_ROOT}/${host_domain}.host.ca.crt
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}
   log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"

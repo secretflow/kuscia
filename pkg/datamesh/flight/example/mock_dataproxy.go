@@ -33,7 +33,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
@@ -183,7 +183,7 @@ func (m *MockDataProxy) getDataByTicket(ticketID string, fs flight.FlightService
 
 	fields := make([]arrow.Field, 0)
 	for i, column := range query.Domaindata.Columns {
-		colType := flight2.Convert2ArrowColumnType(column.Type)
+		colType := common.Convert2ArrowColumnType(column.Type)
 		if colType == nil {
 			return status.Errorf(codes.Internal, "invalid column(%s）with type(%s)", column.Name, column.Type)
 		}
@@ -267,8 +267,12 @@ func (m *MockDataProxy) getDataByTicket(ticketID string, fs flight.FlightService
 
 func (m *MockDataProxy) buildMockFlightInfo(ticket *flight.Ticket) (*flight.FlightInfo, error) {
 	return &flight.FlightInfo{
-		Schema:           nil,
-		FlightDescriptor: nil,
+		Schema: nil,
+		FlightDescriptor: &flight.FlightDescriptor{
+			Type: flight.DescriptorCMD,
+			Cmd:  []byte{},
+			Path: []string{},
+		},
 		Endpoint: []*flight.FlightEndpoint{
 			{
 				Ticket: ticket,

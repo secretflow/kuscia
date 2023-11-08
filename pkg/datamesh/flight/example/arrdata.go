@@ -114,7 +114,7 @@ func MakePrimitiveRecords() []arrow.Record {
 	schema := arrow.NewSchema(
 		[]arrow.Field{
 			{Name: "bools", Type: arrow.FixedWidthTypes.Boolean, Nullable: true},
-			{Name: "int8s", Type: arrow.PrimitiveTypes.Int8, Nullable: true},
+			{Name: "int64s", Type: arrow.PrimitiveTypes.Int64, Nullable: true},
 			{Name: "float64s", Type: arrow.PrimitiveTypes.Float64, Nullable: true},
 		}, &meta,
 	)
@@ -123,17 +123,17 @@ func MakePrimitiveRecords() []arrow.Record {
 	chunks := [][]arrow.Array{
 		{
 			arrayOf(mem, []bool{true, false, true, false, true}, mask),
-			arrayOf(mem, []int8{-1, -2, -3, -4, -5}, mask),
+			arrayOf(mem, []int64{-1, -2, -3, -4, -5}, mask),
 			arrayOf(mem, []float64{+1, +2, +3, +4, +5}, mask),
 		},
 		{
 			arrayOf(mem, []bool{true, false, true, false, true}, mask),
-			arrayOf(mem, []int8{-11, -12, -13, -14, -15}, mask),
+			arrayOf(mem, []int64{-11, -12, -13, -14, -15}, mask),
 			arrayOf(mem, []float64{+11, +12, +13, +14, +15}, mask),
 		},
 		{
 			arrayOf(mem, []bool{true, false, true, false, true}, mask),
-			arrayOf(mem, []int8{-21, -22, -23, -24, -25}, mask),
+			arrayOf(mem, []int64{-21, -22, -23, -24, -25}, mask),
 			arrayOf(mem, []float64{+21, +22, +23, +24, +25}, mask),
 		},
 	}

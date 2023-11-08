@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -334,17 +335,17 @@ func parseDataSource(sourceType string, info *datamesh.DataSourceInfo) (uri stri
 	}
 
 	switch sourceType {
-	case DomainDataSourceTypeOSS:
+	case common.DomainDataSourceTypeOSS:
 		if isInvalid(info.Oss == nil) {
 			return
 		}
-		uri = info.Oss.Bucket + "/" + info.Oss.Prefix
-	case DomainDataSourceTypeLocalFS:
+		uri = strings.TrimRight(info.Oss.Bucket, "/") + "/" + strings.TrimLeft(info.Oss.Prefix, "/")
+	case common.DomainDataSourceTypeLocalFS:
 		if isInvalid(info.Localfs == nil) {
 			return
 		}
 		uri = info.Localfs.Path
-	case DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql:
 		if isInvalid(info.Database == nil) {
 			return
 		}
@@ -383,13 +384,13 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*datamesh.Da
 	var err error
 	connectionBytes := []byte(connectionStr)
 	switch sourceType {
-	case DomainDataSourceTypeOSS:
+	case common.DomainDataSourceTypeOSS:
 		dsInfo.Oss = &datamesh.OssDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Oss)
-	case DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql:
 		dsInfo.Database = &datamesh.DatabaseDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Database)
-	case DomainDataSourceTypeLocalFS:
+	case common.DomainDataSourceTypeLocalFS:
 		dsInfo.Localfs = &datamesh.LocalDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Localfs)
 	default:
@@ -407,11 +408,11 @@ func encodeDataSourceInfo(sourceType string, dsInfo *datamesh.DataSourceInfo) (s
 	var err error
 	var connectionStr []byte
 	switch sourceType {
-	case DomainDataSourceTypeOSS:
+	case common.DomainDataSourceTypeOSS:
 		connectionStr, err = json.Marshal(dsInfo.Oss)
-	case DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql:
 		connectionStr, err = json.Marshal(dsInfo.Database)
-	case DomainDataSourceTypeLocalFS:
+	case common.DomainDataSourceTypeLocalFS:
 		connectionStr, err = json.Marshal(dsInfo.Localfs)
 	default:
 		err = fmt.Errorf("invalid datasourceType:%s", sourceType)
@@ -421,4 +422,8 @@ func encodeDataSourceInfo(sourceType string, dsInfo *datamesh.DataSourceInfo) (s
 	}
 
 	return string(connectionStr), nil
+}
+
+func isFSDataSource(dsType string) bool {
+	return dsType == common.DomainDataSourceTypeLocalFS || dsType == common.DomainDataSourceTypeOSS
 }

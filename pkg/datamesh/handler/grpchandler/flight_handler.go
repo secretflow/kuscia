@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
@@ -65,27 +66,35 @@ func (f *FlightMetaHandler) GetSchema(ctx context.Context, request *flight.Fligh
 func (f *FlightMetaHandler) GetFlightInfo(ctx context.Context, request *flight.FlightDescriptor) (*flight.FlightInfo,
 	error) {
 	var (
-		anyCmd anypb.Any
-		msg    proto.Message
-		err    error
+		anyCmd     anypb.Any
+		msg        proto.Message
+		err        error
+		flightInfo *flight.FlightInfo
 	)
 
 	if err = proto.Unmarshal(request.Cmd, &anyCmd); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "unable to parse command: %s", err.Error())
+		nlog.Warnf("Unable to parse FlightDescriptor.Cmd to Any")
+		return nil, status.Errorf(codes.InvalidArgument, "unable to parse command: %v", err)
 	}
 
 	if msg, err = anyCmd.UnmarshalNew(); err != nil {
+		nlog.Warnf("FlightDescriptor.Cmd UnmarshalNew fail: %v", err)
 		return nil, status.Errorf(codes.InvalidArgument, "could not unmarshal Any to a command type: %s", err.Error())
 	}
 
 	switch cmd := msg.(type) {
 	case *datamesh.CommandDomainDataQuery:
-		return f.srv.GetFlightInfoDomainDataQuery(ctx, cmd)
+		flightInfo, err = f.srv.GetFlightInfoDomainDataQuery(ctx, cmd)
 	case *datamesh.CommandDomainDataUpdate:
-		return f.srv.GetFlightInfoDomainDataUpdate(ctx, cmd)
+		flightInfo, err = f.srv.GetFlightInfoDomainDataUpdate(ctx, cmd)
+	default:
+		err = status.Error(codes.InvalidArgument, "FlightDescriptor.Cmd of GetFlightInfo Request is invalid")
 	}
 
-	return nil, status.Error(codes.InvalidArgument, "request command is invalid")
+	if err != nil {
+		nlog.Warnf("GetFlightInfo fail: %v", err)
+	}
+	return flightInfo, err
 }
 
 func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.FlightService_DoActionServer) error {
@@ -95,6 +104,7 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 	)
 
 	buildUnmarshalError := func() error {
+		nlog.Warnf("Action Request body can not deserialize to %s, body size:%d", action.Type, len(action.Body))
 		return status.Errorf(codes.InvalidArgument, "request action body can not deserialize to %s", action.Type)
 	}
 
@@ -116,9 +126,7 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 		if err = proto.Unmarshal(action.Body, &request); err != nil {
 			return buildUnmarshalError()
 		}
-		if result, err = f.srv.DoActionQueryDomainDataRequest(context.Background(), &request); err != nil {
-			return err
-		}
+		result, err = f.srv.DoActionQueryDomainDataRequest(context.Background(), &request)
 	case "ActionUpdateDomainDataRequest":
 		var (
 			request datamesh.ActionUpdateDomainDataRequest
@@ -126,9 +134,7 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 		if err = proto.Unmarshal(action.Body, &request); err != nil {
 			return buildUnmarshalError()
 		}
-		if result, err = f.srv.DoActionUpdateDomainDataRequest(context.Background(), &request); err != nil {
-			return err
-		}
+		result, err = f.srv.DoActionUpdateDomainDataRequest(context.Background(), &request)
 	case "ActionDeleteDomainDataRequest":
 		var (
 			request datamesh.ActionDeleteDomainDataRequest
@@ -136,9 +142,7 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 		if err = proto.Unmarshal(action.Body, &request); err != nil {
 			return buildUnmarshalError()
 		}
-		if result, err = f.srv.DoActionDeleteDomainDataRequest(context.Background(), &request); err != nil {
-			return err
-		}
+		result, err = f.srv.DoActionDeleteDomainDataRequest(context.Background(), &request)
 	case "ActionCreateDomainDataSourceRequest":
 		var (
 			request datamesh.ActionCreateDomainDataSourceRequest
@@ -146,9 +150,7 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 		if err = proto.Unmarshal(action.Body, &request); err != nil {
 			return buildUnmarshalError()
 		}
-		if result, err = f.srv.DoActionCreateDomainDataSourceRequest(context.Background(), &request); err != nil {
-			return err
-		}
+		result, err = f.srv.DoActionCreateDomainDataSourceRequest(context.Background(), &request)
 	case "ActionQueryDomainDataSourceRequest":
 		var (
 			request datamesh.ActionQueryDomainDataSourceRequest
@@ -156,11 +158,15 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 		if err = proto.Unmarshal(action.Body, &request); err != nil {
 			return buildUnmarshalError()
 		}
-		if result, err = f.srv.DoActionQueryDomainDataSourceRequest(context.Background(), &request); err != nil {
-			return err
-		}
+		result, err = f.srv.DoActionQueryDomainDataSourceRequest(context.Background(), &request)
 	default:
-		return status.Errorf(codes.InvalidArgument, "unsupported action type: %s", action.Type)
+		err = status.Errorf(codes.InvalidArgument, "unsupported action type: %s", action.Type)
 	}
+
+	if err != nil {
+		nlog.Warnf("DoAction %s fail: %v", action.Type, err)
+		return err
+	}
+
 	return stream.Send(result)
 }

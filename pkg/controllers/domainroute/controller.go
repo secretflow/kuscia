@@ -85,7 +85,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 				if !ok {
 					return
 				}
-				nlog.Infof("Syncing DomainRoute because found new Gateway(%s)", newGateway.Namespace)
+				nlog.Debugf("Syncing DomainRoute because found new Gateway(%s)", newGateway.Namespace)
 				c.syncDomainRouteByNamespace(newGateway.Namespace)
 			},
 		},
@@ -100,7 +100,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 				if !ok {
 					return
 				}
-				nlog.Infof("Found DomainRoute(%s/%s) add", newDr.Namespace, newDr.Name)
+				nlog.Debugf("Found DomainRoute(%s/%s) add", newDr.Namespace, newDr.Name)
 				c.enqueueDomainRoute(newone)
 			},
 			// AddFunc is unnecessary. Clusterdomainroute's handler will create it and continue to process.
@@ -109,7 +109,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 				if !ok {
 					return
 				}
-				nlog.Infof("Found DomainRoute(%s/%s) update", newDr.Namespace, newDr.Name)
+				nlog.Debugf("Found DomainRoute(%s/%s) update", newDr.Namespace, newDr.Name)
 				c.enqueueDomainRoute(newone)
 			},
 			DeleteFunc: func(obj interface{}) {
@@ -117,7 +117,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 				if !ok {
 					return
 				}
-				nlog.Infof("Found DomainRoute(%s/%s) deleted", dr.Namespace, dr.Name)
+				nlog.Debugf("Found DomainRoute(%s/%s) deleted", dr.Namespace, dr.Name)
 			},
 		},
 	)
@@ -131,6 +131,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 // workers to finish processing their current work items.
 func (c *controller) Run(threadiness int) error {
 	defer utilruntime.HandleCrash()
+	defer c.domainRouteWorkqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
 	nlog.Info("Starting DomainRoute controller")
@@ -143,12 +144,11 @@ func (c *controller) Run(threadiness int) error {
 
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(func() {
-			c.runWoker(c.ctx)
+			c.runWorker(c.ctx)
 		}, time.Second, c.ctx.Done())
 	}
 	nlog.Info("Started DomainRoute controller")
 	<-c.ctx.Done()
-	nlog.Info("DomainRoute controller run end")
 	return nil
 }
 
@@ -157,7 +157,7 @@ func (c *controller) Name() string {
 }
 
 // controller is the controller implementation for ClusterDomainRoute resources
-func (c *controller) runWoker(ctx context.Context) {
+func (c *controller) runWorker(ctx context.Context) {
 	for queue.HandleQueueItemWithAlwaysRetry(ctx, controllerName, c.domainRouteWorkqueue, c.syncHandler) {
 	}
 }
@@ -180,7 +180,9 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	dr = addLabel(ctx, c.kusciaClient, dr)
+	if ensureLabels(ctx, c.kusciaClient, dr) {
+		return nil
+	}
 
 	if err := DoValidate(&dr.Spec); err != nil {
 		nlog.Error(err.Error())
@@ -191,11 +193,19 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		if dr.Spec.TokenConfig == nil {
 			return fmt.Errorf("tokenconfig cant be null")
 		}
+		if dr.Spec.TokenConfig.SourcePublicKey == "" || dr.Spec.TokenConfig.DestinationPublicKey == "" {
+			nlog.Warnf("domainroute %s/%s select initializer failed, because source or destination pub is null, wait domain update", dr.Namespace, dr.Name)
+			return nil
+		}
 		if namespace == dr.Spec.Source {
 			if c.needRollingToNext(ctx, dr) {
-				c.preRollingSourceDomainRoute(ctx, dr, false)
-				return nil
+				return c.preRollingSourceDomainRoute(ctx, dr)
+			} else {
+				if hasUpdate, err := c.ensureInitializer(ctx, dr); err != nil || hasUpdate {
+					return err
+				}
 			}
+
 			if dr.Status.TokenStatus.RevisionToken.IsReady {
 				c.domainRouteWorkqueue.AddAfter(key, time.Until(dr.Status.TokenStatus.RevisionToken.ExpirationTime.Time))
 				return c.postRollingSourceDomainRoute(ctx, dr)
@@ -227,7 +237,7 @@ func (c *controller) syncDomainRouteByNamespace(namespace string) {
 	}
 }
 
-func addLabel(ctx context.Context, kusciaClient kusciaclientset.Interface, dr *kusciaapisv1alpha1.DomainRoute) *kusciaapisv1alpha1.DomainRoute {
+func ensureLabels(ctx context.Context, kusciaClient kusciaclientset.Interface, dr *kusciaapisv1alpha1.DomainRoute) bool {
 	var err error
 	if dr.Labels == nil {
 		drCopy := dr.DeepCopy()
@@ -235,23 +245,23 @@ func addLabel(ctx context.Context, kusciaClient kusciaclientset.Interface, dr *k
 			common.KusciaSourceKey:      dr.Spec.Source,
 			common.KusciaDestinationKey: dr.Spec.Destination,
 		}
-		if dr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil {
-			nlog.Errorf("Update domainroute %s/%s error:%s", dr.Namespace, dr.Name, err.Error())
+		if _, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil {
+			nlog.Warnf("Update domainroute %s/%s error:%s", dr.Namespace, dr.Name, err.Error())
 		}
+		return true
 	} else if _, ok := dr.Labels[common.KusciaSourceKey]; !ok {
 		drCopy := dr.DeepCopy()
 		drCopy.Labels[common.KusciaSourceKey] = dr.Spec.Source
 		drCopy.Labels[common.KusciaDestinationKey] = dr.Spec.Destination
-		if dr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil {
-			nlog.Errorf("Update domainroute %s/%s error:%s", dr.Namespace, dr.Name, err.Error())
+		if _, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil {
+			nlog.Warnf("Update domainroute %s/%s error:%s", dr.Namespace, dr.Name, err.Error())
 		}
+		return true
 	}
-	return dr
+	return false
 }
 
 func (c *controller) Stop() {
-	c.kusciaInformerFactory.Shutdown()
-	c.domainRouteWorkqueue.ShutDown()
 	if c.cancel != nil {
 		c.cancel()
 		c.cancel = nil

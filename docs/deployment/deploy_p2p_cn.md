@@ -4,11 +4,11 @@
 
 本教程帮助你在多台机器上使用 [点对点组网模式](../reference/architecture_cn.md#点对点组网模式) 来部署 Kuscia 集群。
 
-当前 Kuscia 节点之间只支持 MTLS 的身份认证方式，在跨机器部署的场景下流程较为繁琐，后续本教程会持续更新优化。
+当前 Kuscia 节点之间只支持 token 的身份认证方式，在跨机器部署的场景下流程较为繁琐，后续本教程会持续更新优化。
 
 
 
-## 部署流程（基于MTLS认证）
+## 部署流程（基于 TOKEN 认证）
 
 ### 部署 alice 节点
 
@@ -51,49 +51,28 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 
 #### 创建 alice 到 bob 的授权
 
-准备 alice 的公钥，在 alice 节点的机器上，可以看到包含公钥的 csr 文件：
+准备 alice 的公钥，在 alice 节点的机器上，可以看到包含公钥的 crt 文件：
 
 ```bash 
 
-# [alice 机器] domain.csr 位于部署节点时创建的 ${PWD}/kuscia-autonomy-alice-certs 目录中，默认为以下路径
-ls ${PWD}/kuscia-autonomy-alice-certs/domain.csr
-
-# [alice 机器] 或者可以从容器内部拷贝出来
-docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/etc/certs/domain.csr .
+# [alice 机器] 将 domain.crt 从容器内部拷贝出来
+docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/var/tmp/domain.crt .
 ```
 
 
 
-将 alice 的公钥拷贝到 bob 的机器上的 ${PWD}/kuscia-autonomy-bob-certs 目录中并重命名为 alice.domain.csr：
+将 alice 的公钥拷贝到 bob 的机器上的 ${PWD}/kuscia-autonomy-bob-certs 目录中并重命名为 alice.domain.crt：
 
 ```bash
-# [bob 机器] 确保 alice.domain.csr 位于 bob 的 ${PWD}/kuscia-autonomy-bob-certs 目录中
-ls ${PWD}/kuscia-autonomy-bob-certs/alice.domain.csr
-```
-
-
-
-bob 给 alice 签发 MTLS 证书：
-
-```bash 
-# [bob 机器] 给 alice 签发 MTLS 证书
-docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice ${USER}-kuscia-autonomy-bob p2p
-
-# [bob 机器] 确保证书生成成功
+# [bob 机器] 确保 alice.domain.crt 位于 bob 的 ${PWD}/kuscia-autonomy-bob-certs 目录中
 ls ${PWD}/kuscia-autonomy-bob-certs/alice.domain.crt
-ls ${PWD}/kuscia-autonomy-bob-certs/ca.crt
-```
- 
-
-将 alice.domain.crt 和 ca.crt 拷贝至 alice 机器上的 ${PWD}/kuscia-autonomy-alice-certs 目录并重命名为 domain-2-bob.crt 和 bob.host.ca.crt：
-
-```bash
-# [alice 机器] 确保证书存在且命名正确
-ls ${PWD}/kuscia-autonomy-alice-certs/domain-2-bob.crt
-ls ${PWD}/kuscia-autonomy-alice-certs/bob.host.ca.crt
 ```
 
+在 bob 里添加 alice 的证书等信息：
 
+```bash 
+# [bob 机器] 添加 alice 的证书等信息
+docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice ${USER}-kuscia-autonomy-bob p2p
 
 alice 建立到 bob 的通信：
 
@@ -111,33 +90,29 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh ali
 创建 bob 到 alice 的授权可参考上述建立 alice 到 bob 的授权的流程，以下是简要步骤。
 
 
-
-将 bob 的公钥拷贝到 alice 的机器上的 ${PWD}/kuscia-autonomy-alice-certs 目录中并重命名为 bob.domain.csr：
+准备 bob 的公钥，在 bob 节点的机器上，可以看到包含公钥的 crt 文件：
 
 ```bash
-# [alice 机器] 确保 bob.domain.csr 位于 alice 的 ${PWD}/kuscia-autonomy-alice-certs 目录中
-ls ${PWD}/kuscia-autonomy-alice-certs/bob.domain.csr
+
+
+# [bob 机器] 将 domain.crt 从容器内部拷贝出来
+docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/tmp/domain.crt .
+```
+
+将 bob 的公钥拷贝到 alice 的机器上的 ${PWD}/kuscia-autonomy-alice-certs 目录中并重命名为 bob.domain.crt：
+
+```bash
+# [alice 机器] 确保 bob.domain.crt 位于 alice 的 ${PWD}/kuscia-autonomy-alice-certs 目录中
+ls ${PWD}/kuscia-autonomy-alice-certs/bob.domain.crt
 ```
 
 
-
-alice 给 bob 签发 MTLS 证书：
+在 alice 里添加 bob 的证书等信息：
 
 ```bash
-# [alice 机器] 给 bob 签发 MTLS 证书
+# [alice 机器] 添加 bob 的证书等信息
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob ${USER}-kuscia-autonomy-alice p2p
 ```
-
-
-
-将 bob.domain.crt 和 ca.crt 拷贝至 bob 机器上的 ${PWD}/kuscia-autonomy-bob-certs 目录并重命名为 domain-2-alice.crt 和 alice.host.ca.crt：
-
-```bash
-# [bob 机器] 确保证书存在且命名正确
-ls ${PWD}/kuscia-autonomy-bob-certs/domain-2-alice.crt
-ls ${PWD}/kuscia-autonomy-bob-certs/alice.host.ca.crt
-```
-
 
 
 bob 建立到 alice 的通信：

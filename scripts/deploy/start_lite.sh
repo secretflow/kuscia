@@ -69,8 +69,6 @@ confmanager:
   san:
     dnsNames:
     - ${HOSTNAME}
-dataMesh:
-  enableDataProxy: false
 " >etc/kuscia.yaml
 bin/kuscia lite -c etc/kuscia.yaml --log.path var/logs/kuscia.log
 

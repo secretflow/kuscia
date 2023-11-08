@@ -1,4 +1,4 @@
-ARG DEPS_IMAGE="secretflow/kuscia-deps:0.1.0b0"
+ARG DEPS_IMAGE="secretflow/kuscia-deps:0.2.0b0"
 ARG KUSCIA_ENVOY_IMAGE="secretflow/kuscia-envoy:0.2.0b0"
 
 FROM ${DEPS_IMAGE} as deps

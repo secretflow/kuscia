@@ -23,14 +23,14 @@ organizational_unit=$2
 DAYS=1000
 
 #create a PKCS#1 key for server, default is PKCS#1
-openssl genrsa -out "${common_name}".key 2048
+openssl genrsa -out "${common_name}".key 2048 >/dev/null 2>&1
 
 #generate the Certificate Signing Request
 openssl req -new -key "${common_name}".key -days ${DAYS} -out "${common_name}".csr \
-    -subj "/CN=${common_name}/OU=${organizational_unit}"
+    -subj "/CN=${common_name}/OU=${organizational_unit}" >/dev/null 2>&1
 
 #sign it with Root CA
 openssl x509  -req -in "${common_name}".csr \
     -CA ca.crt -CAkey ca.key  \
     -days ${DAYS} -sha256 -CAcreateserial \
-    -out "${common_name}".crt
+    -out "${common_name}".crt >/dev/null 2>&1

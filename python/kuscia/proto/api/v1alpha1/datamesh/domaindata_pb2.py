@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from kuscia.proto.api.v1alpha1 import common_pb2 as kuscia_dot_proto_dot_api_dot_v1alpha1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3kuscia/proto/api/v1alpha1/datamesh/domaindata.proto\x12\"kuscia.proto.api.v1alpha1.datamesh\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xc8\x03\n\x17\x43reateDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04type\x18\x04 \x01(\t\x12\x14\n\x0crelative_uri\x18\x05 \x01(\t\x12\x15\n\rdatasource_id\x18\x06 \x01(\t\x12_\n\nattributes\x18\x07 \x03(\x0b\x32K.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest.AttributesEntry\x12\x37\n\tpartition\x18\x08 \x01(\x0b\x32$.kuscia.proto.api.v1alpha1.Partition\x12\x36\n\x07\x63olumns\x18\t \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\x12\x0e\n\x06vendor\x18\n \x01(\t\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9d\x01\n\x18\x43reateDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12N\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32@.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponseData\"5\n\x1c\x43reateDomainDataResponseData\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\"\xc8\x03\n\x17UpdateDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04type\x18\x04 \x01(\t\x12\x14\n\x0crelative_uri\x18\x05 \x01(\t\x12\x15\n\rdatasource_id\x18\x06 \x01(\t\x12_\n\nattributes\x18\x07 \x03(\x0b\x32K.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest.AttributesEntry\x12\x37\n\tpartition\x18\x08 \x01(\x0b\x32$.kuscia.proto.api.v1alpha1.Partition\x12\x36\n\x07\x63olumns\x18\t \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\x12\x0e\n\x06vendor\x18\n \x01(\t\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"M\n\x18UpdateDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"j\n\x17\x44\x65leteDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\"M\n\x18\x44\x65leteDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"i\n\x16QueryDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\"\x8a\x01\n\x17QueryDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12<\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32..kuscia.proto.api.v1alpha1.datamesh.DomainData\"\xc0\x03\n\nDomainData\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x14\n\x0crelative_uri\x18\x04 \x01(\t\x12\x15\n\rdatasource_id\x18\x05 \x01(\t\x12R\n\nattributes\x18\x06 \x03(\x0b\x32>.kuscia.proto.api.v1alpha1.datamesh.DomainData.AttributesEntry\x12\x37\n\tpartition\x18\x07 \x01(\x0b\x32$.kuscia.proto.api.v1alpha1.Partition\x12\x36\n\x07\x63olumns\x18\x08 \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\x12\x0e\n\x06vendor\x18\t \x01(\t\x12:\n\x0b\x66ile_format\x18\n \x01(\x0e\x32%.kuscia.proto.api.v1alpha1.FileFormat\x12\x0e\n\x06\x61uthor\x18\x0b \x01(\t\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xd0\x04\n\x11\x44omainDataService\x12\x8d\x01\n\x10\x43reateDomainData\x12;.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest\x1a<.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse\x12\x8a\x01\n\x0fQueryDomainData\x12:.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest\x1a;.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse\x12\x8d\x01\n\x10UpdateDomainData\x12;.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest\x1a<.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse\x12\x8d\x01\n\x10\x44\x65leteDomainData\x12;.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest\x1a<.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponseB\\\n org.secretflow.v1alpha1.datameshZ8github.com/secretflow/kuscia/proto/api/v1alpha1/datameshb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3kuscia/proto/api/v1alpha1/datamesh/domaindata.proto\x12\"kuscia.proto.api.v1alpha1.datamesh\x1a&kuscia/proto/api/v1alpha1/common.proto\"\x84\x04\n\x17\x43reateDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04type\x18\x04 \x01(\t\x12\x14\n\x0crelative_uri\x18\x05 \x01(\t\x12\x15\n\rdatasource_id\x18\x06 \x01(\t\x12_\n\nattributes\x18\x07 \x03(\x0b\x32K.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest.AttributesEntry\x12\x37\n\tpartition\x18\x08 \x01(\x0b\x32$.kuscia.proto.api.v1alpha1.Partition\x12\x36\n\x07\x63olumns\x18\t \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\x12\x0e\n\x06vendor\x18\n \x01(\t\x12:\n\x0b\x66ile_format\x18\x0b \x01(\x0e\x32%.kuscia.proto.api.v1alpha1.FileFormat\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9d\x01\n\x18\x43reateDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12N\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32@.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponseData\"5\n\x1c\x43reateDomainDataResponseData\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\"\x84\x04\n\x17UpdateDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04type\x18\x04 \x01(\t\x12\x14\n\x0crelative_uri\x18\x05 \x01(\t\x12\x15\n\rdatasource_id\x18\x06 \x01(\t\x12_\n\nattributes\x18\x07 \x03(\x0b\x32K.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest.AttributesEntry\x12\x37\n\tpartition\x18\x08 \x01(\x0b\x32$.kuscia.proto.api.v1alpha1.Partition\x12\x36\n\x07\x63olumns\x18\t \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\x12\x0e\n\x06vendor\x18\n \x01(\t\x12:\n\x0b\x66ile_format\x18\x0b \x01(\x0e\x32%.kuscia.proto.api.v1alpha1.FileFormat\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"M\n\x18UpdateDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"j\n\x17\x44\x65leteDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\"M\n\x18\x44\x65leteDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"i\n\x16QueryDomainDataRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x15\n\rdomaindata_id\x18\x02 \x01(\t\"\x8a\x01\n\x17QueryDomainDataResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12<\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32..kuscia.proto.api.v1alpha1.datamesh.DomainData\"\xc0\x03\n\nDomainData\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x14\n\x0crelative_uri\x18\x04 \x01(\t\x12\x15\n\rdatasource_id\x18\x05 \x01(\t\x12R\n\nattributes\x18\x06 \x03(\x0b\x32>.kuscia.proto.api.v1alpha1.datamesh.DomainData.AttributesEntry\x12\x37\n\tpartition\x18\x07 \x01(\x0b\x32$.kuscia.proto.api.v1alpha1.Partition\x12\x36\n\x07\x63olumns\x18\x08 \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\x12\x0e\n\x06vendor\x18\t \x01(\t\x12:\n\x0b\x66ile_format\x18\n \x01(\x0e\x32%.kuscia.proto.api.v1alpha1.FileFormat\x12\x0e\n\x06\x61uthor\x18\x0b \x01(\t\x1a\x31\n\x0f\x41ttributesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xd0\x04\n\x11\x44omainDataService\x12\x8d\x01\n\x10\x43reateDomainData\x12;.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest\x1a<.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse\x12\x8a\x01\n\x0fQueryDomainData\x12:.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest\x1a;.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse\x12\x8d\x01\n\x10UpdateDomainData\x12;.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest\x1a<.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse\x12\x8d\x01\n\x10\x44\x65leteDomainData\x12;.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest\x1a<.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponseB\\\n org.secretflow.v1alpha1.datameshZ8github.com/secretflow/kuscia/proto/api/v1alpha1/datameshb\x06proto3')
 
 
 
@@ -138,31 +138,31 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _DOMAINDATA_ATTRIBUTESENTRY._options = None
   _DOMAINDATA_ATTRIBUTESENTRY._serialized_options = b'8\001'
   _CREATEDOMAINDATAREQUEST._serialized_start=132
-  _CREATEDOMAINDATAREQUEST._serialized_end=588
-  _CREATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_start=539
-  _CREATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_end=588
-  _CREATEDOMAINDATARESPONSE._serialized_start=591
-  _CREATEDOMAINDATARESPONSE._serialized_end=748
-  _CREATEDOMAINDATARESPONSEDATA._serialized_start=750
-  _CREATEDOMAINDATARESPONSEDATA._serialized_end=803
-  _UPDATEDOMAINDATAREQUEST._serialized_start=806
-  _UPDATEDOMAINDATAREQUEST._serialized_end=1262
-  _UPDATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_start=539
-  _UPDATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_end=588
-  _UPDATEDOMAINDATARESPONSE._serialized_start=1264
-  _UPDATEDOMAINDATARESPONSE._serialized_end=1341
-  _DELETEDOMAINDATAREQUEST._serialized_start=1343
-  _DELETEDOMAINDATAREQUEST._serialized_end=1449
-  _DELETEDOMAINDATARESPONSE._serialized_start=1451
-  _DELETEDOMAINDATARESPONSE._serialized_end=1528
-  _QUERYDOMAINDATAREQUEST._serialized_start=1530
-  _QUERYDOMAINDATAREQUEST._serialized_end=1635
-  _QUERYDOMAINDATARESPONSE._serialized_start=1638
-  _QUERYDOMAINDATARESPONSE._serialized_end=1776
-  _DOMAINDATA._serialized_start=1779
-  _DOMAINDATA._serialized_end=2227
-  _DOMAINDATA_ATTRIBUTESENTRY._serialized_start=539
-  _DOMAINDATA_ATTRIBUTESENTRY._serialized_end=588
-  _DOMAINDATASERVICE._serialized_start=2230
-  _DOMAINDATASERVICE._serialized_end=2822
+  _CREATEDOMAINDATAREQUEST._serialized_end=648
+  _CREATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_start=599
+  _CREATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_end=648
+  _CREATEDOMAINDATARESPONSE._serialized_start=651
+  _CREATEDOMAINDATARESPONSE._serialized_end=808
+  _CREATEDOMAINDATARESPONSEDATA._serialized_start=810
+  _CREATEDOMAINDATARESPONSEDATA._serialized_end=863
+  _UPDATEDOMAINDATAREQUEST._serialized_start=866
+  _UPDATEDOMAINDATAREQUEST._serialized_end=1382
+  _UPDATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_start=599
+  _UPDATEDOMAINDATAREQUEST_ATTRIBUTESENTRY._serialized_end=648
+  _UPDATEDOMAINDATARESPONSE._serialized_start=1384
+  _UPDATEDOMAINDATARESPONSE._serialized_end=1461
+  _DELETEDOMAINDATAREQUEST._serialized_start=1463
+  _DELETEDOMAINDATAREQUEST._serialized_end=1569
+  _DELETEDOMAINDATARESPONSE._serialized_start=1571
+  _DELETEDOMAINDATARESPONSE._serialized_end=1648
+  _QUERYDOMAINDATAREQUEST._serialized_start=1650
+  _QUERYDOMAINDATAREQUEST._serialized_end=1755
+  _QUERYDOMAINDATARESPONSE._serialized_start=1758
+  _QUERYDOMAINDATARESPONSE._serialized_end=1896
+  _DOMAINDATA._serialized_start=1899
+  _DOMAINDATA._serialized_end=2347
+  _DOMAINDATA_ATTRIBUTESENTRY._serialized_start=599
+  _DOMAINDATA_ATTRIBUTESENTRY._serialized_end=648
+  _DOMAINDATASERVICE._serialized_start=2350
+  _DOMAINDATASERVICE._serialized_end=2942
 # @@protoc_insertion_point(module_scope)

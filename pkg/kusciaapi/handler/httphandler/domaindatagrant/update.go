@@ -27,9 +27,9 @@ type updateDomainHandler struct {
 	domainDataGrantService service.IDomainDataGrantService
 }
 
-func NewUpdateDomainDataGrantHandler(domainService service.IDomainDataGrantService) api.ProtoHandler {
+func NewUpdateDomainDataGrantHandler(domainDataGrantService service.IDomainDataGrantService) api.ProtoHandler {
 	return &updateDomainHandler{
-		domainDataGrantService: domainService,
+		domainDataGrantService: domainDataGrantService,
 	}
 }
 

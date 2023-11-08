@@ -21,13 +21,14 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
-	"github.com/spf13/cobra"
 )
 
 func NewAutonomyCommand(ctx context.Context) *cobra.Command {
@@ -55,7 +56,7 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 			}
 
 			kusciaConf := confloader.ReadConfig(configFile, domainID, common.RunModeAutonomy)
-			nlog.Infof("Read kuscia config: %+v", kusciaConf)
+			nlog.Debugf("Read kuscia config: %+v", kusciaConf)
 
 			// dns must start before dependencies because that dependencies init process may access network.
 			var coreDnsModule modules.Module

@@ -120,23 +120,6 @@ func TestControllerRun(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestControllerStop(t *testing.T) {
-	kubeFakeClient := kubefake.NewSimpleClientset()
-	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
-	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), controllers.ControllerConfig{
-		KubeClient:    kubeFakeClient,
-		KusciaClient:  kusciaFakeClient,
-		EventRecorder: eventRecorder,
-	})
-	c.Stop()
-	cc := c.(*Controller)
-	_, shutdown := cc.workqueue.Get()
-	assert.Equal(t, true, shutdown)
-}
-
 func TestEnqueueKusciaTask(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()

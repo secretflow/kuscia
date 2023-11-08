@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from kuscia.proto.api.v1alpha1 import common_pb2 as kuscia_dot_proto_dot_api_dot_v1alpha1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n0kuscia/proto/api/v1alpha1/kusciaapi/domain.proto\x12#kuscia.proto.api.v1alpha1.kusciaapi\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xc4\x01\n\x13\x43reateDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\x12\x0c\n\x04role\x18\x03 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x04 \x01(\t\x12\x44\n\x0b\x61uth_center\x18\x05 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.AuthCenter\"I\n\x14\x43reateDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"b\n\x13\x44\x65leteDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\"I\n\x14\x44\x65leteDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"a\n\x12QueryDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\"\x94\x01\n\x13QueryDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12J\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainResponseData\"\xc5\x03\n\x17QueryDomainResponseData\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x03 \x01(\t\x12\x46\n\rnode_statuses\x18\x04 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.NodeStatus\x12U\n\x15\x64\x65ploy_token_statuses\x18\x05 \x03(\x0b\x32\x36.kuscia.proto.api.v1alpha1.kusciaapi.DeployTokenStatus\x12\x62\n\x0b\x61nnotations\x18\x06 \x03(\x0b\x32M.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainResponseData.AnnotationsEntry\x12\x44\n\x0b\x61uth_center\x18\x07 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.AuthCenter\x1a\x32\n\x10\x41nnotationsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"v\n\nNodeStatus\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x1b\n\x13last_heartbeat_time\x18\x04 \x01(\t\x12\x1c\n\x14last_transition_time\x18\x05 \x01(\t\"\xc4\x01\n\x13UpdateDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\x12\x0c\n\x04role\x18\x03 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x04 \x01(\t\x12\x44\n\x0b\x61uth_center\x18\x05 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.AuthCenter\"I\n\x14UpdateDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"m\n\x1d\x42\x61tchQueryDomainStatusRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x12\n\ndomain_ids\x18\x02 \x03(\t\"\xaa\x01\n\x1e\x42\x61tchQueryDomainStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12U\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32G.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainStatusResponseData\"h\n\"BatchQueryDomainStatusResponseData\x12\x42\n\x07\x64omains\x18\x01 \x03(\x0b\x32\x31.kuscia.proto.api.v1alpha1.kusciaapi.DomainStatus\"\xc0\x01\n\x0c\x44omainStatus\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x46\n\rnode_statuses\x18\x02 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.NodeStatus\x12U\n\x15\x64\x65ploy_token_statuses\x18\x03 \x03(\x0b\x32\x36.kuscia.proto.api.v1alpha1.kusciaapi.DeployTokenStatus\"O\n\x11\x44\x65ployTokenStatus\x12\r\n\x05token\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x1c\n\x14last_transition_time\x18\x03 \x01(\t\"C\n\nAuthCenter\x12\x1b\n\x13\x61uthentication_type\x18\x01 \x01(\t\x12\x18\n\x10token_gen_method\x18\x02 \x01(\t2\xc8\x05\n\rDomainService\x12\x83\x01\n\x0c\x43reateDomain\x12\x38.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRequest\x1a\x39.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainResponse\x12\x80\x01\n\x0bQueryDomain\x12\x37.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRequest\x1a\x38.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainResponse\x12\x83\x01\n\x0cUpdateDomain\x12\x38.kuscia.proto.api.v1alpha1.kusciaapi.UpdateDomainRequest\x1a\x39.kuscia.proto.api.v1alpha1.kusciaapi.UpdateDomainResponse\x12\x83\x01\n\x0c\x44\x65leteDomain\x12\x38.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainRequest\x1a\x39.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainResponse\x12\xa1\x01\n\x16\x42\x61tchQueryDomainStatus\x12\x42.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainStatusRequest\x1a\x43.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainStatusResponseB^\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapib\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n0kuscia/proto/api/v1alpha1/kusciaapi/domain.proto\x12#kuscia.proto.api.v1alpha1.kusciaapi\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xc4\x01\n\x13\x43reateDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\x12\x0c\n\x04role\x18\x03 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x04 \x01(\t\x12\x44\n\x0b\x61uth_center\x18\x05 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.AuthCenter\"I\n\x14\x43reateDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"b\n\x13\x44\x65leteDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\"I\n\x14\x44\x65leteDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"a\n\x12QueryDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\"\x94\x01\n\x13QueryDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12J\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainResponseData\"\xc5\x03\n\x17QueryDomainResponseData\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x03 \x01(\t\x12\x46\n\rnode_statuses\x18\x04 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.NodeStatus\x12U\n\x15\x64\x65ploy_token_statuses\x18\x05 \x03(\x0b\x32\x36.kuscia.proto.api.v1alpha1.kusciaapi.DeployTokenStatus\x12\x62\n\x0b\x61nnotations\x18\x06 \x03(\x0b\x32M.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainResponseData.AnnotationsEntry\x12\x44\n\x0b\x61uth_center\x18\x07 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.AuthCenter\x1a\x32\n\x10\x41nnotationsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"v\n\nNodeStatus\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x1b\n\x13last_heartbeat_time\x18\x04 \x01(\t\x12\x1c\n\x14last_transition_time\x18\x05 \x01(\t\"\xc4\x01\n\x13UpdateDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x11\n\tdomain_id\x18\x02 \x01(\t\x12\x0c\n\x04role\x18\x03 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x04 \x01(\t\x12\x44\n\x0b\x61uth_center\x18\x05 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.AuthCenter\"I\n\x14UpdateDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"g\n\x17\x42\x61tchQueryDomainRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x12\n\ndomain_ids\x18\x02 \x03(\t\"\xa4\x01\n\x18\x42\x61tchQueryDomainResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12U\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32G.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainStatusResponseData\"b\n\"BatchQueryDomainStatusResponseData\x12<\n\x07\x64omains\x18\x01 \x03(\x0b\x32+.kuscia.proto.api.v1alpha1.kusciaapi.Domain\"\xd6\x01\n\x06\x44omain\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\x12\x0c\n\x04\x63\x65rt\x18\x03 \x01(\t\x12\x46\n\rnode_statuses\x18\x04 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.NodeStatus\x12U\n\x15\x64\x65ploy_token_statuses\x18\x05 \x03(\x0b\x32\x36.kuscia.proto.api.v1alpha1.kusciaapi.DeployTokenStatus\"O\n\x11\x44\x65ployTokenStatus\x12\r\n\x05token\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x1c\n\x14last_transition_time\x18\x03 \x01(\t\"C\n\nAuthCenter\x12\x1b\n\x13\x61uthentication_type\x18\x01 \x01(\t\x12\x18\n\x10token_gen_method\x18\x02 \x01(\t2\xb6\x05\n\rDomainService\x12\x83\x01\n\x0c\x43reateDomain\x12\x38.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRequest\x1a\x39.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainResponse\x12\x80\x01\n\x0bQueryDomain\x12\x37.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRequest\x1a\x38.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainResponse\x12\x83\x01\n\x0cUpdateDomain\x12\x38.kuscia.proto.api.v1alpha1.kusciaapi.UpdateDomainRequest\x1a\x39.kuscia.proto.api.v1alpha1.kusciaapi.UpdateDomainResponse\x12\x83\x01\n\x0c\x44\x65leteDomain\x12\x38.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainRequest\x1a\x39.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainResponse\x12\x8f\x01\n\x10\x42\x61tchQueryDomain\x12<.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRequest\x1a=.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainResponseB^\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapib\x06proto3')
 
 
 
@@ -30,10 +30,10 @@ _QUERYDOMAINRESPONSEDATA_ANNOTATIONSENTRY = _QUERYDOMAINRESPONSEDATA.nested_type
 _NODESTATUS = DESCRIPTOR.message_types_by_name['NodeStatus']
 _UPDATEDOMAINREQUEST = DESCRIPTOR.message_types_by_name['UpdateDomainRequest']
 _UPDATEDOMAINRESPONSE = DESCRIPTOR.message_types_by_name['UpdateDomainResponse']
-_BATCHQUERYDOMAINSTATUSREQUEST = DESCRIPTOR.message_types_by_name['BatchQueryDomainStatusRequest']
-_BATCHQUERYDOMAINSTATUSRESPONSE = DESCRIPTOR.message_types_by_name['BatchQueryDomainStatusResponse']
+_BATCHQUERYDOMAINREQUEST = DESCRIPTOR.message_types_by_name['BatchQueryDomainRequest']
+_BATCHQUERYDOMAINRESPONSE = DESCRIPTOR.message_types_by_name['BatchQueryDomainResponse']
 _BATCHQUERYDOMAINSTATUSRESPONSEDATA = DESCRIPTOR.message_types_by_name['BatchQueryDomainStatusResponseData']
-_DOMAINSTATUS = DESCRIPTOR.message_types_by_name['DomainStatus']
+_DOMAIN = DESCRIPTOR.message_types_by_name['Domain']
 _DEPLOYTOKENSTATUS = DESCRIPTOR.message_types_by_name['DeployTokenStatus']
 _AUTHCENTER = DESCRIPTOR.message_types_by_name['AuthCenter']
 CreateDomainRequest = _reflection.GeneratedProtocolMessageType('CreateDomainRequest', (_message.Message,), {
@@ -114,19 +114,19 @@ UpdateDomainResponse = _reflection.GeneratedProtocolMessageType('UpdateDomainRes
   })
 _sym_db.RegisterMessage(UpdateDomainResponse)
 
-BatchQueryDomainStatusRequest = _reflection.GeneratedProtocolMessageType('BatchQueryDomainStatusRequest', (_message.Message,), {
-  'DESCRIPTOR' : _BATCHQUERYDOMAINSTATUSREQUEST,
+BatchQueryDomainRequest = _reflection.GeneratedProtocolMessageType('BatchQueryDomainRequest', (_message.Message,), {
+  'DESCRIPTOR' : _BATCHQUERYDOMAINREQUEST,
   '__module__' : 'kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2'
-  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainStatusRequest)
+  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRequest)
   })
-_sym_db.RegisterMessage(BatchQueryDomainStatusRequest)
+_sym_db.RegisterMessage(BatchQueryDomainRequest)
 
-BatchQueryDomainStatusResponse = _reflection.GeneratedProtocolMessageType('BatchQueryDomainStatusResponse', (_message.Message,), {
-  'DESCRIPTOR' : _BATCHQUERYDOMAINSTATUSRESPONSE,
+BatchQueryDomainResponse = _reflection.GeneratedProtocolMessageType('BatchQueryDomainResponse', (_message.Message,), {
+  'DESCRIPTOR' : _BATCHQUERYDOMAINRESPONSE,
   '__module__' : 'kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2'
-  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainStatusResponse)
+  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainResponse)
   })
-_sym_db.RegisterMessage(BatchQueryDomainStatusResponse)
+_sym_db.RegisterMessage(BatchQueryDomainResponse)
 
 BatchQueryDomainStatusResponseData = _reflection.GeneratedProtocolMessageType('BatchQueryDomainStatusResponseData', (_message.Message,), {
   'DESCRIPTOR' : _BATCHQUERYDOMAINSTATUSRESPONSEDATA,
@@ -135,12 +135,12 @@ BatchQueryDomainStatusResponseData = _reflection.GeneratedProtocolMessageType('B
   })
 _sym_db.RegisterMessage(BatchQueryDomainStatusResponseData)
 
-DomainStatus = _reflection.GeneratedProtocolMessageType('DomainStatus', (_message.Message,), {
-  'DESCRIPTOR' : _DOMAINSTATUS,
+Domain = _reflection.GeneratedProtocolMessageType('Domain', (_message.Message,), {
+  'DESCRIPTOR' : _DOMAIN,
   '__module__' : 'kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2'
-  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.DomainStatus)
+  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.Domain)
   })
-_sym_db.RegisterMessage(DomainStatus)
+_sym_db.RegisterMessage(Domain)
 
 DeployTokenStatus = _reflection.GeneratedProtocolMessageType('DeployTokenStatus', (_message.Message,), {
   'DESCRIPTOR' : _DEPLOYTOKENSTATUS,
@@ -185,18 +185,18 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _UPDATEDOMAINREQUEST._serialized_end=1601
   _UPDATEDOMAINRESPONSE._serialized_start=1603
   _UPDATEDOMAINRESPONSE._serialized_end=1676
-  _BATCHQUERYDOMAINSTATUSREQUEST._serialized_start=1678
-  _BATCHQUERYDOMAINSTATUSREQUEST._serialized_end=1787
-  _BATCHQUERYDOMAINSTATUSRESPONSE._serialized_start=1790
-  _BATCHQUERYDOMAINSTATUSRESPONSE._serialized_end=1960
-  _BATCHQUERYDOMAINSTATUSRESPONSEDATA._serialized_start=1962
-  _BATCHQUERYDOMAINSTATUSRESPONSEDATA._serialized_end=2066
-  _DOMAINSTATUS._serialized_start=2069
-  _DOMAINSTATUS._serialized_end=2261
-  _DEPLOYTOKENSTATUS._serialized_start=2263
-  _DEPLOYTOKENSTATUS._serialized_end=2342
-  _AUTHCENTER._serialized_start=2344
-  _AUTHCENTER._serialized_end=2411
-  _DOMAINSERVICE._serialized_start=2414
-  _DOMAINSERVICE._serialized_end=3126
+  _BATCHQUERYDOMAINREQUEST._serialized_start=1678
+  _BATCHQUERYDOMAINREQUEST._serialized_end=1781
+  _BATCHQUERYDOMAINRESPONSE._serialized_start=1784
+  _BATCHQUERYDOMAINRESPONSE._serialized_end=1948
+  _BATCHQUERYDOMAINSTATUSRESPONSEDATA._serialized_start=1950
+  _BATCHQUERYDOMAINSTATUSRESPONSEDATA._serialized_end=2048
+  _DOMAIN._serialized_start=2051
+  _DOMAIN._serialized_end=2265
+  _DEPLOYTOKENSTATUS._serialized_start=2267
+  _DEPLOYTOKENSTATUS._serialized_end=2346
+  _AUTHCENTER._serialized_start=2348
+  _AUTHCENTER._serialized_end=2415
+  _DOMAINSERVICE._serialized_start=2418
+  _DOMAINSERVICE._serialized_end=3112
 # @@protoc_insertion_point(module_scope)

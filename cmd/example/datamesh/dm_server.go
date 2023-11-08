@@ -42,11 +42,14 @@ const (
 	binaryTestData        = "binary"
 	primitivesTestData    = "primitives"
 	mockDataProxyEndpoint = "localhost:8086"
+	dataMeshHost          = "localhost"
 )
 
 type opts struct {
 	dataProxyEndpoint string
 	startClient       bool
+	startDataMesh     bool
+	enableDataMeshTLS bool
 	testDataType      string
 	outputCSVFilePath string
 	logCfg            *nlog.LogConfig
@@ -56,8 +59,10 @@ func (o *opts) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.dataProxyEndpoint, "dataProxyEndpoint", mockDataProxyEndpoint,
 		"data proxy endpoint")
 	fs.BoolVar(&o.startClient, "startClient", true, "startClient")
+	fs.BoolVar(&o.startDataMesh, "startDataMesh", true, "startDataMesh")
+	fs.BoolVar(&o.enableDataMeshTLS, "enableDataMeshTLS", false, "enableDataMeshTLS")
 	fs.StringVar(&o.testDataType, "testDataType", primitivesTestData, "binary or primitives,"+
-		"binary refers to schema [{binary,nullable}], primitives refers to [{bool,nullable},{int8,nullable},{float64,"+
+		"binary refers to schema [{binary,nullable}], primitives refers to [{bool,nullable},{int64,nullable},{float64,"+
 		"nullable}]")
 	fs.StringVar(&o.outputCSVFilePath, "outputCSVFilePath", "./a.csv",
 		"outputCSVFilePath")
@@ -98,6 +103,7 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 			conf.KubeNamespace = "MockDomain"
 			conf.KusciaClient = kusciafake.NewSimpleClientset()
 			conf.DomainKeyFile = "./mock_domain.key"
+			conf.DisableTLS = !o.enableDataMeshTLS
 			if conf.TLS.ServerKey, err = tls.ParseKey([]byte{}, certsConfig.serverKeyFile); err != nil {
 				return err
 			}
@@ -130,12 +136,19 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 				defer wg.Done()
 				go startClient(cancel, o, certsConfig)
 			}
+
 			go func() {
 				wg.Add(1)
 				defer wg.Done()
-				if err := commands.Run(runCtx, conf, conf.KusciaClient); err != nil {
-					cancel()
+				if o.startDataMesh {
+					if err := commands.Run(runCtx, conf, conf.KusciaClient); err != nil {
+						cancel()
+					}
+				} else {
+					time.Sleep(time.Minute * 7200)
+					nlog.Infof("mock example exit by timeout")
 				}
+
 			}()
 			wg.Wait()
 			<-runCtx.Done()
@@ -172,6 +185,10 @@ func startMockDataProxy(cancel context.CancelFunc, o *opts) {
 }
 
 func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig) {
+	if !o.enableDataMeshTLS {
+		certConfig = nil
+	}
+
 	client := &MockFlightClient{
 		testDataType:      o.testDataType,
 		outputCSVFilePath: o.outputCSVFilePath,

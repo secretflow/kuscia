@@ -28,7 +28,7 @@ ENV GO111MODULE=on
 ENV GOPATH=/root/gopath
 ENV PATH=${PATH}:${GOPATH}/bin:/usr/local/go/bin
 
-ARG FLANNEL_VER=v0.21.5
+ARG FLANNEL_VER=v0.23.0
 RUN git clone https://github.com/flannel-io/flannel.git && \
     pushd flannel && \
     git checkout -b stable ${FLANNEL_VER} && \
