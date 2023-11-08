@@ -27,55 +27,80 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func (c *controller) preRollingSourceDomainRoute(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute, force bool) error {
+func (c *controller) preRollingSourceDomainRoute(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) error {
+	nlog.Infof("PreRollingDomainRoute %s/%s, new revision %d", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
+
+	initializer, err := c.selectInitializer(ctx, dr)
+	if err != nil {
+		nlog.Warnf("Choose initializer for preRollingSourceDomainRoute %s fail: %v", dr.Name, err)
+		return err
+	}
+
+	dr = dr.DeepCopy()
+	dr.Status.TokenStatus.RevisionInitializer = initializer
+	dr.Status.TokenStatus.RevisionToken = kusciaapisv1alpha1.DomainRouteToken{
+		RevisionTime: metav1.Time{Time: time.Now()},
+		Revision:     dr.Status.TokenStatus.RevisionToken.Revision,
+		IsReady:      false,
+	}
+	_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
+	return err
+}
+
+func (c *controller) selectInitializer(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) (string, error) {
 	// randomly choose a gateway from source namespace as revision intializer
 	gateways, err := c.gatewayLister.Gateways(dr.Namespace).List(labels.Everything())
 	if err != nil {
-		return err
+		return "", err
 	}
 	var liveGateways []string
-	for i := range gateways {
-		if time.Since(gateways[i].Status.HeartbeatTime.Time) < gatewayLiveTimeout {
-			liveGateways = append(liveGateways, gateways[i].Name)
+	for _, g := range gateways {
+		if time.Since(g.Status.HeartbeatTime.Time) < gatewayLiveTimeout {
+			if g.Name == dr.Status.TokenStatus.RevisionInitializer {
+				return g.Name, nil
+			}
+			liveGateways = append(liveGateways, g.Name)
 		}
 	}
+
 	if len(liveGateways) == 0 {
-		nlog.Warnf("No available gateway in source namespace %s", dr.Namespace)
-		return nil
+		err := fmt.Errorf("there is no live gateway instance of %s", dr.Namespace)
+		nlog.Warn(err)
+		return "", err
 	}
+
 	initializer := liveGateways[mrand.Intn(len(liveGateways))]
+	return initializer, nil
+}
 
+func (c *controller) ensureInitializer(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) (bool, error) {
+	// randomly choose a gateway from source namespace as revision intializer
+	initializer, err := c.selectInitializer(ctx, dr)
+	if err != nil || initializer == dr.Status.TokenStatus.RevisionInitializer {
+		return false, err
+	}
+
+	nlog.Infof("domainroute %s/%s select initializer %s", dr.Namespace, dr.Name, initializer)
 	dr = dr.DeepCopy()
-	dr.Status.TokenStatus.RevisionToken = kusciaapisv1alpha1.DomainRouteToken{
-		RevisionTime: metav1.Time{Time: time.Now()},
-		Revision:     dr.Status.TokenStatus.RevisionToken.Revision + 1,
-	}
 	dr.Status.TokenStatus.RevisionInitializer = initializer
-
-	msg := fmt.Sprintf("PreRollingDomainRoute %s/%s, new revision %d, initializer: %s", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision, initializer)
-	nlog.Infof(msg)
-	if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{}); err != nil {
-		return err
+	_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
+	if err != nil {
+		return false, err
 	}
-
-	return nil
+	return true, nil
 }
 
 func (c *controller) postRollingSourceDomainRoute(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) error {
 	n := len(dr.Status.TokenStatus.Tokens)
 	if n == 0 || dr.Status.TokenStatus.Tokens[n-1].Revision != dr.Status.TokenStatus.RevisionToken.Revision {
+		nlog.Infof("Rolling update source domainroute %s/%s finish, revision %d", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
 		dr = dr.DeepCopy()
 		dr.Status.TokenStatus.Tokens = append(dr.Status.TokenStatus.Tokens, dr.Status.TokenStatus.RevisionToken)
 		if n > 1 {
 			dr.Status.TokenStatus.Tokens = dr.Status.TokenStatus.Tokens[n-1:]
 		}
-		msg := fmt.Sprintf("Rolling update source domainroute %s/%s finish, revision %d", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
-		nlog.Info(msg)
 		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
-		if err != nil {
-			nlog.Error(err)
-			return err
-		}
+		return err
 	}
 	return nil
 }
@@ -83,29 +108,23 @@ func (c *controller) postRollingSourceDomainRoute(ctx context.Context, dr *kusci
 func (c *controller) postRollingDestinationDomainRoute(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) error {
 	n := len(dr.Status.TokenStatus.Tokens)
 	if dr.Status.TokenStatus.RevisionToken.Token != "" && (n == 0 || dr.Status.TokenStatus.Tokens[n-1].Revision != dr.Status.TokenStatus.RevisionToken.Revision) {
+		nlog.Infof("Post rolling update destination domainroute %s/%s, revision %d, waiting for all instance sync token", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
 		dr = dr.DeepCopy()
 		dr.Status.TokenStatus.Tokens = append(dr.Status.TokenStatus.Tokens, dr.Status.TokenStatus.RevisionToken)
-
-		msg := fmt.Sprintf("Post rolling update destination domainroute %s/%s, revision %d, waiting for all instance sync token", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
-		nlog.Info(msg)
 		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
-		if err != nil {
-			nlog.Error(err)
-			return err
-		}
+		return err
 	}
 
 	if !dr.Status.TokenStatus.RevisionToken.IsReady && c.checkEffectiveInstances(dr) {
+		// update source after all instances in destination have taken effect
+		nlog.Infof("Rolling update destination domainroute %s/%s finish, revision %d", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
+		dr = dr.DeepCopy()
 		n = len(dr.Status.TokenStatus.Tokens)
 		dr.Status.TokenStatus.Tokens[n-1].IsReady = true
 		dr.Status.TokenStatus.RevisionToken.IsReady = true
-		// update source after all instances in destination have taken effect
-		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{}); err != nil {
-			nlog.Error(err)
-			return err
-		}
-		msg := fmt.Sprintf("Rolling update destination domainroute %s/%s finish, revision %d", dr.Namespace, dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
-		nlog.Debug(msg)
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
+		return err
+
 	}
 	return nil
 }

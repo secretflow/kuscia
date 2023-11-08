@@ -161,7 +161,7 @@ func TestServiceMain(t *testing.T) {
 			ExpirationTime: tm.UnixNano(),
 			UseCount:       3,
 			FlowId:         "bbbb",
-			Componets:      []string{"mpc", "psi"},
+			Components:     []string{"mpc", "psi"},
 			Initiator:      "alice",
 			InputConfig:    "xxxxx",
 		},

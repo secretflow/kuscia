@@ -106,7 +106,7 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 // Run is used to run server.
 func (s *server) Run(ctx context.Context) error {
 	s.ctx = ctx
-	crdNames := []string{}
+	var crdNames []string
 	crdNamesMap := map[string]bool{}
 	for _, cc := range s.controllerConstructions {
 		for _, name := range cc.CRDNames {
@@ -141,7 +141,6 @@ func (s *server) onNewLeader(identity string) {
 		if s.controllersIsEmpty() {
 			s.onStartedLeading(s.ctx)
 		}
-		return
 	}
 	nlog.Infof("New leader has been elected: %s", identity)
 }
@@ -166,12 +165,12 @@ func (s *server) onStartedLeading(ctx context.Context) {
 	}
 	for _, cc := range s.controllerConstructions {
 		controller := cc.NewControler(ctx, config)
-		nlog.Infof("Run controller %v ", controller.Name())
+		nlog.Infof("Run controller %v", controller.Name())
 		go func(controller IController) {
 			if err := controller.Run(s.options.Workers); err != nil {
-				nlog.Fatalf("Error running controller %v: %v", controller.Name(), err)
+				nlog.Fatalf("Error running controller %v, %v", controller.Name(), err)
 			} else {
-				nlog.Infof("Run controller %v successfully", controller.Name())
+				nlog.Infof("Controller %v exit", controller.Name())
 			}
 		}(controller)
 		s.controllers = append(s.controllers, controller)
@@ -180,11 +179,12 @@ func (s *server) onStartedLeading(ctx context.Context) {
 
 // onStoppedLeading is executed when leader stopped.
 func (s *server) onStoppedLeading() {
-	nlog.Warnf("Server %v Leading stopped", s.Name())
+	nlog.Warnf("Server %v Leading stopped, self identity: %v, leader identity: %v", s.Name(), s.leaderElector.MyIdentity(), s.leaderElector.GetLeader())
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	for _, c := range s.controllers {
-		c.Stop()
+	for i := range s.controllers {
+		s.controllers[i].Stop()
+		s.controllers[i] = nil
 	}
 	s.controllers = nil
 }

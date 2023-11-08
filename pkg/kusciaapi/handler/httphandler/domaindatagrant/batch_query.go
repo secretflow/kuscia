@@ -27,9 +27,9 @@ type batchQueryDomainDataGrantHandler struct {
 	domainDataGrantService service.IDomainDataGrantService
 }
 
-func NewBatchQueryDomainDataGrantHandler(domainService service.IDomainDataGrantService) api.ProtoHandler {
+func NewBatchQueryDomainDataGrantHandler(domainDataGrantService service.IDomainDataGrantService) api.ProtoHandler {
 	return &batchQueryDomainDataGrantHandler{
-		domainDataGrantService: domainService,
+		domainDataGrantService: domainDataGrantService,
 	}
 }
 

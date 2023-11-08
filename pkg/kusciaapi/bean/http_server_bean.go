@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package bean
 
 import (
@@ -350,6 +351,11 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "batchQuery",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewBatchQueryDomainDataGrantHandler(domainDataGrantService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "list",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewListDomainDataGrantHandler(domainDataGrantService))},
 				},
 			},
 		},

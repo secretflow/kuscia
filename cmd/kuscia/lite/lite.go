@@ -54,7 +54,7 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 			}
 
 			kusciaConf := confloader.ReadConfig(configFile, domainID, common.RunModeLite)
-			nlog.Infof("Read kuscia config: %+v", kusciaConf)
+			nlog.Debugf("Read kuscia config: %+v", kusciaConf)
 
 			// dns must start before dependencies because that dependencies init process may access network.
 			coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)

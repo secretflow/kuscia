@@ -73,7 +73,7 @@ message DomainDataGrantStatus {
 message UseRecord {
   int64 use_time = 1;
   string grant_domain = 2;
-  string componet = 3;
+  string component = 3;
   string output = 4;
 }
 
@@ -92,7 +92,7 @@ message GrantLimit {
   int64 expiration_time = 1;
   int32 use_count = 2;
   string flow_id = 3;
-  repeated string componets = 4;
+  repeated string components = 4;
   string initiator = 5;
   string input_config = 6;
 }
@@ -125,7 +125,8 @@ message QueryDomainDataGrantRequestData {
 
 message QueryDomainDataGrantRequest {
   RequestHeader header = 1;
-  QueryDomainDataGrantRequestData data = 2;
+  string domain_id = 2;
+  string domaindatagrant_id = 3;
 }
 
 message QueryDomainDataGrantResponse {

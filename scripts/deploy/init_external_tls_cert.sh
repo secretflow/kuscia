@@ -40,17 +40,17 @@ echo "subjectAltName=${SUBJECT_ALT_NAME}" > /tmp/external_tls_openssh.conf
 
 #create a PKCS#1 key for tls
 pushd $ROOT/etc/certs >/dev/null || exit
-openssl genrsa -out external_tls.key 2048
+openssl genrsa -out external_tls.key 2048 >/dev/null 2>&1
 
 #generate the Certificate Signing Request
-openssl req -new -key external_tls.key -out external_tls.csr -subj "/CN=${DOMAIN_ID}_ENVOY_EXTERNAL"
+openssl req -new -key external_tls.key -out external_tls.csr -subj "/CN=${DOMAIN_ID}_ENVOY_EXTERNAL" >/dev/null 2>&1
 
 #sign it with Root CA
 openssl x509  -req -in external_tls.csr \
     -extfile /tmp/external_tls_openssh.conf \
     -CA ca.crt -CAkey ca.key  \
     -days 10000 -sha256 -CAcreateserial \
-    -out external_tls.crt
+    -out external_tls.crt >/dev/null 2>&1
 
 rm -rf /tmp/external_tls_openssh.conf
 

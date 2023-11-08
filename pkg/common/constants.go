@@ -57,7 +57,7 @@ const (
 	LabelPodUID          = "kuscia.secretflow/pod-uid"
 	LabelOwnerReferences = "kuscia.secretflow/owner-references"
 
-	LabelDomainRouteCreateInteropConfig = "kuscia.secertflow/domainroute-create-interopconfig"
+	LabelDomainRoutePartner = "kuscia.secertflow/domainroute-partner"
 )
 
 type LoadBalancerType string
@@ -132,6 +132,8 @@ const (
 
 const (
 	DomainDataSourceTypeLocalFS        = "localfs"
+	DomainDataSourceTypeOSS            = "oss"
+	DomainDataSourceTypeMysql          = "mysql"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )
 

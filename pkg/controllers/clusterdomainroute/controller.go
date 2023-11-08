@@ -313,7 +313,14 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	cdr, err = c.updateLabel(ctx, cdr, nil, nil)
+	appendLabels := make(map[string]string, 0)
+	if sourceRole == kusciaapisv1alpha1.Partner {
+		appendLabels[common.LabelDomainRoutePartner] = cdr.Spec.Source
+	} else if destRole == kusciaapisv1alpha1.Partner {
+		appendLabels[common.LabelDomainRoutePartner] = cdr.Spec.Destination
+	}
+
+	cdr, err = c.updateLabel(ctx, cdr, appendLabels, nil)
 	if err != nil {
 		return err
 	}
@@ -373,7 +380,7 @@ func (c *controller) syncClusterDomainRouteByDomainName(key, domainName string) 
 
 func (c *controller) Run(threadiness int) error {
 	defer utilruntime.HandleCrash()
-
+	defer c.clusterDomainRouteWorkqueue.ShutDown()
 	// Start the informer factories to begin populating the informer caches
 	nlog.Info("Starting ClusterDomainRoute controller")
 	c.kusciaInformerFactory.Start(c.ctx.Done())
@@ -395,12 +402,10 @@ func (c *controller) Run(threadiness int) error {
 
 	nlog.Info("Started ClusterDomainRoute controller")
 	<-c.ctx.Done()
-	nlog.Info("ClusterDomainRoute controller run end")
 	return nil
 }
 
 func (c *controller) Stop() {
-	c.clusterDomainRouteWorkqueue.ShutDown()
 	if c.cancel != nil {
 		c.cancel()
 		c.cancel = nil
@@ -462,7 +467,11 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 		cdr.Status.TokenStatus.SourceTokens = srcdr.Status.TokenStatus.Tokens
 		needUpdate = true
 		if len(cdr.Status.TokenStatus.SourceTokens) == 0 {
-			setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "TokenNotGenerate", "TokenNotGenerate"))
+			if !srcdr.Status.IsDestinationAuthrized {
+				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "DestinationIsNotAuthrized", "TokenNotGenerate"))
+			} else {
+				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "TokenNotGenerate", "TokenNotGenerate"))
+			}
 		}
 	}
 	if destdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.DestinationTokens, destdr.Status.TokenStatus.Tokens) {
@@ -480,8 +489,7 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 			setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "TokenRevisionNotMatch", "TokenRevisionNotMatch"))
 		}
 
-		cdr, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(c.ctx, cdr,
-			metav1.UpdateOptions{})
+		cdr, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(c.ctx, cdr, metav1.UpdateOptions{})
 		return cdr, err
 	}
 
@@ -510,11 +518,28 @@ func (c *controller) updateLabel(ctx context.Context, cdr *kusciaapisv1alpha1.Cl
 	var err error
 
 	needUpdateLabel := func() bool {
-		if cdr.Labels == nil || len(addLabels) > 0 || len(removeLabels) > 0 {
+		if cdr.Labels == nil {
 			return true
 		}
+
 		_, ok := cdr.Labels[common.KusciaSourceKey]
-		return !ok
+		if !ok {
+			return true
+		}
+
+		for k, v := range addLabels {
+			if oldVal, exist := cdr.Labels[k]; !exist || oldVal != v {
+				return true
+			}
+		}
+
+		for k, _ := range removeLabels {
+			if _, exist := cdr.Labels[k]; exist {
+				return true
+			}
+		}
+
+		return false
 	}
 
 	if !needUpdateLabel() {
@@ -525,12 +550,13 @@ func (c *controller) updateLabel(ctx context.Context, cdr *kusciaapisv1alpha1.Cl
 	cdrCopy.Labels = make(map[string]string, 0)
 
 	// copy old labels exclude needRemoved Labels
-	if cdr.Labels != nil {
-		for k, v := range cdr.Labels {
-			_, needRemove := removeLabels[k]
-			if !needRemove {
-				cdrCopy.Labels[k] = v
-			}
+	for k, v := range cdr.Labels {
+		needRemove := false
+		if removeLabels != nil {
+			_, needRemove = removeLabels[k]
+		}
+		if !needRemove {
+			cdrCopy.Labels[k] = v
 		}
 	}
 
@@ -543,13 +569,11 @@ func (c *controller) updateLabel(ctx context.Context, cdr *kusciaapisv1alpha1.Cl
 		cdrCopy.Labels[k] = v
 	}
 
-	if cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy,
-		metav1.UpdateOptions{}); err != nil {
+	if cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{}); err != nil {
 		nlog.Errorf("Update cdr, src(%s) dst(%s) failed with (%s)", cdrCopy.Spec.Source, cdrCopy.Spec.Destination, err.Error())
 		return cdr, err
 	}
 
-	nlog.Infof("cdrcopy:%s, cdr:%s %s", cdrCopy.ResourceVersion, cdr.ResourceVersion, cdrCopy.Name)
 	return cdr, nil
 }
 

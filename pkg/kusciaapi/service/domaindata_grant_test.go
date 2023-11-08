@@ -44,10 +44,8 @@ func TestDomainDataGrant(t *testing.T) {
 	assert.NotNil(t, createRes)
 	t.Log(createRes)
 	queryRes := kusciaAPIDG.QueryDomainDataGrant(context.Background(), &kusciaapi.QueryDomainDataGrantRequest{
-		Data: &kusciaapi.QueryDomainDataGrantRequestData{
-			DomainId:          kusciaAPIDG.data.DomainId,
-			DomaindatagrantId: createRes.Data.DomaindatagrantId,
-		},
+		DomainId:          kusciaAPIDG.data.DomainId,
+		DomaindatagrantId: createRes.Data.DomaindatagrantId,
 	})
 	assert.Equal(t, int32(0), queryRes.Status.Code)
 

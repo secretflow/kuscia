@@ -62,7 +62,7 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 		return nil, err
 	}
 
-	nlog.Infof("Kuscia api config is %+v", kusciaAPIConfig)
+	nlog.Debugf("Kuscia api config is %+v", kusciaAPIConfig)
 
 	return &kusciaAPIModule{
 		conf:         kusciaAPIConfig,

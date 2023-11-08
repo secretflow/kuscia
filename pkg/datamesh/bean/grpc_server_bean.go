@@ -61,13 +61,15 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeOut) * time.Second),
 	}
 
-	serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA,
-		s.config.TLS.ServerCert, s.config.TLS.ServerKey)
-	if err != nil {
-		nlog.Fatalf("Failed to init server tls config: %v", err)
+	if !s.config.DisableTLS {
+		serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA,
+			s.config.TLS.ServerCert, s.config.TLS.ServerKey)
+		if err != nil {
+			nlog.Fatalf("Failed to init server tls config: %v", err)
+		}
+		creds := credentials.NewTLS(serverTLSConfig)
+		opts = append(opts, grpc.Creds(creds))
 	}
-	creds := credentials.NewTLS(serverTLSConfig)
-	opts = append(opts, grpc.Creds(creds))
 
 	// listen on grpc port
 	addr := fmt.Sprintf(":%d", s.config.GRPCPort)

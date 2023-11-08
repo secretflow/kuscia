@@ -65,7 +65,7 @@ func NewAgent(i *Dependencies) Module {
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
 	conf.Plugins = i.Agent.Plugins
 
-	nlog.Infof("Agent config is %+v", conf)
+	nlog.Debugf("Agent config is %+v", conf)
 
 	return &agentModule{
 		conf:    conf,

@@ -24,7 +24,6 @@ agent:
 externalTLS:
   certFile: etc/certs/external_tls.crt
   keyFile: etc/certs/external_tls.key
-
 dataMesh:
   enableDataProxy : false
   # dataProxyEndpoint: localhost:8086

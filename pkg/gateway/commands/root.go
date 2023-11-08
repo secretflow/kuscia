@@ -56,7 +56,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 
 	// add master config
 	masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
-	nlog.Infof("masterConfig is: %v", masterConfig)
+	nlog.Debugf("masterConfig is: %v", masterConfig)
 
 	if err != nil {
 		return fmt.Errorf("failed to load masterConfig, detail-> %v", err)

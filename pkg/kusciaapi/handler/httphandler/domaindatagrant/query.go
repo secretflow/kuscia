@@ -27,9 +27,9 @@ type queryDomainHandler struct {
 	domainDataGrantService service.IDomainDataGrantService
 }
 
-func NewQueryDomainDataGrantHandler(domainService service.IDomainDataGrantService) api.ProtoHandler {
+func NewQueryDomainDataGrantHandler(domainDataGrantService service.IDomainDataGrantService) api.ProtoHandler {
 	return &queryDomainHandler{
-		domainDataGrantService: domainService,
+		domainDataGrantService: domainDataGrantService,
 	}
 }
 

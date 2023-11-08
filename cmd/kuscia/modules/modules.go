@@ -20,6 +20,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
 	"math/big"
@@ -121,7 +122,7 @@ func EnsureDomainCert(conf *Dependencies) error {
 	domainKey := conf.DomainKey
 	domainCrt := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               caCert.Subject,
+		Subject:               pkix.Name{CommonName: conf.DomainID},
 		PublicKeyAlgorithm:    caCert.PublicKeyAlgorithm,
 		PublicKey:             domainKey.PublicKey,
 		NotBefore:             caCert.NotBefore,
@@ -213,7 +214,7 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 		nlog.Errorf("Load config by configloader failed: %s", err)
 	}
 
-	nlog.Infof("After config loader handle, kuscia config is %+v", dependencies.KusciaConfig)
+	nlog.Debugf("After config loader handle, kuscia config is %+v", dependencies.KusciaConfig)
 
 	// make runtime dir
 	err = EnsureDir(dependencies)

@@ -247,7 +247,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.workqueue.ShutDown()
 }
 
 // enqueueKusciaTask takes a KusciaTask resource and converts it into a namespace/name

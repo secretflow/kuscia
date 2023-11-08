@@ -23,24 +23,24 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
-type createDomainHandler struct {
+type listDomainDataGrantHandler struct {
 	domainDataGrantService service.IDomainDataGrantService
 }
 
-func NewCreateDomainDataGrantHandler(domainDataGrantService service.IDomainDataGrantService) api.ProtoHandler {
-	return &createDomainHandler{
+func NewListDomainDataGrantHandler(domainDataGrantService service.IDomainDataGrantService) api.ProtoHandler {
+	return &listDomainDataGrantHandler{
 		domainDataGrantService: domainDataGrantService,
 	}
 }
 
-func (h createDomainHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
+func (h listDomainDataGrantHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 }
 
-func (h createDomainHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	createRequest, _ := request.(*kusciaapi.CreateDomainDataGrantRequest)
-	return h.domainDataGrantService.CreateDomainDataGrant(context.Context, createRequest)
+func (h listDomainDataGrantHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	req, _ := request.(*kusciaapi.ListDomainDataGrantRequest)
+	return h.domainDataGrantService.ListDomainDataGrant(context.Context, req)
 }
 
-func (h createDomainHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(kusciaapi.CreateDomainDataGrantRequest{}), reflect.TypeOf(kusciaapi.CreateDomainDataGrantResponse{})
+func (h listDomainDataGrantHandler) GetType() (reqType, respType reflect.Type) {
+	return reflect.TypeOf(kusciaapi.ListDomainDataGrantRequest{}), reflect.TypeOf(kusciaapi.ListDomainDataGrantResponse{})
 }

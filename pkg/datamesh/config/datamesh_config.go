@@ -38,6 +38,7 @@ type DataMeshConfig struct {
 	KusciaClient   kusciaclientset.Interface
 	KubeNamespace  string
 
+	DisableTLS         bool                    `yaml:"disableTLS,omitempty"`
 	EnableDataProxy    bool                    `yaml:"enableDataProxy,omitempty"`
 	DataProxyEndpoint  string                  `yaml:"dataProxyEndpoint,omitempty"`
 	DataProxyTLSConfig *kusciaconfig.TLSConfig `yaml:"dataProxyTLSConfig,omitempty"`
@@ -75,6 +76,7 @@ func NewDefaultDataMeshConfig() *DataMeshConfig {
 		ReadTimeout:     20,
 		WriteTimeout:    20,
 		IdleTimeout:     300,
+		DisableTLS:      false,
 		EnableDataProxy: false,
 	}
 }
