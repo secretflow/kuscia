@@ -27,9 +27,9 @@ type deleteDomainHandler struct {
 	domainDataGrantService service.IDomainDataGrantService
 }
 
-func NewDeleteDomainDataGrantHandler(domainService service.IDomainDataGrantService) api.ProtoHandler {
+func NewDeleteDomainDataGrantHandler(domainDataGrantService service.IDomainDataGrantService) api.ProtoHandler {
 	return &deleteDomainHandler{
-		domainDataGrantService: domainService,
+		domainDataGrantService: domainDataGrantService,
 	}
 }
 

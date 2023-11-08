@@ -24,8 +24,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
@@ -128,56 +130,123 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 	maxRetryTimes := 60
 	i := 0
 	t := time.NewTicker(time.Second)
+	defer t.Stop()
+	var err error
 	for {
 		i++
 		if i == maxRetryTimes {
-			return fmt.Errorf("do http request fail, at max retry times:%d", maxRetryTimes)
+			return fmt.Errorf("wait dr %s token ready failed at max retry times:%d, last error: %s", dr.Name, maxRetryTimes, err.Error())
 		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-t.C:
-			req, err := http.NewRequest(http.MethodGet, config.InternalServer+"/handshake", nil)
+			var drLatest *kusciaapisv1alpha1.DomainRoute
+			drLatest, err = c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
 			if err != nil {
-				nlog.Errorf("new handshake request fail:%v", err)
 				return err
 			}
-			ns := dr.Spec.Destination
-			if dr.Spec.Transit != nil {
-				ns = dr.Spec.Transit.Domain.DomainID
+			if drLatest.Status.TokenStatus.RevisionToken.IsReady {
+				return nil
 			}
-			req.Host = fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns)
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set(fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake), fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name))
-			req.Header.Set("Kuscia-Source", dr.Spec.Source)
-			req.Header.Set("kuscia-Host", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns))
-			client := &http.Client{}
-			resp, err := client.Do(req)
+			if drLatest.Status.TokenStatus.RevisionToken.Token == "" {
+				return fmt.Errorf("token of dr %s was deleted ", drLatest.Name)
+			}
+			if drLatest.Status.TokenStatus.RevisionInitializer != c.gateway.Name {
+				return fmt.Errorf("dr %s may change initializer ", drLatest.Name)
+			}
+			var out *getResponse
+			out, err = c.checkConnectionStatus(drLatest)
 			if err != nil {
-				nlog.Errorf("do http request fail:%v, retry:%d", err, i)
-				continue
-			}
-
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
-			}
-			if resp.StatusCode != http.StatusOK {
-				if len(body) > 200 {
-					body = body[:200]
+				if out != nil {
+					if out.State == TokenNotReady {
+						continue
+					} else {
+						nlog.Warnf("err:%s, retry time: %d", err.Error(), i)
+						return err
+					}
+				} else {
+					nlog.Warnf("err:%s, retry time: %d", err.Error(), i)
 				}
-				nlog.Errorf("Request error(%d), path: %s, code: %d, message: %s", i, fmt.Sprintf("%s.%s.svc/handshake", clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
-				continue
-			}
-			out := &getResponse{}
-			if err := json.Unmarshal(body, out); err == nil && out.TokenReady {
-				dr = dr.DeepCopy()
-				dr.Status.TokenStatus.RevisionToken.IsReady = true
-				_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
-				return err
+			} else {
+				nlog.Infof("Destination(%s) token is ready", drLatest.Spec.Destination)
+				return nil
 			}
 		}
+	}
+}
+
+func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.DomainRoute) (*getResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, config.InternalServer+"/handshake", nil)
+	if err != nil {
+		nlog.Errorf("new handshake request fail:%v", err)
+		return nil, err
+	}
+	ns := dr.Spec.Destination
+	if dr.Spec.Transit != nil {
+		ns = dr.Spec.Transit.Domain.DomainID
+	}
+	req.Host = fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake), fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name))
+	req.Header.Set("Kuscia-Token-Revision", fmt.Sprintf("%d", dr.Status.TokenStatus.RevisionToken.Revision))
+	req.Header.Set("Kuscia-Source", dr.Spec.Source)
+	req.Header.Set("kuscia-Host", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do http request fail:%v", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
+	}
+	if resp.StatusCode != http.StatusOK {
+		if len(body) > 200 {
+			body = body[:200]
+		}
+		return nil, fmt.Errorf("request error, path: %s, code: %d, message: %s", fmt.Sprintf("%s.%s.svc/handshake", clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
+	}
+	out := &getResponse{}
+	err = json.Unmarshal(body, out)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, c.handleGetResponse(out, dr)
+}
+
+func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaapisv1alpha1.DomainRoute) error {
+	switch out.State {
+	case TokenReady:
+		dr = dr.DeepCopy()
+		dr.Status.TokenStatus.RevisionToken.IsReady = true
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+		return err
+	case TokenNotFound:
+		dr = dr.DeepCopy()
+		dr.Status.TokenStatus.RevisionToken.Token = ""
+		dr.Status.TokenStatus.RevisionToken.IsReady = false
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+		return err
+	case DomainIDInputInvalid:
+		return fmt.Errorf("%s destinationreturn  DomainIDInputInvalid, check 'Kuscia-Source' in header", dr.Name)
+	case TokenRevisionInputInvalid:
+		return fmt.Errorf("%s destination return TokenRevisionInputInvalid, check 'Kuscia-Token-Revision' in header", dr.Name)
+	case TokenNotReady:
+		return fmt.Errorf("%s destination token is not ready", dr.Name)
+	case NoAuthentication:
+		dr = dr.DeepCopy()
+		dr.Status.IsDestinationAuthrized = false
+		dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
+		c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+		return fmt.Errorf("%s cant contact destination because destination authentication is false", dr.Name)
+	case InternalError:
+		return fmt.Errorf("%s destination return unkown error", dr.Name)
+	default:
+		return nil
 	}
 }
 
@@ -275,40 +344,51 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	if err != nil {
 		return err
 	}
-
-	dr = dr.DeepCopy()
+	drLatest, _ := c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
+	drCopy := drLatest.DeepCopy()
 	tn := metav1.Now()
-	dr.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
-	dr.Status.TokenStatus.RevisionToken.Revision = int64(resp.Token.Revision)
-	dr.Status.TokenStatus.RevisionToken.IsReady = false
-	dr.Status.TokenStatus.RevisionToken.RevisionTime = tn
-	if dr.Spec.TokenConfig.RollingUpdatePeriod == 0 {
-		dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
+	drCopy.Status.IsDestinationAuthrized = true
+	drCopy.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
+	drCopy.Status.TokenStatus.RevisionToken.Revision = int64(resp.Token.Revision)
+	drCopy.Status.TokenStatus.RevisionToken.IsReady = false
+	drCopy.Status.TokenStatus.RevisionToken.RevisionTime = tn
+	if drCopy.Spec.TokenConfig.RollingUpdatePeriod == 0 {
+		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
 	} else {
 		tTx := time.Unix(resp.Token.ExpirationTime/int64(time.Second), resp.Token.ExpirationTime%int64(time.Second))
-		dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tTx)
+		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tTx)
 	}
-	_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+	_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(drCopy.Namespace).UpdateStatus(context.Background(), drCopy, metav1.UpdateOptions{})
 	return err
 }
 
+type DestinationStatus int
+
+const (
+	TokenReady DestinationStatus = iota
+	DomainIDInputInvalid
+	TokenRevisionInputInvalid
+	TokenNotReady
+	TokenNotFound
+	NoAuthentication
+	InternalError
+)
+
 type getResponse struct {
-	Namespace  string `json:"namespace"`
-	TokenReady bool   `json:"tokenReady"`
+	Namespace string            `json:"namespace"`
+	State     DestinationStatus `json:"state"`
 }
 
 func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		resp := &getResponse{
-			Namespace:  c.gateway.Namespace,
-			TokenReady: false,
+			Namespace: c.gateway.Namespace,
+			State:     TokenNotReady,
 		}
 
 		domainID := r.Header.Get("Kuscia-Source")
-		drName := common.GenDomainRouteName(domainID, c.gateway.Namespace)
-		if dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName); err == nil {
-			resp.TokenReady = dr.Status.TokenStatus.RevisionToken.IsReady
-		}
+		tokenRevision := r.Header.Get("Kuscia-Token-Revision")
+		resp.State = c.checkTokenStatus(domainID, tokenRevision)
 
 		w.Header().Set("Content-Type", "application/json")
 		err := json.NewEncoder(w).Encode(resp)
@@ -351,6 +431,38 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 	} else {
 		nlog.Infof("DomainRoute %s handle success", drName)
 	}
+}
+
+func (c *DomainRouteController) checkTokenStatus(domainID, tokenRevision string) DestinationStatus {
+	if domainID == "" {
+		return DomainIDInputInvalid
+	}
+	drName := common.GenDomainRouteName(domainID, c.gateway.Namespace)
+	if dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName); err == nil {
+		return checkTokenRevision(tokenRevision, dr)
+	} else if k8serrors.IsNotFound(err) {
+		return NoAuthentication
+	}
+	return InternalError
+}
+
+func checkTokenRevision(tokenRevision string, dr *kusciaapisv1alpha1.DomainRoute) DestinationStatus {
+	if tokenRevision == "" {
+		return TokenRevisionInputInvalid
+	}
+	r, err := strconv.Atoi(tokenRevision)
+	if err != nil {
+		return TokenRevisionInputInvalid
+	}
+	for _, t := range dr.Status.TokenStatus.Tokens {
+		if t.Revision == int64(r) {
+			if t.IsReady {
+				return TokenReady
+			}
+			return TokenNotReady
+		}
+	}
+	return TokenNotFound
 }
 
 func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeRequest, dr *kusciaapisv1alpha1.DomainRoute) (*handshake.HandShakeResponse, error) {
@@ -400,19 +512,28 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 		return nil, err
 	}
 
-	if dr.Status.TokenStatus.RevisionToken.Token != tokenEncrypted {
-		dr = dr.DeepCopy()
-		tn := metav1.Now()
-		dr.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
-		dr.Status.TokenStatus.RevisionToken.Revision++
-		dr.Status.TokenStatus.RevisionToken.RevisionTime = tn
-		dr.Status.TokenStatus.RevisionToken.IsReady = false
-		if dr.Spec.TokenConfig.RollingUpdatePeriod == 0 {
-			dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
+	var revision int64
+	var expirationTime metav1.Time
+	drLatest, err := c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
+	if err != nil {
+		return nil, err
+	}
+	if drLatest.Status.TokenStatus.RevisionToken.Token != tokenEncrypted {
+		drCopy := drLatest.DeepCopy()
+		revisionTime := metav1.Now()
+		drCopy.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
+		drCopy.Status.TokenStatus.RevisionToken.Revision++
+		revision = drCopy.Status.TokenStatus.RevisionToken.Revision
+		drCopy.Status.TokenStatus.RevisionToken.RevisionTime = revisionTime
+		drCopy.Status.TokenStatus.RevisionToken.IsReady = false
+		if drCopy.Spec.TokenConfig.RollingUpdatePeriod == 0 {
+			expirationTime = metav1.NewTime(revisionTime.AddDate(100, 0, 0))
 		} else {
-			dr.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.Add(2 * time.Duration(dr.Spec.TokenConfig.RollingUpdatePeriod) * time.Second))
+			expirationTime = metav1.NewTime(revisionTime.Add(2 * time.Duration(drCopy.Spec.TokenConfig.RollingUpdatePeriod) * time.Second))
 		}
-		if _, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
+		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = expirationTime
+		_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(drCopy.Namespace).UpdateStatus(context.Background(), drCopy, metav1.UpdateOptions{})
+		if err != nil {
 			return nil, err
 		}
 		nlog.Infof("Update domainroute %s status", dr.Name)
@@ -426,8 +547,8 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 	return &handshake.HandShakeResponse{
 		Token: &handshake.Token{
 			Token:          respTokenEncrypted,
-			ExpirationTime: dr.Status.TokenStatus.RevisionToken.ExpirationTime.UnixNano(),
-			Revision:       int32(dr.Status.TokenStatus.RevisionToken.Revision),
+			ExpirationTime: expirationTime.UnixNano(),
+			Revision:       int32(revision),
 		},
 	}, nil
 }
@@ -487,23 +608,20 @@ func (c *DomainRouteController) checkAndUpdateTokenInstances(dr *kusciaapisv1alp
 	if len(dr.Status.TokenStatus.Tokens) == 0 {
 		return nil
 	}
-
 	updated := false
-	dr = dr.DeepCopy()
-	for i := range dr.Status.TokenStatus.Tokens {
-		if !exists(dr.Status.TokenStatus.Tokens[i].EffectiveInstances, c.gateway.Name) {
+	drCopy := dr.DeepCopy()
+	for i := range drCopy.Status.TokenStatus.Tokens {
+		if !exists(drCopy.Status.TokenStatus.Tokens[i].EffectiveInstances, c.gateway.Name) {
 			updated = true
-			dr.Status.TokenStatus.Tokens[i].EffectiveInstances = append(dr.Status.TokenStatus.Tokens[i].EffectiveInstances, c.gateway.Name)
+			drCopy.Status.TokenStatus.Tokens[i].EffectiveInstances = append(drCopy.Status.TokenStatus.Tokens[i].EffectiveInstances, c.gateway.Name)
 		}
 	}
-
 	if updated {
-		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
-			nlog.Error(err)
-			return err
-		}
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(drCopy.Namespace).UpdateStatus(context.Background(), drCopy, metav1.UpdateOptions{})
+		return err
 	}
 	return nil
+
 }
 
 func encryptToken(pub *rsa.PublicKey, key []byte) (string, error) {

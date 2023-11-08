@@ -124,6 +124,15 @@ func Test_server_restartLeading(t *testing.T) {
 		options:                 opts,
 		controllerConstructions: []ControllerConstruction{{testNewControllerFunc, nil}},
 	}
+
+	s.leaderElector = election.NewElector(
+		s.kubeClient,
+		s.options.ControllerName,
+		election.WithHealthChecker(s.electionChecker),
+		election.WithOnNewLeader(s.onNewLeader),
+		election.WithOnStartedLeading(s.onStartedLeading),
+		election.WithOnStoppedLeading(s.onStoppedLeading))
+
 	goroutineNumBegin := runtime.NumGoroutine()
 	go s.onStartedLeading(context.Background())
 	time.Sleep(time.Second)

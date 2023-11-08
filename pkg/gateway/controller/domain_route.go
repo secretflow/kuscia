@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	gocache "github.com/patrickmn/go-cache"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	corev1 "k8s.io/api/core/v1"
@@ -100,7 +101,9 @@ type DomainRouteController struct {
 	workqueue               workqueue.RateLimitingInterface
 	recorder                record.EventRecorder
 
-	cache           sync.Map
+	drCache sync.Map
+
+	handshakeCache  *gocache.Cache
 	handshakeServer *http.Server
 	handshakePort   uint32
 }
@@ -141,6 +144,8 @@ func NewDomainRouteController(
 		workqueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), domainRouteQueueName),
 		recorder:                recorder,
 		handshakePort:           drConfig.HandshakePort,
+		drCache:                 sync.Map{},
+		handshakeCache:          gocache.New(5*time.Minute, 10*time.Minute),
 	}
 
 	DomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
@@ -182,7 +187,7 @@ func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
 	}
 
 	go c.startHandShakeServer(c.handshakePort)
-
+	go c.checkConnectionHealthy(stopCh)
 	nlog.Info("Starting workers")
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -193,6 +198,31 @@ func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
 	<-stopCh
 	c.handshakeServer.Close()
 	nlog.Info("Shutting down workers")
+}
+
+func (c *DomainRouteController) checkConnectionHealthy(stopCh <-chan struct{}) {
+	t := time.NewTicker(15 * time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			drs, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).List(labels.Everything())
+			if err != nil {
+				nlog.Error(err)
+				break
+			}
+			for _, dr := range drs {
+				if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name && dr.Status.TokenStatus.RevisionToken.Token != "" {
+					_, err := c.checkConnectionStatus(dr)
+					if err != nil {
+						nlog.Error(err)
+					}
+				}
+			}
+		case <-stopCh:
+			return
+		}
+	}
 }
 
 func (c *DomainRouteController) runWorker() {
@@ -231,18 +261,30 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
 			if dr.Status.TokenStatus.RevisionToken.Token == "" {
-				nlog.Infof("DomainRoute %s starts handshake at revision: %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
-				if dr.Spec.Transit == nil {
-					if err := setKeepAliveForDstClusters(dr, false); err != nil {
-						return fmt.Errorf("disable keep-alive fail for DomainRoute: %s err: %v", key, err)
+				_, ok := c.handshakeCache.Get(dr.Name)
+				if !ok {
+					c.handshakeCache.Add(dr.Name, dr.Name, 2*time.Minute)
+					if err := func() error {
+						if dr.Spec.Transit == nil {
+							if err := setKeepAliveForDstClusters(dr, false); err != nil {
+								return fmt.Errorf("disable keep-alive fail for DomainRoute: %s err: %v", key, err)
+							}
+						}
+						nlog.Infof("DomainRoute %s starts handshake, the last revision is %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
+						return c.sourceInitiateHandShake(dr)
+					}(); err != nil {
+						c.handshakeCache.Delete(dr.Name)
+						nlog.Error(err)
+						return err
 					}
 				}
-				return c.sourceInitiateHandShake(dr)
+				return nil
 			} else if !dr.Status.TokenStatus.RevisionToken.IsReady {
+				nlog.Infof("DomainRoute %s wait token ready for latest revision %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
 				if err = c.waitTokenReady(ctx, dr); err != nil {
 					return err
 				}
-				nlog.Infof("DomainRoute %s wait token ready at revision: %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
+				c.handshakeCache.Delete(dr.Name)
 			}
 		}
 	}
@@ -314,7 +356,7 @@ func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainR
 		return err
 	}
 
-	c.cache.Store(key, dr)
+	c.drCache.Store(key, dr)
 
 	// update effective instances
 	return c.checkAndUpdateTokenInstances(dr)
@@ -323,7 +365,7 @@ func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainR
 func (c *DomainRouteController) deleteDomainRoute(key string) error {
 	nlog.Infof("Delete DomainRoute %s", key)
 
-	val, ok := c.cache.Load(key)
+	val, ok := c.drCache.Load(key)
 	if !ok {
 		return nil
 	}
@@ -335,7 +377,7 @@ func (c *DomainRouteController) deleteDomainRoute(key string) error {
 	if err := c.deleteEnvoyRule(dr); err != nil {
 		return err
 	}
-	c.cache.Delete(key)
+	c.drCache.Delete(key)
 	return nil
 }
 

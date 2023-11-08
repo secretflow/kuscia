@@ -2,8 +2,7 @@
 
 在 Kuscia 中将隐私计算的节点称为 Domain，一个 Domain 中可以包含多个 K3s
 的工作节点（Node）。详情请参考 [Domain](../concepts/domain_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto) 找到对应的
-protobuf 文件。
+你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 

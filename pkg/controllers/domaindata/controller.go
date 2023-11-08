@@ -212,7 +212,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.domainDataGrantWorkqueue.ShutDown()
 }
 
 // runDomainDataGrantWorker is a long-running function that will continually call the
@@ -258,6 +257,10 @@ func (c *Controller) syncDomainDataGrantHandler(ctx context.Context, key string)
 	if err != nil {
 		nlog.Warn(err)
 		return nil
+	}
+	update, err := c.checkLabels(dg)
+	if err != nil || update {
+		return err
 	}
 	if dg.Spec.Author == namespace {
 		dgGrant, err := c.domaindatagrantLister.DomainDataGrants(dg.Spec.GrantDomain).Get(name)
@@ -417,6 +420,34 @@ func (c *Controller) doValidate(dg *v1alpha1.DomainDataGrant) error {
 	return nil
 }
 
+func (c *Controller) checkLabels(dg *v1alpha1.DomainDataGrant) (bool, error) {
+	dgCopy := dg.DeepCopy()
+	needUpdate := false
+	if dgCopy.Labels == nil {
+		dgCopy.Labels = map[string]string{}
+	}
+
+	if _, ok := dgCopy.Labels[common.LabelInterConnProtocolType]; !ok {
+		dgCopy.Labels[common.LabelInterConnProtocolType] = "kuscia"
+		needUpdate = true
+	}
+
+	if _, ok := dgCopy.Labels[common.LabelInitiator]; !ok {
+		dgCopy.Labels[common.LabelInitiator] = dgCopy.Spec.Author
+		needUpdate = true
+	}
+
+	if _, ok := dgCopy.Labels[common.LabelDomainDataID]; !ok {
+		dgCopy.Labels[common.LabelDomainDataID] = dgCopy.Spec.DomainDataID
+		needUpdate = true
+	}
+	if needUpdate {
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(c.ctx, dgCopy, metav1.UpdateOptions{})
+		return true, err
+	}
+	return false, nil
+}
+
 func (c *Controller) verify(dg *v1alpha1.DomainDataGrant) error {
 	phase := v1alpha1.GrantReady
 	msg := ""
@@ -457,12 +488,9 @@ func (c *Controller) verify(dg *v1alpha1.DomainDataGrant) error {
 	}
 	if dg.Spec.Limit != nil {
 		if dg.Spec.Limit.ExpirationTime != nil {
-			nlog.Info(time.Since(dg.Spec.Limit.ExpirationTime.Time))
 			if time.Since(dg.Spec.Limit.ExpirationTime.Time) > 0 {
 				phase = v1alpha1.GrantUnavailable
-				if msg != "" {
-					msg = "Expirated"
-				}
+				msg = "Expirated"
 			}
 		}
 		if dg.Spec.Limit.UseCount != 0 {

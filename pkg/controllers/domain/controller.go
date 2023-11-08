@@ -290,7 +290,6 @@ func (c *Controller) Run(workers int) error {
 	nlog.Info("Starting sync domain status")
 	go wait.Until(c.syncDomainStatuses, 10*time.Second, c.ctx.Done())
 	<-c.ctx.Done()
-
 	return nil
 }
 
@@ -300,7 +299,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.workqueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the

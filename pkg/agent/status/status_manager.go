@@ -629,9 +629,9 @@ func (m *manager) syncPod(uid types.UID, status versionedPodStatus) {
 		return
 	}
 	if unchanged {
-		nlog.Infof("Status for pod %q is up-to-date, statusVersion=%v", format.Pod(pod), status.version)
+		nlog.Debugf("Status for pod %q is up-to-date, statusVersion=%v", format.Pod(pod), status.version)
 	} else {
-		nlog.Infof("Status for pod %q updated successfully, statusVersion=%v, status=%v", format.Pod(pod), status.version, mergedStatus)
+		nlog.Debugf("Status for pod %q updated successfully, statusVersion=%v, status=%v", format.Pod(pod), status.version, mergedStatus)
 		pod = newPod
 	}
 

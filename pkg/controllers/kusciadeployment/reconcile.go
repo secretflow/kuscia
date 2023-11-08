@@ -418,6 +418,12 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		updateStrategy = partyKitInfo.deployTemplate.Strategy
 	}
 
+	var affinity *corev1.Affinity
+	if partyKitInfo.deployTemplate.Spec.Affinity != nil {
+		affinity = partyKitInfo.deployTemplate.Spec.Affinity.DeepCopy()
+		buildAffinity(affinity, partyKitInfo.dkInfo.deploymentName)
+	}
+
 	automountServiceAccountToken := false
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -439,6 +445,7 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 					Labels: selectorLabels,
 				},
 				Spec: corev1.PodSpec{
+					Affinity: affinity,
 					Tolerations: []corev1.Toleration{
 						{
 							Key:      common.KusciaTaintTolerationKey,
@@ -577,6 +584,19 @@ func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKi
 				deploymentCopy.Spec.Strategy = *kdParty.Template.Strategy
 			}
 
+			// check affinity
+			// currently, only check when kd template affinity is not nil
+			// allows manual modification of deployment affinity
+			if kdParty.Template.Spec.Affinity != nil {
+				affinity := kdParty.Template.Spec.Affinity.DeepCopy()
+				buildAffinity(affinity, deploymentCopy.Name)
+
+				if !reflect.DeepEqual(affinity, deploymentCopy.Spec.Template.Spec.Affinity) {
+					needUpdate = true
+					deploymentCopy.Spec.Template.Spec.Affinity = affinity
+				}
+			}
+
 			// check container image
 			for i, ctr := range deploymentCopy.Spec.Template.Spec.Containers {
 				if ctr.Image != partyKitInfo.dkInfo.image {
@@ -634,4 +654,28 @@ func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKi
 	}
 
 	return nil
+}
+
+func buildAffinity(affinity *corev1.Affinity, deploymentName string) {
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: map[string]string{"kuscia.secretflow/deployment-name": deploymentName},
+	}
+
+	if affinity.PodAntiAffinity != nil {
+		for i := range affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
+			affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[i].LabelSelector = labelSelector
+		}
+		for i := range affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+			affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i].PodAffinityTerm.LabelSelector = labelSelector
+		}
+	}
+
+	if affinity.PodAffinity != nil {
+		for i := range affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
+			affinity.PodAffinity.RequiredDuringSchedulingIgnoredDuringExecution[i].LabelSelector = labelSelector
+		}
+		for i := range affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution {
+			affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i].PodAffinityTerm.LabelSelector = labelSelector
+		}
+	}
 }

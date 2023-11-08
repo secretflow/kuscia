@@ -58,7 +58,7 @@ func TestCreateDomainDataGrant(t *testing.T) {
 		KubeNamespace: "DomainDataUnitTestNamespace",
 		DomainKeyFile: cafile,
 	}
-
+	createTestDomainDataSource(t, conf)
 	domainDataService := NewDomainDataService(conf)
 	attr := make(map[string]string)
 	attr["rows"] = "100"
@@ -91,7 +91,7 @@ func TestCreateDomainDataGrant(t *testing.T) {
 			ExpirationTime: tm.UnixNano(),
 			UseCount:       3,
 			FlowId:         "bbbb",
-			Componets:      []string{"mpc", "psi"},
+			Components:     []string{"mpc", "psi"},
 			Initiator:      conf.KubeNamespace,
 			InputConfig:    "xxxxx",
 		},

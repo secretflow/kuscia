@@ -18,6 +18,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -78,10 +79,17 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 	}
 	cdrEndpoint.Ports = make([]v1alpha1.DomainPort, len(endpoint.Ports))
 	for i, port := range endpoint.Ports {
+		drProtocol, isTLS, err := convert2DomainRouteProtocol(port.Protocol)
+		if err != nil {
+			return &kusciaapi.CreateDomainRouteResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrCreateDomainRoute), err.Error()),
+			}
+		}
 		cdrEndpoint.Ports[i] = v1alpha1.DomainPort{
 			Name:     port.Name,
 			Port:     int(port.Port),
-			Protocol: v1alpha1.DomainRouteProtocolType(port.Protocol),
+			Protocol: drProtocol,
+			IsTLS:    isTLS,
 		}
 	}
 	// build cdr token config or mtls config
@@ -288,9 +296,21 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 func buildRouteStatus(cdr *v1alpha1.ClusterDomainRoute) *kusciaapi.RouteStatus {
 	cdrTokenStatus := cdr.Status.TokenStatus
 	status := constants.RouteFailed
-	if len(cdrTokenStatus.DestinationTokens) > 0 && len(cdrTokenStatus.SourceTokens) > 0 {
+
+	hasPartnerDomain := false
+	if cdr.Labels != nil {
+		_, exist := cdr.Labels[common.LabelDomainRoutePartner]
+		hasPartnerDomain = exist
+	}
+
+	if !hasPartnerDomain && len(cdrTokenStatus.DestinationTokens) > 0 && len(cdrTokenStatus.SourceTokens) > 0 {
 		status = constants.RouteSucceeded
 	}
+
+	if hasPartnerDomain && (len(cdrTokenStatus.DestinationTokens) > 0 || len(cdrTokenStatus.SourceTokens) > 0) {
+		status = constants.RouteSucceeded
+	}
+
 	return &kusciaapi.RouteStatus{
 		Status: status,
 	}
@@ -357,4 +377,24 @@ func validateDomainRouteRequest(request RequestWithDstAndSrc) error {
 		return fmt.Errorf("destination can not be empty")
 	}
 	return nil
+}
+
+func convert2DomainRouteProtocol(protocol string) (drProtocol v1alpha1.DomainRouteProtocolType, isTLS bool, err error) {
+	protocol = strings.ToUpper(protocol)
+	isTLS = false
+	if protocol == "HTTPS" || protocol == "GRPCS" {
+		isTLS = true
+		protocol = strings.TrimRight(protocol, "S")
+	}
+
+	err = nil
+	switch protocol {
+	case "HTTP":
+		drProtocol = v1alpha1.DomainRouteProtocolHTTP
+	case "GRPC":
+		drProtocol = v1alpha1.DomainRouteProtocolGRPC
+	default:
+		err = fmt.Errorf("DomainRoute Port Protocol should be HTTP or HTTPS or GRPC or GRPCS")
+	}
+	return
 }

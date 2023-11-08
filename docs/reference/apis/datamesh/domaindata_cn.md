@@ -2,8 +2,7 @@
 
 DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 侧的管理 DomainData
 的能力。请参考 [DomainData](../../concepts/domaindata_cn.md)。
-你可以从 [这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/datamesh/domaindata.proto) 找到对应的
-protobuf 文件。
+你可以从 [这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/datamesh/domaindata.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -105,14 +104,14 @@ protobuf 文件。
 #### HTTP路径
 /api/v1/datamesh/domaindata/query
 
-#### 请求（QueryDomainRequest）
+#### 请求（QueryDomainDataRequest）
 
 | 字段            | 类型                                           | 选填 | 描述      |
 |---------------|----------------------------------------------|----|---------|
 | header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | domaindata_id | string                                       | 必填 | 查询内容    |
 
-#### 响应（QueryDomainResponse）
+#### 响应（QueryDomainDataResponse）
 
 | 字段     | 类型                                | 选填 | 描述   |
 |--------|-----------------------------------|----|------|

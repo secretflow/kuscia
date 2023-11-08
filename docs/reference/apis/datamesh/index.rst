@@ -8,3 +8,4 @@ DataMesh
 
     summary_cn
     domaindata_cn
+    domaindatagrant_cn

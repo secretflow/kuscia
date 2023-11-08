@@ -42,17 +42,17 @@ func compareTokens(tokens1, tokens2 []kusciaapisv1alpha1.DomainRouteToken) bool 
 
 func (c *controller) checkEffectiveInstances(dr *kusciaapisv1alpha1.DomainRoute) bool {
 	if len(dr.Status.TokenStatus.Tokens) == 0 {
-		nlog.Error("dr tokens is nil")
+		nlog.Errorf("Domainroute %s/%s checkEffectiveInstances failed: tokens is nil", dr.Namespace, dr.Name)
 		return false
 	}
 
 	gateways, err := c.gatewayLister.Gateways(dr.Namespace).List(labels.Everything())
 	if err != nil {
-		nlog.Errorf("List gateways failed with %v", err)
+		nlog.Errorf("Domainroute %s/%s checkEffectiveInstances error: List gateways failed with %v", dr.Namespace, dr.Name, err)
 		return false
 	}
 	if gateways == nil {
-		nlog.Error("gateways is null, please deploy first")
+		nlog.Errorf("Domainroute %s/%s checkEffectiveInstances error: not found effective gateway in %s, please deploy first", dr.Namespace, dr.Name, dr.Namespace)
 		return false
 	}
 	liveGateways := map[string]bool{}
@@ -131,22 +131,17 @@ func DoValidate(spec *kusciaapisv1alpha1.DomainRouteSpec) error {
 }
 
 func (c *controller) needRollingToNext(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) bool {
-	tokenLens := len(dr.Status.TokenStatus.Tokens)
-
-	if dr.Status.TokenStatus.RevisionInitializer != "" && !dr.Status.TokenStatus.RevisionToken.IsReady {
+	if !dr.Status.TokenStatus.RevisionToken.IsReady {
 		rollEslpsedTime := time.Since(dr.Status.TokenStatus.RevisionToken.RevisionTime.Time)
 		if rollEslpsedTime > domainRouteSyncPeriod {
-			nlog.Warnf("Clusterdomainroute %s token is out of SyncPeriod", dr.Name)
+			nlog.Warnf("Domainroute %s/%s token is waiting more than %d minutes for ready, so need to re-handshake", dr.Namespace, dr.Name, domainRouteSyncPeriod/time.Minute)
 			return true
 		}
-	}
-	if tokenLens == 0 && dr.Status.TokenStatus.RevisionInitializer == "" {
-		return true
-	} else if tokenLens > 0 && dr.Status.TokenStatus.RevisionToken.IsReady {
+	} else {
 		rollingUpdatePeriod := time.Duration(dr.Spec.TokenConfig.RollingUpdatePeriod) * time.Second
 		tokenUsedTime := time.Since(dr.Status.TokenStatus.RevisionToken.RevisionTime.Time)
 		if rollingUpdatePeriod > 0 && (tokenUsedTime > rollingUpdatePeriod || time.Now().After(dr.Status.TokenStatus.RevisionToken.ExpirationTime.Time)) {
-			nlog.Warnf("Domainroute %s/%s token is out of time, rollingUpdate", dr.Namespace, dr.Name)
+			nlog.Warnf("Domainroute %s/%s token is out of time, need to rolling", dr.Namespace, dr.Name)
 			return true
 		}
 	}

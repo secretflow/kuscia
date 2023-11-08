@@ -65,7 +65,6 @@ const (
 )
 
 var (
-	keyFunc         = cache.DeletionHandlingMetaNamespaceKeyFunc
 	serviceProtocol = map[string]bool{
 		xds.ProtocolHTTP:  true,
 		xds.ProtocolHTTPS: true,

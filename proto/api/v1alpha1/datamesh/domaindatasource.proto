@@ -156,4 +156,7 @@ message DatabaseDataSourceInfo {
   string user = 2;
   // password of account to access database
   string password = 3;
+
+  // database name
+  string database = 4;
 }

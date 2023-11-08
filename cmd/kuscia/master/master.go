@@ -55,7 +55,7 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 			}
 
 			kusciaConf := confloader.ReadConfig(configFile, domainID, common.RunModeMaster)
-			nlog.Infof("Read kuscia config: %+v", kusciaConf)
+			nlog.Debugf("Read kuscia config: %+v", kusciaConf)
 
 			// dns must start before dependencies because that dependencies init process may access network.
 			var coreDnsModule modules.Module

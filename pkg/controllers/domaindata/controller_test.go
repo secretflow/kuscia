@@ -27,6 +27,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 
@@ -37,7 +38,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/signals"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
-	"github.com/stretchr/testify/assert"
 )
 
 func createCrtString(t *testing.T) (*rsa.PrivateKey, string) {
@@ -114,14 +114,14 @@ func Test_doValidate(t *testing.T) {
 		_, err := kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Create(ctx, dg, v1.CreateOptions{})
 		assert.NoError(t, err)
 		time.Sleep(100 * time.Millisecond)
-		dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants("alice").Get(ctx, "testgrant", v1.GetOptions{})
+		dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
 		assert.NoError(t, err)
 		assert.Equal(t, v1alpha1.GrantReady, dg.Status.Phase)
 		time.Sleep(100 * time.Millisecond)
 		dg.Annotations["test"] = "bob"
 		kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
 		time.Sleep(1000 * time.Millisecond)
-		dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants("alice").Get(ctx, "testgrant", v1.GetOptions{})
+		dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
 		assert.NoError(t, err)
 		assert.Equal(t, v1alpha1.GrantUnavailable, dg.Status.Phase)
 		close(ch)

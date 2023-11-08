@@ -34,10 +34,10 @@ class DomainServiceStub(object):
                 request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.DeleteDomainRequest.SerializeToString,
                 response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.DeleteDomainResponse.FromString,
                 )
-        self.BatchQueryDomainStatus = channel.unary_unary(
-                '/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/BatchQueryDomainStatus',
-                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainStatusRequest.SerializeToString,
-                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainStatusResponse.FromString,
+        self.BatchQueryDomain = channel.unary_unary(
+                '/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/BatchQueryDomain',
+                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainRequest.SerializeToString,
+                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainResponse.FromString,
                 )
 
 
@@ -68,7 +68,7 @@ class DomainServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def BatchQueryDomainStatus(self, request, context):
+    def BatchQueryDomain(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -97,10 +97,10 @@ def add_DomainServiceServicer_to_server(servicer, server):
                     request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.DeleteDomainRequest.FromString,
                     response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.DeleteDomainResponse.SerializeToString,
             ),
-            'BatchQueryDomainStatus': grpc.unary_unary_rpc_method_handler(
-                    servicer.BatchQueryDomainStatus,
-                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainStatusRequest.FromString,
-                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainStatusResponse.SerializeToString,
+            'BatchQueryDomain': grpc.unary_unary_rpc_method_handler(
+                    servicer.BatchQueryDomain,
+                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainRequest.FromString,
+                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -181,7 +181,7 @@ class DomainService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def BatchQueryDomainStatus(request,
+    def BatchQueryDomain(request,
             target,
             options=(),
             channel_credentials=None,
@@ -191,8 +191,8 @@ class DomainService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/BatchQueryDomainStatus',
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainStatusRequest.SerializeToString,
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainStatusResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.DomainService/BatchQueryDomain',
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainRequest.SerializeToString,
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domain__pb2.BatchQueryDomainResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

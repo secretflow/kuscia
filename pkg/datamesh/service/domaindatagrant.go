@@ -93,9 +93,6 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 	}
 	dg := &v1alpha1.DomainDataGrant{}
 	dg.Labels = map[string]string{}
-	dg.Labels[common.LabelInterConnProtocolType] = "kuscia"
-	dg.Labels[common.LabelInitiator] = s.conf.KubeNamespace
-	dg.Labels[common.LabelDomainDataID] = request.DomaindataId
 	dg.OwnerReferences = append(dg.OwnerReferences, *metav1.NewControllerRef(dd, v1alpha1.SchemeGroupVersion.WithKind("DomainData")))
 	err = s.convertData2Spec(&datamesh.DomainDataGrantData{
 		DomaindatagrantId: request.DomaindatagrantId,
@@ -252,7 +249,7 @@ func (s *domainDataGrantService) convertData2Spec(reqdata *datamesh.DomainDataGr
 			UseCount:    int(reqdata.Limit.UseCount),
 			Initiator:   reqdata.Limit.Initiator,
 			InputConfig: reqdata.Limit.InputConfig,
-			Components:  reqdata.Limit.Componets,
+			Components:  reqdata.Limit.Components,
 		}
 		if reqdata.Limit.ExpirationTime > 0 {
 			mt := metav1.NewTime(time.Unix(reqdata.Limit.ExpirationTime/int64(time.Second), reqdata.Limit.ExpirationTime%int64(time.Second)))
@@ -285,7 +282,7 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, d
 	domaindata.Signature = v.Spec.Signature
 
 	domaindata.Limit = &datamesh.GrantLimit{
-		Componets:   v.Spec.Limit.Components,
+		Components:  v.Spec.Limit.Components,
 		FlowId:      v.Spec.Limit.FlowID,
 		UseCount:    int32(v.Spec.Limit.UseCount),
 		InputConfig: v.Spec.Limit.InputConfig,

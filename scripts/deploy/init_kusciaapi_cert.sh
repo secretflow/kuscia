@@ -49,31 +49,31 @@ fi
 echo "subjectAltName=${subjectAltName}" > /tmp/openssh.conf
 
 #create a PKCS#1 key for server, default is PKCS#1
-openssl genrsa -out ${SERVER}.key 2048
+openssl genrsa -out ${SERVER}.key 2048 >/dev/null 2>&1
 
 #generate the Certificate Signing Request
-openssl req -new -key ${SERVER}.key -out ${SERVER}.csr -subj "/CN=KusciaAPI"
+openssl req -new -key ${SERVER}.key -out ${SERVER}.csr -subj "/CN=KusciaAPI" >/dev/null 2>&1
 
 #sign it with Root CA
 openssl x509  -req -in ${SERVER}.csr \
     -extfile /tmp/openssh.conf \
     -CA ca.crt -CAkey ca.key  \
     -days ${DAYS} -sha256 -CAcreateserial \
-    -out ${SERVER}.crt
+    -out ${SERVER}.crt >/dev/null 2>&1
 
 rm -rf /tmp/openssh.conf
 
 #create a PKCS#8 key for client(JAVA native supported), default is PKCS#1
-openssl genpkey -out ${CLIENT}.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048
+openssl genpkey -out ${CLIENT}.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048 >/dev/null 2>&1
 
 #generate the Certificate Signing Request for client
-openssl req -new -key ${CLIENT}.key -out ${CLIENT}.csr -subj "/CN=KusciaAPIClient"
+openssl req -new -key ${CLIENT}.key -out ${CLIENT}.csr -subj "/CN=KusciaAPIClient" >/dev/null 2>&1
 
 #sign it with Root CA for client
 openssl x509  -req -in ${CLIENT}.csr \
     -CA ca.crt -CAkey ca.key  \
     -days 1000 -sha256 -CAcreateserial \
-    -out ${CLIENT}.crt
+    -out ${CLIENT}.crt >/dev/null 2>&1
 
 #generate token file
 if [ ! -e token ]; then # token not exists

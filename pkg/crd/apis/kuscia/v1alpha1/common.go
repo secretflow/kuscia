@@ -82,6 +82,9 @@ type PodSpec struct {
 	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
 	// +optional
 	Containers []Container `json:"containers,omitempty"`
+	// If specified, the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 // Container defines the container info.

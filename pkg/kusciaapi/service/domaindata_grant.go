@@ -93,10 +93,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 
 	dg := &v1alpha1.DomainDataGrant{}
 	dg.Labels = map[string]string{}
-	dg.Labels[common.LabelInterConnProtocolType] = "kuscia"
-	dg.Labels[common.LabelInitiator] = request.DomainId
 	dg.OwnerReferences = append(dg.OwnerReferences, *metav1.NewControllerRef(dd, v1alpha1.SchemeGroupVersion.WithKind("DomainData")))
-	dg.Labels[common.LabelDomainDataID] = request.DomaindataId
 	s.convertData2Spec(&kusciaapi.DomainDataGrantData{
 		Author:       request.DomainId,
 		DomaindataId: request.DomaindataId,
@@ -123,7 +120,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 }
 
 func (s *domainDataGrantService) QueryDomainDataGrant(ctx context.Context, request *kusciaapi.QueryDomainDataGrantRequest) *kusciaapi.QueryDomainDataGrantResponse {
-	dg, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.Data.DomainId).Get(ctx, request.Data.DomaindatagrantId, metav1.GetOptions{})
+	dg, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.DomainId).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("Query DomainDataGrant failed, error:%s", err.Error())
 		return &kusciaapi.QueryDomainDataGrantResponse{
@@ -143,7 +140,8 @@ func (s *domainDataGrantService) BatchQueryDomainDataGrant(ctx context.Context, 
 	data := []*kusciaapi.DomainDataGrant{}
 	for _, req := range request.Data {
 		resp := s.QueryDomainDataGrant(ctx, &kusciaapi.QueryDomainDataGrantRequest{
-			Data: req,
+			DomainId:          req.DomainId,
+			DomaindatagrantId: req.DomaindatagrantId,
 		})
 		data = append(data, resp.Data)
 	}
@@ -199,8 +197,6 @@ func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, requ
 	if dg.Labels == nil {
 		dg.Labels = map[string]string{}
 	}
-	dg.Labels[common.LabelInterConnProtocolType] = "kuscia"
-	dg.Labels[common.LabelInitiator] = request.DomainId
 	dg.OwnerReferences = append(dg.OwnerReferences, *metav1.NewControllerRef(dd, v1alpha1.SchemeGroupVersion.WithKind("DomainData")))
 
 	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.DomainId).Update(ctx, dg, metav1.UpdateOptions{})
@@ -300,7 +296,7 @@ func (s *domainDataGrantService) convertData2Spec(data *kusciaapi.DomainDataGran
 			UseCount:    int(data.Limit.UseCount),
 			Initiator:   data.Limit.Initiator,
 			InputConfig: data.Limit.InputConfig,
-			Components:  data.Limit.Componets,
+			Components:  data.Limit.Components,
 		}
 		if data.Limit.ExpirationTime > 0 {
 			mt := metav1.NewTime(time.Unix(data.Limit.ExpirationTime/int64(time.Second), data.Limit.ExpirationTime%int64(time.Second)))
@@ -341,7 +337,7 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, g
 
 	if v.Spec.Limit != nil {
 		data.Limit = &kusciaapi.GrantLimit{
-			Componets:   v.Spec.Limit.Components,
+			Components:  v.Spec.Limit.Components,
 			FlowId:      v.Spec.Limit.FlowID,
 			UseCount:    int32(v.Spec.Limit.UseCount),
 			InputConfig: v.Spec.Limit.InputConfig,
@@ -361,7 +357,7 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, g
 		grant.Status.Records = append(grant.Status.Records, &kusciaapi.UseRecord{
 			UseTime:     r.UseTime.UnixNano(),
 			GrantDomain: r.GrantDomain,
-			Componet:    r.Component,
+			Component:   r.Component,
 			Output:      r.Output,
 		})
 	}

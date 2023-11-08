@@ -287,6 +287,7 @@ func (c *KusciaAPIHttpClient) WatchJob(ctx context.Context, request *kusciaapi.W
 			if respOne.Type == kusciaapi.EventType_HEARTBEAT {
 				continue
 			}
+			nlog.Debugf("Watch job: %+v", respOne)
 			// send a response to channel
 			eventCh <- respOne
 		}

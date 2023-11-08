@@ -16,7 +16,10 @@ package domainroute
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"io"
 	"os"
 	"path/filepath"
@@ -143,7 +146,9 @@ func Test_controller_with_token(t *testing.T) {
 				Destination:        bob,
 				AuthenticationType: dv1.DomainAuthenticationToken,
 				TokenConfig: &dv1.TokenConfig{
-					TokenGenMethod: dv1.TokenGenMethodRSA,
+					TokenGenMethod:       dv1.TokenGenMethodRSA,
+					SourcePublicKey:      getPublickeyFromCert(certstr),
+					DestinationPublicKey: getPublickeyFromCert(certstr),
 				},
 			},
 			Status: dv1.DomainRouteStatus{
@@ -173,7 +178,9 @@ func Test_controller_with_token(t *testing.T) {
 				Destination:        bob,
 				AuthenticationType: dv1.DomainAuthenticationToken,
 				TokenConfig: &dv1.TokenConfig{
-					TokenGenMethod: dv1.TokenGenMethodRSA,
+					TokenGenMethod:       dv1.TokenGenMethodRSA,
+					SourcePublicKey:      getPublickeyFromCert(certstr),
+					DestinationPublicKey: getPublickeyFromCert(certstr),
 				},
 			},
 			Status: dv1.DomainRouteStatus{
@@ -305,4 +312,20 @@ func Test_controller_add_label(t *testing.T) {
 func Test_Name(t *testing.T) {
 	c := controller{}
 	assert.Equal(t, controllerName, c.Name())
+}
+
+func getPublickeyFromCert(certString string) string {
+	certPem, _ := base64.StdEncoding.DecodeString(certString)
+	certData, _ := pem.Decode(certPem)
+
+	cert, _ := x509.ParseCertificate(certData.Bytes)
+
+	rsaPub, _ := cert.PublicKey.(*rsa.PublicKey)
+
+	block := &pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: x509.MarshalPKCS1PublicKey(rsaPub),
+	}
+
+	return base64.StdEncoding.EncodeToString(pem.EncodeToMemory(block))
 }

@@ -331,6 +331,8 @@ loop:
 			jobStatus, err := h.buildJobStatus(ctx, job)
 			if !h.authHandlerJobWatch(ctx, job) {
 				// No permission to watch
+				role, domain := GetRoleAndDomainFromCtx(ctx)
+				nlog.Debugf("Watch domain: %s role: %s, Job ID: %s", domain, role, job.Name)
 				continue
 			}
 			if err != nil {

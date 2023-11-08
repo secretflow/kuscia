@@ -59,4 +59,5 @@ message DataColumn {
 enum FileFormat {
 	UNKNOWN = 0;
 	CSV     = 1;
+	BINARY  = 2;
 }

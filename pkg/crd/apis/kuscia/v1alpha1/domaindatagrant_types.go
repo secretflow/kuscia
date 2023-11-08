@@ -39,7 +39,7 @@ type DomainDataGrant struct {
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// DomainDataList contains a list of domain data.
+// DomainDataGrantList contains a list of domain data grant.
 type DomainDataGrantList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -62,7 +62,7 @@ type GrantLimit struct {
 	InputConfig string `json:"inputConfig,omitempty"`
 }
 
-// DomainDataSpec defines the spec of data object.
+// DomainDataGrantSpec defines the spec of data grant info.
 type DomainDataGrantSpec struct {
 	Author       string `json:"author"`
 	DomainDataID string `json:"domainDataID"`
