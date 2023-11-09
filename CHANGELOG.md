@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+
+## [0.4.0b0] - 2023-11-9
+### Added
+- Add KusciaDeployment operator.
+- Support non MTLS network communication in P2P networking mode.
+
 ## [0.3.0b0] - 2023-9-7
 ### Added
 - Support the deployment of new lite domain in centralized clusters.
