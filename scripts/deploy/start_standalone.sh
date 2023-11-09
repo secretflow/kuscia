@@ -294,6 +294,25 @@ function copy_kuscia_api_client_certs() {
   log "copy kuscia api client certs to web server container done"
 }
 
+function copy_kuscia_api_lite_client_certs() {
+  local domain_id=$1
+  local volume_path=$2
+  local IMAGE=$SECRETPAD_IMAGE
+  local domain_ctr=${CTR_PREFIX}-lite-${domain_id}
+  # copy result
+  tmp_path=${volume_path}/temp/certs/${domain_id}
+  mkdir -p ${tmp_path}
+  docker cp ${domain_ctr}:/${CTR_CERT_ROOT}/ca.crt ${tmp_path}/ca.crt
+  docker cp ${domain_ctr}:/${CTR_CERT_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
+  docker cp ${domain_ctr}:/${CTR_CERT_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
+  docker cp ${domain_ctr}:/${CTR_CERT_ROOT}/token ${tmp_path}/token
+  docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config/certs:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
+  docker cp -a ${tmp_path} ${CTR_PREFIX}-dummy:/tmp/temp/
+  docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
+  rm -rf ${volume_path}/temp
+  log "copy kuscia api client lite :${domain_id} certs to web server container done"
+}
+
 function render_secretpad_config() {
   local volume_path=$1
   local tmpl_path=${volume_path}/secretpad/config/template/application.yaml.tmpl
@@ -302,7 +321,10 @@ function render_secretpad_config() {
   # create data mesh service
   log "kuscia_master_ip: '${MASTER_CTR}'"
   # render kuscia api address
-  sed "s/{{.KUSCIA_API_ADDRESS}}/${MASTER_CTR}/g" ${tmpl_path} >${volume_path}/application_01.yaml
+  sed "s/{{.KUSCIA_API_ADDRESS}}/${MASTER_CTR}/g;
+  s/{{.KUSCIA_API_LITE_ALICE_ADDRESS}}/${CTR_PREFIX}-lite-${ALICE_DOMAIN}/g;
+  s/{{.KUSCIA_API_LITE_BOB_ADDRESS}}/${CTR_PREFIX}-lite-${BOB_DOMAIN}/g" \
+  ${tmpl_path} >${volume_path}/application_01.yaml
   # render store password
   sed "s/{{.PASSWORD}}/${store_key_password}/g" ${volume_path}/application_01.yaml >${volume_path}/application.yaml
   # cp file to secretpad's config path
@@ -429,7 +451,7 @@ including uppercase and lowercase letters, numbers, and special characters."
 function create_secretpad_svc() {
   local ctr=$1
   local secretpad_ctr=$2
-  # create domain data alice table
+  # create secretpad servcie
   docker exec -it ${ctr} scripts/deploy/create_secretpad_svc.sh ${secretpad_ctr}
 }
 
@@ -469,6 +491,10 @@ function start_secretpad() {
     create_secretpad_user_password ${volume_path} ${user_name} ${password}
     # copy kuscia api client certs
     copy_kuscia_api_client_certs ${volume_path}
+    # copy kuscia api lite:alice client certs
+    copy_kuscia_api_lite_client_certs ${ALICE_DOMAIN} ${volume_path}
+    # copy kuscia api lite:bob client certs
+    copy_kuscia_api_lite_client_certs ${BOB_DOMAIN} ${volume_path}
     # render secretpad config
     render_secretpad_config ${volume_path} ${secretpad_key_pass}
     # run secretpad
