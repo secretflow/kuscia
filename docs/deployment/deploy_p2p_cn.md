@@ -73,6 +73,7 @@ ls ${PWD}/kuscia-autonomy-bob-certs/alice.domain.crt
 ```bash 
 # [bob 机器] 添加 alice 的证书等信息
 docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice ${USER}-kuscia-autonomy-bob p2p
+```
 
 alice 建立到 bob 的通信：
 
@@ -93,7 +94,6 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh ali
 准备 bob 的公钥，在 bob 节点的机器上，可以看到包含公钥的 crt 文件：
 
 ```bash
-
 
 # [bob 机器] 将 domain.crt 从容器内部拷贝出来
 docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/tmp/domain.crt .
@@ -126,17 +126,35 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob a
 ```
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
-#### 获取测试数据集
-登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-alice-data下
+#### 准备测试数据
+登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的 kuscia-autonomy-alice-data 下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-autonomy-alice-data/alice.csv
 ```
+为 alice 的测试数据创建 domaindata
+```bash
+docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/create_domaindata_alice_table.sh alice
+```
+为 alice 的测试数据创建 domaindatagrant
 
-登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-bob-data下
+```bash
+docker exec -it ${USER}-kuscia-autonomy-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
+```
+
+同理，登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的 kuscia-autonomy-bob-data 下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-autonomy-bob-data/bob.csv
+```
+为 bob 的测试数据创建 domaindata
+```bash
+docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/create_domaindata_bob_table.sh bob
+```
+为 bob 的测试数据创建 domaindatagrant
+
+```bash
+docker exec -it ${USER}-kuscia-autonomy-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 ```
 
 #### 执行作业
