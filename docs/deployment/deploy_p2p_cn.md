@@ -72,7 +72,7 @@ ls ${PWD}/kuscia-autonomy-bob-certs/alice.domain.crt
 
 ```bash 
 # [bob 机器] 添加 alice 的证书等信息
-docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice ${USER}-kuscia-autonomy-bob p2p
+docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice p2p
 ```
 
 alice 建立到 bob 的通信：
@@ -111,7 +111,7 @@ ls ${PWD}/kuscia-autonomy-alice-certs/bob.domain.crt
 
 ```bash
 # [alice 机器] 添加 bob 的证书等信息
-docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob ${USER}-kuscia-autonomy-alice p2p
+docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p2p
 ```
 
 
