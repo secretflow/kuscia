@@ -41,6 +41,7 @@ func (c *controller) UpdateStatus(ctx context.Context) error {
 	}
 
 	for _, cdr1 := range cdrs {
+		update := false
 		cdr := cdr1.DeepCopy()
 		gws, err := c.gatewayLister.Gateways(cdr.Spec.Source).List(labels.Everything())
 		if err != nil {
@@ -62,16 +63,21 @@ func (c *controller) UpdateStatus(ctx context.Context) error {
 				for _, port := range cdr.Spec.Endpoint.Ports {
 					if metric.Name == fmt.Sprintf("%s-to-%s-%s", cdr.Spec.Source, cdr.Spec.Destination, port.Name) && metric.HealthyEndpointsCount > 0 {
 						healthyCount++
-						cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
-							EndpointHealthy: true,
+						if v, ok := cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name]; !ok || !v.EndpointHealthy {
+							cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
+								EndpointHealthy: true,
+							}
+							update = true
 						}
 					}
 				}
 			}
 		}
 
-		if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(ctx, cdr, metav1.UpdateOptions{}); err != nil {
-			nlog.Warnf("Update cdr %s status failed with %v", cdr.Name, err)
+		if update {
+			if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(ctx, cdr, metav1.UpdateOptions{}); err != nil {
+				nlog.Warnf("Update cdr %s status failed with %v", cdr.Name, err)
+			}
 		}
 	}
 

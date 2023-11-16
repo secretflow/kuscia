@@ -247,6 +247,9 @@ func (c *controller) checkDomainRoute(ctx context.Context, cdr *kusciaapisv1alph
 		msg := fmt.Sprintf("DomainRoute %s already exists in namespace %s and is not managed by ClusterDomainRoute", drName, namespace)
 		return nil, fmt.Errorf("%s", msg)
 	}
+	if needDeleteDr(cdr, dr) {
+		return nil, c.kusciaClient.KusciaV1alpha1().DomainRoutes(namespace).Delete(ctx, dr.Name, metav1.DeleteOptions{})
+	}
 
 	if !compareSpec(cdr, dr) {
 		dr = dr.DeepCopy()
@@ -258,6 +261,24 @@ func (c *controller) checkDomainRoute(ctx context.Context, cdr *kusciaapisv1alph
 		}
 	}
 	return dr, nil
+}
+
+func needDeleteDr(cdr *kusciaapisv1alpha1.ClusterDomainRoute, dr *kusciaapisv1alpha1.DomainRoute) bool {
+	if !reflect.DeepEqual(cdr.Spec.Endpoint, dr.Spec.Endpoint) {
+		return true
+	}
+
+	if cdr.Spec.TokenConfig == nil || dr.Spec.TokenConfig == nil {
+		return cdr.Spec.TokenConfig != dr.Spec.TokenConfig
+	}
+	if cdr.Spec.TokenConfig.DestinationPublicKey != dr.Spec.TokenConfig.DestinationPublicKey {
+		return true
+	}
+	if cdr.Spec.TokenConfig.SourcePublicKey != dr.Spec.TokenConfig.SourcePublicKey {
+		return true
+	}
+
+	return false
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
@@ -342,20 +363,21 @@ func (c *controller) syncDomainPubKey(ctx context.Context,
 	if cdr.Spec.TokenConfig != nil && cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
 		cdrCopy := cdr.DeepCopy()
 		needUpdate := false
-		if cdr.Spec.TokenConfig.SourcePublicKey == "" {
-			srcRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Source)
-			if len(srcRsaPubData) != 0 {
-				cdrCopy.Spec.TokenConfig.SourcePublicKey = base64.StdEncoding.EncodeToString(srcRsaPubData)
-				needUpdate = true
-			}
+
+		srcRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Source)
+		srcRsaPub := base64.StdEncoding.EncodeToString(srcRsaPubData)
+		if len(srcRsaPubData) != 0 && cdr.Spec.TokenConfig.SourcePublicKey != srcRsaPub {
+			cdrCopy.Spec.TokenConfig.SourcePublicKey = srcRsaPub
+			needUpdate = true
 		}
-		if cdr.Spec.TokenConfig.DestinationPublicKey == "" {
-			destRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Destination)
-			if len(destRsaPubData) != 0 {
-				cdrCopy.Spec.TokenConfig.DestinationPublicKey = base64.StdEncoding.EncodeToString(destRsaPubData)
-				needUpdate = true
-			}
+
+		destRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Destination)
+		destRsaPub := base64.StdEncoding.EncodeToString(destRsaPubData)
+		if len(destRsaPubData) != 0 && cdr.Spec.TokenConfig.DestinationPublicKey != destRsaPub {
+			cdrCopy.Spec.TokenConfig.DestinationPublicKey = destRsaPub
+			needUpdate = true
 		}
+
 		if needUpdate {
 			cdr, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy,
 				metav1.UpdateOptions{})
