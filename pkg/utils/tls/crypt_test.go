@@ -23,18 +23,18 @@ import (
 
 func TestTokenCrypt(t *testing.T) {
 	priKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
 
-	pub := EncodePKCS1PublicKey(priKey)
-
-	pubKey, err := ParsePKCS1PublicKey(pub)
+	pubKey, err := ParsePKCS1PublicKey(EncodePKCS1PublicKey(priKey))
 	assert.NoError(t, err)
 
 	originToken := make([]byte, 16)
 	_, err = rand.Read(originToken)
-	text, err := EncryptPKCS1v15(pubKey, originToken)
+	assert.NoError(t, err)
+	text, err := EncryptPKCS1v15(pubKey, originToken, []byte{0})
 	assert.NoError(t, err)
 
-	decodedToken, err := DecryptPKCS1v15(priKey, text, 16)
+	decodedToken, err := DecryptPKCS1v15(priKey, text, 16, []byte{0})
 	assert.NoError(t, err)
 	assert.Equal(t, originToken, decodedToken)
 }
