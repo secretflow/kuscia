@@ -79,20 +79,45 @@ func EncodePKCS1PublicKey(priKey *rsa.PrivateKey) []byte {
 	return pubPem
 }
 
-func EncryptPKCS1v15(pub *rsa.PublicKey, key []byte) (string, error) {
-	rng := rand.Reader
-	ciphertext, err := rsa.EncryptPKCS1v15(rng, pub, key)
+func EncryptPKCS1v15(pub *rsa.PublicKey, key []byte, prefix []byte) (string, error) {
+	keyToEncrypt := append(prefix, key...)
+	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, pub, keyToEncrypt)
 	if err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int) ([]byte, error) {
-	rng := rand.Reader
-
+func generateRandKey(keysize int) ([]byte, error) {
 	key := make([]byte, keysize)
-	if _, err := io.ReadFull(rng, key); err != nil {
+	if _, err := io.ReadFull(rand.Reader, key); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func genKey(keysize int, prefix []byte) ([]byte, error) {
+	key, err := generateRandKey(keysize + len(prefix))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(prefix) > 0 {
+		i := 0
+		for i < len(prefix) {
+			if key[i] != prefix[i] {
+				return key, nil
+			}
+			i++
+		}
+		return genKey(keysize, prefix)
+	}
+	return key, nil
+}
+
+func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int, prefix []byte) ([]byte, error) {
+	key, err := genKey(keysize, prefix)
+	if err != nil {
 		return nil, err
 	}
 
@@ -101,11 +126,21 @@ func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int) ([]by
 		return nil, err
 	}
 
-	if err := rsa.DecryptPKCS1v15SessionKey(rng, priv, text, key); err != nil {
+	if err := rsa.DecryptPKCS1v15SessionKey(rand.Reader, priv, text, key); err != nil {
 		return nil, err
 	}
 
-	return key, nil
+	if len(prefix) > 0 {
+		i := 0
+		for ; i < len(prefix); i++ {
+			if key[i] != prefix[i] {
+				return nil, fmt.Errorf("decrypt error")
+			}
+		}
+		return key[len(prefix):], nil
+	}
+
+	return key[1:], nil
 }
 
 func VerifySSLKey(key []byte) bool {
