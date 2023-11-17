@@ -164,18 +164,29 @@ func EnsureDir(conf *Dependencies) error {
 }
 
 func CreateDefaultDomain(ctx context.Context, conf *Dependencies) error {
-	certStr, err := os.ReadFile(conf.DomainCertFile)
+	certRaw, err := os.ReadFile(conf.DomainCertFile)
 	if err != nil {
 		return err
 	}
+	certStr := base64.StdEncoding.EncodeToString(certRaw)
 	_, err = conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Create(ctx, &kusciaapisv1alpha1.Domain{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: conf.DomainID,
 		},
 		Spec: kusciaapisv1alpha1.DomainSpec{
-			Cert: base64.StdEncoding.EncodeToString(certStr),
+			Cert: certStr,
 		}}, metav1.CreateOptions{})
 	if k8serrors.IsAlreadyExists(err) {
+		dm, err := conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Get(ctx, conf.DomainID, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if dm.Spec.Cert != certStr {
+			nlog.Warnf("domain %s cert is not match, will update", conf.DomainID)
+			dm.Spec.Cert = certStr
+			_, err = conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Update(ctx, dm, metav1.UpdateOptions{})
+			return err
+		}
 		return nil
 	}
 
