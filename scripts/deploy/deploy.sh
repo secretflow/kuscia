@@ -27,23 +27,18 @@ function log() {
 }
 
 function arch_check() {
-  local arch=$(uname -m)
-  case $arch in
-  *"arm"*)
-    echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+  local arch=$(uname -a)
+  if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
+    echo -e "${RED}ARM architecture is not supported by kuscia currently${NC}"
     exit 1
-    ;;
-  "x86_64")
+  elif [[ $arch == *"x86_64"* ]]; then
     echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
-    ;;
-  "amd64")
+  elif [[ $arch == *"amd64"* ]]; then
     echo "Warning: amd64 architecture. Continuing..."
-    ;;
-  *)
+  else
     echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
     exit 1
-    ;;
-  esac
+  fi
 }
 
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
@@ -238,7 +233,12 @@ function create_secretflow_app_image() {
     image_tag=${SECRETFLOW_IMAGE##*:}
   fi
 
-  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${image_repo}" "${image_tag}"
+  app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}'  |awk -F'-' '{print $1}')
+  if [[ ${app_type} == "" ]]; then
+    app_type="secretflow"
+  fi
+
+  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${image_repo}" "${image_tag}"  "${app_type}"
   log "Create secretflow app image done"
 }
 
@@ -286,7 +286,7 @@ function getIPV4Address() {
 }
 
 function generate_mount_flag() {
-  local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data  "
+  local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data -v ${DOMAIN_LOG_DIR}:/home/kuscia/var/stdout "
   if [ -e "${KUSCIA_CONFIG_FILE}" ]; then
     mount_flag=$mount_flag+"-v ${KUSCIA_CONFIG_FILE}:/home/kuscia/etc/kuscia.yaml"
   fi
@@ -437,6 +437,8 @@ OPTIONS:
     -h              Show this help text.
     -i              The IP address exposed by the domain. You can set Env 'DOMAIN_HOST_IP' instead.
                     Usually the host IP, default is the IP address of interface eth0.
+    -l              The data directory used to store domain logs. It will be mounted into the domain container.
+                    You can set Env 'DOMAIN_LOG_DIR' instead.  Default is '{{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-log'.
     -m              (Only used in lite mode) The master endpoint. You can set Env 'MASTER_ENDPOINT' instead.
     -n              Domain id to be deployed. You can set Env 'DOMAIN_ID' instead.
     -p              The port exposed by domain. You can set Env 'DOMAIN_HOST_PORT' instead.
@@ -466,13 +468,16 @@ autonomy | lite | master | secretpad)
   ;;
 esac
 
-while getopts 'c:i:n:p:m:t:r:d:k:g:e:u:h' option; do
+while getopts 'c:i:l:n:p:m:t:r:d:k:g:e:u:h' option; do
   case "$option" in
   c)
     DOMAIN_CERTS_DIR=$OPTARG
     ;;
   i)
     DOMAIN_HOST_IP=$OPTARG
+    ;;
+  l)
+    DOMAIN_LOG_DIR=$OPTARG
     ;;
   n)
     DOMAIN_ID=$OPTARG
@@ -538,6 +543,7 @@ function init() {
   [[ ${ROOT} == "" ]] && ROOT=${PWD}
   [[ ${DOMAIN_CERTS_DIR} == "" ]] && DOMAIN_CERTS_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-certs"
   [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-data"
+  [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-log"
   [[ ${DOMAIN_HOST_IP} == "" ]] && DOMAIN_HOST_IP=$(getIPV4Address)
 
   log "ROOT=${ROOT}"
@@ -545,6 +551,7 @@ function init() {
   log "DOMAIN_HOST_IP=${DOMAIN_HOST_IP}"
   log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
   log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
+  log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
   log "DOMAIN_CERTS_DIR=${DOMAIN_CERTS_DIR}"
   log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
   log "KUSCIAAPI_HTTP_PORT=${KUSCIAAPI_HTTP_PORT}"
@@ -552,6 +559,7 @@ function init() {
 
   mkdir -p "${DOMAIN_CERTS_DIR}"
   mkdir -p "${DOMAIN_DATA_DIR}"
+  mkdir -p "${DOMAIN_LOG_DIR}"
 
   build_kuscia_network
 }
