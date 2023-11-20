@@ -65,23 +65,18 @@ function log() {
 }
 
 function arch_check() {
-   local arch=$(uname -m)
-   case $arch in
-    *"arm"*)
-        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
-        exit 1
-        ;;
-    "x86_64")
-        echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
-        ;;
-    "amd64")
-        echo "Warning: amd64 architecture. Continuing..."
-        ;;
-    *)
-        echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
-        exit 1
-        ;;
-    esac
+  local arch=$(uname -a)
+  if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
+    echo -e "${RED}ARM architecture is not supported by kuscia currently${NC}"
+    exit 1
+  elif [[ $arch == *"x86_64"* ]]; then
+    echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
+  elif [[ $arch == *"amd64"* ]]; then
+    echo "Warning: amd64 architecture. Continuing..."
+  else
+    echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+    exit 1
+  fi
 }
 
 function init_sf_image_info() {
@@ -451,8 +446,9 @@ including uppercase and lowercase letters, numbers, and special characters."
 function create_secretpad_svc() {
   local ctr=$1
   local secretpad_ctr=$2
-  # create secretpad servcie
-  docker exec -it ${ctr} scripts/deploy/create_secretpad_svc.sh ${secretpad_ctr}
+  local domain_id=$3
+  # create domain data alice table
+  docker exec -it ${ctr} scripts/deploy/create_secretpad_svc.sh ${secretpad_ctr} ${domain_id}
 }
 
 function probe_secret_pad() {
@@ -505,7 +501,7 @@ function start_secretpad() {
       --workdir=/app \
       -p 8088:8080 \
       ${SECRETPAD_IMAGE}
-    create_secretpad_svc ${MASTER_CTR} ${CTR_PREFIX}-secretpad
+    create_secretpad_svc ${MASTER_CTR} ${CTR_PREFIX}-secretpad kuscia-system
     probe_secret_pad ${CTR_PREFIX}-secretpad
     log "web server started successfully"
     log "Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions ."

@@ -80,7 +80,7 @@ KUSCIA_ALICE_AUTONOMY_CONTAINER_NAME="${DEPLOY_USER}-kuscia-autonomy-alice"
 KUSCIA_BOB_AUTONOMY_CONTAINER_NAME="${DEPLOY_USER}-kuscia-autonomy-bob"
 
 IMAGE_TEMP_DIR="/tmp/kuscia-appimage-tmp"
-APP_IMAGE_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/appimage.yaml"
+APP_IMAGE_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/${APP_IMAGE_NAME_IN_KUSCIA}.yaml"
 APP_IMAGE_TEMP_FILE="${IMAGE_TEMP_DIR}/appimage_tmp.yaml"
 
 function prepare_app_image() {
@@ -100,11 +100,15 @@ function prepare_app_image() {
     bob_container_name=${KUSCIA_BOB_AUTONOMY_CONTAINER_NAME}
   fi
 
-  echo "=> => import app image into ${alice_container_name} container"
-  docker exec -it "${alice_container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" || exit 1
+  if [[ -n $(docker ps -q -f "name=${alice_container_name}") ]]; then
+    echo "=> => import app image into ${alice_container_name} container"
+    docker exec -it "${alice_container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" || exit 1
+  fi
 
-  echo "=> => import app image into ${bob_container_name} container"
-  docker exec -it "${bob_container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" || exit 1
+  if [[ -n $(docker ps -q -f "name=${bob_container_name}") ]]; then
+    echo "=> => import app image into ${bob_container_name} container"
+    docker exec -it "${bob_container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" || exit 1
+  fi
 
   if [[ $APP_IMAGE_NAME_IN_KUSCIA = "" ]]; then
     APP_IMAGE_NAME_IN_KUSCIA=$(echo ${image_name##*/}-${image_tag} | sed 's/_/-/g')
@@ -118,8 +122,12 @@ function prepare_app_image() {
   echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
 
   if [[ $DEPLOY_MODE = "p2p" ]]; then
-      docker exec -it "${alice_container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
-      docker exec -it "${bob_container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
+      if [[ -n $(docker ps -q -f "name=${alice_container_name}") ]]; then
+        docker exec -it "${alice_container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
+      fi
+      if [[ -n $(docker ps -q -f "name=${bob_container_name}") ]]; then
+        docker exec -it "${bob_container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
+      fi
   else
       docker exec -it "${KUSCIA_MASTER_CONTAINER_NAME}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
   fi
