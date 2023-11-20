@@ -207,13 +207,13 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr bob-alice -o=jsonpath="{.s
 #### 准备数据
 
 ##### 获取测试数据集
-登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的 kuscia-lite-alice-data 下
+登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-lite-alice-data 下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-lite-alice-data/alice.csv
 ```
 
-登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的 kuscia-lite-bob-data 下
+登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-lite-bob-data 下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-lite-bob-data/bob.csv
@@ -236,7 +236,7 @@ docker exec -it ${USER}-kuscia-master scripts/deploy/create_domaindata_bob_table
 docker exec -it ${USER}-kuscia-lite-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 ```
 
-同理，登录到安装 alice 的机器上，为 bob 的测试数据创建 domaindatagrant
+同理，登录到安装 bob 的机器上，为 bob 的测试数据创建 domaindatagrant
 
 ```bash
 docker exec -it ${USER}-kuscia-lite-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key

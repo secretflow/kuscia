@@ -127,7 +127,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob a
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 #### 准备测试数据
-登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的 kuscia-autonomy-alice-data 下
+登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-autonomy-alice-data 下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-autonomy-alice-data/alice.csv
@@ -142,7 +142,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/create_domaindata_a
 docker exec -it ${USER}-kuscia-autonomy-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
 ```
 
-同理，登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的 kuscia-autonomy-bob-data 下
+同理，登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-autonomy-bob-data 下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-autonomy-bob-data/bob.csv
