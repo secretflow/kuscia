@@ -18,8 +18,9 @@
 set -e
 
 SECRET_PAD_CTR_NAME=$1
+DOMAIN_ID=$2
 
-usage="$(basename "$0") SECRET_PAD_CTR_NAME"
+usage="$(basename "$0") SECRET_PAD_CTR_NAME DOMAIN_ID"
 
 if [[ ${SECRET_PAD_CTR_NAME} == "" ]]; then
   echo "missing argument: $usage"
@@ -28,7 +29,8 @@ fi
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
-SECRET_PAD_SVC_TEMPLATE=$(sed "s/{{.SECRET_PAD_CTR_NAME}}/${SECRET_PAD_CTR_NAME}/g;" \
+SECRET_PAD_SVC_TEMPLATE=$(sed "s/{{.SECRET_PAD_CTR_NAME}}/${SECRET_PAD_CTR_NAME}/g;
+ s/{{.DOMAIN}}/${DOMAIN_ID}/g;" \
   < "${ROOT}/scripts/templates/secretpad_svc.yaml")
 
 echo "${SECRET_PAD_SVC_TEMPLATE}" | kubectl apply -f -
