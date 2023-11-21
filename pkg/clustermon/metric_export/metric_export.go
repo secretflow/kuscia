@@ -109,12 +109,6 @@ func UpdateMetrics(clusterResults map[string]map[string]float64, MetricTypes map
 		for metric, val := range clusterResult {
 			metricId := Formalize(metric)
 			metricTypeId := strings.Join(strings.Split(metric, ".")[2: 3], "__")
-			/*var metricTypeId string
-			if strings.Split(metric, ".")[0] == "cluster"{
-				metricTypeId = strings.Join(strings.Split(metric, ".")[2:], "__")
-			}else{
-				metricTypeId = strings.Join(strings.Split(metric, ".")[2: 3], "__")
-			}*/
 			switch MetricTypes[metricTypeId] {
 			case "Counter":
 				counters[metricId].Add(val)

@@ -19,7 +19,7 @@ import (
 // GetStatisticFromSs get the statistics of network flows from ss
 func GetStatisticFromSs() []map[string]string {
 	// execute ss comand
-	cmd := exec.Command("ss", "-tio4n")
+	cmd := exec.Command("ss", "-tio4nO")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Cannot get ss.")
@@ -28,40 +28,39 @@ func GetStatisticFromSs() []map[string]string {
 	lines := strings.Split(string(output), "\n")
 	var tcpStatisticList []map[string]string
 	ssMetrics := make(map[string]string)
-	ssMetrics["total_connections"] = "0"
-	ssMetrics["retrans"] = "0"
 	for idx, line := range lines {
 		if idx < 1 {
 			continue
 		}
 		fields := strings.Fields(line)
-		if idx%2 == 1 {
-			if len(fields) < 5 {
+		if len(fields) < 5 {
+			continue
+			}
+		ssMetrics = make(map[string]string)
+		ssMetrics["rto"] = "0"
+                ssMetrics["rtt"] = "0"
+                ssMetrics["bytes_send"] = "0"
+                ssMetrics["bytes_received"] = "0"
+		ssMetrics["total_connections"] = "1"
+		ssMetrics["retrans"] = "0"
+		ssMetrics["localAddr"] = fields[3]
+		ssMetrics["peerAddr"] = fields[4]
+		for idx, field := range fields{
+			if idx < 6{
 				continue
 			}
-			if len(fields) == 6 {
-                                ssMetrics["retrans"] = strings.Split(strings.Split(fields[5], ",")[2], ")")[0]
-                                ssMetrics["total_connections"] = "1"
-                        }
-			ssMetrics["localAddr"] = fields[3]
-			ssMetrics["peerAddr"] = fields[4]
-		} else {
-			if len(fields) < 33 {
-				continue
+			kv := strings.Split(field, ":")
+			if len(kv) == 2{
+				switch kv[0]{
+					case "rto": ssMetrics["rto"] = kv[1]
+					case "rtt": ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
+					case "bytes_send": ssMetrics["bytes_send"] = kv[1]
+					case "bytes_received": ssMetrics["bytes_received"] = kv[1]
+					case "retrans": ssMetrics["retrans"] = strings.Split(kv[1], "/")[1]
+				}
 			}
-			ssMetrics["rto"] = strings.Split(fields[4], ":")[1]
-			rtt := strings.Split(fields[5], ":")[1]
-			ssMetrics["rtt"] = strings.Split(rtt, "/")[0]
-			ssMetrics["var_rtt"] = strings.Split(rtt, "/")[1]
-			ssMetrics["delivery_rate"] = strings.Split(fields[27], "bps")[0]
-			ssMetrics["bytes_send"] = strings.Split(fields[12], ":")[1]
-			ssMetrics["bytes_received"] = strings.Split(fields[14], ":")[1]
-			ssMetrics["min_rtt"] = strings.Split(fields[32], ":")[1]
-			tcpStatisticList = append(tcpStatisticList, ssMetrics)
-			ssMetrics = make(map[string]string)
-			ssMetrics["total_connections"] = "0"
-			ssMetrics["retrans"] = "0"
 		}
+		tcpStatisticList = append(tcpStatisticList, ssMetrics)
 	}
 	return tcpStatisticList
 }
@@ -156,7 +155,7 @@ func Sum(metrics []map[string]string, key string) float64 {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			log.Fatalln("fail to parse float", metric[key],"key:",key)
+			log.Fatalln("fail to parse float", metric[key],"key:",key, "value:", val)
 		}
 		sum += val
 	}

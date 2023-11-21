@@ -3,18 +3,14 @@ net_metrics:
   - rtt
   - bytes_send
   - bytes_received
-  - retrans
-  - total_connections
-  - retran_rate
+  - min_rtt
 
 agg_metrics:
   - avg
   - avg
   - avg
   - avg
-  - sum
-  - sum
-  - rate
+  - avg
 
 clu_metrics:
   - assignment_stale
@@ -128,4 +124,5 @@ clu_metrics:
   - upstream_rq_total
   - upstream_rq_tx_reset
   - version
+
 mon_periods: 5

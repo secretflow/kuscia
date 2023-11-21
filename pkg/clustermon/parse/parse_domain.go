@@ -10,7 +10,10 @@ import (
 	"strconv"
 	"strings"
 )
-
+type NamespaceId struct {
+	Namespace string `json:"namespace"`
+	State     int    `json:"state"`
+}
 // GetLocalDomainName get the name of a local domain
 func GetLocalDomainName() string {
 	resp, err := http.Get("http://localhost:1054/handshake")
@@ -27,12 +30,12 @@ func GetLocalDomainName() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var namespaceId map[string]string
+	var namespaceId NamespaceId
 	err = json.Unmarshal(body, &namespaceId)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return namespaceId["namespace"]
+	return namespaceId.Namespace
 }
 
 // GetIpFromDomain get a list of IP addresses from a local domain name
