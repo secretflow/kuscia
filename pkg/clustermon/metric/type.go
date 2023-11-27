@@ -1,4 +1,5 @@
-package metric_types
+// Define the type of metrics exporting to Prometheus
+package metric
 
 // NewMetricTypes parse the metric types from a yaml file
 func NewMetricTypes() map[string]string {

@@ -1,3 +1,4 @@
+// Parse config files and domain files
 package parse
 
 import (
@@ -10,10 +11,12 @@ import (
 	"strconv"
 	"strings"
 )
+
 type NamespaceId struct {
 	Namespace string `json:"namespace"`
 	State     int    `json:"state"`
 }
+
 // GetLocalDomainName get the name of a local domain
 func GetLocalDomainName() string {
 	resp, err := http.Get("http://localhost:1054/handshake")

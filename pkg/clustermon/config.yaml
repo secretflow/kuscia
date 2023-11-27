@@ -128,4 +128,6 @@ clu_metrics:
   - upstream_rq_total
   - upstream_rq_tx_reset
   - version
-mon_periods: 5
+mon_period: 5
+prometheus: True
+local_file: True

@@ -1,3 +1,4 @@
+// collect metrics from envoy and ss
 package netmon
 
 import (
@@ -35,28 +36,33 @@ func GetStatisticFromSs() []map[string]string {
 		fields := strings.Fields(line)
 		if len(fields) < 5 {
 			continue
-			}
+		}
 		ssMetrics = make(map[string]string)
 		ssMetrics["rto"] = "0"
-                ssMetrics["rtt"] = "0"
-                ssMetrics["bytes_send"] = "0"
-                ssMetrics["bytes_received"] = "0"
+		ssMetrics["rtt"] = "0"
+		ssMetrics["bytes_send"] = "0"
+		ssMetrics["bytes_received"] = "0"
 		ssMetrics["total_connections"] = "1"
 		ssMetrics["retrans"] = "0"
 		ssMetrics["localAddr"] = fields[3]
 		ssMetrics["peerAddr"] = fields[4]
-		for idx, field := range fields{
-			if idx < 6{
+		for idx, field := range fields {
+			if idx < 6 {
 				continue
 			}
 			kv := strings.Split(field, ":")
-			if len(kv) == 2{
-				switch kv[0]{
-					case "rto": ssMetrics["rto"] = kv[1]
-					case "rtt": ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
-					case "bytes_send": ssMetrics["bytes_send"] = kv[1]
-					case "bytes_received": ssMetrics["bytes_received"] = kv[1]
-					case "retrans": ssMetrics["retrans"] = strings.Split(kv[1], "/")[1]
+			if len(kv) == 2 {
+				switch kv[0] {
+				case "rto":
+					ssMetrics["rto"] = kv[1]
+				case "rtt":
+					ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
+				case "bytes_send":
+					ssMetrics["bytes_send"] = kv[1]
+				case "bytes_received":
+					ssMetrics["bytes_received"] = kv[1]
+				case "retrans":
+					ssMetrics["retrans"] = strings.Split(kv[1], "/")[1]
 				}
 			}
 		}
@@ -155,7 +161,7 @@ func Sum(metrics []map[string]string, key string) float64 {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			log.Fatalln("fail to parse float", metric[key],"key:",key, "value:", val)
+			log.Fatalln("fail to parse float", metric[key], "key:", key, "value:", val)
 		}
 		sum += val
 	}
@@ -199,7 +205,7 @@ func Min(metrics []map[string]string, key string) float64 {
 
 // Rate an aggregation function to calculate the rate of a network metric betweem to metrics
 func Rate(metric1 float64, metric2 float64) float64 {
-	if metric2 == 0.0{
+	if metric2 == 0.0 {
 		return 0
 	}
 	return metric1 / metric2
@@ -212,26 +218,27 @@ func Alert(metric float64, threshold float64) bool {
 
 // AggregateStatistics aggregate statistics using an aggregation function
 func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods int) map[string]float64 {
-	if(len(networkResults) == 0){
+	if len(networkResults) == 0 {
 		return clusterResults
 	}
 	for metric, aggFunc := range aggregationMetrics {
 		if metric != "localAddr" && metric != "peerAddr" {
 			if aggFunc == "rate" {
-				if metric == "retran_rate"{
+				if metric == "retran_rate" {
 					threshold := 0.0
-					clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Rate(Sum(networkResults, "retrans") - threshold, Sum(networkResults, "total_connections"))}
+					clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Rate(Sum(networkResults, "retrans")-threshold, Sum(networkResults, "total_connections"))
+				}
 			} else if aggFunc == "sum" {
-				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Sum(networkResults, metric)
+				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Sum(networkResults, metric)
 			} else if aggFunc == "avg" {
-				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Avg(networkResults, metric)
+				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Avg(networkResults, metric)
 			} else if aggFunc == "max" {
-				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Max(networkResults, metric)
+				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Max(networkResults, metric)
 			} else if aggFunc == "min" {
-				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Min(networkResults, metric)
+				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Min(networkResults, metric)
 			}
 			if metric == "bytes_send" || metric == "bytes_received" {
-				clusterResults[localDomainName + "." + dstDomain + "." + metric + "." + aggFunc] = Rate(clusterResults[localDomainName + "." + dstDomain + "." + metric], float64(MonitorPeriods))
+				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Rate(clusterResults[localDomainName+"."+dstDomain+"."+metric], float64(MonitorPeriods))
 			}
 		}
 	}
@@ -277,7 +284,7 @@ func GetClusterMetricResults(localDomainName string, clusterName string, remoteA
 func GetMetricChange(MetricTypes map[string]string, lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
 	for metric, value := range currentMetricValues {
 		currentMetricValues[metric] = currentMetricValues[metric] - lastMetricValues[metric]
-		if(currentMetricValues[metric] < 0){
+		if currentMetricValues[metric] < 0 {
 			currentMetricValues[metric] = 0
 		}
 		lastMetricValues[metric] = value
