@@ -257,7 +257,7 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 		}
 	}
 
-	if (dr.Spec.BodyEncryption != nil || dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken) &&
+	if (dr.Spec.BodyEncryption != nil || (dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Transit == nil)) &&
 		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
 			if dr.Status.TokenStatus.RevisionToken.Token == "" {

@@ -184,7 +184,6 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 	if !dr.Status.TokenStatus.RevisionToken.IsReady {
 		handshake = fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
 	}
-	fmt.Println("=======", handshake)
 	req, err := http.NewRequest(http.MethodGet, config.InternalServer+handshake, nil)
 	if err != nil {
 		nlog.Errorf("new handshake request fail:%v", err)
