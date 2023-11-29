@@ -68,11 +68,11 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		return fmt.Errorf("add master clusters fail, detail-> %v", err)
 	}
 	if !masterConfig.Master {
-		err = controller.RegisterDomain(gwConfig.Namespace, gwConfig.CsrFile, prikey, afterRegisterHook)
+		err = controller.RegisterDomain(gwConfig.Namespace, masterConfig.MasterProxy.Path, gwConfig.CsrFile, prikey, afterRegisterHook)
 		if err != nil {
 			return fmt.Errorf("RegisterDomain err:%s", err.Error())
 		}
-		err = controller.HandshakeToMaster(gwConfig.Namespace, prikey)
+		err = controller.HandshakeToMaster(gwConfig.Namespace, masterConfig.MasterProxy.Path, prikey)
 		if err != nil {
 			return fmt.Errorf("HandshakeToMaster err:%s", err.Error())
 		}

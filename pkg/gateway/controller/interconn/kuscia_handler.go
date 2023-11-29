@@ -16,6 +16,7 @@ package interconn
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -35,6 +36,10 @@ type KusciaHandler struct {
 
 func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute,
 	dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
+	action := generateDefaultRouteAction(dr, dp)
+	if len(dp.Path) > 0 {
+		action.PrefixRewrite = strings.TrimSuffix(dp.Path, "/") + "/"
+	}
 	httpRoute := &route.Route{
 		Match: &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Prefix{
@@ -43,7 +48,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 		},
 
 		Action: &route.Route_Route{
-			Route: xds.AddDefaultTimeout(generateDefaultRouteAction(dr, dp)),
+			Route: xds.AddDefaultTimeout(action),
 		},
 		RequestHeadersToAdd: []*core.HeaderValueOption{
 			{
@@ -81,6 +86,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 
 func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRoute,
 	cluster *envoycluster.Cluster) {
+	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
 	cluster.HealthChecks = []*core.HealthCheck{
 		{
 			Timeout:            durationpb.New(time.Second),
@@ -91,7 +97,7 @@ func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRout
 			HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 				HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 					Host: dr.Spec.Endpoint.Host,
-					Path: "/handshake",
+					Path: handshake,
 					RequestHeadersToAdd: []*core.HeaderValueOption{
 						{
 							Header: &core.HeaderValue{

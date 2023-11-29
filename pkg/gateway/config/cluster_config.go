@@ -21,6 +21,7 @@ import (
 type ClusterConfig struct {
 	Host     string
 	Port     uint32
+	Path     string
 	Protocol string
 
 	TLSCert *xds.TLSCert
