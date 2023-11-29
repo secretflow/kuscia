@@ -1,21 +1,16 @@
-// Parse config files and domain files
+// Package parse configures files and domain files
 package parse
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
-)
 
-type NamespaceId struct {
-	Namespace string `json:"namespace"`
-	State     int    `json:"state"`
-}
+	jsoniter "github.com/json-iterator/go"
+)
 
 // GetLocalDomainName get the name of a local domain
 func GetLocalDomainName() string {
@@ -33,12 +28,11 @@ func GetLocalDomainName() string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var namespaceId NamespaceId
-	err = json.Unmarshal(body, &namespaceId)
-	if err != nil {
-		log.Fatal(err)
+	namespace := jsoniter.Get(body, "namespace").ToString()
+	if len(namespace) == 0 {
+		log.Fatalln("Cannot parse namespace")
 	}
-	return namespaceId.Namespace
+	return namespace
 }
 
 // GetIpFromDomain get a list of IP addresses from a local domain name
@@ -55,9 +49,10 @@ func GetIpFromDomain(localDomainName string) []string {
 }
 
 // GetClusterAddress get the address and port of a remote domain connected by a local domain
-func GetClusterAddress() (string, []string) {
+func GetClusterAddress() map[string][]string {
+	endpointAddresses := make(map[string][]string)
 	// get the results of config_dump
-	resp, err := http.Get("http://localhost:10000/config_dump?format=json")
+	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
 	if err != nil {
 		log.Fatalln("Fail to get the results of config_dump", err)
 	}
@@ -71,36 +66,41 @@ func GetClusterAddress() (string, []string) {
 	if err != nil {
 		log.Fatalln("Fail to parse the results of config_dump", err)
 	}
-	var configDumpData map[string]interface{}
-	err = json.Unmarshal(body, &configDumpData)
-	if err != nil {
-		log.Fatalln("Fail to parse the results of config_dump", err)
-	}
-	configData := configDumpData["configs"].([]interface{})
-	configData1 := configData[1].(map[string]interface{})
-	configData2 := configData1["dynamic_active_clusters"].([]interface{})
 	domainName := GetLocalDomainName()
-	var domainID = 0
-	for id, cluster := range configData2 {
-		clusterName := cluster.(map[string]interface{})["cluster"].(map[string]interface{})["load_assignment"].(map[string]interface{})["cluster_name"].(string)
-		if strings.HasPrefix(clusterName, domainName+"-to-") {
-			domainID = id
+	res := make(map[string]interface{})
+	err = jsoniter.Unmarshal(body, &res)
+	configs := jsoniter.Get(body, "configs")
+
+	for i := 0; ; i++ {
+		x := configs.Get(i)
+		if x.Size() == 0 {
 			break
 		}
-	}
-	configData3 := configData2[domainID].(map[string]interface{})
-	configData4 := configData3["cluster"].(map[string]interface{})
-	configData5 := configData4["load_assignment"].(map[string]interface{})
-	clusterName := configData5["cluster_name"].(string)
-	endpoints := configData5["endpoints"].([]interface{})
-	var remoteClusterAddress []string
-	for _, lbEndpoints := range endpoints {
-		for _, lbEndPoint := range lbEndpoints.(map[string]interface{})["lb_endpoints"].([]interface{}) {
-			socketAddress := lbEndPoint.(map[string]interface{})["endpoint"].(map[string]interface{})["address"].(map[string]interface{})["socket_address"].(map[string]interface{})
-			address := socketAddress["address"].(string)
-			portValue := int(socketAddress["port_value"].(float64))
-			remoteClusterAddress = append(remoteClusterAddress, address+":"+strconv.Itoa(portValue))
+		loadAssignment := x.Get("cluster", "load_assignment")
+		clusterName := loadAssignment.Get("cluster_name").ToString()
+
+		if !strings.HasPrefix(clusterName, domainName+"-to-") {
+			break
+		}
+		endpoints := loadAssignment.Get("endpoints")
+
+		for j := 0; ; j++ {
+			lbEndpoints := endpoints.Get(j, "lb_endpoints")
+			if lbEndpoints.Size() == 0 {
+				break
+			}
+			for k := 0; ; k++ {
+				endpoint := lbEndpoints.Get(k)
+				if endpoint.Size() == 0 {
+					break
+				}
+				socketAddress := endpoint.Get("endpoint", "address", "socket_address")
+				address := socketAddress.Get("address")
+				portValue := socketAddress.Get("port_value")
+				endpointAddress := address.ToString() + ":" + portValue.ToString()
+				endpointAddresses[clusterName] = append(endpointAddresses[clusterName], endpointAddress)
+			}
 		}
 	}
-	return clusterName, remoteClusterAddress
+	return endpointAddresses
 }

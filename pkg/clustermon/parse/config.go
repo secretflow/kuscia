@@ -1,4 +1,4 @@
-// Parse config files and domain files
+// Package parse configures files and domain files
 package parse
 
 import (
@@ -12,7 +12,7 @@ type Config struct {
 	NetMetrics []string `yaml:"net_metrics"`
 	AggMetrics []string `yaml:"agg_metrics"`
 	CluMetrics []string `yaml:"clu_metrics"`
-	MonPeriod int      `yaml:"mon_period"`
+	MonPeriod  int      `yaml:"mon_period"`
 	Prometheus bool     `yaml:"prometheus"`
 	LocalFile  bool     `yaml:"local_file"`
 }

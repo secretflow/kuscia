@@ -1,4 +1,4 @@
-// measure the usage of system resources used by monitor.go
+// Package sysmon measure the usage of system resources used by monitor.go
 package sysmon
 
 import (
@@ -133,5 +133,5 @@ func LogSystemResourceUsage(sysOutput *os.File, sysRes []float64) {
 			return
 		}
 	}
-	sysOutput.WriteString("\n")
+	_, _ = sysOutput.WriteString("\n")
 }

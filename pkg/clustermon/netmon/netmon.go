@@ -1,8 +1,7 @@
-// collect metrics from envoy and ss
+// Package netmon collect metrics from envoy and ss
 package netmon
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,11 +14,13 @@ import (
 	"strings"
 
 	"E2EMon/parse"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 // GetStatisticFromSs get the statistics of network flows from ss
 func GetStatisticFromSs() []map[string]string {
-	// execute ss comand
+	// execute ss command
 	cmd := exec.Command("ss", "-tio4nO")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -40,7 +41,7 @@ func GetStatisticFromSs() []map[string]string {
 		ssMetrics = make(map[string]string)
 		ssMetrics["rto"] = "0"
 		ssMetrics["rtt"] = "0"
-		ssMetrics["bytes_send"] = "0"
+		ssMetrics["bytes_sent"] = "0"
 		ssMetrics["bytes_received"] = "0"
 		ssMetrics["total_connections"] = "1"
 		ssMetrics["retrans"] = "0"
@@ -57,8 +58,8 @@ func GetStatisticFromSs() []map[string]string {
 					ssMetrics["rto"] = kv[1]
 				case "rtt":
 					ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
-				case "bytes_send":
-					ssMetrics["bytes_send"] = kv[1]
+				case "bytes_sent":
+					ssMetrics["bytes_sent"] = kv[1]
 				case "bytes_received":
 					ssMetrics["bytes_received"] = kv[1]
 				case "retrans":
@@ -88,42 +89,31 @@ func GetStatisticFromEnvoy(metrics []string) map[string]float64 {
 	if err != nil {
 		log.Fatalln("Fail to read the results of envoy ", err)
 	}
-	// parse data from envoy
-	var statsData map[string]interface{}
-	err = json.Unmarshal(body, &statsData)
-	if err != nil {
-		log.Fatalln("Fail to parse the results of envoy", err)
-	}
-	stats := make(map[string]float64)
+	// initialize metricSet
 	metricSet := make(map[string]bool)
 	for _, metric := range metrics {
 		metricSet[metric] = true
 	}
-	for _, metric := range statsData["stats"].([]interface{}) {
-		if name, ok := metric.(map[string]interface{})["name"].(string); ok {
-			if _, ok := metricSet[name]; ok {
-				if value, ok := metric.(map[string]interface{})["value"].(float64); ok {
-					stats[name] = value
-				} else if str, ok := metric.(map[string]interface{})["value"].(string); ok {
-					value, err := strconv.ParseFloat(str, 64)
-					if err != nil {
-						log.Fatalln(name, "Cannot convert ", str, "into type float64:", err)
-					} else {
-						stats[name] = value
-					}
-				}
-			}
+	statData := jsoniter.Get(body, "stats")
+	stats := make(map[string]float64)
+	for i := 0; statData.Get(i).Size() != 0; i++ {
+		metric := statData.Get(i).Get("name").ToString()
+		value := statData.Get(i).Get("value").ToFloat64()
+		if _, ok := metricSet[metric]; ok {
+			stats[metric] = value
 		}
 	}
 	return stats
 }
 
 // ConvertClusterMetrics convert cluster metrics for prometheus
-func ConvertClusterMetrics(ClusterMetrics []string, clusterName string) []string {
+func ConvertClusterMetrics(ClusterMetrics []string, clusterAddresses map[string][]string) []string {
 	var clusterMetrics []string
-	for _, metric := range ClusterMetrics {
-		str := "cluster." + clusterName + "." + strings.ToLower(metric)
-		clusterMetrics = append(clusterMetrics, str)
+	for clusterName := range clusterAddresses {
+		for _, metric := range ClusterMetrics {
+			str := "cluster." + clusterName + "." + strings.ToLower(metric)
+			clusterMetrics = append(clusterMetrics, str)
+		}
 	}
 	return clusterMetrics
 }
@@ -203,7 +193,7 @@ func Min(metrics []map[string]string, key string) float64 {
 	return min
 }
 
-// Rate an aggregation function to calculate the rate of a network metric betweem to metrics
+// Rate an aggregation function to calculate the rate of a network metric between to metrics
 func Rate(metric1 float64, metric2 float64) float64 {
 	if metric2 == 0.0 {
 		return 0
@@ -246,7 +236,7 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 }
 
 // GetClusterMetricResults Get the results of cluster statistics after filtering
-func GetClusterMetricResults(localDomainName string, clusterName string, remoteAddress []string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]map[string]float64 {
+func GetClusterMetricResults(localDomainName string, clusterAddresses map[string][]string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]float64 {
 	// get the statistics from SS
 	ssMetrics := GetStatisticFromSs()
 	// get the statistics from envoy
@@ -254,19 +244,19 @@ func GetClusterMetricResults(localDomainName string, clusterName string, remoteA
 	// get the source/destination IP from domain names
 	sourceIP := parse.GetIpFromDomain("root-kuscia-lite-" + localDomainName)
 	destinationIP := make(map[string][]string)
-	for _, remoteDomainName := range remoteAddress {
-		destinationIP[remoteDomainName] = parse.GetIpFromDomain(strings.Split(remoteDomainName, ":")[0])
+	for _, endpointAddresses := range clusterAddresses {
+		for _, endpointAddress := range endpointAddresses{
+			destinationIP[endpointAddress] = parse.GetIpFromDomain(strings.Split(endpointAddress, ":")[0])
+		}
 	}
 	// group metrics by the domain name
-	clusterResults := make(map[string]map[string]float64)
-	clusterResults[clusterName] = make(map[string]float64)
+	clusterResults := make(map[string]float64)
 	for metric, value := range clusterStatistics {
-		clusterResults[clusterName][metric] = value
+		clusterResults[metric] = value
 	}
-	for _, dstAddr := range remoteAddress {
+	for dstAddr := range destinationIP {
 		// get the connection name
-		dstDomain := strings.Split(dstAddr, ":")[0]
-		clusterResults[dstDomain] = make(map[string]float64)
+		endpointName := strings.Split(dstAddr, ":")[0]
 		var networkResults []map[string]string
 		dstPort := strings.Split(dstAddr, ":")[1]
 		for _, srcIP := range sourceIP {
@@ -275,13 +265,14 @@ func GetClusterMetricResults(localDomainName string, clusterName string, remoteA
 				networkResults = append(networkResults, networkResult...)
 			}
 		}
-		clusterResults[dstDomain] = AggregateStatistics(localDomainName, clusterResults[dstDomain], networkResults, AggregationMetrics, dstDomain, MonitorPeriods)
+		clusterResults = AggregateStatistics(localDomainName, clusterResults, networkResults, AggregationMetrics, endpointName, MonitorPeriods)
 	}
+
 	return clusterResults
 }
 
 // GetMetricChange get the change values of metrics
-func GetMetricChange(MetricTypes map[string]string, lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
+func GetMetricChange(lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
 	for metric, value := range currentMetricValues {
 		currentMetricValues[metric] = currentMetricValues[metric] - lastMetricValues[metric]
 		if currentMetricValues[metric] < 0 {
@@ -294,11 +285,11 @@ func GetMetricChange(MetricTypes map[string]string, lastMetricValues map[string]
 }
 
 // LogClusterMetricResults write the results of cluster statistics into a file
-func LogClusterMetricResults(clusterOutput *os.File, clusterResults map[string]map[string]float64) {
-	for clusterName, clusterResult := range clusterResults {
-		clusterOutput.WriteString(clusterName + "\n")
-		for metric, val := range clusterResult {
-			clusterOutput.WriteString(metric + ":" + fmt.Sprintf("%f", val) + ";\n")
+func LogClusterMetricResults(clusterOutput *os.File, clusterResults map[string]float64) {
+		for metric, val := range clusterResults {
+			_, err := clusterOutput.WriteString(metric + ":" + fmt.Sprintf("%f", val) + ";\n")
+			if err != nil {
+				log.Fatalln("Fail to output monitoring data")
+			}
 		}
-	}
 }

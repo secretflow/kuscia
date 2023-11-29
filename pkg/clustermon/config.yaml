@@ -1,7 +1,7 @@
 net_metrics:
   - rto
   - rtt
-  - bytes_send
+  - bytes_sent
   - bytes_received
   - retrans
   - total_connections

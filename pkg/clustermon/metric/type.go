@@ -1,4 +1,4 @@
-// Define the type of metrics exporting to Prometheus
+// Package metric defines the type of metrics exporting to Prometheus
 package metric
 
 // NewMetricTypes parse the metric types from a yaml file
@@ -7,7 +7,7 @@ func NewMetricTypes() map[string]string {
 	MetricTypes["rto"] = "Gauge"
 	MetricTypes["rtt"] = "Gauge"
 	MetricTypes["delivery_rate"] = "Gauge"
-	MetricTypes["bytes_send"] = "Counter"
+	MetricTypes["bytes_sent"] = "Counter"
 	MetricTypes["bytes_received"] = "Counter"
 	MetricTypes["assignment_stale"] = "Counter"
 	MetricTypes["assignment_timeout_received"] = "Counter"
