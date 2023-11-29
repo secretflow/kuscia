@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -51,7 +52,7 @@ type RegisterJwtClaims struct {
 	jwt.RegisteredClaims
 }
 
-func RegisterDomain(namespace string, csrPath string, prikey *rsa.PrivateKey, afterRegisterHook AfterRegisterDomainHook) error {
+func RegisterDomain(namespace string, path string, csrPath string, prikey *rsa.PrivateKey, afterRegisterHook AfterRegisterDomainHook) error {
 	csrRaw, err := os.ReadFile(csrPath)
 	if err != nil {
 		return err
@@ -84,7 +85,8 @@ func RegisterDomain(namespace string, csrPath string, prikey *rsa.PrivateKey, af
 		"kuscia-Host": fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
 		"jwt-token":   tokenstr,
 	}
-	err = doHTTP(regReq, regResp, "/register", fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
+	register := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/register")
+	err = doHTTP(regReq, regResp, register, fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
 	if err != nil {
 		return err
 	}

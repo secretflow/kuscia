@@ -67,7 +67,7 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 			return err
 		}
 		nlog.Infof("add Master cluster:%s", ServiceMasterProxy)
-		waitMasterProxyReady(ctx)
+		waitMasterProxyReady(ctx, config.MasterProxy.Path)
 	} else {
 		if config.APIServer != nil {
 			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.APIWhitelist); err != nil {
@@ -102,14 +102,14 @@ func addMasterCluster(service, namespace string, config *config.ClusterConfig, a
 		return err
 	}
 
-	if err := addMasterServiceVirtualHost(localCluster.Name, namespace, service, apiWhitelist); err != nil {
+	if err := addMasterServiceVirtualHost(localCluster.Name, config.Path, namespace, service, apiWhitelist); err != nil {
 		return err
 	}
 	return nil
 }
 
-func addMasterServiceVirtualHost(cluster, namespace, service string, apiWhitelist []string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterServiceDomains(namespace, service), apiWhitelist)
+func addMasterServiceVirtualHost(cluster, path, namespace, service string, apiWhitelist []string) error {
+	internalVh := generateMasterInternalVirtualHost(cluster, path, service, generateMasterServiceDomains(namespace, service), apiWhitelist)
 	if err := xds.AddOrUpdateVirtualHost(internalVh, xds.InternalRoute); err != nil {
 		return err
 	}
@@ -123,8 +123,8 @@ func addMasterServiceVirtualHost(cluster, namespace, service string, apiWhitelis
 	return xds.AddOrUpdateVirtualHost(externalVh, xds.ExternalRoute)
 }
 
-func AddMasterProxyVirtualHost(cluster, service, namespace, token string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterProxyDomains(), nil)
+func AddMasterProxyVirtualHost(cluster, path, service, namespace, token string) error {
+	internalVh := generateMasterInternalVirtualHost(cluster, path, service, generateMasterProxyDomains(), nil)
 	internalVh.Routes[0].RequestHeadersToAdd = []*core.HeaderValueOption{
 		{
 			Header: &core.HeaderValue{
@@ -152,7 +152,11 @@ func AddMasterProxyVirtualHost(cluster, service, namespace, token string) error 
 	return xds.AddOrUpdateVirtualHost(internalVh, xds.InternalRoute)
 }
 
-func generateMasterInternalVirtualHost(cluster, service string, domains []string, apiWhitelist []string) *route.VirtualHost {
+func generateMasterInternalVirtualHost(cluster, path, service string, domains []string, apiWhitelist []string) *route.VirtualHost {
+	var prefixRewrite string
+	if len(path) > 0 {
+		prefixRewrite = strings.TrimSuffix(path, "/") + "/"
+	}
 	virtualHost := &route.VirtualHost{
 		Name:    fmt.Sprintf("%s-internal", cluster),
 		Domains: domains,
@@ -166,6 +170,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 				Action: &route.Route_Route{
 					Route: xds.AddDefaultTimeout(
 						&route.RouteAction{
+							PrefixRewrite: prefixRewrite,
 							ClusterSpecifier: &route.RouteAction_Cluster{
 								Cluster: cluster,
 							},
@@ -248,9 +253,10 @@ func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycl
 	return cluster, nil
 }
 
-func getMasterNamespace() (string, error) {
+func getMasterNamespace(path string) (string, error) {
 	var namespace string
-	req, err := http.NewRequest("GET", config.InternalServer+"/handshake", nil)
+	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/handshake")
+	req, err := http.NewRequest("GET", config.InternalServer+handshake, nil)
 	if err != nil {
 		return namespace, fmt.Errorf("new http request failed with (%s)", err.Error())
 	}
@@ -291,14 +297,14 @@ func getMasterNamespace() (string, error) {
 	return namespace, nil
 }
 
-func waitMasterProxyReady(ctx context.Context) {
+func waitMasterProxyReady(ctx context.Context, path string) {
 	timestick := time.NewTicker(2 * time.Second)
 	timeout, timeoutCancel := context.WithTimeout(ctx, time.Second*300)
 	defer timeoutCancel()
 	for {
 		select {
 		case <-timestick.C:
-			namespace, err := getMasterNamespace()
+			namespace, err := getMasterNamespace(path)
 			if err == nil {
 				nlog.Infof("Get master gateway namespace: %s", namespace)
 				return

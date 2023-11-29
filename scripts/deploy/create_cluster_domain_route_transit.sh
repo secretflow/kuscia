@@ -20,10 +20,11 @@ set -e
 SRC_DOMAIN=$1
 DEST_DOMAIN=$2
 DEST_ENDPOINT=$3
+TRANSIT_DOMAIN=$4
 
-usage="$(basename "$0") SRC_DOMAIN DEST_DOMAIN DEST_ENDPOINT(http(s)://ip:port) "
+usage="$(basename "$0") SRC_DOMAIN DEST_DOMAIN DEST_ENDPOINT(http(s)://ip:port) TRANSIT_DOMAIN "
 
-if [[ ${SRC_DOMAIN} == "" || ${DEST_DOMAIN} == "" || ${DEST_ENDPOINT} == "" ]]; then
+if [[ ${SRC_DOMAIN} == "" || ${DEST_DOMAIN} == "" || ${DEST_ENDPOINT} == "" || ${TRANSIT_DOMAIN} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
 fi
@@ -63,6 +64,7 @@ CLUSTER_DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SRC_DOMAIN}}/${SRC_DOMAIN}/g;
   s/{{.HOST}}/${HOST}/g;
   s@{{.PATH}}@${HOST_PATH}@g;
   s/{{.ISTLS}}/${PROTOCOL_TLS}/g;
-  s/{{.PORT}}/${PORT}/g" \
-  <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
+  s/{{.PORT}}/${PORT}/g;
+  s/{{.TRANSIT_DOMAIN}}/${TRANSIT_DOMAIN}/g" \
+  <"${ROOT}/scripts/templates/cluster_domain_route.token.transit.yaml")
 echo "${CLUSTER_DOMAIN_ROUTE_TEMPLATE}" | kubectl apply -f -

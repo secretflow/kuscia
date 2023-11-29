@@ -26,6 +26,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -179,7 +180,12 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 }
 
 func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.DomainRoute) (*getResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, config.InternalServer+"/handshake", nil)
+	handshake := "/handshake"
+	if !dr.Status.TokenStatus.RevisionToken.IsReady {
+		handshake = fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+	}
+	fmt.Println("=======", handshake)
+	req, err := http.NewRequest(http.MethodGet, config.InternalServer+handshake, nil)
 	if err != nil {
 		nlog.Errorf("new handshake request fail:%v", err)
 		return nil, err
@@ -301,7 +307,8 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			"Kuscia-Source": dr.Spec.Source,
 			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
 		}
-		err := doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
+		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+		err := doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
@@ -362,8 +369,8 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			"Kuscia-Source": dr.Spec.Source,
 			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
 		}
-
-		err = doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
+		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+		err = doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
@@ -721,7 +728,7 @@ func exists(slice []string, val string) bool {
 	return false
 }
 
-func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
+func HandshakeToMaster(domainID string, path string, prikey *rsa.PrivateKey) error {
 	handshankeReq := &handshake.HandShakeRequest{
 		DomainId:    domainID,
 		RequestTime: time.Now().UnixNano(),
@@ -739,7 +746,8 @@ func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 		fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): clusters.GetMasterClusterName(),
 		"kuscia-Host": fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
 	}
-	err := doHTTP(handshankeReq, resp, "/handshake", fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
+	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/handshake")
+	err := doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
 	if err != nil {
 		nlog.Error(err)
 		return err
@@ -758,7 +766,7 @@ func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 		nlog.Error(err)
 		return err
 	}
-	if err := clusters.AddMasterProxyVirtualHost(c.Name, clusters.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
+	if err := clusters.AddMasterProxyVirtualHost(c.Name, path, clusters.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
 		nlog.Error(err)
 		return err
 	}
