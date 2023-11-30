@@ -46,14 +46,14 @@ fi
 if [[ "${HOST_PORT}" == *":"* ]]; then
   PORT=${HOST_PORT##*:}
   HOST=${HOST_PORT%%:*}
-  ISTLS=false
+  PROTOCOL_TLS=false
 else
   if [[ "${DEST_ENDPOINT}" == https://* ]]; then
     PORT=443
-    ISTLS=true
+    PROTOCOL_TLS=true
   else
     PORT=80
-    ISTLS=false
+    PROTOCOL_TLS=false
   fi
   HOST="$HOST_PORT"
 fi
