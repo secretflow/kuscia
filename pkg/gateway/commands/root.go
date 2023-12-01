@@ -134,7 +134,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		HandshakePort: gwConfig.HandshakePort,
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
-	go drc.Run(concurrentSyncs*2, ctx.Done())
+	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
 
 	// start runtime metrics collector
 	go metrics.MonitorRuntimeMetrics(ctx.Done())

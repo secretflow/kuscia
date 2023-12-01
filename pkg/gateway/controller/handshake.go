@@ -134,6 +134,7 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
 	var err error
+	var out *getResponse
 	for {
 		i++
 		if i == maxRetryTimes {
@@ -157,10 +158,9 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 			if drLatest.Status.TokenStatus.RevisionInitializer != c.gateway.Name {
 				return fmt.Errorf("dr %s may change initializer ", drLatest.Name)
 			}
-			var out *getResponse
 			out, err = c.checkConnectionStatus(drLatest)
 			if err != nil {
-				if out != nil {
+				if out != nil && out.State != NetworkUnreachable {
 					if out.State == TokenNotReady {
 						continue
 					} else {
@@ -196,25 +196,35 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 	req.Header.Set("kuscia-Host", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns))
 	client := &http.Client{}
 	resp, err := client.Do(req)
+
+	buildUnreachableResp := func() *getResponse {
+		out := &getResponse{
+			Namespace: ns,
+			State:     NetworkUnreachable,
+		}
+		return out
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("do http request fail:%v", err)
+		return buildUnreachableResp(), fmt.Errorf("do http request fail:%v", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
+		return buildUnreachableResp(), fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
 	}
 	if resp.StatusCode != http.StatusOK {
 		if len(body) > 200 {
 			body = body[:200]
 		}
-		return nil, fmt.Errorf("request error, path: %s, code: %d, message: %s", fmt.Sprintf("%s.%s.svc/handshake", clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
+		return buildUnreachableResp(), fmt.Errorf("request error, path: %s, code: %d, message: %s", fmt.Sprintf("%s.%s.svc/handshake",
+			clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
 	}
 	out := &getResponse{}
 	err = json.Unmarshal(body, out)
 	if err != nil {
-		return nil, err
+		return buildUnreachableResp(), err
 	}
 
 	return out, c.handleGetResponse(out, dr)
@@ -226,6 +236,7 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 		if !dr.Status.TokenStatus.RevisionToken.IsReady {
 			dr = dr.DeepCopy()
 			dr.Status.TokenStatus.RevisionToken.IsReady = true
+			dr.Status.IsDestinationUnreachable = false
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			return err
 		}
@@ -248,6 +259,7 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 		if dr.Status.IsDestinationAuthrized {
 			dr = dr.DeepCopy()
 			dr.Status.IsDestinationAuthrized = false
+			dr.Status.IsDestinationUnreachable = false
 			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
 			c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			return fmt.Errorf("%s cant contact destination because destination authentication is false", dr.Name)
@@ -417,6 +429,7 @@ const (
 	TokenNotFound
 	NoAuthentication
 	InternalError
+	NetworkUnreachable
 )
 
 type getResponse struct {

@@ -17,6 +17,7 @@ package framework
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/kubernetes/test/utils"
 	"k8s.io/utils/pointer"
 
 	coord "k8s.io/api/coordination/v1"
@@ -62,6 +64,10 @@ const (
 	labelNodeStopTimestamp = "node.kuscia.secretflow/stop-timestamp"
 
 	conditionNodeReused = "NodeReused"
+)
+
+var (
+	errDuplicateNode = errors.New("duplicate node")
 )
 
 type NodeGetter interface {
@@ -157,9 +163,18 @@ func (nc *NodeController) Run(ctx context.Context) error {
 
 	if !reused {
 		nlog.Infof("Configure node %s", nc.nodeCfg.NodeName)
+
 		nc.nmt = nc.nodeProvider.ConfigureNode(ctx, nc.nodeCfg.NodeName)
-		if err := nc.ensureNodeOnStartup(ctx); err != nil {
-			return err
+
+		for {
+			if err := nc.ensureNodeOnStartup(ctx); err != nil {
+				if err == errDuplicateNode {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				return err
+			}
+			break
 		}
 	}
 
@@ -350,12 +365,8 @@ func (nc *NodeController) NotifyAgentReady() {
 
 func (nc *NodeController) WaitAgentReady(ctx context.Context) {
 	<-nc.chAgentReady
-	nc.nmt.Status.Conditions, _ = nodeutils.AddOrUpdateNodeCondition(nc.nmt.Status.Conditions, corev1.NodeCondition{
-		Type:    corev1.NodeReady,
-		Status:  corev1.ConditionTrue,
-		Reason:  "AgentReady",
-		Message: "Agent is ready",
-	})
+
+	fillReadyCondition(&nc.nmt.Status)
 
 	if err := nc.updateStatus(ctx); err != nil {
 		nlog.Warnf("Error handling node status update: %v", err)
@@ -378,7 +389,8 @@ func (nc *NodeController) ensureNodeOnStartup(ctx context.Context) error {
 
 		if nodeutils.IsNodeReady(nodeFromMaster) {
 			if nodeFromMaster.Status.NodeInfo.MachineID != nc.nmt.Status.NodeInfo.MachineID {
-				return fmt.Errorf("there is another node with same name but a different machine id is running, please check, node_name=%v", nc.nmt.Name)
+				nlog.Warnf("There is another node with same name but a different machine id is running, please check, node_name=%v", nc.nmt.Name)
+				return errDuplicateNode
 			}
 
 			nlog.Warnf("There is another node with the same name and machine id is running and will be replaced by the current node, "+
@@ -456,6 +468,7 @@ func (nc *NodeController) controlLoop(ctx context.Context) {
 			}
 			statusNoChangeTimer.Reset(nc.statusNoChangeInterval)
 		case <-statusRefreshTimer.C:
+			fillReadyCondition(&nc.nmt.Status)
 			changed := nc.nodeProvider.RefreshNodeStatus(ctx, &nc.nmt.Status)
 			statusRefreshTimer.Reset(nc.statusRefreshInterval)
 
@@ -614,8 +627,25 @@ func updateNodeStatus(ctx context.Context, nodeStub v1.NodeInterface, n *corev1.
 	node.ResourceVersion = ""
 	node.Status = n.Status
 
+	checkReadyTransited(&oldNode.Status, &node.Status)
+
 	// Patch the node status to merge other changes on the nc.
 	return patchNodeStatus(ctx, nodeStub, types.NodeName(n.Name), oldNode, node)
+}
+
+// checkReadyTransited updates LastTransitionTime if the ready status changed.
+func checkReadyTransited(oldStatus, newStatus *corev1.NodeStatus) {
+	_, oldReadyCond := utils.GetNodeCondition(oldStatus, corev1.NodeReady)
+	_, newReadyCond := utils.GetNodeCondition(newStatus, corev1.NodeReady)
+	if newReadyCond == nil {
+		return
+	}
+
+	if oldReadyCond != nil && oldReadyCond.Status == newReadyCond.Status {
+		return
+	}
+
+	newReadyCond.LastTransitionTime = metav1.Now()
 }
 
 func (nc *NodeController) handleNodeStatusUpdateError(ctx context.Context, err error) error {
@@ -639,4 +669,13 @@ func getNodeNamespace(node *corev1.Node) string {
 		return ""
 	}
 	return node.Labels[common.LabelNodeNamespace]
+}
+
+func fillReadyCondition(status *corev1.NodeStatus) {
+	status.Conditions, _ = nodeutils.AddOrUpdateNodeCondition(status.Conditions, corev1.NodeCondition{
+		Type:    corev1.NodeReady,
+		Status:  corev1.ConditionTrue,
+		Reason:  "AgentReady",
+		Message: "Agent is ready",
+	})
 }
