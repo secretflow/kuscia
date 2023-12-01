@@ -362,6 +362,59 @@ func TestPingAfterStatusUpdate(t *testing.T) {
 		testP.maxPingInterval, maxAllowedInterval)
 }
 
+func TestDuplicateNode(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := testclient.NewSimpleClientset()
+
+	nodeCfg := &config.NodeCfg{NodeName: "aaa"}
+	nodes := c.CoreV1().Nodes()
+
+	preNode := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeCfg.NodeName}}
+	preNode.Status.NodeInfo.MachineID = "aaaaaa"
+	preNode.Status.Conditions, _ = nodeutils.AddOrUpdateNodeCondition(preNode.Status.Conditions, corev1.NodeCondition{
+		Type:    corev1.NodeReady,
+		Status:  corev1.ConditionTrue,
+		Reason:  "AgentReady",
+		Message: "Agent is ready",
+	})
+	var err error
+	preNode, err = nodes.Create(ctx, preNode, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
+	tNode := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeCfg.NodeName}}
+	tNode.Status.NodeInfo.MachineID = "bbbbbb"
+	testP := &testNodeProvider{NodeProvider: &mockNodeProvider{node: tNode}}
+	leases := c.CoordinationV1().Leases(corev1.NamespaceNodeLease)
+	nc, err := NewNodeController(corev1.NamespaceDefault, testP, nodes, leases, nodeCfg)
+	assert.NoError(t, err)
+
+	go func() {
+		assert.NoError(t, nc.Run(context.Background()))
+	}()
+
+	time.Sleep(2 * time.Second)
+	preNode.Status.Conditions, _ = nodeutils.AddOrUpdateNodeCondition(nc.nmt.Status.Conditions, corev1.NodeCondition{
+		Type:    corev1.NodeReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  "AgentNotReady",
+		Message: "Agent is not ready",
+	})
+	_, err = nodes.UpdateStatus(ctx, preNode, metav1.UpdateOptions{})
+	assert.NoError(t, err)
+
+	select {
+	case <-time.After(time.Second * 10):
+		assert.Fail(t, "timeout")
+	case <-nc.Ready():
+		break
+	}
+
+	nc.NotifyAgentReady()
+	nc.Stop()
+}
+
 func testNode(t *testing.T) *corev1.Node {
 	n := &corev1.Node{}
 	n.Name = strings.ToLower(t.Name())
@@ -440,15 +493,4 @@ func waitForEvent(ctx context.Context, chEvent <-chan watch.Event, check func(wa
 	}()
 
 	return chErr
-}
-
-func failTemplate(op string) string {
-	return `
-			{{- .Data.x}} (
-				{{- with callArg 0 }}{{ formatNode . }} {{end -}}
-				{{- printf "%T" .Data.x -}}
-			) ` + op + ` {{ .Data.y}} (
-				{{- with callArg 1 }}{{ formatNode . }} {{end -}}
-				{{- printf "%T" .Data.y -}}
-			)`
 }
