@@ -484,16 +484,27 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 	srcdr *kusciaapisv1alpha1.DomainRoute, destdr *kusciaapisv1alpha1.DomainRoute) (*kusciaapisv1alpha1.ClusterDomainRoute, error) {
 	needUpdate := false
 	cdr = cdr.DeepCopy()
+
+	isSrcTokenChanged := srcdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.SourceTokens, srcdr.Status.TokenStatus.Tokens)
+	isSrcStatusChanged := srcdr != nil && !srcdr.Status.IsDestinationUnreachable != IsReady(&cdr.Status)
+
+	// init new condition
 	setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionTrue, "", "Success"))
-	if srcdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.SourceTokens, srcdr.Status.TokenStatus.Tokens) {
+
+	if isSrcTokenChanged || isSrcStatusChanged {
 		cdr.Status.TokenStatus.SourceTokens = srcdr.Status.TokenStatus.Tokens
 		needUpdate = true
+
 		if len(cdr.Status.TokenStatus.SourceTokens) == 0 {
 			if !srcdr.Status.IsDestinationAuthrized {
 				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "DestinationIsNotAuthrized", "TokenNotGenerate"))
 			} else {
 				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "TokenNotGenerate", "TokenNotGenerate"))
 			}
+		} else if srcdr.Status.IsDestinationUnreachable {
+			nlog.Infof("set cdr(%s) ready condition.reason=DestinationUnreachable", cdr.Name)
+			setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse,
+				"DestinationUnreachable", "DestinationUnreachable"))
 		}
 	}
 	if destdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.DestinationTokens, destdr.Status.TokenStatus.Tokens) {
@@ -666,4 +677,13 @@ func getPublickeyFromCert(certString string) ([]byte, error) {
 		Bytes: x509.MarshalPKCS1PublicKey(rsaPub),
 	}
 	return pem.EncodeToMemory(block), nil
+}
+
+func IsReady(status *kusciaapisv1alpha1.ClusterDomainRouteStatus) bool {
+	for _, cond := range status.Conditions {
+		if cond.Type == kusciaapisv1alpha1.ClusterDomainRouteReady {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }

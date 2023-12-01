@@ -70,14 +70,14 @@ ls ${PWD}/kuscia-autonomy-bob-certs/alice.domain.crt
 
 在 bob 里添加 alice 的证书等信息：
 
-```bash 
+```bash
 # [bob 机器] 添加 alice 的证书等信息
 docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice p2p
 ```
 
 alice 建立到 bob 的通信：
 
-```bash 
+```bash
 # [alice 机器]
 # 为了减少授权错误的排查成本，建议在 alice 容器内(curl)访问 bob 地址判定是否能联通，之后再授权
 # 示例：curl -kvvv https://2.2.2.2:21080 返回正常的HTTP错误码是401
@@ -117,8 +117,8 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p
 
 bob 建立到 alice 的通信：
 
-```bash 
-# [bob 机器] 
+```bash
+# [bob 机器]
 # 为了减少授权错误的排查成本，建议在 bob 容器内(curl)访问 alice 地址判定是否能联通，之后再授权
 # 示例：curl -kvvv https://1.1.1.1:11080 返回正常的HTTP错误码是401
 # 1.1.1.1 是上文中 alice 的访问 ip，11080 是上文中 alice 的访问端口

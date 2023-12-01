@@ -106,6 +106,8 @@ type DomainRouteController struct {
 	handshakeCache  *gocache.Cache
 	handshakeServer *http.Server
 	handshakePort   uint32
+
+	drHeartbeat map[string]time.Time
 }
 
 // NewDomainRouteController create a new endpoints controller.
@@ -146,6 +148,7 @@ func NewDomainRouteController(
 		handshakePort:           drConfig.HandshakePort,
 		drCache:                 sync.Map{},
 		handshakeCache:          gocache.New(5*time.Minute, 10*time.Minute),
+		drHeartbeat:             make(map[string]time.Time, 0),
 	}
 
 	DomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
@@ -166,7 +169,7 @@ func NewDomainRouteController(
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
-func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
+func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh <-chan struct{}) {
 	var err error
 
 	defer utilruntime.HandleCrash()
@@ -187,7 +190,7 @@ func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
 	}
 
 	go c.startHandShakeServer(c.handshakePort)
-	go c.checkConnectionHealthy(stopCh)
+	go c.checkConnectionHealthy(ctx, stopCh)
 	nlog.Info("Starting workers")
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -200,7 +203,7 @@ func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
 	nlog.Info("Shutting down workers")
 }
 
-func (c *DomainRouteController) checkConnectionHealthy(stopCh <-chan struct{}) {
+func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stopCh <-chan struct{}) {
 	t := time.NewTicker(15 * time.Second)
 	defer t.Stop()
 	for {
@@ -212,10 +215,21 @@ func (c *DomainRouteController) checkConnectionHealthy(stopCh <-chan struct{}) {
 				break
 			}
 			for _, dr := range drs {
-				if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name && dr.Status.TokenStatus.RevisionToken.Token != "" {
-					_, err := c.checkConnectionStatus(dr)
+				if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Source == c.gateway.Namespace &&
+					dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name && dr.Status.TokenStatus.RevisionToken.Token != "" {
+					nlog.Infof("checkConnectionHealthy of dr(%s)", dr.Name)
+					resp, err := c.checkConnectionStatus(dr)
 					if err != nil {
-						nlog.Error(err)
+						nlog.Warn(err)
+					}
+					if resp != nil && resp.State == NetworkUnreachable {
+						c.markDestUnreachable(ctx, dr)
+					} else {
+						c.refreshHeartbeatTime(dr)
+					}
+
+					if err == nil {
+						c.markDestReachable(ctx, dr)
 					}
 				}
 			}
@@ -257,7 +271,7 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 		}
 	}
 
-	if (dr.Spec.BodyEncryption != nil || dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken) &&
+	if (dr.Spec.BodyEncryption != nil || (dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Transit == nil)) &&
 		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
 			if dr.Status.TokenStatus.RevisionToken.Token == "" {
@@ -377,6 +391,7 @@ func (c *DomainRouteController) deleteDomainRoute(key string) error {
 	if err := c.deleteEnvoyRule(dr); err != nil {
 		return err
 	}
+	delete(c.drHeartbeat, dr.Name)
 	c.drCache.Delete(key)
 	return nil
 }
