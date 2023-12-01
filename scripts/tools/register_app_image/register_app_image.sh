@@ -147,7 +147,7 @@ function apply_appimage_crd(){
 
 function post_action() {
   echo "=> remove temporary directory ${IMAGE_TEMP_DIR}"
-  #rm -rf "${IMAGE_TEMP_DIR}"
+  rm -rf "${IMAGE_TEMP_DIR}"
 }
 
 function gen_domain_container_names(){
