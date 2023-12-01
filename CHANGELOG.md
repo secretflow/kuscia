@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [v0.5.0.dev231201] - 2023-12-01
+### Fixed
+- When there is a duplicate node error, the node will not exit but will try again.
+- Change ClusterDomainRoute status to be unready when dest domain is unreachable.
+
+## [v0.5.0.dev231122] - 2023-11-22
+### Added
+- Support register secretflow psi image
 
 ## [0.4.0b0] - 2023-11-9
 ### Added
