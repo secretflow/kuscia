@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	//"strings"
 	"time"
 
 	"E2EMon/metric"
@@ -60,15 +58,7 @@ func main() {
 			// get cluster metrics
 			currentClusterMetricValues := netmon.GetClusterMetricResults(localDomainName, clusterAddresses, clusterMetrics, AggregationMetrics, MonitorPeriods)
 			// calculate the change values of cluster metrics
-			//for clusterName := range clusterAddresses {
 			lastClusterMetricValues, currentClusterMetricValues = netmon.GetMetricChange(lastClusterMetricValues, currentClusterMetricValues)
-
-			//}
-			/*for _, dstAddr := range clusterAddresses[clusterName] {
-				dstDomain := strings.Split(dstAddr, ":")[0]
-				lastClusterMetricValues[dstDomain], currentClusterMetricValues[dstDomain] = netmon.GetMetricChange(lastClusterMetricValues[dstDomain], currentClusterMetricValues[dstDomain])
-			}*/
-
 			// update cluster metrics in prometheus
 			if Prometheus {
 				metric.UpdateMetrics(currentClusterMetricValues, MetricTypes)
@@ -87,11 +77,6 @@ func main() {
 					EnableOpenMetrics: true,
 				}),
 		)
-		//goland:noinspection ALL
-		ipAddresses, err := net.LookupIP("root-kuscia-lite-" + parse.GetLocalDomainName())
-		if err != nil {
-			log.Fatalln("Cannot find IP address:", err)
-		}
-		log.Fatalln(http.ListenAndServe(ipAddresses[0].String()+":9091", nil))
+		log.Fatalln(http.ListenAndServe("0.0.0.0:9091", nil))
 	}
 }
