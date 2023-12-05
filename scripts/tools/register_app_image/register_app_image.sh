@@ -82,7 +82,9 @@ KUSCIA_MASTER_CONTAINER_NAME="${DEPLOY_USER}-kuscia-master"
 KUSCIA_DOMAIN_CONTAINER_NAMES=()
 
 IMAGE_TEMP_DIR="/tmp/kuscia-appimage-tmp"
-APP_IMAGE_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/${APP_IMAGE_NAME_IN_KUSCIA}.yaml"
+APP_IMAGE_FILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+DEFAULT_APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/secretflow-image.yaml"
+APP_IMAGE_FILE=""
 APP_IMAGE_TEMP_FILE="${IMAGE_TEMP_DIR}/appimage_tmp.yaml"
 
 function prepare_app_image() {
@@ -124,8 +126,14 @@ function apply_appimage_crd(){
   image_name=$1
   image_tag=$2
 
-  if [[ $APP_IMAGE_NAME_IN_KUSCIA = "" ]]; then
+  if [[ -z $APP_IMAGE_NAME_IN_KUSCIA ]]; then
     APP_IMAGE_NAME_IN_KUSCIA=$(echo ${image_name##*/}-${image_tag} | sed 's/_/-/g')
+    APP_IMAGE_FILE=${DEFAULT_APP_IMAGE_FILE}
+  else
+    APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/${APP_IMAGE_NAME_IN_KUSCIA}-image.yaml"
+    if [[ ! -f "$APP_IMAGE_FILE" ]]; then
+      APP_IMAGE_FILE=${DEFAULT_APP_IMAGE_FILE}
+    fi
   fi
 
   app_image_content=$(sed "s!{{APP_IMAGE_NAME}}!${APP_IMAGE_NAME_IN_KUSCIA}!g;
