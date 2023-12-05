@@ -128,7 +128,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 28080
 ```
-
+> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g 参数指定下端口号（例如：./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 28080 -k 2008 -g 2009），防止出现端口冲突
 
 #### 部署 lite 节点 bob
 
@@ -173,7 +173,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh lite -n bob -t hijklmn -m https://1.1.1.1:18080 -p 38080
 ```
-
+> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g 参数指定下端口号（例如：./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 38080 -k 2010 -g 2011），防止出现端口冲突
 
 ### 配置授权
 

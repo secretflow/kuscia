@@ -18,13 +18,9 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
-	"os"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 var (
@@ -33,10 +29,10 @@ var (
 
 type GatewayConfig struct {
 	RootDir       string `yaml:"rootdir,omitempty"`
-	Namespace     string `yaml:"namespace,omitempty"`
+	DomainID      string `yaml:"domainID,omitempty"`
 	ConfBasedir   string `yaml:"confBasedir,omitempty"`
-	CsrFile       string `yaml:"csrFile,omitempty"`
 	WhiteListFile string `yaml:"whiteListFile,omitempty"`
+	CsrData       string `yaml:"-"`
 	DomainKey     *rsa.PrivateKey
 	CACert        *x509.Certificate
 	CAKey         *rsa.PrivateKey
@@ -60,7 +56,7 @@ type GatewayConfig struct {
 
 func DefaultStaticGatewayConfig() *GatewayConfig {
 	g := &GatewayConfig{
-		Namespace:     "default",
+		DomainID:      "default",
 		ConfBasedir:   "./conf",
 		WhiteListFile: "",
 
@@ -73,26 +69,6 @@ func DefaultStaticGatewayConfig() *GatewayConfig {
 		MasterConfig:   &kusciaconfig.MasterConfig{},
 	}
 	return g
-}
-
-func LoadOverrideConfig(config *GatewayConfig, configPath string) (*GatewayConfig, error) {
-	if configPath == "" {
-		return config, nil // no need to load config file
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return config, err
-	}
-
-	err = yaml.Unmarshal(data, config)
-	if err != nil {
-		return config, err
-	}
-
-	nlog.Infof("Gateway config: %+v", config)
-
-	return config, config.CheckConfig()
 }
 
 func (config *GatewayConfig) CheckConfig() error {
@@ -129,6 +105,6 @@ func (config *GatewayConfig) CheckConfig() error {
 
 func (config *GatewayConfig) GetEnvoyNodeID() string {
 	hostname := utils.GetHostname()
-	envoyNodeCluster := fmt.Sprintf("kuscia-gateway-%s", config.Namespace)
+	envoyNodeCluster := fmt.Sprintf("kuscia-gateway-%s", config.DomainID)
 	return fmt.Sprintf("%s-%s", envoyNodeCluster, hostname)
 }

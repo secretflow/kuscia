@@ -98,3 +98,7 @@ func (f *Fake) Get(confID string) (string, error) {
 func (f *Fake) GetByParams(confID string, params map[string]any) (string, error) {
 	return "", nil
 }
+
+func (f *Fake) Close() error {
+	return nil
+}

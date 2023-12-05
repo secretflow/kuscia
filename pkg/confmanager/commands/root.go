@@ -24,8 +24,9 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/engine"
 
-	// register mem driver
+	// register driver
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/rfile"
 )
 
 func Run(ctx context.Context, conf *config.ConfManagerConfig) error {

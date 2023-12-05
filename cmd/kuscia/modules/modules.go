@@ -17,13 +17,9 @@ package modules
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
-	"encoding/pem"
-	"math/big"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -45,10 +41,6 @@ import (
 )
 
 var (
-	CertPrefix                    = "etc/certs/"
-	LogPrefix                     = "var/logs/"
-	StdoutPrefix                  = "var/stdout/"
-	ConfPrefix                    = "etc/conf/"
 	k3sDataDirPrefix              = "var/k3s/"
 	defaultInterConnSchedulerPort = 8084
 	defaultEndpointForLite        = "http://apiserver.master.svc"
@@ -82,82 +74,66 @@ func (d *Dependencies) MakeClients() {
 	d.Clients = clients
 }
 
+func (d *Dependencies) Close() {
+	if d.SecretBackendHolder != nil {
+		d.SecretBackendHolder.CloseAll()
+	}
+}
+
 type Module interface {
 	Run(ctx context.Context) error
 	WaitReady(ctx context.Context) error
 	Name() string
 }
 
-func LoadCaDomainKeyAndCert(dependencies *Dependencies) error {
+func (dependencies *Dependencies) LoadCaDomainKeyAndCert() error {
 	var err error
-	if dependencies.CAKey, err = tlsutils.ParseKey([]byte(dependencies.CAKeyData),
-		dependencies.CAKeyFile); err != nil {
-		nlog.Errorf("load key failed: key: %t, file: %s", len(dependencies.CAKeyData) == 0, dependencies.CAKeyFile)
+	config := dependencies.KusciaConfig
+
+	if dependencies.CAKey, err = tlsutils.ParseEncodedKey(config.CAKeyData, config.CAKeyFile); err != nil {
+		nlog.Errorf("load key failed: key: %t, file: %s", len(config.CAKeyData) == 0, config.CAKeyFile)
 		return err
 	}
 
-	if dependencies.CACertFile == "" {
+	if config.CACertFile == "" {
 		nlog.Errorf("load cert failed: ca cert must be file, ca file should not be empty")
 		return err
 	}
 
-	if dependencies.CACert, err = tlsutils.ParseCert(nil,
-		dependencies.CACertFile); err != nil {
+	if dependencies.CACert, err = tlsutils.ParseCertWithGenerated(dependencies.CAKey, config.DomainID, nil, config.CACertFile); err != nil {
 		nlog.Errorf("load cert failed: file: %s", dependencies.CACertFile)
 		return err
 	}
 
-	if dependencies.DomainKey, err = tlsutils.ParseKey([]byte(dependencies.DomainKeyData),
-		dependencies.DomainKeyFile); err != nil {
-		nlog.Errorf("load key failed: key: %t, file: %s", len(dependencies.CAKeyData) == 0, dependencies.DomainKeyFile)
+	if dependencies.DomainKey, err = tlsutils.ParseEncodedKey(config.DomainKeyData, config.DomainKeyFile); err != nil {
+		nlog.Errorf("load key failed: key: %t, file: %s", len(config.CAKeyData) == 0, config.DomainKeyFile)
+		return err
+	}
+
+	if config.DomainCertFile == "" {
+		nlog.Errorf("load cert failed: ca cert must be file, ca file should not be empty")
+		return err
+	}
+
+	if dependencies.DomainCert, err = tlsutils.ParseCertWithGenerated(dependencies.DomainKey, dependencies.DomainID, nil, config.DomainCertFile); err != nil {
+		nlog.Errorf("load cert failed: file: %s", dependencies.DomainCertFile)
 		return err
 	}
 
 	return nil
 }
 
-func EnsureDomainCert(conf *Dependencies) error {
-	caKey := conf.CAKey
-	caCert := conf.CACert
-	domainKey := conf.DomainKey
-	domainCrt := &x509.Certificate{
-		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: conf.DomainID},
-		PublicKeyAlgorithm:    caCert.PublicKeyAlgorithm,
-		PublicKey:             domainKey.PublicKey,
-		NotBefore:             caCert.NotBefore,
-		NotAfter:              caCert.NotAfter,
-		ExtKeyUsage:           caCert.ExtKeyUsage,
-		KeyUsage:              caCert.KeyUsage,
-		BasicConstraintsValid: caCert.BasicConstraintsValid,
-	}
-	domainCrtRaw, err := x509.CreateCertificate(rand.Reader, domainCrt, caCert, &domainKey.PublicKey, caKey)
-	if err != nil {
-		return err
-	}
-	if conf.DomainCert, err = x509.ParseCertificate(domainCrtRaw); err != nil {
-		return err
-	}
-	certOut, err := os.Create(conf.DomainCertFile)
-	if err != nil {
-		return err
-	}
-	defer certOut.Close()
-
-	return pem.Encode(certOut, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: domainCrtRaw,
-	})
-}
-
 func EnsureDir(conf *Dependencies) error {
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, CertPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.CertPrefix), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, LogPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.LogPrefix), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, StdoutPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.StdoutPrefix), 0755); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.TmpPrefix), 0755); err != nil {
 		return err
 	}
 	return nil
@@ -205,18 +181,44 @@ func InitLogs(logConfig *nlog.LogConfig) error {
 	return nil
 }
 
-func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *Dependencies {
+func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig, onlyControllerMode bool) *Dependencies {
 	dependencies := &Dependencies{
 		KusciaConfig: kusciaConf,
 	}
 
-	// run config loader
-	dependencies.SecretBackendHolder = secretbackend.NewHolder()
-	for _, sbc := range dependencies.SecretBackends {
-		if err := dependencies.SecretBackendHolder.Init(sbc.Name, sbc.Driver, sbc.Params); err != nil {
-			nlog.Fatalf("Init secret backend name=%s params=%+v failed: %s", sbc.Name, sbc.Params, err)
-		}
+	// init log
+	logConfig := &nlog.LogConfig{
+		LogLevel:      kusciaConf.LogLevel,
+		LogPath:       "var/logs/kuscia.log",
+		MaxFileSizeMB: 512,
+		MaxFiles:      10,
+		Compress:      true,
 	}
+	if err := InitLogs(logConfig); err != nil {
+		nlog.Fatal(err)
+	}
+	dependencies.LogConfig = logConfig
+
+	// run config loader
+	if !onlyControllerMode {
+		dependencies.SecretBackendHolder = secretbackend.NewHolder()
+		nlog.Info("Start to init all secret backends ... ")
+		initDefaultSecretBackend := true
+		for _, sbc := range dependencies.SecretBackends {
+			if err := dependencies.SecretBackendHolder.Init(sbc.Name, sbc.Driver, sbc.Params); err != nil {
+				nlog.Fatalf("Init secret backend name=%s params=%+v failed: %s", sbc.Name, sbc.Params, err)
+			}
+			initDefaultSecretBackend = false
+		}
+		if initDefaultSecretBackend {
+			nlog.Warnf("Init all secret backend but no provider found, creating default mem type")
+			if err := dependencies.SecretBackendHolder.Init(common.DefaultSecretBackendName, common.DefaultSecretBackendType, map[string]any{}); err != nil {
+				nlog.Fatalf("Init default secret backend failed: %s", err)
+			}
+		}
+		nlog.Info("Finish to init all secret backends")
+	}
+
 	configLoaders, err := confloader.NewConfigLoaderChain(ctx, dependencies.KusciaConfig.ConfLoaders, dependencies.SecretBackendHolder)
 	if err != nil {
 		nlog.Fatalf("Init config loader failed: %s", err)
@@ -255,6 +257,11 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	}
 	if dependencies.RunMode == common.RunModeLite {
 		dependencies.ApiserverEndpoint = defaultEndpointForLite
+	}
+
+	// init certs
+	if err = dependencies.LoadCaDomainKeyAndCert(); err != nil {
+		nlog.Fatal(err)
 	}
 
 	return dependencies

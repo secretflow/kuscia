@@ -36,15 +36,13 @@ import (
 )
 
 const (
-	pluginNameConfigRender = "config-render"
-
 	KubeStorageConfigDataAnnotation = "config-data.kuscia.secretflow/kube-storage"
 
 	defaultTemplateRenderOption = "missingkey=zero"
 )
 
 func Register() {
-	plugin.Register(pluginNameConfigRender, &configRender{})
+	plugin.Register(common.PluginNameConfigRender, &configRender{})
 }
 
 type configRenderConfig struct {
@@ -65,7 +63,7 @@ func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.Plug
 		return err
 	}
 
-	hook.Register(pluginNameConfigRender, cr)
+	hook.Register(common.PluginNameConfigRender, cr)
 	return nil
 }
 

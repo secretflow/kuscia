@@ -28,6 +28,7 @@ import (
 	"k8s.io/kubernetes/cmd/kube-scheduler/app/options"
 	kubeschedulerconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/scheduler/kusciascheduling"
 	"github.com/secretflow/kuscia/pkg/scheduler/queuesort"
 	"github.com/secretflow/kuscia/pkg/utils/common"
@@ -80,8 +81,8 @@ func NewScheduler(i *Dependencies) Module {
 }
 
 func (s *schedulerModule) Run(ctx context.Context) error {
-	configPathTmpl := filepath.Join(s.rootDir, ConfPrefix, "scheduler-config.yaml.tmpl")
-	configPath := filepath.Join(s.rootDir, ConfPrefix, "scheduler-config.yaml")
+	configPathTmpl := filepath.Join(s.rootDir, confloader.ConfPrefix, "scheduler-config.yaml.tmpl")
+	configPath := filepath.Join(s.rootDir, confloader.ConfPrefix, "scheduler-config.yaml")
 	if err := common.RenderConfig(configPathTmpl, configPath, s); err != nil {
 		return err
 	}

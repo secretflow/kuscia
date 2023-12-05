@@ -172,10 +172,19 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 	}
 
 	// build modified domainData
+	labels := make(map[string]string)
+	for key, value := range originalDomainData.Labels {
+		labels[key] = value
+	}
+	labels[common.LabelDomainDataType] = request.Type
+	labels[common.LabelDomainDataVendor] = request.Vendor
+
+	// build modified domainData
 	modifiedDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            request.DomaindataId,
 			ResourceVersion: originalDomainData.ResourceVersion,
+			Labels:          labels,
 		},
 		Spec: v1alpha1.DomainDataSpec{
 			RelativeURI: request.RelativeUri,
@@ -247,7 +256,7 @@ func (s domainDataService) normalizationCreateRequest(request *datamesh.CreateDo
 	}
 	//fill default datasource id
 	if request.DatasourceId == "" {
-		request.DatasourceId = GetDefaultDataSourceID()
+		request.DatasourceId = common.DefaultDataSourceID
 	}
 	if request.Vendor == "" {
 		request.Vendor = common.DefaultDomainDataVendor

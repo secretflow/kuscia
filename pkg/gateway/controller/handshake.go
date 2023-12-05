@@ -22,6 +22,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -438,6 +439,7 @@ type getResponse struct {
 }
 
 func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.Request) {
+	nlog.Debugf("Receive handshake request, method [%s], host[%s], headers[%s]", r.Method, r.Host, r.Header)
 	if r.Method == http.MethodGet {
 		resp := &getResponse{
 			Namespace: c.gateway.Namespace,
@@ -452,6 +454,7 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 		err := json.NewEncoder(w).Encode(resp)
 		if err != nil {
 			nlog.Errorf("write handshake response fail, detail-> %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -459,7 +462,7 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 	req := handshake.HandShakeRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		nlog.Error(err)
+		nlog.Errorf("Invalid request: %v", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -474,7 +477,9 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 	}
 	if !(req.Type == handShakeTypeUID && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) &&
 		!(req.Type == handShakeTypeRSA && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA) {
-		nlog.Errorf("handshake Type(%s) not match domainroute required(%s)", req.Type, dr.Spec.TokenConfig.TokenGenMethod)
+		errMsg := fmt.Sprintf("handshake Type(%s) not match domainroute required(%s)", req.Type, dr.Spec.TokenConfig.TokenGenMethod)
+		nlog.Error(errMsg)
+		http.Error(w, errMsg, http.StatusInternalServerError)
 		return
 	}
 	resp := c.DestReplyHandshake(&req, dr)
@@ -482,9 +487,11 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		nlog.Errorf("encode handshake response for(%s) fail, detail-> %v", drName, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
 		if resp.Status.Code != 0 {
 			nlog.Errorf("DestReplyHandshake for(%s) fail, detail-> %v", drName, resp.Status.Message)
+			http.Error(w, resp.Status.Message, http.StatusInternalServerError)
 		} else {
 			nlog.Infof("DomainRoute %s handle success", drName)
 		}
@@ -759,7 +766,7 @@ func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 	}
 	if resp.Status.Code != 0 {
 		nlog.Errorf("Handshake  to master fail, return error:%v", resp.Status.Message)
-		return err
+		return errors.New(resp.Status.Message)
 	}
 	token, err := decryptToken(prikey, resp.Token.Token, tokenByteSize)
 	if err != nil {

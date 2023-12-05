@@ -23,9 +23,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/confmanager/commands"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
+	"github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
@@ -33,11 +34,16 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
+const (
+	serverCertsCommonName        = "ConfManager"
+	defaultServerCertsSanDNSName = "confmanager"
+)
+
 type confManagerModule struct {
 	conf *config.ConfManagerConfig
 }
 
-func NewConfManager(d *Dependencies) (Module, error) {
+func NewConfManager(ctx context.Context, d *Dependencies) (Module, error) {
 	// overwrite config
 	conf := config.NewDefaultConfManagerConfig()
 	if d.ConfManager.HTTPPort != 0 {
@@ -64,24 +70,29 @@ func NewConfManager(d *Dependencies) (Module, error) {
 	if d.ConfManager.IsMaster {
 		conf.IsMaster = d.ConfManager.IsMaster
 	}
+	if d.ConfManager.Backend != "" {
+		conf.Backend = d.ConfManager.Backend
+	}
 	conf.DomainID = d.DomainID
 	conf.DomainKey = d.DomainKey
 	conf.TLS.RootCA = d.CACert
 	conf.TLS.RootCAKey = d.CAKey
 	conf.DomainCertValue = &d.DomainCertByMasterValue
-	if d.ConfManager.Backend != "" {
-		if secretBackend := findSecretBackend(d.SecretBackends, d.ConfManager.Backend); secretBackend != nil {
-			conf.SetSecretBackend(d.ConfManager.Backend, *secretBackend)
-		}
+	secretBackend := findSecretBackend(d.SecretBackendHolder, conf.Backend)
+	if secretBackend == nil {
+		return nil, fmt.Errorf("failed to find secret backend %s for cm", conf.Backend)
 	}
-	if d.ConfManager.SAN != nil {
-		conf.SAN = d.ConfManager.SAN
-	}
+	conf.BackendDriver = secretBackend
+
 	nlog.Infof("Conf manager config is %+v", conf)
 
-	ips, dnsNames := config.MakeConfManagerSAN(conf.SAN, "confmanager")
-	if err := conf.TLS.GenerateServerKeyCerts("ConfManager", ips, dnsNames); err != nil {
+	if err := conf.TLS.GenerateServerKeyCerts(serverCertsCommonName, nil, []string{defaultServerCertsSanDNSName}); err != nil {
 		return nil, err
+	}
+
+	// init service holder
+	if err := service.InitServiceHolder(conf); err != nil {
+		return nil, fmt.Errorf("init service holder failed: %v", err.Error())
 	}
 
 	return &confManagerModule{
@@ -89,13 +100,8 @@ func NewConfManager(d *Dependencies) (Module, error) {
 	}, nil
 }
 
-func findSecretBackend(s []confloader.SecretBackendConfig, name string) *config.SecretBackendConfig {
-	for _, b := range s {
-		if b.Name == name {
-			return &b.SecretBackendConfig
-		}
-	}
-	return nil
+func findSecretBackend(s *secretbackend.Holder, name string) secretbackend.SecretDriver {
+	return s.Get(name)
 }
 
 func (m confManagerModule) Run(ctx context.Context) error {
@@ -170,7 +176,7 @@ func (m confManagerModule) readyZ() bool {
 }
 
 func RunConfManager(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m, err := NewConfManager(conf)
+	m, err := NewConfManager(ctx, conf)
 	if err != nil {
 		nlog.Error(err)
 		cancel()

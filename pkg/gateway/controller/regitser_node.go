@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"os"
 	"reflect"
 	"time"
 
@@ -36,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -51,15 +51,10 @@ type RegisterJwtClaims struct {
 	jwt.RegisteredClaims
 }
 
-func RegisterDomain(namespace string, csrPath string, prikey *rsa.PrivateKey, afterRegisterHook AfterRegisterDomainHook) error {
-	csrRaw, err := os.ReadFile(csrPath)
-	if err != nil {
-		return err
-	}
-
+func RegisterDomain(namespace, csrData string, prikey *rsa.PrivateKey, afterRegisterHook AfterRegisterDomainHook) error {
 	regReq := &handshake.RegisterRequest{
 		DomainId:    namespace,
-		Csr:         base64.StdEncoding.EncodeToString(csrRaw),
+		Csr:         base64.StdEncoding.EncodeToString([]byte(csrData)),
 		RequestTime: int64(time.Now().Nanosecond()),
 	}
 
@@ -299,9 +294,8 @@ func (c *DomainRouteController) registerVerify(jwtTokenStr string, pubKey interf
 // The token in the csr file must be in the extension field and its id must be 1.2.3.4
 func getTokenFromCsr(csr *x509.CertificateRequest) string {
 	for _, e := range csr.Extensions {
-		if e.Id.String() == "1.2.3.4" {
-			// The token value in the csr file starts with \r\n by default, and these two characters need to be removed
-			return string(csr.Extensions[0].Value[2:])
+		if e.Id.String() == common.DomainCsrExtensionID {
+			return string(e.Value)
 		}
 	}
 	return ""

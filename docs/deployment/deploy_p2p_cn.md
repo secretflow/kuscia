@@ -31,8 +31,8 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 ```bash
 # -n 参数传递的是节点 ID。
 # -i 参数传递的是节点容器对外暴露的 IP，通常是主机 IP。 如果合作方无法直达主机，请填写网关映射的IP。
-# -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
-# -k 参数传递的是节点容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+# -p 参数传递的是节点容器映射到主机的 HTTPS 端口，保证和主机上现有的端口不冲突即可
+# -k 参数传递的是节点容器 KusciaAPI 映射到主机的 MTLS 端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh autonomy -n alice -i 1.1.1.1 -p 11080 -k 8082
 ```
 <span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
@@ -80,10 +80,16 @@ alice 建立到 bob 的通信：
 ```bash
 # [alice 机器]
 # 为了减少授权错误的排查成本，建议在 alice 容器内(curl)访问 bob 地址判定是否能联通，之后再授权
-# 示例：curl -kvvv https://2.2.2.2:21080 返回正常的HTTP错误码是401
+# 示例：curl -kvvv https://2.2.2.2:21080 返回正常的 HTTP 错误码是401
 # 2.2.2.2是上文中 bob 的访问 ip，21080 是上文中 bob 的访问端口
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh alice bob https://2.2.2.2:21080
 ```
+
+执行以下命令，查看是否有内容，如果有说明 alice 到 bob 授权建立成功。
+```bash
+docker exec -it ${USER}-kuscia-autonomy-alice kubectl get cdr alice-bob -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
+```
+
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 #### 创建 bob 到 alice 的授权
@@ -120,10 +126,16 @@ bob 建立到 alice 的通信：
 ```bash
 # [bob 机器]
 # 为了减少授权错误的排查成本，建议在 bob 容器内(curl)访问 alice 地址判定是否能联通，之后再授权
-# 示例：curl -kvvv https://1.1.1.1:11080 返回正常的HTTP错误码是401
+# 示例：curl -kvvv https://1.1.1.1:11080 返回正常的 HTTP 错误码是401
 # 1.1.1.1 是上文中 alice 的访问 ip，11080 是上文中 alice 的访问端口
 docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob alice https://1.1.1.1:11080
 ```
+
+执行以下命令，查看是否有内容，如果有说明 bob 到 alice 授权建立成功。
+```bash
+docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
+```
+
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 #### 准备测试数据

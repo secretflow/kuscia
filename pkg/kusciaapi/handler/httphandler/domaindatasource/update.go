@@ -12,41 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
 package domaindatasource
 
 import (
-	"errors"
 	"reflect"
 
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
 type updateDomainDataSourceHandler struct {
 	domainDataSourceService service.IDomainDataSourceService
 }
 
-func NewUpdateDomainSourceHandler(domainDataSourceService service.IDomainDataSourceService) api.ProtoHandler {
+func NewUpdateDomainDataSourceHandler(domainDataSourceService service.IDomainDataSourceService) api.ProtoHandler {
 	return &updateDomainDataSourceHandler{
 		domainDataSourceService: domainDataSourceService,
 	}
 }
 
-func (h *updateDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	updateReq, _ := request.(*datamesh.UpdateDomainDataSourceRequest)
-	if updateReq.DatasourceId == "" {
-		errs.AppendErr(errors.New("domaindata id should not be empty"))
-	}
+func (h updateDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 }
 
-func (h *updateDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	updateRequest, _ := request.(*datamesh.UpdateDomainDataSourceRequest)
+func (h updateDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	updateRequest, _ := request.(*kusciaapi.UpdateDomainDataSourceRequest)
 	return h.domainDataSourceService.UpdateDomainDataSource(context.Context, updateRequest)
 }
 
-func (h *updateDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(datamesh.UpdateDomainDataSourceRequest{}), reflect.TypeOf(datamesh.UpdateDomainDataSourceResponse{})
+func (h updateDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
+	return reflect.TypeOf(kusciaapi.UpdateDomainDataSourceRequest{}), reflect.TypeOf(kusciaapi.UpdateDomainDataSourceResponse{})
 }

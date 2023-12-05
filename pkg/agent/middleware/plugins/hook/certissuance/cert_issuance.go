@@ -44,8 +44,6 @@ import (
 )
 
 const (
-	pluginNameCertIssuance = "cert-issuance"
-
 	defaultCertsDirName       = "certs"
 	defaultContainerCertsPath = "/etc/kuscia/certs"
 
@@ -56,7 +54,7 @@ const (
 )
 
 func Register() {
-	plugin.Register(pluginNameCertIssuance, &certIssuance{})
+	plugin.Register(common.PluginNameCertIssuance, &certIssuance{})
 }
 
 type certIssuance struct {
@@ -83,7 +81,7 @@ func (ci *certIssuance) Init(dependencies *plugin.Dependencies, cfg *config.Plug
 	ci.caKey = dependencies.AgentConfig.DomainCAKey
 	ci.initialized = true
 
-	hook.Register(pluginNameCertIssuance, ci)
+	hook.Register(common.PluginNameCertIssuance, ci)
 
 	return nil
 }
