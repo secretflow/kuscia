@@ -39,12 +39,16 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/tools/register_app_
 
 ## 准备自定义算法镜像的 AppImage
 
-你可以在工具目录`register_app_image`下获取 Secretflow 算法镜像的 AppImage 模版`appimage.yaml`。若有需要，可参考 [AppImage](../reference/concepts/appimage_cn.md) 对模版进行修改。
+你可以在工具目录`register_app_image`下获取 Secretflow 算法镜像的 AppImage 模版`secretflow-image.yaml`。若有需要，可参考 [AppImage](../reference/concepts/appimage_cn.md) 对模版进行修改。
 
 在该模版中，以下占位符不建议修改，这些占位符实际内容由工具脚本动态填充。
 - `{{APP_IMAGE_NAME}}`: 自定义算法镜像对应的 Kuscia AppImage 名称
 - `{{IMAGE_NAME}}`: 自定义算法镜像名称
 - `{{IMAGE_TAG}}`: 自定义算法镜像标签
+
+若需注册非 Secretflow 算法镜像，请先准备自定义算法镜像的 AppImage 模版文件，该文件命名规则为`{算法镜像对应的 Kuscia AppImage 名称}-image.yaml`。
+其中符号`{}`中的内容需和`register_app_image.sh`脚本`-n` Flag 指定的参数值一致。
+
 
 ## 注册镜像
 
