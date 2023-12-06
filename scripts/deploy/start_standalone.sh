@@ -343,6 +343,7 @@ function create_secretflow_app_image() {
 
 function create_domaindatagrant_alice2bob() {
   local ctr=$1
+  probe_datamesh $ctr
   docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
       --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key
 }
@@ -359,6 +360,7 @@ function create_domaindata_alice_table() {
 
 function create_domaindatagrant_bob2alice() {
   local ctr=$1
+  probe_datamesh $ctr
   docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
     --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key
 }
@@ -371,6 +373,26 @@ function create_domaindata_bob_table() {
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
   log "create domaindata bob's table done default stored path: '${data_path}'"
+}
+
+function probe_datamesh() {
+  local domain_ctr=$1
+  local endpoint="https://127.0.0.1:8070/healthZ"
+  local max_retry=5
+  local retry=0
+  while [ $retry -lt "$max_retry" ]; do
+    local status_code
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" -d'{}' --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key || true)
+    if [[ $status_code -eq 200 ]]; then
+      log "Probe ${domain_ctr} datamesh successfully"
+      return 0
+    fi
+    sleep 1
+    retry=$((retry + 1))
+  done
+  log "[Error] Probe ${domain_ctr} datamesh in container '$domain_ctr' failed."
+  log "You cloud run command that 'docker logs $domain_ctr' to check the log"
+  exit 1
 }
 
 function check_user_name() {

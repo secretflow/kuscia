@@ -77,9 +77,9 @@ function get_kuscia_api_healthz_http_status_code() {
   local addr=$1
   local kuscia_cert_dir=$2
 
-  curl --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
-    --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${addr}/api/v1/domain/query" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
-    --header 'Content-Type: application/json' -s -o /dev/null --write-out '%{http_code}' -d '{"domain_id": "alice"}'
+  curl -k --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
+    --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${addr}/healthZ" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
+    --header 'Content-Type: application/json' -s -o /dev/null --write-out '%{http_code}' -d '{}'
 
   unset addr kuscia_cert_dir
 }
@@ -97,7 +97,7 @@ function get_kuscia_api_healthz_grpc_status_message() {
   local addr=$2
   local kuscia_cert_dir=$3
 
-  ${bin} --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
+  ${bin} -insecure --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
     --cacert "${kuscia_cert_dir}"/ca.crt -H "Token: $(cat "${kuscia_cert_dir}"/token)" -d '{}' \
     "${addr}" kuscia.proto.api.v1alpha1.kusciaapi.HealthService.healthZ
 
