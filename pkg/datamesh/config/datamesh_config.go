@@ -15,6 +15,7 @@
 package config
 
 import (
+	"crypto/rsa"
 	"github.com/spf13/pflag"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -33,7 +34,7 @@ type DataMeshConfig struct {
 	IdleTimeout    int
 	Initiator      string
 	FlagSet        *pflag.FlagSet
-	DomainKeyFile  string
+	DomainKey      *rsa.PrivateKey
 	TLS            config.TLSServerConfig
 	KusciaClient   kusciaclientset.Interface
 	KubeNamespace  string

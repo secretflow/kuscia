@@ -20,20 +20,35 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
-	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 func newTestConfigFile(t *testing.T) string {
 	root := t.TempDir()
+	keyDataEncoded, err := tls.GenerateKeyData()
+	assert.NoError(t, err, "generate key data error")
 	path := filepath.Join(root, "config.yaml")
 	content := fmt.Sprintf(`
+mode: lite
 rootDir: %s
 domainID: alice
-caKeyFile: etc/certs/ca.key
-caFile: etc/certs/ca.crt
-domainKeyFile: etc/certs/domain.key
+domainKeyData: %s
+logLevel: INFO
+liteDeployToken: cTWuN4TdHgAtnBiJ2bbdDHv6GMFMX5Y5
+masterEndpoint: https://localhost:1080
+runtime: runk
+runk:
+  namespace: test
+  dnsServers:
+  kubeconfigFile:
+capacity:
+  cpu: #4
+  memory: #8Gi
+  pods: #500
+  storage: #100Gi
 agent:
   node:
     enableNodeReuse: true
@@ -48,7 +63,7 @@ agent:
   allowPrivileged: true
   plugins:
     - name: config-render
-`, root)
+`, root, keyDataEncoded)
 	assert.NoError(t, os.WriteFile(path, []byte(content), 0644))
 
 	transportDir := filepath.Join(root, "etc/conf/transport/")
@@ -74,6 +89,6 @@ httpConfig:
 
 func TestRenderInitConfig(t *testing.T) {
 	configFile := newTestConfigFile(t)
-	d := confloader.ReadConfig(configFile, "alice", common.RunModeLite)
+	d := confloader.ReadConfig(configFile, "lite")
 	assert.Equal(t, "runk", d.Agent.Provider.Runtime)
 }

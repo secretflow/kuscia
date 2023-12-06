@@ -20,23 +20,25 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
+
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 
 	"github.com/secretflow/kuscia/pkg/utils/common"
 )
 
 func Test_LoadCaDomainKeyAndCert(t *testing.T) {
 	rootDir := t.TempDir()
-	err := LoadCaDomainKeyAndCert(&Dependencies{
+	de := &Dependencies{
 		KusciaConfig: confloader.KusciaConfig{
 			CAKeyFile:     filepath.Join(rootDir, "ca.key"),
 			CACertFile:    filepath.Join(rootDir, "ca.crt"),
 			DomainKeyFile: filepath.Join(rootDir, "domain.key"),
 			DomainID:      "alice",
 		},
-	})
+	}
+	err := de.LoadCaDomainKeyAndCert()
 	assert.NotEmpty(t, err)
 }
 

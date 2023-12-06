@@ -26,7 +26,6 @@ import (
 	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	apisvc "github.com/secretflow/kuscia/pkg/kusciaapi/service"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/decorator"
@@ -76,17 +75,8 @@ func (s *httpServerBean) ServerName() string {
 }
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
-	certificateService, err := service.NewCertificateService(service.CertConfig{
-		CertValue:  s.config.DomainCertValue,
-		PrivateKey: s.config.DomainKey,
-	})
-	if err != nil {
-		nlog.Fatalf("Failed to init certificate service : %v", err)
-	}
-	configurationService, err := service.NewConfigurationService(s.config)
-	if err != nil {
-		nlog.Fatalf("Failed to init configuration service : %v", err)
-	}
+	certificateService := service.Exporter.CertificateService()
+	configurationService := service.Exporter.ConfigurationService()
 
 	healthService := apisvc.NewHealthService()
 	// define router groups

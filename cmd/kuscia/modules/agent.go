@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
@@ -40,12 +41,13 @@ type agentModule struct {
 
 func NewAgent(i *Dependencies) Module {
 	conf := &i.Agent
+	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
 	hostname, err := os.Hostname()
 	if err != nil {
 		nlog.Fatalf("Get hostname fail: %v", err)
 	}
-	conf.StdoutPath = filepath.Join(i.RootDir, StdoutPrefix)
+	conf.StdoutPath = filepath.Join(i.RootDir, confloader.StdoutPrefix)
 	if conf.Node.NodeName == "" {
 		conf.Node.NodeName = hostname
 	}

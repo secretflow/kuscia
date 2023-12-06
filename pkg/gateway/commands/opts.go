@@ -61,7 +61,7 @@ func (o *Opts) overWriteConfigByOpts(config *config.GatewayConfig) *config.Gatew
 	}
 
 	if o.Namespace != "" {
-		config.Namespace = o.Namespace
+		config.DomainID = o.Namespace
 	}
 
 	if o.IdleTimeout != 60 || config.IdleTimeout == 0 {

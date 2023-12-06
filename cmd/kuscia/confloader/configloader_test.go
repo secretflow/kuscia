@@ -19,7 +19,6 @@ import (
 	"reflect"
 	"testing"
 
-	cmconf "github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/secretbackend"
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 )
@@ -44,13 +43,11 @@ func TestConfigLoaderChain_Load(t *testing.T) {
 				conf: &KusciaConfig{
 					SecretBackends: []SecretBackendConfig{
 						{
-							Name: "mem1",
-							SecretBackendConfig: cmconf.SecretBackendConfig{
-								Driver: "mem",
-								Params: map[string]any{
-									"preset": map[string]string{
-										"secretKeyDomainKeyData": "secretValueDomainKeyData",
-									},
+							Name:   "mem1",
+							Driver: "mem",
+							Params: map[string]any{
+								"preset": map[string]string{
+									"secretKeyDomainKeyData": "secretValueDomainKeyData",
 								},
 							},
 						},

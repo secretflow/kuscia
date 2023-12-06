@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
 package domaindatasource
 
 import (
-	"errors"
 	"reflect"
 
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
 type createDomainDataSourceHandler struct {
@@ -35,21 +33,14 @@ func NewCreateDomainDataSourceHandler(domainDataSourceService service.IDomainDat
 	}
 }
 
-func (h *createDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	createReq, _ := request.(*datamesh.CreateDomainDataSourceRequest)
-	if createReq.Info == nil {
-		errs.AppendErr(errors.New("datasource info should not be empty"))
-	}
-	if createReq.Type == "" {
-		errs.AppendErr(errors.New("type should not be empty"))
-	}
+func (h createDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 }
 
-func (h *createDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	createRequest, _ := request.(*datamesh.CreateDomainDataSourceRequest)
+func (h createDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	createRequest, _ := request.(*kusciaapi.CreateDomainDataSourceRequest)
 	return h.domainDataSourceService.CreateDomainDataSource(context.Context, createRequest)
 }
 
-func (h *createDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(datamesh.CreateDomainDataSourceRequest{}), reflect.TypeOf(datamesh.CreateDomainDataSourceResponse{})
+func (h createDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
+	return reflect.TypeOf(kusciaapi.CreateDomainDataSourceRequest{}), reflect.TypeOf(kusciaapi.CreateDomainDataSourceResponse{})
 }

@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.5.0.dev231205] - 2023-12-5
+### Changed
+- Optimize Kuscia deployment configuration and add configuration documentation.
+- Optimize error messages due to scheduling failures.
+
 ## [v0.5.0.dev231201] - 2023-12-01
 ### Fixed
 - When there is a duplicate node error, the node will not exit but will try again.

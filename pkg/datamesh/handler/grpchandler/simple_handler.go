@@ -61,20 +61,8 @@ func NewDomainDataSourceHandler(domaindataSourceService service.IDomainDataSourc
 	}
 }
 
-func (h *domainDataSourceHandler) CreateDomainDataSource(ctx context.Context, request *datamesh.CreateDomainDataSourceRequest) (*datamesh.CreateDomainDataSourceResponse, error) {
-	return h.domainDataSourceService.CreateDomainDataSource(ctx, request), nil
-}
-
 func (h *domainDataSourceHandler) QueryDomainDataSource(ctx context.Context, request *datamesh.QueryDomainDataSourceRequest) (*datamesh.QueryDomainDataSourceResponse, error) {
 	return h.domainDataSourceService.QueryDomainDataSource(ctx, request), nil
-}
-
-func (h *domainDataSourceHandler) UpdateDomainData(ctx context.Context, request *datamesh.UpdateDomainDataSourceRequest) (*datamesh.UpdateDomainDataSourceResponse, error) {
-	return h.domainDataSourceService.UpdateDomainDataSource(ctx, request), nil
-}
-
-func (h *domainDataSourceHandler) DeleteDomainData(ctx context.Context, request *datamesh.DeleteDomainDataSourceRequest) (*datamesh.DeleteDomainDataSourceResponse, error) {
-	return h.domainDataSourceService.DeleteDomainDataSource(ctx, request), nil
 }
 
 type domainDataGrantHandler struct {

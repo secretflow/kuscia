@@ -31,6 +31,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domain"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindata"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindatagrant"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domainroute"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/job"
@@ -157,6 +158,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	jobService := service.NewJobService(s.config)
 	domainService := service.NewDomainService(s.config)
 	routeService := service.NewDomainRouteService(s.config)
+	domainDataSourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
 	domainDataService := service.NewDomainDataService(s.config)
 	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	servingService := service.NewServingService(s.config)
@@ -293,6 +295,37 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 			},
 		},
+		// domainDataSource routes
+		{
+			Group: "api/v1/domaindatasource",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "create",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewCreateDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "update",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewUpdateDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "delete",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewDeleteDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewQueryDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "batchQuery",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewBatchQueryDomainDataSourceHandler(domainDataSourceService))},
+				},
+			},
+		},
 		// serving group routes
 		{
 			Group: "api/v1/serving",
@@ -381,6 +414,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			},
 		},
 	}
+
 	// register router groups to httpEg
 	for _, gr := range groupsRouters {
 		group := bean.Group(gr.Group, gr.GroupMiddleware...)
@@ -395,11 +429,11 @@ func newCertService(config *apiconfig.KusciaAPIConfig) cmservice.ICertificateSer
 	var privateKey *rsa.PrivateKey
 	switch config.RunMode {
 	case common.RunModeMaster, common.RunModeAutonomy:
-		if config.TLS == nil || config.TLS.RootCA == nil || config.TLS.RootCAKey == nil {
+		if config.RootCA == nil || config.RootCAKey == nil {
 			nlog.Fatalf("Init certificate service failed, error: config tls cert is nil.")
 		}
-		certValue.Store(config.TLS.RootCA)
-		privateKey = config.TLS.RootCAKey
+		certValue.Store(config.RootCA)
+		privateKey = config.RootCAKey
 	case common.RunModeLite:
 		certValue = config.DomainCertValue
 		privateKey = config.DomainKey
@@ -420,17 +454,21 @@ func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.
 }
 
 func convertToGinConf(conf *apiconfig.KusciaAPIConfig) beans.GinBeanConfig {
-	return beans.GinBeanConfig{
-		Logger:         nil,
-		ReadTimeout:    &conf.ReadTimeout,
-		WriteTimeout:   &conf.WriteTimeout,
-		IdleTimeout:    &conf.IdleTimeout,
-		MaxHeaderBytes: nil,
-		TLSServerConfig: &beans.TLSServerConfig{
+	var tlsConfig *beans.TLSServerConfig
+	if conf.TLS != nil {
+		tlsConfig = &beans.TLSServerConfig{
 			CACert:     conf.TLS.RootCA,
 			ServerCert: conf.TLS.ServerCert,
 			ServerKey:  conf.TLS.ServerKey,
-		},
+		}
+	}
+	return beans.GinBeanConfig{
+		Logger:          nil,
+		ReadTimeout:     &conf.ReadTimeout,
+		WriteTimeout:    &conf.WriteTimeout,
+		IdleTimeout:     &conf.IdleTimeout,
+		MaxHeaderBytes:  nil,
+		TLSServerConfig: tlsConfig,
 	}
 }
 

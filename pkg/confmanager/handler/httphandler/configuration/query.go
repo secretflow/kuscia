@@ -48,7 +48,8 @@ func (h queryConfigurationHandler) Validate(context *api.BizContext, request api
 func (h queryConfigurationHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
 	queryRequest, _ := request.(*confmanager.QueryConfigurationRequest)
 	tlsCert := interceptor.TLSCertFromGinContext(context.Context)
-	return h.configurationService.QueryConfiguration(context.Context, queryRequest, tlsCert.OrganizationalUnit[0])
+	response := h.configurationService.QueryConfiguration(context.Context, queryRequest, tlsCert.OrganizationalUnit[0])
+	return &response
 }
 
 func (h queryConfigurationHandler) GetType() (reqType, respType reflect.Type) {

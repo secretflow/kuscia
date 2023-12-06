@@ -109,7 +109,7 @@ function import_appimage(){
   ctr_num=${#KUSCIA_DOMAIN_CONTAINER_NAMES[@]}
 
   idx=0
-  while (($idx<$ctr_num)); do  
+  while (($idx<$ctr_num)); do
     container_name=${KUSCIA_DOMAIN_CONTAINER_NAMES[$idx]}
     echo "=> => import app image into ${container_name} container"
     docker exec -i "${container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" &> /dev/tty &
@@ -144,7 +144,7 @@ function apply_appimage_crd(){
   echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
 
   if [[ $DEPLOY_MODE = "p2p" ]]; then
-      for container_name in "${KUSCIA_DOMAIN_CONTAINER_NAMES[@]}"; do  
+      for container_name in "${KUSCIA_DOMAIN_CONTAINER_NAMES[@]}"; do
         docker exec -it "${container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
       done
   else
@@ -159,13 +159,13 @@ function post_action() {
 }
 
 function gen_domain_container_names(){
-  IFS=',' read -ra DOMAINS <<< "$DOMAIN_IDS"  
-  for DOMAIN in "${DOMAINS[@]}"; do  
+  IFS=',' read -ra DOMAINS <<< "$DOMAIN_IDS"
+  for DOMAIN in "${DOMAINS[@]}"; do
     container_name=("${DEPLOY_USER}-kuscia-lite-${DOMAIN}")
     if [[ $DEPLOY_MODE = "p2p" ]]; then
       container_name=("${DEPLOY_USER}-kuscia-autonomy-${DOMAIN}")
     fi
-    
+
     if [[ -n $(docker ps -q -f "name=${container_name}") ]]; then
       KUSCIA_DOMAIN_CONTAINER_NAMES+=("${container_name}")
     else
