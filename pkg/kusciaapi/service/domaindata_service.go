@@ -90,7 +90,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	Labels[common.LabelDomainDataType] = request.Type
 	Labels[common.LabelDomainDataVendor] = request.Vendor
 	Labels[common.LabelInterConnProtocolType] = "kuscia"
-	Labels[common.LabelInitiator] = request.DomaindataId
+	Labels[common.LabelInitiator] = request.DomainId
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   request.DomaindataId,
