@@ -15,16 +15,25 @@
 package tls
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io"
+	"math/big"
+	"net"
 	"os"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
 func ParsePKCS1PrivateKeyData(data []byte) (*rsa.PrivateKey, error) {
@@ -46,6 +55,9 @@ func ParsePKCS1PrivateKey(serverKey string) (*rsa.PrivateKey, error) {
 }
 
 func ParsePKCS1PublicKey(der []byte) (*rsa.PublicKey, error) {
+	if len(der) == 0 {
+		return nil, fmt.Errorf("invalid public key, key is empty")
+	}
 	block, _ := pem.Decode(der)
 	if block == nil || block.Type != "RSA PUBLIC KEY" {
 		return nil, fmt.Errorf("invalid public key, should be PEM block format")
@@ -143,6 +155,29 @@ func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int, prefi
 	return key[1:], nil
 }
 
+func EncryptOAEP(pub *rsa.PublicKey, key []byte) (string, error) {
+	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pub, key, nil)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+func DecryptOAEP(priv *rsa.PrivateKey, ciphertext string) ([]byte, error) {
+	text, err := base64.StdEncoding.DecodeString(ciphertext)
+	if err != nil {
+		return nil, err
+	}
+
+	// For Debug:
+	//   openssl pkeyutl -inkey domain.key -in {base64-decode-info} -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -decrypt
+	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, priv, text, nil)
+	if err != nil {
+		return nil, err
+	}
+	return plaintext, nil
+}
+
 func VerifySSLKey(key []byte) bool {
 	block, _ := pem.Decode(key)
 	if block == nil {
@@ -176,6 +211,31 @@ func VerifyCert(cert []byte) bool {
 	}
 
 	return true
+}
+
+func ParseEncodedKey(keyDataEncoded, keyFile string) (*rsa.PrivateKey, error) {
+	var (
+		keyDataDecoded []byte
+		err            error
+		key            *rsa.PrivateKey
+	)
+	if keyDataEncoded != "" {
+		if keyDataDecoded, err = base64.StdEncoding.DecodeString(keyDataEncoded); err != nil {
+			nlog.Errorf("Decoded keyData error: %v", err)
+			return nil, err
+		}
+		key, err = ParseKey(keyDataDecoded, "")
+		if err != nil {
+			return nil, err
+		}
+		if keyFile != "" {
+			if err = WritePrivateKeyToFile(key, keyFile); err != nil {
+				return nil, err
+			}
+		}
+		return key, nil
+	}
+	return ParseKey(nil, keyFile)
 }
 
 func ParseKey(keyData []byte, keyFile string) (key *rsa.PrivateKey, err error) {
@@ -221,4 +281,108 @@ func ParseCert(certData []byte, certFile string) (cert *x509.Certificate, err er
 	}
 
 	return nil, fmt.Errorf("can't parse cert")
+}
+
+func ParseCertWithGenerated(privateKey *rsa.PrivateKey, domainID string, certData []byte, certFile string) (cert *x509.Certificate, err error) {
+	if len(certData) != 0 || (certFile != "" && paths.CheckFileExist(certFile)) {
+		return ParseCert(certData, certFile)
+	}
+
+	nlog.Infof("Generate cert with key")
+	template := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: domainID},
+		PublicKeyAlgorithm:    x509.RSA,
+		SignatureAlgorithm:    x509.SHA256WithRSA,
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(50, 0, 0),
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		IsCA:                  true,
+		BasicConstraintsValid: true,
+	}
+	crtRaw, err := x509.CreateCertificate(rand.Reader, template, template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		nlog.Errorf("Create certificate error: %v", err)
+		return nil, err
+	}
+
+	certOut, err := os.Create(certFile)
+	defer certOut.Close()
+	if err != nil {
+		nlog.Errorf("Create cert file [%s] error: %v", certFile, err)
+		return nil, err
+	}
+	err = pem.Encode(certOut, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: crtRaw,
+	})
+	if err != nil {
+		nlog.Errorf("Encode cert error: %v", err)
+		return nil, err
+	}
+
+	return x509.ParseCertificate(crtRaw)
+}
+
+func GenerateKeyCertPairData(rootCAKey *rsa.PrivateKey, rootCACert *x509.Certificate, commonName string) (string, string, error) {
+	var certBuf, keyBuf bytes.Buffer
+
+	var netIPs []net.IP
+	netIPs = append(netIPs, net.IPv4(127, 0, 0, 1))
+
+	cert := &x509.Certificate{
+		SerialNumber: big.NewInt(int64(uuid.New().ID())),
+		Subject:      pkix.Name{CommonName: commonName},
+		IPAddresses:  netIPs,
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+		SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+	}
+
+	err := GenerateX509KeyPair(rootCACert, rootCAKey, cert, &certBuf, &keyBuf)
+	if err != nil {
+		return "", "", err
+	}
+	return keyBuf.String(), certBuf.String(), nil
+}
+
+func GenerateKeyData() (string, error) {
+	var keyOut bytes.Buffer
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return "", err
+	}
+
+	err = pem.Encode(&keyOut, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+	return base64.StdEncoding.EncodeToString(keyOut.Bytes()), err
+}
+
+func WritePrivateKeyToFile(key *rsa.PrivateKey, filename string) error {
+	keyOut, err := os.Create(filename)
+	defer keyOut.Close()
+	if err != nil {
+		return fmt.Errorf("create key file [%s] error: %v", filename, err.Error())
+	}
+	return pem.Encode(keyOut, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+}
+
+func WriteX509CertToFile(cert *x509.Certificate, filename string) error {
+	certOut, err := os.Create(filename)
+	defer certOut.Close()
+	if err != nil {
+		return fmt.Errorf("create key file [%s] error: %v", filename, err.Error())
+	}
+	return pem.Encode(certOut, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	})
 }

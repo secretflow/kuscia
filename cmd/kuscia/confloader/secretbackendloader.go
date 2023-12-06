@@ -18,9 +18,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+
 	"github.com/secretflow/kuscia/pkg/secretbackend"
-	// register mem driver
+	// register driver
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/rfile"
 )
 
 type SecretBackendParams struct {

@@ -16,6 +16,7 @@ package config
 
 import (
 	"crypto/rsa"
+	"crypto/x509"
 	"path"
 	"sync/atomic"
 
@@ -28,24 +29,26 @@ import (
 )
 
 type KusciaAPIConfig struct {
-	HTTPPort         int32        `yaml:"HTTPPort,omitempty"`
-	HTTPInternalPort int32        `yaml:"HTTPInternalPort,omitempty"`
-	GRPCPort         int32        `yaml:"GRPCPort,omitempty"`
-	Debug            bool         `yaml:"debug,omitempty"`
-	ConnectTimeout   int          `yaml:"connectTimeout,omitempty"`
-	ReadTimeout      int          `yaml:"readTimeout,omitempty"`
-	WriteTimeout     int          `yaml:"-"`
-	IdleTimeout      int          `yaml:"idleTimeout,omitempty"`
-	Initiator        string       `yaml:"initiator,omitempty"`
-	Token            *TokenConfig `yaml:"token"`
-
-	TLS             *config.TLSServerConfig   `yaml:"-"`
-	DomainKey       *rsa.PrivateKey           `yaml:"-"`
-	KusciaClient    kusciaclientset.Interface `yaml:"-"`
-	KubeClient      kubernetes.Interface      `yaml:"-"`
-	RunMode         common.RunModeType        `yaml:"-"`
-	DomainCertValue *atomic.Value             `yaml:"-"`
-	ConfDir         string                    `yaml:"-"`
+	HTTPPort         int32                     `yaml:"HTTPPort,omitempty"`
+	HTTPInternalPort int32                     `yaml:"HTTPInternalPort,omitempty"`
+	GRPCPort         int32                     `yaml:"GRPCPort,omitempty"`
+	Debug            bool                      `yaml:"debug,omitempty"`
+	ConnectTimeout   int                       `yaml:"connectTimeout,omitempty"`
+	ReadTimeout      int                       `yaml:"readTimeout,omitempty"`
+	IdleTimeout      int                       `yaml:"idleTimeout,omitempty"`
+	Initiator        string                    `yaml:"initiator,omitempty"`
+	Token            *TokenConfig              `yaml:"token"`
+	WriteTimeout     int                       `yaml:"-"`
+	TLS              *config.TLSServerConfig   `yaml:"-"`
+	DomainKey        *rsa.PrivateKey           `yaml:"-"`
+	RootCAKey        *rsa.PrivateKey           `yaml:"-"`
+	RootCA           *x509.Certificate         `yaml:"-"`
+	KusciaClient     kusciaclientset.Interface `yaml:"-"`
+	KubeClient       kubernetes.Interface      `yaml:"-"`
+	RunMode          common.RunModeType        `yaml:"-"`
+	DomainCertValue  *atomic.Value             `yaml:"-"`
+	ConfDir          string                    `yaml:"-"`
+	DomainID         string                    `yaml:"-"`
 }
 
 type TokenConfig struct {

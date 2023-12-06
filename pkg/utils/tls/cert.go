@@ -202,13 +202,18 @@ func BuildServerTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key 
 		return nil, fmt.Errorf("load client tls config failed, ca|servercert|serverkey can't be empty")
 	}
 
-	caCertPool := x509.NewCertPool()
-	caCertPool.AddCert(caCert)
+	var caCertPool *x509.CertPool
+	var clientAuth tls.ClientAuthType
+	if caCert != nil {
+		caCertPool = x509.NewCertPool()
+		caCertPool.AddCert(caCert)
+		clientAuth = tls.RequireAndVerifyClientCert
+	}
 
 	certs := BuildTLSCertificate(cert, key)
 	config := &tls.Config{
 		ClientCAs:    caCertPool,
-		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientAuth:   clientAuth,
 		Certificates: certs,
 	}
 	return config, nil
@@ -244,8 +249,11 @@ func BuildClientTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key 
 		return nil, fmt.Errorf("load client tls config failed, ca|clientcert|clientkey path can't be empty")
 	}
 
-	caCertPool := x509.NewCertPool()
-	caCertPool.AddCert(caCert)
+	var caCertPool *x509.CertPool
+	if caCert != nil {
+		caCertPool = x509.NewCertPool()
+		caCertPool.AddCert(caCert)
+	}
 
 	certs := BuildTLSCertificate(cert, key)
 	config := &tls.Config{

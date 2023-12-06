@@ -75,7 +75,7 @@ func (*KusciaSort) Name() string {
 // Less is used to sort pods in the scheduling queue in the following order.
 // 1. Compare the priorities of Pods.
 // 2. Compare the initialization timestamps of TaskResource or Pods.
-// 3. Compare the keys of Namespace/Pods: <namespace>/<podName>.
+// 3. Compare the keys of DomainID/Pods: <namespace>/<podName>.
 func (ks *KusciaSort) Less(podInfo1, podInfo2 *framework.QueuedPodInfo) bool {
 	prio1 := corev1helpers.PodPriority(podInfo1.Pod)
 	prio2 := corev1helpers.PodPriority(podInfo2.Pod)

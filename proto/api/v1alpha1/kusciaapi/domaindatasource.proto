@@ -1,0 +1,185 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service DomainDataSourceService {
+    rpc CreateDomainDataSource(CreateDomainDataSourceRequest) returns (CreateDomainDataSourceResponse);
+
+    rpc QueryDomainDataSource(QueryDomainDataSourceRequest) returns (QueryDomainDataSourceResponse);
+
+    rpc UpdateDomainDataSource(UpdateDomainDataSourceRequest) returns (UpdateDomainDataSourceResponse);
+
+    rpc DeleteDomainDataSource(DeleteDomainDataSourceRequest) returns (DeleteDomainDataSourceResponse);
+
+    rpc BatchQueryDomainDataSource(BatchQueryDomainDataSourceRequest) returns (BatchQueryDomainDataSourceResponse);
+}
+
+message CreateDomainDataSourceRequest {
+    RequestHeader header = 1;
+    string domain_id = 2;
+    string datasource_id = 3;
+    string type = 4;
+    optional string name = 5;
+    optional DataSourceInfo info = 6;
+    optional string info_key = 7;
+    optional bool access_directly = 8;
+}
+
+message CreateDomainDataSourceResponse {
+    Status status = 1;
+    CreateDomainDataSourceResponseData data = 2;
+}
+
+message CreateDomainDataSourceResponseData {
+    string datasource_id = 1;
+}
+
+message UpdateDomainDataSourceRequest {
+    RequestHeader header = 1;
+    string domain_id = 2;
+    string datasource_id = 3;
+    string type = 4;
+    optional string name = 5;
+    optional DataSourceInfo info = 6;
+    optional string info_key = 7;
+    optional bool access_directly = 8;
+}
+
+message UpdateDomainDataSourceResponse {
+    Status status = 1;
+}
+
+message DeleteDomainDataSourceRequest {
+    RequestHeader header = 1;
+    string domain_id = 2;
+    string datasource_id = 3;
+}
+
+message DeleteDomainDataSourceResponse {
+    Status status = 1;
+}
+
+message QueryDomainDataSourceRequest {
+    RequestHeader header = 1;
+    string domain_id = 2;
+    string datasource_id = 3;
+}
+
+message QueryDomainDataSourceResponse {
+    Status status = 1;
+    DomainDataSource data = 2;
+}
+
+message QueryDomainDataSourceRequestData {
+    string domain_id = 1;
+    string datasource_id = 2;
+}
+
+message BatchQueryDomainDataSourceRequest {
+    RequestHeader header = 1;
+    repeated QueryDomainDataSourceRequestData data =2;
+}
+
+message BatchQueryDomainDataSourceResponse {
+    Status   status = 1;
+    DomainDataSourceList data = 2;
+}
+
+message DomainDataSourceList {
+    repeated DomainDataSource datasource_list = 1;
+}
+
+message DomainDataSource {
+    // domain identity
+    string domain_id = 1;
+    // datasource id
+    string datasource_id = 2;
+    // datasource name
+    string name = 3;
+    // datasource type, enum [localfs, oss, mysql]
+    string type = 4;
+    // datasource status, enum [Available,Unavailable]
+    string status = 5;
+
+    // datasource info, for domain secretBackend which support set interface in clientSDK, you can set info directly when
+    // create or update domainDataSource, you can also set an info_key already existed in secretBackend instead.
+    // if you set info and info_key simultaneously, only info_key will take effect.
+    DataSourceInfo info = 6;
+
+    // datasource info key, for domain secretBackend which nonsupport set interface in clientSDK, use an secret key
+    // instead of info when create or update DomainDataSource, the value refers to info_key is a json format string of
+    // DataSourceInfo varies by datasource type
+    string info_key = 7;
+
+    // access directly to datasource or proxy_pass to DataProxy, default is false
+    bool access_directly = 8;
+}
+
+message DataSourceInfo {
+    // there is only one of the localfs or the oss in the DataSourceInfo
+    // LocalDataSourceInfo is exist only if the type of datasource is localfs
+    // OssDataSourceInfo is exist only if the type of datasource is oss
+    LocalDataSourceInfo localfs = 1;
+    // oss not support now
+    OssDataSourceInfo oss = 2;
+    // Relational database info, such as Mysql/oracle/postgres
+    DatabaseDataSourceInfo database = 3;
+}
+
+// datasource info for local path
+message LocalDataSourceInfo {
+    // the local path of datasource
+    string path = 1;
+}
+
+// datasource info for oss
+// oss not support now
+message OssDataSourceInfo {
+    // endpoint oss.xxx.cn-xxx.com or 127.0.0.1:9000
+    string endpoint = 1;
+    // the bucket name of the oss datasource
+    string bucket = 2;
+    // the prefix of the oss datasource. e.g.  data/traindata/
+    string prefix = 3;
+    // access key
+    string access_key_id = 4;
+    // access secret
+    string access_key_secret = 5;
+    // virtualhost is the same as AliyunOSS's virtualhost , default true
+    bool virtualhost = 6;
+    // optional enum[s3v2,s3v4]
+    string version = 7;
+    // optional enum[oss,minio] , default oss
+    string storage_type = 8;
+}
+
+// datasource info for mysql/oracle/postgres
+message DatabaseDataSourceInfo {
+    // endpoint for database, such as localhost:3306
+    string endpoint = 1;
+    // user name of account to access database
+    string user = 2;
+    // password of account to access database
+    string password = 3;
+    // database name
+    string database = 4;
+}

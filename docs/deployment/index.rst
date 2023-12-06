@@ -9,3 +9,4 @@
     operation_cn
     networkrequirements
     logdescription
+    kuscia_config_cn

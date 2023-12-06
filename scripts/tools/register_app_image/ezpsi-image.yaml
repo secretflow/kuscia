@@ -1,0 +1,39 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: AppImage
+metadata:
+  name: {{APP_IMAGE_NAME}}
+spec:
+  configTemplates:
+    task-config.conf: |
+      {
+        "task_id": "{{.TASK_ID}}",
+        "task_input_config": "{{.TASK_INPUT_CONFIG}}",
+        "task_cluster_def": "{{.TASK_CLUSTER_DEFINE}}",
+        "allocated_ports": "{{.ALLOCATED_PORTS}}"
+      }
+  deployTemplates:
+    - name: ezpsi
+      replicas: 1
+      spec:
+        containers:
+          - args:
+              - -c
+              - /root/main --kuscia /etc/kuscia/task-config.conf
+            command:
+              - sh
+            configVolumeMounts:
+              - mountPath: /etc/kuscia/task-config.conf
+                subPath: task-config.conf
+            name: secretflow
+            ports:
+              - name: ezpsi
+                port: 54509
+                protocol: HTTP
+                scope: Cluster
+            workingDir: /work
+        restartPolicy: Never
+  image:
+    id: abc
+    name: {{IMAGE_NAME}}
+    sign: abc
+    tag: {{IMAGE_TAG}}

@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
 package domaindatasource
 
 import (
-	"errors"
 	"reflect"
 
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
-// Delete handler
 type deleteDomainDataSourceHandler struct {
 	domainDataSourceService service.IDomainDataSourceService
 }
@@ -36,18 +33,14 @@ func NewDeleteDomainDataSourceHandler(domainDataSourceService service.IDomainDat
 	}
 }
 
-func (h *deleteDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	deleteReq, _ := request.(*datamesh.DeleteDomainDataSourceRequest)
-	if deleteReq.DatasourceId == "" {
-		errs.AppendErr(errors.New("datasource id should not be empty"))
-	}
+func (h deleteDomainDataSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 }
 
-func (h *deleteDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	deleteRequest, _ := request.(*datamesh.DeleteDomainDataSourceRequest)
+func (h deleteDomainDataSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	deleteRequest, _ := request.(*kusciaapi.DeleteDomainDataSourceRequest)
 	return h.domainDataSourceService.DeleteDomainDataSource(context.Context, deleteRequest)
 }
 
-func (h *deleteDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(datamesh.DeleteDomainDataSourceRequest{}), reflect.TypeOf(datamesh.DeleteDomainDataSourceResponse{})
+func (h deleteDomainDataSourceHandler) GetType() (reqType, respType reflect.Type) {
+	return reflect.TypeOf(kusciaapi.DeleteDomainDataSourceRequest{}), reflect.TypeOf(kusciaapi.DeleteDomainDataSourceResponse{})
 }

@@ -218,7 +218,7 @@ func (h *JobScheduler) stopTasks(now metav1.Time, kusciaJob *kusciaapisv1alpha1.
 		}
 
 		copyKt := kt.DeepCopy()
-		setKusciaTaskStatus(now, &copyKt.Status, kusciaapisv1alpha1.TaskFailed, "KusciaJobStopped", "")
+		setKusciaTaskStatus(now, &copyKt.Status, kusciaapisv1alpha1.TaskFailed, "KusciaJobStopped", "Job was stopped")
 		for _, party := range copyKt.Spec.Parties {
 			if utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
 				continue
