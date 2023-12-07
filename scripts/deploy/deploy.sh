@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-set -ex
+set -e
 
 GREEN='\033[0;32m'
 NC='\033[0m'
