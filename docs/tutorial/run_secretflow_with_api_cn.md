@@ -106,7 +106,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 在 kuscia-master 容器终端中，执行以下命令，内容如下：
 
 ```shell
-curl -X POST 'https://localhost:8082/api/v1/job/create' \
+curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 --header "Token: $(cat /home/kuscia/var/tmp/token)" \
 --header 'Content-Type: application/json' \
 --cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
@@ -171,7 +171,7 @@ job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的
 请求参数`job_ids`是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。
 
 ```shell
-curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
+curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 --header "Token: $(cat /home/kuscia/var/tmp/token)" \
 --header 'Content-Type: application/json' \
 --cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
@@ -261,7 +261,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 KusciaJob.
 
 ```shell
-curl -X POST 'https://localhost:8082/api/v1/job/delete' \
+curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 --header "Token: $(cat /home/kuscia/var/tmp/token)" \
 --header 'Content-Type: application/json' \
 --cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
