@@ -42,7 +42,7 @@ fi
 
 CTR_PREFIX=${USER}-kuscia
 CTR_ROOT=/home/kuscia
-CTR_CERT_ROOT=${CTR_ROOT}/etc/certs
+CTR_CERT_ROOT=${CTR_ROOT}/var/tmp
 CTR_TMP_ROOT=${CTR_ROOT}/var/tmp
 MASTER_DOMAIN="kuscia-system"
 ALICE_DOMAIN="alice"
