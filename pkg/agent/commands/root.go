@@ -20,7 +20,6 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	kubeinformers "k8s.io/client-go/informers"
@@ -60,6 +59,25 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	// check namespace exist
+	for {
+		_, err := kubeClient.CoreV1().Pods(agentConfig.Namespace).List(ctx, metav1.ListOptions{Limit: 1})
+		if err == nil {
+			break
+		}
+
+		nlog.Warnf("Failed to list resource in namespace %v from master: %v", agentConfig.Namespace, err)
+
+		select {
+		case <-ctx.Done():
+			nlog.Infof("Stop watch kuscia domain, since agent is shutting down")
+		case <-time.After(3 * time.Second):
+			continue // continue for loop
+		}
+
+		break // context cancelled, agent is shutting down
+	}
 
 	// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
 	scmInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
@@ -168,28 +186,9 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 		}
 	}()
 	<-podsController.Ready()
-	nlog.Debugf("Agent core service started success")
 
-	// check namespace exist
-	for {
-		_, err := kubeClient.CoreV1().Pods(agentConfig.Namespace).Get(ctx, "test", metav1.GetOptions{})
-		if err == nil || k8serrors.IsNotFound(err) {
-			nlog.Info("Agent started")
-			nodeController.NotifyAgentReady()
-			break
-		}
-
-		nlog.Warnf("Failed to get resource in namespace %v from master: %v", agentConfig.Namespace, err)
-
-		select {
-		case <-ctx.Done():
-			nlog.Infof("Stop watch kuscia domain, since agent is shutting down")
-		case <-time.After(30 * time.Second):
-			continue // continue for loop
-		}
-
-		break // context cancelled, agent is shutting down
-	}
+	nlog.Info("Agent started")
+	nodeController.NotifyAgentReady()
 	close(ReadyChan)
 	<-ctx.Done()
 	<-podsController.Stop()

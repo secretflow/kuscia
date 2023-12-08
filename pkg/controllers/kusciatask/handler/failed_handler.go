@@ -84,11 +84,6 @@ func updateStatuses(kusciaTask *kusciaapisv1alpha1.KusciaTask) {
 	for idx, status := range kusciaTask.Status.PartyTaskStatus {
 		if status.Phase == kusciaapisv1alpha1.TaskPending || status.Phase == kusciaapisv1alpha1.TaskRunning {
 			kusciaTask.Status.PartyTaskStatus[idx].Phase = kusciaapisv1alpha1.TaskFailed
-			if kusciaTask.Status.Reason == KusciaJobStopped {
-				kusciaTask.Status.PartyTaskStatus[idx].Message = "Kuscia job stopped"
-			} else {
-				kusciaTask.Status.PartyTaskStatus[idx].Message = "Kuscia task failed"
-			}
 		}
 	}
 

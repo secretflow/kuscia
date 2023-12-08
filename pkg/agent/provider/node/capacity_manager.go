@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 const (
@@ -47,7 +48,7 @@ type CapacityManager struct {
 
 func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity bool) (*CapacityManager, error) {
 	pa := &CapacityManager{}
-
+	nlog.Infof("Capacity Manager, cfg:%v, rootDir: %s, localCapacity:%v", cfg, rootDir, localCapacity)
 	if localCapacity {
 		memStat, err := mem.VirtualMemory()
 		if err != nil {
@@ -73,7 +74,7 @@ func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity b
 		if cfg.Storage == "" {
 			storageStat, err := disk.Usage(rootDir)
 			if err != nil {
-				return nil, fmt.Errorf("failed to stat disk usage, detail-> %v", err)
+				return nil, fmt.Errorf("failed to stat disk usage[%s], detail-> %v", rootDir, err)
 			}
 			pa.storageAvailable = *resource.NewQuantity(int64(storageStat.Free), resource.BinarySI)
 			pa.storageTotal = *resource.NewQuantity(int64(storageStat.Total), resource.BinarySI)

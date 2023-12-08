@@ -60,6 +60,11 @@ const (
 	LabelDomainRoutePartner = "kuscia.secertflow/domainroute-partner"
 )
 
+const (
+	PluginNameCertIssuance = "cert-issuance"
+	PluginNameConfigRender = "config-render"
+)
+
 type LoadBalancerType string
 
 const (
@@ -144,3 +149,19 @@ const (
 	RunModeAutonomy = "autonomy"
 	RunModeLite     = "lite"
 )
+
+const (
+	DefaultSecretBackendName = "default"
+	DefaultSecretBackendType = "mem"
+)
+
+type CommunicationProtocol string
+type Protocol string
+
+const (
+	NOTLS Protocol = "NOTLS"
+	TLS   Protocol = "TLS"
+	MTLS  Protocol = "MTLS"
+)
+
+const DomainCsrExtensionID = "1.2.3.4"

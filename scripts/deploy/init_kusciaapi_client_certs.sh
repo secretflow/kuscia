@@ -1,5 +1,4 @@
 #!/bin/bash
-#
 # Copyright 2023 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,39 +12,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 set -e
 
-usage="$(basename "$0") NAMESPACE"
-NAMESPACE=$1
-if [[ ${NAMESPACE} == "" ]]; then
-  echo "missing argument: $usage"
-  exit 1
-fi
-
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-echo "${ROOT}"
 
-pushd ${ROOT} >/dev/null || exit
+pushd ${ROOT}/var/tmp >/dev/null || exit
 
-# k3s need default route in the container
-if [[ $(ip route | grep -w default) == "" ]]; then
-  IP_ADDR=$(hostname -I | awk '{print $1}')
-  ip route add default via $IP_ADDR
-fi
+CLIENT=kusciaapi-client
 
-bin/kuscia master -c etc/kuscia.yaml -d ${NAMESPACE} --log.path var/logs/kuscia.log
+#create a PKCS#8 key for client(JAVA native supported), default is PKCS#1
+openssl genpkey -out ${CLIENT}.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048 >/dev/null 2>&1
 
-echo "
-apiVersion: kuscia.secretflow/v1alpha1
-kind: Domain
-metadata:
-  name: ${NAMESPACE}
-spec:
-  cert:
-" | kubectl apply -f -
+#generate the Certificate Signing Request for client
+openssl req -new -key ${CLIENT}.key -out ${CLIENT}.csr -subj "/CN=KusciaAPIClient" >/dev/null 2>&1
+
+#sign it with Root CA for client
+openssl x509  -req -in ${CLIENT}.csr \
+    -CA ca.crt -CAkey ca.key  \
+    -days 1000 -sha256 -CAcreateserial \
+    -out ${CLIENT}.crt >/dev/null 2>&1
 
 popd >/dev/null || exit
-
-tail -f /dev/null

@@ -17,10 +17,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -39,26 +35,14 @@ import (
 func TestCreateDomainDataGrant(t *testing.T) {
 	logger, _ := zlogwriter.New(nil)
 	nlog.Setup(nlog.SetWriter(logger))
-	dir, err := os.MkdirTemp("", "TestCreateDomainDataGrant")
-	assert.NoError(t, err)
-	cafile := filepath.Join(dir, "ca.key")
-
-	keyOut, err := os.OpenFile(cafile, os.O_CREATE|os.O_RDWR, 0644)
-	assert.NoError(t, err)
-	defer keyOut.Close()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
-	err = pem.Encode(keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
 	assert.NoError(t, err)
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKeyFile: cafile,
+		DomainKey:     key,
 	}
-	createTestDomainDataSource(t, conf)
+	createTestDefaultDomainDataSource(t, conf)
 	domainDataService := NewDomainDataService(conf)
 	attr := make(map[string]string)
 	attr["rows"] = "100"

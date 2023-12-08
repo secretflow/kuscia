@@ -24,6 +24,47 @@ agent:
 externalTLS:
   certFile: etc/certs/external_tls.crt
   keyFile: etc/certs/external_tls.key
+
+# SecretBackend means the secret information hosting backend used by Kuscia.
+# Currently, ConfManager and config loaders will use these backends.
+#
+# It is always required to provide at least one secret information hosting for ConfManager to use.
+# If no secret information hosting backend is provided, a mem type backend named "default" will be added.
+#
+# The secret information hosting backend supports the following types:
+# mem:
+#     The mem type secret information hosting backend will read the key-value structure from params.preset and store it in an in-memory map structure.
+#     You can read or write to it, but any changes made will be lost after Kuscia is restarted.
+#     This is only intended for demo purposes and should not be used in a production environment!!!
+# rfile:
+#     The rfile type secret information hosting backend uses a local file for storage and encrypts the data using an encryption algorithm, currently supporting AES.
+#     This allows you to retain your modifications even when Kuscia is restarted.
+#     However, if you need to use the rfile type backend in a multi-replica environment, you should consider alternative backends.
+#
+#secretBackends:
+#  - name: default
+#    driver: mem
+#    params:
+#      preset:
+#        # you can add any kv you needed.
+#        someKey: someValue
+#  - name: rfile1
+#    driver: rfile
+#    params:
+#      # the file path to store/load secret. required, no default.
+#      path: /home/kuscia/var/tmp/rfile1
+#      cipher:
+#        type: aes
+#        aes:
+#          # key to encrypt/decrypt.
+#          key: thisismyaeskey
+
+# ConfManager will use the secret information hosting backend named "confManager.backend" as specified.
+# If not specified, ConfManager will use the backend named "default".
+#
+#confManager:
+#  backend: default
+
 dataMesh:
-  enableDataProxy : false
+  enableDataProxy: false
   # dataProxyEndpoint: localhost:8086

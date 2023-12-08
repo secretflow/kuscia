@@ -392,14 +392,27 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 	}
 
 	needUpdate, err := c.handlerFactory.GetTaskResourceGroupPhaseHandler(phase).Handle(trg)
-	if err != nil && c.trgQueue.NumRequeues(key) < maxRetries {
-		return err
+	if err != nil {
+		if c.trgQueue.NumRequeues(key) < maxRetries {
+			return err
+		}
+
+		failTaskResourceGroup(trg)
+		needUpdate = true
 	}
+
 	if needUpdate {
 		err = c.updateTaskResourceGroupStatus(ctx, rawTrg, trg)
 	}
 
 	return err
+}
+
+func failTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) {
+	now := metav1.Now()
+	trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
+	trg.Status.LastTransitionTime = &now
+	trg.Status.CompletionTime = &now
 }
 
 // needHandleExpiredTrg is used to check if trg is expired, if expired, patching the task resource group status phase to failed.

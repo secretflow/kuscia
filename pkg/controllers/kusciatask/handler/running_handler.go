@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -133,27 +134,26 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 }
 
 func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *kusciaapisv1alpha1.TaskResourceGroup) {
-	var (
-		succeededPartyCount = 0
-		failedPartyCount    = 0
-		runningPartyCount   = 0
-		pendingPartyCount   = 0
-	)
-
+	var pendingParty, runningParty, successfulParty, failedParty []string
 	partyTaskStatuses := h.buildPartyTaskStatus(taskStatus, trg)
 	taskStatus.PartyTaskStatus = partyTaskStatuses
 	for _, s := range partyTaskStatuses {
 		switch s.Phase {
 		case kusciaapisv1alpha1.TaskSucceeded:
-			succeededPartyCount++
+			successfulParty = append(successfulParty, buildPartyKey(s.DomainID, s.Role))
 		case kusciaapisv1alpha1.TaskFailed:
-			failedPartyCount++
+			failedParty = append(failedParty, buildPartyKey(s.DomainID, s.Role))
 		case kusciaapisv1alpha1.TaskRunning:
-			runningPartyCount++
+			runningParty = append(runningParty, buildPartyKey(s.DomainID, s.Role))
 		default:
-			pendingPartyCount++
+			pendingParty = append(pendingParty, buildPartyKey(s.DomainID, s.Role))
 		}
 	}
+
+	successfulPartyCount := len(successfulParty)
+	failedPartyCount := len(failedParty)
+	runningPartyCount := len(runningParty)
+	pendingPartyCount := len(pendingParty)
 
 	validPartyCount := len(trg.Spec.Parties)
 	minReservedMembers := trg.Spec.MinReservedMembers
@@ -164,11 +164,12 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 
 	if minReservedMembers > validPartyCount-failedPartyCount {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
-		taskStatus.Message = fmt.Sprintf("The remaining non-failed parties counts %v is less than the task success threshold %v", len(trg.Spec.Parties)-failedPartyCount, trg.Spec.MinReservedMembers)
+		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the threshold %v that meets the conditions for task success. pending party[%v], running party[%v], successful party[%v], failed party[%v]",
+			len(trg.Spec.Parties)-failedPartyCount, trg.Spec.MinReservedMembers, strings.Join(pendingParty, ","), strings.Join(runningParty, ","), strings.Join(successfulParty, ","), strings.Join(failedParty, ","))
 		return
 	}
 
-	if succeededPartyCount >= minReservedMembers {
+	if successfulPartyCount >= minReservedMembers {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskSucceeded
 		return
 	}
@@ -193,6 +194,10 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 			return
 		}
 	}
+}
+
+func buildPartyKey(domainID, role string) string {
+	return strings.TrimSuffix(fmt.Sprintf("%v-%v", domainID, role), "-")
 }
 
 func (h *RunningHandler) buildPartyTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *kusciaapisv1alpha1.TaskResourceGroup) []kusciaapisv1alpha1.PartyTaskStatus {
@@ -471,14 +476,6 @@ func (h *RunningHandler) refreshServiceStatuses(serviceStatuses map[string]*kusc
 	}
 }
 
-func getTaskLifecycle(kusciaTask *kusciaapisv1alpha1.KusciaTask) time.Duration {
-	taskLifecycle := taskDefaultLifecycle
-	if kusciaTask.Spec.ScheduleConfig.LifecycleSeconds > 0 {
-		taskLifecycle = time.Duration(kusciaTask.Spec.ScheduleConfig.LifecycleSeconds) * time.Second
-	}
-	return taskLifecycle
-}
-
 func isPodFailed(ps *v1.PodStatus) bool {
 	for _, cond := range ps.Conditions {
 		if cond.Type == v1.ContainersReady && cond.Status == v1.ConditionFalse {
@@ -531,7 +528,6 @@ func setTaskStatusPhase(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *ku
 		kusciaapisv1alpha1.TaskResourceGroupPhaseReserveFailed,
 		kusciaapisv1alpha1.TaskResourceGroupPhaseReserved:
 		taskStatus.Phase = kusciaapisv1alpha1.TaskRunning
-		taskStatus.Message = buildTaskStatusMessage(trg)
 	case kusciaapisv1alpha1.TaskResourceGroupPhaseFailed:
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
 		taskStatus.Reason = "TaskResourceGroupPhaseFailed"
@@ -544,10 +540,16 @@ func setTaskStatusPhase(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *ku
 }
 
 func buildTaskStatusMessage(trg *kusciaapisv1alpha1.TaskResourceGroup) string {
+	expiredCond, found := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceGroupExpired)
+	if found && expiredCond.Status == v1.ConditionTrue {
+		return fmt.Sprintf("The task was not scheduled within %v seconds of its entire lifecycle", trg.Spec.LifecycleSeconds)
+	}
+
+	condReason := ""
 	for _, cond := range trg.Status.Conditions {
 		if cond.Status != v1.ConditionTrue && cond.Reason != "" {
-			return cond.Reason
+			condReason += fmt.Sprintf("%v failed: %v,", cond.Type, cond.Reason)
 		}
 	}
-	return ""
+	return strings.TrimSuffix(condReason, ",")
 }

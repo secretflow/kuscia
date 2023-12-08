@@ -43,6 +43,7 @@ fi
 CTR_PREFIX=${USER}-kuscia
 CTR_ROOT=/home/kuscia
 CTR_CERT_ROOT=${CTR_ROOT}/etc/certs
+CTR_TMP_ROOT=${CTR_ROOT}/var/tmp
 MASTER_DOMAIN="kuscia-system"
 ALICE_DOMAIN="alice"
 BOB_DOMAIN="bob"
@@ -52,7 +53,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.2.0b0"
+SF_IMAGE_TAG="1.3.0.dev20231120"
 SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
 NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
@@ -275,13 +276,15 @@ function create_secretpad_user_password() {
 
 function copy_kuscia_api_client_certs() {
   local volume_path=$1
+  # generate client certs
+  docker exec -it ${MASTER_CTR} sh scripts/deploy/init_kusciaapi_client_certs.sh
   # copy result
   tmp_path=${volume_path}/temp/certs
   mkdir -p ${tmp_path}
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/ca.crt ${tmp_path}/ca.crt
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/token ${tmp_path}/token
+  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/ca.crt ${tmp_path}/ca.crt
+  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
+  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
+  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/token ${tmp_path}/token
   docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
   docker cp -a ${tmp_path} ${CTR_PREFIX}-dummy:/tmp/temp/
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
@@ -340,8 +343,9 @@ function create_secretflow_app_image() {
 
 function create_domaindatagrant_alice2bob() {
   local ctr=$1
+  probe_datamesh $ctr
   docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
-      --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
+      --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key
 }
 
 function create_domaindata_alice_table() {
@@ -356,8 +360,9 @@ function create_domaindata_alice_table() {
 
 function create_domaindatagrant_bob2alice() {
   local ctr=$1
+  probe_datamesh $ctr
   docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
-    --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
+    --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key
 }
 
 function create_domaindata_bob_table() {
@@ -368,6 +373,26 @@ function create_domaindata_bob_table() {
   # create domain data bob table
   docker exec -it ${ctr} scripts/deploy/create_domaindata_bob_table.sh ${domain_id}
   log "create domaindata bob's table done default stored path: '${data_path}'"
+}
+
+function probe_datamesh() {
+  local domain_ctr=$1
+  local endpoint="https://127.0.0.1:8070/healthZ"
+  local max_retry=5
+  local retry=0
+  while [ $retry -lt "$max_retry" ]; do
+    local status_code
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" -d'{}' --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key || true)
+    if [[ $status_code -eq 200 ]]; then
+      log "Probe ${domain_ctr} datamesh successfully"
+      return 0
+    fi
+    sleep 1
+    retry=$((retry + 1))
+  done
+  log "[Error] Probe ${domain_ctr} datamesh in container '$domain_ctr' failed."
+  log "You cloud run command that 'docker logs $domain_ctr' to check the log"
+  exit 1
 }
 
 function check_user_name() {
@@ -522,6 +547,7 @@ function start_lite() {
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
     local certs_volume=${domain_ctr}-certs
+    local conf_dir=${ROOT}/${domain_ctr}
     env_flag=$(generate_env_flag)
     local mount_volume_param="-v /tmp:/tmp"
     if [ "$volume_path" != "" ]; then
@@ -529,41 +555,27 @@ function start_lite() {
     fi
 
     host_ip=$(getIPV4Address)
-    csrToken=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
-    docker run -it --rm --mount source="${certs_volume}",target="${CTR_CERT_ROOT}" "${IMAGE}" scripts/deploy/init_domain_certs.sh "${domain_id}" "${csrToken}"
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" ""
-    copy_container_file_to_volume ${MASTER_CTR}:${CTR_CERT_ROOT}/ca.crt $certs_volume master.ca.crt
+    csr_token=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
+    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh lite ${domain_id} ${master_endpoint} ${csr_token} ${ALLOW_PRIVILEGED}
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
-      --env NAMESPACE=${domain_id} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
-      --mount source=${certs_volume},target=${CTR_CERT_ROOT} \
+      -e NAMESPACE=${domain_id} \
       ${mount_volume_param} \
       -p $port:1080 \
       -p "${httpPort}":8082 \
       -p "${grpcPort}":8083 \
-      --entrypoint bin/entrypoint.sh \
-      ${IMAGE} tini -- scripts/deploy/start_lite.sh ${domain_id} ${master_endpoint} "${ALLOW_PRIVILEGED}" ""
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
+      ${IMAGE} bin/kuscia start -c etc/conf/kuscia.yaml
     probe_gateway_crd ${MASTER_CTR} ${domain_id} ${domain_ctr} 60
-    log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}', crt path: '${CTR_CERT_ROOT}'"
+    log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}'"
   fi
 }
 
 function create_cluster_domain_route() {
   local src_domain=$1
   local dest_domain=$2
-  local src_ctr=${CTR_PREFIX}-lite-${src_domain}
-  local dest_ctr=${CTR_PREFIX}-lite-${dest_domain}
-  local src_domain_csr=${CTR_CERT_ROOT}/${src_domain}.domain.csr
-  local src_2_dest_cert=${CTR_CERT_ROOT}/${src_domain}-2-${dest_domain}.crt
-  local dest_ca=${CTR_CERT_ROOT}/${dest_domain}.ca.crt
-
   log "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
-  copy_between_containers ${src_ctr}:${CTR_CERT_ROOT}/domain.csr ${dest_ctr}:${src_domain_csr}
-  docker exec -it ${dest_ctr} openssl x509 -req -in $src_domain_csr -CA ${CTR_CERT_ROOT}/ca.crt -CAkey ${CTR_CERT_ROOT}/ca.key -CAcreateserial -days 10000 -out ${src_2_dest_cert}  >/dev/null 2>&1
-  copy_between_containers ${dest_ctr}:${CTR_CERT_ROOT}/ca.crt ${MASTER_CTR}:${dest_ca}
-  copy_between_containers ${dest_ctr}:${src_2_dest_cert} ${MASTER_CTR}:${src_2_dest_cert}
 
   docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} http://${CTR_PREFIX}-lite-${dest_domain}:1080
   log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${CTR_PREFIX}'-lite-'${dest_domain}':1080"
@@ -628,19 +640,18 @@ function run_centralized() {
   if need_start_docker_container $MASTER_CTR; then
     log "Starting container '$MASTER_CTR' ..."
     local certs_volume=${MASTER_CTR}-certs
+    local conf_dir=${ROOT}/${MASTER_CTR}
     local host_ip=$(getIPV4Address)
     env_flag=$(generate_env_flag)
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${MASTER_DOMAIN} ${csrToken}
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${MASTER_DOMAIN}
-    docker run -it --rm --mount source=${certs_volume},target=${CTR_CERT_ROOT} --network=${NETWORK_NAME} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh ${MASTER_CTR} ${host_ip}
+    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh master $MASTER_DOMAIN
     docker run -dit --name=${MASTER_CTR} --hostname=${MASTER_CTR} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
+      -e NAMESPACE=$MASTER_DOMAIN \
       -p 18080:1080 \
       -p 18082:8082 \
       -p 18083:8083 \
-      --env NAMESPACE=${MASTER_DOMAIN} \
-      --mount source=${certs_volume},target=${CTR_CERT_ROOT} \
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
       -v /tmp:/tmp \
-      ${IMAGE} scripts/deploy/start_master.sh ${MASTER_DOMAIN} ${MASTER_CTR}
+      ${IMAGE} bin/kuscia start -c etc/conf/kuscia.yaml
     probe_gateway_crd ${MASTER_CTR} ${MASTER_DOMAIN} ${MASTER_CTR} 60
     log "Master '${MASTER_DOMAIN}' started successfully"
     FORCE_START=true
@@ -692,24 +703,23 @@ function start_autonomy() {
   local kusciaapi_http_port=$2
   local kusciaapi_grpc_port=$3
   local host_ip=$(getIPV4Address)
+  local conf_dir=${ROOT}/${domain_ctr}
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
     env_flag=$(generate_env_flag $domain_id)
-    docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_domain_certs.sh ${domain_id}
-    docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} ${IMAGE} scripts/deploy/init_external_tls_cert.sh ${domain_id}
-    docker run -it --rm --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} --network=${NETWORK_NAME} ${IMAGE} scripts/deploy/init_kusciaapi_cert.sh "" ${host_ip}
+
+    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${domain_id} "" "" ${ALLOW_PRIVILEGED}
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
-      --mount source=${domain_ctr}-certs,target=${CTR_CERT_ROOT} \
       -p "$kusciaapi_http_port":8082 \
       -p "$kusciaapi_grpc_port":8083 \
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
       -v /tmp:/tmp \
-      --entrypoint bin/entrypoint.sh \
-      ${IMAGE} tini -- scripts/deploy/start_autonomy.sh ${domain_id} ${ALLOW_PRIVILEGED}
+      ${IMAGE} bin/kuscia start -c etc/conf/kuscia.yaml
     probe_gateway_crd ${domain_ctr} ${domain_id} ${domain_ctr} 60
-    log "Autonomy domain '${domain_id}' started successfully docker container name: '${domain_ctr}' crt path:'${CTR_CERT_ROOT}'"
+    log "Autonomy domain '${domain_id}' started successfully docker container name: '${domain_ctr}'"
   fi
 }
 
@@ -721,7 +731,7 @@ function build_interconn() {
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
   log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
-  copy_between_containers ${member_ctr}:${CTR_ROOT}/var/tmp/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
+  copy_between_containers ${member_ctr}:${CTR_TMP_ROOT}/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}
