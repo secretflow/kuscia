@@ -10,7 +10,7 @@
 
 ## 确认证书和 token
 
-Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HTTPS 配置。
+Kuscia API 使用双向 HTTPS，所以需要配置你的服务端库的双向 HTTPS 配置。
 
 ### 中心化组网模式
 
@@ -18,8 +18,8 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
-| kusciaapi-client.key | 客户端私钥文件                                          |
-| kusciaapi-client.crt | 客户端证书文件                                          |
+| kusciaapi-server.key | 服务端私钥文件                                          |
+| kusciaapi-server.crt | 服务端证书文件                                          |
 | ca.crt               | CA 证书文件                                             |
 | token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
 
@@ -31,8 +31,8 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
-| kusciaapi-client.key | 客户端私钥文件                                          |
-| kusciaapi-client.crt | 客户端证书文件                                          |
+| kusciaapi-server.key | 服务端私钥文件                                          |
+| kusciaapi-server.crt | 服务端证书文件                                          |
 | ca.crt               | CA 证书文件                                             |
 | token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
 
@@ -288,9 +288,9 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 对于 secretflow ，请参考：[Secretflow 官网](https://www.secretflow.org.cn/)。
 
-{#http-client-error}
+{#http-server-error}
 
-## HTTP 客户端错误处理
+## HTTP 服务端错误处理
 
 ### curl: (56)
 
