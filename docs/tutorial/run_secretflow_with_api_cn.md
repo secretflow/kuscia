@@ -14,7 +14,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/etc/certs/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/tmp/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -27,7 +27,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 证书的配置参考[配置授权](../deployment/deploy_p2p_cn.md#配置授权)
 
-这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/etc/certs/`目录下：
+这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/tmp/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -107,11 +107,11 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/create' \
---header "Token: $(cat /home/kuscia/etc/certs/token)" \
+--header "Token: $(cat /home/kuscia/var/tmp/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
---key '/home/kuscia/etc/certs/kusciaapi-client.key' \
---cacert '/home/kuscia/etc/certs/ca.crt' \
+--cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
+--key '/home/kuscia/var/tmp/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/tmp/ca.crt' \
 -d '{
     "job_id": "job-best-effort-linear",
     "initiator": "alice",
@@ -172,11 +172,11 @@ job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
---header "Token: $(cat /home/kuscia/etc/certs/token)" \
+--header "Token: $(cat /home/kuscia/var/tmp/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
---key '/home/kuscia/etc/certs/kusciaapi-client.key' \
---cacert '/home/kuscia/etc/certs/ca.crt' \
+--cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
+--key '/home/kuscia/var/tmp/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/tmp/ca.crt' \
 -d '{
     "job_ids": ["job-best-effort-linear"]
 }'
@@ -262,11 +262,11 @@ KusciaJob.
 
 ```shell
 curl -X POST 'https://localhost:8082/api/v1/job/delete' \
---header "Token: $(cat /home/kuscia/etc/certs/token)" \
+--header "Token: $(cat /home/kuscia/var/tmp/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
---key '/home/kuscia/etc/certs/kusciaapi-client.key' \
---cacert '/home/kuscia/etc/certs/ca.crt' \
+--cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
+--key '/home/kuscia/var/tmp/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/tmp/ca.crt' \
 -d '{
     "job_id": "job-best-effort-linear"
 }'

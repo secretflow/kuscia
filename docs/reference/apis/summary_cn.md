@@ -69,10 +69,10 @@ Status 携带请求响应的状态信息。
 Kuscia master 部署完成之后，会默认生成一个 kuscia API client 证书，你可以通过以下命令获取（以中心化组网模式为例）：
 
 ```shell
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.key .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/ca.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/token .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/kusciaapi-client.key .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/kusciaapi-client.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/ca.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/token .
 ```
 
 ### GRPC
