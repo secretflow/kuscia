@@ -10,7 +10,7 @@
 
 ## 确认证书和 token
 
-Kuscia API 使用双向 HTTPS，所以需要配置你的服务端库的双向 HTTPS 配置。
+Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HTTPS 配置。
 
 ### 中心化组网模式
 
@@ -290,7 +290,7 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 {#http-server-error}
 
-## HTTP 服务端错误处理
+## HTTP 客户端错误处理
 
 ### curl: (56)
 
