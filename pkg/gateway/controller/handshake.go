@@ -182,7 +182,7 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.DomainRoute) (*getResponse, error) {
 	handshake := "/handshake"
 	if !dr.Status.TokenStatus.RevisionToken.IsReady {
-		handshake = fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+		handshake = fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
 	}
 	req, err := http.NewRequest(http.MethodGet, config.InternalServer+handshake, nil)
 	if err != nil {
@@ -306,7 +306,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			"Kuscia-Source": dr.Spec.Source,
 			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
 		}
-		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
 		err := doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
@@ -368,7 +368,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			"Kuscia-Source": dr.Spec.Source,
 			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
 		}
-		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
 		err = doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)

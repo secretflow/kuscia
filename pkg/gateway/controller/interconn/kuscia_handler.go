@@ -37,8 +37,8 @@ type KusciaHandler struct {
 func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute,
 	dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
 	action := generateDefaultRouteAction(dr, dp)
-	if len(dp.Path) > 0 {
-		action.PrefixRewrite = strings.TrimSuffix(dp.Path, "/") + "/"
+	if len(dp.PathPrefix) > 0 {
+		action.PrefixRewrite = strings.TrimSuffix(dp.PathPrefix, "/") + "/"
 	}
 	httpRoute := &route.Route{
 		Match: &route.RouteMatch{
@@ -86,7 +86,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 
 func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRoute,
 	cluster *envoycluster.Cluster) {
-	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].Path, "/"), "/handshake")
+	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
 	cluster.HealthChecks = []*core.HealthCheck{
 		{
 			Timeout:            durationpb.New(time.Second),
