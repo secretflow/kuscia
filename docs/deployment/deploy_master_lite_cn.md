@@ -233,13 +233,13 @@ docker exec -it ${USER}-kuscia-master scripts/deploy/create_domaindata_bob_table
 登录到安装 alice 的机器上，为 alice 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
+docker exec -it ${USER}-kuscia-lite-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert var/tmp/ca.crt --cert var/tmp/ca.crt --key var/tmp/ca.key
 ```
 
 同理，登录到安装 bob 的机器上，为 bob 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key
+docker exec -it ${USER}-kuscia-lite-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert var/tmp/ca.crt --cert var/tmp/ca.crt --key var/tmp/ca.key
 ```
 
 #### 执行测试作业
