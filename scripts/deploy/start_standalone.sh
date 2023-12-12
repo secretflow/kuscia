@@ -297,6 +297,8 @@ function copy_kuscia_api_lite_client_certs() {
   local volume_path=$2
   local IMAGE=$SECRETPAD_IMAGE
   local domain_ctr=${CTR_PREFIX}-lite-${domain_id}
+  # generate client certs
+  docker exec -it ${domain_ctr} sh scripts/deploy/init_kusciaapi_client_certs.sh
   # copy result
   tmp_path=${volume_path}/temp/certs/${domain_id}
   mkdir -p ${tmp_path}
