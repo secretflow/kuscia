@@ -267,6 +267,7 @@ export SECRETPAD_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflo
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_secretpad.sh > start_secretpad.sh && chmod u+x start_secretpad.sh
 ```
 
