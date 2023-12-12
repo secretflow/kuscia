@@ -32,6 +32,8 @@ NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
 SECRETPAD_PASSWORD=""
 VOLUME_PATH="${ROOT}"
+ALICE_DOMAIN=alice
+BOB_DOMAIN=bob
 
 
 function log() {
@@ -141,6 +143,8 @@ function create_secretpad_user_password() {
 function copy_kuscia_api_client_certs() {
   local volume_path=$1
   local IMAGE=$SECRETPAD_IMAGE
+  # generate client certs
+  docker exec -it ${MASTER_CTR} sh scripts/deploy/init_kusciaapi_client_certs.sh
   # copy result
   tmp_path=${volume_path}/temp/certs
   mkdir -p ${tmp_path}
@@ -160,6 +164,8 @@ function copy_kuscia_api_lite_client_certs() {
   local volume_path=$2
   local IMAGE=$SECRETPAD_IMAGE
   local domain_ctr=${CTR_PREFIX}-lite-${domain_id}
+  # generate client certs
+  docker exec -it ${domain_ctr} sh scripts/deploy/init_kusciaapi_client_certs.sh
   # copy result
   tmp_path=${volume_path}/temp/certs/${domain_id}
   mkdir -p ${tmp_path}
