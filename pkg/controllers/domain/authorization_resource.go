@@ -161,8 +161,9 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 		newDomain.Labels = make(map[string]string, 0)
 	}
 	newDomain.Labels[constants.LabelDomainAuth] = authCompleted
+
 	if _, err := c.kusciaClient.KusciaV1alpha1().Domains().Update(c.ctx, newDomain, metav1.UpdateOptions{}); err != nil {
-		nlog.Errorf("Update domain [%s] auth label error: %s", domainID, err.Error())
+		nlog.Warnf("Update domain [%s] auth label error: %s", domainID, err.Error())
 		return err
 	}
 	return nil

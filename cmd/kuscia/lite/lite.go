@@ -26,7 +26,6 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func NewLiteCommand(ctx context.Context) *cobra.Command {
@@ -48,13 +47,10 @@ func Run(ctx context.Context, configFile string) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	kusciaConf := confloader.ReadConfig(configFile, common.RunModeLite)
-	nlog.Debugf("Read kuscia config: %+v", kusciaConf)
-
-	// dns must start before dependencies because that dependencies init process may access network.
-	coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
-
-	conf := modules.InitDependencies(ctx, kusciaConf, false)
+	conf := modules.InitDependencies(ctx, kusciaConf)
 	defer conf.Close()
+
+	coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
 
 	conf.MakeClients()
 

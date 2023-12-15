@@ -13,7 +13,9 @@ Kuscia的配置文件由公共配置和每个模式的特殊配置组成， 具�
 mode: Lite
 # 节点ID
 domainID: alice
-# 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发， 经过 base64 编码。
+# 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发
+# 注意: 目前节点私钥仅支持 pkcs#1 格式的: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"
+# 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
 # 日志级别 INFO、DEBUG、WARN
 logLevel: INFO
@@ -68,7 +70,7 @@ datastoreEndpoint: ""
 ### 配置项详解
 - `mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, 不同部署模式详情请参考[这里](../reference/architecture_cn)
 - `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
-- `domainKeyData`: 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发， 经过 base64 编码。 可以通过命令 `openssl genrsa 2048 | base64` 生成
+- `domainKeyData`: 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发， 经过 base64 编码。 可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
 - `liteDeployToken`: 节点连接 master 的部署 token，用于节点向 master 注册证书， 只在节点第一次向 master 注册证书时有效，详情请参考[节点中心化部署](./deploy_master_lite_cn)
 - `masterEndpoint`: 节点连接 master 的地址，比如 https://172.18.0.2:1080
@@ -101,8 +103,8 @@ datastoreEndpoint: ""
 如果使用 [start_standalone.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/start_standalone.sh) 或者 [deploy.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/deploy.sh) 脚本部署的 kuscia，kuscia.yaml 文件路径默认是在以下位置（其他部署模式可以借鉴）。
 - 宿主机路径：
   - master：\$HOME/kuscia/\${USER}-kuscia-master/kuscia.yaml
-  - lite：\$HOME/kuscia/\${USER}-kuscia-lite-${domainID}/kuscia.yaml
-  - autonomy：\$HOME/kuscia/\${USER}-kuscia-autonomy-${domainID}/kuscia.yaml
+  - lite：\$HOME/kuscia/\${USER}-kuscia-lite-\${domainID}/kuscia.yaml
+  - autonomy：\$HOME/kuscia/\${USER}-kuscia-autonomy-\${domainID}/kuscia.yaml
 - 容器内路径：/home/kuscia/etc/conf/kuscia.yaml
 
 宿主机路径下修改 kuscia.yaml 配置后，重启容器 `docker restart ${container_name}` 生效。

@@ -80,17 +80,65 @@ type GatewayNamespaceListerExpansion interface{}
 // InteropConfigLister.
 type InteropConfigListerExpansion interface{}
 
+// KusciaBetaDeploymentListerExpansion allows custom methods to be added to
+// KusciaBetaDeploymentLister.
+type KusciaBetaDeploymentListerExpansion interface{}
+
+// KusciaBetaDeploymentNamespaceListerExpansion allows custom methods to be added to
+// KusciaBetaDeploymentNamespaceLister.
+type KusciaBetaDeploymentNamespaceListerExpansion interface{}
+
+// KusciaBetaJobListerExpansion allows custom methods to be added to
+// KusciaBetaJobLister.
+type KusciaBetaJobListerExpansion interface{}
+
+// KusciaBetaJobNamespaceListerExpansion allows custom methods to be added to
+// KusciaBetaJobNamespaceLister.
+type KusciaBetaJobNamespaceListerExpansion interface{}
+
+// KusciaBetaTaskListerExpansion allows custom methods to be added to
+// KusciaBetaTaskLister.
+type KusciaBetaTaskListerExpansion interface{}
+
+// KusciaBetaTaskNamespaceListerExpansion allows custom methods to be added to
+// KusciaBetaTaskNamespaceLister.
+type KusciaBetaTaskNamespaceListerExpansion interface{}
+
 // KusciaDeploymentListerExpansion allows custom methods to be added to
 // KusciaDeploymentLister.
 type KusciaDeploymentListerExpansion interface{}
+
+// KusciaDeploymentSummaryListerExpansion allows custom methods to be added to
+// KusciaDeploymentSummaryLister.
+type KusciaDeploymentSummaryListerExpansion interface{}
+
+// KusciaDeploymentSummaryNamespaceListerExpansion allows custom methods to be added to
+// KusciaDeploymentSummaryNamespaceLister.
+type KusciaDeploymentSummaryNamespaceListerExpansion interface{}
 
 // KusciaJobListerExpansion allows custom methods to be added to
 // KusciaJobLister.
 type KusciaJobListerExpansion interface{}
 
+// KusciaJobSummaryListerExpansion allows custom methods to be added to
+// KusciaJobSummaryLister.
+type KusciaJobSummaryListerExpansion interface{}
+
+// KusciaJobSummaryNamespaceListerExpansion allows custom methods to be added to
+// KusciaJobSummaryNamespaceLister.
+type KusciaJobSummaryNamespaceListerExpansion interface{}
+
 // KusciaTaskListerExpansion allows custom methods to be added to
 // KusciaTaskLister.
 type KusciaTaskListerExpansion interface{}
+
+// KusciaTaskSummaryListerExpansion allows custom methods to be added to
+// KusciaTaskSummaryLister.
+type KusciaTaskSummaryListerExpansion interface{}
+
+// KusciaTaskSummaryNamespaceListerExpansion allows custom methods to be added to
+// KusciaTaskSummaryNamespaceLister.
+type KusciaTaskSummaryNamespaceListerExpansion interface{}
 
 // TaskResourceListerExpansion allows custom methods to be added to
 // TaskResourceLister.

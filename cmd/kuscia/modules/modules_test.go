@@ -69,8 +69,8 @@ func Test_LoadKusciaConfig(t *testing.T) {
 rootDir: /home/kuscia
 domainID: kuscia
 caKeyFile: var/tmp/ca.key
-caFile: var/tmp//ca.crt
-domainKeyFile: var/tmp//domain.key
+caFile: var/tmp/ca.crt
+domainKeyFile: var/tmp/domain.key
 master:
   endpoint: http://127.0.0.1:1080
   tls:

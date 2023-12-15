@@ -14,7 +14,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/tmp/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -27,7 +27,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 证书的配置参考[配置授权](../deployment/deploy_p2p_cn.md#配置授权)
 
-这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/tmp/`目录下：
+这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -107,11 +107,11 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 ```shell
 curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
---header "Token: $(cat /home/kuscia/var/tmp/token)" \
+--header "Token: $(cat /home/kuscia/var/certs/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
---key '/home/kuscia/var/tmp/kusciaapi-server.key' \
---cacert '/home/kuscia/var/tmp/ca.crt' \
+--cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
+--key '/home/kuscia/var/certs/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/certs/ca.crt' \
 -d '{
     "job_id": "job-best-effort-linear",
     "initiator": "alice",
@@ -172,11 +172,11 @@ job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的
 
 ```shell
 curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
---header "Token: $(cat /home/kuscia/var/tmp/token)" \
+--header "Token: $(cat /home/kuscia/var/certs/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
---key '/home/kuscia/var/tmp/kusciaapi-server.key' \
---cacert '/home/kuscia/var/tmp/ca.crt' \
+--cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
+--key '/home/kuscia/var/certs/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/certs/ca.crt' \
 -d '{
     "job_ids": ["job-best-effort-linear"]
 }'
@@ -213,12 +213,46 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
                 {
                   "domain_id": "alice",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-spu.alice.svc"
+                    },
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-fed.alice.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-psi-0-global.alice.svc:8081"
+                    }
+                  ]
                 },
                 {
                   "domain_id": "bob",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-fed.bob.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-psi-0-global.bob.svc:8081"
+                    },
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-spu.bob.svc"
+                    }
+                  ]
                 }
               ]
             },
@@ -233,12 +267,46 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
                 {
                   "domain_id": "alice",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-split-0-spu.alice.svc"
+                    },
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-split-0-fed.alice.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-split-0-global.alice.svc:8081"
+                    }
+                  ]
                 },
                 {
                   "domain_id": "bob",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-fed.bob.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-psi-0-global.bob.svc:8081"
+                    },
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-spu.bob.svc"
+                    }
+                  ]
                 }
               ]
             }
@@ -262,11 +330,11 @@ KusciaJob.
 
 ```shell
 curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
---header "Token: $(cat /home/kuscia/var/tmp/token)" \
+--header "Token: $(cat /home/kuscia/var/certs/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/var/tmp/kusciaapi-server.crt' \
---key '/home/kuscia/var/tmp/kusciaapi-server.key' \
---cacert '/home/kuscia/var/tmp/ca.crt' \
+--cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
+--key '/home/kuscia/var/certs/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/certs/ca.crt' \
 -d '{
     "job_id": "job-best-effort-linear"
 }'
@@ -288,7 +356,7 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 对于 secretflow ，请参考：[Secretflow 官网](https://www.secretflow.org.cn/)。
 
-{#http-server-error}
+{#http-client-error}
 
 ## HTTP 客户端错误处理
 

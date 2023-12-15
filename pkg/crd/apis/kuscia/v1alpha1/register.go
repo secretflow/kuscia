@@ -76,6 +76,14 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&InteropConfigList{},
 		&KusciaDeployment{},
 		&KusciaDeploymentList{},
+		&KusciaBetaJob{},
+		&KusciaBetaJobList{},
+		&KusciaJobSummary{},
+		&KusciaJobSummaryList{},
+		&KusciaBetaTask{},
+		&KusciaBetaTaskList{},
+		&KusciaTaskSummary{},
+		&KusciaTaskSummaryList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

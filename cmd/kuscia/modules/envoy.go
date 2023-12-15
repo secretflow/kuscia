@@ -27,7 +27,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
@@ -87,7 +87,7 @@ func NewEnvoy(i *Dependencies) Module {
 }
 
 func (s *envoyModule) Run(ctx context.Context) error {
-	if err := os.MkdirAll(filepath.Join(s.rootDir, confloader.LogPrefix, "envoy/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.rootDir, common.LogPrefix, "envoy/"), 0755); err != nil {
 		return err
 	}
 	deltaArgs, err := s.readCommandArgs()
@@ -97,13 +97,13 @@ func (s *envoyModule) Run(ctx context.Context) error {
 
 	args := []string{
 		"-c",
-		filepath.Join(s.rootDir, confloader.ConfPrefix, "envoy/envoy.yaml"),
+		filepath.Join(s.rootDir, common.ConfPrefix, "envoy/envoy.yaml"),
 		"--service-cluster",
 		s.cluster,
 		"--service-node",
 		s.id,
 		"--log-path",
-		filepath.Join(s.rootDir, confloader.LogPrefix, "envoy/envoy.log"),
+		filepath.Join(s.rootDir, common.LogPrefix, "envoy/envoy.log"),
 	}
 	args = append(args, deltaArgs.Args...)
 	sp := supervisor.NewSupervisor("envoy", nil, -1)
@@ -129,7 +129,7 @@ func (s *envoyModule) logRotate(ctx context.Context) {
 
 		time.Sleep(d)
 
-		cmd := exec.Command("logrotate", filepath.Join(s.rootDir, confloader.ConfPrefix, "logrotate.conf"))
+		cmd := exec.Command("logrotate", filepath.Join(s.rootDir, common.ConfPrefix, "logrotate.conf"))
 		if err := cmd.Run(); err != nil {
 			nlog.Errorf("Logrotate run error: %v", err)
 		}
@@ -158,7 +158,7 @@ func (s *envoyModule) Name() string {
 }
 
 func (s *envoyModule) readCommandArgs() (*EnvoyCommandLineConfig, error) {
-	configPath := filepath.Join(s.rootDir, confloader.ConfPrefix, s.commandLineConfigFile)
+	configPath := filepath.Join(s.rootDir, common.ConfPrefix, s.commandLineConfigFile)
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err

@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/gateway/commands"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
@@ -42,7 +41,7 @@ type domainRouteModule struct {
 func NewDomainRoute(i *Dependencies) Module {
 	conf := config.DefaultStaticGatewayConfig()
 	conf.RootDir = i.RootDir
-	conf.ConfBasedir = filepath.Join(i.RootDir, confloader.ConfPrefix, "domainroute")
+	conf.ConfBasedir = filepath.Join(i.RootDir, common.ConfPrefix, "domainroute")
 	conf.DomainID = i.DomainID
 	conf.DomainKey = i.DomainKey
 	conf.MasterConfig = &i.Master

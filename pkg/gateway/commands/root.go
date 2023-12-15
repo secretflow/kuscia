@@ -20,7 +20,9 @@ import (
 	"path/filepath"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
@@ -87,6 +89,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 			}
 			time.Sleep(defaultHandshakeRetryInterval)
 		}
+		checkMasterProxyReady(ctx, gwConfig.DomainID, clients.KubeClient)
 	}
 	nlog.Infof("Add master clusters success")
 
@@ -165,6 +168,19 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	<-ctx.Done()
 	nlog.Info("Gateway shutdown")
 	return nil
+}
+
+func checkMasterProxyReady(ctx context.Context, domainID string, kubeClient kubernetes.Interface) {
+	var err error
+	times := 5
+	for i := 0; i < times; i++ {
+		if _, err = kubeClient.CoreV1().Pods(domainID).List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
+			nlog.Info("Check MasterProxy ready")
+			return
+		}
+		time.Sleep(time.Second)
+	}
+	nlog.Fatalf("Check MasterProxy failed: %v", err.Error())
 }
 
 func StartXds(gwConfig *config.GatewayConfig) error {

@@ -42,8 +42,7 @@ fi
 
 CTR_PREFIX=${USER}-kuscia
 CTR_ROOT=/home/kuscia
-CTR_CERT_ROOT=${CTR_ROOT}/var/tmp
-CTR_TMP_ROOT=${CTR_ROOT}/var/tmp
+CTR_CERT_ROOT=${CTR_ROOT}/var/certs
 MASTER_DOMAIN="kuscia-system"
 ALICE_DOMAIN="alice"
 BOB_DOMAIN="bob"
@@ -281,10 +280,10 @@ function copy_kuscia_api_client_certs() {
   # copy result
   tmp_path=${volume_path}/temp/certs
   mkdir -p ${tmp_path}
-  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/ca.crt ${tmp_path}/ca.crt
-  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
-  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
-  docker cp ${MASTER_CTR}:/${CTR_TMP_ROOT}/token ${tmp_path}/token
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/ca.crt ${tmp_path}/ca.crt
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
+  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/token ${tmp_path}/token
   docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
   docker cp -a ${tmp_path} ${CTR_PREFIX}-dummy:/tmp/temp/
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
@@ -347,7 +346,8 @@ function create_domaindatagrant_alice2bob() {
   local ctr=$1
   probe_datamesh $ctr
   docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
-      --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key
+      --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key
+  echo
 }
 
 function create_domaindata_alice_table() {
@@ -364,7 +364,8 @@ function create_domaindatagrant_bob2alice() {
   local ctr=$1
   probe_datamesh $ctr
   docker exec -it ${ctr} curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
-    --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key
+    --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key
+  echo
 }
 
 function create_domaindata_bob_table() {
@@ -384,7 +385,7 @@ function probe_datamesh() {
   local retry=0
   while [ $retry -lt "$max_retry" ]; do
     local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" -d'{}' --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key || true)
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" -d'{}' --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key || true)
     if [[ $status_code -eq 200 ]]; then
       log "Probe ${domain_ctr} datamesh successfully"
       return 0
@@ -733,7 +734,7 @@ function build_interconn() {
   local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
 
   log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
-  copy_between_containers ${member_ctr}:${CTR_TMP_ROOT}/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
+  copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}

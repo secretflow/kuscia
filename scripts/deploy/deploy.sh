@@ -53,8 +53,7 @@ log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
 SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
 CTR_ROOT=/home/kuscia
-CTR_TMP_ROOT=${CTR_ROOT}/var/tmp
-CTR_CERT_ROOT=${CTR_ROOT}/var/tmp
+CTR_CERT_ROOT=${CTR_ROOT}/var/certs
 MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
@@ -126,7 +125,7 @@ function do_https_probe() {
   local retry=0
   while [ $retry -lt "$max_retry" ]; do
     local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}"   --cacert ${CTR_TMP_ROOT}/ca.crt --cert ${CTR_TMP_ROOT}/ca.crt --key ${CTR_TMP_ROOT}/ca.key )
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}"   --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key )
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi

@@ -130,9 +130,10 @@ function apply_appimage_crd(){
     APP_IMAGE_NAME_IN_KUSCIA=$(echo ${image_name##*/}-${image_tag} | sed 's/_/-/g')
     APP_IMAGE_FILE=${DEFAULT_APP_IMAGE_FILE}
   else
-    APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/${APP_IMAGE_NAME_IN_KUSCIA}-image.yaml"
+    APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/${APP_IMAGE_NAME_IN_KUSCIA}.yaml"
     if [[ ! -f "$APP_IMAGE_FILE" ]]; then
-      APP_IMAGE_FILE=${DEFAULT_APP_IMAGE_FILE}
+      echo "=> => $APP_IMAGE_FILE is not exist, register fail"
+      exit 1
     fi
   fi
 

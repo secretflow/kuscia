@@ -30,11 +30,6 @@ import (
 var (
 	defaultRootDir           = "/home/kuscia/"
 	defaultEndpointForMaster = "https://127.0.0.1:6443"
-	CertPrefix               = "etc/certs/"
-	LogPrefix                = "var/logs/"
-	StdoutPrefix             = "var/stdout/"
-	TmpPrefix                = "var/tmp/"
-	ConfPrefix               = "etc/conf/"
 )
 
 type KusciaConfig struct {
@@ -129,10 +124,10 @@ func defaultKusciaConfig(rootDir string) KusciaConfig {
 	}
 	return KusciaConfig{
 		RootDir:        rootDir,
-		CAKeyFile:      filepath.Join(rootDir, TmpPrefix, "ca.key"),
-		CACertFile:     filepath.Join(rootDir, TmpPrefix, "ca.crt"),
-		DomainKeyFile:  filepath.Join(rootDir, TmpPrefix, "domain.key"),
-		DomainCertFile: filepath.Join(rootDir, TmpPrefix, "domain.crt"),
+		CAKeyFile:      filepath.Join(rootDir, common.CertPrefix, "ca.key"),
+		CACertFile:     filepath.Join(rootDir, common.CertPrefix, "ca.crt"),
+		DomainKeyFile:  filepath.Join(rootDir, common.CertPrefix, "domain.key"),
+		DomainCertFile: filepath.Join(rootDir, common.CertPrefix, "domain.crt"),
 		EnvoyIP:        hostIP,
 		KusciaAPI:      kaconfig.NewDefaultKusciaAPIConfig(rootDir),
 	}

@@ -151,10 +151,14 @@ message PartyServingStatus {
   int32 unavailable_replicas = 6;
   int32 updatedReplicas = 7;
   string create_time = 8;
-  // only contain cluster scope service
-  repeated Endpoint endpoints = 9;
+  repeated ServingPartyEndpoint endpoints = 9;
 }
 
-message Endpoint {
-  string endpoint = 1;
+message ServingPartyEndpoint {
+  // service port name which defined in AppImage container port.
+  string port_name = 1;
+  // service scope which defined in AppImage container port.
+  string scope = 2;
+  // service access address.
+  string endpoint = 3;
 }

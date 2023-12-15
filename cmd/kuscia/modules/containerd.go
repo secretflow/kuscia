@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
@@ -44,8 +44,8 @@ func NewContainerd(i *Dependencies) Module {
 }
 
 func (s *containerdModule) Run(ctx context.Context) error {
-	configPath := filepath.Join(s.Root, confloader.ConfPrefix, "containerd.toml")
-	configPathTmpl := filepath.Join(s.Root, confloader.ConfPrefix, "containerd.toml.tmpl")
+	configPath := filepath.Join(s.Root, pkgcom.ConfPrefix, "containerd.toml")
+	configPathTmpl := filepath.Join(s.Root, pkgcom.ConfPrefix, "containerd.toml.tmpl")
 	if err := common.RenderConfig(configPathTmpl, configPath, s); err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	crictlFile := "/etc/crictl.yaml"
 	if _, err := os.Stat(crictlFile); err != nil {
 		if os.IsNotExist(err) {
-			if err = os.Link(filepath.Join(s.Root, confloader.ConfPrefix, "crictl.yaml"), crictlFile); err != nil {
+			if err = os.Link(filepath.Join(s.Root, pkgcom.ConfPrefix, "crictl.yaml"), crictlFile); err != nil {
 				return err
 			}
 		} else {
@@ -72,7 +72,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	}
 
 	sp := supervisor.NewSupervisor("containerd", nil, -1)
-	s.LogConfig.LogPath = filepath.Join(s.Root, confloader.LogPrefix, "containerd.log")
+	s.LogConfig.LogPath = filepath.Join(s.Root, pkgcom.LogPrefix, "containerd.log")
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {

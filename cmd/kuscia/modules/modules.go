@@ -86,11 +86,11 @@ type Module interface {
 	Name() string
 }
 
-func (dependencies *Dependencies) LoadCaDomainKeyAndCert() error {
+func (d *Dependencies) LoadCaDomainKeyAndCert() error {
 	var err error
-	config := dependencies.KusciaConfig
+	config := d.KusciaConfig
 
-	if dependencies.CAKey, err = tlsutils.ParseEncodedKey(config.CAKeyData, config.CAKeyFile); err != nil {
+	if d.CAKey, err = tlsutils.ParseEncodedKey(config.CAKeyData, config.CAKeyFile); err != nil {
 		nlog.Errorf("load key failed: key: %t, file: %s", len(config.CAKeyData) == 0, config.CAKeyFile)
 		return err
 	}
@@ -100,12 +100,12 @@ func (dependencies *Dependencies) LoadCaDomainKeyAndCert() error {
 		return err
 	}
 
-	if dependencies.CACert, err = tlsutils.ParseCertWithGenerated(dependencies.CAKey, config.DomainID, nil, config.CACertFile); err != nil {
-		nlog.Errorf("load cert failed: file: %s", dependencies.CACertFile)
+	if d.CACert, err = tlsutils.ParseCertWithGenerated(d.CAKey, config.DomainID, nil, config.CACertFile); err != nil {
+		nlog.Errorf("load cert failed: file: %s", d.CACertFile)
 		return err
 	}
 
-	if dependencies.DomainKey, err = tlsutils.ParseEncodedKey(config.DomainKeyData, config.DomainKeyFile); err != nil {
+	if d.DomainKey, err = tlsutils.ParseEncodedKey(config.DomainKeyData, config.DomainKeyFile); err != nil {
 		nlog.Errorf("load key failed: key: %t, file: %s", len(config.CAKeyData) == 0, config.DomainKeyFile)
 		return err
 	}
@@ -115,8 +115,8 @@ func (dependencies *Dependencies) LoadCaDomainKeyAndCert() error {
 		return err
 	}
 
-	if dependencies.DomainCert, err = tlsutils.ParseCertWithGenerated(dependencies.DomainKey, dependencies.DomainID, nil, config.DomainCertFile); err != nil {
-		nlog.Errorf("load cert failed: file: %s", dependencies.DomainCertFile)
+	if d.DomainCert, err = tlsutils.ParseCertWithGenerated(d.DomainKey, d.DomainID, nil, config.DomainCertFile); err != nil {
+		nlog.Errorf("load cert failed: file: %s", d.DomainCertFile)
 		return err
 	}
 
@@ -124,16 +124,16 @@ func (dependencies *Dependencies) LoadCaDomainKeyAndCert() error {
 }
 
 func EnsureDir(conf *Dependencies) error {
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.CertPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, common.CertPrefix), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.LogPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, common.LogPrefix), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.StdoutPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, common.StdoutPrefix), 0755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(conf.RootDir, confloader.TmpPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(conf.RootDir, common.TmpPrefix), 0755); err != nil {
 		return err
 	}
 	return nil
@@ -181,11 +181,10 @@ func InitLogs(logConfig *nlog.LogConfig) error {
 	return nil
 }
 
-func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig, onlyControllerMode bool) *Dependencies {
+func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *Dependencies {
 	dependencies := &Dependencies{
 		KusciaConfig: kusciaConf,
 	}
-
 	// init log
 	logConfig := &nlog.LogConfig{
 		LogLevel:      kusciaConf.LogLevel,
@@ -197,27 +196,24 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig, o
 	if err := InitLogs(logConfig); err != nil {
 		nlog.Fatal(err)
 	}
+	nlog.Debugf("Read kuscia config: %+v", kusciaConf)
 	dependencies.LogConfig = logConfig
 
 	// run config loader
-	if !onlyControllerMode {
-		dependencies.SecretBackendHolder = secretbackend.NewHolder()
-		nlog.Info("Start to init all secret backends ... ")
-		initDefaultSecretBackend := true
-		for _, sbc := range dependencies.SecretBackends {
-			if err := dependencies.SecretBackendHolder.Init(sbc.Name, sbc.Driver, sbc.Params); err != nil {
-				nlog.Fatalf("Init secret backend name=%s params=%+v failed: %s", sbc.Name, sbc.Params, err)
-			}
-			initDefaultSecretBackend = false
+	dependencies.SecretBackendHolder = secretbackend.NewHolder()
+	nlog.Info("Start to init all secret backends ... ")
+	for _, sbc := range dependencies.SecretBackends {
+		if err := dependencies.SecretBackendHolder.Init(sbc.Name, sbc.Driver, sbc.Params); err != nil {
+			nlog.Fatalf("Init secret backend name=%s params=%+v failed: %s", sbc.Name, sbc.Params, err)
 		}
-		if initDefaultSecretBackend {
-			nlog.Warnf("Init all secret backend but no provider found, creating default mem type")
-			if err := dependencies.SecretBackendHolder.Init(common.DefaultSecretBackendName, common.DefaultSecretBackendType, map[string]any{}); err != nil {
-				nlog.Fatalf("Init default secret backend failed: %s", err)
-			}
-		}
-		nlog.Info("Finish to init all secret backends")
 	}
+	if len(dependencies.SecretBackends) == 0 {
+		nlog.Warnf("Init all secret backend but no provider found, creating default mem type")
+		if err := dependencies.SecretBackendHolder.Init(common.DefaultSecretBackendName, common.DefaultSecretBackendType, map[string]any{}); err != nil {
+			nlog.Fatalf("Init default secret backend failed: %s", err)
+		}
+	}
+	nlog.Info("Finish Initializing all secret backends")
 
 	configLoaders, err := confloader.NewConfigLoaderChain(ctx, dependencies.KusciaConfig.ConfLoaders, dependencies.SecretBackendHolder)
 	if err != nil {

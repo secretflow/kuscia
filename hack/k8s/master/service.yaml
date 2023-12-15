@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuscia-master
+  namespace: kuscia-master
+spec:
+  selector:
+    app: kuscia-master
+  type: ClusterIP
+  ports:
+    - name: envoy
+      port: 1080
+      protocol: TCP
+      targetPort: 1080
+    - name: kusciaapi
+      port: 8082
+      protocol: TCP
+      targetPort: 8082

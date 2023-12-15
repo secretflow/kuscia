@@ -387,6 +387,8 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		common.LabelKusciaDeploymentUID:      string(partyKitInfo.kd.UID),
 		common.LabelKusciaDeploymentName:     partyKitInfo.kd.Name,
 		common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
+		common.LabelCommunicationRoleServer:  "true",
+		common.LabelCommunicationRoleClient:  "true",
 	}
 
 	ns, err := c.namespaceLister.Get(partyKitInfo.domainID)
