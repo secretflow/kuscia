@@ -36,8 +36,6 @@ spec:
               name: kuscia-config
               subPath: kuscia.yaml
           workingDir: /home/kuscia
-      imagePullSecrets:
-      - name: node-image-secret
       automountServiceAccountToken: true
       volumes:
         - configMap:
