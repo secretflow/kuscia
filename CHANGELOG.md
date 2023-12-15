@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.5.0.dev231215] - 2023-12-15
+### Added
+- Add document for deploying Kuscia on k8s.
+### Changed
+- Optimize log output.
+
 ## [0.5.0.dev231205] - 2023-12-5
 ### Changed
 - Optimize Kuscia deployment configuration and add configuration documentation.
