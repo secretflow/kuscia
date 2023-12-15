@@ -486,13 +486,16 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 				return nil, nil, fmt.Errorf("failed to generate service %q, %v", serviceName, err)
 			}
 
-			if err := h.submitService(service, pod); err != nil {
+			if err = h.submitService(service, pod); err != nil {
 				return nil, nil, fmt.Errorf("failed to submit service %q, %v", serviceName, err)
 			}
 
 			serviceStatuses[service.Namespace+"/"+service.Name] = &kusciaapisv1alpha1.ServiceStatus{
-				Namespace:   service.GetNamespace(),
+				Namespace:   service.Namespace,
 				ServiceName: service.Name,
+				PortName:    portName,
+				PortNumber:  ctrPort.Port,
+				Scope:       ctrPort.Scope,
 			}
 		}
 	}
@@ -842,6 +845,7 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 	}
 
 	svc.Labels = map[string]string{
+		common.LabelPortName:  port.Name,
 		common.LabelPortScope: string(port.Scope),
 		common.LabelInitiator: partyKit.kusciaTask.Spec.Initiator,
 	}

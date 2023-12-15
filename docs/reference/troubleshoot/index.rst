@@ -10,3 +10,4 @@
     runjobfailed
     FATEdeployfailed
     FATErunjobfailed
+    userdefinedserviceroute

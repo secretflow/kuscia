@@ -44,6 +44,10 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
+const (
+	kusciaAPISanDNSName = "kusciaapi"
+)
+
 type kusciaAPIModule struct {
 	conf         *config.KusciaAPIConfig
 	kusciaClient kusciaclientset.Interface
@@ -61,7 +65,7 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 	kusciaAPIConfig.DomainKey = d.DomainKey
 	kusciaAPIConfig.TLS.RootCA = d.CACert
 	kusciaAPIConfig.TLS.RootCAKey = d.CAKey
-	kusciaAPIConfig.TLS.CommonName = d.DomainID
+	kusciaAPIConfig.TLS.CommonName = "KusciaAPI"
 	kusciaAPIConfig.RunMode = d.RunMode
 	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
 	kusciaAPIConfig.TLS.Protocol = d.Protocol
@@ -74,7 +78,7 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 	}
 
 	if kusciaAPIConfig.TLS != nil {
-		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(); err != nil {
+		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(nil, []string{kusciaAPISanDNSName}); err != nil {
 			return nil, err
 		}
 	}

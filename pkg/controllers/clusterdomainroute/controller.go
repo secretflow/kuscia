@@ -323,14 +323,14 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 	// Create domainroute in source namespace
 	srcdr, err := c.checkDomainRoute(ctx, cdr, sourceRole, cdr.Spec.Source, drName)
 	if err != nil {
-		nlog.Error(err.Error())
+		nlog.Warnf(err.Error())
 		return err
 	}
 
 	// Create domainroute in destination namespace
 	destdr, err := c.checkDomainRoute(ctx, cdr, destRole, cdr.Spec.Destination, drName)
 	if err != nil {
-		nlog.Error(err.Error())
+		nlog.Warnf(err.Error())
 		return err
 	}
 
@@ -496,7 +496,7 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 		needUpdate = true
 
 		if len(cdr.Status.TokenStatus.SourceTokens) == 0 {
-			if !srcdr.Status.IsDestinationAuthrized {
+			if !srcdr.Status.IsDestinationAuthorized {
 				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "DestinationIsNotAuthrized", "TokenNotGenerate"))
 			} else {
 				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "TokenNotGenerate", "TokenNotGenerate"))
@@ -603,7 +603,7 @@ func (c *controller) updateLabel(ctx context.Context, cdr *kusciaapisv1alpha1.Cl
 	}
 
 	if cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{}); err != nil {
-		nlog.Errorf("Update cdr, src(%s) dst(%s) failed with (%s)", cdrCopy.Spec.Source, cdrCopy.Spec.Destination, err.Error())
+		nlog.Warnf("Update cdr, src(%s) dst(%s) failed with (%s)", cdrCopy.Spec.Source, cdrCopy.Spec.Destination, err.Error())
 		return cdr, err
 	}
 

@@ -21,8 +21,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/confmanager/commands"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
@@ -77,14 +79,20 @@ func NewConfManager(ctx context.Context, d *Dependencies) (Module, error) {
 	conf.DomainKey = d.DomainKey
 	conf.TLS.RootCA = d.CACert
 	conf.TLS.RootCAKey = d.CAKey
-	conf.DomainCertValue = &d.DomainCertByMasterValue
+	switch d.RunMode {
+	case common.RunModeLite:
+		conf.DomainCertValue = &d.DomainCertByMasterValue
+	case common.RunModeAutonomy:
+		conf.DomainCertValue = &atomic.Value{}
+		conf.DomainCertValue.Store(d.DomainCert)
+	}
 	secretBackend := findSecretBackend(d.SecretBackendHolder, conf.Backend)
 	if secretBackend == nil {
 		return nil, fmt.Errorf("failed to find secret backend %s for cm", conf.Backend)
 	}
 	conf.BackendDriver = secretBackend
 
-	nlog.Infof("Conf manager config is %+v", conf)
+	nlog.Debugf("Conf manager config is %+v", conf)
 
 	if err := conf.TLS.GenerateServerKeyCerts(serverCertsCommonName, nil, []string{defaultServerCertsSanDNSName}); err != nil {
 		return nil, err
@@ -110,7 +118,9 @@ func (m confManagerModule) Run(ctx context.Context) error {
 
 func (m confManagerModule) WaitReady(ctx context.Context) error {
 	timeoutTicker := time.NewTicker(30 * time.Second)
+	defer timeoutTicker.Stop()
 	checkTicker := time.NewTicker(1 * time.Second)
+	defer checkTicker.Stop()
 	for {
 		select {
 		case <-checkTicker.C:

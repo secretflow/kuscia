@@ -29,7 +29,9 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 # -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh master -i 1.1.1.1 -p 18080 -k 18082
 ```
-<span style="color:red;">注意：如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
+<span style="color:red;">注意：<br>
+1、如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md) <br>
+2、master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)</span>
 
 建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 http 错误码是401，内容是：unauthorized。
 示例如下：
@@ -191,15 +193,20 @@ docker exec -it ${USER}-kuscia-master sh scripts/deploy/create_cluster_domain_ro
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/create_cluster_domain_route.sh bob alice http://2.2.2.2:28080
 ```
 
-执行以下命令，查看是否有内容，如果有说明 alice 到 bob 授权建立成功。
+执行以下命令：
 ```bash
-docker exec -it ${USER}-kuscia-master kubectl get cdr alice-bob -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
+docker exec -it ${USER}-kuscia-master kubectl get cdr alice-bob -o yaml
 ```
 
-执行以下命令，查看是否有内容，如果有说明 bob 到 alice 授权建立成功。
+当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 alice 到 bob 授权建立成功。
+
+执行以下命令：
 ```bash
-docker exec -it ${USER}-kuscia-master kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
+docker exec -it ${USER}-kuscia-master kubectl get cdr bob-alice -o yaml
 ```
+
+当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 bob 到 alice 授权建立成功。
+
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 ### 运行任务
@@ -233,13 +240,13 @@ docker exec -it ${USER}-kuscia-master scripts/deploy/create_domaindata_bob_table
 登录到安装 alice 的机器上，为 alice 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert var/tmp/ca.crt --cert var/tmp/ca.crt --key var/tmp/ca.key
+docker exec -it ${USER}-kuscia-lite-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
 ```
 
 同理，登录到安装 bob 的机器上，为 bob 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert var/tmp/ca.crt --cert var/tmp/ca.crt --key var/tmp/ca.key
+docker exec -it ${USER}-kuscia-lite-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
 ```
 
 #### 执行测试作业

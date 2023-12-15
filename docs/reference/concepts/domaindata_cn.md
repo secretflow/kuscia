@@ -164,7 +164,7 @@ Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 80
 ```shell
 docker exec -it ${USER}-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
   "domaindata_id": "alice-table"
-}' --cacert /home/kuscia/var/tmp/ca.crt --cert /home/kuscia/var/tmp/ca.crt --key /home/kuscia/var/tmp/ca.key
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
 

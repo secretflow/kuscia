@@ -23,7 +23,7 @@ NC='\033[0m'
 
 ROOT=$(pwd)
 CTR_ROOT=/home/kuscia
-CTR_CERT_ROOT=${CTR_ROOT}/var/tmp
+CTR_CERT_ROOT=${CTR_ROOT}/var/certs
 CTR_PREFIX=${USER}-kuscia
 MASTER_CTR=${CTR_PREFIX}-master
 FORCE_START=false

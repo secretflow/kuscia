@@ -32,10 +32,10 @@ type TLSServerConfig struct {
 	CommonName string            `yaml:"-"`
 }
 
-func (t *TLSServerConfig) LoadFromDataOrFile() error {
+func (t *TLSServerConfig) LoadFromDataOrFile(ipList, dnsList []string) error {
 	var err error
 	if t.ServerKeyData == "" && t.ServerKeyFile != "" && !paths.CheckFileExist(t.ServerKeyFile) {
-		if err = t.GenerateServerKeyCerts(t.CommonName, nil, nil); err != nil {
+		if err = t.GenerateServerKeyCerts(t.CommonName, ipList, dnsList); err != nil {
 			return err
 		}
 	} else {

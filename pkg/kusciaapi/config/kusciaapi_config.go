@@ -24,7 +24,6 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
@@ -65,12 +64,12 @@ func NewDefaultKusciaAPIConfig(rootDir string) *KusciaAPIConfig {
 		WriteTimeout:     0, // WriteTimeout must be 0 , To support http stream
 		IdleTimeout:      300,
 		TLS: &config.TLSServerConfig{
-			ServerKeyFile:  path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.key"),
-			ServerCertFile: path.Join(rootDir, constants.CertPathPrefix, "kusciaapi-server.crt"),
+			ServerKeyFile:  path.Join(rootDir, common.CertPrefix, "kusciaapi-server.key"),
+			ServerCertFile: path.Join(rootDir, common.CertPrefix, "kusciaapi-server.crt"),
 		},
 		Token: &TokenConfig{
-			TokenFile: path.Join(rootDir, constants.CertPathPrefix, "token"),
+			TokenFile: path.Join(rootDir, common.CertPrefix, "token"),
 		},
-		ConfDir: path.Join(rootDir, constants.ConfPathPrefix),
+		ConfDir: path.Join(rootDir, common.ConfPrefix),
 	}
 }

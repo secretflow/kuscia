@@ -169,26 +169,28 @@
 
 ### PartyServingStatus
 
-| 字段                   | 类型                              | 选填 | 描述         |
-|----------------------|---------------------------------|----|------------|
-| domain_id            | string                          | 必填 | 节点ID       |
-| role                 | string                          | 可选 | 角色         |
-| state                | string                          | 必填 | 状态         |
-| replicas             | int32                           | 必填 | 应用副本总数     |
-| available_replicas   | int32                           | 必填 | 应用可用副本数    |
-| unavailable_replicas | int32                           | 必填 | 应用不可用副本数   |
-| updatedReplicas      | int32                           | 必填 | 最新版本的应用副本数 |
-| create_time          | string                          | 必填 | 创建时间       |
-| endpoints            | [Endpoint](#serving-endpoint)[] | 必填 | 应用访问地址列表   |
+| 字段                   | 类型                                                | 选填 | 描述            |
+|----------------------|---------------------------------------------------|----|---------------|
+| domain_id            | string                                            | 必填 | 节点ID          |
+| role                 | string                                            | 可选 | 角色            |
+| state                | string                                            | 必填 | 状态            |
+| replicas             | int32                                             | 必填 | 应用副本总数        |
+| available_replicas   | int32                                             | 必填 | 应用可用副本数       |
+| unavailable_replicas | int32                                             | 必填 | 应用不可用副本数      |
+| updatedReplicas      | int32                                             | 必填 | 最新版本的应用副本数    |
+| create_time          | string                                            | 必填 | 创建时间          |
+| endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息 |
 
 
-{#serving-endpoint}
+{#serving-party-endpoint}
 
-### Endpoint
+### ServingPartyEndpoint
 
-| 字段       | 类型     | 选填 | 描述     |
-|----------|--------|----|--------|
-| endpoint | string | 否  | 应用访问地址 |
+| 字段        | 类型     | 选填 | 描述                                                                                                    |
+|-----------|--------|---|-------------------------------------------------------------------------------------------------------|
+| port_name | string | 必填 | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name`   |
+| scope     | string | 必填 | 应用服务使用范围, 详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
+| endpoint  | string | 必填 | 应用服务访问地址                                                                                              |
 
 
 {#serving-party}

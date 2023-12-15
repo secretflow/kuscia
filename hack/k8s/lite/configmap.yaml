@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kuscia-lite-alice-cm
+  namespace: lite-alice
+data:
+  kuscia.yaml: |-
+    # 启动模式
+    mode: Lite
+    # 节点ID
+    # 示例: domainID: alice
+    domainID: {{.DOMAIN_ID}}
+    # 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发
+    # 注意: 目前节点私钥仅支持 pkcs#1 格式的: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"
+    # 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
+    domainKeyData: {{.DOMAIN_KEY_DATA}}
+
+    # 日志级别 INFO、DEBUG、WARN
+    logLevel: INFO
+
+
+    # master
+    # 节点连接 master 的部署 token, 用于节点向 master 注册证书, 只在节点第一次向 master 注册证书时有效
+    liteDeployToken: {{.DEPLOY_TOKEN}}
+    # 节点连接 master 的地址
+    # 示例: http://kuscia-master.kuscia-master.svc.cluster.local:1080
+    masterEndpoint: {{.MASTER_ENDPOINT}}
+
+    # runc or runk
+    runtime: runk
+
+    # 当 runtime 为 runk 时配置
+    runk:
+      # 任务调度到指定的机构 k8s namespace上
+      namespace: lite-alice
+      # 机构 k8s 集群的 pod dns 配置, 用于解析节点的应用域名, dns 的地址为 pod service 地址, 此处以 "1.1.1.1" 为例
+      dnsServers:
+      # - kuscia-dns-lb-server
+        - 1.1.1.1
+      # k8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
+      kubeconfigFile:
+
+    # 节点可用于调度应用的容量, runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
+    capacity:
+      cpu: 4
+      memory: 4Gi
+      pods: 500
+      storage: 100Gi
+
+    # KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
+    protocol: NOTLS
+
+    # agent 镜像配置, 使用私有仓库存储镜像时配置(默认无需配置)
+    image:
+      pullPolicy: #使用镜像仓库|使用本地
+      defaultRegistry: ""
+      registries:
+        - name: ""
+          endpoint: ""
+          username: ""
+          password: ""

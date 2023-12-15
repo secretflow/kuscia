@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -47,7 +47,7 @@ func NewAgent(i *Dependencies) Module {
 	if err != nil {
 		nlog.Fatalf("Get hostname fail: %v", err)
 	}
-	conf.StdoutPath = filepath.Join(i.RootDir, confloader.StdoutPrefix)
+	conf.StdoutPath = filepath.Join(i.RootDir, common.StdoutPrefix)
 	if conf.Node.NodeName == "" {
 		conf.Node.NodeName = hostname
 	}
