@@ -22,7 +22,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/secretbackend"
 	// register driver
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
-	_ "github.com/secretflow/kuscia/pkg/secretbackend/rfile"
 )
 
 type SecretBackendParams struct {

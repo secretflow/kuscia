@@ -42,6 +42,25 @@ type KusciaDeployment struct {
 	Status KusciaDeploymentStatus `json:"status,omitempty"`
 }
 
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:printcolumn:name="TotalParties",type=integer,JSONPath=`.status.totalParties`
+// +kubebuilder:printcolumn:name="AvailableParties",type=integer,JSONPath=`.status.availableParties`
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=kbd
+
+// KusciaBetaDeployment is the Schema for the kuscia deployment API.
+type KusciaBetaDeployment struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata"`
+	Spec              KusciaDeploymentSpec `json:"spec"`
+	// +optional
+	Status KusciaDeploymentStatus `json:"status,omitempty"`
+}
+
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -50,6 +69,16 @@ type KusciaDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KusciaDeployment `json:"items"`
+}
+
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KusciaBetaDeploymentList contains a list of kuscia deployments.
+type KusciaBetaDeploymentList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []KusciaBetaDeployment `json:"items"`
 }
 
 // KusciaDeploymentSpec defines the information of kuscia deployment spec.
@@ -148,3 +177,38 @@ const (
 	// KusciaDeploymentPhaseFailed means failed to parse and create deployment.
 	KusciaDeploymentPhaseFailed KusciaDeploymentPhase = "Failed"
 )
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:printcolumn:name="TotalParties",type=integer,JSONPath=`.status.totalParties`
+// +kubebuilder:printcolumn:name="AvailableParties",type=integer,JSONPath=`.status.availableParties`
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=kds
+
+// KusciaDeploymentSummary is used to sync deployment status between clusters
+type KusciaDeploymentSummary struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata"`
+
+	Spec KusciaDeploymentSummarySpec `json:"spec"`
+	// +optional
+	Status KusciaDeploymentStatus `json:"status,omitempty"`
+}
+
+// KusciaDeploymentSummarySpec defines the information of kuscia deployment spec.
+type KusciaDeploymentSummarySpec struct {
+	KusciaDeploymentID string `json:"KusciaDeploymentID"`
+}
+
+// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KusciaDeploymentSummaryList contains a list of kuscia deployments.
+type KusciaDeploymentSummaryList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []KusciaDeploymentSummary `json:"items"`
+}

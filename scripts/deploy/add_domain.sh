@@ -40,7 +40,7 @@ if [[ $SELF_DOMAIN_ID == "" ]]; then
 fi
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-CERT=$(base64 $ROOT/var/tmp/${DOMAIN_ID}.domain.crt | tr -d "\n")
+CERT=$(base64 $ROOT/var/certs/${DOMAIN_ID}.domain.crt | tr -d "\n")
 
 DOMAIN_TEMPLATE="
 apiVersion: kuscia.secretflow/v1alpha1

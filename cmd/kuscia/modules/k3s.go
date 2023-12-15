@@ -35,7 +35,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
@@ -128,7 +128,6 @@ func NewK3s(i *Dependencies) Module {
 	if clusterToken == "" {
 		clusterToken = fmt.Sprintf("%x", md5.Sum([]byte(i.DomainID)))
 	}
-	nlog.Infof("ClusterToken is: %s", clusterToken)
 	hostIP, err := network.GetHostIP()
 	if err != nil {
 		nlog.Fatal(err)
@@ -176,15 +175,15 @@ func (s *k3sModule) Run(ctx context.Context) error {
 	}
 	if s.enableAudit {
 		args = append(args,
-			"--kube-apiserver-arg=audit-log-path="+filepath.Join(s.rootDir, confloader.LogPrefix, "k3s-audit.log"),
-			"--kube-apiserver-arg=audit-policy-file="+filepath.Join(s.rootDir, confloader.ConfPrefix, "k3s/k3s-audit-policy.yaml"),
+			"--kube-apiserver-arg=audit-log-path="+filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s-audit.log"),
+			"--kube-apiserver-arg=audit-policy-file="+filepath.Join(s.rootDir, pkgcom.ConfPrefix, "k3s/k3s-audit-policy.yaml"),
 			"--kube-apiserver-arg=audit-log-maxbackup=10",
 			"--kube-apiserver-arg=audit-log-maxsize=300",
 		)
 	}
 
 	sp := supervisor.NewSupervisor("k3s", nil, -1)
-	s.LogConfig.LogPath = filepath.Join(s.rootDir, confloader.LogPrefix, "k3s.log")
+	s.LogConfig.LogPath = filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s.log")
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 
@@ -274,9 +273,9 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		serverCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/server-ca.crt"),
 		clientKeyFile:          filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.key"),
 		clientCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.crt"),
-		clusterRoleFile:        filepath.Join(conf.RootDir, confloader.ConfPrefix, "kuscia-clusterrole.yaml"),
-		clusterRoleBindingFile: filepath.Join(conf.RootDir, confloader.ConfPrefix, "kuscia-clusterrolebinding.yaml"),
-		kubeConfigTmplFile:     filepath.Join(conf.RootDir, confloader.ConfPrefix, "kuscia.kubeconfig.tmpl"),
+		clusterRoleFile:        filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia-clusterrole.yaml"),
+		clusterRoleBindingFile: filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia-clusterrolebinding.yaml"),
+		kubeConfigTmplFile:     filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia.kubeconfig.tmpl"),
 		kubeConfig:             conf.KusciaKubeConfig,
 	}
 
@@ -341,7 +340,7 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 func applyKusciaResources(conf *Dependencies) error {
 	// apply kuscia clusterRole
 	resourceFiles := []string{
-		filepath.Join(conf.RootDir, confloader.ConfPrefix, "domain-cluster-res.yaml"),
+		filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "domain-cluster-res.yaml"),
 	}
 	sw := sync.WaitGroup{}
 	for _, file := range resourceFiles {

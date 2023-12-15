@@ -51,16 +51,13 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 	defer cancel()
 
 	kusciaConf := confloader.ReadConfig(configFile, common.RunModeAutonomy)
-	nlog.Debugf("Read kuscia config: %+v", kusciaConf)
+	conf := modules.InitDependencies(ctx, kusciaConf)
+	defer conf.Close()
 
-	// dns must start before dependencies because that dependencies init process may access network.
 	var coreDnsModule modules.Module
 	if !onlyControllers {
 		coreDnsModule = modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
 	}
-
-	conf := modules.InitDependencies(ctx, kusciaConf, onlyControllers)
-	defer conf.Close()
 
 	if onlyControllers {
 		conf.MakeClients()

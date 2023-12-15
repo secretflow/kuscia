@@ -146,7 +146,7 @@ func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int, prefi
 		i := 0
 		for ; i < len(prefix); i++ {
 			if key[i] != prefix[i] {
-				return nil, fmt.Errorf("decrypt error")
+				return nil, fmt.Errorf("decrypt error, prefix not match")
 			}
 		}
 		return key[len(prefix):], nil
@@ -283,15 +283,15 @@ func ParseCert(certData []byte, certFile string) (cert *x509.Certificate, err er
 	return nil, fmt.Errorf("can't parse cert")
 }
 
-func ParseCertWithGenerated(privateKey *rsa.PrivateKey, domainID string, certData []byte, certFile string) (cert *x509.Certificate, err error) {
+func ParseCertWithGenerated(privateKey *rsa.PrivateKey, subject string, certData []byte, certFile string) (cert *x509.Certificate, err error) {
 	if len(certData) != 0 || (certFile != "" && paths.CheckFileExist(certFile)) {
 		return ParseCert(certData, certFile)
 	}
 
-	nlog.Infof("Generate cert with key")
+	nlog.Infof("Generate cert with key, subject[%s]", subject)
 	template := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
-		Subject:               pkix.Name{CommonName: domainID},
+		Subject:               pkix.Name{CommonName: subject},
 		PublicKeyAlgorithm:    x509.RSA,
 		SignatureAlgorithm:    x509.SHA256WithRSA,
 		NotBefore:             time.Now(),

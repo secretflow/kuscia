@@ -338,17 +338,15 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 // create is used to create resource under domain.
 func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 	if err := c.createNamespace(domain); err != nil {
-		nlog.Errorf("Create domain %v namespace failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
-
 	if err := c.createResourceQuota(domain); err != nil {
-		nlog.Errorf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
 		return err
 	}
-
 	if err := c.createOrUpdateAuth(domain); err != nil {
-		nlog.Errorf("Create domain %v auth failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v auth failed: %v", domain.Name, err.Error())
 		return err
 	}
 
@@ -358,22 +356,22 @@ func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 // update is used to update resource under domain.
 func (c *Controller) update(domain *kusciaapisv1alpha1.Domain) error {
 	if err := c.updateNamespace(domain); err != nil {
-		nlog.Errorf("Update domain %v namespace failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Update domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.updateResourceQuota(domain); err != nil {
-		nlog.Errorf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.createOrUpdateAuth(domain); err != nil {
-		nlog.Errorf("update domain %v auth failed: %v", domain.Name, err.Error())
+		nlog.Warnf("update domain %v auth failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.syncDomainStatus(domain); err != nil {
-		nlog.Errorf("sync domain %v status failed: %v", domain.Name, err.Error())
+		nlog.Warnf("sync domain %v status failed: %v", domain.Name, err.Error())
 		return err
 	}
 

@@ -315,7 +315,7 @@ func Test_controller_syncDomainRouteStatus(t *testing.T) {
 
 	dstDr := &kusciaapisv1alpha1.DomainRoute{
 		Status: kusciaapisv1alpha1.DomainRouteStatus{
-			IsDestinationAuthrized:   false,
+			IsDestinationAuthorized:  false,
 			IsDestinationUnreachable: false,
 			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
 				RevisionToken: mockToken,

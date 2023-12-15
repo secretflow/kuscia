@@ -53,7 +53,7 @@ func (c *Controller) syncDomainStatus(dm *kusciaapisv1alpha1.Domain) error {
 	newStatus.NodeStatuses = c.newDomainNodeStatus(deepCopy)
 	newStatus.DeployTokenStatuses = c.newDomainTokenStatus(deepCopy)
 	if !c.isDomainStatusEqual(oldStatus, newStatus) {
-		nlog.Infof("Updating domain %v status", deepCopy.Name)
+		nlog.Infof("Update domain %v status", deepCopy.Name)
 		deepCopy.Status = newStatus
 		return c.updateDomainStatus(deepCopy)
 	}

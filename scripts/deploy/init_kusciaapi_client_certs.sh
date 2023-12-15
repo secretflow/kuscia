@@ -17,7 +17,7 @@ set -e
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
-pushd ${ROOT}/var/tmp >/dev/null || exit
+pushd ${ROOT}/var/certs >/dev/null || exit
 
 CLIENT=kusciaapi-client
 

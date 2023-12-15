@@ -34,6 +34,7 @@ func RunOperatorsAllinOne(runctx context.Context, cancel context.CancelFunc, con
 
 	if startAgent {
 		RunAgent(runctx, cancel, conf)
+		RunConfManager(runctx, cancel, conf)
 		RunDataMesh(runctx, cancel, conf)
 		RunTransport(runctx, cancel, conf)
 	}

@@ -217,7 +217,7 @@ func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stop
 			for _, dr := range drs {
 				if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Source == c.gateway.Namespace &&
 					dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name && dr.Status.TokenStatus.RevisionToken.Token != "" {
-					nlog.Infof("checkConnectionHealthy of dr(%s)", dr.Name)
+					nlog.Debugf("checkConnectionHealthy of dr(%s)", dr.Name)
 					resp, err := c.checkConnectionStatus(dr)
 					if err != nil {
 						nlog.Warn(err)
@@ -362,7 +362,12 @@ func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainR
 	tokens, err := c.parseToken(dr, key)
 	// Swallow all errors to avoid requeuing
 	if err != nil {
-		nlog.Error(err)
+		nlog.Warn(err)
+		return nil
+	}
+
+	if len(tokens) == 0 {
+		nlog.Debugf("DomainRoute %s has no available token", key)
 		return nil
 	}
 

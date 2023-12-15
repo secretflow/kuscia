@@ -69,10 +69,10 @@ Status 携带请求响应的状态信息。
 Kuscia master 部署完成之后，会默认生成一个 kuscia API server 证书，你可以通过以下命令获取（以中心化组网模式为例）：
 
 ```shell
-docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/kusciaapi-server.key .
-docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/kusciaapi-server.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/ca.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/var/tmp/token .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.key .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/ca.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/token .
 ```
 
 ### GRPC
@@ -120,9 +120,9 @@ def query_domain():
 你也可以使用 GRPC 的客户端工具连接上 Kuscia API，如 [grpcurl](https://github.com/fullstorydev/grpcurl/releases)，你需要替换 {} 中的内容：
 > 如果 GRPC 的主机端口是 8083 ，则可以执行下面的命令，端口号不是 8083 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
-grpcurl --cert /home/kuscia/var/tmp/kusciaapi-server.crt \
-        --key /home/kuscia/var/tmp/kusciaapi-server.key \
-        --cacert /home/kuscia/var/tmp/ca.crt \
+grpcurl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
+        --key /home/kuscia/var/certs/kusciaapi-server.key \
+        --cacert /home/kuscia/var/certs/ca.crt \
         -H 'Token: {token}' \
         -d '{"domain_id": "alice"}' \
         ${USER}-kuscia-master:8083 kuscia.proto.api.v1alpha1.kusciaapi.DomainService.QueryDomain
@@ -143,9 +143,9 @@ GRPC 主机上端口：master 或者 autonomy 可以通过 `docker inspect --for
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：
 > 如果 GRPC 的主机端口是 8082 ，则可以执行下面的命令，端口号不是 8082 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
-curl --cert /home/kuscia/var/tmp/kusciaapi-server.crt \
-     --key /home/kuscia/var/tmp/kusciaapi-server.key \
-     --cacert /home/kuscia/var/tmp/ca.crt \
+curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
+     --key /home/kuscia/var/certs/kusciaapi-server.key \
+     --cacert /home/kuscia/var/certs/ca.crt \
      --header 'Token: {token}' --header 'Content-Type: application/json' \
      'https://{{USER}-kuscia-master}:8082/api/v1/domain/query' \
      -d '{"domain_id": "alice"}'
