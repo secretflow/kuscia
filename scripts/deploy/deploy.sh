@@ -303,7 +303,7 @@ function deploy_autonomy() {
     mount_flag=$(generate_mount_flag)
     host_ip=$(getIPV4Address)
     # TODO: to be remove
-    docker run -it --rm -v ${conf_dir}:/tmp ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${DOMAIN_ID} "" "" ${ALLOW_PRIVILEGED}
+    docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${DOMAIN_ID} "" "" ${ALLOW_PRIVILEGED}
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${AUTONOMY_MEMORY_LIMIT} \
       -p "${DOMAIN_HOST_PORT}":1080 \
@@ -352,7 +352,7 @@ function deploy_lite() {
 
     host_ip=$(getIPV4Address)
     # TODO: to be remove
-    docker run -it --rm -v ${conf_dir}:/tmp ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh lite ${DOMAIN_ID} ${MASTER_ENDPOINT} ${DOMAIN_TOKEN} ${ALLOW_PRIVILEGED}
+    docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh lite ${DOMAIN_ID} ${MASTER_ENDPOINT} ${DOMAIN_TOKEN} ${ALLOW_PRIVILEGED}
     # TODO end
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
@@ -390,7 +390,7 @@ function deploy_master() {
     host_ip=$(getIPV4Address)
 
     # TODO: to be remove
-    docker run -it --rm -v ${conf_dir}:/tmp ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh master $master_domain_id
+    docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh master $master_domain_id
 
     docker run -dit --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${MASTER_MEMORY_LIMIT} \
       --env NAMESPACE=${master_domain_id} \
