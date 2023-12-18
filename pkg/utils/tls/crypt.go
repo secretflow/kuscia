@@ -228,7 +228,7 @@ func ParseEncodedKey(keyDataEncoded, keyFile string) (*rsa.PrivateKey, error) {
 		if err != nil {
 			return nil, err
 		}
-		if keyFile != "" {
+		if keyFile != "" && !paths.CheckFileExist(keyFile) {
 			if err = WritePrivateKeyToFile(key, keyFile); err != nil {
 				return nil, err
 			}
