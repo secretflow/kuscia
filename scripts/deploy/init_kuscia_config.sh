@@ -34,7 +34,14 @@ agent:
   allowPrivileged: true
 "
 
-DOMAIN_KEY_DATA=$(openssl genrsa 2048 | base64 | tr -d "\n")
+DOMAIN_KEY_FILE="/home/kuscia/var/certs/domain.key"
+if [[ -e ${DOMAIN_KEY_FILE} ]]; then
+  echo -e "Domain key file already exists"
+  DOMAIN_KEY_DATA=$(base64 -i ${DOMAIN_KEY_FILE} | tr -d "\n")
+else
+  echo -e "Generate key data"
+  DOMAIN_KEY_DATA=$(openssl genrsa 2048 | base64 | tr -d "\n")
+fi
 
 if [[ $MODE == "lite" ]]; then
   CONFIG_DATA=$(sed -e "s!{{.DOMAIN_ID}}!${DOMAIN_ID}!g;
