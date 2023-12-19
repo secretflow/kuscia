@@ -32,14 +32,16 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
+            - mountPath: /home/kuscia/var/tmp
+              name: kuscia-var-tmp
             - mountPath: /home/kuscia/etc/conf/kuscia.yaml
               name: kuscia-config
               subPath: kuscia.yaml
           workingDir: /home/kuscia
-      imagePullSecrets:
-      - name: node-image-secret
       automountServiceAccountToken: true
       volumes:
+        - emptyDir: {}
+          name: kuscia-var-tmp
         - configMap:
             defaultMode: 420
             name: kuscia-autonomy-alice-cm
