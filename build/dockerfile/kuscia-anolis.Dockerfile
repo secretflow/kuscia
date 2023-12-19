@@ -36,7 +36,6 @@ COPY build/apps/kuscia/kuscia ${ROOT_DIR}/bin
 COPY build/pause/pause.tar ${ROOT_DIR}/pause
 COPY crds/v1alpha1 ${ROOT_DIR}/crds/v1alpha1
 COPY etc ${ROOT_DIR}/etc
-COPY hack/entrypoint.sh ${ROOT_DIR}/bin
 COPY testdata ${ROOT_DIR}/var/storage/data
 COPY scripts ${ROOT_DIR}/scripts
 
