@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
@@ -295,9 +294,20 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 }
 
 func buildRouteStatus(cdr *v1alpha1.ClusterDomainRoute) *kusciaapi.RouteStatus {
+	cdrTokenStatus := cdr.Status.TokenStatus
 	status := constants.RouteFailed
 
-	if clusterdomainroute.IsReady(&cdr.Status) {
+	hasPartnerDomain := false
+	if cdr.Labels != nil {
+		_, exist := cdr.Labels[common.LabelDomainRoutePartner]
+		hasPartnerDomain = exist
+	}
+
+	if !hasPartnerDomain && len(cdrTokenStatus.DestinationTokens) > 0 && len(cdrTokenStatus.SourceTokens) > 0 {
+		status = constants.RouteSucceeded
+	}
+
+	if hasPartnerDomain && (len(cdrTokenStatus.DestinationTokens) > 0 || len(cdrTokenStatus.SourceTokens) > 0) {
 		status = constants.RouteSucceeded
 	}
 

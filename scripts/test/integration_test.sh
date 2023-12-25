@@ -20,7 +20,8 @@ set -e
 SELECTED_TEST_SUITE=${1}
 
 # TEST_SUITES hold all test suites.
-TEST_SUITES="center.base p2p.base center.example center.nsjail p2p.nsjail"
+#TEST_SUITES="center.base p2p.base center.example center.nsjail p2p.nsjail"
+TEST_SUITES="center.base p2p.base center.example" # remove nsjail from test suites, because secretflow image incompatible now.
 WSL_IGNORE_SUITES="center.nsjail p2p.nsjail"
 center_base="./test/suite/center/base.sh"
 p2p_base="./test/suite/p2p/base.sh"

@@ -73,16 +73,36 @@ type CertsConfig struct {
 func (m *MockFlightClient) start(config *CertsConfig) error {
 	var (
 		err          error
+		datasourceID string
 		domainDataID string
+
+		localDatasourceID string
+		ossDatasourceID   string
+		mysqlDatasourceID string
 	)
 
 	m.flightClient, err = createFlightClient(metaServerEndpoint, config)
-	if err := m.QueryDataSource(common.DefaultDataSourceID); err != nil {
+
+	if localDatasourceID, err = m.createLocalFsDataSource(); err != nil {
+		return err
+	}
+
+	if ossDatasourceID, err = m.createOSSDataSource(); err != nil {
+		return err
+	}
+
+	if mysqlDatasourceID, err = m.createMysqlDataSource(); err != nil {
+		return err
+	}
+	nlog.Infof("LocalFsID:%s ossID:%s mysqlID:%s", localDatasourceID, ossDatasourceID, mysqlDatasourceID)
+
+	datasourceID = localDatasourceID
+	if err := m.QueryDataSource(datasourceID); err != nil {
 		nlog.Warnf("Query datasource info fail: %v", err)
 		return err
 	}
 
-	if domainDataID, err = m.createDomainData(common.DefaultDataSourceID); err != nil {
+	if domainDataID, err = m.createDomainData(datasourceID); err != nil {
 		return err
 	}
 
@@ -97,6 +117,97 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 	}
 
 	return m.flightClient.Close()
+}
+
+func (m *MockFlightClient) createLocalFsDataSource() (string, error) {
+	// CreateDataSource
+	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
+		Request: &datamesh.CreateDomainDataSourceRequest{
+			DatasourceId: "",
+			Name:         "default-datasource",
+			Type:         "localfs",
+			Info: &datamesh.DataSourceInfo{
+				Localfs: &datamesh.LocalDataSourceInfo{
+					Path: "./",
+				},
+			},
+			AccessDirectly: false,
+		},
+	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createOSSDataSource() (string, error) {
+	// CreateDataSource
+	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
+		Request: &datamesh.CreateDomainDataSourceRequest{
+			DatasourceId: "",
+			Name:         "oss-ds",
+			Type:         "oss",
+			Info: &datamesh.DataSourceInfo{
+				Oss: &datamesh.OssDataSourceInfo{
+					Endpoint:        fmt.Sprintf("%s:9000", dataMeshHost),
+					Bucket:          "testBucket",
+					Prefix:          "/xxx/",
+					AccessKeyId:     "ak",
+					AccessKeySecret: "sk",
+					StorageType:     "minio",
+				},
+			},
+			AccessDirectly: false,
+		},
+	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createMysqlDataSource() (string, error) {
+	// CreateDataSource
+	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
+		Request: &datamesh.CreateDomainDataSourceRequest{
+			DatasourceId: "",
+			Name:         "mysql-ds",
+			Type:         "mysql",
+			Info: &datamesh.DataSourceInfo{
+				Database: &datamesh.DatabaseDataSourceInfo{
+					Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),
+					User:     "root",
+					Password: "passwd",
+					Database: "demo",
+				},
+			},
+			AccessDirectly: false,
+		},
+	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createDataSource(createDatasourceReq *datamesh.ActionCreateDomainDataSourceRequest) (string, error) {
+	msg, err := proto.Marshal(createDatasourceReq)
+	if err != nil {
+		return "", err
+	}
+
+	action := &flight.Action{
+		Type: "ActionCreateDomainDataSourceRequest",
+		Body: msg,
+	}
+	resp, err := m.flightClient.DoAction(context.Background(), action)
+	if err != nil {
+		nlog.Warnf("DoActionCreateDomainDataSourceRequest err: %v", err)
+		return "", err
+	}
+	result, err := resp.Recv()
+	if err != nil {
+		nlog.Warnf("Receive ActionCreateDomainDataSourceResponse err: %v", err)
+	}
+
+	var createDatasourceResp datamesh.ActionCreateDomainDataSourceResponse
+	if err := proto.Unmarshal(result.Body, &createDatasourceResp); err != nil {
+		nlog.Warnf("Unmarshal ActionCreateDomainDataSourceResponse err: %v", err)
+	}
+	datasourceID := createDatasourceResp.Response.Data.DatasourceId
+	nlog.Infof("data-source-id:%s, type is:%s", datasourceID, createDatasourceReq.Request.Type)
+	return datasourceID, nil
 }
 
 func (m *MockFlightClient) QueryDataSource(datasourceID string) error {

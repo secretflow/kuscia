@@ -60,13 +60,6 @@ type DomainSpec struct {
 	// +optional
 	Role DomainRole `json:"role,omitempty"`
 
-	// MasterDomain is used to represent the master domain id of current domain.
-	// For a omit domain, MasterDomain is exactly local cluster's master
-	// For a partner domain, the default MasterDomain is the domain itself
-	// Only for a partner domain which is not an autonomy domain, you need to specify its master domain explicitly
-	// +optional
-	MasterDomain string `json:"master,omitempty"`
-
 	// Interconnection Protocols
 	// If multiple protocols are specified, select the protocols in the order of configuration.
 	// +optional

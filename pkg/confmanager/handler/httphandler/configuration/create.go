@@ -48,8 +48,7 @@ func (h createConfigurationHandler) Validate(context *api.BizContext, request ap
 func (h createConfigurationHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
 	createRequest, _ := request.(*confmanager.CreateConfigurationRequest)
 	tlsCert := interceptor.TLSCertFromGinContext(context.Context)
-	response := h.configurationService.CreateConfiguration(context.Context, createRequest, tlsCert.OrganizationalUnit[0])
-	return &response
+	return h.configurationService.CreateConfiguration(context.Context, createRequest, tlsCert.OrganizationalUnit[0])
 }
 
 func (h createConfigurationHandler) GetType() (reqType, respType reflect.Type) {

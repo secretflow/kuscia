@@ -77,7 +77,6 @@ type K8sProvider struct {
 
 	labelsToAdd      map[string]string
 	annotationsToAdd map[string]string
-	runtimeClassName string
 
 	leaderElector election.Elector
 }
@@ -93,7 +92,6 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		resourceManager:  dep.ResourceManager,
 		labelsToAdd:      dep.K8sProviderCfg.LabelsToAdd,
 		annotationsToAdd: dep.K8sProviderCfg.AnnotationsToAdd,
-		runtimeClassName: dep.K8sProviderCfg.RuntimeClassName,
 	}
 
 	if kp.podDNSPolicy == "" {
@@ -209,10 +207,6 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 	newPod.Spec.NodeName = ""
 	newPod.Spec.NodeSelector = nil
 	newPod.Spec.SchedulerName = ""
-
-	if newPod.Spec.RuntimeClassName == nil && kp.runtimeClassName != "" {
-		newPod.Spec.RuntimeClassName = &kp.runtimeClassName
-	}
 
 	configMaps := map[string]*v1.ConfigMap{}
 	secrets := map[string]*v1.Secret{}

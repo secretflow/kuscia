@@ -19,7 +19,7 @@ set -e
 
 app_type=""
 
-ldflags="-s -w -X github.com/secretflow/kuscia/pkg/utils/meta.KusciaVersion=$(git describe --always)"
+ldflags="-X github.com/secretflow/kuscia/pkg/utils/meta.KusciaVersion=$(git describe --always)"
 
 function build_kuscia() {
   echo "build kuscia binary..."

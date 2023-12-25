@@ -24,7 +24,6 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
@@ -155,7 +154,6 @@ type K8sProviderCfg struct {
 	Backend          K8sProviderBackendCfg `yaml:"backend,omitempty"`
 	LabelsToAdd      map[string]string     `yaml:"labelsToAdd,omitempty"`
 	AnnotationsToAdd map[string]string     `yaml:"annotationsToAdd,omitempty"`
-	RuntimeClassName string                `yaml:"runtimeClassName,omitempty"`
 }
 
 type ProviderCfg struct {
@@ -281,14 +279,6 @@ func DefaultStaticAgentConfig() *AgentConfig {
 				ClusterDomain:         "",
 				ClusterDNS:            []string{},
 				ResolverConfig:        defaultResolvConfig,
-			},
-		},
-		Plugins: []PluginCfg{
-			{
-				Name: common.PluginNameCertIssuance,
-			},
-			{
-				Name: common.PluginNameConfigRender,
 			},
 		},
 	}

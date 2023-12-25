@@ -198,12 +198,11 @@ protobuf 文件。
 
 ### PartyStatus
 
-| 字段        | 类型                                        | 选填 | 描述            |
-|-----------|-------------------------------------------|----|---------------|
-| domain_id | string                                    | 必填 | 节点 ID         |
-| state     | [TaskState](#task-state)                  | 必填 | 总体状态          |
-| err_msg   | string                                    | 可选 | 错误信息          |
-| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息 |
+| 字段        | 类型                       | 选填 | 描述    |
+|-----------|--------------------------|----|-------|
+| domain_id | string                   | 必填 | 节点 ID |
+| state     | [TaskState](#task-state) | 必填 | 总体状态  |
+| err_msg   | string                   | 可选 | 错误信息  |
 
 {#task}
 
@@ -268,13 +267,3 @@ protobuf 文件。
 | Running   | 1      | 运行中   |
 | Succeeded | 2      | 成功    |
 | Failed    | 3      | 失败    |
-
-{#job-party-endpoint}
-
-### JobPartyEndpoint
-
-| 字段        | 类型     | 选填 | 描述                                                                                                  |
-|-----------|--------|---|-----------------------------------------------------------------------------------------------------|
-| port_name | string | 必填 | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name` |
-| scope     | string | 必填 | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
-| endpoint  | string | 必填 | 应用服务访问地址                                                                                            |

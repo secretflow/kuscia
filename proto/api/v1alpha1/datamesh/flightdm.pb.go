@@ -853,6 +853,101 @@ func (x *ActionDeleteDomainDataResponse) GetResponse() *DeleteDomainDataResponse
 	return nil
 }
 
+// call DoAction with ActionCreateDomainDataSourceRequest, return ActionCreateDomainDataSourceResponse
+type ActionCreateDomainDataSourceRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Request *CreateDomainDataSourceRequest `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+}
+
+func (x *ActionCreateDomainDataSourceRequest) Reset() {
+	*x = ActionCreateDomainDataSourceRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ActionCreateDomainDataSourceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActionCreateDomainDataSourceRequest) ProtoMessage() {}
+
+func (x *ActionCreateDomainDataSourceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActionCreateDomainDataSourceRequest.ProtoReflect.Descriptor instead.
+func (*ActionCreateDomainDataSourceRequest) Descriptor() ([]byte, []int) {
+	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ActionCreateDomainDataSourceRequest) GetRequest() *CreateDomainDataSourceRequest {
+	if x != nil {
+		return x.Request
+	}
+	return nil
+}
+
+type ActionCreateDomainDataSourceResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Response *CreateDomainDataSourceResponse `protobuf:"bytes,1,opt,name=response,proto3" json:"response,omitempty"`
+}
+
+func (x *ActionCreateDomainDataSourceResponse) Reset() {
+	*x = ActionCreateDomainDataSourceResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ActionCreateDomainDataSourceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ActionCreateDomainDataSourceResponse) ProtoMessage() {}
+
+func (x *ActionCreateDomainDataSourceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ActionCreateDomainDataSourceResponse.ProtoReflect.Descriptor instead.
+func (*ActionCreateDomainDataSourceResponse) Descriptor() ([]byte, []int) {
+	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ActionCreateDomainDataSourceResponse) GetResponse() *CreateDomainDataSourceResponse {
+	if x != nil {
+		return x.Response
+	}
+	return nil
+}
+
 // call DoAction with ActionQueryDomainDataSourceRequest, return ActionQueryDomainDataSourceResponse
 type ActionQueryDomainDataSourceRequest struct {
 	state         protoimpl.MessageState
@@ -865,7 +960,7 @@ type ActionQueryDomainDataSourceRequest struct {
 func (x *ActionQueryDomainDataSourceRequest) Reset() {
 	*x = ActionQueryDomainDataSourceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[14]
+		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -878,7 +973,7 @@ func (x *ActionQueryDomainDataSourceRequest) String() string {
 func (*ActionQueryDomainDataSourceRequest) ProtoMessage() {}
 
 func (x *ActionQueryDomainDataSourceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[14]
+	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -891,7 +986,7 @@ func (x *ActionQueryDomainDataSourceRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ActionQueryDomainDataSourceRequest.ProtoReflect.Descriptor instead.
 func (*ActionQueryDomainDataSourceRequest) Descriptor() ([]byte, []int) {
-	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{14}
+	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ActionQueryDomainDataSourceRequest) GetRequest() *QueryDomainDataSourceRequest {
@@ -912,7 +1007,7 @@ type ActionQueryDomainDataSourceResponse struct {
 func (x *ActionQueryDomainDataSourceResponse) Reset() {
 	*x = ActionQueryDomainDataSourceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[15]
+		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -925,7 +1020,7 @@ func (x *ActionQueryDomainDataSourceResponse) String() string {
 func (*ActionQueryDomainDataSourceResponse) ProtoMessage() {}
 
 func (x *ActionQueryDomainDataSourceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[15]
+	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1033,7 @@ func (x *ActionQueryDomainDataSourceResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ActionQueryDomainDataSourceResponse.ProtoReflect.Descriptor instead.
 func (*ActionQueryDomainDataSourceResponse) Descriptor() ([]byte, []int) {
-	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{15}
+	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ActionQueryDomainDataSourceResponse) GetResponse() *QueryDomainDataSourceResponse {
@@ -1097,33 +1192,50 @@ var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDesc = []byte{
 	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61,
 	0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x44, 0x6f, 0x6d,
 	0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52,
-	0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x80, 0x01, 0x0a, 0x22, 0x41, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44,
-	0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x12, 0x5a, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x40, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61,
-	0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x6f, 0x6d, 0x61,
-	0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x84, 0x01, 0x0a,
-	0x23, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x6f, 0x6d, 0x61,
-	0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5d, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x41, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x2a, 0x2a, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x54, 0x79,
-	0x70, 0x65, 0x12, 0x09, 0x0a, 0x05, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x10, 0x00, 0x12, 0x07, 0x0a,
-	0x03, 0x52, 0x41, 0x57, 0x10, 0x01, 0x12, 0x07, 0x0a, 0x03, 0x43, 0x53, 0x56, 0x10, 0x02, 0x42,
-	0x5c, 0x0a, 0x20, 0x6f, 0x72, 0x67, 0x2e, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f,
-	0x77, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d,
-	0x65, 0x73, 0x68, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2f, 0x6b, 0x75, 0x73, 0x63, 0x69,
-	0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x82, 0x01, 0x0a, 0x23, 0x41, 0x63,
+	0x74, 0x69, 0x6f, 0x6e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e,
+	0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x5b, 0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x41, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64,
+	0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x6f,
+	0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x86,
+	0x01, 0x0a, 0x24, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44,
+	0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5e, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x42, 0x2e, 0x6b, 0x75, 0x73, 0x63,
+	0x69, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x08, 0x72,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x80, 0x01, 0x0a, 0x22, 0x41, 0x63, 0x74, 0x69,
+	0x6f, 0x6e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74,
+	0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x5a,
+	0x0a, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x40, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61,
+	0x6d, 0x65, 0x73, 0x68, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e,
+	0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x52, 0x07, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x84, 0x01, 0x0a, 0x23, 0x41,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e,
+	0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x5d, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x41, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
+	0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44,
+	0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x2a, 0x2a, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65,
+	0x12, 0x09, 0x0a, 0x05, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x52,
+	0x41, 0x57, 0x10, 0x01, 0x12, 0x07, 0x0a, 0x03, 0x43, 0x53, 0x56, 0x10, 0x02, 0x42, 0x5c, 0x0a,
+	0x20, 0x6f, 0x72, 0x67, 0x2e, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2e,
+	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73,
+	0x68, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x65,
+	0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2f, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x31, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1139,60 +1251,66 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP() []byte
 }
 
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_goTypes = []interface{}{
-	(ContentType)(0),                            // 0: kuscia.proto.api.v1alpha1.datamesh.ContentType
-	(*CSVWriteOptions)(nil),                     // 1: kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptions
-	(*FileWriteOptions)(nil),                    // 2: kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions
-	(*CommandGetDomainDataSchema)(nil),          // 3: kuscia.proto.api.v1alpha1.datamesh.CommandGetDomainDataSchema
-	(*CommandDomainDataQuery)(nil),              // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
-	(*CommandDomainDataUpdate)(nil),             // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
-	(*TicketDomainDataQuery)(nil),               // 6: kuscia.proto.api.v1alpha1.datamesh.TicketDomainDataQuery
-	(*ActionCreateDomainDataRequest)(nil),       // 7: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataRequest
-	(*ActionCreateDomainDataResponse)(nil),      // 8: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataResponse
-	(*ActionQueryDomainDataRequest)(nil),        // 9: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataRequest
-	(*ActionQueryDomainDataResponse)(nil),       // 10: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataResponse
-	(*ActionUpdateDomainDataRequest)(nil),       // 11: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataRequest
-	(*ActionUpdateDomainDataResponse)(nil),      // 12: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataResponse
-	(*ActionDeleteDomainDataRequest)(nil),       // 13: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataRequest
-	(*ActionDeleteDomainDataResponse)(nil),      // 14: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataResponse
-	(*ActionQueryDomainDataSourceRequest)(nil),  // 15: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceRequest
-	(*ActionQueryDomainDataSourceResponse)(nil), // 16: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceResponse
-	nil,                                   // 17: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
-	(*CreateDomainDataRequest)(nil),       // 18: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
-	(*CreateDomainDataResponse)(nil),      // 19: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse
-	(*QueryDomainDataRequest)(nil),        // 20: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest
-	(*QueryDomainDataResponse)(nil),       // 21: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse
-	(*UpdateDomainDataRequest)(nil),       // 22: kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest
-	(*UpdateDomainDataResponse)(nil),      // 23: kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse
-	(*DeleteDomainDataRequest)(nil),       // 24: kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest
-	(*DeleteDomainDataResponse)(nil),      // 25: kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponse
-	(*QueryDomainDataSourceRequest)(nil),  // 26: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceRequest
-	(*QueryDomainDataSourceResponse)(nil), // 27: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceResponse
+	(ContentType)(0),                             // 0: kuscia.proto.api.v1alpha1.datamesh.ContentType
+	(*CSVWriteOptions)(nil),                      // 1: kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptions
+	(*FileWriteOptions)(nil),                     // 2: kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions
+	(*CommandGetDomainDataSchema)(nil),           // 3: kuscia.proto.api.v1alpha1.datamesh.CommandGetDomainDataSchema
+	(*CommandDomainDataQuery)(nil),               // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
+	(*CommandDomainDataUpdate)(nil),              // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
+	(*TicketDomainDataQuery)(nil),                // 6: kuscia.proto.api.v1alpha1.datamesh.TicketDomainDataQuery
+	(*ActionCreateDomainDataRequest)(nil),        // 7: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataRequest
+	(*ActionCreateDomainDataResponse)(nil),       // 8: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataResponse
+	(*ActionQueryDomainDataRequest)(nil),         // 9: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataRequest
+	(*ActionQueryDomainDataResponse)(nil),        // 10: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataResponse
+	(*ActionUpdateDomainDataRequest)(nil),        // 11: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataRequest
+	(*ActionUpdateDomainDataResponse)(nil),       // 12: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataResponse
+	(*ActionDeleteDomainDataRequest)(nil),        // 13: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataRequest
+	(*ActionDeleteDomainDataResponse)(nil),       // 14: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataResponse
+	(*ActionCreateDomainDataSourceRequest)(nil),  // 15: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataSourceRequest
+	(*ActionCreateDomainDataSourceResponse)(nil), // 16: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataSourceResponse
+	(*ActionQueryDomainDataSourceRequest)(nil),   // 17: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceRequest
+	(*ActionQueryDomainDataSourceResponse)(nil),  // 18: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceResponse
+	nil,                                    // 19: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
+	(*CreateDomainDataRequest)(nil),        // 20: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
+	(*CreateDomainDataResponse)(nil),       // 21: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse
+	(*QueryDomainDataRequest)(nil),         // 22: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest
+	(*QueryDomainDataResponse)(nil),        // 23: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse
+	(*UpdateDomainDataRequest)(nil),        // 24: kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest
+	(*UpdateDomainDataResponse)(nil),       // 25: kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse
+	(*DeleteDomainDataRequest)(nil),        // 26: kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest
+	(*DeleteDomainDataResponse)(nil),       // 27: kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponse
+	(*CreateDomainDataSourceRequest)(nil),  // 28: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataSourceRequest
+	(*CreateDomainDataSourceResponse)(nil), // 29: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataSourceResponse
+	(*QueryDomainDataSourceRequest)(nil),   // 30: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceRequest
+	(*QueryDomainDataSourceResponse)(nil),  // 31: kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceResponse
 }
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_depIdxs = []int32{
 	1,  // 0: kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions.csv_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptions
 	0,  // 1: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery.content_type:type_name -> kuscia.proto.api.v1alpha1.datamesh.ContentType
 	2,  // 2: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery.file_write_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions
-	18, // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.domaindata_request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
+	20, // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.domaindata_request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
 	0,  // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.content_type:type_name -> kuscia.proto.api.v1alpha1.datamesh.ContentType
 	2,  // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.file_write_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions
-	17, // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.extra_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
-	18, // 7: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
-	19, // 8: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse
-	20, // 9: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest
-	21, // 10: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse
-	22, // 11: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest
-	23, // 12: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse
-	24, // 13: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest
-	25, // 14: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponse
-	26, // 15: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceRequest
-	27, // 16: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceResponse
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	19, // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.extra_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
+	20, // 7: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
+	21, // 8: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse
+	22, // 9: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest
+	23, // 10: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse
+	24, // 11: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest
+	25, // 12: kuscia.proto.api.v1alpha1.datamesh.ActionUpdateDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse
+	26, // 13: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest
+	27, // 14: kuscia.proto.api.v1alpha1.datamesh.ActionDeleteDomainDataResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponse
+	28, // 15: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataSourceRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataSourceRequest
+	29, // 16: kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataSourceResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataSourceResponse
+	30, // 17: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceRequest.request:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceRequest
+	31, // 18: kuscia.proto.api.v1alpha1.datamesh.ActionQueryDomainDataSourceResponse.response:type_name -> kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceResponse
+	19, // [19:19] is the sub-list for method output_type
+	19, // [19:19] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_init() }
@@ -1372,7 +1490,7 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_init() {
 			}
 		}
 		file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ActionQueryDomainDataSourceRequest); i {
+			switch v := v.(*ActionCreateDomainDataSourceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1384,6 +1502,30 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_init() {
 			}
 		}
 		file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ActionCreateDomainDataSourceResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ActionQueryDomainDataSourceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ActionQueryDomainDataSourceResponse); i {
 			case 0:
 				return &v.state
@@ -1405,7 +1547,7 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

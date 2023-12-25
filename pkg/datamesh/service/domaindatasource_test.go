@@ -16,64 +16,119 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/common"
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/secretbackend"
-	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateDefaultDomainDataSource(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
+func TestCreateDomainDataSource(t *testing.T) {
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKey:     key,
 	}
-	domainDataService := makeDomainDataSourceService(t, conf)
-	res := domainDataService.CreateDefaultDomainDataSource(context.Background())
-	assert.Nil(t, res)
+	domainDataService := NewDomainDataSourceService(conf)
+	res := domainDataService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Name:         "default-datasource",
+		Type:         "localfs",
+		Info: &datamesh.DataSourceInfo{
+			Localfs: &datamesh.LocalDataSourceInfo{
+				Path: "./data",
+			},
+			Oss: nil,
+		},
+	})
+	assert.NotNil(t, res)
 }
 
 func TestQueryDomainDataSource(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
+
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKey:     key,
 	}
-	domainDataService := makeDomainDataSourceService(t, conf)
-	err = domainDataService.CreateDefaultDomainDataSource(context.Background())
-	assert.Nil(t, err)
+	domainDataService := NewDomainDataSourceService(conf)
+	res := domainDataService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Name:         "default-datasource",
+		Type:         "localfs",
+		Info: &datamesh.DataSourceInfo{
+			Localfs: &datamesh.LocalDataSourceInfo{
+				Path: "./data",
+			},
+			Oss: nil,
+		},
+	})
+	assert.NotNil(t, res)
 	queryRes := domainDataService.QueryDomainDataSource(context.Background(), &datamesh.QueryDomainDataSourceRequest{
-		DatasourceId: common.DefaultDataSourceID,
+		Header:       nil,
+		DatasourceId: dsID,
 	})
 	assert.NotNil(t, queryRes)
-	assert.Equal(t, queryRes.Data.Type, common.DomainDataSourceTypeLocalFS)
-	assert.Equal(t, queryRes.Data.Info.Localfs.Path, common.DefaultDomainDataSourceLocalFSPath)
+	assert.Equal(t, queryRes.Data.Type, "localfs")
+	assert.Equal(t, queryRes.Data.Info.Localfs.Path, "./data")
 }
 
-func makeDomainDataSourceService(t *testing.T, conf *config.DataMeshConfig) IDomainDataSourceService {
-	return NewDomainDataSourceService(conf, makeMemConfigurationService(t))
+func TestUpdateDomainDataSource(t *testing.T) {
+	conf := &config.DataMeshConfig{
+		KusciaClient:  kusciafake.NewSimpleClientset(),
+		KubeNamespace: "DomainDataUnitTestNamespace",
+	}
+	domainDataService := NewDomainDataSourceService(conf)
+	res := domainDataService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Name:         "default-datasource",
+		Type:         "mysql",
+		Info: &datamesh.DataSourceInfo{
+			Database: &datamesh.DatabaseDataSourceInfo{
+				Endpoint: "127.0.0.1:3306",
+				User:     "root",
+				Password: "passwd",
+			},
+		},
+	})
+	assert.NotNil(t, res)
+
+	updateRes := domainDataService.UpdateDomainDataSource(context.Background(), &datamesh.UpdateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Type:         "mysql",
+		Info: &datamesh.DataSourceInfo{
+			Database: &datamesh.DatabaseDataSourceInfo{
+				Endpoint: "127.0.0.1:3306",
+				User:     "root1",
+				Password: "passwd1",
+			},
+		},
+	})
+	assert.NotNil(t, updateRes)
+
+	queryRes := domainDataService.QueryDomainDataSource(context.Background(), &datamesh.QueryDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+	})
+	assert.NotNil(t, queryRes)
+	assert.Equal(t, "mysql", queryRes.Data.Type)
+	assert.Equal(t, "root1", queryRes.Data.Info.Database.User)
+	assert.Equal(t, "passwd1", queryRes.Data.Info.Database.Password)
+	assert.Equal(t, false, queryRes.Data.AccessDirectly)
 }
 
-func makeMemConfigurationService(t *testing.T) cmservice.IConfigurationService {
-	backend, err := secretbackend.NewSecretBackendWith("mem", map[string]any{})
-	assert.Nil(t, err)
-	assert.NotNil(t, backend)
-	configurationService, err := cmservice.NewConfigurationService(
-		backend, false,
-	)
-	assert.Nil(t, err)
-	assert.NotNil(t, configurationService)
-	return configurationService
+func TestDeleteDomainDataSource(t *testing.T) {
+	conf := &config.DataMeshConfig{
+		KusciaClient:  kusciafake.NewSimpleClientset(),
+		KubeNamespace: "DomainDataUnitTestNamespace",
+	}
+	domainDataService := NewDomainDataSourceService(conf)
+	res := domainDataService.DeleteDomainDataSource(context.Background(), &datamesh.DeleteDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+	})
+	assert.NotNil(t, res)
 }

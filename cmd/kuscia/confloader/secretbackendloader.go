@@ -18,9 +18,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-
 	"github.com/secretflow/kuscia/pkg/secretbackend"
-	// register driver
+	// register mem driver
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 )
 

@@ -24,8 +24,6 @@ type SecretDriver interface {
 	Get(confID string) (string, error)
 	// GetByParams lookup value for confId, Secret Backend may reconvert value if it converts value to another form when Set.
 	GetByParams(confID string, params map[string]any) (string, error)
-	// Close should free the SecretBackend resources.
-	Close() error
 }
 
 type RegistryFactory func(config map[string]any) (SecretDriver, error)

@@ -57,26 +57,26 @@
 
 internal.log 日志格式如下：
 ```bash
-%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - [%START_TIME(%d/%b/%Y:%H:%M:%S %z)%] %REQ(Kuscia-Source)% %REQ(Kuscia-Host?:authority)% \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %REQ(x-b3-traceid)% %REQ(x-b3-spanid)% %RESPONSE_CODE% %RESPONSE_FLAGS% %REQ(content-length)% %DURATION% %REQUEST_DURATION% %RESPONSE_DURATION% %RESPONSE_TX_DURATION% %DYNAMIC_METADATA(envoy.kuscia:request_body)% %DYNAMIC_METADATA(envoy.kuscia:response_body)%
+%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - [%START_TIME(%d/%b/%Y:%H:%M:%S %z)%] %REQ(Kuscia-Source)% %REQ(Kuscia-Host?:authority)% \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %REQ(x-b3-traceid)% %REQ(x-b3-spanid)% %RESPONSE_CODE% %REQ(content-length)% %DURATION% %REQUEST_DURATION% %RESPONSE_DURATION% %RESPONSE_TX_DURATION% %DYNAMIC_METADATA(envoy.kuscia:request_body)% %DYNAMIC_METADATA(envoy.kuscia:response_body)%
 ```
 ```bash
 # 示例如下：
-1.2.3.4 - [23/Oct/2023:01:58:02 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" 743d0da7e6814c2e 743d0da7e6814c2e 200 - 1791 0 0 0 0 - -
-1.2.3.4 - [23/Oct/2023:01:58:02 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" b2f636af87a047f8 b2f636af87a047f8 200 - 56 0 0 0 0 - -
-1.2.3.4 - [23/Oct/2023:01:58:03 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" fdd0c66dfb0fbe45 fdd0c66dfb0fbe45 200 - 56 0 0 0 0 - -
-1.2.3.4 - [23/Oct/2023:01:58:03 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" dc52437872f6e051 dc52437872f6e051 200 - 171 0 0 0 0 - -
+10.88.0.87 - [23/Oct/2023:01:58:02 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" 743d0da7e6814c2e 743d0da7e6814c2e 200 1791 0 0 0 0 - -
+10.88.0.87 - [23/Oct/2023:01:58:02 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" b2f636af87a047f8 b2f636af87a047f8 200 56 0 0 0 0 - -
+10.88.0.87 - [23/Oct/2023:01:58:03 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" fdd0c66dfb0fbe45 fdd0c66dfb0fbe45 200 56 0 0 0 0 - -
+10.88.0.87 - [23/Oct/2023:01:58:03 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" dc52437872f6e051 dc52437872f6e051 200 171 0 0 0 0 - -
 ```
 
 
 
 external.log 日志格式如下：
 ```bash
-%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - [%START_TIME(%d/%b/%Y:%H:%M:%S %z)%] %REQ(Kuscia-Source)% %REQ(Kuscia-Host?:authority)% \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %REQ(x-b3-traceid)% %REQ(x-b3-spanid)% %RESPONSE_CODE% %RESPONSE_FLAGS% %REQ(content-length)% %DURATION% %DYNAMIC_METADATA(envoy.kuscia:request_body)% %DYNAMIC_METADATA(envoy.kuscia:response_body)%
+%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - [%START_TIME(%d/%b/%Y:%H:%M:%S %z)%] %REQ(Kuscia-Source)% %REQ(Kuscia-Host?:authority)% \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %REQ(x-b3-traceid)% %REQ(x-b3-spanid)% %RESPONSE_CODE% %REQ(content-length)% %DURATION% %DYNAMIC_METADATA(envoy.kuscia:request_body)% %DYNAMIC_METADATA(envoy.kuscia:response_body)%
 ```
 
 ```bash
-1.2.3.4 - [23/Oct/2023:04:36:51 +0000] bob kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 01e87a178e05f967 01e87a178e05f967 200 - - 0 - -
-1.2.3.4 - [23/Oct/2023:04:36:53 +0000] tee kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 65a07630561d3814 65a07630561d3814 200 - - 0 - -
-1.2.3.4 - [23/Oct/2023:04:37:06 +0000] bob kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 8537c88b929fee67 8537c88b929fee67 200 - - 0 - -
-1.2.3.4 - [23/Oct/2023:04:37:08 +0000] tee kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 875d64696b98c6fa 875d64696b98c6fa 200 - - 0 - -
+192.168.128.4 - [23/Oct/2023:04:36:51 +0000] bob kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 01e87a178e05f967 01e87a178e05f967 200 - 0 - -
+192.168.128.6 - [23/Oct/2023:04:36:53 +0000] tee kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 65a07630561d3814 65a07630561d3814 200 - 0 - -
+192.168.128.4 - [23/Oct/2023:04:37:06 +0000] bob kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 8537c88b929fee67 8537c88b929fee67 200 - 0 - -
+192.168.128.6 - [23/Oct/2023:04:37:08 +0000] tee kuscia-handshake.alice.svc "GET /handshake HTTP/1.1" 875d64696b98c6fa 875d64696b98c6fa 200 - 0 - -
 ```

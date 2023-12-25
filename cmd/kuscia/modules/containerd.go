@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 	"time"
 
-	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
@@ -44,25 +43,9 @@ func NewContainerd(i *Dependencies) Module {
 }
 
 func (s *containerdModule) Run(ctx context.Context) error {
-	configPath := filepath.Join(s.Root, pkgcom.ConfPrefix, "containerd.toml")
-	configPathTmpl := filepath.Join(s.Root, pkgcom.ConfPrefix, "containerd.toml.tmpl")
+	configPath := filepath.Join(s.Root, ConfPrefix, "containerd.toml")
+	configPathTmpl := filepath.Join(s.Root, ConfPrefix, "containerd.toml.tmpl")
 	if err := common.RenderConfig(configPathTmpl, configPath, s); err != nil {
-		return err
-	}
-
-	// check if the file /etc/crictl.yaml exists
-	crictlFile := "/etc/crictl.yaml"
-	if _, err := os.Stat(crictlFile); err != nil {
-		if os.IsNotExist(err) {
-			if err = os.Link(filepath.Join(s.Root, pkgcom.ConfPrefix, "crictl.yaml"), crictlFile); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-
-	if err := s.execPreCmds(ctx); err != nil {
 		return err
 	}
 
@@ -72,7 +55,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	}
 
 	sp := supervisor.NewSupervisor("containerd", nil, -1)
-	s.LogConfig.LogPath = filepath.Join(s.Root, pkgcom.LogPrefix, "containerd.log")
+	s.LogConfig.LogPath = filepath.Join(s.Root, LogPrefix, "containerd.log")
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
@@ -81,13 +64,6 @@ func (s *containerdModule) Run(ctx context.Context) error {
 		cmd.Stdout = n
 		return cmd
 	})
-}
-
-func (s *containerdModule) execPreCmds(ctx context.Context) error {
-	cmd := exec.Command("sh", "-c", filepath.Join(s.Root, "scripts/deploy/iptables_pre_detect.sh"))
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
 }
 
 func (s *containerdModule) WaitReady(ctx context.Context) error {

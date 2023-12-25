@@ -41,7 +41,7 @@ type dataMeshModule struct {
 func NewDataMesh(d *Dependencies) (Module, error) {
 	conf := config.NewDefaultDataMeshConfig()
 	conf.RootDir = d.RootDir
-	conf.DomainKey = d.DomainKey
+	conf.DomainKeyFile = d.DomainKeyFile
 
 	// override data proxy config
 	if d.DataMesh != nil {

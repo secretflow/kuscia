@@ -23,7 +23,7 @@ import (
 )
 
 type Mem struct {
-	conf map[string]string
+	confs map[string]string
 }
 
 type Config struct {
@@ -39,11 +39,11 @@ func NewMem(configMap map[string]any) (secretbackend.SecretDriver, error) {
 	for k, v := range config.Preset {
 		confs[k] = v
 	}
-	return &Mem{conf: confs}, nil
+	return &Mem{confs: confs}, nil
 }
 
 func (m *Mem) Set(confID string, value string) error {
-	m.conf[confID] = value
+	m.confs[confID] = value
 	return nil
 }
 
@@ -52,15 +52,11 @@ func (m *Mem) Get(confID string) (string, error) {
 }
 
 func (m *Mem) GetByParams(confID string, params map[string]any) (string, error) {
-	value, exist := m.conf[confID]
+	value, exist := m.confs[confID]
 	if !exist {
 		return "", fmt.Errorf("not exist")
 	}
 	return value, nil
-}
-
-func (m *Mem) Close() error {
-	return nil
 }
 
 func init() {

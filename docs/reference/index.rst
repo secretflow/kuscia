@@ -7,4 +7,4 @@
     architecture_cn
     concepts/index
     apis/index
-    troubleshoot/index
+    faq_cn

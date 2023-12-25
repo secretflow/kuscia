@@ -70,19 +70,10 @@ func (h *ReserveFailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup)
 			trCopy := tr.DeepCopy()
 			trCopy.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserving
 			trCopy.Status.LastTransitionTime = &now
-
-			trReservingCond := utilsres.GetTaskResourceCondition(&trCopy.Status, kusciaapisv1alpha1.TaskResourceCondReserving)
-			trReservingCond.Status = corev1.ConditionTrue
-			trReservingCond.LastTransitionTime = &now
-			trReservingCond.Reason = "Retry to reserve resource"
-
-			trReservedCond := utilsres.GetTaskResourceCondition(&trCopy.Status, kusciaapisv1alpha1.TaskResourceCondReserved)
-			if trReservedCond.Status == corev1.ConditionTrue {
-				trReservedCond.Status = corev1.ConditionFalse
-				trReservedCond.LastTransitionTime = &now
-				trReservedCond.Reason = kusciaapisv1alpha1.RetryReserveResourceReason
-			}
-
+			trCond := utilsres.GetTaskResourceCondition(&trCopy.Status, kusciaapisv1alpha1.TaskResourceCondReserving)
+			trCond.Status = corev1.ConditionTrue
+			trCond.LastTransitionTime = &now
+			trCond.Reason = "Retry to reserve resource"
 			if err = utilsres.PatchTaskResource(context.Background(), h.kusciaClient, utilsres.ExtractTaskResourceStatus(tr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
 				err = fmt.Errorf("patch party task resource %v/%v failed, %v", trCopy.Namespace, trCopy.Name, err.Error())
 				return false, err

@@ -166,7 +166,7 @@ func HandleQueueItemWithAlwaysRetry(ctx context.Context, queueID string, q workq
 		// Run the handler, passing it the namespace/name string of the Pod resource to be synced.
 		if err := handler(ctx, key); err != nil {
 			// Put the item back on the work queue to handle any transient errors.
-			nlog.Warnf("Processing item failed: queue id[%v], key[%v]: %q, re-queuing (%v)", queueID, key, err.Error(), time.Since(startTime))
+			nlog.Warnf("Error syncing: queue id[%v], key[%v]: %q, re-queuing (%v)", queueID, key, err.Error(), time.Since(startTime))
 			q.AddRateLimited(key)
 			return
 		}

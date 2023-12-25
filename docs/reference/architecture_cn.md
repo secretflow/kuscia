@@ -37,7 +37,7 @@ Kuscia 扩展了一组 K3s 控制器，用于处理 Kuscia 的自定义资源，
 
 #### Kuscia Storage
 
-Kuscia Storage 是对 K3s 原生集群存储的补充。K3s 原生集群存储不适合存储大 value，因此对于大 value 的资源属性，如作业配置等，将存储在 Kuscia Storage
+Kuscia Storage 是对 K3s 原生集群存储的补充。K3s 原生集群存储不适合存储大 value，因此对于大 value 的资源属性，如作业配置等，将存储在 Kuscia Storagee
 中。该模块暂未开源。
 
 #### Envoy

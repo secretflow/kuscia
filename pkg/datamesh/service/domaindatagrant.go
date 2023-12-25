@@ -33,6 +33,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
@@ -45,12 +46,18 @@ type IDomainDataGrantService interface {
 }
 
 type domainDataGrantService struct {
-	conf *config.DataMeshConfig
+	conf   *config.DataMeshConfig
+	priKey *rsa.PrivateKey
 }
 
 func NewDomainDataGrantService(config *config.DataMeshConfig) IDomainDataGrantService {
+	priKey, err := tlsutils.ParsePKCS1PrivateKey(config.DomainKeyFile)
+	if err != nil {
+		nlog.Fatal(err)
+	}
 	return &domainDataGrantService{
-		conf: config,
+		conf:   config,
+		priKey: priKey,
 	}
 }
 
@@ -226,7 +233,7 @@ func (s *domainDataGrantService) signDomainDataGrant(dg *v1alpha1.DomainDataGran
 	h := sha256.New()
 	h.Write(bs)
 	digest := h.Sum(nil)
-	sign, err := rsa.SignPKCS1v15(rand.Reader, s.conf.DomainKey, crypto.SHA256, digest)
+	sign, err := rsa.SignPKCS1v15(rand.Reader, s.priKey, crypto.SHA256, digest)
 	if err != nil {
 		return err
 	}

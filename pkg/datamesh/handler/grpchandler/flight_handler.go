@@ -143,6 +143,14 @@ func (f *FlightMetaHandler) DoAction(action *flight.Action, stream flight.Flight
 			return buildUnmarshalError()
 		}
 		result, err = f.srv.DoActionDeleteDomainDataRequest(context.Background(), &request)
+	case "ActionCreateDomainDataSourceRequest":
+		var (
+			request datamesh.ActionCreateDomainDataSourceRequest
+		)
+		if err = proto.Unmarshal(action.Body, &request); err != nil {
+			return buildUnmarshalError()
+		}
+		result, err = f.srv.DoActionCreateDomainDataSourceRequest(context.Background(), &request)
 	case "ActionQueryDomainDataSourceRequest":
 		var (
 			request datamesh.ActionQueryDomainDataSourceRequest

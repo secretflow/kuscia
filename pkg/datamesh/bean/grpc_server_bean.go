@@ -25,7 +25,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/grpchandler"
@@ -83,7 +82,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	server := grpc.NewServer(opts...)
 	// get operator bean
 	domainDataService := service.NewDomainDataService(s.config)
-	datasourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
+	datasourceService := service.NewDomainDataSourceService(s.config)
 	datamesh.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(domainDataService))
 	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(datasourceService))
 	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))

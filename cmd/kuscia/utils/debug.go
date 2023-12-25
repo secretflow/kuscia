@@ -23,35 +23,18 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func SetupPprof(debug bool, debugPort int, onlyControllers bool) {
-	if debug {
-		if debugPort <= 0 {
-			debugPort = 28080
-			if onlyControllers {
-				debugPort = 28180
-			}
-		}
-
-		if onlyControllers {
-			nlog.Infof("Controllers debug port is %v", debugPort)
-		} else {
-			nlog.Infof("Common debug port is %v", debugPort)
-		}
-
-		mux := http.NewServeMux()
-		mux.HandleFunc("/debug/pprof/", pprof.Index)
-		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		httpServer := &http.Server{
-			Addr:    fmt.Sprintf("0.0.0.0:%d", debugPort),
-			Handler: mux,
-		}
-		go func() {
-			if err := httpServer.ListenAndServe(); err != nil {
-				nlog.Errorf("open debug mode fail:%+v", err)
-			}
-		}()
+func SetupPprof(debugPort int) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+	httpServer := &http.Server{
+		Addr:    fmt.Sprintf("0.0.0.0:%d", debugPort),
+		Handler: mux,
+	}
+	if err := httpServer.ListenAndServe(); err != nil {
+		nlog.Errorf("open debug mode fail:%+v", err)
 	}
 }

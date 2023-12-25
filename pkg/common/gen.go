@@ -33,7 +33,7 @@ func GenDomainDataID(dataName string) (dataID string) {
 		prefix = prefix[:16]
 	}
 
-	if prefix != "" && !strings.HasSuffix(prefix, "-") {
+	if !strings.HasSuffix(prefix, "-") {
 		prefix = prefix + "-"
 	}
 

@@ -16,29 +16,25 @@ package flight
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/secretflow/kuscia/pkg/common"
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
-	"github.com/secretflow/kuscia/pkg/secretbackend"
-	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
 var (
-	dsID = common.DefaultDataSourceID
+	dsID = service.GetDefaultDataSourceID()
 )
 
 type MockDataServer struct {
@@ -73,11 +69,35 @@ func (m *MockDataServer) GetFlightInfoDataMeshUpdate(ctx context.Context, query 
 	return mockFlightInfo("test"), nil
 }
 
-func createTestDomainDataSource(t *testing.T, datasourceService service.IDomainDataSourceService) string {
-	err := datasourceService.CreateDefaultDomainDataSource(context.Background())
-	assert.Nil(t, err)
+func createTestDomainDataSource(t *testing.T, conf *config.DataMeshConfig) string {
+	domainDataService := service.NewDomainDataSourceService(conf)
+	res := domainDataService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: dsID,
+		Name:         "default-datasource",
+		Type:         "localfs",
+		Info: &datamesh.DataSourceInfo{
+			Localfs: &datamesh.LocalDataSourceInfo{
+				Path: "./data",
+			},
+			Oss: nil,
+		},
+		AccessDirectly: false,
+	})
+	assert.NotNil(t, res)
 
-	return common.DefaultDataSourceID
+	exist := false
+	for i := 0; i < 10; {
+		if _, err := conf.KusciaClient.KusciaV1alpha1().DomainDataSources(conf.KubeNamespace).Get(context.Background(),
+			dsID, metav1.GetOptions{}); err == nil {
+			exist = true
+			break
+		}
+		time.Sleep(time.Second)
+		i++
+	}
+	assert.True(t, exist)
+	return res.Data.DatasourceId
 }
 
 func createDomainData(domainDataService service.IDomainDataService,
@@ -105,16 +125,30 @@ func createDomainData(domainDataService service.IDomainDataService,
 	return res
 }
 
+func createDatasource(datasourceService service.IDomainDataSourceService,
+	t *testing.T) *datamesh.CreateDomainDataSourceResponse {
+	res := datasourceService.CreateDomainDataSource(context.Background(), &datamesh.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DatasourceId: "",
+		Name:         "default-data-source",
+		Type:         "localfs",
+		Info: &datamesh.DataSourceInfo{
+			Localfs: &datamesh.LocalDataSourceInfo{
+				Path: "./data",
+			},
+			Oss: nil,
+		},
+	})
+	assert.NotNil(t, res)
+	return res
+}
+
 func TestGetSchema(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKey:     key,
 	}
-	datasourceService := makeDomainDataSourceService(t, conf)
-	dsID = createTestDomainDataSource(t, datasourceService)
+	dsID = createTestDomainDataSource(t, conf)
 	domainDataService := service.NewDomainDataService(conf)
 	res := createDomainData(domainDataService, dsID, t)
 
@@ -138,16 +172,14 @@ func TestGetSchema(t *testing.T) {
 }
 
 func TestCommandDomainDataQuery(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKey:     key,
 	}
-	datasourceService := makeDomainDataSourceService(t, conf)
-	dsID = createTestDomainDataSource(t, datasourceService)
+	dsID = createTestDomainDataSource(t, conf)
 	domainDataService := service.NewDomainDataService(conf)
+
+	datasourceService := service.NewDomainDataSourceService(conf)
 	domainDataResp := createDomainData(domainDataService, dsID, t)
 
 	metaSrv := &DomainDataMetaServer{
@@ -169,17 +201,15 @@ func TestCommandDomainDataQuery(t *testing.T) {
 }
 
 func TestCommandDomainDataUpdate(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKey:     key,
 	}
-	datasourceService := makeDomainDataSourceService(t, conf)
-	dsID = createTestDomainDataSource(t, datasourceService)
+	dsID = createTestDomainDataSource(t, conf)
 
 	domainDataService := service.NewDomainDataService(conf)
+
+	datasourceService := service.NewDomainDataSourceService(conf)
 
 	metaSrv := &DomainDataMetaServer{
 		domainDataService:       domainDataService,
@@ -212,20 +242,4 @@ func TestCommandDomainDataUpdate(t *testing.T) {
 	assert.Nil(t, err)
 	ticket := string(info.Endpoint[0].Ticket.Ticket)
 	assert.True(t, len(ticket) > 0)
-}
-
-func makeDomainDataSourceService(t *testing.T, conf *config.DataMeshConfig) service.IDomainDataSourceService {
-	return service.NewDomainDataSourceService(conf, makeMemConfigurationService(t))
-}
-
-func makeMemConfigurationService(t *testing.T) cmservice.IConfigurationService {
-	backend, err := secretbackend.NewSecretBackendWith("mem", map[string]any{})
-	assert.Nil(t, err)
-	assert.NotNil(t, backend)
-	configurationService, err := cmservice.NewConfigurationService(
-		backend, false,
-	)
-	assert.Nil(t, err)
-	assert.NotNil(t, configurationService)
-	return configurationService
 }

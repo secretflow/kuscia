@@ -71,24 +71,12 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().Gateways().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("interopconfigs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().InteropConfigs().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("kusciabetadeployments"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaBetaDeployments().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("kusciabetajobs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaBetaJobs().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("kusciabetatasks"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaBetaTasks().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("kusciadeployments"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaDeployments().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("kusciadeploymentsummaries"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaDeploymentSummaries().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("kusciajobs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaJobs().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("kusciajobsummaries"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaJobSummaries().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("kusciatasks"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaTasks().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("kusciatasksummaries"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().KusciaTaskSummaries().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("taskresources"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kuscia().V1alpha1().TaskResources().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("taskresourcegroups"):

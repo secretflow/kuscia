@@ -20,25 +20,23 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
-
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 
 	"github.com/secretflow/kuscia/pkg/utils/common"
 )
 
 func Test_LoadCaDomainKeyAndCert(t *testing.T) {
 	rootDir := t.TempDir()
-	de := &Dependencies{
+	err := LoadCaDomainKeyAndCert(&Dependencies{
 		KusciaConfig: confloader.KusciaConfig{
 			CAKeyFile:     filepath.Join(rootDir, "ca.key"),
 			CACertFile:    filepath.Join(rootDir, "ca.crt"),
 			DomainKeyFile: filepath.Join(rootDir, "domain.key"),
 			DomainID:      "alice",
 		},
-	}
-	err := de.LoadCaDomainKeyAndCert()
+	})
 	assert.NotEmpty(t, err)
 }
 
@@ -68,23 +66,23 @@ func Test_LoadKusciaConfig(t *testing.T) {
 	content := fmt.Sprintf(`
 rootDir: /home/kuscia
 domainID: kuscia
-caKeyFile: var/tmp/ca.key
-caFile: var/tmp/ca.crt
-domainKeyFile: var/tmp/domain.key
+caKeyFile: etc/certs/ca.key
+caFile: etc/certs/ca.crt
+domainKeyFile: etc/certs/domain.key
 master:
   endpoint: http://127.0.0.1:1080
   tls:
-    certFile: var/tmp/client-admin.crt
-    keyFile: var/tmp/client-admin.key
-    caFile: var/tmp/server-ca.crt
+    certFile: etc/certs/client-admin.crt
+    keyFile: etc/certs/client-admin.key
+    caFile: etc/certs/server-ca.crt
   apiserver:
     kubeconfigFile: etc/kubeconfig
     endpoint:  http://127.0.0.1:1080
 agent:
   allowPrivileged: false
 externalTLS:
-  certFile: var/tmp/external_tls.crt
-  keyFile: var/tmp/external_tls.key
+  certFile: etc/certs/external_tls.crt
+  keyFile: etc/certs/external_tls.key
 dataMesh:
   enableDataProxy : true
 `)

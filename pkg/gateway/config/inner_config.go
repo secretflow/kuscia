@@ -133,7 +133,7 @@ func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*Cluste
 }
 
 func LoadTLSCertByTLSConfig(config *kusciaconfig.TLSConfig) (*xds.TLSCert, error) {
-	if config == nil || !config.EnableTLS {
+	if config == nil {
 		return nil, nil
 	}
 

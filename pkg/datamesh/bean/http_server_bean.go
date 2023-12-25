@@ -20,7 +20,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	dmconfig "github.com/secretflow/kuscia/pkg/datamesh/config"
 	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindata"
@@ -81,7 +80,7 @@ func (s *httpServerBean) ServerName() string {
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 	domainDataService := service.NewDomainDataService(s.config)
-	domainDataSourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
+	domainDataSourceService := service.NewDomainDataSourceService(s.config)
 	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	healthService := apisvc.NewHealthService()
 	// define router groups
@@ -118,8 +117,23 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
+					RelativePath: "create",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewCreateDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "delete",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewDeleteDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
 					RelativePath: "query",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewQueryDomainDataSourceHandler(domainDataSourceService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "update",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewUpdateDomainSourceHandler(domainDataSourceService))},
 				},
 			},
 		},

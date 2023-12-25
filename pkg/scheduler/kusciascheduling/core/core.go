@@ -45,7 +45,7 @@ const (
 	// defaultWaitTime is 60s if ResourceReservedSeconds is not specified.
 	defaultWaitTime = 30 * time.Second
 
-	retryInterval      = 200 * time.Millisecond
+	retryInterval      = 1 * time.Second
 	checkRetryInterval = 500 * time.Millisecond
 
 	patchTimeout = 15 * time.Second
@@ -148,13 +148,10 @@ func (trMgr *TaskResourceManager) PreFilter(ctx context.Context, pod *corev1.Pod
 		return fmt.Errorf("failed to get task resource %v/%v for pod", pod.Namespace, trName)
 	}
 
-	if tr.Status.Phase == "" || tr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhasePending {
-		return fmt.Errorf("task resource %v/%v status phase is %v, skip scheduling pod", tr.Namespace, tr.Name, tr.Status.Phase)
-	}
-
-	if tr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseFailed {
-		return fmt.Errorf("task resource %v/%v status phase is %v, skip scheduling pod. last failed scheduling result: %v",
-			tr.Namespace, trName, tr.Status.Phase, trMgr.buildSiblingStatusInfo(tr))
+	if tr.Status.Phase == "" ||
+		tr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhasePending ||
+		tr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseFailed {
+		return fmt.Errorf("task resource %v status phase is %v, skip scheduling the pod", trName, tr.Status.Phase)
 	}
 
 	trLabel, _ := GetTaskResourceLabel(pod)
@@ -301,8 +298,7 @@ func (trMgr *TaskResourceManager) PreBind(ctx context.Context, pod *corev1.Pod) 
 		return framework.Success, nil
 	}
 
-	nlog.Errorf("Can't schedule the domain %v pod %v because task resource %v status phase isn't schedulable, %v",
-		pod.Namespace, pod.Name, tr.Name, err)
+	nlog.Errorf("Can't schedule the pod %v/%v because of task resource status phase isn't schedulable, %v", pod.Namespace, pod.Name, err)
 	return framework.Unschedulable, err
 }
 
@@ -330,7 +326,7 @@ func (trMgr *TaskResourceManager) patchTaskResourceWithPollImmediate(tr *kusciaa
 				tr.Namespace, tr.Name, kusciaapisv1alpha1.TaskResourcePhaseReserving, tr.Status.Phase, pod.Namespace, pod.Name)
 		}
 
-		reason := "The min set of pods has already reserved resource"
+		reason := "min member had reserved resource"
 		if err := trMgr.patchTaskResource(kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, reason, tr); err != nil {
 			return false, nil
 		}
@@ -372,13 +368,8 @@ func (trMgr *TaskResourceManager) isSchedulable(waitingTime time.Duration, tr *k
 			return false, nil
 		}
 
-		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseReserved {
-			nlog.Infof("Domain %v pod %v has already reserved resources, waiting it's partner to reserve resources for pods",
-				latestTr.Namespace, pod.Name)
-		}
-
 		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseFailed {
-			return false, fmt.Errorf("%v", trMgr.buildSiblingStatusInfo(latestTr))
+			return false, fmt.Errorf("task resource status phase changed to failed")
 		}
 
 		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseSchedulable {
@@ -386,12 +377,24 @@ func (trMgr *TaskResourceManager) isSchedulable(waitingTime time.Duration, tr *k
 			return true, nil
 		}
 
+		nlog.Infof("Task resource %v/%v status is not %v for pod %v/%v, continue to wait...",
+			latestTr.Namespace, latestTr.Name, kusciaapisv1alpha1.TaskResourcePhaseSchedulable, pod.Namespace, pod.Name)
 		return false, nil
 	}
 
 	err := wait.PollImmediate(checkRetryInterval, waitingTime, checkFn)
 	if wait.ErrWaitTimeout == err {
-		err = fmt.Errorf("%s", trMgr.buildSiblingStatusInfo(tr))
+		siblingTrPhase := trMgr.getSiblingTaskResourcePhaseInfo(tr)
+		if siblingTrPhase != nil {
+			siblingTrPhaseInfo := ""
+			for name, phase := range siblingTrPhase {
+				siblingTrPhaseInfo += fmt.Sprintf("task resource %q phase is %q,", name, phase)
+			}
+			siblingTrPhaseInfo = strings.TrimSuffix(siblingTrPhaseInfo, ",")
+
+			trgName := tr.Labels[common.LabelTaskResourceGroup]
+			err = fmt.Errorf("reserved task resources belonging to the task resource group %q doesn't meet the minReservedMembers, %s", trgName, siblingTrPhaseInfo)
+		}
 	}
 
 	if schedulable {
@@ -400,47 +403,35 @@ func (trMgr *TaskResourceManager) isSchedulable(waitingTime time.Duration, tr *k
 	return false, err
 }
 
-func (trMgr *TaskResourceManager) buildSiblingStatusInfo(tr *kusciaapisv1alpha1.TaskResource) string {
+// getSiblingTaskResourcePhaseInfo get sibling TaskResource phase info.
+func (trMgr *TaskResourceManager) getSiblingTaskResourcePhaseInfo(tr *kusciaapisv1alpha1.TaskResource) map[string]string {
 	if tr == nil || tr.Labels == nil {
-		return ""
+		return nil
 	}
 
 	trgName := tr.Labels[common.LabelTaskResourceGroup]
 	if trgName == "" {
-		return ""
+		return nil
 	}
 
 	selector := labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trgName})
 	trs, err := trMgr.trLister.List(selector)
 	if err != nil {
-		return ""
+		return nil
 	}
 
-	var unreservedDomains []string
+	trPhaseInfo := make(map[string]string)
 	for _, item := range trs {
-		lastReserved := false
-		for _, cond := range item.Status.Conditions {
-			if cond.Type == kusciaapisv1alpha1.TaskResourceCondReserved {
-				if (cond.Status == corev1.ConditionFalse && cond.Reason == kusciaapisv1alpha1.RetryReserveResourceReason) ||
-					cond.Status == corev1.ConditionTrue {
-					lastReserved = true
-				}
-				break
-			}
-		}
-
-		if lastReserved {
+		if item.Name == tr.Name {
 			continue
 		}
-		unreservedDomains = append(unreservedDomains, item.Namespace)
-	}
 
-	siblingInfo := ""
-	if len(unreservedDomains) > 0 {
-		siblingInfo = fmt.Sprintf("domain [%v] can not reserve resources for pods", strings.Join(unreservedDomains, ","))
+		if item.Status.Phase != kusciaapisv1alpha1.TaskResourcePhaseReserved {
+			key := item.Namespace + "/" + item.Name
+			trPhaseInfo[key] = string(item.Status.Phase)
+		}
 	}
-
-	return siblingInfo
+	return trPhaseInfo
 }
 
 // getPatchTaskResourceInfos gets patch task resource infos.

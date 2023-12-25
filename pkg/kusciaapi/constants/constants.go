@@ -14,6 +14,9 @@
 
 package constants
 
+const CertPathPrefix = "etc/certs"
+const ConfPathPrefix = "etc/conf"
+
 const RouteSucceeded = "Succeeded"
 const RouteFailed = "Failed"
 

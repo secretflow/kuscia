@@ -12,31 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
-## [0.5.0.dev231215] - 2023-12-15
-### Added
-- Add document for deploying Kuscia on k8s.
-### Changed
-- Optimize log output.
-
-## [0.5.0.dev231205] - 2023-12-5
-### Changed
-- Optimize Kuscia deployment configuration and add configuration documentation.
-- Optimize error messages due to scheduling failures.
-
-## [v0.5.0.dev231201] - 2023-12-01
-### Fixed
-- When there is a duplicate node error, the node will not exit but will try again.
-- Change ClusterDomainRoute status to be unready when dest domain is unreachable.
-
-## [v0.5.0.dev231122] - 2023-11-22
-### Added
-- Support register secretflow psi image.
-
-## [0.4.0b0] - 2023-11-9
-### Added
-- Add KusciaDeployment operator.
-- Support non MTLS network communication in P2P networking mode.
-
 ## [0.3.0b0] - 2023-9-7
 ### Added
 - Support the deployment of new lite domain in centralized clusters.

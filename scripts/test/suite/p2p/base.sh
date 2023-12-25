@@ -47,13 +47,15 @@ function test_p2p_kuscia_job() {
 }
 
 function test_p2p_kuscia_api_http_available() {
-  local alice_http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:11082" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
+  local ipv4=($(get_ipv4_address))
+
+  local alice_http_status_code=$(get_kuscia_api_healthz_http_status_code "${ipv4}":11082 "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
   assertEquals "KusciaApi healthZ http code" "200" "${alice_http_status_code}"
 
   unset alice_http_status_code
 
   local autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
-  local bob_http_status_code=$(get_kuscia_api_healthz_http_status_code 127.0.0.1:12082 "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
+  local bob_http_status_code=$(get_kuscia_api_healthz_http_status_code "${ipv4}":12082 "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
   assertEquals "KusciaApi healthZ http code" "200" "${bob_http_status_code}"
 
   unset bob_http_status_code
@@ -62,13 +64,15 @@ function test_p2p_kuscia_api_http_available() {
 }
 
 function test_p2p_kuscia_api_grpc_available() {
-  local alice_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:11083" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
+  local ipv4=($(get_ipv4_address))
+
+  local alice_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${ipv4}":11083 "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${alice_status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
   unset alice_status_message
 
   local autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
-  local bob_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:12083" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
+  local bob_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "${ipv4}":12083 "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${bob_status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
   unset bob_status_message

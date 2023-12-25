@@ -61,7 +61,6 @@ import (
 	"github.com/spf13/pflag"
 	kubectlcmd "k8s.io/kubectl/pkg/cmd"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/start"
 	_ "github.com/secretflow/kuscia/pkg/agent/middleware/plugins"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/autonomy"
@@ -87,7 +86,6 @@ func main() {
 	rootCmd.AddCommand(autonomy.NewAutonomyCommand(ctx))
 	rootCmd.AddCommand(lite.NewLiteCommand(ctx))
 	rootCmd.AddCommand(master.NewMasterCommand(ctx))
-	rootCmd.AddCommand(start.NewStartCommand(ctx))
 	initKubeEnv()
 	rootCmd.AddCommand(kubectlcmd.NewDefaultKubectlCommand())
 	if err := rootCmd.Execute(); err != nil {

@@ -128,55 +128,37 @@ kubectl get kt secretflow-task-psi -o jsonpath={.status} | jq
     "alice/secretflow-task-psi-0-fed": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
-      "portName": "fed",
-      "portNumber": 8080,
       "readyTime": "2023-08-21T07:43:18Z",
-      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-fed"
     },
     "alice/secretflow-task-psi-0-global": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
-      "portName": "global",
-      "portNumber": 8081,
       "readyTime": "2023-08-21T07:43:18Z",
-      "scope": "Domain",
       "serviceName": "secretflow-task-psi-0-global"
     },
     "alice/secretflow-task-psi-0-spu": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
-      "portName": "spu",
-      "portNumber": 54509,
       "readyTime": "2023-08-21T07:43:18Z",
-      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-spu"
     },
     "bob/secretflow-task-psi-0-fed": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
-      "portName": "fed",
-      "portNumber": 8080,
       "readyTime": "2023-08-21T07:43:18Z",
-      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-fed"
     },
     "bob/secretflow-task-psi-0-global": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
-      "portName": "global",
-      "portNumber": 8081,
       "readyTime": "2023-08-21T07:43:18Z",
-      "scope": "Domain",
       "serviceName": "secretflow-task-psi-0-global"
     },
     "bob/secretflow-task-psi-0-spu": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
-      "portName": "spu",
-      "portNumber": 54509,
       "readyTime": "2023-08-21T07:43:18Z",
-      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-spu"
     }
   },
@@ -314,55 +296,6 @@ status:
       podName: task-template-psi-0
       podPhase: Succeeded
       reason: Completed
-  serviceStatuses:
-    alice/secretflow-task-psi-0-fed:
-      createTime: "2023-08-21T07:43:15Z"
-      namespace: alice
-      portName: fed
-      portNumber: 8080
-      readyTime: "2023-08-21T07:43:18Z"
-      scope: Cluster
-      serviceName: secretflow-task-psi-0-fed
-    alice/secretflow-task-psi-0-global:
-      createTime: "2023-08-21T07:43:15Z"
-      namespace: alice
-      portName: global
-      portNumber: 8081
-      readyTime: "2023-08-21T07:43:18Z"
-      scope: Domain
-      serviceName: secretflow-task-psi-0-global
-    alice/secretflow-task-psi-0-spu:
-      createTime: "2023-08-21T07:43:15Z"
-      namespace: alice
-      portName: spu
-      portNumber: 54509
-      readyTime: "2023-08-21T07:43:18Z"
-      scope: Cluster
-      serviceName: secretflow-task-psi-0-spu
-    bob/secretflow-task-psi-0-fed:
-      createTime: "2023-08-21T07:43:15Z"
-      namespace: bob
-      portName: fed
-      portNumber: 8080
-      readyTime: "2023-08-21T07:43:18Z"
-      scope: Cluster
-      serviceName: secretflow-task-psi-0-fed
-    bob/secretflow-task-psi-0-global:
-      createTime: "2023-08-21T07:43:15Z"
-      namespace: bob
-      portName: global
-      portNumber: 8081
-      readyTime: "2023-08-21T07:43:18Z"
-      scope: Domain
-      serviceName: secretflow-task-psi-0-global
-    bob/secretflow-task-psi-0-spu:
-      createTime: "2023-08-21T07:43:15Z"
-      namespace: bob
-      portName: spu
-      portNumber: 54509
-      readyTime: "2023-08-21T07:43:18Z"
-      scope: Cluster
-      serviceName: secretflow-task-psi-0-spu
   startTime: "2023-06-26T03:46:38Z"
 ```
 
@@ -415,14 +348,6 @@ KusciaTask `status` 的子字段详细介绍如下：
   - `podStatuses[].reason`: 表示 Pod 处在该阶段的原因。
   - `podStatuses[].message`: 表示 Pod 处在该阶段的详细描述信息。
   - `podStatuses[].terminationLog`: 表示 Pod 异常终止时的日志信息。
-- `serviceStatuses`: 表示 KusciaTask 相关的所有参与方的 Service 状态信息。
-  - `serviceStatuses[].createTime`: 表示 Service 的创建时间戳。
-  - `serviceStatuses[].namespace`: 表示 Service 的所在的 Namespace。
-  - `serviceStatuses[].portName`: 表示 Service 的端口名称。
-  - `serviceStatuses[].portNumber`: 表示 Service 的端口号。
-  - `serviceStatuses[].readyTime`: 表示 Service 就绪并可以对外提供服务的时间。
-  - `serviceStatuses[].scope`: 表示 Service 的端口使用范围。
-  - `serviceStatuses[].serviceName`: 表示 Service 的名称。
 - `startTime`: 表示 KusciaTask 第一次被 Kuscia 控制器处理的时间戳。
 - `completionTime`: 表示 KusciaTask 运行完成的时间戳。
 - `lastReconcileTime`: 表示 KusciaTask 上次更新的时间戳。

@@ -16,26 +16,20 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 )
 
 func TestRegisterDatasource(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	assert.NoError(t, err)
 	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
-		DomainKey:     key,
+		RootDir:       "/home/kuscia",
 	}
-	domainDataService := NewOperatorService(conf, makeMemConfigurationService(t))
+	domainDataService := NewOperatorService(conf)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*11)
 	domainDataService.Start(ctx)
 	<-ctx.Done()

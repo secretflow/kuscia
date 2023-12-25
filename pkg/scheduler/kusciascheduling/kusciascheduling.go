@@ -172,7 +172,7 @@ func (cs *KusciaScheduling) PostFilter(ctx context.Context, state *framework.Cyc
 	})
 
 	return &framework.PostFilterResult{}, framework.NewStatus(framework.Unschedulable,
-		fmt.Sprintf("reject the pod %v even after PostFilter", pod.Name))
+		fmt.Sprintf("reject the pod %v is unschedulable even after PostFilter", pod.Name))
 }
 
 // PreFilterExtensions returns a PreFilterExtensions interface if the plugin implements one.

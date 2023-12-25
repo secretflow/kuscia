@@ -64,15 +64,15 @@ Status 携带请求响应的状态信息。
 
 ## 如何使用 Kuscia API
 
-### 获取 Kuscia API server 证书和私钥
+### 获取 Kuscia API client 证书和私钥
 
-Kuscia master 部署完成之后，会默认生成一个 kuscia API server 证书，你可以通过以下命令获取（以中心化组网模式为例）：
+Kuscia master 部署完成之后，会默认生成一个 kuscia API client 证书，你可以通过以下命令获取（以中心化组网模式为例）：
 
 ```shell
-docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.key .
-docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/ca.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/token .
+docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.key .
+docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/ca.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/token .
 ```
 
 ### GRPC
@@ -101,15 +101,15 @@ from kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2 import (
 
 
 def query_domain():
-    server_cert_file = "kusciaapi-server.crt"
-    server_key_file = "kusciaapi-server.key"
+    client_cert_file = "kusciaapi-client.crt"
+    client_key_file = "kusciaapi-client.key"
     trusted_ca_file = "ca.crt"
     token_file = "token"
     address = "root-kuscia-master:8083"
-    with open(server_cert_file, 'rb') as server_cert, open(
-            server_key_file, 'rb'
-    ) as server_key, open(trusted_ca_file, 'rb') as trusted_ca, open(token_file, 'rb') as token:
-        credentials = grpc.ssl_channel_credentials(trusted_ca.read(), server_key.read(), server_cert.read())
+    with open(client_cert_file, 'rb') as client_cert, open(
+            client_key_file, 'rb'
+    ) as client_key, open(trusted_ca_file, 'rb') as trusted_ca, open(token_file, 'rb') as token:
+        credentials = grpc.ssl_channel_credentials(trusted_ca.read(), client_key.read(), client_cert.read())
         channel = grpc.secure_channel(address, credentials)
         domainStub = DomainServiceStub(channel)
         metadata = [('token', token.read())]
@@ -120,9 +120,9 @@ def query_domain():
 你也可以使用 GRPC 的客户端工具连接上 Kuscia API，如 [grpcurl](https://github.com/fullstorydev/grpcurl/releases)，你需要替换 {} 中的内容：
 > 如果 GRPC 的主机端口是 8083 ，则可以执行下面的命令，端口号不是 8083 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
-grpcurl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
-        --key /home/kuscia/var/certs/kusciaapi-server.key \
-        --cacert /home/kuscia/var/certs/ca.crt \
+grpcurl --cert kusciaapi-client.crt \
+        --key kusciaapi-client.key \
+        --cacert ca.crt \
         -H 'Token: {token}' \
         -d '{"domain_id": "alice"}' \
         ${USER}-kuscia-master:8083 kuscia.proto.api.v1alpha1.kusciaapi.DomainService.QueryDomain
@@ -143,9 +143,9 @@ GRPC 主机上端口：master 或者 autonomy 可以通过 `docker inspect --for
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：
 > 如果 GRPC 的主机端口是 8082 ，则可以执行下面的命令，端口号不是 8082 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
-curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
-     --key /home/kuscia/var/certs/kusciaapi-server.key \
-     --cacert /home/kuscia/var/certs/ca.crt \
+curl --cert kusciaapi-client.crt \
+     --key kusciaapi-client.key \
+     --cacert ca.crt \
      --header 'Token: {token}' --header 'Content-Type: application/json' \
      'https://{{USER}-kuscia-master}:8082/api/v1/domain/query' \
      -d '{"domain_id": "alice"}'

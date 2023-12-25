@@ -20,3 +20,21 @@ COPY --from=k3s-image /bin/aux /image/bin/aux
 RUN wget https://github.com/krallin/tini/releases/download/v0.19.0/tini -O /image/home/kuscia/bin/tini && \
     chmod +x /image/home/kuscia/bin/tini
 
+ARG GO_VER=1.19.10
+RUN wget https://go.dev/dl/go${GO_VER}.linux-amd64.tar.gz && \
+    tar -C /usr/local -zxvf go${GO_VER}.linux-amd64.tar.gz && \
+    rm -rf go${GO_VER}.linux-amd64.tar.gz
+ENV GO111MODULE=on
+ENV GOPATH=/root/gopath
+ENV PATH=${PATH}:${GOPATH}/bin:/usr/local/go/bin
+
+ARG FLANNEL_VER=v0.23.0
+RUN git clone https://github.com/flannel-io/flannel.git && \
+    pushd flannel && \
+    git checkout -b stable ${FLANNEL_VER} && \
+    CGO_ENABLED=1 make dist/flanneld && \
+    cp dist/flanneld /image/home/kuscia/bin && \
+    popd && \
+    rm -rf flannel && \
+    go clean -modcache && \
+    rm -rf /usr/local/go/

@@ -19,10 +19,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -40,7 +38,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
 )
 
@@ -50,12 +47,12 @@ const (
 )
 
 const (
-	handShakeTypeUID = "UID"
-	handShakeTypeRSA = "RSA"
+	handShakeTypeUID   = "UID"
+	handShakeTypeTOKEN = "TOKEN"
 )
 
-var (
-	tokenPrefix = []byte("kuscia")
+const (
+	expirationTime = 30 * time.Minute
 )
 
 type Token struct {
@@ -118,8 +115,7 @@ func doHTTP(in interface{}, out interface{}, path, host string, headers map[stri
 			time.Sleep(time.Second)
 			continue
 		}
-
-		if err = json.Unmarshal(body, out); err != nil {
+		if err := json.Unmarshal(body, out); err != nil {
 			nlog.Errorf("Json unmarshal failed, err:%s, body:%s", err.Error(), string(body))
 			time.Sleep(time.Second)
 			continue
@@ -136,7 +132,6 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
 	var err error
-	var out *getResponse
 	for {
 		i++
 		if i == maxRetryTimes {
@@ -160,9 +155,10 @@ func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaap
 			if drLatest.Status.TokenStatus.RevisionInitializer != c.gateway.Name {
 				return fmt.Errorf("dr %s may change initializer ", drLatest.Name)
 			}
+			var out *getResponse
 			out, err = c.checkConnectionStatus(drLatest)
 			if err != nil {
-				if out != nil && out.State != NetworkUnreachable {
+				if out != nil {
 					if out.State == TokenNotReady {
 						continue
 					} else {
@@ -198,35 +194,25 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 	req.Header.Set("kuscia-Host", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns))
 	client := &http.Client{}
 	resp, err := client.Do(req)
-
-	buildUnreachableResp := func() *getResponse {
-		out := &getResponse{
-			Namespace: ns,
-			State:     NetworkUnreachable,
-		}
-		return out
-	}
-
 	if err != nil {
-		return buildUnreachableResp(), fmt.Errorf("do http request fail:%v", err)
+		return nil, fmt.Errorf("do http request fail:%v", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return buildUnreachableResp(), fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
+		return nil, fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
 	}
 	if resp.StatusCode != http.StatusOK {
 		if len(body) > 200 {
 			body = body[:200]
 		}
-		return buildUnreachableResp(), fmt.Errorf("request error, path: %s, code: %d, message: %s", fmt.Sprintf("%s.%s.svc/handshake",
-			clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
+		return nil, fmt.Errorf("request error, path: %s, code: %d, message: %s", fmt.Sprintf("%s.%s.svc/handshake", clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
 	}
 	out := &getResponse{}
 	err = json.Unmarshal(body, out)
 	if err != nil {
-		return buildUnreachableResp(), err
+		return nil, err
 	}
 
 	return out, c.handleGetResponse(out, dr)
@@ -235,22 +221,16 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaapisv1alpha1.DomainRoute) error {
 	switch out.State {
 	case TokenReady:
-		if !dr.Status.TokenStatus.RevisionToken.IsReady {
-			dr = dr.DeepCopy()
-			dr.Status.TokenStatus.RevisionToken.IsReady = true
-			dr.Status.IsDestinationUnreachable = false
-			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
-			return err
-		}
-		return nil
+		dr = dr.DeepCopy()
+		dr.Status.TokenStatus.RevisionToken.IsReady = true
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+		return err
 	case TokenNotFound:
-		if dr.Status.TokenStatus.RevisionToken.Token != "" || dr.Status.TokenStatus.Tokens != nil || dr.Status.TokenStatus.RevisionToken.IsReady {
-			dr = dr.DeepCopy()
-			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
-			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
-			return err
-		}
-		return nil
+		dr = dr.DeepCopy()
+		dr.Status.TokenStatus.RevisionToken.Token = ""
+		dr.Status.TokenStatus.RevisionToken.IsReady = false
+		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+		return err
 	case DomainIDInputInvalid:
 		return fmt.Errorf("%s destinationreturn  DomainIDInputInvalid, check 'Kuscia-Source' in header", dr.Name)
 	case TokenRevisionInputInvalid:
@@ -258,33 +238,16 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 	case TokenNotReady:
 		return fmt.Errorf("%s destination token is not ready", dr.Name)
 	case NoAuthentication:
-		if dr.Status.IsDestinationAuthorized {
-			dr = dr.DeepCopy()
-			dr.Status.IsDestinationAuthorized = false
-			dr.Status.IsDestinationUnreachable = false
-			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
-			c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
-			return fmt.Errorf("%s cant contact destination because destination authentication is false", dr.Name)
-		}
-		return nil
+		dr = dr.DeepCopy()
+		dr.Status.IsDestinationAuthrized = false
+		dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
+		c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+		return fmt.Errorf("%s cant contact destination because destination authentication is false", dr.Name)
 	case InternalError:
 		return fmt.Errorf("%s destination return unkown error", dr.Name)
 	default:
 		return nil
 	}
-}
-
-func calcPublicKeyHash(pubStr string) ([]byte, error) {
-	srcPub, err := base64.StdEncoding.DecodeString(pubStr)
-	if err != nil {
-		return nil, err
-	}
-	msgHash := sha256.New()
-	_, err = msgHash.Write(srcPub)
-	if err != nil {
-		return nil, err
-	}
-	return msgHash.Sum(nil), nil
 }
 
 func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.DomainRoute) error {
@@ -320,27 +283,15 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
 		}
-		if resp.Status.Code != 0 {
-			err = fmt.Errorf("DomainRoute %s: handshake fail, return error:%v", dr.Name, resp.Status.Message)
-			nlog.Error(err)
-			return err
-		}
+
 		token, err = decryptToken(c.prikey, resp.Token.Token, tokenByteSize)
 		if err != nil {
-			err = fmt.Errorf("DomainRoute %s: handshake fail, return error:%v", dr.Name, resp.Status.Message)
-			nlog.Error(err)
 			return err
 		}
 	} else if dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA {
-		handshankeReq.Type = handShakeTypeRSA
-
-		msgHashSum, err := calcPublicKeyHash(c.gateway.Status.PublicKey)
-		if err != nil {
-			return err
-		}
-
+		handshankeReq.Type = handShakeTypeTOKEN
 		sourceToken := make([]byte, tokenByteSize/2)
-		_, err = rand.Read(sourceToken)
+		_, err := rand.Read(sourceToken)
 		if err != nil {
 			return err
 		}
@@ -355,16 +306,13 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		if err != nil {
 			return err
 		}
-
 		sourceTokenEnc, err := encryptToken(destPubKey, sourceToken)
 		if err != nil {
 			return err
 		}
-
 		handshankeReq.TokenConfig = &handshake.TokenConfig{
 			Token:    sourceTokenEnc,
 			Revision: dr.Status.TokenStatus.RevisionToken.Revision,
-			Pubhash:  base64.StdEncoding.EncodeToString(msgHashSum),
 		}
 
 		ns := dr.Spec.Destination
@@ -382,15 +330,8 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
 		}
-		if resp.Status.Code != 0 {
-			err = fmt.Errorf("DomainRoute %s: handshake fail, return error:%v", dr.Name, resp.Status.Message)
-			nlog.Error(err)
-			return err
-		}
 		destToken, err := decryptToken(c.prikey, resp.Token.Token, tokenByteSize/2)
 		if err != nil {
-			err = fmt.Errorf("DomainRoute %s: handshake fail, decryptToken  error:%v", dr.Name, resp.Status.Message)
-			nlog.Error(err)
 			return err
 		}
 		token = append(sourceToken, destToken...)
@@ -406,7 +347,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	drLatest, _ := c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
 	drCopy := drLatest.DeepCopy()
 	tn := metav1.Now()
-	drCopy.Status.IsDestinationAuthorized = true
+	drCopy.Status.IsDestinationAuthrized = true
 	drCopy.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
 	drCopy.Status.TokenStatus.RevisionToken.Revision = int64(resp.Token.Revision)
 	drCopy.Status.TokenStatus.RevisionToken.IsReady = false
@@ -431,7 +372,6 @@ const (
 	TokenNotFound
 	NoAuthentication
 	InternalError
-	NetworkUnreachable
 )
 
 type getResponse struct {
@@ -440,7 +380,6 @@ type getResponse struct {
 }
 
 func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.Request) {
-	nlog.Debugf("Receive handshake request, method [%s], host[%s], headers[%s]", r.Method, r.Host, r.Header)
 	if r.Method == http.MethodGet {
 		resp := &getResponse{
 			Namespace: c.gateway.Namespace,
@@ -455,7 +394,6 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 		err := json.NewEncoder(w).Encode(resp)
 		if err != nil {
 			nlog.Errorf("write handshake response fail, detail-> %v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -463,7 +401,7 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 	req := handshake.HandShakeRequest{}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		nlog.Errorf("Invalid request: %v", err.Error())
+		nlog.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -477,24 +415,21 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 		return
 	}
 	if !(req.Type == handShakeTypeUID && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) &&
-		!(req.Type == handShakeTypeRSA && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA) {
-		errMsg := fmt.Sprintf("handshake Type(%s) not match domainroute required(%s)", req.Type, dr.Spec.TokenConfig.TokenGenMethod)
-		nlog.Error(errMsg)
-		http.Error(w, errMsg, http.StatusInternalServerError)
+		!(req.Type == handShakeTypeTOKEN && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA) {
+		nlog.Errorf("handshake Type(%s) not match domainroute required(%s)", req.Type, dr.Spec.TokenConfig.TokenGenMethod)
 		return
 	}
-	resp := c.DestReplyHandshake(&req, dr)
+	resp, err := c.DestReplyHandshake(&req, dr)
+	if err != nil {
+		nlog.Errorf("DestReplyHandshake for(%s) fail, detail-> %v", drName, err)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		nlog.Errorf("encode handshake response for(%s) fail, detail-> %v", drName, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
-		if resp.Status.Code != 0 {
-			nlog.Errorf("DestReplyHandshake for(%s) fail, detail-> %v", drName, resp.Status.Message)
-		} else {
-			nlog.Infof("DomainRoute %s handle success", drName)
-		}
+		nlog.Infof("DomainRoute %s handle success", drName)
 	}
 }
 
@@ -530,26 +465,14 @@ func checkTokenRevision(tokenRevision string, dr *kusciaapisv1alpha1.DomainRoute
 	return TokenNotFound
 }
 
-func buildFailedHandshakeReply(code int32, err error) *handshake.HandShakeResponse {
-	resp := &handshake.HandShakeResponse{
-		Status: &v1alpha1.Status{
-			Code: code,
-		},
-	}
-	if err != nil {
-		resp.Status.Message = err.Error()
-	}
-	return resp
-}
-
-func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeRequest, dr *kusciaapisv1alpha1.DomainRoute) *handshake.HandShakeResponse {
+func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeRequest, dr *kusciaapisv1alpha1.DomainRoute) (*handshake.HandShakeResponse, error) {
 	srcPub, err := base64.StdEncoding.DecodeString(dr.Spec.TokenConfig.SourcePublicKey)
 	if err != nil {
-		return buildFailedHandshakeReply(500, err)
+		return nil, err
 	}
 	sourcePubKey, err := tlsutils.ParsePKCS1PublicKey(srcPub)
 	if err != nil {
-		return buildFailedHandshakeReply(500, err)
+		return nil, err
 	}
 	dstRevisionToken := dr.Status.TokenStatus.RevisionToken
 
@@ -558,48 +481,27 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 	if req.Type == handShakeTypeUID {
 		// If the token in domainroute is empty or has expired, the token is regenerated.
 		// Otherwise, the token is returned
-		needGenerateToken := func() bool {
-			if dstRevisionToken.Token == "" {
-				return true
-			}
-			if dr.Spec.TokenConfig != nil && dr.Spec.TokenConfig.RollingUpdatePeriod > 0 && time.Since(dstRevisionToken.RevisionTime.Time) > time.Duration(dr.Spec.TokenConfig.RollingUpdatePeriod)*time.Second {
-				return true
-			}
-			return false
-		}
-		if needGenerateToken() {
-			respToken, err = generateRandomToken(tokenByteSize)
-			if err != nil {
-				return buildFailedHandshakeReply(500, err)
+		if dstRevisionToken.Token == "" || time.Since(dstRevisionToken.RevisionTime.Time) > expirationTime {
+			respToken = make([]byte, tokenByteSize)
+			if _, err = rand.Read(respToken); err != nil {
+				return nil, err
 			}
 		} else {
 			respToken, err = decryptToken(c.prikey, dstRevisionToken.Token, tokenByteSize)
 			if err != nil {
-				nlog.Warnf("source %s %s handshake decryptToken failed, error:%s", req.DomainId, handShakeTypeUID, err.Error())
-				respToken, err = generateRandomToken(tokenByteSize)
-				if err != nil {
-					return buildFailedHandshakeReply(500, err)
-				}
+				return nil, err
 			}
 		}
 
 		token = respToken
-	} else if req.Type == handShakeTypeRSA {
-		msgHashSum, err := calcPublicKeyHash(dr.Spec.TokenConfig.SourcePublicKey)
-		if err != nil {
-			return buildFailedHandshakeReply(500, fmt.Errorf("source %s %s handshake calcPublicKeyHash failed, error:%s", req.DomainId, req.Type, err.Error()))
-		}
-		if req.TokenConfig.Pubhash != base64.StdEncoding.EncodeToString(msgHashSum) {
-			return buildFailedHandshakeReply(500, fmt.Errorf("source %s %s publickey mismatch in domainroute(%s) SourcePublicKey", req.DomainId, req.Type, dr.Name))
-		}
+	} else if req.Type == handShakeTypeTOKEN {
 		sourceToken, err := decryptToken(c.prikey, req.TokenConfig.Token, tokenByteSize/2)
 		if err != nil {
-			return buildFailedHandshakeReply(500, fmt.Errorf("source %s %s handshake decryptToken failed, error:%s", req.DomainId, req.Type, err.Error()))
+			return nil, err
 		}
-
 		respToken = make([]byte, tokenByteSize/2)
 		if _, err = rand.Read(respToken); err != nil {
-			return buildFailedHandshakeReply(500, err)
+			return nil, err
 		}
 
 		token = append(sourceToken, respToken...)
@@ -607,20 +509,15 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 
 	tokenEncrypted, err := encryptToken(&c.prikey.PublicKey, token)
 	if err != nil {
-		return buildFailedHandshakeReply(500, fmt.Errorf("source %s %s handshake encryptToken by self publickey failed, error:%s", req.DomainId, req.Type, err.Error()))
+		return nil, err
 	}
 
-	respTokenEncrypted, err := encryptToken(sourcePubKey, respToken)
-	if err != nil {
-		return buildFailedHandshakeReply(500, fmt.Errorf("source %s %s handshake encryptToken by source publickey failed, error:%s", req.DomainId, req.Type, err.Error()))
-	}
-
-	drLatest, err := c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
-	if err != nil {
-		return buildFailedHandshakeReply(500, err)
-	}
 	var revision int64
 	var expirationTime metav1.Time
+	drLatest, err := c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
+	if err != nil {
+		return nil, err
+	}
 	if drLatest.Status.TokenStatus.RevisionToken.Token != tokenEncrypted {
 		drCopy := drLatest.DeepCopy()
 		revisionTime := metav1.Now()
@@ -637,24 +534,23 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = expirationTime
 		_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(drCopy.Namespace).UpdateStatus(context.Background(), drCopy, metav1.UpdateOptions{})
 		if err != nil {
-			return buildFailedHandshakeReply(500, err)
+			return nil, err
 		}
 		nlog.Infof("Update domainroute %s status", dr.Name)
-	} else {
-		revision = drLatest.Status.TokenStatus.RevisionToken.Revision
-		expirationTime = drLatest.Status.TokenStatus.RevisionToken.ExpirationTime
+	}
+
+	respTokenEncrypted, err := encryptToken(sourcePubKey, respToken)
+	if err != nil {
+		return nil, err
 	}
 
 	return &handshake.HandShakeResponse{
-		Status: &v1alpha1.Status{
-			Code: 0,
-		},
 		Token: &handshake.Token{
 			Token:          respTokenEncrypted,
 			ExpirationTime: expirationTime.UnixNano(),
 			Revision:       int32(revision),
 		},
-	}
+	}, nil
 }
 
 func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, routeKey string) ([]*Token, error) {
@@ -674,10 +570,8 @@ func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, r
 	}
 
 	switch dr.Spec.TokenConfig.TokenGenMethod {
-	case kusciaapisv1alpha1.TokenGenMethodRSA:
-		tokens, err = c.parseTokenRSA(dr, false)
-	case kusciaapisv1alpha1.TokenGenUIDRSA:
-		tokens, err = c.parseTokenRSA(dr, true)
+	case kusciaapisv1alpha1.TokenGenMethodRSA, kusciaapisv1alpha1.TokenGenUIDRSA:
+		tokens, err = c.parseTokenRSA(dr)
 	default:
 		err = fmt.Errorf("DomainRoute %s unsupported token method: %s", routeKey,
 			dr.Spec.TokenConfig.TokenGenMethod)
@@ -685,12 +579,12 @@ func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, r
 	return tokens, err
 }
 
-func (c *DomainRouteController) parseTokenRSA(dr *kusciaapisv1alpha1.DomainRoute, drop bool) ([]*Token, error) {
+func (c *DomainRouteController) parseTokenRSA(dr *kusciaapisv1alpha1.DomainRoute) ([]*Token, error) {
 	key, _ := cache.MetaNamespaceKeyFunc(dr)
 
 	var tokens []*Token
 	if len(dr.Status.TokenStatus.Tokens) == 0 {
-		return tokens, nil
+		return tokens, fmt.Errorf("DomainRoute %s has no avaliable token", key)
 	}
 
 	if (c.gateway.Namespace == dr.Spec.Source && dr.Spec.TokenConfig.SourcePublicKey != c.gateway.Status.PublicKey) ||
@@ -702,11 +596,7 @@ func (c *DomainRouteController) parseTokenRSA(dr *kusciaapisv1alpha1.DomainRoute
 	for _, token := range dr.Status.TokenStatus.Tokens {
 		b, err := decryptToken(c.prikey, token.Token, tokenByteSize)
 		if err != nil {
-			if !drop {
-				return []*Token{}, fmt.Errorf("DomainRoute %s decrypt token error: %v", key, err)
-			}
-			nlog.Warnf("DomainRoute %s decrypt token [revision -> %d] error: %v", key, token.Revision, err)
-			continue
+			return []*Token{}, fmt.Errorf("DomainRoute %s decrypt error: %v", key, err)
 		}
 		tokens = append(tokens, &Token{Token: base64.StdEncoding.EncodeToString(b), Version: token.Revision})
 	}
@@ -731,22 +621,15 @@ func (c *DomainRouteController) checkAndUpdateTokenInstances(dr *kusciaapisv1alp
 		return err
 	}
 	return nil
-}
 
-func generateRandomToken(size int) ([]byte, error) {
-	respToken := make([]byte, size)
-	if _, err := rand.Read(respToken); err != nil {
-		return nil, err
-	}
-	return respToken, nil
 }
 
 func encryptToken(pub *rsa.PublicKey, key []byte) (string, error) {
-	return tlsutils.EncryptPKCS1v15(pub, key, tokenPrefix)
+	return tlsutils.EncryptPKCS1v15(pub, key)
 }
 
 func decryptToken(priv *rsa.PrivateKey, ciphertext string, keysize int) ([]byte, error) {
-	return tlsutils.DecryptPKCS1v15(priv, ciphertext, keysize, tokenPrefix)
+	return tlsutils.DecryptPKCS1v15(priv, ciphertext, keysize)
 }
 
 func exists(slice []string, val string) bool {
@@ -781,13 +664,10 @@ func HandshakeToMaster(domainID string, prikey *rsa.PrivateKey) error {
 		nlog.Error(err)
 		return err
 	}
-	if resp.Status.Code != 0 {
-		nlog.Errorf("Handshake to master fail, return error:%v", resp.Status.Message)
-		return errors.New(resp.Status.Message)
-	}
+
 	token, err := decryptToken(prikey, resp.Token.Token, tokenByteSize)
 	if err != nil {
-		nlog.Errorf("Handshake to master decryptToken err:%s", err.Error())
+		nlog.Error(err)
 		return err
 	}
 	c, err := xds.QueryCluster(clusters.GetMasterClusterName())

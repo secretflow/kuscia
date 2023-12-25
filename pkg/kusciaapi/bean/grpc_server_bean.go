@@ -17,7 +17,6 @@ package bean
 import (
 	"context"
 	"fmt"
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"net"
 	"time"
 
@@ -61,7 +60,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
 	}
 	if s.config.TLS != nil {
-		serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA, s.config.TLS.ServerCert, s.config.TLS.ServerKey)
+		serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA,
+			s.config.TLS.ServerCert, s.config.TLS.ServerKey)
 		if err != nil {
 			nlog.Fatalf("Failed to init server tls config: %v", err)
 		}
@@ -95,7 +95,6 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterDomainRouteServiceServer(server, grpchandler.NewDomainRouteHandler(service.NewDomainRouteService(s.config)))
 	kusciaapi.RegisterHealthServiceServer(server, grpchandler.NewHealthHandler(service.NewHealthService()))
 	kusciaapi.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
-	kusciaapi.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())))
 	kusciaapi.RegisterServingServiceServer(server, grpchandler.NewServingHandler(service.NewServingService(s.config)))
 	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 	kusciaapi.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(newCertService(s.config)))

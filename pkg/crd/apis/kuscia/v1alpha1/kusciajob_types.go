@@ -42,25 +42,6 @@ type KusciaJob struct {
 	Status KusciaJobStatus `json:"status,omitempty"`
 }
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
-// +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
-// +kubebuilder:printcolumn:name="LastReconcileTime",type=date,JSONPath=`.status.lastReconcileTime`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=kbj
-
-// KusciaBetaJob is the Schema for the kuscia beta job API.
-type KusciaBetaJob struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-	Spec              KusciaBetaJobSpec `json:"spec"`
-	// +optional
-	Status KusciaJobStatus `json:"status,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -69,16 +50,6 @@ type KusciaJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KusciaJob `json:"items"`
-}
-
-// +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KusciaBetaJobList contains a list of kuscia jobs.
-type KusciaBetaJobList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KusciaBetaJob `json:"items"`
 }
 
 type JobStage string
@@ -95,38 +66,6 @@ type KusciaJobSpec struct {
 	// +optional
 	// +kubebuilder:default=Create
 	Stage JobStage `json:"stage,omitempty"`
-
-	// FlowID defines the id of flow
-	FlowID string `json:"flowID,omitempty"`
-	// Initiator who schedule this KusciaJob.
-	Initiator string `json:"initiator"`
-	// ScheduleMode defines how this job will be scheduled.
-	// In Strict, if any non-tolerable subtasks failed, Scheduling for this task stops immediately, and it immediately enters the final Failed state.
-	// In BestEffort, if any non-tolerable subtasks failed, Scheduling for this job will continue.
-	// But the successor subtask of the failed subtask stops scheduling, and the current state will be running.
-	// When all subtasks succeed or fail, the job will enter the Failed state.
-	// +optional
-	// +kubebuilder:validation:Enum=Strict;BestEffort
-	// +kubebuilder:default=Strict
-	ScheduleMode KusciaJobScheduleMode `json:"scheduleMode,omitempty"`
-	// MaxParallelism max parallelism of tasks, default 1.
-	// At a certain moment, there may be multiple subtasks that can be scheduled.
-	// this field defines the maximum number of tasks in the Running state.
-	// +optional
-	// +kubebuilder:default=1
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=128
-	MaxParallelism *int `json:"maxParallelism,omitempty"`
-	// Tasks defines the subtasks participating in scheduling and their dependencies,
-	// and the subtasks and dependencies should constitute a directed acyclic graph.
-	// During runtime, each subtask will be created as a KusciaTask.
-	// +kubebuilder:validation:MaxItems=128
-	// +kubebuilder:validation:MinItems=1
-	Tasks []KusciaTaskTemplate `json:"tasks"`
-}
-
-// KusciaBetaJobSpec defines the information of kuscia beta job spec.
-type KusciaBetaJobSpec struct {
 	// FlowID defines the id of flow
 	FlowID string `json:"flowID,omitempty"`
 	// Initiator who schedule this KusciaJob.
@@ -204,15 +143,6 @@ type KusciaJobStatus struct {
 	// +optional
 	Phase KusciaJobPhase `json:"phase,omitempty"`
 
-	// job approve status of each party, if job controller is configured with "AutoApproved",
-	// the party's approved status will be initiated with "JobAccepted"
-	// +optional
-	ApproveStatus map[string]JobApprovePhase `json:"approveStatus,omitempty"`
-
-	// job stage status of each party,
-	// +optional
-	StageStatus map[string]JobStagePhase `json:"stageStatus,omitempty"`
-
 	// The latest available observations of an object's current state.
 	// +optional
 	Conditions []KusciaJobCondition `json:"conditions,omitempty"`
@@ -224,10 +154,6 @@ type KusciaJobStatus struct {
 	// A human-readable message indicating details about why the job is in this condition.
 	// +optional
 	Message string `json:"message,omitempty"`
-
-	// PartyTaskCreateStatus describes the created status of party task.
-	// +optional
-	PartyTaskCreateStatus map[string][]PartyTaskCreateStatus `json:"partyTaskCreateStatus,omitempty"`
 
 	// TaskStatus describes subtasks state. The key is taskId.
 	// Uncreated subtasks will not appear here.
@@ -252,24 +178,6 @@ type KusciaJobStatus struct {
 	// +optional
 	LastReconcileTime *metav1.Time `json:"lastReconcileTime,omitempty"`
 }
-
-// PartyTaskCreateStatus defines party task create status.
-type PartyTaskCreateStatus struct {
-	DomainID string `json:"domainID"`
-	// +optional
-	Role string `json:"role,omitempty"`
-	// +optional
-	Phase KusciaTaskCreatePhase `json:"phase,omitempty"`
-	// +optional
-	Message string `json:"message,omitempty"`
-}
-
-type KusciaTaskCreatePhase string
-
-const (
-	KusciaTaskCreateSucceeded KusciaTaskCreatePhase = "Succeeded"
-	KusciaTaskCreateFailed    KusciaTaskCreatePhase = "Failed"
-)
 
 // KusciaJobScheduleMode defines how this job will be scheduled.
 type KusciaJobScheduleMode string
@@ -344,60 +252,3 @@ const (
 	// KusciaJobFailed means least one non-tolerable tasks are failed and kuscia job scheduling is stopped.
 	KusciaJobFailed KusciaJobPhase = "Failed"
 )
-
-type JobStagePhase string
-
-const (
-	JobCreateStageSucceeded JobStagePhase = "JobCreateStageSucceeded"
-	JobCreateStageFailed    JobStagePhase = "JobCreateStageFailed"
-
-	JobStopStageSucceeded JobStagePhase = "JobStopStageSucceeded"
-	JobStopStageFailed    JobStagePhase = "JobStopStageFailed"
-)
-
-type JobApprovePhase string
-
-const (
-	JobRejected JobApprovePhase = "JobRejected"
-	JobAccepted JobApprovePhase = "JobAccepted"
-)
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
-// +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
-// +kubebuilder:printcolumn:name="LastReconcileTime",type=date,JSONPath=`.status.lastReconcileTime`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:shortName=kjs
-
-// KusciaJobSummary is used to sync job status between clusters
-type KusciaJobSummary struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-
-	Spec KusciaJobSummarySpec `json:"spec"`
-	// +optional
-	Status KusciaJobStatus `json:"status,omitempty"`
-}
-
-type KusciaJobSummarySpec struct {
-	// Stage defines the current situation of a job.
-	// +optional
-	// +kubebuilder:default=Create
-	Stage JobStage `json:"stage,omitempty"`
-
-	// StageTrigger refers to the party who trigger current stage
-	// +optional
-	StageTrigger string `json:"stageTrigger,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KusciaJobSummaryList contains a list of kuscia tasks.
-type KusciaJobSummaryList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KusciaJobSummary `json:"items"`
-}

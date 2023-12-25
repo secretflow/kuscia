@@ -56,6 +56,11 @@ func NewDomainDataService(config *config.KusciaAPIConfig) IDomainDataService {
 	}
 }
 
+const (
+	LabelDomainDataType   = "kuscia.secretflow/domaindata-type"
+	LabelDomainDataVendor = "kuscia.secretflow/domaindata-vendor"
+)
+
 func (s domainDataService) CreateDomainData(ctx context.Context, request *kusciaapi.CreateDomainDataRequest) *kusciaapi.CreateDomainDataResponse {
 	// do validate
 	if request.DomainId == "" {
@@ -87,10 +92,10 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	s.normalizationCreateRequest(request)
 	// build kuscia domain
 	Labels := make(map[string]string)
-	Labels[common.LabelDomainDataType] = request.Type
-	Labels[common.LabelDomainDataVendor] = request.Vendor
+	Labels[LabelDomainDataType] = request.Type
+	Labels[LabelDomainDataVendor] = request.Vendor
 	Labels[common.LabelInterConnProtocolType] = "kuscia"
-	Labels[common.LabelInitiator] = request.DomainId
+	Labels[common.LabelInitiator] = request.DomaindataId
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   request.DomaindataId,
@@ -153,16 +158,13 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 	}
 	s.normalizationUpdateRequest(request, originalDomainData.Spec)
 	// build modified domainData
-	labels := make(map[string]string)
-	for key, value := range originalDomainData.Labels {
-		labels[key] = value
-	}
-	labels[common.LabelDomainDataType] = request.Type
-	labels[common.LabelDomainDataVendor] = request.Vendor
+	Labels := make(map[string]string)
+	Labels[LabelDomainDataType] = request.Type
+	Labels[LabelDomainDataVendor] = request.Vendor
 	modifiedDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            request.DomaindataId,
-			Labels:          labels,
+			Labels:          Labels,
 			ResourceVersion: originalDomainData.ResourceVersion,
 		},
 		Spec: v1alpha1.DomainDataSpec{

@@ -28,7 +28,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
-	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/coredns"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -76,7 +75,8 @@ var directives = []string{
 }
 
 const (
-	serverType = "dns"
+	serverType   = "dns"
+	tmpDirPrefix = "var/tmp/"
 )
 
 type CorednsModule struct {
@@ -121,7 +121,7 @@ func (s *CorednsModule) Run(ctx context.Context) error {
 	)
 	dnsserver.Directives = directives
 
-	contents, err := os.ReadFile(filepath.Join(s.rootDir, common.ConfPrefix, "corefile"))
+	contents, err := os.ReadFile(filepath.Join(s.rootDir, ConfPrefix, "corefile"))
 	if err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func prepareResolvConf(rootDir string) error {
 	}
 
 	resolvConf := "/etc/resolv.conf"
-	backupResolvConf := filepath.Join(rootDir, common.TmpPrefix, "resolv.conf")
+	backupResolvConf := filepath.Join(rootDir, tmpDirPrefix, "resolv.conf")
 	exist := paths.CheckFileExist(backupResolvConf)
 	if !exist {
 		if err = paths.CopyFile(resolvConf, backupResolvConf); err != nil {

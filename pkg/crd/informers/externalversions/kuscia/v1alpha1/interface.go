@@ -42,24 +42,12 @@ type Interface interface {
 	Gateways() GatewayInformer
 	// InteropConfigs returns a InteropConfigInformer.
 	InteropConfigs() InteropConfigInformer
-	// KusciaBetaDeployments returns a KusciaBetaDeploymentInformer.
-	KusciaBetaDeployments() KusciaBetaDeploymentInformer
-	// KusciaBetaJobs returns a KusciaBetaJobInformer.
-	KusciaBetaJobs() KusciaBetaJobInformer
-	// KusciaBetaTasks returns a KusciaBetaTaskInformer.
-	KusciaBetaTasks() KusciaBetaTaskInformer
 	// KusciaDeployments returns a KusciaDeploymentInformer.
 	KusciaDeployments() KusciaDeploymentInformer
-	// KusciaDeploymentSummaries returns a KusciaDeploymentSummaryInformer.
-	KusciaDeploymentSummaries() KusciaDeploymentSummaryInformer
 	// KusciaJobs returns a KusciaJobInformer.
 	KusciaJobs() KusciaJobInformer
-	// KusciaJobSummaries returns a KusciaJobSummaryInformer.
-	KusciaJobSummaries() KusciaJobSummaryInformer
 	// KusciaTasks returns a KusciaTaskInformer.
 	KusciaTasks() KusciaTaskInformer
-	// KusciaTaskSummaries returns a KusciaTaskSummaryInformer.
-	KusciaTaskSummaries() KusciaTaskSummaryInformer
 	// TaskResources returns a TaskResourceInformer.
 	TaskResources() TaskResourceInformer
 	// TaskResourceGroups returns a TaskResourceGroupInformer.
@@ -127,29 +115,9 @@ func (v *version) InteropConfigs() InteropConfigInformer {
 	return &interopConfigInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// KusciaBetaDeployments returns a KusciaBetaDeploymentInformer.
-func (v *version) KusciaBetaDeployments() KusciaBetaDeploymentInformer {
-	return &kusciaBetaDeploymentInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// KusciaBetaJobs returns a KusciaBetaJobInformer.
-func (v *version) KusciaBetaJobs() KusciaBetaJobInformer {
-	return &kusciaBetaJobInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// KusciaBetaTasks returns a KusciaBetaTaskInformer.
-func (v *version) KusciaBetaTasks() KusciaBetaTaskInformer {
-	return &kusciaBetaTaskInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // KusciaDeployments returns a KusciaDeploymentInformer.
 func (v *version) KusciaDeployments() KusciaDeploymentInformer {
 	return &kusciaDeploymentInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// KusciaDeploymentSummaries returns a KusciaDeploymentSummaryInformer.
-func (v *version) KusciaDeploymentSummaries() KusciaDeploymentSummaryInformer {
-	return &kusciaDeploymentSummaryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // KusciaJobs returns a KusciaJobInformer.
@@ -157,19 +125,9 @@ func (v *version) KusciaJobs() KusciaJobInformer {
 	return &kusciaJobInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// KusciaJobSummaries returns a KusciaJobSummaryInformer.
-func (v *version) KusciaJobSummaries() KusciaJobSummaryInformer {
-	return &kusciaJobSummaryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // KusciaTasks returns a KusciaTaskInformer.
 func (v *version) KusciaTasks() KusciaTaskInformer {
 	return &kusciaTaskInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// KusciaTaskSummaries returns a KusciaTaskSummaryInformer.
-func (v *version) KusciaTaskSummaries() KusciaTaskSummaryInformer {
-	return &kusciaTaskSummaryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // TaskResources returns a TaskResourceInformer.

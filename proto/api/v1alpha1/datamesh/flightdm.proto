@@ -126,6 +126,15 @@ message ActionDeleteDomainDataResponse {
   DeleteDomainDataResponse response = 1;
 }
 
+// call DoAction with ActionCreateDomainDataSourceRequest, return ActionCreateDomainDataSourceResponse
+message ActionCreateDomainDataSourceRequest {
+  CreateDomainDataSourceRequest request = 1;
+}
+
+message ActionCreateDomainDataSourceResponse {
+  CreateDomainDataSourceResponse response = 1;
+}
+
 // call DoAction with ActionQueryDomainDataSourceRequest, return ActionQueryDomainDataSourceResponse
 message ActionQueryDomainDataSourceRequest {
   QueryDomainDataSourceRequest request = 1;

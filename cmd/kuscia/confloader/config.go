@@ -15,7 +15,10 @@
 package confloader
 
 import (
+	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
@@ -30,6 +33,8 @@ import (
 var (
 	defaultRootDir           = "/home/kuscia/"
 	defaultEndpointForMaster = "https://127.0.0.1:6443"
+	certPrefix               = "etc/certs/"
+	tmpDirPrefix             = "var/tmp/"
 )
 
 type KusciaConfig struct {
@@ -43,23 +48,15 @@ type KusciaConfig struct {
 	CAKeyFile      string `yaml:"caKeyFile,omitempty"`
 	CAKeyData      string `yaml:"caKeyData,omitempty"`
 	CACertFile     string `yaml:"caFile,omitempty"` // Note: for ca cert will be mounted to agent pod
-	CACertData     string `yaml:"caCertData,omitempty"`
-
-	LogLevel string `yaml:"logLevel"`
-
-	Debug        bool `yaml:"debug"`
-	DebugPort    int  `yaml:"debugPort"`
-	CtrDebugPort int  `yaml:"controllerDebugPort"`
 
 	Agent          config.AgentConfig        `yaml:"agent,omitempty"`
 	Master         kusciaconfig.MasterConfig `yaml:"master,omitempty"`
 	ConfManager    cmconf.ConfManagerConfig  `yaml:"confManager,omitempty"`
+	ExternalTLS    *kusciaconfig.TLSConfig   `yaml:"externalTLS,omitempty"`
 	KusciaAPI      *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
 	SecretBackends []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
 	ConfLoaders    []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
 	DataMesh       *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
-	DomainRoute    DomainRouteConfig         `yaml:"domainRoute,omitempty"`
-	Protocol       common.Protocol           `yaml:"protocol"`
 
 	EnvoyIP           string             `yaml:"-"`
 	CoreDNSBackUpConf string             `yaml:"-"`
@@ -67,9 +64,8 @@ type KusciaConfig struct {
 }
 
 type SecretBackendConfig struct {
-	Name   string         `yaml:"name"`
-	Driver string         `yaml:"driver"`
-	Params map[string]any `yaml:"params"`
+	Name                       string `yaml:"name"`
+	cmconf.SecretBackendConfig `yaml:",inline"`
 }
 
 type ConfigLoaderConfig struct {
@@ -77,13 +73,8 @@ type ConfigLoaderConfig struct {
 	SecretBackendParams SecretBackendParams `yaml:"secretBackendParams"`
 }
 
-type DomainRouteConfig struct {
-	ExternalTLS   *kusciaconfig.TLSConfig `yaml:"externalTLS,omitempty"`
-	DomainCsrData string                  `yaml:"-"`
-}
-
-func defaultMaster(rootDir string) KusciaConfig {
-	conf := defaultKusciaConfig(rootDir)
+func defaultMaster() KusciaConfig {
+	conf := defaultKusciaConfig()
 	conf.Master = kusciaconfig.MasterConfig{
 		APIServer: &kusciaconfig.APIServerConfig{
 			KubeConfig: filepath.Join(conf.RootDir, "etc/kubeconfig"),
@@ -93,65 +84,67 @@ func defaultMaster(rootDir string) KusciaConfig {
 			Endpoint: "http://127.0.0.1:8092",
 		},
 	}
-	conf.DomainRoute = DomainRouteConfig{
-		ExternalTLS: &kusciaconfig.TLSConfig{
-			EnableTLS: true,
-		},
-	}
 	return conf
 }
 
-func defaultLite(rootDir string) KusciaConfig {
-	conf := defaultKusciaConfig(rootDir)
+func defaultLite() KusciaConfig {
+	conf := defaultKusciaConfig()
 	conf.Agent = *config.DefaultAgentConfig()
+	// TODO: gateway: no conf.Master.APIServer == nil is master
+
 	return conf
 }
 
-func defaultAutonomy(rootDir string) KusciaConfig {
-	conf := defaultMaster(rootDir)
+func defaultAutonomy() KusciaConfig {
+	conf := defaultMaster()
 	conf.Agent = *config.DefaultAgentConfig()
 
 	return conf
 }
 
-func defaultKusciaConfig(rootDir string) KusciaConfig {
+func defaultKusciaConfig() KusciaConfig {
 	hostIP, err := network.GetHostIP()
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	if rootDir == "" {
-		rootDir = defaultRootDir
-	}
 	return KusciaConfig{
-		RootDir:        rootDir,
-		CAKeyFile:      filepath.Join(rootDir, common.CertPrefix, "ca.key"),
-		CACertFile:     filepath.Join(rootDir, common.CertPrefix, "ca.crt"),
-		DomainKeyFile:  filepath.Join(rootDir, common.CertPrefix, "domain.key"),
-		DomainCertFile: filepath.Join(rootDir, common.CertPrefix, "domain.crt"),
+		RootDir:        defaultRootDir,
+		CAKeyFile:      filepath.Join(defaultRootDir, certPrefix, "ca.key"),
+		CACertFile:     filepath.Join(defaultRootDir, certPrefix, "ca.crt"),
+		DomainKeyFile:  filepath.Join(defaultRootDir, certPrefix, "domain.key"),
+		DomainCertFile: filepath.Join(defaultRootDir, tmpDirPrefix, "domain.crt"),
 		EnvoyIP:        hostIP,
-		KusciaAPI:      kaconfig.NewDefaultKusciaAPIConfig(rootDir),
 	}
 }
 
-func ReadConfig(configFile, runMode string) KusciaConfig {
+func ReadConfig(configFile string, flagDomainID string, runMode string) KusciaConfig {
 	var conf KusciaConfig
 	switch runMode {
 	case common.RunModeMaster:
-		masterConfig := LoadMasterConfig(configFile)
-		conf = defaultMaster(defaultRootDir)
-		masterConfig.OverwriteKusciaConfig(&conf)
+		conf = defaultMaster()
 	case common.RunModeLite:
-		liteConfig := LoadLiteConfig(configFile)
-		conf = defaultLite(defaultRootDir)
-		liteConfig.OverwriteKusciaConfig(&conf)
+		conf = defaultLite()
 	case common.RunModeAutonomy:
-		autonomyConfig := LoadAutonomyConfig(configFile)
-		conf = defaultAutonomy(defaultRootDir)
-		autonomyConfig.OverwriteKusciaConfig(&conf)
+		conf = defaultAutonomy()
 	default:
 		nlog.Fatalf("Not supported run mode: %s", runMode)
 	}
 	conf.RunMode = runMode
+	// overwrite config
+	if configFile != "" {
+		content, err := os.ReadFile(configFile)
+		if err != nil {
+			nlog.Fatal(err)
+		}
+		err = yaml.Unmarshal(content, &conf)
+		if err != nil {
+			nlog.Fatal(err)
+		}
+	}
+	// overwrite by domain flag
+	if flagDomainID != "" {
+		conf.DomainID = flagDomainID
+	}
 	if conf.DomainID == "" {
 		nlog.Fatalf("Kuscia config domain should not be empty")
 	}

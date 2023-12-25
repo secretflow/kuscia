@@ -42,25 +42,6 @@ type KusciaTask struct {
 	Status KusciaTaskStatus `json:"status,omitempty"`
 }
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
-// +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
-// +kubebuilder:printcolumn:name="LastReconcileTime",type=date,JSONPath=`.status.lastReconcileTime`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=kbt
-
-// KusciaBetaTask is the Schema for the namespace kuscia task API.
-type KusciaBetaTask struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-	Spec              KusciaTaskSpec `json:"spec"`
-	// +optional
-	Status KusciaTaskStatus `json:"status,omitempty"`
-}
-
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -69,16 +50,6 @@ type KusciaTaskList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KusciaTask `json:"items"`
-}
-
-// +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KusciaBetaTaskList contains a list of kuscia tasks.
-type KusciaBetaTaskList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KusciaBetaTask `json:"items"`
 }
 
 // KusciaTaskSpec defines the information of kuscia task spec.
@@ -288,15 +259,6 @@ type ServiceStatus struct {
 	Namespace string `json:"namespace"`
 	// Service name.
 	ServiceName string `json:"serviceName"`
-	// Service's port name which defined in AppImage container port.
-	// +optional
-	PortName string `json:"portName,omitempty"`
-	// Service's port number which defined in AppImage container port.
-	// +optional
-	PortNumber int32 `json:"portNumber,omitempty"`
-	// Service's port scope which defined in AppImage container port.
-	// +optional
-	Scope PortScope `json:"scope,omitempty"`
 	// A brief CamelCase message indicating details about why the service is in this state.
 	// e.g. 'Evicted'
 	// +optional
@@ -313,48 +275,4 @@ type ServiceStatus struct {
 	// It is represented in RFC3339 form and is in UTC.
 	// +optional
 	ReadyTime *metav1.Time `json:"readyTime,omitempty"`
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="TaskID",type=string,JSONPath=`.spec.taskID`
-// +kubebuilder:printcolumn:name="JobID",type=string,JSONPath=`.spec.jobID`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
-// +kubebuilder:resource:shortName=kts
-
-// KusciaTaskSummary is used to sync task status between clusters
-type KusciaTaskSummary struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-
-	Spec KusciaTaskSummarySpec `json:"spec"`
-
-	// +optional
-	Status KusciaTaskSummaryStatus `json:"status,omitempty"`
-}
-
-// KusciaTaskSummarySpec defines the information of kuscia task spec.
-type KusciaTaskSummarySpec struct {
-	Alias string `json:"alias"`
-	JobID string `json:"jobID"`
-}
-
-type KusciaTaskSummaryStatus struct {
-	KusciaTaskStatus `json:",inline"`
-
-	// resourceStatus refers to each party resource status
-	// +optional
-	ResourceStatus map[string]TaskResourceStatus `json:"resourceStatus,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KusciaTaskSummaryList contains a list of kuscia tasks.
-type KusciaTaskSummaryList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KusciaTaskSummary `json:"items"`
 }

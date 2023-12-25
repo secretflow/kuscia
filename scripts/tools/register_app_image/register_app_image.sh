@@ -18,9 +18,8 @@
 set -e
 
 IMAGE=""
-DEPLOY_MODE="p2p"
 DEPLOY_USER="${USER}"
-DOMAIN_IDS="alice,bob"
+DEPLOY_MODE=""
 APP_IMAGE_NAME_IN_KUSCIA=""
 
 usage="$(basename "$0") [OPTIONS]
@@ -28,16 +27,15 @@ usage="$(basename "$0") [OPTIONS]
 OPTIONS:
     -h    [optional] show this help text
     -i    [mandatory] app docker image info
-    -m    [optional] kuscia deploy mode. support [center, p2p], default value: p2p
-    -d    [optional] domain ids that makes up the kuscia container name. default value: alice,bob
+    -m    [mandatory] kuscia deploy mode. support [center, p2p], default value: p2p
     -u    [optional] user who deploy the kuscia container. default value: ${USER}
     -n    [optional] kuscia appImage name for app docker image. if not specified, the script will automatically generate a name
 
 example:
- ./register_app_image.sh -u ${USER} -m center -d alice,bob -n secretflow-image -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
+ ./register_app_image.sh -u ${USER} -m center -n secretflow-image -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 "
 
-while getopts ':hi:u:d:m:n:' option; do
+while getopts ':hi:u:m:n:' option; do
   case "$option" in
   h)
     echo "$usage"
@@ -48,9 +46,6 @@ while getopts ':hi:u:d:m:n:' option; do
     ;;
   u)
     DEPLOY_USER=$OPTARG
-    ;;
-  d)
-    DOMAIN_IDS=$OPTARG
     ;;
   m)
     DEPLOY_MODE=$OPTARG
@@ -79,62 +74,40 @@ fi
 
 CTR_ROOT="/home/kuscia"
 KUSCIA_MASTER_CONTAINER_NAME="${DEPLOY_USER}-kuscia-master"
-KUSCIA_DOMAIN_CONTAINER_NAMES=()
+KUSCIA_ALICE_LITE_CONTAINER_NAME="${DEPLOY_USER}-kuscia-lite-alice"
+KUSCIA_BOB_LITE_CONTAINER_NAME="${DEPLOY_USER}-kuscia-lite-bob"
+KUSCIA_ALICE_AUTONOMY_CONTAINER_NAME="${DEPLOY_USER}-kuscia-autonomy-alice"
+KUSCIA_BOB_AUTONOMY_CONTAINER_NAME="${DEPLOY_USER}-kuscia-autonomy-bob"
 
 IMAGE_TEMP_DIR="/tmp/kuscia-appimage-tmp"
-APP_IMAGE_FILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-DEFAULT_APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/secretflow-image.yaml"
-APP_IMAGE_FILE=""
+APP_IMAGE_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/appimage.yaml"
 APP_IMAGE_TEMP_FILE="${IMAGE_TEMP_DIR}/appimage_tmp.yaml"
 
 function prepare_app_image() {
-  import_appimage $1 $2
-  apply_appimage_crd $1 $2
-}
-
-function import_appimage(){
-  echo "=> start import containerd image..."
+  echo "=> start preparing app image..."
   image_name=$1
   image_tag=$2
-
-  if [[ -z $(docker images -q -f "reference=${IMAGE}") ]]; then
-    docker pull "${IMAGE}"
-  fi
 
   image_tar=${IMAGE_TEMP_DIR}/$(echo ${image_name} | sed 's/\//_/g' ).tar
   if [[ ! -e ${image_tar} ]] ; then
     docker save "${IMAGE}" -o "${image_tar}"
   fi
 
-  ctr_num=${#KUSCIA_DOMAIN_CONTAINER_NAMES[@]}
+  alice_container_name=${KUSCIA_ALICE_LITE_CONTAINER_NAME}
+  bob_container_name=${KUSCIA_BOB_LITE_CONTAINER_NAME}
+  if [[ $DEPLOY_MODE = "p2p" ]]; then
+    alice_container_name=${KUSCIA_ALICE_AUTONOMY_CONTAINER_NAME}
+    bob_container_name=${KUSCIA_BOB_AUTONOMY_CONTAINER_NAME}
+  fi
 
-  idx=0
-  while (($idx<$ctr_num)); do
-    container_name=${KUSCIA_DOMAIN_CONTAINER_NAMES[$idx]}
-    echo "=> => import app image into ${container_name} container"
-    docker exec -i "${container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" &> /dev/tty &
-    idx+=1
-  done
+  echo "=> => import app image into ${alice_container_name} container"
+  docker exec -it "${alice_container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" || exit 1
 
-  wait
+  echo "=> => import app image into ${bob_container_name} container"
+  docker exec -it "${bob_container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" || exit 1
 
-  echo "=> finish import containerd image"
-}
-
-function apply_appimage_crd(){
-  echo "=> start apply kuscia AppImage crd..."
-  image_name=$1
-  image_tag=$2
-
-  if [[ -z $APP_IMAGE_NAME_IN_KUSCIA ]]; then
+  if [[ $APP_IMAGE_NAME_IN_KUSCIA = "" ]]; then
     APP_IMAGE_NAME_IN_KUSCIA=$(echo ${image_name##*/}-${image_tag} | sed 's/_/-/g')
-    APP_IMAGE_FILE=${DEFAULT_APP_IMAGE_FILE}
-  else
-    APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/${APP_IMAGE_NAME_IN_KUSCIA}.yaml"
-    if [[ ! -f "$APP_IMAGE_FILE" ]]; then
-      echo "=> => $APP_IMAGE_FILE is not exist, register fail"
-      exit 1
-    fi
   fi
 
   app_image_content=$(sed "s!{{APP_IMAGE_NAME}}!${APP_IMAGE_NAME_IN_KUSCIA}!g;
@@ -145,34 +118,18 @@ function apply_appimage_crd(){
   echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
 
   if [[ $DEPLOY_MODE = "p2p" ]]; then
-      for container_name in "${KUSCIA_DOMAIN_CONTAINER_NAMES[@]}"; do
-        docker exec -it "${container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
-      done
+      docker exec -it "${alice_container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
+      docker exec -it "${bob_container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
   else
       docker exec -it "${KUSCIA_MASTER_CONTAINER_NAME}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
   fi
-  echo "=> finish apply kuscia AppImage crd"
+
+  echo "=> finish preparing app image"
 }
 
 function post_action() {
   echo "=> remove temporary directory ${IMAGE_TEMP_DIR}"
   rm -rf "${IMAGE_TEMP_DIR}"
-}
-
-function gen_domain_container_names(){
-  IFS=',' read -ra DOMAINS <<< "$DOMAIN_IDS"
-  for DOMAIN in "${DOMAINS[@]}"; do
-    container_name=("${DEPLOY_USER}-kuscia-lite-${DOMAIN}")
-    if [[ $DEPLOY_MODE = "p2p" ]]; then
-      container_name=("${DEPLOY_USER}-kuscia-autonomy-${DOMAIN}")
-    fi
-
-    if [[ -n $(docker ps -q -f "name=${container_name}") ]]; then
-      KUSCIA_DOMAIN_CONTAINER_NAMES+=("${container_name}")
-    else
-      echo "=> ${container_name} container is not exist! will skip it."
-    fi
-  done
 }
 
 function register_app_image() {
@@ -193,7 +150,6 @@ function register_app_image() {
     mkdir ${IMAGE_TEMP_DIR}
   fi
 
-  gen_domain_container_names
   prepare_app_image "${image_name}" "${image_tag}"
   post_action
   echo "=> finish registering app image: ${IMAGE}"

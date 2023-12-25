@@ -53,19 +53,16 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 - [指南：多机器部署中心化集群][deploy-master-lite]
 - [指南：多机器部署点对点集群][deploy-p2p]
-- [指南：k8s 集群部署 kuscia][deploy-k8s-deploy-kuscia]
 - [常见运维操作][ops-cheatsheet]
 - [网络要求][deploy-networkrequirements]
 - [日志说明][deploy-logdescription]
-- [kuscia 配置文件][deploy-kuscia_config_cn]
 
 [deploy-master-lite]: ./deployment/deploy_master_lite_cn.md
 [deploy-p2p]: ./deployment/deploy_p2p_cn.md
-[deploy-k8s-deploy-kuscia]: ./deployment/K8s_deployment_kuscia/index.rst
 [ops-cheatsheet]: ./deployment/operation_cn.md
 [deploy-networkrequirements]: ./deployment/networkrequirements.md
 [deploy-logdescription]: ./deployment/logdescription.md
-[deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
+
 ## 更多指南
 
 - [如何运行一个互联互通银联 BFIA 协议作业][how-to-bfia]
@@ -83,7 +80,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - [常见问题（FAQ）][faq]
 - Kuscia 的 [Issues] 和 [讨论区]
 
-[faq]: ./reference/troubleshoot/index.rst
+[faq]: ./reference/faq_cn.md
 [Issues]: https://github.com/secretflow/kuscia/issues
 [讨论区]: https://github.com/secretflow/kuscia/discussions
 

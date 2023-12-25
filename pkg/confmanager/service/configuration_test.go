@@ -5,17 +5,19 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	"github.com/secretflow/kuscia/pkg/confmanager/config"
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 	"github.com/secretflow/kuscia/pkg/web/asserts"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 )
 
 func newMemDriverConfigurationService() (IConfigurationService, error) {
-	driver, err := mem.NewMem(map[string]any{})
-	if err != nil {
-		return nil, err
-	}
-	srv, err := NewConfigurationService(driver, false)
+	srv, err := NewConfigurationService(config.ConfManagerConfig{
+		BackendConfig: &config.SecretBackendConfig{
+			Driver: "mem",
+			Params: map[string]any{},
+		},
+	})
 	if err != nil {
 		return nil, err
 	}

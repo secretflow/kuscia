@@ -19,13 +19,12 @@ import (
 )
 
 type TLSConfig struct {
-	EnableTLS bool   `yaml:"enableTLS,omitempty"`
-	CertFile  string `yaml:"certFile,omitempty"`
-	CertData  string `yaml:"certData,omitempty"`
-	KeyFile   string `yaml:"keyFile,omitempty"`
-	KeyData   string `yaml:"keyData,omitempty"`
-	CAData    string `yaml:"caData,omitempty"`
-	CAFile    string `yaml:"caFile,omitempty"`
+	CertFile string `yaml:"certFile,omitempty"`
+	CertData string `yaml:"certData,omitempty"`
+	KeyFile  string `yaml:"keyFile,omitempty"`
+	KeyData  string `yaml:"keyData,omitempty"`
+	CAData   string `yaml:"caData,omitempty"`
+	CAFile   string `yaml:"caFile,omitempty"`
 }
 
 func CheckTLSConfig(config *TLSConfig, name string) error {

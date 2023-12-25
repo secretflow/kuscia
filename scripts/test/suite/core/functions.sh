@@ -77,9 +77,9 @@ function get_kuscia_api_healthz_http_status_code() {
   local addr=$1
   local kuscia_cert_dir=$2
 
-  curl -k --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
-    --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${addr}/healthZ" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
-    --header 'Content-Type: application/json' -s -o /dev/null --write-out '%{http_code}' -d '{}'
+  curl --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
+    --cacert "${kuscia_cert_dir}"/ca.crt -X POST "https://${addr}/api/v1/domain/query" --header "Token: $(cat "${kuscia_cert_dir}"/token)" \
+    --header 'Content-Type: application/json' -s -o /dev/null --write-out '%{http_code}' -d '{"domain_id": "alice"}'
 
   unset addr kuscia_cert_dir
 }
@@ -97,7 +97,7 @@ function get_kuscia_api_healthz_grpc_status_message() {
   local addr=$2
   local kuscia_cert_dir=$3
 
-  ${bin} -insecure --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
+  ${bin} --cert "${kuscia_cert_dir}"/kusciaapi-client.crt --key "${kuscia_cert_dir}"/kusciaapi-client.key \
     --cacert "${kuscia_cert_dir}"/ca.crt -H "Token: $(cat "${kuscia_cert_dir}"/token)" -d '{}' \
     "${addr}" kuscia.proto.api.v1alpha1.kusciaapi.HealthService.healthZ
 
@@ -166,12 +166,10 @@ function start_center_mode() {
 
   # get kuscia api resource
   mkdir -p "${test_suite_run_kuscia_dir}"/master
-  ## generate client certs
-  docker exec -it ${MASTER_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
-  docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/master
-  docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/master
-  docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/master
-  docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/token "${test_suite_run_kuscia_dir}"/master
+  docker cp "${MASTER_CONTAINER}":/home/kuscia/etc/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/master
+  docker cp "${MASTER_CONTAINER}":/home/kuscia/etc/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/master
+  docker cp "${MASTER_CONTAINER}":/home/kuscia/etc/certs/ca.crt "${test_suite_run_kuscia_dir}"/master
+  docker cp "${MASTER_CONTAINER}":/home/kuscia/etc/certs/token "${test_suite_run_kuscia_dir}"/master
 
   unset test_suite_run_kuscia_dir master_container_state lite_alice_container_state lite_bob_container_state
 }
@@ -203,18 +201,14 @@ function start_p2p_mode() {
   mkdir -p "${test_suite_run_kuscia_dir}"
   mkdir -p "${test_suite_run_kuscia_dir}"/alice
   mkdir -p "${test_suite_run_kuscia_dir}"/bob
-  ## generate client certs
-  docker exec -it ${AUTONOMY_ALICE_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
-  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/alice
-  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/alice
-  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/alice
-  ## generate client certs
-  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/token "${test_suite_run_kuscia_dir}"/alice
-  docker exec -it ${AUTONOMY_BOB_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
-  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/bob
-  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/bob
-  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/bob
-  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/token "${test_suite_run_kuscia_dir}"/bob
+  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/etc/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/alice
+  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/etc/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/alice
+  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/etc/certs/ca.crt "${test_suite_run_kuscia_dir}"/alice
+  docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/etc/certs/token "${test_suite_run_kuscia_dir}"/alice
+  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/etc/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/bob
+  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/etc/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/bob
+  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/etc/certs/ca.crt "${test_suite_run_kuscia_dir}"/bob
+  docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/etc/certs/token "${test_suite_run_kuscia_dir}"/bob
 
   unset test_suite_run_kuscia_dir autonomy_alice_container_state autonomy_bob_container_state
 }

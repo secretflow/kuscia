@@ -12,7 +12,7 @@
 
 ### 部署 alice 节点
 
-登录到安装 alice 的机器上，本文为叙述方便，假定节点ID为 alice ，对外可访问的ip是 1.1.1.1，对外可访问的port是 11080 。
+登录到安装 alice 的机器上，本文为叙述方便，假定节点ID为 alice ，对外可访问的ip是 1.1.1.1，对外可访问的port是 8081 。
 指定 kuscia 版本：
 
 ```bash
@@ -31,18 +31,16 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 ```bash
 # -n 参数传递的是节点 ID。
 # -i 参数传递的是节点容器对外暴露的 IP，通常是主机 IP。 如果合作方无法直达主机，请填写网关映射的IP。
-# -p 参数传递的是节点容器映射到主机的 HTTPS 端口，保证和主机上现有的端口不冲突即可
-# -k 参数传递的是节点容器 KusciaAPI 映射到主机的 MTLS 端口，保证和主机上现有的端口不冲突即可
-./deploy.sh autonomy -n alice -i 1.1.1.1 -p 11080 -k 8082
+# -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
+# -k 参数传递的是节点容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+./deploy.sh autonomy -n alice -i 1.1.1.1 -p 8081 -k 8082
 ```
-<span style="color:red;">注意：<br>
-1、如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md) <br>
-2、alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)</span>
+<span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
 
 
 ### 部署 bob 节点
 
-你可以选择在另一台机器上部署 bob 节点，详细步骤参考上述 alice 节点部署的流程，唯一不同的是在部署前准备参数时配置 bob 节点相关的参数。假定节点ID为 bob ，对外可访问的ip是 2.2.2.2，对外可访问的port是 21080 。
+你可以选择在另一台机器上部署 bob 节点，详细步骤参考上述 alice 节点部署的流程，唯一不同的是在部署前准备参数时配置 bob 节点相关的参数。假定节点ID为 bob ，对外可访问的ip是 2.2.2.2，对外可访问的port是 8082 。
 
 
 {#配置授权}
@@ -58,7 +56,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 ```bash 
 
 # [alice 机器] 将 domain.crt 从容器内部拷贝出来
-docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/domain.crt .
+docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/var/tmp/domain.crt .
 ```
 
 
@@ -74,26 +72,17 @@ ls ${PWD}/kuscia-autonomy-bob-certs/alice.domain.crt
 
 ```bash
 # [bob 机器] 添加 alice 的证书等信息
-docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice p2p
-```
+docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice ${USER}-kuscia-autonomy-bob p2p
 
 alice 建立到 bob 的通信：
 
 ```bash
 # [alice 机器]
 # 为了减少授权错误的排查成本，建议在 alice 容器内(curl)访问 bob 地址判定是否能联通，之后再授权
-# 示例：curl -kvvv https://2.2.2.2:21080 返回正常的 HTTP 错误码是401
-# 2.2.2.2是上文中 bob 的访问 ip，21080 是上文中 bob 的访问端口
-docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh alice bob https://2.2.2.2:21080
+# 示例：curl -vvv http://2.2.2.2:8082 返回正常的HTTP错误码是401
+# 2.2.2.2是上文中 bob 的访问 ip，8082 是上文中 bob 的访问端口
+docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh alice bob 2.2.2.2:8082
 ```
-
-执行以下命令：
-```bash
-docker exec -it ${USER}-kuscia-autonomy-alice kubectl get cdr alice-bob -o yaml
-```
-
-当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 alice 到 bob 授权建立成功。
-
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 #### 创建 bob 到 alice 的授权
@@ -105,8 +94,9 @@ docker exec -it ${USER}-kuscia-autonomy-alice kubectl get cdr alice-bob -o yaml
 
 ```bash
 
+
 # [bob 机器] 将 domain.crt 从容器内部拷贝出来
-docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/certs/domain.crt .
+docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/tmp/domain.crt .
 ```
 
 将 bob 的公钥拷贝到 alice 的机器上的 ${PWD}/kuscia-autonomy-alice-certs 目录中并重命名为 bob.domain.crt：
@@ -121,7 +111,7 @@ ls ${PWD}/kuscia-autonomy-alice-certs/bob.domain.crt
 
 ```bash
 # [alice 机器] 添加 bob 的证书等信息
-docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p2p
+docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob ${USER}-kuscia-autonomy-alice p2p
 ```
 
 
@@ -130,49 +120,23 @@ bob 建立到 alice 的通信：
 ```bash
 # [bob 机器]
 # 为了减少授权错误的排查成本，建议在 bob 容器内(curl)访问 alice 地址判定是否能联通，之后再授权
-# 示例：curl -kvvv https://1.1.1.1:11080 返回正常的 HTTP 错误码是401
-# 1.1.1.1 是上文中 alice 的访问 ip，11080 是上文中 alice 的访问端口
-docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob alice https://1.1.1.1:11080
+# 示例：curl -vvv http://1.1.1.1:8081 返回正常的HTTP错误码是401
+# 1.1.1.1 是上文中 alice 的访问 ip，8081 是上文中 alice 的访问端口
+docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob alice 1.1.1.1:8081
 ```
-
-执行以下命令：
-```bash
-docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o yaml
-```
-
-当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 bob 到 alice 授权建立成功。
-
 <span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
-#### 准备测试数据
-登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-autonomy-alice-data 下
+#### 获取测试数据集
+登录到安装 alice 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-alice-data下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-autonomy-alice-data/alice.csv
 ```
-为 alice 的测试数据创建 domaindata
-```bash
-docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/create_domaindata_alice_table.sh alice
-```
-为 alice 的测试数据创建 domaindatagrant
 
-```bash
-docker exec -it ${USER}-kuscia-autonomy-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
-```
-
-同理，登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-autonomy-bob-data 下
+登录到安装 bob 的机器上，将默认的测试数据拷贝到当前目录的kuscia-autonomy-bob-data下
 
 ```bash
 docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-autonomy-bob-data/bob.csv
-```
-为 bob 的测试数据创建 domaindata
-```bash
-docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/create_domaindata_bob_table.sh bob
-```
-为 bob 的测试数据创建 domaindatagrant
-
-```bash
-docker exec -it ${USER}-kuscia-autonomy-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
 ```
 
 #### 执行作业

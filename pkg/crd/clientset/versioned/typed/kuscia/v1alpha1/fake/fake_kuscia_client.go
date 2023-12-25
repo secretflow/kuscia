@@ -66,40 +66,16 @@ func (c *FakeKusciaV1alpha1) InteropConfigs() v1alpha1.InteropConfigInterface {
 	return &FakeInteropConfigs{c}
 }
 
-func (c *FakeKusciaV1alpha1) KusciaBetaDeployments(namespace string) v1alpha1.KusciaBetaDeploymentInterface {
-	return &FakeKusciaBetaDeployments{c, namespace}
-}
-
-func (c *FakeKusciaV1alpha1) KusciaBetaJobs(namespace string) v1alpha1.KusciaBetaJobInterface {
-	return &FakeKusciaBetaJobs{c, namespace}
-}
-
-func (c *FakeKusciaV1alpha1) KusciaBetaTasks(namespace string) v1alpha1.KusciaBetaTaskInterface {
-	return &FakeKusciaBetaTasks{c, namespace}
-}
-
 func (c *FakeKusciaV1alpha1) KusciaDeployments() v1alpha1.KusciaDeploymentInterface {
 	return &FakeKusciaDeployments{c}
-}
-
-func (c *FakeKusciaV1alpha1) KusciaDeploymentSummaries(namespace string) v1alpha1.KusciaDeploymentSummaryInterface {
-	return &FakeKusciaDeploymentSummaries{c, namespace}
 }
 
 func (c *FakeKusciaV1alpha1) KusciaJobs() v1alpha1.KusciaJobInterface {
 	return &FakeKusciaJobs{c}
 }
 
-func (c *FakeKusciaV1alpha1) KusciaJobSummaries(namespace string) v1alpha1.KusciaJobSummaryInterface {
-	return &FakeKusciaJobSummaries{c, namespace}
-}
-
 func (c *FakeKusciaV1alpha1) KusciaTasks() v1alpha1.KusciaTaskInterface {
 	return &FakeKusciaTasks{c}
-}
-
-func (c *FakeKusciaV1alpha1) KusciaTaskSummaries(namespace string) v1alpha1.KusciaTaskSummaryInterface {
-	return &FakeKusciaTaskSummaries{c, namespace}
 }
 
 func (c *FakeKusciaV1alpha1) TaskResources(namespace string) v1alpha1.TaskResourceInterface {

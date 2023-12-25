@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -416,43 +415,13 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 				ts.CreateTime = utils.TimeRfc3339String(&task.CreationTimestamp)
 				ts.StartTime = utils.TimeRfc3339String(taskStatus.StartTime)
 				ts.EndTime = utils.TimeRfc3339String(taskStatus.CompletionTime)
-				partyTaskStatus := make(map[string]string)
-				for _, ps := range taskStatus.PartyTaskStatus {
-					partyTaskStatus[ps.DomainID] = string(ps.Phase)
-				}
-
-				partyErrMsg := make(map[string][]string)
-				for _, podStatus := range taskStatus.PodStatuses {
-					msg := ""
-					if podStatus.Message != "" {
-						msg = fmt.Sprintf("%v;", podStatus.Message)
-					}
-					if podStatus.TerminationLog != "" {
-						msg += podStatus.TerminationLog
-					}
-					partyErrMsg[podStatus.Namespace] = append(partyErrMsg[podStatus.Namespace], msg)
-				}
-
-				partyEndpoints := make(map[string][]*kusciaapi.JobPartyEndpoint)
-				for _, svcStatus := range taskStatus.ServiceStatuses {
-					ep := fmt.Sprintf("%v.%v.svc", svcStatus.ServiceName, svcStatus.Namespace)
-					if svcStatus.Scope == v1alpha1.ScopeDomain {
-						ep = fmt.Sprintf("%v:%v", ep, svcStatus.PortNumber)
-					}
-					partyEndpoints[svcStatus.Namespace] = append(partyEndpoints[svcStatus.Namespace], &kusciaapi.JobPartyEndpoint{
-						PortName: svcStatus.PortName,
-						Scope:    string(svcStatus.Scope),
-						Endpoint: ep,
-					})
-				}
-
+				podStatuses := taskStatus.PodStatuses
 				ts.Parties = make([]*kusciaapi.PartyStatus, 0)
-				for partyID, _ := range partyErrMsg {
+				for _, podStatus := range podStatuses {
 					ts.Parties = append(ts.Parties, &kusciaapi.PartyStatus{
-						DomainId:  partyID,
-						State:     partyTaskStatus[partyID],
-						ErrMsg:    strings.Join(partyErrMsg[partyID], ","),
-						Endpoints: partyEndpoints[partyID],
+						DomainId: podStatus.Namespace,
+						State:    string(podStatus.PodPhase),
+						ErrMsg:   podStatus.TerminationLog,
 					})
 				}
 			}

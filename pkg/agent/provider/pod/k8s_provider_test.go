@@ -121,7 +121,6 @@ func TestK8sProvider_SyncAndKillPod(t *testing.T) {
 		DNS: config.DNSCfg{
 			ResolverConfig: resolveConfig,
 		},
-		RuntimeClassName: "runc",
 	}
 	kp := createTestK8sProvider(t, cfg, rm)
 
@@ -178,7 +177,6 @@ func TestK8sProvider_SyncAndKillPod(t *testing.T) {
 	assert.Equal(t, "config-template", newPod.Spec.Volumes[0].Name)
 	assert.Equal(t, "test-secret", newPod.Spec.Volumes[1].Name)
 	assert.Equal(t, "resolv-config", newPod.Spec.Volumes[2].Name)
-	assert.Equal(t, "runc", *newPod.Spec.RuntimeClassName)
 
 	newPodConfig, err := kp.configMapLister.Get("config-template")
 	assert.NoError(t, err)

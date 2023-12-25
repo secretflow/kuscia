@@ -326,8 +326,7 @@ type DomainRouteMTLSConfig struct {
 
 // DomainRouteStatus represents information about the status of DomainRoute.
 type DomainRouteStatus struct {
-	IsDestinationAuthorized  bool `json:"isDestinationAuthorized"`
-	IsDestinationUnreachable bool `json:"isDestinationUnreachable"`
+	IsDestinationAuthrized bool `json:"isDestinationAuthrized"`
 	// +optional
 	TokenStatus DomainRouteTokenStatus `json:"tokenStatus,omitempty"`
 }

@@ -9,8 +9,8 @@ IMG := secretflow/kuscia:${TAG}
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-ENVOY_IMAGE ?= secretflow/kuscia-envoy:0.3.0.dev231122
-DEPS_IMAGE ?= secretflow/kuscia-deps:0.3.0b0
+ENVOY_IMAGE ?= secretflow/kuscia-envoy:0.2.0b0
+DEPS_IMAGE ?= secretflow/kuscia-deps:0.1.0b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

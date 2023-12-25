@@ -55,8 +55,20 @@ func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
 
 // Start grpcServerBean
 func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error {
-	certificateService := service.Exporter.CertificateService()
-	configurationService := service.Exporter.ConfigurationService()
+	certificateService, err := service.NewCertificateService(service.CertConfig{
+		CertValue:  s.config.DomainCertValue,
+		PrivateKey: s.config.DomainKey,
+	})
+	if err != nil {
+		nlog.Fatalf("Failed to init certificate service : %v", err)
+		return err
+	}
+
+	configurationService, err := service.NewConfigurationService(s.config)
+	if err != nil {
+		nlog.Fatalf("Failed to init configuration service : %v", err)
+		return err
+	}
 
 	// init grpc server opts
 	opts := []grpc.ServerOption{

@@ -42,7 +42,7 @@ func compareTokens(tokens1, tokens2 []kusciaapisv1alpha1.DomainRouteToken) bool 
 
 func (c *controller) checkEffectiveInstances(dr *kusciaapisv1alpha1.DomainRoute) bool {
 	if len(dr.Status.TokenStatus.Tokens) == 0 {
-		nlog.Warnf("Domainroute %s/%s checkEffectiveInstances failed: tokens is nil", dr.Namespace, dr.Name)
+		nlog.Errorf("Domainroute %s/%s checkEffectiveInstances failed: tokens is nil", dr.Namespace, dr.Name)
 		return false
 	}
 

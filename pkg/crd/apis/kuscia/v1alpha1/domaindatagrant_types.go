@@ -66,9 +66,8 @@ type GrantLimit struct {
 type DomainDataGrantSpec struct {
 	Author       string `json:"author"`
 	DomainDataID string `json:"domainDataID"`
-	// +optional
-	Signature   string `json:"signature,omitempty"`
-	GrantDomain string `json:"grantDomain"`
+	Signature    string `json:"signature"`
+	GrantDomain  string `json:"grantDomain"`
 	// +optional
 	Limit *GrantLimit `json:"limit,omitempty"`
 	// +optional

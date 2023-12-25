@@ -35,7 +35,7 @@ const (
 	defaultExpiration = 30 * time.Minute
 )
 
-var localService = []string{"datamesh", "confmanager", "dataproxy", "kusciaapi"}
+var localService = []string{"datamesh", "confmanager", "dataproxy"}
 
 func KusciaParse(c *caddy.Controller, namespace, envoyIP string) (*KusciaCoreDNS, error) {
 	etc := KusciaCoreDNS{

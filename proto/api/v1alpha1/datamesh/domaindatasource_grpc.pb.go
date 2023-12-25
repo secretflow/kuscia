@@ -33,14 +33,20 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	DomainDataSourceService_QueryDomainDataSource_FullMethodName = "/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/QueryDomainDataSource"
+	DomainDataSourceService_CreateDomainDataSource_FullMethodName = "/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/CreateDomainDataSource"
+	DomainDataSourceService_QueryDomainDataSource_FullMethodName  = "/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/QueryDomainDataSource"
+	DomainDataSourceService_UpdateDomainDataSource_FullMethodName = "/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/UpdateDomainDataSource"
+	DomainDataSourceService_DeleteDomainDataSource_FullMethodName = "/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/DeleteDomainDataSource"
 )
 
 // DomainDataSourceServiceClient is the client API for DomainDataSourceService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DomainDataSourceServiceClient interface {
+	CreateDomainDataSource(ctx context.Context, in *CreateDomainDataSourceRequest, opts ...grpc.CallOption) (*CreateDomainDataSourceResponse, error)
 	QueryDomainDataSource(ctx context.Context, in *QueryDomainDataSourceRequest, opts ...grpc.CallOption) (*QueryDomainDataSourceResponse, error)
+	UpdateDomainDataSource(ctx context.Context, in *UpdateDomainDataSourceRequest, opts ...grpc.CallOption) (*UpdateDomainDataSourceResponse, error)
+	DeleteDomainDataSource(ctx context.Context, in *DeleteDomainDataSourceRequest, opts ...grpc.CallOption) (*DeleteDomainDataSourceResponse, error)
 }
 
 type domainDataSourceServiceClient struct {
@@ -49,6 +55,15 @@ type domainDataSourceServiceClient struct {
 
 func NewDomainDataSourceServiceClient(cc grpc.ClientConnInterface) DomainDataSourceServiceClient {
 	return &domainDataSourceServiceClient{cc}
+}
+
+func (c *domainDataSourceServiceClient) CreateDomainDataSource(ctx context.Context, in *CreateDomainDataSourceRequest, opts ...grpc.CallOption) (*CreateDomainDataSourceResponse, error) {
+	out := new(CreateDomainDataSourceResponse)
+	err := c.cc.Invoke(ctx, DomainDataSourceService_CreateDomainDataSource_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *domainDataSourceServiceClient) QueryDomainDataSource(ctx context.Context, in *QueryDomainDataSourceRequest, opts ...grpc.CallOption) (*QueryDomainDataSourceResponse, error) {
@@ -60,11 +75,32 @@ func (c *domainDataSourceServiceClient) QueryDomainDataSource(ctx context.Contex
 	return out, nil
 }
 
+func (c *domainDataSourceServiceClient) UpdateDomainDataSource(ctx context.Context, in *UpdateDomainDataSourceRequest, opts ...grpc.CallOption) (*UpdateDomainDataSourceResponse, error) {
+	out := new(UpdateDomainDataSourceResponse)
+	err := c.cc.Invoke(ctx, DomainDataSourceService_UpdateDomainDataSource_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *domainDataSourceServiceClient) DeleteDomainDataSource(ctx context.Context, in *DeleteDomainDataSourceRequest, opts ...grpc.CallOption) (*DeleteDomainDataSourceResponse, error) {
+	out := new(DeleteDomainDataSourceResponse)
+	err := c.cc.Invoke(ctx, DomainDataSourceService_DeleteDomainDataSource_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DomainDataSourceServiceServer is the server API for DomainDataSourceService service.
 // All implementations must embed UnimplementedDomainDataSourceServiceServer
 // for forward compatibility
 type DomainDataSourceServiceServer interface {
+	CreateDomainDataSource(context.Context, *CreateDomainDataSourceRequest) (*CreateDomainDataSourceResponse, error)
 	QueryDomainDataSource(context.Context, *QueryDomainDataSourceRequest) (*QueryDomainDataSourceResponse, error)
+	UpdateDomainDataSource(context.Context, *UpdateDomainDataSourceRequest) (*UpdateDomainDataSourceResponse, error)
+	DeleteDomainDataSource(context.Context, *DeleteDomainDataSourceRequest) (*DeleteDomainDataSourceResponse, error)
 	mustEmbedUnimplementedDomainDataSourceServiceServer()
 }
 
@@ -72,8 +108,17 @@ type DomainDataSourceServiceServer interface {
 type UnimplementedDomainDataSourceServiceServer struct {
 }
 
+func (UnimplementedDomainDataSourceServiceServer) CreateDomainDataSource(context.Context, *CreateDomainDataSourceRequest) (*CreateDomainDataSourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDomainDataSource not implemented")
+}
 func (UnimplementedDomainDataSourceServiceServer) QueryDomainDataSource(context.Context, *QueryDomainDataSourceRequest) (*QueryDomainDataSourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryDomainDataSource not implemented")
+}
+func (UnimplementedDomainDataSourceServiceServer) UpdateDomainDataSource(context.Context, *UpdateDomainDataSourceRequest) (*UpdateDomainDataSourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDomainDataSource not implemented")
+}
+func (UnimplementedDomainDataSourceServiceServer) DeleteDomainDataSource(context.Context, *DeleteDomainDataSourceRequest) (*DeleteDomainDataSourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDomainDataSource not implemented")
 }
 func (UnimplementedDomainDataSourceServiceServer) mustEmbedUnimplementedDomainDataSourceServiceServer() {
 }
@@ -87,6 +132,24 @@ type UnsafeDomainDataSourceServiceServer interface {
 
 func RegisterDomainDataSourceServiceServer(s grpc.ServiceRegistrar, srv DomainDataSourceServiceServer) {
 	s.RegisterService(&DomainDataSourceService_ServiceDesc, srv)
+}
+
+func _DomainDataSourceService_CreateDomainDataSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDomainDataSourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DomainDataSourceServiceServer).CreateDomainDataSource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DomainDataSourceService_CreateDomainDataSource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DomainDataSourceServiceServer).CreateDomainDataSource(ctx, req.(*CreateDomainDataSourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _DomainDataSourceService_QueryDomainDataSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -107,6 +170,42 @@ func _DomainDataSourceService_QueryDomainDataSource_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DomainDataSourceService_UpdateDomainDataSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDomainDataSourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DomainDataSourceServiceServer).UpdateDomainDataSource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DomainDataSourceService_UpdateDomainDataSource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DomainDataSourceServiceServer).UpdateDomainDataSource(ctx, req.(*UpdateDomainDataSourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DomainDataSourceService_DeleteDomainDataSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDomainDataSourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DomainDataSourceServiceServer).DeleteDomainDataSource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DomainDataSourceService_DeleteDomainDataSource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DomainDataSourceServiceServer).DeleteDomainDataSource(ctx, req.(*DeleteDomainDataSourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DomainDataSourceService_ServiceDesc is the grpc.ServiceDesc for DomainDataSourceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -115,8 +214,20 @@ var DomainDataSourceService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*DomainDataSourceServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "CreateDomainDataSource",
+			Handler:    _DomainDataSourceService_CreateDomainDataSource_Handler,
+		},
+		{
 			MethodName: "QueryDomainDataSource",
 			Handler:    _DomainDataSourceService_QueryDomainDataSource_Handler,
+		},
+		{
+			MethodName: "UpdateDomainDataSource",
+			Handler:    _DomainDataSourceService_UpdateDomainDataSource_Handler,
+		},
+		{
+			MethodName: "DeleteDomainDataSource",
+			Handler:    _DomainDataSourceService_DeleteDomainDataSource_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

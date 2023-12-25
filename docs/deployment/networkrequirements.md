@@ -60,9 +60,7 @@ http {
     #   If kuscia is deployed to multiple machines, use the ip of each kuscia here
     #   server 0.0.0.1 weight=1 max_fails=5 fail_timeout=60s;
         server 0.0.0.2 weight=1 max_fails=5 fail_timeout=60s;
-    #   Nginx_upstream_check_module can support upstream health check with Nginx
-    #   Please refer to the document: https://github.com/yaoweibin/nginx_upstream_check_module/tree/master/doc
-    #   check interval=3000 rise=2 fall=5 timeout=1000 type=http;
+        check interval=3000 rise=2 fall=5 timeout=1000 type=http;
 
         keepalive 32;
         keepalive_timeout 600s;

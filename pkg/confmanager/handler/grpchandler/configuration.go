@@ -43,8 +43,7 @@ func (h *configurationHandler) CreateConfiguration(ctx context.Context, request 
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "require client tls ou"),
 		}, nil
 	}
-	response := h.configurationService.CreateConfiguration(ctx, request, tlsCert.OrganizationalUnit[0])
-	return &response, nil
+	return h.configurationService.CreateConfiguration(ctx, request, tlsCert.OrganizationalUnit[0]), nil
 }
 
 func (h *configurationHandler) QueryConfiguration(ctx context.Context, request *confmanager.QueryConfigurationRequest) (*confmanager.QueryConfigurationResponse, error) {
@@ -54,6 +53,5 @@ func (h *configurationHandler) QueryConfiguration(ctx context.Context, request *
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "require client tls ou"),
 		}, nil
 	}
-	response := h.configurationService.QueryConfiguration(ctx, request, tlsCert.OrganizationalUnit[0])
-	return &response, nil
+	return h.configurationService.QueryConfiguration(ctx, request, tlsCert.OrganizationalUnit[0]), nil
 }

@@ -25,7 +25,7 @@ func Test_defaultMasterOverwrite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := defaultMaster("/home/kuscia")
+			got := defaultMaster()
 			err := yaml.Unmarshal([]byte(tt.content), &got)
 			_ = asserts.IsNil(err, "unmarshal yaml should success")
 			if got.RootDir != tt.wantRootDir {

@@ -24,7 +24,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/engine"
 
-	// register driver
+	// register mem driver
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 )
 

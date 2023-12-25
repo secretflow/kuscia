@@ -18,6 +18,8 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"sync"
@@ -100,6 +102,7 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 			conf.DataProxyEndpoint = o.dataProxyEndpoint
 			conf.KubeNamespace = "MockDomain"
 			conf.KusciaClient = kusciafake.NewSimpleClientset()
+			conf.DomainKeyFile = "./mock_domain.key"
 			conf.DisableTLS = !o.enableDataMeshTLS
 			if conf.TLS.ServerKey, err = tls.ParseKey([]byte{}, certsConfig.serverKeyFile); err != nil {
 				return err
@@ -111,10 +114,11 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 				return err
 			}
 
-			if conf.DomainKey, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
+			if err := mockDomainKey(conf.DomainKeyFile); err != nil {
 				nlog.Errorf("generate DomainKey fail:%s", err.Error())
 				return nil
 			}
+
 			runCtx, cancel := context.WithCancel(ctx)
 			defer func() {
 				cancel()
@@ -152,6 +156,24 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 		},
 	}
 	return cmd
+}
+
+func mockDomainKey(keyFilePath string) error {
+	keyOut, err := os.OpenFile(keyFilePath, os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	defer keyOut.Close()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+
+	err = pem.Encode(keyOut, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+	return err
 }
 
 func startMockDataProxy(cancel context.CancelFunc, o *opts) {
