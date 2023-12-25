@@ -38,7 +38,7 @@ import (
 
 func makeTestPendingHandler() *PendingHandler {
 	kubeClient := kubefake.NewSimpleClientset()
-	kusciaClient := kusciafake.NewSimpleClientset(makeTestAppImageCase1())
+	kusciaClient := kusciafake.NewSimpleClientset(makeTestAppImageCase1(), makeTestKusciaTaskCase1())
 
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
@@ -79,8 +79,9 @@ func TestPendingHandler_Handle(t *testing.T) {
 
 	_, err := handler.Handle(kusciaTask)
 	assert.NoError(t, err)
-	assert.Equal(t, kusciaapisv1alpha1.TaskRunning, kusciaTask.Status.Phase)
+	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)
 
+	kusciaTask.Status.Conditions = nil
 	kusciaTask.Spec.Parties[0].AppImageRef = "not-exist-image"
 	_, err = handler.Handle(kusciaTask)
 	assert.Error(t, err)

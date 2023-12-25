@@ -291,10 +291,6 @@ func (c *Controller) handleTaskResourceGroupObject(obj interface{}) {
 		nlog.Debugf("Get kuscia task %v failed, %v", object.GetName(), err.Error())
 		return
 	}
-	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskRunning {
-		nlog.Debugf("KusciaTask %q status is %v, skip task resource group %q event", kusciaTask.Name, kusciaTask.Status.Phase, object.GetName())
-		return
-	}
 
 	c.enqueueKusciaTask(kusciaTask)
 }
@@ -329,11 +325,6 @@ func (c *Controller) handlePodObject(obj interface{}) {
 		kusciaTask, err := c.kusciaTaskLister.Get(ownerRef.Name)
 		if err != nil {
 			nlog.Debugf("Ignoring orphaned object %q of kusciaTask %q", object.GetSelfLink(), ownerRef.Name)
-			return
-		}
-
-		if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskRunning {
-			nlog.Debugf("KusciaTask %q status is not running, skip pod '%v/%v' event", kusciaTask.Name, object.GetNamespace(), object.GetName())
 			return
 		}
 
@@ -372,6 +363,10 @@ func (c *Controller) handleServiceObject(obj interface{}) {
 		pod, err := c.podsLister.Pods(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			nlog.Debugf("Ignoring orphaned object %q of pod %q", object.GetSelfLink(), ownerRef.Name)
+			return
+		}
+
+		if pod.Status.Phase == v1.PodPending {
 			return
 		}
 
@@ -505,7 +500,7 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	if err != nil {
 		metrics.SyncDurations.WithLabelValues(string(phase), metrics.Failed).Observe(time.Since(startTime).Seconds())
 		if c.workqueue.NumRequeues(key) <= maxBackoffLimit {
-			return fmt.Errorf("failed to handle condition for kusciaTask %q, %v, retry", key, err)
+			return fmt.Errorf("failed to process kusciaTask %q, %v, retry", key, err)
 		}
 
 		c.failKusciaTask(kusciaTask, fmt.Errorf("KusciaTask failed after %vx retry, last error: %v", maxBackoffLimit, err))

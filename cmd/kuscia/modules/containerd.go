@@ -84,7 +84,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 }
 
 func (s *containerdModule) execPreCmds(ctx context.Context) error {
-	cmd := exec.Command("sh", "-c", filepath.Join(s.Root, "scripts/deploy/iptables_pre_detect.sh"))
+	cmd := exec.Command("sh", "-c", filepath.Join(s.Root, "scripts/deploy/containerd_pre_detect.sh"))
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()

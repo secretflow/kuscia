@@ -156,9 +156,23 @@ func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int, prefi
 }
 
 func EncryptOAEP(pub *rsa.PublicKey, key []byte) (string, error) {
-	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pub, key, nil)
-	if err != nil {
-		return "", err
+	// refer: http://mpqs.free.fr/h11300-pkcs-1v2-2-rsa-cryptography-standard-wp_EMC_Corporation_Public-Key_Cryptography_Standards_(PKCS).pdf#page=18
+	// see length check:
+	//   2. If mLen > k - 2hLen - 2, output "message too long" and stop
+	roundLength := pub.Size() - 2*sha256.New().Size() - 2
+	start := 0
+	ciphertext := make([]byte, 0)
+	for start < len(key) {
+		end := start + roundLength
+		if end > len(key) {
+			end = len(key)
+		}
+		currentCiphertext, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pub, key[start:end], nil)
+		if err != nil {
+			return "", err
+		}
+		ciphertext = append(ciphertext, currentCiphertext...)
+		start = end
 	}
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
@@ -168,12 +182,20 @@ func DecryptOAEP(priv *rsa.PrivateKey, ciphertext string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// For Debug:
-	//   openssl pkeyutl -inkey domain.key -in {base64-decode-info} -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -decrypt
-	plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, priv, text, nil)
-	if err != nil {
-		return nil, err
+	roundLength := priv.Size()
+	start := 0
+	plaintext := make([]byte, 0)
+	for start < len(text) {
+		end := start + roundLength
+		if end > len(text) {
+			end = len(text)
+		}
+		currentPlaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, priv, text[start:end], nil)
+		if err != nil {
+			return nil, err
+		}
+		plaintext = append(plaintext, currentPlaintext...)
+		start = end
 	}
 	return plaintext, nil
 }

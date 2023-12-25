@@ -85,11 +85,7 @@ agent:
 externalTLS:
   certFile: var/tmp/external_tls.crt
   keyFile: var/tmp/external_tls.key
-dataMesh:
-  enableDataProxy : true
 `)
 	err := yaml.Unmarshal([]byte(content), config)
 	assert.NoError(t, err)
-	assert.True(t, config.DataMesh.EnableDataProxy)
-
 }

@@ -1,0 +1,36 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: AppImage
+metadata:
+  name: {{APP_IMAGE_NAME}}
+spec:
+  configTemplates:
+    serving-config.conf: |
+      {
+        "serving_id": "{{.SERVING_ID}}",
+        "allocated_ports": "{{.ALLOCATED_PORTS}}"
+      }
+  deployTemplates:
+    - name: dataproxy
+      replicas: 1
+      spec:
+        containers:
+          - command:
+              - sh
+              - -c
+              - java ${JAVA_OPTS} -Dsun.net.http.allowRestrictedHeaders=true -jar --add-opens=java.base/java.nio=ALL-UNNAMED -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} ./dataproxy.jar
+            configVolumeMounts:
+              - mountPath: /etc/kuscia/serving-config.conf
+                subPath: serving-config.conf
+            name: dataproxy
+            ports:
+              - name: dp
+                port: 8023
+                protocol: GRPC
+                scope: Domain
+            workingDir: /app
+        restartPolicy: Never
+  image:
+    id: abc
+    name: {{IMAGE_NAME}}
+    sign: abc
+    tag: {{IMAGE_TAG}}

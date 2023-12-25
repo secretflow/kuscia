@@ -391,7 +391,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 	kusciaTasks := kusciaJob.Spec.Tasks
 	// build job status
 	statusDetail := &kusciaapi.JobStatusDetail{
-		State:      string(kusciaJobStatus.Phase),
+		State:      getJobState(kusciaJobStatus.Phase),
 		ErrMsg:     kusciaJobStatus.Message,
 		CreateTime: utils.TimeRfc3339String(&kusciaJob.CreationTimestamp),
 		StartTime:  utils.TimeRfc3339String(kusciaJobStatus.StartTime),
@@ -406,7 +406,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 			TaskId: taskID,
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {
-			ts.State = string(phase)
+			ts.State = getTaskState(phase)
 			task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(ctx, taskID, metav1.GetOptions{})
 			if err != nil {
 				nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
@@ -416,9 +416,9 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 				ts.CreateTime = utils.TimeRfc3339String(&task.CreationTimestamp)
 				ts.StartTime = utils.TimeRfc3339String(taskStatus.StartTime)
 				ts.EndTime = utils.TimeRfc3339String(taskStatus.CompletionTime)
-				partyTaskStatus := make(map[string]string)
+				partyTaskStatus := make(map[string]v1alpha1.KusciaTaskPhase)
 				for _, ps := range taskStatus.PartyTaskStatus {
-					partyTaskStatus[ps.DomainID] = string(ps.Phase)
+					partyTaskStatus[ps.DomainID] = ps.Phase
 				}
 
 				partyErrMsg := make(map[string][]string)
@@ -450,7 +450,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 				for partyID, _ := range partyErrMsg {
 					ts.Parties = append(ts.Parties, &kusciaapi.PartyStatus{
 						DomainId:  partyID,
-						State:     partyTaskStatus[partyID],
+						State:     getTaskState(partyTaskStatus[partyID]),
 						ErrMsg:    strings.Join(partyErrMsg[partyID], ","),
 						Endpoints: partyEndpoints[partyID],
 					})
@@ -587,4 +587,34 @@ func validateBatchQueryJobStatusRequest(request *kusciaapi.BatchQueryJobStatusRe
 		}
 	}
 	return nil
+}
+
+func getJobState(jobPhase v1alpha1.KusciaJobPhase) string {
+	switch jobPhase {
+	case "", v1alpha1.KusciaJobPending:
+		return kusciaapi.State_Pending.String()
+	case v1alpha1.KusciaJobRunning:
+		return kusciaapi.State_Running.String()
+	case v1alpha1.KusciaJobFailed:
+		return kusciaapi.State_Failed.String()
+	case v1alpha1.KusciaJobSucceeded:
+		return kusciaapi.State_Succeeded.String()
+	default:
+		return kusciaapi.State_Unknown.String()
+	}
+}
+
+func getTaskState(taskPhase v1alpha1.KusciaTaskPhase) string {
+	switch taskPhase {
+	case "", v1alpha1.TaskPending:
+		return kusciaapi.State_Pending.String()
+	case v1alpha1.TaskRunning:
+		return kusciaapi.State_Running.String()
+	case v1alpha1.TaskFailed:
+		return kusciaapi.State_Failed.String()
+	case v1alpha1.TaskSucceeded:
+		return kusciaapi.State_Succeeded.String()
+	default:
+		return kusciaapi.State_Unknown.String()
+	}
 }

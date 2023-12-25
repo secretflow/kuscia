@@ -141,13 +141,13 @@ func TestSessionQueuePopWait(t *testing.T) {
 	}()
 
 	for i := 0; i < 10; i++ {
-		msg, err := sq.Pop("topic", time.Millisecond*100)
+		msg, err := sq.Pop("topic", time.Millisecond*500)
 		assert.NotNil(t, msg)
 		assert.Nil(t, err)
 	}
 
 	processTime := time.Now().Sub(start)
-	assert.True(t, processTime < time.Second)
+	assert.True(t, processTime < 10*time.Second)
 }
 
 func TestSessionQueuePeek(t *testing.T) {

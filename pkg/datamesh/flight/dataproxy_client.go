@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
+	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
@@ -70,7 +71,7 @@ func buildGrpcOptions(clientTLSConfig *tls.Config) []grpc.DialOption {
 	return dialOpts
 }
 
-func NewDataProxyClient(conf *DataProxyConfig) (*DataProxyClient, error) {
+func NewDataProxyClient(conf *config.ExternalDataProxyConfig) (*DataProxyClient, error) {
 	var (
 		err             error
 		conn            *grpc.ClientConn
@@ -85,8 +86,8 @@ func NewDataProxyClient(conf *DataProxyConfig) (*DataProxyClient, error) {
 	}
 
 	dialOpts := buildGrpcOptions(nativeTLSConfig)
-	if conn, err = grpc.Dial(conf.Addr, dialOpts...); err != nil {
-		nlog.Errorf("create grpc conn to %s fail: %v", conf.Addr, err)
+	if conn, err = grpc.Dial(conf.Endpoint, dialOpts...); err != nil {
+		nlog.Errorf("create grpc conn to %s fail: %v", conf.Endpoint, err)
 		return nil, err
 	}
 
@@ -94,7 +95,7 @@ func NewDataProxyClient(conf *DataProxyConfig) (*DataProxyClient, error) {
 
 	return &DataProxyClient{
 		conn:         conn,
-		addr:         conf.Addr,
+		addr:         conf.Endpoint,
 		dialOpts:     dialOpts,
 		flightClient: flightClient,
 	}, nil
