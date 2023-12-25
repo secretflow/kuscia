@@ -37,6 +37,7 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/tools/register_app_
 - `-d`：可选参数，指定节点 Domain IDs，默认为：`alice,bob`。若需指定多节点 Domain ID，各节点 Domain ID 之间以`,`分隔。
 - `-u`：可选参数，指定部署 Kuscia 的用户，默认为：`${USER}`。通过命令`echo ${USER}`可查看当前用户
 - `-n`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 名称。若不指定，则工具脚本将根据算法镜像名称生成对应的 AppImage 名称。
+- `-f`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 模版文件。推荐在工具脚本同级目录下，以规则`{Kuscia AppImage 名称}.yaml`命名模版文件。否则必须通过该标志指定模版文件。
 
 ## 准备自定义算法镜像的 AppImage
 
@@ -47,10 +48,6 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/tools/register_app_
 - `{{IMAGE_NAME}}`: 自定义算法镜像名称
 - `{{IMAGE_TAG}}`: 自定义算法镜像标签
 
-若需注册非 Secretflow 算法镜像，请先准备自定义算法镜像的 AppImage 模版文件，该文件命名规则为`{算法镜像对应的 Kuscia AppImage 名称}.yaml`。
-其中符号`{}`中的内容需和`register_app_image.sh`脚本`-n` Flag 指定的参数值一致。
-
-
 ## 注册镜像
 
 ### 中心化组网部署模式
@@ -58,10 +55,10 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/tools/register_app_
 注册自定义算法镜像
 
 ```shell
-./register_app_image/register_app_image.sh -u {USER} -m center -n {APP_IMAGE_NAME} -i {IMAGE}
+./register_app_image/register_app_image.sh -u {USER} -m center -n {APP_IMAGE_NAME} -f {APP_IMAGE_TEMPLATE_FILE} -i {IMAGE}
 
 # 示例: ${USER} 用户注册 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest 镜像
-./register_app_image/register_app_image.sh -u ${USER} -m center -n secretflow-image -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
+./register_app_image/register_app_image.sh -u ${USER} -m center -n secretflow-image -f ./register_app_image/secretflow-image.yaml -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 => register app image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 ...
 => app_image_name: secretflow-image
@@ -77,7 +74,7 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/tools/register_app_
 ./register_app_image/register_app_image.sh -u {USER} -m p2p -n {APP_IMAGE_NAME} -i {IMAGE}
 
 # 示例: ${USER} 用户注册 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest 镜像
-./register_app_image/register_app_image.sh -u ${USER} -m p2p -n secretflow-image -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
+./register_app_image/register_app_image.sh -u ${USER} -m p2p -n secretflow-image -f ./register_app_image/secretflow-image.yaml -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 => register app image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 ...
 => app_image_name: secretflow-image

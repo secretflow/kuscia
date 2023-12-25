@@ -4,6 +4,7 @@
 .. toctree::
     :maxdepth: 2
 
+    overview
     architecture_cn
     concepts/index
     apis/index

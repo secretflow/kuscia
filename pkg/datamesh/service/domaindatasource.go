@@ -42,6 +42,7 @@ const (
 
 type IDomainDataSourceService interface {
 	CreateDefaultDomainDataSource(ctx context.Context) error
+	CreateDefaultDataProxyDomainDataSource(ctx context.Context) error
 	QueryDomainDataSource(ctx context.Context, request *datamesh.QueryDomainDataSourceRequest) *datamesh.QueryDomainDataSourceResponse
 }
 
@@ -58,17 +59,50 @@ func NewDomainDataSourceService(config *config.DataMeshConfig, configurationServ
 }
 
 func (s domainDataSourceService) CreateDefaultDomainDataSource(ctx context.Context) error {
-	nlog.Info("Create default datasource.")
+	nlog.Infof("Create default datasource %s.", common.DefaultDataSourceID)
 
+	kusciaDomainDataSource, err := s.generateDefaultDataSource(common.DefaultDataSourceID)
+	if err != nil {
+		nlog.Errorf("GenerateDefaultDataSource %s failed, error:%s", common.DefaultDataSourceID, err.Error())
+		return err
+	}
+	// create kuscia domain datasource
+	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(s.conf.KubeNamespace).Create(ctx, kusciaDomainDataSource, metav1.CreateOptions{})
+	if err != nil {
+		nlog.Errorf("CreateDomainDataSource %s failed, error:%s", common.DefaultDataSourceID, err.Error())
+		return err
+	}
+	return nil
+}
+
+func (s domainDataSourceService) CreateDefaultDataProxyDomainDataSource(ctx context.Context) error {
+	nlog.Infof("Create default datasource: %s.", common.DefaultDataProxyDataSourceID)
+	kusciaDomainDataSource, err := s.generateDefaultDataSource(common.DefaultDataProxyDataSourceID)
+	if err != nil {
+		nlog.Errorf("GenerateDefaultDataSource %s failed, error:%s", common.DefaultDataProxyDataSourceID, err.Error())
+		return err
+	}
+	kusciaDomainDataSource.Spec.AccessDirectly = false
+	// create kuscia domain datasource
+	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(s.conf.KubeNamespace).Create(ctx, kusciaDomainDataSource, metav1.CreateOptions{})
+	if err != nil {
+		nlog.Errorf("CreateDomainDataSource %s failed, error:%s", common.DefaultDataProxyDataSourceID, err.Error())
+		return err
+	}
+	return nil
+}
+
+func (s domainDataSourceService) generateDefaultDataSource(dsID string) (*v1alpha1.DomainDataSource, error) {
 	info := &datamesh.DataSourceInfo{
 		Localfs: &datamesh.LocalDataSourceInfo{
 			Path: path.Join(s.conf.RootDir, common.DefaultDomainDataSourceLocalFSPath),
 		},
 	}
+
 	// parse DataSource
 	uri, encInfo, err := s.encryptInfo(common.DomainDataSourceTypeLocalFS, info)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// build kuscia domain DataSource
@@ -76,25 +110,18 @@ func (s domainDataSourceService) CreateDefaultDomainDataSource(ctx context.Conte
 	Labels[common.LabelDomainDataSourceType] = common.DomainDataSourceTypeLocalFS
 	kusciaDomainDataSource := &v1alpha1.DomainDataSource{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   common.DefaultDataSourceID,
+			Name:   dsID,
 			Labels: Labels,
 		},
 		Spec: v1alpha1.DomainDataSourceSpec{
 			URI:            uri,
 			Type:           common.DomainDataSourceTypeLocalFS,
-			Name:           common.DefaultDataSourceID,
+			Name:           dsID,
 			Data:           map[string]string{encryptedInfo: encInfo},
 			AccessDirectly: true,
 		},
 	}
-
-	// create kuscia domain datasource
-	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(s.conf.KubeNamespace).Create(ctx, kusciaDomainDataSource, metav1.CreateOptions{})
-	if err != nil {
-		nlog.Errorf("CreateDomainDataSource failed, error:%s", err.Error())
-		return err
-	}
-	return nil
+	return kusciaDomainDataSource, nil
 }
 
 func (s domainDataSourceService) QueryDomainDataSource(ctx context.Context, request *datamesh.QueryDomainDataSourceRequest) *datamesh.QueryDomainDataSourceResponse {

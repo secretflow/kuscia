@@ -1,0 +1,84 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: DomainData
+metadata:
+  labels:
+    kuscia.secretflow/domaindata-type: table
+    kuscia.secretflow/domaindata-vendor: manual
+    kuscia.secretflow/interconn-protocol-type: kuscia
+    kuscia.secretflow/initiator: bob
+  name: bob-dp-table
+  namespace: {{.DOMAIN_ID}}
+spec:
+  attributes:
+    description: "bob demo data"
+  columns:
+    - comment: ""
+      name: id2
+      type: string
+    - comment: ""
+      name: contact_cellular
+      type: float64
+    - comment: ""
+      name: contact_telephone
+      type: float64
+    - comment: ""
+      name: contact_unknown
+      type: float64
+    - comment: ""
+      name: month_apr
+      type: float64
+    - comment: ""
+      name: month_aug
+      type: float64
+    - comment: ""
+      name: month_dec
+      type: float64
+    - comment: ""
+      name: month_feb
+      type: float64
+    - comment: ""
+      name: month_jan
+      type: float64
+    - comment: ""
+      name: month_jul
+      type: float64
+    - comment: ""
+      name: month_jun
+      type: float64
+    - comment: ""
+      name: month_mar
+      type: float64
+    - comment: ""
+      name: month_may
+      type: float64
+    - comment: ""
+      name: month_nov
+      type: float64
+    - comment: ""
+      name: month_oct
+      type: float64
+    - comment: ""
+      name: month_sep
+      type: float64
+    - comment: ""
+      name: poutcome_failure
+      type: float64
+    - comment: ""
+      name: poutcome_other
+      type: float64
+    - comment: ""
+      name: poutcome_success
+      type: float64
+    - comment: ""
+      name: poutcome_unknown
+      type: float64
+    - comment: ""
+      name: "y"
+      type: int64
+  dataSource: default-dp-data-source
+  name: bob.csv
+  type: table
+  relativeURI: bob.csv
+  fileFormat: csv
+  vendor: manual
+  author: bob

@@ -22,6 +22,7 @@ DEPLOY_MODE="p2p"
 DEPLOY_USER="${USER}"
 DOMAIN_IDS="alice,bob"
 APP_IMAGE_NAME_IN_KUSCIA=""
+APP_IMAGE_TEMPLATE_FILE=""
 
 usage="$(basename "$0") [OPTIONS]
 
@@ -32,12 +33,13 @@ OPTIONS:
     -d    [optional] domain ids that makes up the kuscia container name. default value: alice,bob
     -u    [optional] user who deploy the kuscia container. default value: ${USER}
     -n    [optional] kuscia appImage name for app docker image. if not specified, the script will automatically generate a name
+    -f    [optional] kuscia appImage template file full path. the recommended template file naming rule is {appImage name}.yaml under the same directory as tool script. otherwise the file full path must be specified
 
 example:
- ./register_app_image.sh -u ${USER} -m center -d alice,bob -n secretflow-image -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
+ ./register_app_image.sh -u ${USER} -m center -d alice,bob -n secretflow-image -f ./secretflow-image.yaml -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:latest
 "
 
-while getopts ':hi:u:d:m:n:' option; do
+while getopts ':hi:u:d:m:n:f:' option; do
   case "$option" in
   h)
     echo "$usage"
@@ -57,6 +59,9 @@ while getopts ':hi:u:d:m:n:' option; do
     ;;
   n)
     APP_IMAGE_NAME_IN_KUSCIA=$OPTARG
+    ;;
+  f)
+    APP_IMAGE_TEMPLATE_FILE=$OPTARG
     ;;
   \?)
     echo -e "invalid option: -$OPTARG" && echo "${usage}"
@@ -81,6 +86,9 @@ CTR_ROOT="/home/kuscia"
 KUSCIA_MASTER_CONTAINER_NAME="${DEPLOY_USER}-kuscia-master"
 KUSCIA_DOMAIN_CONTAINER_NAMES=()
 
+DEFAULT_DOCKER_REPO="docker.io"
+DEFAULT_DOCKER_REPO_BUCKET="docker.io/library"
+
 IMAGE_TEMP_DIR="/tmp/kuscia-appimage-tmp"
 APP_IMAGE_FILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 DEFAULT_APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/secretflow-image.yaml"
@@ -102,9 +110,7 @@ function import_appimage(){
   fi
 
   image_tar=${IMAGE_TEMP_DIR}/$(echo ${image_name} | sed 's/\//_/g' ).tar
-  if [[ ! -e ${image_tar} ]] ; then
-    docker save "${IMAGE}" -o "${image_tar}"
-  fi
+  docker save "${image_name}:${image_tag}" -o "${image_tar}"
 
   ctr_num=${#KUSCIA_DOMAIN_CONTAINER_NAMES[@]}
 
@@ -126,15 +132,19 @@ function apply_appimage_crd(){
   image_name=$1
   image_tag=$2
 
-  if [[ -z $APP_IMAGE_NAME_IN_KUSCIA ]]; then
+  if [[ ${APP_IMAGE_NAME_IN_KUSCIA} = "" ]]; then
     APP_IMAGE_NAME_IN_KUSCIA=$(echo ${image_name##*/}-${image_tag} | sed 's/_/-/g')
-    APP_IMAGE_FILE=${DEFAULT_APP_IMAGE_FILE}
+  fi
+
+  if [[ ${APP_IMAGE_TEMPLATE_FILE} != "" ]]; then
+    APP_IMAGE_FILE=${APP_IMAGE_TEMPLATE_FILE}
   else
-    APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/${APP_IMAGE_NAME_IN_KUSCIA}.yaml"
-    if [[ ! -f "$APP_IMAGE_FILE" ]]; then
+    APP_IMAGE_FILE=${APP_IMAGE_FILE_DIR}/${APP_IMAGE_NAME_IN_KUSCIA}.yaml
+  fi
+
+  if [[ ! -f $APP_IMAGE_FILE ]]; then
       echo "=> => $APP_IMAGE_FILE is not exist, register fail"
       exit 1
-    fi
   fi
 
   app_image_content=$(sed "s!{{APP_IMAGE_NAME}}!${APP_IMAGE_NAME_IN_KUSCIA}!g;
@@ -180,13 +190,20 @@ function register_app_image() {
   image_name=$(echo "${IMAGE}" | awk -F ":" '{print $1}')
   image_tag=$(echo "${IMAGE}" | awk -F ":" '{print $2}')
 
-  if [[ $image_name = "" ]]; then
+  if [[ ${image_name} = "" ]]; then
     echo "=> => split image ${IMAGE} failed"
     exit 1
   fi
 
-  if [[ $image_tag = "" ]]; then
+  if [[ ${image_tag} = "" ]]; then
     image_tag="latest"
+  fi
+
+  count=$(echo "${image_name}" | grep -o "/" | wc -l)
+  if [[ ${count} -eq 1 ]]; then
+    image_name="${DEFAULT_DOCKER_REPO}/${image_name}"
+  elif [[ ${count} -eq 0 ]]; then
+    image_name="${DEFAULT_DOCKER_REPO_BUCKET}/${image_name}"
   fi
 
   if [[ ! -d ${IMAGE_TEMP_DIR} ]]; then

@@ -4,6 +4,7 @@
 .. toctree::
     :maxdepth: 2
 
+    kuscia_vs_ray
     wslstartdocker
     deployfailed
     networkauthorizationcheck

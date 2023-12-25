@@ -191,6 +191,10 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/k3s"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
+
+		envs := os.Environ()
+		envs = append(envs, "CATTLE_NEW_SIGNED_CERT_EXPIRATION_DAYS=3650")
+		cmd.Env = envs
 		return cmd
 	})
 }

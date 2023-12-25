@@ -46,14 +46,7 @@ func NewDataMesh(d *Dependencies) (Module, error) {
 	// override data proxy config
 	if d.DataMesh != nil {
 		conf.DisableTLS = d.DataMesh.DisableTLS
-		conf.EnableDataProxy = d.DataMesh.EnableDataProxy
-		dpTLS := d.DataMesh.DataProxyTLSConfig
-		if dpTLS != nil && (dpTLS.KeyFile != "" || dpTLS.CAFile != "") {
-			conf.DataProxyTLSConfig = dpTLS
-		}
-		if len(d.DataMesh.DataProxyEndpoint) > 0 {
-			conf.DataProxyEndpoint = d.DataMesh.DataProxyEndpoint
-		}
+		conf.ExternalDataProxyList = d.DataMesh.ExternalDataProxyList
 	}
 
 	conf.TLS.RootCA = d.CACert

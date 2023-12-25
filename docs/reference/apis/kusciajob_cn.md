@@ -176,14 +176,14 @@ protobuf 文件。
 
 ### JobStatusDetail
 
-| 字段          | 类型                           | 选填 | 描述   |
-|-------------|------------------------------|----|------|
-| state       | string                       | 必填 | 总体状态 |
-| err_msg     | string                       | 可选 | 错误信息 |
-| create_time | string                       | 必填 | 创建时间 |
-| start_time  | string                       | 必填 | 启动时间 |
-| end_time    | string                       | 可选 | 结束时间 |
-| tasks       | [TaskStatus](#task-status)[] | 必填 | 任务列表 |
+| 字段          | 类型                           | 选填 | 描述                       |
+|-------------|------------------------------|----|--------------------------|
+| state       | string                       | 必填 | 作业状态, 参考 [State](#state) |
+| err_msg     | string                       | 可选 | 错误信息                     |
+| create_time | string                       | 必填 | 创建时间                     |
+| start_time  | string                       | 必填 | 启动时间                     |
+| end_time    | string                       | 可选 | 结束时间                     |
+| tasks       | [TaskStatus](#task-status)[] | 必填 | 任务列表                     |
 
 {#party}
 
@@ -201,7 +201,7 @@ protobuf 文件。
 | 字段        | 类型                                        | 选填 | 描述            |
 |-----------|-------------------------------------------|----|---------------|
 | domain_id | string                                    | 必填 | 节点 ID         |
-| state     | [TaskState](#task-state)                  | 必填 | 总体状态          |
+| state     | string                                    | 必填 | 参与方任务状态, 参考 [State](#state) |
 | err_msg   | string                                    | 可选 | 错误信息          |
 | endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息 |
 
@@ -237,15 +237,15 @@ protobuf 文件。
 
 ### TaskStatus
 
-| 字段          | 类型                             | 选填 | 描述                               |
-|-------------|--------------------------------|----|----------------------------------|
-| task_id     | string                         | 可选 | 任务 ID                            |
-| state       | string                         | 必填 | 任务状态，参考 [TaskState](#task-state) |
-| err_msg     | string                         | 可选 | 错误信息                             |
-| create_time | string                         | 必填 | 创建事件                             |
-| start_time  | string                         | 必填 | 开始事件                             |
-| end_time    | string                         | 可选 | 结束事件                             |
-| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                              |
+| 字段          | 类型                             | 选填 | 描述                        |
+|-------------|--------------------------------|----|---------------------------|
+| task_id     | string                         | 可选 | 任务 ID                     |
+| state       | string                         | 必填 | 任务状态，参考 [State](#state)   |
+| err_msg     | string                         | 可选 | 错误信息                      |
+| create_time | string                         | 必填 | 创建事件                      |
+| start_time  | string                         | 必填 | 开始事件                      |
+| end_time    | string                         | 可选 | 结束事件                      |
+| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                       |
 
 {#event-type}
 
@@ -258,16 +258,17 @@ protobuf 文件。
 | DELETED  | 2      | 删除事件 |
 | ERROR    | 3      | 错误事件 |
 
-{#task-state}
+{#state}
 
-### TaskState
+### State
 
 | Name      | Number | 描述    |
 |-----------|--------|-------|
-| Pending   | 0      | 未开始运行 |
-| Running   | 1      | 运行中   |
-| Succeeded | 2      | 成功    |
-| Failed    | 3      | 失败    |
+| Unknown   | 0      | 未知    |
+| Pending   | 1      | 未开始运行 |
+| Running   | 2      | 运行中   |
+| Succeeded | 3      | 成功    |
+| Failed    | 4      | 失败    |
 
 {#job-party-endpoint}
 
