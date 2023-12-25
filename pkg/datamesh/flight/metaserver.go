@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
@@ -56,7 +57,7 @@ type DomainDataMetaServer struct {
 }
 
 func NewMetaServer(domainDataService service.IDomainDataService, dataSourceService service.IDomainDataSourceService,
-	config *DataProxyConfig) (*DomainDataMetaServer, error) {
+	config *config.ExternalDataProxyConfig) (*DomainDataMetaServer, error) {
 	dataServer, err := NewDataProxyClient(config)
 	if err != nil {
 		return nil, err

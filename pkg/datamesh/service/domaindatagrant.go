@@ -273,15 +273,15 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, d
 	domaindata.DomaindatagrantId = v.Name
 	domaindata.GrantDomain = v.Spec.GrantDomain
 	domaindata.Signature = v.Spec.Signature
-
-	domaindata.Limit = &datamesh.GrantLimit{
-		Components:  v.Spec.Limit.Components,
-		FlowId:      v.Spec.Limit.FlowID,
-		UseCount:    int32(v.Spec.Limit.UseCount),
-		InputConfig: v.Spec.Limit.InputConfig,
-	}
-
-	if v.Spec.Limit.ExpirationTime != nil {
-		domaindata.Limit.ExpirationTime = v.Spec.Limit.ExpirationTime.UnixNano()
+	if v.Spec.Limit != nil {
+		domaindata.Limit = &datamesh.GrantLimit{
+			Components:  v.Spec.Limit.Components,
+			FlowId:      v.Spec.Limit.FlowID,
+			UseCount:    int32(v.Spec.Limit.UseCount),
+			InputConfig: v.Spec.Limit.InputConfig,
+		}
+		if v.Spec.Limit.ExpirationTime != nil {
+			domaindata.Limit.ExpirationTime = v.Spec.Limit.ExpirationTime.UnixNano()
+		}
 	}
 }

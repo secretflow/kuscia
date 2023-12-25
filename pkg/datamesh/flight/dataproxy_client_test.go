@@ -16,6 +16,7 @@ package flight
 
 import (
 	"context"
+	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/flight"
@@ -59,8 +60,8 @@ func TestDataProxyClient(t *testing.T) {
 	go server.Serve()
 	defer server.Shutdown()
 
-	conf := &DataProxyConfig{
-		Addr: server.Addr().String(),
+	conf := &config.ExternalDataProxyConfig{
+		Endpoint: server.Addr().String(),
 	}
 	client, err := NewDataProxyClient(conf)
 	assert.Nil(t, err)

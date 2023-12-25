@@ -18,11 +18,12 @@ package handler
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
@@ -92,22 +93,61 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 // Handle is used to perform the real logic.
 func (h *PendingHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (needUpdate bool, err error) {
 	now := metav1.Now().Rfc3339Copy()
-	defer func() {
-		if kusciaTask.Status.StartTime == nil {
-			kusciaTask.Status.StartTime = &now
-		}
-	}()
-
-	cond, _ := utilsres.GetKusciaTaskCondition(&kusciaTask.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, true)
-	if err = h.createTaskResources(kusciaTask); err != nil {
-		needUpdate = utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err.Error()))
+	if needUpdate, err = h.prepareTaskResources(now, kusciaTask); needUpdate || err != nil {
 		return needUpdate, err
 	}
 
-	utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionTrue, "", "")
-	kusciaTask.Status.LastReconcileTime = &now
-	kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskRunning
-	return true, nil
+	curKtStatus := kusciaTask.Status.DeepCopy()
+	refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, curKtStatus)
+	if !reflect.DeepEqual(kusciaTask.Status, curKtStatus) {
+		needUpdate = true
+		kusciaTask.Status = *curKtStatus
+		kusciaTask.Status.LastReconcileTime = &now
+	}
+
+	if h.taskRunning(now, kusciaTask) {
+		return true, nil
+	}
+
+	if updated, err := h.taskExpired(now, kusciaTask); updated || err != nil {
+		return updated, err
+	}
+	return needUpdate, nil
+}
+
+func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) (needUpdate bool, err error) {
+	if kusciaTask.Status.StartTime == nil {
+		kusciaTask.Status.StartTime = &now
+		needUpdate = true
+	}
+
+	if kusciaTask.Status.Phase == "" {
+		kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskPending
+		needUpdate = true
+	}
+
+	cond, found := utilsres.GetKusciaTaskCondition(&kusciaTask.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, true)
+	if !found {
+		latestKt, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), kusciaTask.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		latestCond, _ := utilsres.GetKusciaTaskCondition(&latestKt.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, false)
+		if latestCond != nil && latestCond.Status == v1.ConditionTrue {
+			return false, nil
+		}
+
+		if err = h.createTaskResources(kusciaTask); err != nil {
+			needUpdate = utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err))
+			return needUpdate, err
+		}
+		utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionTrue, "", "")
+		kusciaTask.Status.LastReconcileTime = &now
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
@@ -155,6 +195,36 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	}
 
 	return nil
+}
+
+func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) bool {
+	// Check if there is a pod in running status,
+	// If there is, it indicates that the task status can be converted to running
+	for _, podStatus := range kusciaTask.Status.PodStatuses {
+		pod, _ := h.podsLister.Pods(podStatus.Namespace).Get(podStatus.PodName)
+		if pod != nil && pod.Status.Phase != v1.PodPending {
+			kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskRunning
+			kusciaTask.Status.LastReconcileTime = &now
+			return true
+		}
+	}
+	return false
+}
+
+func (h *PendingHandler) taskExpired(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
+	trg, err := getTaskResourceGroup(context.Background(), kusciaTask.Name, h.trgLister, h.kusciaClient)
+	if err != nil {
+		return false, fmt.Errorf("get task resource group %v failed, %v", kusciaTask.Name, err)
+	}
+
+	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseFailed {
+		kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskFailed
+		kusciaTask.Status.Message = fmt.Sprintf("Parties did not complete scheduling within the %v second lifecycle", trg.Spec.LifecycleSeconds)
+		kusciaTask.Status.LastReconcileTime = &now
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.KusciaTask, party *kusciaapisv1alpha1.PartyInfo) (*PartyKitInfo, error) {
@@ -616,7 +686,7 @@ func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 
 func (h *PendingHandler) submitConfigMap(cm *v1.ConfigMap, kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
 	listerCM, err := h.configMapLister.ConfigMaps(cm.Namespace).Get(cm.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		listerCM, err = h.kubeClient.CoreV1().ConfigMaps(cm.Namespace).Create(context.Background(), cm, metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item, so we
@@ -796,7 +866,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 
 func (h *PendingHandler) submitPod(partyKit *PartyKitInfo, pod *v1.Pod) (*v1.Pod, error) {
 	listerPod, err := h.podsLister.Pods(pod.Namespace).Get(pod.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		listerPod, err = h.kubeClient.CoreV1().Pods(pod.Namespace).Create(context.Background(), pod, metav1.CreateOptions{})
 	}
 
@@ -873,7 +943,7 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 
 func (h *PendingHandler) submitService(service *v1.Service, pod *v1.Pod) error {
 	listerService, err := h.servicesLister.Services(service.Namespace).Get(service.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		listerService, err = h.kubeClient.CoreV1().Services(service.Namespace).Create(context.Background(), service, metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item, so we
@@ -893,7 +963,7 @@ func (h *PendingHandler) submitService(service *v1.Service, pod *v1.Pod) error {
 
 func (h *PendingHandler) submitTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
 	_, err := h.trgLister.Get(trg.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		_, err = h.kusciaClient.KusciaV1alpha1().TaskResourceGroups().Create(context.Background(), trg, metav1.CreateOptions{})
 	}
 

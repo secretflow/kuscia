@@ -152,7 +152,9 @@ const (
 )
 
 const (
-	DefaultDataSourceID     = "default-data-source"
+	DefaultDataSourceID          = "default-data-source"
+	DefaultDataProxyDataSourceID = "default-dp-data-source"
+
 	DefaultDomainDataVendor = "manual"
 	DomainDataVendorGrant   = "grant"
 )

@@ -17,23 +17,27 @@
 
 set -e
 
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+USAGE="$(basename "$0") [DOMAIN_ID]"
+
 DOMAIN_ID=$1
 
-usage="$(basename "$0") DOMAIN_ID"
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+pushd ${ROOT} || exit
 
-if [[ ${DOMAIN_ID} == "" ]]; then
-  echo "missing argument: $usage"
+if [[ $DOMAIN_ID == "" ]] ; then
+  echo $USAGE
   exit 1
 fi
 
-ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
-DOMAIN_DATASOURCE_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;" \
-  < "${ROOT}/scripts/templates/domaindata_bob_table.yaml")
+template=$(sed "s~{{.DOMAIN_ID}}~${DOMAIN_ID}~g" < "scripts/templates/dataproxy.yaml")
 
-echo "${DOMAIN_DATASOURCE_TEMPLATE}" | kubectl apply -f -
+echo "$template" | kubectl apply -f -
 
-DOMAIN_DATASOURCE_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;" \
-  < "${ROOT}/scripts/templates/domaindata_bob_dp_table.yaml")
+echo -e "${GREEN}KusciaDeployment dataproxy created successfully. You can use the following command to display deployment status:
+kubectl get kd${NC}"
 
-echo "${DOMAIN_DATASOURCE_TEMPLATE}" | kubectl apply -f -
+popd || exit

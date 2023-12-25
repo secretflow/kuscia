@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -68,6 +69,11 @@ func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt
 		nlog.Infof("Start updating kuscia task %q status", rawKt.Name)
 		if _, err = kusciaClient.KusciaV1alpha1().KusciaTasks().UpdateStatus(context.Background(), curKt, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia task %q status", rawKt.Name)
+			return nil
+		}
+
+		if k8serrors.IsConflict(err) {
+			nlog.Warnf("Failed to update kuscia task %q status since the resource version changed, skip updating it, last updating error: %v", rawKt.Name, err)
 			return nil
 		}
 

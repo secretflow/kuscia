@@ -149,11 +149,12 @@ message PartyStatus {
   repeated JobPartyEndpoint endpoints = 4;
 }
 
-enum TaskState {
-  Pending = 0;
-  Running = 1;
-  Succeeded = 2;
-  Failed = 3;
+enum State {
+  Unknown = 0;
+  Pending = 1;
+  Running = 2;
+  Succeeded = 3;
+  Failed = 4;
 }
 
 message BatchQueryJobStatusRequest {

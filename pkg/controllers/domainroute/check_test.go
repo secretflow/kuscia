@@ -121,7 +121,7 @@ func Test_checkEffectiveInstances(t *testing.T) {
 	}
 	assert.False(t, controller.checkEffectiveInstances(testdr))
 	kusciaClient.KusciaV1alpha1().Gateways(testNamespace).Create(context.Background(), testgateway, metav1.CreateOptions{})
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 	assert.False(t, controller.checkEffectiveInstances(testdr))
 	testdr.Status.TokenStatus.Tokens[1].EffectiveInstances = []string{"testgw"}
 	assert.True(t, controller.checkEffectiveInstances(testdr))

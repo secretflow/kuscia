@@ -228,22 +228,6 @@ func TestReconcileTaskStatus(t *testing.T) {
 		wantPhase  kusciaapisv1alpha1.KusciaTaskPhase
 	}{
 		{
-			name: "all party are pending and task expired",
-			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
-				Phase: kusciaapisv1alpha1.TaskRunning,
-				StartTime: func() *metav1.Time {
-					now := metav1.Now().Add(-800 * time.Second)
-					return &metav1.Time{Time: now}
-				}(),
-			},
-			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
-			pods: []*v1.Pod{
-				makePod("alice", v1.PodPending),
-				makePod("bob", v1.PodPending),
-			},
-			wantPhase: kusciaapisv1alpha1.TaskFailed,
-		},
-		{
 			name: "all party are pending and task does not expired",
 			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
 				Phase: kusciaapisv1alpha1.TaskRunning,
@@ -298,34 +282,6 @@ func TestReconcileTaskStatus(t *testing.T) {
 				makePod("bob", v1.PodSucceeded),
 			},
 			wantPhase: kusciaapisv1alpha1.TaskSucceeded,
-		},
-		{
-			name: "interconn task, self cluster as initiator, interconn party is pending, another is pending, task expired",
-			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
-				Phase: kusciaapisv1alpha1.TaskRunning,
-				PartyTaskStatus: []kusciaapisv1alpha1.PartyTaskStatus{
-					{
-						DomainID: "bob",
-						Role:     "guest",
-						Phase:    kusciaapisv1alpha1.TaskPending,
-					},
-				},
-				StartTime: func() *metav1.Time {
-					now := metav1.Now().Add(-800 * time.Second)
-					return &metav1.Time{Time: now}
-				}(),
-			},
-			namespaces: []*v1.Namespace{
-				makeNamespace("alice", nil),
-				makeNamespace("bob", map[string]string{
-					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
-					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
-			},
-			trg: makeTaskResourceGroup("trg-1", [2]string{"alice", "bob"}),
-			pods: []*v1.Pod{
-				makePod("alice", v1.PodPending),
-			},
-			wantPhase: kusciaapisv1alpha1.TaskFailed,
 		},
 		{
 			name: "interconn task, self cluster as initiator, interconn party is pending, another is pending, task does not expired",
@@ -522,27 +478,6 @@ func TestReconcileTaskStatus(t *testing.T) {
 				makePod("alice", v1.PodSucceeded),
 			},
 			wantPhase: kusciaapisv1alpha1.TaskSucceeded,
-		},
-		{
-			name: "interconn task, self cluster is not initiator, self cluster task is pending, task expired",
-			taskStatus: &kusciaapisv1alpha1.KusciaTaskStatus{
-				Phase: kusciaapisv1alpha1.TaskRunning,
-				StartTime: func() *metav1.Time {
-					now := metav1.Now().Add(-800 * time.Second)
-					return &metav1.Time{Time: now}
-				}(),
-			},
-			namespaces: []*v1.Namespace{
-				makeNamespace("alice", nil),
-				makeNamespace("bob", map[string]string{
-					common.LabelDomainRole:         string(kusciaapisv1alpha1.Partner),
-					common.LabelInterConnProtocols: string(kusciaapisv1alpha1.InterConnBFIA)}),
-			},
-			trg: makeTaskResourceGroup("trg-1", [2]string{"bob", "alice"}),
-			pods: []*v1.Pod{
-				makePod("alice", v1.PodPending),
-			},
-			wantPhase: kusciaapisv1alpha1.TaskFailed,
 		},
 		{
 			name: "interconn task, self cluster is not initiator, self cluster task is pending, task does not expired",

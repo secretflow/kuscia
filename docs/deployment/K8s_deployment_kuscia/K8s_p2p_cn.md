@@ -80,7 +80,7 @@ scripts/deploy/add_domain.sh alice p2p
 # 登录到 alice 节点
 kubectl exec -it kuscia-autonomy-alice-686d6747c-gc2kk bash -n autonomy-alice
 # 建立 alice 到 bob 的通信
-cripts/deploy/join_to_host.sh alice bob http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080
+scripts/deploy/join_to_host.sh alice bob http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080
 ```
 
 建立 bob 到 alice 授权
