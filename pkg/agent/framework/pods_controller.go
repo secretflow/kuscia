@@ -306,7 +306,7 @@ func (pc *PodsController) syncLoopIteration(ctx context.Context, handler SyncHan
 // no changes are seen to the configuration, will synchronize the last known desired
 // state every sync-frequency seconds. Never returns.
 func (pc *PodsController) syncLoop(ctx context.Context, handler SyncHandler, updates <-chan kubetypes.PodUpdate) {
-	nlog.Info("Starting kubelet main sync loop")
+	nlog.Info("Starting agent main sync loop")
 
 	housekeepingTicker := time.NewTicker(housekeepingPeriod)
 	defer housekeepingTicker.Stop()

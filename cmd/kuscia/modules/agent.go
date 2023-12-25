@@ -24,6 +24,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -40,12 +41,13 @@ type agentModule struct {
 
 func NewAgent(i *Dependencies) Module {
 	conf := &i.Agent
+	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
 	hostname, err := os.Hostname()
 	if err != nil {
 		nlog.Fatalf("Get hostname fail: %v", err)
 	}
-	conf.StdoutPath = filepath.Join(i.RootDir, StdoutPrefix)
+	conf.StdoutPath = filepath.Join(i.RootDir, common.StdoutPrefix)
 	if conf.Node.NodeName == "" {
 		conf.Node.NodeName = hostname
 	}
@@ -78,7 +80,7 @@ func (agent *agentModule) Run(ctx context.Context) error {
 }
 
 func (agent *agentModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(300 * time.Second)
 	select {
 	case <-commands.ReadyChan:
 		return nil
@@ -105,7 +107,7 @@ func RunAgent(ctx context.Context, cancel context.CancelFunc, conf *Dependencies
 		nlog.Error(err)
 		cancel()
 	} else {
-		nlog.Info("agent is ready")
+		nlog.Info("Agent is ready")
 	}
 	return m
 }

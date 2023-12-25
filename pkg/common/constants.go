@@ -18,6 +18,8 @@ package common
 const (
 	// LabelPortScope represents port usage scope. Its values may be Local, Domain, Cluster. Refer to PortScope for more details.
 	LabelPortScope = "kuscia.secretflow/port-scope"
+	// LabelPortName represents port name which defined in AppImage container port.
+	LabelPortName = "kuscia.secretflow/port-name"
 
 	LabelController                      = "kuscia.secretflow/controller"
 	LabelGatewayProxy                    = "kuscia.secretflow/gateway-proxy"
@@ -43,10 +45,30 @@ const (
 	LabelDomainDataGrantDomain           = "kuscia.secretflow/domaindatagrant-domain"
 
 	LabelSelfClusterAsInitiator = "kuscia.secretflow/self-cluster-as-initiator"
-	LabelInterConnProtocolType  = "kuscia.secretflow/interconn-protocol-type"
-	LabelJobID                  = "kuscia.secretflow/job-id"
-	LabelTaskID                 = "kuscia.secretflow/task-id"
-	LabelTaskAlias              = "kuscia.secretflow/task-alias"
+	// LabelInterConnProtocolType is a label to specify the interconn protocol type of job
+	// For KusciaBetaJob, it's only used for partner job
+	LabelInterConnProtocolType = "kuscia.secretflow/interconn-protocol-type"
+	LabelJobID                 = "kuscia.secretflow/job-id"
+	LabelTaskID                = "kuscia.secretflow/task-id"
+	LabelTaskAlias             = "kuscia.secretflow/task-alias"
+
+	// LabelJobStage is a label to specify the current stage of job.
+	LabelJobStage = "kuscia.secretflow/job-stage"
+	// LabelJobStageTrigger is a label to specify who trigger the current stage of job.
+	LabelJobStageTrigger = "kuscia.secretflow/job-stage-trigger"
+
+	// LabelInterConnKusciaParty is a label of a job which has parties interconnected with kuscia protocol,
+	// the value is a series of domain id join with '_', such as alice_bob_carol .
+	LabelInterConnKusciaParty = "kuscia.secretflow/interconn-kuscia-parties"
+
+	// LabelInterConnBFIAParty is a label of a job which has parties interconnected with bfia protocol,
+	// the value is a series of domain id join with '_', such as alice_bob_carol .
+	LabelInterConnBFIAParty = "kuscia.secretflow/interconn-bfia-parties"
+
+	// LabelTargetDomain is a label represent the target domain of a partner cluster,
+	// which labeled on the mirror custom resources in mocked master domain of partner cluster,
+	// the custom resources include DomainData, DomainDataGrant, etc.
+	LabelTargetDomain = "kuscia.secretflow/target-domain"
 
 	LabelKusciaDeploymentAppType  = "kuscia.secretflow/app-type"
 	LabelKusciaDeploymentUID      = "kuscia.secretflow/kd-uid"
@@ -58,6 +80,11 @@ const (
 	LabelOwnerReferences = "kuscia.secretflow/owner-references"
 
 	LabelDomainRoutePartner = "kuscia.secertflow/domainroute-partner"
+)
+
+const (
+	PluginNameCertIssuance = "cert-issuance"
+	PluginNameConfigRender = "config-render"
 )
 
 type LoadBalancerType string
@@ -125,7 +152,9 @@ const (
 )
 
 const (
-	DefaultDataSourceID     = "default-data-source"
+	DefaultDataSourceID          = "default-data-source"
+	DefaultDataProxyDataSourceID = "default-dp-data-source"
+
 	DefaultDomainDataVendor = "manual"
 	DomainDataVendorGrant   = "grant"
 )
@@ -143,4 +172,28 @@ const (
 	RunModeMaster   = "master"
 	RunModeAutonomy = "autonomy"
 	RunModeLite     = "lite"
+)
+
+const (
+	DefaultSecretBackendName = "default"
+	DefaultSecretBackendType = "mem"
+)
+
+type CommunicationProtocol string
+type Protocol string
+
+const (
+	NOTLS Protocol = "NOTLS"
+	TLS   Protocol = "TLS"
+	MTLS  Protocol = "MTLS"
+)
+
+const DomainCsrExtensionID = "1.2.3.4"
+
+const (
+	CertPrefix   = "var/certs/"
+	LogPrefix    = "var/logs/"
+	StdoutPrefix = "var/stdout/"
+	TmpPrefix    = "var/tmp/"
+	ConfPrefix   = "etc/conf/"
 )

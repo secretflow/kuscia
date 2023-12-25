@@ -17,6 +17,7 @@ package modules
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -34,7 +35,9 @@ import (
 
 	"github.com/google/uuid"
 
+	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/common"
+	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
@@ -43,16 +46,16 @@ import (
 )
 
 type k3sModule struct {
-	rootDir        string
-	kubeconfigFile string
-	bindAddress    string
-	listenPort     string
-	dataDir        string
-	datastore      string
-	token          string
-
-	LogConfig   nlog.LogConfig
-	enableAudit bool
+	rootDir           string
+	kubeconfigFile    string
+	bindAddress       string
+	listenPort        string
+	dataDir           string
+	datastoreEndpoint string
+	clusterToken      string
+	hostIP            string
+	enableAudit       bool
+	LogConfig         nlog.LogConfig
 }
 
 func (s *k3sModule) readyz(host string) error {
@@ -120,16 +123,26 @@ func (s *k3sModule) readyz(host string) error {
 }
 
 func NewK3s(i *Dependencies) Module {
+	var clusterToken string
+	clusterToken = i.Master.ClusterToken
+	if clusterToken == "" {
+		clusterToken = fmt.Sprintf("%x", md5.Sum([]byte(i.DomainID)))
+	}
+	hostIP, err := network.GetHostIP()
+	if err != nil {
+		nlog.Fatal(err)
+	}
 	return &k3sModule{
-		rootDir:        i.RootDir,
-		kubeconfigFile: i.KubeconfigFile,
-		bindAddress:    "0.0.0.0",
-		listenPort:     "6443",
-		dataDir:        filepath.Join(i.RootDir, k3sDataDirPrefix),
-		enableAudit:    false,
-		datastore:      i.Master.Datastore,
-		token:          i.Master.Token,
-		LogConfig:      *i.LogConfig,
+		rootDir:           i.RootDir,
+		kubeconfigFile:    i.KubeconfigFile,
+		bindAddress:       "0.0.0.0",
+		listenPort:        "6443",
+		hostIP:            hostIP,
+		dataDir:           filepath.Join(i.RootDir, k3sDataDirPrefix),
+		enableAudit:       false,
+		datastoreEndpoint: i.Master.DatastoreEndpoint,
+		clusterToken:      clusterToken,
+		LogConfig:         *i.LogConfig,
 	}
 }
 
@@ -142,6 +155,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable-agent",
 		"--bind-address=" + s.bindAddress,
 		"--https-listen-port=" + s.listenPort,
+		"--node-ip=" + s.hostIP,
 		"--disable-cloud-controller",
 		"--disable-network-policy",
 		"--disable-scheduler",
@@ -151,24 +165,25 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable=servicelb",
 		"--disable=local-storage",
 		"--disable=metrics-server",
+		"--kube-apiserver-arg=event-ttl=10m",
 	}
-	if s.datastore != "" {
-		args = append(args, "--datastore-endpoint="+s.datastore)
+	if s.datastoreEndpoint != "" {
+		args = append(args, "--datastore-endpoint="+s.datastoreEndpoint)
 	}
-	if s.token != "" {
-		args = append(args, "--token="+s.token)
+	if s.clusterToken != "" {
+		args = append(args, "--token="+s.clusterToken)
 	}
 	if s.enableAudit {
 		args = append(args,
-			"--kube-apiserver-arg=audit-log-path="+filepath.Join(s.rootDir, LogPrefix, "k3s-audit.log"),
-			"--kube-apiserver-arg=audit-policy-file="+filepath.Join(s.rootDir, ConfPrefix, "k3s/k3s-audit-policy.yaml"),
+			"--kube-apiserver-arg=audit-log-path="+filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s-audit.log"),
+			"--kube-apiserver-arg=audit-policy-file="+filepath.Join(s.rootDir, pkgcom.ConfPrefix, "k3s/k3s-audit-policy.yaml"),
 			"--kube-apiserver-arg=audit-log-maxbackup=10",
 			"--kube-apiserver-arg=audit-log-maxsize=300",
 		)
 	}
 
 	sp := supervisor.NewSupervisor("k3s", nil, -1)
-	s.LogConfig.LogPath = filepath.Join(s.rootDir, LogPrefix, "k3s.log")
+	s.LogConfig.LogPath = filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s.log")
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 
@@ -176,6 +191,10 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/k3s"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
+
+		envs := os.Environ()
+		envs = append(envs, "CATTLE_NEW_SIGNED_CERT_EXPIRATION_DAYS=3650")
+		cmd.Env = envs
 		return cmd
 	})
 }
@@ -258,9 +277,9 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		serverCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/server-ca.crt"),
 		clientKeyFile:          filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.key"),
 		clientCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.crt"),
-		clusterRoleFile:        filepath.Join(conf.RootDir, ConfPrefix, "kuscia-clusterrole.yaml"),
-		clusterRoleBindingFile: filepath.Join(conf.RootDir, ConfPrefix, "kuscia-clusterrolebinding.yaml"),
-		kubeConfigTmplFile:     filepath.Join(conf.RootDir, ConfPrefix, "kuscia.kubeconfig.tmpl"),
+		clusterRoleFile:        filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia-clusterrole.yaml"),
+		clusterRoleBindingFile: filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia-clusterrolebinding.yaml"),
+		kubeConfigTmplFile:     filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia.kubeconfig.tmpl"),
 		kubeConfig:             conf.KusciaKubeConfig,
 	}
 
@@ -325,7 +344,7 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 func applyKusciaResources(conf *Dependencies) error {
 	// apply kuscia clusterRole
 	resourceFiles := []string{
-		filepath.Join(conf.RootDir, ConfPrefix, "domain-cluster-res.yaml"),
+		filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "domain-cluster-res.yaml"),
 	}
 	sw := sync.WaitGroup{}
 	for _, file := range resourceFiles {

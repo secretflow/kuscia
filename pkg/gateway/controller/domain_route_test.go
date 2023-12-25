@@ -232,7 +232,7 @@ func TestTokenRSA(t *testing.T) {
 	ns := "defaultrsa"
 	c := newDomainRouteTestInfo(ns, 1054)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(200 * time.Millisecond)
 
 	var testcases = []DrTestCase{
@@ -332,7 +332,7 @@ func TestTokenHandshake(t *testing.T) {
 	port := 11054
 	c := newDomainRouteTestInfo(ns, uint32(port))
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(1000 * time.Millisecond)
 
 	realInternalServer := config.InternalServer
@@ -395,7 +395,7 @@ func TestMutualAuth(t *testing.T) {
 
 	c := newDomainRouteTestInfo(ns, 1051)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(100 * time.Millisecond)
 
 	var sslKey, sslCrt []byte
@@ -485,7 +485,7 @@ func TestTransit(t *testing.T) {
 	ns := "defaulttransit"
 	c := newDomainRouteTestInfo(ns, 1055)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(100 * time.Millisecond)
 
 	testcases := []DrTestCase{
@@ -581,7 +581,7 @@ func TestAppendHeaders(t *testing.T) {
 	ns := "defaultappend"
 	c := newDomainRouteTestInfo(ns, 1056)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(200 * time.Millisecond)
 
 	dr := &kusciaapisv1alpha1.DomainRoute{
@@ -680,7 +680,7 @@ func TestGenerateInternalRoute(t *testing.T) {
 	ns := "defaultinternal"
 	c := newDomainRouteTestInfo(ns, 1057)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(200 * time.Millisecond)
 
 	dr := &kusciaapisv1alpha1.DomainRoute{
@@ -766,4 +766,65 @@ func TestGenerateInternalRoute(t *testing.T) {
 	assert.True(t, route.RequestHeadersToAdd[0].Header.Key == "x-interconn-protocol")
 	assert.True(t, route.RequestHeadersToAdd[0].Header.Value == "kuscia")
 	assert.Equal(t, len(route.RequestHeadersToAdd), 4)
+}
+
+func TestCheckHealthy(t *testing.T) {
+	ns := "defaultinternal"
+	c := newDomainRouteTestInfo(ns, 1057)
+	dr := &kusciaapisv1alpha1.DomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "interconn",
+			Namespace: ns,
+		},
+		Spec: kusciaapisv1alpha1.DomainRouteSpec{
+			Source:            ns,
+			Destination:       "test",
+			InterConnProtocol: kusciaapisv1alpha1.InterConnBFIA,
+			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+				Host: EnvoyServerIP,
+				Ports: []kusciaapisv1alpha1.DomainPort{
+					{
+						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
+						Port:     ExternalServerPort,
+					},
+				},
+			},
+			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
+				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
+				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
+				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
+			},
+		},
+		Status: kusciaapisv1alpha1.DomainRouteStatus{
+			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
+				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
+					{
+						Token: fakeRevisionToken,
+					},
+				},
+			},
+		},
+	}
+	dr, err := c.client.KusciaV1alpha1().DomainRoutes(ns).Create(context.Background(), dr, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
+	err = c.markDestUnreachable(context.Background(), dr)
+	assert.NoError(t, err)
+
+	_, ok := c.drHeartbeat[dr.Name]
+	assert.True(t, ok)
+	assert.False(t, dr.Status.IsDestinationUnreachable)
+	beforeTm, _ := time.ParseDuration("-1m")
+	c.drHeartbeat[dr.Name] = time.Now().Add(beforeTm)
+	err = c.markDestUnreachable(context.Background(), dr)
+	assert.NoError(t, err)
+	dr, err = c.client.KusciaV1alpha1().DomainRoutes(ns).Get(context.Background(), dr.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.True(t, dr.Status.IsDestinationUnreachable)
+
+	c.markDestReachable(context.Background(), dr)
+	dr, err = c.client.KusciaV1alpha1().DomainRoutes(ns).Get(context.Background(), dr.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.False(t, dr.Status.IsDestinationUnreachable)
 }

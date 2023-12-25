@@ -295,18 +295,17 @@ status:
 
 KusciaDeployment `metadata` 的子字段详细介绍如下：
 
-- `labels`：表示 KusciaDeployment 的标签。当配置`kuscia.secretflow/app-type: serving`标签时，KusciaDeployment Controller 在创建 K3s 内置的 Deployment 资源时，会新增环境变量`SERVING_ID`，
-该环境变量的值为 KusciaDeployment 资源的名称。
+- `labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-type: serving`表示管理的应用为预测类型。
 - `name`：表示 KusciaDeployment 的名称。
 
 KusciaDeployment `spec` 的子字段详细介绍如下：
 
 - `initiator`：表示发起方的节点标识。
-- `inputConfig`：表示输入参数配置，KusciaDeployment Controller 会将该配置通过环境变量的方式传递给应用。环境变量的名称为`INPUT_CONFIG`。当前，该字段中的内容是临时的，预计下一期会有调整，后续也会补充该字段中的内容详细解释。
+- `inputConfig`：表示应用输入参数配置。
 - `parties`：表示所有参与方的信息。
   - `parties[].appImageRef`：表示参与方所依赖的应用镜像名称。有关 AppImage 的详细介绍，请参考 [AppImage](./appimage_cn.md)。
   - `parties[].domainID`：表示参与方的节点标识。
-  - `parties[].role`：表示参与方的角色。若想在同一节点下管理不同的应用，那么可以通过该字段来区分。
+  - `parties[].role`：表示参与方的角色。
   - `parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从`parties[].appImageRef`获取的对应模版信息。
     - `template.replicas`：表示应用的期望副本数。
     - `template.strategy`：表示应用的更新策略。当前支持`Recreate`和`RollingUpdate`两种策略，详细解释请参考 [Strategy](https://kubernetes.io/zh-cn/docs/concepts/workloads/controllers/deployment/#strategy)

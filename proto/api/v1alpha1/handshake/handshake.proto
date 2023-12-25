@@ -24,6 +24,7 @@ option java_package = "com.secretflow.v1alpha1.handshake";
 message TokenConfig {
     string token = 1;
     int64 revision = 2;
+    string pubhash = 3;
 }
 
 // HandShakeRequest represents domainroute handshake request.

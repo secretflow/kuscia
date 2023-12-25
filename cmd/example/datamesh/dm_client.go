@@ -43,11 +43,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
 	"github.com/secretflow/kuscia/pkg/datamesh/flight/example"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
 var (
@@ -58,6 +60,7 @@ type MockFlightClient struct {
 	testDataType      string
 	outputCSVFilePath string
 	flightClient      flight.Client
+	datasourceSvc     service.IDomainDataSourceService
 }
 
 type CertsConfig struct {
@@ -73,7 +76,6 @@ type CertsConfig struct {
 func (m *MockFlightClient) start(config *CertsConfig) error {
 	var (
 		err          error
-		datasourceID string
 		domainDataID string
 
 		localDatasourceID string
@@ -82,7 +84,6 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 	)
 
 	m.flightClient, err = createFlightClient(metaServerEndpoint, config)
-
 	if localDatasourceID, err = m.createLocalFsDataSource(); err != nil {
 		return err
 	}
@@ -96,7 +97,7 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 	}
 	nlog.Infof("LocalFsID:%s ossID:%s mysqlID:%s", localDatasourceID, ossDatasourceID, mysqlDatasourceID)
 
-	datasourceID = localDatasourceID
+	datasourceID := localDatasourceID
 	if err := m.QueryDataSource(datasourceID); err != nil {
 		nlog.Warnf("Query datasource info fail: %v", err)
 		return err
@@ -118,43 +119,39 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 
 	return m.flightClient.Close()
 }
-
 func (m *MockFlightClient) createLocalFsDataSource() (string, error) {
 	// CreateDataSource
-	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
-		Request: &datamesh.CreateDomainDataSourceRequest{
-			DatasourceId: "",
-			Name:         "default-datasource",
-			Type:         "localfs",
-			Info: &datamesh.DataSourceInfo{
-				Localfs: &datamesh.LocalDataSourceInfo{
-					Path: "./",
-				},
+	createDatasourceReq := &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomain,
+		DatasourceId: "",
+		Type:         "localfs",
+		Info: &kusciaapi.DataSourceInfo{
+			Localfs: &kusciaapi.LocalDataSourceInfo{
+				Path: "./",
 			},
-			AccessDirectly: false,
 		},
 	}
+
 	return m.createDataSource(createDatasourceReq)
 }
 
 func (m *MockFlightClient) createOSSDataSource() (string, error) {
 	// CreateDataSource
-	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
-		Request: &datamesh.CreateDomainDataSourceRequest{
-			DatasourceId: "",
-			Name:         "oss-ds",
-			Type:         "oss",
-			Info: &datamesh.DataSourceInfo{
-				Oss: &datamesh.OssDataSourceInfo{
-					Endpoint:        fmt.Sprintf("%s:9000", dataMeshHost),
-					Bucket:          "testBucket",
-					Prefix:          "/xxx/",
-					AccessKeyId:     "ak",
-					AccessKeySecret: "sk",
-					StorageType:     "minio",
-				},
+	createDatasourceReq := &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomain,
+		DatasourceId: "",
+		Type:         "oss",
+		Info: &kusciaapi.DataSourceInfo{
+			Oss: &kusciaapi.OssDataSourceInfo{
+				Endpoint:        fmt.Sprintf("%s:9000", dataMeshHost),
+				Bucket:          "testBucket",
+				Prefix:          "/xxx/",
+				AccessKeyId:     "ak",
+				AccessKeySecret: "sk",
+				StorageType:     "minio",
 			},
-			AccessDirectly: false,
 		},
 	}
 	return m.createDataSource(createDatasourceReq)
@@ -162,52 +159,37 @@ func (m *MockFlightClient) createOSSDataSource() (string, error) {
 
 func (m *MockFlightClient) createMysqlDataSource() (string, error) {
 	// CreateDataSource
-	createDatasourceReq := &datamesh.ActionCreateDomainDataSourceRequest{
-		Request: &datamesh.CreateDomainDataSourceRequest{
-			DatasourceId: "",
-			Name:         "mysql-ds",
-			Type:         "mysql",
-			Info: &datamesh.DataSourceInfo{
-				Database: &datamesh.DatabaseDataSourceInfo{
-					Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),
-					User:     "root",
-					Password: "passwd",
-					Database: "demo",
-				},
+	createDatasourceReq := &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomain,
+		DatasourceId: "",
+		Type:         "mysql",
+		Info: &kusciaapi.DataSourceInfo{
+			Database: &kusciaapi.DatabaseDataSourceInfo{
+				Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),
+				User:     "root",
+				Password: "passwd",
+				Database: "demo",
 			},
-			AccessDirectly: false,
 		},
 	}
 	return m.createDataSource(createDatasourceReq)
 }
 
-func (m *MockFlightClient) createDataSource(createDatasourceReq *datamesh.ActionCreateDomainDataSourceRequest) (string, error) {
-	msg, err := proto.Marshal(createDatasourceReq)
-	if err != nil {
+func (m *MockFlightClient) createDataSource(createDatasourceReq *kusciaapi.CreateDomainDataSourceRequest) (string, error) {
+	resp := m.datasourceSvc.CreateDomainDataSource(context.Background(), createDatasourceReq)
+	if resp == nil {
+		err := fmt.Errorf("create domainDataSource source fail")
+		nlog.Warn(err)
 		return "", err
 	}
-
-	action := &flight.Action{
-		Type: "ActionCreateDomainDataSourceRequest",
-		Body: msg,
-	}
-	resp, err := m.flightClient.DoAction(context.Background(), action)
-	if err != nil {
-		nlog.Warnf("DoActionCreateDomainDataSourceRequest err: %v", err)
+	if resp.Status != nil && resp.Status.Code != 0 {
+		err := fmt.Errorf("create domainDataSource %s source fail:%v", createDatasourceReq.DatasourceId, resp.Status)
+		nlog.Warn(err)
 		return "", err
 	}
-	result, err := resp.Recv()
-	if err != nil {
-		nlog.Warnf("Receive ActionCreateDomainDataSourceResponse err: %v", err)
-	}
-
-	var createDatasourceResp datamesh.ActionCreateDomainDataSourceResponse
-	if err := proto.Unmarshal(result.Body, &createDatasourceResp); err != nil {
-		nlog.Warnf("Unmarshal ActionCreateDomainDataSourceResponse err: %v", err)
-	}
-	datasourceID := createDatasourceResp.Response.Data.DatasourceId
-	nlog.Infof("data-source-id:%s, type is:%s", datasourceID, createDatasourceReq.Request.Type)
-	return datasourceID, nil
+	nlog.Infof("data-source-id:%s, type is:%s", resp.Data.DatasourceId, createDatasourceReq.Type)
+	return resp.Data.DatasourceId, nil
 }
 
 func (m *MockFlightClient) QueryDataSource(datasourceID string) error {

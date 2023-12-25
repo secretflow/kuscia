@@ -2,10 +2,12 @@
 
 Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的轻量级隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。通过 Kuscia：
 
-- 你可以快速体验隐私计算功能。
-- 你可以获得完整的隐私计算生产能力。
-- 你可以与行业内多种隐私计算系统进行互联互通。
-- 你可以使用不同的中心化或点对点业务组网模式。
+- 轻量化部署：您可以用最低 1C2G 的资源完成 100W 级数据隐私求交(PSI)。
+- 跨域网络安全通信：您可以实现多隐私计算任务并发执行时的端口复用（仅需一个公网端口）与安全通信。
+- 统一的 API 接口：您可以使用 [HTTP/GRPC API 接口](./reference/apis/summary_cn.md)集成隐私计算能力。
+- 互联互通：你可以与行业内多种隐私计算系统进行互联互通。
+
+更多 Kuscia 的能力介绍，请参考[ Kuscia 概述](./reference/overview.md)。
 
 ## 入门
 
@@ -53,16 +55,19 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 - [指南：多机器部署中心化集群][deploy-master-lite]
 - [指南：多机器部署点对点集群][deploy-p2p]
+- [指南：k8s 集群部署 kuscia][deploy-k8s-deploy-kuscia]
 - [常见运维操作][ops-cheatsheet]
 - [网络要求][deploy-networkrequirements]
 - [日志说明][deploy-logdescription]
+- [kuscia 配置文件][deploy-kuscia_config_cn]
 
 [deploy-master-lite]: ./deployment/deploy_master_lite_cn.md
 [deploy-p2p]: ./deployment/deploy_p2p_cn.md
+[deploy-k8s-deploy-kuscia]: ./deployment/K8s_deployment_kuscia/index.rst
 [ops-cheatsheet]: ./deployment/operation_cn.md
 [deploy-networkrequirements]: ./deployment/networkrequirements.md
 [deploy-logdescription]: ./deployment/logdescription.md
-
+[deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
 ## 更多指南
 
 - [如何运行一个互联互通银联 BFIA 协议作业][how-to-bfia]
@@ -80,7 +85,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - [常见问题（FAQ）][faq]
 - Kuscia 的 [Issues] 和 [讨论区]
 
-[faq]: ./reference/faq_cn.md
+[faq]: ./reference/troubleshoot/index.rst
 [Issues]: https://github.com/secretflow/kuscia/issues
 [讨论区]: https://github.com/secretflow/kuscia/discussions
 

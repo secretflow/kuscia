@@ -247,6 +247,9 @@ func (c *controller) checkDomainRoute(ctx context.Context, cdr *kusciaapisv1alph
 		msg := fmt.Sprintf("DomainRoute %s already exists in namespace %s and is not managed by ClusterDomainRoute", drName, namespace)
 		return nil, fmt.Errorf("%s", msg)
 	}
+	if needDeleteDr(cdr, dr) {
+		return nil, c.kusciaClient.KusciaV1alpha1().DomainRoutes(namespace).Delete(ctx, dr.Name, metav1.DeleteOptions{})
+	}
 
 	if !compareSpec(cdr, dr) {
 		dr = dr.DeepCopy()
@@ -258,6 +261,24 @@ func (c *controller) checkDomainRoute(ctx context.Context, cdr *kusciaapisv1alph
 		}
 	}
 	return dr, nil
+}
+
+func needDeleteDr(cdr *kusciaapisv1alpha1.ClusterDomainRoute, dr *kusciaapisv1alpha1.DomainRoute) bool {
+	if !reflect.DeepEqual(cdr.Spec.Endpoint, dr.Spec.Endpoint) {
+		return true
+	}
+
+	if cdr.Spec.TokenConfig == nil || dr.Spec.TokenConfig == nil {
+		return cdr.Spec.TokenConfig != dr.Spec.TokenConfig
+	}
+	if cdr.Spec.TokenConfig.DestinationPublicKey != dr.Spec.TokenConfig.DestinationPublicKey {
+		return true
+	}
+	if cdr.Spec.TokenConfig.SourcePublicKey != dr.Spec.TokenConfig.SourcePublicKey {
+		return true
+	}
+
+	return false
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
@@ -302,14 +323,14 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 	// Create domainroute in source namespace
 	srcdr, err := c.checkDomainRoute(ctx, cdr, sourceRole, cdr.Spec.Source, drName)
 	if err != nil {
-		nlog.Error(err.Error())
+		nlog.Warnf(err.Error())
 		return err
 	}
 
 	// Create domainroute in destination namespace
 	destdr, err := c.checkDomainRoute(ctx, cdr, destRole, cdr.Spec.Destination, drName)
 	if err != nil {
-		nlog.Error(err.Error())
+		nlog.Warnf(err.Error())
 		return err
 	}
 
@@ -342,20 +363,21 @@ func (c *controller) syncDomainPubKey(ctx context.Context,
 	if cdr.Spec.TokenConfig != nil && cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
 		cdrCopy := cdr.DeepCopy()
 		needUpdate := false
-		if cdr.Spec.TokenConfig.SourcePublicKey == "" {
-			srcRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Source)
-			if len(srcRsaPubData) != 0 {
-				cdrCopy.Spec.TokenConfig.SourcePublicKey = base64.StdEncoding.EncodeToString(srcRsaPubData)
-				needUpdate = true
-			}
+
+		srcRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Source)
+		srcRsaPub := base64.StdEncoding.EncodeToString(srcRsaPubData)
+		if len(srcRsaPubData) != 0 && cdr.Spec.TokenConfig.SourcePublicKey != srcRsaPub {
+			cdrCopy.Spec.TokenConfig.SourcePublicKey = srcRsaPub
+			needUpdate = true
 		}
-		if cdr.Spec.TokenConfig.DestinationPublicKey == "" {
-			destRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Destination)
-			if len(destRsaPubData) != 0 {
-				cdrCopy.Spec.TokenConfig.DestinationPublicKey = base64.StdEncoding.EncodeToString(destRsaPubData)
-				needUpdate = true
-			}
+
+		destRsaPubData := c.getPublicKeyFromDomain(cdr.Spec.Destination)
+		destRsaPub := base64.StdEncoding.EncodeToString(destRsaPubData)
+		if len(destRsaPubData) != 0 && cdr.Spec.TokenConfig.DestinationPublicKey != destRsaPub {
+			cdrCopy.Spec.TokenConfig.DestinationPublicKey = destRsaPub
+			needUpdate = true
 		}
+
 		if needUpdate {
 			cdr, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy,
 				metav1.UpdateOptions{})
@@ -462,16 +484,27 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 	srcdr *kusciaapisv1alpha1.DomainRoute, destdr *kusciaapisv1alpha1.DomainRoute) (*kusciaapisv1alpha1.ClusterDomainRoute, error) {
 	needUpdate := false
 	cdr = cdr.DeepCopy()
+
+	isSrcTokenChanged := srcdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.SourceTokens, srcdr.Status.TokenStatus.Tokens)
+	isSrcStatusChanged := srcdr != nil && !srcdr.Status.IsDestinationUnreachable != IsReady(&cdr.Status)
+
+	// init new condition
 	setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionTrue, "", "Success"))
-	if srcdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.SourceTokens, srcdr.Status.TokenStatus.Tokens) {
+
+	if isSrcTokenChanged || isSrcStatusChanged {
 		cdr.Status.TokenStatus.SourceTokens = srcdr.Status.TokenStatus.Tokens
 		needUpdate = true
+
 		if len(cdr.Status.TokenStatus.SourceTokens) == 0 {
-			if !srcdr.Status.IsDestinationAuthrized {
+			if !srcdr.Status.IsDestinationAuthorized {
 				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "DestinationIsNotAuthrized", "TokenNotGenerate"))
 			} else {
 				setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "TokenNotGenerate", "TokenNotGenerate"))
 			}
+		} else if srcdr.Status.IsDestinationUnreachable {
+			nlog.Infof("set cdr(%s) ready condition.reason=DestinationUnreachable", cdr.Name)
+			setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse,
+				"DestinationUnreachable", "DestinationUnreachable"))
 		}
 	}
 	if destdr != nil && !reflect.DeepEqual(cdr.Status.TokenStatus.DestinationTokens, destdr.Status.TokenStatus.Tokens) {
@@ -570,7 +603,7 @@ func (c *controller) updateLabel(ctx context.Context, cdr *kusciaapisv1alpha1.Cl
 	}
 
 	if cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{}); err != nil {
-		nlog.Errorf("Update cdr, src(%s) dst(%s) failed with (%s)", cdrCopy.Spec.Source, cdrCopy.Spec.Destination, err.Error())
+		nlog.Warnf("Update cdr, src(%s) dst(%s) failed with (%s)", cdrCopy.Spec.Source, cdrCopy.Spec.Destination, err.Error())
 		return cdr, err
 	}
 
@@ -644,4 +677,13 @@ func getPublickeyFromCert(certString string) ([]byte, error) {
 		Bytes: x509.MarshalPKCS1PublicKey(rsaPub),
 	}
 	return pem.EncodeToMemory(block), nil
+}
+
+func IsReady(status *kusciaapisv1alpha1.ClusterDomainRouteStatus) bool {
+	for _, cond := range status.Conditions {
+		if cond.Type == kusciaapisv1alpha1.ClusterDomainRouteReady {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }

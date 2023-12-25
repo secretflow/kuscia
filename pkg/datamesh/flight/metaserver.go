@@ -29,6 +29,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
@@ -43,7 +44,6 @@ type MetaServer interface {
 	DoActionQueryDomainDataRequest(ctx context.Context, request *datamesh.ActionQueryDomainDataRequest) (*flight.Result, error)
 	DoActionUpdateDomainDataRequest(ctx context.Context, request *datamesh.ActionUpdateDomainDataRequest) (*flight.Result, error)
 	DoActionDeleteDomainDataRequest(ctx context.Context, request *datamesh.ActionDeleteDomainDataRequest) (*flight.Result, error)
-	DoActionCreateDomainDataSourceRequest(ctx context.Context, request *datamesh.ActionCreateDomainDataSourceRequest) (*flight.Result, error)
 	DoActionQueryDomainDataSourceRequest(ctx context.Context, request *datamesh.ActionQueryDomainDataSourceRequest) (
 		*flight.Result, error)
 }
@@ -57,7 +57,7 @@ type DomainDataMetaServer struct {
 }
 
 func NewMetaServer(domainDataService service.IDomainDataService, dataSourceService service.IDomainDataSourceService,
-	config *DataProxyConfig) (*DomainDataMetaServer, error) {
+	config *config.ExternalDataProxyConfig) (*DomainDataMetaServer, error) {
 	dataServer, err := NewDataProxyClient(config)
 	if err != nil {
 		return nil, err
@@ -230,24 +230,6 @@ func (s *DomainDataMetaServer) DoActionDeleteDomainDataRequest(ctx context.Conte
 
 	actionResp := &datamesh.ActionDeleteDomainDataResponse{
 		Response: domainDataResp,
-	}
-	return packActionResult(actionResp)
-}
-
-func (s *DomainDataMetaServer) DoActionCreateDomainDataSourceRequest(ctx context.Context,
-	request *datamesh.ActionCreateDomainDataSourceRequest) (*flight.Result, error) {
-	domainSourceResp := s.domainDataSourceService.CreateDomainDataSource(ctx, request.Request)
-	if domainSourceResp == nil || domainSourceResp.GetStatus() == nil || domainSourceResp.GetStatus().GetCode() != 0 {
-		var appStatus *v1alpha1.Status
-		if domainSourceResp.GetStatus() != nil {
-			appStatus = domainSourceResp.GetStatus()
-		}
-		return nil, buildGrpcErrorf(appStatus, codes.Internal, "update datasource data with id(%s) fail",
-			request.Request)
-	}
-
-	actionResp := &datamesh.ActionCreateDomainDataSourceResponse{
-		Response: domainSourceResp,
 	}
 	return packActionResult(actionResp)
 }

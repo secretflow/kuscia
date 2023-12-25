@@ -33,10 +33,10 @@ spec:
 在示例中
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是 Master 的 Namespace。
-* `.spec.authenticationType`：表示节点到 Master 的身份认证方式，目前仅支持 MTLS 和 None（表示不校验）。
+* `.spec.authenticationType`：表示节点到目标节点的身份认证方式，目前仅支持 TOKEN 、MTLS 和 None（表示不校验）。
 * `.spec.source`：表示源节点的 Namespace，这里即 Lite 节点的 Namespace。
 * `.spec.destination`：表示目标节点的 Namespace，这里即 Master 的命名空间。
-* `.spec.requestHeadersToAdd`：表示 Master 侧的 Envoy 在转发源节点的请求时添加的 headers，示例中 key 为
+* `.spec.requestHeadersToAdd`：表示目标节点侧的 Envoy 在转发源节点的请求时添加的 headers，示例中 key 为
   Authorization 的 header 是 Master 为 alice 分配访问 k3s 的令牌。
 
 你可以通过 kubectl 命令来创建、修改、查看、删除 DomainRoute。
@@ -254,6 +254,8 @@ DomainRoute `spec` 的子字段详细介绍如下：
 
 DomainRoute `status` 的子字段详细介绍如下：
 
+* `isDestinationUnreachable`：表示 到目标节点是否是不可达的。
+* `isDestinationAuthorized`：表示 和目标节点是否已经握手成功。
 * `tokenStatus`：表示 Token 认证方式下，源节点和目标节点协商的 Token 的信息。
   * `revisionInitializer`：表示源节点中发起 Token 协商的实例。
   * `revisionToken`：表示最新版本的 Token。
@@ -265,6 +267,8 @@ DomainRoute `status` 的子字段详细介绍如下：
     * `tokens[].revision`：表示 Token 的版本。
     * `tokens[].revisionTime`：表示 Token 时间戳。
     * `tokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。
+    * `tokens[].isReady`：表示 Token 是否生效。
+    * `tokens[].expirationTime`：表示 Token 何时过期。
   
 
 ### ClusterDomainRoute-template

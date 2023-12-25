@@ -467,15 +467,33 @@ func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alp
 	for domainID, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
 		for deploymentName, statusInfo := range partyDeploymentStatus {
 			services, err := s.kubeClient.CoreV1().Services(domainID).List(ctx, metav1.ListOptions{
-				LabelSelector: labels.SelectorFromSet(labels.Set{common.LabelKubernetesDeploymentName: deploymentName, common.LabelPortScope: string(v1alpha1.ScopeCluster)}).String(),
+				LabelSelector: labels.SelectorFromSet(labels.Set{common.LabelKubernetesDeploymentName: deploymentName}).String(),
 			})
 			if err != nil {
 				return nil, err
 			}
 
-			var endpoints []*kusciaapi.Endpoint
+			var endpoints []*kusciaapi.ServingPartyEndpoint
 			for _, svc := range services.Items {
-				endpoints = append(endpoints, &kusciaapi.Endpoint{Endpoint: fmt.Sprintf("%v.%v.svc", svc.Name, svc.Namespace)})
+				scope := svc.Labels[common.LabelPortScope]
+				for _, port := range svc.Spec.Ports {
+					switch scope {
+					case string(v1alpha1.ScopeDomain):
+						endpoints = append(endpoints, &kusciaapi.ServingPartyEndpoint{
+							PortName: port.Name,
+							Scope:    scope,
+							Endpoint: fmt.Sprintf("%v.%v.svc:%v", svc.Name, svc.Namespace, port.Port),
+						})
+					case string(v1alpha1.ScopeCluster):
+						endpoints = append(endpoints, &kusciaapi.ServingPartyEndpoint{
+							PortName: port.Name,
+							Scope:    scope,
+							Endpoint: fmt.Sprintf("%v.%v.svc", svc.Name, svc.Namespace),
+						})
+					default:
+						nlog.Warnf("Invalid party %v service %v port scope %v", domainID, svc.Name, scope)
+					}
+				}
 			}
 
 			partyStatuses = append(partyStatuses, &kusciaapi.PartyServingStatus{

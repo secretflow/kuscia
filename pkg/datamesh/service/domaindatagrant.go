@@ -33,7 +33,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
@@ -46,18 +45,12 @@ type IDomainDataGrantService interface {
 }
 
 type domainDataGrantService struct {
-	conf   *config.DataMeshConfig
-	priKey *rsa.PrivateKey
+	conf *config.DataMeshConfig
 }
 
 func NewDomainDataGrantService(config *config.DataMeshConfig) IDomainDataGrantService {
-	priKey, err := tlsutils.ParsePKCS1PrivateKey(config.DomainKeyFile)
-	if err != nil {
-		nlog.Fatal(err)
-	}
 	return &domainDataGrantService{
-		conf:   config,
-		priKey: priKey,
+		conf: config,
 	}
 }
 
@@ -233,7 +226,7 @@ func (s *domainDataGrantService) signDomainDataGrant(dg *v1alpha1.DomainDataGran
 	h := sha256.New()
 	h.Write(bs)
 	digest := h.Sum(nil)
-	sign, err := rsa.SignPKCS1v15(rand.Reader, s.priKey, crypto.SHA256, digest)
+	sign, err := rsa.SignPKCS1v15(rand.Reader, s.conf.DomainKey, crypto.SHA256, digest)
 	if err != nil {
 		return err
 	}
@@ -280,15 +273,15 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, d
 	domaindata.DomaindatagrantId = v.Name
 	domaindata.GrantDomain = v.Spec.GrantDomain
 	domaindata.Signature = v.Spec.Signature
-
-	domaindata.Limit = &datamesh.GrantLimit{
-		Components:  v.Spec.Limit.Components,
-		FlowId:      v.Spec.Limit.FlowID,
-		UseCount:    int32(v.Spec.Limit.UseCount),
-		InputConfig: v.Spec.Limit.InputConfig,
-	}
-
-	if v.Spec.Limit.ExpirationTime != nil {
-		domaindata.Limit.ExpirationTime = v.Spec.Limit.ExpirationTime.UnixNano()
+	if v.Spec.Limit != nil {
+		domaindata.Limit = &datamesh.GrantLimit{
+			Components:  v.Spec.Limit.Components,
+			FlowId:      v.Spec.Limit.FlowID,
+			UseCount:    int32(v.Spec.Limit.UseCount),
+			InputConfig: v.Spec.Limit.InputConfig,
+		}
+		if v.Spec.Limit.ExpirationTime != nil {
+			domaindata.Limit.ExpirationTime = v.Spec.Limit.ExpirationTime.UnixNano()
+		}
 	}
 }

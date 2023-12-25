@@ -16,22 +16,16 @@ package service
 
 import (
 	"context"
-	"path"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/web/utils"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
-
-func GetDefaultDataSourceID() string {
-	return common.DefaultDataSourceID
-}
 
 type IOperatorService interface {
 	Start(ctx context.Context)
@@ -42,10 +36,10 @@ type operatorService struct {
 	datasourceSvc IDomainDataSourceService
 }
 
-func NewOperatorService(config *config.DataMeshConfig) IOperatorService {
+func NewOperatorService(config *config.DataMeshConfig, configurationService service.IConfigurationService) IOperatorService {
 	return &operatorService{
 		conf:          config,
-		datasourceSvc: NewDomainDataSourceService(config),
+		datasourceSvc: NewDomainDataSourceService(config, configurationService),
 	}
 }
 
@@ -80,34 +74,36 @@ func (o *operatorService) registerDatasourceBestEfforts() {
 }
 
 func (o *operatorService) registerDefaultDatasource() bool {
-	datasource, err := o.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(o.conf.KubeNamespace).Get(context.Background(), GetDefaultDataSourceID(), metav1.GetOptions{})
+	_, err := o.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(o.conf.KubeNamespace).Get(context.Background(),
+		common.DefaultDataSourceID, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			req := &datamesh.CreateDomainDataSourceRequest{
-				DatasourceId: GetDefaultDataSourceID(),
-				Name:         GetDefaultDataSourceID(),
-				Type:         common.DomainDataSourceTypeLocalFS,
-				Info: &datamesh.DataSourceInfo{
-					Localfs: &datamesh.LocalDataSourceInfo{
-						Path: path.Join(o.conf.RootDir, common.DefaultDomainDataSourceLocalFSPath),
-					},
-					Oss: nil,
-				},
-				AccessDirectly: true,
-			}
-			nlog.Infof("Create default datasource.")
-			resp := o.datasourceSvc.CreateDomainDataSource(context.Background(), req)
-			nlog.Debugf("Create default datasource response code:%d , message:%s.", resp.Status.Code, resp.Status.Message)
-			if resp.Status.Code != utils.ResponseCodeSuccess {
-				nlog.Errorf("Create default datasource failed,code %d,error message:%s.", resp.Status.Code, resp.Status.Message)
+			if err := o.datasourceSvc.CreateDefaultDomainDataSource(context.Background()); err != nil {
+				nlog.Errorf("Create default datasource %s failed, error: %v.", common.DefaultDataSourceID, err)
+				return false
 			}
 		} else {
-			nlog.Errorf("Get default datasource failed, error:%s.", err.Error())
+			nlog.Errorf("Get default datasource %s failed, error: %v.", common.DefaultDataSourceID, err)
+			return false
 		}
 	}
-	if datasource != nil && datasource.Name == GetDefaultDataSourceID() {
-		nlog.Infof("Datasource has been created successful.")
-		return true
+
+	nlog.Infof("Datasource %s has been created successful.", common.DefaultDataSourceID)
+
+	_, err = o.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(o.conf.KubeNamespace).Get(context.
+		Background(), common.DefaultDataProxyDataSourceID, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			if err := o.datasourceSvc.CreateDefaultDataProxyDomainDataSource(context.Background()); err != nil {
+				nlog.Errorf("Create default datasource %s failed, error: %v.", common.DefaultDataProxyDataSourceID, err)
+				return false
+			}
+		} else {
+			nlog.Errorf("Get default datasource %s failed, error: %v.", common.DefaultDataProxyDataSourceID, err)
+			return false
+		}
 	}
-	return false
+	nlog.Infof("Datasource %s has been created successful.", common.DefaultDataProxyDataSourceID)
+
+	return true
 }

@@ -18,7 +18,6 @@ package lite
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/spf13/cobra"
@@ -27,87 +26,66 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 )
 
 func NewLiteCommand(ctx context.Context) *cobra.Command {
 	configFile := ""
-	domainID := ""
-	debug := false
-	debugPort := 28080
-	var logConfig *nlog.LogConfig
 	cmd := &cobra.Command{
 		Use:          "lite",
 		Short:        "Lite means only running as a node",
 		Long:         `Lite contains node modules, such as: agent, envoy, domainroute, coredns, containerd`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			runCtx, cancel := context.WithCancel(ctx)
-			defer func() {
-				cancel()
-			}()
-			err := modules.InitLogs(logConfig)
-			if err != nil {
-				fmt.Println(err)
-				return err
-			}
-
-			kusciaConf := confloader.ReadConfig(configFile, domainID, common.RunModeLite)
-			nlog.Debugf("Read kuscia config: %+v", kusciaConf)
-
-			// dns must start before dependencies because that dependencies init process may access network.
-			coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
-
-			conf := modules.InitDependencies(ctx, kusciaConf)
-			conf.LogConfig = logConfig
-			err = modules.LoadCaDomainKeyAndCert(conf)
-			if err != nil {
-				nlog.Error(err)
-				return err
-			}
-			conf.MakeClients()
-
-			if conf.EnableContainerd {
-				modules.RunContainerd(runCtx, cancel, conf)
-			}
-			wg := sync.WaitGroup{}
-			wg.Add(3)
-			go func() {
-				defer wg.Done()
-				modules.RunDomainRoute(runCtx, cancel, conf)
-			}()
-			go func() {
-				defer wg.Done()
-				modules.RunEnvoy(runCtx, cancel, conf)
-			}()
-			go func() {
-				defer wg.Done()
-				modules.RunTransport(runCtx, cancel, conf)
-			}()
-			wg.Wait()
-
-			cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
-			if !ok {
-				return errors.New("coredns module type is invalid")
-			}
-			cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
-
-			modules.RunAgent(runCtx, cancel, conf)
-			modules.RunDataMesh(runCtx, cancel, conf)
-			modules.RunConfManager(runCtx, cancel, conf)
-			modules.RunKusciaAPI(runCtx, cancel, conf)
-			if debug {
-				utils.SetupPprof(debugPort)
-			}
-			<-runCtx.Done()
-			return nil
+			return Run(ctx, configFile)
 		},
 	}
-	cmd.Flags().StringVarP(&configFile, "conf", "c", "/home/kuscia/etc/kuscia.yaml", "config path")
-	cmd.Flags().StringVarP(&domainID, "domain", "d", "", "domain id")
-	cmd.Flags().BoolVar(&debug, "debug", false, "debug mode")
-	cmd.Flags().IntVar(&debugPort, "debugPort", 28080, "debug mode listen port")
-	logConfig = zlogwriter.InstallPFlags(cmd.Flags())
+	cmd.Flags().StringVarP(&configFile, "conf", "c", "etc/conf/kuscia.yaml", "config path")
 	return cmd
+}
+
+func Run(ctx context.Context, configFile string) error {
+	runCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	kusciaConf := confloader.ReadConfig(configFile, common.RunModeLite)
+	conf := modules.InitDependencies(ctx, kusciaConf)
+	defer conf.Close()
+
+	coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
+
+	conf.MakeClients()
+
+	if conf.EnableContainerd {
+		modules.RunContainerd(runCtx, cancel, conf)
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		modules.RunDomainRoute(runCtx, cancel, conf)
+	}()
+	go func() {
+		defer wg.Done()
+		modules.RunEnvoy(runCtx, cancel, conf)
+	}()
+	go func() {
+		defer wg.Done()
+		modules.RunTransport(runCtx, cancel, conf)
+	}()
+	wg.Wait()
+
+	cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
+	if !ok {
+		return errors.New("coredns module type is invalid")
+	}
+	cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
+
+	modules.RunAgent(runCtx, cancel, conf)
+	modules.RunConfManager(runCtx, cancel, conf)
+	modules.RunDataMesh(runCtx, cancel, conf)
+	modules.RunKusciaAPI(runCtx, cancel, conf)
+
+	utils.SetupPprof(conf.Debug, conf.DebugPort, false)
+
+	<-runCtx.Done()
+	return nil
 }

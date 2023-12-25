@@ -18,8 +18,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"os"
 	"sync"
@@ -28,10 +26,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/secretflow/kuscia/pkg/common"
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/datamesh/commands"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/flight/example"
+	kusciaapiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
@@ -43,6 +46,7 @@ const (
 	primitivesTestData    = "primitives"
 	mockDataProxyEndpoint = "localhost:8086"
 	dataMeshHost          = "localhost"
+	mockDomain            = "mock-domain"
 )
 
 type opts struct {
@@ -98,12 +102,22 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 			}
 
 			conf := config.NewDefaultDataMeshConfig()
-			conf.EnableDataProxy = true
-			conf.DataProxyEndpoint = o.dataProxyEndpoint
-			conf.KubeNamespace = "MockDomain"
+			conf.ExternalDataProxyList = []config.ExternalDataProxyConfig{
+				{
+					Endpoint: o.dataProxyEndpoint,
+				},
+			}
+			conf.KubeNamespace = mockDomain
 			conf.KusciaClient = kusciafake.NewSimpleClientset()
-			conf.DomainKeyFile = "./mock_domain.key"
 			conf.DisableTLS = !o.enableDataMeshTLS
+
+			privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+			if err != nil {
+				nlog.Fatal("generate domainKey fail")
+				return nil
+			}
+			conf.DomainKey = privateKey
+
 			if conf.TLS.ServerKey, err = tls.ParseKey([]byte{}, certsConfig.serverKeyFile); err != nil {
 				return err
 			}
@@ -114,11 +128,10 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 				return err
 			}
 
-			if err := mockDomainKey(conf.DomainKeyFile); err != nil {
+			if conf.DomainKey, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
 				nlog.Errorf("generate DomainKey fail:%s", err.Error())
 				return nil
 			}
-
 			runCtx, cancel := context.WithCancel(ctx)
 			defer func() {
 				cancel()
@@ -134,7 +147,7 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 			if o.startClient {
 				wg.Add(1)
 				defer wg.Done()
-				go startClient(cancel, o, certsConfig)
+				go startClient(cancel, o, certsConfig, conf)
 			}
 
 			go func() {
@@ -158,24 +171,6 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 	return cmd
 }
 
-func mockDomainKey(keyFilePath string) error {
-	keyOut, err := os.OpenFile(keyFilePath, os.O_CREATE|os.O_RDWR, 0644)
-	if err != nil {
-		return err
-	}
-	defer keyOut.Close()
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return err
-	}
-
-	err = pem.Encode(keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
-	return err
-}
-
 func startMockDataProxy(cancel context.CancelFunc, o *opts) {
 	fmt.Println(o.dataProxyEndpoint)
 	dp := example.NewMockDataProxy(o.dataProxyEndpoint)
@@ -184,14 +179,22 @@ func startMockDataProxy(cancel context.CancelFunc, o *opts) {
 	}
 }
 
-func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig) {
+func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig, dmConfig *config.DataMeshConfig) {
 	if !o.enableDataMeshTLS {
 		certConfig = nil
 	}
 
+	kusciaAPIConfig := &kusciaapiconfig.KusciaAPIConfig{
+		DomainKey:    dmConfig.DomainKey,
+		KusciaClient: dmConfig.KusciaClient,
+		RunMode:      common.RunModeLite,
+		Initiator:    dmConfig.KubeNamespace,
+		DomainID:     dmConfig.KubeNamespace,
+	}
 	client := &MockFlightClient{
 		testDataType:      o.testDataType,
 		outputCSVFilePath: o.outputCSVFilePath,
+		datasourceSvc:     service.NewDomainDataSourceService(kusciaAPIConfig, makeMemConfigurationService()),
 	}
 
 	// wait a while to wait data proxy ready to serve
@@ -199,4 +202,12 @@ func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig) {
 	if err := client.start(certConfig); err != nil {
 		cancel()
 	}
+}
+
+func makeMemConfigurationService() cmservice.IConfigurationService {
+	backend, _ := secretbackend.NewSecretBackendWith("mem", map[string]any{})
+	configurationService, _ := cmservice.NewConfigurationService(
+		backend, false,
+	)
+	return configurationService
 }

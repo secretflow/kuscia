@@ -17,6 +17,7 @@ package bean
 import (
 	"context"
 
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -50,7 +51,7 @@ func (b *operatorBean) Validate(errs *errorcode.Errs) {
 func (b *operatorBean) Init(e framework.ConfBeanRegistry) error {
 	// tls config from config file
 	nlog.Infof("operatorBean init")
-	b.operatorSvc = service.NewOperatorService(b.config)
+	b.operatorSvc = service.NewOperatorService(b.config, cmservice.Exporter.ConfigurationService())
 	return nil
 }
 

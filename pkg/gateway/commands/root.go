@@ -20,7 +20,9 @@ import (
 	"path/filepath"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
@@ -37,6 +39,9 @@ import (
 const (
 	gatewayName     = "gateway"
 	concurrentSyncs = 8
+
+	defaultHandshakeRetryCount    = 10
+	defaultHandshakeRetryInterval = 100 * time.Millisecond
 )
 
 var (
@@ -63,19 +68,28 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	}
 
 	// add master Clusters
-	err = clusters.AddMasterClusters(ctx, gwConfig.Namespace, masterConfig)
+	err = clusters.AddMasterClusters(ctx, gwConfig.DomainID, masterConfig)
 	if err != nil {
 		return fmt.Errorf("add master clusters fail, detail-> %v", err)
 	}
 	if !masterConfig.Master {
-		err = controller.RegisterDomain(gwConfig.Namespace, gwConfig.CsrFile, prikey, afterRegisterHook)
+		err = controller.RegisterDomain(gwConfig.DomainID, gwConfig.CsrData, prikey, afterRegisterHook)
 		if err != nil {
 			return fmt.Errorf("RegisterDomain err:%s", err.Error())
 		}
-		err = controller.HandshakeToMaster(gwConfig.Namespace, prikey)
-		if err != nil {
-			return fmt.Errorf("HandshakeToMaster err:%s", err.Error())
+
+		for i := 1; i <= defaultHandshakeRetryCount; i++ {
+			err = controller.HandshakeToMaster(gwConfig.DomainID, prikey)
+			if err == nil {
+				break
+			}
+			nlog.Warnf("HandshakeToMaster err: %v", err)
+			if i == defaultHandshakeRetryCount {
+				return err
+			}
+			time.Sleep(defaultHandshakeRetryInterval)
 		}
+		checkMasterProxyReady(ctx, gwConfig.DomainID, clients.KubeClient)
 	}
 	nlog.Infof("Add master clusters success")
 
@@ -85,7 +99,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return fmt.Errorf("failed to load interConnClusterConfig, detail-> %v", err)
 	}
-	err = clusters.AddInterConnClusters(gwConfig.Namespace, interConnClusterConfig)
+	err = clusters.AddInterConnClusters(gwConfig.DomainID, interConnClusterConfig)
 	if err != nil {
 		return fmt.Errorf("add interConn clusters fail, detail-> %v", err)
 	}
@@ -94,12 +108,12 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	// create informer factory
 	defaultResync := time.Duration(gwConfig.ResyncPeriod) * time.Second
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(clients.KubeClient, defaultResync,
-		kubeinformers.WithNamespace(gwConfig.Namespace))
+		kubeinformers.WithNamespace(gwConfig.DomainID))
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(clients.KusciaClient, defaultResync,
-		informers.WithNamespace(gwConfig.Namespace))
+		informers.WithNamespace(gwConfig.DomainID))
 
 	// start GatewayController
-	gwc, err := controller.NewGatewayController(gwConfig.Namespace, prikey, clients.KusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().Gateways())
+	gwc, err := controller.NewGatewayController(gwConfig.DomainID, prikey, clients.KusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().Gateways())
 	if err != nil {
 		return fmt.Errorf("failed to new gateway controller, detail-> %v", err)
 	}
@@ -125,7 +139,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	// start DomainRoute controller
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	drConfig := &controller.DomainRouteConfig{
-		Namespace:     gwConfig.Namespace,
+		Namespace:     gwConfig.DomainID,
 		MasterConfig:  masterConfig,
 		CAKey:         gwConfig.CAKey,
 		CACert:        gwConfig.CACert,
@@ -134,7 +148,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		HandshakePort: gwConfig.HandshakePort,
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
-	go drc.Run(concurrentSyncs*2, ctx.Done())
+	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
 
 	// start runtime metrics collector
 	go metrics.MonitorRuntimeMetrics(ctx.Done())
@@ -154,6 +168,19 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	<-ctx.Done()
 	nlog.Info("Gateway shutdown")
 	return nil
+}
+
+func checkMasterProxyReady(ctx context.Context, domainID string, kubeClient kubernetes.Interface) {
+	var err error
+	times := 5
+	for i := 0; i < times; i++ {
+		if _, err = kubeClient.CoreV1().Pods(domainID).List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
+			nlog.Info("Check MasterProxy ready")
+			return
+		}
+		time.Sleep(time.Second)
+	}
+	nlog.Fatalf("Check MasterProxy failed: %v", err.Error())
 }
 
 func StartXds(gwConfig *config.GatewayConfig) error {
@@ -180,7 +207,7 @@ func StartXds(gwConfig *config.GatewayConfig) error {
 		Logdir:       filepath.Join(gwConfig.RootDir, "var/logs/envoy/"),
 	}
 
-	xds.InitSnapshot(gwConfig.Namespace, utils.GetHostname(), xdsConfig)
+	xds.InitSnapshot(gwConfig.DomainID, utils.GetHostname(), xdsConfig)
 	return nil
 }
 

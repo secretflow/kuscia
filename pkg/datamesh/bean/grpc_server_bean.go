@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/grpchandler"
@@ -82,17 +83,14 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	server := grpc.NewServer(opts...)
 	// get operator bean
 	domainDataService := service.NewDomainDataService(s.config)
-	datasourceService := service.NewDomainDataSourceService(s.config)
+	datasourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
 	datamesh.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(domainDataService))
 	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(datasourceService))
 	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 
 	// register flight service
-	if s.config.EnableDataProxy {
-		dpConf := &flight2.DataProxyConfig{
-			Addr:            s.config.DataProxyEndpoint,
-			ClientTLSConfig: s.config.DataProxyTLSConfig,
-		}
+	if s.config.ExternalDataProxyList != nil && len(s.config.ExternalDataProxyList) > 0 {
+		dpConf := &s.config.ExternalDataProxyList[0]
 		metaSrv, err := flight2.NewMetaServer(domainDataService, datasourceService, dpConf)
 		if err != nil {
 			nlog.Fatalf("Failed to create meta server: %v", err)

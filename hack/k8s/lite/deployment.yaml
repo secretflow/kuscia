@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuscia-lite-alice
+  namespace: lite-alice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kuscia-lite-alice
+  template:
+    metadata:
+      labels:
+        app: kuscia-lite-alice
+    spec:
+      containers:
+        - command:
+            - kuscia
+            - start
+            - -c
+            - etc/conf/kuscia.yaml
+          env:
+            - name: REGISTRY_ENDPOINT
+              value: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow
+            - name: NAMESPACE
+              value: alice
+            - name: TZ
+              value: Asia/Shanghai
+          image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+          imagePullPolicy: Always
+          name: alice
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /home/kuscia/var/tmp
+              name: kuscia-var-tmp
+            - mountPath: /home/kuscia/etc/conf/kuscia.yaml
+              name: kuscia-config
+              subPath: kuscia.yaml
+          workingDir: /home/kuscia
+      automountServiceAccountToken: true
+      volumes:
+        - emptyDir: {}
+          name: kuscia-var-tmp
+        - configMap:
+            defaultMode: 420
+            name: kuscia-lite-alice-cm
+          name: kuscia-config

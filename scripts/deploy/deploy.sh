@@ -27,23 +27,18 @@ function log() {
 }
 
 function arch_check() {
-  local arch=$(uname -m)
-  case $arch in
-  *"arm"*)
-    echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
+  local arch=$(uname -a)
+  if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
+    echo -e "${RED}ARM architecture is not supported by kuscia currently${NC}"
     exit 1
-    ;;
-  "x86_64")
+  elif [[ $arch == *"x86_64"* ]]; then
     echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
-    ;;
-  "amd64")
+  elif [[ $arch == *"amd64"* ]]; then
     echo "Warning: amd64 architecture. Continuing..."
-    ;;
-  *)
+  else
     echo -e "${RED}$arch architecture is not supported by kuscia currently${NC}"
     exit 1
-    ;;
-  esac
+  fi
 }
 
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
@@ -52,13 +47,13 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.2.0.dev20231025
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.3.0.dev20231120
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
 SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
 CTR_ROOT=/home/kuscia
-CTR_CERT_ROOT=${CTR_ROOT}/etc/certs
+CTR_CERT_ROOT=${CTR_ROOT}/var/certs
 MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
@@ -130,7 +125,7 @@ function do_https_probe() {
   local retry=0
   while [ $retry -lt "$max_retry" ]; do
     local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}"   --cacert etc/certs/ca.crt --cert etc/certs/ca.crt --key etc/certs/ca.key )
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}"   --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key )
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -238,7 +233,12 @@ function create_secretflow_app_image() {
     image_tag=${SECRETFLOW_IMAGE##*:}
   fi
 
-  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${image_repo}" "${image_tag}"
+  app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}'  |awk -F'-' '{print $1}')
+  if [[ ${app_type} == "" ]]; then
+    app_type="secretflow"
+  fi
+
+  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${image_repo}" "${image_tag}"  "${app_type}"
   log "Create secretflow app image done"
 }
 
@@ -286,7 +286,7 @@ function getIPV4Address() {
 }
 
 function generate_mount_flag() {
-  local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data  "
+  local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data -v ${DOMAIN_LOG_DIR}:/home/kuscia/var/stdout"
   if [ -e "${KUSCIA_CONFIG_FILE}" ]; then
     mount_flag=$mount_flag+"-v ${KUSCIA_CONFIG_FILE}:/home/kuscia/etc/kuscia.yaml"
   fi
@@ -295,6 +295,7 @@ function generate_mount_flag() {
 
 function deploy_autonomy() {
   local domain_ctr=${USER}-kuscia-autonomy-${DOMAIN_ID}
+  local conf_dir=${ROOT}/${domain_ctr}
   arch_check
   if need_start_docker_container "$domain_ctr"; then
     log "Starting container $domain_ctr ..."
@@ -302,20 +303,17 @@ function deploy_autonomy() {
     mount_flag=$(generate_mount_flag)
     host_ip=$(getIPV4Address)
     # TODO: to be remove
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
-    # TODO end
+    docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${DOMAIN_ID} "" "" ${ALLOW_PRIVILEGED}
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${AUTONOMY_MEMORY_LIMIT} \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
-      --env NAMESPACE="${DOMAIN_ID}" \
       --mount source="${domain_ctr}"-containerd,target=/home/kuscia/containerd \
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
       ${env_flag} ${mount_flag} \
-      --entrypoint bin/entrypoint.sh \
-      "${KUSCIA_IMAGE}" tini -- scripts/deploy/start_autonomy.sh "${DOMAIN_ID}"
+      --env NAMESPACE=${DOMAIN_ID} \
+      "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
     probe_gateway_crd "${domain_ctr}" "${DOMAIN_ID}" "${domain_ctr}" 60
 
@@ -334,7 +332,8 @@ function deploy_autonomy() {
 
 function deploy_lite() {
   local domain_ctr=${USER}-kuscia-lite-${DOMAIN_ID}
-  local HttpResponseCode=$(curl -k -s -o /dev/null -w "%{http_code}" ${MASTER_ENDPOINT})
+  local conf_dir=${ROOT}/${domain_ctr}
+  local HttpResponseCode=$(docker run -it --rm  --network=${NETWORK_NAME} ${KUSCIA_IMAGE} curl -k -s -o /dev/null -w "%{http_code}" ${MASTER_ENDPOINT})
   arch_check
 
   if need_start_docker_container "$domain_ctr"; then
@@ -347,25 +346,24 @@ function deploy_lite() {
       echo -e "${GREEN}Communication with master is normal, response code is 401${NC}"
     else
       echo -e "${RED}Failed to connect to the master. Please check if the network link to the master is normal. Please refer to the kuscia documentation (https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/deploy_master_lite_cn) for the correct return results${NC}"
-      curl -kv ${MASTER_ENDPOINT}
+      docker run -it --rm  --network=${NETWORK_NAME} ${KUSCIA_IMAGE} curl -kvvv ${MASTER_ENDPOINT}
       exit 1
     fi
 
     host_ip=$(getIPV4Address)
     # TODO: to be remove
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${DOMAIN_ID}" "${DOMAIN_TOKEN}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
+    docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh lite ${DOMAIN_ID} ${MASTER_ENDPOINT} ${DOMAIN_TOKEN} ${ALLOW_PRIVILEGED}
     # TODO end
 
     docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
-      --env NAMESPACE="${DOMAIN_ID}" \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
       ${env_flag} ${mount_flag} \
-      --entrypoint bin/entrypoint.sh \
-      "${KUSCIA_IMAGE}" tini -- scripts/deploy/start_lite.sh "${DOMAIN_ID}" "${MASTER_ENDPOINT}" "${ALLOW_PRIVILEGED}" "${MASTER_CA}"
+      --env NAMESPACE=${DOMAIN_ID} \
+      "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
     probe_datamesh "$domain_ctr"
 
@@ -380,6 +378,7 @@ function deploy_master() {
   local domain_ctr=${USER}-kuscia-master
   local master_domain_id=kuscia-system
   local deploy_secretpad=${DEPLOY_SECRETPAD}
+  local conf_dir=${ROOT}/${domain_ctr}
   arch_check
 
   if need_start_docker_container "${domain_ctr}"; then
@@ -391,18 +390,16 @@ function deploy_master() {
     host_ip=$(getIPV4Address)
 
     # TODO: to be remove
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_domain_certs.sh "${master_domain_id}" "${DOMAIN_TOKEN}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs "${KUSCIA_IMAGE}" scripts/deploy/init_external_tls_cert.sh "${DOMAIN_ID}" IP:"${DOMAIN_HOST_IP}"
-    docker run -it --rm -v "${DOMAIN_CERTS_DIR}":/home/kuscia/etc/certs --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" scripts/deploy/init_kusciaapi_cert.sh "${domain_ctr}" "${host_ip}" "${KUSCIAAPI_EXTRA_SUBJECT_ALTNAME}"
-    # TODO end
+    docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh master $master_domain_id
 
     docker run -dit --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${MASTER_MEMORY_LIMIT} \
       --env NAMESPACE=${master_domain_id} \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
       ${env_flag} ${mount_flag} \
-      "${KUSCIA_IMAGE}" scripts/deploy/start_master.sh ${master_domain_id}
+      "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
     probe_gateway_crd "${domain_ctr}" ${master_domain_id} "${domain_ctr}" 60
     log "Master '${master_domain_id}' started successfully"
   fi
@@ -437,6 +434,8 @@ OPTIONS:
     -h              Show this help text.
     -i              The IP address exposed by the domain. You can set Env 'DOMAIN_HOST_IP' instead.
                     Usually the host IP, default is the IP address of interface eth0.
+    -l              The data directory used to store domain logs. It will be mounted into the domain container.
+                    You can set Env 'DOMAIN_LOG_DIR' instead.  Default is '{{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-log'.
     -m              (Only used in lite mode) The master endpoint. You can set Env 'MASTER_ENDPOINT' instead.
     -n              Domain id to be deployed. You can set Env 'DOMAIN_ID' instead.
     -p              The port exposed by domain. You can set Env 'DOMAIN_HOST_PORT' instead.
@@ -466,13 +465,16 @@ autonomy | lite | master | secretpad)
   ;;
 esac
 
-while getopts 'c:i:n:p:m:t:r:d:k:g:e:u:h' option; do
+while getopts 'c:i:l:n:p:m:t:r:d:k:g:e:u:h' option; do
   case "$option" in
   c)
     DOMAIN_CERTS_DIR=$OPTARG
     ;;
   i)
     DOMAIN_HOST_IP=$OPTARG
+    ;;
+  l)
+    DOMAIN_LOG_DIR=$OPTARG
     ;;
   n)
     DOMAIN_ID=$OPTARG
@@ -538,6 +540,7 @@ function init() {
   [[ ${ROOT} == "" ]] && ROOT=${PWD}
   [[ ${DOMAIN_CERTS_DIR} == "" ]] && DOMAIN_CERTS_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-certs"
   [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-data"
+  [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-log"
   [[ ${DOMAIN_HOST_IP} == "" ]] && DOMAIN_HOST_IP=$(getIPV4Address)
 
   log "ROOT=${ROOT}"
@@ -545,6 +548,7 @@ function init() {
   log "DOMAIN_HOST_IP=${DOMAIN_HOST_IP}"
   log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
   log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
+  log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
   log "DOMAIN_CERTS_DIR=${DOMAIN_CERTS_DIR}"
   log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
   log "KUSCIAAPI_HTTP_PORT=${KUSCIAAPI_HTTP_PORT}"
@@ -552,6 +556,7 @@ function init() {
 
   mkdir -p "${DOMAIN_CERTS_DIR}"
   mkdir -p "${DOMAIN_DATA_DIR}"
+  mkdir -p "${DOMAIN_LOG_DIR}"
 
   build_kuscia_network
 }

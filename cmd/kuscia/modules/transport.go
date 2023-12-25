@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/server/http"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -57,7 +58,7 @@ func (t *transportModule) runAsGoroutine(ctx context.Context) error {
 }
 
 func (t *transportModule) runAsSubProcess(ctx context.Context) error {
-	LogDir := filepath.Join(t.rootDir, LogPrefix, fmt.Sprintf("%s/", transportModuleName))
+	LogDir := filepath.Join(t.rootDir, common.LogPrefix, fmt.Sprintf("%s/", transportModuleName))
 	if err := os.MkdirAll(LogDir, 0755); err != nil {
 		return err
 	}

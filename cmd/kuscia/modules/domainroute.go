@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/gateway/commands"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller"
@@ -40,14 +41,33 @@ type domainRouteModule struct {
 func NewDomainRoute(i *Dependencies) Module {
 	conf := config.DefaultStaticGatewayConfig()
 	conf.RootDir = i.RootDir
-	conf.ConfBasedir = filepath.Join(i.RootDir, ConfPrefix, "domainroute")
-	conf.Namespace = i.DomainID
+	conf.ConfBasedir = filepath.Join(i.RootDir, common.ConfPrefix, "domainroute")
+	conf.DomainID = i.DomainID
 	conf.DomainKey = i.DomainKey
 	conf.MasterConfig = &i.Master
-	conf.ExternalTLS = i.ExternalTLS
-	conf.CsrFile = filepath.Join(i.RootDir, CertPrefix, "domain.csr")
+	conf.CsrData = i.DomainRoute.DomainCsrData
 	conf.CACert = i.CACert
 	conf.CAKey = i.CAKey
+
+	externalTLS := conf.ExternalTLS
+	if i.DomainRoute.ExternalTLS != nil {
+		externalTLS = i.DomainRoute.ExternalTLS
+	}
+
+	if i.Protocol == common.NOTLS {
+		externalTLS = nil
+	}
+
+	if externalTLS != nil && externalTLS.EnableTLS {
+		if externalTLS.KeyData == "" && externalTLS.CertData == "" {
+			var err error
+			externalTLS.KeyData, externalTLS.CertData, err = tlsutils.GenerateKeyCertPairData(i.CAKey, i.CACert, fmt.Sprintf("%s_ENVOY_EXTERNAL", conf.DomainID))
+			if err != nil {
+				nlog.Fatalf("Generate external keyCert pair error:%v", err.Error())
+			}
+		}
+	}
+	conf.ExternalTLS = externalTLS
 
 	if i.TransportPort > 0 {
 		conf.TransportConfig = &kusciaconfig.ServiceConfig{

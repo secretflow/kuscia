@@ -15,6 +15,7 @@
 package config
 
 import (
+	"crypto/rsa"
 	"github.com/spf13/pflag"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -33,15 +34,20 @@ type DataMeshConfig struct {
 	IdleTimeout    int
 	Initiator      string
 	FlagSet        *pflag.FlagSet
-	DomainKeyFile  string
+	DomainKey      *rsa.PrivateKey
 	TLS            config.TLSServerConfig
 	KusciaClient   kusciaclientset.Interface
 	KubeNamespace  string
 
-	DisableTLS         bool                    `yaml:"disableTLS,omitempty"`
-	EnableDataProxy    bool                    `yaml:"enableDataProxy,omitempty"`
-	DataProxyEndpoint  string                  `yaml:"dataProxyEndpoint,omitempty"`
-	DataProxyTLSConfig *kusciaconfig.TLSConfig `yaml:"dataProxyTLSConfig,omitempty"`
+	DisableTLS            bool                      `yaml:"disableTLS,omitempty"`
+	ExternalDataProxyList []ExternalDataProxyConfig `yaml:"externalDataProxyList,omitempty"`
+}
+
+type ExternalDataProxyConfig struct {
+	Endpoint        string                  `yaml:"endpoint,omitempty"`
+	ClientTLSConfig *kusciaconfig.TLSConfig `yaml:"clientTLSConfig,omitempty"`
+	// DatasourceTypes claims which dataSources proxy by this dataProxy, empty means all types that builtin dataProxy unsupported
+	DataSourceTypes []string `yaml:"dataSourceTypes,omitempty"`
 }
 
 type DbConfig struct {
@@ -70,13 +76,12 @@ type DbTableAlias struct {
 
 func NewDefaultDataMeshConfig() *DataMeshConfig {
 	return &DataMeshConfig{
-		HTTPPort:        8070,
-		GRPCPort:        8071,
-		ConnectTimeOut:  5,
-		ReadTimeout:     20,
-		WriteTimeout:    20,
-		IdleTimeout:     300,
-		DisableTLS:      false,
-		EnableDataProxy: false,
+		HTTPPort:       8070,
+		GRPCPort:       8071,
+		ConnectTimeOut: 5,
+		ReadTimeout:    20,
+		WriteTimeout:   20,
+		IdleTimeout:    300,
+		DisableTLS:     false,
 	}
 }

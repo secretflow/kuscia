@@ -55,11 +55,11 @@ func (h WatchJobHandler) Handle(ginCtx *gin.Context) {
 	closeCh := make(chan error)
 	go func() {
 		err := h.jobService.WatchJob(ginCtx, req, eventCh)
+		closeCh <- err
 		if err != nil {
 			nlog.Errorf("Call watchJob function failed, error: %s", err.Error())
 			return
 		}
-		closeCh <- err
 	}()
 	// set header of the response   TODO: support multiple data formats, such as protobuf, json, yaml
 	ginCtx.Header("Content-Type", "application/json; charset=utf-8")
@@ -82,8 +82,8 @@ func (h WatchJobHandler) Handle(ginCtx *gin.Context) {
 		case err := <-closeCh:
 			if err != nil {
 				nlog.Errorf("Watch job stats failed, error: %s.", err.Error())
-				return false
 			}
+			return false
 		}
 		respBody, err := json.Marshal(resp)
 		if err != nil {
