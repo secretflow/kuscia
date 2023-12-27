@@ -35,6 +35,12 @@ PORT=80
 PROTOCOL_TLS=false
 HOST_PATH="/"
 
+if [[ "${DEST_ENDPOINT}" == https://* ]]; then
+    PROTOCOL_TLS=true
+  else
+    PROTOCOL_TLS=false
+fi
+
 HOST_PORT_PATH=${DEST_ENDPOINT##*://}
 if [[ "${HOST_PORT_PATH}" == *"/"* ]]; then
   HOST_PATH="/${HOST_PORT_PATH#*/}"
@@ -47,14 +53,11 @@ fi
 if [[ "${HOST_PORT}" == *":"* ]]; then
   PORT=${HOST_PORT##*:}
   HOST=${HOST_PORT%%:*}
-  PROTOCOL_TLS=false
 else
   if [[ "${DEST_ENDPOINT}" == https://* ]]; then
     PORT=443
-    PROTOCOL_TLS=true
   else
     PORT=80
-    PROTOCOL_TLS=false
   fi
   HOST="$HOST_PORT"
 fi
