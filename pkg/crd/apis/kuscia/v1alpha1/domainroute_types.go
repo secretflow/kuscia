@@ -235,8 +235,9 @@ type DomainPort struct {
 	// +kubebuilder:validation:Enum=HTTP;GRPC
 	Protocol DomainRouteProtocolType `json:"protocol"`
 	// +optional
-	IsTLS bool `json:"isTLS,omitempty"`
-	Port  int  `json:"port"`
+	PathPrefix string `json:"pathPrefix,omitempty"`
+	IsTLS      bool   `json:"isTLS,omitempty"`
+	Port       int    `json:"port"`
 }
 
 // Transit defines the information of the transit entity used to forward the request.
