@@ -14,6 +14,9 @@ spec:
         pathPrefix: {{.PATH}}
         isTLS: {{.ISTLS}}
         port: {{.PORT}}
+  transit:
+    domain:
+      domainID: {{.TRANSIT_DOMAIN}}
   authenticationType: Token
   tokenConfig:
     tokenGenMethod: RSA-GEN

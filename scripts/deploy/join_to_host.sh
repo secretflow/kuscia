@@ -28,14 +28,20 @@ interconn_protocol=kuscia
 auth_type=MTLS
 token=
 insecure="false"
+transit_domain=
 
 function join_to_host() {
   local host=${host_endpoint}
   local port=80
+  local path="/"
 
   istls="false"
   if [[ "${host_endpoint}" == *"://"* ]]; then
-    host=${host_endpoint##*://}
+    host_and_path=${host_endpoint##*://}
+    host=${host_and_path%%/*}
+    if [[ $host_and_path == *"/"* ]]; then
+      path=/${host_and_path#*/}
+    fi
     protocol=${host_endpoint%%://*}
     if [ "${protocol}" == "https" ]; then
       istls="true"
@@ -45,18 +51,35 @@ function join_to_host() {
   if [[ "${host}" == *":"* ]]; then
     port=${host##*:}
     host=${host%%:*}
+  elif [ "$istls" = "true" ]; then
+    port=443
   fi
 
   local domain_route_template
-  domain_route_template=$(sed "s/{{.SELF_DOMAIN}}/${self_domain_id}/g;
-    s/{{.SRC_DOMAIN}}/${self_domain_id}/g;
-    s/{{.DEST_DOMAIN}}/${host_domain_id}/g;
-    s/{{.INTERCONN_PROTOCOL}}/${interconn_protocol}/g;
-    s/{{.HOST}}/${host}/g;
-    s/{{.PORT}}/${port}/g;
-    s/{{.ISTLS}}/${istls}/g;
-    s/{{.TOKEN}}/${token}/g" \
-    <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
+  if [[ ${transit_domain} == "" ]]; then
+    domain_route_template=$(sed "s/{{.SELF_DOMAIN}}/${self_domain_id}/g;
+      s/{{.SRC_DOMAIN}}/${self_domain_id}/g;
+      s/{{.DEST_DOMAIN}}/${host_domain_id}/g;
+      s/{{.INTERCONN_PROTOCOL}}/${interconn_protocol}/g;
+      s/{{.HOST}}/${host}/g;
+      s/{{.PORT}}/${port}/g;
+      s@{{.PATH}}@${path}@g;
+      s/{{.ISTLS}}/${istls}/g;
+      s/{{.TOKEN}}/${token}/g" \
+      <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
+  else
+    domain_route_template=$(sed "s/{{.SELF_DOMAIN}}/${self_domain_id}/g;
+      s/{{.SRC_DOMAIN}}/${self_domain_id}/g;
+      s/{{.DEST_DOMAIN}}/${host_domain_id}/g;
+      s/{{.INTERCONN_PROTOCOL}}/${interconn_protocol}/g;
+      s/{{.HOST}}/${host}/g;
+      s/{{.PORT}}/${port}/g;
+      s@{{.PATH}}@${path}@g;
+      s/{{.ISTLS}}/${istls}/g;
+      s/{{.TRANSIT_DOMAIN}}/${transit_domain}/g;
+      s/{{.TOKEN}}/${token}/g" \
+      <"${ROOT}/scripts/templates/cluster_domain_route.token.transit.yaml")
+  fi
   echo "${domain_route_template}" | kubectl apply -f -
 
   if [[ ${interconn_protocol} == "kuscia" ]]; then
@@ -84,10 +107,11 @@ OPTIONS:
     -k    Allow insecure server connections when using SSL.
     -p    Interconnection protocol, default is 'kuscia'.
     -a    Authentication type from this domain to the host domain, must be one of 'MTLS', 'Token' or 'None', default is 'MTLS'. If set to Token, you need to set the -t parameter.
-    -t    Token used for authentication. "
+    -t    Token used for authentication.
+    -x    transit domain name."
 }
 
-while getopts 'p:a:t:kh' option; do
+while getopts 'p:a:t:x:kh' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG
@@ -101,6 +125,9 @@ while getopts 'p:a:t:kh' option; do
     ;;
   t)
     token=$OPTARG
+    ;;
+  x)
+    transit_domain=$OPTARG
     ;;
   k)
     insecure="true"

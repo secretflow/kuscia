@@ -38,7 +38,7 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 			return nil, err
 		}
 
-		protocol, host, port, err := utils.ParseURL(kubeConfig.Host)
+		protocol, host, port, path, err := utils.ParseURL(kubeConfig.Host)
 		if err != nil {
 			return nil, err
 		}
@@ -65,6 +65,7 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 			APIServer: &ClusterConfig{
 				Host:     host,
 				Port:     port,
+				Path:     path,
 				Protocol: protocol,
 				TLSCert:  apiCert,
 			},
@@ -119,7 +120,7 @@ func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*Cluste
 		return nil, err
 	}
 
-	protocol, host, port, err := utils.ParseURL(endpoint)
+	protocol, host, port, path, err := utils.ParseURL(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -127,6 +128,7 @@ func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*Cluste
 	return &ClusterConfig{
 		Host:     host,
 		Port:     port,
+		Path:     path,
 		Protocol: protocol,
 		TLSCert:  cert,
 	}, nil

@@ -20,8 +20,8 @@ import (
 	"strings"
 )
 
-func ParseURL(url string) (string, string, uint32, error) {
-	var protocol, hostPort, host string
+func ParseURL(url string) (string, string, uint32, string, error) {
+	var protocol, hostPort, host, path string
 	var port int
 	var err error
 	if strings.HasPrefix(url, "http://") {
@@ -31,14 +31,20 @@ func ParseURL(url string) (string, string, uint32, error) {
 		protocol = "https"
 		hostPort = url[8:]
 	} else {
-		return protocol, host, uint32(port), fmt.Errorf("invalid host: %s", url)
+		return protocol, host, uint32(port), path, fmt.Errorf("invalid host: %s", url)
+	}
+
+	parts := strings.SplitN(hostPort, "/", 2)
+	hostPort = parts[0]
+	if len(parts) > 1 {
+		path = "/" + parts[1]
 	}
 
 	fields := strings.Split(hostPort, ":")
 	host = fields[0]
 	if len(fields) == 2 {
 		if port, err = strconv.Atoi(fields[1]); err != nil {
-			return protocol, host, uint32(port), err
+			return protocol, host, uint32(port), path, err
 		}
 	} else {
 		if protocol == "http" {
@@ -48,5 +54,5 @@ func ParseURL(url string) (string, string, uint32, error) {
 		}
 	}
 
-	return protocol, host, uint32(port), nil
+	return protocol, host, uint32(port), path, nil
 }
