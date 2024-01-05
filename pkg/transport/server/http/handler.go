@@ -27,12 +27,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-// params
 const (
-	paramTimeout   = "timeout"
-	defaultTimeout = time.Second * 120
-	minTimeout     = time.Second
-	maxTimeout     = time.Second * 300
+	ParamTimeout   = "timeout"
+	DefaultTimeout = time.Second * 120
+	MinTimeout = time.Second
+	MaxTimeout = time.Second * 300
 )
 
 type ReqParams struct {
@@ -181,25 +180,25 @@ func getReqParams(r *http.Request, isPush bool) (*ReqParams, *transerr.TransErro
 }
 
 func getTimeout(r *http.Request) time.Duration {
-	val := r.URL.Query().Get(paramTimeout)
+	val := r.URL.Query().Get(ParamTimeout)
 	if len(val) == 0 {
-		return defaultTimeout
+		return DefaultTimeout
 	}
 
 	num, err := strconv.Atoi(val)
 	if err != nil {
 		nlog.Warnf("Invalid param timeout:%d", num)
-		return defaultTimeout
+		return DefaultTimeout
 	}
 
 	timeout := time.Second * time.Duration(num)
 
-	if timeout < minTimeout {
-		return minTimeout
+	if timeout < MinTimeout {
+		return MinTimeout
 	}
 
-	if timeout > maxTimeout {
-		return maxTimeout
+	if timeout > MaxTimeout {
+		return MaxTimeout
 	}
 
 	return timeout
