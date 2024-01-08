@@ -61,6 +61,7 @@ import (
 	"github.com/spf13/pflag"
 	kubectlcmd "k8s.io/kubectl/pkg/cmd"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/image"
 	"github.com/secretflow/kuscia/cmd/kuscia/start"
 	_ "github.com/secretflow/kuscia/pkg/agent/middleware/plugins"
 
@@ -87,6 +88,7 @@ func main() {
 	rootCmd.AddCommand(autonomy.NewAutonomyCommand(ctx))
 	rootCmd.AddCommand(lite.NewLiteCommand(ctx))
 	rootCmd.AddCommand(master.NewMasterCommand(ctx))
+	rootCmd.AddCommand(image.NewImageCommand(ctx))
 	rootCmd.AddCommand(start.NewStartCommand(ctx))
 	initKubeEnv()
 	rootCmd.AddCommand(kubectlcmd.NewDefaultKubectlCommand())

@@ -48,6 +48,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/framework/net"
 	"github.com/secretflow/kuscia/pkg/agent/images"
 	"github.com/secretflow/kuscia/pkg/agent/kuberuntime"
+	"github.com/secretflow/kuscia/pkg/agent/local/runtime/process"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/pleg"
 	"github.com/secretflow/kuscia/pkg/agent/prober"
@@ -102,6 +103,7 @@ type CRIProviderDependence struct {
 	PodSyncHandler   framework.SyncHandler
 	StatusManager    status.Manager
 
+	Runtime        string
 	CRIProviderCfg *config.CRIProviderCfg
 	RegistryCfg    *config.RegistryCfg
 }
@@ -132,9 +134,6 @@ type CRIProvider struct {
 	dnsConfigurer *dns.Configurer
 
 	volumeManager *resource.VolumeManager
-
-	remoteImageService internalapi.ImageManagerService
-
 	// Handles container probing.
 	probeManager prober.Manager
 	// Manages container health check results.
@@ -149,6 +148,8 @@ type CRIProvider struct {
 	podStateProvider framework.PodStateProvider
 
 	podSyncHandler framework.SyncHandler
+
+	remoteImageService internalapi.ImageManagerService
 
 	chStopping chan struct{}
 	chStopped  chan struct{}
@@ -182,15 +183,40 @@ func NewCRIProvider(dep *CRIProviderDependence) (framework.PodProvider, error) {
 
 	imageBackOff := flowcontrol.NewBackOff(backOffPeriod, maxContainerBackOff)
 
-	remoteRuntimeService, err := remote.NewRemoteRuntimeService(dep.CRIProviderCfg.RemoteRuntimeEndpoint, dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
-	if err != nil {
-		return nil, err
+	var (
+		remoteRuntimeService internalapi.RuntimeService
+		remoteImageService   internalapi.ImageManagerService
+		err                  error
+	)
+
+	switch dep.Runtime {
+	case config.ContainerRuntime:
+		remoteRuntimeService, err = remote.NewRemoteRuntimeService(dep.CRIProviderCfg.RemoteRuntimeEndpoint, dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
+		if err != nil {
+			return nil, err
+		}
+		remoteImageService, err = remote.NewRemoteImageService(dep.CRIProviderCfg.RemoteImageEndpoint,
+			dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
+		if err != nil {
+			return nil, err
+		}
+	case config.ProcessRuntime:
+		processRuntimeDep := &process.RuntimeDependence{
+			HostIP:         dep.NodeIP,
+			ImageRootDir:   dep.CRIProviderCfg.LocalRuntime.ImageRootDir,
+			SandboxRootDir: dep.CRIProviderCfg.LocalRuntime.SandboxRootDir,
+		}
+		processRuntime, err := process.NewRuntime(processRuntimeDep)
+		if err != nil {
+			return nil, err
+		}
+		remoteRuntimeService = processRuntime
+		remoteImageService = processRuntime
+	default:
+		return nil, fmt.Errorf("unknown runtime: %s", dep.Runtime)
 	}
-	cp.remoteImageService, err = remote.NewRemoteImageService(dep.CRIProviderCfg.RemoteImageEndpoint,
-		dep.CRIProviderCfg.RuntimeRequestTimeout, nil)
-	if err != nil {
-		return nil, err
-	}
+
+	cp.remoteImageService = remoteImageService
 
 	// setup containerLogManager for CRI container runtime
 	containerLogManager, err := logs.NewContainerLogManager(
@@ -220,7 +246,7 @@ func NewCRIProvider(dep *CRIProviderDependence) (framework.PodProvider, error) {
 		containerLogManager,
 		cp,
 		remoteRuntimeService,
-		cp.remoteImageService,
+		remoteImageService,
 		imageBackOff,
 		false,
 		0,
@@ -228,6 +254,7 @@ func NewCRIProvider(dep *CRIProviderDependence) (framework.PodProvider, error) {
 		true,
 		podsStdoutDirectory,
 		dep.AllowPrivileged,
+		dep.Runtime,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize kuberuntime manager")

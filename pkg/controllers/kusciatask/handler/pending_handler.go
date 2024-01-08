@@ -30,6 +30,7 @@ import (
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -138,10 +139,11 @@ func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusci
 			return false, nil
 		}
 
-		if err = h.createTaskResources(kusciaTask); err != nil {
-			needUpdate = utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err))
-			return needUpdate, err
+		if needUpdate, err = h.createTaskResources(kusciaTask); err != nil {
+			conditionNeedUpdate := utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err.Error()))
+			return needUpdate || conditionNeedUpdate, err
 		}
+
 		utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionTrue, "", "")
 		kusciaTask.Status.LastReconcileTime = &now
 		return true, nil
@@ -150,17 +152,21 @@ func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusci
 	return false, nil
 }
 
-func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
+func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	partyKitInfos := map[string]*PartyKitInfo{}
 	for i, party := range kusciaTask.Spec.Parties {
 		kit, err := h.buildPartyKitInfo(kusciaTask, &kusciaTask.Spec.Parties[i])
 		if err != nil {
-			return fmt.Errorf("failed to build domain %v kit info, %v", party.DomainID, err)
+			return false, fmt.Errorf("failed to build domain %v kit info, %v", party.DomainID, err)
 		}
 
 		partyKitInfos[party.DomainID+party.Role] = kit
 	}
 
+	needUpdate, err := allocatePorts(kusciaTask, partyKitInfos)
+	if err != nil {
+		return needUpdate, err
+	}
 	parties := generateParties(partyKitInfos)
 
 	for _, partyKitInfo := range partyKitInfos {
@@ -176,7 +182,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
-			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
+			return needUpdate, fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
 		}
 
 		for key, v := range ps {
@@ -191,10 +197,10 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	kusciaTask.Status.ServiceStatuses = serviceStatuses
 
 	if err := h.createTaskResourceGroup(kusciaTask, partyKitInfos); err != nil {
-		return fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
+		return needUpdate, fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
 	}
 
-	return nil
+	return needUpdate, nil
 }
 
 func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) bool {
@@ -424,6 +430,111 @@ func generatePortAccessDomains(parties []kusciaapisv1alpha1.PartyInfo, networkPo
 	return portAccessDomains
 }
 
+func allocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitInfos map[string]*PartyKitInfo) (bool, error) {
+	needUpdate := false
+
+	if kusciaTask.Annotations == nil {
+		kusciaTask.Annotations = make(map[string]string)
+	}
+
+	allocatedPorts := kusciaTask.Status.AllocatedPorts
+	if len(allocatedPorts) == 0 {
+		needCounts := map[string]int{}
+		for _, partyKit := range partyKitInfos {
+			ns := partyKit.domainID
+			count := needCounts[ns]
+			for _, pod := range partyKit.pods {
+				count += len(pod.ports)
+			}
+			needCounts[ns] = count
+		}
+
+		retPorts, err := pkgport.AllocatePort(needCounts)
+		if err != nil {
+			return false, err
+		}
+
+		for _, partyKit := range partyKitInfos {
+			ns := partyKit.domainID
+			ports, ok := retPorts[ns]
+			if !ok {
+				return false, fmt.Errorf("allocated ports not found for domain %s", ns)
+			}
+			index := 0
+			partyPorts := kusciaapisv1alpha1.PartyAllocatedPorts{
+				DomainID:  partyKit.domainID,
+				Role:      partyKit.role,
+				NamedPort: map[string]int32{},
+			}
+
+			for _, pod := range partyKit.pods {
+				for portName := range pod.ports {
+					if index >= len(ports) {
+						return false, fmt.Errorf("allocated ports are not enough for domain %s", ns)
+					}
+
+					partyPorts.NamedPort[buildPortIdentity(pod.podName, portName)] = ports[index]
+					index++
+				}
+			}
+
+			allocatedPorts = append(allocatedPorts, partyPorts)
+		}
+
+		kusciaTask.Status.AllocatedPorts = allocatedPorts
+		needUpdate = true
+	}
+
+	for _, partyKit := range partyKitInfos {
+		var partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts
+		for _, ports := range allocatedPorts {
+			if ports.DomainID == partyKit.domainID && ports.Role == partyKit.role {
+				partyPorts = &ports
+				break
+			}
+		}
+		if partyPorts == nil {
+			return false, fmt.Errorf("allocated ports not found for party %s/%s", partyKit.domainID, partyKit.role)
+		}
+
+		for _, pod := range partyKit.pods {
+			if err := fillPodAllocatedPorts(partyPorts, pod); err != nil {
+				return false, fmt.Errorf("failed to fill allocated ports for party %s/%s, detail->%v", partyKit.domainID, partyKit.role, err)
+			}
+		}
+	}
+
+	return needUpdate, nil
+}
+
+func fillPodAllocatedPorts(partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts, pod *PodKitInfo) error {
+
+	resPorts := make([]*proto.Port, 0, len(pod.ports))
+	for i, port := range pod.ports {
+		portIdentity := buildPortIdentity(pod.podName, port.Name)
+		realPort, ok := partyPorts.NamedPort[portIdentity]
+		if !ok {
+			return fmt.Errorf("not found allocated port for %v", portIdentity)
+		}
+
+		resPorts = append(resPorts, &proto.Port{
+			Name:     port.Name,
+			Port:     realPort,
+			Scope:    string(port.Scope),
+			Protocol: string(port.Protocol),
+		})
+		port.Port = realPort
+		pod.ports[i] = port
+	}
+
+	pod.allocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
+	return nil
+}
+
+func buildPortIdentity(podName, portName string) string {
+	return fmt.Sprintf("%s/%s", podName, portName)
+}
+
 func generateParty(kitInfo *PartyKitInfo) *proto.Party {
 	var partyServices []*proto.Service
 
@@ -488,7 +599,6 @@ func fillPartyClusterDefine(kitInfo *PartyKitInfo, parties []*proto.Party) {
 
 	for i, podKit := range kitInfo.pods {
 		fillPodClusterDefine(podKit, parties, *selfPartyIndex, i)
-		fillPodAllocatedPorts(podKit)
 	}
 }
 
@@ -498,20 +608,6 @@ func fillPodClusterDefine(pod *PodKitInfo, parties []*proto.Party, partyIndex in
 		SelfPartyIdx:    int32(partyIndex),
 		SelfEndpointIdx: int32(endpointIndex),
 	}
-}
-
-func fillPodAllocatedPorts(pod *PodKitInfo) {
-	resPorts := make([]*proto.Port, 0, len(pod.ports))
-	for _, port := range pod.ports {
-		resPorts = append(resPorts, &proto.Port{
-			Name:     port.Name,
-			Port:     port.Port,
-			Scope:    string(port.Scope),
-			Protocol: string(port.Protocol),
-		})
-	}
-
-	pod.allocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
 }
 
 func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[string]*kusciaapisv1alpha1.PodStatus, map[string]*kusciaapisv1alpha1.ServiceStatus, error) {
@@ -793,11 +889,17 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		}
 
 		for _, port := range ctr.Ports {
-			resCtr.Ports = append(resCtr.Ports, v1.ContainerPort{
+			namedPort, ok := podKit.ports[port.Name]
+			if !ok {
+				return nil, fmt.Errorf("port %s is not allocated for pod %s", port.Name, pod.Name)
+			}
+			resPort := v1.ContainerPort{
 				Name:          port.Name,
-				ContainerPort: port.Port,
+				ContainerPort: namedPort.Port,
 				Protocol:      v1.ProtocolTCP,
-			})
+			}
+
+			resCtr.Ports = append(resCtr.Ports, resPort)
 		}
 
 		protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}

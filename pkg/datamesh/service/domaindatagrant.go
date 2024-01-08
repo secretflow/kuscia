@@ -237,12 +237,14 @@ func (s *domainDataGrantService) signDomainDataGrant(dg *v1alpha1.DomainDataGran
 func (s *domainDataGrantService) convertData2Spec(reqdata *datamesh.DomainDataGrantData, v *v1alpha1.DomainDataGrant) error {
 	var limit *v1alpha1.GrantLimit
 	if reqdata.Limit != nil {
+		grantMode := []v1alpha1.GrantType{"normal"}
 		limit = &v1alpha1.GrantLimit{
 			FlowID:      reqdata.Limit.FlowId,
 			UseCount:    int(reqdata.Limit.UseCount),
 			Initiator:   reqdata.Limit.Initiator,
 			InputConfig: reqdata.Limit.InputConfig,
 			Components:  reqdata.Limit.Components,
+			GrantMode:   grantMode,
 		}
 		if reqdata.Limit.ExpirationTime > 0 {
 			mt := metav1.NewTime(time.Unix(reqdata.Limit.ExpirationTime/int64(time.Second), reqdata.Limit.ExpirationTime%int64(time.Second)))

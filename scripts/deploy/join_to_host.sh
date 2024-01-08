@@ -111,7 +111,7 @@ OPTIONS:
     -x    transit domain name."
 }
 
-while getopts 'p:a:t:x:kh' option; do
+while getopts 'p:a:t:x:k:h' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG

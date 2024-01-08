@@ -31,8 +31,10 @@ import (
 )
 
 const (
-	defaultLogsPath   = "var/logs"
-	defaultStdoutPath = "var/stdout"
+	defaultLogsPath            = "var/logs"
+	defaultStdoutPath          = "var/stdout"
+	defaultLocalImageRootDir   = "var/images"
+	defaultLocalSandboxRootDir = "sandbox"
 
 	defaultK8sClientMaxQPS = 250
 	defaultPodsCapacity    = "500"
@@ -46,6 +48,7 @@ const (
 const (
 	ContainerRuntime = "runc"
 	K8sRuntime       = "runk"
+	ProcessRuntime   = "runp"
 )
 
 type AgentLogCfg struct {
@@ -128,6 +131,13 @@ type CRIProviderCfg struct {
 	// ResolverConfig is the resolver configuration file used as the basis
 	// for the container DNS resolution configuration.
 	ResolverConfig string `yaml:"resolverConfig,omitempty"`
+
+	LocalRuntime LocalRuntimeCfg `yaml:"localRuntime"`
+}
+
+type LocalRuntimeCfg struct {
+	SandboxRootDir string `yaml:"sandboxRootDir"`
+	ImageRootDir   string `yaml:"imageRootDir"`
 }
 
 // DNSCfg specifies the DNS servers and search domains of a sandbox.
@@ -281,6 +291,10 @@ func DefaultStaticAgentConfig() *AgentConfig {
 				ClusterDomain:         "",
 				ClusterDNS:            []string{},
 				ResolverConfig:        defaultResolvConfig,
+				LocalRuntime: LocalRuntimeCfg{
+					SandboxRootDir: defaultLocalSandboxRootDir,
+					ImageRootDir:   defaultLocalImageRootDir,
+				},
 			},
 		},
 		Plugins: []PluginCfg{

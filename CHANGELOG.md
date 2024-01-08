@@ -12,6 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.5.0b0] - 2024-1-8
+### Added
+- Support deploying kuscia on K8s.
+- Support running algorithm images based on runp and runk modes.
+- Support configuring Path prefix in domain public URL addresses.
+
+### Changed
+- Optimize deployment configuration and add configuration documentation.
+- Optimize error information of task and error logs of kuscia.
+
+### Fixed
+- When there is a duplicate node error, the node will not exit but will try again.
+- Change ClusterDomainRoute status to be unready when dest domain is unreachable.
+
 ## [0.5.0.dev231225] - 2023-12-25
 ### Added
 - Add document of Kuscia overview.

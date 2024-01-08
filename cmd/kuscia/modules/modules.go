@@ -246,9 +246,9 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 		if err != nil {
 			nlog.Fatal(err)
 		}
-		dependencies.EnableContainerd = true
-		if dependencies.Agent.Provider.Runtime == config.K8sRuntime {
-			dependencies.EnableContainerd = false
+		dependencies.EnableContainerd = false
+		if dependencies.Agent.Provider.Runtime == config.ContainerRuntime {
+			dependencies.EnableContainerd = true
 		}
 	}
 	if dependencies.RunMode == common.RunModeLite {

@@ -9,7 +9,7 @@ domainKeyData: {{.DOMAIN_KEY_DATA}}
 # 日志级别 INFO、DEBUG、WARN
 logLevel: INFO
 
-# runc or runk
+# runc or runk or runp
 runtime: runc
 
 # 当 runtime 为 runk 时配置

@@ -5,7 +5,7 @@ metadata:
 spec:
   source: {{.SRC_DOMAIN}}
   destination: {{.DEST_DOMAIN}}
-  interConnProtocol: kuscia
+  interConnProtocol: {{.INTERCONN_PROTOCOL}}
   endpoint:
     host: {{.HOST}}
     ports:

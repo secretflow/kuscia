@@ -601,11 +601,11 @@ const (
 	MaxPodTerminationMessageLogLength = 1024 * 12
 	// MaxContainerTerminationMessageLength is the upper bound any one container may write to
 	// its termination message path. Contents above this length will be truncated.
-	MaxContainerTerminationMessageLength = 1024 * 4
+	MaxContainerTerminationMessageLength = 1024 * 8
 	// MaxContainerTerminationMessageLogLength is the maximum bytes any one container will
 	// have written to its termination message when the message is read from the logs.
-	MaxContainerTerminationMessageLogLength = 1024 * 2
+	MaxContainerTerminationMessageLogLength = 1024 * 8
 	// MaxContainerTerminationMessageLogLines is the maximum number of previous lines of
 	// log output that the termination message can contain.
-	MaxContainerTerminationMessageLogLines = 80
+	MaxContainerTerminationMessageLogLines = 200
 )

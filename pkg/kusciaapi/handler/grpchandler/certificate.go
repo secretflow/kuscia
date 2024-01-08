@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -38,13 +40,21 @@ func NewCertificateHandler(certService service.ICertificateService) kusciaapi.Ce
 func (h *certificateHandler) GenerateKeyCerts(ctx context.Context, request *kusciaapi.GenerateKeyCertsRequest) (*kusciaapi.GenerateKeyCertsResponse, error) {
 	cmReq := &confmanager.GenerateKeyCertsRequest{}
 	kapiResp := &kusciaapi.GenerateKeyCertsResponse{}
-	CopyValue(request, cmReq)
+	if err := CopyValue(request, cmReq); err != nil {
+		return &kusciaapi.GenerateKeyCertsResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrForUnexpected, err.Error()),
+		}, nil
+	}
 	cmResp := h.certificateService.GenerateKeyCerts(ctx, cmReq)
-	CopyValue(cmResp, kapiResp)
+	if err := CopyValue(cmResp, kapiResp); err != nil {
+		return &kusciaapi.GenerateKeyCertsResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrForUnexpected, err.Error()),
+		}, nil
+	}
 	return kapiResp, nil
 }
 
-func CopyValue(src interface{}, dst interface{}) {
+func CopyValue(src interface{}, dst interface{}) error {
 	jsonBytes, _ := json.Marshal(src)
-	_ = json.Unmarshal(jsonBytes, dst)
+	return json.Unmarshal(jsonBytes, dst)
 }

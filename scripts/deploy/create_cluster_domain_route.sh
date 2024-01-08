@@ -62,12 +62,15 @@ else
   HOST="$HOST_PORT"
 fi
 
+INTERCONN_PROTOCOL=kuscia
+
 if [[ ${TRANSIT_DOMAIN} == "" ]]; then
   CLUSTER_DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SRC_DOMAIN}}/${SRC_DOMAIN}/g;
     s/{{.DEST_DOMAIN}}/${DEST_DOMAIN}/g;
     s/{{.HOST}}/${HOST}/g;
     s@{{.PATH}}@${HOST_PATH}@g;
     s/{{.ISTLS}}/${PROTOCOL_TLS}/g;
+    s/{{.INTERCONN_PROTOCOL}}/${INTERCONN_PROTOCOL}/g;
     s/{{.PORT}}/${PORT}/g" \
     <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
 else

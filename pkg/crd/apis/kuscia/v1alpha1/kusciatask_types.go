@@ -167,6 +167,10 @@ type KusciaTaskStatus struct {
 	// +optional
 	ServiceStatuses map[string]*ServiceStatus `json:"serviceStatuses,omitempty"`
 
+	// AllocatedPorts defines the allocated ports to all parties.
+	// +optional
+	AllocatedPorts []PartyAllocatedPorts `json:"allocatedPorts,omitempty"`
+
 	// Represents time when the task was acknowledged by the task controller.
 	// It is not guaranteed to be set in happens-before order across separate operations.
 	// It is represented in RFC3339 form and is in UTC.

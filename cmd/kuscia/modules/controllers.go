@@ -26,6 +26,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciadeployment"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
+	"github.com/secretflow/kuscia/pkg/controllers/portflake"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -74,6 +75,9 @@ func NewControllersModule(i *Dependencies) Module {
 			{
 				NewControler: domaindata.NewController,
 				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDDomainDataGrantsName},
+			},
+			{
+				NewControler: portflake.NewController,
 			},
 		},
 	)

@@ -124,8 +124,9 @@ func TestCertIssuanceWithGenerateOptCtx(t *testing.T) {
 
 	dep := &plugin.Dependencies{
 		AgentConfig: &config.AgentConfig{
-			DomainCACert: signingCert,
-			DomainCAKey:  signingKey,
+			DomainCACertFile: signingCertFile,
+			DomainCACert:     signingCert,
+			DomainCAKey:      signingKey,
 		},
 	}
 
