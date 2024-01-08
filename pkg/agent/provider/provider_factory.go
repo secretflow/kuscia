@@ -37,6 +37,8 @@ type Factory interface {
 
 func NewFactory(agentConfig *config.AgentConfig) (Factory, error) {
 	switch agentConfig.Provider.Runtime {
+	case config.ProcessRuntime:
+		fallthrough
 	case config.ContainerRuntime:
 		return &containerRuntimeFactory{agentConfig: agentConfig}, nil
 	case config.K8sRuntime:
@@ -111,6 +113,7 @@ func (f *containerRuntimeFactory) BuildPodProvider(nodeName string, eventRecorde
 		PodStateProvider: podsController.GetPodStateProvider(),
 		PodSyncHandler:   podsController,
 		StatusManager:    podsController.GetStatusManager(),
+		Runtime:          f.agentConfig.Provider.Runtime,
 		CRIProviderCfg:   &f.agentConfig.Provider.CRI,
 		RegistryCfg:      &f.agentConfig.Registry,
 	}

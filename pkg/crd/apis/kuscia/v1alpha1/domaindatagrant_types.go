@@ -50,8 +50,9 @@ type GrantLimit struct {
 	// +optional
 	ExpirationTime *metav1.Time `json:"expirationTime,omitempty"`
 	// +optional
-	UseCount  int         `json:"useCount,omitempty"`
-	GrantMode []GrantType `json:"grantMode"`
+	UseCount int `json:"useCount,omitempty"`
+	// +optional
+	GrantMode []GrantType `json:"grantMode,omitempty"`
 	// +optional
 	FlowID string `json:"flowID,omitempty"`
 	// +optional

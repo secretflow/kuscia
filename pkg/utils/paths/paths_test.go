@@ -16,6 +16,7 @@ package paths
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,9 +25,7 @@ import (
 )
 
 func TestEnsureDirectory(t *testing.T) {
-	wd, err := os.MkdirTemp("", t.Name())
-	assert.NoError(t, err)
-	defer os.RemoveAll(wd)
+	wd := t.TempDir()
 
 	path := filepath.Join(wd, "/dir")
 	assert.ErrorContains(t, EnsureDirectory(path, false), "no such file or directory")
@@ -34,7 +33,7 @@ func TestEnsureDirectory(t *testing.T) {
 	assert.NoError(t, EnsureDirectory(path, true)) // second: no create
 
 	file := path + "/file"
-	_, err = os.Create(file)
+	_, err := os.Create(file)
 	assert.NoError(t, err)
 
 	assert.Error(t, EnsureDirectory(file, false), fmt.Sprintf("'%s' already exist as a file", file))
@@ -42,9 +41,7 @@ func TestEnsureDirectory(t *testing.T) {
 }
 
 func TestEnsureFile(t *testing.T) {
-	path, err := os.MkdirTemp("", t.Name())
-	assert.NoError(t, err)
-	defer os.RemoveAll(path)
+	path := t.TempDir()
 
 	// dir already exist
 	assert.Error(t, EnsureFile(path, false), fmt.Sprintf("'%s' already exist as a directory", path))
@@ -59,4 +56,64 @@ func TestEnsureFile(t *testing.T) {
 	assert.ErrorContains(t, EnsureDirectory(file, false), "no such file or directory")
 	assert.NoError(t, EnsureFile(file, true)) // create
 	assert.NoError(t, EnsureFile(file, true)) // no create
+}
+
+func TestLinkUnlink(t *testing.T) {
+	wd := t.TempDir()
+
+	// file not exist, pass
+	assert.NoError(t, Unlink(wd+"/dir/non-exist"))
+
+	// symlink file2 -> file1
+	// symlink a_dir/file2 -> ../file1
+	content := []byte("a secret")
+	originalFile := filepath.Join(wd, "file1")
+	assert.NoError(t, WriteFile(originalFile, content))
+	assert.NoError(t, Link("./file1", wd+"/file2", true))
+	assert.NoError(t, Link("../file1", wd+"/a_dir/file2", true))
+
+	assert.NoError(t, Unlink(wd+"/file2"))
+	assert.NoError(t, Unlink(wd+"/a_dir/file2"))
+	c, err := ioutil.ReadFile(wd + "/file1")
+	assert.NoError(t, err)
+	assert.Equal(t, c, content)
+
+	// unlink dir
+	assert.NoError(t, os.Mkdir(wd+"a_dir", 0755))
+	assert.NoError(t, Link(wd+"a_dir", wd+"/dir2", true))
+	assert.NoError(t, EnsureDirectory(wd+"/dir2", false))
+	assert.NoError(t, Unlink(wd+"/dir2"))
+	assert.NoError(t, EnsureDirectory(wd+"a_dir", false))
+	assert.False(t, CheckFileOrDirExist(wd+"/dir2"))
+
+	// unlink normal file, fail
+	assert.ErrorContains(t, Unlink(originalFile), "not a hard link file")
+
+	// hardlink file2 -> file1
+	assert.NoError(t, Link("./file1", wd+"/file2", true))
+	assert.NoError(t, Unlink(wd+"/file2"))
+	assert.False(t, CheckFileOrDirExist(wd+"/file2"))
+	c, err = os.ReadFile(wd + "/file1")
+	assert.NoError(t, err)
+	assert.Equal(t, c, content)
+}
+
+func TestReadWriteJson(t *testing.T) {
+	rootDir := t.TempDir()
+	file := filepath.Join(rootDir, "a.json")
+	WData := map[string]int{"a": 1}
+
+	assert.NoError(t, WriteJSON(file, WData))
+
+	rData := map[string]int{}
+	assert.NoError(t, ReadJSON(file, &rData))
+	assert.Equal(t, 1, rData["a"])
+}
+
+func TestMove(t *testing.T) {
+	rootDir := t.TempDir()
+	oldPath := filepath.Join(rootDir, "src.txt")
+	assert.NoError(t, os.WriteFile(oldPath, []byte("hello world"), 0644))
+	newPath := filepath.Join(rootDir, "dst.txt")
+	assert.NoError(t, Move(oldPath, newPath))
 }

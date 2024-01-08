@@ -45,7 +45,7 @@ import (
 
 const (
 	defaultCertsDirName       = "certs"
-	defaultContainerCertsPath = "/etc/kuscia/certs"
+	defaultContainerCertsPath = "./kuscia/certs"
 
 	communicationRoleServer = "server"
 	communicationRoleClient = "client"
@@ -259,7 +259,7 @@ func mountCertificateSecret(bkPod *corev1.Pod, secret *corev1.Secret) {
 		c := &bkPod.Spec.Containers[i]
 		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
 			Name:      certsVolumeName,
-			MountPath: defaultContainerCertsPath,
+			MountPath: filepath.Join(c.WorkingDir, defaultContainerCertsPath),
 		})
 	}
 }
@@ -293,7 +293,11 @@ func (ci *certIssuance) handleGenerateOptionContext(ctx *hook.GenerateContainerO
 	}
 
 	// inject ca file.
-	injectCertificateLocal(ctx, "trusted-ca", common.EnvTrustedCAFile, ci.signingCertFile, filepath.Join(defaultContainerCertsPath, "ca.crt"))
+	signingCertFile := filepath.Join(hostCertsDir, "ca.crt")
+	if err := paths.CopyFile(ci.signingCertFile, signingCertFile); err != nil {
+		return fmt.Errorf("failed to copy signing certificate file %q to %q, detail-> %v", ci.signingCertFile, signingCertFile, err)
+	}
+	injectCertificateLocal(ctx, "trusted-ca", common.EnvTrustedCAFile, signingCertFile, filepath.Join(defaultContainerCertsPath, "ca.crt"))
 
 	nlog.Infof("Successfully issued certificate(server=%v,client=%v) for container %q in pod %q", issueServerCert, issueClientCert, ctx.Container.Name, format.Pod(ctx.Pod))
 
@@ -349,7 +353,7 @@ func injectCertificateLocal(obj *hook.GenerateContainerOptionContext, name, envK
 	})
 	obj.Opts.Mounts = append(obj.Opts.Mounts, container.Mount{
 		Name:          name,
-		ContainerPath: containerPath,
+		ContainerPath: filepath.Join(obj.Container.WorkingDir, containerPath),
 		HostPath:      hostPath,
 		ReadOnly:      true,
 	})

@@ -31,7 +31,7 @@ masterEndpoint: https://172.18.0.2:1080
 #############################################################################
 ############               Lite、Autonomy 配置                    ############
 #############################################################################
-# runc or runk
+# runc or runk or runp
 runtime: runc
 # 当 runtime 为 runk 时配置
 runk:
@@ -42,7 +42,7 @@ runk:
   # 机构 k8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
   kubeconfigFile:
 
-# 节点可用于调度应用的容量，runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
+# 节点可用于调度应用的容量，runc/runp 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
 capacity:
   cpu: #4
   memory: #8Gi
@@ -74,12 +74,12 @@ datastoreEndpoint: ""
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
 - `liteDeployToken`: 节点连接 master 的部署 token，用于节点向 master 注册证书， 只在节点第一次向 master 注册证书时有效，详情请参考[节点中心化部署](./deploy_master_lite_cn)
 - `masterEndpoint`: 节点连接 master 的地址，比如 https://172.18.0.2:1080
-- `runtime`: 节点运行时 runc、runk，运行时详解请参考[这里](../reference/architecture_cn.md#agent)
+- `runtime`: 节点运行时 runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)
 - `runk`: 当 runtime 为 runk 时配置
   - `namespace`: 任务调度到指定的机构 k8s namespace 上
   - `dnsServers`: 机构 k8s 集群的 pod dns 配置， 用于解析节点的应用域名
   - `kubeconfigFile`: 机构 k8s 集群的 kubeconfig，不填默认 serviceaccount；当前请不填，默认使用 serviceaccount
-- `capacity`: 节点可用于调度应用的容量，runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
+- `capacity`: 节点可用于调度应用的容量，runc/runp 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
   - `cpu`: cpu 核数， 如 4
   - `memory`: 内存大小，如 8Gi
   - `pods`: pods 数，如 500
@@ -94,6 +94,7 @@ datastoreEndpoint: ""
     - `password`: 镜像仓库密码
 - `datastoreEndpoint`: 数据库连接串，不填默认使用 sqlite。示例：mysql://username:password@tcp(hostname:3306)/database-name
 
+{#configuration-example}
 ### 配置示例
 - [Lite 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-lite.yaml)
 - [Master 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-master.yaml)
@@ -103,8 +104,16 @@ datastoreEndpoint: ""
 如果使用 [start_standalone.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/start_standalone.sh) 或者 [deploy.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/deploy.sh) 脚本部署的 kuscia，kuscia.yaml 文件路径默认是在以下位置（其他部署模式可以借鉴）。
 - 宿主机路径：
   - master：\$HOME/kuscia/\${USER}-kuscia-master/kuscia.yaml
-  - lite：\$HOME/kuscia/\${USER}-kuscia-lite-\${domainID}/kuscia.yaml
-  - autonomy：\$HOME/kuscia/\${USER}-kuscia-autonomy-\${domainID}/kuscia.yaml
+  - lite：\$HOME/kuscia/&#36;{USER}-kuscia-lite-&#36;{domainID}/kuscia.yaml
+  - autonomy：\$HOME/kuscia/&#36;{USER}-kuscia-autonomy-&#36;{domainID}/kuscia.yaml
 - 容器内路径：/home/kuscia/etc/conf/kuscia.yaml
 
 宿主机路径下修改 kuscia.yaml 配置后，重启容器 `docker restart ${container_name}` 生效。
+
+## 指定配置文件
+如果使用 [deploy.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/deploy.sh) 脚本部署的 kuscia，可以指定配置文件，示例：
+```bash
+# -c 参数传递的是指定的 kuscia 配置文件路径。
+./deploy.sh autonomy -n alice -i 1.1.1.1 -p 11080 -k 8082 -c kuscia-autonomy.yaml
+```
+其中，kuscia-autonomy.yaml 可参考 [配置示例](#configuration-example)

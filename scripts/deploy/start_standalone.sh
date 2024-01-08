@@ -166,7 +166,7 @@ function probe_gateway_crd() {
 
   local retry=0
   while [ $retry -lt $max_retry ]; do
-    local line_num=$(docker exec -it $master kubectl get gateways -n $domain | grep $gw_name | wc -l | xargs)
+    local line_num=$(docker exec -it $master kubectl get gateways -n $domain | grep -i $gw_name | wc -l | xargs)
     if [[ $line_num == "1" ]]; then
       return
     fi
@@ -565,7 +565,7 @@ function start_lite() {
 
     host_ip=$(getIPV4Address)
     csr_token=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
-    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh lite ${domain_id} ${master_endpoint} ${csr_token} ${ALLOW_PRIVILEGED}
+    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh lite ${domain_id} ${master_endpoint} ${csr_token} "${ALLOW_PRIVILEGED}"
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
@@ -711,13 +711,13 @@ function start_autonomy() {
   local domain_ctr=${CTR_PREFIX}-autonomy-${domain_id}
   local kusciaapi_http_port=$2
   local kusciaapi_grpc_port=$3
-  local host_ip=$(getIPV4Address)
+  local p2p_protocol=$4
   local conf_dir=${ROOT}/${domain_ctr}
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
     env_flag=$(generate_env_flag $domain_id)
 
-    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${domain_id} "" "" ${ALLOW_PRIVILEGED}
+    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${domain_id} "" "" "${ALLOW_PRIVILEGED}" ${p2p_protocol}
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
@@ -752,8 +752,8 @@ function run_p2p() {
   build_kuscia_network
   arch_check
 
-  start_autonomy ${ALICE_DOMAIN} 11082 11083
-  start_autonomy ${BOB_DOMAIN} 12082 12083
+  start_autonomy ${ALICE_DOMAIN} 11082 11083 ${p2p_protocol}
+  start_autonomy ${BOB_DOMAIN} 12082 12083 ${p2p_protocol}
 
   build_interconn ${ALICE_DOMAIN} ${BOB_DOMAIN} ${p2p_protocol}
   build_interconn ${BOB_DOMAIN} ${ALICE_DOMAIN} ${p2p_protocol}

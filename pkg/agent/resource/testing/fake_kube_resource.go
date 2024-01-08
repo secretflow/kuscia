@@ -48,6 +48,6 @@ func FakeResourceManager(namespace string, objects ...runtime.Object) *resource.
 		panic("failed to wait for caches to be synced")
 	}
 	// Create a new instance of the resource manager using the listers for configmaps and secrets.
-	rm := resource.NewResourceManager(kubeClient, pInformer.Lister().Pods(namespace), sInformer.Lister().Secrets(namespace), mInformer.Lister().ConfigMaps(namespace))
+	rm := resource.NewResourceManager(kubeClient, namespace, pInformer.Lister().Pods(namespace), sInformer.Lister().Secrets(namespace), mInformer.Lister().ConfigMaps(namespace))
 	return rm
 }

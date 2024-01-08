@@ -35,6 +35,8 @@
 
 ## nginx 代理参数配置示例
 
+- 推荐使用 nginx release-1.15.3 及以上版本，详情参考[github/nginx](https://github.com/nginx/nginx)
+
 ```bash
 http {
     # Default is HTTP/1, keepalive is only enabled in HTTP/1.1

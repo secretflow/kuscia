@@ -85,6 +85,7 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 
 	rm := resource.NewResourceManager(
 		kubeClient,
+		agentConfig.Namespace,
 		scmInformerFactory.Core().V1().Pods().Lister().Pods(agentConfig.Namespace),
 		scmInformerFactory.Core().V1().Secrets().Lister().Secrets(agentConfig.Namespace),
 		scmInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(agentConfig.Namespace))
