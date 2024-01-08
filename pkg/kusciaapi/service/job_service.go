@@ -547,7 +547,7 @@ func validateCreateJobRequest(request *kusciaapi.CreateJobRequest, domainID stri
 		return fmt.Errorf("initiator can not be empty")
 	}
 	if domainID != "" && domainID != initiator {
-		return fmt.Errorf("initiator must be %s in P2P", initiator)
+		return fmt.Errorf("request.initiator is %s, but initiator must be %s in P2P", initiator, domainID)
 	}
 	// check maxParallelism
 	maxParallelism := request.MaxParallelism

@@ -15,6 +15,7 @@
 package paths
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -22,6 +23,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 const (
@@ -255,4 +257,109 @@ func CreateIfNotExists(dir string, perm os.FileMode) error {
 	}
 
 	return nil
+}
+
+func ReadJSON(filename string, v interface{}) error {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(content, v)
+}
+
+func WriteJSON(filename string, v interface{}) error {
+	content, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	return WriteFile(filename, content)
+}
+
+func WriteFile(filename string, data []byte) error {
+	if err := EnsureDirectory(filepath.Dir(filename), true); err != nil {
+		return err
+	}
+
+	return os.WriteFile(filename, data, defaultFileMode)
+}
+
+func Link(oldPath, newPath string, symlink bool) error {
+	if oldPath == newPath {
+		return nil
+	}
+
+	if err := EnsureDirectory(filepath.Dir(newPath), true); err != nil {
+		return err
+	}
+
+	// if newPath exists, os.Symlink() will fail
+	if err := RemoveIfExist(newPath); err != nil {
+		return err
+	}
+
+	if symlink {
+		return os.Symlink(oldPath, newPath)
+	}
+
+	return os.Link(oldPath, newPath)
+}
+
+func Unlink(path string) error {
+	file, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to check symlink/hardlink file: %v", err)
+	}
+
+	if (file.Mode() & os.ModeSymlink) > 0 {
+		// remove symlink
+		return os.Remove(path)
+	}
+
+	// remove hard link file
+	sys := file.Sys()
+	if sys == nil {
+		return fmt.Errorf("read file [%v] sys info fail, cannot unlink", path)
+	}
+
+	if stat, ok := sys.(*syscall.Stat_t); ok {
+		if stat.Nlink <= 1 {
+			return fmt.Errorf("file ref count=%v, not a hard link file, cannot unlink", stat.Nlink)
+		}
+		return os.Remove(path)
+	}
+
+	return fmt.Errorf("read file [%v] stat info fail, cannot unlink", path)
+}
+
+func RemoveIfExist(path string) error {
+	if _, err := os.Lstat(path); err == nil {
+		if err := os.RemoveAll(path); err != nil {
+			return fmt.Errorf("failed to remove file %q, err-> %+v", path, err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("failed to check file %q, err-> %v", path, err)
+	}
+	return nil
+}
+
+func Move(oldPath, newPath string) error {
+	if oldPath == newPath {
+		return nil
+	}
+
+	if err := EnsureDirectory(filepath.Dir(newPath), true); err != nil {
+		return err
+	}
+
+	// if newPath already exist, os.Rename() will fail
+	if err := RemoveIfExist(newPath); err != nil {
+		return err
+	}
+
+	return os.Rename(oldPath, newPath)
 }

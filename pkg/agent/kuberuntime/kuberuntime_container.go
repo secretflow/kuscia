@@ -51,8 +51,10 @@ import (
 	"k8s.io/kubernetes/pkg/util/tail"
 	volumeutil "k8s.io/kubernetes/pkg/volume/util"
 
+	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 
 	"github.com/secretflow/kuscia/pkg/agent/utils/format"
 )
@@ -148,7 +150,7 @@ func (m *kubeGenericRuntimeManager) makeMounts(opts *pkgcontainer.RunContainerOp
 	// The reason we create and mount the log file in here (not in kubelet) is because
 	// the file's location depends on the ID of the container, and we need to create and
 	// mount the file before actually starting the container.
-	if opts.PodContainerDir != "" && len(container.TerminationMessagePath) != 0 {
+	if m.agentRuntime == config.ContainerRuntime && opts.PodContainerDir != "" && len(container.TerminationMessagePath) != 0 {
 		// Because the PodContainerDir contains pod uid and container name which is unique enough,
 		// here we just add a random id to make the path unique for different instances
 		// of the same container.
@@ -513,9 +515,40 @@ func (m *kubeGenericRuntimeManager) readLastStringFromContainerLogs(path string)
 	value := int64(pkgcontainer.MaxContainerTerminationMessageLogLines)
 	buf, _ := circbuf.NewBuffer(pkgcontainer.MaxContainerTerminationMessageLogLength)
 	if err := m.ReadLogs(context.Background(), path, "", &v1.PodLogOptions{TailLines: &value}, buf, buf); err != nil {
-		return fmt.Sprintf("Error on reading termination message from logs: %v", err)
+		nlog.Warnf("Error on reading termination message from logs: %v", err)
+		return m.readGeneralLogs(path)
 	}
+
 	return buf.String()
+}
+
+func (m *kubeGenericRuntimeManager) readGeneralLogs(path string) string {
+	notEmpty, fileSize := paths.CheckFileNotEmpty(path)
+	if !notEmpty { // file is empty
+		return ""
+	}
+
+	data, _, err := tail.ReadAtMost(path, pkgcontainer.MaxContainerTerminationMessageLogLength)
+	if err != nil {
+		message := fmt.Sprintf("Error on reading termination message from logs: %v", err)
+		nlog.Warn(message)
+		return message
+	}
+
+	startPos := len(data) - 1
+	lines := 0
+	for ; startPos >= 0 && lines < pkgcontainer.MaxContainerTerminationMessageLogLines; startPos-- {
+		if data[startPos] == '\n' {
+			lines++
+		}
+	}
+	startPos++
+	messageByte := int64(len(data) - startPos)
+	if messageByte >= fileSize {
+		return string(data[startPos:])
+	}
+
+	return fmt.Sprintf("... Ignore %v characters at the beginning ...\n", fileSize-messageByte) + string(data[startPos:])
 }
 
 // getPodContainerStatuses gets all containers' statuses for the pod.

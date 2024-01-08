@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -62,7 +63,9 @@ func (h jobHandler) WatchJob(request *kusciaapi.WatchJobRequest, stream kusciaap
 	defer close(eventCh)
 	go func() {
 		for e := range eventCh {
-			stream.Send(e)
+			if err := stream.Send(e); err != nil {
+				nlog.Errorf("Send job event error: %v", err)
+			}
 		}
 	}()
 	err := h.jobService.WatchJob(context.Background(), request, eventCh)

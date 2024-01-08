@@ -291,12 +291,14 @@ func (s *domainDataGrantService) ListDomainDataGrant(ctx context.Context, reques
 func (s *domainDataGrantService) convertData2Spec(data *kusciaapi.DomainDataGrantData, v *v1alpha1.DomainDataGrant) {
 	var limit *v1alpha1.GrantLimit
 	if data.Limit != nil {
+		grantMode := []v1alpha1.GrantType{"normal"}
 		limit = &v1alpha1.GrantLimit{
 			FlowID:      data.Limit.FlowId,
 			UseCount:    int(data.Limit.UseCount),
 			Initiator:   data.Limit.Initiator,
 			InputConfig: data.Limit.InputConfig,
 			Components:  data.Limit.Components,
+			GrantMode:   grantMode,
 		}
 		if data.Limit.ExpirationTime > 0 {
 			mt := metav1.NewTime(time.Unix(data.Limit.ExpirationTime/int64(time.Second), data.Limit.ExpirationTime%int64(time.Second)))

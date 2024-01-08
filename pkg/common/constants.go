@@ -113,7 +113,8 @@ const (
 
 	TaskResourceReservingTimestampAnnotationKey = "kuscia.secretflow/taskresource-reserving-timestamp"
 
-	ComponentSpecAnnotationKey = "kuscia.secretflow/component-spec"
+	ComponentSpecAnnotationKey  = "kuscia.secretflow/component-spec"
+	AllocatedPortsAnnotationKey = "kuscia.secretflow/allocated-ports"
 )
 
 // Environment variables issued to the task pod.
