@@ -30,6 +30,7 @@ import (
 var (
 	defaultRootDir           = "/home/kuscia/"
 	defaultEndpointForMaster = "https://127.0.0.1:6443"
+	defaultExportPeriod      = uint(5)
 )
 
 type KusciaConfig struct {
@@ -45,25 +46,25 @@ type KusciaConfig struct {
 	CACertFile     string `yaml:"caFile,omitempty"` // Note: for ca cert will be mounted to agent pod
 	CACertData     string `yaml:"caCertData,omitempty"`
 
-	LogLevel string `yaml:"logLevel"`
+	LogLevel     string `yaml:"logLevel"`
+	ExportPeriod uint   `yaml:"exportPeriod,omitempty"`
 
 	Debug        bool `yaml:"debug"`
 	DebugPort    int  `yaml:"debugPort"`
 	CtrDebugPort int  `yaml:"controllerDebugPort"`
 
-	Agent          config.AgentConfig        `yaml:"agent,omitempty"`
-	Master         kusciaconfig.MasterConfig `yaml:"master,omitempty"`
-	ConfManager    cmconf.ConfManagerConfig  `yaml:"confManager,omitempty"`
-	KusciaAPI      *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
-	SecretBackends []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
-	ConfLoaders    []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
-	DataMesh       *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
-	DomainRoute    DomainRouteConfig         `yaml:"domainRoute,omitempty"`
-	Protocol       common.Protocol           `yaml:"protocol"`
-
-	EnvoyIP           string             `yaml:"-"`
-	CoreDNSBackUpConf string             `yaml:"-"`
-	RunMode           common.RunModeType `yaml:"-"`
+	Agent             config.AgentConfig        `yaml:"agent,omitempty"`
+	Master            kusciaconfig.MasterConfig `yaml:"master,omitempty"`
+	ConfManager       cmconf.ConfManagerConfig  `yaml:"confManager,omitempty"`
+	KusciaAPI         *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
+	SecretBackends    []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
+	ConfLoaders       []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
+	DataMesh          *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
+	DomainRoute       DomainRouteConfig         `yaml:"domainRoute,omitempty"`
+	Protocol          common.Protocol           `yaml:"protocol"`
+	EnvoyIP           string                    `yaml:"-"`
+	CoreDNSBackUpConf string                    `yaml:"-"`
+	RunMode           common.RunModeType        `yaml:"-"`
 }
 
 type SecretBackendConfig struct {
@@ -130,6 +131,7 @@ func defaultKusciaConfig(rootDir string) KusciaConfig {
 		DomainCertFile: filepath.Join(rootDir, common.CertPrefix, "domain.crt"),
 		EnvoyIP:        hostIP,
 		KusciaAPI:      kaconfig.NewDefaultKusciaAPIConfig(rootDir),
+		ExportPeriod:   defaultExportPeriod,
 	}
 }
 

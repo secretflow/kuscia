@@ -1,5 +1,5 @@
 // Package metric the function to export metrics to Prometheus
-package metric
+package promexporter
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
@@ -118,18 +118,18 @@ func ProduceMetrics(localDomainName string,
 }
 
 func UpdateMetrics(clusterResults map[string]float64, MetricTypes map[string]string) {
-		for metric, val := range clusterResults {
-			metricId := Formalize(metric)
-			metricTypeId := strings.Join(strings.Split(metric, ".")[2:3], "__")
-			switch MetricTypes[metricTypeId] {
-			case "Counter":
-				counters[metricId].Add(val)
-			case "Gauge":
-				gauges[metricId].Set(val)
-			case "Histogram":
-				histograms[metricId].Observe(val)
-			case "Summary":
-				summaries[metricId].Observe(val)
-			}
+	for metric, val := range clusterResults {
+		metricId := Formalize(metric)
+		metricTypeId := strings.Join(strings.Split(metric, ".")[2:3], "__")
+		switch MetricTypes[metricTypeId] {
+		case "Counter":
+			counters[metricId].Add(val)
+		case "Gauge":
+			gauges[metricId].Set(val)
+		case "Histogram":
+			histograms[metricId].Observe(val)
+		case "Summary":
+			summaries[metricId].Observe(val)
 		}
+	}
 }

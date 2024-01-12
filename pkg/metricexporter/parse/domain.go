@@ -4,19 +4,19 @@ package parse
 import (
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // GetLocalDomainName get the name of a local domain
 func GetLocalDomainName() string {
 	resp, err := http.Get("http://localhost:1054/handshake")
 	if err != nil {
-		log.Fatal(err)
+		nlog.Error(err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -26,11 +26,11 @@ func GetLocalDomainName() string {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		nlog.Error(err)
 	}
 	namespace := jsoniter.Get(body, "namespace").ToString()
 	if len(namespace) == 0 {
-		log.Fatalln("Cannot parse namespace")
+		nlog.Error("Cannot parse namespace")
 	}
 	return namespace
 }
@@ -40,7 +40,7 @@ func GetIpFromDomain(localDomainName string) []string {
 	ipAddresses, err := net.LookupIP(localDomainName)
 	var ipAddr []string
 	if err != nil {
-		log.Fatalln("Cannot find IP address:", err)
+		nlog.Error("Cannot find IP address:", err)
 	}
 	for _, ip := range ipAddresses {
 		ipAddr = append(ipAddr, ip.String())
@@ -54,7 +54,7 @@ func GetClusterAddress() map[string][]string {
 	// get the results of config_dump
 	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
 	if err != nil {
-		log.Fatalln("Fail to get the results of config_dump", err)
+		nlog.Error("Fail to get the results of config_dump", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -64,7 +64,7 @@ func GetClusterAddress() map[string][]string {
 	// parse the results of config_dump
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln("Fail to parse the results of config_dump", err)
+		nlog.Error("Fail to parse the results of config_dump", err)
 	}
 	domainName := GetLocalDomainName()
 	res := make(map[string]interface{})

@@ -1,21 +1,19 @@
 // Package netmon collect metrics from envoy and ss
-package netmon
+package netmetrics
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math"
 	"net/http"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	"E2EMon/parse"
-
 	jsoniter "github.com/json-iterator/go"
+	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/metricexporter/parse"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // GetStatisticFromSs get the statistics of network flows from ss
@@ -24,7 +22,7 @@ func GetStatisticFromSs() []map[string]string {
 	cmd := exec.Command("ss", "-tio4nO")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Cannot get ss.")
+		nlog.Error("Cannot get metrics from ss.", err)
 	}
 	// parse statistics from ss
 	lines := strings.Split(string(output), "\n")
@@ -74,10 +72,24 @@ func GetStatisticFromSs() []map[string]string {
 
 // GetStatisticFromEnvoy get statistics of network flows from envoy
 func GetStatisticFromEnvoy(metrics []string) map[string]float64 {
+	metricSet := make(map[string]bool)
+	stats := make(map[string]float64)
+	filter_regex := "("
+	for _, metric := range metrics {
+		// initialize metricSet
+		metricSet[metric] = true
+		// initialize filter_regex
+		filter_regex += metric + "|"
+	}
+	if len(filter_regex) == 1 {
+		return stats
+	} else {
+		filter_regex = filter_regex[0:len(filter_regex)-1] + ")"
+	}
 	// get statistics from envoy
-	resp, err := http.Get("http://localhost:10000/stats?format=json")
+	resp, err := http.Get("http://localhost:10000/stats?format=json&&filter=" + filter_regex)
 	if err != nil {
-		log.Fatalln("Fail to get the statistics from envoy", err)
+		nlog.Error("Fail to get the statistics from envoy", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -87,15 +99,9 @@ func GetStatisticFromEnvoy(metrics []string) map[string]float64 {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln("Fail to read the results of envoy ", err)
-	}
-	// initialize metricSet
-	metricSet := make(map[string]bool)
-	for _, metric := range metrics {
-		metricSet[metric] = true
+		nlog.Error("Fail to read the results of envoy ", err)
 	}
 	statData := jsoniter.Get(body, "stats")
-	stats := make(map[string]float64)
 	for i := 0; statData.Get(i).Size() != 0; i++ {
 		metric := statData.Get(i).Get("name").ToString()
 		value := statData.Get(i).Get("value").ToFloat64()
@@ -151,7 +157,7 @@ func Sum(metrics []map[string]string, key string) float64 {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			log.Fatalln("fail to parse float", metric[key], "key:", key, "value:", val)
+			nlog.Error("fail to parse float", metric[key], "key:", key, "value:", val)
 		}
 		sum += val
 	}
@@ -169,7 +175,7 @@ func Max(metrics []map[string]string, key string) float64 {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			log.Fatalln("fail to parse float")
+			nlog.Error("fail to parse float")
 		}
 		if val > max {
 			max = val
@@ -184,7 +190,7 @@ func Min(metrics []map[string]string, key string) float64 {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			log.Fatalln("fail to parse float")
+			nlog.Error("fail to parse float")
 		}
 		if val < min {
 			min = val
@@ -207,7 +213,7 @@ func Alert(metric float64, threshold float64) bool {
 }
 
 // AggregateStatistics aggregate statistics using an aggregation function
-func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods int) map[string]float64 {
+func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods uint) map[string]float64 {
 	if len(networkResults) == 0 {
 		return clusterResults
 	}
@@ -236,16 +242,16 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 }
 
 // GetClusterMetricResults Get the results of cluster statistics after filtering
-func GetClusterMetricResults(localDomainName string, clusterAddresses map[string][]string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods int) map[string]float64 {
+func GetClusterMetricResults(runMode pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods uint) map[string]float64 {
 	// get the statistics from SS
 	ssMetrics := GetStatisticFromSs()
 	// get the statistics from envoy
 	clusterStatistics := GetStatisticFromEnvoy(clusterMetrics)
 	// get the source/destination IP from domain names
-	sourceIP := parse.GetIpFromDomain("root-kuscia-lite-" + localDomainName)
+	sourceIP := parse.GetIpFromDomain("root-kuscia-" + runMode + "-" + localDomainName)
 	destinationIP := make(map[string][]string)
 	for _, endpointAddresses := range clusterAddresses {
-		for _, endpointAddress := range endpointAddresses{
+		for _, endpointAddress := range endpointAddresses {
 			destinationIP[endpointAddress] = parse.GetIpFromDomain(strings.Split(endpointAddress, ":")[0])
 		}
 	}
@@ -282,14 +288,4 @@ func GetMetricChange(lastMetricValues map[string]float64, currentMetricValues ma
 
 	}
 	return lastMetricValues, currentMetricValues
-}
-
-// LogClusterMetricResults write the results of cluster statistics into a file
-func LogClusterMetricResults(clusterOutput *os.File, clusterResults map[string]float64) {
-		for metric, val := range clusterResults {
-			_, err := clusterOutput.WriteString(metric + ":" + fmt.Sprintf("%f", val) + ";\n")
-			if err != nil {
-				log.Fatalln("Fail to output monitoring data")
-			}
-		}
 }
