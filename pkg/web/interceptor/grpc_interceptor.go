@@ -31,6 +31,7 @@ func GrpcServerTokenInterceptor(tokenData string) grpc.UnaryServerInterceptor {
 		if err != nil {
 			return nil, err
 		}
+		ctx = context.WithValue(ctx, constants.AuthRole, constants.AuthRoleMaster)
 		return handler(ctx, req)
 	}
 }
@@ -43,6 +44,7 @@ func GrpcStreamServerTokenInterceptor(tokenData string) grpc.StreamServerInterce
 		if err != nil {
 			return err
 		}
+		ctx = context.WithValue(ctx, constants.AuthRole, constants.AuthRoleMaster)
 		return handler(srv, ss)
 	}
 }

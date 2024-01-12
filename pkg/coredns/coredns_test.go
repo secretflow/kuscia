@@ -263,7 +263,7 @@ func Test_startPodController(t *testing.T) {
 
 func Test_kusciaParse_with_no_next(t *testing.T) {
 	c := caddy.NewTestController("kuscia", "")
-	_, err := KusciaParse(context.Background(), c, kubefake.NewSimpleClientset(), "test", "127.0.0.1")
+	_, err := KusciaParse(c, "test", "127.0.0.1")
 	assert.NoError(t, err)
 }
 

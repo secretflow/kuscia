@@ -8,11 +8,11 @@ Kuscia 提供了两套 API 接口，分别是 K8s API 和 Kuscia API。
 
 K8s API 是基于 K8s 接口，以 CRD 的形式提供，请参考 [概念](../concepts/index) 。
 你可以通过 kubectl 或 类似于 [client-go](https://github.com/kubernetes/client-go) 这样的 Go 客户端 进行接入。
-其他语言的接入方式，可以参考其他 K8s SDK 开源项目。
+其他语言的接入方式，可以参考[这里](https://kubernetes.io/docs/reference/using-api/client-libraries/)。
 
 Kuscia API 是在 K8s API 上的一层封装，提供了更加上层的逻辑，你可以通过 GRPC 或者 HTTPS 进行接入。
 
-当前我们推荐基于 Kuscia API 接入隐语能力；仅当业务方对 K8s 非常熟悉，并且有很多 Kuscia API 无法满足的复杂功能需要实现，才推荐基于
+当前我们推荐基于 Kuscia API 接入隐语能力；仅当业务方对 K3s 非常熟悉，并且有很多 Kuscia API 无法满足的复杂功能需要实现，才推荐基于
 K8s API 接入。
 
 {#kuscia-api}
@@ -25,7 +25,7 @@ Kuscia API 提供 HTTPS 和 GRPC 两种访问方法。
 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)
 找到 Kuscia API 的 protobuf 文件。
 
-当你使用 HTTPS 时，你可以访问对应的 HTTPS 端点，Kuscia API 的接口通过 POST+JSON 或 POST+PROTOBUF 的形式提供 ，并且满足
+当你使用 HTTPS 时，你可以访问对应的 HTTPS 端口，Kuscia API 的接口通过 POST+JSON 或 POST+PROTOBUF 的形式提供 ，并且满足
 protobuf
 的 [JSON Mapping](https://protobuf.dev/programming-guides/proto3/#json) 。当请求的 `Content-Type`
 为 `application/x-protobuf` 时，使用 PROTOBUF 编码，否则使用 JSON 编码。
@@ -44,9 +44,9 @@ protobuf
 
 RequestHeader 可以携带自定义的信息。
 
-| 字段           | 类型                | 可选 | 描述           |
-| -------------- | ------------------- | ---- | -------------- |
-| custom_headers | map<string, string> | 是   | 自定义的键值对 |
+| 字段             | 类型                  | 选填 | 描述      |
+|----------------|---------------------|----|---------|
+| custom_headers | map<string, string> | 可选 | 自定义的键值对 |
 
 {#status}
 
@@ -56,23 +56,23 @@ Status 携带请求响应的状态信息。
 
 参考: [GRPC 的 Status 定义](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)
 
-| 字段    | 类型                                                                          | 可选 | 描述         |
-| ------- | ----------------------------------------------------------------------------- | ---- | ------------ |
-| code    | int32                                                                         |      | 错误码       |
-| message | string                                                                        |      | 错误信息     |
-| details | [google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[] |      | 错误详细描述 |
+| 字段      | 类型                                                                            | 选填 | 描述     |
+|---------|-------------------------------------------------------------------------------|----|--------|
+| code    | int32                                                                         | 必填 | 错误码    |
+| message | string                                                                        | 必填 | 错误信息   |
+| details | [google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[] | 可选 | 错误详细描述 |
 
 ## 如何使用 Kuscia API
 
-### 获取 Kuscia API client 证书和私钥
+### 获取 Kuscia API server 证书和私钥
 
-Kuscia master 部署完成之后，会默认生成一个 kuscia API client 证书，你可以通过以下命令获取（以中心化组网模式为例）：
+Kuscia master 部署完成之后，会默认生成一个 kuscia API server 证书，你可以通过以下命令获取（以中心化组网模式为例）：
 
 ```shell
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.key .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/kusciaapi-client.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/ca.crt .
-docker cp ${USER}-kuscia-master:/home/kuscia/etc/certs/token .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.key .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/ca.crt .
+docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/token .
 ```
 
 ### GRPC
@@ -99,36 +99,37 @@ from kuscia.proto.api.v1alpha1.kusciaapi.domain_pb2 import (
     QueryDomainRequest,
 )
 
+
 def query_domain():
-    client_cert_file = "kusciaapi-client.crt"
-    client_key_file = "kusciaapi-client.key"
+    server_cert_file = "kusciaapi-server.crt"
+    server_key_file = "kusciaapi-server.key"
     trusted_ca_file = "ca.crt"
     token_file = "token"
     address = "root-kuscia-master:8083"
-    with open(client_cert_file, 'rb') as client_cert, open(
-         client_key_file, 'rb'
-    ) as client_key, open(trusted_ca_file, 'rb') as trusted_ca, open(token_file, 'rb') as token:
-       credentials = grpc.ssl_channel_credentials(trusted_ca.read(), client_key.read(), client_cert.read())
-       channel = grpc.secure_channel(address, credentials)
-       domainStub = DomainServiceStub(channel)
-       metadata = [('token', token.read())]
-       ret = domainStub.QueryDomain(request=QueryDomainRequest(domain_id="alice"),metadata=metadata)
-       print(ret)
+    with open(server_cert_file, 'rb') as server_cert, open(
+            server_key_file, 'rb'
+    ) as server_key, open(trusted_ca_file, 'rb') as trusted_ca, open(token_file, 'rb') as token:
+        credentials = grpc.ssl_channel_credentials(trusted_ca.read(), server_key.read(), server_cert.read())
+        channel = grpc.secure_channel(address, credentials)
+        domainStub = DomainServiceStub(channel)
+        metadata = [('token', token.read())]
+        ret = domainStub.QueryDomain(request=QueryDomainRequest(domain_id="alice"), metadata=metadata)
+        print(ret)
 ```
 
 你也可以使用 GRPC 的客户端工具连接上 Kuscia API，如 [grpcurl](https://github.com/fullstorydev/grpcurl/releases)，你需要替换 {} 中的内容：
-
+> 如果 GRPC 的主机端口是 8083 ，则可以执行下面的命令，端口号不是 8083 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
-grpcurl --cert kusciaapi-client.crt \
-        --key kusciaapi-client.key \
-        --cacert ca.crt \
-        --header 'Token: {token}' \
+grpcurl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
+        --key /home/kuscia/var/certs/kusciaapi-server.key \
+        --cacert /home/kuscia/var/certs/ca.crt \
+        -H 'Token: {token}' \
         -d '{"domain_id": "alice"}' \
         ${USER}-kuscia-master:8083 kuscia.proto.api.v1alpha1.kusciaapi.DomainService.QueryDomain
 ```
 
-GRPC 容器内端点默认在：master 或者 autonomy 节点的 8083 端口。
-GRPC 主机上端点：master 或者 autonomy 可以通过 docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名} 获得 8082 端口的主机映射。
+GRPC 容器内端口默认在：master 或者 autonomy 节点的 8083。
+GRPC 主机上端口：master 或者 autonomy 可以通过 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 获得 8083 端口的主机映射。
 
 ### HTTPS
 
@@ -140,15 +141,15 @@ GRPC 主机上端点：master 或者 autonomy 可以通过 docker inspect --form
 3. 发送请求。
 
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：
-
+> 如果 GRPC 的主机端口是 8082 ，则可以执行下面的命令，端口号不是 8082 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
-curl --cert kusciaapi-client.crt \
-     --key kusciaapi-client.key \
-     --cacert ca.crt \
+curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
+     --key /home/kuscia/var/certs/kusciaapi-server.key \
+     --cacert /home/kuscia/var/certs/ca.crt \
      --header 'Token: {token}' --header 'Content-Type: application/json' \
      'https://{{USER}-kuscia-master}:8082/api/v1/domain/query' \
      -d '{"domain_id": "alice"}'
 ```
 
-HTTPS 容器内端点默认在：master 或者 autonomy 节点的 8082 端口。
-HTTPS 主机上端点：master 或者 autonomy 可以通过 docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名} 获得 8083 端口的主机映射
+HTTPS 容器内端口默认在：master 或者 autonomy 节点的 8082 。
+HTTPS 主机上端口：master 或者 autonomy 可以通过 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 获得 8082 端口的主机映射

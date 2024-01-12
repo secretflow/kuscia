@@ -19,20 +19,19 @@ import (
 	"net/http"
 
 	cmconfig "github.com/secretflow/kuscia/pkg/confmanager/config"
+	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/configuration"
 	"github.com/secretflow/kuscia/pkg/confmanager/interceptor"
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
 	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	apisvc "github.com/secretflow/kuscia/pkg/kusciaapi/service"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/decorator"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/beans"
-	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
 
 	"github.com/gin-gonic/gin"
@@ -76,10 +75,8 @@ func (s *httpServerBean) ServerName() string {
 }
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
-	configurationService, err := service.NewConfigurationService(s.config)
-	if err != nil {
-		nlog.Fatalf("Failed to init configuration service : %v", err)
-	}
+	certificateService := service.Exporter.CertificateService()
+	configurationService := service.Exporter.ConfigurationService()
 
 	healthService := apisvc.NewHealthService()
 	// define router groups
@@ -97,6 +94,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "query",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, configuration.NewQueryConfigurationHandler(configurationService))},
+				},
+			},
+			GroupMiddleware: []gin.HandlerFunc{interceptor.HTTPTLSCertInfoInterceptor},
+		},
+		{
+			Group: "api/v1/cm/certificate",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "generate",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, certificate.NewGenerateKeyCertsHandler(certificateService))},
 				},
 			},
 			GroupMiddleware: []gin.HandlerFunc{interceptor.HTTPTLSCertInfoInterceptor},
@@ -125,18 +133,16 @@ func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.
 }
 
 func convertToGinConf(conf *cmconfig.ConfManagerConfig) beans.GinBeanConfig {
-	tlsConf := &frameworkconfig.TLSConfig{
-		EnableTLS:      true,
-		CAPath:         conf.TLSConfig.RootCAFile,
-		ServerCertPath: conf.TLSConfig.ServerCertFile,
-		ServerKeyPath:  conf.TLSConfig.ServerKeyFile,
-	}
 	return beans.GinBeanConfig{
 		Logger:         nil,
 		ReadTimeout:    &conf.ReadTimeout,
 		WriteTimeout:   &conf.WriteTimeout,
 		IdleTimeout:    &conf.IdleTimeout,
 		MaxHeaderBytes: nil,
-		TLSConfig:      tlsConf,
+		TLSServerConfig: &beans.TLSServerConfig{
+			CACert:     conf.TLS.RootCA,
+			ServerCert: conf.TLS.ServerCert,
+			ServerKey:  conf.TLS.ServerKey,
+		},
 	}
 }

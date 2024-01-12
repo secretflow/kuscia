@@ -1,0 +1,165 @@
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service DomainDataGrantService {
+  rpc CreateDomainDataGrant(CreateDomainDataGrantRequest)
+      returns (CreateDomainDataGrantResponse);
+
+  rpc UpdateDomainDataGrant(UpdateDomainDataGrantRequest)
+      returns (UpdateDomainDataGrantResponse);
+
+  rpc DeleteDomainDataGrant(DeleteDomainDataGrantRequest)
+      returns (DeleteDomainDataGrantResponse);
+
+  rpc QueryDomainDataGrant(QueryDomainDataGrantRequest)
+      returns (QueryDomainDataGrantResponse);
+
+  rpc BatchQueryDomainDataGrant(BatchQueryDomainDataGrantRequest)
+      returns (BatchQueryDomainDataGrantResponse);
+
+  rpc ListDomainDataGrant(ListDomainDataGrantRequest)
+      returns (ListDomainDataGrantResponse);
+}
+
+message CreateDomainDataGrantRequest {
+  RequestHeader header = 1;
+  string domaindatagrant_id = 2;
+  string domaindata_id = 3;
+  string grant_domain = 4;
+  GrantLimit limit = 5;
+  map<string, string> description = 6;
+  string signature = 7;
+  string domain_id = 8;
+}
+
+message CreateDomainDataGrantResponse {
+  Status status = 1;
+  CreateDomainDataGrantResponseData data = 2;
+}
+
+message CreateDomainDataGrantResponseData {
+  // id of created domaindatagrant
+  string domaindatagrant_id = 1;
+}
+
+message DomainDataGrant {
+  DomainDataGrantData data = 1;
+  DomainDataGrantStatus status = 2;
+}
+
+message DomainDataGrantStatus {
+  string phase = 1;
+  string message = 2;
+  repeated UseRecord records = 3;
+}
+
+message UseRecord {
+  int64 use_time = 1;
+  string grant_domain = 2;
+  string component = 3;
+  string output = 4;
+}
+
+message DomainDataGrantData {
+  string domaindatagrant_id = 1;
+  string author = 2;
+  string domaindata_id = 3;
+  string grant_domain = 4;
+  GrantLimit limit = 5;
+  map<string, string> description = 6;
+  string signature = 7;
+  string domain_id = 8;
+}
+
+message GrantLimit {
+  int64 expiration_time = 1;
+  int32 use_count = 2;
+  string flow_id = 3;
+  repeated string components = 4;
+  string initiator = 5;
+  string input_config = 6;
+}
+
+message UpdateDomainDataGrantRequest {
+  RequestHeader header = 1;
+  string domaindatagrant_id = 2;
+  string domaindata_id = 3;
+  string grant_domain = 4;
+  GrantLimit limit = 5;
+  map<string, string> description = 6;
+  string signature = 7;
+  string domain_id = 8;
+}
+
+message UpdateDomainDataGrantResponse { Status status = 1; }
+
+message DeleteDomainDataGrantRequest {
+  RequestHeader header = 1;
+  string domain_id = 2;
+  string domaindatagrant_id = 3;
+}
+
+message DeleteDomainDataGrantResponse { Status status = 1; }
+
+message QueryDomainDataGrantRequestData {
+  string domain_id = 1;
+  string domaindatagrant_id = 2;
+}
+
+message QueryDomainDataGrantRequest {
+  RequestHeader header = 1;
+  string domain_id = 2;
+  string domaindatagrant_id = 3;
+}
+
+message QueryDomainDataGrantResponse {
+  Status status = 1;
+  DomainDataGrant data = 2;
+}
+
+message BatchQueryDomainDataGrantRequest {
+  RequestHeader header = 1;
+  repeated QueryDomainDataGrantRequestData data = 2;
+}
+
+message BatchQueryDomainDataGrantResponse {
+  Status status = 1;
+  repeated DomainDataGrant data = 2;
+}
+
+message ListDomainDataGrantRequest {
+  RequestHeader header = 1;
+  ListDomainDataGrantRequestData data = 2;
+}
+
+message ListDomainDataGrantRequestData {
+  string domain_id = 1;
+  string grant_domain = 2;
+  string domaindata_vendor = 3;
+}
+
+message ListDomainDataGrantResponse {
+  Status status = 1;
+  DomainDataGrantList data = 2;
+}
+
+message DomainDataGrantList {
+  repeated DomainDataGrant domaindatagrant_list = 1;
+}

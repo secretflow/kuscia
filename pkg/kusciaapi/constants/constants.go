@@ -14,12 +14,14 @@
 
 package constants
 
-const CertPathPrefix = "etc/certs"
-
 const RouteSucceeded = "Succeeded"
 const RouteFailed = "Failed"
 
 const (
 	DomainDataStatusAvailable   = "Available"
 	DomainDataStatusUnavailable = "Unavailable"
+)
+
+const (
+	KusciaMasterDomain = "master"
 )

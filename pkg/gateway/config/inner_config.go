@@ -23,6 +23,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restclient.Config) (*MasterConfig, error) {
@@ -37,7 +38,7 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 			return nil, err
 		}
 
-		protocol, host, port, err := utils.ParseURL(kubeConfig.Host)
+		protocol, host, port, path, err := utils.ParseURL(kubeConfig.Host)
 		if err != nil {
 			return nil, err
 		}
@@ -51,15 +52,25 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 			}
 		}
 
+		var kusciaAPICluster *ClusterConfig
+		if masterConfig.KusciaAPI != nil {
+			kusciaAPICluster, err = LoadClusterConfig(masterConfig.KusciaAPI.TLSConfig, masterConfig.KusciaAPI.Endpoint)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		return &MasterConfig{
 			Master: true,
 			APIServer: &ClusterConfig{
 				Host:     host,
 				Port:     port,
+				Path:     path,
 				Protocol: protocol,
 				TLSCert:  apiCert,
 			},
 			KusciaStorage: storageCluster,
+			KusciaAPI:     kusciaAPICluster,
 			APIWhitelist:  masterConfig.APIWhitelist,
 		}, nil
 	}
@@ -109,7 +120,7 @@ func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*Cluste
 		return nil, err
 	}
 
-	protocol, host, port, err := utils.ParseURL(endpoint)
+	protocol, host, port, path, err := utils.ParseURL(endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -117,47 +128,65 @@ func LoadClusterConfig(config *kusciaconfig.TLSConfig, endpoint string) (*Cluste
 	return &ClusterConfig{
 		Host:     host,
 		Port:     port,
+		Path:     path,
 		Protocol: protocol,
 		TLSCert:  cert,
 	}, nil
 }
 
 func LoadTLSCertByTLSConfig(config *kusciaconfig.TLSConfig) (*xds.TLSCert, error) {
-	if config == nil {
+	if config == nil || !config.EnableTLS {
 		return nil, nil
 	}
 
 	cert := ""
+	if config.CertData != "" {
+		cert = config.CertData
+	} else {
+		if config.CertFile != "" {
+			certBytes, err := os.ReadFile(config.CertFile)
+			if err != nil {
+				nlog.Errorf("LoadTLSCertByTLSConfig read CertFile failed")
+				return nil, err
+			}
+			cert = string(certBytes)
+		}
+	}
+
 	key := ""
-	if config.CertFile != "" {
-		certBytes, err := os.ReadFile(config.CertFile)
-		if err != nil {
-			return nil, err
+	if config.KeyData != "" {
+		key = config.KeyData
+	} else {
+		if config.KeyFile != "" {
+			keyBytes, err := os.ReadFile(config.KeyFile)
+			if err != nil {
+				return nil, err
+			}
+			key = string(keyBytes)
 		}
 
-		keyBytes, err := os.ReadFile(config.KeyFile)
-		if err != nil {
-			return nil, err
-		}
-
-		cert = string(certBytes)
-		key = string(keyBytes)
 	}
 
 	ca := ""
-	if config.CAFile != "" {
-		data, err := os.ReadFile(config.CAFile)
-		if err != nil {
-			return nil, fmt.Errorf("invalid ca file: %s, detail: %v", config.CAFile, err)
+	if config.CAData != "" {
+		ca = config.CAData
+	} else {
+		if config.CAFile != "" {
+			data, err := os.ReadFile(config.CAFile)
+			if err != nil {
+				return nil, fmt.Errorf("invalid ca file: %s, detail: %v", config.CAFile, err)
+			}
+			ca = string(data)
 		}
-		ca = string(data)
 	}
 
-	return &xds.TLSCert{
+	result := &xds.TLSCert{
 		CertData: cert,
 		KeyData:  key,
 		CAData:   ca,
-	}, nil
+	}
+
+	return result, nil
 }
 
 func LoadTLSCertByKubeConfig(config *restclient.Config) (*xds.TLSCert, error) {

@@ -31,12 +31,24 @@ const (
 	ErrPatchDomainDataFailed       = 12204
 	ErrDeleteDomainDataFailed      = 12205
 
-	ErrCreateDomainDataSource       = 12300
-	ErrParseDomainDataSourceFailed  = 12301
-	ErrQueryDomainDataSource        = 12302
-	ErrDeleteDomainDataSourceFailed = 12303
-	ErrDomainDataSourceExists       = 12304
-	ErrDomainDataSourceNotExists    = 12305
+	ErrCreateDomainDataSource            = 12300
+	ErrParseDomainDataSourceFailed       = 12301
+	ErrQueryDomainDataSource             = 12302
+	ErrDeleteDomainDataSourceFailed      = 12303
+	ErrDomainDataSourceExists            = 12304
+	ErrDomainDataSourceNotExists         = 12305
+	ErrGetDomainDataSourceFromKubeFailed = 12306
+	ErrDecodeDomainDataSourceInfoFailed  = 12307
+	ErrEncodeDomainDataSourceInfoFailed  = 12308
+	ErrMergeDomainDataSourceFailed       = 12309
+	ErrPatchDomainDataSourceFailed       = 12310
+
+	ErrCreateDomainDataGrant    = 12400
+	ErrUpdateDomainDataGrant    = 12401
+	ErrQueryDomainDataGrant     = 12402
+	ErrDeleteDomainDataGrant    = 12403
+	ErrDomainDataGrantExists    = 12404
+	ErrDomainDataGrantNotExists = 12405
 )
 
 func GetDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
@@ -45,6 +57,16 @@ func GetDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.KusciaEr
 	}
 	if errors.IsAlreadyExists(err) {
 		return ErrDomainDataSourceExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainDataGrantErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataGrantNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataGrantExists
 	}
 	return defaultErrorCode
 }

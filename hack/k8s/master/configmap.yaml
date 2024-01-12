@@ -1,0 +1,26 @@
+apiVersion: v1
+data:
+  kuscia.yaml: |-
+    # 部署模式
+    mode: Master
+    # 节点ID
+    # 示例: domainID: kuscia-system
+    domainID: {{.DOMAIN_ID}}
+    # 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发
+    # 注意: 目前节点私钥仅支持 pkcs#1 格式的: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"
+    # 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
+    domainKeyData: {{.DOMAIN_KEY_DATA}}
+
+    # 日志级别 INFO、DEBUG、WARN
+    logLevel: INFO
+
+    ####### master节点配置 #########
+    # 数据库连接串，不填默认使用
+    # 注意: database 名称暂不支持 "-" 特殊字符
+    datastoreEndpoint: "mysql://user:password@tcp(host:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
+    # KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
+    protocol: NOTLS
+kind: ConfigMap
+metadata:
+  name: kuscia-master-cm
+  namespace: kuscia-master

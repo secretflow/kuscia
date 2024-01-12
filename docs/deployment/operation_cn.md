@@ -75,7 +75,7 @@ docker exec -it ${USER}-kuscia-master bash
 
 #### 查看 Kuscia 安装的 CRD
 
-Kuscia 基于通过 [Kubernetes](https://kubernetes.io/zh-cn/) 提供的 CRD 拓展能力来实现隐私计算的调度能力。如果你对 Kubernetes 比较熟悉，你可以通过查看 CRD 来了解
+Kuscia 基于通过 [Kubernetes](https://kubernetes.io/zh-cn/) 提供的 CRD 拓展能力来实现隐私计算的调度能力。如果你对 K3s 比较熟悉，你可以通过查看 CRD 来了解
 Kuscia
 提供的能力。
 

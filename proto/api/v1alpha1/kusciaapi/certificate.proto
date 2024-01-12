@@ -1,0 +1,59 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service CertificateService {
+  rpc GenerateKeyCerts(GenerateKeyCertsRequest) returns (GenerateKeyCertsResponse);
+}
+
+message GenerateKeyCertsRequest {
+  // Common Name, required
+  string common_name = 1;
+  // Country, optional
+  string country = 2;
+  // Organization, optional
+  string organization = 3;
+  // Organization Unit, optional
+  string organization_unit = 4;
+  // Locality, optional
+  string locality = 5;
+  // Province, optional
+  string province = 6;
+  // Street Address, optional
+  string street_address = 7;
+  // Valid Duration Seconds, optional, from now, default: 1 day
+  int64 duration_sec = 8;
+  // Key Type, Enum: [PKCS#1, PKCS#8], optional, default: PKCS#1
+  string key_type = 9;
+  // Subject Alt Name, optional, example: IP:127.0.0.1,IP:2.2.2.2,DNS:localhost,DNS:www.example.com
+  //  string san = 10;
+  // Extensions, optional
+  //  map<string, string> extensions = 11;
+}
+
+message GenerateKeyCertsResponse {
+  Status status = 1;
+  // The generate private key.Default PKCS#1. Base64 Encoded.
+  string key = 2;
+  // The cert chain of generate cert file.The first is the generate cert, The last is domain root ca cert.Base64 Encoded.
+  repeated string cert_chain = 3;
+}

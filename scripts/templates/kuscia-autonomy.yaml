@@ -1,0 +1,44 @@
+# 部署模式
+mode: Autonomy
+# 节点ID
+domainID: {{.DOMAIN_ID}}
+# 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发， 经过 base64 编码
+# 示例：LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+domainKeyData: {{.DOMAIN_KEY_DATA}}
+
+# 日志级别 INFO、DEBUG、WARN
+logLevel: INFO
+
+# runc or runk or runp
+runtime: runc
+
+# 当 runtime 为 runk 时配置
+runk:
+  # 任务调度到指定的机构 k8s namespace上
+  namespace: ""
+  # k8s 集群的 pod dns 配置， 用于解析节点的应用域名
+  dnsServers:
+#    - kuscia-dns-lb-server
+  #  k8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
+  kubeconfigFile:
+
+# 节点的可调度容量，runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
+capacity:
+  cpu: #4
+  memory: #8Gi
+  pods: #500
+  storage: #100Gi
+
+# agent 镜像配置
+image:
+  pullPolicy: #使用镜像仓库|使用本地
+  defaultRegistry: ""
+  registries:
+    - name: ""
+      endpoint: ""
+      username: ""
+      password: ""
+
+# 数据库连接串，不填默认使用 sqlite
+# 示例：mysql://username:password@tcp(hostname:3306)/database-name
+datastoreEndpoint: ""

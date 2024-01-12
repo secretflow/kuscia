@@ -24,7 +24,7 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 )
 
-// ConfigurationHandler GRPC Handler
+// configurationHandler GRPC Handler
 type configurationHandler struct {
 	configurationService service.IConfigurationService
 	confmanager.UnimplementedConfigurationServiceServer
@@ -43,7 +43,8 @@ func (h *configurationHandler) CreateConfiguration(ctx context.Context, request 
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "require client tls ou"),
 		}, nil
 	}
-	return h.configurationService.CreateConfiguration(ctx, request, tlsCert.OrganizationalUnit[0]), nil
+	response := h.configurationService.CreateConfiguration(ctx, request, tlsCert.OrganizationalUnit[0])
+	return &response, nil
 }
 
 func (h *configurationHandler) QueryConfiguration(ctx context.Context, request *confmanager.QueryConfigurationRequest) (*confmanager.QueryConfigurationResponse, error) {
@@ -53,5 +54,6 @@ func (h *configurationHandler) QueryConfiguration(ctx context.Context, request *
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "require client tls ou"),
 		}, nil
 	}
-	return h.configurationService.QueryConfiguration(ctx, request, tlsCert.OrganizationalUnit[0]), nil
+	response := h.configurationService.QueryConfiguration(ctx, request, tlsCert.OrganizationalUnit[0])
+	return &response, nil
 }

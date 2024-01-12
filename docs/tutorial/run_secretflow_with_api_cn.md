@@ -14,12 +14,12 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/etc/certs/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
-| kusciaapi-client.key | 客户端私钥文件                                          |
-| kusciaapi-client.crt | 客户端证书文件                                          |
+| kusciaapi-server.key | 服务端私钥文件                                          |
+| kusciaapi-server.crt | 服务端证书文件                                          |
 | ca.crt               | CA 证书文件                                             |
 | token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
 
@@ -27,12 +27,12 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 证书的配置参考[配置授权](../deployment/deploy_p2p_cn.md#配置授权)
 
-这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/etc/certs/`目录下：
+这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
-| kusciaapi-client.key | 客户端私钥文件                                          |
-| kusciaapi-client.crt | 客户端证书文件                                          |
+| kusciaapi-server.key | 服务端私钥文件                                          |
+| kusciaapi-server.crt | 服务端证书文件                                          |
 | ca.crt               | CA 证书文件                                             |
 | token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
 
@@ -106,12 +106,12 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 在 kuscia-master 容器终端中，执行以下命令，内容如下：
 
 ```shell
-curl -X POST 'https://localhost:8082/api/v1/job/create' \
---header "Token: $(cat /home/kuscia/etc/certs/token)" \
+curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
+--header "Token: $(cat /home/kuscia/var/certs/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
---key '/home/kuscia/etc/certs/kusciaapi-client.key' \
---cacert '/home/kuscia/etc/certs/ca.crt' \
+--cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
+--key '/home/kuscia/var/certs/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/certs/ca.crt' \
 -d '{
     "job_id": "job-best-effort-linear",
     "initiator": "alice",
@@ -121,7 +121,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
             "parties": [{"domain_id": "alice"},{"domain_id": "bob"}],
             "alias": "job-psi",
             "task_id": "job-psi",
-            "task_input_config": "{\"sf_datasource_config\":{\"bob\":{\"id\":\"default-data-source\"},\"alice\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}]},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}],\"inputs\":[{\"type\":\"sf.table.individual\",\"meta\":{\"@type\":\"type.googleapis.com/secretflow.component.IndividualTable\",\"schema\":{\"ids\":[\"id1\"],\"features\":[\"age\",\"education\",\"default\",\"balance\",\"housing\",\"loan\",\"day\",\"duration\",\"campaign\",\"pdays\",\"previous\",\"job_blue-collar\",\"job_entrepreneur\",\"job_housemaid\",\"job_management\",\"job_retired\",\"job_self-employed\",\"job_services\",\"job_student\",\"job_technician\",\"job_unemployed\",\"marital_divorced\",\"marital_married\",\"marital_single\"],\"id_types\":[\"str\"],\"feature_types\":[\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\"]},\"num_lines\":\"-1\"},\"data_refs\":[{\"uri\":\"alice.csv\",\"party\":\"alice\",\"format\":\"csv\"}]},{\"type\":\"sf.table.individual\",\"meta\":{\"@type\":\"type.googleapis.com/secretflow.component.IndividualTable\",\"schema\":{\"ids\":[\"id2\"],\"features\":[\"contact_cellular\",\"contact_telephone\",\"contact_unknown\",\"month_apr\",\"month_aug\",\"month_dec\",\"month_feb\",\"month_jan\",\"month_jul\",\"month_jun\",\"month_mar\",\"month_may\",\"month_nov\",\"month_oct\",\"month_sep\",\"poutcome_failure\",\"poutcome_other\",\"poutcome_success\",\"poutcome_unknown\"],\"labels\":[\"y\"],\"id_types\":[\"str\"],\"feature_types\":[\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\"],\"label_types\":[\"i32\"]},\"num_lines\":\"-1\"},\"data_refs\":[{\"uri\":\"bob.csv\",\"party\":\"bob\",\"format\":\"csv\"}]}]},\"sf_output_uris\":[\"psi-output.csv\"],\"sf_output_ids\":[\"psi-output\"]}",
+            "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
             "priority": "100"
         }, {
             "app_image": "secretflow-image",
@@ -129,7 +129,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
             "alias": "job-split",
             "task_id": "job-split",
             "dependencies": ["job-psi"],
-            "task_input_config": "{\"sf_datasource_config\":{\"bob\":{\"id\":\"default-data-source\"},\"alice\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}]},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}],\"inputs\":[{\"type\":\"sf.table.vertical_table\",\"meta\":{\"@type\":\"type.googleapis.com/secretflow.component.VerticalTable\",\"schemas\":[{\"ids\":[\"id1\"],\"features\":[\"age\",\"education\",\"default\",\"balance\",\"housing\",\"loan\",\"day\",\"duration\",\"campaign\",\"pdays\",\"previous\",\"job_blue-collar\",\"job_entrepreneur\",\"job_housemaid\",\"job_management\",\"job_retired\",\"job_self-employed\",\"job_services\",\"job_student\",\"job_technician\",\"job_unemployed\",\"marital_divorced\",\"marital_married\",\"marital_single\"],\"id_types\":[\"str\"],\"feature_types\":[\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\"]},{\"ids\":[\"id2\"],\"features\":[\"contact_cellular\",\"contact_telephone\",\"contact_unknown\",\"month_apr\",\"month_aug\",\"month_dec\",\"month_feb\",\"month_jan\",\"month_jul\",\"month_jun\",\"month_mar\",\"month_may\",\"month_nov\",\"month_oct\",\"month_sep\",\"poutcome_failure\",\"poutcome_other\",\"poutcome_success\",\"poutcome_unknown\",\"y\"],\"id_types\":[\"str\"],\"feature_types\":[\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"float\",\"int\"]}]},\"data_refs\":[{\"uri\":\"psi-output.csv\",\"party\":\"alice\",\"format\":\"csv\"},{\"uri\":\"psi-output.csv\",\"party\":\"bob\",\"format\":\"csv\"}]}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"]}",
+            "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
             "priority": "100"
         }
     ]
@@ -150,7 +150,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/create' \
 
 ### 使用你自己的数据配置 KusciaJob
 
-如果你要使用你自己的数据，可以将两个算子中的`tasks.task_input_config.sf_node_eval_param`的`inputs`和`output_uris`的数据文件路径修改为你在[准备你自己的数据](#prepare-your-own-data)中的数据文件目标路径即可。
+如果你要使用你自己的数据，可以将两个算子中的 `taskInputConfig.sf_input_ids` 的数据文件 `id` 修改为你在 [准备你自己的数据](#prepare-your-own-data) 中的 `domaindata_id` 即可。
 
 ### 更多相关
 
@@ -171,12 +171,12 @@ job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的
 请求参数`job_ids`是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。
 
 ```shell
-curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
---header "Token: $(cat /home/kuscia/etc/certs/token)" \
+curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
+--header "Token: $(cat /home/kuscia/var/certs/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
---key '/home/kuscia/etc/certs/kusciaapi-client.key' \
---cacert '/home/kuscia/etc/certs/ca.crt' \
+--cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
+--key '/home/kuscia/var/certs/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/certs/ca.crt' \
 -d '{
     "job_ids": ["job-best-effort-linear"]
 }'
@@ -213,12 +213,46 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
                 {
                   "domain_id": "alice",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-spu.alice.svc"
+                    },
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-fed.alice.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-psi-0-global.alice.svc:8081"
+                    }
+                  ]
                 },
                 {
                   "domain_id": "bob",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-fed.bob.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-psi-0-global.bob.svc:8081"
+                    },
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-spu.bob.svc"
+                    }
+                  ]
                 }
               ]
             },
@@ -233,12 +267,46 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
                 {
                   "domain_id": "alice",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-split-0-spu.alice.svc"
+                    },
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-split-0-fed.alice.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-split-0-global.alice.svc:8081"
+                    }
+                  ]
                 },
                 {
                   "domain_id": "bob",
                   "state": "Succeeded",
-                  "err_msg": ""
+                  "err_msg": "",
+                  "endpoints": [
+                    {
+                      "port_name": "fed",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-fed.bob.svc"
+                    },
+                    {
+                      "port_name": "global",
+                      "scope": "Domain",
+                      "endpoint": "job-psi-0-global.bob.svc:8081"
+                    },
+                    {
+                      "port_name": "spu",
+                      "scope": "Cluster",
+                      "endpoint": "job-psi-0-spu.bob.svc"
+                    }
+                  ]
                 }
               ]
             }
@@ -261,12 +329,12 @@ curl -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 KusciaJob.
 
 ```shell
-curl -X POST 'https://localhost:8082/api/v1/job/delete' \
---header "Token: $(cat /home/kuscia/etc/certs/token)" \
+curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
+--header "Token: $(cat /home/kuscia/var/certs/token)" \
 --header 'Content-Type: application/json' \
---cert '/home/kuscia/etc/certs/kusciaapi-client.crt' \
---key '/home/kuscia/etc/certs/kusciaapi-client.key' \
---cacert '/home/kuscia/etc/certs/ca.crt' \
+--cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
+--key '/home/kuscia/var/certs/kusciaapi-server.key' \
+--cacert '/home/kuscia/var/certs/ca.crt' \
 -d '{
     "job_id": "job-best-effort-linear"
 }'
@@ -284,7 +352,7 @@ curl -X POST 'https://localhost:8082/api/v1/job/delete' \
 
 ## 算子参数描述
 
-KusciaJob 的算子参数由`taskInputConfig`字段定义，对于不同的算子，算子的参数不同。
+KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。
 
 对于 secretflow ，请参考：[Secretflow 官网](https://www.secretflow.org.cn/)。
 

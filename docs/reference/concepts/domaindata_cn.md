@@ -56,7 +56,7 @@ spec:
 
 在该示例中:
 
-- `.metadata.labels`：标签在 K8s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
+- `.metadata.labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
 - `.metadata.name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
 - `.metadata.namespace`: 表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
 - `.spec.attributes`：表示 DomainData 的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，详细请查看 [参考](#refer)。
@@ -162,9 +162,9 @@ Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 80
 
 1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainData。
 ```shell
-curl -X POST 'http://{{USER-kuscia-lite-alice}:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
-  "domaindata_id": "alice"
-}'
+docker exec -it ${USER}-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
+  "domaindata_id": "alice-table"
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
 
@@ -205,7 +205,7 @@ spec:
 
 DomainData `metadata` 的子字段详细介绍如下：
 
-- `labels`：标签在 K8s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
+- `labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
 - `name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
 - `namespace`：表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
 

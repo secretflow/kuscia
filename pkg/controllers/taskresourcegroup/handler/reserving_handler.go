@@ -138,7 +138,7 @@ func (h *ReservingHandler) summarizeTaskResourcesInfo(now metav1.Time, trg *kusc
 		// patch all party status phase to failed.
 		trCondReason := "Task resource group state changed to reserve-failed, so set the task resource status to failed"
 		if err = patchTaskResourceStatus(trg, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, trCondReason, h.kusciaClient, h.trLister); err != nil {
-			needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Patch task resoueces status failed, %v", err.Error()))
+			needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("Patch task resources status failed, %v", err.Error()))
 			return needUpdate, err
 		}
 
@@ -147,7 +147,8 @@ func (h *ReservingHandler) summarizeTaskResourcesInfo(now metav1.Time, trg *kusc
 			trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
 		}
 		trg.Status.LastTransitionTime = &now
-		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse, fmt.Sprintf("The remaining number of parties %v is less than the schedulable threshold %v", len(trg.Spec.Parties)-failedCount, trg.Spec.MinReservedMembers))
+		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionFalse,
+			fmt.Sprintf("The remaining no-failed parties count %v is less than the schedulable threshold %v", len(trg.Spec.Parties)-failedCount, trg.Spec.MinReservedMembers))
 		return needUpdate, nil
 	}
 	return needUpdate, nil

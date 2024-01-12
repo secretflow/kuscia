@@ -2,5 +2,5 @@
     kuscia {
         fallthrough
     }
-    forward . /home/kuscia/etc/resolv.conf
+    forward . /home/kuscia/var/tmp/resolv.conf
 }

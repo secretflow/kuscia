@@ -1,7 +1,7 @@
 # KusciaDeployment
 
 在 Kuscia 中，常驻服务是通过 KusciaDeployment 进行管理的。例如，可以通过 KusciaDeployment 管理联合预测服务。
-如果要运行常驻服务，那么仅需创建一个 KusciaDeployment。KusciaDeployment Controller 将会根据 KusciaDeployment 的描述信息，在参与方节点下创建与常驻服务有关的 K8s 内置资源，例如 Service, Deployment 等。
+如果要运行常驻服务，那么仅需创建一个 KusciaDeployment。KusciaDeployment Controller 将会根据 KusciaDeployment 的描述信息，在参与方节点下创建与常驻服务有关的 K3s 内置资源，例如 Service, Deployment 等。
 
 基于 KusciaDeployment，你可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。
 
@@ -144,7 +144,7 @@ kubectl get kd secretflow-serving -o jsonpath={.status} | jq
 }
 ```
 
-3. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 Service 资源。
+3. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Service 资源。
 
 下面以 alice 节点为例：
 
@@ -156,7 +156,7 @@ secretflow-serving-service        ClusterIP   None         <none>        53509/T
 secretflow-serving-brpc-builtin   ClusterIP   None         <none>        53511/TCP   89m
 ```
 
-4. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 ConfigMap 资源。
+4. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 ConfigMap 资源。
 
 下面以 alice 节点为例：
 
@@ -166,7 +166,7 @@ NAME                                DATA   AGE
 secretflow-serving-configtemplate   1      89m
 ```
 
-5. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 Deployment 资源。
+5. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Deployment 资源。
 
 下面以 alice 节点为例：
 
@@ -176,7 +176,7 @@ NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
 secretflow-serving   1/1     1            1           89m
 ```
 
-6. 运行以下命令查看 KusciaDeployment 相关的 K8s 内置 Pod 资源。
+6. 运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Pod 资源。
 
 下面以 alice 节点为例：
 
@@ -295,18 +295,17 @@ status:
 
 KusciaDeployment `metadata` 的子字段详细介绍如下：
 
-- `labels`：表示 KusciaDeployment 的标签。当配置`kuscia.secretflow/app-type: serving`标签时，KusciaDeployment Controller 在创建 K8s 内置的 Deployment 资源时，会新增环境变量`SERVING_ID`，
-该环境变量的值为 KusciaDeployment 资源的名称。
+- `labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-type: serving`表示管理的应用为预测类型。
 - `name`：表示 KusciaDeployment 的名称。
 
 KusciaDeployment `spec` 的子字段详细介绍如下：
 
 - `initiator`：表示发起方的节点标识。
-- `inputConfig`：表示输入参数配置，KusciaDeployment Controller 会将该配置通过环境变量的方式传递给应用。环境变量的名称为`INPUT_CONFIG`。当前，该字段中的内容是临时的，预计下一期会有调整，后续也会补充该字段中的内容详细解释。
+- `inputConfig`：表示应用输入参数配置。
 - `parties`：表示所有参与方的信息。
   - `parties[].appImageRef`：表示参与方所依赖的应用镜像名称。有关 AppImage 的详细介绍，请参考 [AppImage](./appimage_cn.md)。
   - `parties[].domainID`：表示参与方的节点标识。
-  - `parties[].role`：表示参与方的角色。若想在同一节点下管理不同的应用，那么可以通过该字段来区分。
+  - `parties[].role`：表示参与方的角色。
   - `parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从`parties[].appImageRef`获取的对应模版信息。
     - `template.replicas`：表示应用的期望副本数。
     - `template.strategy`：表示应用的更新策略。当前支持`Recreate`和`RollingUpdate`两种策略，详细解释请参考 [Strategy](https://kubernetes.io/zh-cn/docs/concepts/workloads/controllers/deployment/#strategy)
@@ -330,7 +329,7 @@ KusciaDeployment `status` 的子字段详细介绍如下：
   - `alice.secretflow-serving.conditions`：表示名称为`secretflow-serving`的 Deployment 资源的详细状况信息。
   - `alice.secretflow-serving.creationTimestamp`：表示名称为`secretflow-serving`的 Deployment 资源的创建时间。
   - `alice.secretflow-serving.phase`：表示名称为`secretflow-serving`的 Deployment 资源的状态。当前包括以下几种 PHASE：
-    - `Progressing`：表示该资源正在被 K8s Deployment Controller 处理。
+    - `Progressing`：表示该资源正在被 K3s Deployment Controller 处理。
     - `PartialAvailable`：表示该参与方下的应用部分可用，即应用可用副本数小于期望副本数。
     - `Available`：表示该参与方下的应用全部可用，即应用可用副本数等于期望副本数。
   - `alice.secretflow-serving.replicas`：表示应用期望副本数。

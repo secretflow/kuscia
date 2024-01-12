@@ -54,4 +54,8 @@ type DomainDataSourceSpec struct {
 	// +optional
 	Data map[string]string `json:"data,omitempty"`
 	Type string            `json:"type"`
+	// +optional
+	InfoKey string `json:"infoKey,omitempty"`
+	// +optional
+	AccessDirectly bool `json:"accessDirectly,omitempty"`
 }

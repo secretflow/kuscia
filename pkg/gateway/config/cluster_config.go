@@ -21,6 +21,7 @@ import (
 type ClusterConfig struct {
 	Host     string
 	Port     uint32
+	Path     string
 	Protocol string
 
 	TLSCert *xds.TLSCert
@@ -36,5 +37,6 @@ type MasterConfig struct {
 	MasterProxy   *ClusterConfig
 	APIServer     *ClusterConfig
 	KusciaStorage *ClusterConfig
+	KusciaAPI     *ClusterConfig
 	APIWhitelist  []string
 }

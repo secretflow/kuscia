@@ -29,10 +29,7 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-
-	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -41,29 +38,36 @@ import (
 
 const (
 	DomainAPIServer      = "apiserver.master.svc"
-	serviceMasterProxy   = "masterproxy"
+	ServiceMasterProxy   = "masterproxy"
 	ServiceAPIServer     = "apiserver"
 	ServiceKusciaStorage = "kusciastorage"
 	ServiceHandshake     = "kuscia-handshake"
 	virtualHostHandshake = "handshake-virtual-host"
+	ServiceKusciaAPI     = "kusciaapi"
 )
+
+func GetMasterClusterName() string {
+	return fmt.Sprintf("service-%s", ServiceMasterProxy)
+}
 
 func AddMasterClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
 	if !config.Master {
-		masterProxyCluster, err := generateDefaultCluster(serviceMasterProxy, config.MasterProxy)
+		masterProxyCluster, err := generateDefaultCluster(ServiceMasterProxy, config.MasterProxy)
 		if err != nil {
 			nlog.Fatalf("Generate masterProxy Cluster fail, %v", err)
+			return err
 		}
 
+		if err := xds.SetKeepAliveForDstCluster(masterProxyCluster, false); err != nil {
+			nlog.Error(err)
+			return err
+		}
 		if err := xds.AddOrUpdateCluster(masterProxyCluster); err != nil {
+			nlog.Error(err)
 			return err
 		}
-		nlog.Infof("add Master cluster:%s", serviceMasterProxy)
-		if err := addMasterProxyVirtualHost(masterProxyCluster.Name, serviceMasterProxy, namespace); err != nil {
-			return err
-		}
-
-		waitMasterProxyReady(ctx)
+		nlog.Infof("add Master cluster:%s", ServiceMasterProxy)
+		waitMasterProxyReady(ctx, config.MasterProxy.Path)
 	} else {
 		if config.APIServer != nil {
 			if err := addMasterCluster(ServiceAPIServer, namespace, config.APIServer, config.APIWhitelist); err != nil {
@@ -72,11 +76,16 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 		}
 
 		if config.KusciaStorage != nil {
-			if err := addMasterCluster(ServiceKusciaStorage, namespace, config.APIServer, nil); err != nil {
+			if err := addMasterCluster(ServiceKusciaStorage, namespace, config.KusciaStorage, nil); err != nil {
 				return err
 			}
 		}
 
+		if config.KusciaAPI != nil {
+			if err := addMasterCluster(ServiceKusciaAPI, namespace, config.KusciaAPI, nil); err != nil {
+				return err
+			}
+		}
 		addMasterHandshakeRoute(xds.InternalRoute)
 		addMasterHandshakeRoute(xds.ExternalRoute)
 	}
@@ -93,14 +102,14 @@ func addMasterCluster(service, namespace string, config *config.ClusterConfig, a
 		return err
 	}
 
-	if err := addMasterServiceVirtualHost(localCluster.Name, namespace, service, apiWhitelist); err != nil {
+	if err := addMasterServiceVirtualHost(localCluster.Name, config.Path, namespace, service, apiWhitelist); err != nil {
 		return err
 	}
 	return nil
 }
 
-func addMasterServiceVirtualHost(cluster, namespace, service string, apiWhitelist []string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterServiceDomains(namespace, service), apiWhitelist)
+func addMasterServiceVirtualHost(cluster, path, namespace, service string, apiWhitelist []string) error {
+	internalVh := generateMasterInternalVirtualHost(cluster, path, service, generateMasterServiceDomains(namespace, service), apiWhitelist)
 	if err := xds.AddOrUpdateVirtualHost(internalVh, xds.InternalRoute); err != nil {
 		return err
 	}
@@ -111,25 +120,11 @@ func addMasterServiceVirtualHost(cluster, namespace, service string, apiWhitelis
 	}
 	externalVh.Name = fmt.Sprintf("%s-external", cluster)
 
-	disable := &kusciatokenauth.FilterConfigPerRoute{
-		Disabled: true,
-	}
-	b, err := proto.Marshal(disable)
-	if err != nil {
-		return fmt.Errorf("marshal kusciatokenauth.FilterConfigPerRoute fail")
-	}
-
-	externalVh.Routes[0].TypedPerFilterConfig = map[string]*anypb.Any{
-		"envoy.filters.http.kuscia_token_auth": {
-			TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.kuscia_token_auth.v3.FilterConfigPerRoute",
-			Value:   b,
-		},
-	}
 	return xds.AddOrUpdateVirtualHost(externalVh, xds.ExternalRoute)
 }
 
-func addMasterProxyVirtualHost(cluster, service, namespace string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, service, generateMasterProxyDomains(), nil)
+func AddMasterProxyVirtualHost(cluster, path, service, namespace, token string) error {
+	internalVh := generateMasterInternalVirtualHost(cluster, path, service, generateMasterProxyDomains(), nil)
 	internalVh.Routes[0].RequestHeadersToAdd = []*core.HeaderValueOption{
 		{
 			Header: &core.HeaderValue{
@@ -145,12 +140,23 @@ func addMasterProxyVirtualHost(cluster, service, namespace string) error {
 			},
 			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 		},
+		{
+			Header: &core.HeaderValue{
+				Key:   "Kuscia-Token",
+				Value: token,
+			},
+			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+		},
 	}
 
 	return xds.AddOrUpdateVirtualHost(internalVh, xds.InternalRoute)
 }
 
-func generateMasterInternalVirtualHost(cluster, service string, domains []string, apiWhitelist []string) *route.VirtualHost {
+func generateMasterInternalVirtualHost(cluster, path, service string, domains []string, apiWhitelist []string) *route.VirtualHost {
+	var prefixRewrite string
+	if len(path) > 0 {
+		prefixRewrite = strings.TrimSuffix(path, "/") + "/"
+	}
 	virtualHost := &route.VirtualHost{
 		Name:    fmt.Sprintf("%s-internal", cluster),
 		Domains: domains,
@@ -164,6 +170,7 @@ func generateMasterInternalVirtualHost(cluster, service string, domains []string
 				Action: &route.Route_Route{
 					Route: xds.AddDefaultTimeout(
 						&route.RouteAction{
+							PrefixRewrite: prefixRewrite,
 							ClusterSpecifier: &route.RouteAction_Cluster{
 								Cluster: cluster,
 							},
@@ -198,9 +205,7 @@ func generateMasterServiceDomains(namespace, service string) []string {
 
 func generateMasterProxyDomains() []string {
 	return []string{
-		fmt.Sprintf("%s.master.svc", ServiceHandshake),
-		fmt.Sprintf("%s.master.svc", ServiceAPIServer),
-		fmt.Sprintf("%s.master.svc", ServiceKusciaStorage),
+		"*.master.svc",
 	}
 }
 
@@ -235,7 +240,6 @@ func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycl
 		},
 	}
 	if config.TLSCert != nil {
-		nlog.Infof("generate tls for %s：%v", name, config.TLSCert)
 		transportSocket, err := xds.GenerateUpstreamTLSConfigByCert(config.TLSCert)
 		if err != nil {
 			return nil, err
@@ -249,15 +253,17 @@ func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycl
 	return cluster, nil
 }
 
-func getMasterNamespace() (string, error) {
+func getMasterNamespace(path string) (string, error) {
 	var namespace string
-	req, err := http.NewRequest("GET", config.InternalServer+"/handshake", nil)
+	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/handshake")
+	req, err := http.NewRequest("GET", config.InternalServer+handshake, nil)
 	if err != nil {
 		return namespace, fmt.Errorf("new http request failed with (%s)", err.Error())
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("kuscia-Host", fmt.Sprintf("%s.master.svc", ServiceHandshake))
+	req.Header.Set(fmt.Sprintf("%s-Cluster", ServiceHandshake), GetMasterClusterName())
 	req.Host = fmt.Sprintf("%s.master.svc", ServiceHandshake)
 
 	client := &http.Client{}
@@ -291,14 +297,14 @@ func getMasterNamespace() (string, error) {
 	return namespace, nil
 }
 
-func waitMasterProxyReady(ctx context.Context) {
+func waitMasterProxyReady(ctx context.Context, path string) {
 	timestick := time.NewTicker(2 * time.Second)
 	timeout, timeoutCancel := context.WithTimeout(ctx, time.Second*300)
 	defer timeoutCancel()
 	for {
 		select {
 		case <-timestick.C:
-			namespace, err := getMasterNamespace()
+			namespace, err := getMasterNamespace(path)
 			if err == nil {
 				nlog.Infof("Get master gateway namespace: %s", namespace)
 				return

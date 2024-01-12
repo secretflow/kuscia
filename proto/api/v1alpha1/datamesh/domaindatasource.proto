@@ -22,57 +22,9 @@ option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh";
 option java_package = "org.secretflow.v1alpha1.datamesh";
 
 service DomainDataSourceService {
-  rpc CreateDomainDataSource(CreateDomainDataSourceRequest) returns (CreateDomainDataSourceResponse);
 
   rpc QueryDomainDataSource(QueryDomainDataSourceRequest) returns (QueryDomainDataSourceResponse);
 
-  rpc UpdateDomainDataSource(UpdateDomainDataSourceRequest) returns (UpdateDomainDataSourceResponse);
-
-  rpc DeleteDomainDataSource(DeleteDomainDataSourceRequest) returns (DeleteDomainDataSourceResponse);
-}
-
-message CreateDomainDataSourceRequest {
-  RequestHeader header = 1;
-  string datasource_id = 2;
-  string name = 3;
-  string type = 4;
-  DataSourceInfo info = 5;
-  string info_key = 6;
-  bool access_directly = 7;
-}
-
-message CreateDomainDataSourceResponse {
-  Status status = 1;
-  CreateDomainDataSourceResponseData data = 2;
-}
-
-message CreateDomainDataSourceResponseData {
-  // id of created datasource
-  string datasource_id = 1;
-}
-
-message UpdateDomainDataSourceRequest {
-  RequestHeader header = 1;
-  string datasource_id = 2;
-  string name = 3;
-  string type = 4;
-  DataSourceInfo info = 5;
-  string info_key = 6;
-  bool access_directly = 7;
-}
-
-message UpdateDomainDataSourceResponse {
-  Status status = 1;
-}
-
-message DeleteDomainDataSourceRequest {
-  RequestHeader header = 1;
-  // datasource id
-  string datasource_id = 2;
-}
-
-message DeleteDomainDataSourceResponse {
-  Status status = 1;
 }
 
 message QueryDomainDataSourceRequest {
@@ -156,4 +108,7 @@ message DatabaseDataSourceInfo {
   string user = 2;
   // password of account to access database
   string password = 3;
+
+  // database name
+  string database = 4;
 }

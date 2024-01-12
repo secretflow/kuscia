@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	cryptrand "crypto/rand"
 	"crypto/rsa"
@@ -22,7 +23,6 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
@@ -62,10 +62,11 @@ const (
 
 var (
 	fakeRevisionToken string
+	pubPemData        []byte
 	fakeToken         = "FwBvarrLUpfACr00v8AiIbHbFcYguNqvu92XRJ2YysU="
 )
 
-func newDomainRouteTestInfo(namespace string) *DomainRouteTestInfo {
+func newDomainRouteTestInfo(namespace string, port uint32) *DomainRouteTestInfo {
 	logger, _ := zlogwriter.New(nil)
 	nlog.Setup(nlog.SetWriter(logger))
 	kusciaClient := kusciaFake.NewSimpleClientset()
@@ -86,26 +87,36 @@ func newDomainRouteTestInfo(namespace string) *DomainRouteTestInfo {
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	dir, err := os.MkdirTemp("", "testnewdomainroute")
+
+	caKey, caCertBytes, err := tlsutils.CreateCA(namespace)
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	cafile := filepath.Join(dir, "ca.key")
-	cacrt := filepath.Join(dir, "ca.crt")
-	err = tlsutils.CreateCAFile(namespace, cacrt, cafile)
+	caPEM := new(bytes.Buffer)
+	if err := pem.Encode(caPEM, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: caCertBytes,
+	}); err != nil {
+		nlog.Fatal(err)
+	}
+	caCert, err := tlsutils.ParseCert(caPEM.Bytes(), "")
 	if err != nil {
 		nlog.Fatal(err)
 	}
 	config := &DomainRouteConfig{
 		Namespace:     namespace,
 		Prikey:        priKey,
-		HandshakePort: 1054,
-		CAFile:        cacrt,
-		CAKeyFile:     cafile,
+		HandshakePort: port,
+		CAKey:         caKey,
+		CACert:        caCert,
 	}
 	c := NewDomainRouteController(config, fake.NewSimpleClientset(), kusciaClient, domainRouteInformer)
 	kusciaInformerFactory.Start(wait.NeverStop)
-
+	block := &pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: x509.MarshalPKCS1PublicKey(&c.prikey.PublicKey),
+	}
+	pubPemData = pem.EncodeToMemory(block)
 	return &DomainRouteTestInfo{
 		c,
 		kusciaClient,
@@ -113,9 +124,8 @@ func newDomainRouteTestInfo(namespace string) *DomainRouteTestInfo {
 }
 
 type DrTestCase struct {
-	dr               *kusciaapisv1alpha1.DomainRoute
-	token            string
-	expectedResponse string
+	dr    *kusciaapisv1alpha1.DomainRoute
+	token string
 }
 
 func (c *DomainRouteTestInfo) runPlainCase(cases []DrTestCase, t *testing.T, add bool) {
@@ -132,7 +142,7 @@ func (c *DomainRouteTestInfo) runPlainCase(cases []DrTestCase, t *testing.T, add
 			vhName := fmt.Sprintf("%s-to-%s", tc.dr.Spec.Source, tc.dr.Spec.Destination)
 			_, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
 			if add && err != nil {
-				t.Fatal("add route failed")
+				t.Fatal("add route failed ", err)
 			}
 			if !add && err == nil {
 				t.Fatal("delete route failed")
@@ -219,27 +229,22 @@ func (c *DomainRouteTestInfo) runMTLSCase(cases []DrTestCase, t *testing.T, add 
 }
 
 func TestTokenRSA(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
+	ns := "defaultrsa"
+	c := newDomainRouteTestInfo(ns, 1054)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(200 * time.Millisecond)
-
-	block := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(&c.prikey.PublicKey),
-	}
-	pubPemData := pem.EncodeToMemory(block)
 
 	var testcases = []DrTestCase{
 		{
 			dr: &kusciaapisv1alpha1.DomainRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "rsa-inbound",
-					Namespace: "default",
+					Namespace: ns,
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
 					Source:            "test",
-					Destination:       "default",
+					Destination:       ns,
 					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: EnvoyServerIP,
@@ -247,6 +252,7 @@ func TestTokenRSA(t *testing.T) {
 							{
 								Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
 								Port:     ExternalServerPort,
+								Name:     "http",
 							},
 						},
 					},
@@ -276,10 +282,10 @@ func TestTokenRSA(t *testing.T) {
 			dr: &kusciaapisv1alpha1.DomainRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "rsa-outbound",
-					Namespace: "default",
+					Namespace: ns,
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:            "default",
+					Source:            ns,
 					Destination:       "test",
 					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
@@ -321,104 +327,12 @@ func TestTokenRSA(t *testing.T) {
 	time.Sleep(time.Second)
 }
 
-func TestTokenRand(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
-	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
-	time.Sleep(200 * time.Millisecond)
-
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token := base64.StdEncoding.EncodeToString(b)
-
-	var testcases = []DrTestCase{
-		{
-			dr: &kusciaapisv1alpha1.DomainRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "rand-inbound",
-					Namespace: "default",
-				},
-				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:            "test",
-					Destination:       "default",
-					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
-					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-						Host: EnvoyServerIP,
-						Ports: []kusciaapisv1alpha1.DomainPort{
-							{
-								Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-								Port:     ExternalServerPort,
-							},
-						},
-					},
-					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
-					},
-				},
-				Status: kusciaapisv1alpha1.DomainRouteStatus{
-					TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
-						Tokens: []kusciaapisv1alpha1.DomainRouteToken{
-							{
-								Token: token,
-							},
-						},
-					},
-				},
-			},
-			token: token,
-		},
-		{
-			dr: &kusciaapisv1alpha1.DomainRoute{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "rand-outbound",
-					Namespace: "default",
-				},
-				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:            "default",
-					Destination:       "test",
-					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
-					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-						Host: FakeServerIP,
-						Ports: []kusciaapisv1alpha1.DomainPort{
-							{
-								Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-								Port:     FakeServerPort,
-							},
-						},
-					},
-					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
-					},
-				},
-				Status: kusciaapisv1alpha1.DomainRouteStatus{
-					TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
-						Tokens: []kusciaapisv1alpha1.DomainRouteToken{
-							{
-								Token: token,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	c.runPlainCase(testcases, t, true)
-	c.runPlainCase(testcases, t, false)
-
-	stopCh <- struct{}{}
-	time.Sleep(time.Second)
-}
-
 func TestTokenHandshake(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
+	ns := "defaulthandshake"
+	port := 11054
+	c := newDomainRouteTestInfo(ns, uint32(port))
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(1000 * time.Millisecond)
 
 	realInternalServer := config.InternalServer
@@ -426,27 +340,23 @@ func TestTokenHandshake(t *testing.T) {
 		config.InternalServer = realInternalServer
 	}()
 
-	config.InternalServer = "http://localhost:1054"
-	block := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(&c.prikey.PublicKey),
-	}
-	pubPemData := pem.EncodeToMemory(block)
+	config.InternalServer = fmt.Sprintf("http://localhost:%d", port)
+
 	dr := &kusciaapisv1alpha1.DomainRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "default-default",
-			Namespace: "default",
+			Name:      ns + "-" + ns,
+			Namespace: ns,
 		},
 		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:            "default",
-			Destination:       "default",
+			Source:            ns,
+			Destination:       ns,
 			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 				Host: "127.0.0.1",
 				Ports: []kusciaapisv1alpha1.DomainPort{
 					{
 						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-						Port:     1054,
+						Port:     port,
 						Name:     "http",
 					},
 				},
@@ -461,6 +371,9 @@ func TestTokenHandshake(t *testing.T) {
 		Status: kusciaapisv1alpha1.DomainRouteStatus{
 			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
 				RevisionInitializer: c.gateway.Name,
+				RevisionToken: kusciaapisv1alpha1.DomainRouteToken{
+					IsReady: true,
+				},
 			},
 		},
 	}
@@ -478,9 +391,11 @@ func TestTokenHandshake(t *testing.T) {
 }
 
 func TestMutualAuth(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
+	ns := "defaultauth"
+
+	c := newDomainRouteTestInfo(ns, 1051)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(100 * time.Millisecond)
 
 	var sslKey, sslCrt []byte
@@ -504,10 +419,10 @@ func TestMutualAuth(t *testing.T) {
 			dr: &kusciaapisv1alpha1.DomainRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "mutual-outbound",
-					Namespace: "default",
+					Namespace: ns,
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:            "default",
+					Source:            ns,
 					Destination:       "mutual",
 					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
@@ -533,11 +448,11 @@ func TestMutualAuth(t *testing.T) {
 			dr: &kusciaapisv1alpha1.DomainRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "mutual-inbound",
-					Namespace: "default",
+					Namespace: ns,
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
 					Source:            "mutual",
-					Destination:       "default",
+					Destination:       ns,
 					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 						Host: EnvoyServerIP,
@@ -567,27 +482,21 @@ func TestMutualAuth(t *testing.T) {
 }
 
 func TestTransit(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
+	ns := "defaulttransit"
+	c := newDomainRouteTestInfo(ns, 1055)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(100 * time.Millisecond)
-
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token := base64.StdEncoding.EncodeToString(b)
 
 	testcases := []DrTestCase{
 		{
 			dr: &kusciaapisv1alpha1.DomainRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "rand-outbound",
-					Namespace: "default",
+					Namespace: ns,
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:            "default",
+					Source:            ns,
 					Destination:       "test",
 					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
@@ -601,14 +510,16 @@ func TestTransit(t *testing.T) {
 					},
 					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
 					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
+						TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
+						SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
+						DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
 					},
 				},
 				Status: kusciaapisv1alpha1.DomainRouteStatus{
 					TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
 						Tokens: []kusciaapisv1alpha1.DomainRouteToken{
 							{
-								Token: token,
+								Token: fakeRevisionToken,
 							},
 						},
 					},
@@ -619,10 +530,10 @@ func TestTransit(t *testing.T) {
 			dr: &kusciaapisv1alpha1.DomainRoute{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "routing",
-					Namespace: "default",
+					Namespace: ns,
 				},
 				Spec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:            "default",
+					Source:            ns,
 					Destination:       "foo",
 					InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
@@ -638,7 +549,9 @@ func TestTransit(t *testing.T) {
 						Algorithm: kusciaapisv1alpha1.BodyEncryptionAlgorithmSM4,
 					},
 					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
+						TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
+						SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
+						DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
 					},
 					Transit: &kusciaapisv1alpha1.Transit{
 						Domain: &kusciaapisv1alpha1.DomainTransit{
@@ -650,7 +563,7 @@ func TestTransit(t *testing.T) {
 					TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
 						Tokens: []kusciaapisv1alpha1.DomainRouteToken{
 							{
-								Token: token,
+								Token: fakeRevisionToken,
 							},
 						},
 					},
@@ -665,26 +578,20 @@ func TestTransit(t *testing.T) {
 }
 
 func TestAppendHeaders(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
+	ns := "defaultappend"
+	c := newDomainRouteTestInfo(ns, 1056)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(200 * time.Millisecond)
-
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token := base64.StdEncoding.EncodeToString(b)
 
 	dr := &kusciaapisv1alpha1.DomainRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "append-headers",
-			Namespace: "default",
+			Namespace: ns,
 		},
 		Spec: kusciaapisv1alpha1.DomainRouteSpec{
 			Source:            "test",
-			Destination:       "default",
+			Destination:       ns,
 			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
 			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
 				Host: EnvoyServerIP,
@@ -697,7 +604,9 @@ func TestAppendHeaders(t *testing.T) {
 			},
 			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
 			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-				TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
+				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
+				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
+				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
 			},
 			RequestHeadersToAdd: map[string]string{
 				"k1": "v1",
@@ -708,7 +617,7 @@ func TestAppendHeaders(t *testing.T) {
 			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
 				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
 					{
-						Token: token,
+						Token: fakeRevisionToken,
 					},
 				},
 			},
@@ -768,25 +677,19 @@ func TestAppendHeaders(t *testing.T) {
 }
 
 func TestGenerateInternalRoute(t *testing.T) {
-	c := newDomainRouteTestInfo("default")
+	ns := "defaultinternal"
+	c := newDomainRouteTestInfo(ns, 1057)
 	stopCh := make(chan struct{})
-	go c.Run(1, stopCh)
+	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(200 * time.Millisecond)
-
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token := base64.StdEncoding.EncodeToString(b)
 
 	dr := &kusciaapisv1alpha1.DomainRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "interconn",
-			Namespace: "default",
+			Namespace: ns,
 		},
 		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:            "default",
+			Source:            ns,
 			Destination:       "test",
 			InterConnProtocol: kusciaapisv1alpha1.InterConnBFIA,
 			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
@@ -800,14 +703,16 @@ func TestGenerateInternalRoute(t *testing.T) {
 			},
 			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
 			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-				TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRAND,
+				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
+				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
+				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
 			},
 		},
 		Status: kusciaapisv1alpha1.DomainRouteStatus{
 			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
 				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
 					{
-						Token: token,
+						Token: fakeRevisionToken,
 					},
 				},
 			},
@@ -861,4 +766,65 @@ func TestGenerateInternalRoute(t *testing.T) {
 	assert.True(t, route.RequestHeadersToAdd[0].Header.Key == "x-interconn-protocol")
 	assert.True(t, route.RequestHeadersToAdd[0].Header.Value == "kuscia")
 	assert.Equal(t, len(route.RequestHeadersToAdd), 4)
+}
+
+func TestCheckHealthy(t *testing.T) {
+	ns := "defaultinternal"
+	c := newDomainRouteTestInfo(ns, 1057)
+	dr := &kusciaapisv1alpha1.DomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "interconn",
+			Namespace: ns,
+		},
+		Spec: kusciaapisv1alpha1.DomainRouteSpec{
+			Source:            ns,
+			Destination:       "test",
+			InterConnProtocol: kusciaapisv1alpha1.InterConnBFIA,
+			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+				Host: EnvoyServerIP,
+				Ports: []kusciaapisv1alpha1.DomainPort{
+					{
+						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
+						Port:     ExternalServerPort,
+					},
+				},
+			},
+			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
+				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
+				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
+				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
+			},
+		},
+		Status: kusciaapisv1alpha1.DomainRouteStatus{
+			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
+				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
+					{
+						Token: fakeRevisionToken,
+					},
+				},
+			},
+		},
+	}
+	dr, err := c.client.KusciaV1alpha1().DomainRoutes(ns).Create(context.Background(), dr, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
+	err = c.markDestUnreachable(context.Background(), dr)
+	assert.NoError(t, err)
+
+	_, ok := c.drHeartbeat[dr.Name]
+	assert.True(t, ok)
+	assert.False(t, dr.Status.IsDestinationUnreachable)
+	beforeTm, _ := time.ParseDuration("-1m")
+	c.drHeartbeat[dr.Name] = time.Now().Add(beforeTm)
+	err = c.markDestUnreachable(context.Background(), dr)
+	assert.NoError(t, err)
+	dr, err = c.client.KusciaV1alpha1().DomainRoutes(ns).Get(context.Background(), dr.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.True(t, dr.Status.IsDestinationUnreachable)
+
+	c.markDestReachable(context.Background(), dr)
+	dr, err = c.client.KusciaV1alpha1().DomainRoutes(ns).Get(context.Background(), dr.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.False(t, dr.Status.IsDestinationUnreachable)
 }

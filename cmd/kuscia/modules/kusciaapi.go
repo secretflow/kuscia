@@ -22,23 +22,30 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/commands"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
-	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	utilcommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/interceptor"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
+)
+
+const (
+	kusciaAPISanDNSName = "kusciaapi"
 )
 
 type kusciaAPIModule struct {
@@ -47,25 +54,51 @@ type kusciaAPIModule struct {
 	kubeClient   kubernetes.Interface
 }
 
-func NewKusciaAPI(i *Dependencies) (Module, error) {
-	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig(i.RootDir)
-	if !i.IsMaster {
-		kusciaAPIConfig.Initiator = i.DomainID
+func NewKusciaAPI(d *Dependencies) (Module, error) {
+	kusciaAPIConfig := d.KusciaAPI
+	if d.RunMode != common.RunModeMaster {
+		kusciaAPIConfig.Initiator = d.DomainID
 	}
-	rootCAFile := i.CAFile
-	if rootCAFile != "" && kusciaAPIConfig.TLSConfig != nil {
-		kusciaAPIConfig.TLSConfig.RootCAFile = rootCAFile
+
+	kusciaAPIConfig.RootCAKey = d.CAKey
+	kusciaAPIConfig.RootCA = d.CACert
+	kusciaAPIConfig.DomainKey = d.DomainKey
+	kusciaAPIConfig.TLS.RootCA = d.CACert
+	kusciaAPIConfig.TLS.RootCAKey = d.CAKey
+	kusciaAPIConfig.TLS.CommonName = "KusciaAPI"
+	kusciaAPIConfig.RunMode = d.RunMode
+	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
+	kusciaAPIConfig.TLS.Protocol = d.Protocol
+	kusciaAPIConfig.DomainID = d.DomainID
+
+	switch d.Protocol {
+	case common.NOTLS:
+		kusciaAPIConfig.TLS = nil
+		kusciaAPIConfig.Token = nil
 	}
-	// init clients with kuscia kubeconfig
-	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(i.KusciaKubeConfig, i.ApiserverEndpoint)
-	if err != nil {
-		return nil, err
+
+	if kusciaAPIConfig.TLS != nil {
+		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(nil, []string{kusciaAPISanDNSName}); err != nil {
+			return nil, err
+		}
 	}
+
+	if kusciaAPIConfig.Token != nil {
+		tokenFile := kusciaAPIConfig.Token.TokenFile
+		if tokenFile != "" && !paths.CheckFileExist(tokenFile) {
+			if err := os.WriteFile(tokenFile, utilcommon.GenerateRandomBytes(32), 0644); err != nil {
+				nlog.Errorf("Generate token file error: %v", err.Error())
+				return nil, err
+			}
+		}
+	}
+
+	nlog.Debugf("Kuscia api config is %+v", kusciaAPIConfig)
 
 	return &kusciaAPIModule{
 		conf:         kusciaAPIConfig,
-		kusciaClient: clients.KusciaClient,
-		kubeClient:   clients.KubeClient,
+		kusciaClient: d.Clients.KusciaClient,
+		kubeClient:   d.Clients.KubeClient,
 	}, nil
 }
 
@@ -99,9 +132,13 @@ func (m kusciaAPIModule) readyZ() bool {
 	var err error
 	schema := constants.SchemaHTTP
 	// init client tls config
-	tlsConfig := m.conf.TLSConfig
+	tlsConfig := m.conf.TLS
 	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+		if tlsConfig.Protocol == common.TLS {
+			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(nil, tlsConfig.ServerCert, tlsConfig.ServerKey)
+		} else {
+			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
+		}
 		if err != nil {
 			nlog.Errorf("local tls config error: %v", err)
 			return false
@@ -112,7 +149,7 @@ func (m kusciaAPIModule) readyZ() bool {
 	// token auth
 	var token string
 	var tokenAuth bool
-	tokenConfig := m.conf.TokenConfig
+	tokenConfig := m.conf.Token
 	if tokenConfig != nil {
 		token, err = apiutils.ReadToken(*tokenConfig)
 		if err != nil {

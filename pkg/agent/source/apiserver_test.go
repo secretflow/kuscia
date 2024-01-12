@@ -37,7 +37,9 @@ func createApiserverSourceCfg(namespace string, nodeName types.NodeName, kubeCli
 		KubeClient: kubeClient,
 		SourceCfg: &config.SourceCfg{
 			Apiserver: config.ApiserverSourceCfg{
-				KubeconfigFile: "/tmp/kubeconfig",
+				KubeConnCfg: config.KubeConnCfg{
+					KubeconfigFile: "/tmp/kubeconfig",
+				},
 			},
 		},
 	}

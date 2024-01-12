@@ -28,18 +28,18 @@ spec:
     domainID: alice
   - appImageRef: secretflow-image
     domainID: bob
-  taskInputConfig: '{"sf_datasource_config":{"bob":{"id":"default-data-source"},"alice":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}],"inputs":[{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id1"],"features":["age","education","default","balance","housing","loan","day","duration","campaign","pdays","previous","job_blue-collar","job_entrepreneur","job_housemaid","job_management","job_retired","job_self-employed","job_services","job_student","job_technician","job_unemployed","marital_divorced","marital_married","marital_single"],"id_types":["str"],"feature_types":["float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float"]},"num_lines":"-1"},"data_refs":[{"uri":"alice.csv","party":"alice","format":"csv"}]},{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id2"],"features":["contact_cellular","contact_telephone","contact_unknown","month_apr","month_aug","month_dec","month_feb","month_jan","month_jul","month_jun","month_mar","month_may","month_nov","month_oct","month_sep","poutcome_failure","poutcome_other","poutcome_success","poutcome_unknown"],"labels":["y"],"id_types":["str"],"feature_types":["float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float"],"label_types":["int"]},"num_lines":"-1"},"data_refs":[{"uri":"bob.csv","party":"bob","format":"csv"}]}]},"sf_output_uris":["psi-output.csv"],"sf_output_ids":["psi-output"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
 ```
 
 在该示例中:
 
-- `.metadata.name`：表示 KusciaTask 的名称，当前示例为`secretflow-task-psi`。
-- `.spec.initiator`：表示任务参与方中负责发起任务的节点标识，当前示例为`alice`。
+- `.metadata.name`：表示 KusciaTask 的名称，当前示例为 `secretflow-task-psi` 。
+- `.spec.initiator`：表示任务参与方中负责发起任务的节点标识，当前示例为 `alice` 。
 - `.spec.parties`：表示所有任务参与方的信息。该字段下主要包含以下子字段：
-  - `.spec.parties[0].domainID`：表示任务的一个参与方节点标识为`bob`。
-  - `.spec.parties[0].appImageRef`：表示节点标识为`bob`的任务参与方所依赖的应用镜像 AppImage 名称为`secretflow-image`。
-  - `.spec.parties[1].domainID`：表示任务的另一个参与方节点标识为`alice`。
-  - `.spec.parties[1].appImageRef`：表示节点标识为`alice`的任务参与方所依赖的应用镜像 AppImage 名称为`secretflow-image`。
+  - `.spec.parties[0].domainID`：表示任务的一个参与方节点标识为 `bob` 。
+  - `.spec.parties[0].appImageRef`：表示节点标识为 `bob` 的任务参与方所依赖的应用镜像 AppImage 名称为 `secretflow-image` 。
+  - `.spec.parties[1].domainID`：表示任务的另一个参与方节点标识为 `alice`。
+  - `.spec.parties[1].appImageRef`：表示节点标识为 `alice` 的任务参与方所依赖的应用镜像 AppImage 名称为 `secretflow-image` 。
 - `.spec.taskInputConfig`：表示任务输入参数配置。
 
 1. 运行以下命令创建 KusciaTask。
@@ -61,11 +61,11 @@ secretflow-task-psi   7s          7s               7s                  Succeeded
 ```
 
 上述命令输出内容，各个列字段的含义如下：
-- `NAME`：表示 KusciaTask 的名称，当前示例为`secretflow-task-psi`。
+- `NAME`：表示 KusciaTask 的名称，当前示例为 `secretflow-task-psi` 。
 - `STARTTIME`：表示 KusciaTask 从开始执行到现在经历的时间。
 - `COMPLETIONTIME`：表示 KusciaTask 从完成执行到现在经历的时间。
 - `LASTRECONCILETIME`：表示 KusciaTask 从上次被更新到现在经历的时间。
-- `PHASE`：表示 KusciaTask 当前所处的阶段。当前示例阶段为`Succeeded`。
+- `PHASE`：表示 KusciaTask 当前所处的阶段。当前示例阶段为 `Succeeded` 。
 
 2. 运行以下命令查看 KusciaTask 详细的状态信息。
 
@@ -128,37 +128,55 @@ kubectl get kt secretflow-task-psi -o jsonpath={.status} | jq
     "alice/secretflow-task-psi-0-fed": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
+      "portName": "fed",
+      "portNumber": 8080,
       "readyTime": "2023-08-21T07:43:18Z",
+      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-fed"
     },
     "alice/secretflow-task-psi-0-global": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
+      "portName": "global",
+      "portNumber": 8081,
       "readyTime": "2023-08-21T07:43:18Z",
+      "scope": "Domain",
       "serviceName": "secretflow-task-psi-0-global"
     },
     "alice/secretflow-task-psi-0-spu": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "alice",
+      "portName": "spu",
+      "portNumber": 54509,
       "readyTime": "2023-08-21T07:43:18Z",
+      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-spu"
     },
     "bob/secretflow-task-psi-0-fed": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
+      "portName": "fed",
+      "portNumber": 8080,
       "readyTime": "2023-08-21T07:43:18Z",
+      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-fed"
     },
     "bob/secretflow-task-psi-0-global": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
+      "portName": "global",
+      "portNumber": 8081,
       "readyTime": "2023-08-21T07:43:18Z",
+      "scope": "Domain",
       "serviceName": "secretflow-task-psi-0-global"
     },
     "bob/secretflow-task-psi-0-spu": {
       "createTime": "2023-08-21T07:43:15Z",
       "namespace": "bob",
+      "portName": "spu",
+      "portNumber": 54509,
       "readyTime": "2023-08-21T07:43:18Z",
+      "scope": "Cluster",
       "serviceName": "secretflow-task-psi-0-spu"
     }
   },
@@ -199,7 +217,7 @@ spec:
     resourceReservedSeconds: 30
     lifecycleSeconds: 300
     retryIntervalSeconds: 15
-  taskInputConfig: '{"sf_datasource_config":{"bob":{"id":"default-data-source"},"alice":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}],"inputs":[{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id1"],"features":["age","education","default","balance","housing","loan","day","duration","campaign","pdays","previous","job_blue-collar","job_entrepreneur","job_housemaid","job_management","job_retired","job_self-employed","job_services","job_student","job_technician","job_unemployed","marital_divorced","marital_married","marital_single"],"id_types":["str"],"feature_types":["float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float"]},"num_lines":"-1"},"data_refs":[{"uri":"alice.csv","party":"alice","format":"csv"}]},{"type":"sf.table.individual","meta":{"@type":"type.googleapis.com/secretflow.component.IndividualTable","schema":{"ids":["id2"],"features":["contact_cellular","contact_telephone","contact_unknown","month_apr","month_aug","month_dec","month_feb","month_jan","month_jul","month_jun","month_mar","month_may","month_nov","month_oct","month_sep","poutcome_failure","poutcome_other","poutcome_success","poutcome_unknown"],"labels":["y"],"id_types":["str"],"feature_types":["float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float","float"],"label_types":["int"]},"num_lines":"-1"},"data_refs":[{"uri":"bob.csv","party":"bob","format":"csv"}]}]},"sf_output_uris":["psi-output.csv"],"sf_output_ids":["psi-output"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
   parties:
     - domainID: alice
       appImageRef: app-template
@@ -296,6 +314,55 @@ status:
       podName: task-template-psi-0
       podPhase: Succeeded
       reason: Completed
+  serviceStatuses:
+    alice/secretflow-task-psi-0-fed:
+      createTime: "2023-08-21T07:43:15Z"
+      namespace: alice
+      portName: fed
+      portNumber: 8080
+      readyTime: "2023-08-21T07:43:18Z"
+      scope: Cluster
+      serviceName: secretflow-task-psi-0-fed
+    alice/secretflow-task-psi-0-global:
+      createTime: "2023-08-21T07:43:15Z"
+      namespace: alice
+      portName: global
+      portNumber: 8081
+      readyTime: "2023-08-21T07:43:18Z"
+      scope: Domain
+      serviceName: secretflow-task-psi-0-global
+    alice/secretflow-task-psi-0-spu:
+      createTime: "2023-08-21T07:43:15Z"
+      namespace: alice
+      portName: spu
+      portNumber: 54509
+      readyTime: "2023-08-21T07:43:18Z"
+      scope: Cluster
+      serviceName: secretflow-task-psi-0-spu
+    bob/secretflow-task-psi-0-fed:
+      createTime: "2023-08-21T07:43:15Z"
+      namespace: bob
+      portName: fed
+      portNumber: 8080
+      readyTime: "2023-08-21T07:43:18Z"
+      scope: Cluster
+      serviceName: secretflow-task-psi-0-fed
+    bob/secretflow-task-psi-0-global:
+      createTime: "2023-08-21T07:43:15Z"
+      namespace: bob
+      portName: global
+      portNumber: 8081
+      readyTime: "2023-08-21T07:43:18Z"
+      scope: Domain
+      serviceName: secretflow-task-psi-0-global
+    bob/secretflow-task-psi-0-spu:
+      createTime: "2023-08-21T07:43:15Z"
+      namespace: bob
+      portName: spu
+      portNumber: 54509
+      readyTime: "2023-08-21T07:43:18Z"
+      scope: Cluster
+      serviceName: secretflow-task-psi-0-spu
   startTime: "2023-06-26T03:46:38Z"
 ```
 
@@ -318,7 +385,7 @@ KusciaTask `spec` 的子字段详细介绍如下：
   - `parties[].role`：表示任务参与方的角色。
   - `parties[].minReservedPods`：表示任务参与方最小已预留资源的 Pod 数量，默认为空，表示任务参与方所有的 Pod 数量。Kuscia 调度器对每个任务参与方使用 Co-Scheduling 调度策略，
      仅当任务参与方下已预留资源的 Pod 数量大于等于该值时，设置该参与方为已完成预留资源。
-  - `parties[].template`：表示任务参与方应用的模版信息。若配置该模版，则使用模版中配置的信息替换从`parties[].appImageRef`获取的模版信息。该字段下所包含的子字段含义，请参考概念 [AppImage](./appimage_cn.md)。
+  - `parties[].template`：表示任务参与方应用的模版信息。若配置该模版，则使用模版中配置的信息替换从 `parties[].appImageRef` 获取的模版信息。该字段下所包含的子字段含义，请参考概念 [AppImage](./appimage_cn.md)。
 
 KusciaTask `status` 的子字段详细介绍如下：
 
@@ -333,10 +400,10 @@ KusciaTask `status` 的子字段详细介绍如下：
   - `partyTaskStatus[].phase`：表示所属参与方的单方任务当前所处阶段。
   - `partyTaskStatus[].message`：表示所属参与方的单方任务运行失败时的详细信息。
 - `reason`: 表示为什么 KusciaTask 处于该阶段。
-- `message`: 表示 KusciaTask 处于该阶段的详细描述信息，用于对`reason`的补充。
+- `message`: 表示 KusciaTask 处于该阶段的详细描述信息，用于对 `reason` 的补充。
 - `conditions`: 表示 KusciaTask 处于该阶段时所包含的一些状况。
   - `conditions[].type`: 表示状况的名称。
-  - `conditions[].status`: 表示该状况是否适用，可能的取值有`True`、`False`或`Unknown`。
+  - `conditions[].status`: 表示该状况是否适用，可能的取值有 `True` 、 `False` 或 `Unknown` 。
   - `conditions[].reason`: 表示该状况的原因。
   - `conditions[].message`: 表示该状况的详细信息。
   - `conditions[].lastTransitionTime`: 表示转换为该状态的时间戳。
@@ -348,6 +415,14 @@ KusciaTask `status` 的子字段详细介绍如下：
   - `podStatuses[].reason`: 表示 Pod 处在该阶段的原因。
   - `podStatuses[].message`: 表示 Pod 处在该阶段的详细描述信息。
   - `podStatuses[].terminationLog`: 表示 Pod 异常终止时的日志信息。
+- `serviceStatuses`: 表示 KusciaTask 相关的所有参与方的 Service 状态信息。
+  - `serviceStatuses[].createTime`: 表示 Service 的创建时间戳。
+  - `serviceStatuses[].namespace`: 表示 Service 的所在的 Namespace。
+  - `serviceStatuses[].portName`: 表示 Service 的端口名称。
+  - `serviceStatuses[].portNumber`: 表示 Service 的端口号。
+  - `serviceStatuses[].readyTime`: 表示 Service 就绪并可以对外提供服务的时间。
+  - `serviceStatuses[].scope`: 表示 Service 的端口使用范围。
+  - `serviceStatuses[].serviceName`: 表示 Service 的名称。
 - `startTime`: 表示 KusciaTask 第一次被 Kuscia 控制器处理的时间戳。
 - `completionTime`: 表示 KusciaTask 运行完成的时间戳。
 - `lastReconcileTime`: 表示 KusciaTask 上次更新的时间戳。

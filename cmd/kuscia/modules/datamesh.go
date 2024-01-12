@@ -38,20 +38,30 @@ type dataMeshModule struct {
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewDataMesh(d *Dependencies) Module {
+func NewDataMesh(d *Dependencies) (Module, error) {
 	conf := config.NewDefaultDataMeshConfig()
+	conf.RootDir = d.RootDir
+	conf.DomainKey = d.DomainKey
 
-	rootCAFile := d.CAFile
-	if rootCAFile != "" && conf.TLSConfig != nil {
-		conf.TLSConfig.RootCAFile = rootCAFile
+	// override data proxy config
+	if d.DataMesh != nil {
+		conf.DisableTLS = d.DataMesh.DisableTLS
+		conf.ExternalDataProxyList = d.DataMesh.ExternalDataProxyList
 	}
+
+	conf.TLS.RootCA = d.CACert
+	conf.TLS.RootCAKey = d.CAKey
+	if err := conf.TLS.GenerateServerKeyCerts("DataMesh", nil, []string{"datamesh"}); err != nil {
+		return nil, err
+	}
+
 	// set namespace
 	conf.KubeNamespace = d.DomainID
 	nlog.Infof("Datamesh namespace:%s.", d.DomainID)
 	return &dataMeshModule{
 		conf:         conf,
 		kusciaClient: d.Clients.KusciaClient,
-	}
+	}, nil
 }
 
 func (m dataMeshModule) Run(ctx context.Context) error {
@@ -84,15 +94,13 @@ func (m dataMeshModule) readyZ() bool {
 	var err error
 	schema := constants.SchemaHTTP
 	// init client tls config
-	tlsConfig := m.conf.TLSConfig
-	if tlsConfig != nil {
-		clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
-		if err != nil {
-			nlog.Errorf("local tls config error: %v", err)
-			return false
-		}
-		schema = constants.SchemaHTTPS
+	tlsConfig := m.conf.TLS
+	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
+	if err != nil {
+		nlog.Errorf("local tls config error: %v", err)
+		return false
 	}
+	schema = constants.SchemaHTTPS
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
@@ -132,7 +140,12 @@ func (m dataMeshModule) readyZ() bool {
 }
 
 func RunDataMesh(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewDataMesh(conf)
+	m, err := NewDataMesh(conf)
+	if err != nil {
+		nlog.Error(err)
+		cancel()
+		return m
+	}
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)

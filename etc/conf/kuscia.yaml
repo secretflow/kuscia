@@ -1,0 +1,100 @@
+#############################################################################
+############                       Common Configs                ############
+#############################################################################
+# Deploy mode
+mode: Lite
+# Domain ID
+domainID: alice
+# Domain RSA private key encoded with base64。
+domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
+# Logging level, INFO、DEBUG、WARN
+logLevel: INFO
+
+#############################################################################
+############                       Lite Configs                  ############
+#############################################################################
+# The deploy token used by the lite connecting to the master.
+liteDeployToken: LS0tLS1CRUdJTi
+# The master endpoint the lite connecting to
+masterEndpoint: https://172.18.0.2:1080
+
+#############################################################################
+############               Lite、Autonomy Configs                ############
+#############################################################################
+# runc or runk or runp
+runtime: runc
+# Runk configs
+runk:
+  # Organization's k8s namespace scheduling pods
+  namespace: ""
+  # Organization's k8s cluster dns config
+  dnsServers:
+  # The kubeconfig of the organization's k8s cluster, the default serviceaccount will be used.
+  kubeconfigFile:
+
+# The capacity of the domain that can be used to schedule app pods.
+capacity:
+  cpu: #4
+  memory: #8Gi
+  pods: #500
+  storage: #100Gi
+
+# agent image configs
+image:
+  pullPolicy: ""
+  defaultRegistry: ""
+  registries:
+    - name: ""
+      endpoint: ""
+      username: ""
+      password: ""
+
+#############################################################################
+############                   Master Configs                    ############
+#############################################################################
+# Database dsn connection string
+# Example: mysql://username:password@tcp(hostname:3306)/database-name
+datastoreEndpoint: ""
+
+#############################################################################
+############                 SecretBackend Configs               ############
+#############################################################################
+# SecretBackend means the secret information hosting backend used by Kuscia.
+# Currently, ConfManager and config loaders will use these backends.
+#
+# It is always required to provide at least one secret information hosting for ConfManager to use.
+# If no secret information hosting backend is provided, a mem type backend named "default" will be added.
+#
+# The secret information hosting backend supports the following types:
+# mem:
+#     The mem type secret information hosting backend will read the key-value structure from params.preset and store it in an in-memory map structure.
+#     You can read or write to it, but any changes made will be lost after Kuscia is restarted.
+#     This is only intended for demo purposes and should not be used in a production environment!!!
+# rfile:
+#     The rfile type secret information hosting backend uses a local file for storage and encrypts the data using an encryption algorithm, currently supporting AES.
+#     This allows you to retain your modifications even when Kuscia is restarted.
+#     However, if you need to use the rfile type backend in a multi-replica environment, you should consider alternative backends.
+#
+#secretBackends:
+#  - name: default
+#    driver: mem
+#    params:
+#      preset:
+#        # you can add any kv you needed.
+#        someKey: someValue
+#  - name: rfile1
+#    driver: rfile
+#    params:
+#      # the file path to store/load secret. required, no default.
+#      path: /home/kuscia/var/tmp/rfile1
+#      cipher:
+#        type: aes
+#        aes:
+#          # key to encrypt/decrypt.
+#          key: thisismyaeskey
+
+# ConfManager will use the secret information hosting backend named "confManager.backend" as specified.
+# If not specified, ConfManager will use the backend named "default".
+#
+#confManager:
+#  backend: default

@@ -17,13 +17,11 @@ package commands
 import (
 	"os"
 
-	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 )
 
 type Opts struct {
@@ -32,19 +30,6 @@ type Opts struct {
 	GatewayConfigFile string
 	ResyncPeriod      int
 	IdleTimeout       int
-	logCfg            *zlogwriter.LogConfig
-}
-
-// AddFlags adds flags for a specific server to the specified FlagSet.
-func (o *Opts) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.Kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
-	fs.StringVar(&o.Namespace, "namespace", "default", "Namespace to list-watch services.")
-	fs.StringVar(&o.GatewayConfigFile, "gateway-config", "conf/gateway.yaml", "Namespace to list-watch services.")
-	fs.IntVar(&o.ResyncPeriod, "resync-period", 600, `Resync period of informers, in seconds`)
-	fs.IntVar(&o.IdleTimeout, "idle-timeout", 60, "Specify a field of envoy routing config, namely "+
-		"config.route.v3.RouteAction.idle_timeout, which bounds the amount of time the request’s stream may be idle.")
-
-	o.logCfg = zlogwriter.InstallPFlags(fs)
 }
 
 func loadAndOverrideConfig(config *config.GatewayConfig, configPath string) *config.GatewayConfig {
@@ -76,7 +61,7 @@ func (o *Opts) overWriteConfigByOpts(config *config.GatewayConfig) *config.Gatew
 	}
 
 	if o.Namespace != "" {
-		config.Namespace = o.Namespace
+		config.DomainID = o.Namespace
 	}
 
 	if o.IdleTimeout != 60 || config.IdleTimeout == 0 {

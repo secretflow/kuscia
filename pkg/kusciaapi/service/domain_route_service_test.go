@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -81,4 +82,24 @@ func TestDeleteRoute(t *testing.T) {
 		Destination: kusciaAPIDR.destination,
 	})
 	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrDomainRouteNotExists))
+}
+
+func TestConvertDomainRouteProtocol(t *testing.T) {
+	p, isTLS, err := convert2DomainRouteProtocol("http")
+	assert.False(t, isTLS)
+	assert.Nil(t, err)
+	assert.Equal(t, p, v1alpha1.DomainRouteProtocolHTTP)
+
+	p, isTLS, err = convert2DomainRouteProtocol("https")
+	assert.True(t, isTLS)
+	assert.Nil(t, err)
+	assert.Equal(t, p, v1alpha1.DomainRouteProtocolHTTP)
+
+	p, isTLS, err = convert2DomainRouteProtocol("grpc")
+	assert.False(t, isTLS)
+	assert.Nil(t, err)
+	assert.Equal(t, p, v1alpha1.DomainRouteProtocolGRPC)
+
+	p, isTLS, err = convert2DomainRouteProtocol("xxx")
+	assert.NotNil(t, err)
 }

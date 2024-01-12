@@ -1,0 +1,12 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: KusciaDeployment
+metadata:
+  labels:
+    kuscia.secretflow/app-type: serving
+  name: dataproxy-serving
+spec:
+  initiator: {{.DOMAIN_ID}}
+  inputConfig: '{}'
+  parties:
+    - appImageRef: dataproxy-image
+      domainID: {{.DOMAIN_ID}}

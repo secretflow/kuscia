@@ -21,8 +21,11 @@ import (
 )
 
 const (
-	ErrRequestValidate = 11100
-	ErrForUnexpected   = 11101
+	ErrRequestValidate     = 11100
+	ErrForUnexpected       = 11101
+	ErrAuthFailed          = 11102
+	ErrRequestMasterFailed = 11103
+	ErrLiteAPINotSupport   = 11104
 
 	ErrCreateJob      = 11201
 	ErrQueryJob       = 11202
@@ -59,6 +62,22 @@ const (
 	ErrQueryServingStatus = 11602
 	ErrUpdateServing      = 11603
 	ErrDeleteServing      = 11604
+
+	ErrCreateDomainDataGrant    = 11700
+	ErrUpdateDomainDataGrant    = 11701
+	ErrQueryDomainDataGrant     = 11702
+	ErrDeleteDomainDataGrant    = 11703
+	ErrDomainDataGrantExists    = 11704
+	ErrDomainDataGrantNotExists = 11705
+
+	ErrCreateDomainDataSource           = 11800
+	ErrUpdateDomainDataSource           = 11801
+	ErrQueryDomainDataSource            = 11802
+	ErrBatchQueryDomainDataSource       = 11803
+	ErrDeleteDomainDataSource           = 11804
+	ErrDomainDataSourceExists           = 11805
+	ErrDomainDataSourceNotExists        = 11806
+	ErrDomainDataSourceInfoEncodeFailed = 11907
 )
 
 func GetDomainErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
@@ -87,6 +106,26 @@ func GetDomainDataErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCod
 	}
 	if errors.IsAlreadyExists(err) {
 		return ErrDomainDataExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainDataGrantErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataGrantNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataGrantExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataSourceNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataSourceExists
 	}
 	return defaultErrorCode
 }

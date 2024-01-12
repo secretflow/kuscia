@@ -15,26 +15,26 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
 	"gopkg.in/yaml.v3"
-	kubeResource "k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
 const (
-	defaultLogsPath   = "var/logs"
-	defaultStdoutPath = "var/stdout"
+	defaultLogsPath            = "var/logs"
+	defaultStdoutPath          = "var/stdout"
+	defaultLocalImageRootDir   = "var/images"
+	defaultLocalSandboxRootDir = "sandbox"
 
 	defaultK8sClientMaxQPS = 250
 	defaultPodsCapacity    = "500"
@@ -43,6 +43,12 @@ const (
 	defaultResolvConfig      = "/etc/resolv.conf"
 
 	defaultRootDir = "/home/kuscia"
+)
+
+const (
+	ContainerRuntime = "runc"
+	K8sRuntime       = "runk"
+	ProcessRuntime   = "runp"
 )
 
 type AgentLogCfg struct {
@@ -64,12 +70,13 @@ type AgentLogCfg struct {
 }
 
 type CapacityCfg struct {
-	CPU    string `yaml:"cpu,omitempty"`
-	Memory string `yaml:"memory,omitempty"`
-	Pods   string `yaml:"pods,omitempty"`
+	CPU     string `yaml:"cpu,omitempty"`
+	Memory  string `yaml:"memory,omitempty"`
+	Pods    string `yaml:"pods,omitempty"`
+	Storage string `yaml:"storage,omitempty"`
 }
 
-type ApiserverSourceCfg struct {
+type KubeConnCfg struct {
 	KubeconfigFile string `yaml:"kubeconfigFile,omitempty"`
 	Endpoint       string `yaml:"endpoint,omitempty"`
 	// QPS indicates the maximum QPS to the master from this client.
@@ -78,6 +85,10 @@ type ApiserverSourceCfg struct {
 	Burst int `yaml:"burst,omitempty"`
 	// The maximum length of time to wait before giving up on a server request.
 	Timeout time.Duration `yaml:"timeout,omitempty"`
+}
+
+type ApiserverSourceCfg struct {
+	KubeConnCfg `yaml:",inline"`
 }
 
 type FileSourceCfg struct {
@@ -120,6 +131,53 @@ type CRIProviderCfg struct {
 	// ResolverConfig is the resolver configuration file used as the basis
 	// for the container DNS resolution configuration.
 	ResolverConfig string `yaml:"resolverConfig,omitempty"`
+
+	LocalRuntime LocalRuntimeCfg `yaml:"localRuntime"`
+}
+
+type LocalRuntimeCfg struct {
+	SandboxRootDir string `yaml:"sandboxRootDir"`
+	ImageRootDir   string `yaml:"imageRootDir"`
+}
+
+// DNSCfg specifies the DNS servers and search domains of a sandbox.
+type DNSCfg struct {
+	// Defines how a pod's DNS will be configured. Default is None.
+	Policy string `yaml:"policy,omitempty"`
+	// List of DNS servers of the cluster.
+	Servers []string `yaml:"servers,omitempty"`
+	// List of DNS search domains of the cluster.
+	Searches []string `yaml:"searches,omitempty"`
+	// ResolverConfig is the resolver configuration file used as the basis
+	// for the container DNS resolution configuration.
+	ResolverConfig string `yaml:"resolverConfig,omitempty"`
+}
+
+type K8sProviderBackendCfg struct {
+	Name   string    `yaml:"name,omitempty"`
+	Config yaml.Node `yaml:"config,omitempty"`
+}
+
+type K8sProviderCfg struct {
+	KubeConnCfg      `yaml:",inline"`
+	Namespace        string                `yaml:"namespace"`
+	DNS              DNSCfg                `yaml:"dns,omitempty"`
+	Backend          K8sProviderBackendCfg `yaml:"backend,omitempty"`
+	LabelsToAdd      map[string]string     `yaml:"labelsToAdd,omitempty"`
+	AnnotationsToAdd map[string]string     `yaml:"annotationsToAdd,omitempty"`
+	RuntimeClassName string                `yaml:"runtimeClassName,omitempty"`
+}
+
+type ProviderCfg struct {
+	Runtime string         `yaml:"runtime,omitempty"`
+	CRI     CRIProviderCfg `yaml:"cri,omitempty"`
+	K8s     K8sProviderCfg `yaml:"k8s,omitempty"`
+}
+
+type NodeCfg struct {
+	NodeName        string `yaml:"nodeName,omitempty"`
+	EnableNodeReuse bool   `yaml:"enableNodeReuse,omitempty"`
+	KeepNodeOnExit  bool   `yaml:"keepNodeOnExit,omitempty"`
 }
 
 type RegistryAuth struct {
@@ -145,10 +203,6 @@ type RegistryCfg struct {
 	Allows  []RegistryAuth `yaml:"allows,omitempty"`
 }
 
-type ProviderCfg struct {
-	CRI CRIProviderCfg `yaml:"cri,omitempty"`
-}
-
 type CertCfg struct {
 	SigningCertFile string `yaml:"signingCertFile,omitempty"`
 	SigningKeyFile  string `yaml:"signingKeyFile,omitempty"`
@@ -163,12 +217,10 @@ type AgentConfig struct {
 	// Root directory of framework.
 	RootDir      string `yaml:"rootDir,omitempty"`
 	Namespace    string `yaml:"namespace,omitempty"`
-	NodeName     string `yaml:"nodeName,omitempty"`
-	NodeIP       string `yaml:"hostIP"`
+	NodeIP       string `yaml:"NodeIP,omitempty"`
 	APIVersion   string `yaml:"apiVersion,omitempty"`
 	AgentVersion string `yaml:"agentVersion,omitempty"`
 
-	KeepNodeOnExit bool `yaml:"keepNodeOnExit,omitempty"`
 	// If k3s is built into the node, it is a head node.
 	Head bool `yaml:"head"`
 
@@ -177,8 +229,9 @@ type AgentConfig struct {
 	StdoutPath string `yaml:"stdoutPath,omitempty"`
 
 	// CA configuration.
-	DomainCAKeyFile string `yaml:"domainCAKeyFile,omitempty"`
-	DomainCAFile    string `yaml:"domainCAFile,omitempty"`
+	DomainCACertFile string
+	DomainCAKey      *rsa.PrivateKey
+	DomainCACert     *x509.Certificate
 
 	// AllowPrivileged if true, securityContext.Privileged will work for container.
 	AllowPrivileged bool `yaml:"allowPrivileged,omitempty"`
@@ -188,6 +241,7 @@ type AgentConfig struct {
 	Source    SourceCfg    `yaml:"source,omitempty"`
 	Framework FrameworkCfg `yaml:"framework,omitempty"`
 	Provider  ProviderCfg  `yaml:"provider,omitempty"`
+	Node      NodeCfg      `yaml:"node,omitempty"`
 	Registry  RegistryCfg  `yaml:"registry,omitempty"`
 	Cert      CertCfg      `yaml:"cert,omitempty"`
 	Plugins   []PluginCfg  `yaml:"plugins,omitempty"`
@@ -212,10 +266,12 @@ func DefaultStaticAgentConfig() *AgentConfig {
 		},
 		Source: SourceCfg{
 			Apiserver: ApiserverSourceCfg{
-				QPS:   defaultK8sClientMaxQPS,
-				Burst: defaultK8sClientMaxQPS * 2,
-				// K8S does not set timeout by default, so the agent sets a more tolerant value by default.
-				Timeout: 20 * time.Minute,
+				KubeConnCfg: KubeConnCfg{
+					QPS:   defaultK8sClientMaxQPS,
+					Burst: defaultK8sClientMaxQPS * 2,
+					// K8S does not set timeout by default, so the agent sets a more tolerant value by default.
+					Timeout: 20 * time.Minute,
+				},
 			},
 			File: FileSourceCfg{
 				Enable: false,
@@ -225,6 +281,7 @@ func DefaultStaticAgentConfig() *AgentConfig {
 			SyncFrequency: 10 * time.Second,
 		},
 		Provider: ProviderCfg{
+			Runtime: ContainerRuntime,
 			CRI: CRIProviderCfg{
 				RemoteRuntimeEndpoint: defaultCRIRemoteEndpoint,
 				RemoteImageEndpoint:   defaultCRIRemoteEndpoint,
@@ -234,6 +291,18 @@ func DefaultStaticAgentConfig() *AgentConfig {
 				ClusterDomain:         "",
 				ClusterDNS:            []string{},
 				ResolverConfig:        defaultResolvConfig,
+				LocalRuntime: LocalRuntimeCfg{
+					SandboxRootDir: defaultLocalSandboxRootDir,
+					ImageRootDir:   defaultLocalImageRootDir,
+				},
+			},
+		},
+		Plugins: []PluginCfg{
+			{
+				Name: common.PluginNameCertIssuance,
+			},
+			{
+				Name: common.PluginNameConfigRender,
 			},
 		},
 	}
@@ -247,21 +316,6 @@ func DefaultAgentConfig() *AgentConfig {
 		config.NodeIP = hostIP
 	} else {
 		nlog.Fatalf("Get host ip fail, err=%v . You should set host ip manually in config file.", err)
-	}
-
-	// Memory are measured in bytes in Kubernetes
-	if memstat, err := mem.VirtualMemory(); err == nil {
-		config.Capacity.Memory = strconv.FormatUint(memstat.Total, 10)
-	} else {
-		nlog.Fatalf("Get host memory state fail, err=%v", err)
-	}
-
-	// One cpu, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers
-	// and 1 hyperthread on bare-metal Intel processors.
-	if cpus, err := cpu.Counts(true); err == nil {
-		config.Capacity.CPU = strconv.Itoa(cpus)
-	} else {
-		nlog.Fatalf("Get cpu info fail, err=%v", err.Error())
 	}
 
 	return config
@@ -311,14 +365,6 @@ func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 
 	if len(config.Provider.CRI.ClusterDNS) == 0 {
 		config.Provider.CRI.ClusterDNS = []string{config.NodeIP}
-	}
-
-	if _, err = kubeResource.ParseQuantity(config.Capacity.Memory); err != nil {
-		return nil, fmt.Errorf("invalid memory value %v", config.Capacity.Memory)
-	}
-
-	if _, err = kubeResource.ParseQuantity(config.Capacity.CPU); err != nil {
-		return nil, fmt.Errorf("invalid CPU value %v", config.Capacity.CPU)
 	}
 
 	return config, nil

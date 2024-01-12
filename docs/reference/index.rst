@@ -4,7 +4,8 @@
 .. toctree::
     :maxdepth: 2
 
+    overview
     architecture_cn
     concepts/index
     apis/index
-    faq_cn
+    troubleshoot/index

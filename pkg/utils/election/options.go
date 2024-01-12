@@ -23,11 +23,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 )
 
 type Options struct {
 	Identity      string
+	LockType      string
 	KubeClient    kubernetes.Interface
 	EventRecorder record.EventRecorder
 	Namespace     string
@@ -50,6 +52,7 @@ type Options struct {
 func defaultOptions() *Options {
 	return &Options{
 		Identity:      genIdentity(),
+		LockType:      resourcelock.LeasesResourceLock,
 		KubeClient:    nil,
 		EventRecorder: nil,
 		Namespace:     "kube-system",
@@ -106,5 +109,17 @@ func WithOnStoppedLeading(onStartedLeading func()) Option {
 func WithOnNewLeader(onNewLeader func(string)) Option {
 	return func(o *Options) {
 		o.OnNewLeader = onNewLeader
+	}
+}
+
+func WithLockType(lockType string) Option {
+	return func(o *Options) {
+		o.LockType = lockType
+	}
+}
+
+func WithNamespace(namespace string) Option {
+	return func(o *Options) {
+		o.Namespace = namespace
 	}
 }

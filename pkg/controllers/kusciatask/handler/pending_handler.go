@@ -18,17 +18,19 @@ package handler
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -92,35 +94,79 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 // Handle is used to perform the real logic.
 func (h *PendingHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (needUpdate bool, err error) {
 	now := metav1.Now().Rfc3339Copy()
-	defer func() {
-		if kusciaTask.Status.StartTime == nil {
-			kusciaTask.Status.StartTime = &now
-		}
-	}()
-
-	cond, _ := utilsres.GetKusciaTaskCondition(&kusciaTask.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, true)
-	if err = h.createTaskResources(kusciaTask); err != nil {
-		needUpdate = utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err.Error()))
+	if needUpdate, err = h.prepareTaskResources(now, kusciaTask); needUpdate || err != nil {
 		return needUpdate, err
 	}
 
-	utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionTrue, "", "")
-	kusciaTask.Status.LastReconcileTime = &now
-	kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskRunning
-	return true, nil
+	curKtStatus := kusciaTask.Status.DeepCopy()
+	refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, curKtStatus)
+	if !reflect.DeepEqual(kusciaTask.Status, curKtStatus) {
+		needUpdate = true
+		kusciaTask.Status = *curKtStatus
+		kusciaTask.Status.LastReconcileTime = &now
+	}
+
+	if h.taskRunning(now, kusciaTask) {
+		return true, nil
+	}
+
+	if updated, err := h.taskExpired(now, kusciaTask); updated || err != nil {
+		return updated, err
+	}
+	return needUpdate, nil
 }
 
-func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
+func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) (needUpdate bool, err error) {
+	if kusciaTask.Status.StartTime == nil {
+		kusciaTask.Status.StartTime = &now
+		needUpdate = true
+	}
+
+	if kusciaTask.Status.Phase == "" {
+		kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskPending
+		needUpdate = true
+	}
+
+	cond, found := utilsres.GetKusciaTaskCondition(&kusciaTask.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, true)
+	if !found {
+		latestKt, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), kusciaTask.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		latestCond, _ := utilsres.GetKusciaTaskCondition(&latestKt.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, false)
+		if latestCond != nil && latestCond.Status == v1.ConditionTrue {
+			return false, nil
+		}
+
+		if needUpdate, err = h.createTaskResources(kusciaTask); err != nil {
+			conditionNeedUpdate := utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err.Error()))
+			return needUpdate || conditionNeedUpdate, err
+		}
+
+		utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionTrue, "", "")
+		kusciaTask.Status.LastReconcileTime = &now
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	partyKitInfos := map[string]*PartyKitInfo{}
 	for i, party := range kusciaTask.Spec.Parties {
 		kit, err := h.buildPartyKitInfo(kusciaTask, &kusciaTask.Spec.Parties[i])
 		if err != nil {
-			return fmt.Errorf("failed to build domain %v kit info, %v", party.DomainID, err)
+			return false, fmt.Errorf("failed to build domain %v kit info, %v", party.DomainID, err)
 		}
 
 		partyKitInfos[party.DomainID+party.Role] = kit
 	}
 
+	needUpdate, err := allocatePorts(kusciaTask, partyKitInfos)
+	if err != nil {
+		return needUpdate, err
+	}
 	parties := generateParties(partyKitInfos)
 
 	for _, partyKitInfo := range partyKitInfos {
@@ -136,7 +182,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
-			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
+			return needUpdate, fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
 		}
 
 		for key, v := range ps {
@@ -151,10 +197,40 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	kusciaTask.Status.ServiceStatuses = serviceStatuses
 
 	if err := h.createTaskResourceGroup(kusciaTask, partyKitInfos); err != nil {
-		return fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
+		return needUpdate, fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
 	}
 
-	return nil
+	return needUpdate, nil
+}
+
+func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) bool {
+	// Check if there is a pod in running status,
+	// If there is, it indicates that the task status can be converted to running
+	for _, podStatus := range kusciaTask.Status.PodStatuses {
+		pod, _ := h.podsLister.Pods(podStatus.Namespace).Get(podStatus.PodName)
+		if pod != nil && pod.Status.Phase != v1.PodPending {
+			kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskRunning
+			kusciaTask.Status.LastReconcileTime = &now
+			return true
+		}
+	}
+	return false
+}
+
+func (h *PendingHandler) taskExpired(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
+	trg, err := getTaskResourceGroup(context.Background(), kusciaTask.Name, h.trgLister, h.kusciaClient)
+	if err != nil {
+		return false, fmt.Errorf("get task resource group %v failed, %v", kusciaTask.Name, err)
+	}
+
+	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseFailed {
+		kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskFailed
+		kusciaTask.Status.Message = fmt.Sprintf("Parties did not complete scheduling within the %v second lifecycle", trg.Spec.LifecycleSeconds)
+		kusciaTask.Status.LastReconcileTime = &now
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.KusciaTask, party *kusciaapisv1alpha1.PartyInfo) (*PartyKitInfo, error) {
@@ -354,6 +430,111 @@ func generatePortAccessDomains(parties []kusciaapisv1alpha1.PartyInfo, networkPo
 	return portAccessDomains
 }
 
+func allocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitInfos map[string]*PartyKitInfo) (bool, error) {
+	needUpdate := false
+
+	if kusciaTask.Annotations == nil {
+		kusciaTask.Annotations = make(map[string]string)
+	}
+
+	allocatedPorts := kusciaTask.Status.AllocatedPorts
+	if len(allocatedPorts) == 0 {
+		needCounts := map[string]int{}
+		for _, partyKit := range partyKitInfos {
+			ns := partyKit.domainID
+			count := needCounts[ns]
+			for _, pod := range partyKit.pods {
+				count += len(pod.ports)
+			}
+			needCounts[ns] = count
+		}
+
+		retPorts, err := pkgport.AllocatePort(needCounts)
+		if err != nil {
+			return false, err
+		}
+
+		for _, partyKit := range partyKitInfos {
+			ns := partyKit.domainID
+			ports, ok := retPorts[ns]
+			if !ok {
+				return false, fmt.Errorf("allocated ports not found for domain %s", ns)
+			}
+			index := 0
+			partyPorts := kusciaapisv1alpha1.PartyAllocatedPorts{
+				DomainID:  partyKit.domainID,
+				Role:      partyKit.role,
+				NamedPort: map[string]int32{},
+			}
+
+			for _, pod := range partyKit.pods {
+				for portName := range pod.ports {
+					if index >= len(ports) {
+						return false, fmt.Errorf("allocated ports are not enough for domain %s", ns)
+					}
+
+					partyPorts.NamedPort[buildPortIdentity(pod.podName, portName)] = ports[index]
+					index++
+				}
+			}
+
+			allocatedPorts = append(allocatedPorts, partyPorts)
+		}
+
+		kusciaTask.Status.AllocatedPorts = allocatedPorts
+		needUpdate = true
+	}
+
+	for _, partyKit := range partyKitInfos {
+		var partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts
+		for _, ports := range allocatedPorts {
+			if ports.DomainID == partyKit.domainID && ports.Role == partyKit.role {
+				partyPorts = &ports
+				break
+			}
+		}
+		if partyPorts == nil {
+			return false, fmt.Errorf("allocated ports not found for party %s/%s", partyKit.domainID, partyKit.role)
+		}
+
+		for _, pod := range partyKit.pods {
+			if err := fillPodAllocatedPorts(partyPorts, pod); err != nil {
+				return false, fmt.Errorf("failed to fill allocated ports for party %s/%s, detail->%v", partyKit.domainID, partyKit.role, err)
+			}
+		}
+	}
+
+	return needUpdate, nil
+}
+
+func fillPodAllocatedPorts(partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts, pod *PodKitInfo) error {
+
+	resPorts := make([]*proto.Port, 0, len(pod.ports))
+	for i, port := range pod.ports {
+		portIdentity := buildPortIdentity(pod.podName, port.Name)
+		realPort, ok := partyPorts.NamedPort[portIdentity]
+		if !ok {
+			return fmt.Errorf("not found allocated port for %v", portIdentity)
+		}
+
+		resPorts = append(resPorts, &proto.Port{
+			Name:     port.Name,
+			Port:     realPort,
+			Scope:    string(port.Scope),
+			Protocol: string(port.Protocol),
+		})
+		port.Port = realPort
+		pod.ports[i] = port
+	}
+
+	pod.allocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
+	return nil
+}
+
+func buildPortIdentity(podName, portName string) string {
+	return fmt.Sprintf("%s/%s", podName, portName)
+}
+
 func generateParty(kitInfo *PartyKitInfo) *proto.Party {
 	var partyServices []*proto.Service
 
@@ -418,7 +599,6 @@ func fillPartyClusterDefine(kitInfo *PartyKitInfo, parties []*proto.Party) {
 
 	for i, podKit := range kitInfo.pods {
 		fillPodClusterDefine(podKit, parties, *selfPartyIndex, i)
-		fillPodAllocatedPorts(podKit)
 	}
 }
 
@@ -428,20 +608,6 @@ func fillPodClusterDefine(pod *PodKitInfo, parties []*proto.Party, partyIndex in
 		SelfPartyIdx:    int32(partyIndex),
 		SelfEndpointIdx: int32(endpointIndex),
 	}
-}
-
-func fillPodAllocatedPorts(pod *PodKitInfo) {
-	resPorts := make([]*proto.Port, 0, len(pod.ports))
-	for _, port := range pod.ports {
-		resPorts = append(resPorts, &proto.Port{
-			Name:     port.Name,
-			Port:     port.Port,
-			Scope:    string(port.Scope),
-			Protocol: string(port.Protocol),
-		})
-	}
-
-	pod.allocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
 }
 
 func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[string]*kusciaapisv1alpha1.PodStatus, map[string]*kusciaapisv1alpha1.ServiceStatus, error) {
@@ -486,13 +652,16 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 				return nil, nil, fmt.Errorf("failed to generate service %q, %v", serviceName, err)
 			}
 
-			if err := h.submitService(service, pod); err != nil {
+			if err = h.submitService(service, pod); err != nil {
 				return nil, nil, fmt.Errorf("failed to submit service %q, %v", serviceName, err)
 			}
 
 			serviceStatuses[service.Namespace+"/"+service.Name] = &kusciaapisv1alpha1.ServiceStatus{
-				Namespace:   service.GetNamespace(),
+				Namespace:   service.Namespace,
 				ServiceName: service.Name,
+				PortName:    portName,
+				PortNumber:  ctrPort.Port,
+				Scope:       ctrPort.Scope,
 			}
 		}
 	}
@@ -613,7 +782,7 @@ func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 
 func (h *PendingHandler) submitConfigMap(cm *v1.ConfigMap, kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
 	listerCM, err := h.configMapLister.ConfigMaps(cm.Namespace).Get(cm.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		listerCM, err = h.kubeClient.CoreV1().ConfigMaps(cm.Namespace).Create(context.Background(), cm, metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item, so we
@@ -720,11 +889,17 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		}
 
 		for _, port := range ctr.Ports {
-			resCtr.Ports = append(resCtr.Ports, v1.ContainerPort{
+			namedPort, ok := podKit.ports[port.Name]
+			if !ok {
+				return nil, fmt.Errorf("port %s is not allocated for pod %s", port.Name, pod.Name)
+			}
+			resPort := v1.ContainerPort{
 				Name:          port.Name,
-				ContainerPort: port.Port,
+				ContainerPort: namedPort.Port,
 				Protocol:      v1.ProtocolTCP,
-			})
+			}
+
+			resCtr.Ports = append(resCtr.Ports, resPort)
 		}
 
 		protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}
@@ -793,7 +968,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 
 func (h *PendingHandler) submitPod(partyKit *PartyKitInfo, pod *v1.Pod) (*v1.Pod, error) {
 	listerPod, err := h.podsLister.Pods(pod.Namespace).Get(pod.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		listerPod, err = h.kubeClient.CoreV1().Pods(pod.Namespace).Create(context.Background(), pod, metav1.CreateOptions{})
 	}
 
@@ -842,6 +1017,7 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 	}
 
 	svc.Labels = map[string]string{
+		common.LabelPortName:  port.Name,
 		common.LabelPortScope: string(port.Scope),
 		common.LabelInitiator: partyKit.kusciaTask.Spec.Initiator,
 	}
@@ -869,7 +1045,7 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 
 func (h *PendingHandler) submitService(service *v1.Service, pod *v1.Pod) error {
 	listerService, err := h.servicesLister.Services(service.Namespace).Get(service.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		listerService, err = h.kubeClient.CoreV1().Services(service.Namespace).Create(context.Background(), service, metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item, so we
@@ -889,7 +1065,7 @@ func (h *PendingHandler) submitService(service *v1.Service, pod *v1.Pod) error {
 
 func (h *PendingHandler) submitTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
 	_, err := h.trgLister.Get(trg.Name)
-	if apierrors.IsNotFound(err) {
+	if k8serrors.IsNotFound(err) {
 		_, err = h.kusciaClient.KusciaV1alpha1().TaskResourceGroups().Create(context.Background(), trg, metav1.CreateOptions{})
 	}
 

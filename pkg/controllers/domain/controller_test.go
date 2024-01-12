@@ -135,20 +135,6 @@ func TestEnqueueNamespace(t *testing.T) {
 	assert.Equal(t, 1, cc.workqueue.Len())
 }
 
-func TestStop(t *testing.T) {
-	kubeFakeClient := kubefake.NewSimpleClientset()
-	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	c := NewController(context.Background(), controllers.ControllerConfig{
-		KubeClient:   kubeFakeClient,
-		KusciaClient: kusciaFakeClient,
-	})
-	cc := c.(*Controller)
-
-	cc.Stop()
-	_, shutdown := cc.workqueue.Get()
-	assert.Equal(t, true, shutdown)
-}
-
 func TestSyncHandler(t *testing.T) {
 	domain1 := makeTestDomain("ns1")
 	domain2 := makeTestDomain("ns2")

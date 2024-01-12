@@ -20,7 +20,6 @@ import (
 	"time"
 
 	apicorev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -70,7 +69,7 @@ const (
 type Controller struct {
 	ctx                   context.Context
 	cancel                context.CancelFunc
-	IsMaster              bool
+	RunMode               common.RunModeType
 	Namespace             string
 	RootDir               string
 	kubeClient            kubernetes.Interface
@@ -106,7 +105,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		nodeInformer.Informer().HasSynced,
 	}
 	controller := &Controller{
-		IsMaster:              config.IsMaster,
+		RunMode:               config.RunMode,
 		Namespace:             config.Namespace,
 		RootDir:               config.RootDir,
 		kubeClient:            kubeClient,
@@ -291,7 +290,6 @@ func (c *Controller) Run(workers int) error {
 	nlog.Info("Starting sync domain status")
 	go wait.Until(c.syncDomainStatuses, 10*time.Second, c.ctx.Done())
 	<-c.ctx.Done()
-
 	return nil
 }
 
@@ -301,7 +299,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.workqueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -341,17 +338,15 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 // create is used to create resource under domain.
 func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 	if err := c.createNamespace(domain); err != nil {
-		nlog.Errorf("Create domain %v namespace failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
-
 	if err := c.createResourceQuota(domain); err != nil {
-		nlog.Errorf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
 		return err
 	}
-
 	if err := c.createOrUpdateAuth(domain); err != nil {
-		nlog.Errorf("Create domain %v auth failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v auth failed: %v", domain.Name, err.Error())
 		return err
 	}
 
@@ -361,22 +356,22 @@ func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 // update is used to update resource under domain.
 func (c *Controller) update(domain *kusciaapisv1alpha1.Domain) error {
 	if err := c.updateNamespace(domain); err != nil {
-		nlog.Errorf("Update domain %v namespace failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Update domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.updateResourceQuota(domain); err != nil {
-		nlog.Errorf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.createOrUpdateAuth(domain); err != nil {
-		nlog.Errorf("update domain %v auth failed: %v", domain.Name, err.Error())
+		nlog.Warnf("update domain %v auth failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.syncDomainStatus(domain); err != nil {
-		nlog.Errorf("sync domain %v status failed: %v", domain.Name, err.Error())
+		nlog.Warnf("sync domain %v status failed: %v", domain.Name, err.Error())
 		return err
 	}
 
@@ -395,9 +390,4 @@ func (c *Controller) delete(name string) error {
 
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	_, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainsName, apismetav1.GetOptions{})
-	return err
 }

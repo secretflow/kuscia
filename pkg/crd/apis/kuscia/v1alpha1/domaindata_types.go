@@ -52,6 +52,7 @@ type DomainDataList struct {
 type DomainDataSpec struct {
 	// the URI of domaindata, the relative URI to the datasource
 	RelativeURI string `json:"relativeURI"`
+	Author      string `json:"author"`
 	Name        string `json:"name"`
 	Type        string `json:"type"`
 	DataSource  string `json:"dataSource"`
@@ -64,6 +65,8 @@ type DomainDataSpec struct {
 	// +optional ,The vendor is the one who outputs the domain data, which may be done by the secretFlow engine,
 	// another vendor's engine, or manually registered.
 	Vendor string `json:"vendor,omitempty"`
+	// +optional
+	FileFormat string `json:"fileFormat,omitempty"`
 }
 
 type Partition struct {
@@ -79,4 +82,6 @@ type DataColumn struct {
 	Type string `json:"type"`
 	// +optional
 	Comment string `json:"comment"`
+	// +optional
+	NotNullable bool `json:"notNullable,omitempty"`
 }

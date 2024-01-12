@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -47,7 +48,7 @@ func TestUpdateDomain(t *testing.T) {
 }
 
 func TestBatchQueryDomain(t *testing.T) {
-	res := kusciaAPIDS.BatchQueryDomainStatus(context.Background(), &kusciaapi.BatchQueryDomainStatusRequest{
+	res := kusciaAPIDS.BatchQueryDomain(context.Background(), &kusciaapi.BatchQueryDomainRequest{
 		DomainIds: []string{kusciaAPIDS.domainID},
 	})
 	assert.Equal(t, len(res.Data.Domains), 1)

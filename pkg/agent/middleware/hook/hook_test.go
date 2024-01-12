@@ -23,12 +23,12 @@ import (
 type mockHookHandlerA struct {
 }
 
-func (p *mockHookHandlerA) CanExec(obj interface{}, point Point) bool {
-	return point == 0
+func (p *mockHookHandlerA) CanExec(ctx Context) bool {
+	return true
 }
 
-func (p *mockHookHandlerA) ExecHook(obj interface{}, point Point) (*Result, error) {
-	if obj == nil {
+func (p *mockHookHandlerA) ExecHook(ctx Context) (*Result, error) {
+	if ctx.Point() == PointMakeMounts {
 		return &Result{Terminated: true, Msg: "terminated by mock"}, nil
 	}
 	return &Result{}, nil
@@ -37,9 +37,9 @@ func (p *mockHookHandlerA) ExecHook(obj interface{}, point Point) (*Result, erro
 func TestExecute(t *testing.T) {
 	Register("mock-handler-a", &mockHookHandlerA{})
 
-	err := Execute(new(int), 0)
+	err := Execute(&K8sProviderSyncPodContext{})
 	assert.NoError(t, err)
 
-	err = Execute(nil, 0)
+	err = Execute(&MakeMountsContext{})
 	assert.ErrorContains(t, err, "terminate operation")
 }

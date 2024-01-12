@@ -20,7 +20,6 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
@@ -248,7 +247,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.workqueue.ShutDown()
 }
 
 // enqueueKusciaTask takes a KusciaTask resource and converts it into a namespace/name
@@ -293,10 +291,6 @@ func (c *Controller) handleTaskResourceGroupObject(obj interface{}) {
 		nlog.Debugf("Get kuscia task %v failed, %v", object.GetName(), err.Error())
 		return
 	}
-	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskRunning {
-		nlog.Debugf("KusciaTask %q status is %v, skip task resource group %q event", kusciaTask.Name, kusciaTask.Status.Phase, object.GetName())
-		return
-	}
 
 	c.enqueueKusciaTask(kusciaTask)
 }
@@ -331,11 +325,6 @@ func (c *Controller) handlePodObject(obj interface{}) {
 		kusciaTask, err := c.kusciaTaskLister.Get(ownerRef.Name)
 		if err != nil {
 			nlog.Debugf("Ignoring orphaned object %q of kusciaTask %q", object.GetSelfLink(), ownerRef.Name)
-			return
-		}
-
-		if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskRunning {
-			nlog.Debugf("KusciaTask %q status is not running, skip pod '%v/%v' event", kusciaTask.Name, object.GetNamespace(), object.GetName())
 			return
 		}
 
@@ -374,6 +363,10 @@ func (c *Controller) handleServiceObject(obj interface{}) {
 		pod, err := c.podsLister.Pods(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			nlog.Debugf("Ignoring orphaned object %q of pod %q", object.GetSelfLink(), ownerRef.Name)
+			return
+		}
+
+		if pod.Status.Phase == v1.PodPending {
 			return
 		}
 
@@ -507,7 +500,7 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	if err != nil {
 		metrics.SyncDurations.WithLabelValues(string(phase), metrics.Failed).Observe(time.Since(startTime).Seconds())
 		if c.workqueue.NumRequeues(key) <= maxBackoffLimit {
-			return fmt.Errorf("failed to handle condition for kusciaTask %q, %v, retry", key, err)
+			return fmt.Errorf("failed to process kusciaTask %q, %v, retry", key, err)
 		}
 
 		c.failKusciaTask(kusciaTask, fmt.Errorf("KusciaTask failed after %vx retry, last error: %v", maxBackoffLimit, err))
@@ -554,15 +547,4 @@ func (c *Controller) updateTaskStatus(rawKusciaTask, curKusciaTask *kusciaapisv1
 // Name returns controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists check whether KusciaTask and AppImage crd exists.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDKusciaTasksName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDAppImagesName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	return nil
 }

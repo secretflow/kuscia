@@ -15,8 +15,6 @@
 package service
 
 const (
-	DomainDataNamePrefixLen     = 32
-	DomainDataURIDelimiter      = "/"
-	DomainDataSourceTypeOSS     = "oss"
-	DomainDataSourceTypeLocalFS = "localfs"
+	DomainDataNamePrefixLen = 32
+	DomainDataURIDelimiter  = "/"
 )

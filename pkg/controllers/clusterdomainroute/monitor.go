@@ -15,11 +15,10 @@
 package clusterdomainroute
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -27,27 +26,22 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-var (
-	clusterdomainrouteStatus = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "clusterdomainroute_status",
-			Help: "clusterdomainroute status",
-		},
-		[]string{"name"},
-	)
+const (
+	gatewayLiveTimeout = 3 * time.Minute
 )
 
-func (c *Controller) Monitorcdrstatus() {
-	c.UpdateStatus()
+func (c *controller) Monitorcdrstatus(ctx context.Context) {
+	c.UpdateStatus(ctx)
 }
 
-func (c *Controller) UpdateStatus() error {
+func (c *controller) UpdateStatus(ctx context.Context) error {
 	cdrs, err := c.clusterDomainRouteLister.List(labels.Everything())
 	if err != nil {
 		return err
 	}
 
 	for _, cdr1 := range cdrs {
+		update := false
 		cdr := cdr1.DeepCopy()
 		gws, err := c.gatewayLister.Gateways(cdr.Spec.Source).List(labels.Everything())
 		if err != nil {
@@ -69,23 +63,23 @@ func (c *Controller) UpdateStatus() error {
 				for _, port := range cdr.Spec.Endpoint.Ports {
 					if metric.Name == fmt.Sprintf("%s-to-%s-%s", cdr.Spec.Source, cdr.Spec.Destination, port.Name) && metric.HealthyEndpointsCount > 0 {
 						healthyCount++
-						cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
-							EndpointHealthy: true,
+						if v, ok := cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name]; !ok || !v.EndpointHealthy {
+							cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
+								EndpointHealthy: true,
+							}
+							update = true
 						}
 					}
 				}
 			}
 		}
 
-		clusterdomainrouteStatus.WithLabelValues(cdr.Name).Set(float64(healthyCount))
-		if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(c.ctx, cdr, metav1.UpdateOptions{}); err != nil {
-			nlog.Warnf("Update cdr %s status failed with %v", cdr.Name, err)
+		if update {
+			if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(ctx, cdr, metav1.UpdateOptions{}); err != nil {
+				nlog.Warnf("Update cdr %s status failed with %v", cdr.Name, err)
+			}
 		}
 	}
 
 	return nil
-}
-
-func (c *Controller) cleanMetrics(name string) {
-	clusterdomainrouteStatus.DeleteLabelValues(name)
 }

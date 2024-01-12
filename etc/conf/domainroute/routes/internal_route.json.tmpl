@@ -50,6 +50,37 @@
                     }
                 },
                 {
+                    "name": "default-route-grpc",
+                    "match": {
+                        "prefix": "/",
+                        "headers": [
+                            {
+                                "name": "content-type",
+                                "string_match": {
+                                    "prefix": "application/grpc"
+                                }
+                            }
+                        ]
+                    },
+                    "directResponse": {
+                        "status": 404
+                    },
+                    "response_headers_to_add": [
+                        {
+                            "header": {
+                                "key": "Kuscia-Error-Message-Internal",
+                                "value": "Service \"%REQ(:authority)%\" not found."
+                            }
+                        },
+                        {
+                            "header": {
+                                "key": "grpc-status",
+                                "value": "14"
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "default-route",
                     "match": {
                         "prefix": "/"

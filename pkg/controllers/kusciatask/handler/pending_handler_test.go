@@ -38,7 +38,7 @@ import (
 
 func makeTestPendingHandler() *PendingHandler {
 	kubeClient := kubefake.NewSimpleClientset()
-	kusciaClient := kusciafake.NewSimpleClientset(makeTestAppImageCase1())
+	kusciaClient := kusciafake.NewSimpleClientset(makeTestAppImageCase1(), makeTestKusciaTaskCase1())
 
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
@@ -79,8 +79,9 @@ func TestPendingHandler_Handle(t *testing.T) {
 
 	_, err := handler.Handle(kusciaTask)
 	assert.NoError(t, err)
-	assert.Equal(t, kusciaapisv1alpha1.TaskRunning, kusciaTask.Status.Phase)
+	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)
 
+	kusciaTask.Status.Conditions = nil
 	kusciaTask.Spec.Parties[0].AppImageRef = "not-exist-image"
 	_, err = handler.Handle(kusciaTask)
 	assert.Error(t, err)
@@ -110,8 +111,29 @@ func TestPendingHandler_Handle(t *testing.T) {
 	}
 
 	for i, tt := range podTests {
-		t.Run(fmt.Sprintf("TestCase %d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("PodTestCase %d", i), func(t *testing.T) {
 			_, err := handler.kubeClient.CoreV1().Pods(tt.namespace).Get(context.Background(), tt.name, metav1.GetOptions{})
+			assert.NoError(t, err)
+		})
+	}
+
+	serviceTests := []struct {
+		namespace string
+		name      string
+	}{
+		{
+			namespace: "domain-a",
+			name:      "kusciatask-001-server-0-cluster",
+		},
+		{
+			namespace: "domain-b",
+			name:      "kusciatask-001-client-0-cluster",
+		},
+	}
+
+	for i, tt := range serviceTests {
+		t.Run(fmt.Sprintf("ServiceTestCase %d", i), func(t *testing.T) {
+			_, err := handler.kubeClient.CoreV1().Services(tt.namespace).Get(context.Background(), tt.name, metav1.GetOptions{})
 			assert.NoError(t, err)
 		})
 	}

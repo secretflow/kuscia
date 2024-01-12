@@ -21,10 +21,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/confmanager/commands"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
+	"github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
@@ -32,13 +36,18 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
+const (
+	serverCertsCommonName        = "ConfManager"
+	defaultServerCertsSanDNSName = "confmanager"
+)
+
 type confManagerModule struct {
 	conf *config.ConfManagerConfig
 }
 
-func NewConfManager(d *Dependencies) Module {
+func NewConfManager(ctx context.Context, d *Dependencies) (Module, error) {
 	// overwrite config
-	conf := config.NewDefaultConfManagerConfig(d.RootDir)
+	conf := config.NewDefaultConfManagerConfig()
 	if d.ConfManager.HTTPPort != 0 {
 		conf.HTTPPort = d.ConfManager.HTTPPort
 	}
@@ -57,21 +66,50 @@ func NewConfManager(d *Dependencies) Module {
 	if d.ConfManager.IdleTimeout != 0 {
 		conf.IdleTimeout = d.ConfManager.IdleTimeout
 	}
-	if d.ConfManager.EnableConfAuth != false {
+	if !d.ConfManager.EnableConfAuth {
 		conf.EnableConfAuth = d.ConfManager.EnableConfAuth
 	}
-	if d.ConfManager.TLSConfig != nil {
-		conf.TLSConfig = d.ConfManager.TLSConfig
+	if d.ConfManager.IsMaster {
+		conf.IsMaster = d.ConfManager.IsMaster
 	}
-	if d.ConfManager.SecretBackend != nil && d.ConfManager.SecretBackend.Driver != "" {
-		conf.SecretBackend = d.ConfManager.SecretBackend
+	if d.ConfManager.Backend != "" {
+		conf.Backend = d.ConfManager.Backend
+	}
+	conf.DomainID = d.DomainID
+	conf.DomainKey = d.DomainKey
+	conf.TLS.RootCA = d.CACert
+	conf.TLS.RootCAKey = d.CAKey
+	switch d.RunMode {
+	case common.RunModeLite:
+		conf.DomainCertValue = &d.DomainCertByMasterValue
+	case common.RunModeAutonomy:
+		conf.DomainCertValue = &atomic.Value{}
+		conf.DomainCertValue.Store(d.DomainCert)
+	}
+	secretBackend := findSecretBackend(d.SecretBackendHolder, conf.Backend)
+	if secretBackend == nil {
+		return nil, fmt.Errorf("failed to find secret backend %s for cm", conf.Backend)
+	}
+	conf.BackendDriver = secretBackend
+
+	nlog.Debugf("Conf manager config is %+v", conf)
+
+	if err := conf.TLS.GenerateServerKeyCerts(serverCertsCommonName, nil, []string{defaultServerCertsSanDNSName}); err != nil {
+		return nil, err
 	}
 
-	// set namespace
-	nlog.Infof("ConfManager namespace:%s.", d.DomainID)
+	// init service holder
+	if err := service.InitServiceHolder(conf); err != nil {
+		return nil, fmt.Errorf("init service holder failed: %v", err.Error())
+	}
+
 	return &confManagerModule{
 		conf: conf,
-	}
+	}, nil
+}
+
+func findSecretBackend(s *secretbackend.Holder, name string) secretbackend.SecretDriver {
+	return s.Get(name)
 }
 
 func (m confManagerModule) Run(ctx context.Context) error {
@@ -80,7 +118,9 @@ func (m confManagerModule) Run(ctx context.Context) error {
 
 func (m confManagerModule) WaitReady(ctx context.Context) error {
 	timeoutTicker := time.NewTicker(30 * time.Second)
+	defer timeoutTicker.Stop()
 	checkTicker := time.NewTicker(1 * time.Second)
+	defer checkTicker.Stop()
 	for {
 		select {
 		case <-checkTicker.C:
@@ -103,8 +143,8 @@ func (m confManagerModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
 	// init client tls config
-	tlsConfig := m.conf.TLSConfig
-	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCAFile, tlsConfig.ServerCertFile, tlsConfig.ServerKeyFile)
+	tlsConfig := m.conf.TLS
+	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
 	if err != nil {
 		nlog.Errorf("local tls config error: %v", err)
 		return false
@@ -141,12 +181,17 @@ func (m confManagerModule) readyZ() bool {
 	if healthResp.Data == nil || !healthResp.Data.Ready {
 		return false
 	}
-	nlog.Infof("http server is ready")
+	nlog.Infof("http/https server is ready")
 	return true
 }
 
 func RunConfManager(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewConfManager(conf)
+	m, err := NewConfManager(ctx, conf)
+	if err != nil {
+		nlog.Error(err)
+		cancel()
+		return m
+	}
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)

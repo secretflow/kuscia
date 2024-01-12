@@ -33,39 +33,88 @@ type DomainDataGrant struct {
 	metav1.ObjectMeta `json:"metadata"`
 	Spec              DomainDataGrantSpec `json:"spec"`
 	// +optional
-	Status GrantStatus `json:"status,omitempty"`
+	Status DomainDataGrantStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// DomainDataList contains a list of domain data.
+// DomainDataGrantList contains a list of domain data grant.
 type DomainDataGrantList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []DomainDataGrant `json:"items"`
 }
 
-// DomainDataSpec defines the spec of data object.
-type DomainDataGrantSpec struct {
-	DomainData  string      `json:"domainData"`
-	Signature   string      `json:"signature"`
-	GrantDomain string      `json:"grantDomain"`
-	GrantMode   []GrantType `json:"grantMode"`
+type GrantLimit struct {
 	// +optional
-	Description map[string]string `json:"description"`
+	ExpirationTime *metav1.Time `json:"expirationTime,omitempty"`
+	// +optional
+	UseCount int `json:"useCount,omitempty"`
+	// +optional
+	GrantMode []GrantType `json:"grantMode,omitempty"`
+	// +optional
+	FlowID string `json:"flowID,omitempty"`
+	// +optional
+	Components []string `json:"components,omitempty"`
+	// +optional
+	Initiator string `json:"initiator,omitempty"`
+	// +optional
+	InputConfig string `json:"inputConfig,omitempty"`
+}
+
+// DomainDataGrantSpec defines the spec of data grant info.
+type DomainDataGrantSpec struct {
+	Author       string `json:"author"`
+	DomainDataID string `json:"domainDataID"`
+	// +optional
+	Signature   string `json:"signature,omitempty"`
+	GrantDomain string `json:"grantDomain"`
+	// +optional
+	Limit *GrantLimit `json:"limit,omitempty"`
+	// +optional
+	Description map[string]string `json:"description,omitempty"`
+}
+
+type DataSchema struct {
+	// +optional
+	Attributes map[string]string `json:"attributes,omitempty"`
+	// +optional
+	Partition *Partition `json:"partitions,omitempty"`
+	// +optional
+	Columns []DataColumn `json:"columns,omitempty"`
+	// +optional ,The vendor is the one who outputs the domain data, which may be done by the secretFlow engine,
+	// another vendor's engine, or manually registered.
+	Vendor string `json:"vendor,omitempty"`
+}
+
+// DomainDataGrantStatus defines current data status.
+type DomainDataGrantStatus struct {
+	Phase   GrantPhase `json:"phase"`
+	Message string     `json:"message"`
+	// +optional
+	UseRecords []UseRecord `json:"use_records"`
+}
+
+// GrantPhase is phase of data grant at the current time.
+// +kubebuilder:validation:Enum=Ready;Unavailable;Unknown
+type GrantPhase string
+
+const (
+	GrantReady       GrantPhase = "Ready"
+	GrantUnavailable GrantPhase = "Unavailable"
+	GrantUnknown     GrantPhase = "Unknown"
+)
+
+type UseRecord struct {
+	UseTime     metav1.Time `json:"use_time"`
+	GrantDomain string      `json:"grant_domain"`
+	// +optional
+	Component string `json:"componet,omitempty"`
+	// +optional
+	Output string `json:"output,omitempty"`
 }
 
 // GrantLevel
 // +kubebuilder:validation:Enum=normal;metadata;file
 type GrantType string
-
-// GrantStatus defines current data status.
-type GrantStatus struct {
-	// +kubebuilder:validation:Enum=Init;Granted;Unknown
-	Phase   GrantPhase `json:"phase"`
-	Message string     `json:"message"`
-}
-
-// GrantPhase is phase of data grant at the current time.
-type GrantPhase string

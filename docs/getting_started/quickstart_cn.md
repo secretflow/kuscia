@@ -23,7 +23,11 @@
 
 CPU 架构：x86
 
+> 单机体验版需要部署多个节点和平台，且要预留资源运行各类隐私计算任务，所以这里的资源需求要比节点最低资源大一些
+
 ### 环境准备
+
+在部署 kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
 
 Kuscia 的部署需要依赖 docker 环境，docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 docker 的示例：
 
@@ -43,7 +47,7 @@ systemctl start docker
 
 macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
 
-此外，Kuscia 当前不支持 M1 芯片的 Mac。
+此外，Kuscia 当前不支持 M1/M2 芯片的 Mac。
 
 ## 部署体验
 

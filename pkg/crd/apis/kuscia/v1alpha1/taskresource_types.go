@@ -114,6 +114,10 @@ const (
 	TaskResourceCondSchedulable TaskResourceConditionType = "Schedulable"
 )
 
+const (
+	RetryReserveResourceReason = "Last reserved resources and need retry since partners doesn't reserve resources"
+)
+
 // TaskResourceCondition defines the details of task resource condition.
 type TaskResourceCondition struct {
 	LastTransitionTime *metav1.Time           `json:"lastTransitionTime,omitempty"`

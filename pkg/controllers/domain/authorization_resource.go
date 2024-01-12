@@ -29,11 +29,16 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 	if !shouldCreateOrUpdate(domain) {
 		return nil
 	}
+
+	ownerRef := metav1.NewControllerRef(domain, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("Domain"))
 	domainID := domain.Name
 	// create service account if not exists
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: domainID,
+			OwnerReferences: []metav1.OwnerReference{
+				*ownerRef,
+			},
 		},
 	}
 	if _, err := c.kubeClient.CoreV1().ServiceAccounts(domainID).Create(c.ctx, sa, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
@@ -52,6 +57,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 	if err := common.RenderRuntimeObject(roleFilePath, role, input); err != nil {
 		return err
 	}
+	role.OwnerReferences = append(role.OwnerReferences, *ownerRef)
 	if _, err := c.kubeClient.RbacV1().Roles(domainID).Create(c.ctx, role, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
 		nlog.Errorf("Create role [%s] error: %v", role.Name, err.Error())
 		return err
@@ -59,7 +65,8 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 	// create domain roleBinding if not exists
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: domainID,
+			Name:            domainID,
+			OwnerReferences: []metav1.OwnerReference{*ownerRef},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -82,7 +89,8 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 	// create domain clusterRoleBinding if not exists
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: domainID,
+			Name:            domainID,
+			OwnerReferences: []metav1.OwnerReference{*ownerRef},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -104,30 +112,23 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 
 	// create domainRoute if necessary
 	authCenter := domain.Spec.AuthCenter
-	if c.IsMaster && authCenter != nil {
+	if authCenter != nil {
 		dest := c.Namespace
-		domainRoute := &kusciaapisv1alpha1.DomainRoute{
+
+		cdr := &kusciaapisv1alpha1.ClusterDomainRoute{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: fmt.Sprintf("%s-%s", domainID, dest),
+				Name:            fmt.Sprintf("%s-%s", domainID, dest),
+				OwnerReferences: []metav1.OwnerReference{*ownerRef},
 			},
-			Spec: kusciaapisv1alpha1.DomainRouteSpec{
-				Source:      domainID,
-				Destination: dest,
-				Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-					Host: dest,
-					Ports: []kusciaapisv1alpha1.DomainPort{
-						{
-							Name:     "http",
-							IsTLS:    true,
-							Port:     1080,
-							Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-						},
+			Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
+				DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
+					Source:             domainID,
+					Destination:        dest,
+					InterConnProtocol:  getInterConnProtocol(domain),
+					AuthenticationType: authCenter.AuthenticationType,
+					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
+						TokenGenMethod: authCenter.TokenGenMethod,
 					},
-				},
-				InterConnProtocol:  kusciaapisv1alpha1.InterConnKuscia,
-				AuthenticationType: authCenter.AuthenticationType,
-				TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-					TokenGenMethod: authCenter.TokenGenMethod,
 				},
 			},
 		}
@@ -142,14 +143,15 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 			return err
 		}
 		key, value := buildAuthorizationHeader(tokenRes.Status.Token)
-		domainRoute.Spec.RequestHeadersToAdd = map[string]string{
+		cdr.Spec.RequestHeadersToAdd = map[string]string{
 			key: value,
 		}
-		// create domainRoute domain to master
-		if _, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dest).Create(c.ctx, domainRoute, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
-			nlog.Errorf("Create domainRoute [%s] error: %v", domainRoute.Name, err.Error())
+		// create clusterDomainRoute domain to master
+		if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(c.ctx, cdr, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
+			nlog.Errorf("Create clusterDomainRoute [%s] error: %v", cdr.Name, err.Error())
 			return err
 		}
+		nlog.Infof("Create clusterDomainRoute [%s] success", cdr.Name)
 	}
 
 	// label domain auth completed
@@ -159,8 +161,9 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 		newDomain.Labels = make(map[string]string, 0)
 	}
 	newDomain.Labels[constants.LabelDomainAuth] = authCompleted
+
 	if _, err := c.kusciaClient.KusciaV1alpha1().Domains().Update(c.ctx, newDomain, metav1.UpdateOptions{}); err != nil {
-		nlog.Errorf("Update domain [%s] auth label error: %s", domainID, err.Error())
+		nlog.Warnf("Update domain [%s] auth label error: %s", domainID, err.Error())
 		return err
 	}
 	return nil
@@ -181,3 +184,13 @@ func shouldCreateOrUpdate(domain *kusciaapisv1alpha1.Domain) bool {
 	}
 	return true
 }
+
+func getInterConnProtocol(domain *kusciaapisv1alpha1.Domain) kusciaapisv1alpha1.InterConnProtocolType {
+	if domain.Spec.Role == kusciaapisv1alpha1.Partner && len(domain.Spec.InterConnProtocols) > 0 &&
+		domain.Spec.InterConnProtocols[0] != kusciaapisv1alpha1.InterConnKuscia {
+		return domain.Spec.InterConnProtocols[0]
+	}
+	return kusciaapisv1alpha1.InterConnKuscia
+}
+
+// send-content/ds

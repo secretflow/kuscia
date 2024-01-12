@@ -18,9 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/confmanager/errorcode"
-	"github.com/secretflow/kuscia/pkg/confmanager/secretbackend"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
@@ -33,76 +32,73 @@ const (
 // IConfigurationService is service which manager conf from/to secret backend. It can be used by grpc-mtls/https/process-call.
 type IConfigurationService interface {
 	// CreateConfiguration create a configuration with confID/content/cn.
-	CreateConfiguration(context.Context, *confmanager.CreateConfigurationRequest, string) *confmanager.CreateConfigurationResponse
+	CreateConfiguration(context.Context, *confmanager.CreateConfigurationRequest, string) confmanager.CreateConfigurationResponse
 	// QueryConfiguration query a configuration with confIDs/cn.
-	QueryConfiguration(context.Context, *confmanager.QueryConfigurationRequest, string) *confmanager.QueryConfigurationResponse
+	QueryConfiguration(context.Context, *confmanager.QueryConfigurationRequest, string) confmanager.QueryConfigurationResponse
 }
 
 type configurationService struct {
-	conf    config.ConfManagerConfig
-	backend secretbackend.SecretDriver
+	backend    secretbackend.SecretDriver
+	enableAuth bool
 }
 
-func NewConfigurationService(config config.ConfManagerConfig) (IConfigurationService, error) {
-	nlog.Infof("Find secret config: type: %s, backendConfig: %+v", config.SecretBackend.Driver, config.SecretBackend.Params)
-	backend, err := secretbackend.NewSecretBackendWith(config.SecretBackend.Driver, config.SecretBackend.Params)
-	if err != nil {
-		nlog.Errorf("New secret backend with name=%s failed: %s", config.SecretBackend.Driver, err)
-		return nil, err
+func NewConfigurationService(backend secretbackend.SecretDriver, enableAuth bool) (IConfigurationService, error) {
+	if backend == nil {
+		return nil, fmt.Errorf("can not find secret backend for cm")
 	}
 	return &configurationService{
-		conf:    config,
-		backend: backend,
+		backend:    backend,
+		enableAuth: enableAuth,
 	}, nil
 }
 
-func (s configurationService) CreateConfiguration(ctx context.Context, request *confmanager.CreateConfigurationRequest, ou string) *confmanager.CreateConfigurationResponse {
+func (s *configurationService) CreateConfiguration(ctx context.Context, request *confmanager.CreateConfigurationRequest, ou string) confmanager.CreateConfigurationResponse {
 	if ou == "" {
-		return &confmanager.CreateConfigurationResponse{
+		return confmanager.CreateConfigurationResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "tls ou must not be empty"),
 		}
 	}
 
 	if request.Id == "" {
-		return &confmanager.CreateConfigurationResponse{
+		return confmanager.CreateConfigurationResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "confID must not be empty"),
 		}
 	}
 
 	if ou != GroupKuscia {
 		if err := s.backend.Set(s.groupPermissionKey(ou, request.Id), ""); err != nil {
-			return &confmanager.CreateConfigurationResponse{
+			return confmanager.CreateConfigurationResponse{
 				Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateConfiguration, err.Error()),
 			}
 		}
 	}
 
 	if err := s.backend.Set(request.Id, request.Content); err != nil {
-		return &confmanager.CreateConfigurationResponse{
+		return confmanager.CreateConfigurationResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateConfiguration, err.Error()),
 		}
 	}
 
-	return &confmanager.CreateConfigurationResponse{
+	return confmanager.CreateConfigurationResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 	}
 }
 
 // QueryConfiguration query configuration
-func (s configurationService) QueryConfiguration(ctx context.Context, request *confmanager.QueryConfigurationRequest, ou string) *confmanager.QueryConfigurationResponse {
+func (s *configurationService) QueryConfiguration(ctx context.Context, request *confmanager.QueryConfigurationRequest, ou string) confmanager.QueryConfigurationResponse {
 	if ou == "" {
-		return &confmanager.QueryConfigurationResponse{
+		return confmanager.QueryConfigurationResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "tls ou must not be empty"),
 		}
 	}
 
 	if len(request.GetIds()) == 0 {
-		return &confmanager.QueryConfigurationResponse{
+		return confmanager.QueryConfigurationResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "ids length must not be zero"),
 		}
 	}
 
-	return &confmanager.QueryConfigurationResponse{
+	return confmanager.QueryConfigurationResponse{
 		Status:         utils.BuildSuccessResponseStatus(),
 		Configurations: s.GetConfs(ou, request.GetIds()),
 	}
@@ -110,7 +106,7 @@ func (s configurationService) QueryConfiguration(ctx context.Context, request *c
 
 // GetConfs get multi confs by role.
 // Params role should not be empty.
-func (s configurationService) GetConfs(role string, confIDs []string) map[string]*confmanager.QueryConfigurationResult {
+func (s *configurationService) GetConfs(role string, confIDs []string) map[string]*confmanager.QueryConfigurationResult {
 	resultChannels := make([]<-chan getConfResultAsync, len(confIDs))
 	for i, id := range confIDs {
 		resultChannels[i] = s.GetConfAsync(role, id)
@@ -134,7 +130,7 @@ func (s configurationService) GetConfs(role string, confIDs []string) map[string
 }
 
 // GetConfAsync get conf for role async. The role should have permission for the key.
-func (s configurationService) GetConfAsync(role string, confID string) <-chan getConfResultAsync {
+func (s *configurationService) GetConfAsync(role string, confID string) <-chan getConfResultAsync {
 	resultChan := make(chan getConfResultAsync, 0)
 	go func() {
 		result, err := s.GetConf(role, confID)
@@ -148,11 +144,11 @@ func (s configurationService) GetConfAsync(role string, confID string) <-chan ge
 }
 
 // GetConf get conf for role. The role should have permission for the key.
-func (s configurationService) GetConf(role string, confID string) (string, error) {
+func (s *configurationService) GetConf(role string, confID string) (string, error) {
 	if role == "" || confID == "" {
 		return "", fmt.Errorf("role or confID should not be empty")
 	}
-	if s.conf.EnableConfAuth {
+	if s.enableAuth {
 		group := s.groupOf(role)
 		yes, err := s.hasPermissionFor(group, confID)
 		if err != nil {
@@ -172,7 +168,7 @@ func (s configurationService) GetConf(role string, confID string) (string, error
 }
 
 // hasPermissionFor check whether group has permission to access configuration.
-func (s configurationService) hasPermissionFor(group string, confID string) (bool, error) {
+func (s *configurationService) hasPermissionFor(group string, confID string) (bool, error) {
 	// GroupKuscia has permission to access all configurations.
 	if group == GroupKuscia {
 		return true, nil
@@ -187,12 +183,12 @@ func (s configurationService) hasPermissionFor(group string, confID string) (boo
 }
 
 // groupOf return group which the role joined.
-func (s configurationService) groupOf(role string) string {
+func (s *configurationService) groupOf(role string) string {
 	return role
 }
 
 // groupPermissionKey return the permission key.
-func (s configurationService) groupPermissionKey(group string, confID string) string {
+func (s *configurationService) groupPermissionKey(group string, confID string) string {
 	return fmt.Sprintf("%s.%s", group, confID)
 }
 

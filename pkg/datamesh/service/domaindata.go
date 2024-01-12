@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +29,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/utils"
+	pbv1alpha1 "github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
@@ -38,10 +41,10 @@ type IDomainDataService interface {
 }
 
 type domainDataService struct {
-	conf config.DataMeshConfig
+	conf *config.DataMeshConfig
 }
 
-func NewDomainDataService(config config.DataMeshConfig) IDomainDataService {
+func NewDomainDataService(config *config.DataMeshConfig) IDomainDataService {
 	return &domainDataService{
 		conf: config,
 	}
@@ -57,12 +60,27 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 			return convert2CreateResp(resp, request.DomaindataId)
 		}
 	}
+
 	// normalization request
 	s.normalizationCreateRequest(request)
+
+	// check datasource
+	datasource, err := s.checkDataSource(ctx, request.DatasourceId, request.Columns)
+	if err != nil {
+		return &datamesh.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataSourceFromKubeFailed, err.Error()),
+		}
+	}
+	if !isFSDataSource(datasource.Spec.Type) {
+		request.FileFormat = pbv1alpha1.FileFormat_UNKNOWN
+	}
+
 	// build kuscia domain
 	Labels := make(map[string]string)
 	Labels[common.LabelDomainDataType] = request.Type
 	Labels[common.LabelDomainDataVendor] = request.Vendor
+	Labels[common.LabelInterConnProtocolType] = "kuscia"
+	Labels[common.LabelInitiator] = request.DomaindataId
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   request.DomaindataId,
@@ -77,12 +95,15 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			Author:      s.conf.KubeNamespace,
+			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
 	}
+
 	// create kuscia domain
-	_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Create(ctx, kusciaDomainData, metav1.CreateOptions{})
+	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Create(ctx, kusciaDomainData, metav1.CreateOptions{})
 	if err != nil {
-		nlog.Errorf("CreateDomainData failed, error:%s", err.Error())
+		nlog.Errorf("CreateDomainData failed, error: %s", err.Error())
 		return &datamesh.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomainData, err.Error()),
 		}
@@ -99,7 +120,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 	// get kuscia domain
 	kusciaDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
-		nlog.Errorf("QueryDomainData failed, error:%s", err.Error())
+		nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
 		return &datamesh.QueryDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainData, err.Error()),
 		}
@@ -117,6 +138,8 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 			Partition:    common.Convert2PbPartition(kusciaDomainData.Spec.Partition),
 			Columns:      common.Convert2PbColumn(kusciaDomainData.Spec.Columns),
 			Vendor:       kusciaDomainData.Spec.Vendor,
+			FileFormat:   common.Convert2PbFileFormat(kusciaDomainData.Spec.FileFormat),
+			Author:       kusciaDomainData.Spec.Author,
 		},
 	}
 }
@@ -125,18 +148,43 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 	// get original domainData from k8s
 	originalDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
-		nlog.Errorf("UpdateDomainData failed, error:%s", err.Error())
+		nlog.Errorf("UpdateDomainData failed, error: %s", err.Error())
 		return &datamesh.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFromKubeFailed, err.Error()),
 		}
 	}
+
 	// normalize request
 	s.normalizationUpdateRequest(request, originalDomainData.Spec)
+
+	// check DataSource
+	if request.DatasourceId != originalDomainData.Spec.DataSource {
+		datasource, err := s.checkDataSource(ctx, request.DatasourceId, request.Columns)
+		if err != nil {
+			nlog.Errorf("Query DataSource %s of DomainData %s fail: %v", request.DatasourceId, request.DomaindataId, err)
+			return &datamesh.UpdateDomainDataResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataSourceFromKubeFailed, err.Error()),
+			}
+		}
+		if !isFSDataSource(datasource.Spec.Type) {
+			request.FileFormat = pbv1alpha1.FileFormat_UNKNOWN
+		}
+	}
+
+	// build modified domainData
+	labels := make(map[string]string)
+	for key, value := range originalDomainData.Labels {
+		labels[key] = value
+	}
+	labels[common.LabelDomainDataType] = request.Type
+	labels[common.LabelDomainDataVendor] = request.Vendor
+
 	// build modified domainData
 	modifiedDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            request.DomaindataId,
 			ResourceVersion: originalDomainData.ResourceVersion,
+			Labels:          labels,
 		},
 		Spec: v1alpha1.DomainDataSpec{
 			RelativeURI: request.RelativeUri,
@@ -147,24 +195,26 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
 			Vendor:      request.Vendor,
+			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
+			Author:      s.conf.KubeNamespace,
 		},
 	}
 	// merge modifiedDomainData to originalDomainData
 	patchBytes, originalBytes, modifiedBytes, err := common.MergeDomainData(originalDomainData, modifiedDomainData)
 	if err != nil {
-		nlog.Errorf("Merge DomainData failed,request:%+v,error:%s.",
+		nlog.Errorf("Merge DomainData failed, request: %+v,error: %s.",
 			request, err.Error())
 		return &datamesh.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrMergeDomainDataFailed, err.Error()),
 		}
 	}
-	nlog.Debugf("Update DomainData request:%+v, patchBytes:%s,originalDomainData:%s,modifiedDomainData:%s",
+	nlog.Debugf("Update DomainData request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s",
 		request, patchBytes, originalBytes, modifiedBytes)
 	// patch the merged domainData
 	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(originalDomainData.Namespace).Patch(ctx, originalDomainData.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
 		// todo: retry if conflict
-		nlog.Debugf("Patch DomainData failed, request:%+v, patchBytes:%s,originalDomainData:%s,modifiedDomainData:%s,error:%s",
+		nlog.Debugf("Patch DomainData failed, request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s, error: %s",
 			request, patchBytes, originalBytes, modifiedBytes, err.Error())
 		return &datamesh.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrPatchDomainDataFailed, err.Error()),
@@ -182,7 +232,7 @@ func (s domainDataService) DeleteDomainData(ctx context.Context, request *datame
 	// delete kuscia domainData
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
-		nlog.Errorf("Delete domainData:%s failed, detail:%s", request.DomaindataId, err.Error())
+		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
 		return &datamesh.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainDataFailed, err.Error()),
 		}
@@ -206,7 +256,7 @@ func (s domainDataService) normalizationCreateRequest(request *datamesh.CreateDo
 	}
 	//fill default datasource id
 	if request.DatasourceId == "" {
-		request.DatasourceId = GetDefaultDataSourceID()
+		request.DatasourceId = common.DefaultDataSourceID
 	}
 	if request.Vendor == "" {
 		request.Vendor = common.DefaultDomainDataVendor
@@ -238,6 +288,24 @@ func (s domainDataService) normalizationUpdateRequest(request *datamesh.UpdateDo
 	if request.Vendor == "" {
 		request.Vendor = data.Vendor
 	}
+
+	if request.FileFormat == pbv1alpha1.FileFormat_UNKNOWN {
+		request.FileFormat = common.Convert2PbFileFormat(data.FileFormat)
+	}
+}
+
+func (s domainDataService) checkDataSource(ctx context.Context, dsID string,
+	cols []*pbv1alpha1.DataColumn) (*v1alpha1.DomainDataSource, error) {
+	datasource, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(s.conf.KubeNamespace).Get(ctx,
+		dsID, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("query DataSource %s of DomainData fail: %v", dsID, err)
+	}
+
+	if !datasource.Spec.AccessDirectly {
+		return datasource, CheckColType(cols, datasource.Spec.Type)
+	}
+	return datasource, nil
 }
 
 func convert2UpdateReq(createReq *datamesh.CreateDomainDataRequest) (updateReq *datamesh.UpdateDomainDataRequest) {
@@ -252,6 +320,7 @@ func convert2UpdateReq(createReq *datamesh.CreateDomainDataRequest) (updateReq *
 		Partition:    createReq.Partition,
 		Columns:      createReq.Columns,
 		Vendor:       createReq.Vendor,
+		FileFormat:   createReq.FileFormat,
 	}
 	return
 }
@@ -264,4 +333,33 @@ func convert2CreateResp(updateResp *datamesh.UpdateDomainDataResponse, domainDat
 		},
 	}
 	return
+}
+
+func CheckColType(cols []*pbv1alpha1.DataColumn, dsType string) error {
+	for _, col := range cols {
+		col.Type = strings.ToLower(col.Type)
+		if dsType == common.DomainDataSourceTypeMysql {
+			switch col.Type {
+			case "int64":
+			case "float64":
+			case "bool":
+			case "string":
+				return nil
+			default:
+				err := fmt.Errorf("Col[%s].Type=%s is invalid for mysql", col.Name, col.Type)
+				nlog.Error(err)
+				return err
+			}
+
+			return nil
+		}
+
+		arrowType := common.Convert2ArrowColumnType(col.Type)
+		if arrowType == nil {
+			err := fmt.Errorf("Col[%s].Type=%s is invalid for DataProxy", col.Name, col.Type)
+			nlog.Error(err)
+			return err
+		}
+	}
+	return nil
 }

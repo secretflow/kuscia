@@ -20,8 +20,9 @@ set -e
 SRC_DOMAIN=$1
 DEST_DOMAIN=$2
 DEST_ENDPOINT=$3
+TRANSIT_DOMAIN=$4
 
-usage="$(basename "$0") SRC_DOMAIN DEST_DOMAIN DEST_ENDPOINT(http(s)://ip:port) "
+usage="$(basename "$0") SRC_DOMAIN DEST_DOMAIN DEST_ENDPOINT(http(s)://ip:port) TRANSIT_DOMAIN "
 
 if [[ ${SRC_DOMAIN} == "" || ${DEST_DOMAIN} == "" || ${DEST_ENDPOINT} == "" ]]; then
   echo "missing argument: $usage"
@@ -31,20 +32,55 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 HOST=${DEST_ENDPOINT}
 PORT=80
+PROTOCOL_TLS=false
+HOST_PATH="/"
 
-if [[ "${DEST_ENDPOINT}" == *"://"* ]]; then
-  HOST=${DEST_ENDPOINT##*://}
+if [[ "${DEST_ENDPOINT}" == https://* ]]; then
+    PROTOCOL_TLS=true
+  else
+    PROTOCOL_TLS=false
 fi
 
-if [[ "${HOST}" == *":"* ]]; then
-  PORT=${HOST##*:}
-  HOST=${HOST%%:*}
+HOST_PORT_PATH=${DEST_ENDPOINT##*://}
+if [[ "${HOST_PORT_PATH}" == *"/"* ]]; then
+  HOST_PATH="/${HOST_PORT_PATH#*/}"
+  HOST_PORT=${HOST_PORT_PATH%%/*}
+else
+  HOST_PATH="/"
+  HOST_PORT="$HOST_PORT_PATH"
 fi
 
-CLUSTER_DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SRC_DOMAIN}}/${SRC_DOMAIN}/g;
-  s/{{.DEST_DOMAIN}}/${DEST_DOMAIN}/g;
-  s/{{.HOST}}/${HOST}/g;
-  s/{{.PORT}}/${PORT}/g" \
-  <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
+if [[ "${HOST_PORT}" == *":"* ]]; then
+  PORT=${HOST_PORT##*:}
+  HOST=${HOST_PORT%%:*}
+else
+  if [[ "${DEST_ENDPOINT}" == https://* ]]; then
+    PORT=443
+  else
+    PORT=80
+  fi
+  HOST="$HOST_PORT"
+fi
 
+INTERCONN_PROTOCOL=kuscia
+
+if [[ ${TRANSIT_DOMAIN} == "" ]]; then
+  CLUSTER_DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SRC_DOMAIN}}/${SRC_DOMAIN}/g;
+    s/{{.DEST_DOMAIN}}/${DEST_DOMAIN}/g;
+    s/{{.HOST}}/${HOST}/g;
+    s@{{.PATH}}@${HOST_PATH}@g;
+    s/{{.ISTLS}}/${PROTOCOL_TLS}/g;
+    s/{{.INTERCONN_PROTOCOL}}/${INTERCONN_PROTOCOL}/g;
+    s/{{.PORT}}/${PORT}/g" \
+    <"${ROOT}/scripts/templates/cluster_domain_route.token.yaml")
+else
+  CLUSTER_DOMAIN_ROUTE_TEMPLATE=$(sed "s/{{.SRC_DOMAIN}}/${SRC_DOMAIN}/g;
+    s/{{.DEST_DOMAIN}}/${DEST_DOMAIN}/g;
+    s/{{.HOST}}/${HOST}/g;
+    s@{{.PATH}}@${HOST_PATH}@g;
+    s/{{.ISTLS}}/${PROTOCOL_TLS}/g;
+    s/{{.PORT}}/${PORT}/g;
+    s/{{.TRANSIT_DOMAIN}}/${TRANSIT_DOMAIN}/g" \
+    <"${ROOT}/scripts/templates/cluster_domain_route.token.transit.yaml")
+fi
 echo "${CLUSTER_DOMAIN_ROUTE_TEMPLATE}" | kubectl apply -f -

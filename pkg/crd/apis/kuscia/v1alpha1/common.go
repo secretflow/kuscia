@@ -82,6 +82,9 @@ type PodSpec struct {
 	RestartPolicy corev1.RestartPolicy `json:"restartPolicy,omitempty"`
 	// +optional
 	Containers []Container `json:"containers,omitempty"`
+	// If specified, the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 // Container defines the container info.
@@ -90,9 +93,8 @@ type Container struct {
 	// +optional
 	Command []string `json:"command,omitempty"`
 	// +optional
-	Args []string `json:"args,omitempty"`
-	// +optional
-	WorkingDir string `json:"workingDir,omitempty"`
+	Args       []string `json:"args,omitempty"`
+	WorkingDir string   `json:"workingDir"`
 	// +optional
 	ConfigVolumeMounts []ConfigVolumeMount `json:"configVolumeMounts,omitempty"`
 	// +optional
@@ -157,4 +159,13 @@ type ContainerPort struct {
 	// +kubebuilder:default:=Local
 	// +optional
 	Scope PortScope `json:"scope,omitempty"`
+}
+
+// PartyAllocatedPorts defines the ports allocated to the party.
+type PartyAllocatedPorts struct {
+	DomainID string `json:"domainID"`
+	// +optional
+	Role string `json:"role,omitempty"`
+	// +optional
+	NamedPort map[string]int32 `json:"namedPort,omitempty"`
 }
