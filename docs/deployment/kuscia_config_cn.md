@@ -19,7 +19,8 @@ domainID: alice
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
 # 日志级别 INFO、DEBUG、WARN
 logLevel: INFO
-
+# 指标采集周期，单位: 秒
+exportPeriod: 5
 #############################################################################
 ############                       Lite 配置                      ############
 #############################################################################
@@ -72,6 +73,7 @@ datastoreEndpoint: ""
 - `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
 - `domainKeyData`: 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发， 经过 base64 编码。 可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
+- `exportPeriod`: 指标采集周期（单位: 秒），默认 5 秒
 - `liteDeployToken`: 节点连接 master 的部署 token，用于节点向 master 注册证书， 只在节点第一次向 master 注册证书时有效，详情请参考[节点中心化部署](./deploy_master_lite_cn)
 - `masterEndpoint`: 节点连接 master 的地址，比如 https://172.18.0.2:1080
 - `runtime`: 节点运行时 runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)

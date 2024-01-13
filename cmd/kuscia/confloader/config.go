@@ -47,7 +47,7 @@ type KusciaConfig struct {
 	CACertData     string `yaml:"caCertData,omitempty"`
 
 	LogLevel     string `yaml:"logLevel"`
-	ExportPeriod uint   `yaml:"exportPeriod,omitempty"`
+	ExportPeriod uint   `yaml:"exportPeriod,omitempty"` // Unit: second
 
 	Debug        bool `yaml:"debug"`
 	DebugPort    int  `yaml:"debugPort"`
