@@ -33,6 +33,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
@@ -74,6 +75,13 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id can not be empty"),
 		}
 	}
+	// do k8s validate
+	if err := resources.ValidateK8sName(domainID, "doamin_id"); err != nil {
+		return &kusciaapi.CreateDomainResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+
 	role := request.Role
 	if role != "" && role != string(v1alpha1.Partner) {
 		return &kusciaapi.CreateDomainResponse{

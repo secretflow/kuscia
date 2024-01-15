@@ -33,7 +33,7 @@ spec:
 在示例中
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是 Master 的 Namespace。
-* `.spec.authenticationType`：表示节点到目标节点的身份认证方式，目前仅支持 TOKEN 、MTLS 和 None（表示不校验）。
+* `.spec.authenticationType`：表示节点到目标节点的身份认证方式，目前仅支持 Token 、MTLS 和 None（表示不校验）。
 * `.spec.source`：表示源节点的 Namespace，这里即 Lite 节点的 Namespace。
 * `.spec.destination`：表示目标节点的 Namespace，这里即 Master 的命名空间。
 * `.spec.requestHeadersToAdd`：表示目标节点侧的 Envoy 在转发源节点的请求时添加的 headers，示例中 key 为

@@ -148,16 +148,19 @@ Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not fo
 ## 在 Domain 侧管理 DomainDataGrant
 
 如 上文所述，DomainDataGrant 属于节点内资源，每一个 DomainDataGrant 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
-你可以在 Domain 侧管理属于该 Domain 的 DomainDataGrant。Kuscia 在 Domain 侧提供了的 DataMesh API 来管理 DomainDataGrant。
+你可以在 Domain 侧管理属于该 Domain 的 DomainDataGrant。Kuscia 在 Domain 侧提供了的 Kuscia API 来管理 DomainDataGrant。
 
-Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 8071
-端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api-约定)。
+Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分为 8082 和 8083 。
+端口，详情请参考 [Kuscia API](../apis/domaindatagrant_cn.md)。
 
 1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainDataGrant。
 ```shell
-curl -X POST 'http://{{USER-kuscia-lite-alice}:8070/api/v1/datamesh/domaindatagrant/query' --header 'Content-Type: application/json' -d '{
-  "domaindatagrant_id": "alice"
-}'
+docker exec -it root-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/query' --header "Token: $(cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
+ "data": {
+  "domain_id": "alice",
+  "domaindatagrant_id": "${domaindatagrant_id}"
+  }
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
 

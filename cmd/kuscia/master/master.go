@@ -75,7 +75,10 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		nlog.Info("Scheduler and controllers are all started")
 		// wait any controller failed
 	} else {
-		modules.RunK3s(runCtx, cancel, conf)
+		if err := modules.RunK3s(runCtx, cancel, conf); err != nil {
+			nlog.Errorf("k3s start failed: %s", err)
+			return err
+		}
 		// make clients after k3s start
 		conf.MakeClients()
 

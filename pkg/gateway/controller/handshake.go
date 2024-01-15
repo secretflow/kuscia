@@ -15,19 +15,15 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,7 +33,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
-	"github.com/secretflow/kuscia/pkg/gateway/config"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
@@ -55,6 +51,10 @@ const (
 	handShakeTypeRSA = "RSA"
 )
 
+const (
+	kusciaTokenRevision = "Kuscia-Token-Revision"
+)
+
 var (
 	tokenPrefix = []byte("kuscia")
 )
@@ -68,7 +68,7 @@ type AfterRegisterDomainHook func(response *handshake.RegisterResponse)
 
 func (c *DomainRouteController) startHandShakeServer(port uint32) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/handshake", c.handShakeHandle)
+	mux.HandleFunc(utils.GetHandshakePathSuffix(), c.handShakeHandle)
 	if c.masterConfig != nil && c.masterConfig.Master {
 		mux.HandleFunc("/register", c.registerHandle)
 	}
@@ -81,160 +81,61 @@ func (c *DomainRouteController) startHandShakeServer(port uint32) {
 	nlog.Error(c.handshakeServer.ListenAndServe())
 }
 
-func doHTTP(in interface{}, out interface{}, path, host string, headers map[string]string) error {
-	maxRetryTimes := 5
-
-	for i := 0; i < maxRetryTimes; i++ {
-		inbody, err := json.Marshal(in)
-		if err != nil {
-			nlog.Errorf("new handshake request fail:%v", err)
-			return err
-		}
-		req, err := http.NewRequest(http.MethodPost, config.InternalServer+path, bytes.NewBuffer(inbody))
-		if err != nil {
-			nlog.Errorf("new handshake request fail:%v", err)
-			return err
-		}
-		req.Host = host
-		req.Header.Set("Content-Type", "application/json")
-		for key, val := range headers {
-			req.Header.Set(key, val)
-		}
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			nlog.Errorf("do http request fail:%v", err)
-			time.Sleep(time.Second)
-			continue
-		}
-
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			nlog.Warnf("Request error, path: %s, code: %d, message: %s", path, resp.StatusCode, string(body))
-			time.Sleep(time.Second)
-			continue
-		}
-
-		if err = json.Unmarshal(body, out); err != nil {
-			nlog.Errorf("Json unmarshal failed, err:%s, body:%s", err.Error(), string(body))
-			time.Sleep(time.Second)
-			continue
-		}
-		return nil
-	}
-
-	return fmt.Errorf("request error, retry at maxtimes:%d, path: %s", maxRetryTimes, path)
+func doHTTPWithDefaultRetry(in interface{}, out interface{}, hp *utils.HTTPParam) error {
+	return utils.DoHTTPWithRetry(in, out, hp, time.Second, 5)
 }
 
-func (c *DomainRouteController) waitTokenReady(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) error {
-	maxRetryTimes := 60
+func (c *DomainRouteController) waitTokenReady(drName string) error {
+	maxRetryTimes := 30
 	i := 0
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
-	var err error
-	var out *getResponse
-	for {
+	for range t.C {
 		i++
-		if i == maxRetryTimes {
-			return fmt.Errorf("wait dr %s token ready failed at max retry times:%d, last error: %s", dr.Name, maxRetryTimes, err.Error())
+		drLatest, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName)
+		if err != nil {
+			return err
 		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-t.C:
-			var drLatest *kusciaapisv1alpha1.DomainRoute
-			drLatest, err = c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
-			if err != nil {
-				return err
-			}
-			if drLatest.Status.TokenStatus.RevisionToken.IsReady {
-				return nil
-			}
-			if drLatest.Status.TokenStatus.RevisionToken.Token == "" {
-				return fmt.Errorf("token of dr %s was deleted ", drLatest.Name)
-			}
-			if drLatest.Status.TokenStatus.RevisionInitializer != c.gateway.Name {
-				return fmt.Errorf("dr %s may change initializer ", drLatest.Name)
-			}
-			out, err = c.checkConnectionStatus(drLatest)
-			if err != nil {
-				if out != nil && out.State != NetworkUnreachable {
-					if out.State == TokenNotReady {
-						continue
-					} else {
-						nlog.Warnf("err:%s, retry time: %d", err.Error(), i)
-						return err
-					}
-				} else {
-					nlog.Warnf("err:%s, retry time: %d", err.Error(), i)
-				}
-			} else {
-				nlog.Infof("Destination(%s) token is ready", drLatest.Spec.Destination)
-				return nil
-			}
+		if drLatest.Status.TokenStatus.RevisionToken.IsReady {
+			return nil
+		}
+		if drLatest.Status.TokenStatus.RevisionToken.Token == "" {
+			return fmt.Errorf("token of dr %s was deleted ", drName)
+		}
+		if i == maxRetryTimes {
+			break
 		}
 	}
+	return fmt.Errorf("wait dr %s token ready failed at max retry times:%d", drName, maxRetryTimes)
 }
 
-func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.DomainRoute) (*getResponse, error) {
-	handshake := "/handshake"
-	if !dr.Status.TokenStatus.RevisionToken.IsReady {
-		handshake = fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
-	}
-	req, err := http.NewRequest(http.MethodGet, config.InternalServer+handshake, nil)
-	if err != nil {
-		nlog.Errorf("new handshake request fail:%v", err)
-		return nil, err
-	}
-	ns := dr.Spec.Destination
-	if dr.Spec.Transit != nil {
-		ns = dr.Spec.Transit.Domain.DomainID
-	}
-	req.Host = fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake), fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name))
-	req.Header.Set("Kuscia-Token-Revision", fmt.Sprintf("%d", dr.Status.TokenStatus.RevisionToken.Revision))
-	req.Header.Set("Kuscia-Source", dr.Spec.Source)
-	req.Header.Set("kuscia-Host", fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns))
-	client := &http.Client{}
-	resp, err := client.Do(req)
-
-	buildUnreachableResp := func() *getResponse {
-		out := &getResponse{
-			Namespace: ns,
-			State:     NetworkUnreachable,
-		}
-		return out
-	}
-
-	if err != nil {
-		return buildUnreachableResp(), fmt.Errorf("do http request fail:%v", err)
-	}
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return buildUnreachableResp(), fmt.Errorf("read body failed, err:%s, code: %d", err.Error(), resp.StatusCode)
-	}
-	if resp.StatusCode != http.StatusOK {
-		if len(body) > 200 {
-			body = body[:200]
-		}
-		return buildUnreachableResp(), fmt.Errorf("request error, path: %s, code: %d, message: %s", fmt.Sprintf("%s.%s.svc/handshake",
-			clusters.ServiceHandshake, ns), resp.StatusCode, string(body))
-	}
+func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.DomainRoute, clusterName string) error {
 	out := &getResponse{}
-	err = json.Unmarshal(body, out)
-	if err != nil {
-		return buildUnreachableResp(), err
+	headers := map[string]string{
+		kusciaTokenRevision: fmt.Sprintf("%d", dr.Status.TokenStatus.RevisionToken.Revision),
 	}
 
-	return out, c.handleGetResponse(out, dr)
+	handshakePath := utils.GetHandshakePathSuffix()
+	if !dr.Status.TokenStatus.RevisionToken.IsReady {
+		handshakePath = utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+	}
+
+	hp := &utils.HTTPParam{
+		Method:       http.MethodGet,
+		Path:         handshakePath,
+		ClusterName:  clusterName,
+		KusciaHost:   getHandshakeHost(dr),
+		KusciaSource: dr.Spec.Source,
+		Headers:      headers}
+	err := utils.DoHTTP(nil, out, hp)
+	if err != nil {
+		c.markDestUnreachable(context.Background(), dr)
+		return err
+	}
+
+	c.refreshHeartbeatTime(dr)
+	c.markDestReachable(context.Background(), dr)
+	return c.handleGetResponse(out, dr)
 }
 
 func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaapisv1alpha1.DomainRoute) error {
@@ -245,6 +146,9 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 			dr.Status.TokenStatus.RevisionToken.IsReady = true
 			dr.Status.IsDestinationUnreachable = false
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+			if err == nil {
+				nlog.Infof("Domainroute %s found destination token(revsion %d) ready", dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
+			}
 			return err
 		}
 		return nil
@@ -253,6 +157,9 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 			dr = dr.DeepCopy()
 			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+			if err == nil {
+				nlog.Infof("Domainroute %s found destination token(revsion %d) not exist", dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
+			}
 			return err
 		}
 		return nil
@@ -292,7 +199,7 @@ func calcPublicKeyHash(pubStr string) ([]byte, error) {
 	return msgHash.Sum(nil), nil
 }
 
-func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.DomainRoute) error {
+func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.DomainRoute, clusterName string) error {
 	if dr.Spec.TokenConfig.SourcePublicKey != c.gateway.Status.PublicKey {
 		nlog.Errorf("DomainRoute %s: mismatch source public key", dr.Name)
 		return nil
@@ -311,17 +218,14 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	resp := &handshake.HandShakeResponse{}
 	if dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
 		handshankeReq.Type = handShakeTypeUID
-		ns := dr.Spec.Destination
-		if dr.Spec.Transit != nil {
-			ns = dr.Spec.Transit.Domain.DomainID
-		}
-		headers := map[string]string{
-			fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name),
-			"Kuscia-Source": dr.Spec.Source,
-			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
-		}
-		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
-		err := doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
+		handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+		err := doHTTPWithDefaultRetry(handshankeReq, resp, &utils.HTTPParam{
+			Method:       http.MethodPost,
+			Path:         handshakePath,
+			KusciaSource: dr.Spec.Source,
+			ClusterName:  clusterName,
+			KusciaHost:   getHandshakeHost(dr),
+		})
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
@@ -373,17 +277,14 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			Pubhash:  base64.StdEncoding.EncodeToString(msgHashSum),
 		}
 
-		ns := dr.Spec.Destination
-		if dr.Spec.Transit != nil {
-			ns = dr.Spec.Transit.Domain.DomainID
-		}
-		headers := map[string]string{
-			fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, ns, dr.Spec.Endpoint.Ports[0].Name),
-			"Kuscia-Source": dr.Spec.Source,
-			"kuscia-Host":   fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns),
-		}
-		handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
-		err = doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, ns), headers)
+		handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+		err = doHTTPWithDefaultRetry(handshankeReq, resp, &utils.HTTPParam{
+			Method:       http.MethodPost,
+			Path:         handshakePath,
+			KusciaSource: dr.Spec.Source,
+			ClusterName:  clusterName,
+			KusciaHost:   getHandshakeHost(dr),
+		})
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
@@ -415,7 +316,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	drCopy.Status.IsDestinationAuthorized = true
 	drCopy.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
 	drCopy.Status.TokenStatus.RevisionToken.Revision = int64(resp.Token.Revision)
-	drCopy.Status.TokenStatus.RevisionToken.IsReady = false
+	drCopy.Status.TokenStatus.RevisionToken.IsReady = true
 	drCopy.Status.TokenStatus.RevisionToken.RevisionTime = tn
 	if drCopy.Spec.TokenConfig.RollingUpdatePeriod == 0 {
 		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
@@ -454,7 +355,7 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 		}
 
 		domainID := r.Header.Get("Kuscia-Source")
-		tokenRevision := r.Header.Get("Kuscia-Token-Revision")
+		tokenRevision := r.Header.Get(kusciaTokenRevision)
 		resp.State = c.checkTokenStatus(domainID, tokenRevision)
 
 		w.Header().Set("Content-Type", "application/json")
@@ -475,21 +376,7 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 	}
 
 	drName := common.GenDomainRouteName(req.DomainId, c.gateway.Namespace)
-	dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName)
-	if err != nil {
-		msg := fmt.Sprintf("DomainRoute %s get error: %v", drName, err)
-		nlog.Error(msg)
-		http.Error(w, msg, http.StatusNotFound)
-		return
-	}
-	if !(req.Type == handShakeTypeUID && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) &&
-		!(req.Type == handShakeTypeRSA && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA) {
-		errMsg := fmt.Sprintf("handshake Type(%s) not match domainroute required(%s)", req.Type, dr.Spec.TokenConfig.TokenGenMethod)
-		nlog.Error(errMsg)
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		return
-	}
-	resp := c.DestReplyHandshake(&req, dr)
+	resp := c.DestReplyHandshake(&req, drName)
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
@@ -548,7 +435,17 @@ func buildFailedHandshakeReply(code int32, err error) *handshake.HandShakeRespon
 	return resp
 }
 
-func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeRequest, dr *kusciaapisv1alpha1.DomainRoute) *handshake.HandShakeResponse {
+func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeRequest, drName string) *handshake.HandShakeResponse {
+	dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName)
+	if err != nil {
+		err = fmt.Errorf("domainRoute %s get error: %v", drName, err)
+		return buildFailedHandshakeReply(500, err)
+	}
+	if !(req.Type == handShakeTypeUID && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) &&
+		!(req.Type == handShakeTypeRSA && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA) {
+		err = fmt.Errorf("handshake Type(%s) not match domainroute required(%s)", req.Type, dr.Spec.TokenConfig.TokenGenMethod)
+		return buildFailedHandshakeReply(500, err)
+	}
 	srcPub, err := base64.StdEncoding.DecodeString(dr.Spec.TokenConfig.SourcePublicKey)
 	if err != nil {
 		return buildFailedHandshakeReply(500, err)
@@ -649,6 +546,11 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 	} else {
 		revision = drLatest.Status.TokenStatus.RevisionToken.Revision
 		expirationTime = drLatest.Status.TokenStatus.RevisionToken.ExpirationTime
+	}
+
+	err = c.waitTokenReady(drLatest.Name)
+	if err != nil {
+		return buildFailedHandshakeReply(500, err)
 	}
 
 	return &handshake.HandShakeResponse{
@@ -764,7 +666,7 @@ func exists(slice []string, val string) bool {
 	return false
 }
 
-func HandshakeToMaster(domainID string, path string, prikey *rsa.PrivateKey) error {
+func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKey) error {
 	handshankeReq := &handshake.HandShakeRequest{
 		DomainId:    domainID,
 		RequestTime: time.Now().UnixNano(),
@@ -777,20 +679,33 @@ func HandshakeToMaster(domainID string, path string, prikey *rsa.PrivateKey) err
 	handshankeReq.Type = handShakeTypeUID
 	resp := &handshake.HandShakeResponse{}
 
-	headers := map[string]string{
-		"Kuscia-Source": domainID,
-		fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): clusters.GetMasterClusterName(),
-		"kuscia-Host": fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
+	handshakePath := utils.GetHandshakePathOfPrefix(pathPrefix)
+	maxRetryTimes := 50
+	for i := 0; i < maxRetryTimes; i++ {
+		resp = &handshake.HandShakeResponse{}
+		err := utils.DoHTTP(handshankeReq, resp, &utils.HTTPParam{
+			Method:       http.MethodPost,
+			Path:         handshakePath,
+			KusciaSource: domainID,
+			ClusterName:  clusters.GetMasterClusterName(),
+			KusciaHost:   fmt.Sprintf("%s.master.svc", utils.ServiceHandshake),
+		})
+		if err != nil {
+			nlog.Warn(err)
+		} else {
+			if resp.Status.Code == 0 {
+				break
+			} else {
+				nlog.Warn(resp.Status.Message)
+			}
+		}
+		time.Sleep(time.Second)
 	}
-	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/handshake")
-	err := doHTTP(handshankeReq, resp, handshake, fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
-	if err != nil {
+
+	if resp.Status.Code != 0 {
+		err := fmt.Errorf("handshake to master fail, return error:%v", resp.Status.Message)
 		nlog.Error(err)
 		return err
-	}
-	if resp.Status.Code != 0 {
-		nlog.Errorf("Handshake to master fail, return error:%v", resp.Status.Message)
-		return errors.New(resp.Status.Message)
 	}
 	token, err := decryptToken(prikey, resp.Token.Token, tokenByteSize)
 	if err != nil {
@@ -802,7 +717,7 @@ func HandshakeToMaster(domainID string, path string, prikey *rsa.PrivateKey) err
 		nlog.Error(err)
 		return err
 	}
-	if err := clusters.AddMasterProxyVirtualHost(c.Name, path, clusters.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
+	if err := clusters.AddMasterProxyVirtualHost(c.Name, pathPrefix, utils.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
 		nlog.Error(err)
 		return err
 	}

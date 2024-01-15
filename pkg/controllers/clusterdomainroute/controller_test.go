@@ -153,6 +153,21 @@ func Test_controller_add_label(t *testing.T) {
 		}
 		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, aliceDomain, metav1.CreateOptions{})
 		assert.NoError(t, err)
+		_, err = kusciaClient.KusciaV1alpha1().Gateways(alice).Create(ctx, &kusciaapisv1alpha1.Gateway{
+			Status: kusciaapisv1alpha1.GatewayStatus{
+				NetworkStatus: []kusciaapisv1alpha1.GatewayEndpointStatus{
+					{
+						Type: common.GenerateClusterName(alice, bob, "http"),
+						Name: "DomainRoute",
+					},
+					{
+						Type: common.GenerateClusterName(alice, bob, "http"),
+						Name: "DomainRoute",
+					},
+				},
+			},
+		}, metav1.CreateOptions{})
+		assert.NoError(t, err)
 		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, bobDomain, metav1.CreateOptions{})
 		assert.NoError(t, err)
 		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, charlieDomain, metav1.CreateOptions{})
@@ -168,6 +183,13 @@ func Test_controller_add_label(t *testing.T) {
 					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
 					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
 						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
+					},
+					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+						Ports: []kusciaapisv1alpha1.DomainPort{
+							{
+								Name: "http",
+							},
+						},
 					},
 				},
 			},
@@ -185,6 +207,13 @@ func Test_controller_add_label(t *testing.T) {
 					Source:             alice,
 					Destination:        charlie,
 					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+						Ports: []kusciaapisv1alpha1.DomainPort{
+							{
+								Name: "http",
+							},
+						},
+					},
 					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
 						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
 					},
@@ -198,6 +227,7 @@ func Test_controller_add_label(t *testing.T) {
 		_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testdr2, metav1.CreateOptions{})
 		assert.NoError(t, err)
 		time.Sleep(100 * time.Millisecond)
+
 		close(chStop)
 	}()
 	ic.Run(4)
@@ -257,14 +287,15 @@ func Test_controller_update_label(t *testing.T) {
 		"l2": "v2",
 	}
 
-	removeLabels := map[string]struct{}{
-		"l3": struct{}{},
-		"l4": struct{}{},
+	removeLabels := map[string]bool{
+		"l3": true,
+		"l4": true,
 	}
 
-	cdr, err := c.updateLabel(context.Background(), testdr1, addLabels, removeLabels)
+	_, err = c.updateLabel(context.Background(), testdr1, addLabels, removeLabels)
 	assert.NoError(t, err)
-
+	cdr, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(context.Background(), testdr1.Name, metav1.GetOptions{})
+	assert.NoError(t, err)
 	v1, ok := cdr.Labels["l1"]
 	assert.True(t, ok)
 	assert.True(t, v1 == "v1")
@@ -326,22 +357,34 @@ func Test_controller_syncDomainRouteStatus(t *testing.T) {
 	srcDr := dstDr.DeepCopy()
 
 	dstDr.Status.TokenStatus.Tokens = []kusciaapisv1alpha1.DomainRouteToken{}
-	cdr, err := c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	update, err := c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	assert.NoError(t, err)
+	assert.True(t, update)
+	cdr, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(c.ctx, testCdr1.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.False(t, IsReady(&cdr.Status))
 
 	dstDr.Status.TokenStatus.Tokens = []kusciaapisv1alpha1.DomainRouteToken{mockToken}
-	cdr, err = c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	update, err = c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	assert.NoError(t, err)
+	assert.True(t, update)
+	cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(c.ctx, testCdr1.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.True(t, IsReady(&cdr.Status))
 
 	srcDr.Status.IsDestinationUnreachable = true
-	cdr, err = c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	update, err = c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	assert.NoError(t, err)
+	assert.True(t, update)
+	cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(c.ctx, testCdr1.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.False(t, IsReady(&cdr.Status))
 
 	srcDr.Status.IsDestinationUnreachable = false
-	cdr, err = c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	update, err = c.syncStatusFromDomainroute(testCdr1, srcDr, dstDr)
+	assert.NoError(t, err)
+	assert.True(t, update)
+	cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(c.ctx, testCdr1.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.True(t, IsReady(&cdr.Status))
 }

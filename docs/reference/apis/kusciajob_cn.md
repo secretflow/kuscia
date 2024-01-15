@@ -192,7 +192,7 @@ protobuf 文件。
 | 字段        | 类型     | 选填 | 描述       |
 |-----------|--------|----|----------|
 | domain_id | string | 必填 | DomainID |
-| role      | string | 可选 | 角色       |
+| role      | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)       |
 
 {#party-status}
 

@@ -108,7 +108,9 @@ func (m kusciaAPIModule) Run(ctx context.Context) error {
 
 func (m kusciaAPIModule) WaitReady(ctx context.Context) error {
 	timeoutTicker := time.NewTicker(30 * time.Second)
+	defer timeoutTicker.Stop()
 	checkTicker := time.NewTicker(1 * time.Second)
+	defer checkTicker.Stop()
 	for {
 		select {
 		case <-checkTicker.C:

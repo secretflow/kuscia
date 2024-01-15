@@ -319,6 +319,8 @@ spec:
     env:
     - name: HOME
       value: /root
+    - name: DOMAIN_ID
+      value: domain-a
     - name: TASK_ID
       value: kusciatask-001
     - name: TASK_CLUSTER_DEFINE

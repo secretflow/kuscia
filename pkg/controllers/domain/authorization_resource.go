@@ -7,7 +7,7 @@ import (
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 
@@ -26,10 +26,6 @@ const (
 )
 
 func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error {
-	if !shouldCreateOrUpdate(domain) {
-		return nil
-	}
-
 	ownerRef := metav1.NewControllerRef(domain, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("Domain"))
 	domainID := domain.Name
 	// create service account if not exists
@@ -41,7 +37,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 			},
 		},
 	}
-	if _, err := c.kubeClient.CoreV1().ServiceAccounts(domainID).Create(c.ctx, sa, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
+	if _, err := c.kubeClient.CoreV1().ServiceAccounts(domainID).Create(c.ctx, sa, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
 		nlog.Errorf("Create serviceAccount [%s] error: %v", sa.Name, err.Error())
 		return err
 	}
@@ -58,7 +54,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 		return err
 	}
 	role.OwnerReferences = append(role.OwnerReferences, *ownerRef)
-	if _, err := c.kubeClient.RbacV1().Roles(domainID).Create(c.ctx, role, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
+	if _, err := c.kubeClient.RbacV1().Roles(domainID).Create(c.ctx, role, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
 		nlog.Errorf("Create role [%s] error: %v", role.Name, err.Error())
 		return err
 	}
@@ -81,7 +77,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 			Name:     role.Name,
 		},
 	}
-	if _, err := c.kubeClient.RbacV1().RoleBindings(domainID).Create(c.ctx, roleBinding, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
+	if _, err := c.kubeClient.RbacV1().RoleBindings(domainID).Create(c.ctx, roleBinding, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
 		nlog.Errorf("Create roleBinding [%s] error: %v", roleBinding.Name, err.Error())
 		return err
 	}
@@ -105,7 +101,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 			Name:     "domain-cluster-res",
 		},
 	}
-	if _, err := c.kubeClient.RbacV1().ClusterRoleBindings().Create(c.ctx, clusterRoleBinding, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
+	if _, err := c.kubeClient.RbacV1().ClusterRoleBindings().Create(c.ctx, clusterRoleBinding, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
 		nlog.Errorf("Create clusterRoleBinding [%s] error: %v", clusterRoleBinding.Name, err.Error())
 		return err
 	}
@@ -127,7 +123,8 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 					InterConnProtocol:  getInterConnProtocol(domain),
 					AuthenticationType: authCenter.AuthenticationType,
 					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: authCenter.TokenGenMethod,
+						TokenGenMethod:      authCenter.TokenGenMethod,
+						RollingUpdatePeriod: 600,
 					},
 				},
 			},
@@ -147,7 +144,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 			key: value,
 		}
 		// create clusterDomainRoute domain to master
-		if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(c.ctx, cdr, metav1.CreateOptions{}); err != nil && !errors.IsAlreadyExists(err) {
+		if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(c.ctx, cdr, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
 			nlog.Errorf("Create clusterDomainRoute [%s] error: %v", cdr.Name, err.Error())
 			return err
 		}
@@ -161,8 +158,7 @@ func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error
 		newDomain.Labels = make(map[string]string, 0)
 	}
 	newDomain.Labels[constants.LabelDomainAuth] = authCompleted
-
-	if _, err := c.kusciaClient.KusciaV1alpha1().Domains().Update(c.ctx, newDomain, metav1.UpdateOptions{}); err != nil {
+	if _, err := c.kusciaClient.KusciaV1alpha1().Domains().Update(c.ctx, newDomain, metav1.UpdateOptions{}); err != nil && !k8serrors.IsConflict(err) {
 		nlog.Warnf("Update domain [%s] auth label error: %s", domainID, err.Error())
 		return err
 	}

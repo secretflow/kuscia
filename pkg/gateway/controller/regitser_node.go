@@ -39,6 +39,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
 )
@@ -75,13 +76,17 @@ func RegisterDomain(namespace, path, csrData string, prikey *rsa.PrivateKey, aft
 	}
 	regResp := &handshake.RegisterResponse{}
 	headers := map[string]string{
-		"Kuscia-Source": namespace,
-		fmt.Sprintf("%s-Cluster", clusters.ServiceHandshake): clusters.GetMasterClusterName(),
-		"kuscia-Host": fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake),
-		"jwt-token":   tokenstr,
+		"jwt-token": tokenstr,
 	}
-	register := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/register")
-	err = doHTTP(regReq, regResp, register, fmt.Sprintf("%s.master.svc", clusters.ServiceHandshake), headers)
+	registerPath := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/register")
+	err = doHTTPWithDefaultRetry(regReq, regResp, &utils.HTTPParam{
+		Method:       http.MethodPost,
+		Path:         registerPath,
+		KusciaSource: namespace,
+		ClusterName:  clusters.GetMasterClusterName(),
+		KusciaHost:   fmt.Sprintf("%s.master.svc", utils.ServiceHandshake),
+		Headers:      headers,
+	})
 	if err != nil {
 		return err
 	}
@@ -192,7 +197,7 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 				}
 				return
 			}
-			nlog.Infof("Domain %s update status success", do.Name)
+			nlog.Infof("Domain %s update status success, set token used", do.Name)
 		}
 	}
 
@@ -216,7 +221,7 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 				}
 				return
 			}
-			nlog.Infof("Domain %s update success", do.Name)
+			nlog.Infof("Domain %s register success, set domain cert", do.Name)
 		} else {
 			errmsg := fmt.Errorf("domain %s register failed(token match error)", req.DomainId)
 			nlog.Error(errmsg)

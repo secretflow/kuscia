@@ -34,6 +34,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -61,25 +62,17 @@ func NewDomainDataGrantService(config *config.KusciaAPIConfig) IDomainDataGrantS
 }
 
 func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, request *kusciaapi.CreateDomainDataGrantRequest) *kusciaapi.CreateDomainDataGrantResponse {
-	if request.GrantDomain == "" {
+	// do validate
+	if validateErr := validateCreateDomainDataGrantRequest(request); validateErr != nil {
 		return &kusciaapi.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "grantdomain cant be null"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, validateErr.Error()),
 		}
 	}
-	if request.GrantDomain == request.DomainId {
-		return &kusciaapi.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "grantdomain cant be self"),
-		}
-	}
-	if request.DomaindataId == "" {
-		return &kusciaapi.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domaindata cant be null"),
-		}
-	}
+
 	dd, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domaindata cant be found"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("domaindata [%s] not exists", request.DomaindataId)),
 		}
 	}
 	if request.DomaindatagrantId != "" {
@@ -379,5 +372,33 @@ func (s *domainDataGrantService) signDomainDataGrant(dg *v1alpha1.DomainDataGran
 		return err
 	}
 	dg.Signature = base64.StdEncoding.EncodeToString(sign)
+	return nil
+}
+
+func validateCreateDomainDataGrantRequest(request *kusciaapi.CreateDomainDataGrantRequest) error {
+
+	if request.GrantDomain == "" {
+		return fmt.Errorf("grantdomain cant be null")
+	}
+
+	if request.GrantDomain == request.DomainId {
+		return fmt.Errorf("grantdomain cant be self")
+	}
+
+	if request.DomaindataId == "" {
+		return fmt.Errorf("domaindata cant be null")
+	}
+	// do k8s validate
+	if err := resources.ValidateK8sName(request.DomainId, "domain_id"); err != nil {
+		return err
+	}
+
+	if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {
+		return err
+	}
+
+	if request.GetDomaindatagrantId() != "" {
+		return resources.ValidateK8sName(request.GetDomaindatagrantId(), "domaindatagrant_id")
+	}
 	return nil
 }

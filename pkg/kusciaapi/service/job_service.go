@@ -35,6 +35,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
@@ -540,6 +541,10 @@ func validateCreateJobRequest(request *kusciaapi.CreateJobRequest, domainID stri
 	jobID := request.JobId
 	if jobID == "" {
 		return fmt.Errorf("job id can not be empty")
+	}
+	// do k8s validate
+	if err := resources.ValidateK8sName(request.JobId, "job_id"); err != nil {
+		return err
 	}
 	// check initiator
 	initiator := request.Initiator

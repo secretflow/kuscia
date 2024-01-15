@@ -102,6 +102,12 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 		cdrAuthenticationType = v1alpha1.DomainAuthenticationToken
 		// build cdr token config
 		tokenConfig := request.TokenConfig
+		if tokenConfig == nil {
+			// set default token config
+			tokenConfig = &kusciaapi.TokenConfig{
+				TokenGenMethod: v1alpha1.TokenGenMethodRSA,
+			}
+		}
 		cdrTokenConfig = &v1alpha1.TokenConfig{
 			SourcePublicKey:      tokenConfig.SourcePublicKey,
 			DestinationPublicKey: tokenConfig.DestinationPublicKey,
@@ -111,10 +117,12 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 		cdrAuthenticationType = v1alpha1.DomainAuthenticationMTLS
 		// build cdr mtls config
 		mtlsConfig := request.MtlsConfig
-		cdrMtlsConfig = &v1alpha1.DomainRouteMTLSConfig{
-			TLSCA:                  mtlsConfig.TlsCa,
-			SourceClientPrivateKey: mtlsConfig.SourceClientPrivateKey,
-			SourceClientCert:       mtlsConfig.SourceClientCert,
+		if mtlsConfig != nil {
+			cdrMtlsConfig = &v1alpha1.DomainRouteMTLSConfig{
+				TLSCA:                  mtlsConfig.TlsCa,
+				SourceClientPrivateKey: mtlsConfig.SourceClientPrivateKey,
+				SourceClientCert:       mtlsConfig.SourceClientCert,
+			}
 		}
 	case string(v1alpha1.DomainAuthenticationNone):
 		cdrAuthenticationType = v1alpha1.DomainAuthenticationNone
