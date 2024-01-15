@@ -1,9 +1,8 @@
 
 # Image URL to use all building image targets
 DATETIME = $(shell date +"%Y%m%d%H%M%S")
-KUSCIA_VERSION_TAG = $(shell git describe --abbrev=7 --always)
-COMMIT_ID = $(shell git log -1 --pretty="format:%h")
-TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}-${COMMIT_ID}
+KUSCIA_VERSION_TAG = $(shell git describe --tags --always)
+TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}
 IMG := secretflow/kuscia:${TAG}
 
 # TEST_SUITE used by integration test

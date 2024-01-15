@@ -341,13 +341,17 @@ func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 		nlog.Warnf("Create domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
+
 	if err := c.createResourceQuota(domain); err != nil {
 		nlog.Warnf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
 		return err
 	}
-	if err := c.createOrUpdateAuth(domain); err != nil {
-		nlog.Warnf("Create domain %v auth failed: %v", domain.Name, err.Error())
-		return err
+
+	if shouldCreateOrUpdate(domain) {
+		if err := c.createOrUpdateAuth(domain); err != nil {
+			nlog.Warnf("Create domain %v auth failed: %v", domain.Name, err.Error())
+			return err
+		}
 	}
 
 	return nil
@@ -365,9 +369,12 @@ func (c *Controller) update(domain *kusciaapisv1alpha1.Domain) error {
 		return err
 	}
 
-	if err := c.createOrUpdateAuth(domain); err != nil {
-		nlog.Warnf("update domain %v auth failed: %v", domain.Name, err.Error())
-		return err
+	if shouldCreateOrUpdate(domain) {
+		if err := c.createOrUpdateAuth(domain); err != nil {
+			nlog.Warnf("update domain %v auth failed: %v", domain.Name, err.Error())
+			return err
+		}
+		return nil
 	}
 
 	if err := c.syncDomainStatus(domain); err != nil {

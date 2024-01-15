@@ -382,7 +382,7 @@ KusciaTask `spec` 的子字段详细介绍如下：
 - `parties`：表示所有任务参与方的信息。
   - `parties[].domainID`：表示任务参与方的节点标识。
   - `parties[].appImageRef`：表示任务参与方所依赖的应用镜像名称。
-  - `parties[].role`：表示任务参与方的角色。
+  - `parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ， kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
   - `parties[].minReservedPods`：表示任务参与方最小已预留资源的 Pod 数量，默认为空，表示任务参与方所有的 Pod 数量。Kuscia 调度器对每个任务参与方使用 Co-Scheduling 调度策略，
      仅当任务参与方下已预留资源的 Pod 数量大于等于该值时，设置该参与方为已完成预留资源。
   - `parties[].template`：表示任务参与方应用的模版信息。若配置该模版，则使用模版中配置的信息替换从 `parties[].appImageRef` 获取的模版信息。该字段下所包含的子字段含义，请参考概念 [AppImage](./appimage_cn.md)。

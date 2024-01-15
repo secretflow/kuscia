@@ -15,13 +15,19 @@
 package resources
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+
+	"regexp"
 )
+
+const k3sRegex = `^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`
 
 // CompareResourceVersion is used to compare resource version.
 func CompareResourceVersion(rv1, rv2 string) bool {
@@ -65,4 +71,16 @@ func IsOuterBFIAInterConnDomain(nsLister corelisters.NamespaceLister, domainID s
 	}
 
 	return false
+}
+
+// ValidateK8sName checks dns subdomain names
+func ValidateK8sName(val string, feildName string) error {
+
+	match, _ := regexp.MatchString(k3sRegex, val)
+	if !match {
+		errorMsg := fmt.Sprintf("Field '%s' is invalid, Invalid value: '%s': regex used for validation is '%s' ", feildName, val, k3sRegex)
+		return errors.New(errorMsg)
+	}
+
+	return nil
 }

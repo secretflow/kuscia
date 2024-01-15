@@ -15,6 +15,8 @@
 package interconn
 
 import (
+	"fmt"
+
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -36,10 +38,9 @@ const (
 type BFIAHandler struct {
 }
 
-func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
-	token string) []*route.Route {
-
-	transportRouteRouteAction := generateDefaultRouteAction(dr, dp)
+func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
+	clusterName := fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name)
+	transportRouteRouteAction := generateDefaultRouteAction(dr, clusterName)
 	transportRouteRouteAction.PrefixRewrite = ptpOuterPushPath
 	transportRoute := &route.Route{
 		Match: &route.RouteMatch{
@@ -82,7 +83,7 @@ func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainR
 			},
 		},
 		Action: &route.Route_Route{
-			Route: xds.AddDefaultTimeout(generateDefaultRouteAction(dr, dp)),
+			Route: xds.AddDefaultTimeout(generateDefaultRouteAction(dr, clusterName)),
 		},
 		RequestHeadersToAdd: []*core.HeaderValueOption{
 			{

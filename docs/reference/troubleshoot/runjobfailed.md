@@ -101,3 +101,4 @@ docker exec -it ${USER}-kuscia-autonomy-bob bash
 # 查看 bob 节点上任务 pod 日志
 cat /home/kuscia/var/stdout/pods/podName_xxxx/xxxx/x.log
 ```
+任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查

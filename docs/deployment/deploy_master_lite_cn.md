@@ -128,7 +128,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 启动 alice。默认会在当前目录下创建 kuscia-lite-alice-certs 目录用来存放 alice 的公私钥和证书。默认会在当前目录下创建 kuscia-lite-alice-data 目录用来存放 alice 的数据：
 ```bash
 # -n 参数传递的是节点 ID
-# -t 参数传递的是节点部署的 token
+# -t 参数传递的是节点部署的 Token
 # -m 参数传递的是 master 容器对外暴露的 https://IP:PORT，如上文中 master 的 ip 是1.1.1.1，端口是18080
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 28080
@@ -137,8 +137,8 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 
 #### 部署 lite 节点 bob
 
-在部署 bob 节点之前，我们需要在 master 注册 bob 节点，并获取到部署时需要用到的 token 。
-执行以下命令，完成节点注册并从返回中得到 token （下文将以hijklmn为例）。
+在部署 bob 节点之前，我们需要在 master 注册 bob 节点，并获取到部署时需要用到的 Token 。
+执行以下命令，完成节点注册并从返回中得到 Token （下文将以hijklmn为例）。
 ```bash
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh bob
 ```
@@ -147,7 +147,7 @@ docker exec -it ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh bob
 hijklmn
 ```
 
-如果token遗忘了，可以通过该命令重新获取
+如果 Token 遗忘了，可以通过该命令重新获取
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get domain bob -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
 ```
@@ -173,7 +173,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/depl
 启动 bob。默认会在当前目录下创建 kuscia-lite-bob-certs 目录用来存放 bob 的公私钥和证书。默认会在当前目录下创建 kuscia-lite-bob-data 目录用来存放 bob 的数据：
 ```bash
 # -n 参数传递的是节点 ID
-# -t 参数传递的是节点部署的 token
+# -t 参数传递的是节点部署的 Token
 # -m 参数传递的是 master 容器对外暴露的 https://IP:PORT，如上文中 master 的 ip 是1.1.1.1，端口是18080
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh lite -n bob -t hijklmn -m https://1.1.1.1:18080 -p 38080
@@ -243,13 +243,24 @@ docker exec -it ${USER}-kuscia-master scripts/deploy/create_domaindata_bob_table
 登录到安装 alice 的机器上，为 alice 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
+docker exec -it root-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(cat kuscia-lite-alice-certs/token)" --header 'Content-Type: application/json' -d '{
+ "grant_domain": "bob",
+ "description": {"domaindatagrant":"alice-bob"},
+ "domain_id": "alice",
+ "domaindata_id": "alice-table"
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
 同理，登录到安装 bob 的机器上，为 bob 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-lite-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
+docker exec -it root-kuscia-lite-bob curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(cat kuscia-lite-bob-certs/token)" --header 'Content-Type: application/json' -d '{
+ "grant_domain": "alice",
+ "description": {"domaindatagrant":"bob-alice"},
+ "domain_id": "bob",
+ "domaindata_id": "bob-table"
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
+
 ```
 
 #### 执行测试作业
@@ -265,8 +276,9 @@ docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get kj
 ```
+任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查
 ### 部署 secretpad
-> 注意：secretpad 的部署依赖 master 的证书与 token，必须与 master 部署在同一台物理机上
+> 注意：secretpad 的部署依赖 master 的证书与 Token，必须与 master 部署在同一台物理机上
 
 指定 secretpad 版本：
 ```bash

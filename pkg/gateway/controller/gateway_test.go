@@ -217,7 +217,11 @@ func TestGatewayCreate(t *testing.T) {
 		},
 		gw.Namespace,
 		gw,
-	))
+	), core.NewUpdateSubresourceAction(schema.GroupVersionResource{
+		Group:    "kuscia.secretflow",
+		Version:  "v1",
+		Resource: "gateways",
+	}, "status", gw.Namespace, gw))
 
 	f.doSync()
 }

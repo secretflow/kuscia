@@ -52,6 +52,7 @@ spec:
   relativeURI: alice.csv
   type: table
   vendor: manual
+  author: alice
 ```
 
 在该示例中:
@@ -66,6 +67,7 @@ spec:
 - `.spec.relativeURI`：表示相对于数据源根路径的位置，当前示例的绝对路径为`/home/kuscia/var/storage/data/alice.csv`，详细请查看 [参考](#refer)。
 - `.spec.type`：表示 DomainData 的类型，目前支持 `table`、`model`、`rule`、`report`、`unknown`五种类型，分别表示数据表，模型，规则，报告和未知类型。
 - `.spec.vendor`：表示 DomainData 的来源，仅用作标识，详细请查看 [参考](#refer)。
+- `.spec.author`：表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的。
 
 
 1. 准备你的 CSV 数据文件，将你的数据文件重命名为 `alice.csv`，并拷贝到alice节点容器即`${USER}-kuscia-lite-alice`容器的`/home/kuscia/var/storage/data`目录下，运行以下命令可完成：
@@ -113,10 +115,11 @@ spec:
       name: education
       type: float
   dataSource: default-data-source
-  name: alice.csv
+  name: alice-test.csv
   relativeURI: alice.csv
   type: table
   vendor: manual
+  author: alice
 ```
 
 在该示例中，将`.spec.name`的值调整为`alice-test.csv`。
@@ -155,15 +158,18 @@ Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not fo
 ## 在 Domain 侧管理 DomainData
 
 如 上文所述，DomainData 属于节点内资源，每一个 DomainData 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
-你可以在 Domain 侧管理属于该 Domain 的 DomainData。Kuscia 在 Domain 侧提供了的 DataMesh API 来管理 DomainData。
+你可以在 Domain 侧管理属于该 Domain 的 DomainData。Kuscia 在 Domain 侧提供了的 Kuscia API 来管理 DomainData。
 
-Data Mesh API 提供 HTTP 和 GRPC 两种访问方法，分别位于 8070 和 8071
-端口，详情请参考 [Data Mesh API](../apis/datamesh/summary_cn.md#data-mesh-api-约定)。
+Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分别为 8082 和 8083 。
+端口，详情请参考 [Kuscia API](../apis/domaindata_cn.md)。
 
 1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainData。
 ```shell
-docker exec -it ${USER}-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
+docker exec -it root-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindata/query' --header "Token: $(cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
+ "data": {
+  "domain_id": "alice",
   "domaindata_id": "alice-table"
+  }
 }' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
@@ -201,6 +207,7 @@ spec:
   relativeURI: alice.csv
   type: table
   vendor: manual
+  author: alice
 ```
 
 DomainData `metadata` 的子字段详细介绍如下：
@@ -224,4 +231,5 @@ DomainData `spec` 的子字段详细介绍如下：
   在该示例中是对于`default-data-source`数据源根目录的相对位置，即`/home/kuscia/var/storage/data/alice.csv`。
 - `type`：表示 DomainData 的类型，目前支持 `table`、`model`、`rule`、`report`、`unknown`五种类型，分别表示数据表，模型，规则，报告和未知类型。
 - `vendor`：表示 DomainData 的来源，仅用作标识，对于你手动创建的 DomainData，可以将其设置为`manual`，对于应用算法组件生成的表，由算法组件本身填充，secretflow算法组件会填充`secretflow`。
+- `.spec.author`：表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的。
 

@@ -9,7 +9,10 @@
 > Tips：k8s 部署模式暂不支持训练，仅支持预测服务
 
 ## 部署 autonomy
-部署 autonomy 需提前准备好 mysql 数据库，数据库帐号密码等信息配置在步骤三 Configmap 中（database 需要提前手动创建好并且 mysql 账户需要具有创建表的权限）
+
+### 前置准备
+
+部署 autonomy 需提前准备好 mysql 数据库表并且符合[kuscia配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 configmap 中。
 
 ### 步骤一：创建 Namespace
 > 创建 namespace 需要先获取 create 权限，避免出现 "namespaces is forbidden" 报错
@@ -65,7 +68,7 @@ kubectl create -f deployment.yaml
 
 alice 和 bob 授权之前可以先检测下相互之间的通信是否正常
 
-建议使用 curl -kvvv http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080;（此处以 http 为例，https 可以删除 configmap 里的 protocol: NOTLS 字段，重启 pod 生效。LoadBalancer 或者 NodePort 方式可以用 curl -kvvv http://ip:port）检查一下是否访问能通，正常情况下返回的 http 错误码是401，内容是：unauthorized
+建议使用 curl -kvvv http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080;（此处以 http 为例，https 可以删除 configmap 里的 protocol: NOTLS 字段，重启 pod 生效。[LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer) 或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport) 方式可以用 curl -kvvv http://ip:port）检查一下是否访问能通，正常情况下返回的 http 错误码是401，内容是：unauthorized
 
 示例参考[这里](../K8s_deployment_kuscia/K8s_master_lite_cn.md#id6)
 

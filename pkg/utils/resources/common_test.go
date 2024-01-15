@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -50,6 +51,97 @@ func TestCompareResourceVersion(t *testing.T) {
 			got := CompareResourceVersion(tt.rv1, tt.rv2)
 			if got != tt.want {
 				t.Errorf(" got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+type domainStruct struct {
+	Domain_name string
+	Domain_id   string
+	want        bool
+}
+
+var domains = []domainStruct{
+	{
+		Domain_name: "1",
+		Domain_id:   "QWERdasda.12.23",
+		want:        false,
+	},
+	{
+		Domain_name: "2",
+		Domain_id:   "adsdsada.12.23",
+		want:        true,
+	},
+	{
+		Domain_name: "lenth=63 is true",
+		Domain_id:   "adsdsada.12.23wqdqdqdqwdqwddddddddddddddddddddddddddddddddddddd",
+		want:        true,
+	},
+	{
+		Domain_name: "lenth=64 is false",
+		Domain_id:   "adsdsada.12.23wqdqdqdqwdqwdddddddddddddddddddddddddddddddddddddd",
+		want:        false,
+	},
+	{
+		Domain_name: "5",
+		Domain_id:   "adswqdqdqdqwdqwddddddddddddddddddddddddddddddddddddddddd",
+		want:        true,
+	},
+	{
+		Domain_name: "empty",
+		Domain_id:   "",
+		want:        false,
+	},
+	{
+		Domain_name: "Chinese is false",
+		Domain_id:   "中文",
+		want:        false,
+	},
+	{
+		Domain_name: "8",
+		Domain_id:   "!@#$%^&*()！@#￥%……&*（）——+",
+		want:        false,
+	},
+	{
+		Domain_name: "9",
+		Domain_id:   "qwe_qwe",
+		want:        false,
+	},
+	{
+		Domain_name: "10",
+		Domain_id:   "qwe.",
+		want:        false,
+	},
+	{
+		Domain_name: "11",
+		Domain_id:   "qwe-",
+		want:        false,
+	},
+	{
+		Domain_name: "12",
+		Domain_id:   "_qwer",
+		want:        false,
+	},
+	{
+		Domain_name: "13",
+		Domain_id:   "-qwer",
+		want:        false,
+	},
+}
+
+func TestValidateK8sName(t *testing.T) {
+
+	for _, domain := range domains {
+		t.Run(domain.Domain_name, func(t *testing.T) {
+
+			err := ValidateK8sName(domain.Domain_id, "domain_id")
+			got := err == nil
+			if !got {
+				fmt.Printf("%s error message: %s \n", domain.Domain_name, err.Error())
+			}
+			if got != domain.want {
+				t.Errorf(" got %v, want %v", got, domain.want)
 			}
 		})
 	}

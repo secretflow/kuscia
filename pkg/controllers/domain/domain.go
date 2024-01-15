@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	apicorev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -151,5 +152,8 @@ func (c *Controller) sortNodeStatus(status []kusciaapisv1alpha1.NodeStatus) {
 func (c *Controller) updateDomainStatus(domain *kusciaapisv1alpha1.Domain) error {
 	nlog.Infof("Update domain %v status", domain.Name)
 	_, err := c.kusciaClient.KusciaV1alpha1().Domains().UpdateStatus(context.Background(), domain, apismetav1.UpdateOptions{})
-	return err
+	if err != nil && !k8serrors.IsConflict(err) {
+		return err
+	}
+	return nil
 }

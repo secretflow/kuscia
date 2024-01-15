@@ -17,7 +17,7 @@ from kuscia.proto.api.v1alpha1.datamesh import domaindata_pb2 as kuscia_dot_prot
 from kuscia.proto.api.v1alpha1.datamesh import domaindatasource_pb2 as kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n1kuscia/proto/api/v1alpha1/datamesh/flightdm.proto\x12\"kuscia.proto.api.v1alpha1.datamesh\x1a\x33kuscia/proto/api/v1alpha1/datamesh/domaindata.proto\x1a\x39kuscia/proto/api/v1alpha1/datamesh/domaindatasource.proto\"*\n\x0f\x43SVWriteOptions\x12\x17\n\x0f\x66ield_delimiter\x18\x01 \x01(\t\"i\n\x10\x46ileWriteOptions\x12J\n\x0b\x63sv_options\x18\x02 \x01(\x0b\x32\x33.kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptionsH\x00\x42\t\n\x07Options\"3\n\x1a\x43ommandGetDomainDataSchema\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\"\xd9\x01\n\x16\x43ommandDomainDataQuery\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\x12\x0f\n\x07\x63olumns\x18\x02 \x03(\t\x12\x45\n\x0c\x63ontent_type\x18\x03 \x01(\x0e\x32/.kuscia.proto.api.v1alpha1.datamesh.ContentType\x12P\n\x12\x66ile_write_options\x18\x04 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions\"\xbd\x03\n\x17\x43ommandDomainDataUpdate\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\x12W\n\x12\x64omaindata_request\x18\x02 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest\x12\x45\n\x0c\x63ontent_type\x18\x03 \x01(\x0e\x32/.kuscia.proto.api.v1alpha1.datamesh.ContentType\x12P\n\x12\x66ile_write_options\x18\x04 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions\x12\x64\n\rextra_options\x18\x05 \x03(\x0b\x32M.kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry\x1a\x33\n\x11\x45xtraOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"2\n\x15TicketDomainDataQuery\x12\x19\n\x11\x64omaindata_handle\x18\x01 \x01(\t\"m\n\x1d\x41\x63tionCreateDomainDataRequest\x12L\n\x07request\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest\"p\n\x1e\x41\x63tionCreateDomainDataResponse\x12N\n\x08response\x18\x01 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse\"k\n\x1c\x41\x63tionQueryDomainDataRequest\x12K\n\x07request\x18\x01 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest\"n\n\x1d\x41\x63tionQueryDomainDataResponse\x12M\n\x08response\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse\"m\n\x1d\x41\x63tionUpdateDomainDataRequest\x12L\n\x07request\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest\"p\n\x1e\x41\x63tionUpdateDomainDataResponse\x12N\n\x08response\x18\x01 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse\"\x88\x01\n\x1d\x41\x63tionDeleteDomainDataRequest\x12L\n\x07request\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest\x12\x19\n\x11physical_deletion\x18\x02 \x01(\x08\"p\n\x1e\x41\x63tionDeleteDomainDataResponse\x12N\n\x08response\x18\x01 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponse\"y\n#ActionCreateDomainDataSourceRequest\x12R\n\x07request\x18\x01 \x01(\x0b\x32\x41.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataSourceRequest\"|\n$ActionCreateDomainDataSourceResponse\x12T\n\x08response\x18\x01 \x01(\x0b\x32\x42.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataSourceResponse\"w\n\"ActionQueryDomainDataSourceRequest\x12Q\n\x07request\x18\x01 \x01(\x0b\x32@.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceRequest\"z\n#ActionQueryDomainDataSourceResponse\x12S\n\x08response\x18\x01 \x01(\x0b\x32\x41.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceResponse**\n\x0b\x43ontentType\x12\t\n\x05Table\x10\x00\x12\x07\n\x03RAW\x10\x01\x12\x07\n\x03\x43SV\x10\x02\x42\\\n org.secretflow.v1alpha1.datameshZ8github.com/secretflow/kuscia/proto/api/v1alpha1/datameshb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n1kuscia/proto/api/v1alpha1/datamesh/flightdm.proto\x12\"kuscia.proto.api.v1alpha1.datamesh\x1a\x33kuscia/proto/api/v1alpha1/datamesh/domaindata.proto\x1a\x39kuscia/proto/api/v1alpha1/datamesh/domaindatasource.proto\"*\n\x0f\x43SVWriteOptions\x12\x17\n\x0f\x66ield_delimiter\x18\x01 \x01(\t\"i\n\x10\x46ileWriteOptions\x12J\n\x0b\x63sv_options\x18\x02 \x01(\x0b\x32\x33.kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptionsH\x00\x42\t\n\x07Options\"3\n\x1a\x43ommandGetDomainDataSchema\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\"\xd9\x01\n\x16\x43ommandDomainDataQuery\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\x12\x0f\n\x07\x63olumns\x18\x02 \x03(\t\x12\x45\n\x0c\x63ontent_type\x18\x03 \x01(\x0e\x32/.kuscia.proto.api.v1alpha1.datamesh.ContentType\x12P\n\x12\x66ile_write_options\x18\x04 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions\"\xbd\x03\n\x17\x43ommandDomainDataUpdate\x12\x15\n\rdomaindata_id\x18\x01 \x01(\t\x12W\n\x12\x64omaindata_request\x18\x02 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest\x12\x45\n\x0c\x63ontent_type\x18\x03 \x01(\x0e\x32/.kuscia.proto.api.v1alpha1.datamesh.ContentType\x12P\n\x12\x66ile_write_options\x18\x04 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions\x12\x64\n\rextra_options\x18\x05 \x03(\x0b\x32M.kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry\x1a\x33\n\x11\x45xtraOptionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"2\n\x15TicketDomainDataQuery\x12\x19\n\x11\x64omaindata_handle\x18\x01 \x01(\t\"m\n\x1d\x41\x63tionCreateDomainDataRequest\x12L\n\x07request\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest\"p\n\x1e\x41\x63tionCreateDomainDataResponse\x12N\n\x08response\x18\x01 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataResponse\"k\n\x1c\x41\x63tionQueryDomainDataRequest\x12K\n\x07request\x18\x01 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataRequest\"n\n\x1d\x41\x63tionQueryDomainDataResponse\x12M\n\x08response\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataResponse\"m\n\x1d\x41\x63tionUpdateDomainDataRequest\x12L\n\x07request\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataRequest\"p\n\x1e\x41\x63tionUpdateDomainDataResponse\x12N\n\x08response\x18\x01 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.datamesh.UpdateDomainDataResponse\"\x88\x01\n\x1d\x41\x63tionDeleteDomainDataRequest\x12L\n\x07request\x18\x01 \x01(\x0b\x32;.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataRequest\x12\x19\n\x11physical_deletion\x18\x02 \x01(\x08\"p\n\x1e\x41\x63tionDeleteDomainDataResponse\x12N\n\x08response\x18\x01 \x01(\x0b\x32<.kuscia.proto.api.v1alpha1.datamesh.DeleteDomainDataResponse\"w\n\"ActionQueryDomainDataSourceRequest\x12Q\n\x07request\x18\x01 \x01(\x0b\x32@.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceRequest\"z\n#ActionQueryDomainDataSourceResponse\x12S\n\x08response\x18\x01 \x01(\x0b\x32\x41.kuscia.proto.api.v1alpha1.datamesh.QueryDomainDataSourceResponse**\n\x0b\x43ontentType\x12\t\n\x05Table\x10\x00\x12\x07\n\x03RAW\x10\x01\x12\x07\n\x03\x43SV\x10\x02\x42\\\n org.secretflow.v1alpha1.datameshZ8github.com/secretflow/kuscia/proto/api/v1alpha1/datameshb\x06proto3')
 
 _CONTENTTYPE = DESCRIPTOR.enum_types_by_name['ContentType']
 ContentType = enum_type_wrapper.EnumTypeWrapper(_CONTENTTYPE)
@@ -41,8 +41,6 @@ _ACTIONUPDATEDOMAINDATAREQUEST = DESCRIPTOR.message_types_by_name['ActionUpdateD
 _ACTIONUPDATEDOMAINDATARESPONSE = DESCRIPTOR.message_types_by_name['ActionUpdateDomainDataResponse']
 _ACTIONDELETEDOMAINDATAREQUEST = DESCRIPTOR.message_types_by_name['ActionDeleteDomainDataRequest']
 _ACTIONDELETEDOMAINDATARESPONSE = DESCRIPTOR.message_types_by_name['ActionDeleteDomainDataResponse']
-_ACTIONCREATEDOMAINDATASOURCEREQUEST = DESCRIPTOR.message_types_by_name['ActionCreateDomainDataSourceRequest']
-_ACTIONCREATEDOMAINDATASOURCERESPONSE = DESCRIPTOR.message_types_by_name['ActionCreateDomainDataSourceResponse']
 _ACTIONQUERYDOMAINDATASOURCEREQUEST = DESCRIPTOR.message_types_by_name['ActionQueryDomainDataSourceRequest']
 _ACTIONQUERYDOMAINDATASOURCERESPONSE = DESCRIPTOR.message_types_by_name['ActionQueryDomainDataSourceResponse']
 CSVWriteOptions = _reflection.GeneratedProtocolMessageType('CSVWriteOptions', (_message.Message,), {
@@ -151,20 +149,6 @@ ActionDeleteDomainDataResponse = _reflection.GeneratedProtocolMessageType('Actio
   })
 _sym_db.RegisterMessage(ActionDeleteDomainDataResponse)
 
-ActionCreateDomainDataSourceRequest = _reflection.GeneratedProtocolMessageType('ActionCreateDomainDataSourceRequest', (_message.Message,), {
-  'DESCRIPTOR' : _ACTIONCREATEDOMAINDATASOURCEREQUEST,
-  '__module__' : 'kuscia.proto.api.v1alpha1.datamesh.flightdm_pb2'
-  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataSourceRequest)
-  })
-_sym_db.RegisterMessage(ActionCreateDomainDataSourceRequest)
-
-ActionCreateDomainDataSourceResponse = _reflection.GeneratedProtocolMessageType('ActionCreateDomainDataSourceResponse', (_message.Message,), {
-  'DESCRIPTOR' : _ACTIONCREATEDOMAINDATASOURCERESPONSE,
-  '__module__' : 'kuscia.proto.api.v1alpha1.datamesh.flightdm_pb2'
-  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.datamesh.ActionCreateDomainDataSourceResponse)
-  })
-_sym_db.RegisterMessage(ActionCreateDomainDataSourceResponse)
-
 ActionQueryDomainDataSourceRequest = _reflection.GeneratedProtocolMessageType('ActionQueryDomainDataSourceRequest', (_message.Message,), {
   'DESCRIPTOR' : _ACTIONQUERYDOMAINDATASOURCEREQUEST,
   '__module__' : 'kuscia.proto.api.v1alpha1.datamesh.flightdm_pb2'
@@ -185,8 +169,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._serialized_options = b'\n org.secretflow.v1alpha1.datameshZ8github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh'
   _COMMANDDOMAINDATAUPDATE_EXTRAOPTIONSENTRY._options = None
   _COMMANDDOMAINDATAUPDATE_EXTRAOPTIONSENTRY._serialized_options = b'8\001'
-  _CONTENTTYPE._serialized_start=2543
-  _CONTENTTYPE._serialized_end=2585
+  _CONTENTTYPE._serialized_start=2294
+  _CONTENTTYPE._serialized_end=2336
   _CSVWRITEOPTIONS._serialized_start=201
   _CSVWRITEOPTIONS._serialized_end=243
   _FILEWRITEOPTIONS._serialized_start=245
@@ -217,12 +201,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _ACTIONDELETEDOMAINDATAREQUEST._serialized_end=1933
   _ACTIONDELETEDOMAINDATARESPONSE._serialized_start=1935
   _ACTIONDELETEDOMAINDATARESPONSE._serialized_end=2047
-  _ACTIONCREATEDOMAINDATASOURCEREQUEST._serialized_start=2049
-  _ACTIONCREATEDOMAINDATASOURCEREQUEST._serialized_end=2170
-  _ACTIONCREATEDOMAINDATASOURCERESPONSE._serialized_start=2172
-  _ACTIONCREATEDOMAINDATASOURCERESPONSE._serialized_end=2296
-  _ACTIONQUERYDOMAINDATASOURCEREQUEST._serialized_start=2298
-  _ACTIONQUERYDOMAINDATASOURCEREQUEST._serialized_end=2417
-  _ACTIONQUERYDOMAINDATASOURCERESPONSE._serialized_start=2419
-  _ACTIONQUERYDOMAINDATASOURCERESPONSE._serialized_end=2541
+  _ACTIONQUERYDOMAINDATASOURCEREQUEST._serialized_start=2049
+  _ACTIONQUERYDOMAINDATASOURCEREQUEST._serialized_end=2168
+  _ACTIONQUERYDOMAINDATASOURCERESPONSE._serialized_start=2170
+  _ACTIONQUERYDOMAINDATASOURCERESPONSE._serialized_end=2292
 # @@protoc_insertion_point(module_scope)

@@ -33,6 +33,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
@@ -55,9 +56,10 @@ func NewDomainDataGrantService(config *config.DataMeshConfig) IDomainDataGrantSe
 }
 
 func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, request *datamesh.CreateDomainDataGrantRequest) *datamesh.CreateDomainDataGrantResponse {
-	if request.GrantDomain == "" {
+
+	if validateErr := validateCreateDomainDataGrantRequest(request); validateErr != nil {
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "grantdomain cant be null"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, validateErr.Error()),
 		}
 	}
 	if request.GrantDomain == s.conf.KubeNamespace {
@@ -65,15 +67,11 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "grantdomain cant be self"),
 		}
 	}
-	if request.DomaindataId == "" {
-		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindata cant be null"),
-		}
-	}
+
 	dd, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindata cant be found"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, fmt.Sprintf("domaindata [%s] not exists", request.DomaindataId)),
 		}
 	}
 	if request.DomaindatagrantId != "" {
@@ -286,4 +284,24 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, d
 			domaindata.Limit.ExpirationTime = v.Spec.Limit.ExpirationTime.UnixNano()
 		}
 	}
+}
+
+func validateCreateDomainDataGrantRequest(request *datamesh.CreateDomainDataGrantRequest) error {
+	if request.GrantDomain == "" {
+		return fmt.Errorf("grantdomain cant be null")
+	}
+
+	if request.DomaindataId == "" {
+		return fmt.Errorf("domaindata cant be null")
+	}
+
+	// do k8s validate
+	if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {
+		return err
+	}
+
+	if request.GetDomaindatagrantId() != "" {
+		return resources.ValidateK8sName(request.GetDomaindatagrantId(), "domaindatagrant_id")
+	}
+	return nil
 }

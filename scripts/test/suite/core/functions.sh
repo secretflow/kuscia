@@ -239,3 +239,115 @@ function get_ipv4_address() {
   esac
   echo $ipv4
 }
+
+
+# @return domain route destination token
+# Args:
+#   ctr: container name
+#   dr_name: dormain route name
+function get_dr_dst_token_value() {
+  local ctr=$1
+  local dr_name=$2
+  docker exec "${ctr}" kubectl get dr $dr_name -o jsonpath='{.status.tokenStatus.revisionToken.token}'
+}
+
+# @return domain route source token
+# Args:
+#   ctr: container name
+#   dr_name: dormain route name
+function get_dr_src_token_value() {
+  local ctr=$1
+  local dr_name=$2
+  docker exec "${ctr}" kubectl get dr $dr_name -o jsonpath='{.status.tokenStatus.revisionToken.token}'
+}
+
+
+# @return cluster domain route destination token
+# Args:
+#   ctr: container name
+#   cdr_name: cluster dormain route name
+function get_cdr_dst_token_value() {
+  local ctr=$1
+  local cdr_name=$2
+  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.destinationTokens[-1].token}'
+}
+
+
+# @return cluster domain route source token
+# Args:
+#   ctr: container name
+#   dr_name: cluster dormain route name
+function get_cdr_src_token_value() {
+  local ctr=$1
+  local cdr_name=$2
+  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.sourceTokens[-1].token}'
+}
+
+
+# @return cluster domain route destination token revision
+# Args:
+#   ctr: container name
+#   cdr_name: cluster dormain route name
+function get_cdr_dst_token_revision() {
+  local ctr=$1
+  local cdr_name=$2
+  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.destinationTokens[-1].revision}'
+}
+
+
+# @return cluster domain route source token revision
+# Args:
+#   ctr: container name
+#   cdr_name: cluster dormain route name
+function get_cdr_src_token_revision() {
+  local ctr=$1
+  local cdr_name=$2
+  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.sourceTokens[-1].revision}'
+}
+
+
+# @return cluster domain route token status
+# Args:
+#   ctr: container name
+#   cdr_name: cluster dormain route name
+function get_cdr_token_status() {
+  local ctr=$1
+  local cdr_name=$2
+  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.conditions[0].type}'
+}
+
+
+# @return domain route party token ready status
+# Args:
+#   ctr: container name
+#   dr_name: dormain route name
+#   domain: party
+function get_dr_revision_token_ready() {
+  local ctr=$1
+  local dr_name=$2
+  local domain=$3
+  docker exec "${ctr}" kubectl get dr $dr_name -n $domain -o jsonpath='{.status.tokenStatus.revisionToken.isReady}'
+}
+
+
+# Args:
+#   ctr: container name
+#   cdr_name: cluster dormain route name
+#   period: target token rolling period(s)
+function set_cdr_token_rolling_period() {
+  local ctr=$1
+  local cdr_name=$2
+  local peroid=$3
+  docker exec "${ctr}" kubectl patch cdr $cdr_name --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${period}}]"
+}
+
+
+# @return cluster domain route rolling period(s)
+# Args:
+#   ctr: container name
+#   cdr_name: cluster dormain route name
+function get_cdr_token_rolling_period() {
+  local ctr=$1
+  local cdr_name=$2
+  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.spec.tokenConfig.rollingUpdatePeriod}'
+}

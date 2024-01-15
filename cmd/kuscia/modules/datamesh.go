@@ -70,7 +70,9 @@ func (m dataMeshModule) Run(ctx context.Context) error {
 
 func (m dataMeshModule) WaitReady(ctx context.Context) error {
 	timeoutTicker := time.NewTicker(30 * time.Second)
+	defer timeoutTicker.Stop()
 	checkTicker := time.NewTicker(1 * time.Second)
+	defer checkTicker.Stop()
 	for {
 		select {
 		case <-checkTicker.C:

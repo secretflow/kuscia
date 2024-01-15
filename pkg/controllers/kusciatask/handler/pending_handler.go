@@ -915,6 +915,10 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 
 		resCtr.Env = append(resCtr.Env, []v1.EnvVar{
 			{
+				Name:  common.EnvDomainID,
+				Value: partyKit.domainID,
+			},
+			{
 				Name:  common.EnvTaskID,
 				Value: partyKit.kusciaTask.Name,
 			},

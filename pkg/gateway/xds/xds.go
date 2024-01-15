@@ -445,7 +445,6 @@ func QueryCluster(name string) (*envoycluster.Cluster, error) {
 	clusters := snapshot.Resources[types.Cluster].Items
 	rs, ok := clusters[name]
 	if !ok {
-		nlog.Errorf("unknown cluster: %s", name)
 		return nil, fmt.Errorf("unknown cluster: %s", name)
 	}
 	cluster, ok := rs.Resource.(*envoycluster.Cluster)

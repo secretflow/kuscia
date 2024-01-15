@@ -31,6 +31,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
@@ -407,6 +408,11 @@ func (s domainDataSourceService) validateRequestIdentity(domainID string) error 
 
 	if domainID == "" {
 		return errors.New("domain id can not be empty")
+	}
+
+	// do k8s validate
+	if err := resources.ValidateK8sName(domainID, "domain_id"); err != nil {
+		return err
 	}
 
 	if domainID != s.conf.Initiator {

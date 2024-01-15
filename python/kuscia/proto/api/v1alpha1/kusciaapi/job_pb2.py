@@ -16,20 +16,22 @@ _sym_db = _symbol_database.Default()
 from kuscia.proto.api.v1alpha1 import common_pb2 as kuscia_dot_proto_dot_api_dot_v1alpha1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-kuscia/proto/api/v1alpha1/kusciaapi/job.proto\x12#kuscia.proto.api.v1alpha1.kusciaapi\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xc2\x01\n\x10\x43reateJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x11\n\tinitiator\x18\x03 \x01(\t\x12\x17\n\x0fmax_parallelism\x18\x04 \x01(\x05\x12\x38\n\x05tasks\x18\x05 \x03(\x0b\x32).kuscia.proto.api.v1alpha1.kusciaapi.Task\"\x90\x01\n\x11\x43reateJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12H\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.kusciaapi.CreateJobResponseData\"\'\n\x15\x43reateJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xb9\x01\n\x04Task\x12\x11\n\tapp_image\x18\x01 \x01(\t\x12;\n\x07parties\x18\x02 \x03(\x0b\x32*.kuscia.proto.api.v1alpha1.kusciaapi.Party\x12\r\n\x05\x61lias\x18\x03 \x01(\t\x12\x0f\n\x07task_id\x18\x04 \x01(\t\x12\x14\n\x0c\x64\x65pendencies\x18\x05 \x03(\t\x12\x19\n\x11task_input_config\x18\x06 \x01(\t\x12\x10\n\x08priority\x18\x07 \x01(\x05\"(\n\x05Party\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\"\\\n\x10\x44\x65leteJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"\x90\x01\n\x11\x44\x65leteJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12H\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.kusciaapi.DeleteJobResponseData\"\'\n\x15\x44\x65leteJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"Z\n\x0eStopJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"\x8c\x01\n\x0fStopJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12\x46\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x38.kuscia.proto.api.v1alpha1.kusciaapi.StopJobResponseData\"%\n\x13StopJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"[\n\x0fQueryJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"\x8e\x01\n\x10QueryJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12G\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x39.kuscia.proto.api.v1alpha1.kusciaapi.QueryJobResponseData\"\xd8\x01\n\x14QueryJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x11\n\tinitiator\x18\x02 \x01(\t\x12\x17\n\x0fmax_parallelism\x18\x03 \x01(\x05\x12>\n\x05tasks\x18\x04 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.TaskConfig\x12\x44\n\x06status\x18\x05 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusDetail\"\xac\x01\n\x0fJobStatusDetail\x12\r\n\x05state\x18\x01 \x01(\t\x12\x0f\n\x07\x65rr_msg\x18\x02 \x01(\t\x12\x13\n\x0b\x63reate_time\x18\x03 \x01(\t\x12\x12\n\nstart_time\x18\x04 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x05 \x01(\t\x12>\n\x05tasks\x18\x06 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.TaskStatus\"\xbf\x01\n\nTaskConfig\x12\x11\n\tapp_image\x18\x01 \x01(\t\x12;\n\x07parties\x18\x02 \x03(\x0b\x32*.kuscia.proto.api.v1alpha1.kusciaapi.Party\x12\r\n\x05\x61lias\x18\x03 \x01(\t\x12\x0f\n\x07task_id\x18\x04 \x01(\t\x12\x14\n\x0c\x64\x65pendencies\x18\x05 \x03(\t\x12\x19\n\x11task_input_config\x18\x06 \x01(\t\x12\x10\n\x08priority\x18\x07 \x01(\x05\"\xbb\x01\n\nTaskStatus\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x0f\n\x07\x65rr_msg\x18\x03 \x01(\t\x12\x13\n\x0b\x63reate_time\x18\x04 \x01(\t\x12\x12\n\nstart_time\x18\x05 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x06 \x01(\t\x12\x41\n\x07parties\x18\x07 \x03(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.PartyStatus\"@\n\x0bPartyStatus\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x0f\n\x07\x65rr_msg\x18\x03 \x01(\t\"g\n\x1a\x42\x61tchQueryJobStatusRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0f\n\x07job_ids\x18\x02 \x03(\t\"\xa4\x01\n\x1b\x42\x61tchQueryJobStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12R\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x44.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryJobStatusResponseData\"_\n\x1f\x42\x61tchQueryJobStatusResponseData\x12<\n\x04jobs\x18\x01 \x03(\x0b\x32..kuscia.proto.api.v1alpha1.kusciaapi.JobStatus\"\x90\x01\n\x11JobStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12H\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusResponseData\"m\n\x15JobStatusResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x44\n\x06status\x18\x02 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusDetail\"a\n\tJobStatus\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x44\n\x06status\x18\x02 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusDetail\"d\n\x0fWatchJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x17\n\x0ftimeout_seconds\x18\x02 \x01(\x03\"\x95\x01\n\x15WatchJobEventResponse\x12<\n\x04type\x18\x01 \x01(\x0e\x32..kuscia.proto.api.v1alpha1.kusciaapi.EventType\x12>\n\x06object\x18\x02 \x01(\x0b\x32..kuscia.proto.api.v1alpha1.kusciaapi.JobStatus*@\n\tTaskState\x12\x0b\n\x07Pending\x10\x00\x12\x0b\n\x07Running\x10\x01\x12\r\n\tSucceeded\x10\x02\x12\n\n\x06\x46\x61iled\x10\x03*<\n\tEventType\x12\t\n\x05\x41\x44\x44\x45\x44\x10\x00\x12\x0c\n\x08MODIFIED\x10\x01\x12\x0b\n\x07\x44\x45LETED\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x32\x8e\x06\n\nJobService\x12z\n\tCreateJob\x12\x35.kuscia.proto.api.v1alpha1.kusciaapi.CreateJobRequest\x1a\x36.kuscia.proto.api.v1alpha1.kusciaapi.CreateJobResponse\x12w\n\x08QueryJob\x12\x34.kuscia.proto.api.v1alpha1.kusciaapi.QueryJobRequest\x1a\x35.kuscia.proto.api.v1alpha1.kusciaapi.QueryJobResponse\x12\x98\x01\n\x13\x42\x61tchQueryJobStatus\x12?.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryJobStatusRequest\x1a@.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryJobStatusResponse\x12t\n\x07StopJob\x12\x33.kuscia.proto.api.v1alpha1.kusciaapi.StopJobRequest\x1a\x34.kuscia.proto.api.v1alpha1.kusciaapi.StopJobResponse\x12z\n\tDeleteJob\x12\x35.kuscia.proto.api.v1alpha1.kusciaapi.DeleteJobRequest\x1a\x36.kuscia.proto.api.v1alpha1.kusciaapi.DeleteJobResponse\x12~\n\x08WatchJob\x12\x34.kuscia.proto.api.v1alpha1.kusciaapi.WatchJobRequest\x1a:.kuscia.proto.api.v1alpha1.kusciaapi.WatchJobEventResponse0\x01\x42^\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapib\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-kuscia/proto/api/v1alpha1/kusciaapi/job.proto\x12#kuscia.proto.api.v1alpha1.kusciaapi\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xc2\x01\n\x10\x43reateJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\x12\x11\n\tinitiator\x18\x03 \x01(\t\x12\x17\n\x0fmax_parallelism\x18\x04 \x01(\x05\x12\x38\n\x05tasks\x18\x05 \x03(\x0b\x32).kuscia.proto.api.v1alpha1.kusciaapi.Task\"\x90\x01\n\x11\x43reateJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12H\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.kusciaapi.CreateJobResponseData\"\'\n\x15\x43reateJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"\xb9\x01\n\x04Task\x12\x11\n\tapp_image\x18\x01 \x01(\t\x12;\n\x07parties\x18\x02 \x03(\x0b\x32*.kuscia.proto.api.v1alpha1.kusciaapi.Party\x12\r\n\x05\x61lias\x18\x03 \x01(\t\x12\x0f\n\x07task_id\x18\x04 \x01(\t\x12\x14\n\x0c\x64\x65pendencies\x18\x05 \x03(\t\x12\x19\n\x11task_input_config\x18\x06 \x01(\t\x12\x10\n\x08priority\x18\x07 \x01(\x05\"(\n\x05Party\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04role\x18\x02 \x01(\t\"\\\n\x10\x44\x65leteJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"\x90\x01\n\x11\x44\x65leteJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12H\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.kusciaapi.DeleteJobResponseData\"\'\n\x15\x44\x65leteJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"Z\n\x0eStopJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"\x8c\x01\n\x0fStopJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12\x46\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x38.kuscia.proto.api.v1alpha1.kusciaapi.StopJobResponseData\"%\n\x13StopJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\"[\n\x0fQueryJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0e\n\x06job_id\x18\x02 \x01(\t\"\x8e\x01\n\x10QueryJobResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12G\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x39.kuscia.proto.api.v1alpha1.kusciaapi.QueryJobResponseData\"\xd8\x01\n\x14QueryJobResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x11\n\tinitiator\x18\x02 \x01(\t\x12\x17\n\x0fmax_parallelism\x18\x03 \x01(\x05\x12>\n\x05tasks\x18\x04 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.TaskConfig\x12\x44\n\x06status\x18\x05 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusDetail\"\xac\x01\n\x0fJobStatusDetail\x12\r\n\x05state\x18\x01 \x01(\t\x12\x0f\n\x07\x65rr_msg\x18\x02 \x01(\t\x12\x13\n\x0b\x63reate_time\x18\x03 \x01(\t\x12\x12\n\nstart_time\x18\x04 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x05 \x01(\t\x12>\n\x05tasks\x18\x06 \x03(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.TaskStatus\"\xbf\x01\n\nTaskConfig\x12\x11\n\tapp_image\x18\x01 \x01(\t\x12;\n\x07parties\x18\x02 \x03(\x0b\x32*.kuscia.proto.api.v1alpha1.kusciaapi.Party\x12\r\n\x05\x61lias\x18\x03 \x01(\t\x12\x0f\n\x07task_id\x18\x04 \x01(\t\x12\x14\n\x0c\x64\x65pendencies\x18\x05 \x03(\t\x12\x19\n\x11task_input_config\x18\x06 \x01(\t\x12\x10\n\x08priority\x18\x07 \x01(\x05\"\xbb\x01\n\nTaskStatus\x12\x0f\n\x07task_id\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x0f\n\x07\x65rr_msg\x18\x03 \x01(\t\x12\x13\n\x0b\x63reate_time\x18\x04 \x01(\t\x12\x12\n\nstart_time\x18\x05 \x01(\t\x12\x10\n\x08\x65nd_time\x18\x06 \x01(\t\x12\x41\n\x07parties\x18\x07 \x03(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.PartyStatus\"\x8a\x01\n\x0bPartyStatus\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\r\n\x05state\x18\x02 \x01(\t\x12\x0f\n\x07\x65rr_msg\x18\x03 \x01(\t\x12H\n\tendpoints\x18\x04 \x03(\x0b\x32\x35.kuscia.proto.api.v1alpha1.kusciaapi.JobPartyEndpoint\"g\n\x1a\x42\x61tchQueryJobStatusRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x0f\n\x07job_ids\x18\x02 \x03(\t\"\xa4\x01\n\x1b\x42\x61tchQueryJobStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12R\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x44.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryJobStatusResponseData\"_\n\x1f\x42\x61tchQueryJobStatusResponseData\x12<\n\x04jobs\x18\x01 \x03(\x0b\x32..kuscia.proto.api.v1alpha1.kusciaapi.JobStatus\"\x90\x01\n\x11JobStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12H\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32:.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusResponseData\"m\n\x15JobStatusResponseData\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x44\n\x06status\x18\x02 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusDetail\"a\n\tJobStatus\x12\x0e\n\x06job_id\x18\x01 \x01(\t\x12\x44\n\x06status\x18\x02 \x01(\x0b\x32\x34.kuscia.proto.api.v1alpha1.kusciaapi.JobStatusDetail\"d\n\x0fWatchJobRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x17\n\x0ftimeout_seconds\x18\x02 \x01(\x03\"\x95\x01\n\x15WatchJobEventResponse\x12<\n\x04type\x18\x01 \x01(\x0e\x32..kuscia.proto.api.v1alpha1.kusciaapi.EventType\x12>\n\x06object\x18\x02 \x01(\x0b\x32..kuscia.proto.api.v1alpha1.kusciaapi.JobStatus\"F\n\x10JobPartyEndpoint\x12\x11\n\tport_name\x18\x01 \x01(\t\x12\r\n\x05scope\x18\x02 \x01(\t\x12\x10\n\x08\x65ndpoint\x18\x03 \x01(\t*I\n\x05State\x12\x0b\n\x07Unknown\x10\x00\x12\x0b\n\x07Pending\x10\x01\x12\x0b\n\x07Running\x10\x02\x12\r\n\tSucceeded\x10\x03\x12\n\n\x06\x46\x61iled\x10\x04*K\n\tEventType\x12\t\n\x05\x41\x44\x44\x45\x44\x10\x00\x12\x0c\n\x08MODIFIED\x10\x01\x12\x0b\n\x07\x44\x45LETED\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x12\r\n\tHEARTBEAT\x10\x04\x32\x8e\x06\n\nJobService\x12z\n\tCreateJob\x12\x35.kuscia.proto.api.v1alpha1.kusciaapi.CreateJobRequest\x1a\x36.kuscia.proto.api.v1alpha1.kusciaapi.CreateJobResponse\x12w\n\x08QueryJob\x12\x34.kuscia.proto.api.v1alpha1.kusciaapi.QueryJobRequest\x1a\x35.kuscia.proto.api.v1alpha1.kusciaapi.QueryJobResponse\x12\x98\x01\n\x13\x42\x61tchQueryJobStatus\x12?.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryJobStatusRequest\x1a@.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryJobStatusResponse\x12t\n\x07StopJob\x12\x33.kuscia.proto.api.v1alpha1.kusciaapi.StopJobRequest\x1a\x34.kuscia.proto.api.v1alpha1.kusciaapi.StopJobResponse\x12z\n\tDeleteJob\x12\x35.kuscia.proto.api.v1alpha1.kusciaapi.DeleteJobRequest\x1a\x36.kuscia.proto.api.v1alpha1.kusciaapi.DeleteJobResponse\x12~\n\x08WatchJob\x12\x34.kuscia.proto.api.v1alpha1.kusciaapi.WatchJobRequest\x1a:.kuscia.proto.api.v1alpha1.kusciaapi.WatchJobEventResponse0\x01\x42^\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapib\x06proto3')
 
-_TASKSTATE = DESCRIPTOR.enum_types_by_name['TaskState']
-TaskState = enum_type_wrapper.EnumTypeWrapper(_TASKSTATE)
+_STATE = DESCRIPTOR.enum_types_by_name['State']
+State = enum_type_wrapper.EnumTypeWrapper(_STATE)
 _EVENTTYPE = DESCRIPTOR.enum_types_by_name['EventType']
 EventType = enum_type_wrapper.EnumTypeWrapper(_EVENTTYPE)
-Pending = 0
-Running = 1
-Succeeded = 2
-Failed = 3
+Unknown = 0
+Pending = 1
+Running = 2
+Succeeded = 3
+Failed = 4
 ADDED = 0
 MODIFIED = 1
 DELETED = 2
 ERROR = 3
+HEARTBEAT = 4
 
 
 _CREATEJOBREQUEST = DESCRIPTOR.message_types_by_name['CreateJobRequest']
@@ -58,6 +60,7 @@ _JOBSTATUSRESPONSEDATA = DESCRIPTOR.message_types_by_name['JobStatusResponseData
 _JOBSTATUS = DESCRIPTOR.message_types_by_name['JobStatus']
 _WATCHJOBREQUEST = DESCRIPTOR.message_types_by_name['WatchJobRequest']
 _WATCHJOBEVENTRESPONSE = DESCRIPTOR.message_types_by_name['WatchJobEventResponse']
+_JOBPARTYENDPOINT = DESCRIPTOR.message_types_by_name['JobPartyEndpoint']
 CreateJobRequest = _reflection.GeneratedProtocolMessageType('CreateJobRequest', (_message.Message,), {
   'DESCRIPTOR' : _CREATEJOBREQUEST,
   '__module__' : 'kuscia.proto.api.v1alpha1.kusciaapi.job_pb2'
@@ -240,15 +243,22 @@ WatchJobEventResponse = _reflection.GeneratedProtocolMessageType('WatchJobEventR
   })
 _sym_db.RegisterMessage(WatchJobEventResponse)
 
+JobPartyEndpoint = _reflection.GeneratedProtocolMessageType('JobPartyEndpoint', (_message.Message,), {
+  'DESCRIPTOR' : _JOBPARTYENDPOINT,
+  '__module__' : 'kuscia.proto.api.v1alpha1.kusciaapi.job_pb2'
+  # @@protoc_insertion_point(class_scope:kuscia.proto.api.v1alpha1.kusciaapi.JobPartyEndpoint)
+  })
+_sym_db.RegisterMessage(JobPartyEndpoint)
+
 _JOBSERVICE = DESCRIPTOR.services_by_name['JobService']
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   DESCRIPTOR._serialized_options = b'\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi'
-  _TASKSTATE._serialized_start=3359
-  _TASKSTATE._serialized_end=3423
-  _EVENTTYPE._serialized_start=3425
-  _EVENTTYPE._serialized_end=3485
+  _STATE._serialized_start=3506
+  _STATE._serialized_end=3579
+  _EVENTTYPE._serialized_start=3581
+  _EVENTTYPE._serialized_end=3656
   _CREATEJOBREQUEST._serialized_start=127
   _CREATEJOBREQUEST._serialized_end=321
   _CREATEJOBRESPONSE._serialized_start=324
@@ -283,24 +293,26 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _TASKCONFIG._serialized_end=2121
   _TASKSTATUS._serialized_start=2124
   _TASKSTATUS._serialized_end=2311
-  _PARTYSTATUS._serialized_start=2313
-  _PARTYSTATUS._serialized_end=2377
-  _BATCHQUERYJOBSTATUSREQUEST._serialized_start=2379
-  _BATCHQUERYJOBSTATUSREQUEST._serialized_end=2482
-  _BATCHQUERYJOBSTATUSRESPONSE._serialized_start=2485
-  _BATCHQUERYJOBSTATUSRESPONSE._serialized_end=2649
-  _BATCHQUERYJOBSTATUSRESPONSEDATA._serialized_start=2651
-  _BATCHQUERYJOBSTATUSRESPONSEDATA._serialized_end=2746
-  _JOBSTATUSRESPONSE._serialized_start=2749
-  _JOBSTATUSRESPONSE._serialized_end=2893
-  _JOBSTATUSRESPONSEDATA._serialized_start=2895
-  _JOBSTATUSRESPONSEDATA._serialized_end=3004
-  _JOBSTATUS._serialized_start=3006
-  _JOBSTATUS._serialized_end=3103
-  _WATCHJOBREQUEST._serialized_start=3105
-  _WATCHJOBREQUEST._serialized_end=3205
-  _WATCHJOBEVENTRESPONSE._serialized_start=3208
-  _WATCHJOBEVENTRESPONSE._serialized_end=3357
-  _JOBSERVICE._serialized_start=3488
-  _JOBSERVICE._serialized_end=4270
+  _PARTYSTATUS._serialized_start=2314
+  _PARTYSTATUS._serialized_end=2452
+  _BATCHQUERYJOBSTATUSREQUEST._serialized_start=2454
+  _BATCHQUERYJOBSTATUSREQUEST._serialized_end=2557
+  _BATCHQUERYJOBSTATUSRESPONSE._serialized_start=2560
+  _BATCHQUERYJOBSTATUSRESPONSE._serialized_end=2724
+  _BATCHQUERYJOBSTATUSRESPONSEDATA._serialized_start=2726
+  _BATCHQUERYJOBSTATUSRESPONSEDATA._serialized_end=2821
+  _JOBSTATUSRESPONSE._serialized_start=2824
+  _JOBSTATUSRESPONSE._serialized_end=2968
+  _JOBSTATUSRESPONSEDATA._serialized_start=2970
+  _JOBSTATUSRESPONSEDATA._serialized_end=3079
+  _JOBSTATUS._serialized_start=3081
+  _JOBSTATUS._serialized_end=3178
+  _WATCHJOBREQUEST._serialized_start=3180
+  _WATCHJOBREQUEST._serialized_end=3280
+  _WATCHJOBEVENTRESPONSE._serialized_start=3283
+  _WATCHJOBEVENTRESPONSE._serialized_end=3432
+  _JOBPARTYENDPOINT._serialized_start=3434
+  _JOBPARTYENDPOINT._serialized_end=3504
+  _JOBSERVICE._serialized_start=3659
+  _JOBSERVICE._serialized_end=4441
 # @@protoc_insertion_point(module_scope)
