@@ -25,21 +25,21 @@ import (
 )
 
 type metricExporterModule struct {
-	runMode      pkgcom.RunModeType
-	rootDir      string
-	exportPeriod uint
+	runMode            pkgcom.RunModeType
+	rootDir            string
+	metricUpdatePeriod uint
 }
 
 func NewMetricExporter(i *Dependencies) Module {
 	return &metricExporterModule{
-		runMode:      i.RunMode,
-		rootDir:      i.RootDir,
-		exportPeriod: i.ExportPeriod,
+		runMode:            i.RunMode,
+		rootDir:            i.RootDir,
+		metricUpdatePeriod: i.MetricUpdatePeriod,
 	}
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx, exporter.runMode, exporter.exportPeriod)
+	metricexporter.MetricExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod)
 	return nil
 }
 

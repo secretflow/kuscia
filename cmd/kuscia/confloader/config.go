@@ -28,9 +28,9 @@ import (
 )
 
 var (
-	defaultRootDir           = "/home/kuscia/"
-	defaultEndpointForMaster = "https://127.0.0.1:6443"
-	defaultExportPeriod      = uint(5)
+	defaultRootDir            = "/home/kuscia/"
+	defaultEndpointForMaster  = "https://127.0.0.1:6443"
+	defaultMetricUpdatePeriod = uint(5)
 )
 
 type KusciaConfig struct {
@@ -46,8 +46,8 @@ type KusciaConfig struct {
 	CACertFile     string `yaml:"caFile,omitempty"` // Note: for ca cert will be mounted to agent pod
 	CACertData     string `yaml:"caCertData,omitempty"`
 
-	LogLevel     string `yaml:"logLevel"`
-	ExportPeriod uint   `yaml:"exportPeriod,omitempty"` // Unit: second
+	LogLevel           string `yaml:"logLevel"`
+	MetricUpdatePeriod uint   `yaml:"metricUpdatePeriod,omitempty"` // Unit: second
 
 	Debug        bool `yaml:"debug"`
 	DebugPort    int  `yaml:"debugPort"`
@@ -124,14 +124,14 @@ func defaultKusciaConfig(rootDir string) KusciaConfig {
 		rootDir = defaultRootDir
 	}
 	return KusciaConfig{
-		RootDir:        rootDir,
-		CAKeyFile:      filepath.Join(rootDir, common.CertPrefix, "ca.key"),
-		CACertFile:     filepath.Join(rootDir, common.CertPrefix, "ca.crt"),
-		DomainKeyFile:  filepath.Join(rootDir, common.CertPrefix, "domain.key"),
-		DomainCertFile: filepath.Join(rootDir, common.CertPrefix, "domain.crt"),
-		EnvoyIP:        hostIP,
-		KusciaAPI:      kaconfig.NewDefaultKusciaAPIConfig(rootDir),
-		ExportPeriod:   defaultExportPeriod,
+		RootDir:            rootDir,
+		CAKeyFile:          filepath.Join(rootDir, common.CertPrefix, "ca.key"),
+		CACertFile:         filepath.Join(rootDir, common.CertPrefix, "ca.crt"),
+		DomainKeyFile:      filepath.Join(rootDir, common.CertPrefix, "domain.key"),
+		DomainCertFile:     filepath.Join(rootDir, common.CertPrefix, "domain.crt"),
+		EnvoyIP:            hostIP,
+		KusciaAPI:          kaconfig.NewDefaultKusciaAPIConfig(rootDir),
+		MetricUpdatePeriod: defaultMetricUpdatePeriod,
 	}
 }
 
