@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	corelister "k8s.io/client-go/listers/core/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/controller"
@@ -123,16 +124,17 @@ func (c *ClusterMetricsCollector) collect() {
 			}
 
 			for _, port := range dr.Spec.Endpoint.Ports {
-				total, ok := metrics[fmt.Sprintf("cluster.%s-to-%s-%s.membership_total", dr.Spec.Source, dr.Spec.Destination, port.Name)]
+				clusterName := common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, port.Name)
+				total, ok := metrics[fmt.Sprintf("cluster.%s.membership_total", clusterName)]
 				if !ok {
 					continue
 				}
-				healthy, ok := metrics[fmt.Sprintf("cluster.%s-to-%s-%s.membership_healthy", dr.Spec.Source, dr.Spec.Destination, port.Name)]
+				healthy, ok := metrics[fmt.Sprintf("cluster.%s.membership_healthy", clusterName)]
 				if !ok {
 					continue
 				}
 				networkStatus = append(networkStatus, &kusciaapisv1alpha1.GatewayEndpointStatus{
-					Name:                  fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, port.Name),
+					Name:                  clusterName,
 					Type:                  "DomainRoute",
 					TotalEndpointsCount:   total,
 					HealthyEndpointsCount: healthy,

@@ -138,7 +138,9 @@ func (s *envoyModule) logRotate(ctx context.Context) {
 
 func (s *envoyModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
 	for {
 		select {
 		case <-ctx.Done():

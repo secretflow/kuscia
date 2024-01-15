@@ -41,7 +41,6 @@ import (
 
 const (
 	domainRouteSyncPeriod = 2 * time.Minute
-	gatewayLiveTimeout    = 3 * time.Minute
 	controllerName        = "domain-route-controller"
 	errErrResourceExists  = "ErrResourceExists"
 )
@@ -208,14 +207,21 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 
 			if dr.Status.TokenStatus.RevisionToken.IsReady {
 				c.domainRouteWorkqueue.AddAfter(key, time.Until(dr.Status.TokenStatus.RevisionToken.ExpirationTime.Time))
+				if dr.Spec.TokenConfig.RollingUpdatePeriod > 0 {
+					c.domainRouteWorkqueue.AddAfter(key, time.Until(dr.Status.TokenStatus.RevisionToken.RevisionTime.Time.Add(time.Second*time.Duration(dr.Spec.TokenConfig.RollingUpdatePeriod))))
+				}
 				return c.postRollingSourceDomainRoute(ctx, dr)
 			}
 		} else if namespace == dr.Spec.Destination {
 			if dr.Spec.TokenConfig.RollingUpdatePeriod > 0 {
 				if len(dr.Status.TokenStatus.Tokens) > 0 && time.Since(dr.Status.TokenStatus.Tokens[0].ExpirationTime.Time) > domainRouteSyncPeriod {
 					dr = dr.DeepCopy()
+					rev := dr.Status.TokenStatus.Tokens[0].Revision
 					dr.Status.TokenStatus.Tokens = dr.Status.TokenStatus.Tokens[1:]
 					_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(c.ctx, dr, metav1.UpdateOptions{})
+					if err == nil {
+						nlog.Infof("domainroute %s/%s delete expirated token %d", dr.Namespace, dr.Name, rev)
+					}
 					return err
 				}
 			}
@@ -245,16 +251,22 @@ func ensureLabels(ctx context.Context, kusciaClient kusciaclientset.Interface, d
 			common.KusciaSourceKey:      dr.Spec.Source,
 			common.KusciaDestinationKey: dr.Spec.Destination,
 		}
-		if _, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil {
+		if _, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil && !k8serrors.IsConflict(err) {
 			nlog.Warnf("Update domainroute %s/%s error:%s", dr.Namespace, dr.Name, err.Error())
+		}
+		if err == nil {
+			nlog.Infof("domainroute %s/%s add labels", dr.Namespace, dr.Name)
 		}
 		return true
 	} else if _, ok := dr.Labels[common.KusciaSourceKey]; !ok {
 		drCopy := dr.DeepCopy()
 		drCopy.Labels[common.KusciaSourceKey] = dr.Spec.Source
 		drCopy.Labels[common.KusciaDestinationKey] = dr.Spec.Destination
-		if _, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil {
+		if _, err = kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Update(ctx, drCopy, metav1.UpdateOptions{}); err != nil && !k8serrors.IsConflict(err) {
 			nlog.Warnf("Update domainroute %s/%s error:%s", dr.Namespace, dr.Name, err.Error())
+		}
+		if err == nil {
+			nlog.Infof("domainroute %s/%s add labels", dr.Namespace, dr.Name)
 		}
 		return true
 	}

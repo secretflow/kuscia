@@ -62,6 +62,15 @@ func CheckFileExist(path string) bool {
 	return false
 }
 
+func CheckAllFileExist(paths ...string) error {
+	for _, filePath := range paths {
+		if !CheckFileExist(filePath) {
+			return fmt.Errorf("file [%s] is not exist", filePath)
+		}
+	}
+	return nil
+}
+
 // CheckExists checks if specified file, directory, or symlink exists. The behavior
 // of the test depends on the linkBehaviour argument. See LinkTreatment for
 // more details.

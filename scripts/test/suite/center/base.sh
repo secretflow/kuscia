@@ -61,4 +61,76 @@ function test_centralized_kuscia_api_grpc_available() {
   unset status_message
 }
 
+# set and verify cluster domain route rolling period.
+# Args:
+#   ctr: container name
+#   cdr_name: cluster domain route name
+#   loop_count: period count to be verified
+function try_centralized_token_rolling() {
+  local ctr=$1
+  local cdr_name=$2
+  local loop_count=$3
+  local period=15
+
+  # set rolling period(s)
+  set_cdr_token_rolling_period ${ctr} $cdr_name $period
+
+  # get initial token reversion
+  local prev_src_revision=$(get_cdr_src_token_revision ${ctr} $cdr_name)
+  local prev_dst_revision=$(get_cdr_dst_token_revision ${ctr} $cdr_name)
+
+  for ((i=1; i<loop_count; i++)); do
+    # wait for period(s)
+    sleep $(($period+3))
+
+    # get new token reversion
+    local src_revision=$(get_cdr_src_token_revision ${ctr} $cdr_name)
+    local dst_revision=$(get_cdr_dst_token_revision ${ctr} $cdr_name)
+
+    assertNotEquals "source token revision must change" $src_revision $prev_src_revision
+    assertNotEquals "destination token revision must change" $dst_revision $prev_dst_revision
+
+    prev_src_revision=$src_revision
+    prev_dst_revision=$dst_revision
+  done
+}
+
+
+function test_centralized_token_rolling_all() {
+  # lite to lite
+  try_centralized_token_rolling "root-kuscia-master" "alice-bob" 2
+  # lite to master
+  try_centralized_token_rolling "root-kuscia-master" "alice-kuscia-system" 2
+  # master to lite
+  # try_centralized_token_rolling "root-kuscia-master" "kuscia-system-alice"
+}
+
+function test_centralized_token_rolling_party_offline() {
+  local master_ctr="root-kuscia-master"
+  local bob_ctr="root-kuscia-lite-bob"
+  local cdr_name="alice-bob"
+  local dr_name="alice-bob"
+  local src_domain="alice"
+  local period=30
+
+  local ready=$(get_dr_revision_token_ready $master_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+  # party offline
+  docker stop $bob_ctr
+  sleep $period
+
+  local ready=$(get_dr_revision_token_ready $master_ctr $dr_name $src_domain)
+  assertEquals "false" "$ready"
+
+  # back online
+  docker start $bob_ctr
+  sleep $period
+
+  local ready=$(get_dr_revision_token_ready $master_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+
+  # run task
+  test_centralized_example_kuscia_job
+}
+
 . ./test/vendor/shunit2

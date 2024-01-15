@@ -15,8 +15,6 @@
 package interconn
 
 import (
-	"fmt"
-
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -67,10 +65,10 @@ func (f *Factory) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRoute,
 }
 
 func generateDefaultRouteAction(dr *kusciaapisv1alpha1.DomainRoute,
-	dp kusciaapisv1alpha1.DomainPort) *route.RouteAction {
+	clusterName string) *route.RouteAction {
 	action := &route.RouteAction{
 		ClusterSpecifier: &route.RouteAction_Cluster{
-			Cluster: fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
+			Cluster: clusterName,
 		},
 		HostRewriteSpecifier: &route.RouteAction_AutoHostRewrite{
 			AutoHostRewrite: wrapperspb.Bool(true),

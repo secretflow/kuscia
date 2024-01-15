@@ -139,13 +139,14 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	// start DomainRoute controller
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	drConfig := &controller.DomainRouteConfig{
-		Namespace:     gwConfig.DomainID,
-		MasterConfig:  masterConfig,
-		CAKey:         gwConfig.CAKey,
-		CACert:        gwConfig.CACert,
-		Prikey:        prikey,
-		PrikeyData:    priKeyData,
-		HandshakePort: gwConfig.HandshakePort,
+		Namespace:       gwConfig.DomainID,
+		MasterNamespace: masterConfig.Namespace,
+		MasterConfig:    masterConfig,
+		CAKey:           gwConfig.CAKey,
+		CACert:          gwConfig.CACert,
+		Prikey:          prikey,
+		PrikeyData:      priKeyData,
+		HandshakePort:   gwConfig.HandshakePort,
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
 	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
@@ -209,14 +210,4 @@ func StartXds(gwConfig *config.GatewayConfig) error {
 
 	xds.InitSnapshot(gwConfig.DomainID, utils.GetHostname(), xdsConfig)
 	return nil
-}
-
-func createClientSets(config *config.GatewayConfig) (*kubeconfig.KubeClients, error) {
-	masterURL := ""
-	if config.MasterConfig.APIServer.KubeConfig == "" {
-		masterURL = clusters.DomainAPIServer
-		nlog.Infof("apiserver url is %s", masterURL)
-	}
-
-	return kubeconfig.CreateClientSetsFromKubeconfig(config.MasterConfig.APIServer.KubeConfig, masterURL)
 }

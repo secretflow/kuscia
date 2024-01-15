@@ -40,7 +40,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciaFake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
-	"github.com/secretflow/kuscia/pkg/gateway/config"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
@@ -104,11 +104,12 @@ func newDomainRouteTestInfo(namespace string, port uint32) *DomainRouteTestInfo 
 		nlog.Fatal(err)
 	}
 	config := &DomainRouteConfig{
-		Namespace:     namespace,
-		Prikey:        priKey,
-		HandshakePort: port,
-		CAKey:         caKey,
-		CACert:        caCert,
+		MasterNamespace: "kuscia",
+		Namespace:       namespace,
+		Prikey:          priKey,
+		HandshakePort:   port,
+		CAKey:           caKey,
+		CACert:          caCert,
 	}
 	c := NewDomainRouteController(config, fake.NewSimpleClientset(), kusciaClient, domainRouteInformer)
 	kusciaInformerFactory.Start(wait.NeverStop)
@@ -335,12 +336,12 @@ func TestTokenHandshake(t *testing.T) {
 	go c.Run(context.Background(), 1, stopCh)
 	time.Sleep(1000 * time.Millisecond)
 
-	realInternalServer := config.InternalServer
+	realInternalServer := utils.InternalServer
 	defer func() {
-		config.InternalServer = realInternalServer
+		utils.InternalServer = realInternalServer
 	}()
 
-	config.InternalServer = fmt.Sprintf("http://localhost:%d", port)
+	utils.InternalServer = fmt.Sprintf("http://localhost:%d", port)
 
 	dr := &kusciaapisv1alpha1.DomainRoute{
 		ObjectMeta: metav1.ObjectMeta{

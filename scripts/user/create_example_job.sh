@@ -34,7 +34,7 @@ if [[ ${JOB_EXAMPLE} == "" ]]; then
   JOB_EXAMPLE="PSI"
 fi
 
-if [[ ${JOB_EXAMPLE} != "PSI" && ${JOB_EXAMPLE} != "PSI_WITH_DP" ]] && ${JOB_EXAMPLE} != "NSJAIL_PSI" ]]; then
+if [[ ${JOB_EXAMPLE} != "PSI" && ${JOB_EXAMPLE} != "PSI_WITH_DP" && ${JOB_EXAMPLE} != "NSJAIL_PSI" ]]; then
   printf "invalid arguments: JOB_EXAMPLE=%s\n\n%s" "${JOB_EXAMPLE}" "${USAGE}" >&2
   exit 1
 fi

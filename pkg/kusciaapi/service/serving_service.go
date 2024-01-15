@@ -74,6 +74,13 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 		}
 	}
 
+	// do k8s validate
+	if err := resources.ValidateK8sName(request.ServingId, "serving_id"); err != nil {
+		return &kusciaapi.CreateServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+
 	if request.ServingInputConfig == "" {
 		return &kusciaapi.CreateServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "serving input config can not be empty"),

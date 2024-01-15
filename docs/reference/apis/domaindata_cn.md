@@ -217,6 +217,7 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 | partition     | [Partition](#partition)      | 可选 | 暂不支持                                                                                                                             |
 | columns       | [DataColumn](#data-column)[] | 必填 | 列信息                                                                                                                              |
 | vendor        | string                       | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md) |
+| author        | string                       | 可选 | 表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的 |
 
 {#partition}
 

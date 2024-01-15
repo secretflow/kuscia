@@ -8,7 +8,7 @@
 
 {#cert-and-token}
 
-## 确认证书和 token
+## 确认证书和 Token
 
 Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HTTPS 配置。
 
@@ -21,7 +21,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 | kusciaapi-server.key | 服务端私钥文件                                          |
 | kusciaapi-server.crt | 服务端证书文件                                          |
 | ca.crt               | CA 证书文件                                             |
-| token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
+| token                | 认证 Token ，在 headers 中添加 Token: { token 文件内容} |
 
 ### 点对点组网模式
 
@@ -34,7 +34,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 | kusciaapi-server.key | 服务端私钥文件                                          |
 | kusciaapi-server.crt | 服务端证书文件                                          |
 | ca.crt               | CA 证书文件                                             |
-| token                | 认证 token ，在 headers 中添加 Token: { token 文件内容} |
+| token                | 认证 Token ，在 headers 中添加 Token: { token 文件内容} |
 
 同时，还要保证节点间的授权证书配置正确，alice 节点和 bob 节点要完成授权的建立，否则双方无法共同参与计算任务。
 
@@ -364,13 +364,13 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 curl: (56) OpenSSL SSL_read: error:14094412:SSL routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0
 
-未配置 SSL 证书和私钥。请[确认证书和 token](#cert-and-token).
+未配置 SSL 证书和私钥。请[确认证书和 Token](#cert-and-token).
 
 ### curl: (58)
 
 curl: (58) unable to set XXX file
 
-SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 token](#cert-and-token).
+SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 Token](#cert-and-token).
 
 {#http-error-code}
 
@@ -378,7 +378,7 @@ SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 to
 
 ### 401 Unauthorized
 
-身份认证失败。请检查是否在 Headers 中配置了正确的 Token 。 Token 内容详见[确认证书和 token](#cert-and-token).
+身份认证失败。请检查是否在 Headers 中配置了正确的 Token 。 Token 内容详见[确认证书和 Token](#cert-and-token).
 
 ### 404 Page Not Found
 

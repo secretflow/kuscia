@@ -12,11 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
+## [0.6.0.dev240115] - 2023-01-15
+### Added
+- Add network error troubleshooting document.
+- Add steps for pre creating data tables in the process of deploying kusica on K8s.
+
+### Changed
+- The token from lite to master supports rotation.
+### Fixed
+- When deploying using deploy.sh, no kuscia API client certificate was generated.
+
 ## [0.5.0b0] - 2024-1-8
 ### Added
 - Support deploying kuscia on K8s.
 - Support running algorithm images based on runp and runk modes.
-- Support configuring Path prefix in domain public URL addresses.
 
 ### Changed
 - Optimize deployment configuration and add configuration documentation.

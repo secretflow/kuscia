@@ -120,7 +120,7 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 		return arrow.PrimitiveTypes.Int16
 	case "int32":
 		return arrow.PrimitiveTypes.Int32
-	case "int64":
+	case "int64", "int":
 		return arrow.PrimitiveTypes.Int64
 	case "uint8":
 		return arrow.PrimitiveTypes.Uint8
@@ -132,7 +132,7 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 		return arrow.PrimitiveTypes.Uint64
 	case "float32":
 		return arrow.PrimitiveTypes.Float32
-	case "float64":
+	case "float64", "float":
 		return arrow.PrimitiveTypes.Float64
 	case "date32":
 		return arrow.PrimitiveTypes.Date32
@@ -141,7 +141,7 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 	case "bool":
 		return arrow.FixedWidthTypes.Boolean
 	// STRING UTF8 variable-length string as List<Char>
-	case "string":
+	case "string", "str":
 		return arrow.BinaryTypes.String
 	// Variable-length bytes (no guarantee of UTF8-ness)
 	case "binary":

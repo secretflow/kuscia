@@ -28,6 +28,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	pbv1alpha1 "github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
@@ -53,6 +54,12 @@ func NewDomainDataService(config *config.DataMeshConfig) IDomainDataService {
 func (s domainDataService) CreateDomainData(ctx context.Context, request *datamesh.CreateDomainDataRequest) *datamesh.CreateDomainDataResponse {
 	// check whether domainData  is existed
 	if request.DomaindataId != "" {
+		// do k8s validate
+		if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {
+			return &datamesh.CreateDomainDataResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, err.Error()),
+			}
+		}
 		domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 		if err == nil && domainData != nil {
 			// update domainData

@@ -107,6 +107,7 @@ func (d *domainRouteModule) Run(ctx context.Context) error {
 
 func (d *domainRouteModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
 	select {
 	case <-commands.ReadyChan:
 		return nil

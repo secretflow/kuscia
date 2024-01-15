@@ -77,4 +77,4 @@ curl: (7) Failed to connect to 1.1.1.1 port 18080 after 248 ms: Connection refus
 通过日志能够很好的分析 kuscia 运行状态、连接情况、流量信息等，详细内容请参考[日志说明](../../deployment/logdescription.md/#envoy)
 
 ### 分析网络拓扑、使用抓包工具
-在复杂的网络环境中，可以先整理两方机构之间的网络拓扑，以便于更加清晰、快速的定位，再配合 Tcpdump、Wireshark 等抓包工具进行排查。
+在复杂的网络环境中，可以先整理两方机构之间的网络拓扑，以便于更加清晰、快速的定位，再配合 Tcpdump、Wireshark 等抓包工具进行排查。一个机构的网络拓扑可以参考[网络要求](../../deployment/networkrequirements.md)

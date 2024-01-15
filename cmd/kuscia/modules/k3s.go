@@ -37,8 +37,11 @@ import (
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/common"
+	"github.com/secretflow/kuscia/pkg/utils/datastore"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/pkg/utils/process"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -59,8 +62,27 @@ type k3sModule struct {
 }
 
 func (s *k3sModule) readyz(host string) error {
+
+	// check k3s process
+	if !process.CheckExists("k3s") {
+		errMsg := "process [k3s] is not exists"
+		nlog.Error(errMsg)
+		return errors.New(errMsg)
+	}
+
 	cl := http.Client{}
-	caCertFile, err := os.ReadFile(filepath.Join(s.dataDir, "server/tls/server-ca.crt"))
+	// check file exist
+	serverCaFilePath := filepath.Join(s.dataDir, "server/tls/server-ca.crt")
+	clientAdminCrtFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.crt")
+	clientAdminKeyFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.key")
+
+	if fileExistError := paths.CheckAllFileExist(serverCaFilePath, clientAdminCrtFilePath, clientAdminKeyFilePath); fileExistError != nil {
+		err := fmt.Errorf("%s. Please check the k3s service is running successfully ", fileExistError)
+		nlog.Error(err)
+		return err
+	}
+
+	caCertFile, err := os.ReadFile(serverCaFilePath)
 	if err != nil {
 		nlog.Error(err)
 		return err
@@ -71,13 +93,13 @@ func (s *k3sModule) readyz(host string) error {
 		nlog.Error(msg)
 		return fmt.Errorf("%s", msg)
 	}
-	certPEMBlock, err := os.ReadFile(filepath.Join(s.dataDir, "server/tls/client-admin.crt"))
+	certPEMBlock, err := os.ReadFile(clientAdminCrtFilePath)
 	if err != nil {
 		nlog.Error(err)
 		return err
 	}
 
-	keyPEMBlock, err := os.ReadFile(filepath.Join(s.dataDir, "server/tls/client-admin.key"))
+	keyPEMBlock, err := os.ReadFile(clientAdminKeyFilePath)
 	if err != nil {
 		nlog.Error(err)
 		return err
@@ -194,6 +216,9 @@ func (s *k3sModule) Run(ctx context.Context) error {
 
 		envs := os.Environ()
 		envs = append(envs, "CATTLE_NEW_SIGNED_CERT_EXPIRATION_DAYS=3650")
+		if os.Getenv("KINE_SKIP_INIT_MYSQL") == "" {
+			envs = append(envs, "KINE_SKIP_INIT_MYSQL=true")
+		}
 		cmd.Env = envs
 		return cmd
 	})
@@ -201,7 +226,9 @@ func (s *k3sModule) Run(ctx context.Context) error {
 
 func (s *k3sModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -220,7 +247,14 @@ func (s *k3sModule) Name() string {
 	return "k3s"
 }
 
-func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) error {
+	// check DatastoreEndpoint
+	if err := datastore.CheckDatastoreEndpoint(conf.Master.DatastoreEndpoint); err != nil {
+		nlog.Error(err)
+		cancel()
+		return err
+	}
+
 	m := NewK3s(conf)
 	go func() {
 		if err := m.Run(ctx); err != nil {
@@ -247,7 +281,7 @@ func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) 
 		nlog.Info("k3s is ready")
 	}
 
-	return m
+	return nil
 }
 
 func applyCRD(conf *Dependencies) error {

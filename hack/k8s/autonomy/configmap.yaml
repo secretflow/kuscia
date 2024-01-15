@@ -11,7 +11,7 @@ data:
     # 节点ID
     # 示例: domainID: alice
     domainID: {{.DOMAIN_ID}}
-    # 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发
+    # 节点私钥配置, 用于节点间的通信认证(通过 2 方的证书来生成通讯的身份令牌), 节点应用的证书签发(为了加强通讯安全性，kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。)
     # 注意: 目前节点私钥仅支持 pkcs#1 格式的: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"
     # 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
     domainKeyData: {{.DOMAIN_KEY_DATA}}
