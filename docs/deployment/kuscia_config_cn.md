@@ -19,7 +19,8 @@ domainID: alice
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
 # 日志级别 INFO、DEBUG、WARN
 logLevel: INFO
-
+# 指标采集周期，单位: 秒
+metricUpdatePeriod: 5
 #############################################################################
 ############                       Lite 配置                      ############
 #############################################################################
