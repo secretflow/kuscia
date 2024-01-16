@@ -145,7 +145,7 @@ func (ec *EndpointsController) addServiceEventHandler(serviceInformer corev1info
 			},
 			Handler: cache.ResourceEventHandlerFuncs{
 				AddFunc: ec.updateService,
-				UpdateFunc: func(oldObj, newObj interface{}) {
+				UpdateFunc: func(_, newObj interface{}) {
 					ec.updateService(newObj)
 				},
 				DeleteFunc: ec.updateService,
@@ -159,7 +159,7 @@ func (ec *EndpointsController) addEndpointsEventHandler(endpointInformer corev1i
 	endpointInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: ec.updateEndpoints,
-			UpdateFunc: func(oldObj, newObj interface{}) {
+			UpdateFunc: func(_, newObj interface{}) {
 				ec.updateEndpoints(newObj)
 			},
 			DeleteFunc: ec.updateEndpoints,

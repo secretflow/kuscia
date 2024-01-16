@@ -24,7 +24,9 @@ metricUpdatePeriod: 5
 #############################################################################
 ############                       Lite 配置                      ############
 #############################################################################
-# 节点连接 master 的部署 token，用于节点向 master 注册证书， 只在节点第一次向 master 注册证书时有效
+# 当节点首次部署链接 Master 时，Master 通过该 Token 来验证节点的身份（Token 由 Master 颁发)，因为安全原因，该 Token 在节点部署成功后，立即失效
+# 多机部署时，请保持该 Token 不变即可
+# 如果节点私钥丢失，请在 Master 删除节点公钥，并重新申请 Token 部署
 liteDeployToken: LS0tLS1CRUdJTi
 # 节点连接 master 的地址
 masterEndpoint: https://172.18.0.2:1080
@@ -66,15 +68,16 @@ image:
 # 数据库连接串，不填默认使用 sqlite
 # 示例：mysql://username:password@tcp(hostname:3306)/database-name
 datastoreEndpoint: ""
+# KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
+protocol: NOTLS
 ```
 
 ### 配置项详解
 - `mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, 不同部署模式详情请参考[这里](../reference/architecture_cn)
 - `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
-- `domainKeyData`: 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发， 经过 base64 编码。 可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
+- `domainKeyData`: 节点私钥配置, 用于节点间的通信认证（通过 2 方的证书来生成通讯的身份令牌），节点应用的证书签发（为了加强通讯安全性，kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。）。可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
-- `metricUpdatePeriod`: 指标采集周期（单位: 秒），默认 5 秒
-- `liteDeployToken`: 节点连接 master 的部署 token，用于节点向 master 注册证书， 只在节点第一次向 master 注册证书时有效，详情请参考[节点中心化部署](./deploy_master_lite_cn)
+- `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取Token](../deployment/deploy_master_lite_cn.md#lite-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](./../reference/troubleshoot/private_key_loss.md)
 - `masterEndpoint`: 节点连接 master 的地址，比如 https://172.18.0.2:1080
 - `runtime`: 节点运行时 runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)
 - `runk`: 当 runtime 为 runk 时配置
@@ -94,7 +97,14 @@ datastoreEndpoint: ""
     - `endpoint`: 镜像仓库地址
     - `username`: 镜像仓库用户名
     - `password`: 镜像仓库密码
-- `datastoreEndpoint`: 数据库连接串，不填默认使用 sqlite。示例：mysql://username:password@tcp(hostname:3306)/database-name
+- `datastoreEndpoint`: 数据库连接串，不填默认使用 sqlite。示例：`mysql://username:password@tcp(hostname:3306)/database-name`使用mysql数据库存储需要符合以下规范：
+  - database 数据库名称暂不支持 "-"。
+  - 创建数据库表 kine，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。
+  - 数据库账户对表中字段至少具有 select、insert、update、delete 操作权限。
+- `protocol`: KusciaAPI 以及节点对外网关使用的通信协议，有三种安全模式可供选择：NOTLS/TLS/MTLS（区分大小写）。
+  - `NOTLS`: 此模式下，通信不使用 TLS 协议，即数据通过未加密的 HTTP 传输，比较安全的内部网络环境或者 kuscia 已经存在外部网关的情况可以使用该模式。
+  - `TLS`: 在此模式下，通信通过 TLS 协议进行加密，即使用 HTTPS 进行安全传输，不需要手动配置证书。
+  - `MTLS`: 这种模式也使用 HTTPS 进行通信，但它支持双向TLS验证，需要手动交换证书以建立安全连接。
 
 {#configuration-example}
 ### 配置示例

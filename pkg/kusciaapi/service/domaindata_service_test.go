@@ -30,7 +30,7 @@ import (
 
 var (
 	dsID     = common.DefaultDataSourceID
-	domainId = "DomainDataUnitTestNamespace"
+	domainId = "domain-data-unit-test-namespace"
 )
 
 func TestCreateDomainData(t *testing.T) {

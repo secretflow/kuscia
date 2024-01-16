@@ -34,6 +34,7 @@ type InterConnClusterConfig struct {
 
 type MasterConfig struct {
 	Master        bool
+	Namespace     string
 	MasterProxy   *ClusterConfig
 	APIServer     *ClusterConfig
 	KusciaStorage *ClusterConfig

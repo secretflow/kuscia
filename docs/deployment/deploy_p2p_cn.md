@@ -4,7 +4,7 @@
 
 本教程帮助你在多台机器上使用 [点对点组网模式](../reference/architecture_cn.md#点对点组网模式) 来部署 Kuscia 集群。
 
-当前 Kuscia 节点之间只支持 token 的身份认证方式，在跨机器部署的场景下流程较为繁琐，后续本教程会持续更新优化。
+当前 Kuscia 节点之间只支持 Token 的身份认证方式，在跨机器部署的场景下流程较为繁琐，后续本教程会持续更新优化。
 
 ## 前置准备
 
@@ -162,7 +162,12 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/create_domaindata_a
 为 alice 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-autonomy-alice curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
+docker exec -it root-kuscia-autonomy-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(cat kuscia-autonomy-alice-certs/token)" --header 'Content-Type: application/json' -d '{
+ "grant_domain": "bob",
+ "description": {"domaindatagrant":"alice-bob"},
+ "domain_id": "alice",
+ "domaindata_id": "alice-table"
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 - bob 节点准备测试数据
 
@@ -178,7 +183,12 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/create_domaindata_bob
 为 bob 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-autonomy-bob curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' --cacert var/certs/ca.crt --cert var/certs/ca.crt --key var/certs/ca.key
+docker exec -it root-kuscia-autonomy-bob curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(cat kuscia-autonomy-bob-certs/token)" --header 'Content-Type: application/json' -d '{
+ "grant_domain": "alice",
+ "description": {"domaindatagrant":"bob-alice"},
+ "domain_id": "bob",
+ "domaindata_id": "bob-table"
+}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
 ### 执行作业
@@ -192,3 +202,4 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 ```bash
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj
 ```
+任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查

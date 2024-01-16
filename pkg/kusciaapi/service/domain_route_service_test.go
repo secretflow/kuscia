@@ -100,6 +100,6 @@ func TestConvertDomainRouteProtocol(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, p, v1alpha1.DomainRouteProtocolGRPC)
 
-	p, isTLS, err = convert2DomainRouteProtocol("xxx")
+	_, _, err = convert2DomainRouteProtocol("xxx")
 	assert.NotNil(t, err)
 }

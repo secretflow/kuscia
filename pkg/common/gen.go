@@ -43,3 +43,7 @@ func GenDomainDataID(dataName string) (dataID string) {
 func GenDomainRouteName(src, dest string) string {
 	return fmt.Sprintf("%s-%s", src, dest)
 }
+
+func GenerateClusterName(source, dest, portName string) string {
+	return fmt.Sprintf("%s-to-%s-%s", source, dest, portName)
+}

@@ -41,6 +41,13 @@ function arch_check() {
   fi
 }
 
+function pre_check() {
+    if ! mkdir -p "$1" 2>/dev/null; then
+        echo -e "${RED}User does not have access to create the directory: $1${NC}"
+        exit 1
+    fi
+}
+
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
   KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
 fi
@@ -51,7 +58,7 @@ if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
-SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
+SF_IMAGE_REGISTRY=""
 CTR_ROOT=/home/kuscia
 CTR_CERT_ROOT=${CTR_ROOT}/var/certs
 MASTER_MEMORY_LIMIT=2G
@@ -336,6 +343,7 @@ function deploy_autonomy() {
       --env NAMESPACE=${DOMAIN_ID} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
+    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     probe_gateway_crd "${domain_ctr}" "${DOMAIN_ID}" "${domain_ctr}" 60
 
     log "Container ${domain_ctr} started successfully"
@@ -401,6 +409,7 @@ function deploy_lite() {
       --env NAMESPACE=${DOMAIN_ID} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
+    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     probe_datamesh "$domain_ctr"
 
     log "Lite domain '${DOMAIN_ID}' started successfully"
@@ -445,6 +454,8 @@ function deploy_master() {
       -v ${kuscia_conf_file}:/home/kuscia/etc/conf/kuscia.yaml \
       ${env_flag} ${mount_flag} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
+
+    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     probe_gateway_crd "${domain_ctr}" ${master_domain_id} "${domain_ctr}" 60
     log "Master '${master_domain_id}' started successfully"
   fi
@@ -596,6 +607,10 @@ function init() {
   [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-log"
   [[ ${DOMAIN_HOST_IP} == "" ]] && DOMAIN_HOST_IP=$(getIPV4Address)
 
+  pre_check "${DOMAIN_CERTS_DIR}"
+  pre_check "${DOMAIN_DATA_DIR}"
+  pre_check "${DOMAIN_LOG_DIR}"
+
   log "ROOT=${ROOT}"
   log "DOMAIN_ID=${DOMAIN_ID}"
   log "DOMAIN_HOST_IP=${DOMAIN_HOST_IP}"
@@ -606,10 +621,6 @@ function init() {
   log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
   log "KUSCIAAPI_HTTP_PORT=${KUSCIAAPI_HTTP_PORT}"
   log "KUSCIAAPI_GRPC_PORT=${KUSCIAAPI_GRPC_PORT}"
-
-  mkdir -p "${DOMAIN_CERTS_DIR}"
-  mkdir -p "${DOMAIN_DATA_DIR}"
-  mkdir -p "${DOMAIN_LOG_DIR}"
 
   build_kuscia_network
 }

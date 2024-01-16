@@ -10,7 +10,10 @@
 > Tips：k8s 部署模式暂不支持训练，仅支持预测服务
 
 ## 部署 master
-部署 master 需提前准备好 mysql 数据库，数据库帐号密码等信息配置在步骤三 Configmap 中（database 需要提前手动创建好并且 mysql 账户需要具有创建表的权限）
+
+### 前置准备
+
+部署 master 需提前准备好 mysql 数据库表并且符合[kuscia配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 configmap 中。
 
 ### 步骤一：创建 Namespace
 > 创建 namespace 需要先获取 create 权限，避免出现 "namespaces is forbidden" 报错
@@ -63,7 +66,7 @@ kubectl create ns lite-alice
 
 ### 步骤二：创建 Service
 
-获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/service.yaml) 文件，如果 master 与 lite 不在一个 k8s 集群内，可以将 master service 的端口暴露方式改为 LoadBalancer（公有云，例如：阿里云） 或者 NodePort，并在 configmap 的  masterEndpoint 字段改为可正常访问的地址，创建 service
+获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/service.yaml) 文件，如果 master 与 lite 不在一个 k8s 集群内，可以将 master service 的端口暴露方式改为 [LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer)（公有云，例如：[阿里云](https://help.aliyun.com/zh/ack/serverless-kubernetes/user-guide/use-annotations-to-configure-load-balancing)） 或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport)，并在 configmap 的  masterEndpoint 字段改为可正常访问的地址，创建 service
 ```bash
 kubectl create -f service.yaml
 ```
@@ -71,7 +74,7 @@ kubectl create -f service.yaml
 ### 步骤三：创建 Configmap
 ConfigMap 是用来配置 kuscia 的配置文件，详细的配置文件介绍参考[kuscia配置](../kuscia_config_cn.md)
 
-部署 configmap 需要提前在 master 节点 pod 内生成 domainID 以及 token，并填写到 configmap 的 domainID 和 liteDeployToken 字段中，私钥可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成并填写到 domainKeyData 字段中
+部署 configmap 需要提前在 master 节点 pod 内生成 domainID 以及 Token，并填写到 configmap 的 domainID 和 liteDeployToken 字段中，私钥可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成并填写到 domainKeyData 字段中
 > 注意：<br>
 1、目前节点私钥仅支持 pkcs#1 格式: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"<br>
 2、修改 Configmap 配置后，需执行 kubectl delete po &#36;{pod-name} -n &#36;{namespace} 重新拉起 pod 生效
@@ -82,9 +85,9 @@ lite-bob 配置与 lite-alice 一样，下面以 alice 为例：
 ```bash
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
 scripts/deploy/add_domain_lite.sh alice
-# 示例 token
+# 示例 Token
 BMC4xjNqa7uAmWmyXLuJ4rrZw6brZeax
-# 如果token遗忘了，可以通过该命令重新获取
+# 如果 Token 遗忘了，可以通过该命令重新获取
 kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
 ```
 

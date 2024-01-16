@@ -509,6 +509,10 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 
 		resCtr.Env = append(resCtr.Env, []corev1.EnvVar{
 			{
+				Name:  common.EnvDomainID,
+				Value: partyKitInfo.domainID,
+			},
+			{
 				Name:  common.EnvClusterDefine,
 				Value: string(clusterDefine),
 			},

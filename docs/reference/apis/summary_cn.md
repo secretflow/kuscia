@@ -137,7 +137,7 @@ GRPC 主机上端口：master 或者 autonomy 可以通过 `docker inspect --for
 
 1. 使用编程语言的 HTTP 客户端库连接上 Kuscia API，注意：Kuscia API 使用 双向 HTTPS，所以你需要配置你的客户端库的双向 HTTPS
    配置。
-2. 读取 token 文件内容，设置 HTTP 请求的 Header，增加：TOKEN={token}。
+2. 读取 Token 文件内容，设置 HTTP 请求的 Header，增加：TOKEN={token}。
 3. 发送请求。
 
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：

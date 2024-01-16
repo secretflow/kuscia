@@ -31,6 +31,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	pbv1alpha1 "github.com/secretflow/kuscia/proto/api/v1alpha1"
@@ -63,6 +64,12 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id can not be empty"),
 		}
 	}
+	// do k8s validate
+	if err := resources.ValidateK8sName(request.DomainId, "domain_id"); err != nil {
+		return &kusciaapi.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
 	if err := s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
@@ -70,6 +77,12 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	}
 	// check whether domainData  is existed
 	if request.DomaindataId != "" {
+		// do k8s validate
+		if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {
+			return &kusciaapi.CreateDomainDataResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			}
+		}
 		domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 		if err == nil && domainData != nil {
 			// update domainData

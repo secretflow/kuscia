@@ -14,6 +14,8 @@
 
 package common
 
+import "time"
+
 // labels
 const (
 	// LabelPortScope represents port usage scope. Its values may be Local, Domain, Cluster. Refer to PortScope for more details.
@@ -119,6 +121,7 @@ const (
 
 // Environment variables issued to the task pod.
 const (
+	EnvDomainID          = "DOMAIN_ID"
 	EnvTaskID            = "TASK_ID"
 	EnvServingID         = "SERVING_ID"
 	EnvInputConfig       = "INPUT_CONFIG"
@@ -197,4 +200,8 @@ const (
 	StdoutPrefix = "var/stdout/"
 	TmpPrefix    = "var/tmp/"
 	ConfPrefix   = "etc/conf/"
+)
+
+const (
+	GatewayLiveTimeout = 3 * time.Minute
 )

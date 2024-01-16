@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from kuscia.proto.api.v1alpha1 import common_pb2 as kuscia_dot_proto_dot_api_dot_v1alpha1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3kuscia/proto/api/v1alpha1/handshake/handshake.proto\x12#kuscia.proto.api.v1alpha1.handshake\x1a&kuscia/proto/api/v1alpha1/common.proto\".\n\x0bTokenConfig\x12\r\n\x05token\x18\x01 \x01(\t\x12\x10\n\x08revision\x18\x02 \x01(\x03\"\x91\x01\n\x10HandShakeRequest\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x46\n\x0ctoken_config\x18\x03 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.handshake.TokenConfig\x12\x14\n\x0crequest_time\x18\x04 \x01(\x03\"A\n\x05Token\x12\r\n\x05token\x18\x01 \x01(\t\x12\x17\n\x0f\x65xpiration_time\x18\x02 \x01(\x03\x12\x10\n\x08revision\x18\x03 \x01(\x05\"\x81\x01\n\x11HandShakeResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12\x39\n\x05token\x18\x02 \x01(\x0b\x32*.kuscia.proto.api.v1alpha1.handshake.Token\"G\n\x0fRegisterRequest\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0b\n\x03\x63sr\x18\x02 \x01(\t\x12\x14\n\x0crequest_time\x18\x03 \x01(\x03\"S\n\x10RegisterResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12\x0c\n\x04\x63\x65rt\x18\x03 \x01(\tB^\n!com.secretflow.v1alpha1.handshakeZ9github.com/secretflow/kuscia/proto/api/v1alpha1/handshakeb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3kuscia/proto/api/v1alpha1/handshake/handshake.proto\x12#kuscia.proto.api.v1alpha1.handshake\x1a&kuscia/proto/api/v1alpha1/common.proto\"?\n\x0bTokenConfig\x12\r\n\x05token\x18\x01 \x01(\t\x12\x10\n\x08revision\x18\x02 \x01(\x03\x12\x0f\n\x07pubhash\x18\x03 \x01(\t\"\x91\x01\n\x10HandShakeRequest\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x46\n\x0ctoken_config\x18\x03 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.handshake.TokenConfig\x12\x14\n\x0crequest_time\x18\x04 \x01(\x03\"A\n\x05Token\x12\r\n\x05token\x18\x01 \x01(\t\x12\x17\n\x0f\x65xpiration_time\x18\x02 \x01(\x03\x12\x10\n\x08revision\x18\x03 \x01(\x05\"\x81\x01\n\x11HandShakeResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12\x39\n\x05token\x18\x02 \x01(\x0b\x32*.kuscia.proto.api.v1alpha1.handshake.Token\"G\n\x0fRegisterRequest\x12\x11\n\tdomain_id\x18\x01 \x01(\t\x12\x0b\n\x03\x63sr\x18\x02 \x01(\t\x12\x14\n\x0crequest_time\x18\x03 \x01(\x03\"S\n\x10RegisterResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12\x0c\n\x04\x63\x65rt\x18\x03 \x01(\tB^\n!com.secretflow.v1alpha1.handshakeZ9github.com/secretflow/kuscia/proto/api/v1alpha1/handshakeb\x06proto3')
 
 
 
@@ -72,15 +72,15 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   DESCRIPTOR._serialized_options = b'\n!com.secretflow.v1alpha1.handshakeZ9github.com/secretflow/kuscia/proto/api/v1alpha1/handshake'
   _TOKENCONFIG._serialized_start=132
-  _TOKENCONFIG._serialized_end=178
-  _HANDSHAKEREQUEST._serialized_start=181
-  _HANDSHAKEREQUEST._serialized_end=326
-  _TOKEN._serialized_start=328
-  _TOKEN._serialized_end=393
-  _HANDSHAKERESPONSE._serialized_start=396
-  _HANDSHAKERESPONSE._serialized_end=525
-  _REGISTERREQUEST._serialized_start=527
-  _REGISTERREQUEST._serialized_end=598
-  _REGISTERRESPONSE._serialized_start=600
-  _REGISTERRESPONSE._serialized_end=683
+  _TOKENCONFIG._serialized_end=195
+  _HANDSHAKEREQUEST._serialized_start=198
+  _HANDSHAKEREQUEST._serialized_end=343
+  _TOKEN._serialized_start=345
+  _TOKEN._serialized_end=410
+  _HANDSHAKERESPONSE._serialized_start=413
+  _HANDSHAKERESPONSE._serialized_end=542
+  _REGISTERREQUEST._serialized_start=544
+  _REGISTERREQUEST._serialized_end=615
+  _REGISTERRESPONSE._serialized_start=617
+  _REGISTERRESPONSE._serialized_end=700
 # @@protoc_insertion_point(module_scope)

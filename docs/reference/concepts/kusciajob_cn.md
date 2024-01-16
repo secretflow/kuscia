@@ -343,7 +343,7 @@ KusciaJob `spec`的子字段详细介绍如下：
   - `tasks[].appImage`： 表示任务使用的 AppImage，详见 [AppImage](./appimage_cn.md)。
   - `tasks[].parties`：表示任务参与方的信息。
     - `tasks[].parties[].domainID`：表示任务参与方的节点 ID。
-    - `tasks[].parties[].role`：表示任务参与方的角色。
+    - `tasks[].parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ， kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
 
 KusciaJob `status`的子字段详细介绍如下：
 

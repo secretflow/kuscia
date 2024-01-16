@@ -23,10 +23,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 )
 
-var (
-	InternalServer = "http://127.0.0.1:80"
-)
-
 type GatewayConfig struct {
 	RootDir       string `yaml:"rootdir,omitempty"`
 	DomainID      string `yaml:"domainID,omitempty"`

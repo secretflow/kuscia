@@ -83,7 +83,9 @@ func (t *transportModule) Name() string {
 
 func (t *transportModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
 	for {
 		select {
 		case <-ctx.Done():

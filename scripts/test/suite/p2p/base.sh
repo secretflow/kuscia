@@ -76,4 +76,132 @@ function test_p2p_kuscia_api_grpc_available() {
   unset ipv4
 }
 
+# set and verify cluster domain route rolling period.
+# Args:
+#   ctr: container name
+#   cdr_name: cluster domain route name
+#   loop_count: period count to be verified
+function try_p2p_token_rolling() {
+  local src_ctr=$1
+  local dst_ctr=$2
+  local cdr_name=$3
+  local loop_count=$4
+  local period=15
+
+  # set rolling period(s)
+  set_cdr_token_rolling_period ${src_ctr} $cdr_name $period
+
+  local prev_src_revision=$(get_cdr_src_token_revision ${src_ctr} $cdr_name)
+  local prev_dst_revision=$(get_cdr_dst_token_revision ${dst_ctr} $cdr_name)
+
+  for ((i = 1; i < loop_count; i++)); do
+    # wait for period(s)
+    sleep $(($period+3))
+
+    # get new token reversion
+    local src_revision=$(get_cdr_src_token_revision ${src_ctr} $cdr_name)
+    local dst_revision=$(get_cdr_dst_token_revision ${dst_ctr} $cdr_name)
+
+    assertNotEquals "source token revision must change" $src_revision $prev_src_revision
+    assertNotEquals "destination token revision must change" $dst_revision $prev_dst_revision
+
+    prev_src_revision=$src_revision
+    prev_dst_revision=$dst_revision
+  done
+}
+
+function test_p2p_token_rolling_all() {
+  try_p2p_token_rolling "root-kuscia-autonomy-alice" "root-kuscia-autonomy-bob" "alice-bob" 2
+  try_p2p_token_rolling "root-kuscia-autonomy-bob" "root-kuscia-autonomy-alice" "bob-alice" 2
+}
+
+function test_p2p_token_rolling_party_offline() {
+  local alice_ctr="root-kuscia-autonomy-alice"
+  local bob_ctr="root-kuscia-autonomy-bob"
+  local cdr_name="alice-bob"
+  local dr_name="alice-bob"
+  local src_domain="alice"
+  local period=30
+
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+  # party offline
+  docker stop $bob_ctr
+  sleep $period
+
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "false" "$ready"
+
+  # back online
+  docker start $bob_ctr
+  sleep $period
+
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+
+  # run task
+  test_p2p_kuscia_job
+}
+
+function test_p2p_token_rolling_auth_removal() {
+  local alice_ctr="root-kuscia-autonomy-alice"
+  local bob_ctr="root-kuscia-autonomy-bob"
+  local cdr_name="alice-bob"
+  local dr_name="alice-bob"
+  local dst_domain="bob"
+  local src_domain="alice"
+  local period=30
+
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+
+  # save dr
+  docker exec "$bob_ctr" kubectl get cdr $cdr_name -o json | jq 'del(.status)' > tmp.json
+  # dr removal
+  docker exec "$bob_ctr" kubectl delete cdr $cdr_name
+
+  sleep $period
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "false" "$ready"
+
+  # dr restore
+  docker cp tmp.json $bob_ctr:/home/kuscia/
+  docker exec "$bob_ctr" kubectl create -f /home/kuscia/tmp.json
+
+  sleep $period
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+
+  # run task
+  test_p2p_kuscia_job
+}
+
+function test_p2p_token_rolling_cert_misconfig() {
+  local alice_ctr="root-kuscia-autonomy-alice"
+  local bob_ctr="root-kuscia-autonomy-bob"
+  local dr_name="alice-bob"
+  local cdr_name="alice-bob"
+  local dst_domain="bob"
+  local src_domain="alice"
+  local period=30
+  local dst_cert=$(docker exec "$alice_ctr" kubectl get domain $dst_domain -o jsonpath='{.spec.cert}')
+  local mis_cert=$(docker exec "$alice_ctr" kubectl get domain $src_domain -o jsonpath='{.spec.cert}') # use alice domain cert as misconfigured cert
+  # cert mis config
+  docker exec "$alice_ctr" kubectl patch domain $dst_domain --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${mis_cert}}]"
+
+  sleep $period
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "false" "$ready"
+
+  # cert restore
+  docker exec "$alice_ctr" kubectl patch domain $dst_domain --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${dst_cert}}]"
+
+  sleep $period
+  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  assertEquals "true" "$ready"
+
+  # run task
+  test_p2p_kuscia_job
+}
+
 . ./test/vendor/shunit2

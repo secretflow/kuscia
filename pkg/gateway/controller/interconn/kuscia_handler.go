@@ -27,16 +27,16 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/gateway/clusters"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 )
 
 type KusciaHandler struct {
 }
 
-func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute,
-	dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
-	action := generateDefaultRouteAction(dr, dp)
+func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
+	clusterName := fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name)
+	action := generateDefaultRouteAction(dr, clusterName)
 	if len(dp.PathPrefix) > 0 {
 		action.PrefixRewrite = strings.TrimSuffix(dp.PathPrefix, "/") + "/"
 	}
@@ -86,7 +86,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 
 func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRoute,
 	cluster *envoycluster.Cluster) {
-	handshake := fmt.Sprintf("%s%s", strings.TrimSuffix(dr.Spec.Endpoint.Ports[0].PathPrefix, "/"), "/handshake")
+	handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
 	cluster.HealthChecks = []*core.HealthCheck{
 		{
 			Timeout:            durationpb.New(time.Second),
@@ -97,12 +97,12 @@ func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRout
 			HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 				HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 					Host: dr.Spec.Endpoint.Host,
-					Path: handshake,
+					Path: handshakePath,
 					RequestHeadersToAdd: []*core.HeaderValueOption{
 						{
 							Header: &core.HeaderValue{
 								Key:   "Kuscia-Host",
-								Value: fmt.Sprintf("%s.%s.svc", clusters.ServiceHandshake, dr.Spec.Destination),
+								Value: fmt.Sprintf("%s.%s.svc", utils.ServiceHandshake, dr.Spec.Destination),
 							},
 						},
 						{
