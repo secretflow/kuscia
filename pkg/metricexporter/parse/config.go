@@ -26,7 +26,7 @@ func LoadMetricConfig() ([]string, map[string]string, []string) {
 		"upstream_cx_connect_timeout",
 		"upstream_rq_timeout")
 	aggMetrics := make(map[string]string)
-	config.AggMetrics = append(config.AggMetrics, "avg", "avg", "sum", "rate")
+	config.AggMetrics = append(config.AggMetrics, "avg", "sum", "sum", "rate")
 	for i, metric := range config.NetMetrics {
 		aggMetrics[metric] = config.AggMetrics[i]
 	}

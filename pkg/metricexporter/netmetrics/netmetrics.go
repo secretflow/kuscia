@@ -264,10 +264,9 @@ func GetClusterMetricResults(runMode pkgcom.RunModeType, localDomainName string,
 		// get the connection name
 		endpointName := strings.Split(dstAddr, ":")[0]
 		var networkResults []map[string]string
-		dstPort := strings.Split(dstAddr, ":")[1]
 		for _, srcIP := range sourceIP {
 			for _, dstIP := range destinationIP[dstAddr] {
-				networkResult := Filter(ssMetrics, srcIP, dstIP, "*", dstPort, "*")
+				networkResult := Filter(ssMetrics, srcIP, dstIP, "*", "*", "*")
 				networkResults = append(networkResults, networkResult...)
 			}
 		}

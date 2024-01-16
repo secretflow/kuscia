@@ -120,8 +120,19 @@ func ProduceMetrics(localDomainName string,
 func UpdateMetrics(clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
 		metricId := Formalize(metric)
-		metricTypeId := strings.Join(strings.Split(metric, ".")[2:3], "__")
-		switch MetricTypes[metricTypeId] {
+			splitedMetric := strings.Split(metric, ".")
+			var metricTypeId string
+			metricTypeId = splitedMetric[len(splitedMetric)-1]
+			metricType, ok := MetricTypes[metricTypeId]
+			if !ok {
+				metricTypeId = splitedMetric[len(splitedMetric)-2] + "__" + splitedMetric[len(splitedMetric)-1]
+				metricType, ok = MetricTypes[metricTypeId]
+				}
+			if !ok {
+				metricTypeId = splitedMetric[len(splitedMetric)-2]
+				metricType, ok = MetricTypes[metricTypeId]
+				}
+		switch metricType {
 		case "Counter":
 			counters[metricId].Add(val)
 		case "Gauge":

@@ -55,7 +55,7 @@ func NewMetricTypes() map[string]string {
 	MetricTypes["membership_degraded"] = "Gauge"
 	MetricTypes["membership_excluded"] = "Gauge"
 	MetricTypes["embership_healthy"] = "Gauge"
-	MetricTypes["mMembership_total"] = "Gauge"
+	MetricTypes["membership_total"] = "Gauge"
 	MetricTypes["original_dst_host_invalid"] = "Counter"
 	MetricTypes["retry_or_shadow_abandoned"] = "Counter"
 	MetricTypes["update_attempt"] = "Counter"
