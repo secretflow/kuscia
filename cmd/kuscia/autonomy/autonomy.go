@@ -97,6 +97,7 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 			modules.RunEnvoy(runCtx, cancel, conf)
 		}()
 		wg.Wait()
+		modules.RunMetricExporter(runCtx, cancel, conf)
 		utils.SetupPprof(conf.Debug, conf.DebugPort, false)
 	}
 	<-runCtx.Done()
