@@ -646,11 +646,16 @@ function init_monitor_config(){
     local domain_id=$3
     local config_data=$4
     if [[ $mode == "center" ]]; then
-        config_data=$(generate_center_config "${config_data}")
+        docker exec -d root-kuscia-master node_exporter
+        docker exec -d root-kuscia-lite-alice node_exporter
+        docker exec -d root-kuscia-lite-bob node_exporter
+	config_data=$(generate_center_config "${config_data}")
         echo "${config_data}" > ${conf_dir}/prometheus.yml
     elif [[ $mode == "p2p" ]]; then
-      config_data=$(generate_p2p_config "${config_data}" "${domain_id}")
-      echo "${config_data}" > ${conf_dir}/prometheus.yml
+        docker exec -d root-kuscia-autonomy-alice node_exporter
+        docker exec -d root-kuscia-autonomy-bob node_exporter
+        config_data=$(generate_p2p_config "${config_data}" "${domain_id}")
+        echo "${config_data}" > ${conf_dir}/prometheus.yml
     else
     echo "Unsupported mode: $mode"
     exit 1
@@ -862,9 +867,9 @@ function run_p2p() {
   create_domaindatagrant_bob2alice ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
   log "Kuscia p2p cluster started successfully"
   init_monitor_config p2p ${ROOT}/${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${ALICE_DOMAIN} 9090 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
+  start_kuscia_monitor ${ALICE_DOMAIN} 9089 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
   init_monitor_config p2p ${ROOT}/${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${BOB_DOMAIN} 9090 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${CTR_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
+  start_kuscia_monitor ${BOB_DOMAIN} 9090 3001 docker.io/secretflow/kusica-monitor "${ROOT}/${CTR_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
 }
 
 function build_kuscia_network() {

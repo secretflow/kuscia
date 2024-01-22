@@ -42,9 +42,9 @@ COPY scripts ${ROOT_DIR}/scripts
 COPY thirdparty/*/scripts ${ROOT_DIR}/scripts
 
 COPY --from=kuscia_envoy /home/kuscia/bin/envoy ${ROOT_DIR}/bin
-
+COPY build/dockerfile/node_exporter ${ROOT_DIR}/bin
 ENV PATH="${PATH}:${ROOT_DIR}/bin:/bin/aux"
-
 WORKDIR ${ROOT_DIR}
 
 ENTRYPOINT ["tini", "--"]
+
