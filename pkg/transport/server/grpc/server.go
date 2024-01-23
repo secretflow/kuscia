@@ -179,8 +179,6 @@ func getTimeout(ctx context.Context, inbound interface{}) time.Duration{
 		}
 		return convertTimeout(int32(timeout))
 	}
-
-	return common.DefaultTimeout
 }
 
 func convertTimeout(t int32) time.Duration{
