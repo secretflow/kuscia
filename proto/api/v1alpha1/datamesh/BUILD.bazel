@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -23,11 +24,47 @@ proto_library(
     deps = ["//proto/api/v1alpha1:common_proto"],
 )
 
+cc_proto_library(
+    name = "domaindata_cc_proto",
+    deps = [
+        ":domaindata_proto",
+    ],
+)
+
+cc_grpc_library(
+    name = "domaindata_cc_grpc",
+    srcs = [
+        ":domaindata_proto",
+    ],
+    grpc_only = True,
+    deps = [
+        ":domaindata_cc_proto",
+    ],
+)
+
 proto_library(
     name = "domaindatasource_proto",
     srcs = ["domaindatasource.proto"],
     import_prefix = "kuscia",
     deps = ["//proto/api/v1alpha1:common_proto"],
+)
+
+cc_proto_library(
+    name = "domaindatasource_cc_proto",
+    deps = [
+        ":domaindatasource_proto",
+    ],
+)
+
+cc_grpc_library(
+    name = "domaindatasource_cc_grpc",
+    srcs = [
+        ":domaindatasource_proto",
+    ],
+    grpc_only = True,
+    deps = [
+        ":domaindatasource_cc_proto",
+    ],
 )
 
 proto_library(
@@ -45,17 +82,4 @@ proto_library(
 cc_proto_library(
     name = "flightdm_cc_proto",
     deps = [":flightdm_proto"],
-)
-
-cc_proto_library(
-    name = "domaindata_cc_proto",
-    deps = [
-        ":domaindata_proto",
-    ],
-)
-cc_proto_library(
-    name = "domaindatasource_cc_proto",
-    deps = [
-        ":domaindatasource_proto",
-    ],
 )
