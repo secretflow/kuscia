@@ -127,7 +127,7 @@ func (s *Server) Peek(ctx context.Context, inbound *pb.PeekInbound) (*pb.Transpo
 }
 
 func (s *Server) Release(ctx context.Context, inbound *pb.ReleaseInbound) (*pb.TransportOutbound, error) {
-	sid , ok:= getPramFromCtx(ctx, codec.PtpSessionID)
+	sid , ok:= getParamFromCtx(ctx, codec.PtpSessionID)
 	if !ok || len(sid)==0 {
 		nlog.Warnf("Empty session-id")
 		return codec.BuildTransportOutboundByErr(transerr.NewTransError(transerr.InvalidRequest)), nil
@@ -136,7 +136,7 @@ func (s *Server) Release(ctx context.Context, inbound *pb.ReleaseInbound) (*pb.T
 	topic := getTopic(ctx, inbound)
 
 	if len(topic) != 0 {
-		topicPrefix, ok := getPramFromCtx(ctx, codec.PtpTargetNodeID)
+		topicPrefix, ok := getParamFromCtx(ctx, codec.PtpTargetNodeID)
 
 		if !ok {
 			return codec.BuildTransportOutboundByErr(transerr.NewTransError(transerr.InvalidRequest)), nil
@@ -169,7 +169,7 @@ func getTimeout(ctx context.Context, inbound interface{}) time.Duration{
 		return convertTimeout(releaseInbound.GetTimeout())
 	}
 
-	timeout, ok := getPramFromCtx(ctx, "timeout")
+	timeout, ok := getParamFromCtx(ctx, "timeout")
 	if !ok{
 		return common.DefaultTimeout
 	}else {
@@ -213,7 +213,7 @@ func getTopic(ctx context.Context, inbound interface{}) string {
 		return releaseInbound.GetTopic()
 	}
 
-	topic, ok := getPramFromCtx(ctx, codec.PtpTopicID)
+	topic, ok := getParamFromCtx(ctx, codec.PtpTopicID)
 	if !ok {
 		return ""
 	}
@@ -228,13 +228,13 @@ func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*I
 		nodeID = codec.PtpTargetNodeID
 	}
 
-	topicPrefix, ok := getPramFromCtx(ctx, nodeID)
+	topicPrefix, ok := getParamFromCtx(ctx, nodeID)
 	if !ok {
 		nlog.Warnf("Empty session-id or topic or %s", nodeID)
 		return nil, transerr.NewTransError(transerr.InvalidRequest)
 	}
 
-	sid, ok := getPramFromCtx(ctx, codec.PtpSessionID)
+	sid, ok := getParamFromCtx(ctx, codec.PtpSessionID)
 	if !ok || len(sid)==0 {
 		nlog.Warnf("Empty session-id or topic or %s", nodeID)
 		return nil, transerr.NewTransError(transerr.InvalidRequest)
@@ -252,7 +252,7 @@ func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*I
 	}, nil
 }
 
-func getPramFromCtx(ctx context.Context, param string) (string, bool) {
+func getParamFromCtx(ctx context.Context, param string) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok{
 		return "", false
