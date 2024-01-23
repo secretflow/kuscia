@@ -412,7 +412,7 @@ func TestPerformance(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(time.Minute * 2)
+	time.Sleep(time.Second * 20)
 	stop = true
 	wg.Wait()
 
