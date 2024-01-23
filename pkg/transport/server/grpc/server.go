@@ -16,7 +16,11 @@ package grpc
 
 import (
 	"fmt"
+	"github.com/secretflow/kuscia/pkg/transport/server/common"
+	"google.golang.org/grpc/metadata"
 	"net"
+	"strconv"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/netutil"
@@ -25,10 +29,16 @@ import (
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
-	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcptp"
+	pb "github.com/secretflow/kuscia/pkg/transport/proto/mesh"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
+
+type InboundParams struct {
+	sid   string
+	topic string
+}
+
 
 type Server struct {
 	grpcConfig *config.GRPCConfig
@@ -53,6 +63,9 @@ func (s *Server) Start(ctx context.Context) error {
 		grpc.MaxConcurrentStreams(s.grpcConfig.MaxConcurrentStreams),
 		grpc.MaxRecvMsgSize(s.grpcConfig.MaxRecvMsgSize),
 		grpc.MaxSendMsgSize(s.grpcConfig.MaxSendMsgSize),
+		grpc.ConnectionTimeout(time.Duration(s.grpcConfig.ConnectionTimeout)*time.Second),
+		grpc.ReadBufferSize(s.grpcConfig.ReadBufferSize),
+		grpc.WriteBufferSize(s.grpcConfig.WriteBufferSize),
 	}
 	gs := grpc.NewServer(opts...)
 
@@ -73,7 +86,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Invoke(ctx context.Context, inbound *pb.Inbound) (*pb.Outbound, error) {
-	params, err := getInboundParams(ctx, true)
+	params, err := getInboundParams(ctx, inbound,true)
 	if err != nil {
 		return codec.BuildInvokeOutboundByErr(err), nil
 	}
@@ -81,17 +94,17 @@ func (s *Server) Invoke(ctx context.Context, inbound *pb.Inbound) (*pb.Outbound,
 	if err != nil {
 		return codec.BuildInvokeOutboundByErr(err), nil
 	}
-	err = s.sm.Push(params.sid, params.topic, message, getInboundTimeout(ctx))
+	err = s.sm.Push(params.sid, params.topic, message, getTimeout(ctx, inbound))
 	return codec.BuildInvokeOutboundByErr(err), nil
 }
 
 func (s *Server) Pop(ctx context.Context, inbound *pb.PopInbound) (*pb.TransportOutbound, error) {
-	params, err := getInboundParams(ctx, false)
+	params, err := getInboundParams(ctx, inbound,false)
 	if err != nil {
 		return codec.BuildTransportOutboundByErr(err), nil
 	}
 
-	msg, err := s.sm.Pop(params.sid, params.topic, getInboundTimeout(ctx))
+	msg, err := s.sm.Pop(params.sid, params.topic, getTimeout(ctx, inbound))
 	if err != nil || msg == nil {
 		return codec.BuildTransportOutboundByErr(err), nil
 	}
@@ -100,7 +113,7 @@ func (s *Server) Pop(ctx context.Context, inbound *pb.PopInbound) (*pb.Transport
 }
 
 func (s *Server) Peek(ctx context.Context, inbound *pb.PeekInbound) (*pb.TransportOutbound, error) {
-	params, err := getInboundParams(ctx, false)
+	params, err := getInboundParams(ctx, inbound,false)
 	if err != nil {
 		return codec.BuildTransportOutboundByErr(err), nil
 	}
@@ -114,23 +127,22 @@ func (s *Server) Peek(ctx context.Context, inbound *pb.PeekInbound) (*pb.Transpo
 }
 
 func (s *Server) Release(ctx context.Context, inbound *pb.ReleaseInbound) (*pb.TransportOutbound, error) {
-	sidList := getMetaDataList(ctx, codec.PtpSessionID)
-	if len(sidList) == 0 {
+	sid , ok:= getPramFromCtx(ctx, codec.PtpSessionID)
+	if !ok || len(sid)==0 {
 		nlog.Warnf("Empty session-id")
 		return codec.BuildTransportOutboundByErr(transerr.NewTransError(transerr.InvalidRequest)), nil
 	}
-	sid := sidList[0]
 
-	topicIdList := getMetaDataList(ctx, codec.PtpTopicID)
-	if len(topicIdList) != 0 {
-		topicPrefixList := getMetaDataList(ctx, codec.PtpTargetNodeID)
-		var topicPrefix string
-		if len(topicPrefixList) == 0 {
-			topicPrefix = ""
-		} else {
-			topicPrefix = topicPrefixList[0]
+	topic := getTopic(ctx, inbound)
+
+	if len(topic) != 0 {
+		topicPrefix, ok := getPramFromCtx(ctx, codec.PtpTargetNodeID)
+
+		if !ok {
+			return codec.BuildTransportOutboundByErr(transerr.NewTransError(transerr.InvalidRequest)), nil
 		}
-		fullTopic := fmt.Sprintf("%s-%s", topicPrefix, topicIdList[0])
+
+		fullTopic := fmt.Sprintf("%s-%s", topicPrefix, topic)
 		s.sm.ReleaseTopic(sid, fullTopic)
 		return codec.BuildTransportOutboundByErr(nil), nil
 	}
@@ -144,4 +156,114 @@ func (s *Server) readMessage(inbound *pb.Inbound) (*msq.Message, *transerr.Trans
 		return nil, transerr.NewTransError(transerr.InvalidRequest)
 	}
 	return msq.NewMessage(inbound.GetPayload()), nil
+}
+
+
+func getTimeout(ctx context.Context, inbound interface{}) time.Duration{
+	popInbound, ok:= inbound.(*pb.PopInbound)
+	if ok{
+		return convertTimeout(popInbound.GetTimeout())
+	}
+	releaseInbound, ok := inbound.(*pb.ReleaseInbound)
+	if ok{
+		return convertTimeout(releaseInbound.GetTimeout())
+	}
+
+	timeout, ok := getPramFromCtx(ctx, "timeout")
+	if !ok{
+		return common.DefaultTimeout
+	}else {
+		timeout, err := strconv.ParseInt(timeout,10, 32)
+		if err == nil {
+			return common.DefaultTimeout
+		}
+		return convertTimeout(int32(timeout))
+	}
+
+	return common.DefaultTimeout
+}
+
+func convertTimeout(t int32) time.Duration{
+	timeoutDuration := time.Duration(t)*time.Second
+	if timeoutDuration < common.MinTimeout {
+		return common.MinTimeout
+	}
+	if timeoutDuration > common.MaxTimeout {
+		return common.MaxTimeout
+	}
+	return timeoutDuration
+}
+
+func getTopic(ctx context.Context, inbound interface{}) string {
+	popInbound, ok := inbound.(*pb.PopInbound)
+	if ok {
+		return popInbound.GetTopic()
+	}
+
+	peekInbound, ok := inbound.(*pb.PeekInbound)
+	if ok {
+		return peekInbound.GetTopic()
+	}
+
+	pushInbound, ok := inbound.(*pb.PushInbound)
+	if ok {
+		return pushInbound.GetTopic()
+	}
+
+	releaseInbound, ok := inbound.(*pb.ReleaseInbound)
+	if ok {
+		return releaseInbound.GetTopic()
+	}
+
+	topic, ok := getPramFromCtx(ctx, codec.PtpTopicID)
+	if !ok {
+		return ""
+	}
+	return topic
+}
+
+func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*InboundParams, *transerr.TransError) {
+	var nodeID string
+	if isPush {
+		nodeID = codec.PtpSourceNodeID
+	} else {
+		nodeID = codec.PtpTargetNodeID
+	}
+
+	topicPrefix, ok := getPramFromCtx(ctx, nodeID)
+	if !ok {
+		nlog.Warnf("Empty session-id or topic or %s", nodeID)
+		return nil, transerr.NewTransError(transerr.InvalidRequest)
+	}
+
+	sid, ok := getPramFromCtx(ctx, codec.PtpSessionID)
+	if !ok || len(sid)==0 {
+		nlog.Warnf("Empty session-id or topic or %s", nodeID)
+		return nil, transerr.NewTransError(transerr.InvalidRequest)
+	}
+
+	topic := getTopic(ctx, inbound)
+	if len(sid) == 0 || len(topic) == 0 || len(topicPrefix) == 0 {
+		nlog.Warnf("Empty session-id or topic or %s", nodeID)
+		return nil, transerr.NewTransError(transerr.InvalidRequest)
+	}
+
+	return &InboundParams{
+		sid:   sid,
+		topic: fmt.Sprintf("%s-%s", topicPrefix, topic),
+	}, nil
+}
+
+func getPramFromCtx(ctx context.Context, param string) (string, bool) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok{
+		return "", false
+	}
+
+	values := md.Get(param)
+	if len(values)==0{
+		return "", true
+	}
+
+	return values[0], true
 }

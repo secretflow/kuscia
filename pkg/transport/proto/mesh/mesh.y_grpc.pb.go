@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.23.4
-// source: ptp_transport.proto
+// source: mesh.y.proto
 
-package grpcptp
+package mesh
 
 import (
 	context "context"
@@ -210,5 +210,5 @@ var PrivateTransferTransport_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "ptp_transport.proto",
+	Metadata: "mesh.y.proto",
 }

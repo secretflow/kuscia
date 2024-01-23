@@ -28,6 +28,9 @@ const (
 	defaultMaxConcurrentStreams = 128
 	defaultMaxRecvMsgSize       = 4194304
 	defaultMaxSendMsgSize       = 4194304
+	defaultConnectionTimeout    = 120
+	defaultReadBufferSize       = 32768
+	defaultWriteBufferSize      = 32768
 )
 
 type GRPCConfig struct {
@@ -36,6 +39,9 @@ type GRPCConfig struct {
 	MaxConcurrentStreams uint32 `yaml:"maxConcurrentStreams,omitempty"`
 	MaxRecvMsgSize       int    `yaml:"maxRecvMsgSize,omitempty"`
 	MaxSendMsgSize       int    `yaml:"maxSendMsgSize,omitempty"`
+	ConnectionTimeout    uint32 `yaml:"connectionTimeout,omitempty"`
+	ReadBufferSize 		 int `yaml:"readBufferSize,omitempty"`
+	WriteBufferSize		 int `yaml:"writeBufferSize,omitempty"`
 }
 
 func DefaultGrpcConfig() *GRPCConfig {
@@ -45,6 +51,9 @@ func DefaultGrpcConfig() *GRPCConfig {
 		MaxConcurrentStreams: defaultMaxConcurrentStreams,
 		MaxRecvMsgSize:       defaultMaxRecvMsgSize,
 		MaxSendMsgSize:       defaultMaxSendMsgSize,
+		ConnectionTimeout:    defaultConnectionTimeout,
+		ReadBufferSize:       defaultReadBufferSize,
+		WriteBufferSize:      defaultWriteBufferSize,
 	}
 }
 

@@ -23,16 +23,12 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
+	"github.com/secretflow/kuscia/pkg/transport/server/common"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-const (
-	ParamTimeout   = "timeout"
-	DefaultTimeout = time.Second * 120
-	MinTimeout = time.Second
-	MaxTimeout = time.Second * 300
-)
+
 
 type ReqParams struct {
 	sid   string
@@ -180,25 +176,25 @@ func getReqParams(r *http.Request, isPush bool) (*ReqParams, *transerr.TransErro
 }
 
 func getTimeout(r *http.Request) time.Duration {
-	val := r.URL.Query().Get(ParamTimeout)
+	val := r.URL.Query().Get(common.ParamTimeout)
 	if len(val) == 0 {
-		return DefaultTimeout
+		return common.DefaultTimeout
 	}
 
 	num, err := strconv.Atoi(val)
 	if err != nil {
 		nlog.Warnf("Invalid param timeout:%d", num)
-		return DefaultTimeout
+		return common.DefaultTimeout
 	}
 
 	timeout := time.Second * time.Duration(num)
 
-	if timeout < MinTimeout {
-		return MinTimeout
+	if timeout < common.MinTimeout {
+		return common.MinTimeout
 	}
 
-	if timeout > MaxTimeout {
-		return MaxTimeout
+	if timeout > common.MaxTimeout {
+		return common.MaxTimeout
 	}
 
 	return timeout

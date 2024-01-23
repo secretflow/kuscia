@@ -32,7 +32,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
-	pb "github.com/secretflow/kuscia/pkg/transport/proto/grpcptp"
+	pb "github.com/secretflow/kuscia/pkg/transport/proto/mesh"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -134,36 +134,37 @@ func TestMain(m *testing.M) {
 }
 
 func TestTransportAndPop(t *testing.T) {
-	in := &pb.Inbound{
-		Payload: NewStr("123456789"),
-	}
-
 	md := metadata.New(map[string]string{
-		codec.PtpTopicID:      "topic1",
 		codec.PtpSessionID:    "session1",
 		codec.PtpSourceNodeID: "node0",
+		codec.PtpTopicID: "topic1",
 	})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
-	verifyInvokeResponse(t, ctx, in, transerr.Success)
+	invokeInbound := &pb.Inbound{
+		Payload: NewStr("123456789"),
+	}
+	verifyInvokeResponse(t, ctx, invokeInbound, transerr.Success)
 
 	popMd := metadata.New(map[string]string{
-		codec.PtpTopicID:      "topic1",
 		codec.PtpSessionID:    "session1",
 		codec.PtpTargetNodeID: "node0",
 	})
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
-	outbound := verifyPopResponse(t, popCtx, &pb.PopInbound{}, transerr.Success)
+	popInbound := &pb.PopInbound{
+		Topic: "topic1",
+	}
+	outbound := verifyPopResponse(t, popCtx, popInbound, transerr.Success)
 	assert.Equal(t, string(outbound.GetPayload()), "123456789")
 }
 
 func TestPeek(t *testing.T) {
 	peekMd := metadata.New(map[string]string{
-		codec.PtpTopicID:      "topic1",
 		codec.PtpSessionID:    "session1",
 		codec.PtpTargetNodeID: "node0",
 	})
 	peekCtx := metadata.NewOutgoingContext(context.Background(), peekMd)
-	outbound := verifyPeekResponse(t, peekCtx, &pb.PeekInbound{}, transerr.Success)
+	peekInbound := &pb.PeekInbound{Topic: "topic1"}
+	outbound := verifyPeekResponse(t, peekCtx, peekInbound, transerr.Success)
 	assert.Equal(t, string(outbound.Payload), "")
 }
 
@@ -176,15 +177,17 @@ func TestPopWithData(t *testing.T) {
 	}()
 
 	popMd := metadata.New(map[string]string{
-		codec.PtpTopicID:      "topic2",
 		codec.PtpSessionID:    "session3",
 		codec.PtpTargetNodeID: "node0",
 	})
-	popMd.Append("timeout", "5")
-
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
+	popInbound := &pb.PopInbound{
+		Topic: "topic2",
+		Timeout: 5,
+	}
 	start := time.Now()
-	outbound := verifyPopResponse(t, popCtx, &pb.PopInbound{}, transerr.Success)
+
+	outbound := verifyPopResponse(t, popCtx, popInbound, transerr.Success)
 	assert.Equal(t, len(outbound.Payload), 10)
 	processTime := time.Now().Sub(start)
 	assert.True(t, processTime > time.Second)
@@ -192,16 +195,17 @@ func TestPopWithData(t *testing.T) {
 
 func TestPopTimeout(t *testing.T) {
 	popMd := metadata.New(map[string]string{
-		codec.PtpTopicID:      "topic2",
 		codec.PtpSessionID:    "session4",
 		codec.PtpTargetNodeID: "node0",
 	})
-
-	popMd.Append("timeout", "2")
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 
+	popInbound := &pb.PopInbound{
+		Topic: "topic2",
+		Timeout: 2,
+	}
 	start := time.Now()
-	outbound := verifyPopResponse(t, popCtx, &pb.PopInbound{}, transerr.Success)
+	outbound := verifyPopResponse(t, popCtx, popInbound, transerr.Success)
 	assert.True(t, outbound.Payload == nil)
 
 	processTime := time.Now().Sub(start)
@@ -214,12 +218,13 @@ func TestReleaseTopic(t *testing.T) {
 	server.sm.Push("session5", "-topic3", &msq.Message{Content: NewRandomStr(1024)}, time.Second)
 
 	releaseMd := metadata.New(map[string]string{
-		codec.PtpTopicID:   "topic2",
 		codec.PtpSessionID: "session5",
 	})
-
 	releaseCtx := metadata.NewOutgoingContext(context.Background(), releaseMd)
-	verifyReleaseResponse(t, releaseCtx, &pb.ReleaseInbound{}, transerr.Success)
+	releaseInbound := &pb.ReleaseInbound{
+		Topic: "topic2",
+	}
+	verifyReleaseResponse(t, releaseCtx, releaseInbound, transerr.Success)
 
 	msg, err := server.sm.Peek("session5", "-topic3")
 	assert.Nil(t, err)
@@ -245,12 +250,12 @@ func TestReleaseSession(t *testing.T) {
 	_, err := server.sm.Peek("session6", "node0-topic3")
 	assert.NotNil(t, err)
 
-	releaseMd2 := metadata.New(map[string]string{
+	invokeMd := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic2",
 		codec.PtpSessionID:    "session6",
 		codec.PtpSourceNodeID: "node0",
 	})
-	releaseCtx2 := metadata.NewOutgoingContext(context.Background(), releaseMd2)
+	releaseCtx2 := metadata.NewOutgoingContext(context.Background(), invokeMd)
 	verifyInvokeResponse(t, releaseCtx2, &pb.Inbound{Payload: NewStr("123456789")}, transerr.SessionReleased)
 }
 
@@ -262,25 +267,25 @@ func TestPushWait(t *testing.T) {
 		time.Sleep(time.Second)
 		server.sm.Pop("session8", "topic2", time.Second)
 	}()
-	pushMd := metadata.New(map[string]string{
+	invokeMd := metadata.New(map[string]string{
 		codec.PtpTopicID:      "topic2",
 		codec.PtpSessionID:    "session8",
 		codec.PtpSourceNodeID: "node0",
 	})
-	pushMd.Append("timeout", "2")
+	invokeMd.Append("timeout", "2")
 	start := time.Now()
-	pushCtx := metadata.NewOutgoingContext(context.Background(), pushMd)
+	pushCtx := metadata.NewOutgoingContext(context.Background(), invokeMd)
 	verifyInvokeResponse(t, pushCtx, &pb.Inbound{Payload: NewStr("123456789")}, transerr.Success)
 	processTime := time.Now().Sub(start)
 	assert.True(t, processTime >= time.Second && processTime <= time.Second*2)
 }
 
 func TestBadRequestParam(t *testing.T) {
-	pushMd := metadata.New(map[string]string{
+	invokeMd := metadata.New(map[string]string{
 		codec.PtpSessionID: "session9",
 	})
-	pushCtx := metadata.NewOutgoingContext(context.Background(), pushMd)
-	verifyInvokeResponse(t, pushCtx, &pb.Inbound{Payload: NewStr("123456789")}, transerr.InvalidRequest)
+	invokeCtx := metadata.NewOutgoingContext(context.Background(), invokeMd)
+	verifyInvokeResponse(t, invokeCtx, &pb.Inbound{Payload: NewStr("123456789")}, transerr.InvalidRequest)
 }
 
 var sessionCount int = 10
@@ -295,13 +300,13 @@ func producer(t *testing.T, pushSucceedCount, pushFailCount *int64) {
 	topic := fmt.Sprintf("topic-%d", r.Intn(topicCount))
 	content := NewRandomStr(r.Intn(msgLength) + 256*1024)
 
-	pushMd := metadata.New(map[string]string{
+	invokeMd := metadata.New(map[string]string{
 		codec.PtpTopicID:      topic,
 		codec.PtpSessionID:    sid,
 		codec.PtpSourceNodeID: "node0",
 	})
-	pushMd.Append("timeout", "3")
-	pushCtx := metadata.NewOutgoingContext(context.Background(), pushMd)
+	invokeMd.Append("timeout", "3")
+	invokeCtx := metadata.NewOutgoingContext(context.Background(), invokeMd)
 
 	dial, err := grpc.Dial(testServer,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -313,7 +318,7 @@ func producer(t *testing.T, pushSucceedCount, pushFailCount *int64) {
 
 	client := pb.NewPrivateTransferProtocolClient(dial)
 
-	outbound, err := client.Invoke(pushCtx, &pb.Inbound{Payload: content})
+	outbound, err := client.Invoke(invokeCtx, &pb.Inbound{Payload: content})
 
 	//assert.NoError(t, err)
 
@@ -333,12 +338,15 @@ func consumer(t *testing.T, popSucceedCount, popFailCount *int64) {
 	topic := fmt.Sprintf("topic-%d", r.Intn(topicCount))
 
 	popMd := metadata.New(map[string]string{
-		codec.PtpTopicID:      topic,
 		codec.PtpSessionID:    sid,
 		codec.PtpTargetNodeID: "node0",
 	})
-	popMd.Append("timeout", "2")
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
+
+	popInbound := &pb.PopInbound{
+		Topic: topic,
+		Timeout: 2,
+	}
 
 	dial, err := grpc.Dial(testServer,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -351,7 +359,7 @@ func consumer(t *testing.T, popSucceedCount, popFailCount *int64) {
 	client := pb.NewPrivateTransferTransportClient(dial)
 
 	var outbound *pb.TransportOutbound
-	outbound, err = client.Pop(popCtx, &pb.PopInbound{})
+	outbound, err = client.Pop(popCtx, popInbound)
 
 	//assert.NoError(t, err)
 
@@ -492,13 +500,16 @@ func TestLoadOverrideGrpcTransConfig(t *testing.T) {
 	transportClient := pb.NewPrivateTransferTransportClient(dial)
 
 	popMd := metadata.New(map[string]string{
-		codec.PtpTopicID:      "topic1",
 		codec.PtpSessionID:    "session11",
 		codec.PtpTargetNodeID: "node0",
 	})
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 
-	popOut, err := transportClient.Pop(popCtx, &pb.PopInbound{})
+	popInbound := &pb.PopInbound{
+		Topic: "topic1",
+	}
+
+	popOut, err := transportClient.Pop(popCtx, popInbound)
 	assert.NoError(t, err)
 
 	assert.Equal(t, string(popOut.Payload), "123456789")

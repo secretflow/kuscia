@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v4.23.4
-// source: ptp_invoke.proto
+// source: mesh.x.proto
 
-package grpcptp
+package mesh
 
 import (
 	context "context"
@@ -171,5 +171,5 @@ var PrivateTransferProtocol_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "ptp_invoke.proto",
+	Metadata: "mesh.x.proto",
 }

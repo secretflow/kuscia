@@ -17,7 +17,7 @@ syntax = "proto3";
 
 package org.ppc.grpc_ptp;
 
-option go_package = "github.com/secretflow/kuscia/transport/proto/grpcptp";
+option go_package = "github.com/secretflow/kuscia/transport/proto/mesh";
 
 // PTP Private transfer protocol
 // 通用报头名称编码，4层无Header以二进制填充到报头，7层以Header传输
