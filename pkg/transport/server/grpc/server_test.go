@@ -42,7 +42,7 @@ const (
 )
 
 var server *Server
-var grpcConfig *config.GRPCConfig
+var grpcConfig *config.GrpcConfig
 var msqConfig *msq.Config
 
 func NewRandomStr(l int) []byte {
@@ -412,7 +412,7 @@ func TestPerformance(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 20)
 	stop = true
 	wg.Wait()
 

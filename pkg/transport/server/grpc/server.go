@@ -41,7 +41,7 @@ type InboundParams struct {
 
 
 type Server struct {
-	grpcConfig *config.GRPCConfig
+	grpcConfig *config.GrpcConfig
 	sm         *msq.SessionManager
 
 	codec codec.Codec
@@ -50,7 +50,7 @@ type Server struct {
 	pb.UnimplementedPrivateTransferProtocolServer
 }
 
-func NewServer(grpcConfig *config.GRPCConfig, sm *msq.SessionManager) *Server {
+func NewServer(grpcConfig *config.GrpcConfig, sm *msq.SessionManager) *Server {
 	return &Server{
 		grpcConfig: grpcConfig,
 		sm:         sm,
@@ -193,31 +193,23 @@ func convertTimeout(t int32) time.Duration{
 }
 
 func getTopic(ctx context.Context, inbound interface{}) string {
-	popInbound, ok := inbound.(*pb.PopInbound)
-	if ok {
-		return popInbound.GetTopic()
-	}
 
-	peekInbound, ok := inbound.(*pb.PeekInbound)
-	if ok {
-		return peekInbound.GetTopic()
+	switch in :=inbound.(type) {
+	case *pb.PopInbound:
+		return in.GetTopic()
+	case *pb.ReleaseInbound:
+		return in.GetTopic()
+	case *pb.PushInbound:
+		return in.GetTopic()
+	case *pb.PeekInbound:
+		return in.GetTopic()
+	default:
+		topic, ok := getParamFromCtx(ctx, codec.PtpTopicID)
+		if !ok{
+			return ""
+		}
+		return topic
 	}
-
-	pushInbound, ok := inbound.(*pb.PushInbound)
-	if ok {
-		return pushInbound.GetTopic()
-	}
-
-	releaseInbound, ok := inbound.(*pb.ReleaseInbound)
-	if ok {
-		return releaseInbound.GetTopic()
-	}
-
-	topic, ok := getParamFromCtx(ctx, codec.PtpTopicID)
-	if !ok {
-		return ""
-	}
-	return topic
 }
 
 func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*InboundParams, *transerr.TransError) {

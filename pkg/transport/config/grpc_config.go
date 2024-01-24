@@ -33,7 +33,7 @@ const (
 	defaultWriteBufferSize      = 32768
 )
 
-type GRPCConfig struct {
+type GrpcConfig struct {
 	Port                 int    `yaml:"port,omitempty"`
 	MaxConns             int    `yaml:"maxConns,omitempty"`
 	MaxConcurrentStreams uint32 `yaml:"maxConcurrentStreams,omitempty"`
@@ -44,8 +44,8 @@ type GRPCConfig struct {
 	WriteBufferSize		 int `yaml:"writeBufferSize,omitempty"`
 }
 
-func DefaultGrpcConfig() *GRPCConfig {
-	return &GRPCConfig{
+func DefaultGrpcConfig() *GrpcConfig {
+	return &GrpcConfig{
 		Port:                 defaultGrpcPort,
 		MaxConns:             defaultMaxConns,
 		MaxConcurrentStreams: defaultMaxConcurrentStreams,
@@ -59,7 +59,7 @@ func DefaultGrpcConfig() *GRPCConfig {
 
 type GrpcTransConfig struct {
 	MsqConfig  *msq.Config `yaml:"msqConfig,omitempty"`
-	GrpcConfig *GRPCConfig `yaml:"grpcConfig,omitempty"`
+	GrpcConfig *GrpcConfig `yaml:"grpcConfig,omitempty"`
 }
 
 func DefaultGrpcTransConfig() *GrpcTransConfig {
