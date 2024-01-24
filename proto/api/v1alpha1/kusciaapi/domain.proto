@@ -30,7 +30,7 @@ service DomainService {
 
   rpc DeleteDomain(DeleteDomainRequest) returns (DeleteDomainResponse);
 
-  rpc BatchQueryDomainStatus(BatchQueryDomainStatusRequest) returns (BatchQueryDomainStatusResponse);
+  rpc BatchQueryDomain(BatchQueryDomainRequest) returns (BatchQueryDomainResponse);
 }
 
 message CreateDomainRequest {
@@ -38,6 +38,7 @@ message CreateDomainRequest {
   string domain_id = 2;
   string role = 3;
   string cert = 4;
+  AuthCenter auth_center = 5;
 }
 
 message CreateDomainResponse {
@@ -68,6 +69,9 @@ message QueryDomainResponseData {
   string role = 2;
   string cert = 3;
   repeated NodeStatus node_statuses = 4;
+  repeated DeployTokenStatus deploy_token_statuses = 5;
+  map<string, string> annotations = 6;
+  AuthCenter auth_center = 7;
 }
 
 message NodeStatus {
@@ -83,27 +87,45 @@ message UpdateDomainRequest {
   string domain_id = 2;
   string role = 3;
   string cert = 4;
+  AuthCenter auth_center = 5;
 }
 
 message UpdateDomainResponse {
   Status status = 1;
 }
 
-message BatchQueryDomainStatusRequest {
-  Status status = 1;
+message BatchQueryDomainRequest {
+  RequestHeader header = 1;
   repeated string domain_ids = 2;
 }
 
-message BatchQueryDomainStatusResponse {
+message BatchQueryDomainResponse {
   Status status = 1;
-  BatchQueryDomainStatusResponseData data = 2;
+  BatchQueryDomainResponseData data = 2;
 }
 
-message BatchQueryDomainStatusResponseData {
-  repeated DomainStatus domains = 1;
+message BatchQueryDomainResponseData {
+  repeated Domain domains = 1;
 }
 
-message DomainStatus {
+message Domain {
   string domain_id = 1;
-  repeated NodeStatus node_statuses = 2;
+  string role = 2;
+  string cert = 3;
+  repeated NodeStatus node_statuses = 4;
+}
+
+message DeployTokenStatus {
+  // deploy token
+  string token = 1;
+  // used or unused
+  string state = 2;
+  string last_transition_time = 3;
+}
+
+message AuthCenter {
+  // Token
+  string authentication_type = 1;
+  // UID-RSA-GEN
+  string token_gen_method = 2;
 }

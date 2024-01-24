@@ -17,12 +17,12 @@ package commands
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
@@ -32,81 +32,66 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
-	"github.com/secretflow/kuscia/pkg/utils/signals"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
 	gatewayName     = "gateway"
 	concurrentSyncs = 8
+
+	defaultHandshakeRetryCount    = 10
+	defaultHandshakeRetryInterval = 100 * time.Millisecond
 )
 
 var (
 	ReadyChan = make(chan struct{})
 )
 
-func NewCommand(opts *Opts) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          gatewayName,
-		Long:         gatewayName + ` set route rules for ingress and egress netflow, and Responsible for authentication.`,
-		Version:      meta.KusciaVersionString(),
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			zLogWriter, err := zlogwriter.New(opts.logCfg)
-			if err != nil {
-				return err
-			}
-			nlog.Setup(nlog.SetWriter(zLogWriter))
-			conf := opts.Config()
-			err = conf.CheckConfig()
-			if err != nil {
-				return err
-			}
-			// create clientset
-			clients, err := createClientSets(conf)
-			if err != nil {
-				return fmt.Errorf("failed to create clientSets, detail-> %v", err)
-			}
-			err = Run(signals.NewKusciaContextWithStopCh(signals.SetupSignalHandler()), conf, clients)
-			if err != nil {
-				nlog.Fatalf("failed to start gateway, %v", err)
-			}
-			return err
-		},
-	}
-
-	return cmd
-}
-
-func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients) error {
-	// parse private key
-	priKeyData, err := os.ReadFile(gwConfig.DomainKeyFile)
-	if err != nil {
-		return err
-	}
-	prikey, err := utils.ParsePKCS1PrivateKeyData(priKeyData)
-	if err != nil {
-		return fmt.Errorf("failed to add scheme, detail-> %v", err)
-	}
+func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients, afterRegisterHook controller.AfterRegisterDomainHook) error {
+	prikey := gwConfig.DomainKey
+	priKeyData := tls.EncodePKCS1PublicKey(gwConfig.DomainKey)
 
 	// start xds server and envoy
-	err = StartXds(gwConfig)
+	err := StartXds(gwConfig)
 	if err != nil {
 		return fmt.Errorf("start xds server fail with err: %v", err)
 	}
+	nlog.Infof("Start xds success")
 
-	// add master Clusters
+	// add master config
 	masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
+	nlog.Debugf("masterConfig is: %v", masterConfig)
+
 	if err != nil {
 		return fmt.Errorf("failed to load masterConfig, detail-> %v", err)
 	}
 
-	err = clusters.AddMasterClusters(ctx, gwConfig.Namespace, masterConfig)
+	// add master Clusters
+	err = clusters.AddMasterClusters(ctx, gwConfig.DomainID, masterConfig)
 	if err != nil {
 		return fmt.Errorf("add master clusters fail, detail-> %v", err)
 	}
+	if !masterConfig.Master {
+		err = controller.RegisterDomain(gwConfig.DomainID, masterConfig.MasterProxy.Path, gwConfig.CsrData, prikey, afterRegisterHook)
+		if err != nil {
+			return fmt.Errorf("RegisterDomain err:%s", err.Error())
+		}
+
+		for i := 1; i <= defaultHandshakeRetryCount; i++ {
+			err = controller.HandshakeToMaster(gwConfig.DomainID, masterConfig.MasterProxy.Path, prikey)
+			if err == nil {
+				break
+			}
+			nlog.Warnf("HandshakeToMaster err: %v", err)
+			if i == defaultHandshakeRetryCount {
+				return err
+			}
+			time.Sleep(defaultHandshakeRetryInterval)
+		}
+		checkMasterProxyReady(ctx, gwConfig.DomainID, clients.KubeClient)
+	}
+	nlog.Infof("Add master clusters success")
 
 	// add interconn cluster
 	interConnClusterConfig, err := config.LoadInterConnClusterConfig(gwConfig.TransportConfig,
@@ -114,20 +99,21 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return fmt.Errorf("failed to load interConnClusterConfig, detail-> %v", err)
 	}
-	err = clusters.AddInterConnClusters(gwConfig.Namespace, interConnClusterConfig)
+	err = clusters.AddInterConnClusters(gwConfig.DomainID, interConnClusterConfig)
 	if err != nil {
 		return fmt.Errorf("add interConn clusters fail, detail-> %v", err)
 	}
+	nlog.Infof("Add interconn clusters success")
 
 	// create informer factory
 	defaultResync := time.Duration(gwConfig.ResyncPeriod) * time.Second
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(clients.KubeClient, defaultResync,
-		kubeinformers.WithNamespace(gwConfig.Namespace))
+		kubeinformers.WithNamespace(gwConfig.DomainID))
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(clients.KusciaClient, defaultResync,
-		informers.WithNamespace(gwConfig.Namespace))
+		informers.WithNamespace(gwConfig.DomainID))
 
 	// start GatewayController
-	gwc, err := controller.NewGatewayController(gwConfig.Namespace, prikey, clients.KusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().Gateways())
+	gwc, err := controller.NewGatewayController(gwConfig.DomainID, prikey, clients.KusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().Gateways())
 	if err != nil {
 		return fmt.Errorf("failed to new gateway controller, detail-> %v", err)
 	}
@@ -141,7 +127,9 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if err != nil {
 		return fmt.Errorf("load innerClientTLS fail, detail-> %v", err)
 	}
-	ec, err := controller.NewEndpointsController(clients.KubeClient, serviceInformer, endpointsInformer, gwConfig.WhiteListFile,
+	ec, err := controller.NewEndpointsController(masterConfig.Master, clients.KubeClient, serviceInformer,
+		endpointsInformer,
+		gwConfig.WhiteListFile,
 		clientCert)
 	if err != nil {
 		return fmt.Errorf("failed to new endpoints controller, detail-> %v", err)
@@ -151,13 +139,17 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	// start DomainRoute controller
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	drConfig := &controller.DomainRouteConfig{
-		Namespace:     gwConfig.Namespace,
-		Prikey:        prikey,
-		PrikeyData:    priKeyData,
-		HandshakePort: gwConfig.HandshakePort,
+		Namespace:       gwConfig.DomainID,
+		MasterNamespace: masterConfig.Namespace,
+		MasterConfig:    masterConfig,
+		CAKey:           gwConfig.CAKey,
+		CACert:          gwConfig.CACert,
+		Prikey:          prikey,
+		PrikeyData:      priKeyData,
+		HandshakePort:   gwConfig.HandshakePort,
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
-	go drc.Run(concurrentSyncs*2, ctx.Done())
+	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
 
 	// start runtime metrics collector
 	go metrics.MonitorRuntimeMetrics(ctx.Done())
@@ -177,6 +169,19 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	<-ctx.Done()
 	nlog.Info("Gateway shutdown")
 	return nil
+}
+
+func checkMasterProxyReady(ctx context.Context, domainID string, kubeClient kubernetes.Interface) {
+	var err error
+	times := 5
+	for i := 0; i < times; i++ {
+		if _, err = kubeClient.CoreV1().Pods(domainID).List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
+			nlog.Info("Check MasterProxy ready")
+			return
+		}
+		time.Sleep(time.Second)
+	}
+	nlog.Fatalf("Check MasterProxy failed: %v", err.Error())
 }
 
 func StartXds(gwConfig *config.GatewayConfig) error {
@@ -203,16 +208,6 @@ func StartXds(gwConfig *config.GatewayConfig) error {
 		Logdir:       filepath.Join(gwConfig.RootDir, "var/logs/envoy/"),
 	}
 
-	xds.InitSnapshot(gwConfig.Namespace, utils.GetHostname(), xdsConfig)
+	xds.InitSnapshot(gwConfig.DomainID, utils.GetHostname(), xdsConfig)
 	return nil
-}
-
-func createClientSets(config *config.GatewayConfig) (*kubeconfig.KubeClients, error) {
-	masterURL := ""
-	if config.MasterConfig.APIServer.KubeConfig == "" {
-		masterURL = clusters.DomainAPIServer
-		nlog.Infof("apiserver url is %s", masterURL)
-	}
-
-	return kubeconfig.CreateClientSetsFromKubeconfig(config.MasterConfig.APIServer.KubeConfig, masterURL)
 }

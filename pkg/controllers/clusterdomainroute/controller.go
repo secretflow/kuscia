@@ -12,32 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package clusterdomainroute
 
 import (
 	"context"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/pem"
 	"fmt"
-	mrand "math/rand"
+	"reflect"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
+	"github.com/secretflow/kuscia/pkg/controllers/domainroute"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -48,15 +44,14 @@ import (
 
 const (
 	clusterDomainRouteSyncPeriod = 2 * time.Minute
-	gatewayLiveTimeout           = 3 * time.Minute
-	controllerName               = "domain-route-controller"
-	errErrResourceExists         = "ErrResourceExists"
+	controllerName               = "cluster-domain-route-controller"
 )
 
-// Controller is the controller implementation for ClusterDomainRoute resources
-type Controller struct {
-	cancel context.CancelFunc
+type controller struct {
 	ctx    context.Context
+	cancel context.CancelFunc
+
+	Namespace string
 
 	clusterDomainRouteLister       kuscialistersv1alpha1.ClusterDomainRouteLister
 	clusterDomainRouteListerSynced cache.InformerSynced
@@ -66,306 +61,162 @@ type Controller struct {
 	domainRouteListerSynced        cache.InformerSynced
 	gatewayLister                  kuscialistersv1alpha1.GatewayLister
 	gatewayListerSynced            cache.InformerSynced
+	interopLister                  kuscialistersv1alpha1.InteropConfigLister
+	interopListerSynced            cache.InformerSynced
 
-	kubeClient            kubernetes.Interface
 	kusciaClient          kusciaclientset.Interface
 	kusciaInformerFactory informers.SharedInformerFactory
 
-	recorder  record.EventRecorder
-	workqueue workqueue.RateLimitingInterface
+	clusterDomainRouteWorkqueue workqueue.RateLimitingInterface
 }
 
-// NewController returns a new sample controller
-func NewController(
-	ctx context.Context,
-	kubeClient kubernetes.Interface,
-	kusciaClient kusciaclientset.Interface,
-	eventRecorder record.EventRecorder,
-) controllers.IController {
-	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, clusterDomainRouteSyncPeriod)
+func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kusciaInformerFactory := informers.NewSharedInformerFactory(config.KusciaClient, clusterDomainRouteSyncPeriod)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
-	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
 	clusterDomainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 	domainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
-	controller := &Controller{
-		kubeClient:                     kubeClient,
-		kusciaClient:                   kusciaClient,
+	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
+	interopInformer := kusciaInformerFactory.Kuscia().V1alpha1().InteropConfigs()
+
+	cc := &controller{
 		kusciaInformerFactory:          kusciaInformerFactory,
+		kusciaClient:                   config.KusciaClient,
+		Namespace:                      config.Namespace,
 		domainLister:                   domainInformer.Lister(),
 		domainListerSynced:             domainInformer.Informer().HasSynced,
-		gatewayLister:                  gatewayInformer.Lister(),
-		gatewayListerSynced:            gatewayInformer.Informer().HasSynced,
 		clusterDomainRouteLister:       clusterDomainRouteInformer.Lister(),
 		clusterDomainRouteListerSynced: clusterDomainRouteInformer.Informer().HasSynced,
+		gatewayLister:                  gatewayInformer.Lister(),
+		gatewayListerSynced:            gatewayInformer.Informer().HasSynced,
 		domainRouteLister:              domainRouteInformer.Lister(),
 		domainRouteListerSynced:        domainRouteInformer.Informer().HasSynced,
-		workqueue:                      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusterDomainRoutes"),
-		recorder:                       eventRecorder,
+		interopLister:                  interopInformer.Lister(),
+		interopListerSynced:            interopInformer.Informer().HasSynced,
+		clusterDomainRouteWorkqueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusterDomainRoutes"),
 	}
-	controller.ctx, controller.cancel = context.WithCancel(ctx)
-
-	nlog.Info("Setting up event handlers")
-	gatewayInformer.Informer().AddEventHandlerWithResyncPeriod(
+	cc.ctx, cc.cancel = context.WithCancel(ctx)
+	clusterDomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(newOne interface{}) {
-				newGateway, ok := newOne.(*kusciaapisv1alpha1.Gateway)
+				newCdr, ok := newOne.(*kusciaapisv1alpha1.ClusterDomainRoute)
 				if !ok {
 					return
 				}
-				nlog.Infof("Syncing ClusterDomainRoute because found new Gateway(%s)", newGateway.Namespace)
-				controller.syncClusterDomainRoute(newGateway.Namespace)
+				nlog.Debugf("Found new clusterdomain(%s)", newCdr.Name)
+				cc.enqueueClusterDomainRoute(newCdr)
 			},
-		},
-		0,
-	)
+			UpdateFunc: func(_, newOne interface{}) {
+				newCdr, ok := newOne.(*kusciaapisv1alpha1.ClusterDomainRoute)
+				if !ok {
+					return
+				}
 
-	// Set up an event handler for when Namespace resources change
-	domainInformer.Informer().AddEventHandlerWithResyncPeriod(
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(newOne interface{}) {
-				newDomain, ok := newOne.(*kusciaapisv1alpha1.Domain)
-				if !ok {
-					return
-				}
-				nlog.Infof("Syncing ClusterDomainRoute because found new Domain(%s)", newDomain.Name)
-				controller.syncClusterDomainRoute(newDomain.Name)
-			},
-			UpdateFunc: func(oldOne, newOne interface{}) {
-				oldDomain, ok := oldOne.(*kusciaapisv1alpha1.Domain)
-				if !ok {
-					return
-				}
-				newDomain, ok := newOne.(*kusciaapisv1alpha1.Domain)
-				if !ok {
-					return
-				}
-				// If public key doesn't change, do nothing.
-				if newDomain.Spec.Cert == oldDomain.Spec.Cert {
-					return
-				}
-				nlog.Infof("Syncing ClusterDomainRoute because Domain(%s) cert is changed", newDomain.Name)
-				controller.syncClusterDomainRoute(newDomain.Name)
-			},
-		},
-		0, // no resync, just wait event or wait Clusterdomainroute's resync.
-	)
-
-	// Set up an event handler for when clusterdomainroute resources change
-	clusterDomainRouteInformer.Informer().AddEventHandler(
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: controller.enqueueClusterDomainRoute,
-			UpdateFunc: func(_, newone interface{}) {
-				controller.enqueueClusterDomainRoute(newone)
-			},
-			DeleteFunc: controller.deleteClusterDomainRoute,
-		},
-	)
-
-	// Set up an event handler for when DomainRoute resources change
-	domainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
-		cache.ResourceEventHandlerFuncs{
-			// AddFunc is unnecessary. Clusterdomainroute's handler will create it and continue to process.
-			UpdateFunc: func(oldone, newone interface{}) {
-				newDr, ok := newone.(*kusciaapisv1alpha1.DomainRoute)
-				if !ok {
-					return
-				}
-				cdr, err := controller.clusterDomainRouteLister.Get(newDr.Name)
-				if err != nil {
-					nlog.Warnf("Get ClusterDomainRoute by DomainRoute(%s/%s) fail", newDr.Namespace, newDr.Name)
-					return
-				}
-				nlog.Infof("Syncing ClusterDomainRoute because found DomainRoute(%s/%s) update", newDr.Namespace, newDr.Name)
-				controller.enqueueClusterDomainRoute(cdr)
+				nlog.Debugf("Found clusterdomainroute(%s) update", newCdr.Name)
+				cc.enqueueClusterDomainRoute(newCdr)
 			},
 			DeleteFunc: func(obj interface{}) {
-				oldDr, ok := obj.(*kusciaapisv1alpha1.DomainRoute)
+				newCdr, ok := obj.(*kusciaapisv1alpha1.ClusterDomainRoute)
 				if !ok {
 					return
 				}
-				cdr, err := controller.clusterDomainRouteLister.Get(oldDr.Name)
-				if err != nil {
-					nlog.Warnf("Get ClusterDomainRoute by DomainRoute(%s/%s) fail", oldDr.Namespace, oldDr.Name)
+				nlog.Debugf("Found clusterdomain(%s) delete", newCdr.Name)
+			},
+		},
+		clusterDomainRouteSyncPeriod,
+	)
+	domainInformer.Informer().AddEventHandlerWithResyncPeriod(
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				newOne, ok := obj.(*kusciaapisv1alpha1.Domain)
+				if !ok {
 					return
 				}
-				nlog.Infof("Syncing ClusterDomainRoute because found DomainRoute(%s/%s) deleted", oldDr.Namespace, oldDr.Name)
-				controller.enqueueClusterDomainRoute(cdr)
+				nlog.Debugf("Sync clusterdomainroute because found new domain(%s)", newOne.Name)
+				cc.syncClusterDomainRouteByDomainName(common.KusciaSourceKey, newOne.Name)
+				cc.syncClusterDomainRouteByDomainName(common.KusciaDestinationKey, newOne.Name)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				newOne, ok := newObj.(*kusciaapisv1alpha1.Domain)
+				if !ok {
+					return
+				}
+				oldOne, ok := oldObj.(*kusciaapisv1alpha1.Domain)
+				if !ok {
+					return
+				}
+				if oldOne.Spec.Cert == newOne.Spec.Cert {
+					return
+				}
+				nlog.Debugf("Sync clusterdomainroute because found domain(%s) update", newOne.Name)
+				cc.syncClusterDomainRouteByDomainName(common.KusciaSourceKey, newOne.Name)
+				cc.syncClusterDomainRouteByDomainName(common.KusciaDestinationKey, newOne.Name)
 			},
 		},
 		0,
 	)
+	domainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				newOne, ok := obj.(*kusciaapisv1alpha1.DomainRoute)
+				if !ok {
+					return
+				}
 
-	return controller
-}
+				if len(newOne.OwnerReferences) > 0 && newOne.OwnerReferences[0].Kind == "ClusterDomainRoute" {
+					nlog.Debugf("Sync clusterdomainroute because found new domainroute(%s)", newOne.Name)
+					cc.enqueueClusterDomainRoute(newOne)
+				}
+			},
+			UpdateFunc: func(_, newObj interface{}) {
+				newOne, ok := newObj.(*kusciaapisv1alpha1.DomainRoute)
+				if !ok {
+					return
+				}
 
-// Run will set up the event handlers for types we are interested in, as well
-// as syncing informer caches and starting workers. It will block until stopCh
-// is closed, at which point it will shutdown the workqueue and wait for
-// workers to finish processing their current work items.
-func (c *Controller) Run(threadiness int) error {
-	defer utilruntime.HandleCrash()
-	defer c.workqueue.ShutDown()
-
-	// Start the informer factories to begin populating the informer caches
-	nlog.Info("Starting ClusterDomainRoute controller")
-	c.kusciaInformerFactory.Start(c.ctx.Done())
-	// Wait for the caches to be synced before starting workers
-	nlog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.domainListerSynced, c.gatewayListerSynced, c.clusterDomainRouteListerSynced, c.domainRouteListerSynced); !ok {
-		return fmt.Errorf("failed to wait for caches to sync")
-	}
-
-	mrand.Seed(time.Now().UnixNano())
-	go wait.Until(c.Monitorcdrstatus, time.Minute, c.ctx.Done())
-
-	nlog.Info("Starting workers")
-	// Launch two workers to process ClusterDomainRoute resources
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
-	}
-
-	nlog.Info("Started workers")
-	<-c.ctx.Done()
-	nlog.Info("Shutting down workers")
-
-	return nil
-}
-
-// Stop the controller.
-func (c *Controller) Stop() {
-	if c.cancel != nil {
-		c.cancel()
-		c.cancel = nil
-	}
-	c.workqueue.ShutDown()
+				if len(newOne.OwnerReferences) > 0 && newOne.OwnerReferences[0].Kind == "ClusterDomainRoute" {
+					nlog.Debugf("Sync clusterdomainroute because found domainroute(%s) update", newOne.Name)
+					cc.enqueueClusterDomainRoute(newOne)
+				}
+			},
+			DeleteFunc: func(obj interface{}) {
+				cc.enqueueClusterDomainRoute(obj)
+			},
+		},
+		0,
+	)
+	return cc
 }
 
 // runWorker is a long-running function that will continually call the
 // processNextWorkItem function in order to read and process a message on the
 // workqueue.
-func (c *Controller) runWorker() {
-	for queue.HandleQueueItemWithAlwaysRetry(context.Background(), controllerName, c.workqueue, c.syncHandler) {
+func (c *controller) runWorker(ctx context.Context) {
+	for queue.HandleQueueItemWithAlwaysRetry(ctx, controllerName, c.clusterDomainRouteWorkqueue, c.syncHandler) {
 	}
 }
 
-func (c *Controller) addLabel(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute) *kusciaapisv1alpha1.ClusterDomainRoute {
-	var err error
-	// add labels
-	if cdr.Labels == nil {
-		cdrCopy := cdr.DeepCopy()
-		cdrCopy.Labels = map[string]string{
-			common.KusciaSourceKey:      cdr.Spec.Source,
-			common.KusciaDestinationKey: cdr.Spec.Destination,
-		}
-		if cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{}); err != nil {
-			nlog.Errorf("Update cdr, src(%s) dst(%s) failed with (%s)", cdr.Spec.Source, cdr.Spec.Destination, err.Error())
-		}
-	} else if _, ok := cdr.Labels[common.KusciaSourceKey]; !ok {
-		cdrCopy := cdr.DeepCopy()
-		cdrCopy.Labels[common.KusciaSourceKey] = cdr.Spec.Source
-		cdrCopy.Labels[common.KusciaDestinationKey] = cdr.Spec.Destination
-		if cdr, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{}); err != nil {
-			nlog.Errorf("Update cdr, src(%s) dst(%s) failed with (%s)", cdr.Spec.Source, cdr.Spec.Destination, err.Error())
-		}
-	}
-	return cdr
-}
-
-func (c *Controller) doValidate(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute) error {
-	if cdr.Spec.Source == "" || cdr.Spec.Destination == "" {
-		return fmt.Errorf("%s source or destination is null", cdr.Name)
-	}
-	// body encryption will use tokenConfig to generate encrypt key
-	if cdr.Spec.BodyEncryption != nil {
-		if cdr.Spec.TokenConfig == nil {
-			return fmt.Errorf("clusterdomainroute %s Spec.Authentication.Token is null", cdr.Name)
-		}
+func needDeleteDr(cdr *kusciaapisv1alpha1.ClusterDomainRoute, dr *kusciaapisv1alpha1.DomainRoute) bool {
+	if !reflect.DeepEqual(cdr.Spec.Endpoint, dr.Spec.Endpoint) {
+		return true
 	}
 
-	switch cdr.Spec.AuthenticationType {
-	case kusciaapisv1alpha1.DomainAuthenticationToken:
-		if cdr.Spec.TokenConfig == nil {
-			return fmt.Errorf("clusterdomainroute %s Spec.Authentication.Token is null", cdr.Name)
-		}
-	case kusciaapisv1alpha1.DomainAuthenticationMTLS:
-		if cdr.Spec.MTLSConfig == nil {
-			return fmt.Errorf("clusterdomainroute %s Spec.MTLSConfig is null", cdr.Name)
-		}
-		if cdr.Spec.MTLSConfig.SourceClientCert == "" {
-			return fmt.Errorf("clusterdomainroute %s Spec.MTLSConfig.SourceClientCert is null", cdr.Name)
-		}
-		if _, err := base64.StdEncoding.DecodeString(cdr.Spec.MTLSConfig.SourceClientCert); err != nil {
-			return fmt.Errorf("clusterdomainroute %s Spec.MTLSConfig.SourceClientCert is format error, must be base64 encoded", cdr.Name)
-		}
-		if cdr.Spec.MTLSConfig.TLSCA != "" {
-			if _, err := base64.StdEncoding.DecodeString(cdr.Spec.MTLSConfig.TLSCA); err != nil {
-				return fmt.Errorf("clusterdomainroute %s Spec.MTLSConfig.TLSCA is format error, must be base64 encoded", cdr.Name)
-			}
-		}
-		if cdr.Spec.MTLSConfig.SourceClientPrivateKey != "" {
-			if _, err := base64.StdEncoding.DecodeString(cdr.Spec.MTLSConfig.SourceClientPrivateKey); err != nil {
-				return fmt.Errorf("clusterdomainroute %s Spec.MTLSConfig.SourceClientPrivateKey is format error, must be base64 encoded", cdr.Name)
-			}
-		}
-	case kusciaapisv1alpha1.DomainAuthenticationNone:
-	default:
-		return fmt.Errorf("unsupport type %s", cdr.Spec.AuthenticationType)
+	if cdr.Spec.TokenConfig == nil || dr.Spec.TokenConfig == nil {
+		return cdr.Spec.TokenConfig != dr.Spec.TokenConfig
+	}
+	if cdr.Spec.TokenConfig.DestinationPublicKey != dr.Spec.TokenConfig.DestinationPublicKey {
+		return true
+	}
+	if cdr.Spec.TokenConfig.SourcePublicKey != dr.Spec.TokenConfig.SourcePublicKey {
+		return true
 	}
 
-	if cdr.Spec.TokenConfig != nil {
-		// Only check public key if TokenGenMethodRSA is RSA
-		if cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA {
-			if cdr.Spec.TokenConfig.SourcePublicKey != "" && cdr.Spec.TokenConfig.DestinationPublicKey != "" {
-				// publickey must be base64 encoded
-				if _, err := base64.StdEncoding.DecodeString(cdr.Spec.TokenConfig.SourcePublicKey); err != nil {
-					return fmt.Errorf("sourcePublicKey[%s] is format err, must be base64 encoded, err :%v ", cdr.Name, err)
-				}
-				if _, err := base64.StdEncoding.DecodeString(cdr.Spec.TokenConfig.DestinationPublicKey); err != nil {
-					return fmt.Errorf("destinationPublicKey[%s] is format err, must be base64 encoded, err :%v ", cdr.Name, err)
-				}
-			} else {
-				// If not be set, sync public key from domain.
-				c.syncDomainPubKey(ctx, cdr)
-				return fmt.Errorf("%s's source or destination public key is nil, try to sync from domain cert and wait retry", cdr.Name)
-			}
-		}
-	}
-	return nil
-}
-
-func (c *Controller) checkDomainRoute(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, namespace, drName string) (*kusciaapisv1alpha1.DomainRoute, error) {
-	dr, err := c.domainRouteLister.DomainRoutes(namespace).Get(drName)
-	if k8serrors.IsNotFound(err) {
-		nlog.Infof("Create domainroute %s/%s", namespace, drName)
-		if dr, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(namespace).Create(ctx, newDomainRoute(cdr, drName, namespace), metav1.CreateOptions{}); err != nil {
-			return nil, err
-		}
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if !metav1.IsControlledBy(dr, cdr) {
-		msg := fmt.Sprintf("DomainRoute %s already exists in namespace %s and is not managed by ClusterDomainRoute", drName, namespace)
-		c.recorder.Event(cdr, corev1.EventTypeWarning, errErrResourceExists, msg)
-		return nil, fmt.Errorf("%s", msg)
-	}
-
-	if !compareSpec(cdr, dr) {
-		nlog.Infof("Delete domainroute %s/%s", namespace, drName)
-		if err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(namespace).Delete(ctx, drName, metav1.DeleteOptions{}); err != nil {
-			return nil, err
-		}
-		return nil, nil
-	}
-	return dr, nil
+	return false
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the ClusterDomainRoute resource
 // with the current status of the resource.
-func (c *Controller) syncHandler(ctx context.Context, key string) error {
+func (c *controller) syncHandler(ctx context.Context, key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
 	_, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -383,211 +234,188 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	cdr = c.addLabel(ctx, cdr)
-
-	if err := c.doValidate(ctx, cdr); err != nil {
-		nlog.Error(err.Error())
-		c.recorder.Event(cdr, corev1.EventTypeNormal, doValidateReason, err.Error())
-		return nil
+	// Check domain role
+	sourceRole, destRole, err := c.getDomainRole(cdr)
+	if err != nil {
+		return err
 	}
-	c.recorder.Event(cdr, corev1.EventTypeNormal, doValidateReason, "Success")
 
+	appendLabels := make(map[string]string, 0)
+	appendLabels[common.KusciaSourceKey] = cdr.Spec.Source
+	appendLabels[common.KusciaDestinationKey] = cdr.Spec.Destination
+	if sourceRole == kusciaapisv1alpha1.Partner {
+		appendLabels[common.LabelDomainRoutePartner] = cdr.Spec.Source
+	} else if destRole == kusciaapisv1alpha1.Partner {
+		appendLabels[common.LabelDomainRoutePartner] = cdr.Spec.Destination
+	}
+
+	// Update label must be first.
+	if hasUpdate, err := c.updateLabel(ctx, cdr, appendLabels, nil); err != nil || hasUpdate {
+		return err
+	}
+
+	if hasUpdate, err := c.syncDomainPubKey(ctx, cdr); err != nil || hasUpdate {
+		return err
+	}
+
+	if err := domainroute.DoValidate(&cdr.Spec.DomainRouteSpec); err != nil {
+		nlog.Errorf("clusterdomainroute %s doValidate error:%v", cdr.Name, err)
+		return err
+	}
+
+	var srcdr, destdr *kusciaapisv1alpha1.DomainRoute
 	drName := fmt.Sprintf("%s-%s", cdr.Spec.Source, cdr.Spec.Destination)
-
-	// Create domainroute in source namespace
-	srcDr, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Source, drName)
-	if err != nil {
-		nlog.Error(err.Error())
-		return err
-	}
-	// Create domainroute in destination namespace
-	destDr, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Destination, drName)
-	if err != nil {
-		nlog.Error(err.Error())
-		return err
-	}
-	// Wait clusterdomainroute update event
-	if srcDr == nil || destDr == nil {
-		return nil
-	}
-	return c.updateClusterDomainRoute(ctx, cdr, srcDr, destDr)
-}
-
-func getPublickeyFromCert(certString string) ([]byte, error) {
-	certPem, err := base64.StdEncoding.DecodeString(certString)
-	if err != nil {
-		return nil, err
-	}
-	certData, _ := pem.Decode(certPem)
-	if certData == nil {
-		return nil, fmt.Errorf("%s", "pem Decode fail")
-	}
-	cert, err := x509.ParseCertificate(certData.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	rsaPub, ok := cert.PublicKey.(*rsa.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("%s", "Cant get publickey from src domain")
-	}
-	block := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(rsaPub),
-	}
-	return pem.EncodeToMemory(block), nil
-}
-
-func (c *Controller) getPublicKeyFromDomain(ctx context.Context, cdrName, namespace string) ([]byte, error) {
-	domain, err := c.domainLister.Get(namespace)
-	if err != nil {
-		return nil, err
-	}
-	if domain.Spec.Cert != "" {
-		rsaPubData, err := getPublickeyFromCert(domain.Spec.Cert)
-		if err != nil {
-			return nil, err
+	if sourceRole != kusciaapisv1alpha1.Partner {
+		// Create domainroute in source namespace
+		if hasUpdate, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Source, drName); err != nil || hasUpdate {
+			return err
 		}
-		return rsaPubData, nil
+		if srcdr, err = c.domainRouteLister.DomainRoutes(cdr.Spec.Source).Get(drName); err != nil {
+			return err
+		}
 	}
-	return nil, fmt.Errorf("domain %s cert is nil", domain.Name)
+
+	if destRole != kusciaapisv1alpha1.Partner {
+		// Create domainroute in destination namespace
+		if hasUpdate, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Destination, drName); err != nil || hasUpdate {
+			return err
+		}
+		if destdr, err = c.domainRouteLister.DomainRoutes(cdr.Spec.Destination).Get(drName); err != nil {
+			return err
+		}
+	}
+
+	if hasUpdate, err := c.syncStatusFromDomainroute(cdr, srcdr, destdr); err != nil || hasUpdate {
+		return err
+	}
+
+	return c.checkInteropConfig(ctx, cdr, sourceRole, destRole)
 }
 
-func (c *Controller) syncDomainPubKey(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute) {
-	srcRsaPubData, err := c.getPublicKeyFromDomain(ctx, cdr.Name, cdr.Spec.Source)
-	if err != nil {
-		nlog.Warn(err)
-		c.recorder.Event(cdr, corev1.EventTypeNormal, syncDomainPubKeyReason, cdr.Spec.Source+":"+err.Error())
-		return
-	}
-	destRsaPubData, err := c.getPublicKeyFromDomain(ctx, cdr.Name, cdr.Spec.Destination)
-	if err != nil {
-		nlog.Warn(err)
-		c.recorder.Event(cdr, corev1.EventTypeNormal, syncDomainPubKeyReason, cdr.Spec.Destination+":"+err.Error())
-		return
-	}
-	c.recorder.Event(cdr, corev1.EventTypeNormal, syncDomainPubKeyReason, "Success")
-	cdrCopy := cdr.DeepCopy()
-	cdrCopy.Spec.TokenConfig.SourcePublicKey = base64.StdEncoding.EncodeToString(srcRsaPubData)
-	cdrCopy.Spec.TokenConfig.DestinationPublicKey = base64.StdEncoding.EncodeToString(destRsaPubData)
-
-	_, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{})
-	if err != nil { // maybe network error, wait resync
-		nlog.Warn(err)
-		return
-	}
+func (c *controller) enqueueClusterDomainRoute(obj interface{}) {
+	queue.EnqueueObjectWithKey(obj, c.clusterDomainRouteWorkqueue)
 }
 
-func (c *Controller) syncClusterDomainRoute(domainName string) {
-	cdrs, err := c.clusterDomainRouteLister.List(labels.Everything())
+func (c *controller) syncClusterDomainRouteByDomainName(key, domainName string) {
+	cdrReqSrc, _ := labels.NewRequirement(key, selection.Equals, []string{domainName})
+	cdrs, err := c.clusterDomainRouteLister.List(labels.NewSelector().Add(*cdrReqSrc))
 	if err != nil {
 		nlog.Error(err)
 		return
 	}
 
 	for _, cdr := range cdrs {
-		if cdr.Spec.Source == domainName || cdr.Spec.Destination == domainName {
-			c.enqueueClusterDomainRoute(cdr)
-		}
+		nlog.Infof("Enqueue clusterdomainroute %s, because domain %s update", cdr.Name, domainName)
+		c.enqueueClusterDomainRoute(cdr)
 	}
 }
 
-func (c *Controller) enqueueClusterDomainRoute(obj interface{}) {
-	queue.EnqueueObjectWithKey(obj, c.workqueue)
-}
+func (c *controller) Run(threadiness int) error {
+	defer utilruntime.HandleCrash()
+	defer c.clusterDomainRouteWorkqueue.ShutDown()
+	// Start the informer factories to begin populating the informer caches
+	nlog.Info("Starting ClusterDomainRoute controller")
+	c.kusciaInformerFactory.Start(c.ctx.Done())
 
-func (c *Controller) deleteClusterDomainRoute(obj interface{}) {
-	cdr, ok := obj.(*kusciaapisv1alpha1.ClusterDomainRoute)
-	if !ok {
-		return
+	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.domainListerSynced, c.clusterDomainRouteListerSynced,
+		c.domainRouteListerSynced, c.gatewayListerSynced, c.interopListerSynced); !ok {
+		return fmt.Errorf("failed to wait for caches to sync")
 	}
-	c.cleanMetrics(cdr.Name)
-}
 
-func newDomainRoute(cdr *kusciaapisv1alpha1.ClusterDomainRoute, name, namespace string) *kusciaapisv1alpha1.DomainRoute {
-	return &kusciaapisv1alpha1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    cdr.Labels,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cdr, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("ClusterDomainRoute")),
-			},
-		},
-		Spec:   cdr.Spec.DomainRouteSpec,
-		Status: kusciaapisv1alpha1.DomainRouteStatus{},
+	go wait.Until(func() {
+		c.Monitorcdrstatus(c.ctx)
+	}, time.Second*30, c.ctx.Done())
+	// Launch two workers to process ClusterDomainRoute resources
+	for i := 0; i < threadiness; i++ {
+		go wait.Until(func() {
+			c.runWorker(c.ctx)
+		}, time.Second, c.ctx.Done())
 	}
-}
 
-func (c *Controller) updateClusterDomainRoute(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, srcdr, destdr *kusciaapisv1alpha1.DomainRoute) error {
-	if cdr.Spec.TokenConfig != nil {
-		rollingUpdatePeriod := time.Duration(cdr.Spec.TokenConfig.RollingUpdatePeriod) * time.Second
-		if cdr.Status.TokenStatus.Revision == 0 {
-			c.preRollingClusterDomainRoute(ctx, cdr, false)
-			return nil
-		}
-		if rollingUpdatePeriod > 0 && time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > rollingUpdatePeriod {
-			c.preRollingClusterDomainRoute(ctx, cdr, false)
-			nlog.Warnf("Clusterdomainroute %s token is out of time, rollingUpdate", cdr.Name)
-			return nil
-		}
-
-		if cdr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken || cdr.Spec.BodyEncryption != nil {
-			if cdr.Status.TokenStatus.Revision != srcdr.Status.TokenStatus.RevisionToken.Revision || cdr.Status.TokenStatus.Revision != destdr.Status.TokenStatus.RevisionToken.Revision {
-				// rolling to next revision to invalidate flying token negotiation
-				if time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > clusterDomainRouteSyncPeriod {
-					c.preRollingClusterDomainRoute(ctx, cdr, false)
-					nlog.Warnf("Clusterdomainroute %s token is out of SyncPeriod", cdr.Name)
-					return nil
-				}
-
-				switch cdr.Spec.TokenConfig.TokenGenMethod {
-				case kusciaapisv1alpha1.TokenGenMethodRAND:
-					if err := c.intraRollingClusterDomainRouteRand(ctx, cdr, srcdr, destdr); err != nil {
-						return err
-					}
-				case kusciaapisv1alpha1.TokenGenMethodRSA:
-					if err := c.intraRollingClusterDomainRouteRSA(ctx, cdr, srcdr, destdr); err != nil {
-						return err
-					}
-				default:
-					nlog.Warnf("Clusterdomainroute %s unexpected token generation method: %s", cdr.Name, cdr.Spec.TokenConfig.TokenGenMethod)
-					return nil
-				}
-			}
-
-			if srcdr.Status.TokenStatus.RevisionToken.Token == "" || destdr.Status.TokenStatus.RevisionToken.Token == "" {
-				// rolling to next revision to invalidate flying token negotiation
-				if time.Since(cdr.Status.TokenStatus.RevisionTime.Time) > clusterDomainRouteSyncPeriod {
-					c.preRollingClusterDomainRoute(ctx, cdr, false)
-					nlog.Warnf("Clusterdomainroute %s token is out of SyncPeriod", cdr.Name)
-					return nil
-				}
-
-				return nil
-			}
-			return c.postRollingClusterDomainRoute(ctx, cdr, srcdr, destdr)
-		}
-	}
-	nlog.Debugf("Clusterdomainroute %s has nothing to do", cdr.Name)
+	nlog.Info("Started ClusterDomainRoute controller")
+	<-c.ctx.Done()
 	return nil
 }
 
-func (c *Controller) Name() string {
+func (c *controller) Stop() {
+	if c.cancel != nil {
+		c.cancel()
+		c.cancel = nil
+	}
+}
+
+func (c *controller) Name() string {
 	return controllerName
 }
 
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainsName, metav1.GetOptions{}); err != nil {
-		return err
+func (c *controller) updateLabel(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute, addLabels map[string]string,
+	removeLabels map[string]bool) (bool, error) {
+	var err error
+
+	needUpdateLabel := func() bool {
+		if cdr.Labels == nil {
+			return true
+		}
+
+		for k, v := range addLabels {
+			if oldVal, exist := cdr.Labels[k]; !exist || oldVal != v {
+				return true
+			}
+		}
+
+		for k := range removeLabels {
+			if _, exist := cdr.Labels[k]; exist {
+				return true
+			}
+		}
+
+		return false
 	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDClusterDomainRoutesName, metav1.GetOptions{}); err != nil {
-		return err
+
+	if !needUpdateLabel() {
+		return false, nil
 	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainRoutesName, metav1.GetOptions{}); err != nil {
-		return err
+
+	cdrCopy := cdr.DeepCopy()
+	cdrCopy.Labels = make(map[string]string, 0)
+
+	// copy old labels exclude needRemoved Labels
+	for k, v := range cdr.Labels {
+		needRemove := false
+		if removeLabels != nil {
+			_, needRemove = removeLabels[k]
+		}
+		if !needRemove {
+			cdrCopy.Labels[k] = v
+		}
 	}
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDGatewaysName, metav1.GetOptions{}); err != nil {
-		return err
+
+	// assure to be added labels
+	cdrCopy.Labels[common.KusciaSourceKey] = cdr.Spec.Source
+	cdrCopy.Labels[common.KusciaDestinationKey] = cdr.Spec.Destination
+
+	// add new labels
+	for k, v := range addLabels {
+		cdrCopy.Labels[k] = v
 	}
-	return nil
+
+	_, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{})
+	if err != nil && !k8serrors.IsConflict(err) {
+		nlog.Errorf("Update cdr, src(%s) dst(%s) failed with (%s)", cdrCopy.Spec.Source, cdrCopy.Spec.Destination, err.Error())
+		return true, err
+	}
+	if err == nil {
+		nlog.Infof("ClusterDomainRoute %s updateLabel", cdr.Name)
+	}
+
+	return true, nil
+}
+
+func IsReady(status *kusciaapisv1alpha1.ClusterDomainRouteStatus) bool {
+	for _, cond := range status.Conditions {
+		if cond.Type == kusciaapisv1alpha1.ClusterDomainRouteReady {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }

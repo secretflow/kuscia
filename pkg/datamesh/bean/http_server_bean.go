@@ -20,9 +20,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	dmconfig "github.com/secretflow/kuscia/pkg/datamesh/config"
 	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindata"
+	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindatagrant"
 	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
@@ -78,8 +80,9 @@ func (s *httpServerBean) ServerName() string {
 }
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
-	domainDataService := service.NewDomainDataService(*s.config)
-	domainDataSourceService := service.NewDomainDataSourceService(*s.config)
+	domainDataService := service.NewDomainDataService(s.config)
+	domainDataSourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
+	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	healthService := apisvc.NewHealthService()
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
@@ -115,23 +118,33 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
+					RelativePath: "query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewQueryDomainDataSourceHandler(domainDataSourceService))},
+				},
+			},
+		},
+		{
+			Group: "api/v1/datamesh/domaindatagrant",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
 					RelativePath: "create",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewCreateDomainDataSourceHandler(domainDataSourceService))},
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewCreateDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "delete",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewDeleteDomainDataSourceHandler(domainDataSourceService))},
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewDeleteDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "query",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewQueryDomainDataSourceHandler(domainDataSourceService))},
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewQueryDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "update",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewUpdateDomainSourceHandler(domainDataSourceService))},
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewUpdateDomainSourceHandler(domainDataGrantService))},
 				},
 			},
 		},
@@ -159,22 +172,17 @@ func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.
 }
 
 func convertToGinConf(conf *dmconfig.DataMeshConfig) beans.GinBeanConfig {
-	var tlsConf *frameworkconfig.TLSConfig
-	if conf.TLSConfig != nil {
-		// override tls flags by config
-		tlsConf = &frameworkconfig.TLSConfig{
-			EnableTLS:      true,
-			CAPath:         conf.TLSConfig.RootCAFile,
-			ServerCertPath: conf.TLSConfig.ServerCertFile,
-			ServerKeyPath:  conf.TLSConfig.ServerKeyFile,
-		}
+	var tlsConf = &beans.TLSServerConfig{
+		CACert:     conf.TLS.RootCA,
+		ServerCert: conf.TLS.ServerCert,
+		ServerKey:  conf.TLS.ServerKey,
 	}
 	return beans.GinBeanConfig{
-		Logger:         nil,
-		ReadTimeout:    &conf.ReadTimeout,
-		WriteTimeout:   &conf.WriteTimeout,
-		IdleTimeout:    &conf.IdleTimeout,
-		MaxHeaderBytes: nil,
-		TLSConfig:      tlsConf,
+		Logger:          nil,
+		ReadTimeout:     &conf.ReadTimeout,
+		WriteTimeout:    &conf.WriteTimeout,
+		IdleTimeout:     &conf.IdleTimeout,
+		MaxHeaderBytes:  nil,
+		TLSServerConfig: tlsConf,
 	}
 }

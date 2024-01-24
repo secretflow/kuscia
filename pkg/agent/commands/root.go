@@ -19,9 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	kubeinformers "k8s.io/client-go/informers"
@@ -34,12 +32,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/agent/framework"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
-	"github.com/secretflow/kuscia/pkg/agent/provider/node"
-	"github.com/secretflow/kuscia/pkg/agent/provider/pod"
+	"github.com/secretflow/kuscia/pkg/agent/provider"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/agent/source"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -47,51 +43,8 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-// NewCommand creates a new top-level command.
-// This command is used to start the agent daemon
-func NewCommand(ctx context.Context, opts *Opts) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "agent",
-		Short: "Agent is a node instance in the kubernetes cluster.",
-		Long: `Agent reuses some core capabilities of kubelet, such as node registration, pod management, 
-CRI support, etc. In addition, agent has strengthened the security of pod and implemented various extension
-functions through plug-ins. Supporting multiple runtimes is also a goal of agent.`,
-		Version:      opts.AgentVersion,
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			nlog.Infof("Agent is starting...")
-			agentConfig, err := config.LoadAgentConfig(opts.AgentConfigFile)
-			if err != nil {
-				return err
-			}
-			nlog.Infof("Agent config=%+v", agentConfig)
-
-			kubeClient, err := newKubeClient(&agentConfig.Source.Apiserver)
-			if err != nil {
-				nlog.Fatalf("Error loading kube config, detail-> %v", err)
-			}
-			agentConfig.Namespace = opts.Namespace
-			agentConfig.NodeName = opts.NodeName
-			agentConfig.NodeIP, err = network.GetHostIP()
-			if err != nil {
-				nlog.Fatalf("Get host IP fail: %v", err)
-			}
-			agentConfig.APIVersion = opts.APIVersion
-			agentConfig.AgentVersion = opts.AgentVersion
-			agentConfig.KeepNodeOnExit = opts.KeepNodeOnExit
-			if err = RunRootCommand(ctx, agentConfig, kubeClient); err != nil {
-				nlog.Fatal(err.Error())
-			}
-			return err
-		},
-	}
-
-	installFlags(cmd.Flags(), opts)
-	return cmd
-}
-
 func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeClient kubernetes.Interface) error {
-	nlog.Infof("Run root command, Namespace=%v, node_name=%v, ip=%v", agentConfig.Namespace, agentConfig.NodeName, agentConfig.NodeIP)
+	nlog.Infof("Run root command, Namespace=%v", agentConfig.Namespace)
 	if agentConfig.Namespace == "" {
 		return fmt.Errorf("agent can not start with an empty domain id, you must restart agent with flag --namespace=DOMAIN_ID")
 	}
@@ -107,51 +60,84 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// check namespace exist
+	for {
+		_, err := kubeClient.CoreV1().Pods(agentConfig.Namespace).List(ctx, metav1.ListOptions{Limit: 1})
+		if err == nil {
+			break
+		}
+
+		nlog.Warnf("Failed to list resource in namespace %v from master: %v", agentConfig.Namespace, err)
+
+		select {
+		case <-ctx.Done():
+			nlog.Infof("Stop watch kuscia domain, since agent is shutting down")
+		case <-time.After(3 * time.Second):
+			continue // continue for loop
+		}
+
+		break // context cancelled, agent is shutting down
+	}
+
 	// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
 	scmInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
 		kubeClient, 0, kubeinformers.WithNamespace(agentConfig.Namespace))
+
+	rm := resource.NewResourceManager(
+		kubeClient,
+		agentConfig.Namespace,
+		scmInformerFactory.Core().V1().Pods().Lister().Pods(agentConfig.Namespace),
+		scmInformerFactory.Core().V1().Secrets().Lister().Secrets(agentConfig.Namespace),
+		scmInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(agentConfig.Namespace))
+
+	// init provider factory
+	providerFactory, err := provider.NewFactory(agentConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create provider factory, detail-> %v", err)
+	}
+
+	// init nodeProvider
+	nodeProvider, err := providerFactory.BuildNodeProvider()
+	if err != nil {
+		return fmt.Errorf("failed to build node provider, detail-> %v", err)
+	}
+
+	// init nodeController
+	nodeController, err := framework.NewNodeController(agentConfig.Namespace,
+		nodeProvider,
+		kubeClient.CoreV1().Nodes(),
+		kubeClient.CoordinationV1().Leases(corev1.NamespaceNodeLease), &agentConfig.Node)
+	if err != nil {
+		return fmt.Errorf("failed to build node controller, detail-> %v", err)
+	}
+
+	go func() {
+		if err := nodeController.Run(ctx); err != nil {
+			nlog.Fatalf("Failed to run node controller: %v", err)
+		}
+	}()
+	<-nodeController.Ready()
+
+	node, err := nodeController.GetNode()
+	if err != nil {
+		return fmt.Errorf("failed to get node, detail-> %v", err)
+	}
+
+	// init event recorder
 	eb := record.NewBroadcaster()
 	eb.StartLogging(nlog.Infof)
 	eb.StartRecordingToSink(&corev1client.EventSinkImpl{Interface: kubeClient.CoreV1().Events(agentConfig.Namespace)})
 	eventRecorder := eb.NewRecorder(scheme.Scheme, corev1.EventSource{
 		Component: "Agent",
-		Host:      agentConfig.NodeName,
+		Host:      node.Name,
 	})
 
-	rm := resource.NewResourceManager(
-		scmInformerFactory.Core().V1().Secrets().Lister().Secrets(agentConfig.Namespace),
-		scmInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(agentConfig.Namespace))
-	podAuditor := node.NewPodsAuditor(agentConfig)
-
-	// init nodeProvider
-	nodeCfg := &node.GenericNodeConfig{
-		Namespace:    agentConfig.Namespace,
-		NodeName:     agentConfig.NodeName,
-		NodeIP:       agentConfig.NodeIP,
-		APIVersion:   agentConfig.APIVersion,
-		AgentVersion: agentConfig.AgentVersion,
-		AgentConfig:  agentConfig,
-		PodsAuditor:  podAuditor,
-	}
-	nodeProvider, err := node.NewNodeProvider(nodeCfg)
-	if err != nil {
-		return fmt.Errorf("error setting up node provider, detail-> %v", err)
-	}
-
-	// init nodeController
-	nodeController, err := framework.NewNodeController(nodeProvider,
-		kubeClient.CoreV1().Nodes(),
-		kubeClient.CoordinationV1().Leases(corev1.NamespaceNodeLease), agentConfig.KeepNodeOnExit)
-	if err != nil {
-		return fmt.Errorf("error setting up node controller, detail-> %v", err)
-	}
-
+	// init sourceManager
 	configCh := make(chan kubetypes.PodUpdate, 50)
 
-	// init sourceManager
 	sourceCfg := &source.InitConfig{
 		Namespace:  agentConfig.Namespace,
-		NodeName:   types.NodeName(agentConfig.NodeName),
+		NodeName:   types.NodeName(node.Name),
 		SourceCfg:  &agentConfig.Source,
 		KubeClient: kubeClient,
 		Updates:    configCh,
@@ -162,7 +148,7 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	// init podsController
 	podsControllerConfig := &framework.PodsControllerConfig{
 		Namespace:     agentConfig.Namespace,
-		NodeName:      agentConfig.NodeName,
+		NodeName:      node.Name,
 		NodeIP:        agentConfig.NodeIP,
 		ConfigCh:      configCh,
 		FrameworkCfg:  &agentConfig.Framework,
@@ -175,39 +161,20 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 
 	podsController, err := framework.NewPodsController(podsControllerConfig)
 	if err != nil {
-		return fmt.Errorf("error setting up pods controller, detail-> %v", err)
+		return fmt.Errorf("failed to build pods controller, detail-> %v", err)
 	}
 
-	// init criProvider
-	providerConfig := &framework.ProviderConfig{
-		Namespace:        agentConfig.Namespace,
-		NodeName:         agentConfig.NodeName,
-		NodeIP:           agentConfig.NodeIP,
-		RootDirectory:    agentConfig.RootDir,
-		StdoutDirectory:  agentConfig.StdoutPath,
-		AllowPrivileged:  agentConfig.AllowPrivileged,
-		EventRecorder:    eventRecorder,
-		ResourceManager:  rm,
-		PodStateProvider: podsController.GetPodStateProvider(),
-		PodSyncHandler:   podsController,
-		StatusManager:    podsController.GetStatusManager(),
-
-		CRIProviderCfg: &agentConfig.Provider.CRI,
-		RegistryCfg:    &agentConfig.Registry,
-	}
-
-	criProvider, err := pod.NewCRIProvider(providerConfig)
+	// init pod provider
+	podProvider, err := providerFactory.BuildPodProvider(node.Name, eventRecorder, rm, podsController)
 	if err != nil {
-		return fmt.Errorf("error setting up pods provider, detail-> %v", err)
+		return fmt.Errorf("failed to build pod provider, detail-> %v", err)
 	}
 
 	// register provider
-	podsController.RegisterProvider(criProvider)
+	podsController.RegisterProvider(podProvider)
 
 	chStopKubeClient := make(chan struct{})
 	go scmInformerFactory.Start(chStopKubeClient)
-
-	var agentReadyMessage string
 
 	chSourceManager := make(chan struct{})
 	if err := sourceManager.Run(chSourceManager); err != nil {
@@ -215,50 +182,18 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	}
 
 	go func() {
-		if err := nodeController.Run(ctx); err != nil {
-			nlog.Fatalf("Failed to run node controller: %v", err)
-		}
-	}()
-	<-nodeController.Ready()
-
-	go func() {
 		if err := podsController.Run(ctx); err != nil {
 			nlog.Fatalf("Failed to run pods controller: %v", err)
 		}
 	}()
 	<-podsController.Ready()
-	nlog.Debugf("Agent core service started success")
 
-	// check namespace exist and wait namespace ready
-	for {
-		_, err := kubeClient.CoreV1().Namespaces().Get(ctx, agentConfig.Namespace, metav1.GetOptions{})
-		if err == nil {
-			nlog.Info("Agent started")
-			nodeController.NotifyAgentReady(ctx, true, "Agent is ready")
-			break
-		}
-
-		if k8serrors.IsNotFound(err) {
-			agentReadyMessage = fmt.Sprintf("Domain %q does not exist", agentConfig.Namespace)
-		} else {
-			agentReadyMessage = fmt.Sprintf("Get domain info fail, domain=%v, err=%v", agentConfig.Namespace, err)
-		}
-		nodeController.NotifyAgentReady(ctx, false, agentReadyMessage)
-		nlog.Warn(agentReadyMessage)
-
-		select {
-		case <-ctx.Done():
-			nlog.Infof("Stop watch kuscia domain, since agent is shutting down")
-		case <-time.After(30 * time.Second):
-			continue // continue for loop
-		}
-
-		break // context cancelled, agent is shutting down
-	}
+	nlog.Info("Agent started")
+	nodeController.NotifyAgentReady()
 	close(ReadyChan)
 	<-ctx.Done()
 	<-podsController.Stop()
-	<-nodeController.Stop()
+	nodeController.Stop()
 	nlog.Info("Shutting down k8s-clients ...")
 	close(chStopKubeClient)
 

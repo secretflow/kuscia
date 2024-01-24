@@ -16,6 +16,8 @@ package beans
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 	"time"
@@ -24,9 +26,9 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
-	"github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
 	"github.com/secretflow/kuscia/pkg/web/logs"
 	"github.com/secretflow/kuscia/pkg/web/metrics"
@@ -35,10 +37,10 @@ import (
 type GinBean struct {
 	framework.ConfigLoader
 	// Configs
-	Port      int    `name:"port" usage:"Server port" default:"8080"`
-	Debug     bool   `name:"debug" usage:"Debug mode"`
-	LogPath   string `name:"logpath" usage:"Gin Log path"`
-	TLSConfig *config.TLSConfig
+	IP      string `name:"ip" usage:"Server bind ip" default:"0.0.0.0"`
+	Port    int    `name:"port" usage:"Server port" default:"8080"`
+	Debug   bool   `name:"debug" usage:"Debug mode"`
+	LogPath string `name:"logpath" usage:"Gin Log path"`
 	GinBeanConfig
 	*gin.Engine
 }
@@ -81,11 +83,12 @@ func (b *GinBean) Init(e framework.ConfBeanRegistry) error {
 	}
 	if b.LogPath != "" {
 		logger, err := zlogwriter.New(
-			&zlogwriter.LogConfig{
+			&nlog.LogConfig{
 				LogPath:       b.LogPath,
 				LogLevel:      "INFO",
-				MaxFileSizeMB: 50,
+				MaxFileSizeMB: 512,
 				MaxFiles:      10,
+				Compress:      true,
 			})
 		if err != nil {
 			return err
@@ -105,38 +108,47 @@ func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error
 	mux := http.NewServeMux()
 	mux.Handle("/", b.Engine)
 	normalizeConfig(&b.GinBeanConfig)
+	addr := fmt.Sprintf(":%d", b.Port)
+	if b.IP != "" {
+		addr = fmt.Sprintf("%s:%d", b.IP, b.Port)
+	}
 	s := &http.Server{
-		Addr:           fmt.Sprintf(":%d", b.Port),
+		Addr:           addr,
 		Handler:        mux,
 		ReadTimeout:    time.Duration(*b.ReadTimeout) * time.Second,
 		WriteTimeout:   time.Duration(*b.WriteTimeout) * time.Second,
 		MaxHeaderBytes: *b.MaxHeaderBytes,
 		IdleTimeout:    time.Duration(*b.IdleTimeout) * time.Second,
 	}
-	addr := fmt.Sprintf(":%d", b.Port)
 	// init server tls config
-	if b.TLSConfig != nil && b.TLSConfig.EnableTLS {
-		serverTLSConfig, err := b.TLSConfig.LoadServerTLSConfig()
+	if b.TLSServerConfig != nil {
+		var err error
+		s.TLSConfig, err = tls.BuildServerTLSConfig(b.TLSServerConfig.CACert, b.TLSServerConfig.ServerCert, b.TLSServerConfig.ServerKey)
 		if err != nil {
 			nlog.Errorf(err.Error())
 			return err
 		}
-		s.TLSConfig = serverTLSConfig
 		nlog.Infof("https server started on %s", addr)
-		return s.ListenAndServeTLS(b.TLSConfig.ServerCertPath, b.TLSConfig.ServerKeyPath)
+		return s.ListenAndServeTLS("", "")
 	}
 
-	logs.GetLogger().Infof("server started %s", addr)
+	logs.GetLogger().Infof("http server started %s", addr)
 	return s.ListenAndServe()
 }
 
 type GinBeanConfig struct {
-	Logger         *nlog.NLog
-	ReadTimeout    *int
-	WriteTimeout   *int
-	IdleTimeout    *int
-	MaxHeaderBytes *int
-	TLSConfig      *config.TLSConfig
+	Logger          *nlog.NLog
+	ReadTimeout     *int
+	WriteTimeout    *int
+	IdleTimeout     *int
+	MaxHeaderBytes  *int
+	TLSServerConfig *TLSServerConfig
+}
+
+type TLSServerConfig struct {
+	CACert     *x509.Certificate
+	ServerCert *x509.Certificate
+	ServerKey  *rsa.PrivateKey
 }
 
 var (
@@ -148,12 +160,12 @@ var (
 
 func defaultGinConfig() GinBeanConfig {
 	return GinBeanConfig{
-		Logger:         nil,
-		ReadTimeout:    &defaultReadTimeout,
-		WriteTimeout:   &defaultWriteTimeout,
-		IdleTimeout:    &defaultIdleTimeout,
-		MaxHeaderBytes: &defaultMaxHeaderBytes,
-		TLSConfig:      nil,
+		Logger:          nil,
+		ReadTimeout:     &defaultReadTimeout,
+		WriteTimeout:    &defaultWriteTimeout,
+		IdleTimeout:     &defaultIdleTimeout,
+		MaxHeaderBytes:  &defaultMaxHeaderBytes,
+		TLSServerConfig: nil,
 	}
 }
 

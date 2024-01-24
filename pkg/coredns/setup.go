@@ -24,6 +24,9 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/upstream"
 	"github.com/patrickmn/go-cache"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 const (
@@ -32,7 +35,9 @@ const (
 	defaultExpiration = 30 * time.Minute
 )
 
-func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes.Interface, namespace, envoyIP string) (*KusciaCoreDNS, error) {
+var localService = []string{"datamesh", "confmanager", "dataproxy", "kusciaapi"}
+
+func KusciaParse(c *caddy.Controller, namespace, envoyIP string) (*KusciaCoreDNS, error) {
 	etc := KusciaCoreDNS{
 		EnvoyIP:   envoyIP,
 		Namespace: namespace,
@@ -41,7 +46,14 @@ func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes
 	}
 
 	etc.Cache.Set(fmt.Sprintf("transport.%s", etc.Namespace), []string{etc.EnvoyIP}, -1)
+	hostIP, err := network.GetHostIP()
+	if err != nil {
+		nlog.Fatal(err)
+	}
 
+	for _, svc := range localService {
+		etc.Cache.Set(svc, []string{hostIP}, -1)
+	}
 	if c.Next() {
 		etc.Zones = c.RemainingArgs()
 		if len(etc.Zones) == 0 {
@@ -65,11 +77,15 @@ func KusciaParse(ctx context.Context, c *caddy.Controller, kubeclient kubernetes
 			}
 		}
 
-		err := etc.Start(ctx, kubeclient)
-		if err != nil {
-			return &KusciaCoreDNS{}, err
-		}
 		return &etc, nil
 	}
 	return &KusciaCoreDNS{}, nil
+}
+
+func (e *KusciaCoreDNS) StartControllers(ctx context.Context, kubeclient kubernetes.Interface) error {
+	err := e.Start(ctx, kubeclient)
+	if err != nil {
+		return fmt.Errorf("start coredns controller failed, %v", err)
+	}
+	return nil
 }

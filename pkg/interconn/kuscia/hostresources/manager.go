@@ -27,10 +27,12 @@ import (
 )
 
 const (
-	hostPodsQueueName          = "host-%v-member-%v-pods-queue"
-	hostServicesQueueName      = "host-%v-member-%v-services-queue"
-	hostConfigMapsQueueName    = "host-%v-member-%v-configmaps-queue"
-	hostTaskResourcesQueueName = "host-%v-member-%v-taskresources-queue"
+	hostPodsQueueName            = "host-%v-member-%v-pods-queue"
+	hostServicesQueueName        = "host-%v-member-%v-services-queue"
+	hostConfigMapsQueueName      = "host-%v-member-%v-configmaps-queue"
+	hostTaskResourcesQueueName   = "host-%v-member-%v-taskresources-queue"
+	hostDomainDataQueueName      = "host-%v-member-%v-domaindata-queue"
+	hostDomainDataGrantQueueName = "host-%v-member-%v-domaindatagrant-queue"
 )
 
 // ResourcesManager is an interface to manage host resources.
@@ -44,12 +46,14 @@ type ResourcesManager interface {
 
 // Options defines some options for host resources manager.
 type Options struct {
-	MemberKubeClient      kubernetes.Interface
-	MemberKusciaClient    kusciaclientset.Interface
-	MemberPodLister       listers.PodLister
-	MemberServiceLister   listers.ServiceLister
-	MemberConfigMapLister listers.ConfigMapLister
-	MemberTrLister        kuscialistersv1alpha1.TaskResourceLister
+	MemberKubeClient            kubernetes.Interface
+	MemberKusciaClient          kusciaclientset.Interface
+	MemberPodLister             listers.PodLister
+	MemberServiceLister         listers.ServiceLister
+	MemberConfigMapLister       listers.ConfigMapLister
+	MemberTrLister              kuscialistersv1alpha1.TaskResourceLister
+	MemberDomainDataLister      kuscialistersv1alpha1.DomainDataLister
+	MemberDomainDataGrantLister kuscialistersv1alpha1.DomainDataGrantLister
 }
 
 // hostResourcesManager is used to manage host resources controllers.
@@ -99,14 +103,16 @@ func (m *hostResourcesManager) Register(host, member string) (err error) {
 	}
 
 	opts := &hostResourcesControllerOptions{
-		host:                  host,
-		member:                member,
-		memberKubeClient:      m.opts.MemberKubeClient,
-		memberKusciaClient:    m.opts.MemberKusciaClient,
-		memberPodLister:       m.opts.MemberPodLister,
-		memberServiceLister:   m.opts.MemberServiceLister,
-		memberConfigMapLister: m.opts.MemberConfigMapLister,
-		memberTrLister:        m.opts.MemberTrLister,
+		host:                        host,
+		member:                      member,
+		memberKubeClient:            m.opts.MemberKubeClient,
+		memberKusciaClient:          m.opts.MemberKusciaClient,
+		memberPodLister:             m.opts.MemberPodLister,
+		memberServiceLister:         m.opts.MemberServiceLister,
+		memberConfigMapLister:       m.opts.MemberConfigMapLister,
+		memberTrLister:              m.opts.MemberTrLister,
+		memberDomainDataLister:      m.opts.MemberDomainDataLister,
+		memberDomainDataGrantLister: m.opts.MemberDomainDataGrantLister,
 	}
 
 	var hrc *hostResourcesController

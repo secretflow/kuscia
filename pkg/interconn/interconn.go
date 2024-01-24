@@ -55,7 +55,7 @@ type Server struct {
 }
 
 // NewServer returns a Server instance.
-func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
+func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) (*Server, error) {
 	s := &Server{
 		ctx:             ctx,
 		kubeClient:      clients.KubeClient,
@@ -66,6 +66,7 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
 	bfiaServer, err := bfia.NewServer(ctx, clients)
 	if err != nil {
 		nlog.Fatalf("new bfia Server failed, %v", err.Error())
+		return nil, err
 	}
 	s.bfiaServer = bfiaServer
 	s.kusciaServer = kuscia.NewServer(clients)
@@ -74,7 +75,7 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
 	})
 	s.controllerConstructions = append(s.controllerConstructions, iccommon.ControllerConstruction{
 		NewControler: s.kusciaServer.NewController,
-		CheckCRD:     s.kusciaServer.CheckCRD,
+		CRDNames:     s.kusciaServer.CRDNames,
 	})
 
 	eventBroadcaster := record.NewBroadcaster()
@@ -90,9 +91,10 @@ func NewServer(ctx context.Context, clients *kubeconfig.KubeClients) *Server {
 		election.WithOnStoppedLeading(s.onStoppedLeading))
 	if leaderElector == nil {
 		nlog.Fatal("failed to new leader elector")
+		return nil, err
 	}
 	s.leaderElector = leaderElector
-	return s
+	return s, nil
 }
 
 // onNewLeader is executed when leader is changed.
@@ -165,10 +167,8 @@ func (s *Server) Name() string {
 // Run starts the inter connection service.
 func (s *Server) Run(ctx context.Context) error {
 	for _, cc := range s.controllerConstructions {
-		if cc.CheckCRD != nil {
-			if err := cc.CheckCRD(ctx, s.extensionClient); err != nil {
-				return fmt.Errorf("check crd whether exist failed, %v", err)
-			}
+		if err := iccommon.CheckCRDExists(ctx, s.extensionClient, cc.CRDNames); err != nil {
+			return fmt.Errorf("check crd whether exist failed, %v", err)
 		}
 	}
 

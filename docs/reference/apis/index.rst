@@ -1,7 +1,5 @@
-.. _apis:
-
-接口定义
-===========
+Kuscia API
+==========
 
 .. toctree::
     :maxdepth: 2
@@ -10,5 +8,14 @@
     domain_cn
     domainroute_cn
     domaindata_cn
+    domaindatagrant_cn
     kusciajob_cn
+    serving_cn
     health_cn
+
+.. Hide DataMesh-related docs until we figure out where to put them
+
+.. .. toctree::
+..     :hidden:
+
+..     datamesh/index

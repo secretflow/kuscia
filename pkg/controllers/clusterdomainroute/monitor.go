@@ -15,77 +15,83 @@
 package clusterdomainroute
 
 import (
-	"fmt"
+	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-var (
-	clusterdomainrouteStatus = promauto.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "clusterdomainroute_status",
-			Help: "clusterdomainroute status",
-		},
-		[]string{"name"},
-	)
-)
-
-func (c *Controller) Monitorcdrstatus() {
-	c.UpdateStatus()
+func (c *controller) Monitorcdrstatus(ctx context.Context) {
+	c.UpdateStatus(ctx)
 }
 
-func (c *Controller) UpdateStatus() error {
+func (c *controller) UpdateStatus(ctx context.Context) error {
 	cdrs, err := c.clusterDomainRouteLister.List(labels.Everything())
 	if err != nil {
 		return err
 	}
 
 	for _, cdr1 := range cdrs {
+		update := false
 		cdr := cdr1.DeepCopy()
 		gws, err := c.gatewayLister.Gateways(cdr.Spec.Source).List(labels.Everything())
 		if err != nil {
 			nlog.Errorf("List %s's gateways failed with %v", cdr.Spec.Source, err)
 			continue
 		}
-		healthyCount := 0
 		if cdr.Status.EndpointStatuses == nil {
 			cdr.Status.EndpointStatuses = map[string]kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{}
 		}
+		endpointsHealthy := map[string]bool{}
 		for _, gw := range gws {
-			if time.Since(gw.Status.HeartbeatTime.Time) > gatewayLiveTimeout {
+			if time.Since(gw.Status.HeartbeatTime.Time) > common.GatewayLiveTimeout {
 				continue
 			}
-			for _, metric := range gw.Status.NetworkStatus {
-				if metric.Type != "DomainRoute" {
-					continue
-				}
-				for _, port := range cdr.Spec.Endpoint.Ports {
-					if metric.Name == fmt.Sprintf("%s-to-%s-%s", cdr.Spec.Source, cdr.Spec.Destination, port.Name) && metric.HealthyEndpointsCount > 0 {
-						healthyCount++
-						cdr.Status.EndpointStatuses[gw.Name+"-"+port.Name] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
-							EndpointHealthy: true,
-						}
+			for _, port := range cdr.Spec.Endpoint.Ports {
+				expectMetricsName := common.GenerateClusterName(cdr.Spec.Source, cdr.Spec.Destination, port.Name)
+				for _, metric := range gw.Status.NetworkStatus {
+					if metric.Type != "DomainRoute" {
+						continue
+					}
+					if metric.Name == expectMetricsName && metric.HealthyEndpointsCount > 0 {
+						endpointsHealthy[gw.Name+"-"+port.Name] = true
 					}
 				}
 			}
 		}
+		for k, eh := range endpointsHealthy {
+			if v, ok := cdr.Status.EndpointStatuses[k]; !ok || !v.EndpointHealthy {
+				cdr.Status.EndpointStatuses[k] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
+					EndpointHealthy: eh,
+				}
+				update = true
+			}
+		}
+		for k, es := range cdr.Status.EndpointStatuses {
+			if _, ok := endpointsHealthy[k]; !ok && es.EndpointHealthy {
+				cdr.Status.EndpointStatuses[k] = kusciaapisv1alpha1.ClusterDomainRouteEndpointStatus{
+					EndpointHealthy: false,
+				}
+				update = true
+			}
+		}
 
-		clusterdomainrouteStatus.WithLabelValues(cdr.Name).Set(float64(healthyCount))
-		if _, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(c.ctx, cdr, metav1.UpdateOptions{}); err != nil {
-			nlog.Warnf("Update cdr %s status failed with %v", cdr.Name, err)
+		if update {
+			_, err := c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().UpdateStatus(ctx, cdr, metav1.UpdateOptions{})
+			if err != nil && !k8serrors.IsConflict(err) {
+				nlog.Warnf("Update cdr %s status failed with %v", cdr.Name, err)
+			}
+			if err == nil {
+				nlog.Infof("ClusterDomainRoute %s update monitor status", cdr.Name)
+			}
 		}
 	}
 
 	return nil
-}
-
-func (c *Controller) cleanMetrics(name string) {
-	clusterdomainrouteStatus.DeleteLabelValues(name)
 }

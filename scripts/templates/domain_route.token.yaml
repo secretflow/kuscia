@@ -1,0 +1,21 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: DomainRoute
+metadata:
+  namespace: {{.SELF_DOMAIN}}
+  name: {{.SRC_DOMAIN}}-{{.DEST_DOMAIN}}
+spec:
+  source: {{.SRC_DOMAIN}}
+  destination: {{.DEST_DOMAIN}}
+  interConnProtocol: kuscia
+  endpoint:
+    host: {{.HOST}}
+    ports:
+      - name: http
+        protocol: HTTP
+        isTLS: {{.ISTLS}}
+        port: {{.PORT}}
+  authenticationType: Token
+  tokenConfig:
+    tokenGenMethod: RSA-GEN
+  requestHeadersToAdd:
+    Authorization: Bearer {{.TOKEN}}

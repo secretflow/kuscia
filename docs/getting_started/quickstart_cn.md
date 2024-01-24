@@ -1,13 +1,15 @@
-# 快速入门
+# Kuscia 入门教程 —— 快速开始
 
-## 说明
+你将会在单台机器上准备 Kuscia 需要的环境、快速部署一个示例 Kuscia 集群，然后尝试运行一个 [SecretFlow] 作业。
 
-本教程帮助你在单台机器上快速部署 Kuscia 集群并体验 SecretFlow。
+[SecretFlow]: https://www.secretflow.org.cn/docs/secretflow
+
+## 部署模式：说明
 
 在部署时有两种组网模式可供选择：
 
-- [中心化组网模式](../reference/architecture_cn.md#centralized)：启动一个控制平面（master）容器和两个 Lite 节点（alice 和 bob）容器
-- [点对点组网模式](../reference/architecture_cn.md#peer-to-peer)：启动两个 Autonomy 节点（alice 和 bob）容器
+- [中心化组网模式](../reference/architecture_cn.md#中心化组网模式)：启动一个控制平面（master）容器和两个 Lite 节点（alice 和 bob）容器
+- [点对点组网模式](../reference/architecture_cn.md#点对点组网模式)：启动两个 Autonomy 节点（alice 和 bob）容器
 
 你可以选择其中任意一种或两种模式进行部署体验，在单台机器上可以同时部署两种模式。
 
@@ -19,9 +21,13 @@
 
 资源：8 core / 16G memory / 200G hard disk
 
-CPU架构：x86
+CPU 架构：x86
+
+> 单机体验版需要部署多个节点和平台，且要预留资源运行各类隐私计算任务，所以这里的资源需求要比节点最低资源大一些
 
 ### 环境准备
+
+在部署 kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
 
 Kuscia 的部署需要依赖 docker 环境，docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 docker 的示例：
 
@@ -41,7 +47,7 @@ systemctl start docker
 
 macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
 
-此外，Kuscia 当前不支持 M1 芯片的 Mac。
+此外，Kuscia 当前不支持 M1/M2 芯片的 Mac。
 
 ## 部署体验
 
@@ -60,7 +66,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
 ```
 
 ### 中心化组网模式
@@ -79,6 +85,8 @@ scripts/user/create_example_job.sh
 kubectl get kj
 ```
 
+:::{tip}
+
 如果希望体验隐语白屏功能([隐语白屏使用手册官方文档](https://www.secretflow.org.cn/docs/quickstart/mvp-platform))，请使用如下命令完成部署。
 
 ```bash
@@ -86,6 +94,8 @@ kubectl get kj
 ./start_standalone.sh center -u web
 
 ```
+
+:::
 
 {#p2p-network-mode}
 
@@ -124,7 +134,7 @@ docker exec -it ${USER}-kuscia-lite-alice cat var/storage/data/psi-output.csv
 docker exec -it ${USER}-kuscia-autonomy-alice cat var/storage/data/psi-output.csv
 ```
 
-结果输出（仅前4行）：
+结果输出（仅前 4 行）：
 
 ```bash
 id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previous,job_blue-collar,job_entrepreneur,job_housemaid,job_management,job_retired,job_self-employed,job_services,job_student,job_technician,job_unemployed,marital_divorced,marital_married,marital_single
@@ -144,7 +154,7 @@ id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previ
 获取 Kuscia 停止脚本，脚本会下载到当前目录：
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
 ```
 
 使用方法：
@@ -169,7 +179,7 @@ docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh 
 获取 Kuscia 卸载脚本，脚本会下载到当前目录：
 
 ```bash
-docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
+docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
 ```
 
 与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 network（若无其他容器使用）等。例如：
@@ -181,8 +191,6 @@ docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uni
 
 ## 接下来
 
-如果你希望使用自己的数据来执行作业，请参考[如何运行一个 Secretflow 作业](../tutorial/run_secretflow_cn.md)。
+请继续阅读 [了解 KusciaJob][part-2] 章节，来了解示例作业背后的细节。
 
-如果你希望使用互联互通银联 BFIA 协议来执行作业，请参考[如何运行一个互联互通银联 BFIA 协议作业](../tutorial/run_bfia_job_cn.md)。
-
-如果你希望体验在安全沙箱中执行作业，请参考[如何启用安全沙箱](../tutorial/security_plan_cn.md)。
+[part-2]: ./run_secretflow_cn.md

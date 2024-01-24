@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 
+	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -92,7 +93,11 @@ func TestNewController(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	assert.NotNil(t, c)
 }
 
@@ -102,7 +107,11 @@ func TestControllerRun(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	go func() {
 		time.Sleep(1 * time.Second)
 		c.Stop()
@@ -111,26 +120,17 @@ func TestControllerRun(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestControllerStop(t *testing.T) {
-	kubeFakeClient := kubefake.NewSimpleClientset()
-	kusciaFakeClient := kusciafake.NewSimpleClientset()
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
-	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
-	c.Stop()
-	cc := c.(*Controller)
-	_, shutdown := cc.workqueue.Get()
-	assert.Equal(t, true, shutdown)
-}
-
 func TestEnqueueKusciaTask(t *testing.T) {
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	cc := c.(*Controller)
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskPending)
 	cc.enqueueKusciaTask(kt)
@@ -143,7 +143,11 @@ func TestHandleTaskResourceGroupObject(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	cc := c.(*Controller)
 
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
@@ -228,7 +232,11 @@ func TestHandlePodObject(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	cc := c.(*Controller)
 
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
@@ -276,7 +284,11 @@ func TestProcessNextWorkItem(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	cc := c.(*Controller)
 
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
@@ -320,7 +332,11 @@ func TestFailKusciaTask(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	cc := c.(*Controller)
 
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
@@ -337,7 +353,11 @@ func TestUpdateTaskStatus(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	cc := c.(*Controller)
 
 	got := cc.updateTaskStatus(pendingKt, runningKt)
@@ -351,7 +371,11 @@ func TestName(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeFakeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kusciataskcontroller"})
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, eventRecorder)
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:    kubeFakeClient,
+		KusciaClient:  kusciaFakeClient,
+		EventRecorder: eventRecorder,
+	})
 	got := c.Name()
 	assert.Equal(t, controllerName, got)
 }

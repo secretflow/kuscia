@@ -25,17 +25,23 @@ import (
 	"path/filepath"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
 
 type envoyModule struct {
-	rootDir       string
-	envoyLogLevel string
-	concurrency   int
-	cluster       string
-	id            string
+	rootDir               string
+	cluster               string
+	id                    string
+	commandLineConfigFile string
+}
+
+type EnvoyCommandLineConfig struct {
+	Args []string `yaml:"args,omitempty"`
 }
 
 func (s *envoyModule) readyz(host string) error {
@@ -51,7 +57,7 @@ func (s *envoyModule) readyz(host string) error {
 		return err
 	}
 	if resp == nil || resp.Body == nil {
-		nlog.Error("resp must has body")
+		nlog.Error("Resp must has body")
 		return fmt.Errorf("resp must has body")
 	}
 	defer resp.Body.Close()
@@ -73,37 +79,35 @@ func getEnvoyCluster(domain string) string {
 
 func NewEnvoy(i *Dependencies) Module {
 	return &envoyModule{
-		rootDir:       i.RootDir,
-		cluster:       getEnvoyCluster(i.DomainID),
-		id:            fmt.Sprintf("%s-%s", getEnvoyCluster(i.DomainID), utils.GetHostname()),
-		envoyLogLevel: "config:info",
+		rootDir:               i.RootDir,
+		cluster:               getEnvoyCluster(i.DomainID),
+		id:                    fmt.Sprintf("%s-%s", getEnvoyCluster(i.DomainID), utils.GetHostname()),
+		commandLineConfigFile: "envoy/command-line.yaml",
 	}
 }
 
 func (s *envoyModule) Run(ctx context.Context) error {
-	if err := os.MkdirAll(filepath.Join(s.rootDir, LogPrefix, "envoy/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.rootDir, common.LogPrefix, "envoy/"), 0755); err != nil {
 		return err
 	}
+	deltaArgs, err := s.readCommandArgs()
+	if err != nil {
+		return err
+	}
+
 	args := []string{
 		"-c",
-		filepath.Join(s.rootDir, ConfPrefix, "envoy.yaml"),
+		filepath.Join(s.rootDir, common.ConfPrefix, "envoy/envoy.yaml"),
 		"--service-cluster",
 		s.cluster,
 		"--service-node",
 		s.id,
 		"--log-path",
-		filepath.Join(s.rootDir, LogPrefix, "envoy/envoy.log"),
-		"--log-level",
-		"info",
-		"--component-log-level",
-		s.envoyLogLevel,
+		filepath.Join(s.rootDir, common.LogPrefix, "envoy/envoy.log"),
 	}
-	if s.concurrency > 0 {
-		args = append(args, "--concurrency", fmt.Sprintf("%d", s.concurrency))
-	}
-
+	args = append(args, deltaArgs.Args...)
 	sp := supervisor.NewSupervisor("envoy", nil, -1)
-
+	go s.logRotate(ctx)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/envoy"), args...)
 		cmd.Stdout = os.Stdout
@@ -113,9 +117,30 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	})
 }
 
+func (s *envoyModule) logRotate(ctx context.Context) {
+	for {
+		t := time.Now()
+		n := time.Date(t.Year(), t.Month(), t.Day(), 0, 1, 0, 0, t.Location())
+		d := n.Sub(t)
+		if d < 0 {
+			n = n.Add(24 * time.Hour)
+			d = n.Sub(t)
+		}
+
+		time.Sleep(d)
+
+		cmd := exec.Command("logrotate", filepath.Join(s.rootDir, common.ConfPrefix, "logrotate.conf"))
+		if err := cmd.Run(); err != nil {
+			nlog.Errorf("Logrotate run error: %v", err)
+		}
+	}
+}
+
 func (s *envoyModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -134,6 +159,17 @@ func (s *envoyModule) Name() string {
 	return "envoy"
 }
 
+func (s *envoyModule) readCommandArgs() (*EnvoyCommandLineConfig, error) {
+	configPath := filepath.Join(s.rootDir, common.ConfPrefix, s.commandLineConfigFile)
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	var config EnvoyCommandLineConfig
+	err = yaml.Unmarshal(data, &config)
+	return &config, err
+}
+
 func RunEnvoy(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
 	m := NewEnvoy(conf)
 	go func() {
@@ -146,7 +182,7 @@ func RunEnvoy(ctx context.Context, cancel context.CancelFunc, conf *Dependencies
 		nlog.Error(err)
 		cancel()
 	} else {
-		nlog.Info("envoy is ready")
+		nlog.Info("Envoy is ready")
 	}
 	return m
 }

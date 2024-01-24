@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/client-go/kubernetes"
+
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/bean"
@@ -27,7 +29,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework/engine"
 )
 
-func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaClient kusciaclientset.Interface) error {
+func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaClient kusciaclientset.Interface, kubeClient kubernetes.Interface) error {
 	// new app engine
 	appEngine := engine.New(&framework.AppConfig{
 		Name:    "KusciaAPI",
@@ -35,8 +37,10 @@ func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaCli
 		Version: meta.KusciaVersionString(),
 	})
 
-	// create informer factory
+	kusciaAPIConfig.KubeClient = kubeClient
 	kusciaAPIConfig.KusciaClient = kusciaClient
+
+	// create informer factory
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
 	kusciaInformerFactory.Start(ctx.Done())
 

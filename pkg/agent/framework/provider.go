@@ -17,37 +17,12 @@ package framework
 import (
 	"context"
 
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/tools/record"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
-
-	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/agent/resource"
-	"github.com/secretflow/kuscia/pkg/agent/status"
 )
-
-// ProviderConfig is the config passed to initialize a registered provider.
-type ProviderConfig struct {
-	Namespace       string
-	NodeName        string
-	NodeIP          string
-	RootDirectory   string
-	StdoutDirectory string
-	AllowPrivileged bool
-
-	EventRecorder   record.EventRecorder
-	ResourceManager *resource.KubeResourceManager
-
-	PodStateProvider PodStateProvider
-	PodSyncHandler   SyncHandler
-	StatusManager    status.Manager
-
-	CRIProviderCfg *config.CRIProviderCfg
-	RegistryCfg    *config.RegistryCfg
-}
 
 // NodeProvider is the interface used for registering a node and updating its
 // status in Kubernetes.
@@ -62,13 +37,10 @@ type NodeProvider interface { // nolint:golint
 
 	// ConfigureNode enables a provider to configure the node object that
 	// will be used for Kubernetes.
-	ConfigureNode(context.Context) *corev1.Node
-
-	// SetAgentReady sets agent ready flag
-	SetAgentReady(ctx context.Context, ready bool, message string)
+	ConfigureNode(context.Context, string) *v1.Node
 
 	// RefreshNodeStatus return if the node status changes
-	RefreshNodeStatus(ctx context.Context, nodeStatus *corev1.NodeStatus) bool
+	RefreshNodeStatus(ctx context.Context, nodeStatus *v1.NodeStatus) bool
 
 	// SetStatusUpdateCallback is used to asynchronously monitor the node.
 	// The passed in callback should be called any time there is a change to the
@@ -77,30 +49,30 @@ type NodeProvider interface { // nolint:golint
 	// the status.
 	//
 	// SetStatusUpdateCallback should not block callers.
-	SetStatusUpdateCallback(ctx context.Context, cb func(*corev1.Node))
+	SetStatusUpdateCallback(ctx context.Context, cb func(*v1.Node))
 }
 
 // PodLifecycleHandler defines the interface used by the PodsController to react
 // to new and changed pods scheduled to the node that is being managed.
 type PodLifecycleHandler interface {
-	SyncPod(ctx context.Context, pod *corev1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *ReasonCache) error
+	SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *ReasonCache) error
 
-	KillPod(ctx context.Context, pod *corev1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error
+	KillPod(ctx context.Context, pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error
 
 	// DeletePod Pod object in master is gone, so just delete pod in provider and no need to call NotifyPods
 	// after deletion.
-	DeletePod(ctx context.Context, pod *corev1.Pod) error
+	DeletePod(ctx context.Context, pod *v1.Pod) error
 
-	CleanupPods(ctx context.Context, pods []*corev1.Pod, runningPods []*pkgcontainer.Pod, possiblyRunningPods map[types.UID]sets.Empty) error
+	CleanupPods(ctx context.Context, pods []*v1.Pod, runningPods []*pkgcontainer.Pod, possiblyRunningPods map[types.UID]sets.Empty) error
 
-	UpdatePodStatus(podUID types.UID, podStatus *corev1.PodStatus)
+	RefreshPodStatus(pod *v1.Pod, podStatus *v1.PodStatus)
 
-	GetPodStatus(ctx context.Context, pod *corev1.Pod) (*pkgcontainer.PodStatus, error)
+	GetPodStatus(ctx context.Context, pod *v1.Pod) (*pkgcontainer.PodStatus, error)
 
 	GetPods(ctx context.Context, all bool) ([]*pkgcontainer.Pod, error)
 
 	// Start sync loop
-	Start(ctx context.Context)
+	Start(ctx context.Context) error
 
 	// Stop sync loop
 	Stop()

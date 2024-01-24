@@ -20,55 +20,12 @@ import "kuscia/proto/api/v1alpha1/common.proto";
 
 option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh";
 option java_package = "org.secretflow.v1alpha1.datamesh";
+option cc_generic_services = true;
 
 service DomainDataSourceService {
-  rpc CreateDomainDataSource(CreateDomainDataSourceRequest) returns (CreateDomainDataSourceResponse);
 
   rpc QueryDomainDataSource(QueryDomainDataSourceRequest) returns (QueryDomainDataSourceResponse);
 
-  rpc UpdateDomainDataSource(UpdateDomainDataSourceRequest) returns (UpdateDomainDataSourceResponse);
-
-  rpc DeleteDomainDataSource(DeleteDomainDataSourceRequest) returns (DeleteDomainDataSourceResponse);
-}
-
-message CreateDomainDataSourceRequest {
-  RequestHeader header = 1;
-  string datasource_id = 2;
-  string name = 3;
-  string type = 4;
-  DataSourceInfo info = 5;
-}
-
-message CreateDomainDataSourceResponse {
-  Status status = 1;
-  CreateDomainDataSourceResponseData data = 2;
-}
-
-message CreateDomainDataSourceResponseData {
-  // id of created datasource
-  string datasource_id = 1;
-}
-
-message UpdateDomainDataSourceRequest {
-  RequestHeader header = 1;
-  string datasource_id = 2;
-  string name = 3;
-  string type = 4;
-  DataSourceInfo info = 5;
-}
-
-message UpdateDomainDataSourceResponse {
-  Status status = 1;
-}
-
-message DeleteDomainDataSourceRequest {
-  RequestHeader header = 1;
-  // datasource id
-  string datasource_id = 2;
-}
-
-message DeleteDomainDataSourceResponse {
-  Status status = 1;
 }
 
 message QueryDomainDataSourceRequest {
@@ -86,12 +43,23 @@ message DomainDataSource {
   string datasource_id = 1;
   // datasource name
   string name = 2;
-  // datasource type, enum [localfs, oss] , oss not support now
+  // datasource type, enum [localfs, oss, mysql]
   string type = 3;
   // datasource status, enum [Available,Unavailable]
   string status = 4;
-  // datasource info
+
+  // datasource info, for domain secretBackend which support set interface in clientSDK, you can set info directly when
+  // create or update domainDataSource, you can also set an info_key already existed in secretBackend instead.
+  // if you set info and info_key simultaneously, only info_key will take effect.
   DataSourceInfo info = 5;
+
+  // datasource info key, for domain secretBackend which nonsupport set interface in clientSDK, use an secret key
+  // instead of info when create or update DomainDataSource, the value refers to info_key is a json format string of
+  // DataSourceInfo varies by datasource type
+  string info_key = 6;
+
+  // access directly to datasource or proxy_pass to DataProxy, default is false
+  bool access_directly = 7;
 }
 
 message DataSourceInfo {
@@ -101,6 +69,9 @@ message DataSourceInfo {
   LocalDataSourceInfo localfs = 1;
   // oss not support now
   OssDataSourceInfo oss = 2;
+
+  // Relational database info, such as Mysql/oracle/postgres
+  DatabaseDataSourceInfo database = 3;
 }
 
 // datasource info for local path
@@ -128,4 +99,17 @@ message OssDataSourceInfo {
   string version = 7;
   // optional enum[oss,minio] , default oss
   string storage_type = 8;
+}
+
+// datasource info for mysql/oracle/postgres
+message DatabaseDataSourceInfo {
+  // endpoint for database, such as localhost:3306
+  string endpoint = 1;
+  // user name of account to access database
+  string user = 2;
+  // password of account to access database
+  string password = 3;
+
+  // database name
+  string database = 4;
 }

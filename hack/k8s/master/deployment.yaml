@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kuscia-master
+  namespace: kuscia-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kuscia-master
+  template:
+    metadata:
+      labels:
+        app: kuscia-master
+    spec:
+      containers:
+        - command:
+            - tini
+            - --
+            - kuscia
+            - start
+            - -c
+            - etc/conf/kuscia.yaml
+          ports:
+            - containerPort: 6443
+          env:
+            - name: REGISTRY_ENDPOINT
+              value: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow
+            - name: NAMESPACE
+              value: kuscia-system
+            - name: TZ
+              value: Asia/Shanghai
+          image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+          imagePullPolicy: Always
+          name: master
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /home/kuscia/var/tmp
+              name: kuscia-var-tmp
+            - mountPath: /home/kuscia/etc/conf/kuscia.yaml
+              name: kuscia-master-conf
+              subPath: kuscia.yaml
+          workingDir: /home/kuscia
+      automountServiceAccountToken: true
+      volumes:
+        - emptyDir: {}
+          name: kuscia-var-tmp
+        - configMap:
+            defaultMode: 420
+            name: kuscia-master-cm
+          name: kuscia-master-conf

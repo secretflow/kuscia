@@ -230,7 +230,12 @@ func (vm *VolumeManager) mountLiteralVolume(targetPath string,
 }
 
 func (vm *VolumeManager) mountConfigMap(pod *v1.Pod, volume *v1.ConfigMapVolumeSource) (*VolumeInfo, error) {
-	cmap, err := vm.ResourceManager.GetConfigMap(volume.Name)
+	var (
+		cmap *v1.ConfigMap
+		err  error
+	)
+
+	cmap, err = vm.ResourceManager.GetConfigMap(volume.Name)
 	if err != nil {
 		return nil, err
 	}

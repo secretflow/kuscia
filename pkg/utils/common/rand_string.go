@@ -15,10 +15,11 @@
 package common
 
 import (
+	"encoding/hex"
 	"math/rand"
 )
 
-var letters = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letters = []byte("23456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
 
 func GenerateRandomBytes(l int) []byte {
 	b := make([]byte, l)
@@ -26,4 +27,11 @@ func GenerateRandomBytes(l int) []byte {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return b
+}
+
+// GenerateID generates a random unique id.
+func GenerateID() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }

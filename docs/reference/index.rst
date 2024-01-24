@@ -1,13 +1,11 @@
-.. _reference:
-
 参考手册
-=========
+================
 
 .. toctree::
     :maxdepth: 2
 
+    overview
     architecture_cn
-    ./concepts/index
-    ./apis/index
-    operation_cn
-    faq_cn
+    concepts/index
+    apis/index
+    troubleshoot/index

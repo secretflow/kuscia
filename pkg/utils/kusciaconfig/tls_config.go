@@ -19,9 +19,13 @@ import (
 )
 
 type TLSConfig struct {
-	CertFile string `yaml:"certFile,omitempty"`
-	KeyFile  string `yaml:"keyFile,omitempty"`
-	CAFile   string `yaml:"caFile,omitempty"`
+	EnableTLS bool   `yaml:"enableTLS,omitempty"`
+	CertFile  string `yaml:"certFile,omitempty"`
+	CertData  string `yaml:"certData,omitempty"`
+	KeyFile   string `yaml:"keyFile,omitempty"`
+	KeyData   string `yaml:"keyData,omitempty"`
+	CAData    string `yaml:"caData,omitempty"`
+	CAFile    string `yaml:"caFile,omitempty"`
 }
 
 func CheckTLSConfig(config *TLSConfig, name string) error {
@@ -35,12 +39,12 @@ func CheckTLSConfig(config *TLSConfig, name string) error {
 	}
 
 	// for server or mtls client ,should specify keyFile and CertFile
-	if config.KeyFile == "" {
-		return fmt.Errorf("TLSConfig(%s) need specify keyFile", name)
+	if config.KeyData == "" && config.KeyFile == "" {
+		return fmt.Errorf("TLS(%s) need specify keyFile", name)
 	}
 
-	if config.CertFile == "" {
-		return fmt.Errorf("TLSConfig(%s) need specify caFile", name)
+	if config.CertData == "" && config.CertFile == "" {
+		return fmt.Errorf("TLS(%s) need specify caFile", name)
 	}
 	return nil
 }

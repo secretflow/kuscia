@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package grpchandler
 
 import (
@@ -48,6 +49,6 @@ func (h domainHandler) DeleteDomain(ctx context.Context, request *kusciaapi.Dele
 	return h.domainService.DeleteDomain(ctx, request), nil
 }
 
-func (h domainHandler) BatchQueryDomainStatus(ctx context.Context, request *kusciaapi.BatchQueryDomainStatusRequest) (*kusciaapi.BatchQueryDomainStatusResponse, error) {
-	return h.domainService.BatchQueryDomainStatus(ctx, request), nil
+func (h domainHandler) BatchQueryDomain(ctx context.Context, request *kusciaapi.BatchQueryDomainRequest) (*kusciaapi.BatchQueryDomainResponse, error) {
+	return h.domainService.BatchQueryDomain(ctx, request), nil
 }

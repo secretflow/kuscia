@@ -20,7 +20,6 @@ import (
 	"time"
 
 	apicorev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -70,24 +69,27 @@ const (
 type Controller struct {
 	ctx                   context.Context
 	cancel                context.CancelFunc
+	RunMode               common.RunModeType
+	Namespace             string
+	RootDir               string
 	kubeClient            kubernetes.Interface
 	kusciaClient          kusciaclientset.Interface
 	kubeInformerFactory   kubeinformers.SharedInformerFactory
 	kusciaInformerFactory kusciainformers.SharedInformerFactory
-	resourceQuotaSynced   cache.InformerSynced
 	resourceQuotaLister   listerscorev1.ResourceQuotaLister
-	domainSynced          cache.InformerSynced
 	domainLister          kuscialistersv1alpha1.DomainLister
-	namespaceSynced       cache.InformerSynced
 	namespaceLister       listerscorev1.NamespaceLister
-	nodeSynced            cache.InformerSynced
 	nodeLister            listerscorev1.NodeLister
 	workqueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
+	cacheSyncs            []cache.InformerSynced
 }
 
 // NewController returns a controller instance.
-func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
+func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kubeClient := config.KubeClient
+	kusciaClient := config.KusciaClient
+	eventRecorder := config.EventRecorder
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, 5*time.Minute)
 	resourceQuotaInformer := kubeInformerFactory.Core().V1().ResourceQuotas()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
@@ -96,21 +98,27 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
+	cacheSyncs := []cache.InformerSynced{
+		resourceQuotaInformer.Informer().HasSynced,
+		domainInformer.Informer().HasSynced,
+		namespaceInformer.Informer().HasSynced,
+		nodeInformer.Informer().HasSynced,
+	}
 	controller := &Controller{
+		RunMode:               config.RunMode,
+		Namespace:             config.Namespace,
+		RootDir:               config.RootDir,
 		kubeClient:            kubeClient,
 		kusciaClient:          kusciaClient,
 		kubeInformerFactory:   kubeInformerFactory,
 		kusciaInformerFactory: kusciaInformerFactory,
-		resourceQuotaSynced:   resourceQuotaInformer.Informer().HasSynced,
 		resourceQuotaLister:   resourceQuotaInformer.Lister(),
-		domainSynced:          domainInformer.Informer().HasSynced,
 		domainLister:          domainInformer.Lister(),
-		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		namespaceLister:       namespaceInformer.Lister(),
-		nodeSynced:            nodeInformer.Informer().HasSynced,
 		nodeLister:            nodeInformer.Lister(),
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
 		recorder:              eventRecorder,
+		cacheSyncs:            cacheSyncs,
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -270,7 +278,7 @@ func (c *Controller) Run(workers int) error {
 	c.kubeInformerFactory.Start(c.ctx.Done())
 
 	nlog.Info("Waiting for informer cache to sync")
-	if !cache.WaitForCacheSync(c.ctx.Done(), c.namespaceSynced, c.nodeSynced, c.resourceQuotaSynced, c.domainSynced) {
+	if !cache.WaitForCacheSync(c.ctx.Done(), c.cacheSyncs...) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -280,9 +288,8 @@ func (c *Controller) Run(workers int) error {
 	}
 
 	nlog.Info("Starting sync domain status")
-	go wait.Until(c.syncDomainStatus, 10*time.Second, c.ctx.Done())
+	go wait.Until(c.syncDomainStatuses, 10*time.Second, c.ctx.Done())
 	<-c.ctx.Done()
-
 	return nil
 }
 
@@ -292,7 +299,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-	c.workqueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -318,11 +324,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 
 	domain := rawDomain.DeepCopy()
 	scheme.Scheme.Default(domain)
-	defer func() {
-		if err != nil {
-			c.recorder.Event(domain, apicorev1.EventTypeWarning, "ErrorHandleDomain", err.Error())
-		}
-	}()
 
 	if _, err = c.namespaceLister.Get(key); err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -337,13 +338,20 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 // create is used to create resource under domain.
 func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 	if err := c.createNamespace(domain); err != nil {
-		nlog.Errorf("Create domain %v namespace failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.createResourceQuota(domain); err != nil {
-		nlog.Errorf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
 		return err
+	}
+
+	if shouldCreateOrUpdate(domain) {
+		if err := c.createOrUpdateAuth(domain); err != nil {
+			nlog.Warnf("Create domain %v auth failed: %v", domain.Name, err.Error())
+			return err
+		}
 	}
 
 	return nil
@@ -352,12 +360,25 @@ func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 // update is used to update resource under domain.
 func (c *Controller) update(domain *kusciaapisv1alpha1.Domain) error {
 	if err := c.updateNamespace(domain); err != nil {
-		nlog.Errorf("Update domain %v namespace failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Update domain %v namespace failed: %v", domain.Name, err.Error())
 		return err
 	}
 
 	if err := c.updateResourceQuota(domain); err != nil {
-		nlog.Errorf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
+		nlog.Warnf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
+		return err
+	}
+
+	if shouldCreateOrUpdate(domain) {
+		if err := c.createOrUpdateAuth(domain); err != nil {
+			nlog.Warnf("update domain %v auth failed: %v", domain.Name, err.Error())
+			return err
+		}
+		return nil
+	}
+
+	if err := c.syncDomainStatus(domain); err != nil {
+		nlog.Warnf("sync domain %v status failed: %v", domain.Name, err.Error())
 		return err
 	}
 
@@ -376,9 +397,4 @@ func (c *Controller) delete(name string) error {
 
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	_, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDDomainsName, apismetav1.GetOptions{})
-	return err
 }

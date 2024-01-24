@@ -47,7 +47,7 @@ func NewKusciaTaskPhaseHandlerFactory(deps *Dependencies) *KusciaTaskPhaseHandle
 	finishedHandler := NewFinishedHandler(deps)
 	runningHandler := NewRunningHandler(deps)
 	pendingHandler := NewPendingHandler(deps)
-	succeededHandler := NewSucceededHandler(deps, finishedHandler)
+	succeededHandler := NewSucceededHandler(finishedHandler)
 	failedHandler := NewFailedHandler(deps, finishedHandler)
 	kusciaTaskStateHandlerMap := map[kusciaapisv1alpha1.KusciaTaskPhase]KusciaTaskPhaseHandler{
 		kusciaapisv1alpha1.TaskPending:   pendingHandler,

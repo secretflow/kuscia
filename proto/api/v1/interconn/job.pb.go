@@ -426,7 +426,7 @@ func (x *DAG) GetComponents() []*Component {
 	return nil
 }
 
-// Component represents functional module units for independently computing privacy tasks.
+// Component represents functional module units for independently computing privacy-preserving tasks.
 type Component struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

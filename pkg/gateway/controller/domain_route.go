@@ -17,26 +17,23 @@ package controller
 import (
 	"context"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
+	gocache "github.com/patrickmn/go-cache"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/durationpb"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -46,95 +43,114 @@ import (
 	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	v3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerDecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	clientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	kusciaextv1alpha1 "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/clusters"
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
 	controllerName        = "domain-route-controller"
-	maxRetries            = 15
-	domainRouteSyncPeriod = 30 * time.Minute
+	maxRetries            = 16
+	domainRouteSyncPeriod = 10 * time.Minute
 	domainRouteQueueName  = "domain-route-queue"
 	grpcDegradeLabel      = "kuscia.secretflow/grpc-degrade"
 )
 
 type DomainRouteConfig struct {
-	Namespace     string
-	Prikey        *rsa.PrivateKey
-	PrikeyData    []byte
-	HandshakePort uint32
+	Namespace       string
+	MasterNamespace string
+	MasterConfig    *config.MasterConfig
+	CAKey           *rsa.PrivateKey
+	CACert          *x509.Certificate
+	Prikey          *rsa.PrivateKey
+	PrikeyData      []byte
+	HandshakePort   uint32
 }
 
 type DomainRouteController struct {
-	gateway    *kusciaapisv1alpha1.Gateway
-	prikey     *rsa.PrivateKey
-	prikeyData []byte
+	gateway         *kusciaapisv1alpha1.Gateway
+	masterNamespace string
+	masterConfig    *config.MasterConfig
+	CaCertData      []byte
+	CaCert          *x509.Certificate
+	CaKey           *rsa.PrivateKey
+	prikey          *rsa.PrivateKey
+	prikeyData      []byte
 
 	kubeClient              kubernetes.Interface
 	kusciaClient            clientset.Interface
 	domainRouteLister       kuscialistersv1alpha1.DomainRouteLister
 	domainRouteListerSynced cache.InformerSynced
 	workqueue               workqueue.RateLimitingInterface
-	recorder                record.EventRecorder
 
-	cache           sync.Map
+	drCache sync.Map
+
+	handshakeCache  *gocache.Cache
 	handshakeServer *http.Server
 	handshakePort   uint32
+
+	drHeartbeat map[string]time.Time
 }
 
 // NewDomainRouteController create a new endpoints controller.
 func NewDomainRouteController(
-	config *DomainRouteConfig,
+	drConfig *DomainRouteConfig,
 	kubeClient kubernetes.Interface,
 	kusciaClient clientset.Interface,
 	DomainRouteInformer kusciaextv1alpha1.DomainRouteInformer) *DomainRouteController {
-	// Create event broadcaster, add kuscia types to the default Kubernetes Scheme so Events can be logged for kuscia types.
-	recorder := createEventRecorder(kubeClient, config.Namespace)
 
 	hostname := utils.GetHostname()
-	pubPem := utils.EncodePKCS1PublicKey(config.Prikey)
+	pubPem := tls.EncodePKCS1PublicKey(drConfig.Prikey)
 
 	gateway := &kusciaapisv1alpha1.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hostname,
-			Namespace: config.Namespace,
+			Namespace: drConfig.Namespace,
 		},
 		Status: kusciaapisv1alpha1.GatewayStatus{
 			PublicKey: base64.StdEncoding.EncodeToString(pubPem),
 		},
 	}
-
 	c := &DomainRouteController{
 		gateway:                 gateway,
-		prikey:                  config.Prikey,
-		prikeyData:              config.PrikeyData,
+		masterNamespace:         drConfig.MasterNamespace,
+		CaCertData:              drConfig.CACert.Raw,
+		CaCert:                  drConfig.CACert,
+		CaKey:                   drConfig.CAKey,
+		masterConfig:            drConfig.MasterConfig,
+		prikey:                  drConfig.Prikey,
+		prikeyData:              drConfig.PrikeyData,
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
 		domainRouteLister:       DomainRouteInformer.Lister(),
 		domainRouteListerSynced: DomainRouteInformer.Informer().HasSynced,
 		workqueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), domainRouteQueueName),
-		recorder:                recorder,
-		handshakePort:           config.HandshakePort,
+		handshakePort:           drConfig.HandshakePort,
+		drCache:                 sync.Map{},
+		handshakeCache:          gocache.New(5*time.Minute, 10*time.Minute),
+		drHeartbeat:             make(map[string]time.Time, 0),
 	}
 
 	DomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: c.addDomainRoute,
-			UpdateFunc: func(oldObj, newObj interface{}) {
+			UpdateFunc: func(_, newObj interface{}) {
 				c.addDomainRoute(newObj)
 			},
 			DeleteFunc: c.enqueueDomainRoute,
@@ -149,7 +165,7 @@ func NewDomainRouteController(
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
-func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
+func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh <-chan struct{}) {
 	var err error
 
 	defer utilruntime.HandleCrash()
@@ -170,7 +186,7 @@ func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
 	}
 
 	go c.startHandShakeServer(c.handshakePort)
-
+	go c.checkConnectionHealthy(ctx, stopCh)
 	nlog.Info("Starting workers")
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -181,6 +197,33 @@ func (c *DomainRouteController) Run(threadiness int, stopCh <-chan struct{}) {
 	<-stopCh
 	c.handshakeServer.Close()
 	nlog.Info("Shutting down workers")
+}
+
+func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stopCh <-chan struct{}) {
+	t := time.NewTicker(15 * time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			drs, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).List(labels.Everything())
+			if err != nil {
+				nlog.Error(err)
+				break
+			}
+			for _, dr := range drs {
+				if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Source == c.gateway.Namespace &&
+					dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name && dr.Status.TokenStatus.RevisionToken.Token != "" {
+					nlog.Debugf("checkConnectionHealthy of dr(%s)", dr.Name)
+					err := c.checkConnectionStatus(dr, c.getDefaultClusterNameByDomainRoute(dr))
+					if err != nil {
+						nlog.Warn(err)
+					}
+				}
+			}
+		case <-stopCh:
+			return
+		}
+	}
 }
 
 func (c *DomainRouteController) runWorker() {
@@ -209,20 +252,36 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 		return err
 	}
 
-	if dr.Spec.Source == c.gateway.Namespace && dr.Spec.Transit == nil {
+	if dr.Spec.Source == c.gateway.Namespace && dr.Spec.Transit == nil && dr.Spec.Destination != c.masterNamespace {
 		if err := c.addClusterWithEnvoy(dr); err != nil {
 			return fmt.Errorf("add envoy cluster failed with %s", err.Error())
 		}
 	}
 
-	if (dr.Spec.BodyEncryption != nil || dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken) &&
-		dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA {
-		if dr.Spec.Source == c.gateway.Namespace &&
-			dr.Status.TokenStatus.RevisionToken.Token == "" &&
-			dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
-			nlog.Infof("DomainRoute %s starts handshake at revision: %d", key,
-				dr.Status.TokenStatus.RevisionToken.Revision)
-			return c.sourceInitiateHandShake(dr)
+	if (dr.Spec.BodyEncryption != nil || (dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Transit == nil)) &&
+		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
+		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
+			if dr.Status.TokenStatus.RevisionToken.Token == "" {
+				_, ok := c.handshakeCache.Get(dr.Name)
+				if !ok {
+					c.handshakeCache.Add(dr.Name, dr.Name, 2*time.Minute)
+					defer c.handshakeCache.Delete(dr.Name)
+					if err := func() error {
+						if dr.Spec.Transit == nil {
+							if err := c.setKeepAliveForDstClusters(dr, false); err != nil {
+								return fmt.Errorf("disable keep-alive fail for DomainRoute: %s err: %v", key, err)
+							}
+						}
+						nlog.Infof("DomainRoute %s starts handshake, the last revision is %d", key, dr.Status.TokenStatus.RevisionToken.Revision)
+
+						return c.sourceInitiateHandShake(dr, c.getDefaultClusterNameByDomainRoute(dr))
+					}(); err != nil {
+						nlog.Error(err)
+						return err
+					}
+				}
+				return nil
+			}
 		}
 	}
 
@@ -278,14 +337,19 @@ func (c *DomainRouteController) addDomainRoute(obj interface{}) {
 
 func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainRoute) error {
 	key, _ := cache.MetaNamespaceKeyFunc(dr)
-	nlog.Infof("Update DomainRoute %s", key)
+	nlog.Infof("Update DomainRoute %s revision:%s", key, dr.ResourceVersion)
 
 	var tokens []*Token
 	// for non-token author
 	tokens, err := c.parseToken(dr, key)
 	// Swallow all errors to avoid requeuing
 	if err != nil {
-		nlog.Error(err)
+		nlog.Warn(err)
+		return nil
+	}
+
+	if len(tokens) == 0 {
+		nlog.Debugf("DomainRoute %s has no available token", key)
 		return nil
 	}
 
@@ -293,7 +357,7 @@ func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainR
 		return err
 	}
 
-	c.cache.Store(key, dr)
+	c.drCache.Store(key, dr)
 
 	// update effective instances
 	return c.checkAndUpdateTokenInstances(dr)
@@ -302,7 +366,7 @@ func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainR
 func (c *DomainRouteController) deleteDomainRoute(key string) error {
 	nlog.Infof("Delete DomainRoute %s", key)
 
-	val, ok := c.cache.Load(key)
+	val, ok := c.drCache.Load(key)
 	if !ok {
 		return nil
 	}
@@ -314,7 +378,8 @@ func (c *DomainRouteController) deleteDomainRoute(key string) error {
 	if err := c.deleteEnvoyRule(dr); err != nil {
 		return err
 	}
-	c.cache.Delete(key)
+	delete(c.drHeartbeat, dr.Name)
+	c.drCache.Delete(key)
 	return nil
 }
 
@@ -347,7 +412,7 @@ func (c *DomainRouteController) addClusterWithEnvoy(dr *kusciaapisv1alpha1.Domai
 	}
 
 	for _, dp := range dr.Spec.Endpoint.Ports {
-		nlog.Infof("add cluster %s protocol:%s port:%d", dp.Name, dp.Protocol, dp.Port)
+		nlog.Infof("add cluster %s-to-%s name:%s protocol:%s port:%d", dr.Spec.Source, dr.Spec.Destination, dp.Name, dp.Protocol, dp.Port)
 		err := addClusterForDstGateway(dr, dp, transportSocket)
 		if err != nil {
 			return err
@@ -358,7 +423,29 @@ func (c *DomainRouteController) addClusterWithEnvoy(dr *kusciaapisv1alpha1.Domai
 }
 
 func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) error {
-	if dr.Spec.Source == c.gateway.Namespace { // internal
+	if dr.Spec.Destination == c.masterNamespace && dr.Spec.Source == c.gateway.Namespace {
+		token := tokens[len(tokens)-1]
+		cl, err := xds.QueryCluster(clusters.GetMasterClusterName())
+		if err != nil {
+			nlog.Error(err)
+			return err
+		}
+		pathPrefix := utils.GetPrefixIfPresent(dr.Spec.Endpoint)
+		if err := clusters.AddMasterProxyVirtualHost(cl.Name, pathPrefix, utils.ServiceMasterProxy, c.gateway.Namespace, token.Token); err != nil {
+			nlog.Error(err)
+			return err
+		}
+		if err = xds.SetKeepAliveForDstCluster(cl, true); err != nil {
+			nlog.Error(err)
+			return err
+		}
+		if err = xds.AddOrUpdateCluster(cl); err != nil {
+			nlog.Error(err)
+			return err
+		}
+		nlog.Info("Update rule to master success")
+		return nil
+	} else if dr.Spec.Source == c.gateway.Namespace { // internal
 		token := tokens[len(tokens)-1]
 		grpcDegrade := false
 		if dr.Labels[grpcDegradeLabel] == "True" {
@@ -378,8 +465,12 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 		}
 
 		// case2: direct route, add virtualhost: source-to-dest-Protocol
-		return xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, token.Token, grpcDegrade), xds.InternalRoute)
+		if err := xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, token.Token, grpcDegrade),
+			xds.InternalRoute); err != nil {
+			return err
+		}
 
+		return c.setKeepAliveForDstClusters(dr, true)
 	} else if dr.Spec.Destination == c.gateway.Namespace { // external
 		if dr.Spec.Transit == nil {
 			var tokenVals []string
@@ -447,15 +538,6 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 	}
 
 	return nil
-}
-
-func createEventRecorder(kubeClient kubernetes.Interface, namespace string) record.EventRecorder {
-	utilruntime.Must(kusciascheme.AddToScheme(scheme.Scheme))
-	nlog.Debug("Creating event broadcaster")
-	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events(namespace)})
-	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerName})
-	return recorder
 }
 
 func updateRoutingRule(dr *kusciaapisv1alpha1.DomainRoute) error {
@@ -550,7 +632,7 @@ func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1al
 	return httpRoutes
 }
 
-func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token string, grpcDegrade bool) *route.VirtualHost {
+func generateInternalRoutes(dr *kusciaapisv1alpha1.DomainRoute, token string, grpcDegrade bool) []*route.Route {
 	dps := sortDomainPorts(dr.Spec.Endpoint.Ports)
 	var routes []*route.Route
 	n := len(dps)
@@ -561,6 +643,11 @@ func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token strin
 		}
 		routes = append(routes, generateInternalRoute(dr, dp, token, isDefaultRoute, grpcDegrade)...)
 	}
+	return routes
+}
+
+func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token string, grpcDegrade bool) *route.VirtualHost {
+	routes := generateInternalRoutes(dr, token, grpcDegrade)
 
 	connectRoute := &route.Route{
 		Match: &route.RouteMatch{
@@ -597,24 +684,51 @@ func generateInternalVirtualHost(dr *kusciaapisv1alpha1.DomainRoute, token strin
 	return vh
 }
 
+func (c *DomainRouteController) setKeepAliveForDstClusters(dr *kusciaapisv1alpha1.DomainRoute, enable bool) error {
+	clusterNames := c.getClusterNamesByDomainRoute(dr)
+	for _, cn := range clusterNames {
+		c, err := xds.QueryCluster(cn)
+		if err != nil {
+			return err
+		}
+		if err := xds.SetKeepAliveForDstCluster(c, enable); err != nil {
+			return err
+		}
+		if err := xds.AddOrUpdateCluster(c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
 	transportSocket *core.TransportSocket) error {
 	var protocolOptions *envoyhttp.HttpProtocolOptions
+	var protocol string
 	if dr.Labels[grpcDegradeLabel] == "True" && dp.Protocol == kusciaapisv1alpha1.DomainRouteProtocolGRPC {
 		// use http1.1
-		protocolOptions = &envoyhttp.HttpProtocolOptions{
-			UpstreamProtocolOptions: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig_{
-				ExplicitHttpConfig: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig{
-					ProtocolConfig: &envoyhttp.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{},
-				},
-			},
-		}
+		protocolOptions = xds.GenerateHTTP2UpstreamHTTPOptions(true)
+		protocol = xds.GenerateProtocol(dp.IsTLS, true)
 	} else {
 		// use same protocol with downstream
-		protocolOptions = &envoyhttp.HttpProtocolOptions{
-			UpstreamProtocolOptions: &envoyhttp.HttpProtocolOptions_UseDownstreamProtocolConfig{
-				UseDownstreamProtocolConfig: &envoyhttp.HttpProtocolOptions_UseDownstreamHttpConfig{},
-			},
+		protocolOptions = xds.GenerateSimpleUpstreamHTTPOptions(true)
+		protocol = xds.GenerateProtocol(dp.IsTLS, false)
+	}
+
+	clusterName := common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
+
+	// before token take effect, we disable keep-alive for DstEnvoy
+	if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken {
+		preProtocolOptions, preCluster, _ := xds.GetClusterHTTPProtocolOptions(clusterName)
+		if preCluster == nil {
+			// next action is handshake
+			protocolOptions.CommonHttpProtocolOptions.MaxRequestsPerConnection = &wrapperspb.UInt32Value{
+				Value: uint32(1),
+			}
+			nlog.Infof("disable keep-alive for cluster:%s ", clusterName)
+		} else if preProtocolOptions != nil && preProtocolOptions.CommonHttpProtocolOptions != nil {
+			// do not change keep-alive options when changing cluster
+			protocolOptions.CommonHttpProtocolOptions = preProtocolOptions.CommonHttpProtocolOptions
 		}
 	}
 
@@ -625,13 +739,9 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 	}
 
 	cluster := &envoycluster.Cluster{
-		Name:           fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
-		ConnectTimeout: durationpb.New(10 * time.Second),
-		ClusterDiscoveryType: &envoycluster.Cluster_Type{
-			Type: envoycluster.Cluster_STRICT_DNS,
-		},
+		Name: clusterName,
 		LoadAssignment: &endpoint.ClusterLoadAssignment{
-			ClusterName: fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name),
+			ClusterName: clusterName,
 			Endpoints: []*endpoint.LocalityLbEndpoints{
 				{
 					LbEndpoints: []*endpoint.LbEndpoint{
@@ -656,25 +766,17 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 				},
 			},
 		},
-		CommonLbConfig: &envoycluster.Cluster_CommonLbConfig{
-			HealthyPanicThreshold: &v3.Percent{
-				Value: 5,
-			},
-		},
 		TypedExtensionProtocolOptions: map[string]*anypb.Any{
 			"envoy.extensions.upstreams.http.v3.HttpProtocolOptions": {
 				TypeUrl: "type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
 				Value:   b,
 			},
 		},
+		TransportSocket: transportSocket,
 	}
 
-	if transportSocket != nil {
-		cluster.TransportSocket = transportSocket
-	} else if dp.IsTLS {
-		cluster.TransportSocket = &core.TransportSocket{
-			Name: "envoy.transport_sockets.tls",
-		}
+	if err := xds.DecorateRemoteUpstreamCluster(cluster, protocol); err != nil {
+		return err
 	}
 
 	interconn.Decorator.UpdateDstCluster(dr, cluster)
@@ -697,4 +799,40 @@ func generateRequestHeaders(dr *kusciaapisv1alpha1.DomainRoute) *headerDecorator
 		sourceHeader.Headers = append(sourceHeader.Headers, entry)
 	}
 	return sourceHeader
+}
+
+func (c *DomainRouteController) getClusterNamesByDomainRoute(dr *kusciaapisv1alpha1.DomainRoute) []string {
+	var names []string
+	if dr.Spec.Destination == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
+		names = append(names, clusters.GetMasterClusterName())
+	}
+	for _, dp := range dr.Spec.Endpoint.Ports {
+		names = append(names, common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name))
+	}
+	return names
+}
+
+func (c *DomainRouteController) getDefaultClusterNameByDomainRoute(dr *kusciaapisv1alpha1.DomainRoute) string {
+	if dr.Spec.Destination == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
+		return clusters.GetMasterClusterName()
+	}
+	dps := sortDomainPorts(dr.Spec.Endpoint.Ports)
+	n := len(dps)
+	for _, dp := range dps {
+		if n == 1 || dp.Protocol == "HTTP" {
+			return common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
+		}
+	}
+	if n > 0 {
+		return common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, dps[0].Name)
+	}
+	return ""
+}
+
+func getHandshakeHost(dr *kusciaapisv1alpha1.DomainRoute) string {
+	ns := dr.Spec.Destination
+	if dr.Spec.Transit != nil {
+		ns = dr.Spec.Transit.Domain.DomainID
+	}
+	return fmt.Sprintf("%s.%s.svc", utils.ServiceHandshake, ns)
 }

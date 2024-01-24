@@ -15,6 +15,7 @@
 package tls
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/rsa"
@@ -105,8 +106,72 @@ func GenerateX509KeyPair(parent *x509.Certificate, caKey any, cert *x509.Certifi
 	return nil
 }
 
-// BuildServerTLSConfig builds server tls config.
-func BuildServerTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+// GenerateX509KeyPairStruct creates a public/private key pair and creates a new X.509 v3 certificate based on a template.
+// caKey can be ecdsa.PrivateKey or rsa.PrivateKey
+func GenerateX509KeyPairStruct(parent *x509.Certificate, caKey any, certTemplate *x509.Certificate) (*rsa.PrivateKey, *x509.Certificate, error) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate rsa key, detail-> %v", err)
+	}
+
+	certBytes, err := x509.CreateCertificate(rand.Reader, certTemplate, parent, &key.PublicKey, caKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create x509 certificate, detail-> %v", err)
+	}
+
+	cert, err := x509.ParseCertificate(certBytes)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse certificate, detail-> %v", err)
+	}
+
+	return key, cert, nil
+}
+
+// EncodeRsaKeyToPKCS1 encode key to pkcs#1 form key.
+func EncodeRsaKeyToPKCS1(key *rsa.PrivateKey) (string, error) {
+	var keyOut bytes.Buffer
+	if err := pem.Encode(&keyOut, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	}); err != nil {
+		return "", fmt.Errorf("failed to encode key, detail-> %v", err)
+	}
+
+	return keyOut.String(), nil
+}
+
+// EncodeRsaKeyToPKCS8 encode key to pkcs#8 form key.
+func EncodeRsaKeyToPKCS8(key *rsa.PrivateKey) (string, error) {
+	var keyOut bytes.Buffer
+	pkcs8Bytes, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return "", err
+	}
+	if err := pem.Encode(&keyOut, &pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: pkcs8Bytes,
+	}); err != nil {
+		return "", fmt.Errorf("failed to encode key, detail-> %v", err)
+	}
+
+	return keyOut.String(), nil
+}
+
+// EncodeCert encode cert.
+func EncodeCert(cert *x509.Certificate) (string, error) {
+	var certOut bytes.Buffer
+	if err := pem.Encode(&certOut, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert.Raw,
+	}); err != nil {
+		return "", fmt.Errorf("failed to encode cert, detail-> %v", err)
+	}
+
+	return certOut.String(), nil
+}
+
+// BuildServerTLSConfigFromPath builds server tls config.
+func BuildServerTLSConfigFromPath(caPath, certPath, keyPath string) (*tls.Config, error) {
 	if caPath == "" || certPath == "" || keyPath == "" {
 		return nil, fmt.Errorf("load server tls config failed, ca|servercert|serverkey path can't be empty")
 	}
@@ -118,7 +183,7 @@ func BuildServerTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error)
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCertFile)
 
-	certs, err := BuildTLSCertificate(certPath, keyPath)
+	certs, err := BuildTLSCertificateViaPath(certPath, keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not load server certificate, %v", err.Error())
 	}
@@ -131,8 +196,31 @@ func BuildServerTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error)
 	return config, nil
 }
 
-// BuildClientTLSConfig builds client tls config.
-func BuildClientTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error) {
+// BuildServerTLSConfig builds server tls config.
+func BuildServerTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key *rsa.PrivateKey) (*tls.Config, error) {
+	if caCert == nil || cert == nil || key == nil {
+		return nil, fmt.Errorf("load client tls config failed, ca|servercert|serverkey can't be empty")
+	}
+
+	var caCertPool *x509.CertPool
+	var clientAuth tls.ClientAuthType
+	if caCert != nil {
+		caCertPool = x509.NewCertPool()
+		caCertPool.AddCert(caCert)
+		clientAuth = tls.RequireAndVerifyClientCert
+	}
+
+	certs := BuildTLSCertificate(cert, key)
+	config := &tls.Config{
+		ClientCAs:    caCertPool,
+		ClientAuth:   clientAuth,
+		Certificates: certs,
+	}
+	return config, nil
+}
+
+// BuildClientTLSConfigViaPath builds client tls config.
+func BuildClientTLSConfigViaPath(caPath, certPath, keyPath string) (*tls.Config, error) {
 	if caPath == "" || certPath == "" || keyPath == "" {
 		return nil, fmt.Errorf("load client tls config failed, ca|clientcert|clientkey path can't be empty")
 	}
@@ -144,7 +232,7 @@ func BuildClientTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error)
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCertFile)
 
-	certs, err := BuildTLSCertificate(certPath, keyPath)
+	certs, err := BuildTLSCertificateViaPath(certPath, keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not load client certificate, %v", err.Error())
 	}
@@ -155,8 +243,28 @@ func BuildClientTLSConfig(caPath, certPath, keyPath string) (*tls.Config, error)
 	return config, nil
 }
 
-// BuildTLSCertificate builds tls certificate.
-func BuildTLSCertificate(certPath, keyPath string) ([]tls.Certificate, error) {
+// BuildClientTLSConfig builds client tls config.
+func BuildClientTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key *rsa.PrivateKey) (*tls.Config, error) {
+	if caCert == nil || cert == nil || key == nil {
+		return nil, fmt.Errorf("load client tls config failed, ca|clientcert|clientkey path can't be empty")
+	}
+
+	var caCertPool *x509.CertPool
+	if caCert != nil {
+		caCertPool = x509.NewCertPool()
+		caCertPool.AddCert(caCert)
+	}
+
+	certs := BuildTLSCertificate(cert, key)
+	config := &tls.Config{
+		RootCAs:      caCertPool,
+		Certificates: certs,
+	}
+	return config, nil
+}
+
+// BuildTLSCertificateViaPath builds tls certificate.
+func BuildTLSCertificateViaPath(certPath, keyPath string) ([]tls.Certificate, error) {
 	certPEMBlock, err := LoadCertFile(certPath)
 	if err != nil {
 		return nil, err
@@ -175,6 +283,19 @@ func BuildTLSCertificate(certPath, keyPath string) ([]tls.Certificate, error) {
 	return certs, nil
 }
 
+// BuildTLSCertificate builds tls certificate.
+func BuildTLSCertificate(cert *x509.Certificate, key *rsa.PrivateKey) []tls.Certificate {
+	certs := make([]tls.Certificate, 1)
+	certs[0] = tls.Certificate{
+		Certificate: [][]byte{
+			cert.Raw,
+		},
+		PrivateKey: key,
+		Leaf:       cert,
+	}
+	return certs
+}
+
 // LoadCertFile loads cert file.
 func LoadCertFile(name string) ([]byte, error) {
 	certContent, err := os.ReadFile(name)
@@ -182,4 +303,14 @@ func LoadCertFile(name string) ([]byte, error) {
 		return nil, fmt.Errorf("error reading %v certificate, %v", name, err.Error())
 	}
 	return certContent, nil
+}
+
+// DecodeCert loads cert from string content
+func DecodeCert(certContent []byte) (*x509.Certificate, error) {
+	certBlock, _ := pem.Decode(certContent)
+	cert, err := x509.ParseCertificate(certBlock.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse certificate, detail-> %v", err)
+	}
+	return cert, nil
 }

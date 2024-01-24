@@ -14,10 +14,14 @@
 
 package common
 
+import "time"
+
 // labels
 const (
 	// LabelPortScope represents port usage scope. Its values may be Local, Domain, Cluster. Refer to PortScope for more details.
 	LabelPortScope = "kuscia.secretflow/port-scope"
+	// LabelPortName represents port name which defined in AppImage container port.
+	LabelPortName = "kuscia.secretflow/port-name"
 
 	LabelController                      = "kuscia.secretflow/controller"
 	LabelGatewayProxy                    = "kuscia.secretflow/gateway-proxy"
@@ -25,30 +29,76 @@ const (
 	LabelCommunicationRoleServer         = "kuscia.secretflow/communication-role-server"
 	LabelCommunicationRoleClient         = "kuscia.secretflow/communication-role-client"
 	LabelDomainName                      = "kuscia.secretflow/domain-name"
+	LabelDomainAuth                      = "kuscia.secretflow/domain-auth"
 	LabelNodeNamespace                   = "kuscia.secretflow/namespace"
 	LabelDomainDeleted                   = "kuscia.secretflow/deleted"
 	LabelDomainRole                      = "kuscia.secretflow/role"
 	LabelInterConnProtocols              = "kuscia.secretflow/interconn-protocols"
 	LabelResourceVersionUnderHostCluster = "kuscia.secretflow/resource-version-under-host-cluster"
 	LabelTaskResourceGroup               = "kuscia.secretflow/task-resource-group"
-	LabelTaskInitiator                   = "kuscia.secretflow/initiator"
 	LabelTaskUnschedulable               = "kuscia.secretflow/task-unschedulable"
-	LabelPodHasSynced                    = "kuscia.secretflow/has-synced"
+	LabelInitiator                       = "kuscia.secretflow/initiator"
+	LabelHasSynced                       = "kuscia.secretflow/has-synced"
 	LabelDomainDataType                  = "kuscia.secretflow/domaindata-type"
+	LabelDomainDataID                    = "kuscia.secretflow/domaindataid"
 	LabelDomainDataVendor                = "kuscia.secretflow/domaindata-vendor"
 	LabelDomainDataSourceType            = "kuscia.secretflow/domaindatasource-type"
+	LabelDomainDataGrantVendor           = "kuscia.secretflow/domaindatagrant-vendor"
+	LabelDomainDataGrantDomain           = "kuscia.secretflow/domaindatagrant-domain"
 
 	LabelSelfClusterAsInitiator = "kuscia.secretflow/self-cluster-as-initiator"
-	LabelInterConnProtocolType  = "kuscia.secretflow/interconn-protocol-type"
-	LabelJobID                  = "kuscia.secretflow/job-id"
-	LabelTaskID                 = "kuscia.secretflow/task-id"
-	LabelTaskAlias              = "kuscia.secretflow/task-alias"
+	// LabelInterConnProtocolType is a label to specify the interconn protocol type of job
+	// For KusciaBetaJob, it's only used for partner job
+	LabelInterConnProtocolType = "kuscia.secretflow/interconn-protocol-type"
+	LabelJobID                 = "kuscia.secretflow/job-id"
+	LabelTaskID                = "kuscia.secretflow/task-id"
+	LabelTaskAlias             = "kuscia.secretflow/task-alias"
+
+	// LabelJobStage is a label to specify the current stage of job.
+	LabelJobStage = "kuscia.secretflow/job-stage"
+	// LabelJobStageTrigger is a label to specify who trigger the current stage of job.
+	LabelJobStageTrigger = "kuscia.secretflow/job-stage-trigger"
+
+	// LabelInterConnKusciaParty is a label of a job which has parties interconnected with kuscia protocol,
+	// the value is a series of domain id join with '_', such as alice_bob_carol .
+	LabelInterConnKusciaParty = "kuscia.secretflow/interconn-kuscia-parties"
+
+	// LabelInterConnBFIAParty is a label of a job which has parties interconnected with bfia protocol,
+	// the value is a series of domain id join with '_', such as alice_bob_carol .
+	LabelInterConnBFIAParty = "kuscia.secretflow/interconn-bfia-parties"
+
+	// LabelTargetDomain is a label represent the target domain of a partner cluster,
+	// which labeled on the mirror custom resources in mocked master domain of partner cluster,
+	// the custom resources include DomainData, DomainDataGrant, etc.
+	LabelTargetDomain = "kuscia.secretflow/target-domain"
+
+	LabelKusciaDeploymentAppType  = "kuscia.secretflow/app-type"
+	LabelKusciaDeploymentUID      = "kuscia.secretflow/kd-uid"
+	LabelKusciaDeploymentName     = "kuscia.secretflow/kd-name"
+	LabelKubernetesDeploymentName = "kuscia.secretflow/deployment-name"
+
+	LabelNodeName        = "kuscia.secretflow/node"
+	LabelPodUID          = "kuscia.secretflow/pod-uid"
+	LabelOwnerReferences = "kuscia.secretflow/owner-references"
+
+	LabelDomainRoutePartner = "kuscia.secertflow/domainroute-partner"
+)
+
+const (
+	PluginNameCertIssuance = "cert-issuance"
+	PluginNameConfigRender = "config-render"
 )
 
 type LoadBalancerType string
 
 const (
 	DomainRouteLoadBalancer LoadBalancerType = "domainroute"
+)
+
+type KusciaDeploymentAppType string
+
+const (
+	ServingAppType KusciaDeploymentAppType = "serving"
 )
 
 const (
@@ -63,14 +113,19 @@ const (
 
 	ConfigTemplateVolumesAnnotationKey = "kuscia.secretflow/config-template-volumes"
 
-	TaskResourceReservingTimestamp = "kuscia.secretflow/task-resource-reserving-timestamp"
+	TaskResourceReservingTimestampAnnotationKey = "kuscia.secretflow/taskresource-reserving-timestamp"
 
-	ComponentSpecAnnotationKey = "kuscia.secretflow/component-spec"
+	ComponentSpecAnnotationKey  = "kuscia.secretflow/component-spec"
+	AllocatedPortsAnnotationKey = "kuscia.secretflow/allocated-ports"
 )
 
 // Environment variables issued to the task pod.
 const (
+	EnvDomainID          = "DOMAIN_ID"
 	EnvTaskID            = "TASK_ID"
+	EnvServingID         = "SERVING_ID"
+	EnvInputConfig       = "INPUT_CONFIG"
+	EnvClusterDefine     = "CLUSTER_DEFINE"
 	EnvTaskInputConfig   = "TASK_INPUT_CONFIG"
 	EnvTaskClusterDefine = "TASK_CLUSTER_DEFINE"
 	EnvAllocatedPorts    = "ALLOCATED_PORTS"
@@ -101,6 +156,52 @@ const (
 )
 
 const (
-	DefaultDataSourceID     = "default-data-source"
+	DefaultDataSourceID          = "default-data-source"
+	DefaultDataProxyDataSourceID = "default-dp-data-source"
+
 	DefaultDomainDataVendor = "manual"
+	DomainDataVendorGrant   = "grant"
+)
+
+const (
+	DomainDataSourceTypeLocalFS        = "localfs"
+	DomainDataSourceTypeOSS            = "oss"
+	DomainDataSourceTypeMysql          = "mysql"
+	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
+)
+
+type RunModeType = string
+
+const (
+	RunModeMaster   = "master"
+	RunModeAutonomy = "autonomy"
+	RunModeLite     = "lite"
+)
+
+const (
+	DefaultSecretBackendName = "default"
+	DefaultSecretBackendType = "mem"
+)
+
+type CommunicationProtocol string
+type Protocol string
+
+const (
+	NOTLS Protocol = "NOTLS"
+	TLS   Protocol = "TLS"
+	MTLS  Protocol = "MTLS"
+)
+
+const DomainCsrExtensionID = "1.2.3.4"
+
+const (
+	CertPrefix   = "var/certs/"
+	LogPrefix    = "var/logs/"
+	StdoutPrefix = "var/stdout/"
+	TmpPrefix    = "var/tmp/"
+	ConfPrefix   = "etc/conf/"
+)
+
+const (
+	GatewayLiveTimeout = 3 * time.Minute
 )

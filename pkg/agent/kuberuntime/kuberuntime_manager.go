@@ -94,6 +94,8 @@ func containerStartSpec(c *v1.Container) *startSpec {
 type kubeGenericRuntimeManager struct {
 	runtimeName string
 
+	agentRuntime string
+
 	recorder record.EventRecorder
 
 	osInterface pkgcontainer.OSInterface
@@ -151,7 +153,8 @@ func NewManager(recorder record.EventRecorder,
 	imagePullBurst int,
 	cpuCFSQuota bool,
 	podStdoutRootDirectory string,
-	allowPrivileged bool) (pkgcontainer.Runtime, error) {
+	allowPrivileged bool,
+	agentRuntime string) (pkgcontainer.Runtime, error) {
 	ctx := context.Background()
 	m := &kubeGenericRuntimeManager{
 		recorder:               recorder,
@@ -168,6 +171,7 @@ func NewManager(recorder record.EventRecorder,
 		logReduction:           logreduction.NewLogReduction(identicalErrorDelay),
 		podStdoutRootDirectory: podStdoutRootDirectory,
 		allowPrivileged:        allowPrivileged,
+		agentRuntime:           agentRuntime,
 	}
 
 	typedVersion, err := m.getTypedVersion(ctx)

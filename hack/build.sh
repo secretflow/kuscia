@@ -17,51 +17,44 @@
 
 set -e
 
-exec_type=local
-ldflags="-X github.com/secretflow/kuscia/pkg/utils/meta.KusciaVersion=$(git describe --always)"
+app_type=""
 
-function build_exec() {
-  cmd="$@"
-  echo "$cmd"
-  if [ "$exec_type" == "docker" ]; then
-    docker exec kuscia-dev-$(whoami) bash -lc \
-      "cd /home/admin/dev && $cmd"
-  else
-    eval $cmd
-  fi
-}
+ldflags="-s -w -X github.com/secretflow/kuscia/pkg/utils/meta.KusciaVersion=$(git describe --tags --always)"
 
 function build_kuscia() {
+  echo "build kuscia binary..."
   mkdir -p build/apps/kuscia
-  build_exec go build -ldflags=\"$ldflags\" -o build/apps/kuscia/kuscia ./cmd/kuscia
+  eval go build -ldflags=\"$ldflags\" -o build/apps/kuscia/kuscia ./cmd/kuscia
 }
 
 function build_transport() {
   mkdir -p build/apps/transport
-  build_exec go build -ldflags=\"$ldflags\" -o build/apps/transport/transport ./cmd/transport
+  eval go build -ldflags=\"$ldflags\" -o build/apps/transport/transport ./cmd/transport
 }
 
 usage="$(basename "$0") [OPTIONS]
 OPTIONS:
     -h          show this help text
-    -w string   exec env: docker, local (default: docker)"
+    -t string   build app type. support kuscia, transport
+"
 
-while getopts ':hw:' option; do
+while getopts ':ht:' option; do
   case "$option" in
   h)
     echo "$usage"
     exit
     ;;
-  w)
-    exec_type=$OPTARG
-    if [[ "$exec_type" != "local" && "$exec_type" != "docker" ]]; then
-      printf "unknown env name: %s\n" "$exec_type" >&2
-      exit 1
-    fi
+  t)
+    app_type=$OPTARG
     ;;
   :)
     printf "missing argument for -%s\n" "$OPTARG" >&2
-    exit 1
+    if [[ $OPTARG == "t" ]]; then
+      printf "use default argument: kuscia\n"
+      app_type="kuscia"
+    else
+      exit 1
+    fi
     ;;
   \?)
     printf "illegal option: -%s\n" "$OPTARG" >&2
@@ -74,9 +67,12 @@ shift $((OPTIND - 1))
 base_dir=$(cd "$(dirname "$0")"/.. && pwd -P)
 pushd $base_dir
 
-if [[ $exec_type == "docker" ]]; then
-  build_exec bash hack/build.sh -w local
-else # run on local
+if [[ $app_type == "" ]]; then
+  echo "$usage"
+  exit 1
+elif [[ $app_type == "kuscia" ]]; then
   build_kuscia
+elif [[ $app_type == "transport" ]]; then
+  build_transport
 fi
 

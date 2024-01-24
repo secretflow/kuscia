@@ -22,7 +22,6 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -54,6 +53,7 @@ const (
 const (
 	controllerName         = "interconn-kuscia"
 	podQueueName           = "interconn-kuscia-pod-queue"
+	serviceQueueName       = "interconn-kuscia-service-queue"
 	taskResourceQueueName  = "interconn-kuscia-taskresource-queue"
 	interopConfigQueueName = "interconn-kuscia-interopconfig-queue"
 )
@@ -81,8 +81,13 @@ type Controller struct {
 	taskResourceLister    kuscialistersv1alpha1.TaskResourceLister
 	interopConfigSynced   cache.InformerSynced
 	interopConfigLister   kuscialistersv1alpha1.InteropConfigLister
+	domainDataSynced      cache.InformerSynced
+	domainDataLister      kuscialistersv1alpha1.DomainDataLister
+	domainDataGrantSynced cache.InformerSynced
+	domainDataGrantLister kuscialistersv1alpha1.DomainDataGrantLister
 	interopConfigQueue    workqueue.RateLimitingInterface
 	podQueue              workqueue.RateLimitingInterface
+	serviceQueue          workqueue.RateLimitingInterface
 	taskResourceQueue     workqueue.RateLimitingInterface
 }
 
@@ -102,14 +107,17 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, defaultResync)
 	interopConfigInformer := kusciaInformerFactory.Kuscia().V1alpha1().InteropConfigs()
 	taskResourceInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
-
+	domainDataInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
+	domainDataGrantInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDataGrants()
 	hMgrOpt := &hostresources.Options{
-		MemberKubeClient:      kubeClient,
-		MemberKusciaClient:    kusciaClient,
-		MemberPodLister:       podInformer.Lister(),
-		MemberServiceLister:   serviceInformer.Lister(),
-		MemberConfigMapLister: configMapInformer.Lister(),
-		MemberTrLister:        taskResourceInformer.Lister(),
+		MemberKubeClient:            kubeClient,
+		MemberKusciaClient:          kusciaClient,
+		MemberPodLister:             podInformer.Lister(),
+		MemberServiceLister:         serviceInformer.Lister(),
+		MemberConfigMapLister:       configMapInformer.Lister(),
+		MemberTrLister:              taskResourceInformer.Lister(),
+		MemberDomainDataGrantLister: domainDataGrantInformer.Lister(),
+		MemberDomainDataLister:      domainDataInformer.Lister(),
 	}
 
 	controller := &Controller{
@@ -131,8 +139,13 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		taskResourceLister:    taskResourceInformer.Lister(),
 		interopConfigSynced:   interopConfigInformer.Informer().HasSynced,
 		interopConfigLister:   interopConfigInformer.Lister(),
+		domainDataSynced:      domainDataInformer.Informer().HasSynced,
+		domainDataLister:      domainDataInformer.Lister(),
+		domainDataGrantSynced: domainDataGrantInformer.Informer().HasSynced,
+		domainDataGrantLister: domainDataGrantInformer.Lister(),
 		interopConfigQueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), interopConfigQueueName),
 		podQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), podQueueName),
+		serviceQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), serviceQueueName),
 		taskResourceQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskResourceQueueName),
 	}
 
@@ -153,6 +166,15 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
+	serviceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.resourceFilter,
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc:    controller.handleAddedService,
+			UpdateFunc: controller.handleUpdatedService,
+			DeleteFunc: controller.handleDeletedService,
+		},
+	})
+
 	taskResourceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
@@ -170,6 +192,8 @@ func (c *Controller) resourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
 		switch t := obj.(type) {
 		case *corev1.Pod:
+			return c.matchLabels(t)
+		case *corev1.Service:
 			return c.matchLabels(t)
 		case *kusciaapisv1alpha1.TaskResource:
 			return c.matchLabels(t)
@@ -213,17 +237,12 @@ func (c *Controller) matchLabels(obj metav1.Object) bool {
 		return false
 	}
 
-	initiator := labels[common.LabelTaskInitiator]
+	initiator := labels[common.LabelInitiator]
 	if initiator == "" || initiator == ns.Name {
 		return false
 	}
 
-	rv := labels[common.LabelResourceVersionUnderHostCluster]
-	if rv == "" {
-		return false
-	}
-
-	return true
+	return labels[common.LabelResourceVersionUnderHostCluster] != ""
 }
 
 // Run will set up the event handlers for types we are interested in, as well
@@ -234,6 +253,7 @@ func (c *Controller) Run(workers int) error {
 	defer func() {
 		c.interopConfigQueue.ShutDown()
 		c.podQueue.ShutDown()
+		c.serviceQueue.ShutDown()
 		c.taskResourceQueue.ShutDown()
 	}()
 
@@ -244,7 +264,7 @@ func (c *Controller) Run(workers int) error {
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 
 	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
-	if !cache.WaitForCacheSync(c.ctx.Done(), c.interopConfigSynced, c.namespaceSynced, c.podSynced, c.serviceSynced, c.configMapSynced, c.taskResourceSynced) {
+	if !cache.WaitForCacheSync(c.ctx.Done(), c.interopConfigSynced, c.namespaceSynced, c.podSynced, c.serviceSynced, c.configMapSynced, c.taskResourceSynced, c.domainDataGrantSynced) {
 		return fmt.Errorf("failed to wait for cache sync for %v", c.Name())
 	}
 	c.registerInteropConfigs()
@@ -255,6 +275,7 @@ func (c *Controller) Run(workers int) error {
 	for i := 0; i < workers; i++ {
 		go wait.UntilWithContext(c.ctx, c.runInteropConfigWorker, time.Second)
 		go wait.UntilWithContext(c.ctx, c.runPodWorker, time.Second)
+		go wait.UntilWithContext(c.ctx, c.runServiceWorker, time.Second)
 		go wait.UntilWithContext(c.ctx, c.runTaskResourceWorker, time.Second)
 	}
 
@@ -273,7 +294,7 @@ func (c *Controller) Stop() {
 
 // cleanupResidualResources is used to clean up residual resources.
 func (c *Controller) cleanupResidualResources() {
-	reqForInitiator, err := labels.NewRequirement(common.LabelTaskInitiator, selection.Exists, nil)
+	reqForInitiator, err := labels.NewRequirement(common.LabelInitiator, selection.Exists, nil)
 	if err != nil {
 		nlog.Warnf("New label requirement failed, %v", err.Error())
 		return
@@ -301,7 +322,7 @@ func (c *Controller) cleanupResidualPods(selector labels.Selector) {
 	}
 
 	for _, pod := range pods {
-		initiator := pod.Labels[common.LabelTaskInitiator]
+		initiator := pod.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, pod.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual pod %v/%v", pod.Namespace, pod.Name)
@@ -334,7 +355,7 @@ func (c *Controller) cleanupResidualServices(selector labels.Selector) {
 	}
 
 	for _, service := range services {
-		initiator := service.Labels[common.LabelTaskInitiator]
+		initiator := service.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, service.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual service %v/%v", service.Namespace, service.Name)
@@ -367,7 +388,7 @@ func (c *Controller) cleanupResidualConfigmaps(selector labels.Selector) {
 	}
 
 	for _, configmap := range configmaps {
-		initiator := configmap.Labels[common.LabelTaskInitiator]
+		initiator := configmap.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, configmap.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual configmap %v/%v", configmap.Namespace, configmap.Name)
@@ -400,7 +421,73 @@ func (c *Controller) cleanupResidualTaskResources(selector labels.Selector) {
 	}
 
 	for _, tr := range trs {
-		initiator := tr.Labels[common.LabelTaskInitiator]
+		initiator := tr.Labels[common.LabelInitiator]
+		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, tr.Namespace)
+		if ra == nil {
+			nlog.Infof("Delete residual task resource %v/%v", tr.Namespace, tr.Name)
+			if err = c.kusciaClient.KusciaV1alpha1().TaskResources(tr.Namespace).Delete(context.Background(), tr.Name, metav1.DeleteOptions{}); err != nil {
+				nlog.Warnf("Delete residual task resource %v/%v failed, %v", tr.Namespace, tr.Name, err.Error())
+			}
+			continue
+		}
+
+		if !ra.HasSynced() {
+			nlog.Infof("Host %v resource accessor has not synced, skip cleaning up residual task resources", initiator)
+			continue
+		}
+
+		if _, err = ra.HostTaskResourceLister().TaskResources(tr.Namespace).Get(tr.Name); k8serrors.IsNotFound(err) {
+			nlog.Infof("Delete residual task resource %v/%v", tr.Namespace, tr.Name)
+			if err = c.kusciaClient.KusciaV1alpha1().TaskResources(tr.Namespace).Delete(context.Background(), tr.Name, metav1.DeleteOptions{}); err != nil {
+				nlog.Warnf("Delete residual task resource %v/%v failed, %v", tr.Namespace, tr.Name, err.Error())
+			}
+		}
+	}
+}
+
+// cleanupResidualTaskResources is used to clean up residual domaindatagrant.
+func (c *Controller) cleanupResidualDomainDataGrant(selector labels.Selector) {
+	ddgs, err := c.domainDataGrantLister.List(selector)
+	if err != nil {
+		nlog.Warnf("List domaindatagrants by label selector %v failed, %v", selector.String(), err.Error())
+		return
+	}
+
+	for _, ddg := range ddgs {
+		initiator := ddg.Labels[common.LabelInitiator]
+		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, ddg.Namespace)
+		if ra == nil {
+			nlog.Infof("Delete residual domaindatagrant %v/%v", ddg.Namespace, ddg.Name)
+			if err = c.kusciaClient.KusciaV1alpha1().DomainDataGrants(ddg.Namespace).Delete(context.Background(), ddg.Name, metav1.DeleteOptions{}); err != nil {
+				nlog.Warnf("Delete residual domaindatagrant %v/%v failed, %v", ddg.Namespace, ddg.Name, err.Error())
+			}
+			continue
+		}
+
+		if !ra.HasSynced() {
+			nlog.Infof("Host %v resource accessor has not synced, skip cleaning up residual domaindatagrant", initiator)
+			continue
+		}
+
+		if _, err = ra.HostDomainDataGrantLister().DomainDataGrants(ddg.Namespace).Get(ddg.Name); k8serrors.IsNotFound(err) {
+			nlog.Infof("Delete residual task resource %v/%v", ddg.Namespace, ddg.Name)
+			if err = c.kusciaClient.KusciaV1alpha1().TaskResources(ddg.Namespace).Delete(context.Background(), ddg.Name, metav1.DeleteOptions{}); err != nil {
+				nlog.Warnf("Delete residual task resource %v/%v failed, %v", ddg.Namespace, ddg.Name, err.Error())
+			}
+		}
+	}
+}
+
+// cleanupResidualDomainData is used to clean up residual domaindata.
+func (c *Controller) cleanupResidualDomainData(selector labels.Selector) {
+	ddgs, err := c.domainDataLister.List(selector)
+	if err != nil {
+		nlog.Warnf("List domaindatagrants by label selector %v failed, %v", selector.String(), err.Error())
+		return
+	}
+
+	for _, tr := range ddgs {
+		initiator := tr.Labels[common.LabelInitiator]
 		ra := c.hostResourceManager.GetHostResourceAccessor(initiator, tr.Namespace)
 		if ra == nil {
 			nlog.Infof("Delete residual task resource %v/%v", tr.Namespace, tr.Name)
@@ -430,11 +517,3 @@ func (c *Controller) Name() string {
 }
 
 const crdInteropConfigsName = "interopconfigs.kuscia.secretflow"
-
-// CheckCRDExists is used to check if crd exist.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crdInteropConfigsName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	return nil
-}

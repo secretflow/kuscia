@@ -72,7 +72,7 @@ func (c *Controller) handleDeletedPod(obj interface{}) {
 		return
 	}
 
-	host := pod.Labels[common.LabelTaskInitiator]
+	host := pod.Labels[common.LabelInitiator]
 	hra := c.hostResourceManager.GetHostResourceAccessor(host, pod.Namespace)
 	if hra == nil {
 		nlog.Warnf("Host resource accessor for pod %v is empty of host/member %v/%v, skip this event...", pod.Name, host, pod.Namespace)
@@ -102,7 +102,7 @@ func (c *Controller) syncPodHandler(ctx context.Context, key string) (err error)
 		return err
 	}
 
-	host := mPod.Labels[common.LabelTaskInitiator]
+	host := mPod.Labels[common.LabelInitiator]
 	hra := c.hostResourceManager.GetHostResourceAccessor(host, namespace)
 	if hra == nil {
 		nlog.Warnf("Host resource accessor for pod %v is empty of host/member %v/%v, skip this event", key, host, namespace)
@@ -129,22 +129,26 @@ func (c *Controller) syncPodHandler(ctx context.Context, key string) (err error)
 	}
 
 	hPodCopy := hPod.DeepCopy()
-	if hPodCopy.Labels == nil || (hPodCopy.Labels != nil && hPodCopy.Labels[common.LabelPodHasSynced] != podHasSynced) {
+	if hPodCopy.Labels == nil || (hPodCopy.Labels != nil && hPodCopy.Labels[common.LabelHasSynced] != podHasSynced) {
 		extractedHPodLabels := utilsres.ExtractPodLabels(hPodCopy)
 		if extractedHPodLabels.Labels == nil {
 			extractedHPodLabels.Labels = make(map[string]string)
 		}
 
 		extractedHPodLabelsCopy := extractedHPodLabels.DeepCopy()
-		extractedHPodLabelsCopy.Labels[common.LabelPodHasSynced] = podHasSynced
+		extractedHPodLabelsCopy.Labels[common.LabelHasSynced] = podHasSynced
+
+		nlog.Infof("Patch member pod %v/%v label to host %v cluster", extractedHPodLabels.Namespace, extractedHPodLabels.Name, host)
 		if err = utilsres.PatchPod(ctx, hra.HostKubeClient(), extractedHPodLabels, extractedHPodLabelsCopy); err != nil {
-			return fmt.Errorf("patch pod %v label %v under host cluster failed, %v", key, common.LabelPodHasSynced, err.Error())
+			return fmt.Errorf("patch pod %v label %v under host cluster failed, %v", key, common.LabelHasSynced, err.Error())
 		}
 	}
 
 	mPodCopy := mPod.DeepCopy()
 	extractedMPodStatus := utilsres.ExtractPodStatus(mPodCopy)
 	extractedHPodStatus := utilsres.ExtractPodStatus(hPodCopy)
+
+	nlog.Infof("Patch member pod %v/%v status to host %v cluster", mPodCopy.Namespace, mPodCopy.Name, host)
 	if err = utilsres.PatchPodStatus(ctx, hra.HostKubeClient(), extractedHPodStatus, extractedMPodStatus); err != nil {
 		return fmt.Errorf("patch member pod %v status to host cluster failed, %v", key, err.Error())
 	}

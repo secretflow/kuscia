@@ -17,6 +17,7 @@ package bean
 import (
 	"context"
 	"fmt"
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"net"
 	"time"
 
@@ -24,30 +25,25 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/grpchandler"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
-	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
-	"github.com/secretflow/kuscia/pkg/web/interceptor"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-
-	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
+	"github.com/secretflow/kuscia/pkg/web/interceptor"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
 type grpcServerBean struct {
-	frameworkconfig.FlagEnvConfigLoader
-	config config.KusciaAPIConfig
+	config *config.KusciaAPIConfig
 }
 
 func NewGrpcServerBean(config *config.KusciaAPIConfig) *grpcServerBean { // nolint: golint
 	return &grpcServerBean{
-		FlagEnvConfigLoader: frameworkconfig.FlagEnvConfigLoader{
-			EnableTLSFlag: true,
-		},
-		config: *config,
+		config: config,
 	}
 }
 
@@ -55,15 +51,6 @@ func (s *grpcServerBean) Validate(errs *errorcode.Errs) {
 }
 
 func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
-	// tls config from config file
-	tlsConfig := s.config.TLSConfig
-	if tlsConfig != nil {
-		// override tls flags by config
-		s.TLSConfig.EnableTLS = true
-		s.TLSConfig.CAPath = tlsConfig.RootCAFile
-		s.TLSConfig.ServerCertPath = tlsConfig.ServerCertFile
-		s.TLSConfig.ServerKeyPath = tlsConfig.ServerKeyFile
-	}
 	return nil
 }
 
@@ -71,13 +58,12 @@ func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
 func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error {
 	// init grpc server opts
 	opts := []grpc.ServerOption{
-		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeOut) * time.Second),
+		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
 	}
-	if s.EnableTLS {
-		// tls enabled
-		serverTLSConfig, err := s.LoadServerTLSConfig()
+	if s.config.TLS != nil {
+		serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA, s.config.TLS.ServerCert, s.config.TLS.ServerKey)
 		if err != nil {
-			nlog.Fatalf("failed to init server tls config: %v", err)
+			nlog.Fatalf("Failed to init server tls config: %v", err)
 		}
 		creds := credentials.NewTLS(serverTLSConfig)
 		opts = append(opts, grpc.Creds(creds))
@@ -90,8 +76,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		nlog.Fatalf("failed to listen on addr[%s]: %v", addr, err)
 	}
 
-	tokenConfig := s.config.TokenConfig
-	if s.config.TokenConfig != nil {
+	tokenConfig := s.config.Token
+	if s.config.Token != nil {
 		token, err := utils.ReadToken(*tokenConfig)
 		if err != nil {
 			return err
@@ -109,6 +95,10 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterDomainRouteServiceServer(server, grpchandler.NewDomainRouteHandler(service.NewDomainRouteService(s.config)))
 	kusciaapi.RegisterHealthServiceServer(server, grpchandler.NewHealthHandler(service.NewHealthService()))
 	kusciaapi.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
+	kusciaapi.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())))
+	kusciaapi.RegisterServingServiceServer(server, grpchandler.NewServingHandler(service.NewServingService(s.config)))
+	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
+	kusciaapi.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(newCertService(s.config)))
 	reflection.Register(server)
 	nlog.Infof("grpc server listening on %s", addr)
 

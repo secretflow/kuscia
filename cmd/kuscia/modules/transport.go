@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/server/http"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -57,19 +58,12 @@ func (t *transportModule) runAsGoroutine(ctx context.Context) error {
 }
 
 func (t *transportModule) runAsSubProcess(ctx context.Context) error {
-	LogDir := filepath.Join(t.rootDir, LogPrefix, fmt.Sprintf("%s/", transportModuleName))
+	LogDir := filepath.Join(t.rootDir, common.LogPrefix, fmt.Sprintf("%s/", transportModuleName))
 	if err := os.MkdirAll(LogDir, 0755); err != nil {
 		return err
 	}
 
 	logPath := filepath.Join(LogDir, fmt.Sprintf("%s/%s.log", transportModuleName, transportModuleName))
-	fileOut, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		return err
-	}
-
-	defer fileOut.Close()
-
 	args := []string{
 		"--transport-config=" + t.configPath,
 		"--log.path=" + logPath,
@@ -78,8 +72,6 @@ func (t *transportModule) runAsSubProcess(ctx context.Context) error {
 	sp := supervisor.NewSupervisor(transportModuleName, nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(t.rootDir, transportBinPath), args...)
-		cmd.Stdout = fileOut
-		cmd.Stderr = fileOut
 		cmd.Env = os.Environ()
 		return cmd
 	})
@@ -91,7 +83,9 @@ func (t *transportModule) Name() string {
 
 func (t *transportModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
 	for {
 		select {
 		case <-ctx.Done():

@@ -15,35 +15,117 @@
 package errorcode
 
 import (
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 )
 
-const kusciaAPIErrorCode = errorcode.KusciaErrorCode(1)
-
 const (
-	ErrRequestValidate = kusciaAPIErrorCode + iota
-	ErrForUnexpected
-	ErrCreateJob
-	ErrQueryJob
-	ErrQueryJobStatus
-	ErrDeleteJob
-	ErrStopJob
+	ErrRequestValidate     = 11100
+	ErrForUnexpected       = 11101
+	ErrAuthFailed          = 11102
+	ErrRequestMasterFailed = 11103
+	ErrLiteAPINotSupport   = 11104
 
-	ErrCreateDomain = kusciaAPIErrorCode + 100 + iota
-	ErrQueryDomain
-	ErrQueryDomainStatus
-	ErrUpdateDomain
-	ErrDeleteDomain
+	ErrCreateJob      = 11201
+	ErrQueryJob       = 11202
+	ErrQueryJobStatus = 11203
+	ErrDeleteJob      = 11204
+	ErrStopJob        = 11205
 
-	ErrCreateDomainRoute = kusciaAPIErrorCode + 200 + iota
-	ErrQueryDomainRoute
-	ErrQueryDomainRouteStatus
-	ErrDeleteDomainRoute
+	ErrCreateDomain      = 11300
+	ErrQueryDomain       = 11301
+	ErrQueryDomainStatus = 11302
+	ErrUpdateDomain      = 11303
+	ErrDeleteDomain      = 11304
+	ErrDomainNotExists   = 11305
+	ErrDomainExists      = 11306
 
-	ErrCreateDomainDataFailed = kusciaAPIErrorCode + 300 + iota
-	ErrDeleteDomainDataFailed
-	ErrGetDomainDataFailed
-	ErrListDomainDataFailed
-	ErrMergeDomainDataFailed
-	ErrPatchDomainDataFailed
+	ErrCreateDomainRoute      = 11400
+	ErrQueryDomainRoute       = 11401
+	ErrQueryDomainRouteStatus = 11402
+	ErrDeleteDomainRoute      = 11403
+	ErrDomainRouteNotExists   = 11404
+	ErrDomainRouteExists      = 11405
+
+	ErrCreateDomainDataFailed = 11500
+	ErrDeleteDomainDataFailed = 11501
+	ErrGetDomainDataFailed    = 11502
+	ErrListDomainDataFailed   = 11503
+	ErrMergeDomainDataFailed  = 11504
+	ErrPatchDomainDataFailed  = 11505
+	ErrDomainDataNotExists    = 11506
+	ErrDomainDataExists       = 11507
+
+	ErrCreateServing      = 11600
+	ErrQueryServing       = 11601
+	ErrQueryServingStatus = 11602
+	ErrUpdateServing      = 11603
+	ErrDeleteServing      = 11604
+
+	ErrCreateDomainDataGrant    = 11700
+	ErrUpdateDomainDataGrant    = 11701
+	ErrQueryDomainDataGrant     = 11702
+	ErrDeleteDomainDataGrant    = 11703
+	ErrDomainDataGrantExists    = 11704
+	ErrDomainDataGrantNotExists = 11705
+
+	ErrCreateDomainDataSource           = 11800
+	ErrUpdateDomainDataSource           = 11801
+	ErrQueryDomainDataSource            = 11802
+	ErrBatchQueryDomainDataSource       = 11803
+	ErrDeleteDomainDataSource           = 11804
+	ErrDomainDataSourceExists           = 11805
+	ErrDomainDataSourceNotExists        = 11806
+	ErrDomainDataSourceInfoEncodeFailed = 11907
 )
+
+func GetDomainErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainRouteErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainRouteNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainRouteExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainDataErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainDataGrantErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataGrantNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataGrantExists
+	}
+	return defaultErrorCode
+}
+
+func GetDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainDataSourceNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataSourceExists
+	}
+	return defaultErrorCode
+}

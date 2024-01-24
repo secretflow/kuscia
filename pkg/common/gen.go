@@ -15,6 +15,7 @@
 package common
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -32,9 +33,17 @@ func GenDomainDataID(dataName string) (dataID string) {
 		prefix = prefix[:16]
 	}
 
-	if !strings.HasSuffix(prefix, "-") {
+	if prefix != "" && !strings.HasSuffix(prefix, "-") {
 		prefix = prefix + "-"
 	}
 
 	return prefix + uuid.NewString()
+}
+
+func GenDomainRouteName(src, dest string) string {
+	return fmt.Sprintf("%s-%s", src, dest)
+}
+
+func GenerateClusterName(source, dest, portName string) string {
+	return fmt.Sprintf("%s-to-%s-%s", source, dest, portName)
 }

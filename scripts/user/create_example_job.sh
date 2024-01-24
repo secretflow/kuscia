@@ -23,7 +23,8 @@ SUB_HOST_REGEXP="^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?
 
 USAGE="$(basename "$0") [JOB_EXAMPLE] [JOB_NAME]
 JOB_EXAMPLE:
-    PSI                 run psi (default)
+    PSI                 run psi with default-data-source (default)
+    PSI_WITH_DP         run psi with default-dp-data-source
     NSJAIL_PSI          run psi via nsjail
 "
 JOB_EXAMPLE=$1
@@ -33,7 +34,7 @@ if [[ ${JOB_EXAMPLE} == "" ]]; then
   JOB_EXAMPLE="PSI"
 fi
 
-if [[ ${JOB_EXAMPLE} != "PSI" && ${JOB_EXAMPLE} != "NSJAIL_PSI" ]]; then
+if [[ ${JOB_EXAMPLE} != "PSI" && ${JOB_EXAMPLE} != "PSI_WITH_DP" && ${JOB_EXAMPLE} != "NSJAIL_PSI" ]]; then
   printf "invalid arguments: JOB_EXAMPLE=%s\n\n%s" "${JOB_EXAMPLE}" "${USAGE}" >&2
   exit 1
 fi
@@ -58,12 +59,21 @@ if [[ ! $JOB_NAME =~ ${SUB_HOST_REGEXP} ]]; then
   echo "job name should match ${SUB_HOST_REGEXP}"
   exit 1
 fi
-TASK_INPUT_CONFIG=$(jq -c . <"scripts/templates/task_input_config.2pc_balanced_psi.json")
+
+TASK_INPUT_CONFIG=""
+if [[ $JOB_EXAMPLE == "PSI_WITH_DP" ]]; then
+  TASK_INPUT_CONFIG=$(jq -c . <"scripts/templates/task_input_config.2pc_balanced_psi_dp.json")
+else
+  TASK_INPUT_CONFIG=$(jq -c . <"scripts/templates/task_input_config.2pc_balanced_psi.json")
+fi
 ESCAPE_TASK_INPUT_CONFIG=$(echo $TASK_INPUT_CONFIG | sed "s~[\]~\\\&~g")
 
 APP_IMAGE=""
 case ${JOB_EXAMPLE} in
 "PSI")
+  APP_IMAGE="secretflow-image"
+  ;;
+"PSI_WITH_DP")
   APP_IMAGE="secretflow-image"
   ;;
 "NSJAIL_PSI")

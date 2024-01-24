@@ -1,0 +1,164 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service ServingService {
+  rpc CreateServing(CreateServingRequest) returns (CreateServingResponse);
+
+  rpc QueryServing(QueryServingRequest) returns (QueryServingResponse);
+
+  rpc UpdateServing(UpdateServingRequest) returns (UpdateServingResponse);
+
+  rpc DeleteServing(DeleteServingRequest) returns (DeleteServingResponse);
+
+  rpc BatchQueryServingStatus(BatchQueryServingStatusRequest) returns (BatchQueryServingStatusResponse);
+}
+
+message CreateServingRequest {
+  RequestHeader header = 1;
+  string serving_id = 2;
+  string serving_input_config = 3;
+  string initiator = 4;
+  repeated ServingParty parties = 5;
+}
+
+message CreateServingResponse {
+  Status status = 1;
+}
+
+message QueryServingRequest {
+  RequestHeader header = 1;
+  string serving_id = 2;
+}
+
+message QueryServingResponse {
+  Status status = 1;
+  QueryServingResponseData data = 2;
+}
+
+message QueryServingResponseData {
+  string serving_input_config = 1;
+  string initiator = 2;
+  repeated ServingParty parties = 3;
+  ServingStatusDetail status = 4;
+}
+
+message UpdateServingRequest {
+  RequestHeader header = 1;
+  string serving_id = 2;
+  string serving_input_config = 3;
+  repeated ServingParty parties = 4;
+}
+
+message UpdateServingResponse {
+  Status status = 1;
+}
+
+message DeleteServingRequest {
+  RequestHeader header = 1;
+  string serving_id = 2;
+}
+
+message DeleteServingResponse {
+  Status status = 1;
+}
+
+message BatchQueryServingStatusRequest {
+  RequestHeader header = 1;
+  repeated string serving_ids = 2;
+}
+
+message BatchQueryServingStatusResponse {
+  Status status = 1;
+  BatchQueryServingStatusResponseData data = 2;
+}
+
+message BatchQueryServingStatusResponseData {
+  repeated ServingStatus servings = 1;
+}
+
+message ServingParty {
+  string domain_id = 1;
+  string role = 2;
+  string app_image = 3;
+  // The Number of desired instances. Default value: 1.
+  optional int32 replicas = 4;
+  UpdateStrategy update_strategy = 5;
+  repeated Resource resources = 6;
+}
+
+// Container resource.
+message Resource {
+  string container_name = 1;
+  string min_cpu = 2;
+  string max_cpu = 3;
+  string min_memory = 4;
+  string max_memory = 5;
+}
+
+message UpdateStrategy {
+  // The Type of serving updating strategy.
+  // Can be "Recreate" or "RollingUpdate", default is RollingUpdate.
+  string type = 1;
+  // The maximum number of instances that can be scheduled above the desired number of instances.
+  // Default is 25%.
+  string max_surge = 2;
+  // The maximum number of instances that can be unavailable during the update.
+  // Default is 25%.
+  string max_unavailable = 3;
+}
+
+message ServingStatus {
+  string serving_id = 1;
+  ServingStatusDetail status = 2;
+}
+
+message ServingStatusDetail {
+  string state = 1;
+  string reason = 2;
+  string message = 3;
+  int32 total_parties = 4;
+  int32 available_parties = 5;
+  string create_time = 6;
+  repeated PartyServingStatus party_statuses = 7;
+}
+
+message PartyServingStatus {
+  string domain_id = 1;
+  string role = 2;
+  string state = 3;
+  int32 replicas = 4;
+  int32 available_replicas = 5;
+  int32 unavailable_replicas = 6;
+  int32 updatedReplicas = 7;
+  string create_time = 8;
+  repeated ServingPartyEndpoint endpoints = 9;
+}
+
+message ServingPartyEndpoint {
+  // service port name which defined in AppImage container port.
+  string port_name = 1;
+  // service scope which defined in AppImage container port.
+  string scope = 2;
+  // service access address.
+  string endpoint = 3;
+}

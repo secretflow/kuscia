@@ -17,19 +17,12 @@ package node
 import (
 	"context"
 	"fmt"
-	"runtime"
-	"strings"
-	"time"
 
 	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/agent/framework"
-	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/agent/utils/nodeutils"
 	"github.com/secretflow/kuscia/pkg/utils/math"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -40,167 +33,43 @@ const (
 
 	DiskOutMinFreeSize  = 100 * 1024 * 1024 // 100MB
 	DiskOutMinFreeInode = 1000              // 1000 inodes
-
-	nodeRoleLabelKey       = "kubernetes.io/role"
-	nodeAPIVersionLabelKey = "kubernetes.io/apiVersion"
-	domainLabelKey         = "domain"
 )
 
-type GenericNodeConfig struct {
-	Namespace    string
-	NodeName     string
-	NodeIP       string
-	APIVersion   string
-	AgentVersion string
-	AgentConfig  *config.AgentConfig
-	PodsAuditor  *PodsAuditor
+type GenericNodeDependence struct {
+	BaseNodeDependence
+	RootDir string
 }
 
 type GenericNodeProvider struct {
-	name string
-	ip   string
-	ns   string
-	port string
+	rootDir string
 
-	APIVersion   string
-	AgentVersion string
-
-	podsAuditor *PodsAuditor
-
-	config   *config.AgentConfig
-	notifier func(*v1.Node)
-
-	isAgentReady      bool
-	agentReadyMessage string
+	*BaseNode
 }
 
-func NewNodeProvider(cfg *GenericNodeConfig) (*GenericNodeProvider, error) {
-	np := &GenericNodeProvider{
-		name: cfg.NodeName,
-		ip:   cfg.NodeIP,
-		ns:   cfg.Namespace,
-
-		APIVersion:   cfg.APIVersion,
-		AgentVersion: cfg.AgentVersion,
-
-		podsAuditor: cfg.PodsAuditor,
-		config:      cfg.AgentConfig,
-
-		isAgentReady:      false,
-		agentReadyMessage: "Agent is starting",
+func NewGenericNodeProvider(dep *GenericNodeDependence) *GenericNodeProvider {
+	gnp := &GenericNodeProvider{
+		rootDir: dep.RootDir,
 	}
+	gnp.BaseNode = newBaseNode(&dep.BaseNodeDependence)
 
-	return np, nil
+	return gnp
 }
 
-func (np *GenericNodeProvider) Ping(ctx context.Context) error {
+func (gnp *GenericNodeProvider) Ping(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (np *GenericNodeProvider) SetStatusUpdateCallback(ctx context.Context, f func(*v1.Node)) {
-	np.notifier = f
+func (gnp *GenericNodeProvider) SetStatusUpdateCallback(ctx context.Context, f func(*v1.Node)) {
+	return
 }
 
-func (np *GenericNodeProvider) ConfigureNode(ctx context.Context) *v1.Node {
-	nlog.Debug("Start generate k8s node")
+func (gnp *GenericNodeProvider) ConfigureNode(ctx context.Context, name string) *v1.Node {
+	node := gnp.configureCommonNode(ctx, name)
+	gnp.RefreshNodeStatus(ctx, &node.Status)
 
-	nodeInfo := v1.NodeSystemInfo{
-		Architecture:    runtime.GOARCH,
-		KubeletVersion:  np.AgentVersion,
-		OperatingSystem: runtime.GOOS,
-	}
+	nlog.Infof("Configure generic node %q successfully", name)
 
-	hi, err := host.InfoWithContext(ctx)
-	if err == nil {
-		if hi.KernelArch != "" {
-			nodeInfo.Architecture = hi.KernelArch
-		}
-		nodeInfo.BootID = fmt.Sprintf("%v-%v", hi.BootTime, time.Now().UnixNano())
-		nodeInfo.MachineID = hi.HostID
-		nodeInfo.KernelVersion = hi.KernelVersion
-		prefix := ""
-		if hi.VirtualizationSystem != "" {
-			prefix = hi.VirtualizationSystem + "://"
-		}
-		nodeInfo.OSImage = fmt.Sprintf("%s%s:%s", prefix, joinStrings([]string{hi.OS, hi.Platform}, "/"), hi.PlatformVersion)
-		suffix := joinStrings([]string{hi.PlatformFamily, hi.VirtualizationRole}, ", ")
-		if suffix != "" {
-			nodeInfo.OSImage += fmt.Sprintf(" (%s)", suffix)
-		}
-	} else {
-		nlog.Errorf("Read system information fail: %v", err)
-		nodeInfo.BootID = fmt.Sprint(time.Now().UnixNano())
-	}
-
-	nodeMeta := &v1.Node{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: np.name,
-			Labels: map[string]string{
-				nodeAPIVersionLabelKey:    np.APIVersion,
-				nodeRoleLabelKey:          "agent",
-				domainLabelKey:            np.ns,
-				common.LabelNodeNamespace: np.ns,
-				v1.LabelHostname:          np.name,
-				v1.LabelOSStable:          nodeInfo.OperatingSystem,
-				v1.LabelArchStable:        nodeInfo.Architecture,
-			},
-		},
-		Spec: v1.NodeSpec{
-			Taints: []v1.Taint{
-				{
-					Key:    common.KusciaTaintTolerationKey,
-					Value:  "v1",
-					Effect: v1.TaintEffectNoSchedule,
-				},
-			},
-			Unschedulable: false,
-		},
-		Status: v1.NodeStatus{
-			NodeInfo: nodeInfo,
-			Addresses: []v1.NodeAddress{
-				{
-					Type:    "InternalIP",
-					Address: np.ip,
-				},
-			},
-			Capacity:    np.podsAuditor.Capacity(),
-			Allocatable: np.podsAuditor.Allocatable(),
-			Conditions:  np.GenerateInitConditions(),
-		},
-	}
-
-	nlog.Debug("Generate static node info done")
-	np.RefreshNodeStatus(ctx, &nodeMeta.Status)
-	return nodeMeta
-}
-
-// SetAgentReady sets agent ready flag to true.
-func (np *GenericNodeProvider) SetAgentReady(ctx context.Context, ready bool, message string) {
-	np.isAgentReady = ready
-	np.agentReadyMessage = message
-}
-
-// GenerateInitConditions returns a list of conditions (Ready, OutOfDisk, etc), for updates to the node status
-// within Kubernetes.
-func (np *GenericNodeProvider) GenerateInitConditions() []v1.NodeCondition {
-	var conditions []v1.NodeCondition
-
-	// network
-	conditions, _ = framework.AddOrUpdateNodeCondition(conditions, v1.NodeCondition{
-		Type:    v1.NodeNetworkUnavailable,
-		Status:  v1.ConditionFalse,
-		Reason:  "RouteCreated",
-		Message: "RouteController created a route",
-	})
-	// PIDPressure
-	conditions, _ = framework.AddOrUpdateNodeCondition(conditions, v1.NodeCondition{
-		Type:    v1.NodePIDPressure,
-		Status:  v1.ConditionFalse,
-		Reason:  "AgentHasSufficientPID",
-		Message: "Agent has sufficient PID available",
-	})
-
-	return conditions
+	return node
 }
 
 // refreshDiskCondition checks whether the disk capacity is under pressure.
@@ -209,7 +78,7 @@ func (np *GenericNodeProvider) GenerateInitConditions() []v1.NodeCondition {
 //  2. does out of disk? [bool]
 //  3. message of disk pressure status [string]
 //  4. message of disk out status [string]
-func (np *GenericNodeProvider) refreshDiskCondition(name, path string) (bool, bool, string, string) {
+func (gnp *GenericNodeProvider) refreshDiskCondition(name, path string) (bool, bool, string, string) {
 	du, err := disk.Usage(path)
 	if err != nil {
 		nlog.Warnf("Get disk usage info fail, volume=%v, path=%v, err=%v", name, path, err)
@@ -232,27 +101,9 @@ func (np *GenericNodeProvider) refreshDiskCondition(name, path string) (bool, bo
 	return diskPressure, outOfDisk, pressureMsg, outMsg
 }
 
-// RefreshNodeConditions refreshes node condition.
+// refreshNodeConditions refreshes node condition.
 // return: whether the condition changes
-func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1.NodeStatus) bool {
-	// agent ready
-	var agentChanged bool
-	if np.isAgentReady {
-		st.Conditions, agentChanged = framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
-			Type:    v1.NodeReady,
-			Status:  v1.ConditionTrue,
-			Reason:  "AgentReady",
-			Message: np.agentReadyMessage,
-		})
-	} else {
-		st.Conditions, agentChanged = framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
-			Type:    v1.NodeReady,
-			Status:  v1.ConditionFalse,
-			Reason:  "AgentNotReady",
-			Message: np.agentReadyMessage,
-		})
-	}
-
+func (gnp *GenericNodeProvider) refreshNodeConditions(ctx context.Context, st *v1.NodeStatus) bool {
 	// memory condition
 	var memChanged bool
 	if memory, err := mem.VirtualMemoryWithContext(ctx); err != nil {
@@ -264,7 +115,7 @@ func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1
 				(float64(memory.Total) - float64(memory.Available)) / float64(memory.Total)
 		}
 		if memoryPressure >= MemoryPressureThreshold {
-			st.Conditions, memChanged = framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+			st.Conditions, memChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 				Type:   v1.NodeMemoryPressure,
 				Status: v1.ConditionTrue,
 				Reason: "AgentHasMemoryPressure",
@@ -273,7 +124,7 @@ func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1
 					math.ByteCountBinary(int64(memory.Available))),
 			})
 		} else {
-			st.Conditions, memChanged = framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+			st.Conditions, memChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 				Type:   v1.NodeMemoryPressure,
 				Status: v1.ConditionFalse,
 				Reason: "AgentHasSufficientMemory",
@@ -286,16 +137,16 @@ func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1
 
 	// disk
 	var diskPressureChanged, diskOutChanged bool
-	diskPressure, outOfDisk, pressureMsg, outMsg := np.refreshDiskCondition("agent_volume", np.config.RootDir)
+	diskPressure, outOfDisk, pressureMsg, outMsg := gnp.refreshDiskCondition("agent_volume", gnp.rootDir)
 	if diskPressure {
-		st.Conditions, diskPressureChanged = framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+		st.Conditions, diskPressureChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 			Type:    v1.NodeDiskPressure,
 			Status:  v1.ConditionTrue,
 			Reason:  "AgentHasDiskPressure",
 			Message: fmt.Sprintf("Disk is about to run out. %v", pressureMsg),
 		})
 	} else {
-		st.Conditions, diskPressureChanged = framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+		st.Conditions, diskPressureChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 			Type:    v1.NodeDiskPressure,
 			Status:  v1.ConditionFalse,
 			Reason:  "AgentHasNoDiskPressure",
@@ -305,7 +156,7 @@ func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1
 
 	if outOfDisk {
 		st.Conditions, diskOutChanged =
-			framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+			nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 				Type:    "OutOfDisk",
 				Status:  v1.ConditionTrue,
 				Reason:  "AgentIsOutOfDisk",
@@ -313,7 +164,7 @@ func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1
 			})
 	} else {
 		st.Conditions, diskOutChanged =
-			framework.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+			nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 				Type:    "OutOfDisk",
 				Status:  v1.ConditionFalse,
 				Reason:  "AgentHasSufficientDisk",
@@ -321,23 +172,12 @@ func (np *GenericNodeProvider) RefreshNodeConditions(ctx context.Context, st *v1
 			})
 	}
 
-	return agentChanged || memChanged || diskPressureChanged || diskOutChanged
+	return memChanged || diskPressureChanged || diskOutChanged
 }
 
-func (np *GenericNodeProvider) RefreshNodeStatus(ctx context.Context, nodeStatus *v1.NodeStatus) bool {
-	condChange := np.RefreshNodeConditions(ctx, nodeStatus)
+func (gnp *GenericNodeProvider) RefreshNodeStatus(ctx context.Context, nodeStatus *v1.NodeStatus) bool {
+	condChange := gnp.refreshNodeConditions(ctx, nodeStatus)
 
 	nlog.Debugf("Refresh node status finish, condition_changed=%v", condChange)
 	return condChange
-}
-
-// join none empty strings
-func joinStrings(elems []string, sep string) string {
-	list := make([]string, 0, len(elems))
-	for _, elem := range elems {
-		if elem != "" {
-			list = append(list, elem)
-		}
-	}
-	return strings.Join(list, sep)
 }

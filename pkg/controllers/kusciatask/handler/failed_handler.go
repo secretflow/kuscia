@@ -19,7 +19,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
 
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -34,7 +33,6 @@ type FailedHandler struct {
 	*FinishedHandler
 	kusciaClient kusciaclientset.Interface
 	trgLister    kuscialistersv1alpha1.TaskResourceGroupLister
-	recorder     record.EventRecorder
 }
 
 // NewFailedHandler returns a FailedHandler instance.
@@ -42,7 +40,6 @@ func NewFailedHandler(deps *Dependencies, finishedHandler *FinishedHandler) *Fai
 	return &FailedHandler{
 		FinishedHandler: finishedHandler,
 		kusciaClient:    deps.KusciaClient,
-		recorder:        deps.Recorder,
 		trgLister:       deps.TrgLister,
 	}
 }
@@ -55,7 +52,6 @@ func (h *FailedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool,
 	if err != nil {
 		return false, err
 	}
-	h.recorder.Event(kusciaTask, v1.EventTypeWarning, "KusciaTaskFailed", "KusciaTask failed to run")
 	metrics.TaskResultStats.WithLabelValues(metrics.Failed).Inc()
 	return needUpdate, nil
 }
@@ -88,11 +84,6 @@ func updateStatuses(kusciaTask *kusciaapisv1alpha1.KusciaTask) {
 	for idx, status := range kusciaTask.Status.PartyTaskStatus {
 		if status.Phase == kusciaapisv1alpha1.TaskPending || status.Phase == kusciaapisv1alpha1.TaskRunning {
 			kusciaTask.Status.PartyTaskStatus[idx].Phase = kusciaapisv1alpha1.TaskFailed
-			if kusciaTask.Status.Reason == KusciaJobStopped {
-				kusciaTask.Status.PartyTaskStatus[idx].Message = "Kuscia job stopped"
-			} else {
-				kusciaTask.Status.PartyTaskStatus[idx].Message = "Kuscia task failed"
-			}
 		}
 	}
 

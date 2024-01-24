@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -29,11 +30,11 @@ import (
 
 var (
 	dsID     = common.DefaultDataSourceID
-	domainId = "DomainDataUnitTestNamespace"
+	domainId = "domain-data-unit-test-namespace"
 )
 
 func TestCreateDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -73,7 +74,7 @@ func TestCreateDomainData(t *testing.T) {
 }
 
 func TestQueryDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -108,7 +109,7 @@ func TestQueryDomainData(t *testing.T) {
 }
 
 func TestUpdateDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -148,7 +149,7 @@ func TestUpdateDomainData(t *testing.T) {
 }
 
 func TestDeleteDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -181,7 +182,7 @@ func TestDeleteDomainData(t *testing.T) {
 }
 
 func TestBatchQueryDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -236,7 +237,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 }
 
 func TestListDomainData(t *testing.T) {
-	conf := config.KusciaAPIConfig{
+	conf := &config.KusciaAPIConfig{
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
@@ -258,7 +259,8 @@ func TestListDomainData(t *testing.T) {
 			Type:   "path",
 			Fields: col[1:],
 		},
-		Columns: col,
+		Columns:    col,
+		FileFormat: v1alpha1.FileFormat_CSV,
 	})
 	_ = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
@@ -273,8 +275,9 @@ func TestListDomainData(t *testing.T) {
 			Type:   "path",
 			Fields: col[1:],
 		},
-		Columns: col,
-		Vendor:  "manual",
+		Columns:    col,
+		Vendor:     "manual",
+		FileFormat: v1alpha1.FileFormat_CSV,
 	})
 	res2 := domainDataService.ListDomainData(context.Background(), &kusciaapi.ListDomainDataRequest{
 		Header: nil,

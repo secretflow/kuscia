@@ -1,6 +1,6 @@
 # 架构
 
-Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K8s 的隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia 提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。
+Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的轻量级隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia 提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。
 
 Kuscia 集群由控制平面（俗称调度面、Master）和节点组成。控制平面负责调度，节点负责计算。
 
@@ -24,22 +24,21 @@ Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联
 
 #### Kuscia Controllers
 
-Kuscia 扩展了一组 Kubernetes 控制器，用于处理 Kuscia 的自定义资源，这些控制器包括：
-
+Kuscia 扩展了一组 K3s 控制器，用于处理 Kuscia 的自定义资源，这些控制器包括：
 
 - Job Controller：作业控制器，负责解析作业 DAG 的描述信息，进行 DAG 的编排与多任务调度、采集任务状态。
 - Task Controller：任务控制器，负责解析任务的描述信息，实现多方任务的 Co-Scheduling 调度，对应作业 DAG 中的顶点。
 - Kuscia Scheduler： Kuscia 调度器，负责多方 Pod 的 Co-Scheduling 调度，具备 All-or-Nothing 调度效果。
 - Domain Controller：节点控制器，负责管理节点资源、为节点分配 Namespace。
-- DomainRoute Controller：路由控制器，负责管理节点与节点、节点与 Master的路由规则以及身份认证和鉴权策略。
+- DomainRoute Controller：路由控制器，负责管理节点与节点、节点与 Master 的路由规则以及身份认证和鉴权策略。
 - InterConn Controllers：互联互通控制器，负责不同控制平面下的节点互通，从而协同完成多方任务调度，支持多种互联互通协议。
 - Data Controller: 数据控制器，负责数据授权管理，暂未开源。
 - Serving Controller：服务控制器，负责常驻任务流的编排和调度，暂未开源。
+
 #### Kuscia Storage
 
-Kuscia Storage 是对 Kubernetes 原生集群存储的补充。Kubernetes 原生集群存储不适合存储大 value，因此对于大 value 的资源属性，如作业配置等，将存储在 Kuscia Storage 
+Kuscia Storage 是对 K3s 原生集群存储的补充。K3s 原生集群存储不适合存储大 value，因此对于大 value 的资源属性，如作业配置等，将存储在 Kuscia Storage
 中。该模块暂未开源。
-
 
 #### Envoy
 
@@ -62,16 +61,38 @@ Lite 节点主要由 Agent、NetworkMesh、DataMesh（功能暂不完备），�
 
 #### Agent
 
-Agent 主要负责节点实例注册和容器管理。将节点实例注册为 Kubernetes 集群的工作节点后，用于管理 Kubernetes 集群下发的任务 Pod，并对 Pod 生命周期和节点实例生命周期进行管理。
+Agent 主要负责节点实例注册和容器管理。将节点实例注册为 K3s 集群的工作节点后，用于管理 K3s 集群下发的任务 Pod，并对 Pod 生命周期和节点实例生命周期进行管理。
 
-Agent 当前支持 RunC 运行时，后续还将支持 RunP 和 RunK 模式：
+Agent 当前支持 RunC、 RunP 和 RunK 三种运行时：
 
-- RunK：对接 K8s 集群，以 K8s 的 Pod 形式拉起任务容器。
-- RunP：直接在 Agent 容器内以进程形式启动任务进程。
+- RunC：即容器运行时，以原生容器的方式拉起任务 Pod。
+- RunP：即进程运行时，直接在 Agent 容器内以进程形式拉起任务 Pod。
+- RunK：即 K8s 运行时，对接 K8s 集群，将任务 Pod 转发提交至 K8s 集群中执行。
+
+
+
+![Runtime](../imgs/runtime.png)
+
+
+
+三种运行时有各自的适用场景，你可以在不同的场景中根据运行时的特性来选择最合适的运行时：
+
+- RunC： 在 ECS 部署环境中推荐使用，兼顾了安全性与便捷性。
+- RunP： 在 K8s 部署环境中推荐使用，架构简单且对权限无要求。
+- RunK： 在高并发任务场景中推荐使用，安全性强且资源利用率高。
+
+|                  | RunC                           | RunP                         | RunK                                                    |
+| ---------------- | ------------------------------ | ---------------------------- | ------------------------------------------------------- |
+| 资源隔离         | 支持                           | 不支持                       | 支持                                                    |
+| 部署权限         | Kuscia 容器特权启动            | 无要求                       | 申请机构 K8s 动态创建资源权限（例如 Pod、ConfigMap 等） |
+| 任务安全风险扩散 | 任务运行在不同容器中，不易扩散 | 任务运行在同一容器中，易扩散 | 任务运行在不同容器（Pod）中，不易扩散                   |
+| 资源利用率       | 较低                           | 较低                         | 较高（任务需要的资源可以在机构 K8s 侧动态扩缩）         |
+
+
 
 #### NetworkMesh
 
-NetworkMesh是算法容器之间进行网络通信的基础设施，包含CoreDNS、DomainRoute、Envoy、Transport四个组件。
+NetworkMesh 是算法容器之间进行网络通信的基础设施，包含 CoreDNS、DomainRoute、Envoy、Transport 四个组件。
 
 ##### CoreDNS
 
@@ -145,10 +166,11 @@ Kuscia 提供三种部署模式：Docker 模式、K8s 模式、K8s 控制器模�
 ![Deployment Mode](../imgs/job_schedule.png)
 
 其中 Job 中的一个 Task 调度流程如下:
+
 - Task Controller 在各参与方节点的 Namespace 下分别创建 TaskResource 对象和 PodGroup（包含一组 Label 相同的任务 Pod）。
-- 任务参与方的 InterConn Controller 从调度方集群中将本方的 TaskResource 和 PodGroup 同步到参与方集群中。参与方集群中的 TaskResource 和 PodGroup 的状态也会通过 
+- 任务参与方的 InterConn Controller 从调度方集群中将本方的 TaskResource 和 PodGroup 同步到参与方集群中。参与方集群中的 TaskResource 和 PodGroup 的状态也会通过
   InterConn Controller 同步到调度方集群中。
 - Kuscia Scheduler 为各 PodGroup 中的 Pod 预留资源，当 PodGroup 中资源预留成功的 Pod 数量满足 MinReservedPods
-阀值时，将 PodGroup 对应的 TaskResource 状态更新为 Reserved。在点对点（P2P）组网模式下，调度方的 Kuscia Scheduler 不会调度本集群中非本方的 Pod。
+  阀值时，将 PodGroup 对应的 TaskResource 状态更新为 Reserved。在点对点（P2P）组网模式下，调度方的 Kuscia Scheduler 不会调度本集群中非本方的 Pod。
 - Task Controller 监听到 TaskResource 预留成功的数量满足 MinReservedMembers 阈值时，则将各参与方的 TaskResource 的状态更新为 Schedulable。
 - Kuscia Scheduler 监听到 TaskResource 的状态变为 Schedulable 后，绑定 PodGroup 中的任务 Pod 到已分配的节点上。

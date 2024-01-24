@@ -18,12 +18,17 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+
+	"github.com/secretflow/kuscia/pkg/common"
 )
 
 // Options is the main context object for the domain controller.
 type Options struct {
 	Kubeconfig string
 	MasterURL  string
+	RunMode    common.RunModeType
+	Namespace  string
+	RootDir    string
 	Workers    int
 	// QPS indicates the maximum QPS to the master from this client.
 	// If it's zero, the created RESTClient will use DefaultQPS: 5

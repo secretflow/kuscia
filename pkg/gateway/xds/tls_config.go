@@ -22,7 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/protobuf/types/known/anypb"
 
-	"github.com/secretflow/kuscia/pkg/gateway/utils"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 type TLSCert struct {
@@ -36,9 +36,6 @@ func GenerateUpstreamTLSConfigByCert(cert *TLSCert) (*core.TransportSocket, erro
 }
 
 func GenerateUpstreamTLSConfigByCertStr(cert, key, ca []byte) (*core.TransportSocket, error) {
-	if len(ca) == 0 && (len(cert) == 0 || len(key) == 0) {
-		return nil, fmt.Errorf("invalid upstream tls config, cert:(%s) key:(%s) ca:(%s)", cert, key, ca)
-	}
 	if err := checkTLSConfig(cert, key, ca); err != nil {
 		return nil, err
 	}
@@ -143,16 +140,16 @@ func generateDownstreamTLSConfig(cert, key, ca []byte) (*core.TransportSocket, e
 
 func checkTLSConfig(cert, key, ca []byte) error {
 	if len(cert) != 0 {
-		if !utils.VerifyCert(cert) {
+		if !tlsutils.VerifyCert(cert) {
 			return fmt.Errorf("invalid cert data")
 		}
-		if !utils.VerifySSLKey(key) {
+		if !tlsutils.VerifySSLKey(key) {
 			return fmt.Errorf("invalid cert key")
 		}
 	}
 
 	if len(ca) != 0 {
-		if !utils.VerifyCert(ca) {
+		if !tlsutils.VerifyCert(ca) {
 			return fmt.Errorf("invalid ca data")
 		}
 	}

@@ -16,6 +16,7 @@ package interconn
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -26,22 +27,28 @@ import (
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 )
 
 type KusciaHandler struct {
 }
 
-func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute,
-	dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
+func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
+	clusterName := fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name)
+	action := generateDefaultRouteAction(dr, clusterName)
+	if len(dp.PathPrefix) > 0 {
+		action.PrefixRewrite = strings.TrimSuffix(dp.PathPrefix, "/") + "/"
+	}
 	httpRoute := &route.Route{
 		Match: &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Prefix{
 				Prefix: "/",
 			},
 		},
+
 		Action: &route.Route_Route{
-			Route: xds.AddDefaultTimeout(generateDefaultRouteAction(dr, dp)),
+			Route: xds.AddDefaultTimeout(action),
 		},
 		RequestHeadersToAdd: []*core.HeaderValueOption{
 			{
@@ -79,6 +86,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 
 func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRoute,
 	cluster *envoycluster.Cluster) {
+	handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
 	cluster.HealthChecks = []*core.HealthCheck{
 		{
 			Timeout:            durationpb.New(time.Second),
@@ -89,13 +97,20 @@ func (handler *KusciaHandler) UpdateDstCluster(dr *kusciaapisv1alpha1.DomainRout
 			HealthChecker: &core.HealthCheck_HttpHealthCheck_{
 				HttpHealthCheck: &core.HealthCheck_HttpHealthCheck{
 					Host: dr.Spec.Endpoint.Host,
-					Path: "/",
+					Path: handshakePath,
 					RequestHeadersToAdd: []*core.HeaderValueOption{
 						{
 							Header: &core.HeaderValue{
 								Key:   "Kuscia-Host",
-								Value: fmt.Sprintf("kuscia-handshake.%s.svc", dr.Spec.Destination),
+								Value: fmt.Sprintf("%s.%s.svc", utils.ServiceHandshake, dr.Spec.Destination),
 							},
+						},
+						{
+							Header: &core.HeaderValue{
+								Key:   "Kuscia-Source",
+								Value: dr.Spec.Source,
+							},
+							AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 						},
 					},
 				},

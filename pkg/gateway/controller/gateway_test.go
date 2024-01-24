@@ -18,7 +18,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,10 +35,12 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
-	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 var (
@@ -47,23 +48,25 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	logger, _ := zlogwriter.New(nil)
+	nlog.Setup(nlog.SetWriter(logger))
 	dir, err := os.MkdirTemp("", "test")
 	if err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 	if err := os.Chmod(dir, 0755); err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 
 	if err := paths.CopyDirectory("../../../etc/conf/domainroute", filepath.Join(dir, "conf")); err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
-	if err := paths.CreateIfNotExists(filepath.Join(dir, "logs"), 0755); err != nil {
-		log.Fatal(err)
+	if err := paths.CreateIfNotExists(filepath.Join(dir, "nlogs"), 0755); err != nil {
+		nlog.Fatal(err)
 	}
 	if err := os.Chdir(dir); err != nil {
-		log.Fatal(err)
+		nlog.Fatal(err)
 	}
 
 	os.Setenv("NAMESPACE", "default")
@@ -129,7 +132,7 @@ func newFixture(t testing.TB) *fixture {
 	}
 	f.prikey = prikey
 
-	pubPemData := utils.EncodePKCS1PublicKey(prikey)
+	pubPemData := tlsutils.EncodePKCS1PublicKey(prikey)
 	f.pubkey = string(pubPemData)
 
 	f.objects = []runtime.Object{}
@@ -214,7 +217,11 @@ func TestGatewayCreate(t *testing.T) {
 		},
 		gw.Namespace,
 		gw,
-	))
+	), core.NewUpdateSubresourceAction(schema.GroupVersionResource{
+		Group:    "kuscia.secretflow",
+		Version:  "v1",
+		Resource: "gateways",
+	}, "status", gw.Namespace, gw))
 
 	f.doSync()
 }

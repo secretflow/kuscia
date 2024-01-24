@@ -19,7 +19,7 @@ export KUSCIA_IMAGE=secretflow/kuscia
 2. 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```bash
-docker run --rm -v $(pwd):/tmp/kuscia $KUSCIA_IMAGE cp -f /home/kuscia/scripts/deploy/start_standalone.sh /tmp/kuscia
+docker run --rm --pull always -v $(pwd):/tmp/kuscia $KUSCIA_IMAGE cp -f /home/kuscia/scripts/deploy/start_standalone.sh /tmp/kuscia
 ```
 
 3. 开启特权配置，并以中心化组网模式启动集群（开启容器特权时，会带来容器逃逸的风险，建议使用安全容器 kata)：

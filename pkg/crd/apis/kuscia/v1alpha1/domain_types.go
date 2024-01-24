@@ -60,6 +60,13 @@ type DomainSpec struct {
 	// +optional
 	Role DomainRole `json:"role,omitempty"`
 
+	// MasterDomain is used to represent the master domain id of current domain.
+	// For a omit domain, MasterDomain is exactly local cluster's master
+	// For a partner domain, the default MasterDomain is the domain itself
+	// Only for a partner domain which is not an autonomy domain, you need to specify its master domain explicitly
+	// +optional
+	MasterDomain string `json:"master,omitempty"`
+
 	// Interconnection Protocols
 	// If multiple protocols are specified, select the protocols in the order of configuration.
 	// +optional
@@ -68,7 +75,19 @@ type DomainSpec struct {
 	// +optional
 	Cert string `json:"cert,omitempty"`
 	// +optional
+	AuthCenter *AuthCenter `json:"authCenter"`
+	// +optional
 	ResourceQuota *DomainResourceQuota `json:"resourceQuota,omitempty"`
+}
+
+type AuthCenter struct {
+	// AuthenticationType describes how master authenticates the source's domain nodes request.
+	// +kubebuilder:validation:Enum=Token;MTLS;None
+	AuthenticationType DomainAuthenticationType `json:"authenticationType"`
+	// Token generation method.
+	// +kubebuilder:validation:Enum=RSA-GEN;RAND-GEN;UID-RSA-GEN
+	// +optional
+	TokenGenMethod TokenGenMethodType `json:"tokenGenMethod"`
 }
 
 // DomainResourceQuota defines domain resource quota.
@@ -82,6 +101,8 @@ type DomainResourceQuota struct {
 type DomainStatus struct {
 	// +optional
 	NodeStatuses []NodeStatus `json:"nodeStatuses,omitempty"`
+	// +optional
+	DeployTokenStatuses []DeployTokenStatus `json:"deployTokenStatuses"`
 }
 
 // NodeStatus defines node status under domain.
@@ -91,6 +112,15 @@ type NodeStatus struct {
 	Status  string `json:"status"`
 	// +optional
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+}
+
+// DeployTokenStatus defines csr token status under domain.
+type DeployTokenStatus struct {
+	Token string `json:"token"`
+	// Token state, used or unused
+	State string `json:"state"`
 	// +optional
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }

@@ -47,8 +47,17 @@ message Partition {
 // DataColumn defines the column of data.
 message DataColumn {
 	string name = 1;
-	// enum: string integer float datetime timestamp
+	// enum: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64, date32, date64, bool, string,
+	// binary
 	string type = 2;
 	// The description of column
 	string comment = 3;
+	// can the column could be nullable, default is nullable
+	bool not_nullable = 4;
+}
+
+enum FileFormat {
+	UNKNOWN = 0;
+	CSV     = 1;
+	BINARY  = 2;
 }

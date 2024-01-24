@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package service
 
 import (
@@ -19,18 +20,23 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
+	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -49,69 +55,36 @@ type jobService struct {
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewJobService(config config.KusciaAPIConfig) IJobService {
-	return &jobService{
-		Initiator:    config.Initiator,
-		kusciaClient: config.KusciaClient,
+func NewJobService(config *config.KusciaAPIConfig) IJobService {
+	switch config.RunMode {
+	case common.RunModeLite:
+		return &jobServiceLite{
+			Initiator:       config.Initiator,
+			kusciaAPIClient: proxy.NewKusciaAPIClient(""),
+		}
+	default:
+		return &jobService{
+			Initiator:    config.Initiator,
+			kusciaClient: config.KusciaClient,
+		}
 	}
 }
 
 func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJobRequest) *kusciaapi.CreateJobResponse {
 	// do validate
-	// jobID can not be empty
-	jobID := request.JobId
-	if jobID == "" {
+	if err := validateCreateJobRequest(request, h.Initiator); err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
 	}
-	// check initiator
-	initiator := request.Initiator
-	if initiator == "" {
+	// auth handler
+	if err := h.authHandlerJobCreate(ctx, request); err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "initiator can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
-	if h.Initiator != "" && h.Initiator != initiator {
-		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("initiator must be %s in P2P", initiator)),
-		}
-	}
-	// check maxParallelism
-	maxParallelism := request.MaxParallelism
-	if maxParallelism <= 0 {
-		maxParallelism = 1
-	}
-	// tasks can not be empty
-	tasks := request.Tasks
-	if len(tasks) == 0 {
-		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "tasks can not be empty"),
-		}
-	}
-	// taskId, parties can not be empty
-	for i, task := range tasks {
-		if task.Alias == "" {
-			return &kusciaapi.CreateJobResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("task alias can not be empty on tasks[%d]", i)),
-			}
-		}
-		parties := task.Parties
-		if len(parties) == 0 {
-			return &kusciaapi.CreateJobResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parties can not be empty on tasks[%d]", i)),
-			}
-		}
-		for _, party := range parties {
-			if party.DomainId == "" {
-				return &kusciaapi.CreateJobResponse{
-					Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "party domain id can not be empty"),
-				}
-			}
-		}
-	}
-
 	// convert createJobRequest to kuscia job
+	tasks := request.Tasks
 	kusciaTasks := make([]v1alpha1.KusciaTaskTemplate, len(tasks))
 	for i, task := range tasks {
 		// build kuscia task parties
@@ -137,11 +110,11 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 
 	kusciaJob := &v1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: jobID,
+			Name: request.JobId,
 		},
 		Spec: v1alpha1.KusciaJobSpec{
-			Initiator:      initiator,
-			MaxParallelism: utils.IntValue(maxParallelism),
+			Initiator:      request.Initiator,
+			MaxParallelism: utils.IntValue(request.MaxParallelism),
 			ScheduleMode:   v1alpha1.KusciaJobScheduleModeBestEffort,
 			Tasks:          kusciaTasks,
 		},
@@ -157,7 +130,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	return &kusciaapi.CreateJobResponse{
 		Status: utils2.BuildSuccessResponseStatus(),
 		Data: &kusciaapi.CreateJobResponseData{
-			JobId: jobID,
+			JobId: request.JobId,
 		},
 	}
 }
@@ -167,7 +140,7 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.QueryJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job iD can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// build job status
@@ -227,6 +200,13 @@ func (h *jobService) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJob
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
 		}
 	}
+	// auth handler
+	if err := h.authHandlerJobDelete(ctx, jobID); err != nil {
+		return &kusciaapi.DeleteJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
+	// delete kuscia job
 	err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Delete(ctx, jobID, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteJobResponse{
@@ -256,6 +236,13 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
 		}
 	}
+	// auth pre handler
+	if err = h.authHandlerJobRetrieve(ctx, job); err != nil {
+		return &kusciaapi.StopJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
+	// stop kuscia job
 	job.Spec.Stage = v1alpha1.JobStopStage
 	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs().Update(ctx, job, metav1.UpdateOptions{})
 	if err != nil {
@@ -274,16 +261,9 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 func (h *jobService) BatchQueryJobStatus(ctx context.Context, request *kusciaapi.BatchQueryJobStatusRequest) *kusciaapi.BatchQueryJobStatusResponse {
 	// do validate
 	jobIDs := request.JobIds
-	if len(jobIDs) == 0 {
+	if err := validateBatchQueryJobStatusRequest(request); err != nil {
 		return &kusciaapi.BatchQueryJobStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job ids can not be empty"),
-		}
-	}
-	for _, jobID := range jobIDs {
-		if jobID == "" {
-			return &kusciaapi.BatchQueryJobStatusResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
-			}
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
 	}
 	// build job status
@@ -351,6 +331,12 @@ loop:
 			}
 			job, _ := event.Object.(*v1alpha1.KusciaJob)
 			jobStatus, err := h.buildJobStatus(ctx, job)
+			if !h.authHandlerJobWatch(ctx, job) {
+				// No permission to watch
+				role, domain := GetRoleAndDomainFromCtx(ctx)
+				nlog.Debugf("Watch domain: %s role: %s, Job ID: %s", domain, role, job.Name)
+				continue
+			}
 			if err != nil {
 				return err
 			}
@@ -386,7 +372,10 @@ func (h *jobService) buildJobStatusByID(ctx context.Context, jobID string) (*v1a
 	if err != nil {
 		return nil, nil, err
 	}
-
+	// auth pre handler
+	if err = h.authHandlerJobRetrieve(ctx, kusciaJob); err != nil {
+		return nil, nil, err
+	}
 	jobStatus, err := h.buildJobStatus(ctx, kusciaJob)
 	if err != nil {
 		return nil, nil, err
@@ -403,7 +392,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 	kusciaTasks := kusciaJob.Spec.Tasks
 	// build job status
 	statusDetail := &kusciaapi.JobStatusDetail{
-		State:      string(kusciaJobStatus.Phase),
+		State:      getJobState(kusciaJobStatus.Phase),
 		ErrMsg:     kusciaJobStatus.Message,
 		CreateTime: utils.TimeRfc3339String(&kusciaJob.CreationTimestamp),
 		StartTime:  utils.TimeRfc3339String(kusciaJobStatus.StartTime),
@@ -418,7 +407,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 			TaskId: taskID,
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {
-			ts.State = string(phase)
+			ts.State = getTaskState(phase)
 			task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(ctx, taskID, metav1.GetOptions{})
 			if err != nil {
 				nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
@@ -428,13 +417,43 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 				ts.CreateTime = utils.TimeRfc3339String(&task.CreationTimestamp)
 				ts.StartTime = utils.TimeRfc3339String(taskStatus.StartTime)
 				ts.EndTime = utils.TimeRfc3339String(taskStatus.CompletionTime)
-				podStatuses := taskStatus.PodStatuses
+				partyTaskStatus := make(map[string]v1alpha1.KusciaTaskPhase)
+				for _, ps := range taskStatus.PartyTaskStatus {
+					partyTaskStatus[ps.DomainID] = ps.Phase
+				}
+
+				partyErrMsg := make(map[string][]string)
+				for _, podStatus := range taskStatus.PodStatuses {
+					msg := ""
+					if podStatus.Message != "" {
+						msg = fmt.Sprintf("%v;", podStatus.Message)
+					}
+					if podStatus.TerminationLog != "" {
+						msg += podStatus.TerminationLog
+					}
+					partyErrMsg[podStatus.Namespace] = append(partyErrMsg[podStatus.Namespace], msg)
+				}
+
+				partyEndpoints := make(map[string][]*kusciaapi.JobPartyEndpoint)
+				for _, svcStatus := range taskStatus.ServiceStatuses {
+					ep := fmt.Sprintf("%v.%v.svc", svcStatus.ServiceName, svcStatus.Namespace)
+					if svcStatus.Scope == v1alpha1.ScopeDomain {
+						ep = fmt.Sprintf("%v:%v", ep, svcStatus.PortNumber)
+					}
+					partyEndpoints[svcStatus.Namespace] = append(partyEndpoints[svcStatus.Namespace], &kusciaapi.JobPartyEndpoint{
+						PortName: svcStatus.PortName,
+						Scope:    string(svcStatus.Scope),
+						Endpoint: ep,
+					})
+				}
+
 				ts.Parties = make([]*kusciaapi.PartyStatus, 0)
-				for _, podStatus := range podStatuses {
+				for partyID, _ := range partyErrMsg {
 					ts.Parties = append(ts.Parties, &kusciaapi.PartyStatus{
-						DomainId: podStatus.Namespace,
-						State:    string(podStatus.PodPhase),
-						ErrMsg:   podStatus.TerminationLog,
+						DomainId:  partyID,
+						State:     getTaskState(partyTaskStatus[partyID]),
+						ErrMsg:    strings.Join(partyErrMsg[partyID], ","),
+						Endpoints: partyEndpoints[partyID],
 					})
 				}
 			}
@@ -446,4 +465,161 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 		JobId:  kusciaJob.Name,
 		Status: statusDetail,
 	}, nil
+}
+
+func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaapi.CreateJobRequest) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	// todo: would allow if the executive node is tee
+	if role == consts.AuthRoleDomain {
+		for _, task := range request.Tasks {
+			withDomain := false
+			for _, p := range task.Parties {
+				if p.GetDomainId() == domainId {
+					withDomain = true
+					break
+				}
+			}
+			if !withDomain {
+				return fmt.Errorf("domain's KusciaAPI could only create the job that the domain as a participant in the job")
+			}
+		}
+	}
+	return nil
+}
+
+func (h *jobService) authHandlerJobDelete(ctx context.Context, jobId string) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain {
+		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Get(ctx, jobId, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for _, task := range kusciaJob.Spec.Tasks {
+			for _, p := range task.Parties {
+				if p.DomainID == domainId {
+					return nil
+				}
+			}
+		}
+		return fmt.Errorf("domain's KusciaAPI could only delete the job that the domain as a participant in the job")
+	}
+	return nil
+}
+
+func (h *jobService) authHandlerJobRetrieve(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain {
+		for _, task := range kusciaJob.Spec.Tasks {
+			for _, p := range task.Parties {
+				if p.DomainID == domainId {
+					return nil
+				}
+			}
+		}
+		return fmt.Errorf("domain's KusciaAPI could only retrieve the job that the domain as a participant in the job")
+	}
+	return nil
+}
+
+func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) bool {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain {
+		for _, task := range kusciaJob.Spec.Tasks {
+			for _, p := range task.Parties {
+				if p.DomainID == domainId {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return true
+}
+
+func validateCreateJobRequest(request *kusciaapi.CreateJobRequest, domainID string) error {
+	// jobID can not be empty
+	jobID := request.JobId
+	if jobID == "" {
+		return fmt.Errorf("job id can not be empty")
+	}
+	// do k8s validate
+	if err := resources.ValidateK8sName(request.JobId, "job_id"); err != nil {
+		return err
+	}
+	// check initiator
+	initiator := request.Initiator
+	if initiator == "" {
+		return fmt.Errorf("initiator can not be empty")
+	}
+	if domainID != "" && domainID != initiator {
+		return fmt.Errorf("request.initiator is %s, but initiator must be %s in P2P", initiator, domainID)
+	}
+	// check maxParallelism
+	maxParallelism := request.MaxParallelism
+	if maxParallelism <= 0 {
+		request.MaxParallelism = 1
+	}
+	// tasks can not be empty
+	tasks := request.Tasks
+	if len(tasks) == 0 {
+		return fmt.Errorf("tasks can not be empty")
+	}
+	// taskId, parties can not be empty
+	for i, task := range tasks {
+		if task.Alias == "" {
+			return fmt.Errorf("task alias can not be empty on tasks[%d]", i)
+		}
+		parties := task.Parties
+		if len(parties) == 0 {
+			return fmt.Errorf("parties can not be empty on tasks[%d]", i)
+		}
+		for _, party := range parties {
+			if party.DomainId == "" {
+				return fmt.Errorf("party domain id can not be empty")
+			}
+		}
+	}
+	return nil
+}
+
+func validateBatchQueryJobStatusRequest(request *kusciaapi.BatchQueryJobStatusRequest) error {
+	if len(request.JobIds) == 0 {
+		return fmt.Errorf("job ids can not be empty")
+	}
+	for _, jobID := range request.JobIds {
+		if jobID == "" {
+			return fmt.Errorf("job id can not be empty")
+		}
+	}
+	return nil
+}
+
+func getJobState(jobPhase v1alpha1.KusciaJobPhase) string {
+	switch jobPhase {
+	case "", v1alpha1.KusciaJobPending:
+		return kusciaapi.State_Pending.String()
+	case v1alpha1.KusciaJobRunning:
+		return kusciaapi.State_Running.String()
+	case v1alpha1.KusciaJobFailed:
+		return kusciaapi.State_Failed.String()
+	case v1alpha1.KusciaJobSucceeded:
+		return kusciaapi.State_Succeeded.String()
+	default:
+		return kusciaapi.State_Unknown.String()
+	}
+}
+
+func getTaskState(taskPhase v1alpha1.KusciaTaskPhase) string {
+	switch taskPhase {
+	case "", v1alpha1.TaskPending:
+		return kusciaapi.State_Pending.String()
+	case v1alpha1.TaskRunning:
+		return kusciaapi.State_Running.String()
+	case v1alpha1.TaskFailed:
+		return kusciaapi.State_Failed.String()
+	case v1alpha1.TaskSucceeded:
+		return kusciaapi.State_Succeeded.String()
+	default:
+		return kusciaapi.State_Unknown.String()
+	}
 }

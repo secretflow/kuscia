@@ -17,6 +17,7 @@ package modules
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -29,10 +30,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 
+	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/utils/common"
+	"github.com/secretflow/kuscia/pkg/utils/datastore"
+	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/pkg/utils/process"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -40,18 +49,40 @@ import (
 )
 
 type k3sModule struct {
-	rootDir        string
-	kubeconfigFile string
-	bindAddress    string
-	listenPort     string
-	dataDir        string
-
-	enableAudit bool
+	rootDir           string
+	kubeconfigFile    string
+	bindAddress       string
+	listenPort        string
+	dataDir           string
+	datastoreEndpoint string
+	clusterToken      string
+	hostIP            string
+	enableAudit       bool
+	LogConfig         nlog.LogConfig
 }
 
 func (s *k3sModule) readyz(host string) error {
+
+	// check k3s process
+	if !process.CheckExists("k3s") {
+		errMsg := "process [k3s] is not exists"
+		nlog.Error(errMsg)
+		return errors.New(errMsg)
+	}
+
 	cl := http.Client{}
-	caCertFile, err := os.ReadFile(filepath.Join(s.dataDir, "server/tls/server-ca.crt"))
+	// check file exist
+	serverCaFilePath := filepath.Join(s.dataDir, "server/tls/server-ca.crt")
+	clientAdminCrtFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.crt")
+	clientAdminKeyFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.key")
+
+	if fileExistError := paths.CheckAllFileExist(serverCaFilePath, clientAdminCrtFilePath, clientAdminKeyFilePath); fileExistError != nil {
+		err := fmt.Errorf("%s. Please check the k3s service is running successfully ", fileExistError)
+		nlog.Error(err)
+		return err
+	}
+
+	caCertFile, err := os.ReadFile(serverCaFilePath)
 	if err != nil {
 		nlog.Error(err)
 		return err
@@ -62,13 +93,13 @@ func (s *k3sModule) readyz(host string) error {
 		nlog.Error(msg)
 		return fmt.Errorf("%s", msg)
 	}
-	certPEMBlock, err := os.ReadFile(filepath.Join(s.dataDir, "server/tls/client-admin.crt"))
+	certPEMBlock, err := os.ReadFile(clientAdminCrtFilePath)
 	if err != nil {
 		nlog.Error(err)
 		return err
 	}
 
-	keyPEMBlock, err := os.ReadFile(filepath.Join(s.dataDir, "server/tls/client-admin.key"))
+	keyPEMBlock, err := os.ReadFile(clientAdminKeyFilePath)
 	if err != nil {
 		nlog.Error(err)
 		return err
@@ -114,18 +145,30 @@ func (s *k3sModule) readyz(host string) error {
 }
 
 func NewK3s(i *Dependencies) Module {
+	var clusterToken string
+	clusterToken = i.Master.ClusterToken
+	if clusterToken == "" {
+		clusterToken = fmt.Sprintf("%x", md5.Sum([]byte(i.DomainID)))
+	}
+	hostIP, err := network.GetHostIP()
+	if err != nil {
+		nlog.Fatal(err)
+	}
 	return &k3sModule{
-		rootDir:        i.RootDir,
-		kubeconfigFile: i.KubeconfigFile,
-		bindAddress:    "0.0.0.0",
-		listenPort:     "6443",
-		dataDir:        filepath.Join(i.RootDir, k3sDataDirPrefix),
-		enableAudit:    false,
+		rootDir:           i.RootDir,
+		kubeconfigFile:    i.KubeconfigFile,
+		bindAddress:       "0.0.0.0",
+		listenPort:        "6443",
+		hostIP:            hostIP,
+		dataDir:           filepath.Join(i.RootDir, k3sDataDirPrefix),
+		enableAudit:       false,
+		datastoreEndpoint: i.Master.DatastoreEndpoint,
+		clusterToken:      clusterToken,
+		LogConfig:         *i.LogConfig,
 	}
 }
 
 func (s *k3sModule) Run(ctx context.Context) error {
-
 	args := []string{
 		"server",
 		"-v=5",
@@ -134,6 +177,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable-agent",
 		"--bind-address=" + s.bindAddress,
 		"--https-listen-port=" + s.listenPort,
+		"--node-ip=" + s.hostIP,
 		"--disable-cloud-controller",
 		"--disable-network-policy",
 		"--disable-scheduler",
@@ -143,34 +187,48 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable=servicelb",
 		"--disable=local-storage",
 		"--disable=metrics-server",
+		"--kube-apiserver-arg=event-ttl=10m",
+	}
+	if s.datastoreEndpoint != "" {
+		args = append(args, "--datastore-endpoint="+s.datastoreEndpoint)
+	}
+	if s.clusterToken != "" {
+		args = append(args, "--token="+s.clusterToken)
 	}
 	if s.enableAudit {
 		args = append(args,
-			"--kube-apiserver-arg=audit-log-path="+filepath.Join(s.rootDir, LogPrefix, "k3s-audit.log"),
-			"--kube-apiserver-arg=audit-policy-file="+filepath.Join(s.rootDir, ConfPrefix, "k3s/k3s-audit-policy.yaml"),
+			"--kube-apiserver-arg=audit-log-path="+filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s-audit.log"),
+			"--kube-apiserver-arg=audit-policy-file="+filepath.Join(s.rootDir, pkgcom.ConfPrefix, "k3s/k3s-audit-policy.yaml"),
 			"--kube-apiserver-arg=audit-log-maxbackup=10",
 			"--kube-apiserver-arg=audit-log-maxsize=300",
 		)
 	}
 
 	sp := supervisor.NewSupervisor("k3s", nil, -1)
-	fout, err := os.OpenFile(filepath.Join(s.rootDir, LogPrefix, "k3s.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		nlog.Warnf("open k3s stdout logfile failed")
-		return nil
-	}
-	defer fout.Close()
+	s.LogConfig.LogPath = filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s.log")
+	lj, _ := ljwriter.New(&s.LogConfig)
+	n := nlog.NewNLog(nlog.SetWriter(lj))
+
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/k3s"), args...)
-		cmd.Stderr = fout
-		cmd.Stdout = fout
+		cmd.Stderr = n
+		cmd.Stdout = n
+
+		envs := os.Environ()
+		envs = append(envs, "CATTLE_NEW_SIGNED_CERT_EXPIRATION_DAYS=3650")
+		if os.Getenv("KINE_SKIP_INIT_MYSQL") == "" {
+			envs = append(envs, "KINE_SKIP_INIT_MYSQL=true")
+		}
+		cmd.Env = envs
 		return cmd
 	})
 }
 
 func (s *k3sModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -189,7 +247,14 @@ func (s *k3sModule) Name() string {
 	return "k3s"
 }
 
-func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) error {
+	// check DatastoreEndpoint
+	if err := datastore.CheckDatastoreEndpoint(conf.Master.DatastoreEndpoint); err != nil {
+		nlog.Error(err)
+		cancel()
+		return err
+	}
+
 	m := NewK3s(conf)
 	go func() {
 		if err := m.Run(ctx); err != nil {
@@ -205,6 +270,10 @@ func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) 
 			nlog.Error(err)
 			cancel()
 		}
+		if err = applyKusciaResources(conf); err != nil {
+			nlog.Error(err)
+			cancel()
+		}
 		if err = genKusciaKubeConfig(conf); err != nil {
 			nlog.Error(err)
 			cancel()
@@ -212,7 +281,7 @@ func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) 
 		nlog.Info("k3s is ready")
 	}
 
-	return m
+	return nil
 }
 
 func applyCRD(conf *Dependencies) error {
@@ -221,16 +290,19 @@ func applyCRD(conf *Dependencies) error {
 	if err != nil {
 		return err
 	}
+	sw := sync.WaitGroup{}
 	for _, dir := range dirs {
 		if dir.IsDir() {
 			continue
 		}
 		file := filepath.Join(dirPath, dir.Name())
-		nlog.Infof("apply %s", file)
-		if err := applyFile(conf, file); err != nil {
-			return err
-		}
+		sw.Add(1)
+		go func(f string) {
+			applyFile(conf, f)
+			sw.Done()
+		}(file)
 	}
+	sw.Wait()
 	return nil
 }
 
@@ -239,9 +311,9 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		serverCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/server-ca.crt"),
 		clientKeyFile:          filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.key"),
 		clientCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.crt"),
-		clusterRoleFile:        filepath.Join(conf.RootDir, ConfPrefix, "kuscia-clusterrole.yaml"),
-		clusterRoleBindingFile: filepath.Join(conf.RootDir, ConfPrefix, "kuscia-clusterrolebinding.yaml"),
-		kubeConfigTmplFile:     filepath.Join(conf.RootDir, ConfPrefix, "kuscia.kubeconfig.tmpl"),
+		clusterRoleFile:        filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia-clusterrole.yaml"),
+		clusterRoleBindingFile: filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia-clusterrolebinding.yaml"),
+		kubeConfigTmplFile:     filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "kuscia.kubeconfig.tmpl"),
 		kubeConfig:             conf.KusciaKubeConfig,
 	}
 
@@ -282,7 +354,7 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		KusciaCert: base64.StdEncoding.EncodeToString(certOut.Bytes()),
 		KusciaKey:  base64.StdEncoding.EncodeToString(keyOut.Bytes()),
 	}
-	if err := RenderConfig(c.kubeConfigTmplFile, c.kubeConfig, s); err != nil {
+	if err := common.RenderConfig(c.kubeConfigTmplFile, c.kubeConfig, s); err != nil {
 		return err
 	}
 	nlog.Info("generate kuscia kubeconfig successfully")
@@ -291,23 +363,44 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 		c.clusterRoleFile,
 		c.clusterRoleBindingFile,
 	}
+	sw := sync.WaitGroup{}
 	for _, file := range roleFiles {
-		if err := applyFile(conf, file); err != nil {
-			return err
-		}
+		sw.Add(1)
+		go func(f string) {
+			applyFile(conf, f)
+			sw.Done()
+		}(file)
 	}
+	sw.Wait()
+	return nil
+}
+
+func applyKusciaResources(conf *Dependencies) error {
+	// apply kuscia clusterRole
+	resourceFiles := []string{
+		filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "domain-cluster-res.yaml"),
+	}
+	sw := sync.WaitGroup{}
+	for _, file := range resourceFiles {
+		sw.Add(1)
+		go func(f string) {
+			applyFile(conf, f)
+			sw.Done()
+		}(file)
+	}
+	sw.Wait()
 	return nil
 }
 
 func applyFile(conf *Dependencies, file string) error {
 	cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", file)
-	nlog.Infof("apply %s", file)
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		nlog.Errorf("apply %s err:%s", file, err.Error())
+		nlog.Fatalf("apply %s err:%s", file, err.Error())
 		return err
 	}
+	nlog.Infof("apply %s", file)
 	return nil
 }
 

@@ -35,15 +35,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 const (
-	heartbeatPeriod = 3 * time.Second
-)
-
-var (
-	networkStatus []kusciaapisv1alpha1.GatewayEndpointStatus
-	lock          sync.Mutex
+	heartbeatPeriod = 15 * time.Second
 )
 
 // GatewayController sync gateway status periodically to master.
@@ -54,9 +50,12 @@ type GatewayController struct {
 	address   string
 	uptime    time.Time
 
+	lock sync.Mutex
+
 	kusciaClient        kusciaclientset.Interface
 	gatewayLister       kuscialistersv1alpha1.GatewayLister
 	gatewayListerSynced cache.InformerSynced
+	networkStatus       []kusciaapisv1alpha1.GatewayEndpointStatus
 }
 
 // NewGatewayController returns a new GatewayController.
@@ -66,7 +65,7 @@ func NewGatewayController(namespace string, prikey *rsa.PrivateKey, kusciaClient
 		return nil, err
 	}
 
-	pubPemData := utils.EncodePKCS1PublicKey(prikey)
+	pubPemData := tlsutils.EncodePKCS1PublicKey(prikey)
 
 	controller := &GatewayController{
 		namespace:           namespace,
@@ -93,11 +92,13 @@ func (c *GatewayController) Run(threadiness int, stopCh <-chan struct{}) {
 	if ok := cache.WaitForCacheSync(stopCh, c.gatewayListerSynced); !ok {
 		nlog.Fatal("failed to wait for caches to sync")
 	}
+
 	// Update gateway heartbeat immediately
 	if err := c.syncHandler(); err != nil {
 		nlog.Errorf("sync gateway error: %v", err)
 	}
 	ticker := time.NewTicker(heartbeatPeriod)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ticker.C:
@@ -112,6 +113,26 @@ func (c *GatewayController) Run(threadiness int, stopCh <-chan struct{}) {
 
 func (c *GatewayController) syncHandler() error {
 	client := c.kusciaClient.KusciaV1alpha1().Gateways(c.namespace)
+	gateway, err := c.gatewayLister.Gateways(c.namespace).Get(c.hostname)
+	if k8serrors.IsNotFound(err) {
+		gateway = &kusciaapisv1alpha1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      c.hostname,
+				Namespace: c.namespace,
+			},
+		}
+
+		gateway, err = client.Create(context.Background(), gateway, metav1.CreateOptions{})
+		if err != nil {
+			nlog.Errorf("create gateway(name:%s namespace:%s) fail: %v", c.hostname, c.namespace, err)
+			return err
+		}
+		nlog.Infof("create gateway(name:%s namespace:%s) success", c.hostname, c.namespace)
+	}
+
+	if err != nil {
+		return err
+	}
 
 	status := kusciaapisv1alpha1.GatewayStatus{
 		Address: c.address,
@@ -126,34 +147,11 @@ func (c *GatewayController) syncHandler() error {
 	}
 
 	{
-		lock.Lock()
-		defer lock.Unlock()
+		c.lock.Lock()
+		defer c.lock.Unlock()
 
-		status.NetworkStatus = make([]kusciaapisv1alpha1.GatewayEndpointStatus, len(networkStatus))
-		status.NetworkStatus = append(status.NetworkStatus, networkStatus...)
-	}
-
-	gateway, err := c.gatewayLister.Gateways(c.namespace).Get(c.hostname)
-	if k8serrors.IsNotFound(err) {
-		gateway = &kusciaapisv1alpha1.Gateway{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      c.hostname,
-				Namespace: c.namespace,
-			},
-			Status: status,
-		}
-
-		_, err = client.Create(context.Background(), gateway, metav1.CreateOptions{})
-		if err != nil {
-			nlog.Errorf("create gateway(name:%s namespace:%s) fail: %v", c.hostname, c.namespace, err)
-		} else {
-			nlog.Infof("create gateway(name:%s namespace:%s) success", c.hostname, c.namespace)
-		}
-		return err
-	}
-
-	if err != nil {
-		return err
+		status.NetworkStatus = make([]kusciaapisv1alpha1.GatewayEndpointStatus, len(c.networkStatus))
+		status.NetworkStatus = append(status.NetworkStatus, c.networkStatus...)
 	}
 
 	gatewayCopy := gateway.DeepCopy()
@@ -167,11 +165,11 @@ func (c *GatewayController) syncHandler() error {
 }
 
 func (c *GatewayController) UpdateStatus(status []*kusciaapisv1alpha1.GatewayEndpointStatus) {
-	lock.Lock()
-	defer lock.Unlock()
-	networkStatus = networkStatus[:0]
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.networkStatus = c.networkStatus[:0]
 	for _, s := range status {
-		networkStatus = append(networkStatus, *s)
+		c.networkStatus = append(c.networkStatus, *s)
 	}
 }
 

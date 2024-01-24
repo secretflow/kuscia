@@ -14,50 +14,17 @@ class DomainDataSourceServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.CreateDomainDataSource = channel.unary_unary(
-                '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/CreateDomainDataSource',
-                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.CreateDomainDataSourceRequest.SerializeToString,
-                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.CreateDomainDataSourceResponse.FromString,
-                )
         self.QueryDomainDataSource = channel.unary_unary(
                 '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/QueryDomainDataSource',
                 request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.QueryDomainDataSourceRequest.SerializeToString,
                 response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.QueryDomainDataSourceResponse.FromString,
-                )
-        self.UpdateDomainDataSource = channel.unary_unary(
-                '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/UpdateDomainDataSource',
-                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.UpdateDomainDataSourceRequest.SerializeToString,
-                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.UpdateDomainDataSourceResponse.FromString,
-                )
-        self.DeleteDomainDataSource = channel.unary_unary(
-                '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/DeleteDomainDataSource',
-                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.DeleteDomainDataSourceRequest.SerializeToString,
-                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.DeleteDomainDataSourceResponse.FromString,
                 )
 
 
 class DomainDataSourceServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def CreateDomainDataSource(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def QueryDomainDataSource(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def UpdateDomainDataSource(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def DeleteDomainDataSource(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -66,25 +33,10 @@ class DomainDataSourceServiceServicer(object):
 
 def add_DomainDataSourceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'CreateDomainDataSource': grpc.unary_unary_rpc_method_handler(
-                    servicer.CreateDomainDataSource,
-                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.CreateDomainDataSourceRequest.FromString,
-                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.CreateDomainDataSourceResponse.SerializeToString,
-            ),
             'QueryDomainDataSource': grpc.unary_unary_rpc_method_handler(
                     servicer.QueryDomainDataSource,
                     request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.QueryDomainDataSourceRequest.FromString,
                     response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.QueryDomainDataSourceResponse.SerializeToString,
-            ),
-            'UpdateDomainDataSource': grpc.unary_unary_rpc_method_handler(
-                    servicer.UpdateDomainDataSource,
-                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.UpdateDomainDataSourceRequest.FromString,
-                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.UpdateDomainDataSourceResponse.SerializeToString,
-            ),
-            'DeleteDomainDataSource': grpc.unary_unary_rpc_method_handler(
-                    servicer.DeleteDomainDataSource,
-                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.DeleteDomainDataSourceRequest.FromString,
-                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.DeleteDomainDataSourceResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -95,23 +47,6 @@ def add_DomainDataSourceServiceServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class DomainDataSourceService(object):
     """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def CreateDomainDataSource(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/CreateDomainDataSource',
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.CreateDomainDataSourceRequest.SerializeToString,
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.CreateDomainDataSourceResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def QueryDomainDataSource(request,
@@ -127,39 +62,5 @@ class DomainDataSourceService(object):
         return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/QueryDomainDataSource',
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.QueryDomainDataSourceRequest.SerializeToString,
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.QueryDomainDataSourceResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def UpdateDomainDataSource(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/UpdateDomainDataSource',
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.UpdateDomainDataSourceRequest.SerializeToString,
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.UpdateDomainDataSourceResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def DeleteDomainDataSource(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.datamesh.DomainDataSourceService/DeleteDomainDataSource',
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.DeleteDomainDataSourceRequest.SerializeToString,
-            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_datamesh_dot_domaindatasource__pb2.DeleteDomainDataSourceResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

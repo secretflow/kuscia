@@ -18,9 +18,11 @@ import (
 	"context"
 
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 )
 
@@ -32,24 +34,42 @@ type IController interface {
 
 type ControllerConstruction struct {
 	NewControler NewControllerFunc
-	CheckCRD     CheckCRDExistsFunc
+	CRDNames     []string
 }
 
-type NewControllerFunc func(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) IController
-type CheckCRDExistsFunc func(ctx context.Context, extensionClient apiextensionsclientset.Interface) error
+type NewControllerFunc func(ctx context.Context, config ControllerConfig) IController
+
+// CheckCRDExists is used to check if crd exist.
+func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface, crdNames []string) error {
+	for _, crdName := range crdNames {
+		if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, crdName, v1.GetOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 const (
 	CRDAppImagesName           = "appimages.kuscia.secretflow"
 	CRDClusterDomainRoutesName = "clusterdomainroutes.kuscia.secretflow"
-	CRDDataObjectsName         = "dataobjects.kuscia.secretflow"
-	CRDDataResourcesName       = "datasources.kuscia.secretflow"
-	CRDDataTablesName          = "datatables.kuscia.secretflow"
+	CRDDomainDataGrantsName    = "domaindatagrants.kuscia.secretflow"
 	CRDDomainAppImagesName     = "domainappimages.kuscia.secretflow"
 	CRDDomainRoutesName        = "domainroutes.kuscia.secretflow"
 	CRDDomainsName             = "domains.kuscia.secretflow"
 	CRDGatewaysName            = "gateways.kuscia.secretflow"
 	CRDKusciaTasksName         = "kusciatasks.kuscia.secretflow"
+	CRDKusciaDeploymentsName   = "kusciadeployments.kuscia.secretflow"
 	CRDTaskResourcesGroupsName = "taskresourcegroups.kuscia.secretflow"
 	CRDTaskResourcesName       = "taskresources.kuscia.secretflow"
 	CRDKusciaJobsName          = "kusciajobs.kuscia.secretflow"
 )
+
+type ControllerConfig struct {
+	IsMaster      bool
+	RunMode       common.RunModeType
+	Namespace     string
+	RootDir       string
+	KubeClient    kubernetes.Interface
+	KusciaClient  kusciaclientset.Interface
+	EventRecorder record.EventRecorder
+}

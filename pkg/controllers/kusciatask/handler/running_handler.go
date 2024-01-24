@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,16 +26,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
-	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
-)
-
-const (
-	taskDefaultLifecycle = 600 * time.Second
 )
 
 const (
@@ -91,18 +86,10 @@ func NewRunningHandler(deps *Dependencies) *RunningHandler {
 // Handle is used to perform the real logic.
 func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	now := metav1.Now().Rfc3339Copy()
-	trg, err := h.trgLister.Get(kusciaTask.Name)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			trg, err = h.kusciaClient.KusciaV1alpha1().TaskResourceGroups().Get(context.Background(), kusciaTask.Name, metav1.GetOptions{})
-		}
 
-		if err != nil {
-			nlog.Errorf("Can't find task resource group %v of kuscia task %v, %v", kusciaTask.Name, kusciaTask.Name, err)
-			kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskFailed
-			kusciaTask.Status.Message = fmt.Sprintf("Get task resource group failed, %v", err)
-			return true, nil
-		}
+	trg, err := getTaskResourceGroup(context.Background(), kusciaTask.Name, h.trgLister, h.kusciaClient)
+	if err != nil {
+		return false, fmt.Errorf("get task resource group %v failed, %v", kusciaTask.Name, err)
 	}
 
 	taskStatus := kusciaTask.Status.DeepCopy()
@@ -110,8 +97,7 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 
 	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserved {
 		h.reconcileTaskStatus(taskStatus, trg)
-		h.refreshPodStatuses(taskStatus.PodStatuses)
-		h.refreshServiceStatuses(taskStatus.ServiceStatuses)
+		refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, taskStatus)
 		if !reflect.DeepEqual(taskStatus, kusciaTask.Status) {
 			taskStatus.LastReconcileTime = &now
 			fillTaskCondition(taskStatus)
@@ -119,8 +105,7 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 			return true, nil
 		}
 	} else {
-		h.refreshPodStatuses(taskStatus.PodStatuses)
-		h.refreshServiceStatuses(taskStatus.ServiceStatuses)
+		refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, taskStatus)
 		if !reflect.DeepEqual(taskStatus, kusciaTask.Status) {
 			taskStatus.LastReconcileTime = &now
 			fillTaskCondition(taskStatus)
@@ -133,27 +118,25 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 }
 
 func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *kusciaapisv1alpha1.TaskResourceGroup) {
-	var (
-		succeededPartyCount = 0
-		failedPartyCount    = 0
-		runningPartyCount   = 0
-		pendingPartyCount   = 0
-	)
-
+	var pendingParty, runningParty, successfulParty, failedParty []string
 	partyTaskStatuses := h.buildPartyTaskStatus(taskStatus, trg)
 	taskStatus.PartyTaskStatus = partyTaskStatuses
 	for _, s := range partyTaskStatuses {
 		switch s.Phase {
 		case kusciaapisv1alpha1.TaskSucceeded:
-			succeededPartyCount++
+			successfulParty = append(successfulParty, buildPartyKey(s.DomainID, s.Role))
 		case kusciaapisv1alpha1.TaskFailed:
-			failedPartyCount++
+			failedParty = append(failedParty, buildPartyKey(s.DomainID, s.Role))
 		case kusciaapisv1alpha1.TaskRunning:
-			runningPartyCount++
+			runningParty = append(runningParty, buildPartyKey(s.DomainID, s.Role))
 		default:
-			pendingPartyCount++
+			pendingParty = append(pendingParty, buildPartyKey(s.DomainID, s.Role))
 		}
 	}
+
+	successfulPartyCount := len(successfulParty)
+	failedPartyCount := len(failedParty)
+	runningPartyCount := len(runningParty)
 
 	validPartyCount := len(trg.Spec.Parties)
 	minReservedMembers := trg.Spec.MinReservedMembers
@@ -164,11 +147,12 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 
 	if minReservedMembers > validPartyCount-failedPartyCount {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
-		taskStatus.Message = fmt.Sprintf("The remaining non-failed parties counts %v is less than the task success threshold %v", len(trg.Spec.Parties)-failedPartyCount, trg.Spec.MinReservedMembers)
+		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the threshold %v that meets the conditions for task success. pending party[%v], running party[%v], successful party[%v], failed party[%v]",
+			len(trg.Spec.Parties)-failedPartyCount, trg.Spec.MinReservedMembers, strings.Join(pendingParty, ","), strings.Join(runningParty, ","), strings.Join(successfulParty, ","), strings.Join(failedParty, ","))
 		return
 	}
 
-	if succeededPartyCount >= minReservedMembers {
+	if successfulPartyCount >= minReservedMembers {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskSucceeded
 		return
 	}
@@ -177,22 +161,10 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 		taskStatus.Phase = kusciaapisv1alpha1.TaskRunning
 		return
 	}
+}
 
-	// when runningPartyCount is equal to 0 and pendingPartyCount is greater than 0
-	// if task exceed the max lifecycle, set the task to failed
-	if pendingPartyCount > 0 {
-		taskLifecycle := taskDefaultLifecycle
-		if trg.Spec.LifecycleSeconds != 0 {
-			taskLifecycle = time.Duration(trg.Spec.LifecycleSeconds) * time.Second
-		}
-
-		expiredTime := taskStatus.StartTime.Add(taskLifecycle)
-		if metav1.Now().After(expiredTime) {
-			taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
-			taskStatus.Message = fmt.Sprintf("Pending parties are not scheduled during lifecycle %v", taskLifecycle)
-			return
-		}
-	}
+func buildPartyKey(domainID, role string) string {
+	return strings.TrimSuffix(fmt.Sprintf("%v-%v", domainID, role), "-")
 }
 
 func (h *RunningHandler) buildPartyTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *kusciaapisv1alpha1.TaskResourceGroup) []kusciaapisv1alpha1.PartyTaskStatus {
@@ -323,162 +295,6 @@ func (h *RunningHandler) getPartyTaskStatus(taskStatus *kusciaapisv1alpha1.Kusci
 	return partyPending
 }
 
-func (h *RunningHandler) refreshPodStatuses(podStatuses map[string]*kusciaapisv1alpha1.PodStatus) {
-	for _, st := range podStatuses {
-		if st.PodPhase == v1.PodSucceeded || st.PodPhase == v1.PodFailed {
-			continue
-		}
-
-		ns := st.Namespace
-		name := st.PodName
-		pod, err := h.podsLister.Pods(ns).Get(name)
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				pod, err = h.kubeClient.CoreV1().Pods(ns).Get(context.Background(), name, metav1.GetOptions{})
-				if k8serrors.IsNotFound(err) {
-					st.PodPhase = v1.PodFailed
-					st.Reason = "PodNotExist"
-					st.Message = "Does not find the pod"
-					continue
-				}
-			}
-
-			if err != nil {
-				st.PodPhase = v1.PodFailed
-				st.Reason = "GetPodFailed"
-				st.Message = err.Error()
-			}
-			continue
-		}
-
-		st.PodPhase = pod.Status.Phase
-		st.NodeName = pod.Spec.NodeName
-		st.Reason = pod.Status.Reason
-		st.Message = pod.Status.Message
-
-		// check pod container terminated state
-		for _, cs := range pod.Status.ContainerStatuses {
-			if cs.State.Terminated != nil {
-				if st.Reason == "" && cs.State.Terminated.Reason != "" {
-					st.Reason = cs.State.Terminated.Reason
-				}
-				if cs.State.Terminated.Message != "" {
-					st.TerminationLog = fmt.Sprintf("container[%v] terminated state reason %q, message: %q", cs.Name, cs.State.Terminated.Reason, cs.State.Terminated.Message)
-				}
-			} else if cs.LastTerminationState.Terminated != nil {
-				if st.Reason == "" && cs.LastTerminationState.Terminated.Reason != "" {
-					st.Reason = cs.LastTerminationState.Terminated.Reason
-				}
-				if cs.LastTerminationState.Terminated.Message != "" {
-					st.TerminationLog = fmt.Sprintf("container[%v] last terminated state reason %q, message: %q", cs.Name, cs.LastTerminationState.Terminated.Reason, cs.LastTerminationState.Terminated.Message)
-				}
-			}
-
-			// set terminated log from one of containers
-			if st.TerminationLog != "" {
-				break
-			}
-		}
-
-		if st.Reason != "" && st.Message != "" {
-			return
-		}
-
-		// podStatus createTime
-		st.CreateTime = func() *metav1.Time {
-			createTime := pod.GetCreationTimestamp()
-			return &createTime
-		}()
-
-		// podStatus startTime
-		st.StartTime = pod.Status.StartTime
-
-		// Check if the pod has been scheduled
-		// set scheduleTime、readyTime
-		for _, cond := range pod.Status.Conditions {
-			if cond.Type == v1.PodScheduled && cond.Status == v1.ConditionFalse {
-				if st.Reason == "" {
-					st.Reason = cond.Reason
-				}
-
-				if st.Message == "" {
-					st.Message = cond.Message
-				}
-				return
-			}
-			// cond.Status=True indicates complete availability
-			if cond.Type == v1.PodReady && cond.Status == v1.ConditionTrue {
-				st.ReadyTime = func() *metav1.Time {
-					readyTime := cond.LastTransitionTime
-					return &readyTime
-				}()
-			}
-		}
-
-		// check pod container waiting state
-		for _, cs := range pod.Status.ContainerStatuses {
-			if cs.State.Waiting != nil {
-				if st.Reason == "" && cs.State.Waiting.Reason != "" {
-					st.Reason = cs.State.Waiting.Reason
-				}
-
-				if cs.State.Waiting.Message != "" {
-					st.Message = fmt.Sprintf("container[%v] waiting state reason: %q, message: %q", cs.Name, cs.State.Waiting.Reason, cs.State.Waiting.Message)
-				}
-			}
-
-			if st.Message != "" {
-				return
-			}
-		}
-	}
-}
-
-func (h *RunningHandler) refreshServiceStatuses(serviceStatuses map[string]*kusciaapisv1alpha1.ServiceStatus) {
-	for _, st := range serviceStatuses {
-		ns := st.Namespace
-		name := st.ServiceName
-		srv, err := h.servicesLister.Services(ns).Get(name)
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				srv, err = h.kubeClient.CoreV1().Services(ns).Get(context.Background(), name, metav1.GetOptions{})
-				if k8serrors.IsNotFound(err) {
-					st.Reason = "ServiceNotExist"
-					st.Message = "Does not find the service"
-					continue
-				}
-			}
-
-			if err != nil {
-				st.Reason = "GetServiceFailed"
-				st.Message = err.Error()
-			}
-			continue
-		}
-		st.CreateTime = func() *metav1.Time {
-			createTime := srv.GetCreationTimestamp()
-			return &createTime
-		}()
-
-		// set readyTime
-		if v, ok := srv.Annotations[common.ReadyTimeAnnotationKey]; ok {
-			st.ReadyTime = func() *metav1.Time {
-				readyTime := &metav1.Time{}
-				readyTime.UnmarshalQueryParameter(v)
-				return readyTime
-			}()
-		}
-	}
-}
-
-func getTaskLifecycle(kusciaTask *kusciaapisv1alpha1.KusciaTask) time.Duration {
-	taskLifecycle := taskDefaultLifecycle
-	if kusciaTask.Spec.ScheduleConfig.LifecycleSeconds > 0 {
-		taskLifecycle = time.Duration(kusciaTask.Spec.ScheduleConfig.LifecycleSeconds) * time.Second
-	}
-	return taskLifecycle
-}
-
 func isPodFailed(ps *v1.PodStatus) bool {
 	for _, cond := range ps.Conditions {
 		if cond.Type == v1.ContainersReady && cond.Status == v1.ConditionFalse {
@@ -531,7 +347,6 @@ func setTaskStatusPhase(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *ku
 		kusciaapisv1alpha1.TaskResourceGroupPhaseReserveFailed,
 		kusciaapisv1alpha1.TaskResourceGroupPhaseReserved:
 		taskStatus.Phase = kusciaapisv1alpha1.TaskRunning
-		taskStatus.Message = buildTaskStatusMessage(trg)
 	case kusciaapisv1alpha1.TaskResourceGroupPhaseFailed:
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
 		taskStatus.Reason = "TaskResourceGroupPhaseFailed"
@@ -544,10 +359,16 @@ func setTaskStatusPhase(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *ku
 }
 
 func buildTaskStatusMessage(trg *kusciaapisv1alpha1.TaskResourceGroup) string {
+	expiredCond, found := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceGroupExpired)
+	if found && expiredCond.Status == v1.ConditionTrue {
+		return fmt.Sprintf("The task was not scheduled within %v seconds of its entire lifecycle", trg.Spec.LifecycleSeconds)
+	}
+
+	condReason := ""
 	for _, cond := range trg.Status.Conditions {
 		if cond.Status != v1.ConditionTrue && cond.Reason != "" {
-			return cond.Reason
+			condReason += fmt.Sprintf("%v failed: %v,", cond.Type, cond.Reason)
 		}
 	}
-	return ""
+	return strings.TrimSuffix(condReason, ",")
 }

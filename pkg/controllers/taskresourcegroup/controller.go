@@ -21,7 +21,6 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -89,7 +88,10 @@ type Controller struct {
 }
 
 // NewController returns a controller instance.
-func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
+func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kubeClient := config.KubeClient
+	kusciaClient := config.KusciaClient
+	eventRecorder := config.EventRecorder
 	kubeInformerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient, 5*time.Minute)
 	podInformer := kubeInformerFactory.Core().V1().Pods()
 	nsInformer := kubeInformerFactory.Core().V1().Namespaces()
@@ -384,26 +386,33 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 		return nil
 	}
 
-	defer func() {
-		if err != nil {
-			c.recorder.Event(trg, corev1.EventTypeWarning, "ErrorHandleTaskResourceGroup", err.Error())
-		}
-	}()
-
 	phase := trg.Status.Phase
 	if phase == "" {
 		phase = kusciaapisv1alpha1.TaskResourceGroupPhasePending
 	}
 
 	needUpdate, err := c.handlerFactory.GetTaskResourceGroupPhaseHandler(phase).Handle(trg)
-	if err != nil && c.trgQueue.NumRequeues(key) < maxRetries {
-		return err
+	if err != nil {
+		if c.trgQueue.NumRequeues(key) < maxRetries {
+			return err
+		}
+
+		failTaskResourceGroup(trg)
+		needUpdate = true
 	}
+
 	if needUpdate {
 		err = c.updateTaskResourceGroupStatus(ctx, rawTrg, trg)
 	}
 
 	return err
+}
+
+func failTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) {
+	now := metav1.Now()
+	trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
+	trg.Status.LastTransitionTime = &now
+	trg.Status.CompletionTime = &now
 }
 
 // needHandleExpiredTrg is used to check if trg is expired, if expired, patching the task resource group status phase to failed.
@@ -536,17 +545,4 @@ func (c *Controller) handleDelayingTrg(item interface{}) {
 // Name returns controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists is used to check if crd exist.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDTaskResourcesGroupsName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDTaskResourcesName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-
-	return nil
 }

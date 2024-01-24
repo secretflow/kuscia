@@ -19,12 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
 	listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -35,7 +32,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	clientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -84,7 +80,10 @@ type Controller struct {
 }
 
 // NewController is used to new kuscia job controller.
-func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaClient kusciaclientset.Interface, eventRecorder record.EventRecorder) controllers.IController {
+func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kubeClient := config.KubeClient
+	kusciaClient := config.KusciaClient
+	eventRecorder := config.EventRecorder
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 5*time.Minute)
 
@@ -262,12 +261,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 	// Set default for the new kusciaJob.
 	kusciaJobDefault(curJob)
 
-	defer func() {
-		if retErr != nil {
-			c.recorder.Event(preJob, v1.EventTypeWarning, "ErrorHandleJob", retErr.Error())
-		}
-	}()
-
 	// For kusciaJob that should not reconcile again, just return.
 	if !handler.ShouldReconcile(curJob) {
 		nlog.Infof("KusciaJob %q should not reconcile again, skipping", key)
@@ -332,12 +325,4 @@ func (c *Controller) failKusciaJob(kusciaJob *kusciaapisv1alpha1.KusciaJob, err 
 // Name returns the controller name.
 func (c *Controller) Name() string {
 	return controllerName
-}
-
-// CheckCRDExists is used to check if crd exist.
-func CheckCRDExists(ctx context.Context, extensionClient apiextensionsclientset.Interface) error {
-	if _, err := extensionClient.ApiextensionsV1().CustomResourceDefinitions().Get(ctx, controllers.CRDKusciaJobsName, metav1.GetOptions{}); err != nil {
-		return err
-	}
-	return nil
 }

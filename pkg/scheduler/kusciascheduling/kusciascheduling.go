@@ -172,7 +172,7 @@ func (cs *KusciaScheduling) PostFilter(ctx context.Context, state *framework.Cyc
 	})
 
 	return &framework.PostFilterResult{}, framework.NewStatus(framework.Unschedulable,
-		fmt.Sprintf("reject the pod %v is unschedulable even after PostFilter", pod.Name))
+		fmt.Sprintf("reject the pod %v even after PostFilter", pod.Name))
 }
 
 // PreFilterExtensions returns a PreFilterExtensions interface if the plugin implements one.
@@ -244,7 +244,7 @@ func (cs *KusciaScheduling) Permit(ctx context.Context, state *framework.CycleSt
 func (cs *KusciaScheduling) PreBind(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodeName string) *framework.Status {
 	code, err := cs.trMgr.PreBind(ctx, pod)
 	if err != nil {
-		nlog.Errorf("PreBind pod %v/%v failed, %v", pod.Namespace, pod.Name, err)
+		nlog.Warnf("PreBind pod %v/%v failed, %v", pod.Namespace, pod.Name, err)
 		return framework.NewStatus(code, err.Error())
 	}
 	return framework.NewStatus(code, "")

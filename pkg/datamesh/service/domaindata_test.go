@@ -16,24 +16,54 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
-	dsID = GetDefaultDataSourceID()
+	dsID = common.DefaultDataSourceID
 )
 
+func createTestDefaultDomainDataSource(t *testing.T, conf *config.DataMeshConfig) string {
+	domainDataService := makeDomainDataSourceService(t, conf)
+	err := domainDataService.CreateDefaultDomainDataSource(context.Background())
+	assert.Nil(t, err)
+
+	exist := false
+	for i := 0; i < 10; {
+		if _, err := conf.KusciaClient.KusciaV1alpha1().DomainDataSources(conf.KubeNamespace).Get(context.Background(),
+			dsID, metav1.GetOptions{}); err == nil {
+			exist = true
+			break
+		}
+		time.Sleep(time.Second)
+		i++
+	}
+	assert.True(t, exist)
+	return common.DefaultDataSourceID
+}
+
 func TestCreateDomainData(t *testing.T) {
-	conf := config.DataMeshConfig{
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
+		DomainKey:     key,
 	}
+	mockDsID := createTestDefaultDomainDataSource(t, conf)
 	domainDataService := NewDomainDataService(conf)
 	attr := make(map[string]string)
 	attr["rows"] = "100"
@@ -46,7 +76,7 @@ func TestCreateDomainData(t *testing.T) {
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
-		DatasourceId: dsID,
+		DatasourceId: mockDsID,
 		Attributes:   attr,
 		Partition: &v1alpha1.Partition{
 			Type:   "path",
@@ -54,26 +84,34 @@ func TestCreateDomainData(t *testing.T) {
 		},
 		Columns: col,
 	})
+	assert.NotNil(t, res)
+	assert.True(t, res.Status.Code == 0)
+
+	col[1].Type = "double"
 	res = domainDataService.CreateDomainData(context.Background(), &datamesh.CreateDomainDataRequest{
 		Header:       nil,
-		DomaindataId: res.Data.DomaindataId,
+		DomaindataId: "",
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/d.csv",
-		DatasourceId: dsID,
+		DatasourceId: mockDsID,
 		Attributes:   nil,
 		Partition:    nil,
-		Columns:      nil,
+		Columns:      col,
 	})
 	assert.NotNil(t, res)
+	assert.True(t, res.Status.Code == 0)
 }
 
 func TestQueryDomainData(t *testing.T) {
-
-	conf := config.DataMeshConfig{
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
+		DomainKey:     key,
 	}
+	createTestDefaultDomainDataSource(t, conf)
 	domainDataService := NewDomainDataService(conf)
 	attr := make(map[string]string)
 	attr["rows"] = "100"
@@ -102,10 +140,14 @@ func TestQueryDomainData(t *testing.T) {
 }
 
 func TestUpdateDomainData(t *testing.T) {
-	conf := config.DataMeshConfig{
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
+		DomainKey:     key,
 	}
+	createTestDefaultDomainDataSource(t, conf)
 	domainDataService := NewDomainDataService(conf)
 	attr := make(map[string]string)
 	attr["rows"] = "100"
@@ -141,10 +183,14 @@ func TestUpdateDomainData(t *testing.T) {
 }
 
 func TestDeleteDomainData(t *testing.T) {
-	conf := config.DataMeshConfig{
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+	conf := &config.DataMeshConfig{
 		KusciaClient:  kusciafake.NewSimpleClientset(),
 		KubeNamespace: "DomainDataUnitTestNamespace",
+		DomainKey:     key,
 	}
+	createTestDefaultDomainDataSource(t, conf)
 	domainDataService := NewDomainDataService(conf)
 	attr := make(map[string]string)
 	attr["rows"] = "100"
@@ -153,7 +199,7 @@ func TestDeleteDomainData(t *testing.T) {
 	col[1] = &v1alpha1.DataColumn{Name: "date", Type: "string"}
 	res := domainDataService.CreateDomainData(context.Background(), &datamesh.CreateDomainDataRequest{
 		Header:       nil,
-		DomaindataId: "",
+		DomaindataId: dsID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -170,4 +216,27 @@ func TestDeleteDomainData(t *testing.T) {
 		DomaindataId: res.Data.DomaindataId,
 	})
 	assert.NotNil(t, res1)
+}
+
+func TestCheckCols(t *testing.T) {
+	cols := []*v1alpha1.DataColumn{
+		{
+			Name:        "col1",
+			Type:        "int32",
+			Comment:     "",
+			NotNullable: false,
+		},
+	}
+	assert.NotNil(t, CheckColType(cols, "mysql"))
+	assert.Nil(t, CheckColType(cols, "oss"))
+
+	cols = []*v1alpha1.DataColumn{
+		{
+			Name:        "col1",
+			Type:        "xxx",
+			Comment:     "",
+			NotNullable: false,
+		},
+	}
+	assert.NotNil(t, CheckColType(cols, "oss"))
 }

@@ -20,14 +20,23 @@ set -e
 SELECTED_TEST_SUITE=${1}
 
 # TEST_SUITES hold all test suites.
-declare -A TEST_SUITES
-TEST_SUITES["center.base"]="./test/suite/center/basic.sh"
-TEST_SUITES["p2p.base"]="./test/suite/p2p/basic.sh"
-TEST_SUITES["center.example"]="./test/suite/center/example.sh"
+TEST_SUITES="center.base p2p.base center.example"
+WSL_IGNORE_SUITES="center.nsjail p2p.nsjail"
+center_base="./test/suite/center/base.sh"
+p2p_base="./test/suite/p2p/base.sh"
+center_nsjail="./test/suite/center/nsjail.sh"
+p2p_nsjail="./test/suite/p2p/nsjail.sh"
+center_example="./test/suite/center/example.sh"
 
 TEST_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 TEST_BIN_DIR=${TEST_ROOT}/test_run/bin
 TEST_RUN_ROOT_DIR=${TEST_ROOT}/test_run
+IS_WSL=false
+
+if [ $WSL_DISTRO_NAME ]; then
+  IS_WSL=true
+fi
+echo "detect environment: is_wsl=${IS_WSL}"
 
 # Download grpcurl
 #
@@ -48,10 +57,10 @@ function download_grpcurl() {
   local package_url
   case $(uname -s -m) in
   "Linux x86_64" )
-    package_url="https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_linux_x86_64.tar.gz"
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/grpcurl_1.8.8_linux_x86_64.tar.gz"
     ;;
   "Darwin x86_64" )
-    package_url="https://github.com/fullstorydev/grpcurl/releases/download/v1.8.7/grpcurl_1.8.7_osx_x86_64.tar.gz"
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/grpcurl_1.8.8_osx_x86_64.tar.gz"
     ;;
   *)
     echo "Unsupported Arch"
@@ -80,10 +89,10 @@ function download_jq() {
   fi
   case $(uname -s -m) in
   "Linux x86_64" )
-    package_url="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-linux64"
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/jq-linux64"
     ;;
   "Darwin x86_64" )
-    package_url="https://github.com/jqlang/jq/releases/download/jq-1.6/jq-osx-amd64"
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/jq-osx-amd64"
     ;;
   *)
     echo "Unsupported OS"
@@ -111,9 +120,11 @@ function copyTestScripts() {
 if [ "${SELECTED_TEST_SUITE}" == "" ]; then
   SELECTED_TEST_SUITE="all"
 fi
-if [ "${SELECTED_TEST_SUITE}" != "all" ] && [ -z "${TEST_SUITES[${SELECTED_TEST_SUITE}]}" ] ; then
-  echo "can't find test suite: ${SELECTED_TEST_SUITE}"
-  exit 1
+if [ "${SELECTED_TEST_SUITE}" != "all" ] ; then
+  case "${TEST_SUITES}" in
+    *"${SELECTED_TEST_SUITE}"*) ;;
+    *) echo "can't find test suite: ${SELECTED_TEST_SUITE}" && exit 1;;
+  esac
 fi
 
 installRequires
@@ -122,15 +133,21 @@ copyTestScripts
 docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
 
 if [ "${SELECTED_TEST_SUITE}" == "all" ]; then
-  for suite in "${!TEST_SUITES[@]}"; do
+  for suite in ${TEST_SUITES}; do
+    if [[ "${IS_WSL}" == true && "${WSL_IGNORE_SUITES}" =~ ${suite} ]]; then
+      echo "in wsl env: $suite will be skip"
+      continue
+    fi
     test_suite_run_root_dir="${TEST_RUN_ROOT_DIR}"/"${suite}"
     mkdir -p "${test_suite_run_root_dir}"
-    TEST_SUITE_RUN_ROOT_DIR="${test_suite_run_root_dir}" TEST_BIN_DIR=${TEST_BIN_DIR} ${TEST_SUITES[${suite}]}
+    suite_for_path=${suite//./_}
+    TEST_SUITE_RUN_ROOT_DIR="${test_suite_run_root_dir}" TEST_BIN_DIR=${TEST_BIN_DIR} ${!suite_for_path}
     rm -rf "${test_suite_run_root_dir}"
   done
 else
   test_suite_run_root_dir="${TEST_RUN_ROOT_DIR}"/"${SELECTED_TEST_SUITE}"
   mkdir -p "${test_suite_run_root_dir}"
-  TEST_SUITE_RUN_ROOT_DIR="${test_suite_run_root_dir}" TEST_BIN_DIR=${TEST_BIN_DIR} ${TEST_SUITES[${SELECTED_TEST_SUITE}]}
+  SELECTED_TEST_SUITE_FOR_PATH=${SELECTED_TEST_SUITE//./_}
+  TEST_SUITE_RUN_ROOT_DIR="${test_suite_run_root_dir}" TEST_BIN_DIR=${TEST_BIN_DIR} ${!SELECTED_TEST_SUITE_FOR_PATH}
   rm -rf "${test_suite_run_root_dir}"
 fi

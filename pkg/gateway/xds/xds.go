@@ -193,6 +193,7 @@ func InitSnapshot(ns, instance string, initConfig *InitConfig) {
 }
 
 func generateListeners(configTemplate ConfigTemplate, config *InitConfig) []types.Resource {
+
 	listenerConfPath := path.Join(config.Basedir, "listeners")
 	dir, err := os.ReadDir(listenerConfPath)
 	if err != nil {
@@ -444,14 +445,18 @@ func QueryCluster(name string) (*envoycluster.Cluster, error) {
 	clusters := snapshot.Resources[types.Cluster].Items
 	rs, ok := clusters[name]
 	if !ok {
-		nlog.Errorf("unknown cluster: %s", name)
 		return nil, fmt.Errorf("unknown cluster: %s", name)
 	}
 	cluster, ok := rs.Resource.(*envoycluster.Cluster)
 	if !ok {
 		return nil, fmt.Errorf("resource cannot cast to Cluster")
 	}
-	return cluster, nil
+
+	copiedCluster, ok := proto.Clone(cluster).(*envoycluster.Cluster)
+	if !ok {
+		return nil, fmt.Errorf("clone cluster (%s) fail", name)
+	}
+	return copiedCluster, nil
 }
 
 func QueryVirtualHost(name, routeName string) (*route.VirtualHost, error) {
@@ -525,46 +530,6 @@ func DeleteVirtualHost(name, routeName string) error {
 			routeConfig.VirtualHosts = append(routeConfig.VirtualHosts[:i], routeConfig.VirtualHosts[i+1:]...)
 			break
 		}
-	}
-
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Route].Version)
-	snapshot.Resources[types.Route].Version = fmt.Sprintf("%d", oldVersion+1)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
-}
-
-func AddOrUpdateRoute(rules []*route.Route, vhName, routeName string) error {
-	lock.Lock()
-	defer lock.Unlock()
-	routes := snapshot.Resources[types.Route].Items
-	rs, ok := routes[routeName]
-	if !ok {
-		return fmt.Errorf("unknown route config name: %s", routeName)
-	}
-
-	routeConfig, ok := rs.Resource.(*route.RouteConfiguration)
-	if !ok {
-		return fmt.Errorf("resource cannot cast to RouteConfiguration")
-	}
-
-	var vh *route.VirtualHost
-	for i := range routeConfig.VirtualHosts {
-		if routeConfig.VirtualHosts[i].Name == vhName {
-			vh = routeConfig.VirtualHosts[i]
-			break
-		}
-	}
-	if vh == nil {
-		return fmt.Errorf("cannot find virtual host (%s) in route (%s)", vhName, routeName)
-	}
-
-	for _, rule := range rules {
-		for i := range vh.Routes {
-			if vh.Routes[i].Name == rule.Name {
-				vh.Routes = append(vh.Routes[:i], vh.Routes[i+1:]...)
-				break
-			}
-		}
-		vh.Routes = append(vh.Routes, rule)
 	}
 
 	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Route].Version)
@@ -743,27 +708,6 @@ func generateCryptRules(newRule *kusciacrypt.CryptRule, config []*kusciacrypt.Cr
 		config = append(config, newRule)
 	}
 	return config
-}
-
-func UpdateTokenAuth(newRule *kusciatoken.TokenAuth_SourceToken, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	if !add && len(sourceTokens) == 0 {
-		return nil
-	}
-
-	protoConfig, err := getHTTPFilterConfig(tokenAuthFilterName, ExternalListener)
-	if err != nil {
-		return err
-	}
-
-	httpFilter, err := UpdateTokenAuthConfig(protoConfig, newRule, add)
-	if err != nil {
-		return err
-	}
-
-	return updateHTTPFilter(httpFilter, ExternalListener)
 }
 
 func UpdateTokenAuthConfig(config *anypb.Any, newToken *kusciatoken.TokenAuth_SourceToken,

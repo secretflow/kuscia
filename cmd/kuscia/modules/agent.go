@@ -18,11 +18,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -38,26 +40,34 @@ type agentModule struct {
 }
 
 func NewAgent(i *Dependencies) Module {
-	conf := config.DefaultAgentConfig()
+	conf := &i.Agent
+	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
 	hostname, err := os.Hostname()
 	if err != nil {
 		nlog.Fatalf("Get hostname fail: %v", err)
 	}
-	conf.StdoutPath = filepath.Join(i.RootDir, StdoutPrefix)
-	conf.NodeName = hostname
+	conf.StdoutPath = filepath.Join(i.RootDir, common.StdoutPrefix)
+	if conf.Node.NodeName == "" {
+		conf.Node.NodeName = hostname
+	}
 	conf.APIVersion = k8sVersion
 	conf.AgentVersion = fmt.Sprintf("%v", meta.AgentVersionString())
-	conf.DomainCAFile = i.CAFile
-	conf.DomainCAKeyFile = i.CAKeyFile
+	conf.DomainCACert = i.CACert
+	conf.DomainCAKey = i.CAKey
+	conf.DomainCACertFile = i.CACertFile
+	if !path.IsAbs(conf.DomainCACertFile) {
+		conf.DomainCACertFile = filepath.Join(i.RootDir, i.CACertFile)
+	}
 	conf.AllowPrivileged = i.Agent.AllowPrivileged
-	conf.KeepNodeOnExit = true
 	conf.Provider.CRI.RemoteImageEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Provider.CRI.RemoteRuntimeEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
 	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
 	conf.Plugins = i.Agent.Plugins
+
+	nlog.Debugf("Agent config is %+v", conf)
 
 	return &agentModule{
 		conf:    conf,
@@ -70,7 +80,7 @@ func (agent *agentModule) Run(ctx context.Context) error {
 }
 
 func (agent *agentModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(300 * time.Second)
 	select {
 	case <-commands.ReadyChan:
 		return nil
@@ -97,7 +107,7 @@ func RunAgent(ctx context.Context, cancel context.CancelFunc, conf *Dependencies
 		nlog.Error(err)
 		cancel()
 	} else {
-		nlog.Info("agent is ready")
+		nlog.Info("Agent is ready")
 	}
 	return m
 }

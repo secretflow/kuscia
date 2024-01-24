@@ -132,7 +132,7 @@ func TestSyncServiceHandler(t *testing.T) {
 			Name:            "svc1",
 			ResourceVersion: "1",
 			Labels: map[string]string{
-				common.LabelTaskInitiator: "ns2",
+				common.LabelInitiator: "ns2",
 			},
 		},
 	}
@@ -143,7 +143,7 @@ func TestSyncServiceHandler(t *testing.T) {
 			Name:            "svc2",
 			ResourceVersion: "1",
 			Labels: map[string]string{
-				common.LabelTaskInitiator: "ns2",
+				common.LabelInitiator: "ns2",
 			},
 		},
 	}
@@ -154,7 +154,7 @@ func TestSyncServiceHandler(t *testing.T) {
 			Name:            "svc3",
 			ResourceVersion: "10",
 			Labels: map[string]string{
-				common.LabelTaskInitiator: "ns2",
+				common.LabelInitiator: "ns2",
 			},
 		},
 	}
@@ -173,7 +173,7 @@ func TestSyncServiceHandler(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "svc2",
 			Labels: map[string]string{
-				common.LabelTaskInitiator:                   "ns2",
+				common.LabelInitiator:                       "ns2",
 				common.LabelResourceVersionUnderHostCluster: "10",
 			},
 		},
@@ -184,7 +184,7 @@ func TestSyncServiceHandler(t *testing.T) {
 			Namespace: "ns1",
 			Name:      "svc3",
 			Labels: map[string]string{
-				common.LabelTaskInitiator:                   "ns2",
+				common.LabelInitiator:                       "ns2",
 				common.LabelResourceVersionUnderHostCluster: "1",
 			},
 		},
