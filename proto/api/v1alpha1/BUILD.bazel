@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_proto_grpc//cpp:defs.bzl", "cpp_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -19,4 +21,9 @@ proto_library(
     srcs = ["common.proto"],
     import_prefix = "kuscia",
     deps = ["@com_google_protobuf//:any_proto"],
+)
+
+cpp_proto_library(
+    name = "common_cpp_proto",
+    protos = [":common_proto"],
 )

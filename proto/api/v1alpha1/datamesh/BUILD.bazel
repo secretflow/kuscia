@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
-load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library", "cpp_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -24,21 +25,19 @@ proto_library(
     deps = ["//proto/api/v1alpha1:common_proto"],
 )
 
-cc_proto_library(
-    name = "domaindata_cc_proto",
+cpp_proto_library(
+    name = "domaindata_cpp_proto",
+    protos = [":domaindata_proto"],
     deps = [
-        ":domaindata_proto",
+        "//proto/api/v1alpha1:common_cpp_proto",
     ],
 )
 
-cc_grpc_library(
-    name = "domaindata_cc_grpc",
-    srcs = [
-        ":domaindata_proto",
-    ],
-    grpc_only = True,
+cpp_grpc_library(
+    name = "domaindata_cpp_grpc",
+    protos = [":domaindata_proto"],
     deps = [
-        ":domaindata_cc_proto",
+        "//proto/api/v1alpha1:common_cpp_proto",
     ],
 )
 
@@ -49,21 +48,23 @@ proto_library(
     deps = ["//proto/api/v1alpha1:common_proto"],
 )
 
-cc_proto_library(
+cpp_proto_library(
     name = "domaindatasource_cc_proto",
-    deps = [
+    protos = [
         ":domaindatasource_proto",
+    ],
+    deps = [
+        "//proto/api/v1alpha1:common_cpp_proto",
     ],
 )
 
-cc_grpc_library(
-    name = "domaindatasource_cc_grpc",
-    srcs = [
+cpp_grpc_library(
+    name = "domaindatasource_cpp_grpc",
+    protos = [
         ":domaindatasource_proto",
     ],
-    grpc_only = True,
     deps = [
-        ":domaindatasource_cc_proto",
+        "//proto/api/v1alpha1:common_cpp_proto",
     ],
 )
 
