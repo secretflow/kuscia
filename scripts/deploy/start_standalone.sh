@@ -51,9 +51,9 @@ FORCE_START=false
 MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
-SF_IMAGE_NAME="secretflow/secretflow-lite-anolis8"
+SF_IMAGE_NAME="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8"
 SF_IMAGE_TAG="1.3.0.dev20231120"
-SF_IMAGE_REGISTRY="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow"
+SF_IMAGE_REGISTRY=""
 NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
 SECRETPAD_PASSWORD=""
@@ -567,7 +567,7 @@ function start_lite() {
     csr_token=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
     docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh lite ${domain_id} ${master_endpoint} ${csr_token} "${ALLOW_PRIVILEGED}"
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
-      --mount type=volume,source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
+      --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
       -e NAMESPACE=${domain_id} \
       ${mount_volume_param} \
       -p $port:1080 \
