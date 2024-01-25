@@ -1,8 +1,8 @@
 ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.4.0b0"
 ARG KUSCIA_ENVOY_IMAGE="secretflow/kuscia-envoy:0.3.0.dev231122"
-
+ARG PROM_NODE_EXPORTER="prom/node-exporter:latest"
 FROM ${DEPS_IMAGE} as deps
-
+FROM ${PROM_NODE_EXPORTER} as node_exporter
 FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
 
 FROM openanolis/anolisos:8.8
@@ -20,7 +20,7 @@ RUN yum install -y openssl net-tools which jq logrotate && \
 
 COPY --from=deps /image/home/kuscia/bin ${ROOT_DIR}/bin
 COPY --from=deps /image/bin/aux /bin/aux
-
+COPY --from=node_exporter /bin/node_exporter ${ROOT_DIR}/bin
 RUN pushd ${ROOT_DIR}/bin && \
     ln -s k3s crictl && \
     ln -s k3s ctr && \
@@ -42,7 +42,6 @@ COPY scripts ${ROOT_DIR}/scripts
 COPY thirdparty/*/scripts ${ROOT_DIR}/scripts
 
 COPY --from=kuscia_envoy /home/kuscia/bin/envoy ${ROOT_DIR}/bin
-COPY build/dockerfile/node_exporter ${ROOT_DIR}/bin
 ENV PATH="${PATH}:${ROOT_DIR}/bin:/bin/aux"
 WORKDIR ${ROOT_DIR}
 

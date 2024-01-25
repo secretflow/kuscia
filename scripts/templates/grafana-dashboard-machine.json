@@ -26,7 +26,6 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 8919,
   "graphTooltip": 0,
-  "id": 7,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -55,7 +54,7 @@
         "content": "",
         "mode": "html"
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "repeat": "node",
       "repeatDirection": "h",
       "style": {},
@@ -100,7 +99,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -146,10 +146,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -174,16 +175,20 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
+          "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "avg(time() - node_boot_time_seconds{instance=\"$instance\"})",
+          "expr": "time() - node_boot_time_seconds{instance=~\"${instance}:9100\"}",
           "format": "time_series",
+          "fullMetaSearch": false,
           "hide": false,
+          "includeNullMetadata": true,
           "instant": true,
           "interval": "",
           "intervalFactor": 2,
           "legendFormat": "",
           "refId": "A",
-          "step": 40
+          "step": 40,
+          "useBackend": false
         }
       ],
       "thresholds": "",
@@ -227,7 +232,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -273,10 +279,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -301,7 +308,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "count(count(node_cpu_seconds_total{instance=\"$instance\", mode='system'}) by (cpu))",
+          "expr": "count(count(node_cpu_seconds_total{instance=~\"${instance}:9100\", mode='system'}) by (cpu))",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 1,
@@ -352,7 +359,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -398,10 +406,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -426,7 +435,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "100 - (avg(irate(node_cpu_seconds_total{instance=\"$instance\",mode=\"idle\"}[5m])) * 100)",
+          "expr": "100 - (avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9100\",mode=\"idle\"}[5m])) * 100)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -478,7 +487,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -524,10 +534,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -552,7 +563,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=\"$instance\",mode=\"iowait\"}[5m])) * 100",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9100\",mode=\"iowait\"}[5m])) * 100",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -604,7 +615,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -651,10 +663,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -679,7 +692,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg((1 - (node_memory_MemAvailable_bytes{instance=\"$instance\"} / (node_memory_MemTotal_bytes{instance=\"$instance\"})))* 100)",
+          "expr": "avg((1 - (node_memory_MemAvailable_bytes{instance=~\"${instance}:9100\"} / (node_memory_MemTotal_bytes{instance=~\"${instance}:9100\"})))* 100)",
           "format": "time_series",
           "hide": false,
           "interval": "10s",
@@ -725,7 +738,8 @@
               }
             ]
           },
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "unitScale": true
         },
         "overrides": []
       },
@@ -754,14 +768,14 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "sum(node_filefd_allocated{instance=\"$instance\"})/sum(node_filefd_maximum{instance=\"$instance\"})",
+          "expr": "sum(node_filefd_allocated{instance=~\"${instance}:9100\"})/sum(node_filefd_maximum{instance=~\"${instance}:9100\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -802,7 +816,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -848,10 +863,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -878,7 +894,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=\"$instance\",mountpoint=\"/home/kuscia/var/storage/data\"} * 100) / node_filesystem_size_bytes {instance=\"$instance\",mountpoint=\"/home/kuscia/var/storage/data\"}))",
+          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=~\"${instance}:9100\",mountpoint=\"/etc/hostname\"} * 100) / node_filesystem_size_bytes {instance=~\"${instance}:9100\",mountpoint=\"/etc/hostname\"}))",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -929,7 +945,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -975,10 +992,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -1004,7 +1022,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=\"$instance\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"} * 100) / node_filesystem_size_bytes {instance=\"$instance\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"}))",
+          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=~\"${instance}:9100\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"} * 100) / node_filesystem_size_bytes {instance=~\"${instance}:9100\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"}))",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -1054,7 +1072,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1100,10 +1119,11 @@
           "fields": "",
           "values": false
         },
+        "showPercentChange": false,
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "postfix": "",
       "postfixFontSize": "70%",
       "prefix": "",
@@ -1128,7 +1148,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(node_memory_MemTotal_bytes{instance=\"$instance\"})",
+          "expr": "avg(node_memory_MemTotal_bytes{instance=~\"${instance}:9100\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1166,6 +1186,12 @@
       },
       "editable": true,
       "error": false,
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "grid": {},
@@ -1199,7 +1225,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1213,7 +1239,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_load1{instance=\"$instance\"}",
+          "expr": "node_load1{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "instant": false,
           "interval": "10s",
@@ -1229,7 +1255,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_load5{instance=\"$instance\"}",
+          "expr": "node_load5{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "instant": false,
           "interval": "10s",
@@ -1243,7 +1269,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_load15{instance=\"$instance\"}",
+          "expr": "node_load15{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "instant": false,
           "interval": "10s",
@@ -1312,7 +1338,8 @@
               "viz": false
             }
           },
-          "mappings": []
+          "mappings": [],
+          "unitScale": true
         },
         "overrides": []
       },
@@ -1365,7 +1392,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_filesystem_size_bytes {instance=\"$instance\",fstype=~\"ext4|xfs\"}",
+          "expr": "node_filesystem_size_bytes {instance=~\"${instance}:9100\",fstype=~\"ext4|xfs\"}",
           "format": "time_series",
           "instant": true,
           "interval": "10s",
@@ -1523,7 +1550,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_filesystem_size_bytes{instance='$instance',fstype=~\"ext4|xfs\"}",
+          "expr": "node_filesystem_size_bytes{instance='$instance:9100',fstype=~\"ext4|xfs\"}",
           "format": "table",
           "hide": true,
           "instant": true,
@@ -1537,7 +1564,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_filesystem_avail_bytes {instance='$instance',fstype=~\"ext4|xfs\"}",
+          "expr": "node_filesystem_avail_bytes {instance='$instance:9100',fstype=~\"ext4|xfs\"}",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1552,7 +1579,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "1-(node_filesystem_free_bytes{instance='$instance',fstype=~\"ext4|xfs\"} / node_filesystem_size_bytes{instance='$instance',fstype=~\"ext4|xfs\"})",
+          "expr": "1-(node_filesystem_free_bytes{instance='$instance:9100',fstype=~\"ext4|xfs\"} / node_filesystem_size_bytes{instance='$instance:9100',fstype=~\"ext4|xfs\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1601,6 +1628,12 @@
       },
       "decimals": 2,
       "description": "这里CPU使用率、磁盘每秒IO操作耗时使用率 % 此图每根线的含义：\n\nSystem，是CPU系统部分CPU时间片占总CPU时间片的百分比，也就是CPU系统部分的CPU使用率%\nUser，是CPU User部分CPU时间片占总CPU时间片的百分比，也就是CPU User部分的CPU使用率%\nIowait，是CPU Iowait部分CPU时间片占总CPU时间片的百分比，也就是CPU Iowait部分的CPU使用率%\n\n{{device}}_每秒I/O操作% 这根线是每个设备（如vda），IO操作的时间占总IO时间的占比，也就是此设备的IO使用率 %\nnode_disk_io_time_seconds_total：\n磁盘花费在输入/输出操作上的毫秒数。该值为累加值。（Milliseconds Spent Doing I/Os）\n\nirate(node_disk_io_time_seconds_total[1m])：\n计算每秒的速率：(last值-last前一个值)/时间戳差值，即：1秒钟内磁盘花费在I/O操作的时间占比。",
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1634,7 +1667,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1648,7 +1681,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=\"$instance\",mode=\"system\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9100\",mode=\"system\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1661,7 +1694,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=\"$instance\",mode=\"user\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9100\",mode=\"user\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "User",
@@ -1673,7 +1706,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=\"$instance\",mode=\"idle\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9100\",mode=\"idle\"}[1m]))",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1686,7 +1719,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=\"$instance\",mode=\"iowait\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9100\",mode=\"iowait\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Iowait",
@@ -1698,7 +1731,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_io_time_seconds_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_io_time_seconds_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{device}}_I/O operations per second%",
@@ -1754,6 +1787,12 @@
         "uid": "{{Kuscia-datasource}}"
       },
       "decimals": 2,
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 6,
       "fillGradient": 0,
       "gridPos": {
@@ -1785,7 +1824,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1799,7 +1838,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1813,7 +1852,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=\"$instance\"} - node_memory_MemAvailable_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}:9100\"} - node_memory_MemAvailable_bytes{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -1826,7 +1865,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemFree_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_MemFree_bytes{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1839,7 +1878,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_Buffers_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_Buffers_bytes{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1852,7 +1891,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_Cached_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_Cached_bytes{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1865,7 +1904,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemAvailable_bytes{instance=\"$instance\"}",
+          "expr": "node_memory_MemAvailable_bytes{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1879,7 +1918,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=\"$instance\"} - (node_memory_Cached_bytes{instance=\"$instance\"} + node_memory_Buffers_bytes{instance=\"$instance\"} + node_memory_MemFree_bytes{instance=\"$instance\"})",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}:9100\"} - (node_memory_Cached_bytes{instance=~\"${instance}:9100\"} + node_memory_Buffers_bytes{instance=~\"${instance}:9100\"} + node_memory_MemFree_bytes{instance=~\"${instance}:9100\"})",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 1,
@@ -1929,6 +1968,12 @@
         "uid": "{{Kuscia-datasource}}"
       },
       "description": "Reads completed: 每个磁盘分区每秒读完成次数\n\nWrites completed: 每个磁盘分区每秒写完成次数\n\nIO now 每个磁盘分区每秒正在处理的输入/输出请求数",
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 2,
       "fillGradient": 0,
       "gridPos": {
@@ -1961,7 +2006,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1980,7 +2025,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_reads_completed_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_reads_completed_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1994,7 +2039,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_writes_completed_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_writes_completed_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -2007,7 +2052,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_disk_io_now{instance=\"$instance\"}",
+          "expr": "node_disk_io_now{instance=~\"${instance}:9100\"}",
           "format": "time_series",
           "hide": true,
           "interval": "",
@@ -2059,6 +2104,12 @@
         "uid": "{{Kuscia-datasource}}"
       },
       "description": "Read bytes 每个磁盘分区每秒读取的比特数\nWritten bytes 每个磁盘分区每秒写入的比特数",
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 2,
       "fillGradient": 0,
       "gridPos": {
@@ -2091,7 +2142,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2110,7 +2161,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_read_bytes_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_read_bytes_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -2123,7 +2174,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_written_bytes_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_written_bytes_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -2175,6 +2226,12 @@
         "uid": "{{Kuscia-datasource}}"
       },
       "description": "Read time ms 每个磁盘分区读操作花费的秒数\n\nWrite time ms 每个磁盘分区写操作花费的秒数\n\nIO time ms 每个磁盘分区输入/输出操作花费的秒数\n\nIO time weighted 每个磁盘分区输入/输出操作花费的加权秒数",
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 3,
       "fillGradient": 0,
       "gridPos": {
@@ -2207,7 +2264,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2226,7 +2283,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_io_time_seconds_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_io_time_seconds_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": true,
           "interval": "",
@@ -2240,7 +2297,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_io_time_weighted_seconds_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_io_time_weighted_seconds_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 1,
@@ -2252,7 +2309,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_read_time_seconds_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_read_time_seconds_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2265,7 +2322,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_write_time_seconds_total{instance=\"$instance\"}[1m])",
+          "expr": "irate(node_disk_write_time_seconds_total{instance=~\"${instance}:9100\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -2313,6 +2370,12 @@
         "type": "prometheus",
         "uid": "{{Kuscia-datasource}}"
       },
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -2345,7 +2408,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2365,7 +2428,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_network_receive_bytes_total{instance=~'$instance',device!~'tap.*'}[5m])*8",
+          "expr": "irate(node_network_receive_bytes_total{instance=~\"${instance}:9100\",device!~'tap.*'}[5m])*8",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{device}}_in Download",
@@ -2379,7 +2442,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_network_transmit_bytes_total{instance=~'$instance',device!~'tap.*'}[5m])*8",
+          "expr": "irate(node_network_transmit_bytes_total{instance=~\"${instance}:9100\",device!~'tap.*'}[5m])*8",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{device}}_out上传",
@@ -2431,6 +2494,12 @@
         "uid": "{{Kuscia-datasource}}"
       },
       "description": "CurrEstab - 当前状态为 ESTABLISHED 或 CLOSE-WAIT 的 TCP 连接数\n\nActiveOpens - 已从 CLOSED 状态直接转换到 SYN-SENT 状态的 TCP 平均连接数(1分钟内)\n\nPassiveOpens - 已从 LISTEN 状态直接转换到 SYN-RCVD 状态的 TCP 平均连接数(1分钟内)\n\nTCP_alloc - 已分配（已建立、已申请到sk_buff）的TCP套接字数量\n\nTCP_inuse - 正在使用（正在侦听）的TCP套接字数量\n\nTCP_tw - 等待关闭的TCP连接数",
+      "fieldConfig": {
+        "defaults": {
+          "unitScale": true
+        },
+        "overrides": []
+      },
       "fill": 0,
       "fillGradient": 0,
       "gridPos": {
@@ -2462,7 +2531,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "10.2.3",
+      "pluginVersion": "10.3.1",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2477,7 +2546,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_netstat_Tcp_CurrEstab{instance=~'$instance'}",
+          "expr": "node_netstat_Tcp_CurrEstab{instance=~'$instance:9100'}",
           "format": "time_series",
           "hide": false,
           "interval": "10s",
@@ -2493,7 +2562,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_sockstat_TCP_tw{instance=~'$instance'}",
+          "expr": "node_sockstat_TCP_tw{instance=~'$instance:9100'}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "TCP_tw",
@@ -2506,7 +2575,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_netstat_Tcp_ActiveOpens{instance=~'$instance'}[1m])",
+          "expr": "irate(node_netstat_Tcp_ActiveOpens{instance=~'$instance:9100'}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -2520,7 +2589,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_netstat_Tcp_PassiveOpens{instance=~'$instance'}[1m])",
+          "expr": "irate(node_netstat_Tcp_PassiveOpens{instance=~'$instance:9100'}[1m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "PassiveOpens",
@@ -2533,7 +2602,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_sockstat_TCP_alloc{instance=~'$instance'}",
+          "expr": "node_sockstat_TCP_alloc{instance=~'$instance:9100'}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "TCP_alloc",
@@ -2546,7 +2615,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_sockstat_TCP_inuse{instance=~'$instance'}",
+          "expr": "node_sockstat_TCP_inuse{instance=~'$instance:9100'}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "TCP_inuse",
@@ -2583,6 +2652,594 @@
       "yaxis": {
         "align": false
       }
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "{{Kuscia-datasource}}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 35
+      },
+      "id": 177,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "ss_rtt{instance=\"${instance}:9091\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Average RTT of a cluster",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "{{Kuscia-datasource}}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 3,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "{__name__=\"envoy_upstream_cx_total\", cluster_name=\"bob_to_alice_http\", instance=\"172.18.0.4:9091\", job=\"bob-network\", type=\"envoy\"}"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 35
+      },
+      "id": 174,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_cx_tx_bytes_total{instance=\"${instance}:9091\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_cx_rx_bytes_total{instance=\"${instance}:9091\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_cx_total{instance=\"${instance}:9091\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Total bytes from upstream connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "{{Kuscia-datasource}}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 43
+      },
+      "id": 180,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_cx_connect_fail{instance=\"${instance}:9091\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_cx_connect_timeout{instance=\"${instance}:9091\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "ss_retran_rate{instance=\"${instance}:9091\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_rq_timeout{instance=\"${instance}:9091\"}/envoy_upstream_rq_total{instance=\"${instance}:9091\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_health_check__failure{instance=\"${instance}:9091\"}/envoy_health_check__attempt{instance=\"${instance}:9091\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "E"
+        }
+      ],
+      "title": "Error rate of upstream connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "{{Kuscia-datasource}}"
+      },
+      "description": "The total number of end-to-end requests",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 43
+      },
+      "id": 175,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "envoy_upstream_rq_total{instance=\"${instance}:9091\"}",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Total upstream requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "{{Kuscia-datasource}}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 43
+      },
+      "id": 181,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "{{Kuscia-datasource}}"
+          },
+          "editorMode": "code",
+          "expr": "ss_retrans",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Total retransmissions",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -2598,14 +3255,14 @@
         "allFormat": "glob",
         "current": {
           "selected": true,
-          "text": "192.168.224.2:9100",
-          "value": "192.168.224.2:9100"
+          "text": "172.18.0.3",
+          "value": "172.18.0.3"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "{{Kuscia-datasource}}"
         },
-        "definition": "label_values(node_arp_entries,instance)",
+        "definition": "label_values(envoy_upstream_cx_rx_bytes_total,instance)",
         "hide": 0,
         "includeAll": false,
         "label": "Instance",
@@ -2615,11 +3272,11 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(node_arp_entries,instance)",
+          "query": "label_values(envoy_upstream_cx_rx_bytes_total,instance)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
-        "regex": "",
+        "regex": "/(\\d+\\.\\d+\\.\\d+\\.\\d+)/",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
@@ -2637,7 +3294,7 @@
           "type": "prometheus",
           "uid": "{{Kuscia-datasource}}"
         },
-        "definition": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~'$instance',fstype=~\"ext4|xfs\"}) by (mountpoint))))",
+        "definition": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~\"${instance}:9100\",fstype=~\"ext4|xfs\"}) by (mountpoint))))",
         "hide": 2,
         "includeAll": false,
         "label": "",
@@ -2646,7 +3303,7 @@
         "options": [],
         "query": {
           "qryType": 3,
-          "query": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~'$instance',fstype=~\"ext4|xfs\"}) by (mountpoint))))",
+          "query": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~\"${instance}:9100\",fstype=~\"ext4|xfs\"}) by (mountpoint))))",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -2661,7 +3318,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
@@ -2693,6 +3350,6 @@
   "timezone": "browser",
   "title": "machine_center",
   "uid": "1552593593532704-17695-1-1",
-  "version": 8,
+  "version": 3,
   "weekStart": ""
 }
