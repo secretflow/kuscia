@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library", "cpp_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -23,11 +25,47 @@ proto_library(
     deps = ["//proto/api/v1alpha1:common_proto"],
 )
 
+cpp_proto_library(
+    name = "domaindata_cpp_proto",
+    protos = [":domaindata_proto"],
+    deps = [
+        "//proto/api/v1alpha1:common_cpp_proto",
+    ],
+)
+
+cpp_grpc_library(
+    name = "domaindata_cpp_grpc",
+    protos = [":domaindata_proto"],
+    deps = [
+        "//proto/api/v1alpha1:common_cpp_proto",
+    ],
+)
+
 proto_library(
     name = "domaindatasource_proto",
     srcs = ["domaindatasource.proto"],
     import_prefix = "kuscia",
     deps = ["//proto/api/v1alpha1:common_proto"],
+)
+
+cpp_proto_library(
+    name = "domaindatasource_cc_proto",
+    protos = [
+        ":domaindatasource_proto",
+    ],
+    deps = [
+        "//proto/api/v1alpha1:common_cpp_proto",
+    ],
+)
+
+cpp_grpc_library(
+    name = "domaindatasource_cpp_grpc",
+    protos = [
+        ":domaindatasource_proto",
+    ],
+    deps = [
+        "//proto/api/v1alpha1:common_cpp_proto",
+    ],
 )
 
 proto_library(
@@ -45,17 +83,4 @@ proto_library(
 cc_proto_library(
     name = "flightdm_cc_proto",
     deps = [":flightdm_proto"],
-)
-
-cc_proto_library(
-    name = "domaindata_cc_proto",
-    deps = [
-        ":domaindata_proto",
-    ],
-)
-cc_proto_library(
-    name = "domaindatasource_cc_proto",
-    deps = [
-        ":domaindatasource_proto",
-    ],
 )
