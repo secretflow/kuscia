@@ -29,6 +29,8 @@ $ ./start_monitor p2p
 2. 浏览器打开 Granafa 的页面 localhost:3000, 账号密码均为 admin（登陆后可修改密码）。进入后，选择 Dashboard 界面的 machine-center 看板进入监控界面。
 
 ## 独立部署 Prometheus/Grafana
+导入的 Grafana 模板可参考 scripts/templates/grafana-dashboard-machine.json
+
 以 center 模式为例，获取机构某一方（如 root-kuscia-lite-alice）的指标数据，假设容器 IP 地址 container_ip = 172.18.0.3，可获取到容器暴露的指标，envoy 和 ss 的指标位于 9091 端口。
 ```
 $ curl $(container_ip):9091/metrics
