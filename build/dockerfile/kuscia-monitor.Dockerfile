@@ -1,6 +1,6 @@
 ARG ROOT_DIR="/home"
-ARG PROM_IMAGE="prom/prometheus:latest"
-ARG GRAFANA_IMAGE="grafana/grafana:latest"
+ARG PROM_IMAGE="prom/prometheus:v2.45.3"
+ARG GRAFANA_IMAGE="grafana/grafana:10.3.1"
 FROM ${PROM_IMAGE} as prom
 FROM ${GRAFANA_IMAGE} as grafana
 FROM openanolis/anolisos:8.8

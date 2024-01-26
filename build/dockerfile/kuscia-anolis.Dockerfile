@@ -1,6 +1,6 @@
 ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.4.0b0"
 ARG KUSCIA_ENVOY_IMAGE="secretflow/kuscia-envoy:0.3.0.dev231122"
-ARG PROM_NODE_EXPORTER="prom/node-exporter:latest"
+ARG PROM_NODE_EXPORTER="prom/node-exporter:v1.7.0"
 FROM ${DEPS_IMAGE} as deps
 FROM ${PROM_NODE_EXPORTER} as node_exporter
 FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy

@@ -2741,12 +2741,12 @@
           "editorMode": "code",
           "expr": "ss_rtt{instance=\"${instance}:9091\"}",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_avg_rtt",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Average RTT of a cluster",
+      "title": "Average RTT of a cluster (without the master)",
       "type": "timeseries"
     },
     {
@@ -2808,32 +2808,7 @@
           },
           "unitScale": true
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "{__name__=\"envoy_upstream_cx_total\", cluster_name=\"bob_to_alice_http\", instance=\"172.18.0.4:9091\", job=\"bob-network\", type=\"envoy\"}"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -2863,7 +2838,7 @@
           "editorMode": "code",
           "expr": "envoy_upstream_cx_tx_bytes_total{instance=\"${instance}:9091\"}",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_cx_tx_bytes_total",
           "range": true,
           "refId": "A"
         },
@@ -2876,7 +2851,7 @@
           "expr": "envoy_upstream_cx_rx_bytes_total{instance=\"${instance}:9091\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_cx_rx_bytes_total",
           "range": true,
           "refId": "B"
         },
@@ -2889,12 +2864,12 @@
           "expr": "envoy_upstream_cx_total{instance=\"${instance}:9091\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_cx_total",
           "range": true,
           "refId": "C"
         }
       ],
-      "title": "Total bytes from upstream connections",
+      "title": "Total bytes from upstream connections (without the master)",
       "type": "timeseries"
     },
     {
@@ -2985,7 +2960,7 @@
           "editorMode": "code",
           "expr": "envoy_upstream_cx_connect_fail{instance=\"${instance}:9091\"}",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_cx_connect_fail_rate",
           "range": true,
           "refId": "A"
         },
@@ -2998,7 +2973,7 @@
           "expr": "envoy_upstream_cx_connect_timeout{instance=\"${instance}:9091\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_cx_connect_timeout_rate",
           "range": true,
           "refId": "B"
         },
@@ -3011,7 +2986,7 @@
           "expr": "ss_retran_rate{instance=\"${instance}:9091\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_retran_rate",
           "range": true,
           "refId": "C"
         },
@@ -3024,7 +2999,7 @@
           "expr": "envoy_upstream_rq_timeout{instance=\"${instance}:9091\"}/envoy_upstream_rq_total{instance=\"${instance}:9091\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_rq_timeout_rate",
           "range": true,
           "refId": "D"
         },
@@ -3037,12 +3012,12 @@
           "expr": "envoy_health_check__failure{instance=\"${instance}:9091\"}/envoy_health_check__attempt{instance=\"${instance}:9091\"}",
           "hide": false,
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_health_check_fail_rate",
           "range": true,
           "refId": "E"
         }
       ],
-      "title": "Error rate of upstream connections",
+      "title": "Error rate of upstream connections (without the master)",
       "type": "timeseries"
     },
     {
@@ -3137,12 +3112,12 @@
           "editorMode": "code",
           "expr": "envoy_upstream_rq_total{instance=\"${instance}:9091\"}",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_rq_total",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Total upstream requests",
+      "title": "Total upstream requests (without the master)",
       "type": "timeseries"
     },
     {
@@ -3233,7 +3208,7 @@
           "editorMode": "code",
           "expr": "ss_retrans",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "{${instance}}_retrans",
           "range": true,
           "refId": "A"
         }
@@ -3255,14 +3230,14 @@
         "allFormat": "glob",
         "current": {
           "selected": true,
-          "text": "172.18.0.3",
-          "value": "172.18.0.3"
+          "text": "172.29.0.3",
+          "value": "172.29.0.3"
         },
         "datasource": {
           "type": "prometheus",
           "uid": "{{Kuscia-datasource}}"
         },
-        "definition": "label_values(envoy_upstream_cx_rx_bytes_total,instance)",
+        "definition": "label_values(instance)",
         "hide": 0,
         "includeAll": false,
         "label": "Instance",
@@ -3272,7 +3247,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(envoy_upstream_cx_rx_bytes_total,instance)",
+          "query": "label_values(instance)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -3350,6 +3325,6 @@
   "timezone": "browser",
   "title": "machine_center",
   "uid": "1552593593532704-17695-1-1",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }

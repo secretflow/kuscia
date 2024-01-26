@@ -103,7 +103,7 @@ function generate_center_config(){
     local master_ip=$(get_container_ipaddr ${MASTER_CTR})
     local alice_ip=$(get_container_ipaddr ${alice_ctr})
     local bob_ip=$(get_container_ipaddr ${bob_ctr})
-    config_data=$(generate_config_block "${config_data}" master-network 5 ${master_ip} 9091 http)
+    config_data=$(generate_config_block "${config_data}" master-node 5 ${master_ip} 9100 http)
     config_data=$(generate_config_block "${config_data}" alice-network 5 ${alice_ip} 9091 http)
     config_data=$(generate_config_block "${config_data}" bob-network 5 ${bob_ip} 9091 http)
     config_data=$(generate_config_block "${config_data}" alice-node 5 ${alice_ip} 9100 http)
@@ -132,14 +132,9 @@ function init_monitor_config(){
     local domain_id=$3
     local config_data=$4
     if [[ $mode == "center" ]]; then
-        docker exec -d ${MASTER_CTR} node_exporter
-        docker exec -d ${CTR_PREFIX}-lite-${ALICE_DOMAIN} node_exporter
-        docker exec -d ${CTR_PREFIX}-lite-${BOB_DOMAIN} node_exporter
 	config_data=$(generate_center_config "${config_data}")
         echo "${config_data}" > ${conf_dir}/prometheus.yml
     elif [[ $mode == "p2p" ]]; then
-        docker exec -d ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} node_exporter
-        docker exec -d ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} node_exporter
         config_data=$(generate_p2p_config "${config_data}" "${domain_id}")
         echo "${config_data}" > ${conf_dir}/prometheus.yml
     else
