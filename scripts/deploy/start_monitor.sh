@@ -103,11 +103,9 @@ function generate_center_config(){
     local master_ip=$(get_container_ipaddr ${MASTER_CTR})
     local alice_ip=$(get_container_ipaddr ${alice_ctr})
     local bob_ip=$(get_container_ipaddr ${bob_ctr})
-    config_data=$(generate_config_block "${config_data}" master-node 5 ${master_ip} 9100 http)
-    config_data=$(generate_config_block "${config_data}" alice-network 5 ${alice_ip} 9091 http)
-    config_data=$(generate_config_block "${config_data}" bob-network 5 ${bob_ip} 9091 http)
-    config_data=$(generate_config_block "${config_data}" alice-node 5 ${alice_ip} 9100 http)
-    config_data=$(generate_config_block "${config_data}" bob-node 5 ${bob_ip} 9100 http)
+    config_data=$(generate_config_block "${config_data}" master-node 5 ${master_ip} 9091 http)
+    config_data=$(generate_config_block "${config_data}" alice-node 5 ${alice_ip} 9091 http)
+    config_data=$(generate_config_block "${config_data}" bob-node 5 ${bob_ip} 9091 http)
     echo "${config_data}"
 }
 function generate_p2p_config(){
@@ -116,7 +114,6 @@ function generate_p2p_config(){
     local domain_ctr=${CTR_PREFIX}"-autonomy-"${domain_id}
     local domain_ip=$(get_container_ipaddr ${domain_ctr})
     config_data=$(generate_config_block "${config_data}" "${domain_id}-network" 5 "${domain_ip}" 9091 http)
-    config_data=$(generate_config_block "${config_data}" "${domain_id}-node" 5 "${domain_ip}" 9100 http)
     echo "${config_data}"
 }
 function get_container_ipaddr(){

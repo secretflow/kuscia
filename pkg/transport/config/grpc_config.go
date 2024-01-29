@@ -40,8 +40,8 @@ type GrpcConfig struct {
 	MaxRecvMsgSize       int    `yaml:"maxRecvMsgSize,omitempty"`
 	MaxSendMsgSize       int    `yaml:"maxSendMsgSize,omitempty"`
 	ConnectionTimeout    uint32 `yaml:"connectionTimeout,omitempty"`
-	ReadBufferSize 		 int `yaml:"readBufferSize,omitempty"`
-	WriteBufferSize		 int `yaml:"writeBufferSize,omitempty"`
+	ReadBufferSize       int    `yaml:"readBufferSize,omitempty"`
+	WriteBufferSize      int    `yaml:"writeBufferSize,omitempty"`
 }
 
 func DefaultGrpcConfig() *GrpcConfig {

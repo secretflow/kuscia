@@ -42,7 +42,11 @@ func NewNodeExporter(i *Dependencies) Module {
 }
 
 func (exporter *nodeExporterModule) Run(ctx context.Context) error {
-	args := []string{}
+	var args []string
+	if exporter.runMode == "master" {
+		args = append(args, "--web.listen-address")
+		args = append(args, ":9091")
+	}
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)

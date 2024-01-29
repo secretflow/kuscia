@@ -39,7 +39,6 @@ type InboundParams struct {
 	topic string
 }
 
-
 type Server struct {
 	grpcConfig *config.GrpcConfig
 	sm         *msq.SessionManager
@@ -54,7 +53,7 @@ func NewServer(grpcConfig *config.GrpcConfig, sm *msq.SessionManager) *Server {
 	return &Server{
 		grpcConfig: grpcConfig,
 		sm:         sm,
-		codec: codec.NewProtoCodec(),
+		codec:      codec.NewProtoCodec(),
 	}
 }
 
@@ -63,7 +62,7 @@ func (s *Server) Start(ctx context.Context) error {
 		grpc.MaxConcurrentStreams(s.grpcConfig.MaxConcurrentStreams),
 		grpc.MaxRecvMsgSize(s.grpcConfig.MaxRecvMsgSize),
 		grpc.MaxSendMsgSize(s.grpcConfig.MaxSendMsgSize),
-		grpc.ConnectionTimeout(time.Duration(s.grpcConfig.ConnectionTimeout)*time.Second),
+		grpc.ConnectionTimeout(time.Duration(s.grpcConfig.ConnectionTimeout) * time.Second),
 		grpc.ReadBufferSize(s.grpcConfig.ReadBufferSize),
 		grpc.WriteBufferSize(s.grpcConfig.WriteBufferSize),
 	}
@@ -86,7 +85,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 func (s *Server) Invoke(ctx context.Context, inbound *pb.Inbound) (*pb.Outbound, error) {
-	params, err := getInboundParams(ctx, inbound,true)
+	params, err := getInboundParams(ctx, inbound, true)
 	if err != nil {
 		return codec.BuildInvokeOutboundByErr(err), nil
 	}
@@ -99,7 +98,7 @@ func (s *Server) Invoke(ctx context.Context, inbound *pb.Inbound) (*pb.Outbound,
 }
 
 func (s *Server) Pop(ctx context.Context, inbound *pb.PopInbound) (*pb.TransportOutbound, error) {
-	params, err := getInboundParams(ctx, inbound,false)
+	params, err := getInboundParams(ctx, inbound, false)
 	if err != nil {
 		return codec.BuildTransportOutboundByErr(err), nil
 	}
@@ -113,7 +112,7 @@ func (s *Server) Pop(ctx context.Context, inbound *pb.PopInbound) (*pb.Transport
 }
 
 func (s *Server) Peek(ctx context.Context, inbound *pb.PeekInbound) (*pb.TransportOutbound, error) {
-	params, err := getInboundParams(ctx, inbound,false)
+	params, err := getInboundParams(ctx, inbound, false)
 	if err != nil {
 		return codec.BuildTransportOutboundByErr(err), nil
 	}
@@ -127,8 +126,8 @@ func (s *Server) Peek(ctx context.Context, inbound *pb.PeekInbound) (*pb.Transpo
 }
 
 func (s *Server) Release(ctx context.Context, inbound *pb.ReleaseInbound) (*pb.TransportOutbound, error) {
-	sid , ok:= getParamFromCtx(ctx, codec.PtpSessionID)
-	if !ok || len(sid)==0 {
+	sid, ok := getParamFromCtx(ctx, codec.PtpSessionID)
+	if !ok || len(sid) == 0 {
 		nlog.Warnf("Empty session-id")
 		return codec.BuildTransportOutboundByErr(transerr.NewTransError(transerr.InvalidRequest)), nil
 	}
@@ -158,22 +157,21 @@ func (s *Server) readMessage(inbound *pb.Inbound) (*msq.Message, *transerr.Trans
 	return msq.NewMessage(inbound.GetPayload()), nil
 }
 
-
-func getTimeout(ctx context.Context, inbound interface{}) time.Duration{
-	popInbound, ok:= inbound.(*pb.PopInbound)
-	if ok{
+func getTimeout(ctx context.Context, inbound interface{}) time.Duration {
+	popInbound, ok := inbound.(*pb.PopInbound)
+	if ok {
 		return convertTimeout(popInbound.GetTimeout())
 	}
 	releaseInbound, ok := inbound.(*pb.ReleaseInbound)
-	if ok{
+	if ok {
 		return convertTimeout(releaseInbound.GetTimeout())
 	}
 
 	timeout, ok := getParamFromCtx(ctx, "timeout")
-	if !ok{
+	if !ok {
 		return common.DefaultTimeout
-	}else {
-		timeout, err := strconv.ParseInt(timeout,10, 32)
+	} else {
+		timeout, err := strconv.ParseInt(timeout, 10, 32)
 		if err == nil {
 			return common.DefaultTimeout
 		}
@@ -181,8 +179,8 @@ func getTimeout(ctx context.Context, inbound interface{}) time.Duration{
 	}
 }
 
-func convertTimeout(t int32) time.Duration{
-	timeoutDuration := time.Duration(t)*time.Second
+func convertTimeout(t int32) time.Duration {
+	timeoutDuration := time.Duration(t) * time.Second
 	if timeoutDuration < common.MinTimeout {
 		return common.MinTimeout
 	}
@@ -194,7 +192,7 @@ func convertTimeout(t int32) time.Duration{
 
 func getTopic(ctx context.Context, inbound interface{}) string {
 
-	switch in :=inbound.(type) {
+	switch in := inbound.(type) {
 	case *pb.PopInbound:
 		return in.GetTopic()
 	case *pb.ReleaseInbound:
@@ -205,14 +203,14 @@ func getTopic(ctx context.Context, inbound interface{}) string {
 		return in.GetTopic()
 	default:
 		topic, ok := getParamFromCtx(ctx, codec.PtpTopicID)
-		if !ok{
+		if !ok {
 			return ""
 		}
 		return topic
 	}
 }
 
-func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*InboundParams, *transerr.TransError) {
+func getInboundParams(ctx context.Context, inbound interface{}, isPush bool) (*InboundParams, *transerr.TransError) {
 	var nodeID string
 	if isPush {
 		nodeID = codec.PtpSourceNodeID
@@ -227,7 +225,7 @@ func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*I
 	}
 
 	sid, ok := getParamFromCtx(ctx, codec.PtpSessionID)
-	if !ok || len(sid)==0 {
+	if !ok || len(sid) == 0 {
 		nlog.Warnf("Empty session-id or topic or %s", nodeID)
 		return nil, transerr.NewTransError(transerr.InvalidRequest)
 	}
@@ -246,12 +244,12 @@ func getInboundParams(ctx context.Context, inbound interface{} ,isPush bool) (*I
 
 func getParamFromCtx(ctx context.Context, param string) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok{
+	if !ok {
 		return "", false
 	}
 
 	values := md.Get(param)
-	if len(values)==0{
+	if len(values) == 0 {
 		return "", true
 	}
 
