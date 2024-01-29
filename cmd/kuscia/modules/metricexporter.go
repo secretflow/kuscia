@@ -19,27 +19,22 @@ import (
 	"fmt"
 	"time"
 
-	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type metricExporterModule struct {
-	runMode            pkgcom.RunModeType
 	rootDir            string
-	metricUpdatePeriod uint
 }
 
 func NewMetricExporter(i *Dependencies) Module {
 	return &metricExporterModule{
-		runMode:            i.RunMode,
 		rootDir:            i.RootDir,
-		metricUpdatePeriod: i.MetricUpdatePeriod,
 	}
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod)
+	metricexporter.MetricExporter(ctx)
 	return nil
 }
 
