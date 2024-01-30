@@ -12,4 +12,5 @@
     operation_cn
     networkrequirements
     logdescription
+    kuscia_monitor
     kuscia_config_cn

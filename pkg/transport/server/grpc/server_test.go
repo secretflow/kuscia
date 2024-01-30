@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
-	
+
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
@@ -137,7 +137,7 @@ func TestTransportAndPop(t *testing.T) {
 	md := metadata.New(map[string]string{
 		codec.PtpSessionID:    "session1",
 		codec.PtpSourceNodeID: "node0",
-		codec.PtpTopicID: "topic1",
+		codec.PtpTopicID:      "topic1",
 	})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 	invokeInbound := &pb.Inbound{
@@ -182,7 +182,7 @@ func TestPopWithData(t *testing.T) {
 	})
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 	popInbound := &pb.PopInbound{
-		Topic: "topic2",
+		Topic:   "topic2",
 		Timeout: 5,
 	}
 	start := time.Now()
@@ -201,7 +201,7 @@ func TestPopTimeout(t *testing.T) {
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 
 	popInbound := &pb.PopInbound{
-		Topic: "topic2",
+		Topic:   "topic2",
 		Timeout: 2,
 	}
 	start := time.Now()
@@ -344,7 +344,7 @@ func consumer(t *testing.T, popSucceedCount, popFailCount *int64) {
 	popCtx := metadata.NewOutgoingContext(context.Background(), popMd)
 
 	popInbound := &pb.PopInbound{
-		Topic: topic,
+		Topic:   topic,
 		Timeout: 2,
 	}
 

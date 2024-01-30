@@ -83,6 +83,8 @@ func Run(ctx context.Context, configFile string) error {
 	modules.RunConfManager(runCtx, cancel, conf)
 	modules.RunDataMesh(runCtx, cancel, conf)
 	modules.RunKusciaAPI(runCtx, cancel, conf)
+	modules.RunNodeExporter(runCtx, cancel, conf)
+	modules.RunSsExporter(runCtx, cancel, conf)
 	modules.RunMetricExporter(runCtx, cancel, conf)
 	utils.SetupPprof(conf.Debug, conf.DebugPort, false)
 

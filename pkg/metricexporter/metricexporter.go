@@ -2,15 +2,11 @@ package metricexporter
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	pkgcom "github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/metricexporter/netmetrics"
-	"github.com/secretflow/kuscia/pkg/metricexporter/parse"
-	"github.com/secretflow/kuscia/pkg/metricexporter/promexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -18,46 +14,67 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func MetricExporter(ctx context.Context, runMode pkgcom.RunModeType, ExportPeriod uint) {
-	// read the config
-	NetworkMetrics, AggregationMetrics, ClusterMetrics := parse.LoadMetricConfig()
-	clusterAddresses := parse.GetClusterAddress()
-	localDomainName := parse.GetLocalDomainName()
-	// get the cluster metrics to be exported
-	clusterMetrics := netmetrics.ConvertClusterMetrics(ClusterMetrics, clusterAddresses)
-	var MetricTypes = promexporter.NewMetricTypes()
-	// register metrics for prometheus and initialize the calculation of change values
-	var reg *prometheus.Registry
-	reg = promexporter.ProduceMetrics(localDomainName, clusterAddresses, NetworkMetrics, ClusterMetrics, MetricTypes, AggregationMetrics)
-	lastClusterMetricValues := netmetrics.GetClusterMetricResults(runMode, localDomainName, clusterAddresses, clusterMetrics, AggregationMetrics, ExportPeriod)
+func getMetrics(url string) (string, error) {
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		nlog.Error("Error creating request:", err)
+		return "", err
+	}
+	client := http.Client{
+		Timeout: 100 * time.Millisecond,
+	}
+	response, err := client.Do(request)
+	if err != nil {
+		nlog.Error("Error sending request:", err)
+		return "", err
+	}
+	defer response.Body.Close()
+	responseBody, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		nlog.Error("Error reading response body:", err)
+		return "", err
+	}
+	return string(responseBody), nil
+}
+func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
+	metricsChan := make(chan string, len(metricUrls))
+	var wg sync.WaitGroup
+
+	for key, url := range metricUrls {
+		wg.Add(1)
+		go func(key string, url string) {
+			defer wg.Done()
+
+			metrics, err := getMetrics(url)
+			if err == nil {
+				metricsChan <- metrics
+			} else {
+				nlog.Warnf("metrics[%s] query failed", key)
+				metricsChan <- "" // empty metrics
+			}
+		}(key, url)
+	}
+
+	go func() {
+		wg.Wait()
+		close(metricsChan)
+	}()
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	for metrics := range metricsChan {
+		w.Write([]byte(metrics))
+	}
+}
+
+func MetricExporter(ctx context.Context, metricUrls map[string]string) {
 	nlog.Info("Start to export metrics...")
+	metricServer := http.NewServeMux()
+	metricServer.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		metricHandler(metricUrls, w)
+	})
 	close(ReadyChan)
-	// export the cluster metrics
-	ticker := time.NewTicker(time.Duration(ExportPeriod) * time.Second)
-	defer ticker.Stop()
-	go func(runMode pkgcom.RunModeType, ClusterMetrics []string, MetricTypes map[string]string, ExportPeriods uint, lastClusterMetricValues map[string]float64) {
-		for range ticker.C {
-			// get clusterName and clusterAddress
-			clusterAddresses = parse.GetClusterAddress()
-			// get the cluster metrics to be exported
-			clusterMetrics = netmetrics.ConvertClusterMetrics(ClusterMetrics, clusterAddresses)
-			// get cluster metrics
-			currentClusterMetricValues := netmetrics.GetClusterMetricResults(runMode, localDomainName, clusterAddresses, clusterMetrics, AggregationMetrics, ExportPeriods)
-			// calculate the change values of cluster metrics
-			lastClusterMetricValues, currentClusterMetricValues = netmetrics.GetMetricChange(lastClusterMetricValues, currentClusterMetricValues)
-			// update cluster metrics in prometheus
-			promexporter.UpdateMetrics(currentClusterMetricValues, MetricTypes)
-		}
-	}(runMode, ClusterMetrics, MetricTypes, ExportPeriod, lastClusterMetricValues)
-	// export to the prometheus
-	http.Handle(
-		"/metrics", promhttp.HandlerFor(
-			reg,
-			promhttp.HandlerOpts{
-				EnableOpenMetrics: true,
-			}),
-	)
-	nlog.Error(http.ListenAndServe("0.0.0.0:9091", nil))
+	nlog.Error(http.ListenAndServe("0.0.0.0:9091", metricServer))
 	<-ctx.Done()
 	nlog.Info("Stopping the metric exporter...")
 }

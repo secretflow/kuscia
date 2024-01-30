@@ -108,6 +108,10 @@ image: export GOARCH=amd64
 image: build ## Build docker image with the manager.
 	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 
+.PHONY: build-monitor
+build-monitor:
+	docker build -t secretflow/kusica-monitor -f ./build/dockerfile/kuscia-monitor.Dockerfile .
+
 .PHONY: integration_test
 integration_test: image ## Run Integration Test
 	mkdir -p run/test

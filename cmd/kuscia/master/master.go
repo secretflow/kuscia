@@ -108,7 +108,7 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 			modules.RunConfManager(runCtx, cancel, conf)
 		}()
 		wg.Wait()
-
+		modules.RunNodeExporter(runCtx, cancel, conf)
 		utils.SetupPprof(conf.Debug, conf.DebugPort, false)
 	}
 	<-runCtx.Done()

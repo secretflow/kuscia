@@ -28,8 +28,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-
-
 type ReqParams struct {
 	sid   string
 	topic string
