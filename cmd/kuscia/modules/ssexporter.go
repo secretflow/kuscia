@@ -20,33 +20,33 @@ import (
 	"time"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/netexporter"
+	"github.com/secretflow/kuscia/pkg/ssexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-type netExporterModule struct {
+type ssExporterModule struct {
 	runMode            pkgcom.RunModeType
 	rootDir            string
 	metricUpdatePeriod uint
 }
 
-func NewNetExporter(i *Dependencies) Module {
-	return &netExporterModule{
+func NewSsExporter(i *Dependencies) Module {
+	return &ssExporterModule{
 		runMode:            i.RunMode,
 		rootDir:            i.RootDir,
 		metricUpdatePeriod: i.MetricUpdatePeriod,
 	}
 }
 
-func (exporter *netExporterModule) Run(ctx context.Context) error {
-	netexporter.NetExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod)
+func (exporter *ssExporterModule) Run(ctx context.Context) error {
+	ssexporter.SsExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod)
 	return nil
 }
 
-func (exporter *netExporterModule) WaitReady(ctx context.Context) error {
+func (exporter *ssExporterModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
 	select {
-	case <-netexporter.ReadyChan:
+	case <-ssexporter.ReadyChan:
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -55,12 +55,12 @@ func (exporter *netExporterModule) WaitReady(ctx context.Context) error {
 	}
 }
 
-func (exporter *netExporterModule) Name() string {
-	return "netexporter"
+func (exporter *ssExporterModule) Name() string {
+	return "ssexporter"
 }
 
-func RunNetExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewNetExporter(conf)
+func RunSsExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+	m := NewSsExporter(conf)
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
@@ -71,7 +71,7 @@ func RunNetExporter(ctx context.Context, cancel context.CancelFunc, conf *Depend
 		nlog.Error(err)
 		cancel()
 	} else {
-		nlog.Info("Network exporter is ready")
+		nlog.Info("Ss exporter is ready")
 	}
 	return m
 }

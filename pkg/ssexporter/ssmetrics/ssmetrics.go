@@ -1,18 +1,15 @@
-// Package netmon collect metrics from envoy and ss
-package netmetrics
+// Package ssmetrics collect metrics from ss
+package ssmetrics
 
 import (
-	"io"
-	"io/ioutil"
 	"math"
-	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/metricexporter/parse"
+	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -68,60 +65,6 @@ func GetStatisticFromSs() []map[string]string {
 		tcpStatisticList = append(tcpStatisticList, ssMetrics)
 	}
 	return tcpStatisticList
-}
-
-// GetStatisticFromEnvoy get statistics of network flows from envoy
-func GetStatisticFromEnvoy(metrics []string) map[string]float64 {
-	metricSet := make(map[string]bool)
-	stats := make(map[string]float64)
-	filter_regex := "("
-	for _, metric := range metrics {
-		// initialize metricSet
-		metricSet[metric] = true
-		// initialize filter_regex
-		filter_regex += metric + "|"
-	}
-	if len(filter_regex) == 1 {
-		return stats
-	} else {
-		filter_regex = filter_regex[0:len(filter_regex)-1] + ")"
-	}
-	// get statistics from envoy
-	resp, err := http.Get("http://localhost:10000/stats?format=json&&filter=" + filter_regex)
-	if err != nil {
-		nlog.Error("Fail to get the statistics from envoy", err)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-		}
-	}(resp.Body)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Error("Fail to read the results of envoy ", err)
-	}
-	statData := jsoniter.Get(body, "stats")
-	for i := 0; statData.Get(i).Size() != 0; i++ {
-		metric := statData.Get(i).Get("name").ToString()
-		value := statData.Get(i).Get("value").ToFloat64()
-		if _, ok := metricSet[metric]; ok {
-			stats[metric] = value
-		}
-	}
-	return stats
-}
-
-// ConvertClusterMetrics convert cluster metrics for prometheus
-func ConvertClusterMetrics(ClusterMetrics []string, clusterAddresses map[string][]string) []string {
-	var clusterMetrics []string
-	for clusterName := range clusterAddresses {
-		for _, metric := range ClusterMetrics {
-			str := "cluster." + clusterName + "." + strings.ToLower(metric)
-			clusterMetrics = append(clusterMetrics, str)
-		}
-	}
-	return clusterMetrics
 }
 
 // Filter filter network flows according to given five-tuple rules
@@ -241,14 +184,28 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 	return clusterResults
 }
 
-// GetClusterMetricResults Get the results of cluster statistics after filtering
-func GetClusterMetricResults(runMode pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, clusterMetrics []string, AggregationMetrics map[string]string, MonitorPeriods uint) map[string]float64 {
+// ConvertClusterMetrics convert cluster metrics for prometheus
+func ConvertClusterMetrics(ClusterMetrics []string, clusterAddresses map[string][]string) []string {
+	var clusterMetrics []string
+	for clusterName := range clusterAddresses {
+		for _, metric := range ClusterMetrics {
+			str := "cluster." + clusterName + "." + strings.ToLower(metric)
+			clusterMetrics = append(clusterMetrics, str)
+		}
+	}
+	return clusterMetrics
+}
+
+// GetSsMetricResults Get the results of ss statistics after filtering
+func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, AggregationMetrics map[string]string, MonitorPeriods uint) map[string]float64 {
 	// get the statistics from SS
 	ssMetrics := GetStatisticFromSs()
-	// get the statistics from envoy
-	clusterStatistics := GetStatisticFromEnvoy(clusterMetrics)
 	// get the source/destination IP from domain names
-	sourceIP := parse.GetIpFromDomain("root-kuscia-" + runMode + "-" + localDomainName)
+	hostName, err := os.Hostname()
+	if err != nil {
+		nlog.Error("Fail to get the hostname", err)
+	}
+	sourceIP := parse.GetIpFromDomain(hostName)
 	destinationIP := make(map[string][]string)
 	for _, endpointAddresses := range clusterAddresses {
 		for _, endpointAddress := range endpointAddresses {
@@ -256,10 +213,7 @@ func GetClusterMetricResults(runMode pkgcom.RunModeType, localDomainName string,
 		}
 	}
 	// group metrics by the domain name
-	clusterResults := make(map[string]float64)
-	for metric, value := range clusterStatistics {
-		clusterResults[metric] = value
-	}
+	ssResults := make(map[string]float64)
 	for dstAddr := range destinationIP {
 		// get the connection name
 		endpointName := strings.Split(dstAddr, ":")[0]
@@ -270,10 +224,10 @@ func GetClusterMetricResults(runMode pkgcom.RunModeType, localDomainName string,
 				networkResults = append(networkResults, networkResult...)
 			}
 		}
-		clusterResults = AggregateStatistics(localDomainName, clusterResults, networkResults, AggregationMetrics, endpointName, MonitorPeriods)
+		ssResults = AggregateStatistics(localDomainName, ssResults, networkResults, AggregationMetrics, endpointName, MonitorPeriods)
 	}
 
-	return clusterResults
+	return ssResults
 }
 
 // GetMetricChange get the change values of metrics

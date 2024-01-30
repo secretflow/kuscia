@@ -20,21 +20,28 @@ import (
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/metricexporter"
+	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type metricExporterModule struct {
-	rootDir            string
+	rootDir     string
+	metricsUrls map[string]string
 }
 
 func NewMetricExporter(i *Dependencies) Module {
 	return &metricExporterModule{
-		rootDir:            i.RootDir,
+		rootDir: i.RootDir,
+		metricsUrls: map[string]string{
+			"node-exporter": "http://localhost:9100/metrics",
+			"envoy":         envoyexporter.GetEnvoyMetricUrl(),
+			"ss":            "http://localhost:9092/ssmetrics",
+		},
 	}
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx)
+	metricexporter.MetricExporter(ctx, exporter.metricsUrls)
 	return nil
 }
 

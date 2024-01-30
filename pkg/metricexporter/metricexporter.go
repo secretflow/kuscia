@@ -1,24 +1,11 @@
-// Copyright 2023 Ant Group Co., Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package metricexporter
 
 import (
-	"bytes"
 	"context"
 	"io/ioutil"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -27,46 +14,65 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func getMetrics(buffer *bytes.Buffer, url string) {
+func getMetrics(url string) (string, error) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		nlog.Error("Error creating request:", err)
-		return
+		return "", err
 	}
-	client := http.Client{}
+	client := http.Client{
+		Timeout: 100 * time.Millisecond,
+	}
 	response, err := client.Do(request)
 	if err != nil {
 		nlog.Error("Error sending request:", err)
-		return
+		return "", err
 	}
 	defer response.Body.Close()
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		nlog.Error("Error reading response body:", err)
-		return
+		return "", err
 	}
-	buffer.Write(responseBody)
+	return string(responseBody), nil
 }
-func metricHandler(w http.ResponseWriter, r *http.Request) {
-	nodeExporterUrl := "http://0.0.0.0:9100/metrics"
-	netExporterUrl := "http://0.0.0.0:9092/netmetrics"
-	_, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Error reading request body", http.StatusInternalServerError)
-		return
+func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
+	metricsChan := make(chan string, len(metricUrls))
+	var wg sync.WaitGroup
+
+	for key, url := range metricUrls {
+		wg.Add(1)
+		go func(key string, url string) {
+			defer wg.Done()
+
+			metrics, err := getMetrics(url)
+			if err == nil {
+				metricsChan <- metrics
+			} else {
+				nlog.Warnf("metrics[%s] query failed", key)
+				metricsChan <- "" // empty metrics
+			}
+		}(key, url)
 	}
-	var buffer bytes.Buffer
-	getMetrics(&buffer, nodeExporterUrl)
-	getMetrics(&buffer, netExporterUrl)
+
+	go func() {
+		wg.Wait()
+		close(metricsChan)
+	}()
+
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
-	w.Write(buffer.Bytes())
+	for metrics := range metricsChan {
+		w.Write([]byte(metrics))
+	}
 }
 
-func MetricExporter(ctx context.Context) {
+func MetricExporter(ctx context.Context, metricUrls map[string]string) {
 	nlog.Info("Start to export metrics...")
 	metricServer := http.NewServeMux()
-	metricServer.HandleFunc("/metrics", metricHandler)
+	metricServer.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		metricHandler(metricUrls, w)
+	})
 	close(ReadyChan)
 	nlog.Error(http.ListenAndServe("0.0.0.0:9091", metricServer))
 	<-ctx.Done()
