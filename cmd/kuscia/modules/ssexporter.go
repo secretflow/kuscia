@@ -19,36 +19,34 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/secretflow/kuscia/pkg/metricexporter"
-	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
+	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/ssexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-type metricExporterModule struct {
-	rootDir     string
-	metricsUrls map[string]string
+type ssExporterModule struct {
+	runMode            pkgcom.RunModeType
+	rootDir            string
+	metricUpdatePeriod uint
 }
 
-func NewMetricExporter(i *Dependencies) Module {
-	return &metricExporterModule{
-		rootDir: i.RootDir,
-		metricsUrls: map[string]string{
-			"node-exporter": "http://localhost:9100/metrics",
-			"envoy":         envoyexporter.GetEnvoyMetricUrl(),
-			"ss":            "http://localhost:9092/ssmetrics",
-		},
+func NewSsExporter(i *Dependencies) Module {
+	return &ssExporterModule{
+		runMode:            i.RunMode,
+		rootDir:            i.RootDir,
+		metricUpdatePeriod: i.MetricUpdatePeriod,
 	}
 }
 
-func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx, exporter.metricsUrls)
+func (exporter *ssExporterModule) Run(ctx context.Context) error {
+	ssexporter.SsExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod)
 	return nil
 }
 
-func (exporter *metricExporterModule) WaitReady(ctx context.Context) error {
+func (exporter *ssExporterModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
 	select {
-	case <-metricexporter.ReadyChan:
+	case <-ssexporter.ReadyChan:
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -57,12 +55,12 @@ func (exporter *metricExporterModule) WaitReady(ctx context.Context) error {
 	}
 }
 
-func (exporter *metricExporterModule) Name() string {
-	return "metricexporter"
+func (exporter *ssExporterModule) Name() string {
+	return "ssexporter"
 }
 
-func RunMetricExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
-	m := NewMetricExporter(conf)
+func RunSsExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+	m := NewSsExporter(conf)
 	go func() {
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
@@ -73,7 +71,7 @@ func RunMetricExporter(ctx context.Context, cancel context.CancelFunc, conf *Dep
 		nlog.Error(err)
 		cancel()
 	} else {
-		nlog.Info("Metric exporter is ready")
+		nlog.Info("Ss exporter is ready")
 	}
 	return m
 }

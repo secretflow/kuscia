@@ -566,7 +566,6 @@ function start_lite() {
     host_ip=$(getIPV4Address)
     csr_token=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
     docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh lite ${domain_id} ${master_endpoint} ${csr_token} "${ALLOW_PRIVILEGED}"
-
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
       --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
       -e NAMESPACE=${domain_id} \
@@ -716,7 +715,6 @@ function start_autonomy() {
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
     env_flag=$(generate_env_flag $domain_id)
-
     docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${domain_id} "" "" "${ALLOW_PRIVILEGED}" ${p2p_protocol}
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \

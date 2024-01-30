@@ -54,11 +54,7 @@ var summaries = make(map[string]prometheus.Summary)
 func ProduceMetric(reg *prometheus.Registry,
 	metricType string, nameSpace string, name string, help string, labels map[string]string) *prometheus.Registry {
 	var metricId string
-	if labels["type"] == "envoy" {
-		metricId = "cluster__" + labels["cluster_name"] + "__" + name
-	} else if labels["type"] == "ss" {
-		metricId = labels["local_domain"] + "__" + labels["remote_domain"] + "__" + name + "__" + labels["aggregation_function"]
-	}
+	metricId = labels["local_domain"] + "__" + labels["remote_domain"] + "__" + name + "__" + labels["aggregation_function"]
 	if metricType == "Counter" {
 		counters[metricId] = ProduceCounter(nameSpace, name, help, labels)
 		reg.MustRegister(counters[metricId])
@@ -83,7 +79,6 @@ func Formalize(metric string) string {
 func ProduceMetrics(localDomainName string,
 	clusterAddresses map[string][]string,
 	netMetrics []string,
-	cluMetrics []string,
 	MetricTypes map[string]string,
 	aggregationMetrics map[string]string) *prometheus.Registry {
 	reg := prometheus.NewRegistry()
@@ -106,13 +101,6 @@ func ProduceMetrics(localDomainName string,
 			}
 		}
 
-		labels = make(map[string]string)
-		labels["type"] = "envoy"
-		for _, metric := range cluMetrics {
-			metric = Formalize(metric)
-			labels["cluster_name"] = clusterName
-			reg = ProduceMetric(reg, MetricTypes[metric], "envoy", metric, metric, labels)
-		}
 	}
 	return reg
 }
@@ -120,18 +108,18 @@ func ProduceMetrics(localDomainName string,
 func UpdateMetrics(clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
 		metricId := Formalize(metric)
-			splitedMetric := strings.Split(metric, ".")
-			var metricTypeId string
-			metricTypeId = splitedMetric[len(splitedMetric)-1]
-			metricType, ok := MetricTypes[metricTypeId]
-			if !ok {
-				metricTypeId = splitedMetric[len(splitedMetric)-2] + "__" + splitedMetric[len(splitedMetric)-1]
-				metricType, ok = MetricTypes[metricTypeId]
-				}
-			if !ok {
-				metricTypeId = splitedMetric[len(splitedMetric)-2]
-				metricType, ok = MetricTypes[metricTypeId]
-				}
+		splitedMetric := strings.Split(metric, ".")
+		var metricTypeId string
+		metricTypeId = splitedMetric[len(splitedMetric)-1]
+		metricType, ok := MetricTypes[metricTypeId]
+		if !ok {
+			metricTypeId = splitedMetric[len(splitedMetric)-2] + "__" + splitedMetric[len(splitedMetric)-1]
+			metricType, ok = MetricTypes[metricTypeId]
+		}
+		if !ok {
+			metricTypeId = splitedMetric[len(splitedMetric)-2]
+			metricType, ok = MetricTypes[metricTypeId]
+		}
 		switch metricType {
 		case "Counter":
 			counters[metricId].Add(val)
