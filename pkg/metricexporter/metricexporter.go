@@ -67,14 +67,23 @@ func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
 	}
 }
 
-func MetricExporter(ctx context.Context, metricUrls map[string]string) {
+func MetricExporter(ctx context.Context, metricURLs map[string]string, port string) {
 	nlog.Info("Start to export metrics...")
 	metricServer := http.NewServeMux()
 	metricServer.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		metricHandler(metricUrls, w)
+		metricHandler(metricURLs, w)
 	})
-	close(ReadyChan)
-	nlog.Error(http.ListenAndServe("0.0.0.0:9091", metricServer))
+
+	go func() {
+		if err := http.ListenAndServe("0.0.0.0:"+port, metricServer); err != nil {
+			nlog.Error("Fail to start the metric exporterserver", err)
+		}
+	}()
+	defer func() {
+		close(ReadyChan)
+		nlog.Info("Start to export metrics...")
+	}()
+
 	<-ctx.Done()
 	nlog.Info("Stopping the metric exporter...")
 }

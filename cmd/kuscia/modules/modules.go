@@ -59,6 +59,9 @@ type Dependencies struct {
 	TransportConfigFile     string
 	TransportPort           int
 	InterConnSchedulerPort  int
+	SsExportPort            string
+	NodeExportPort          string
+	MetricExportPort        string
 	KusciaKubeConfig        string
 	EnableContainerd        bool
 	SecretBackendHolder     *secretbackend.Holder
@@ -260,5 +263,9 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 		nlog.Fatal(err)
 	}
 
+	// init exporter ports
+	dependencies.SsExportPort = "9092"
+	dependencies.NodeExportPort = "9100"
+	dependencies.MetricExportPort = "9091"
 	return dependencies
 }

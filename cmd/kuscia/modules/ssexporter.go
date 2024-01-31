@@ -17,6 +17,8 @@ package modules
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
@@ -28,6 +30,7 @@ type ssExporterModule struct {
 	runMode            pkgcom.RunModeType
 	rootDir            string
 	metricUpdatePeriod uint
+	ssExportPort       string
 }
 
 func NewSsExporter(i *Dependencies) Module {
@@ -35,23 +38,56 @@ func NewSsExporter(i *Dependencies) Module {
 		runMode:            i.RunMode,
 		rootDir:            i.RootDir,
 		metricUpdatePeriod: i.MetricUpdatePeriod,
+		ssExportPort:       string(i.SsExportPort),
 	}
 }
 
 func (exporter *ssExporterModule) Run(ctx context.Context) error {
-	ssexporter.SsExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod)
+	ssexporter.SsExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod, exporter.ssExportPort)
+	return nil
+}
+
+func (exporter *ssExporterModule) readyz(host string) error {
+	cl := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, host, nil)
+	if err != nil {
+		nlog.Errorf("NewRequest error:%s", err.Error())
+		return err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		nlog.Errorf("Get ready err:%s", err.Error())
+		return err
+	}
+	if resp == nil || resp.Body == nil {
+		nlog.Error("Resp must has body")
+		return fmt.Errorf("resp must has body")
+	}
+	defer resp.Body.Close()
+	_, err = io.ReadAll(resp.Body)
+	if err != nil {
+		nlog.Error("ReadAll fail")
+		return err
+	}
 	return nil
 }
 
 func (exporter *ssExporterModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
-	select {
-	case <-ssexporter.ReadyChan:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-ticker.C:
-		return fmt.Errorf("wait metric exporter ready timeout")
+	defer ticker.Stop()
+	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
+	for {
+		select {
+		case <-tickerReady.C:
+			if nil == exporter.readyz("http://localhost:"+exporter.ssExportPort) {
+				return nil
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			return fmt.Errorf("wait metric exporter ready timeout")
+		}
 	}
 }
 
