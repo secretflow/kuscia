@@ -4,6 +4,7 @@ package promexporter
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"strings"
 )
 
@@ -52,9 +53,15 @@ var histograms = make(map[string]prometheus.Histogram)
 var summaries = make(map[string]prometheus.Summary)
 
 func ProduceMetric(reg *prometheus.Registry,
-	metricType string, nameSpace string, name string, help string, labels map[string]string) *prometheus.Registry {
-	var metricId string
-	metricId = labels["local_domain"] + "__" + labels["remote_domain"] + "__" + name + "__" + labels["aggregation_function"]
+	metricId string, metricType string) *prometheus.Registry {
+	splitedMetric := strings.Split(metricId, "__")
+	labels := make(map[string]string)
+	labels["type"] = "ss"
+	labels["remote_domain"] = splitedMetric[len(splitedMetric)-3]
+	name := splitedMetric[len(splitedMetric)-2]
+	labels["aggregation_function"] = splitedMetric[len(splitedMetric)-1]
+	help := name + " aggregated by " + labels["aggregation_function"] + " from ss"
+	nameSpace := "ss"
 	if metricType == "Counter" {
 		counters[metricId] = ProduceCounter(nameSpace, name, help, labels)
 		reg.MustRegister(counters[metricId])
@@ -76,7 +83,8 @@ func Formalize(metric string) string {
 	metric = strings.ToLower(metric)
 	return metric
 }
-func ProduceMetrics(localDomainName string,
+func ProduceMetrics(
+	localDomainName string,
 	clusterAddresses map[string][]string,
 	netMetrics []string,
 	MetricTypes map[string]string,
@@ -86,49 +94,49 @@ func ProduceMetrics(localDomainName string,
 		collectors.NewGoCollector(),
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
-	for clusterName := range clusterAddresses {
-		destinationAddress := clusterAddresses[clusterName]
-		clusterName = Formalize(clusterName)
-		labels := make(map[string]string)
-		labels["type"] = "ss"
-		labels["local_domain"] = localDomainName
-		for _, dstAddr := range destinationAddress {
-			labels["remote_domain"] = Formalize(strings.Split(dstAddr, ":")[0])
-			for _, metric := range netMetrics {
-				metric = Formalize(metric)
-				labels["aggregation_function"] = aggregationMetrics[metric]
-				reg = ProduceMetric(reg, MetricTypes[metric], "ss", metric, metric+"with aggregation function "+aggregationMetrics[metric], labels)
-			}
-		}
-
-	}
 	return reg
 }
 
-func UpdateMetrics(clusterResults map[string]float64, MetricTypes map[string]string) {
+func UpdateMetrics(reg *prometheus.Registry,
+	clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
 		metricId := Formalize(metric)
 		splitedMetric := strings.Split(metric, ".")
 		var metricTypeId string
-		metricTypeId = splitedMetric[len(splitedMetric)-1]
+		metricTypeId = splitedMetric[len(splitedMetric)-2]
 		metricType, ok := MetricTypes[metricTypeId]
 		if !ok {
-			metricTypeId = splitedMetric[len(splitedMetric)-2] + "__" + splitedMetric[len(splitedMetric)-1]
-			metricType, ok = MetricTypes[metricTypeId]
-		}
-		if !ok {
-			metricTypeId = splitedMetric[len(splitedMetric)-2]
-			metricType, ok = MetricTypes[metricTypeId]
+			nlog.Error("Fail to get metric types", ok)
 		}
 		switch metricType {
 		case "Counter":
-			counters[metricId].Add(val)
+			if _, ok := counters[metricId]; ok {
+				counters[metricId].Add(val)
+			} else {
+				ProduceMetric(reg, metricId, metricType)
+				counters[metricId].Add(val)
+			}
 		case "Gauge":
-			gauges[metricId].Set(val)
+			if _, ok := gauges[metricId]; ok {
+				gauges[metricId].Set(val)
+			} else {
+				ProduceMetric(reg, metricId, metricType)
+				gauges[metricId].Set(val)
+			}
 		case "Histogram":
-			histograms[metricId].Observe(val)
+			if _, ok := histograms[metricId]; ok {
+				histograms[metricId].Observe(val)
+			} else {
+				ProduceMetric(reg, metricId, metricType)
+				histograms[metricId].Observe(val)
+			}
 		case "Summary":
-			summaries[metricId].Observe(val)
+			if _, ok := summaries[metricId]; ok {
+				summaries[metricId].Observe(val)
+			} else {
+				ProduceMetric(reg, metricId, metricType)
+				summaries[metricId].Observe(val)
+			}
 		}
 	}
 }
