@@ -14,13 +14,13 @@ func GetEnvoyMetrics() []string {
 	return metrics
 }
 
-func GetEnvoyMetricUrl() string {
-	baseUrl := "http://localhost:10000/stats/prometheus?filter="
+func GetEnvoyMetricURL() string {
+	baseURL := "http://localhost:10000/stats/prometheus?filter="
 	metrics := GetEnvoyMetrics()
-	filter_regex := "("
+	filterRegex := "("
 	for _, metric := range metrics {
-		filter_regex += metric + "|"
+		filterRegex += metric + "|"
 	}
-	filter_regex = filter_regex[0:len(filter_regex)-1] + ")"
-	return baseUrl + filter_regex
+	filterRegex = filterRegex[0:len(filterRegex)-1] + ")"
+	return baseURL + filterRegex
 }

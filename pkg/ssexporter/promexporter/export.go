@@ -53,8 +53,8 @@ var histograms = make(map[string]prometheus.Histogram)
 var summaries = make(map[string]prometheus.Summary)
 
 func produceMetric(reg *prometheus.Registry,
-	metricId string, metricType string) *prometheus.Registry {
-	splitedMetric := strings.Split(metricId, "__")
+	metricID string, metricType string) *prometheus.Registry {
+	splitedMetric := strings.Split(metricID, "__")
 	labels := make(map[string]string)
 	labels["type"] = "ss"
 	labels["remote_domain"] = splitedMetric[len(splitedMetric)-3]
@@ -63,17 +63,17 @@ func produceMetric(reg *prometheus.Registry,
 	help := name + " aggregated by " + labels["aggregation_function"] + " from ss"
 	nameSpace := "ss"
 	if metricType == "Counter" {
-		counters[metricId] = produceCounter(nameSpace, name, help, labels)
-		reg.MustRegister(counters[metricId])
+		counters[metricID] = produceCounter(nameSpace, name, help, labels)
+		reg.MustRegister(counters[metricID])
 	} else if metricType == "Gauge" {
-		gauges[metricId] = produceGauge(nameSpace, name, help, labels)
-		reg.MustRegister(gauges[metricId])
+		gauges[metricID] = produceGauge(nameSpace, name, help, labels)
+		reg.MustRegister(gauges[metricID])
 	} else if metricType == "Histogram" {
-		histograms[metricId] = produceHistogram(nameSpace, name, help, labels)
-		reg.MustRegister(histograms[metricId])
+		histograms[metricID] = produceHistogram(nameSpace, name, help, labels)
+		reg.MustRegister(histograms[metricID])
 	} else if metricType == "Summary" {
-		summaries[metricId] = produceSummary(nameSpace, name, help, labels)
-		reg.MustRegister(summaries[metricId])
+		summaries[metricID] = produceSummary(nameSpace, name, help, labels)
+		reg.MustRegister(summaries[metricID])
 	}
 	return reg
 }
@@ -100,35 +100,35 @@ func ProduceMetrics(
 func UpdateMetrics(reg *prometheus.Registry,
 	clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
-		metricId := formalize(metric)
+		metricID := formalize(metric)
 		splitedMetric := strings.Split(metric, ".")
-		var metricTypeId string
-		metricTypeId = splitedMetric[len(splitedMetric)-2]
-		metricType, ok := MetricTypes[metricTypeId]
+		var metricTypeID string
+		metricTypeID = splitedMetric[len(splitedMetric)-2]
+		metricType, ok := MetricTypes[metricTypeID]
 		if !ok {
 			nlog.Error("Fail to get metric types", ok)
 		}
 		switch metricType {
 		case "Counter":
-			if _, ok := counters[metricId]; !ok {
-				produceMetric(reg, metricId, metricType)
+			if _, ok := counters[metricID]; !ok {
+				produceMetric(reg, metricID, metricType)
 			}
-			counters[metricId].Add(val)
+			counters[metricID].Add(val)
 		case "Gauge":
-			if _, ok := gauges[metricId]; !ok {
-				produceMetric(reg, metricId, metricType)
+			if _, ok := gauges[metricID]; !ok {
+				produceMetric(reg, metricID, metricType)
 			}
-			gauges[metricId].Set(val)
+			gauges[metricID].Set(val)
 		case "Histogram":
-			if _, ok := histograms[metricId]; !ok {
-				produceMetric(reg, metricId, metricType)
+			if _, ok := histograms[metricID]; !ok {
+				produceMetric(reg, metricID, metricType)
 			}
-			histograms[metricId].Observe(val)
+			histograms[metricID].Observe(val)
 		case "Summary":
-			if _, ok := summaries[metricId]; !ok {
-				produceMetric(reg, metricId, metricType)
+			if _, ok := summaries[metricID]; !ok {
+				produceMetric(reg, metricID, metricType)
 			}
-			summaries[metricId].Observe(val)
+			summaries[metricID].Observe(val)
 		}
 	}
 }

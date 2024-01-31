@@ -26,22 +26,22 @@ import (
 
 type metricExporterModule struct {
 	rootDir    string
-	metricUrls map[string]string
+	metricURLs map[string]string
 }
 
 func NewMetricExporter(i *Dependencies) Module {
 	return &metricExporterModule{
 		rootDir: i.RootDir,
-		metricUrls: map[string]string{
+		metricURLs: map[string]string{
 			"node-exporter": "http://localhost:9100/metrics",
-			"envoy":         envoyexporter.GetEnvoyMetricUrl(),
+			"envoy":         envoyexporter.GetEnvoyMetricURL(),
 			"ss":            "http://localhost:9092/ssmetrics",
 		},
 	}
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx, exporter.metricUrls)
+	metricexporter.MetricExporter(ctx, exporter.metricURLs)
 	return nil
 }
 
