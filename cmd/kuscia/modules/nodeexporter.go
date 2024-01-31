@@ -30,23 +30,21 @@ import (
 )
 
 type nodeExporterModule struct {
-	runMode pkgcom.RunModeType
-	rootDir string
+	runMode    pkgcom.RunModeType
+	rootDir    string
+	exportPort string
 }
 
 func NewNodeExporter(i *Dependencies) Module {
 	return &nodeExporterModule{
-		runMode: i.RunMode,
-		rootDir: i.RootDir,
+		runMode:    i.RunMode,
+		rootDir:    i.RootDir,
+		exportPort: ":9100",
 	}
 }
 
 func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 	var args []string
-	if exporter.runMode == "master" {
-		args = append(args, "--web.listen-address")
-		args = append(args, ":9091")
-	}
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)
@@ -92,7 +90,7 @@ func (exporter *nodeExporterModule) WaitReady(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-tickerReady.C:
-			if nil == exporter.readyz("http://127.0.0.1:9100") {
+			if nil == exporter.readyz("http://127.0.0.1"+exporter.exportPort) {
 				return nil
 			}
 		case <-ticker.C:

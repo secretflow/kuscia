@@ -205,11 +205,11 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 	if err != nil {
 		nlog.Error("Fail to get the hostname", err)
 	}
-	sourceIP := parse.GetIpFromDomain(hostName)
+	sourceIP := parse.GetIPFromDomain(hostName)
 	destinationIP := make(map[string][]string)
 	for _, endpointAddresses := range clusterAddresses {
 		for _, endpointAddress := range endpointAddresses {
-			destinationIP[endpointAddress] = parse.GetIpFromDomain(strings.Split(endpointAddress, ":")[0])
+			destinationIP[endpointAddress] = parse.GetIPFromDomain(strings.Split(endpointAddress, ":")[0])
 		}
 	}
 	// group metrics by the domain name

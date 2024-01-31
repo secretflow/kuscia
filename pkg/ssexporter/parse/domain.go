@@ -35,8 +35,8 @@ func GetLocalDomainName() string {
 	return namespace
 }
 
-// GetIpFromDomain get a list of IP addresses from a local domain name
-func GetIpFromDomain(localDomainName string) []string {
+// GetIPFromDomain get a list of IP addresses from a local domain name
+func GetIPFromDomain(localDomainName string) []string {
 	ipAddresses, err := net.LookupIP(localDomainName)
 	var ipAddr []string
 	if err != nil {

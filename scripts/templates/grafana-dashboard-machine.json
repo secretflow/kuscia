@@ -2836,7 +2836,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_tx_bytes_total{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_upstream_cx_tx_bytes_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "instant": false,
           "legendFormat": "{${instance}}_cx_tx_bytes_total",
           "range": true,
@@ -2848,7 +2848,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_rx_bytes_total{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_upstream_cx_rx_bytes_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_cx_rx_bytes_total",
@@ -2861,7 +2861,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_total{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_upstream_cx_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_cx_total",
@@ -2958,7 +2958,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_connect_fail{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_upstream_cx_connect_fail{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "instant": false,
           "legendFormat": "{${instance}}_cx_connect_fail_rate",
           "range": true,
@@ -2970,7 +2970,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_connect_timeout{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_upstream_cx_connect_timeout{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_cx_connect_timeout_rate",
@@ -2996,7 +2996,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_rq_timeout{instance=\"${instance}:9091\"}/envoy_cluster_upstream_rq_total{instance=\"${instance}:9091\"} ",
+          "expr": "envoy_cluster_upstream_rq_timeout{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}/envoy_cluster_upstream_rq_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"} ",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_rq_timeout_rate",
@@ -3009,7 +3009,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_health_check_failure{instance=\"${instance}:9091\"}/envoy_cluster_health_check_attempt{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_health_check_failure{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}/envoy_cluster_health_check_attempt{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_health_check_fail_rate",
@@ -3110,7 +3110,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_rq_total{instance=\"${instance}:9091\"}",
+          "expr": "envoy_cluster_upstream_rq_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "instant": false,
           "legendFormat": "{${instance}}_rq_total",
           "range": true,
@@ -3186,7 +3186,7 @@
               "options": {
                 "mode": "exclude",
                 "names": [
-                  "{192.168.176.3}_retrans"
+                  "{172.22.0.3}_retrans"
                 ],
                 "prefix": "All except:",
                 "readOnly": true
@@ -3255,8 +3255,8 @@
         "allFormat": "glob",
         "current": {
           "selected": true,
-          "text": "192.168.176.3",
-          "value": "192.168.176.3"
+          "text": "172.22.0.3",
+          "value": "172.22.0.3"
         },
         "datasource": {
           "type": "prometheus",
