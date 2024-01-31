@@ -17,6 +17,8 @@ package modules
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/metricexporter"
@@ -25,35 +27,73 @@ import (
 )
 
 type metricExporterModule struct {
-	rootDir    string
-	metricURLs map[string]string
+	rootDir          string
+	metricURLs       map[string]string
+	nodeExportPort   string
+	ssExportPort     string
+	metricExportPort string
 }
 
 func NewMetricExporter(i *Dependencies) Module {
 	return &metricExporterModule{
-		rootDir: i.RootDir,
+		rootDir:          i.RootDir,
+		nodeExportPort:   i.NodeExportPort,
+		ssExportPort:     i.SsExportPort,
+		metricExportPort: i.MetricExportPort,
 		metricURLs: map[string]string{
-			"node-exporter": "http://localhost:9100/metrics",
+			"node-exporter": "http://localhost:" + i.NodeExportPort + "/metrics",
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
-			"ss":            "http://localhost:9092/ssmetrics",
+			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
 		},
 	}
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx, exporter.metricURLs)
+	metricexporter.MetricExporter(ctx, exporter.metricURLs, exporter.metricExportPort)
+	return nil
+}
+
+func (exporter *metricExporterModule) readyz(host string) error {
+	cl := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, host, nil)
+	if err != nil {
+		nlog.Errorf("NewRequest error:%s", err.Error())
+		return err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		nlog.Errorf("Get ready err:%s", err.Error())
+		return err
+	}
+	if resp == nil || resp.Body == nil {
+		nlog.Error("Resp must has body")
+		return fmt.Errorf("resp must has body")
+	}
+	defer resp.Body.Close()
+	_, err = io.ReadAll(resp.Body)
+	if err != nil {
+		nlog.Error("ReadAll fail")
+		return err
+	}
 	return nil
 }
 
 func (exporter *metricExporterModule) WaitReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
-	select {
-	case <-metricexporter.ReadyChan:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-ticker.C:
-		return fmt.Errorf("wait metric exporter ready timeout")
+	defer ticker.Stop()
+	tickerReady := time.NewTicker(time.Second)
+	defer tickerReady.Stop()
+	for {
+		select {
+		case <-tickerReady.C:
+			if nil == exporter.readyz("http://localhost:"+exporter.metricExportPort) {
+				return nil
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			return fmt.Errorf("wait metric exporter ready timeout")
+		}
 	}
 }
 

@@ -18,7 +18,7 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, ExportPeriod uint) {
+func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, exportPeriod uint, port string) {
 	// read the config
 	SsMetrics, AggregationMetrics := parse.LoadMetricConfig()
 	clusterAddresses := parse.GetClusterAddress()
@@ -27,24 +27,22 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, ExportPeriod ui
 	var reg *prometheus.Registry
 	reg = promexporter.ProduceMetrics(localDomainName, clusterAddresses, SsMetrics, MetricTypes, AggregationMetrics)
 	ssMetrics := ssmetrics.ConvertClusterMetrics(SsMetrics, clusterAddresses)
-	lastClusterMetricValues := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, ExportPeriod)
-	nlog.Info("Start to export metrics...")
-	close(ReadyChan)
+	lastClusterMetricValues := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriod)
 	// export the cluster metrics
-	ticker := time.NewTicker(time.Duration(ExportPeriod) * time.Second)
+	ticker := time.NewTicker(time.Duration(exportPeriod) * time.Second)
 	defer ticker.Stop()
-	go func(runMode pkgcom.RunModeType, reg *prometheus.Registry, NetMetrics []string, MetricTypes map[string]string, ExportPeriods uint, lastClusterMetricValues map[string]float64) {
+	go func(runMode pkgcom.RunModeType, reg *prometheus.Registry, NetMetrics []string, MetricTypes map[string]string, exportPeriods uint, lastClusterMetricValues map[string]float64) {
 		for range ticker.C {
 			// get clusterName and clusterAddress
 			clusterAddresses = parse.GetClusterAddress()
 			// get cluster metrics
-			currentClusterMetricValues := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, ExportPeriods)
+			currentClusterMetricValues := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
 			// calculate the change values of cluster metrics
 			lastClusterMetricValues, currentClusterMetricValues = ssmetrics.GetMetricChange(lastClusterMetricValues, currentClusterMetricValues)
 			// update cluster metrics in prometheus
 			promexporter.UpdateMetrics(reg, currentClusterMetricValues, MetricTypes)
 		}
-	}(runMode, reg, ssMetrics, MetricTypes, ExportPeriod, lastClusterMetricValues)
+	}(runMode, reg, ssMetrics, MetricTypes, exportPeriod, lastClusterMetricValues)
 	// export to the prometheus
 	http.Handle(
 		"/ssmetrics", promhttp.HandlerFor(
@@ -53,7 +51,16 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, ExportPeriod ui
 				EnableOpenMetrics: true,
 			}),
 	)
-	nlog.Error(http.ListenAndServe("0.0.0.0:9092", nil))
+	go func() {
+		if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
+			nlog.Error("Fail to start the metric exporterserver", err)
+		}
+	}()
+	defer func() {
+		close(ReadyChan)
+		nlog.Info("Start to export metrics...")
+	}()
+
 	<-ctx.Done()
 	nlog.Info("Stopping the metric exporter...")
 }
