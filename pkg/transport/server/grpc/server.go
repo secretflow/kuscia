@@ -170,13 +170,12 @@ func getTimeout(ctx context.Context, inbound interface{}) time.Duration {
 	timeout, ok := getParamFromCtx(ctx, "timeout")
 	if !ok {
 		return common.DefaultTimeout
-	} else {
-		timeout, err := strconv.ParseInt(timeout, 10, 32)
-		if err == nil {
-			return common.DefaultTimeout
-		}
-		return convertTimeout(int32(timeout))
 	}
+	iTimeout, err := strconv.ParseInt(timeout, 10, 32)
+	if err == nil {
+		return common.DefaultTimeout
+	}
+	return convertTimeout(int32(iTimeout))
 }
 
 func convertTimeout(t int32) time.Duration {
