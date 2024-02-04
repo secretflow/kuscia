@@ -50,7 +50,7 @@ function wait_kuscia_job_until() {
       unset ctr timeout_seconds job_id times  current
       return
       ;;
-    Pending | Running | "" )
+    Pending | Running | AwaitingApproval | "" )
       ;;
     *)
       # unexpected
