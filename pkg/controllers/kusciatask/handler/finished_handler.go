@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package handler
 
 import (
@@ -53,7 +54,7 @@ func NewFinishedHandler(deps *Dependencies) *FinishedHandler {
 // Handle is used to perform the real logic.
 func (h *FinishedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	if err := h.DeleteTaskResources(kusciaTask); err != nil {
-		return false, fmt.Errorf("failed to delete all pods of kusciatask %q", kusciaTask.Name)
+		return false, err
 	}
 
 	now := metav1.Now().Rfc3339Copy()
@@ -63,7 +64,7 @@ func (h *FinishedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (boo
 
 // DeleteTaskResources is used to delete task resources.
 func (h *FinishedHandler) DeleteTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
-	pods, _ := h.podsLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskID: kusciaTask.Name}))
+	pods, _ := h.podsLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: string(kusciaTask.UID)}))
 	for _, pod := range pods {
 		if pod.Status.Phase == corev1.PodFailed {
 			continue
@@ -76,35 +77,33 @@ func (h *FinishedHandler) DeleteTaskResources(kusciaTask *kusciaapisv1alpha1.Kus
 			if k8serrors.IsNotFound(e) {
 				continue
 			}
-			return fmt.Errorf("failed to delete pod '%s/%s', %v", ns, name, e)
+			return fmt.Errorf("failed to delete pod %v/%v, %v", ns, name, e)
 		}
 
-		nlog.Infof("Delete the pod '%v/%v' belonging to kusciatask %q successfully", ns, name, kusciaTask.Name)
+		nlog.Debugf("Delete the pod %v/%v belonging to kusciaTask %v successfully", ns, name, kusciaTask.Name)
 	}
 
 	if kusciaTask.Status.Phase != kusciaapisv1alpha1.TaskSucceeded {
 		return nil
 	}
 
-	configMaps, _ := h.configMapLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskID: kusciaTask.Name}))
+	configMaps, _ := h.configMapLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: string(kusciaTask.UID)}))
 	for _, configMap := range configMaps {
 		ns := configMap.Namespace
 		name := configMap.Name
-		e := h.kubeClient.CoreV1().ConfigMaps(ns).Delete(context.Background(), name, metav1.DeleteOptions{})
-		if e != nil {
-			if k8serrors.IsNotFound(e) {
+		err := h.kubeClient.CoreV1().ConfigMaps(ns).Delete(context.Background(), name, metav1.DeleteOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
 				continue
 			}
-			return fmt.Errorf("failed to delete configmap '%s/%s', %v", ns, name, e)
+			return fmt.Errorf("failed to delete configmap %v/%v, %v", ns, name, err)
 		}
-		nlog.Infof("Delete the configmap '%v/%v' belonging to kusciatask %q successfully", ns, name, kusciaTask.Name)
+		nlog.Debugf("Delete the configmap %v/%v belonging to kusciaTask %v successfully", ns, name, kusciaTask.Name)
 	}
 
-	if err := h.kusciaClient.KusciaV1alpha1().TaskResourceGroups().Delete(context.Background(), kusciaTask.Name, metav1.DeleteOptions{}); err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-		return fmt.Errorf("failed to delete task resource group %v, %v", kusciaTask.Name, err.Error())
+	if err := h.kusciaClient.KusciaV1alpha1().TaskResourceGroups().Delete(context.Background(),
+		kusciaTask.Name, metav1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete taskResourceGroup %v, %v", kusciaTask.Name, err)
 	}
 
 	return nil

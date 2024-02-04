@@ -14,6 +14,7 @@ protobuf 文件。
 | [DeleteJob](#delete-job)                       | DeleteJobRequest           | DeleteJobResponse            | 删除 Job      |
 | [StopJob](#stop-job)                           | StopJobRequest             | StopJobResponse              | 停止 Job      |
 | [WatchJob](#watch-job)                         | WatchJobRequest            | WatchJobEventResponse stream | 监控 Job      |
+| [ApproveJob](#{#approval-job)                  | ApproveJobRequest          | ApproveJobResponse           | 审批 Job      |
 
 ## 接口详情
 
@@ -34,6 +35,7 @@ protobuf 文件。
 | initiator       | string                                       | 必填 | 发起方节点 ID                                                                                                                   |
 | max_parallelism | int32                                        | 可选 | 并发度，参考 [KusciaJob 概念](../concepts/kusciajob_cn.md)                                                                         |
 | tasks           | [Task](#task)[]                              | 必填 | 任务参数                                                                                                                       |
+|  custom_fields | map<string, string> | 可选 | 自定义参数，会同步给参与方，key不超过38个字符，value不超过63个字符。                                                                                                            |
 
 #### 响应（CreateJobResponse）
 
@@ -42,6 +44,81 @@ protobuf 文件。
 | status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
 | data        | CreateJobResponseData          |    |       |
 | data.job_id | string                         | 必填 | JobID |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001",
+  "initiator": "alice",
+  "max_parallelism": 2,
+  "tasks": [
+    {
+      "task_id": "job-psi",
+      "app_image": "secretflow-image",
+      "parties": [
+        {
+          "domain_id": "alice",
+          "role": "partner"
+        },
+        {
+          "domain_id": "bob",
+          "role": "partner"
+        }
+      ],
+      "alias": "job-psi",
+      "dependencies": [],
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+      "priority": 100
+    },
+    {
+      "task_id": "job-split",
+      "app_image": "secretflow-image",
+      "parties": [
+        {
+          "domain_id": "alice",
+          "role": "partner"
+        },
+        {
+          "domain_id": "bob",
+          "role": "partner"
+        }
+      ],
+      "alias": "job-split",
+      "dependencies": [
+        "job-psi"
+      ],
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
+      "priority": 100
+    }
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001"
+  }
+}
+```
 
 {#query-job}
 
@@ -69,6 +146,111 @@ protobuf 文件。
 | data.max_parallelism | int32                                 | 必填 | 并发度    |
 | data.tasks           | [TaskConfig](#task-config)[]          | 必填 | 任务列表   |
 | data.status          | [JobStatusDetail](#job-status-detail) | 必填 | Job 状态 |
+| data.custom_fields | map<string, string> | 可选 | 自定义参数                                                                                                             |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001",
+    "initiator": "alice",
+    "max_parallelism": 2,
+    "tasks": [
+      {
+        "app_image": "secretflow-image",
+        "parties": [
+          {
+            "domain_id": "alice",
+            "role": "partner"
+          },
+          {
+            "domain_id": "bob",
+            "role": "partner"
+          }
+        ],
+        "alias": "job-psi",
+        "task_id": "job-psi",
+        "dependencies": [
+          ""
+        ],
+        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+        "priority": 100
+      },
+      {
+        "app_image": "secretflow-image",
+        "parties": [
+          {
+            "domain_id": "alice",
+            "role": "partner"
+          },
+          {
+            "domain_id": "bob",
+            "role": "partner"
+          }
+        ],
+        "alias": "job-split",
+        "task_id": "job-split",
+        "dependencies": [
+          "job-psi"
+        ],
+        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
+        "priority": 100
+      }
+    ],
+    "status": {
+      "state": "Failed",
+      "err_msg": "",
+      "create_time": "2024-01-17T07:13:39Z",
+      "start_time": "2024-01-17T07:13:39Z",
+      "end_time": "2024-01-17T07:13:39Z",
+      "tasks": [
+        {
+          "task_id": "job-psi",
+          "state": "",
+          "err_msg": "",
+          "create_time": "",
+          "start_time": "",
+          "end_time": "",
+          "parties": []
+        },
+        {
+          "task_id": "job-split",
+          "state": "",
+          "err_msg": "",
+          "create_time": "",
+          "start_time": "",
+          "end_time": "",
+          "parties": []
+        }
+      ]
+    }
+  }
+}
+```
 
 {#batch-query-job-status}
 
@@ -93,6 +275,72 @@ protobuf 文件。
 | data      | BatchQueryJobStatusResponseData |    |          |
 | data.jobs | [JobStatus](#job-status)[]      | 必填 | Job 状态列表 |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_ids": [
+    "job-alice-bob-001"
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "jobs": [
+      {
+        "job_id": "job-alice-bob-001",
+        "status": {
+          "state": "Failed",
+          "err_msg": "",
+          "create_time": "2024-01-17T07:13:39Z",
+          "start_time": "2024-01-17T07:13:39Z",
+          "end_time": "2024-01-17T07:13:39Z",
+          "tasks": [
+            {
+              "task_id": "job-psi",
+              "state": "",
+              "err_msg": "",
+              "create_time": "",
+              "start_time": "",
+              "end_time": "",
+              "parties": []
+            },
+            {
+              "task_id": "job-split",
+              "state": "",
+              "err_msg": "",
+              "create_time": "",
+              "start_time": "",
+              "end_time": "",
+              "parties": []
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
 {#delete-job}
 
 ### 删除 Job
@@ -115,6 +363,39 @@ protobuf 文件。
 | status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
 | data        | DeleteJobResponseData          |    |       |
 | data.job_id | string                         | 必填 | JobID |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001"
+  }
+}
+```
 
 {#stop-job}
 
@@ -139,20 +420,53 @@ protobuf 文件。
 | data        | StopJobResponseData            |    |       |
 | data.job_id | string                         | 必填 | JobID |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001"
+  }
+}
+```
+
 {#watch-job}
 
 ### 监控 Job
 
 #### HTTP 路径
 
-暂不支持 HTTP 接口。
+/api/v1/job/watch
 
 #### 请求（WatchJobRequest）
 
 | 字段              | 类型                                           | 选填 | 描述      |
 |-----------------|----------------------------------------------|----|---------|
 | header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| timeout_seconds | int64                                        | 可选 | 超时时间    |
+| timeout_seconds | int64                                        | 可选 | 超时时间，默认为 0，表示不超时。即使在未设置超时时间的情况下, 也会因为网络环境导致断连，客户端根据需求决定是否重新发起请求    |
 
 #### 响应（WatchJobEventResponse）
 
@@ -160,6 +474,33 @@ protobuf 文件。
 |--------|--------------------------|----|--------|
 | 类型     | [EventType](#event-type) | 必填 | 事件类型   |
 | object | [JobStatus](#job-status) | 必填 | Job 状态 |
+
+
+{#approval-job}
+
+### 审批 Job
+
+#### HTTP 路径
+
+/api/v1/job/approval
+
+#### 请求（ApprovalJobRequest）
+
+| 字段              | 类型                                           | 选填 | 描述                                                                                                                         |
+|-----------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------|
+| header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                    |
+| job_id          | string                                       | 必填 | JobID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| result          | [ApproveResult](approve-result)              | 必填 | 审批结果，接收或拒绝，接收则作业(job)可以执行，拒绝则作业不可执行                                                                                                                   | |
+| reason          | string                                       | 可选 | 接收或拒绝的理由                                                                                                                     |
+
+#### 响应（ApprovalJobResponse）
+
+| 字段          | 类型                             | 选填 | 描述    |
+|-------------|--------------------------------|----|-------|
+| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
+| data        | ApprovalJobResponseData        |    |       |
+| data.job_id | string                         | 必填 | JobID |
+
 
 ## 公共
 
@@ -257,18 +598,32 @@ protobuf 文件。
 | MODIFIED | 1      | 修改事件 |
 | DELETED  | 2      | 删除事件 |
 | ERROR    | 3      | 错误事件 |
+| HEARTBEAT | 4      | 心跳事件 |
+
+{#approve-result}
+
+### ApproveResult
+
+| Name     | Number | 描述   |
+|----------|--------|------|
+| APPROVE_RESULT_UNKNOWN    | 0  | 未知状态 |
+| APPROVE_RESULT_ACCEPT     | 1  | 审批通过 |
+| APPROVE_RESULT_REJECT     | 2  | 审批拒绝 |
 
 {#state}
 
 ### State
 
-| Name      | Number | 描述    |
-|-----------|--------|-------|
-| Unknown   | 0      | 未知    |
-| Pending   | 1      | 未开始运行 |
-| Running   | 2      | 运行中   |
-| Succeeded | 3      | 成功    |
-| Failed    | 4      | 失败    |
+| Name               | Number | 描述    |
+|-----------         |--------|-------|
+| Unknown            | 0      | 未知    |
+| Pending            | 1      | 未开始运行 |
+| Running            | 2      | 运行中   |
+| Succeeded          | 3      | 成功    |
+| Failed             | 4      | 失败    |
+| AwaitingApproval   | 5      | 等待参与方审批任务   |
+| ApprovalReject     | 6      | 任务被审批为拒绝执行    |
+| Cancelled          | 7      | 任务被取消，被取消的任务不可被再次执行    |
 
 {#job-party-endpoint}
 

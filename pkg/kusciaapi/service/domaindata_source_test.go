@@ -31,6 +31,8 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
+var mockDomainId = "alice"
+
 func makeDomainDataSourceServiceConfig(t *testing.T) *config.KusciaAPIConfig {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -38,10 +40,10 @@ func makeDomainDataSourceServiceConfig(t *testing.T) *config.KusciaAPIConfig {
 	}
 	return &config.KusciaAPIConfig{
 		DomainKey:    privateKey,
-		KusciaClient: kusciafake.NewSimpleClientset(),
+		KusciaClient: kusciafake.NewSimpleClientset(MakeMockDomain(mockDomainId)),
 		RunMode:      common.RunModeLite,
 		Initiator:    "alice",
-		DomainID:     "alice",
+		DomainID:     mockDomainId,
 	}
 }
 
@@ -51,7 +53,7 @@ func TestCreateDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	res := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeLocalFS,
 		Info: &kusciaapi.DataSourceInfo{
@@ -69,7 +71,7 @@ func TestUpdateDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -85,7 +87,7 @@ func TestUpdateDomainDataSource(t *testing.T) {
 
 	updateRes := dsService.UpdateDomainDataSource(context.Background(), &kusciaapi.UpdateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -100,7 +102,7 @@ func TestUpdateDomainDataSource(t *testing.T) {
 	assert.Equal(t, int32(0), updateRes.Status.Code)
 
 	queryRes := dsService.QueryDomainDataSource(context.Background(), &kusciaapi.QueryDomainDataSourceRequest{
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 	})
 
@@ -117,7 +119,7 @@ func TestDeleteDomainDataSource(t *testing.T) {
 
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -132,13 +134,13 @@ func TestDeleteDomainDataSource(t *testing.T) {
 	assert.Equal(t, dataSourceID, createRes.Data.DatasourceId)
 
 	deleteRes := dsService.DeleteDomainDataSource(context.Background(), &kusciaapi.DeleteDomainDataSourceRequest{
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 	})
 	assert.Equal(t, int32(0), deleteRes.Status.Code)
 
 	queryRes := dsService.QueryDomainDataSource(context.Background(), &kusciaapi.QueryDomainDataSourceRequest{
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 	})
 	assert.NotEqual(t, int32(0), queryRes.Status.Code)
@@ -150,7 +152,7 @@ func TestBatchQueryDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     "alice",
+		DomainId:     mockDomainId,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -167,7 +169,7 @@ func TestBatchQueryDomainDataSource(t *testing.T) {
 	batchQueryRes := dsService.BatchQueryDomainDataSource(context.Background(), &kusciaapi.BatchQueryDomainDataSourceRequest{
 		Data: []*kusciaapi.QueryDomainDataSourceRequestData{
 			{
-				DomainId:     "alice",
+				DomainId:     mockDomainId,
 				DatasourceId: dataSourceID,
 			},
 		},

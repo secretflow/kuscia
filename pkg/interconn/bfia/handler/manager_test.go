@@ -28,13 +28,13 @@ import (
 )
 
 func makeKusciaJob(name string, labels map[string]string, stage kusciaapisv1alpha1.JobStage) *kusciaapisv1alpha1.KusciaJob {
-	return &kusciaapisv1alpha1.KusciaJob{
+	kj := &kusciaapisv1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:      name,
+			Namespace: common.KusciaCrossDomain,
+			Labels:    map[string]string{},
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
-			Stage: stage,
 			Tasks: []kusciaapisv1alpha1.KusciaTaskTemplate{
 				{
 					Alias: "hetero_logistic_regression_1",
@@ -42,13 +42,21 @@ func makeKusciaJob(name string, labels map[string]string, stage kusciaapisv1alph
 			},
 		},
 	}
+
+	if labels != nil {
+		kj.Labels = labels
+	}
+	kj.Labels[common.LabelJobStage] = string(stage)
+	return kj
 }
 
-func makeKusciaTask(name string, labels map[string]string, phase kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1alpha1.KusciaTask {
+func makeKusciaTask(name string, annotations, labels map[string]string, phase kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1alpha1.KusciaTask {
 	return &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name:        name,
+			Namespace:   common.KusciaCrossDomain,
+			Annotations: annotations,
+			Labels:      labels,
 		},
 		Status: kusciaapisv1alpha1.KusciaTaskStatus{
 			Phase: phase,
@@ -89,12 +97,12 @@ func TestSyncJobHandler(t *testing.T) {
 	}{
 		{
 			name:       "key doesn't exist",
-			key:        "job-2",
+			key:        "cross-domain/job-2",
 			wantLength: 0,
 		},
 		{
 			name:       "key is exist",
-			key:        "job-1",
+			key:        "cross-domain/job-1",
 			wantLength: 1,
 		},
 	}
@@ -119,7 +127,7 @@ func TestSyncTaskHandler(t *testing.T) {
 		taskJobInfo:  make(map[string]string),
 	}
 
-	kt := makeKusciaTask("task-2", map[string]string{common.LabelJobID: "job-1"}, "")
+	kt := makeKusciaTask("task-2", map[string]string{common.JobIDAnnotationKey: "job-1"}, nil, "")
 	ktInformer.Informer().GetStore().Add(kt)
 
 	m.InsertJob("job-1")
@@ -132,12 +140,12 @@ func TestSyncTaskHandler(t *testing.T) {
 	}{
 		{
 			name:       "key doesn't exist",
-			key:        "task-1",
+			key:        "cross-domain/task-1",
 			wantLength: 0,
 		},
 		{
 			name:       "key is exist",
-			key:        "task-2",
+			key:        "cross-domain/task-2",
 			wantLength: 1,
 		},
 	}
@@ -168,14 +176,15 @@ func TestResourceFilter(t *testing.T) {
 		},
 		{
 			name: "kuscia task label doesn't match",
-			obj:  makeKusciaTask("task", nil, ""),
+			obj:  makeKusciaTask("task", nil, nil, ""),
 			want: false,
 		},
 		{
 			name: "kuscia task label match",
 			obj: makeKusciaTask("task", map[string]string{
+				common.JobIDAnnotationKey: "job-1",
+			}, map[string]string{
 				common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
-				common.LabelJobID:                 "job-1",
 			}, ""),
 			want: true,
 		},

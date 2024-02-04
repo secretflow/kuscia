@@ -40,32 +40,33 @@ type KusciaTaskInformer interface {
 type kusciaTaskInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	namespace        string
 }
 
 // NewKusciaTaskInformer constructs a new informer for KusciaTask type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewKusciaTaskInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredKusciaTaskInformer(client, resyncPeriod, indexers, nil)
+func NewKusciaTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredKusciaTaskInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredKusciaTaskInformer constructs a new informer for KusciaTask type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredKusciaTaskInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredKusciaTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KusciaV1alpha1().KusciaTasks().List(context.TODO(), options)
+				return client.KusciaV1alpha1().KusciaTasks(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KusciaV1alpha1().KusciaTasks().Watch(context.TODO(), options)
+				return client.KusciaV1alpha1().KusciaTasks(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&kusciav1alpha1.KusciaTask{},
@@ -75,7 +76,7 @@ func NewFilteredKusciaTaskInformer(client versioned.Interface, resyncPeriod time
 }
 
 func (f *kusciaTaskInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredKusciaTaskInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewFilteredKusciaTaskInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *kusciaTaskInformer) Informer() cache.SharedIndexInformer {

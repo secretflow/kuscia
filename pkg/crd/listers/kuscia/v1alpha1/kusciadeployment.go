@@ -29,9 +29,8 @@ type KusciaDeploymentLister interface {
 	// List lists all KusciaDeployments in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.KusciaDeployment, err error)
-	// Get retrieves the KusciaDeployment from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.KusciaDeployment, error)
+	// KusciaDeployments returns an object that can list and get KusciaDeployments.
+	KusciaDeployments(namespace string) KusciaDeploymentNamespaceLister
 	KusciaDeploymentListerExpansion
 }
 
@@ -53,9 +52,41 @@ func (s *kusciaDeploymentLister) List(selector labels.Selector) (ret []*v1alpha1
 	return ret, err
 }
 
-// Get retrieves the KusciaDeployment from the index for a given name.
-func (s *kusciaDeploymentLister) Get(name string) (*v1alpha1.KusciaDeployment, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
+// KusciaDeployments returns an object that can list and get KusciaDeployments.
+func (s *kusciaDeploymentLister) KusciaDeployments(namespace string) KusciaDeploymentNamespaceLister {
+	return kusciaDeploymentNamespaceLister{indexer: s.indexer, namespace: namespace}
+}
+
+// KusciaDeploymentNamespaceLister helps list and get KusciaDeployments.
+// All objects returned here must be treated as read-only.
+type KusciaDeploymentNamespaceLister interface {
+	// List lists all KusciaDeployments in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.KusciaDeployment, err error)
+	// Get retrieves the KusciaDeployment from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.KusciaDeployment, error)
+	KusciaDeploymentNamespaceListerExpansion
+}
+
+// kusciaDeploymentNamespaceLister implements the KusciaDeploymentNamespaceLister
+// interface.
+type kusciaDeploymentNamespaceLister struct {
+	indexer   cache.Indexer
+	namespace string
+}
+
+// List lists all KusciaDeployments in the indexer for a given namespace.
+func (s kusciaDeploymentNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.KusciaDeployment, err error) {
+	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
+		ret = append(ret, m.(*v1alpha1.KusciaDeployment))
+	})
+	return ret, err
+}
+
+// Get retrieves the KusciaDeployment from the indexer for a given namespace and name.
+func (s kusciaDeploymentNamespaceLister) Get(name string) (*v1alpha1.KusciaDeployment, error) {
+	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
 	}

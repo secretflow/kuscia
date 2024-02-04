@@ -1,7 +1,7 @@
 # 用户自定义 Service 路由
 
 ## 说明
-通过复用 kuscia 提供的网络打平功能，可以在 alice 和 bob 中自定义 service，进行请求转发。
+通过复用 Kuscia 提供的网络打平功能，可以在 alice 和 bob 中自定义 service，进行请求转发。
 
 ## 示例
 下面是Alice和Bob的管理平台之间需要进行通信示例：

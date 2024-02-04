@@ -105,7 +105,7 @@ func Test_doValidate(t *testing.T) {
 				GrantDomain:  "bob",
 				Limit: &v1alpha1.GrantLimit{
 					ExpirationTime: &v1.Time{
-						Time: time.Now().Add(150 * time.Millisecond),
+						Time: time.Now().Add(150 * time.Second),
 					},
 				},
 			},
@@ -114,16 +114,34 @@ func Test_doValidate(t *testing.T) {
 		_, err := kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Create(ctx, dg, v1.CreateOptions{})
 		assert.NoError(t, err)
 		time.Sleep(100 * time.Millisecond)
-		dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
-		assert.NoError(t, err)
-		assert.Equal(t, v1alpha1.GrantReady, dg.Status.Phase)
+		pass := false
+		for i := 0; i < 10; i++ {
+			dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
+			assert.NoError(t, err)
+			if dg.Status.Phase == v1alpha1.GrantReady {
+				pass = true
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		assert.Equal(t, true, pass)
+		// set expire
+		dg.Spec.Limit.ExpirationTime.Time = time.Now()
+		kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
 		time.Sleep(100 * time.Millisecond)
 		dg.Annotations["test"] = "bob"
 		kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
-		time.Sleep(1000 * time.Millisecond)
-		dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
-		assert.NoError(t, err)
-		assert.Equal(t, v1alpha1.GrantUnavailable, dg.Status.Phase)
+		pass = false
+		for i := 0; i < 10; i++ {
+			dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
+			assert.NoError(t, err)
+			if dg.Status.Phase == v1alpha1.GrantUnavailable {
+				pass = true
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		assert.Equal(t, true, pass)
 		close(ch)
 	}()
 	c.Run(4)

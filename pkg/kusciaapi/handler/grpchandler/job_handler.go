@@ -71,3 +71,7 @@ func (h jobHandler) WatchJob(request *kusciaapi.WatchJobRequest, stream kusciaap
 	err := h.jobService.WatchJob(context.Background(), request, eventCh)
 	return err
 }
+
+func (h jobHandler) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) (*kusciaapi.ApproveJobResponse, error) {
+	return h.jobService.ApproveJob(ctx, request), nil
+}

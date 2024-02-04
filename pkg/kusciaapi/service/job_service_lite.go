@@ -100,6 +100,29 @@ func (h *jobServiceLite) StopJob(ctx context.Context, request *kusciaapi.StopJob
 	return resp
 }
 
+func (h *jobServiceLite) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) *kusciaapi.ApproveJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	if request.Result == kusciaapi.ApproveResult_APPROVE_RESULT_UNKNOWN {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "approve result must be set"),
+		}
+	}
+	// request the master api
+	resp, err := h.kusciaAPIClient.ApproveJob(ctx, request)
+	if err != nil {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+		}
+	}
+	return resp
+}
+
 func (h *jobServiceLite) BatchQueryJobStatus(ctx context.Context, request *kusciaapi.BatchQueryJobStatusRequest) *kusciaapi.BatchQueryJobStatusResponse {
 	// do validate
 	if err := validateBatchQueryJobStatusRequest(request); err != nil {

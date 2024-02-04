@@ -40,6 +40,79 @@
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "serving_id": "serving-01",
+  "serving_input_config": "{\"partyConfigs\":{\"alice\":{\"serverConfig\":{\"featureMapping\":{\"v24\":\"x24\",\"v22\":\"x22\",\"v21\":\"x21\",\"v25\":\"x25\",\"v23\":\"x23\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/alice\",\"sourceMd5\":\"4216c62acba4a630d5039f917612780b\",\"sourcePath\":\"examples/alice/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}},\"bob\":{\"serverConfig\":{\"featureMapping\":{\"v6\":\"x6\",\"v7\":\"x7\",\"v8\":\"x8\",\"v9\":\"x9\",\"v10\":\"x10\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/bob\",\"sourceMd5\":\"1ded1513dab8734e23152ef906c180fc\",\"sourcePath\":\"examples/bob/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}}}}",
+  "initiator": "alice",
+  "parties": [
+    {
+      "domain_id": "alice",
+      "app_image": "sf-serving-image",
+      "role": "",
+      "replicas": 1,
+      "update_strategy": {
+        "type": "RollingUpdate",
+        "max_surge": "25%",
+        "max_unavailable": "25%"
+      },
+      "resources": [
+        {
+          "container_name": "",
+          "min_cpu": "0.1",
+          "max_cpu": "0.1",
+          "min_memory": "100Mi",
+          "max_memory": "100Mi"
+        }
+      ]
+    },
+    {
+      "domain_id": "bob",
+      "app_image": "sf-serving-image",
+      "role": "",
+      "replicas": 1,
+      "update_strategy": {
+        "type": "RollingUpdate",
+        "max_surge": "25%",
+        "max_unavailable": "25%"
+      },
+      "resources": [
+        {
+          "container_name": "",
+          "min_cpu": "0.1",
+          "max_cpu": "0.1",
+          "min_memory": "100Mi",
+          "max_memory": "100Mi"
+        }
+      ]
+    }
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
 
 {#update-serving}
 
@@ -64,6 +137,78 @@
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "serving_id": "serving-01",
+  "serving_input_config": "{\"partyConfigs\":{\"alice\":{\"serverConfig\":{\"featureMapping\":{\"v24\":\"x24\",\"v22\":\"x22\",\"v21\":\"x21\",\"v25\":\"x25\",\"v23\":\"x23\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/alice\",\"sourceMd5\":\"4216c62acba4a630d5039f917612780b\",\"sourcePath\":\"examples/alice/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}},\"bob\":{\"serverConfig\":{\"featureMapping\":{\"v6\":\"x6\",\"v7\":\"x7\",\"v8\":\"x8\",\"v9\":\"x9\",\"v10\":\"x10\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/bob\",\"sourceMd5\":\"1ded1513dab8734e23152ef906c180fc\",\"sourcePath\":\"examples/bob/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}}}}",
+  "parties": [
+    {
+      "domain_id": "alice",
+      "app_image": "sf-serving-image",
+      "role": "",
+      "replicas": 1,
+      "update_strategy": {
+        "type": "RollingUpdate",
+        "max_surge": "25%",
+        "max_unavailable": "25%"
+      },
+      "resources": [
+        {
+          "container_name": "",
+          "min_cpu": "0.1",
+          "max_cpu": "0.1",
+          "min_memory": "100Mi",
+          "max_memory": "100Mi"
+        }
+      ]
+    },
+    {
+      "domain_id": "bob",
+      "app_image": "sf-serving-image",
+      "role": "",
+      "replicas": 1,
+      "update_strategy": {
+        "type": "RollingUpdate",
+        "max_surge": "25%",
+        "max_unavailable": "25%"
+      },
+      "resources": [
+        {
+          "container_name": "",
+          "min_cpu": "0.1",
+          "max_cpu": "0.1",
+          "min_memory": "100Mi",
+          "max_memory": "200Mi"
+        }
+      ]
+    }
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
 
 {#delete-serving}
 
@@ -85,6 +230,36 @@
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "serving_id": "serving-01"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
 
 {#query-serving}
 
@@ -112,6 +287,145 @@
 | data.parties              | [ServingParty](#serving-party)[]              | 必填 | 参与方信息     |
 | data.status               | [ServingStatusDetail](#serving-status-detail) | 必填 | Serving状态 |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "serving_id": "serving-01"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "serving_input_config": "{\"partyConfigs\":{\"alice\":{\"serverConfig\":{\"featureMapping\":{\"v24\":\"x24\",\"v22\":\"x22\",\"v21\":\"x21\",\"v25\":\"x25\",\"v23\":\"x23\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/alice\",\"sourceMd5\":\"4216c62acba4a630d5039f917612780b\",\"sourcePath\":\"examples/alice/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}},\"bob\":{\"serverConfig\":{\"featureMapping\":{\"v6\":\"x6\",\"v7\":\"x7\",\"v8\":\"x8\",\"v9\":\"x9\",\"v10\":\"x10\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/bob\",\"sourceMd5\":\"1ded1513dab8734e23152ef906c180fc\",\"sourcePath\":\"examples/bob/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}}}}",
+    "initiator": "alice",
+    "parties": [
+      {
+        "domain_id": "alice",
+        "role": "",
+        "app_image": "sf-serving-image",
+        "replicas": 1,
+        "update_strategy": {
+          "type": "RollingUpdate",
+          "max_surge": "25%",
+          "max_unavailable": "25%"
+        },
+        "resources": [
+          {
+            "container_name": "secretflow",
+            "min_cpu": "100m",
+            "max_cpu": "100m",
+            "min_memory": "100Mi",
+            "max_memory": "100Mi"
+          }
+        ]
+      },
+      {
+        "domain_id": "bob",
+        "role": "",
+        "app_image": "sf-serving-image",
+        "replicas": 1,
+        "update_strategy": {
+          "type": "RollingUpdate",
+          "max_surge": "25%",
+          "max_unavailable": "25%"
+        },
+        "resources": [
+          {
+            "container_name": "secretflow",
+            "min_cpu": "100m",
+            "max_cpu": "100m",
+            "min_memory": "100Mi",
+            "max_memory": "100Mi"
+          }
+        ]
+      }
+    ],
+    "status": {
+      "state": "Progressing",
+      "reason": "",
+      "message": "",
+      "total_parties": 2,
+      "available_parties": 0,
+      "create_time": "2024-01-17T10:18:02Z",
+      "party_statuses": [
+        {
+          "domain_id": "alice",
+          "role": "",
+          "state": "Progressing",
+          "replicas": 1,
+          "available_replicas": 0,
+          "unavailable_replicas": 1,
+          "updatedReplicas": 1,
+          "create_time": "2024-01-17T10:18:02Z",
+          "endpoints": [
+            {
+              "port_name": "brpc-builtin",
+              "scope": "Domain",
+              "endpoint": "serving-01-brpc-builtin.alice.svc:53511"
+            },
+            {
+              "port_name": "service",
+              "scope": "Cluster",
+              "endpoint": "serving-01-service.alice.svc"
+            },
+            {
+              "port_name": "internal",
+              "scope": "Domain",
+              "endpoint": "serving-01-internal.alice.svc:53510"
+            }
+          ]
+        },
+        {
+          "domain_id": "bob",
+          "role": "",
+          "state": "Progressing",
+          "replicas": 1,
+          "available_replicas": 0,
+          "unavailable_replicas": 1,
+          "updatedReplicas": 1,
+          "create_time": "2024-01-17T10:18:02Z",
+          "endpoints": [
+            {
+              "port_name": "service",
+              "scope": "Cluster",
+              "endpoint": "serving-01-service.bob.svc"
+            },
+            {
+              "port_name": "internal",
+              "scope": "Domain",
+              "endpoint": "serving-01-internal.bob.svc:53510"
+            },
+            {
+              "port_name": "brpc-builtin",
+              "scope": "Domain",
+              "endpoint": "serving-01-brpc-builtin.bob.svc:53511"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
 
 {#batch-query-serving-status}
 
@@ -137,6 +451,108 @@
 | data          | BatchQueryServingStatusResponseData |    |             |
 | data.servings | [ServingStatus](#serving-status)[]  | 必填 | Serving状态列表 |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "serving_ids": [
+    "serving-01"
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "servings": [
+      {
+        "serving_id": "serving-01",
+        "status": {
+          "state": "Progressing",
+          "reason": "",
+          "message": "",
+          "total_parties": 2,
+          "available_parties": 0,
+          "create_time": "2024-01-17T10:18:02Z",
+          "party_statuses": [
+            {
+              "domain_id": "alice",
+              "role": "",
+              "state": "Progressing",
+              "replicas": 1,
+              "available_replicas": 0,
+              "unavailable_replicas": 1,
+              "updatedReplicas": 1,
+              "create_time": "2024-01-17T10:18:02Z",
+              "endpoints": [
+                {
+                  "port_name": "brpc-builtin",
+                  "scope": "Domain",
+                  "endpoint": "serving-01-brpc-builtin.alice.svc:53511"
+                },
+                {
+                  "port_name": "service",
+                  "scope": "Cluster",
+                  "endpoint": "serving-01-service.alice.svc"
+                },
+                {
+                  "port_name": "internal",
+                  "scope": "Domain",
+                  "endpoint": "serving-01-internal.alice.svc:53510"
+                }
+              ]
+            },
+            {
+              "domain_id": "bob",
+              "role": "",
+              "state": "Progressing",
+              "replicas": 1,
+              "available_replicas": 0,
+              "unavailable_replicas": 1,
+              "updatedReplicas": 1,
+              "create_time": "2024-01-17T10:18:02Z",
+              "endpoints": [
+                {
+                  "port_name": "service",
+                  "scope": "Cluster",
+                  "endpoint": "serving-01-service.bob.svc"
+                },
+                {
+                  "port_name": "internal",
+                  "scope": "Domain",
+                  "endpoint": "serving-01-internal.bob.svc:53510"
+                },
+                {
+                  "port_name": "brpc-builtin",
+                  "scope": "Domain",
+                  "endpoint": "serving-01-brpc-builtin.bob.svc:53511"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
 
 ## 公共
 

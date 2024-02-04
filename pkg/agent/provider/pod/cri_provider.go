@@ -47,6 +47,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/framework"
 	"github.com/secretflow/kuscia/pkg/agent/framework/net"
 	"github.com/secretflow/kuscia/pkg/agent/images"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/kuberuntime"
 	"github.com/secretflow/kuscia/pkg/agent/local/runtime/process"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
@@ -110,6 +111,8 @@ type CRIProviderDependence struct {
 
 // CRIProvider implements the kubelet interface and stores pods in memory.
 type CRIProvider struct {
+	internalapi.ImageManagerService
+
 	// static info
 	nodeIPs        []net.IP
 	ns             string
@@ -149,14 +152,12 @@ type CRIProvider struct {
 
 	podSyncHandler framework.SyncHandler
 
-	remoteImageService internalapi.ImageManagerService
-
 	chStopping chan struct{}
 	chStopped  chan struct{}
 }
 
 // NewCRIProvider creates a new CRIProvider, which implements the PodNotifier interface
-func NewCRIProvider(dep *CRIProviderDependence) (framework.PodProvider, error) {
+func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 	realOS := pkgcontainer.RealOS{}
 
 	cp := &CRIProvider{
@@ -216,7 +217,7 @@ func NewCRIProvider(dep *CRIProviderDependence) (framework.PodProvider, error) {
 		return nil, fmt.Errorf("unknown runtime: %s", dep.Runtime)
 	}
 
-	cp.remoteImageService = remoteImageService
+	cp.ImageManagerService = remoteImageService
 
 	// setup containerLogManager for CRI container runtime
 	containerLogManager, err := logs.NewContainerLogManager(
@@ -520,7 +521,7 @@ func (cp *CRIProvider) GenerateRunContainerOptions(pod *v1.Pod, container *v1.Co
 		Opts:         opts,
 		PodIPs:       podIPs,
 		ContainerDir: cp.getPodContainerDir(pod.UID, container.Name),
-		ImageService: cp.remoteImageService,
+		ImageService: cp.ImageManagerService,
 	}); err != nil {
 		return nil, nil, err
 	}
@@ -751,7 +752,7 @@ func (cp *CRIProvider) getRegistryAuth() *credentialprovider.AuthConfig {
 // This operation writes all events that are dispatched in order to provide
 // the most accurate information possible about an error situation to aid debugging.
 // Callers should not write an event if this operation returns an error.
-func (cp *CRIProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *framework.ReasonCache) error {
+func (cp *CRIProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *kri.ReasonCache) error {
 	nlog.Infof("CRIProvider start syncing pod %q", format.Pod(pod))
 
 	// Make data directories for the pod

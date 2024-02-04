@@ -19,7 +19,12 @@ func (c *controller) checkInteropConfig(ctx context.Context, cdr *kusciaapisv1al
 		return err
 	}
 
-	if !needCreateInteropConfig(sourceRole, destRole) {
+	needCreate, err := c.needCreateInteropConfig(cdr, sourceRole, destRole)
+	if err != nil {
+		return err
+	}
+
+	if !needCreate {
 		if hasCreatedInteropConfig {
 			return c.deleteInteropConfig(ctx, cdr)
 		}
@@ -81,12 +86,24 @@ func (c *controller) hasCreatedInteropConfig(configName string) (bool, error) {
 	return false, err
 }
 
-func getInteropConfigName(source, dest string) string {
-	return fmt.Sprintf("%s-2-%s", source, dest)
+func (c *controller) needCreateInteropConfig(cdr *kusciaapisv1alpha1.ClusterDomainRoute,
+	sourceRole, destRole kusciaapisv1alpha1.DomainRole) (bool, error) {
+	if sourceRole == kusciaapisv1alpha1.Partner || destRole != kusciaapisv1alpha1.Partner {
+		return false, nil
+	}
+	domain, err := c.kusciaClient.KusciaV1alpha1().Domains().Get(c.ctx, cdr.Spec.Destination, metav1.GetOptions{})
+	if err != nil {
+		nlog.Warnf("get Domain %s fail: %v", cdr.Spec.Destination, err)
+		return false, err
+	}
+	if domain.Spec.Role == kusciaapisv1alpha1.Partner && domain.Spec.MasterDomain == domain.Name {
+		return true, nil
+	}
+	return false, nil
 }
 
-func needCreateInteropConfig(sourceRole, destRole kusciaapisv1alpha1.DomainRole) bool {
-	return sourceRole != kusciaapisv1alpha1.Partner && destRole == kusciaapisv1alpha1.Partner
+func getInteropConfigName(source, dest string) string {
+	return fmt.Sprintf("%s-2-%s", source, dest)
 }
 
 func isTimeToCreateInteropConfig(cdr *kusciaapisv1alpha1.ClusterDomainRoute) bool {

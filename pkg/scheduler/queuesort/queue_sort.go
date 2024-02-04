@@ -93,8 +93,8 @@ func (ks *KusciaSort) Less(podInfo1, podInfo2 *framework.QueuedPodInfo) bool {
 
 // GetCreationTimestamp returns the creation time of a TaskResource or a pod.
 func (ks *KusciaSort) getCreationTimestamp(pod *corev1.Pod, ts time.Time) time.Time {
-	if pod.Labels != nil {
-		trName := pod.Labels[kusciaapisv1alpha1.LabelTaskResource]
+	if pod.Annotations != nil {
+		trName := pod.Annotations[kusciaapisv1alpha1.TaskResourceKey]
 		if trName == "" {
 			return ts
 		}

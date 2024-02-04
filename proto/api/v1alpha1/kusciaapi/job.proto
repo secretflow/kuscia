@@ -33,6 +33,8 @@ service JobService {
   rpc DeleteJob(DeleteJobRequest) returns (DeleteJobResponse);
 
   rpc WatchJob(WatchJobRequest) returns (stream WatchJobEventResponse);
+
+  rpc ApproveJob(ApproveJobRequest) returns (ApproveJobResponse);
 }
 
 message CreateJobRequest {
@@ -41,6 +43,7 @@ message CreateJobRequest {
   string initiator = 3; // 发起方
   int32 max_parallelism = 4; // 并发度
   repeated Task tasks = 5; // 任务参数
+  map<string, string> custom_fields = 6; // 自定义参数
 }
 
 message CreateJobResponse {
@@ -111,6 +114,22 @@ message QueryJobResponseData {
   int32 max_parallelism = 3;
   repeated TaskConfig tasks = 4;
   JobStatusDetail status = 5;
+  map<string, string> custom_fields = 6;
+}
+
+message ApproveJobRequest {
+  string job_id = 1;
+  ApproveResult result = 2;
+  string reason = 3;
+}
+
+message ApproveJobResponse {
+  Status status = 1;
+  ApproveJobResponseData data = 2;
+}
+
+message ApproveJobResponseData {
+  string job_id = 1;
 }
 
 message JobStatusDetail {
@@ -120,6 +139,8 @@ message JobStatusDetail {
   string start_time = 4;
   string end_time = 5;
   repeated TaskStatus tasks = 6;
+  repeated PartyStageStatus stage_status_list = 7;
+  repeated PartyApproveStatus approve_status_list = 8;
 }
 
 message TaskConfig {
@@ -130,6 +151,16 @@ message TaskConfig {
   repeated string dependencies = 5; // dependencies tasks
   string task_input_config = 6; // task input config
   int32 priority = 7;
+}
+
+message PartyStageStatus {
+  string domain_id = 1;
+  string state = 2;
+}
+
+message PartyApproveStatus {
+  string domain_id = 1;
+  string state = 2;
 }
 
 message TaskStatus {
@@ -147,6 +178,7 @@ message PartyStatus {
   string state = 2;
   string err_msg = 3;
   repeated JobPartyEndpoint endpoints = 4;
+  // repeated ApprovalDetail  approval_details= 5;
 }
 
 enum State {
@@ -154,7 +186,16 @@ enum State {
   Pending = 1;
   Running = 2;
   Succeeded = 3;
-  Failed = 4;
+  Failed = 4;           // the job run failed
+  AwaitingApproval = 5; // await the partner to approval the job
+  ApprovalReject = 6;   // partner reject the job
+  Cancelled = 7;        // the job cannot start again when it was cancelled
+}
+
+enum ApproveResult {
+  APPROVE_RESULT_UNKNOWN = 0;
+  APPROVE_RESULT_ACCEPT = 1;
+  APPROVE_RESULT_REJECT = 2;
 }
 
 message BatchQueryJobStatusRequest {
@@ -212,3 +253,10 @@ message JobPartyEndpoint {
   // service access address.
   string endpoint = 3;
 }
+
+// message ApprovalDetail {
+//     string domain_id = 1;
+//     string role = 2;
+//     string approval_result = 3; // AwaitingApproval,ApprovalAccept,ApprovalReject
+//     string reason = 4; // describe the reason of the approval result
+// }

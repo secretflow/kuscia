@@ -301,7 +301,7 @@ func (c *Controller) updatePartyTaskStatus(task *kusciaapisv1alpha1.KusciaTask) 
 	taskName := task.Name
 	for i, task := 0, task; ; i++ {
 		nlog.Infof("Start updating kuscia task %q party status %+v", taskName, task.Status.PartyTaskStatus)
-		if ret, err := c.kusciaClient.KusciaV1alpha1().KusciaTasks().UpdateStatus(context.Background(), task, metav1.UpdateOptions{}); err == nil {
+		if ret, err := c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).UpdateStatus(context.Background(), task, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia task %q party status %+v", taskName, ret.Status.PartyTaskStatus)
 			return nil
 		}
@@ -311,7 +311,7 @@ func (c *Controller) updatePartyTaskStatus(task *kusciaapisv1alpha1.KusciaTask) 
 			break
 		}
 
-		task, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), taskName, metav1.GetOptions{})
+		task, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).Get(context.Background(), taskName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get the newest kuscia task %q, %v", taskName, err)
 		}

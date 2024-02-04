@@ -134,8 +134,9 @@ func GenerateKusciaJobFrom(jobInfo *InterConnJobInfo) (*kusciaapisv1alpha1.Kusci
 	kusciaJob.Name = jobInfo.JodID
 	kusciaJob.Labels = map[string]string{
 		common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
+		common.LabelJobStage:              string(kusciaapisv1alpha1.JobCreateStage),
 	}
-	kusciaJob.Spec.Stage = kusciaapisv1alpha1.JobCreateStage
+
 	kusciaJob.Spec.FlowID = jobInfo.FlowID
 	taskMaxParallelism := 2
 	kusciaJob.Spec.MaxParallelism = &taskMaxParallelism

@@ -57,7 +57,8 @@ func (h *PendingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool
 	if err := validate(trg); err != nil {
 		nlog.Error(err)
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
-		utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionFalse, fmt.Sprintf("Validate task resouce group failed, %v", err.Error()))
+		utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionFalse,
+			fmt.Sprintf("Validate task resouce group failed, %v", err.Error()))
 		return true, nil
 	}
 
@@ -80,15 +81,16 @@ func (h *PendingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool
 
 // validate is used to validate task resource group.
 func validate(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
-	if trg.Spec.MinReservedMembers > len(trg.Spec.Parties) {
-		return fmt.Errorf("task resource group %v minReservedMembers can't be greater than parties", trg.Name)
+	totalParty := len(trg.Spec.Parties) + len(trg.Spec.OutOfControlledParties)
+	if trg.Spec.MinReservedMembers > totalParty {
+		return fmt.Errorf("task resource group %v minReservedMembers can't be greater than party counts", trg.Name)
 	}
 
 	if trg.Spec.Initiator == "" {
-		return fmt.Errorf("task resource group initiator %v should be one of parties", trg.Spec.Initiator)
+		return fmt.Errorf("task resource group initiator %v can't be empty", trg.Spec.Initiator)
 	}
 
-	if len(trg.Spec.Parties) == 0 {
+	if totalParty == 0 {
 		return fmt.Errorf("parties in task resource group %v can't be empty", trg.Name)
 	}
 
@@ -99,6 +101,14 @@ func validate(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
 			break
 		}
 	}
+
+	for _, party := range trg.Spec.OutOfControlledParties {
+		if party.DomainID == trg.Spec.Initiator {
+			foundInitiator = true
+			break
+		}
+	}
+
 	if !foundInitiator {
 		return fmt.Errorf("task resource group initiator %v should be one of parties", trg.Spec.Initiator)
 	}
@@ -112,6 +122,13 @@ func setTaskResourceName(kusciaClient kusciaclientset.Interface, trg *kusciaapis
 		if party.TaskResourceName == "" {
 			needUpdate = true
 			trg.Spec.Parties[idx].TaskResourceName = generateTaskResourceName(trg.Name)
+		}
+	}
+
+	for idx, party := range trg.Spec.OutOfControlledParties {
+		if party.TaskResourceName == "" {
+			needUpdate = true
+			trg.Spec.OutOfControlledParties[idx].TaskResourceName = generateTaskResourceName(trg.Name)
 		}
 	}
 
@@ -137,7 +154,8 @@ func setTaskResourceName(kusciaClient kusciaclientset.Interface, trg *kusciaapis
 			return false, err
 		}
 
-		if reflect.DeepEqual(copyTrg.Spec.Parties, trg.Spec.Parties) {
+		if reflect.DeepEqual(copyTrg.Spec.Parties, trg.Spec.Parties) &&
+			reflect.DeepEqual(copyTrg.Spec.OutOfControlledParties, trg.Spec.OutOfControlledParties) {
 			nlog.Infof("Task resource group %v spec parties info is already updated, skip to update it", copyTrg.Name)
 			return true, nil
 		}

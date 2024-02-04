@@ -23,8 +23,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/secretflow/kuscia/pkg/common"
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
@@ -45,7 +45,6 @@ type PartyKitInfo struct {
 	kd                    *kusciav1alpha1.KusciaDeployment
 	domainID              string
 	role                  string
-	interConnProtocol     string
 	deployTemplate        *kusciav1alpha1.KusciaDeploymentPartyTemplate
 	configTemplatesCMName string
 	configTemplates       map[string]string
@@ -62,6 +61,7 @@ type PortService map[string]string
 type DeploymentKitInfo struct {
 	deploymentName string
 	image          string
+	imageID        string
 	ports          NamedPorts
 	portService    PortService
 	clusterDef     *proto.ClusterDefine
@@ -70,8 +70,12 @@ type DeploymentKitInfo struct {
 
 func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (map[string]*PartyKitInfo, error) {
 	partyKitInfos := map[string]*PartyKitInfo{}
-	for i, party := range kd.Spec.Parties {
-		kitInfo, err := c.buildPartyKitInfo(kd, &kd.Spec.Parties[i])
+	selfParties, err := c.selfParties(kd)
+	if err != nil {
+		return nil, err
+	}
+	for _, party := range selfParties {
+		kitInfo, err := c.buildPartyKitInfo(kd, &party)
 		if err != nil {
 			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
 			kd.Status.Reason = string(buildPartyKitInfoFailed)
@@ -93,14 +97,9 @@ func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (ma
 }
 
 func (c *Controller) buildPartyKitInfo(kd *kusciav1alpha1.KusciaDeployment, party *kusciav1alpha1.KusciaDeploymentParty) (*PartyKitInfo, error) {
-	ns, err := c.namespaceLister.Get(party.DomainID)
+	_, err := c.namespaceLister.Get(party.DomainID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespace %v, %v", party.DomainID, err)
-	}
-
-	interConnProtocol := ""
-	if ns.Labels != nil && ns.Labels[common.LabelDomainRole] == string(kusciav1alpha1.Partner) {
-		interConnProtocol = string(kusciav1alpha1.InterConnKuscia)
 	}
 
 	appImage, err := c.appImageLister.Get(party.AppImageRef)
@@ -127,6 +126,7 @@ func (c *Controller) buildPartyKitInfo(kd *kusciav1alpha1.KusciaDeployment, part
 	dkInfo := &DeploymentKitInfo{
 		deploymentName: deployName,
 		image:          fmt.Sprintf("%s:%s", appImage.Spec.Image.Name, appImage.Spec.Image.Tag),
+		imageID:        appImage.Spec.Image.ID,
 		ports:          ports,
 		portService:    portService,
 	}
@@ -135,7 +135,6 @@ func (c *Controller) buildPartyKitInfo(kd *kusciav1alpha1.KusciaDeployment, part
 		kd:                    kd,
 		domainID:              party.DomainID,
 		role:                  party.Role,
-		interConnProtocol:     interConnProtocol,
 		deployTemplate:        deployTemplate,
 		configTemplatesCMName: generateConfigMapName(deployName),
 		configTemplates:       appImage.Spec.ConfigTemplates,
@@ -146,6 +145,8 @@ func (c *Controller) buildPartyKitInfo(kd *kusciav1alpha1.KusciaDeployment, part
 	if baseDeployTemplate.NetworkPolicy != nil {
 		kit.portAccessDomains = generatePortAccessDomains(kd.Spec.Parties, baseDeployTemplate.NetworkPolicy)
 	}
+
+	nlog.Infof("BuildPartyKitInfo for %s: %v ", party.DomainID, kit)
 
 	return kit, nil
 }
@@ -306,8 +307,7 @@ func generatePortServices(deploymentName string, servicedPorts []string) PortSer
 	portService := PortService{}
 
 	for _, portName := range servicedPorts {
-		serviceName := fmt.Sprintf("%s-%s", deploymentName, portName)
-		portService[portName] = serviceName
+		portService[portName] = utilsres.GenerateServiceName(deploymentName, portName)
 	}
 
 	return portService
@@ -380,7 +380,7 @@ func (c *Controller) updateKusciaDeploymentStatus(ctx context.Context, kd *kusci
 		kd.Status.TotalParties = len(kd.Spec.Parties)
 	}
 
-	if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments().UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
+	if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
 		return fmt.Errorf("error updating kuscia deployment %v status, %v", kd.Name, err)
 	}
 

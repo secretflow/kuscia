@@ -88,7 +88,7 @@ spec:
       name: marital_single
       type: float64
   dataSource: default-dp-data-source
-  name: alice.csv
+  name: alice-dp.csv
   type: table
   relativeURI: alice.csv
   fileFormat: csv

@@ -18,21 +18,9 @@ import (
 	"fmt"
 	"sync"
 
-	"k8s.io/client-go/kubernetes"
-	listers "k8s.io/client-go/listers/core/v1"
-
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-)
-
-const (
-	hostPodsQueueName            = "host-%v-member-%v-pods-queue"
-	hostServicesQueueName        = "host-%v-member-%v-services-queue"
-	hostConfigMapsQueueName      = "host-%v-member-%v-configmaps-queue"
-	hostTaskResourcesQueueName   = "host-%v-member-%v-taskresources-queue"
-	hostDomainDataQueueName      = "host-%v-member-%v-domaindata-queue"
-	hostDomainDataGrantQueueName = "host-%v-member-%v-domaindatagrant-queue"
 )
 
 // ResourcesManager is an interface to manage host resources.
@@ -46,12 +34,12 @@ type ResourcesManager interface {
 
 // Options defines some options for host resources manager.
 type Options struct {
-	MemberKubeClient            kubernetes.Interface
 	MemberKusciaClient          kusciaclientset.Interface
-	MemberPodLister             listers.PodLister
-	MemberServiceLister         listers.ServiceLister
-	MemberConfigMapLister       listers.ConfigMapLister
-	MemberTrLister              kuscialistersv1alpha1.TaskResourceLister
+	MemberDomainLister          kuscialistersv1alpha1.DomainLister
+	MemberDeploymentLister      kuscialistersv1alpha1.KusciaDeploymentLister
+	MemberJobLister             kuscialistersv1alpha1.KusciaJobLister
+	MemberTaskLister            kuscialistersv1alpha1.KusciaTaskLister
+	MemberTaskResourceLister    kuscialistersv1alpha1.TaskResourceLister
 	MemberDomainDataLister      kuscialistersv1alpha1.DomainDataLister
 	MemberDomainDataGrantLister kuscialistersv1alpha1.DomainDataGrantLister
 }
@@ -105,12 +93,12 @@ func (m *hostResourcesManager) Register(host, member string) (err error) {
 	opts := &hostResourcesControllerOptions{
 		host:                        host,
 		member:                      member,
-		memberKubeClient:            m.opts.MemberKubeClient,
 		memberKusciaClient:          m.opts.MemberKusciaClient,
-		memberPodLister:             m.opts.MemberPodLister,
-		memberServiceLister:         m.opts.MemberServiceLister,
-		memberConfigMapLister:       m.opts.MemberConfigMapLister,
-		memberTrLister:              m.opts.MemberTrLister,
+		memberDomainLister:          m.opts.MemberDomainLister,
+		memberDeploymentLister:      m.opts.MemberDeploymentLister,
+		memberJobLister:             m.opts.MemberJobLister,
+		memberTaskLister:            m.opts.MemberTaskLister,
+		memberTaskResourceLister:    m.opts.MemberTaskResourceLister,
 		memberDomainDataLister:      m.opts.MemberDomainDataLister,
 		memberDomainDataGrantLister: m.opts.MemberDomainDataGrantLister,
 	}

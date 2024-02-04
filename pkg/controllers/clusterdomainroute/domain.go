@@ -30,7 +30,7 @@ import (
 )
 
 func (c *controller) syncDomainPubKey(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute) (bool, error) {
-	if cdr.Spec.TokenConfig != nil && cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
+	if cdr.Spec.TokenConfig != nil && (cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || cdr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		cdrCopy := cdr.DeepCopy()
 		needUpdate := false
 		srcRsaPub := c.getPublicKeyFromDomain(cdr.Spec.Source)

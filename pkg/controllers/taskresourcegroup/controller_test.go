@@ -261,7 +261,9 @@ func TestResourceFilter(t *testing.T) {
 	cc := c.(*Controller)
 
 	pod1 := st.MakePod().Name("pod1").Namespace("ns1").Obj()
-	pod2 := st.MakePod().Name("pod2").Namespace("ns1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()
+	pod2 := st.MakePod().Name("pod2").Namespace("ns1").
+		Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").
+		Label(kusciaapisv1alpha1.TaskResourceUID, "2").Obj()
 
 	tests := []struct {
 		name string
@@ -315,8 +317,8 @@ func TestHandleAddedTaskResource(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tr",
 			Namespace: "ns1",
-			Labels: map[string]string{
-				common.LabelTaskResourceGroup: "trg",
+			Annotations: map[string]string{
+				common.TaskResourceGroupAnnotationKey: "trg",
 			},
 		},
 		Spec: kusciaapisv1alpha1.TaskResourceSpec{
@@ -370,8 +372,8 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tr1",
 			Namespace: "ns1",
-			Labels: map[string]string{
-				common.LabelTaskResourceGroup: "trg",
+			Annotations: map[string]string{
+				common.TaskResourceGroupAnnotationKey: "trg",
 			},
 			ResourceVersion: "1",
 		},
@@ -389,8 +391,8 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tr2",
 			Namespace: "ns1",
-			Labels: map[string]string{
-				common.LabelTaskResourceGroup: "trg",
+			Annotations: map[string]string{
+				common.TaskResourceGroupAnnotationKey: "trg",
 			},
 			ResourceVersion: "2",
 		},
@@ -441,8 +443,8 @@ func TestHandleAddedPod(t *testing.T) {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
-	tr1.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg1",
+	tr1.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg1",
 	}
 	trInformer.Informer().GetStore().Add(tr1)
 	c := NewController(context.Background(), controllers.ControllerConfig{
@@ -452,7 +454,7 @@ func TestHandleAddedPod(t *testing.T) {
 	cc := c.(*Controller)
 	cc.trLister = trInformer.Lister()
 
-	pod1 := st.MakePod().Name("pod1").Namespace("ns1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj()
+	pod1 := st.MakePod().Name("pod1").Namespace("ns1").Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr1").Obj()
 	cc.handleAddedPod(pod1)
 	if cc.trgQueue.Len() != 1 {
 		t.Error("trg queue length should be 1")

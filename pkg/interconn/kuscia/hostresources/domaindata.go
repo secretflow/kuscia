@@ -19,105 +19,171 @@ import (
 	"context"
 	"fmt"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/cache"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	ikcommon "github.com/secretflow/kuscia/pkg/interconn/kuscia/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// runPodWorker is a long-running function that will continually call the
+// runDomainDataWorker is a long-running function that will continually call the
 // processNextWorkItem function in order to read and process a message on the work queue.
 func (c *hostResourcesController) runDomainDataWorker() {
-	ctx := context.Background()
-	queueName := generateQueueName(hostDomainDataQueueName, c.host, c.member)
-	for queue.HandleQueueItem(ctx, queueName, c.domainDataQueue, c.syncDomainDataHandler, maxRetries) {
+	for queue.HandleQueueItem(context.Background(), c.domainDataQueueName, c.domainDataQueue, c.syncDomainDataHandler, maxRetries) {
 	}
 }
 
-// handleAddedOrDeletedDomainData is used to handle added or deleted pod.
-func (c *hostResourcesController) handleAddedOrDeletedDomainData(obj interface{}) {
+// handleAddedDomainData is used to handle added domain data.
+func (c *hostResourcesController) handleAddedDomainData(obj interface{}) {
 	queue.EnqueueObjectWithKey(obj, c.domainDataQueue)
 }
 
-// handleUpdatedDomainData is used to handle updated pod.
+// handleUpdatedDomainData is used to handle updated domain data.
 func (c *hostResourcesController) handleUpdatedDomainData(oldObj, newObj interface{}) {
-	oldDdg, ok := oldObj.(*kusciaapisv1alpha1.DomainData)
+	oldDd, ok := oldObj.(*kusciaapisv1alpha1.DomainData)
 	if !ok {
 		nlog.Errorf("Object %#v is not a DomainData", oldObj)
 		return
 	}
 
-	newDdg, ok := newObj.(*kusciaapisv1alpha1.DomainData)
+	newDd, ok := newObj.(*kusciaapisv1alpha1.DomainData)
 	if !ok {
 		nlog.Errorf("Object %#v is not a DomainData", newObj)
 		return
 	}
 
-	if oldDdg.ResourceVersion == newDdg.ResourceVersion {
+	if oldDd.ResourceVersion == newDd.ResourceVersion {
 		return
 	}
-	queue.EnqueueObjectWithKey(newDdg, c.domainDataQueue)
+	queue.EnqueueObjectWithKey(newDd, c.domainDataQueue)
 }
 
-// Todo: Abstract into common interface
+// handleDeletedDomainData is used to handle deleted domain data.
+func (c *hostResourcesController) handleDeletedDomainData(obj interface{}) {
+	domainData, ok := obj.(*kusciaapisv1alpha1.DomainData)
+	if !ok {
+		return
+	}
+
+	partyDomainIDs := ikcommon.GetInterConnKusciaPartyDomainIDs(domainData)
+	if len(partyDomainIDs) == 0 {
+		nlog.Warnf("Member domain id is empty from deleted domainData %v, skip processing it",
+			ikcommon.GetObjectNamespaceName(domainData))
+		return
+	}
+
+	for _, domainID := range partyDomainIDs {
+		c.domainDataQueue.Add(fmt.Sprintf("%v%v/%v",
+			ikcommon.DeleteEventKeyPrefix, domainID, domainData.Name))
+	}
+}
+
+// TODO: Abstract into common interface
 // syncDomainDataHandler is used to sync DomainData between host and member cluster.
 func (c *hostResourcesController) syncDomainDataHandler(ctx context.Context, key string) error {
-	namespace, name, err := getNamespaceAndNameFromKey(key, c.member)
+	key, deleteEvent := ikcommon.IsOriginalResourceDeleteEvent(key)
+
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
-		nlog.Error(err)
+		nlog.Errorf("Failed to split domainData key %v, %v, skip processing it", key, err)
 		return nil
 	}
 
-	hDdg, err := c.hostDomainDataLister.DomainDatas(namespace).Get(name)
+	if deleteEvent {
+		return c.deleteDomainData(ctx, namespace, name)
+	}
+
+	hDomainData, err := c.hostDomainDataLister.DomainDatas(namespace).Get(name)
 	if err != nil {
-		// DomainDataGrant is deleted under host cluster
+		// DomainData is deleted under host cluster
 		if k8serrors.IsNotFound(err) {
-			nlog.Infof("DomainData %v may be deleted under host %v cluster, so delete the DomainData under member cluster", key, c.host)
-			if err = c.memberKusciaClient.KusciaV1alpha1().DomainDatas(namespace).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
-				if k8serrors.IsNotFound(err) {
-					return nil
-				}
-				return err
-			}
+			nlog.Infof("Can't get host %v domainData %v, maybe it's deleted, skip processing it", c.host, key)
 			return nil
 		}
 		return err
 	}
 
-	hDomainDataCopy := hDdg.DeepCopy()
-	hrv := hDomainDataCopy.ResourceVersion
+	partyDomainIDs := ikcommon.GetInterConnKusciaPartyDomainIDs(hDomainData)
+	if partyDomainIDs == nil {
+		nlog.Warnf("Failed to get party domain ids from host %v domainData %v, skip processing it",
+			c.host, ikcommon.GetObjectNamespaceName(hDomainData))
+		return nil
+	}
 
-	hExtractedDomainDataSpec := utilsres.ExtractDomainDataSpec(hDomainDataCopy)
-	hExtractedDomainDataSpec.Labels[common.LabelResourceVersionUnderHostCluster] = hrv
+	hDomainDataCopy := hDomainData.DeepCopy()
+	for _, domainID := range partyDomainIDs {
+		mDomainData, err := c.memberDomainDataLister.DomainDatas(domainID).Get(name)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				err = c.createDomainData(ctx, hDomainDataCopy, domainID)
+			}
+			return err
+		}
 
-	mDomainDataGrant, err := c.memberDomainDataLister.DomainDatas(namespace).Get(name)
+		return c.updateDomainData(ctx, hDomainDataCopy, mDomainData.DeepCopy())
+	}
+	return nil
+}
+
+func (c *hostResourcesController) deleteDomainData(ctx context.Context, namespace, name string) error {
+	dd, err := c.memberDomainDataLister.DomainDatas(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			nlog.Infof("Failed to get DomainData %v under member cluster, create it...", key)
-			if _, err = c.memberKusciaClient.KusciaV1alpha1().DomainDatas(namespace).Create(ctx, hExtractedDomainDataSpec, metav1.CreateOptions{}); err != nil {
-				if k8serrors.IsAlreadyExists(err) {
-					return nil
-				}
-				return fmt.Errorf("create DomainData %v from host cluster failed, %v", key, err.Error())
-			}
 			return nil
 		}
 		return err
 	}
 
-	mDomainDataCopy := mDomainDataGrant.DeepCopy()
-	mrv := mDomainDataCopy.Labels[common.LabelResourceVersionUnderHostCluster]
+	if dd.Annotations == nil || dd.Annotations[common.InitiatorMasterDomainAnnotationKey] != c.host {
+		return nil
+	}
+
+	nlog.Infof("Host %v domainData %v is deleted, so clean up member domainData %v", c.host, name, fmt.Sprintf("%v/%v", namespace, name))
+	err = c.memberKusciaClient.KusciaV1alpha1().DomainDatas(namespace).Delete(ctx, name, metav1.DeleteOptions{})
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	return err
+}
+
+func (c *hostResourcesController) createDomainData(ctx context.Context, hostDomainData *kusciaapisv1alpha1.DomainData, domainID string) error {
+	initiator := ikcommon.GetObjectAnnotation(hostDomainData, common.InitiatorAnnotationKey)
+	initiatorMasterDomainID, err := utilsres.GetMasterDomain(c.memberDomainLister, initiator)
+	if err != nil {
+		nlog.Errorf("Failed to get initiator %v master domain id, %v, skip processing it", initiator, err)
+		return nil
+	}
+
+	domainData := utilsres.ExtractDomainDataSpec(hostDomainData)
+	domainData.Namespace = domainID
+	domainData.Annotations[common.InitiatorMasterDomainAnnotationKey] = initiatorMasterDomainID
+	domainData.Labels[common.LabelResourceVersionUnderHostCluster] = hostDomainData.ResourceVersion
+	_, err = c.memberKusciaClient.KusciaV1alpha1().DomainDatas(domainData.Namespace).Create(ctx, domainData, metav1.CreateOptions{})
+	return err
+}
+
+func (c *hostResourcesController) updateDomainData(ctx context.Context, hostDomainData, memberDomainData *kusciaapisv1alpha1.DomainData) error {
+	hrv := hostDomainData.ResourceVersion
+	mrv := memberDomainData.Labels[common.LabelResourceVersionUnderHostCluster]
 	if !utilsres.CompareResourceVersion(hrv, mrv) {
-		nlog.Infof("DomainData %v resource version %v under host cluster is not greater than the value %v under member cluster, skip this event...", key, hrv, mrv)
+		nlog.Infof("Host cluster %v domainData %v resource version %v is not greater than the version %v under member cluster %v, skip this event...",
+			c.host, ikcommon.GetObjectNamespaceName(hostDomainData), hrv, mrv, ikcommon.GetObjectNamespaceName(memberDomainData))
 		return nil
 	}
 
-	mExtractedDomainDataSpec := utilsres.ExtractDomainDataSpec(mDomainDataCopy)
-	if err = utilsres.PatchDomainData(ctx, c.memberKusciaClient, mExtractedDomainDataSpec, hExtractedDomainDataSpec); err != nil {
-		return fmt.Errorf("patch member DomainData %v failed, %v", key, err.Error())
+	hExtractedDomainDataSpec := utilsres.ExtractDomainDataSpec(hostDomainData)
+	hExtractedDomainDataSpec.Namespace = memberDomainData.Namespace
+	hExtractedDomainDataSpec.Annotations[common.InitiatorMasterDomainAnnotationKey] = memberDomainData.Annotations[common.InitiatorMasterDomainAnnotationKey]
+	hExtractedDomainDataSpec.Labels[common.LabelResourceVersionUnderHostCluster] = hrv
+	mExtractedDomainDataSpec := utilsres.ExtractDomainDataSpec(memberDomainData)
+	if err := utilsres.PatchDomainData(ctx, c.memberKusciaClient, mExtractedDomainDataSpec, hExtractedDomainDataSpec); err != nil {
+		return fmt.Errorf("patch member domainData %v fail, %v", ikcommon.GetObjectNamespaceName(mExtractedDomainDataSpec), err)
 	}
+
 	return nil
 }

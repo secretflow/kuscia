@@ -34,7 +34,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/commands"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
-	utilcommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
@@ -75,6 +74,8 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 	case common.NOTLS:
 		kusciaAPIConfig.TLS = nil
 		kusciaAPIConfig.Token = nil
+	case common.TLS:
+		kusciaAPIConfig.TLS.RootCA = nil
 	}
 
 	if kusciaAPIConfig.TLS != nil {
@@ -86,8 +87,13 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 	if kusciaAPIConfig.Token != nil {
 		tokenFile := kusciaAPIConfig.Token.TokenFile
 		if tokenFile != "" && !paths.CheckFileExist(tokenFile) {
-			if err := os.WriteFile(tokenFile, utilcommon.GenerateRandomBytes(32), 0644); err != nil {
+			tokenData, err := tlsutils.SignWithRSA(kusciaAPIConfig.DomainKey, kusciaAPIConfig.DomainID)
+			if err != nil {
 				nlog.Errorf("Generate token file error: %v", err.Error())
+				return nil, err
+			}
+			if err := os.WriteFile(tokenFile, []byte(tokenData[:32]), 0644); err != nil {
+				nlog.Errorf("Write token file error: %v", err.Error())
 				return nil, err
 			}
 		}
@@ -136,8 +142,9 @@ func (m kusciaAPIModule) readyZ() bool {
 	// init client tls config
 	tlsConfig := m.conf.TLS
 	if tlsConfig != nil {
+
 		if tlsConfig.Protocol == common.TLS {
-			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(nil, tlsConfig.ServerCert, tlsConfig.ServerKey)
+			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.ServerCert)
 		} else {
 			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
 		}

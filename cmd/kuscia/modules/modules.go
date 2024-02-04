@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sync/atomic"
 
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
@@ -172,6 +173,20 @@ func CreateDefaultDomain(ctx context.Context, conf *Dependencies) error {
 	return err
 }
 
+func CreateCrossNamespace(ctx context.Context, conf *Dependencies) error {
+	if _, err := conf.Clients.KubeClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: common.KusciaCrossDomain,
+		},
+	}, metav1.CreateOptions{}); err != nil {
+		if !k8serrors.IsAlreadyExists(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func InitLogs(logConfig *nlog.LogConfig) error {
 	zlog, err := zlogwriter.New(logConfig)
 	if err != nil {
@@ -192,8 +207,8 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	logConfig := &nlog.LogConfig{
 		LogLevel:      kusciaConf.LogLevel,
 		LogPath:       "var/logs/kuscia.log",
-		MaxFileSizeMB: 512,
-		MaxFiles:      10,
+		MaxFileSizeMB: 128,
+		MaxFiles:      3,
 		Compress:      true,
 	}
 	if err := InitLogs(logConfig); err != nil {

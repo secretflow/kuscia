@@ -116,6 +116,7 @@ func (s *httpServerBean) externalGinInit(e framework.ConfBeanRegistry) error {
 		}
 		s.externalGinBean.Use(interceptor.HTTPTokenAuthInterceptor(token))
 	}
+	s.externalGinBean.Use(interceptor.HTTPSetMasterRoleInterceptor())
 	s.registerGroupRoutes(e, s.externalGinBean)
 	return nil
 }
@@ -199,6 +200,11 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "watch",
 					Handlers:     []gin.HandlerFunc{job.NewWatchJobHandler(jobService).Handle},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "approve",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewApproveJobHandler(jobService))},
 				},
 			},
 		},

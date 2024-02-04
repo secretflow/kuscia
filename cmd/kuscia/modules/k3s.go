@@ -216,9 +216,6 @@ func (s *k3sModule) Run(ctx context.Context) error {
 
 		envs := os.Environ()
 		envs = append(envs, "CATTLE_NEW_SIGNED_CERT_EXPIRATION_DAYS=3650")
-		if os.Getenv("KINE_SKIP_INIT_MYSQL") == "" {
-			envs = append(envs, "KINE_SKIP_INIT_MYSQL=true")
-		}
 		cmd.Env = envs
 		return cmd
 	})

@@ -37,7 +37,7 @@ spec:
           - command:
               - sh
               - -c
-              - "python -m secretflow.kuscia.entry etc/kuscia/task-config.conf"
+              - "python -m secretflow.kuscia.entry /etc/kuscia/task-config.conf"
             configVolumeMounts:
               - mountPath: /etc/kuscia/task-config.conf
                 subPath: task-config.conf
@@ -329,7 +329,7 @@ spec:
               periodSeconds: 10
             imagePullPolicy: IfNotPresent
             workingDir: /work
-        restartPolicy: Never  
+        restartPolicy: Never
   image:
     id: adlipoidu8yuahd6
     name: app-image
@@ -350,7 +350,7 @@ AppImage `spec` 的子字段详细介绍如下：
   - `allocated_ports`：表示任务应用启动分配的端口信息配置。当前内容为占位符`{{.ALLOCATED_PORTS}}`。在 Kuscia Agent 启动应用时，会用真实的`allocated_ports`值替换占位符`{{.ALLOCATED_PORTS}}`。
 - `deployTemplates`：表示应用部署模版配置信息。Kuscia 控制器会根据该名称和角色，选择合适的 AppImage。若在 AppImage 没有查询到符合的部署模版，则将使用第一个部署模版。
   - `deployTemplates[].name`：表示应用部署模版名称。
-  - `deployTemplates[].role`：表示应用作为该角色时，使用的部署模版配置。默认为空，取值范围示例: `client`、`server`、`client,server`。
+  - `deployTemplates[].role`：表示应用作为该角色时，使用的部署模版配置。这里的角色可以由应用自定义，示例：Host/Guest；如果应用不需要区分角色部署，这里可以填空。
   - `deployTemplates[].replicas`：表示应用运行的副本数，默认为`1`。
   - `deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问名称为`global`的端口。
     - `deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问。

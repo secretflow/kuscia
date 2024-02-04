@@ -21,6 +21,7 @@ import (
 	internalapi "k8s.io/cri-api/pkg/apis"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -29,10 +30,13 @@ const (
 	PointMakeMounts = iota + 1
 	PointGenerateContainerOptions
 	PointK8sProviderSyncPod
+	PointPodAddition
 )
 
 const (
 	PluginType = "hook"
+
+	defaultTerminateReason = "Reject"
 )
 
 type Point int
@@ -79,6 +83,15 @@ func (c *GenerateContainerOptionContext) Point() Point {
 	return PointGenerateContainerOptions
 }
 
+type PodAdditionContext struct {
+	Pod         *v1.Pod
+	PodProvider kri.PodProvider
+}
+
+func (c *PodAdditionContext) Point() Point {
+	return PointPodAddition
+}
+
 type Result struct {
 	Terminated bool
 	Msg        string
@@ -104,6 +117,15 @@ func Register(name string, h Handler) {
 	orders = append(orders, name)
 }
 
+type TerminateError struct {
+	Message string
+	Reason  string
+}
+
+func (e *TerminateError) Error() string {
+	return e.Message
+}
+
 // Execute traverse all handlers according to priority to execute the hook function.
 func Execute(ctx Context) error {
 	for _, name := range orders {
@@ -119,7 +141,10 @@ func Execute(ctx Context) error {
 
 		nlog.Debugf("Execute plugin hook.%v succeed, result=%+v", name, result)
 		if result.Terminated {
-			return fmt.Errorf("terminate operation by plugin hook.%v, detail-> %v", name, result.Msg)
+			return &TerminateError{
+				Reason:  defaultTerminateReason,
+				Message: fmt.Sprintf("terminate operation by plugin hook.%v, detail-> %v", name, result.Msg),
+			}
 		}
 	}
 

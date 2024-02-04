@@ -154,9 +154,15 @@ func (m *ResourcesManager) runTaskWorker(ctx context.Context) {
 
 // syncJobHandler handles kuscia job.
 func (m *ResourcesManager) syncJobHandler(ctx context.Context, key string) error {
-	_, err := m.KjLister.Get(key)
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		nlog.Errorf("Failed to split job key %v, %v, skip processing it", key, err)
+		return nil
+	}
+
+	_, err = m.KjLister.KusciaJobs(namespace).Get(name)
 	if k8serrors.IsNotFound(err) {
-		m.DeleteJobTaskInfoBy(key)
+		m.DeleteJobTaskInfoBy(name)
 		return nil
 	}
 
@@ -164,15 +170,21 @@ func (m *ResourcesManager) syncJobHandler(ctx context.Context, key string) error
 		return err
 	}
 
-	m.InsertJob(key)
+	m.InsertJob(name)
 	return nil
 }
 
 // syncTaskHandler handles kuscia task.
 func (m *ResourcesManager) syncTaskHandler(ctx context.Context, key string) error {
-	kt, err := m.KtLister.Get(key)
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		nlog.Errorf("Failed to split task key %v, %v, skip processing it", key, err)
+		return nil
+	}
+
+	kt, err := m.KtLister.KusciaTasks(namespace).Get(name)
 	if k8serrors.IsNotFound(err) {
-		m.DeleteTaskJobInfoBy(key)
+		m.DeleteTaskJobInfoBy(name)
 		return nil
 	}
 
@@ -180,12 +192,12 @@ func (m *ResourcesManager) syncTaskHandler(ctx context.Context, key string) erro
 		return err
 	}
 
-	jobID := kt.Labels[common.LabelJobID]
+	jobID := kt.Annotations[common.JobIDAnnotationKey]
 	if jobID == "" {
 		return nil
 	}
 
-	if err = m.InsertTask(jobID, key); err != nil {
+	if err = m.InsertTask(jobID, name); err != nil {
 		nlog.Warn(err)
 		return err
 	}
@@ -197,9 +209,9 @@ func resourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
 		switch t := obj.(type) {
 		case *kusciaapisv1alpha1.KusciaJob:
-			return matchKusciaJobLabels(t)
+			return filterKusciaJob(t)
 		case *kusciaapisv1alpha1.KusciaTask:
-			return matchKusciaTaskLabels(t)
+			return filterKusciaTask(t)
 		default:
 			return false
 		}
@@ -213,8 +225,8 @@ func resourceFilter(obj interface{}) bool {
 	return filter(obj)
 }
 
-// matchKusciaJobLabels checks if match labels.
-func matchKusciaJobLabels(obj metav1.Object) bool {
+// filterKusciaJob filter kuscia job.
+func filterKusciaJob(obj metav1.Object) bool {
 	labels := obj.GetLabels()
 	if labels == nil {
 		return false
@@ -227,21 +239,17 @@ func matchKusciaJobLabels(obj metav1.Object) bool {
 	return true
 }
 
-// matchKusciaTaskLabels checks if match labels.
-func matchKusciaTaskLabels(obj metav1.Object) bool {
+// filterKusciaTask filter kuscia task.
+func filterKusciaTask(obj metav1.Object) bool {
 	labels := obj.GetLabels()
-	if labels == nil {
+	if labels == nil || labels[common.LabelInterConnProtocolType] != string(kusciaapisv1alpha1.InterConnBFIA) {
 		return false
 	}
 
-	if labels[common.LabelInterConnProtocolType] != string(kusciaapisv1alpha1.InterConnBFIA) {
+	annotations := obj.GetAnnotations()
+	if annotations == nil || annotations[common.JobIDAnnotationKey] == "" {
 		return false
 	}
-
-	if labels[common.LabelJobID] == "" {
-		return false
-	}
-
 	return true
 }
 

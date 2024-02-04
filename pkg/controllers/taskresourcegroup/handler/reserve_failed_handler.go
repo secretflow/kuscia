@@ -53,13 +53,18 @@ func NewReserveFailedHandler(deps *Dependencies) *ReserveFailedHandler {
 func (h *ReserveFailedHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (needUpdate bool, err error) {
 	var trs []*kusciaapisv1alpha1.TaskResource
 	now := metav1.Now().Rfc3339Copy()
+
+	var allParties []kusciaapisv1alpha1.TaskResourceGroupParty
+	allParties = append(allParties, trg.Spec.Parties...)
+	allParties = append(allParties, trg.Spec.OutOfControlledParties...)
+
 	partySet := make(map[string]struct{})
-	for _, party := range trg.Spec.Parties {
+	for _, party := range allParties {
 		if _, exist := partySet[party.DomainID]; exist {
 			continue
 		}
 
-		trs, err = h.trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trg.Name}))
+		trs, err = h.trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroupUID: string(trg.UID)}))
 		if err != nil {
 			cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed)
 			needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, corev1.ConditionFalse, fmt.Sprintf("List task resources failed, %v", err.Error()))

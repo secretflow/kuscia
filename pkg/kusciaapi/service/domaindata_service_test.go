@@ -38,6 +38,15 @@ func TestCreateDomainData(t *testing.T) {
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)
@@ -58,6 +67,9 @@ func TestCreateDomainData(t *testing.T) {
 		},
 		Columns: col,
 	})
+
+	t.Logf("CreateDomainData res : %+v\n", res)
+
 	res = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
@@ -78,6 +90,15 @@ func TestQueryDomainData(t *testing.T) {
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)
@@ -113,6 +134,15 @@ func TestUpdateDomainData(t *testing.T) {
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)
@@ -153,6 +183,15 @@ func TestDeleteDomainData(t *testing.T) {
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)
@@ -186,6 +225,15 @@ func TestBatchQueryDomainData(t *testing.T) {
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)
@@ -241,6 +289,15 @@ func TestListDomainData(t *testing.T) {
 		KusciaClient: kusciafake.NewSimpleClientset(),
 	}
 	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)

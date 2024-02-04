@@ -38,6 +38,6 @@ template=$(sed "s~{{.DOMAIN_ID}}~${DOMAIN_ID}~g" < "scripts/templates/dataproxy.
 echo "$template" | kubectl apply -f -
 
 echo -e "${GREEN}KusciaDeployment dataproxy created successfully. You can use the following command to display deployment status:
-kubectl get kd${NC}"
+kubectl get kd -n cross-domain${NC}"
 
 popd || exit

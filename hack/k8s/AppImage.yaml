@@ -1,0 +1,59 @@
+apiVersion: kuscia.secretflow/v1alpha1
+kind: AppImage
+metadata:
+  name: secretflow-image
+spec:
+  configTemplates:
+    task-config.conf: |
+      {
+        "task_id": "{{.TASK_ID}}",
+        "task_input_config": "{{.TASK_INPUT_CONFIG}}",
+        "task_cluster_def": "{{.TASK_CLUSTER_DEFINE}}",
+        "allocated_ports": "{{.ALLOCATED_PORTS}}"
+      }
+  deployTemplates:
+  - name: secretflow
+    replicas: 1
+    spec:
+      containers:
+      - args:
+        - -c
+        - python -m secretflow.kuscia.entry ./kuscia/task-config.conf
+        command:
+        - sh
+        configVolumeMounts:
+        - mountPath: /root/kuscia/task-config.conf
+          subPath: task-config.conf
+        name: secretflow
+        ports:
+        - name: spu
+          port: 20000
+          protocol: GRPC
+          scope: Cluster
+        - name: fed
+          port: 20001
+          protocol: GRPC
+          scope: Cluster
+        - name: global
+          port: 20002
+          protocol: GRPC
+          scope: Domain
+        - name: node-manager
+          port: 20003
+          protocol: GRPC
+          scope: Local
+        - name: object-manager
+          port: 20004
+          protocol: GRPC
+          scope: Local
+        - name: client-server
+          port: 20005
+          protocol: GRPC
+          scope: Local
+        workingDir: /root
+      restartPolicy: Never
+  image:
+    id: abc
+    name: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8
+    sign: abc
+    tag: 1.4.0.dev20240105

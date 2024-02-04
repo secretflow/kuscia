@@ -39,7 +39,7 @@ capacity:
   pods: #500
   storage: #100Gi
 
-# agent image configs
+# Agent image configs
 image:
   pullPolicy: ""
   defaultRegistry: ""
@@ -50,11 +50,16 @@ image:
       password: ""
 
 #############################################################################
-############                   Master Configs                    ############
+############          Autonomy、Master Configs                   ############
 #############################################################################
 # Database dsn connection string
 # Example: mysql://username:password@tcp(hostname:3306)/database-name
 datastoreEndpoint: ""
+
+# Approve configs for workloads
+# The approval switch is disabled by default. When enabled, self party acts as a participant, approval for the Job is required through KusciaAPI.
+# It is recommended to enable this feature in the production environment.
+enableWorkloadApprove: false
 
 #############################################################################
 ############                 SecretBackend Configs               ############

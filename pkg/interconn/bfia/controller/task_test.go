@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -119,7 +120,8 @@ func makeTestAppImage(t *testing.T) *kusciaapisv1alpha1.AppImage {
 func makeTestJob(t *testing.T) *kusciaapisv1alpha1.KusciaJob {
 	job := &kusciaapisv1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "job001",
+			Name:      "job001",
+			Namespace: pkgcommon.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
 			Tasks: []kusciaapisv1alpha1.KusciaTaskTemplate{
@@ -255,7 +257,8 @@ func makeTestTaskInputConfig2(t *testing.T) string {
 func makeTestTask1(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv1alpha1.KusciaTask {
 	task := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "task001",
+			Name:      "task001",
+			Namespace: pkgcommon.KusciaCrossDomain,
 			Labels: map[string]string{
 				pkgcommon.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
 				pkgcommon.LabelTaskUnschedulable:     pkgcommon.True,
@@ -298,7 +301,8 @@ func makeTestTask1(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv
 func makeTestTask2(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv1alpha1.KusciaTask {
 	task := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "task002",
+			Name:      "task002",
+			Namespace: pkgcommon.KusciaCrossDomain,
 			Labels: map[string]string{
 				pkgcommon.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
 				pkgcommon.LabelTaskUnschedulable:     pkgcommon.True,
@@ -362,14 +366,14 @@ func TestController_syncTaskHandler(t *testing.T) {
 		t.Fatal("failed to wait for caches to sync")
 	}
 
-	assert.NoError(t, c.syncTaskHandler(context.Background(), task1.Name))
-	assert.NoError(t, c.syncTaskHandler(context.Background(), task2.Name))
+	assert.NoError(t, c.syncTaskHandler(context.Background(), fmt.Sprintf("cross-domain/%s", task1.Name)))
+	assert.NoError(t, c.syncTaskHandler(context.Background(), fmt.Sprintf("cross-domain/%s", task2.Name)))
 
 	var err error
-	task1, err = kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), task1.Name, metav1.GetOptions{})
+	task1, err = kusciaClient.KusciaV1alpha1().KusciaTasks(task1.Namespace).Get(context.Background(), task1.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
-	task2, err = kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), task2.Name, metav1.GetOptions{})
+	task2, err = kusciaClient.KusciaV1alpha1().KusciaTasks(task2.Namespace).Get(context.Background(), task2.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	envs := getTestPartyTaskEnvMap(&task1.Spec.Parties[0])

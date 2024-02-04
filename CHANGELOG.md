@@ -12,7 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
 
-## [0.6.0.dev240115] - 2023-01-15
+## [0.6.0.dev240131] - 2023-01-31
+### Added
+- Upgrade interconnection protocol from kuscia-alpha to kuscia-beta to support interconnection between Kuscia-Master and Kuscia-Autonomy.
+- Kuscia monitor, Kuscia exposes a set of metric data, which can be used as data sources for collection by external monitoring tools (such as Prometheus).
+- The Kuscia API  added a  job approve interface ，allowing participants to review jobs .
+- Add some pre-check before kuscia running, such as health check of the connection of database.
+- Add parameter validation to the kuscia api.
+- The create job interface of kuscia API added the attribute 'customed-fields' .
+- Support configuring the application's image ID in AppImage to prevent domain's application image from being tampered with.
+- Added the curl command example for requesting the kuscia API.
+- polish the agent runtime docs.
+### Changed
+- Changed some kuscia-crds （KusciaJob，KusciaTask，KusciaDeployment）from cluster to namespace (cross-domain).
+### Fixed
+- Correct some inaccurate descriptions in the document.
+
+## [0.6.0.dev240115] - 2024-01-15
 ### Added
 - Add network error troubleshooting document.
 - Add steps for pre creating data tables in the process of deploying kusica on K8s.
@@ -26,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support deploying kuscia on K8s.
 - Support running algorithm images based on runp and runk modes.
-
+- Support configuring Path prefix in domain public URL addresses.
 ### Changed
 - Optimize deployment configuration and add configuration documentation.
 - Optimize error information of task and error logs of kuscia.

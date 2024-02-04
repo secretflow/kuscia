@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
@@ -51,31 +52,51 @@ func TestNewReservingHandler(t *testing.T) {
 }
 
 func TestReservingHandlerHandle(t *testing.T) {
-	pod1 := st.MakePod().Namespace("ns1").Name("pod1").Label(common.LabelTaskResourceGroup, "trg1").Obj()
-	pod2 := st.MakePod().Namespace("ns2").Name("pod2").Label(common.LabelTaskResourceGroup, "trg2").Obj()
-	pod3 := st.MakePod().Namespace("ns3").Name("pod3").Label(common.LabelTaskResourceGroup, "trg2").Obj()
-	pod4 := st.MakePod().Namespace("ns3").Name("pod4").Label(common.LabelTaskResourceGroup, "trg2").Obj()
+	pod1 := st.MakePod().Namespace("ns1").Name("pod1").
+		Annotation(common.TaskResourceGroupAnnotationKey, "trg1").
+		Label(common.LabelTaskResourceGroupUID, "111").Obj()
+	pod2 := st.MakePod().Namespace("ns2").Name("pod2").
+		Annotation(common.TaskResourceGroupAnnotationKey, "trg2").
+		Label(common.LabelTaskResourceGroupUID, "222").Obj()
+	pod3 := st.MakePod().Namespace("ns3").Name("pod3").
+		Annotation(common.TaskResourceGroupAnnotationKey, "trg2").
+		Label(common.LabelTaskResourceGroupUID, "222").Obj()
+	pod4 := st.MakePod().Namespace("ns3").Name("pod4").
+		Annotation(common.TaskResourceGroupAnnotationKey, "trg2").
+		Label(common.LabelTaskResourceGroupUID, "222").Obj()
 
 	tr1 := util.MakeTaskResource("ns1", "tr1", 1, nil)
+	tr1.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg1",
+	}
 	tr1.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg1",
+		common.LabelTaskResourceGroupUID: "111",
 	}
 
 	tr2 := util.MakeTaskResource("ns2", "tr2", 1, nil)
+	tr2.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg2",
+	}
 	tr2.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg2",
+		common.LabelTaskResourceGroupUID: "222",
 	}
 	tr2.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserved
 
 	tr3 := util.MakeTaskResource("ns3", "tr3", 1, nil)
+	tr3.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg2",
+	}
 	tr3.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg2",
+		common.LabelTaskResourceGroupUID: "222",
 	}
 	tr3.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserved
 
 	tr4 := util.MakeTaskResource("ns3", "tr4", 1, nil)
+	tr4.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg2",
+	}
 	tr4.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg2",
+		common.LabelTaskResourceGroupUID: "222",
 	}
 	tr4.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseFailed
 
@@ -84,6 +105,7 @@ func TestReservingHandlerHandle(t *testing.T) {
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	podInformer := informerFactory.Core().V1().Pods()
+	nsInformer := informerFactory.Core().V1().Namespaces()
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 
 	podInformer.Informer().GetStore().Add(pod1)
@@ -97,10 +119,11 @@ func TestReservingHandlerHandle(t *testing.T) {
 	trInformer.Informer().GetStore().Add(tr4)
 
 	deps := &Dependencies{
-		KubeClient:   kubeFakeClient,
-		KusciaClient: kusciaFakeClient,
-		PodLister:    podInformer.Lister(),
-		TrLister:     trInformer.Lister(),
+		KubeClient:      kubeFakeClient,
+		KusciaClient:    kusciaFakeClient,
+		PodLister:       podInformer.Lister(),
+		TrLister:        trInformer.Lister(),
+		NamespaceLister: nsInformer.Lister(),
 	}
 
 	h := NewReservingHandler(deps)
@@ -117,6 +140,7 @@ func TestReservingHandlerHandle(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg1",
+					UID:  types.UID("111"),
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator: "ns1",
@@ -140,6 +164,10 @@ func TestReservingHandlerHandle(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg2",
+					UID:  types.UID("222"),
+					Annotations: map[string]string{
+						common.SelfClusterAsInitiatorAnnotationKey: "true",
+					},
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator:          "ns2",
@@ -172,6 +200,10 @@ func TestReservingHandlerHandle(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg2",
+					UID:  types.UID("222"),
+					Annotations: map[string]string{
+						common.SelfClusterAsInitiatorAnnotationKey: "true",
+					},
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator:          "ns2",
@@ -212,6 +244,10 @@ func TestReservingHandlerHandle(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg2",
+					UID:  types.UID("222"),
+					Annotations: map[string]string{
+						common.SelfClusterAsInitiatorAnnotationKey: "true",
+					},
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator:          "ns2",

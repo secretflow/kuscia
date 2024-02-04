@@ -32,6 +32,12 @@ func HTTPTokenAuthInterceptor(tokenData string) func(c *gin.Context) {
 			c.AbortWithError(http.StatusUnauthorized, err)
 			return
 		}
+		c.Next()
+	}
+}
+
+func HTTPSetMasterRoleInterceptor() func(c *gin.Context) {
+	return func(c *gin.Context) {
 		c.Set(constants.AuthRole, constants.AuthRoleMaster)
 		c.Set(constants.SourceDomainKey, constants.AuthRoleMaster)
 		c.Next()

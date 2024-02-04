@@ -20,6 +20,7 @@ set -e
 SF_IMAGE_NAME=$1
 SF_IMAGE_TAG=$2
 APP_TYPE=$3
+SF_IMAGE_ID=$4
 
 if [[ ${APP_TYPE} == "" ]]; then
   APP_TYPE="secretflow"
@@ -35,7 +36,8 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 APP_IMAGE_TEMPLATE=$(sed "s!{{.SF_IMAGE_NAME}}!'${SF_IMAGE_NAME}'!g;
-  s!{{.SF_IMAGE_TAG}}!'${SF_IMAGE_TAG}'!g" \
+  s!{{.SF_IMAGE_TAG}}!'${SF_IMAGE_TAG}'!g;
+  s!{{.SF_IMAGE_ID}}!'${SF_IMAGE_ID}'!g" \
   < "${ROOT}/scripts/templates/app_image.${APP_TYPE}.yaml")
 
 echo "${APP_IMAGE_TEMPLATE}" | kubectl apply -f -

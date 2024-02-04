@@ -4,6 +4,7 @@ metadata:
   labels:
     kuscia.secretflow/app-type: serving
   name: dataproxy-serving
+  namespace: cross-domain
 spec:
   initiator: {{.DOMAIN_ID}}
   inputConfig: '{}'

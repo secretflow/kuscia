@@ -98,16 +98,16 @@ function try_centralized_token_rolling() {
 
 function test_centralized_token_rolling_all() {
   # lite to lite
-  try_centralized_token_rolling "root-kuscia-master" "alice-bob" 2
+  try_centralized_token_rolling ${MASTER_CONTAINER} "alice-bob" 2
   # lite to master
-  try_centralized_token_rolling "root-kuscia-master" "alice-kuscia-system" 2
+  try_centralized_token_rolling ${MASTER_CONTAINER} "alice-kuscia-system" 2
   # master to lite
   # try_centralized_token_rolling "root-kuscia-master" "kuscia-system-alice"
 }
 
 function test_centralized_token_rolling_party_offline() {
-  local master_ctr="root-kuscia-master"
-  local bob_ctr="root-kuscia-lite-bob"
+  local master_ctr=${MASTER_CONTAINER}
+  local bob_ctr=${LITE_BOB_CONTAINER}
   local cdr_name="alice-bob"
   local dr_name="alice-bob"
   local src_domain="alice"

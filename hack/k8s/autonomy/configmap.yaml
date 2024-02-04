@@ -23,13 +23,13 @@ data:
     runtime: runk
 
     runk:
-      # 任务调度到指定的机构 k8s namespace上
+      # 任务调度到指定的机构 K8s namespace 下
       namespace: autonomy-alice
-      # k8s 集群的 pod dns 配置, 用于解析节点的应用域名, dns 的地址为 pod service 地址, 此处以 "1.1.1.1" 为例
+      # K8s 集群的 pod dns 配置, 用于解析节点的应用域名, dns 的地址为 pod service 地址, 此处以 "1.1.1.1" 为例
       dnsServers:
       # - kuscia-dns-lb-server
         - 1.1.1.1
-      #  k8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
+      #  K8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
       kubeconfigFile:
 
     # 节点的可调度容量, runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置

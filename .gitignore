@@ -1,5 +1,6 @@
 /.idea/
 /build/apps/
+/build/k3s/
 /etc/certs/
 **.log
 .vscode

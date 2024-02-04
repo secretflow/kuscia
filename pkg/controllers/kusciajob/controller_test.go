@@ -30,6 +30,7 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
+	constants "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -44,10 +45,10 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 	}
 	return &kusciaapisv1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "secretflow-job",
+			Name:      "secretflow-job",
+			Namespace: constants.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
-			Stage:        kusciaapisv1alpha1.JobStartStage,
 			Initiator:    "alice",
 			ScheduleMode: kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort,
 			Tasks: []kusciaapisv1alpha1.KusciaTaskTemplate{
@@ -140,14 +141,14 @@ func waitAndChangeKusciaTaskStatus(t *testing.T, c *Controller, expectTaskCount 
 	})
 	assert.NoError(t, err)
 
-	tasks, err := c.kusciaTaskLister.List(labels.Everything())
+	tasks, err := c.kusciaTaskLister.KusciaTasks(constants.KusciaCrossDomain).List(labels.Everything())
 	assert.NoError(t, err)
 
 	for _, task := range tasks {
 		status, exist := taskStatus[task.Name]
 		if exist {
 			task.Status.Phase = status
-			_, err := c.kusciaClient.KusciaV1alpha1().KusciaTasks().UpdateStatus(context.TODO(), task, metav1.UpdateOptions{})
+			_, err := c.kusciaClient.KusciaV1alpha1().KusciaTasks(constants.KusciaCrossDomain).UpdateStatus(context.TODO(), task, metav1.UpdateOptions{})
 			assert.NoError(t, err)
 		}
 	}
@@ -197,7 +198,7 @@ func Test_KusciaTaskControllerHandlerTaskFailed(t *testing.T) {
 
 func waitAndCheckKusciaJobStatus(t *testing.T, c *Controller, kusciaJobName string, statusSet []kusciaapisv1alpha1.KusciaJobPhase) {
 	err := wait.Poll(1*time.Second, 60*time.Second, func() (done bool, err error) {
-		kusciaJob, err := c.kusciaJobLister.Get(kusciaJobName)
+		kusciaJob, err := c.kusciaJobLister.KusciaJobs(constants.KusciaCrossDomain).Get(kusciaJobName)
 		nlog.Infof("kusciaJob: %s, err: %s", kusciaJob.Status, err)
 		return kusciaJob != nil && statusContains(statusSet, kusciaJob.Status.Phase), err
 	})

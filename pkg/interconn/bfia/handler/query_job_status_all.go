@@ -22,7 +22,8 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	"github.com/secretflow/kuscia/pkg/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -66,7 +67,7 @@ func (h *queryJobStatusAllHandler) Handle(ctx *api.BizContext, request api.Proto
 		Code: http.StatusOK,
 	}
 
-	kj, err := h.KjLister.Get(req.JobID)
+	kj, err := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobID)
 	if k8serrors.IsNotFound(err) {
 		if h.IsJobExist(req.JobID) {
 			h.buildResp(resp, nil)
@@ -76,13 +77,13 @@ func (h *queryJobStatusAllHandler) Handle(ctx *api.BizContext, request api.Proto
 
 	if err != nil {
 		resp.Code = http.StatusBadRequest
-		resp.Msg = common.ErrFindJobFailed
+		resp.Msg = bfiacommon.ErrFindJobFailed
 		return resp
 	}
 
 	statusContent := make(map[string]interface{})
 	for taskID, taskStatus := range kj.Status.TaskStatus {
-		statusContent[taskID] = common.KusciaTaskPhaseToInterConnTaskPhase[taskStatus]
+		statusContent[taskID] = bfiacommon.KusciaTaskPhaseToInterConnTaskPhase[taskStatus]
 	}
 
 	h.buildResp(resp, statusContent)
@@ -103,7 +104,7 @@ func (h *queryJobStatusAllHandler) buildResp(resp *interconn.CommonResponse, con
 	data, err := structpb.NewStruct(status)
 	if err != nil {
 		resp.Code = http.StatusInternalServerError
-		resp.Msg = common.ErrGenerateDataFailed
+		resp.Msg = bfiacommon.ErrGenerateDataFailed
 		return
 	}
 	resp.Data = data
