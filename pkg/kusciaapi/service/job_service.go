@@ -268,6 +268,9 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 		}
 	}
 	// stop kuscia job
+	if job.Labels == nil {
+		job.Labels = make(map[string]string)
+	}
 	job.Labels[common.LabelJobStage] = string(v1alpha1.JobStopStage)
 	job.Labels[common.LabelJobStageTrigger] = domainId
 	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
