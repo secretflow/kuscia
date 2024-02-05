@@ -1,0 +1,16 @@
+global:
+ scrape_interval:     5s # default export interval is 5s
+  external_labels:
+    monitor: 'Kuscia-monitor'
+scrape_configs:
+  - job_name: 'prometheus'
+    # 覆盖全局默认采集周期
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090'] # Prometheus service address
+  - job_name: 'alice-node'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['172.18.0.3:9091'] # configure the exporter address of alice
+    metrics_path: /metrics
+    scheme: http
