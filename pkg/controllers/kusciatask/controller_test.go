@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -66,7 +67,8 @@ func makeTestAppImage() *kusciaapisv1alpha1.AppImage {
 func makeTestKusciaTask(phase kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1alpha1.KusciaTask {
 	return &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kusciatask-001",
+			Name:      "kusciatask-001",
+			Namespace: common.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
 			TaskInputConfig: "task input config",
@@ -134,7 +136,7 @@ func TestEnqueueKusciaTask(t *testing.T) {
 	cc := c.(*Controller)
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskPending)
 	cc.enqueueKusciaTask(kt)
-	assert.Equal(t, 1, cc.workqueue.Len())
+	assert.Equal(t, 1, cc.taskQueue.Len())
 }
 
 func TestHandleTaskResourceGroupObject(t *testing.T) {
@@ -221,7 +223,7 @@ func TestHandleTaskResourceGroupObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cc.handleTaskResourceGroupObject(tt.obj)
-			assert.Equal(t, tt.want, cc.workqueue.Len())
+			assert.Equal(t, tt.want, cc.taskQueue.Len())
 		})
 	}
 }
@@ -246,7 +248,7 @@ func TestHandlePodObject(t *testing.T) {
 	cc.kusciaTaskLister = ktInformer.Lister()
 
 	pod1 := st.MakePod().Name("pod1").Obj()
-	pod2 := st.MakePod().Name("pod2").OwnerReference(kt.Name, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("KusciaTask")).Obj()
+	pod2 := st.MakePod().Name("pod2").Annotation(common.TaskIDAnnotationKey, kt.Name)
 
 	tests := []struct {
 		name string
@@ -273,7 +275,7 @@ func TestHandlePodObject(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cc.handlePodObject(tt.obj)
-			assert.Equal(t, tt.want, cc.workqueue.Len())
+			assert.Equal(t, tt.want, cc.taskQueue.Len())
 		})
 	}
 }
@@ -317,7 +319,7 @@ func TestProcessNextWorkItem(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.obj != "" {
-				cc.workqueue.Add(tt.obj)
+				cc.taskQueue.Add(tt.obj)
 			}
 
 			got := cc.processNextWorkItem()

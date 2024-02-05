@@ -42,7 +42,6 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 | attributes    | map<string,string>                           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                  |
 | partition     | [Partition](#partition)                      | 可选 | 暂不支持                                                                                                                           |
 | columns       | [DataColumn](#data-column) array             | 必填 | 列信息                                                                                                                            |
-| vendor        | string                                       | 可选 | 来源，用于查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md) |
 
 {#create-domain-data-response}
 
@@ -53,6 +52,56 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 | status             | [Status](summary_cn.md#status) | 必填 | 状态信息    |
 | data               | CreateDomainDataResponseData   |    |         |
 | data.domaindata_id | string                         | 必填 | 数据对象 ID |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/create' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "alice",
+  "domaindata_id": "alice-001",
+  "datasource_id": "test-alice-datasource-id",
+  "name": "alice001",
+  "type": "table",
+  "relative_uri": "alice.csv",
+  "columns": [
+    {
+      "name": "id1",
+      "type": "str",
+      "comment": ""
+    },
+    {
+      "name": "marital_single",
+      "type": "float",
+      "comment": ""
+    }
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domaindata_id": "alice-001"
+  }
+}
+```
 
 {#update-domain-data}
 
@@ -76,13 +125,59 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 | attributes    | map<string,string>                           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                    |
 | partition     | [Partition](#partition)                      | 可选 | 暂不支持                                                                                                                             |
 | columns       | [DataColumn](#data-column)[]                 | 必填 | 列信息                                                                                                                              |
-| vendor        | string                                       | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md) |
 
 #### 响应（UpdateDomainDataResponse）
 
 | 字段     | 类型                             | 选填 | 描述   |
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/update' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "alice",
+  "domaindata_id": "alice-001",
+  "datasource_id": "test-alice-datasource-id",
+  "name": "alice0010",
+  "type": "table",
+  "relative_uri": "alice.csv",
+  "columns": [
+    {
+      "name": "id1",
+      "type": "str",
+      "comment": ""
+    },
+    {
+      "name": "marital_single",
+      "type": "float",
+      "comment": ""
+    }
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
 
 {#delete-domain-data}
 
@@ -106,6 +201,37 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/delete' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "alice",
+  "domaindata_id": "alice-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
+
 {#query-domain-data}
 
 ### 查询数据对象
@@ -127,6 +253,81 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 |--------|-----------------------------------|----|------|
 | status | [Status](summary_cn.md#status)    | 必填 | 状态信息 |
 | data   | [DomainData](#domain-data-entity) |    |      |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/query' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "data": {
+    "domain_id": "alice",
+    "domaindata_id": "alice-001"
+  }
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domaindata_id": "alice-001",
+    "name": "alice001",
+    "type": "table",
+    "relative_uri": "alice.csv",
+    "domain_id": "alice",
+    "datasource_id": "test-alice-datasource-id",
+    "attributes": {},
+    "partition": null,
+    "columns": [
+      {
+        "name": "id1",
+        "type": "str",
+        "comment": "",
+        "not_nullable": false
+      },
+      {
+        "name": "marital_single",
+        "type": "float",
+        "comment": "",
+        "not_nullable": false
+      }
+    ],
+    "vendor": "manual",
+    "status": "Available",
+    "author": "alice",
+    "file_format": "CSV"
+  }
+}
+```
+
+请求响应异常结果：
+
+```json
+{
+  "status": {
+    "code": 11506,
+    "message": "domaindatas.kuscia.secretflow \"default-data-source\" not found",
+    "details": []
+  },
+  "data": null
+}
+```
+
 
 {#batch-query-domain-data}
 
@@ -150,6 +351,77 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 | status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
 | data   | [DomainDataList](#domain-data-list) |    |      |
 
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/batchQuery' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "data": [
+    {
+      "domain_id": "alice",
+      "domaindata_id": "alice-001"
+    },
+    {
+      "domain_id": "alice",
+      "domaindata_id": "alice-table"
+    }
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domaindata_list": [
+      {
+        "domaindata_id": "alice-001",
+        "name": "alice001",
+        "type": "table",
+        "relative_uri": "alice.csv",
+        "domain_id": "alice",
+        "datasource_id": "test-alice-datasource-id",
+        "attributes": {},
+        "partition": null,
+        "columns": [
+          {
+            "name": "id1",
+            "type": "str",
+            "comment": "",
+            "not_nullable": false
+          },
+          {
+            "name": "marital_single",
+            "type": "float",
+            "comment": "",
+            "not_nullable": false
+          }
+        ],
+        "vendor": "manual",
+        "status": "Available",
+        "author": "alice",
+        "file_format": "CSV"
+      }
+    ]
+  }
+}
+```
+
 {#list-domain-data}
 
 ### 列出数据对象
@@ -171,6 +443,74 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 |--------|-------------------------------------|----|------|
 | status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
 | data   | [DomainDataList](#domain-data-list) |    |      |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "data": {
+    "domain_id": "alice",
+    "domaindata_type": "table",
+    "domaindata_vendor": "manual"
+  }
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domaindata_list": [
+      {
+        "domaindata_id": "alice-table",
+        "name": "alice.csv",
+        "type": "table",
+        "relative_uri": "alice.csv",
+        "domain_id": "alice",
+        "datasource_id": "default-data-source",
+        "attributes": {
+          "description": "alice demo data"
+        },
+        "partition": null,
+        "columns": [
+          {
+            "name": "id1",
+            "type": "str",
+            "comment": "",
+            "not_nullable": false
+          },
+          {
+            "name": "marital_single",
+            "type": "float",
+            "comment": "",
+            "not_nullable": false
+          }
+        ],
+        "vendor": "manual",
+        "status": "Available",
+        "author": "alice",
+        "file_format": "UNKNOWN"
+      }
+    ]
+  }
+}
+```
 
 ## 公共
 

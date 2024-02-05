@@ -207,10 +207,10 @@ docker exec -it ${USER}-kuscia-autonomy-bob bash
 sh scripts/templates/fate/lr_job.sh
 
 # 查看作业
-kubectl get kj
+kubectl get kj -n cross-domain
 
 # 查看任务
-kubectl get kt
+kubectl get kt -n cross-domain
 ```
 
 示例作业的相关文件位于容器的 `/home/kuscia/scripts/templates/fate` 目录下，描述了由 读数据、数据转换、隐私求交、LR、二分类评估 算子构成的一个 LR 流程的 Pipeline。`lr_job.sh` 脚本完成了相应的 AppImage 与 KusciaJob 配置以及作业提交。

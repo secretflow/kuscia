@@ -164,8 +164,8 @@ func (cs *KusciaScheduling) PostFilter(ctx context.Context, state *framework.Cyc
 	// It's based on an implicit assumption: if the nth Pod failed,
 	// it's inferrable other Pods belonging to the same TaskResource would be very likely to fail.
 	cs.frameworkHandler.IterateOverWaitingPods(func(waitingPod framework.WaitingPod) {
-		trLabel, _ := core.GetTaskResourceLabel(waitingPod.GetPod())
-		if trLabel == tr.Name && waitingPod.GetPod().Namespace == pod.Namespace {
+		trName, _ := core.GetTaskResourceName(waitingPod.GetPod())
+		if trName == tr.Name && waitingPod.GetPod().Namespace == pod.Namespace {
 			nlog.Infof("PostFilter rejects the waiting pod %s/%s under task resource %v", pod.Namespace, pod.Name, tr.Name)
 			waitingPod.Reject(cs.Name(), "optimistic rejection in PostFilter")
 		}
@@ -193,8 +193,8 @@ func (cs *KusciaScheduling) Unreserve(ctx context.Context, state *framework.Cycl
 		return
 	}
 	cs.frameworkHandler.IterateOverWaitingPods(func(waitingPod framework.WaitingPod) {
-		trLabel, _ := core.GetTaskResourceLabel(waitingPod.GetPod())
-		if trLabel == tr.Name && waitingPod.GetPod().Namespace == pod.Namespace {
+		trName, _ := core.GetTaskResourceName(waitingPod.GetPod())
+		if trName == tr.Name && waitingPod.GetPod().Namespace == pod.Namespace {
 			nlog.Infof("Unreserve rejects the waiting pod %s/%s under task resource %v", pod.Namespace, pod.Name, tr.Name)
 			waitingPod.Reject(cs.Name(), "rejection in Unreserve")
 		}
@@ -224,9 +224,9 @@ func (cs *KusciaScheduling) Permit(ctx context.Context, state *framework.CycleSt
 		// We will also request to move the sibling pods back to activeQ.
 		cs.trMgr.ActivateSiblings(pod, state)
 	case core.Success:
-		trName, _ := core.GetTaskResourceLabel(pod)
+		trName, _ := core.GetTaskResourceName(pod)
 		cs.frameworkHandler.IterateOverWaitingPods(func(waitingPod framework.WaitingPod) {
-			wTrName, _ := core.GetTaskResourceLabel(waitingPod.GetPod())
+			wTrName, _ := core.GetTaskResourceName(waitingPod.GetPod())
 			if wTrName == trName && waitingPod.GetPod().Namespace == pod.Namespace {
 				nlog.Infof("Permit allows the waiting pod %v/%v", waitingPod.GetPod().Namespace, waitingPod.GetPod().Name)
 				waitingPod.Allow(cs.Name())

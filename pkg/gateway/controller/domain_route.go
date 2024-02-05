@@ -461,7 +461,7 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 		// next step with two cases
 		// case1: transit route, just clone routing rule  from source-to-transitDomainID
 		if dr.Spec.Transit != nil {
-			return updateRoutingRule(dr)
+			return c.updateRoutingRule(dr)
 		}
 
 		// case2: direct route, add virtualhost: source-to-dest-Protocol
@@ -540,15 +540,18 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 	return nil
 }
 
-func updateRoutingRule(dr *kusciaapisv1alpha1.DomainRoute) error {
+func (c *DomainRouteController) updateRoutingRule(dr *kusciaapisv1alpha1.DomainRoute) error {
 	ns := dr.Spec.Transit.Domain.DomainID
-	vh, err := xds.QueryVirtualHost(fmt.Sprintf("%s-to-%s", dr.Spec.Source, ns), xds.InternalRoute)
+	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, ns)
+	if ns == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
+		vhName = fmt.Sprintf("%s-internal", clusters.GetMasterClusterName())
+	}
+	vh, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
 	if err != nil {
 		return fmt.Errorf("failed to query virtual host with %s", err.Error())
 	}
 	if vh == nil {
-		return fmt.Errorf("failed to get virtual host (%s) in route(%s)", fmt.Sprintf("%s-to-%s", dr.Spec.Source, ns),
-			xds.InternalRoute)
+		return fmt.Errorf("failed to get virtual host (%s) in route(%s)", vhName, xds.InternalRoute)
 	}
 
 	vhNew, ok := proto.Clone(vh).(*route.VirtualHost)
@@ -556,6 +559,7 @@ func updateRoutingRule(dr *kusciaapisv1alpha1.DomainRoute) error {
 		return fmt.Errorf("proto cannot cast to VirtualHost")
 	}
 
+	// new vh vs old vh
 	vhNew.Name = fmt.Sprintf("%s-to-%s", dr.Spec.Source, dr.Spec.Destination)
 	vhNew.Domains = []string{fmt.Sprintf("*.%s.svc", dr.Spec.Destination)}
 	if err = xds.AddOrUpdateVirtualHost(vhNew, xds.InternalRoute); err != nil {

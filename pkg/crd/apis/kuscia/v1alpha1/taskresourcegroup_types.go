@@ -72,8 +72,10 @@ type TaskResourceGroupSpec struct {
 	LifecycleSeconds int `json:"lifecycleSeconds,omitempty"`
 	// Initiator represents who initiated the task.
 	Initiator string `json:"initiator"`
-	// Parties represents parties info of task.
+	// Parties represents the parties' whose task resource is controlled by self cluster.
 	Parties []TaskResourceGroupParty `json:"parties"`
+	// Out Of Controlled Parties, namely all partner parties in participant cluster
+	OutOfControlledParties []TaskResourceGroupParty `json:"outOfControlledParties,omitempty"`
 }
 
 // TaskResourceGroupParty defines the details of task resource group party.
@@ -82,8 +84,9 @@ type TaskResourceGroupParty struct {
 	Role     string `json:"role,omitempty"`
 	DomainID string `json:"domainID"`
 	// +optional
-	MinReservedPods int                         `json:"minReservedPods,omitempty"`
-	Pods            []TaskResourceGroupPartyPod `json:"pods"`
+	MinReservedPods int `json:"minReservedPods,omitempty"`
+	// +optional
+	Pods []TaskResourceGroupPartyPod `json:"pods,omitempty"`
 	// +optional
 	TaskResourceName string `json:"taskResourceName,omitempty"`
 }

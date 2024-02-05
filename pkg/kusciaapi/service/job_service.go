@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strings"
 
@@ -48,6 +49,7 @@ type IJobService interface {
 	StopJob(ctx context.Context, request *kusciaapi.StopJobRequest) *kusciaapi.StopJobResponse
 	DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) *kusciaapi.DeleteJobResponse
 	WatchJob(ctx context.Context, request *kusciaapi.WatchJobRequest, event chan<- *kusciaapi.WatchJobEventResponse) error
+	ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) *kusciaapi.ApproveJobResponse
 }
 
 type jobService struct {
@@ -108,9 +110,16 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 		kusciaTasks[i] = kusciaTask
 	}
 
+	// custom_fields to labels
+	labels := map[string]string{}
+	for k, v := range request.CustomFields {
+		labels[jobCustomField2Label(k)] = v
+	}
+
 	kusciaJob := &v1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: request.JobId,
+			Name:   request.JobId,
+			Labels: labels,
 		},
 		Spec: v1alpha1.KusciaJobSpec{
 			Initiator:      request.Initiator,
@@ -121,7 +130,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	}
 
 	// create kuscia job
-	_, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Create(ctx, kusciaJob, metav1.CreateOptions{})
+	_, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Create(ctx, kusciaJob, metav1.CreateOptions{})
 	if err != nil {
 		return &kusciaapi.CreateJobResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCreateJob, err.Error()),
@@ -148,6 +157,14 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 	if err != nil {
 		return &kusciaapi.QueryJobResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrQueryJob, err.Error()),
+		}
+	}
+	// custom fields
+	prefixLen := len(common.JobCustomFieldsLabelPrefix)
+	customFields := map[string]string{}
+	for k, v := range kusciaJob.Labels {
+		if strings.HasPrefix(k, common.JobCustomFieldsLabelPrefix) {
+			customFields[k[prefixLen:]] = v
 		}
 	}
 	// build task config
@@ -187,6 +204,7 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 			MaxParallelism: utils.Int32Value(kusciaJobSpec.MaxParallelism),
 			Tasks:          taskConfigs,
 			Status:         jobStatus,
+			CustomFields:   customFields,
 		},
 	}
 	return jobResponse
@@ -207,7 +225,7 @@ func (h *jobService) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJob
 		}
 	}
 	// delete kuscia job
-	err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Delete(ctx, jobID, metav1.DeleteOptions{})
+	err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Delete(ctx, jobID, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteJobResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrDeleteJob, err.Error()),
@@ -230,10 +248,17 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 		}
 	}
 
-	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Get(ctx, jobID, metav1.GetOptions{})
+	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.StopJobResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
+		}
+	}
+	// get domain from context
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
+		return &kusciaapi.StopJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
 		}
 	}
 	// auth pre handler
@@ -243,8 +268,12 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 		}
 	}
 	// stop kuscia job
-	job.Spec.Stage = v1alpha1.JobStopStage
-	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs().Update(ctx, job, metav1.UpdateOptions{})
+	if job.Labels == nil {
+		job.Labels = make(map[string]string)
+	}
+	job.Labels[common.LabelJobStage] = string(v1alpha1.JobStopStage)
+	job.Labels[common.LabelJobStageTrigger] = domainId
+	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
 	if err != nil {
 		return &kusciaapi.StopJobResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
@@ -256,6 +285,79 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 			JobId: jobID,
 		},
 	}
+}
+
+func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) *kusciaapi.ApproveJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	if request.Result == kusciaapi.ApproveResult_APPROVE_RESULT_UNKNOWN {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "approve result must be set"),
+		}
+	}
+	// get domain from context
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	var domainIds []string
+	if len(domainId) == 0 {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+		}
+	}
+	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
+	if err != nil {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrApproveJob, err.Error()),
+		}
+	}
+	// auth handler
+	if err := h.authHandlerJobApprove(ctx, job); err != nil {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
+	nlog.Infof("approve job %s result %v reason %s", jobID, request.Result, request.Reason)
+	approveStatus := v1alpha1.JobRejected
+	if request.Result == kusciaapi.ApproveResult_APPROVE_RESULT_ACCEPT {
+		approveStatus = v1alpha1.JobAccepted
+	}
+	if role == consts.AuthRoleMaster {
+		// get self cluster parties
+		if selfParties, ok := job.Annotations[common.InterConnSelfPartyAnnotationKey]; ok {
+			domainIds = annotationToDomainList(selfParties)
+		}
+	} else { // role is domain
+		// domain just approval itself party not all self cluster parties
+		domainIds = append(domainIds, domainId)
+	}
+	for _, v := range domainIds {
+		if job.Status.ApproveStatus == nil {
+			job.Status.ApproveStatus = make(map[string]v1alpha1.JobApprovePhase)
+		}
+		job.Status.ApproveStatus[v] = approveStatus
+	}
+	// update kuscia job approve status
+	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).UpdateStatus(ctx, job, metav1.UpdateOptions{})
+	if err != nil {
+		return &kusciaapi.ApproveJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrApproveJob, err.Error()),
+		}
+	}
+	return &kusciaapi.ApproveJobResponse{
+		Status: utils2.BuildSuccessResponseStatus(),
+		Data: &kusciaapi.ApproveJobResponseData{
+			JobId: jobID,
+		},
+	}
+}
+
+func annotationToDomainList(value string) (domains []string) {
+	domains = strings.Split(value, "_")
+	return
 }
 
 func (h *jobService) BatchQueryJobStatus(ctx context.Context, request *kusciaapi.BatchQueryJobStatusRequest) *kusciaapi.BatchQueryJobStatusResponse {
@@ -299,7 +401,12 @@ func (h *jobService) WatchJob(ctx context.Context, request *kusciaapi.WatchJobRe
 	if request.TimeoutSeconds > 0 {
 		timeoutSeconds = &request.TimeoutSeconds
 	}
-	w, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Watch(ctx, metav1.ListOptions{
+
+	if *timeoutSeconds == 0 {
+		*timeoutSeconds = math.MaxInt64
+	}
+
+	w, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Watch(ctx, metav1.ListOptions{
 		TimeoutSeconds: timeoutSeconds,
 	})
 	if err != nil {
@@ -368,7 +475,7 @@ loop:
 }
 
 func (h *jobService) buildJobStatusByID(ctx context.Context, jobID string) (*v1alpha1.KusciaJob, *kusciaapi.JobStatusDetail, error) {
-	kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Get(ctx, jobID, metav1.GetOptions{})
+	kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -392,12 +499,28 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 	kusciaTasks := kusciaJob.Spec.Tasks
 	// build job status
 	statusDetail := &kusciaapi.JobStatusDetail{
-		State:      getJobState(kusciaJobStatus.Phase),
-		ErrMsg:     kusciaJobStatus.Message,
-		CreateTime: utils.TimeRfc3339String(&kusciaJob.CreationTimestamp),
-		StartTime:  utils.TimeRfc3339String(kusciaJobStatus.StartTime),
-		EndTime:    utils.TimeRfc3339String(kusciaJobStatus.CompletionTime),
-		Tasks:      make([]*kusciaapi.TaskStatus, 0),
+		State:             getJobState(kusciaJobStatus.Phase),
+		ErrMsg:            kusciaJobStatus.Message,
+		CreateTime:        utils.TimeRfc3339String(&kusciaJob.CreationTimestamp),
+		StartTime:         utils.TimeRfc3339String(kusciaJobStatus.StartTime),
+		EndTime:           utils.TimeRfc3339String(kusciaJobStatus.CompletionTime),
+		Tasks:             make([]*kusciaapi.TaskStatus, 0),
+		StageStatusList:   make([]*kusciaapi.PartyStageStatus, 0),
+		ApproveStatusList: make([]*kusciaapi.PartyApproveStatus, 0),
+	}
+
+	for k, v := range kusciaJobStatus.StageStatus {
+		statusDetail.StageStatusList = append(statusDetail.StageStatusList, &kusciaapi.PartyStageStatus{
+			DomainId: k,
+			State:    string(v),
+		})
+	}
+
+	for k, v := range kusciaJobStatus.ApproveStatus {
+		statusDetail.ApproveStatusList = append(statusDetail.ApproveStatusList, &kusciaapi.PartyApproveStatus{
+			DomainId: k,
+			State:    string(v),
+		})
 	}
 
 	// build task status
@@ -408,7 +531,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {
 			ts.State = getTaskState(phase)
-			task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks().Get(ctx, taskID, metav1.GetOptions{})
+			task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(ctx, taskID, metav1.GetOptions{})
 			if err != nil {
 				nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
 			} else {
@@ -448,7 +571,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 				}
 
 				ts.Parties = make([]*kusciaapi.PartyStatus, 0)
-				for partyID, _ := range partyErrMsg {
+				for partyID := range partyErrMsg {
 					ts.Parties = append(ts.Parties, &kusciaapi.PartyStatus{
 						DomainId:  partyID,
 						State:     getTaskState(partyTaskStatus[partyID]),
@@ -490,7 +613,7 @@ func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaap
 func (h *jobService) authHandlerJobDelete(ctx context.Context, jobId string) error {
 	role, domainId := GetRoleAndDomainFromCtx(ctx)
 	if role == consts.AuthRoleDomain {
-		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs().Get(ctx, jobId, metav1.GetOptions{})
+		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobId, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -534,6 +657,21 @@ func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha
 		return false
 	}
 	return true
+}
+
+func (h *jobService) authHandlerJobApprove(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain {
+		for _, task := range kusciaJob.Spec.Tasks {
+			for _, p := range task.Parties {
+				if p.DomainID == domainId {
+					return nil
+				}
+			}
+		}
+		return fmt.Errorf("domain's KusciaAPI could only approve the job that the domain as a participant in the job")
+	}
+	return nil
 }
 
 func validateCreateJobRequest(request *kusciaapi.CreateJobRequest, domainID string) error {
@@ -604,6 +742,12 @@ func getJobState(jobPhase v1alpha1.KusciaJobPhase) string {
 		return kusciaapi.State_Failed.String()
 	case v1alpha1.KusciaJobSucceeded:
 		return kusciaapi.State_Succeeded.String()
+	case v1alpha1.KusciaJobAwaitingApproval:
+		return kusciaapi.State_AwaitingApproval.String()
+	case v1alpha1.KusciaJobApprovalReject:
+		return kusciaapi.State_ApprovalReject.String()
+	case v1alpha1.KusciaJobCancelled:
+		return kusciaapi.State_Cancelled.String()
 	default:
 		return kusciaapi.State_Unknown.String()
 	}
@@ -622,4 +766,8 @@ func getTaskState(taskPhase v1alpha1.KusciaTaskPhase) string {
 	default:
 		return kusciaapi.State_Unknown.String()
 	}
+}
+
+func jobCustomField2Label(name string) string {
+	return fmt.Sprintf("%s%s", common.JobCustomFieldsLabelPrefix, name)
 }

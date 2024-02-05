@@ -38,6 +38,7 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/utils/nodeutils"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -79,7 +80,7 @@ type NodeGetter interface {
 // NodeController manages a single node entity.
 type NodeController struct { // nolint: golint
 	namespace    string
-	nodeProvider NodeProvider
+	nodeProvider kri.NodeProvider
 	nmt          *corev1.Node
 	lease        *coord.Lease
 
@@ -107,7 +108,7 @@ type NodeController struct { // nolint: golint
 //
 // Note: When if there are multiple NodeControllerOpts which apply against the same
 // underlying options, the last NodeControllerOpt will win.
-func NewNodeController(namespace string, p NodeProvider, nodes v1.NodeInterface, leaseStub coordtypes.LeaseInterface, cfg *config.NodeCfg) (*NodeController, error) {
+func NewNodeController(namespace string, p kri.NodeProvider, nodes v1.NodeInterface, leaseStub coordtypes.LeaseInterface, cfg *config.NodeCfg) (*NodeController, error) {
 	node := &NodeController{
 		namespace:    namespace,
 		nodeProvider: p,

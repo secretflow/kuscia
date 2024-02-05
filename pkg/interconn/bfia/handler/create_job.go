@@ -24,8 +24,9 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/interconn/bfia/adapter"
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -71,10 +72,10 @@ func (h *createJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest)
 		Code: http.StatusOK,
 	}
 
-	kj, _ := h.KjLister.Get(req.JobId)
+	kj, _ := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobId)
 	if kj != nil {
 		resp.Code = http.StatusBadRequest
-		resp.Msg = common.ErrJobAlreadyExist
+		resp.Msg = bfiacommon.ErrJobAlreadyExist
 		return resp
 	}
 
@@ -92,10 +93,10 @@ func (h *createJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest)
 		return resp
 	}
 
-	kj, err = h.KusciaClient.KusciaV1alpha1().KusciaJobs().Create(context.Background(), kj, metav1.CreateOptions{})
+	kj, err = h.KusciaClient.KusciaV1alpha1().KusciaJobs(kj.Namespace).Create(context.Background(), kj, metav1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			h.buildResponseData(resp, common.KusciaJobPhaseToInterConJobPhase[kj.Status.Phase])
+			h.buildResponseData(resp, bfiacommon.KusciaJobPhaseToInterConJobPhase[kj.Status.Phase])
 			return resp
 		}
 		resp.Code = http.StatusBadRequest
@@ -103,7 +104,7 @@ func (h *createJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest)
 		return resp
 	}
 
-	h.buildResponseData(resp, common.InterConnPending)
+	h.buildResponseData(resp, bfiacommon.InterConnPending)
 	return resp
 }
 

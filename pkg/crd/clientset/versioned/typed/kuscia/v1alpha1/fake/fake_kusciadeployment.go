@@ -31,6 +31,7 @@ import (
 // FakeKusciaDeployments implements KusciaDeploymentInterface
 type FakeKusciaDeployments struct {
 	Fake *FakeKusciaV1alpha1
+	ns   string
 }
 
 var kusciadeploymentsResource = schema.GroupVersionResource{Group: "kuscia.secretflow", Version: "v1alpha1", Resource: "kusciadeployments"}
@@ -40,7 +41,8 @@ var kusciadeploymentsKind = schema.GroupVersionKind{Group: "kuscia.secretflow", 
 // Get takes name of the kusciaDeployment, and returns the corresponding kusciaDeployment object, and an error if there is any.
 func (c *FakeKusciaDeployments) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(kusciadeploymentsResource, name), &v1alpha1.KusciaDeployment{})
+		Invokes(testing.NewGetAction(kusciadeploymentsResource, c.ns, name), &v1alpha1.KusciaDeployment{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -50,7 +52,8 @@ func (c *FakeKusciaDeployments) Get(ctx context.Context, name string, options v1
 // List takes label and field selectors, and returns the list of KusciaDeployments that match those selectors.
 func (c *FakeKusciaDeployments) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.KusciaDeploymentList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(kusciadeploymentsResource, kusciadeploymentsKind, opts), &v1alpha1.KusciaDeploymentList{})
+		Invokes(testing.NewListAction(kusciadeploymentsResource, kusciadeploymentsKind, c.ns, opts), &v1alpha1.KusciaDeploymentList{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -71,13 +74,15 @@ func (c *FakeKusciaDeployments) List(ctx context.Context, opts v1.ListOptions) (
 // Watch returns a watch.Interface that watches the requested kusciaDeployments.
 func (c *FakeKusciaDeployments) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(kusciadeploymentsResource, opts))
+		InvokesWatch(testing.NewWatchAction(kusciadeploymentsResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a kusciaDeployment and creates it.  Returns the server's representation of the kusciaDeployment, and an error, if there is any.
 func (c *FakeKusciaDeployments) Create(ctx context.Context, kusciaDeployment *v1alpha1.KusciaDeployment, opts v1.CreateOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(kusciadeploymentsResource, kusciaDeployment), &v1alpha1.KusciaDeployment{})
+		Invokes(testing.NewCreateAction(kusciadeploymentsResource, c.ns, kusciaDeployment), &v1alpha1.KusciaDeployment{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -87,7 +92,8 @@ func (c *FakeKusciaDeployments) Create(ctx context.Context, kusciaDeployment *v1
 // Update takes the representation of a kusciaDeployment and updates it. Returns the server's representation of the kusciaDeployment, and an error, if there is any.
 func (c *FakeKusciaDeployments) Update(ctx context.Context, kusciaDeployment *v1alpha1.KusciaDeployment, opts v1.UpdateOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(kusciadeploymentsResource, kusciaDeployment), &v1alpha1.KusciaDeployment{})
+		Invokes(testing.NewUpdateAction(kusciadeploymentsResource, c.ns, kusciaDeployment), &v1alpha1.KusciaDeployment{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -98,7 +104,8 @@ func (c *FakeKusciaDeployments) Update(ctx context.Context, kusciaDeployment *v1
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeKusciaDeployments) UpdateStatus(ctx context.Context, kusciaDeployment *v1alpha1.KusciaDeployment, opts v1.UpdateOptions) (*v1alpha1.KusciaDeployment, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(kusciadeploymentsResource, "status", kusciaDeployment), &v1alpha1.KusciaDeployment{})
+		Invokes(testing.NewUpdateSubresourceAction(kusciadeploymentsResource, "status", c.ns, kusciaDeployment), &v1alpha1.KusciaDeployment{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -108,13 +115,14 @@ func (c *FakeKusciaDeployments) UpdateStatus(ctx context.Context, kusciaDeployme
 // Delete takes name of the kusciaDeployment and deletes it. Returns an error if one occurs.
 func (c *FakeKusciaDeployments) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(kusciadeploymentsResource, name, opts), &v1alpha1.KusciaDeployment{})
+		Invokes(testing.NewDeleteActionWithOptions(kusciadeploymentsResource, c.ns, name, opts), &v1alpha1.KusciaDeployment{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeKusciaDeployments) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(kusciadeploymentsResource, listOpts)
+	action := testing.NewDeleteCollectionAction(kusciadeploymentsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.KusciaDeploymentList{})
 	return err
@@ -123,7 +131,8 @@ func (c *FakeKusciaDeployments) DeleteCollection(ctx context.Context, opts v1.De
 // Patch applies the patch and returns the patched kusciaDeployment.
 func (c *FakeKusciaDeployments) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.KusciaDeployment, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(kusciadeploymentsResource, name, pt, data, subresources...), &v1alpha1.KusciaDeployment{})
+		Invokes(testing.NewPatchSubresourceAction(kusciadeploymentsResource, c.ns, name, pt, data, subresources...), &v1alpha1.KusciaDeployment{})
+
 	if obj == nil {
 		return nil, err
 	}

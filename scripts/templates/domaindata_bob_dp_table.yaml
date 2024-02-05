@@ -76,7 +76,7 @@ spec:
       name: "y"
       type: int64
   dataSource: default-dp-data-source
-  name: bob.csv
+  name: bob-dp.csv
   type: table
   relativeURI: bob.csv
   fileFormat: csv

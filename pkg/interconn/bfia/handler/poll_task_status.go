@@ -22,8 +22,9 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -65,7 +66,7 @@ func (h *pollTaskStatusHandler) Handle(ctx *api.BizContext, request api.ProtoReq
 		Code: http.StatusOK,
 	}
 
-	kt, err := h.KtLister.Get(req.TaskId)
+	kt, err := h.KtLister.KusciaTasks(common.KusciaCrossDomain).Get(req.TaskId)
 	if k8serrors.IsNotFound(err) {
 		if h.IsTaskExist(req.TaskId) {
 			h.buildResp(resp, kusciaapisv1alpha1.TaskPending)
@@ -75,7 +76,7 @@ func (h *pollTaskStatusHandler) Handle(ctx *api.BizContext, request api.ProtoReq
 
 	if err != nil {
 		resp.Code = http.StatusBadRequest
-		resp.Msg = common.ErrFindTaskFailed
+		resp.Msg = bfiacommon.ErrFindTaskFailed
 		return resp
 	}
 
@@ -102,13 +103,13 @@ func (h *pollTaskStatusHandler) GetType() (reqType, respType reflect.Type) {
 // buildResp builds response.
 func (h *pollTaskStatusHandler) buildResp(resp *interconn.CommonResponse, phase kusciaapisv1alpha1.KusciaTaskPhase) {
 	status := map[string]interface{}{
-		"status": common.KusciaTaskPhaseToInterConnTaskPhase[phase],
+		"status": bfiacommon.KusciaTaskPhaseToInterConnTaskPhase[phase],
 	}
 
 	data, err := structpb.NewStruct(status)
 	if err != nil {
 		resp.Code = http.StatusInternalServerError
-		resp.Msg = common.ErrGenerateDataFailed
+		resp.Msg = bfiacommon.ErrGenerateDataFailed
 		return
 	}
 	resp.Data = data

@@ -18,12 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
@@ -37,24 +33,22 @@ import (
 )
 
 const (
-	maxRetries    = 15
+	maxRetries    = 20
 	defaultResync = 5 * time.Minute
 )
 
 // ResourcesAccessor is an interface to get host resources controller related information.
 type ResourcesAccessor interface {
 	HasSynced() bool
-	HostKubeClient() kubernetes.Interface
 	HostKusciaClient() kusciaclientset.Interface
-	HostPodLister() listers.PodLister
-	HostServiceLister() listers.ServiceLister
-	HostConfigMapLister() listers.ConfigMapLister
-	HostTaskResourceLister() kuscialistersv1alpha1.TaskResourceLister
+	HostJobLister() kuscialistersv1alpha1.KusciaJobLister
+	HostJobSummaryLister() kuscialistersv1alpha1.KusciaJobSummaryLister
+	HostTaskSummaryLister() kuscialistersv1alpha1.KusciaTaskSummaryLister
+	HostDeploymentLister() kuscialistersv1alpha1.KusciaDeploymentLister
+	HostDeploymentSummaryLister() kuscialistersv1alpha1.KusciaDeploymentSummaryLister
 	HostDomainDataLister() kuscialistersv1alpha1.DomainDataLister
 	HostDomainDataGrantLister() kuscialistersv1alpha1.DomainDataGrantLister
-	EnqueueTaskResource(string)
-	EnqueuePod(string)
-	EnqueueService(string)
+	EnqueueDeployment(string)
 }
 
 // hostResourcesController is used to manage host resources.
@@ -63,35 +57,43 @@ type hostResourcesController struct {
 	member                      string
 	hasSynced                   bool
 	stopCh                      chan struct{}
-	hostKubeClient              kubernetes.Interface
 	hostKusciaClient            kusciaclientset.Interface
-	hostKubeInformerFactory     informers.SharedInformerFactory
 	hostKusciaInformerFactory   kusciainformers.SharedInformerFactory
-	hostPodSynced               cache.InformerSynced
-	hostPodLister               listers.PodLister
-	hostServiceSynced           cache.InformerSynced
-	hostServiceLister           listers.ServiceLister
-	hostConfigMapSynced         cache.InformerSynced
-	hostConfigMapLister         listers.ConfigMapLister
-	hostTrSynced                cache.InformerSynced
-	hostTrLister                kuscialistersv1alpha1.TaskResourceLister
+	hostDeploymentSynced        cache.InformerSynced
+	hostDeploymentLister        kuscialistersv1alpha1.KusciaDeploymentLister
+	hostDeploymentSummarySynced cache.InformerSynced
+	hostDeploymentSummaryLister kuscialistersv1alpha1.KusciaDeploymentSummaryLister
+	hostJobSynced               cache.InformerSynced
+	hostJobLister               kuscialistersv1alpha1.KusciaJobLister
+	hostJobSummarySynced        cache.InformerSynced
+	hostJobSummaryLister        kuscialistersv1alpha1.KusciaJobSummaryLister
+	hostTaskSummarySynced       cache.InformerSynced
+	hostTaskSummaryLister       kuscialistersv1alpha1.KusciaTaskSummaryLister
 	hostDomainDataSynced        cache.InformerSynced
 	hostDomainDataLister        kuscialistersv1alpha1.DomainDataLister
 	hostDomainDataGrantSynced   cache.InformerSynced
 	hostDomainDataGrantLister   kuscialistersv1alpha1.DomainDataGrantLister
-	memberKubeClient            kubernetes.Interface
 	memberKusciaClient          kusciaclientset.Interface
-	memberPodLister             listers.PodLister
-	memberServiceLister         listers.ServiceLister
-	memberConfigMapLister       listers.ConfigMapLister
-	memberTrLister              kuscialistersv1alpha1.TaskResourceLister
+	memberDomainLister          kuscialistersv1alpha1.DomainLister
+	memberDeploymentLister      kuscialistersv1alpha1.KusciaDeploymentLister
+	memberJobLister             kuscialistersv1alpha1.KusciaJobLister
+	memberTaskLister            kuscialistersv1alpha1.KusciaTaskLister
+	memberTaskResourceLister    kuscialistersv1alpha1.TaskResourceLister
 	memberDomainDataLister      kuscialistersv1alpha1.DomainDataLister
 	memberDomainDataGrantLister kuscialistersv1alpha1.DomainDataGrantLister
-	podsQueue                   workqueue.RateLimitingInterface
-	servicesQueue               workqueue.RateLimitingInterface
-	configMapsQueue             workqueue.RateLimitingInterface
-	taskResourcesQueue          workqueue.RateLimitingInterface
+	deploymentQueueName         string
+	deploymentQueue             workqueue.RateLimitingInterface
+	deploymentSummaryQueueName  string
+	deploymentSummaryQueue      workqueue.RateLimitingInterface
+	jobQueueName                string
+	jobQueue                    workqueue.RateLimitingInterface
+	jobSummaryQueueName         string
+	jobSummaryQueue             workqueue.RateLimitingInterface
+	taskSummaryQueueName        string
+	taskSummaryQueue            workqueue.RateLimitingInterface
+	domainDataGrantQueueName    string
 	domainDataGrantQueue        workqueue.RateLimitingInterface
+	domainDataQueueName         string
 	domainDataQueue             workqueue.RateLimitingInterface
 }
 
@@ -99,12 +101,12 @@ type hostResourcesController struct {
 type hostResourcesControllerOptions struct {
 	host                        string
 	member                      string
-	memberKubeClient            kubernetes.Interface
 	memberKusciaClient          kusciaclientset.Interface
-	memberPodLister             listers.PodLister
-	memberServiceLister         listers.ServiceLister
-	memberConfigMapLister       listers.ConfigMapLister
-	memberTrLister              kuscialistersv1alpha1.TaskResourceLister
+	memberDomainLister          kuscialistersv1alpha1.DomainLister
+	memberDeploymentLister      kuscialistersv1alpha1.KusciaDeploymentLister
+	memberJobLister             kuscialistersv1alpha1.KusciaJobLister
+	memberTaskLister            kuscialistersv1alpha1.KusciaTaskLister
+	memberTaskResourceLister    kuscialistersv1alpha1.TaskResourceLister
 	memberDomainDataLister      kuscialistersv1alpha1.DomainDataLister
 	memberDomainDataGrantLister kuscialistersv1alpha1.DomainDataGrantLister
 }
@@ -120,103 +122,128 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		return nil, err
 	}
 
-	hKubeInformerFactory := informers.NewSharedInformerFactoryWithOptions(clients.KubeClient, defaultResync, informers.WithNamespace(member))
-	hPodInformer := hKubeInformerFactory.Core().V1().Pods()
-	hServiceInformer := hKubeInformerFactory.Core().V1().Services()
-	hConfigMapInformer := hKubeInformerFactory.Core().V1().ConfigMaps()
-
 	hKusciaInformerFactory := kusciainformers.NewSharedInformerFactoryWithOptions(clients.KusciaClient, defaultResync, kusciainformers.WithNamespace(member))
-	hTaskResourceInformer := hKusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
+	hDeploymentInformer := hKusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
+	hDeploymentSummaryInformer := hKusciaInformerFactory.Kuscia().V1alpha1().KusciaDeploymentSummaries()
+	hJobInformer := hKusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
+	hJobSummaryInformer := hKusciaInformerFactory.Kuscia().V1alpha1().KusciaJobSummaries()
+	hTaskSummaryInformer := hKusciaInformerFactory.Kuscia().V1alpha1().KusciaTaskSummaries()
 	hDomainDataInformer := hKusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
 	hDomainDataGrantInformer := hKusciaInformerFactory.Kuscia().V1alpha1().DomainDataGrants()
+
+	deploymentQueueName := fmt.Sprintf("host-%s-member-%s-kd-queue", host, member)
+	deploymentSummaryQueueName := fmt.Sprintf("host-%v-member-%v-kds-queue", host, member)
+	jobQueueName := fmt.Sprintf("host-%s-member-%s-job-queue", host, member)
+	jobSummaryQueueName := fmt.Sprintf("host-%v-member-%v-jobsummary-queue", host, member)
+	taskSummaryQueueName := fmt.Sprintf("host-%v-member-%v-tasksummary-queue", host, member)
+	domainDataGrantQueueName := fmt.Sprintf("host-%v-member-%v-domaindatagrant-queue", host, member)
+	domainDataQueueName := fmt.Sprintf("host-%v-member-%v-domaindata-queue", host, member)
 
 	stopCh := make(chan struct{})
 	hrc := &hostResourcesController{
 		stopCh:                      stopCh,
 		host:                        host,
 		member:                      member,
-		hostKubeClient:              clients.KubeClient,
 		hostKusciaClient:            clients.KusciaClient,
-		memberKubeClient:            opts.memberKubeClient,
-		memberKusciaClient:          opts.memberKusciaClient,
-		hostKubeInformerFactory:     hKubeInformerFactory,
 		hostKusciaInformerFactory:   hKusciaInformerFactory,
-		hostPodSynced:               hPodInformer.Informer().HasSynced,
-		hostPodLister:               hPodInformer.Lister(),
-		hostServiceSynced:           hServiceInformer.Informer().HasSynced,
-		hostServiceLister:           hServiceInformer.Lister(),
-		hostConfigMapSynced:         hConfigMapInformer.Informer().HasSynced,
-		hostConfigMapLister:         hConfigMapInformer.Lister(),
-		hostTrSynced:                hTaskResourceInformer.Informer().HasSynced,
-		hostTrLister:                hTaskResourceInformer.Lister(),
+		hostDeploymentSynced:        hDeploymentInformer.Informer().HasSynced,
+		hostDeploymentLister:        hDeploymentInformer.Lister(),
+		hostDeploymentSummarySynced: hDeploymentSummaryInformer.Informer().HasSynced,
+		hostDeploymentSummaryLister: hDeploymentSummaryInformer.Lister(),
+		hostJobSynced:               hJobInformer.Informer().HasSynced,
+		hostJobLister:               hJobInformer.Lister(),
+		hostJobSummarySynced:        hJobSummaryInformer.Informer().HasSynced,
+		hostJobSummaryLister:        hJobSummaryInformer.Lister(),
+		hostTaskSummarySynced:       hTaskSummaryInformer.Informer().HasSynced,
+		hostTaskSummaryLister:       hTaskSummaryInformer.Lister(),
 		hostDomainDataGrantSynced:   hDomainDataGrantInformer.Informer().HasSynced,
 		hostDomainDataGrantLister:   hDomainDataGrantInformer.Lister(),
 		hostDomainDataSynced:        hDomainDataInformer.Informer().HasSynced,
 		hostDomainDataLister:        hDomainDataInformer.Lister(),
-		memberPodLister:             opts.memberPodLister,
-		memberServiceLister:         opts.memberServiceLister,
-		memberConfigMapLister:       opts.memberConfigMapLister,
-		memberTrLister:              opts.memberTrLister,
+		memberKusciaClient:          opts.memberKusciaClient,
+		memberDomainLister:          opts.memberDomainLister,
+		memberDeploymentLister:      opts.memberDeploymentLister,
+		memberJobLister:             opts.memberJobLister,
+		memberTaskLister:            opts.memberTaskLister,
+		memberTaskResourceLister:    opts.memberTaskResourceLister,
 		memberDomainDataLister:      opts.memberDomainDataLister,
 		memberDomainDataGrantLister: opts.memberDomainDataGrantLister,
-		podsQueue:                   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf(hostPodsQueueName, host, member)),
-		servicesQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf(hostServicesQueueName, host, member)),
-		configMapsQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf(hostConfigMapsQueueName, host, member)),
-		taskResourcesQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf(hostTaskResourcesQueueName, host, member)),
-		domainDataQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf(hostDomainDataQueueName, host, member)),
-		domainDataGrantQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf(hostDomainDataGrantQueueName, host, member)),
+		deploymentQueueName:         deploymentQueueName,
+		deploymentQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), deploymentQueueName),
+		deploymentSummaryQueueName:  deploymentSummaryQueueName,
+		deploymentSummaryQueue:      workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), deploymentSummaryQueueName),
+		jobQueueName:                jobQueueName,
+		jobQueue:                    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), jobQueueName),
+		jobSummaryQueueName:         jobSummaryQueueName,
+		jobSummaryQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), jobSummaryQueueName),
+		taskSummaryQueueName:        taskSummaryQueueName,
+		taskSummaryQueue:            workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskSummaryQueueName),
+		domainDataQueueName:         domainDataQueueName,
+		domainDataQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), domainDataQueueName),
+		domainDataGrantQueueName:    domainDataGrantQueueName,
+		domainDataGrantQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), domainDataGrantQueueName),
 	}
 
-	hPodInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	hDeploymentInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc:    hrc.handleAddedOrDeletedPod,
-			UpdateFunc: hrc.handleUpdatedPod,
-			DeleteFunc: hrc.handleAddedOrDeletedPod,
+			AddFunc:    hrc.handleAddedDeployment,
+			UpdateFunc: hrc.handleUpdatedDeployment,
+			DeleteFunc: hrc.handleDeletedDeployment,
 		},
 	})
 
-	hServiceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	hDeploymentSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc:    hrc.handleAddedOrDeletedService,
-			UpdateFunc: hrc.handleUpdatedService,
-			DeleteFunc: hrc.handleAddedOrDeletedService,
+			AddFunc:    hrc.handleAddedorDeletedDeploymentSummary,
+			UpdateFunc: hrc.handleUpdatedDeploymentSummary,
+			DeleteFunc: hrc.handleAddedorDeletedDeploymentSummary,
 		},
 	})
 
-	hConfigMapInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	hJobInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc:    hrc.handleAddedOrDeletedConfigMap,
-			UpdateFunc: hrc.handleUpdatedConfigMap,
-			DeleteFunc: hrc.handleAddedOrDeletedConfigMap,
+			AddFunc:    hrc.handleAddedJob,
+			UpdateFunc: hrc.handleUpdatedJob,
+			DeleteFunc: hrc.handleDeletedJob,
 		},
 	})
 
-	hTaskResourceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	hJobSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc:    hrc.handleAddedOrDeletedTaskResource,
-			UpdateFunc: hrc.handleUpdatedTaskResource,
-			DeleteFunc: hrc.handleAddedOrDeletedTaskResource,
+			AddFunc:    hrc.handleAddedorDeletedJobSummary,
+			UpdateFunc: hrc.handleUpdatedJobSummary,
+			DeleteFunc: hrc.handleAddedorDeletedJobSummary,
+		},
+	})
+
+	hTaskSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: hrc.resourceFilter,
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc:    hrc.handleAddedorDeletedTaskSummary,
+			UpdateFunc: hrc.handleUpdatedTaskSummary,
+			DeleteFunc: hrc.handleAddedorDeletedTaskSummary,
 		},
 	})
 
 	hDomainDataGrantInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc:    hrc.handleAddedOrDeletedDomainDataGrant,
+			AddFunc:    hrc.handleAddedDomainDataGrant,
 			UpdateFunc: hrc.handleUpdatedDomainDataGrant,
-			DeleteFunc: hrc.handleAddedOrDeletedDomainDataGrant,
+			DeleteFunc: hrc.handleDeletedDomainDataGrant,
 		},
 	})
+
 	hDomainDataInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc:    hrc.handleAddedOrDeletedDomainData,
+			AddFunc:    hrc.handleAddedDomainData,
 			UpdateFunc: hrc.handleUpdatedDomainData,
-			DeleteFunc: hrc.handleAddedOrDeletedDomainData,
+			DeleteFunc: hrc.handleDeletedDomainData,
 		},
 	})
 	return hrc, nil
@@ -225,19 +252,21 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 // resourceFilter is used to filter resource.
 func (c *hostResourcesController) resourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
-		switch t := obj.(type) {
-		case *corev1.Pod:
-			return c.matchLabels(t)
-		case *corev1.Service:
-			return c.matchLabels(t)
-		case *corev1.ConfigMap:
-			return c.matchLabels(t)
-		case *kusciaapisv1alpha1.TaskResource:
-			return c.matchLabels(t)
+		switch o := obj.(type) {
+		case *kusciaapisv1alpha1.KusciaDeployment:
+			return c.filterResources(o)
+		case *kusciaapisv1alpha1.KusciaDeploymentSummary:
+			return c.filterResources(o)
+		case *kusciaapisv1alpha1.KusciaJob:
+			return c.filterResources(o)
+		case *kusciaapisv1alpha1.KusciaJobSummary:
+			return c.filterResources(o)
+		case *kusciaapisv1alpha1.KusciaTaskSummary:
+			return c.filterResources(o)
 		case *kusciaapisv1alpha1.DomainDataGrant:
-			return c.matchLabels(t)
+			return c.filterResources(o)
 		case *kusciaapisv1alpha1.DomainData:
-			return c.matchLabels(t)
+			return c.filterResources(o)
 		default:
 			return false
 		}
@@ -251,22 +280,18 @@ func (c *hostResourcesController) resourceFilter(obj interface{}) bool {
 	return filter(obj)
 }
 
-// matchLabels is used to match obj labels.
-func (c *hostResourcesController) matchLabels(obj metav1.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
+// filterResources is used to filter resources that meets the requirements.
+func (c *hostResourcesController) filterResources(obj metav1.Object) bool {
+	return c.matchAnnotations(obj.GetAnnotations())
+}
+
+// matchAnnotations is used to match obj annotations.
+func (c *hostResourcesController) matchAnnotations(annotations map[string]string) bool {
+	if annotations == nil ||
+		annotations[common.InitiatorAnnotationKey] == "" ||
+		annotations[common.InterConnKusciaPartyAnnotationKey] == "" {
 		return false
 	}
-
-	if labels[common.LabelInterConnProtocolType] != string(kusciaapisv1alpha1.InterConnKuscia) {
-		return false
-	}
-
-	value, exist := labels[common.LabelInitiator]
-	if !exist || value != c.host {
-		return false
-	}
-
 	return true
 }
 
@@ -276,11 +301,14 @@ func (c *hostResourcesController) matchLabels(obj metav1.Object) bool {
 // workers to finish processing their current work items.
 func (c *hostResourcesController) run(workers int) error {
 	nlog.Infof("Start host resource controller for %v/%v", c.host, c.member)
-	c.hostKubeInformerFactory.Start(c.stopCh)
 	c.hostKusciaInformerFactory.Start(c.stopCh)
 
 	nlog.Infof("Start waiting for cache to sync for %v/%v resource controller", c.host, c.member)
-	if ok := cache.WaitForCacheSync(c.stopCh, c.hostPodSynced, c.hostServiceSynced, c.hostConfigMapSynced, c.hostTrSynced, c.hostDomainDataGrantSynced); !ok {
+	if ok := cache.WaitForCacheSync(c.stopCh,
+		c.hostDeploymentSynced, c.hostDeploymentSummarySynced,
+		c.hostJobSynced, c.hostJobSummarySynced,
+		c.hostTaskSummarySynced,
+		c.hostDomainDataSynced, c.hostDomainDataGrantSynced); !ok {
 		return fmt.Errorf("failed to wait for %v/%v cache to sync for resource controller", c.host, c.member)
 	}
 	nlog.Infof("Finish waiting for cache to sync for %v/%v resource controller", c.host, c.member)
@@ -289,10 +317,11 @@ func (c *hostResourcesController) run(workers int) error {
 
 	nlog.Infof("Run workers for %v/%v resource controller", c.host, c.member)
 	for i := 0; i < workers; i++ {
-		go wait.Until(c.runPodWorker, time.Second, c.stopCh)
-		go wait.Until(c.runServiceWorker, time.Second, c.stopCh)
-		go wait.Until(c.runConfigMapWorker, time.Second, c.stopCh)
-		go wait.Until(c.runTaskResourceWorker, time.Second, c.stopCh)
+		go wait.Until(c.runDeploymentWorker, time.Second, c.stopCh)
+		go wait.Until(c.runDeploymentSummaryWorker, time.Second, c.stopCh)
+		go wait.Until(c.runJobWorker, time.Second, c.stopCh)
+		go wait.Until(c.runJobSummaryWorker, time.Second, c.stopCh)
+		go wait.Until(c.runTaskSummaryWorker, time.Second, c.stopCh)
 		go wait.Until(c.runDomainDataWorker, time.Second, c.stopCh)
 		go wait.Until(c.runDomainDataGrantWorker, time.Second, c.stopCh)
 	}
@@ -301,10 +330,12 @@ func (c *hostResourcesController) run(workers int) error {
 
 // stop is used to stop the host resource controller.
 func (c *hostResourcesController) stop() {
-	c.podsQueue.ShutDown()
-	c.servicesQueue.ShutDown()
-	c.configMapsQueue.ShutDown()
-	c.taskResourcesQueue.ShutDown()
+	c.deploymentQueue.ShutDown()
+	c.deploymentSummaryQueue.ShutDown()
+	c.jobQueue.ShutDown()
+	c.jobSummaryQueue.ShutDown()
+	c.taskSummaryQueue.ShutDown()
+	c.domainDataQueue.ShutDown()
 	c.domainDataGrantQueue.ShutDown()
 	if c.stopCh != nil {
 		close(c.stopCh)
@@ -317,34 +348,34 @@ func (c *hostResourcesController) HasSynced() bool {
 	return c.hasSynced
 }
 
-// HostKubeClient returns kubeClient of host cluster.
-func (c *hostResourcesController) HostKubeClient() kubernetes.Interface {
-	return c.hostKubeClient
-}
-
 // HostKusciaClient returns KusciaClient of host cluster.
 func (c *hostResourcesController) HostKusciaClient() kusciaclientset.Interface {
 	return c.hostKusciaClient
 }
 
-// HostPodLister returns podLister of host cluster.
-func (c *hostResourcesController) HostPodLister() listers.PodLister {
-	return c.hostPodLister
+// HostJobLister returns jobLister of host cluster.
+func (c *hostResourcesController) HostJobLister() kuscialistersv1alpha1.KusciaJobLister {
+	return c.hostJobLister
 }
 
-// HostServiceLister returns serviceLister of host cluster.
-func (c *hostResourcesController) HostServiceLister() listers.ServiceLister {
-	return c.hostServiceLister
+// HostJobSummaryLister returns jobSummaryLister of host cluster.
+func (c *hostResourcesController) HostJobSummaryLister() kuscialistersv1alpha1.KusciaJobSummaryLister {
+	return c.hostJobSummaryLister
 }
 
-// HostConfigMapLister returns configmapLister of host cluster.
-func (c *hostResourcesController) HostConfigMapLister() listers.ConfigMapLister {
-	return c.hostConfigMapLister
+// HostTaskSummaryLister returns taskSummaryLister of host cluster.
+func (c *hostResourcesController) HostTaskSummaryLister() kuscialistersv1alpha1.KusciaTaskSummaryLister {
+	return c.hostTaskSummaryLister
 }
 
-// HostTaskResourceLister returns taskResourceLister of host cluster.
-func (c *hostResourcesController) HostTaskResourceLister() kuscialistersv1alpha1.TaskResourceLister {
-	return c.hostTrLister
+// HostDeploymentLister returns deploymentLister of host cluster.
+func (c *hostResourcesController) HostDeploymentLister() kuscialistersv1alpha1.KusciaDeploymentLister {
+	return c.hostDeploymentLister
+}
+
+// HostDeploymentSummaryLister returns deploymentSummaryLister of host cluster.
+func (c *hostResourcesController) HostDeploymentSummaryLister() kuscialistersv1alpha1.KusciaDeploymentSummaryLister {
+	return c.hostDeploymentSummaryLister
 }
 
 // HostDomainDataLister returns domainDataLister of host cluster.
@@ -357,19 +388,9 @@ func (c *hostResourcesController) HostDomainDataGrantLister() kuscialistersv1alp
 	return c.hostDomainDataGrantLister
 }
 
-// EnqueueTaskResource is used to put task resource key into host task resources queue.
-func (c *hostResourcesController) EnqueueTaskResource(key string) {
-	c.taskResourcesQueue.Add(key)
-}
-
-// EnqueuePod is used to put pod key into host pods queue.
-func (c *hostResourcesController) EnqueuePod(key string) {
-	c.podsQueue.Add(key)
-}
-
-// EnqueueService is used to put service key into host services queue.
-func (c *hostResourcesController) EnqueueService(key string) {
-	c.servicesQueue.Add(key)
+// EnqueueDeployment is used to put deployment key into host deployments queue.
+func (c *hostResourcesController) EnqueueDeployment(key string) {
+	c.deploymentQueue.Add(key)
 }
 
 // GetHostClient returns kubeClient and kusciaClient of host cluster.
@@ -382,20 +403,12 @@ func getAPIServerURLForHostCluster(host string) string {
 	return fmt.Sprintf("http://apiserver.%s.svc", host)
 }
 
-// generateQueueName is used to generate queue name.
-func generateQueueName(name, host, member string) string {
-	return fmt.Sprintf(name, host, member)
-}
-
 // getNamespaceAndNameFromKey is used to get namespace and name from key.
 func getNamespaceAndNameFromKey(key, member string) (string, string, error) {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
-		return namespace, name, fmt.Errorf("split meta namespace key %v failed, %v", key, err)
+		return namespace, name, fmt.Errorf("failed to split meta namespace key %v failed, %v", key, err)
 	}
 
-	if namespace != member {
-		return namespace, name, fmt.Errorf("%v namespace is not equal to member %v", key, member)
-	}
 	return namespace, name, nil
 }

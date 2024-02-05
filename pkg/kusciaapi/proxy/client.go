@@ -52,6 +52,7 @@ const (
 	DeleteJobPath     = "/api/v1/job/delete"
 	QueryJobPath      = "/api/v1/job/query"
 	StopJobPath       = "/api/v1/job/stop"
+	ApproveJobPath    = "/api/v1/job/approve"
 	BatchQueryJobPath = "/api/v1/job/status/batchQuery"
 	WatchJobPath      = "/api/v1/job/watch"
 	// Kuscia Serving
@@ -114,6 +115,8 @@ type KusciaAPIClient interface {
 	QueryServing(ctx context.Context, request *kusciaapi.QueryServingRequest) (response *kusciaapi.QueryServingResponse, err error)
 
 	BatchQueryServing(ctx context.Context, request *kusciaapi.BatchQueryServingStatusRequest) (response *kusciaapi.BatchQueryServingStatusResponse, err error)
+
+	ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) (response *kusciaapi.ApproveJobResponse, err error)
 }
 
 func NewKusciaAPIClient(endpoint string) KusciaAPIClient {
@@ -229,6 +232,12 @@ func (c *KusciaAPIHttpClient) QueryJob(ctx context.Context, request *kusciaapi.Q
 func (c *KusciaAPIHttpClient) StopJob(ctx context.Context, request *kusciaapi.StopJobRequest) (response *kusciaapi.StopJobResponse, err error) {
 	response = &kusciaapi.StopJobResponse{}
 	err = c.Send(ctx, request, response, StopJobPath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) (response *kusciaapi.ApproveJobResponse, err error) {
+	response = &kusciaapi.ApproveJobResponse{}
+	err = c.Send(ctx, request, response, ApproveJobPath)
 	return
 }
 

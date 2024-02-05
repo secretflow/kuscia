@@ -31,7 +31,7 @@ import (
 // KusciaTasksGetter has a method to return a KusciaTaskInterface.
 // A group's client should implement this interface.
 type KusciaTasksGetter interface {
-	KusciaTasks() KusciaTaskInterface
+	KusciaTasks(namespace string) KusciaTaskInterface
 }
 
 // KusciaTaskInterface has methods to work with KusciaTask resources.
@@ -51,12 +51,14 @@ type KusciaTaskInterface interface {
 // kusciaTasks implements KusciaTaskInterface
 type kusciaTasks struct {
 	client rest.Interface
+	ns     string
 }
 
 // newKusciaTasks returns a KusciaTasks
-func newKusciaTasks(c *KusciaV1alpha1Client) *kusciaTasks {
+func newKusciaTasks(c *KusciaV1alpha1Client, namespace string) *kusciaTasks {
 	return &kusciaTasks{
 		client: c.RESTClient(),
+		ns:     namespace,
 	}
 }
 
@@ -64,6 +66,7 @@ func newKusciaTasks(c *KusciaV1alpha1Client) *kusciaTasks {
 func (c *kusciaTasks) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.KusciaTask, err error) {
 	result = &v1alpha1.KusciaTask{}
 	err = c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -80,6 +83,7 @@ func (c *kusciaTasks) List(ctx context.Context, opts v1.ListOptions) (result *v1
 	}
 	result = &v1alpha1.KusciaTaskList{}
 	err = c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -96,6 +100,7 @@ func (c *kusciaTasks) Watch(ctx context.Context, opts v1.ListOptions) (watch.Int
 	}
 	opts.Watch = true
 	return c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -106,6 +111,7 @@ func (c *kusciaTasks) Watch(ctx context.Context, opts v1.ListOptions) (watch.Int
 func (c *kusciaTasks) Create(ctx context.Context, kusciaTask *v1alpha1.KusciaTask, opts v1.CreateOptions) (result *v1alpha1.KusciaTask, err error) {
 	result = &v1alpha1.KusciaTask{}
 	err = c.client.Post().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(kusciaTask).
@@ -118,6 +124,7 @@ func (c *kusciaTasks) Create(ctx context.Context, kusciaTask *v1alpha1.KusciaTas
 func (c *kusciaTasks) Update(ctx context.Context, kusciaTask *v1alpha1.KusciaTask, opts v1.UpdateOptions) (result *v1alpha1.KusciaTask, err error) {
 	result = &v1alpha1.KusciaTask{}
 	err = c.client.Put().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		Name(kusciaTask.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -132,6 +139,7 @@ func (c *kusciaTasks) Update(ctx context.Context, kusciaTask *v1alpha1.KusciaTas
 func (c *kusciaTasks) UpdateStatus(ctx context.Context, kusciaTask *v1alpha1.KusciaTask, opts v1.UpdateOptions) (result *v1alpha1.KusciaTask, err error) {
 	result = &v1alpha1.KusciaTask{}
 	err = c.client.Put().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		Name(kusciaTask.Name).
 		SubResource("status").
@@ -145,6 +153,7 @@ func (c *kusciaTasks) UpdateStatus(ctx context.Context, kusciaTask *v1alpha1.Kus
 // Delete takes name of the kusciaTask and deletes it. Returns an error if one occurs.
 func (c *kusciaTasks) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		Name(name).
 		Body(&opts).
@@ -159,6 +168,7 @@ func (c *kusciaTasks) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -171,6 +181,7 @@ func (c *kusciaTasks) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 func (c *kusciaTasks) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.KusciaTask, err error) {
 	result = &v1alpha1.KusciaTask{}
 	err = c.client.Patch(pt).
+		Namespace(c.ns).
 		Resource("kusciatasks").
 		Name(name).
 		SubResource(subresources...).

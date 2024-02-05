@@ -59,8 +59,11 @@ func TestPreFilter(t *testing.T) {
 	trInformerFactory.Start(ctx.Done())
 
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
+	tr1.UID = "111"
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
+	tr2.UID = "222"
 	tr3 := util.MakeTaskResource("ns1", "tr3", 1, nil)
+	tr3.UID = "333"
 	tr1.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserving
 	tr2.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseFailed
 	tr3.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserving
@@ -82,7 +85,7 @@ func TestPreFilter(t *testing.T) {
 	}
 	nsInformer.Informer().GetStore().Add(ns1)
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr3"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "333"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 
 	tests := []struct {
@@ -97,24 +100,28 @@ func TestPreFilter(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name:        "pod belong to task resource tr1 but tr1 does node exist",
-			pod:         st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj(),
+			name: "pod belong to task resource tr1 but tr1 does node exist",
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr1").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			cleanTr:     tr1,
 			expectedErr: true,
 		},
 		{
-			name:        "pod belong to task resource tr2 but task resource phase is failed",
-			pod:         st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr2").Obj(),
+			name: "pod belong to task resource tr2 but task resource phase is failed",
+			pod: st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr2").Label(kusciaapisv1alpha1.TaskResourceUID, "222").Obj(),
 			expectedErr: true,
 		},
 		{
-			name:        "pod belong to task resource tr1 but the member less than MinReservedPods",
-			pod:         st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj(),
+			name: "pod belong to task resource tr1 but the member less than MinReservedPods",
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr1").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			expectedErr: true,
 		},
 		{
-			name:        "pod belong to task resource tr3 and the reserved pods number greater than MinReservedPods",
-			pod:         st.MakePod().Name("pod3").Namespace("ns1").Node("node3").UID("pod3").Label(kusciaapisv1alpha1.LabelTaskResource, "tr3").Obj(),
+			name: "pod belong to task resource tr3 and the reserved pods number greater than MinReservedPods",
+			pod: st.MakePod().Name("pod3").Namespace("ns1").Node("node3").UID("pod3").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr3").Label(kusciaapisv1alpha1.TaskResourceUID, "333").Obj(),
 			expectedErr: false,
 		},
 	}
@@ -151,6 +158,7 @@ func TestReserve(t *testing.T) {
 	trInformerFactory.Start(ctx.Done())
 
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
+	tr1.UID = "111"
 	trInformer.Informer().GetStore().Add(tr1)
 
 	fakeClient := clientsetfake.NewSimpleClientset()
@@ -160,7 +168,7 @@ func TestReserve(t *testing.T) {
 
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr1"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 
 	type settr struct {
@@ -180,13 +188,15 @@ func TestReserve(t *testing.T) {
 			expectedtrInfos: nil,
 		},
 		{
-			name:            "pod belong to task resource tr1",
-			pod:             st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj(),
+			name: "pod belong to task resource tr1",
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr1").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			expectedtrInfos: []string{"ns1/tr1"},
 		},
 		{
 			name: "pod belong to task resource tr1 and tr1 already is stored in taskResourceInfos",
-			pod:  st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj(),
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr1").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			settr: settr{
 				trInfo: []taskResourceInfo{
 					{
@@ -200,7 +210,7 @@ func TestReserve(t *testing.T) {
 		},
 		{
 			name: "pod belong to task resource tr1 and taskResourceInfos store multi elements for tr1",
-			pod:  st.MakePod().Name("pod1").Namespace("ns11").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj(),
+			pod:  st.MakePod().Name("pod1").Namespace("ns11").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			settr: settr{
 				trInfo: []taskResourceInfo{
 					{
@@ -240,7 +250,9 @@ func TestPermit(t *testing.T) {
 	trInformerFactory.Start(ctx.Done())
 
 	tr1 := util.MakeTaskResource("ns1", "tr1", 1, nil)
+	tr1.UID = "111"
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
+	tr2.UID = "222"
 	trInformer.Informer().GetStore().Add(tr1)
 	trInformer.Informer().GetStore().Add(tr2)
 
@@ -250,10 +262,10 @@ func TestPermit(t *testing.T) {
 	nsInformer := informerFactory.Core().V1().Namespaces()
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr1"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, map[string]string{kusciaapisv1alpha1.TaskResourceKey: "tr1"}, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 
-	existingPods, allNodes = util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr2"}, 60, 30)
+	existingPods, allNodes = util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "222"}, map[string]string{kusciaapisv1alpha1.TaskResourceKey: "tr2"}, 60, 30)
 	groupSnapshot := util.NewFakeSharedLister(existingPods, allNodes)
 
 	tests := []struct {
@@ -268,19 +280,22 @@ func TestPermit(t *testing.T) {
 			expected: TaskResourceNotSpecified,
 		},
 		{
-			name:     "pods belong to a tr3, Not Found",
-			pod:      st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr3").Obj(),
+			name: "pods belong to a tr3, Not Found",
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr3").Label(kusciaapisv1alpha1.TaskResourceUID, "333").Obj(),
 			expected: TaskResourceNotFound,
 		},
 		{
-			name:          "pods belong to tr1, Allow",
-			pod:           st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr1").Obj(),
+			name: "pods belong to tr1, Allow",
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr1").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			groupSnapshot: groupSnapshot,
 			expected:      Success,
 		},
 		{
-			name:     "pods belong to tr1, Wait",
-			pod:      st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr2").Obj(),
+			name: "pods belong to tr1, Wait",
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr2").Label(kusciaapisv1alpha1.TaskResourceUID, "222").Obj(),
 			expected: Wait,
 		},
 	}
@@ -319,7 +334,7 @@ func TestDeletePermittedTaskResource(t *testing.T) {
 
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 
 	tests := []struct {
@@ -333,8 +348,8 @@ func TestDeletePermittedTaskResource(t *testing.T) {
 			name: "pod1 belong to task resource tr and task resource is patching",
 			tr:   tr,
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.TaskResourceKey, "tr").Obj(),
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.TaskResourceKey, "tr").Obj()},
 			isPatchingtrList: []string{"ns1/tr"},
 			expectedtrExist:  false,
 		},
@@ -364,6 +379,7 @@ func TestDeletePermittedTaskResource(t *testing.T) {
 
 func TestCalculateAssignedPods(t *testing.T) {
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
+	tr.UID = "111"
 	ctx := context.Background()
 	cs := kusciaclientsetfake.NewSimpleClientset()
 	trInformerFactory := kusciainformers.NewSharedInformerFactory(cs, 0)
@@ -379,7 +395,8 @@ func TestCalculateAssignedPods(t *testing.T) {
 
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"},
+		map[string]string{kusciaapisv1alpha1.TaskResourceKey: "tr"}, 60, 30)
 	for _, pod := range existingPods {
 		pod.Namespace = "ns1"
 	}
@@ -394,15 +411,17 @@ func TestCalculateAssignedPods(t *testing.T) {
 		expected     int
 	}{
 		{
-			name:     "pod1 belong to tr but tr does not exist in taskResourceInfos",
-			tr:       tr,
-			pod:      st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
+			name: "pod1 belong to tr but tr does not exist in taskResourceInfos",
+			tr:   tr,
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			expected: 0,
 		},
 		{
-			name:         "pod1 belong to tr but trInfos type is invalid",
-			tr:           tr,
-			pod:          st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
+			name: "pod1 belong to tr but trInfos type is invalid",
+			tr:   tr,
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			wrongtrInfos: true,
 			trInfos: []taskResourceInfo{
 				{
@@ -415,7 +434,8 @@ func TestCalculateAssignedPods(t *testing.T) {
 		{
 			name: "pod1 belong to tr but node info does not exist",
 			tr:   tr,
-			pod:  st.MakePod().Name("pod1").Namespace("ns1").Node("node-1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node-1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			trInfos: []taskResourceInfo{
 				{
 					nodeName: "node-2",
@@ -427,7 +447,8 @@ func TestCalculateAssignedPods(t *testing.T) {
 		{
 			name: "pod1 belong to tr but node name does not exist",
 			tr:   tr,
-			pod:  st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
+			pod: st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+				Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
 			trInfos: []taskResourceInfo{
 				{
 					podName: "pod1",
@@ -499,8 +520,8 @@ func TestGetWaitTimeDuration(t *testing.T) {
 }
 
 func TestGetScheduledPodsCount(t *testing.T) {
-	pod1 := st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()
-	pod2 := st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()
+	pod1 := st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.TaskResourceKey, "tr").Obj()
+	pod2 := st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.TaskResourceKey, "tr").Obj()
 	tests := []struct {
 		name     string
 		trInfos  []taskResourceInfo

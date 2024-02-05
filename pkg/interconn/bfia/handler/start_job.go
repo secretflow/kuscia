@@ -24,8 +24,9 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
@@ -64,25 +65,25 @@ func (h *startJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) 
 		Code: http.StatusOK,
 	}
 
-	rawKj, err := h.KjLister.Get(req.JobId)
+	rawKj, err := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobId)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			rawKj, err = h.KusciaClient.KusciaV1alpha1().KusciaJobs().Get(context.Background(), req.JobId, metav1.GetOptions{})
+			rawKj, err = h.KusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(context.Background(), req.JobId, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				resp.Code = http.StatusBadRequest
-				resp.Msg = common.ErrJobDoesNotExist
+				resp.Msg = bfiacommon.ErrJobDoesNotExist
 				return resp
 			}
 		}
 
 		if err != nil {
 			resp.Code = http.StatusInternalServerError
-			resp.Msg = common.ErrFindJobFailed
+			resp.Msg = bfiacommon.ErrFindJobFailed
 			return resp
 		}
 	}
 
-	if rawKj.Spec.Stage == kusciaapisv1alpha1.JobStartStage {
+	if rawKj.Labels == nil || rawKj.Labels[common.LabelJobStage] == string(kusciaapisv1alpha1.JobStartStage) {
 		return resp
 	}
 
@@ -93,7 +94,7 @@ func (h *startJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) 
 	}
 
 	kj := rawKj.DeepCopy()
-	if err = utilsres.UpdateKusciaJobStage(h.KusciaClient, kj, kusciaapisv1alpha1.JobStartStage, common.ErrRetries); err != nil {
+	if err = utilsres.UpdateKusciaJobStage(h.KusciaClient, kj, kusciaapisv1alpha1.JobStartStage, bfiacommon.ErrRetries); err != nil {
 		resp.Code = http.StatusInternalServerError
 		resp.Msg = err.Error()
 		return resp
@@ -125,7 +126,7 @@ func getFailedMessageFromKusciaJob(kj *kusciaapisv1alpha1.KusciaJob) string {
 	}
 
 	if message == "" {
-		message = common.ErrJobStatusFailed
+		message = bfiacommon.ErrJobStatusFailed
 	}
 
 	return message

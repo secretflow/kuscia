@@ -29,6 +29,7 @@ auth_type=MTLS
 token=
 insecure="false"
 transit_domain=
+need_interop="true"
 
 function join_to_host() {
   local host=${host_endpoint}
@@ -82,7 +83,7 @@ function join_to_host() {
   fi
   echo "${domain_route_template}" | kubectl apply -f -
 
-  if [[ ${interconn_protocol} == "kuscia" ]]; then
+  if [[ ${interconn_protocol} == "kuscia" && ${need_interop} == "true" ]]; then
     INTEROP_CONFIG_TEMPLATE=$(sed "s/{{.MEMBER_DOMAIN_ID}}/${self_domain_id}/g;
        s/{{.HOST_DOMAIN_ID}}/${host_domain_id}/g" \
       <"${ROOT}/scripts/templates/interop_config.yaml")
@@ -111,7 +112,7 @@ OPTIONS:
     -x    transit domain name."
 }
 
-while getopts 'p:a:t:x:k:h' option; do
+while getopts 'p:a:t:x:k:i:h' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG
@@ -131,6 +132,9 @@ while getopts 'p:a:t:x:k:h' option; do
     ;;
   k)
     insecure="true"
+    ;;
+  i)
+    need_interop=$OPTARG
     ;;
   h)
     usage

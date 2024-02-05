@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dupl
 package common
 
 import "time"
@@ -35,9 +36,7 @@ const (
 	LabelDomainRole                      = "kuscia.secretflow/role"
 	LabelInterConnProtocols              = "kuscia.secretflow/interconn-protocols"
 	LabelResourceVersionUnderHostCluster = "kuscia.secretflow/resource-version-under-host-cluster"
-	LabelTaskResourceGroup               = "kuscia.secretflow/task-resource-group"
 	LabelTaskUnschedulable               = "kuscia.secretflow/task-unschedulable"
-	LabelInitiator                       = "kuscia.secretflow/initiator"
 	LabelHasSynced                       = "kuscia.secretflow/has-synced"
 	LabelDomainDataType                  = "kuscia.secretflow/domaindata-type"
 	LabelDomainDataID                    = "kuscia.secretflow/domaindataid"
@@ -46,36 +45,24 @@ const (
 	LabelDomainDataGrantVendor           = "kuscia.secretflow/domaindatagrant-vendor"
 	LabelDomainDataGrantDomain           = "kuscia.secretflow/domaindatagrant-domain"
 
-	LabelSelfClusterAsInitiator = "kuscia.secretflow/self-cluster-as-initiator"
 	// LabelInterConnProtocolType is a label to specify the interconn protocol type of job
-	// For KusciaBetaJob, it's only used for partner job
+	// For KusciaJob, it's only used for partner job
 	LabelInterConnProtocolType = "kuscia.secretflow/interconn-protocol-type"
-	LabelJobID                 = "kuscia.secretflow/job-id"
-	LabelTaskID                = "kuscia.secretflow/task-id"
-	LabelTaskAlias             = "kuscia.secretflow/task-alias"
+	LabelJobUID                = "kuscia.secretflow/job-uid"
+	LabelTaskUID               = "kuscia.secretflow/task-uid"
+	LabelTaskResourceGroupUID  = "kuscia.secretflow/task-resource-group-uid"
 
+	LabelJobAutoApproval = "kuscia.secretflow/job-auto-approval"
 	// LabelJobStage is a label to specify the current stage of job.
 	LabelJobStage = "kuscia.secretflow/job-stage"
 	// LabelJobStageTrigger is a label to specify who trigger the current stage of job.
 	LabelJobStageTrigger = "kuscia.secretflow/job-stage-trigger"
 
-	// LabelInterConnKusciaParty is a label of a job which has parties interconnected with kuscia protocol,
-	// the value is a series of domain id join with '_', such as alice_bob_carol .
-	LabelInterConnKusciaParty = "kuscia.secretflow/interconn-kuscia-parties"
-
-	// LabelInterConnBFIAParty is a label of a job which has parties interconnected with bfia protocol,
-	// the value is a series of domain id join with '_', such as alice_bob_carol .
-	LabelInterConnBFIAParty = "kuscia.secretflow/interconn-bfia-parties"
-
-	// LabelTargetDomain is a label represent the target domain of a partner cluster,
-	// which labeled on the mirror custom resources in mocked master domain of partner cluster,
-	// the custom resources include DomainData, DomainDataGrant, etc.
-	LabelTargetDomain = "kuscia.secretflow/target-domain"
-
 	LabelKusciaDeploymentAppType  = "kuscia.secretflow/app-type"
 	LabelKusciaDeploymentUID      = "kuscia.secretflow/kd-uid"
 	LabelKusciaDeploymentName     = "kuscia.secretflow/kd-name"
 	LabelKubernetesDeploymentName = "kuscia.secretflow/deployment-name"
+	LabelKusciaOwnerNamespace     = "kuscia.secretflow/owner_namespace"
 
 	LabelNodeName        = "kuscia.secretflow/node"
 	LabelPodUID          = "kuscia.secretflow/pod-uid"
@@ -85,8 +72,10 @@ const (
 )
 
 const (
-	PluginNameCertIssuance = "cert-issuance"
-	PluginNameConfigRender = "config-render"
+	PluginNameCertIssuance  = "cert-issuance"
+	PluginNameConfigRender  = "config-render"
+	PluginNameImageSecurity = "image-security"
+	PluginNameEnvImport     = "env-import"
 )
 
 type LoadBalancerType string
@@ -98,15 +87,40 @@ const (
 type KusciaDeploymentAppType string
 
 const (
-	ServingAppType KusciaDeploymentAppType = "serving"
+	ServingApp KusciaDeploymentAppType = "serving"
+	SCQLApp    KusciaDeploymentAppType = "scql"
 )
 
 const (
-	KusciaSchedulerName = "kuscia-scheduler"
+	KusciaSchedulerName        = "kuscia-scheduler"
+	KusciaCrossDomain          = "cross-domain"
+	JobCustomFieldsLabelPrefix = "kuscia.job.custom-fields/"
 )
 
 // annotations
 const (
+	InitiatorAnnotationKey              = "kuscia.secretflow/initiator"
+	SelfClusterAsInitiatorAnnotationKey = "kuscia.secretflow/self-cluster-as-initiator"
+
+	// InterConnKusciaPartyAnnotationKey is a annotation which has parties interconnected with kuscia protocol,
+	// the value is a series of domain id join with '_', such as alice_bob_carol .
+	InterConnKusciaPartyAnnotationKey = "kuscia.secretflow/interconn-kuscia-parties"
+
+	// InterConnBFIAPartyAnnotationKey is a annotation which has parties interconnected with bfia protocol,
+	// the value is a series of domain id join with '_', such as alice_bob_carol .
+	InterConnBFIAPartyAnnotationKey = "kuscia.secretflow/interconn-bfia-parties"
+
+	InitiatorMasterDomainAnnotationKey   = "kuscia.secretflow/initiator-master-domain"
+	InterConnSelfPartyAnnotationKey      = "kuscia.secretflow/interconn-self-parties"
+	KusciaPartyMasterDomainAnnotationKey = "kuscia.secretflow/party-master-domain"
+
+	TaskSummaryResourceVersionAnnotationKey = "kuscia.secretflow/tasksummary-resource-version"
+
+	JobIDAnnotationKey             = "kuscia.secretflow/job-id"
+	TaskIDAnnotationKey            = "kuscia.secretflow/task-id"
+	TaskAliasAnnotationKey         = "kuscia.secretflow/task-alias"
+	TaskResourceGroupAnnotationKey = "kuscia.secretflow/task-resource-group"
+
 	AccessDomainAnnotationKey = "kuscia.secretflow/access-domain"
 	ProtocolAnnotationKey     = "kuscia.secretflow/protocol"
 	ReadyTimeAnnotationKey    = "kuscia.secretflow/ready-time"
@@ -117,23 +131,27 @@ const (
 
 	ComponentSpecAnnotationKey  = "kuscia.secretflow/component-spec"
 	AllocatedPortsAnnotationKey = "kuscia.secretflow/allocated-ports"
+	ImageIDAnnotationKey        = "kuscia.secretflow/image-id"
 )
 
-// Environment variables issued to the task pod.
+// Environment variables issued to the pod.
 const (
-	EnvDomainID          = "DOMAIN_ID"
-	EnvTaskID            = "TASK_ID"
-	EnvServingID         = "SERVING_ID"
-	EnvInputConfig       = "INPUT_CONFIG"
-	EnvClusterDefine     = "CLUSTER_DEFINE"
-	EnvTaskInputConfig   = "TASK_INPUT_CONFIG"
-	EnvTaskClusterDefine = "TASK_CLUSTER_DEFINE"
-	EnvAllocatedPorts    = "ALLOCATED_PORTS"
-	EnvServerCertFile    = "SERVER_CERT_FILE"
-	EnvServerKeyFile     = "SERVER_PRIVATE_KEY_FILE"
-	EnvClientCertFile    = "CLIENT_CERT_FILE"
-	EnvClientKeyFile     = "CLIENT_PRIVATE_KEY_FILE"
-	EnvTrustedCAFile     = "TRUSTED_CA_FILE"
+	EnvTaskID              = "TASK_ID"
+	EnvServingID           = "SERVING_ID"
+	EnvInputConfig         = "INPUT_CONFIG"
+	EnvClusterDefine       = "CLUSTER_DEFINE"
+	EnvTaskInputConfig     = "TASK_INPUT_CONFIG"
+	EnvTaskClusterDefine   = "TASK_CLUSTER_DEFINE"
+	EnvAllocatedPorts      = "ALLOCATED_PORTS"
+	EnvServerCertFile      = "SERVER_CERT_FILE"
+	EnvServerKeyFile       = "SERVER_PRIVATE_KEY_FILE"
+	EnvClientCertFile      = "CLIENT_CERT_FILE"
+	EnvClientKeyFile       = "CLIENT_PRIVATE_KEY_FILE"
+	EnvTrustedCAFile       = "TRUSTED_CA_FILE"
+	EnvDomainID            = "KUSCIA_DOMAIN_ID"
+	EnvPortNumber          = "KUSCIA_PORT_%s_NUMBER"
+	EnvKusciaAPIToken      = "KUSCIA_API_TOKEN"
+	EnvKusciaDomainKeyData = "KUSCIA_DOMAIN_KEY_DATA"
 )
 
 const (
@@ -184,6 +202,7 @@ const (
 )
 
 type CommunicationProtocol string
+
 type Protocol string
 
 const (

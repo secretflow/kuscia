@@ -24,12 +24,12 @@ runtime: runc
 
 # 当 runtime 为 runk 时配置
 runk:
-  # 任务调度到指定的机构 k8s namespace上
+  # 任务调度到指定的机构 K8s namespace 下
   namespace: ""
-  # 机构 k8s 集群的 pod dns 配置， 用于解析节点的应用域名
+  # 机构 K8s 集群的 pod dns 配置， 用于解析节点的应用域名
   dnsServers:
 #    - kuscia-dns-lb-server
-  # k8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
+  # K8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
   kubeconfigFile:
 
 # 节点可用于调度应用的容量，runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置

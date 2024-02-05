@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// nolint:dulp
 package handler
 
 import (
@@ -95,7 +96,14 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 	taskStatus := kusciaTask.Status.DeepCopy()
 	setTaskStatusPhase(taskStatus, trg)
 
-	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserved {
+	refreshTaskStatus := false
+	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserved ||
+		(trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserving &&
+			!utilsres.SelfClusterAsInitiator(h.nsLister, trg.Spec.Initiator, trg.Annotations)) {
+		refreshTaskStatus = true
+	}
+
+	if refreshTaskStatus {
 		h.reconcileTaskStatus(taskStatus, trg)
 		refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, taskStatus)
 		if !reflect.DeepEqual(taskStatus, kusciaTask.Status) {
@@ -117,6 +125,7 @@ func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool
 	return false, nil
 }
 
+// reconcileTaskStatus update task status by gathering statistic of partyTaskStatuses
 func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *kusciaapisv1alpha1.TaskResourceGroup) {
 	var pendingParty, runningParty, successfulParty, failedParty []string
 	partyTaskStatuses := h.buildPartyTaskStatus(taskStatus, trg)
@@ -138,17 +147,13 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 	failedPartyCount := len(failedParty)
 	runningPartyCount := len(runningParty)
 
-	validPartyCount := len(trg.Spec.Parties)
+	validPartyCount := len(trg.Spec.Parties) + len(trg.Spec.OutOfControlledParties)
 	minReservedMembers := trg.Spec.MinReservedMembers
-	if !utilsres.SelfClusterAsInitiator(h.nsLister, trg.Spec.Initiator, nil) {
-		minReservedMembers = minReservedMembers - h.getOuterInterConnPartyCount(trg)
-		validPartyCount = validPartyCount - h.getOuterInterConnPartyCount(trg)
-	}
 
 	if minReservedMembers > validPartyCount-failedPartyCount {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
 		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the threshold %v that meets the conditions for task success. pending party[%v], running party[%v], successful party[%v], failed party[%v]",
-			len(trg.Spec.Parties)-failedPartyCount, trg.Spec.MinReservedMembers, strings.Join(pendingParty, ","), strings.Join(runningParty, ","), strings.Join(successfulParty, ","), strings.Join(failedParty, ","))
+			validPartyCount-failedPartyCount, trg.Spec.MinReservedMembers, strings.Join(pendingParty, ","), strings.Join(runningParty, ","), strings.Join(successfulParty, ","), strings.Join(failedParty, ","))
 		return
 	}
 
@@ -167,26 +172,16 @@ func buildPartyKey(domainID, role string) string {
 	return strings.TrimSuffix(fmt.Sprintf("%v-%v", domainID, role), "-")
 }
 
+// buildPartyTaskStatus only update status of local parties
 func (h *RunningHandler) buildPartyTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trg *kusciaapisv1alpha1.TaskResourceGroup) []kusciaapisv1alpha1.PartyTaskStatus {
 	partyTaskStatuses := make([]kusciaapisv1alpha1.PartyTaskStatus, 0)
+
+	for _, party := range trg.Spec.OutOfControlledParties {
+		outerPartyTaskStatus := buildOuterPartyTaskStatus(taskStatus, &party)
+		partyTaskStatuses = append(partyTaskStatuses, *outerPartyTaskStatus)
+	}
+
 	for _, party := range trg.Spec.Parties {
-		if utilsres.IsOuterBFIAInterConnDomain(h.nsLister, party.DomainID) {
-			outerPartyTaskStatus := kusciaapisv1alpha1.PartyTaskStatus{
-				DomainID: party.DomainID,
-				Role:     party.Role,
-			}
-
-			for _, s := range taskStatus.PartyTaskStatus {
-				if s.DomainID == party.DomainID && s.Role == party.Role {
-					outerPartyTaskStatus.Phase = s.Phase
-					outerPartyTaskStatus.Message = s.Message
-					break
-				}
-			}
-			partyTaskStatuses = append(partyTaskStatuses, outerPartyTaskStatus)
-			continue
-		}
-
 		partyTaskStatus := kusciaapisv1alpha1.PartyTaskStatus{
 			DomainID: party.DomainID,
 			Role:     party.Role,
@@ -206,16 +201,6 @@ func (h *RunningHandler) buildPartyTaskStatus(taskStatus *kusciaapisv1alpha1.Kus
 		partyTaskStatuses = append(partyTaskStatuses, partyTaskStatus)
 	}
 	return partyTaskStatuses
-}
-
-func (h *RunningHandler) getOuterInterConnPartyCount(trg *kusciaapisv1alpha1.TaskResourceGroup) int {
-	outerPartyCount := 0
-	for _, party := range trg.Spec.Parties {
-		if utilsres.IsOuterBFIAInterConnDomain(h.nsLister, party.DomainID) {
-			outerPartyCount++
-		}
-	}
-	return outerPartyCount
 }
 
 func (h *RunningHandler) getPartyTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, party kusciaapisv1alpha1.TaskResourceGroupParty) partyStatus {
@@ -247,7 +232,6 @@ func (h *RunningHandler) getPartyTaskStatus(taskStatus *kusciaapisv1alpha1.Kusci
 				continue
 			}
 		}
-
 		if pod == nil {
 			failedPodCount++
 			continue
@@ -371,4 +355,19 @@ func buildTaskStatusMessage(trg *kusciaapisv1alpha1.TaskResourceGroup) string {
 		}
 	}
 	return strings.TrimSuffix(condReason, ",")
+}
+
+func buildOuterPartyTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, trgParty *kusciaapisv1alpha1.TaskResourceGroupParty) *kusciaapisv1alpha1.PartyTaskStatus {
+	outerPartyTaskStatus := &kusciaapisv1alpha1.PartyTaskStatus{
+		DomainID: trgParty.DomainID,
+		Role:     trgParty.Role,
+	}
+	for _, s := range taskStatus.PartyTaskStatus {
+		if s.DomainID == outerPartyTaskStatus.DomainID && s.Role == outerPartyTaskStatus.Role {
+			outerPartyTaskStatus.Phase = s.Phase
+			outerPartyTaskStatus.Message = s.Message
+			break
+		}
+	}
+	return outerPartyTaskStatus
 }

@@ -137,4 +137,4 @@ Kuscia 暴露的监控指标项
 | ENVOY | health_check.failure | Counter | envoy 针对上游服务器集群立即失败的健康检查次数（如 HTTP 50 错误）以及网络故障导致的失败次数 |
 | ENVOY | upstream_cx_connect_fail | Counter | 上游（envoy作为服务器端）总连接失败次数 |
 | ENVOY | upstream_cx_connect_timeout | Counter | 上游（envoy作为服务器端）总连接超时次数 |
-| ENVOY | upstream_rq_timeout | Counter | 上游（envoy作为服务器端）等待响应超时的总请求次数 | 
+| ENVOY | upstream_rq_timeout | Counter | 上游（envoy作为服务器端）等待响应超时的总请求次数 |

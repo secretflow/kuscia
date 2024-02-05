@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// nolint:dulp
 package kusciatask
 
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -39,6 +42,7 @@ import (
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/queue"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
@@ -47,6 +51,9 @@ const (
 
 	maxBackoffLimit = 3
 	controllerName  = "kuscia-task-controller"
+
+	taskQueue       = "task-queue"
+	taskDeleteQueue = "task-delete-queue"
 )
 
 // Controller is the implementation for KusciaTask resources.
@@ -58,12 +65,13 @@ type Controller struct {
 	// kusciaClient is a clientset for our own API group
 	kusciaClient kusciaclientset.Interface
 
-	// workqueue is a rate limited work queue. This is used to queue work to be
+	// Queue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
 	// means we can ensure we only process a fixed amount of resources at a
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
-	workqueue workqueue.RateLimitingInterface
+	taskQueue       workqueue.RateLimitingInterface
+	taskDeleteQueue workqueue.RateLimitingInterface
 
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
@@ -82,6 +90,7 @@ type Controller struct {
 	servicesSynced   cache.InformerSynced
 	servicesLister   corelisters.ServiceLister
 	configMapSynced  cache.InformerSynced
+	configMapLister  corelisters.ConfigMapLister
 	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
 	kusciaTaskSynced cache.InformerSynced
 	appImageSynced   cache.InformerSynced
@@ -117,12 +126,14 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		servicesSynced:        serviceInformer.Informer().HasSynced,
 		servicesLister:        serviceInformer.Lister(),
 		configMapSynced:       configMapInformer.Informer().HasSynced,
+		configMapLister:       configMapInformer.Lister(),
 		kusciaTaskLister:      kusciaTaskInformer.Lister(),
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		appImageSynced:        appImageInformer.Informer().HasSynced,
 		trgLister:             trgInformer.Lister(),
 		trgSynced:             trgInformer.Informer().HasSynced,
-		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kusciatask"),
+		taskQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskQueue),
+		taskDeleteQueue:       workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskDeleteQueue),
 		recorder:              eventRecorder,
 	}
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -144,7 +155,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			controller.enqueueKusciaTask(newObj)
 		},
-		DeleteFunc: controller.enqueueKusciaTask,
+		DeleteFunc: controller.handleDeletedKusciaTask,
 	})
 
 	// task resource group event handler
@@ -211,10 +222,13 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 // Run will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
-// is closed, at which point it will shutdown the workqueue and wait for
+// is closed, at which point it will shutdown the taskQueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Run(workers int) error {
-	defer c.workqueue.ShutDown()
+	defer func() {
+		c.taskQueue.ShutDown()
+		c.taskDeleteQueue.ShutDown()
+	}()
 
 	// Start the informer factories to begin populating the informer caches
 	nlog.Infof("Starting %v", c.Name())
@@ -233,6 +247,7 @@ func (c *Controller) Run(workers int) error {
 	// Launch workers to process KusciaTask resources
 	for i := 0; i < workers; i++ {
 		go c.runWorker()
+		go c.runDeletedTaskWorker(c.ctx)
 	}
 
 	<-c.ctx.Done()
@@ -261,8 +276,24 @@ func (c *Controller) enqueueKusciaTask(obj interface{}) {
 	if key, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj); err != nil {
 		nlog.Errorf("Error building key of kusciatask: %v", err)
 	}
-	c.workqueue.Add(key)
+	c.taskQueue.Add(key)
 	nlog.Debugf("Enqueue kusciaTask %q", key)
+}
+
+// handleDeletedKusciaTask handles deleted kuscia task.
+func (c *Controller) handleDeletedKusciaTask(obj interface{}) {
+	kt, ok := obj.(*kusciaapisv1alpha1.KusciaTask)
+	if !ok {
+		if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+			obj = d.Obj
+			kt, ok = obj.(*kusciaapisv1alpha1.KusciaTask)
+			if !ok {
+				return
+			}
+		}
+	}
+
+	c.taskDeleteQueue.Add(fmt.Sprintf("%s/%s", kt.Name, kt.UID))
 }
 
 // handleTaskResourceGroupObject enqueue the KusciaTask which the task resource group belongs.
@@ -286,9 +317,9 @@ func (c *Controller) handleTaskResourceGroupObject(obj interface{}) {
 		nlog.Debugf("Recovered deleted object %q from tombstone", object.GetName())
 	}
 
-	kusciaTask, err := c.kusciaTaskLister.Get(object.GetName())
+	kusciaTask, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(object.GetName())
 	if err != nil {
-		nlog.Debugf("Get kuscia task %v failed, %v", object.GetName(), err.Error())
+		nlog.Debugf("Get kuscia task %v fail, %v, skip processing it", object.GetName(), err)
 		return
 	}
 
@@ -316,20 +347,15 @@ func (c *Controller) handlePodObject(obj interface{}) {
 		nlog.Debugf("Recovered deleted object %q from tombstone", object.GetName())
 	}
 
-	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a KusciaTask, we should not do anything more with it.
-		if ownerRef.Kind != "KusciaTask" {
-			nlog.Debugf("Pod %v/%v not belong to this controller, ignore", object.GetNamespace(), object.GetName())
-			return
-		}
-		kusciaTask, err := c.kusciaTaskLister.Get(ownerRef.Name)
+	annotations := object.GetAnnotations()
+	if annotations != nil && annotations[common.TaskIDAnnotationKey] != "" {
+		kusciaTask, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(annotations[common.TaskIDAnnotationKey])
 		if err != nil {
-			nlog.Debugf("Ignoring orphaned object %q of kusciaTask %q", object.GetSelfLink(), ownerRef.Name)
+			nlog.Debugf("Get pod %v/%v related kusciaTask %v fail, %v, skip processing it", object.GetNamespace(), object.GetName(),
+				annotations[common.TaskIDAnnotationKey], err)
 			return
 		}
-
 		c.enqueueKusciaTask(kusciaTask)
-		return
 	}
 }
 
@@ -376,58 +402,58 @@ func (c *Controller) handleServiceObject(obj interface{}) {
 }
 
 // runWorker is a long-running function that will continually call the
-// processNextWorkItem function in order to read and process a message on the workqueue.
+// processNextWorkItem function in order to read and process a message on the taskQueue.
 func (c *Controller) runWorker() {
 	for c.processNextWorkItem() {
-		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
+		metrics.WorkerQueueSize.Set(float64(c.taskQueue.Len()))
 	}
 }
 
-// processNextWorkItem will read a single work item off the workqueue and
+// processNextWorkItem will read a single work item off the taskQueue and
 // attempt to process it, by calling the syncHandler.
 func (c *Controller) processNextWorkItem() bool {
-	obj, shutdown := c.workqueue.Get()
+	obj, shutdown := c.taskQueue.Get()
 	if shutdown {
 		return false
 	}
 
-	// We wrap this block in a func so we can defer c.workqueue.Done.
+	// We wrap this block in a func so we can defer c.taskQueue.Done.
 	err := func(obj interface{}) error {
-		// We call Done here so the workqueue knows we have finished
+		// We call Done here so the taskQueue knows we have finished
 		// processing this item. We also must remember to call Forget if we
 		// do not want this work item being re-queued. For example, we do
 		// not call Forget if a transient error occurs, instead the item is
-		// put back on the workqueue and attempted again after a back-off
+		// put back on the taskQueue and attempted again after a back-off
 		// period.
-		defer c.workqueue.Done(obj)
+		defer c.taskQueue.Done(obj)
 		var key string
 		var ok bool
-		// We expect strings to come off the workqueue. These are of the
+		// We expect strings to come off the taskQueue. These are of the
 		// form namespace/name. We do this as the delayed nature of the
-		// workqueue means the items in the informer cache may actually be
+		// taskQueue means the items in the informer cache may actually be
 		// more up to date that when the item was initially put onto the
-		// workqueue.
+		// taskQueue.
 		if key, ok = obj.(string); !ok {
-			// As the item in the workqueue is actually invalid, we call
+			// As the item in the taskQueue is actually invalid, we call
 			// Forget here else we'd go into a loop of attempting to
 			// process a work item that is invalid.
-			c.workqueue.Forget(obj)
-			return fmt.Errorf("expected string in workqueue but got %+v", obj)
+			c.taskQueue.Forget(obj)
+			return fmt.Errorf("expected string in taskQueue but got %+v", obj)
 		}
 
 		// Run the syncHandler, passing it the namespace/name string of the
 		// Foo resource to be synced.
 		if err := c.syncHandler(key); err != nil {
 			metrics.TaskRequeueCount.WithLabelValues(key).Inc()
-			// Put the item back on the workqueue to handle any transient errors.
-			c.workqueue.AddRateLimited(key)
+			// Put the item back on the taskQueue to handle any transient errors.
+			c.taskQueue.AddRateLimited(key)
 			nlog.Warnf("Error handling %q, re-queuing", key)
 			return fmt.Errorf("error handling %q, %v", key, err)
 		}
 
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
-		c.workqueue.Forget(obj)
+		c.taskQueue.Forget(obj)
 		return nil
 	}(obj)
 
@@ -452,12 +478,12 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 		return nil
 	}
 	// Get the KusciaTask resource with this namespace/name.
-	sharedTask, err := c.kusciaTaskLister.Get(name)
+	sharedTask, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(name)
 	if err != nil {
 		// The KusciaTask resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
 			metrics.ClearDeadMetrics(key)
-			nlog.Infof("KusciaTask %q in work queue has been deleted", key)
+			nlog.Infof("KusciaTask %q in work queue may be deleted, skip", key)
 			return nil
 		}
 		return err
@@ -499,7 +525,7 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	needUpdate, err := c.handlerFactory.GetKusciaTaskPhaseHandler(phase).Handle(kusciaTask)
 	if err != nil {
 		metrics.SyncDurations.WithLabelValues(string(phase), metrics.Failed).Observe(time.Since(startTime).Seconds())
-		if c.workqueue.NumRequeues(key) <= maxBackoffLimit {
+		if c.taskQueue.NumRequeues(key) <= maxBackoffLimit {
 			return fmt.Errorf("failed to process kusciaTask %q, %v, retry", key, err)
 		}
 
@@ -541,7 +567,59 @@ func (c *Controller) updateTaskStatus(rawKusciaTask, curKusciaTask *kusciaapisv1
 		metrics.SyncDurations.WithLabelValues("UpdateStatus", status).Observe(time.Since(startTime).Seconds())
 	}()
 
-	return utilsres.UpdateKusciaTaskStatus(c.kusciaClient, rawKusciaTask, curKusciaTask, statusUpdateRetries)
+	return utilsres.UpdateKusciaTaskStatus(c.kusciaClient, rawKusciaTask, curKusciaTask)
+}
+
+func (c *Controller) runDeletedTaskWorker(ctx context.Context) {
+	for queue.HandleQueueItem(ctx, taskDeleteQueue, c.taskDeleteQueue, c.syncDeletedTaskHandler, 15) {
+	}
+}
+
+func (c *Controller) syncDeletedTaskHandler(ctx context.Context, key string) error {
+	values := strings.Split(key, "/")
+	if len(values) != 2 {
+		return nil
+	}
+
+	taskName := values[0]
+	taskUID := values[1]
+	pods, _ := c.podsLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
+	for _, pod := range pods {
+		ns := pod.Namespace
+		name := pod.Name
+		err := c.kubeClient.CoreV1().Pods(ns).Delete(ctx, name, metav1.DeleteOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
+			return fmt.Errorf("failed to delete pod %v/%v, %v", ns, name, err)
+		}
+		nlog.Debugf("Delete the pod %v/%v belonging to kusciaTask %v successfully", ns, name, taskName)
+	}
+
+	configMaps, _ := c.configMapLister.List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
+	for _, configMap := range configMaps {
+		ns := configMap.Namespace
+		name := configMap.Name
+		err := c.kubeClient.CoreV1().ConfigMaps(ns).Delete(ctx, name, metav1.DeleteOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
+			return fmt.Errorf("failed to delete configmap '%s/%s', %v", ns, name, err)
+		}
+		nlog.Debugf("Delete the configmap %v/%v belonging to kusciaTask %v successfully", ns, name, taskName)
+	}
+
+	trg, _ := c.trgLister.Get(taskName)
+	if trg != nil {
+		if err := c.kusciaClient.KusciaV1alpha1().TaskResourceGroups().Delete(ctx, taskName, metav1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete taskResourceGroup %v, %v", taskName, err)
+		}
+	}
+
+	nlog.Debugf("Finish deleting kusciaTask %q cascaded resources", taskName)
+	return nil
 }
 
 // Name returns controller name.

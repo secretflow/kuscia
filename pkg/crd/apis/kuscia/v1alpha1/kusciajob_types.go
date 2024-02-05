@@ -23,7 +23,6 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
 // +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
@@ -31,32 +30,13 @@ import (
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster,shortName=kj
+// +kubebuilder:resource:shortName=kj
 
 // KusciaJob is the Schema for the kuscia job API.
 type KusciaJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 	Spec              KusciaJobSpec `json:"spec"`
-	// +optional
-	Status KusciaJobStatus `json:"status,omitempty"`
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
-// +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
-// +kubebuilder:printcolumn:name="LastReconcileTime",type=date,JSONPath=`.status.lastReconcileTime`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=kbj
-
-// KusciaBetaJob is the Schema for the kuscia beta job API.
-type KusciaBetaJob struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-	Spec              KusciaBetaJobSpec `json:"spec"`
 	// +optional
 	Status KusciaJobStatus `json:"status,omitempty"`
 }
@@ -71,62 +51,18 @@ type KusciaJobList struct {
 	Items           []KusciaJob `json:"items"`
 }
 
-// +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KusciaBetaJobList contains a list of kuscia jobs.
-type KusciaBetaJobList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KusciaBetaJob `json:"items"`
-}
-
 type JobStage string
 
 const (
-	JobCreateStage JobStage = "Create"
-	JobStartStage  JobStage = "Start"
-	JobStopStage   JobStage = "Stop"
+	JobCreateStage  JobStage = "Create"
+	JobStartStage   JobStage = "Start"
+	JobStopStage    JobStage = "Stop"
+	JobCancelStage  JobStage = "Cancel"
+	JobRestartStage JobStage = "Restart"
 )
 
 // KusciaJobSpec defines the information of kuscia job spec.
 type KusciaJobSpec struct {
-	// Stage defines the current situation of a job.
-	// +optional
-	// +kubebuilder:default=Create
-	Stage JobStage `json:"stage,omitempty"`
-
-	// FlowID defines the id of flow
-	FlowID string `json:"flowID,omitempty"`
-	// Initiator who schedule this KusciaJob.
-	Initiator string `json:"initiator"`
-	// ScheduleMode defines how this job will be scheduled.
-	// In Strict, if any non-tolerable subtasks failed, Scheduling for this task stops immediately, and it immediately enters the final Failed state.
-	// In BestEffort, if any non-tolerable subtasks failed, Scheduling for this job will continue.
-	// But the successor subtask of the failed subtask stops scheduling, and the current state will be running.
-	// When all subtasks succeed or fail, the job will enter the Failed state.
-	// +optional
-	// +kubebuilder:validation:Enum=Strict;BestEffort
-	// +kubebuilder:default=Strict
-	ScheduleMode KusciaJobScheduleMode `json:"scheduleMode,omitempty"`
-	// MaxParallelism max parallelism of tasks, default 1.
-	// At a certain moment, there may be multiple subtasks that can be scheduled.
-	// this field defines the maximum number of tasks in the Running state.
-	// +optional
-	// +kubebuilder:default=1
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=128
-	MaxParallelism *int `json:"maxParallelism,omitempty"`
-	// Tasks defines the subtasks participating in scheduling and their dependencies,
-	// and the subtasks and dependencies should constitute a directed acyclic graph.
-	// During runtime, each subtask will be created as a KusciaTask.
-	// +kubebuilder:validation:MaxItems=128
-	// +kubebuilder:validation:MinItems=1
-	Tasks []KusciaTaskTemplate `json:"tasks"`
-}
-
-// KusciaBetaJobSpec defines the information of kuscia beta job spec.
-type KusciaBetaJobSpec struct {
 	// FlowID defines the id of flow
 	FlowID string `json:"flowID,omitempty"`
 	// Initiator who schedule this KusciaJob.
@@ -331,6 +267,13 @@ type KusciaJobPhase string
 
 // These are valid statuses of kuscia job.
 const (
+
+	// KusciaJobInitialized means the job is initialized, just be created soon.
+	KusciaJobInitialized KusciaJobPhase = "initialized"
+
+	// KusciaJobAwaitingApproval means the job is waiting for approval by some parties
+	KusciaJobAwaitingApproval KusciaJobPhase = "AwaitingApproval"
+
 	// KusciaJobPending means the job has been accepted by the controller,
 	// but no kuscia task has not been created.
 	KusciaJobPending KusciaJobPhase = "Pending"
@@ -343,6 +286,12 @@ const (
 
 	// KusciaJobFailed means least one non-tolerable tasks are failed and kuscia job scheduling is stopped.
 	KusciaJobFailed KusciaJobPhase = "Failed"
+
+	// KusciaJobCancelled means the job is cancelled and cannot to be restarted.
+	KusciaJobCancelled KusciaJobPhase = "Cancelled"
+
+	// KusciaJobApprovalReject means the job is rejected by some parties.
+	KusciaJobApprovalReject KusciaJobPhase = "ApprovalReject"
 )
 
 type JobStagePhase string
@@ -350,6 +299,9 @@ type JobStagePhase string
 const (
 	JobCreateStageSucceeded JobStagePhase = "JobCreateStageSucceeded"
 	JobCreateStageFailed    JobStagePhase = "JobCreateStageFailed"
+
+	JobStartStageSucceeded JobStagePhase = "JobStartStageSucceeded"
+	JobStartStageFailed    JobStagePhase = "JobStartStageFailed"
 
 	JobStopStageSucceeded JobStagePhase = "JobStopStageSucceeded"
 	JobStopStageFailed    JobStagePhase = "JobStopStageFailed"
@@ -367,7 +319,6 @@ const (
 // +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
 // +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
 // +kubebuilder:printcolumn:name="LastReconcileTime",type=date,JSONPath=`.status.lastReconcileTime`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=kjs
 

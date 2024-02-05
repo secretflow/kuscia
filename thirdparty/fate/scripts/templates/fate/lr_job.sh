@@ -58,6 +58,6 @@ JOB_TEMPLATE=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g;
 echo "$JOB_TEMPLATE" | kubectl apply -f -
 
 echo -e "${GREEN}Job '$JOB_NAME' created successfully. You can use the following command to display job status:
-  kubectl get kj${NC}"
+  kubectl get kj -n cross-domain${NC}"
 
 popd || exit

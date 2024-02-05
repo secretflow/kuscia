@@ -31,7 +31,7 @@ var (
 	}, []string{"task_name"})
 
 	WorkerQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "kuscia_worker_queue_size",
+		Name: "kuscia_task_worker_queue_size",
 		Help: "Size of kusciatask worker queue",
 	})
 

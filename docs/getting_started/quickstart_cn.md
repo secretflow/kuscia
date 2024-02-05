@@ -27,9 +27,9 @@ CPU 架构：x86
 
 ### 环境准备
 
-在部署 kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
+在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
 
-Kuscia 的部署需要依赖 docker 环境，docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 docker 的示例：
+Kuscia 的部署需要依赖 Docker 环境，Docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 Docker 的示例：
 
 ```bash
 # 安装 docker。
@@ -66,7 +66,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```
-docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
 ```
 
 ### 中心化组网模式
@@ -82,7 +82,7 @@ docker exec -it ${USER}-kuscia-master bash
 scripts/user/create_example_job.sh
 
 # 查看作业状态。
-kubectl get kj
+kubectl get kj -n cross-domain
 ```
 
 :::{tip}
@@ -112,7 +112,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 scripts/user/create_example_job.sh
 
 # 查看作业状态。
-kubectl get kj
+kubectl get kj -n cross-domain
 ```
 
 ## 作业状态
@@ -154,7 +154,7 @@ id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previ
 获取 Kuscia 停止脚本，脚本会下载到当前目录：
 
 ```bash
-docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
 ```
 
 使用方法：
@@ -179,7 +179,7 @@ docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop
 获取 Kuscia 卸载脚本，脚本会下载到当前目录：
 
 ```bash
-docker run --rm --pull always $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
 ```
 
 与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 network（若无其他容器使用）等。例如：

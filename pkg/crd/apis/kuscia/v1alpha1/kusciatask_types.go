@@ -23,7 +23,6 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // +genclient
-// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
 // +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
@@ -31,29 +30,10 @@ import (
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster,shortName=kt
+// +kubebuilder:resource:shortName=kt
 
-// KusciaTask is the Schema for the kuscia task API.
+// KusciaTask is the Schema for the namespace kuscia task API.
 type KusciaTask struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-	Spec              KusciaTaskSpec `json:"spec"`
-	// +optional
-	Status KusciaTaskStatus `json:"status,omitempty"`
-}
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:printcolumn:name="StartTime",type=date,JSONPath=`.status.startTime`
-// +kubebuilder:printcolumn:name="CompletionTime",type=date,JSONPath=`.status.completionTime`
-// +kubebuilder:printcolumn:name="LastReconcileTime",type=date,JSONPath=`.status.lastReconcileTime`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=kbt
-
-// KusciaBetaTask is the Schema for the namespace kuscia task API.
-type KusciaBetaTask struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
 	Spec              KusciaTaskSpec `json:"spec"`
@@ -69,16 +49,6 @@ type KusciaTaskList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KusciaTask `json:"items"`
-}
-
-// +kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KusciaBetaTaskList contains a list of kuscia tasks.
-type KusciaBetaTaskList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KusciaBetaTask `json:"items"`
 }
 
 // KusciaTaskSpec defines the information of kuscia task spec.
@@ -322,9 +292,8 @@ type ServiceStatus struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="TaskID",type=string,JSONPath=`.spec.taskID`
 // +kubebuilder:printcolumn:name="JobID",type=string,JSONPath=`.spec.jobID`
+// +kubebuilder:printcolumn:name="TaskAlias",type=string,JSONPath=`.spec.alias`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:resource:shortName=kts
 
@@ -350,7 +319,21 @@ type KusciaTaskSummaryStatus struct {
 
 	// resourceStatus refers to each party resource status
 	// +optional
-	ResourceStatus map[string]TaskResourceStatus `json:"resourceStatus,omitempty"`
+	ResourceStatus map[string][]*TaskSummaryResourceStatus `json:"resourceStatus,omitempty"`
+}
+
+type TaskSummaryResourceStatus struct {
+	// +optional
+	Role string `json:"role,omitempty"`
+	// +optional
+	HostTaskResourceName string `json:"hostTaskResourceName,omitempty"`
+	// +optional
+	HostTaskResourceVersion string `json:"hostTaskResourceVersion,omitempty"`
+	// +optional
+	MemberTaskResourceName string `json:"memberTaskResourceName,omitempty"`
+	// +optional
+	MemberTaskResourceVersion string `json:"memberTaskResourceVersion,omitempty"`
+	TaskResourceStatus        `json:",inline"`
 }
 
 // +kubebuilder:object:root=true

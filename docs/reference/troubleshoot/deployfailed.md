@@ -64,7 +64,7 @@ cat /home/kuscia/var/logs/k3s.log | grep -i error
 # 登陆到 bob 容器中
 docker exec -it ${USER}-kuscia-autonomy-bob bash
 
-# 查看 Kuscia 错误日志
+# 查看 kuscia 错误日志
 cat /home/kuscia/var/logs/kuscia.log | grep -i error
 
 # 查看 K3s 错误日志
