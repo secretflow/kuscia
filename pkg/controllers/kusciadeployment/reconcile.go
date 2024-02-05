@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package kusciadeployment
 
 import (
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 
 	"golang.org/x/net/context"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -29,6 +32,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
 const (
@@ -39,6 +43,21 @@ const (
 // ProcessKusciaDeployment processes kuscia deployment resource.
 func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment) (err error) {
 	preKdStatus := kd.Status.DeepCopy()
+
+	updated, err := c.updateKusciaDeploymentAnnotations(kd)
+	if err != nil {
+		nlog.Errorf("UpdateKusciaDeploymentSpec kd=%s/%s failed: %s", kd.Namespace, kd.Name, err)
+		return err
+	}
+
+	// We update the spec and status separately.
+	if updated {
+		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).Update(ctx, kd, metav1.UpdateOptions{}); err != nil {
+			return fmt.Errorf("error updating kuscia deployment %v, %v", kd.Name, err)
+		}
+		return nil
+	}
+
 	partyKitInfos, err := c.buildPartyKitInfos(kd)
 	if err != nil {
 		return c.handleError(ctx, preKdStatus, kd, err)
@@ -55,19 +74,90 @@ func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1al
 	return nil
 }
 
+func (c *Controller) updateKusciaDeploymentAnnotations(kd *kusciav1alpha1.KusciaDeployment) (bool, error) {
+	generatedAnnotations, err := c.computeExceptGeneratedAnnotations(kd)
+	if err != nil {
+		return false, err
+	}
+
+	return c.mergeAnnotations(kd, generatedAnnotations), nil
+}
+
+// computeExceptGeneratedAnnotations calculates the annotations that should be automatically generated for the KusciaDeployment.
+func (c *Controller) computeExceptGeneratedAnnotations(kd *kusciav1alpha1.KusciaDeployment) (map[string]string, error) {
+	annotations := make(map[string]string)
+	// We collect inter conn protocols parties, and we use LabelInterConnKusciaParty only now.
+	interConnParties := make(map[string][]string)
+	isInitiatorController, err := c.isInitiatorController(kd)
+	if err != nil {
+		return nil, err
+	}
+	if isInitiatorController {
+		annotations[common.InitiatorAnnotationKey] = kd.Spec.Initiator
+		annotations[common.SelfClusterAsInitiatorAnnotationKey] = "true"
+		for _, p := range kd.Spec.Parties {
+			partyDomain, err := c.domainLister.Get(p.DomainID)
+			if err != nil {
+				return nil, err
+			}
+			if partyDomain.Spec.Role == kusciav1alpha1.Partner {
+				interConnProtocol := kusciav1alpha1.InterConnKuscia
+				if len(partyDomain.Spec.InterConnProtocols) != 0 {
+					interConnProtocol = partyDomain.Spec.InterConnProtocols[0]
+				}
+				if interConnParties[string(interConnProtocol)] == nil {
+					interConnParties[string(interConnProtocol)] = []string{}
+				}
+				interConnParties[string(interConnProtocol)] =
+					append(interConnParties[string(interConnProtocol)], partyDomain.Name)
+			}
+		}
+		interConnKusciaParties := interConnParties[string(kusciav1alpha1.InterConnKuscia)]
+		if interConnKusciaParties != nil {
+			annotations[common.InterConnKusciaPartyAnnotationKey] = strings.Join(interConnKusciaParties, "_")
+		}
+	}
+
+	selfParties, err := c.selfParties(kd)
+	if err != nil {
+		return nil, err
+	}
+	selfPartiesDomainIds := make([]string, 0)
+	for _, p := range selfParties {
+		selfPartiesDomainIds = append(selfPartiesDomainIds, p.DomainID)
+	}
+	annotations[common.InterConnSelfPartyAnnotationKey] = strings.Join(selfPartiesDomainIds, "_")
+
+	return annotations, nil
+}
+
+// mergeAnnotations will merge annotations into the KusciaDeployment.
+// If it returns true, it indicates that an update is required for the KusciaDeployment.
+func (c *Controller) mergeAnnotations(kd *kusciav1alpha1.KusciaDeployment, annotations map[string]string) bool {
+	updated := false
+	for k, newV := range annotations {
+		if oldV, exists := kd.Annotations[k]; !exists || oldV != newV {
+			if kd.Annotations == nil {
+				kd.Annotations = make(map[string]string)
+			}
+			kd.Annotations[k] = newV
+			updated = true
+		}
+	}
+	return updated
+}
+
 func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDeployment, partyKitInfos map[string]*PartyKitInfo) bool {
 	updated := false
 	if kd.Status.TotalParties == 0 {
 		updated = true
-		kd.Status.TotalParties = len(partyKitInfos)
+		kd.Status.TotalParties = len(kd.Spec.Parties)
 	}
 
 	if kd.Status.PartyDeploymentStatuses == nil {
 		kd.Status.PartyDeploymentStatuses = make(map[string]map[string]*kusciav1alpha1.KusciaDeploymentPartyStatus)
 	}
 
-	availableParties := 0
-	hasPartialAvailableParty := false
 	for _, partyKitInfo := range partyKitInfos {
 		deployment, err := c.deploymentLister.Deployments(partyKitInfo.domainID).Get(partyKitInfo.dkInfo.deploymentName)
 		if err != nil {
@@ -79,11 +169,23 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 		if changed {
 			updated = true
 		}
+	}
 
-		if deployment.Status.AvailableReplicas > 0 {
-			availableParties++
-			if deployment.Status.AvailableReplicas < deployment.Status.Replicas {
+	hasPartialAvailableParty := false
+	for _, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
+		for _, v := range partyDeploymentStatus {
+			if v.Phase == kusciav1alpha1.KusciaDeploymentPhasePartialAvailable {
 				hasPartialAvailableParty = true
+			}
+		}
+	}
+
+	availableParties := 0
+	for _, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
+		for _, v := range partyDeploymentStatus {
+			if v.Phase == kusciav1alpha1.KusciaDeploymentPhaseAvailable || v.Phase == kusciav1alpha1.KusciaDeploymentPhasePartialAvailable {
+				availableParties++
+				break
 			}
 		}
 	}
@@ -147,7 +249,6 @@ func refreshPartyDeploymentStatus(partyDeploymentStatuses map[string]map[string]
 
 	if !reflect.DeepEqual(depStatus, curDepStatus) {
 		partyDepStatuses[deployment.Name] = curDepStatus
-		nlog.Infof("Party deployment %v/%v status changed from %+v to %+v", deployment.Namespace, deployment.Name, depStatus, curDepStatus)
 		return true
 	}
 	return false
@@ -220,14 +321,10 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 	labels := map[string]string{
 		common.LabelController:               kusciaDeploymentName,
 		common.LabelPortScope:                string(port.Scope),
-		common.LabelInitiator:                partyKitInfo.kd.Spec.Initiator,
 		common.LabelKusciaDeploymentUID:      string(partyKitInfo.kd.UID),
 		common.LabelKusciaDeploymentName:     partyKitInfo.kd.Name,
+		common.LabelKusciaOwnerNamespace:     common.KusciaCrossDomain,
 		common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
-	}
-
-	if partyKitInfo.interConnProtocol != "" {
-		labels[common.LabelInterConnProtocolType] = partyKitInfo.interConnProtocol
 	}
 
 	if port.Scope != kusciav1alpha1.ScopeDomain {
@@ -235,6 +332,7 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 	}
 
 	annotations := map[string]string{
+		common.InitiatorAnnotationKey:    partyKitInfo.kd.Spec.Initiator,
 		common.ProtocolAnnotationKey:     string(port.Protocol),
 		common.AccessDomainAnnotationKey: partyKitInfo.portAccessDomains[port.Name],
 	}
@@ -245,9 +343,6 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 			Namespace:   partyKitInfo.domainID,
 			Labels:      labels,
 			Annotations: annotations,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(partyKitInfo.kd, kusciav1alpha1.SchemeGroupVersion.WithKind(kusciaDeploymentName)),
-			},
 		},
 		Spec: corev1.ServiceSpec{
 			Type:      corev1.ServiceTypeClusterIP,
@@ -313,24 +408,22 @@ func (c *Controller) createConfigMap(ctx context.Context, partyKitInfo *PartyKit
 func generateConfigMap(partyKitInfo *PartyKitInfo) *corev1.ConfigMap {
 	labels := map[string]string{
 		common.LabelController:               kusciaDeploymentName,
-		common.LabelInitiator:                partyKitInfo.kd.Spec.Initiator,
 		common.LabelKusciaDeploymentUID:      string(partyKitInfo.kd.UID),
 		common.LabelKusciaDeploymentName:     partyKitInfo.kd.Name,
+		common.LabelKusciaOwnerNamespace:     common.KusciaCrossDomain,
 		common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
 	}
 
-	if partyKitInfo.interConnProtocol != "" {
-		labels[common.LabelInterConnProtocolType] = partyKitInfo.interConnProtocol
+	annotations := map[string]string{
+		common.InitiatorAnnotationKey: partyKitInfo.kd.Spec.Initiator,
 	}
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      partyKitInfo.configTemplatesCMName,
-			Namespace: partyKitInfo.domainID,
-			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(partyKitInfo.kd, kusciav1alpha1.SchemeGroupVersion.WithKind(kusciaDeploymentName)),
-			},
+			Name:        partyKitInfo.configTemplatesCMName,
+			Namespace:   partyKitInfo.domainID,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Data: partyKitInfo.configTemplates,
 	}
@@ -383,12 +476,20 @@ func (c *Controller) createDeployment(ctx context.Context, partyKitInfo *PartyKi
 func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Deployment, error) {
 	selectorLabels := map[string]string{
 		common.LabelController:               kusciaDeploymentName,
-		common.LabelInitiator:                partyKitInfo.kd.Spec.Initiator,
 		common.LabelKusciaDeploymentUID:      string(partyKitInfo.kd.UID),
 		common.LabelKusciaDeploymentName:     partyKitInfo.kd.Name,
+		common.LabelKusciaOwnerNamespace:     common.KusciaCrossDomain,
 		common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
 		common.LabelCommunicationRoleServer:  "true",
 		common.LabelCommunicationRoleClient:  "true",
+	}
+
+	if partyKitInfo.kd.Labels != nil && partyKitInfo.kd.Labels[common.LabelKusciaDeploymentAppType] != "" {
+		selectorLabels[common.LabelKusciaDeploymentAppType] = partyKitInfo.kd.Labels[common.LabelKusciaDeploymentAppType]
+	}
+
+	annotations := map[string]string{
+		common.InitiatorAnnotationKey: partyKitInfo.kd.Spec.Initiator,
 	}
 
 	ns, err := c.namespaceLister.Get(partyKitInfo.domainID)
@@ -401,10 +502,6 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		if ns.Labels[common.LabelDomainRole] == string(kusciav1alpha1.Partner) {
 			schedulerName = fmt.Sprintf("%v-%v", partyKitInfo.domainID, schedulerName)
 		}
-	}
-
-	if partyKitInfo.interConnProtocol != "" {
-		selectorLabels[common.LabelInterConnProtocolType] = partyKitInfo.interConnProtocol
 	}
 
 	maxSurge := intstr.FromString("25%")
@@ -429,12 +526,10 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 	automountServiceAccountToken := false
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      partyKitInfo.dkInfo.deploymentName,
-			Namespace: partyKitInfo.domainID,
-			Labels:    selectorLabels,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(partyKitInfo.kd, kusciav1alpha1.SchemeGroupVersion.WithKind(kusciaDeploymentName)),
-			},
+			Name:        partyKitInfo.dkInfo.deploymentName,
+			Namespace:   partyKitInfo.domainID,
+			Labels:      selectorLabels,
+			Annotations: annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: partyKitInfo.deployTemplate.Replicas,
@@ -463,6 +558,12 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 				},
 			},
 		},
+	}
+	if deployment.Spec.Template.Annotations == nil {
+		deployment.Spec.Template.Annotations = make(map[string]string)
+	}
+	if partyKitInfo.dkInfo.imageID != "" {
+		deployment.Spec.Template.Annotations[common.ImageIDAnnotationKey] = partyKitInfo.dkInfo.imageID
 	}
 
 	renderConfigTemplateVolume := false
@@ -526,7 +627,12 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 			},
 		}...)
 
-		if partyKitInfo.kd.Labels != nil && partyKitInfo.kd.Labels[common.LabelKusciaDeploymentAppType] == string(common.ServingAppType) {
+		portNumberEnvs := buildPortNumberEnvs(partyKitInfo.dkInfo.allocatedPorts)
+		if len(portNumberEnvs) > 0 {
+			resCtr.Env = append(resCtr.Env, portNumberEnvs...)
+		}
+
+		if partyKitInfo.kd.Labels != nil && partyKitInfo.kd.Labels[common.LabelKusciaDeploymentAppType] == string(common.ServingApp) {
 			resCtr.Env = append(resCtr.Env, corev1.EnvVar{
 				Name:  common.EnvServingID,
 				Value: partyKitInfo.kd.Name,
@@ -548,9 +654,6 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 	}
 
 	if renderConfigTemplateVolume {
-		if deployment.Spec.Template.Annotations == nil {
-			deployment.Spec.Template.Annotations = make(map[string]string)
-		}
 		deployment.Spec.Template.Annotations[common.ConfigTemplateVolumesAnnotationKey] = configTemplateVolumeName
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, corev1.Volume{
 			Name: configTemplateVolumeName,
@@ -564,6 +667,25 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		})
 	}
 	return deployment, nil
+}
+
+func buildPortNumberEnvs(allocatedPorts *appconfig.AllocatedPorts) []corev1.EnvVar {
+	if allocatedPorts == nil {
+		return nil
+	}
+
+	portNumberEnvs := make([]corev1.EnvVar, 0)
+	for _, portInfo := range allocatedPorts.Ports {
+		if portInfo == nil {
+			continue
+		}
+
+		portNumberEnvs = append(portNumberEnvs, corev1.EnvVar{
+			Name:  strings.ToUpper(strings.ReplaceAll(fmt.Sprintf(common.EnvPortNumber, portInfo.Name), "-", "_")),
+			Value: strconv.Itoa(int(portInfo.Port)),
+		})
+	}
+	return portNumberEnvs
 }
 
 func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKitInfo) error {
@@ -684,4 +806,67 @@ func buildAffinity(affinity *corev1.Affinity, deploymentName string) {
 			affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i].PodAffinityTerm.LabelSelector = labelSelector
 		}
 	}
+}
+
+func (c *Controller) ownDomains(kd *kusciav1alpha1.KusciaDeployment) ([]*kusciav1alpha1.Domain, error) {
+	ownDomains := make([]*kusciav1alpha1.Domain, 0)
+	for _, p := range kd.Spec.Parties {
+		partyDomain, err := c.domainLister.Get(p.DomainID)
+		if err != nil {
+			return nil, err
+		}
+		if partyDomain.Spec.Role == "" {
+			ownDomains = append(ownDomains, partyDomain)
+		}
+	}
+	return ownDomains, nil
+}
+
+func (c *Controller) selfParties(kd *kusciav1alpha1.KusciaDeployment) ([]kusciav1alpha1.KusciaDeploymentParty, error) {
+	selfParties := make([]kusciav1alpha1.KusciaDeploymentParty, 0)
+	for _, p := range kd.Spec.Parties {
+		partyDomain, err := c.domainLister.Get(p.DomainID)
+		if err != nil {
+			return nil, err
+		}
+		if partyDomain.Spec.Role == "" {
+			selfParties = append(selfParties, p)
+		}
+	}
+	return selfParties, nil
+}
+
+func (c *Controller) isSelfDomain(kd *kusciav1alpha1.KusciaDeployment, domainId string) (bool, error) {
+	for _, p := range kd.Spec.Parties {
+		if p.DomainID != domainId {
+			continue
+		}
+		partyDomain, err := c.domainLister.Get(p.DomainID)
+		if err != nil {
+			return false, err
+		}
+		if partyDomain.Spec.Role == "" {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (c *Controller) isInitiatorController(kd *kusciav1alpha1.KusciaDeployment) (bool, error) {
+	initiatorDomain, err := c.domainLister.Get(kd.Spec.Initiator)
+	if err != nil {
+		return false, err
+	}
+	if initiatorDomain.Spec.Role == "" {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (c *Controller) isPartnerController(kd *kusciav1alpha1.KusciaDeployment) (bool, error) {
+	isInitiatorController, err := c.isInitiatorController(kd)
+	if err != nil {
+		return false, err
+	}
+	return !isInitiatorController, nil
 }

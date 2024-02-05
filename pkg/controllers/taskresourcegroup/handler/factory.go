@@ -76,9 +76,9 @@ func (f *TaskResourceGroupPhaseHandlerFactory) GetTaskResourceGroupPhaseHandler(
 }
 
 // updatePodAnnotations is used to update pod annotations.
-func updatePodAnnotations(trgName string, podLister listers.PodLister, kubeClient kubernetes.Interface) error {
+func updatePodAnnotations(trgUID string, podLister listers.PodLister, kubeClient kubernetes.Interface) error {
 	var pods []*corev1.Pod
-	podLabel := labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trgName})
+	podLabel := labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroupUID: trgUID})
 	pods, err := podLister.List(podLabel)
 	if err != nil {
 		return err
@@ -108,12 +108,16 @@ func patchTaskResourceStatus(trg *kusciaapisv1alpha1.TaskResourceGroup,
 	trLister kuscialistersv1alpha1.TaskResourceLister) error {
 	now := metav1.Now()
 	partySet := make(map[string]struct{})
-	for _, party := range trg.Spec.Parties {
+
+	var allParties []kusciaapisv1alpha1.TaskResourceGroupParty
+	allParties = append(allParties, trg.Spec.Parties...)
+	allParties = append(allParties, trg.Spec.OutOfControlledParties...)
+	for _, party := range allParties {
 		if _, exist := partySet[party.DomainID]; exist {
 			continue
 		}
 
-		trs, err := trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trg.Name}))
+		trs, err := trLister.TaskResources(party.DomainID).List(labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroupUID: string(trg.UID)}))
 		if err != nil {
 			return fmt.Errorf("list party %v task resource of task resource group %v failed, %v", party.DomainID, trg.Name, err)
 		}
@@ -131,7 +135,8 @@ func patchTaskResourceStatus(trg *kusciaapisv1alpha1.TaskResourceGroup,
 				trCopy.Status.CompletionTime = &now
 			}
 
-			if err = utilsres.PatchTaskResource(context.Background(), kusciaClient, utilsres.ExtractTaskResourceStatus(tr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
+			if err = utilsres.PatchTaskResource(context.Background(), kusciaClient, utilsres.ExtractTaskResourceStatus(tr),
+				utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
 				return fmt.Errorf("patch task resource %v/%v status failed, %v", party.DomainID, trCopy.Name, err.Error())
 			}
 		}

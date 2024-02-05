@@ -228,6 +228,10 @@ type AgentConfig struct {
 	LogsPath   string `yaml:"logsPath,omitempty"`
 	StdoutPath string `yaml:"stdoutPath,omitempty"`
 
+	// Todo: temporary solution for scql
+	KusciaAPIToken string
+	DomainKeyData  string
+
 	// CA configuration.
 	DomainCACertFile string
 	DomainCAKey      *rsa.PrivateKey
@@ -298,6 +302,12 @@ func DefaultStaticAgentConfig() *AgentConfig {
 			},
 		},
 		Plugins: []PluginCfg{
+			{
+				Name: common.PluginNameImageSecurity,
+			},
+			{
+				Name: common.PluginNameEnvImport,
+			},
 			{
 				Name: common.PluginNameCertIssuance,
 			},

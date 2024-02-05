@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/secretflow/kuscia/pkg/common"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -293,23 +295,18 @@ metadata:
     kuscia.secretflow/communication-role-client: "true"
     kuscia.secretflow/communication-role-server: "true"
     kuscia.secretflow/controller: kusciatask
-    kuscia.secretflow/initiator: ""
-    kuscia.secretflow/task-resource: ""
-    kuscia.secretflow/task-id: "kusciatask-001"
-    kuscia.secretflow/task-resource-group: "kusciatask-001"
-    task.kuscia.secretflow/pod-name: kusciatask-001-server-0
-    task.kuscia.secretflow/pod-role: server
+    kuscia.secretflow/pod-identity: ""
+    kuscia.secretflow/task-resource-uid: ""
+    kuscia.secretflow/task-uid: ""
+    kuscia.secretflow/pod-role: server
   annotations:
-    "kuscia.secretflow/config-template-volumes": "config-template"
+    kuscia.secretflow/config-template-volumes: config-template
+    kuscia.secretflow/initiator: ""
+    kuscia.secretflow/task-id: kusciatask-001
+    kuscia.secretflow/task-resource: ""
+    kuscia.secretflow/task-resource-group: kusciatask-001
   name: kusciatask-001-server-0
   namespace: domain-a
-  ownerReferences:
-  - apiVersion: kuscia.secretflow/v1alpha1
-    blockOwnerDeletion: true
-    controller: true
-    kind: KusciaTask
-    name: kusciatask-001
-    uid: ""
 spec:
   containers:
   - args:
@@ -319,7 +316,7 @@ spec:
     env:
     - name: HOME
       value: /root
-    - name: DOMAIN_ID
+    - name: KUSCIA_DOMAIN_ID
       value: domain-a
     - name: TASK_ID
       value: kusciatask-001
@@ -398,7 +395,8 @@ func makeTestAppImageCase1() *kusciaapisv1alpha1.AppImage {
 func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 	return &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kusciatask-001",
+			Name:      "kusciatask-001",
+			Namespace: common.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
 			TaskInputConfig: "task input config",

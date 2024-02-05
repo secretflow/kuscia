@@ -31,10 +31,10 @@ import (
 )
 
 const (
-	labelKusciaTaskPodName = "task.kuscia.secretflow/pod-name"
-	labelKusciaTaskPodRole = "task.kuscia.secretflow/pod-role"
+	labelKusciaTaskPodIdentity = "kuscia.secretflow/pod-identity"
+	labelKusciaTaskPodRole     = "kuscia.secretflow/pod-role"
 
-	KusciaTaskLabelValue = "kusciatask"
+	kusciaTaskLabelValue = "kusciatask"
 
 	configTemplateVolumeName = "config-template"
 )

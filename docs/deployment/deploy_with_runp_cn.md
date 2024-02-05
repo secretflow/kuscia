@@ -1,7 +1,7 @@
 # 使用 RunP 模式部署节点
 
 ## 前言
-本教程帮助你使用进程运行时（RunP）来部署节点（lite 和 autonomy），当前本方案仅支持 SecretFlow 引擎，对更多算法引擎的支持敬请期待。
+本教程帮助你使用进程运行时（RunP）来部署节点（Lite 和 Autonomy），当前本方案仅支持 SecretFlow 引擎，对更多算法引擎的支持敬请期待。
 
 关于 RunP 以及更多运行时的介绍请参考 [容器运行模式](../reference/architecture_cn.md#agent)。
 

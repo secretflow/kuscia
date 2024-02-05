@@ -78,6 +78,8 @@ var kusciaAPIDR *kusciaAPIDomainRoute
 var kusciaAPISS *kusciaAPIServingService
 var kusciaAPIDG *kusciaAPIDomainDataGrant
 
+var kusciaAPISuccessStatusCode int32 = 0
+
 func TestServiceMain(t *testing.T) {
 	logger, _ := zlogwriter.New(nil)
 	nlog.Setup(nlog.SetWriter(logger))
@@ -213,4 +215,28 @@ func makeMockAppImage(name string) *v1alpha1.AppImage {
 			},
 		},
 	}
+}
+
+func MakeMockDomain(domainId string) *v1alpha1.Domain {
+
+	return &v1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{Name: domainId},
+		Spec: v1alpha1.DomainSpec{
+			Cert:         "mockcert",
+			Role:         v1alpha1.DomainRole("partner"),
+			MasterDomain: "mockmasterdomain",
+		},
+	}
+}
+
+func MakeDomainService(t *testing.T, conf *config.KusciaAPIConfig) IDomainService {
+	return NewDomainService(conf)
+}
+
+func CreateDomain(domainId string) *kusciaapi.CreateDomainResponse {
+
+	return kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+
 }

@@ -41,6 +41,8 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
+	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/agent/status"
 	"github.com/secretflow/kuscia/pkg/agent/utils/format"
@@ -96,7 +98,7 @@ type PodsController struct {
 	nodeGetter  NodeGetter
 	registryCfg *config.RegistryCfg
 
-	provider PodProvider
+	provider kri.PodProvider
 
 	// recorder is an event recorder for recording Event resources to the Kubernetes API.
 	recorder record.EventRecorder
@@ -123,7 +125,7 @@ type PodsController struct {
 
 	// reasonCache caches the failure reason of the last creation of all containers, which is
 	// used for generating ContainerStatus.
-	reasonCache *ReasonCache
+	reasonCache *kri.ReasonCache
 }
 
 // PodsControllerConfig is used to configure a new PodsController.
@@ -160,7 +162,7 @@ func NewPodsController(cfg *PodsControllerConfig) (*PodsController, error) {
 		recorder:     cfg.EventRecorder,
 		sourcesReady: cfg.SourcesReady,
 		clock:        clock.RealClock{},
-		reasonCache:  NewReasonCache(),
+		reasonCache:  kri.NewReasonCache(),
 	}
 
 	mirrorPodClient := pkgpod.NewBasicMirrorClient(cfg.KubeClient, cfg.NodeGetter)
@@ -238,7 +240,7 @@ func (pc *PodsController) GetStatusManager() status.Manager {
 	return pc.statusManager
 }
 
-func (pc *PodsController) RegisterProvider(provider PodProvider) {
+func (pc *PodsController) RegisterProvider(provider kri.PodProvider) {
 	pc.provider = provider
 }
 
@@ -368,6 +370,20 @@ func (pc *PodsController) HandlePodAdditions(pods []*corev1.Pod) {
 			continue
 		}
 
+		if !pc.podWorkers.IsPodTerminationRequested(pod.UID) {
+			if err := hook.Execute(&hook.PodAdditionContext{
+				Pod:         pod,
+				PodProvider: pc.provider,
+			}); err != nil {
+				if tError, ok := err.(*hook.TerminateError); ok {
+					pc.rejectPod(pod, tError.Reason, tError.Message)
+				}
+				nlog.Warnf("Failed to execute hook plugins for pod %q: %v", format.Pod(pod), err)
+				continue
+			}
+
+		}
+
 		mirrorPod, _ := pc.podManager.GetMirrorPodByPod(pod)
 		pc.dispatchWork(pod, kubetypes.SyncPodCreate, mirrorPod, start)
 	}
@@ -465,7 +481,7 @@ func (pc *PodsController) rejectPod(pod *corev1.Pod, reason, message string) {
 	pc.statusManager.SetPodStatus(pod, corev1.PodStatus{
 		Phase:   corev1.PodFailed,
 		Reason:  reason,
-		Message: "Pod " + message})
+		Message: message})
 }
 
 // constructPodImage construct the image with the configured repository if image does not contain repository information.

@@ -32,7 +32,7 @@ FORCE_START=false
 CONFIG_DATA="
 global:
   scrape_interval:     5s
-  external_labels: 
+  external_labels:
     monitor: 'kuscia-monitor'
 scrape_configs:
   - job_name: 'prometheus'
@@ -40,7 +40,7 @@ scrape_configs:
     #scrape_timeout: 10s
     static_configs:
       - targets: ['localhost:9090']
-" 
+"
 GREEN='\033[0;32m'
 NC='\033[0m'
 RED='\033[31m'

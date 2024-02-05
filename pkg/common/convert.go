@@ -225,3 +225,22 @@ func CopySameMemberTypeStruct(dst, src interface{}) error {
 
 	return nil
 }
+
+// yaml profile conversion for Protocol
+func (protocol *Protocol) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var val string
+	err := unmarshal(&val)
+	if err != nil {
+		return err
+	}
+
+	upval := Protocol(strings.ToUpper(val))
+
+	switch upval {
+	case NOTLS, TLS, MTLS:
+		*protocol = upval
+	default:
+		return fmt.Errorf("Kuscia configuration: protocol: %s is unsupported, supported: NOTLS/TLS/MTLS", val)
+	}
+	return nil
+}

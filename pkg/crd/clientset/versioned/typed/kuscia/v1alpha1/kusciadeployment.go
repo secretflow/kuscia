@@ -31,7 +31,7 @@ import (
 // KusciaDeploymentsGetter has a method to return a KusciaDeploymentInterface.
 // A group's client should implement this interface.
 type KusciaDeploymentsGetter interface {
-	KusciaDeployments() KusciaDeploymentInterface
+	KusciaDeployments(namespace string) KusciaDeploymentInterface
 }
 
 // KusciaDeploymentInterface has methods to work with KusciaDeployment resources.
@@ -51,12 +51,14 @@ type KusciaDeploymentInterface interface {
 // kusciaDeployments implements KusciaDeploymentInterface
 type kusciaDeployments struct {
 	client rest.Interface
+	ns     string
 }
 
 // newKusciaDeployments returns a KusciaDeployments
-func newKusciaDeployments(c *KusciaV1alpha1Client) *kusciaDeployments {
+func newKusciaDeployments(c *KusciaV1alpha1Client, namespace string) *kusciaDeployments {
 	return &kusciaDeployments{
 		client: c.RESTClient(),
+		ns:     namespace,
 	}
 }
 
@@ -64,6 +66,7 @@ func newKusciaDeployments(c *KusciaV1alpha1Client) *kusciaDeployments {
 func (c *kusciaDeployments) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	result = &v1alpha1.KusciaDeployment{}
 	err = c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -80,6 +83,7 @@ func (c *kusciaDeployments) List(ctx context.Context, opts v1.ListOptions) (resu
 	}
 	result = &v1alpha1.KusciaDeploymentList{}
 	err = c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -96,6 +100,7 @@ func (c *kusciaDeployments) Watch(ctx context.Context, opts v1.ListOptions) (wat
 	}
 	opts.Watch = true
 	return c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -106,6 +111,7 @@ func (c *kusciaDeployments) Watch(ctx context.Context, opts v1.ListOptions) (wat
 func (c *kusciaDeployments) Create(ctx context.Context, kusciaDeployment *v1alpha1.KusciaDeployment, opts v1.CreateOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	result = &v1alpha1.KusciaDeployment{}
 	err = c.client.Post().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(kusciaDeployment).
@@ -118,6 +124,7 @@ func (c *kusciaDeployments) Create(ctx context.Context, kusciaDeployment *v1alph
 func (c *kusciaDeployments) Update(ctx context.Context, kusciaDeployment *v1alpha1.KusciaDeployment, opts v1.UpdateOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	result = &v1alpha1.KusciaDeployment{}
 	err = c.client.Put().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		Name(kusciaDeployment.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -132,6 +139,7 @@ func (c *kusciaDeployments) Update(ctx context.Context, kusciaDeployment *v1alph
 func (c *kusciaDeployments) UpdateStatus(ctx context.Context, kusciaDeployment *v1alpha1.KusciaDeployment, opts v1.UpdateOptions) (result *v1alpha1.KusciaDeployment, err error) {
 	result = &v1alpha1.KusciaDeployment{}
 	err = c.client.Put().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		Name(kusciaDeployment.Name).
 		SubResource("status").
@@ -145,6 +153,7 @@ func (c *kusciaDeployments) UpdateStatus(ctx context.Context, kusciaDeployment *
 // Delete takes name of the kusciaDeployment and deletes it. Returns an error if one occurs.
 func (c *kusciaDeployments) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		Name(name).
 		Body(&opts).
@@ -159,6 +168,7 @@ func (c *kusciaDeployments) DeleteCollection(ctx context.Context, opts v1.Delete
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -171,6 +181,7 @@ func (c *kusciaDeployments) DeleteCollection(ctx context.Context, opts v1.Delete
 func (c *kusciaDeployments) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.KusciaDeployment, err error) {
 	result = &v1alpha1.KusciaDeployment{}
 	err = c.client.Patch(pt).
+		Namespace(c.ns).
 		Resource("kusciadeployments").
 		Name(name).
 		SubResource(subresources...).

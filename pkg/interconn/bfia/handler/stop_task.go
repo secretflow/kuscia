@@ -24,8 +24,9 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
@@ -64,20 +65,20 @@ func (h *stopTaskHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) 
 		Code: http.StatusOK,
 	}
 
-	rawKt, err := h.KtLister.Get(req.TaskId)
+	rawKt, err := h.KtLister.KusciaTasks(common.KusciaCrossDomain).Get(req.TaskId)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			rawKt, err = h.KusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), req.TaskId, metav1.GetOptions{})
+			rawKt, err = h.KusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), req.TaskId, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				resp.Code = http.StatusBadRequest
-				resp.Msg = common.ErrTaskDoesNotExist
+				resp.Msg = bfiacommon.ErrTaskDoesNotExist
 				return resp
 			}
 		}
 
 		if err != nil {
 			resp.Code = http.StatusInternalServerError
-			resp.Msg = common.ErrFindTaskFailed
+			resp.Msg = bfiacommon.ErrFindTaskFailed
 			return resp
 		}
 	}
@@ -90,7 +91,7 @@ func (h *stopTaskHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) 
 	kt.Status.Phase = kusciaapisv1alpha1.TaskFailed
 	cond, _ := utilsres.GetKusciaTaskCondition(&kt.Status, kusciaapisv1alpha1.KusciaTaskCondSuccess, true)
 	utilsres.SetKusciaTaskCondition(metav1.Now().Rfc3339Copy(), cond, corev1.ConditionFalse, "TaskIsStopped", "")
-	if err = utilsres.UpdateKusciaTaskStatus(h.KusciaClient, rawKt, kt, common.ErrRetries); err != nil {
+	if err = utilsres.UpdateKusciaTaskStatusWithRetry(h.KusciaClient, rawKt, kt, bfiacommon.ErrRetries); err != nil {
 		resp.Code = http.StatusInternalServerError
 		resp.Msg = fmt.Sprintf("failed to stop tsak, %v", err.Error())
 		return resp

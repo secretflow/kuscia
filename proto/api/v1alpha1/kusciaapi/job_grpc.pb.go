@@ -39,6 +39,7 @@ const (
 	JobService_StopJob_FullMethodName             = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/StopJob"
 	JobService_DeleteJob_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/DeleteJob"
 	JobService_WatchJob_FullMethodName            = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/WatchJob"
+	JobService_ApproveJob_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/ApproveJob"
 )
 
 // JobServiceClient is the client API for JobService service.
@@ -51,6 +52,7 @@ type JobServiceClient interface {
 	StopJob(ctx context.Context, in *StopJobRequest, opts ...grpc.CallOption) (*StopJobResponse, error)
 	DeleteJob(ctx context.Context, in *DeleteJobRequest, opts ...grpc.CallOption) (*DeleteJobResponse, error)
 	WatchJob(ctx context.Context, in *WatchJobRequest, opts ...grpc.CallOption) (JobService_WatchJobClient, error)
+	ApproveJob(ctx context.Context, in *ApproveJobRequest, opts ...grpc.CallOption) (*ApproveJobResponse, error)
 }
 
 type jobServiceClient struct {
@@ -138,6 +140,15 @@ func (x *jobServiceWatchJobClient) Recv() (*WatchJobEventResponse, error) {
 	return m, nil
 }
 
+func (c *jobServiceClient) ApproveJob(ctx context.Context, in *ApproveJobRequest, opts ...grpc.CallOption) (*ApproveJobResponse, error) {
+	out := new(ApproveJobResponse)
+	err := c.cc.Invoke(ctx, JobService_ApproveJob_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // JobServiceServer is the server API for JobService service.
 // All implementations must embed UnimplementedJobServiceServer
 // for forward compatibility
@@ -148,6 +159,7 @@ type JobServiceServer interface {
 	StopJob(context.Context, *StopJobRequest) (*StopJobResponse, error)
 	DeleteJob(context.Context, *DeleteJobRequest) (*DeleteJobResponse, error)
 	WatchJob(*WatchJobRequest, JobService_WatchJobServer) error
+	ApproveJob(context.Context, *ApproveJobRequest) (*ApproveJobResponse, error)
 	mustEmbedUnimplementedJobServiceServer()
 }
 
@@ -172,6 +184,9 @@ func (UnimplementedJobServiceServer) DeleteJob(context.Context, *DeleteJobReques
 }
 func (UnimplementedJobServiceServer) WatchJob(*WatchJobRequest, JobService_WatchJobServer) error {
 	return status.Errorf(codes.Unimplemented, "method WatchJob not implemented")
+}
+func (UnimplementedJobServiceServer) ApproveJob(context.Context, *ApproveJobRequest) (*ApproveJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ApproveJob not implemented")
 }
 func (UnimplementedJobServiceServer) mustEmbedUnimplementedJobServiceServer() {}
 
@@ -297,6 +312,24 @@ func (x *jobServiceWatchJobServer) Send(m *WatchJobEventResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _JobService_ApproveJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(JobServiceServer).ApproveJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: JobService_ApproveJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(JobServiceServer).ApproveJob(ctx, req.(*ApproveJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // JobService_ServiceDesc is the grpc.ServiceDesc for JobService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -323,6 +356,10 @@ var JobService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteJob",
 			Handler:    _JobService_DeleteJob_Handler,
+		},
+		{
+			MethodName: "ApproveJob",
+			Handler:    _JobService_ApproveJob_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

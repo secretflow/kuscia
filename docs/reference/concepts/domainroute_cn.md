@@ -244,7 +244,7 @@ DomainRoute `spec` 的子字段详细介绍如下：
   * `rollingUpdatePeriod`：表示 Token 轮转周期，默认值为 0。
   * `destinationPublicKey`：表示目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充。
   * `sourcePublicKey`：表示源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充。
-  * `tokenGenMethod`：表示 Token 生成算法，支持`RSA-GEN`和`RAND-GEN`。
+  * `tokenGenMethod`：表示 Token 生成算法，使用`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性。
 * `transit`：表示配置中转路由，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke 必须为直连）。若该配置不为空，endpoint 配置项将不生效。
   * `domain`：表示中转节点的信息。
   * `domainID`：表示中转节点的 ID。
@@ -364,7 +364,7 @@ ClusterDomainRoute `spec` 的子字段详细介绍如下：
   * `rollingUpdatePeriod`：表示 Token 轮转周期，默认值为 0。
   * `destinationPublicKey`：表示目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充。
   * `sourcePublicKey`：表示源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充。
-  * `tokenGenMethod`：表示 Token 生成算法，支持`RSA-GEN`和`RAND-GEN`。
+  * `tokenGenMethod`：表示 Token 生成算法，使用`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性。
 * `transit`：表示配置中转路由，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke 必须为直连）。若该配置不为空，endpoint 配置项将不生效。
   * `domain`：表示中转节点的信息。
   * `domainID`：表示中转节点的 ID。
@@ -392,3 +392,34 @@ ClusterDomainRoute `status` 的子字段详细介绍如下：
     * `destinationTokens[].revision`：表示 Token 的版本。
     * `destinationTokens[].revisionTime`：表示 Token 时间戳。
     * `destinationTokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。
+
+### 基于ClusterDomainRoute转发实现联通
+实践过程中发现，机构部署中心化集群时，常常会将Master节点和Lite部署在不同的环境中，并且Lite节点只有受限的网络访问能力。这种情形给多机构之间的互联互通造成了困难，Kuscia引入了转发能力，通过复用Lite与Master之间的通道，使得Lite节点可以访问对端机构。
+> 转发能力是Kuscia的通用能力，并不局限于上述情形。
+#### 双中心化集群
+![multi_party_transit.png](../../imgs/centerx2_transit.png)
+A机构部署中心化集群，B机构部署中心化集群，机构Master节点之间可以互通，但是Alice与Bob不互通，希望Alice和Bob共同完成任务。Alice和Bob的联通需要经历两个转发节点「Master-Alice」和「Master-Bob」，当前转发语义只支持一次转发，要实现两次转发，需要两条转发规则配合：
+
+`Alice->Bob`——如绿色线所示
+
+$$[A\stackrel{MA,MB}\longrightarrow B]=[A\stackrel{MA}\longrightarrow B]+[MA\stackrel{MB}\longrightarrow B]$$
+
+`Bob->Alice`——如红色线所示
+
+$$[B\stackrel{MB,MA}\longrightarrow A]=[B\stackrel{MB}\longrightarrow A]+[MB\stackrel{MA}\longrightarrow A]$$
+
+Alice记为A，Bob记为B，Master-Alice记为MA，Master-Bob记为MB，转发节点记为箭头上方节点。
+
+#### 中心化集群+P2P集群
+![multi_party_transit.png](../../imgs/centerxp2p_transit.png)
+A机构部署中心化集群，B机构部署P2P集群，A机构的Master节点和B机构的P2P节点可以互通，但是Alice与Bob不互通，希望Alice和Bob共同完成任务。Alice和Bob的联通需要经历一个转发节点「Master-Alice」，需要的ClusterDomainRoute为：
+
+`Alice->Bob`——如绿色线所示
+
+$$[A\stackrel{MA}\longrightarrow B]$$
+
+`Bob->Alice`——如红色线所示
+
+$$[B\stackrel{MA}\longrightarrow A]$$
+
+Alice记为A，Autonomy-Bob记为B，Master-Alice记为MA，转发节点记为箭头上方节点。

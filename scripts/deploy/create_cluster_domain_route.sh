@@ -22,7 +22,7 @@ DEST_DOMAIN=$2
 DEST_ENDPOINT=$3
 TRANSIT_DOMAIN=$4
 
-usage="$(basename "$0") SRC_DOMAIN DEST_DOMAIN DEST_ENDPOINT(http(s)://ip:port) TRANSIT_DOMAIN "
+usage="$(basename "$0") SRC_DOMAIN DEST_DOMAIN DEST_ENDPOINT(http(s)://ip:port) [TRANSIT_DOMAIN]"
 
 if [[ ${SRC_DOMAIN} == "" || ${DEST_DOMAIN} == "" || ${DEST_ENDPOINT} == "" ]]; then
   echo "missing argument: $usage"

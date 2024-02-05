@@ -29,9 +29,8 @@ type KusciaJobLister interface {
 	// List lists all KusciaJobs in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.KusciaJob, err error)
-	// Get retrieves the KusciaJob from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.KusciaJob, error)
+	// KusciaJobs returns an object that can list and get KusciaJobs.
+	KusciaJobs(namespace string) KusciaJobNamespaceLister
 	KusciaJobListerExpansion
 }
 
@@ -53,9 +52,41 @@ func (s *kusciaJobLister) List(selector labels.Selector) (ret []*v1alpha1.Kuscia
 	return ret, err
 }
 
-// Get retrieves the KusciaJob from the index for a given name.
-func (s *kusciaJobLister) Get(name string) (*v1alpha1.KusciaJob, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
+// KusciaJobs returns an object that can list and get KusciaJobs.
+func (s *kusciaJobLister) KusciaJobs(namespace string) KusciaJobNamespaceLister {
+	return kusciaJobNamespaceLister{indexer: s.indexer, namespace: namespace}
+}
+
+// KusciaJobNamespaceLister helps list and get KusciaJobs.
+// All objects returned here must be treated as read-only.
+type KusciaJobNamespaceLister interface {
+	// List lists all KusciaJobs in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.KusciaJob, err error)
+	// Get retrieves the KusciaJob from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.KusciaJob, error)
+	KusciaJobNamespaceListerExpansion
+}
+
+// kusciaJobNamespaceLister implements the KusciaJobNamespaceLister
+// interface.
+type kusciaJobNamespaceLister struct {
+	indexer   cache.Indexer
+	namespace string
+}
+
+// List lists all KusciaJobs in the indexer for a given namespace.
+func (s kusciaJobNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.KusciaJob, err error) {
+	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
+		ret = append(ret, m.(*v1alpha1.KusciaJob))
+	})
+	return ret, err
+}
+
+// Get retrieves the KusciaJob from the indexer for a given namespace and name.
+func (s kusciaJobNamespaceLister) Get(name string) (*v1alpha1.KusciaJob, error) {
+	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
 	}

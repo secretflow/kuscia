@@ -148,7 +148,9 @@ func TestPermit(t *testing.T) {
 	trInformerFactory.Start(ctx.Done())
 
 	tr1 := util.MakeTaskResource("ns1", "tr2", 2, nil)
+	tr1.UID = "222"
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
+	tr2.UID = "222"
 	trInformer.Informer().GetStore().Add(tr1)
 	trInformer.Informer().GetStore().Add(tr2)
 
@@ -158,7 +160,8 @@ func TestPermit(t *testing.T) {
 	nsInformer := informerFactory.Core().V1().Namespaces()
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr2"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "222"},
+		map[string]string{kusciaapisv1alpha1.TaskResourceKey: "tr2"}, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
 	registeredPlugins := []st.RegisterPluginFunc{
@@ -189,14 +192,17 @@ func TestPermit(t *testing.T) {
 		{
 			name: "pods belong to a taskResource, Wait",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr2").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr2").Label(kusciaapisv1alpha1.TaskResourceUID, "222").Obj()},
 			expected: framework.Wait,
 		},
 		{
 			name: "pods belong to a taskResource, Allow",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr2").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr2").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr2").Label(kusciaapisv1alpha1.TaskResourceUID, "222").Obj(),
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr2").Label(kusciaapisv1alpha1.TaskResourceUID, "222").Obj()},
 			expected: framework.Success,
 		},
 	}
@@ -219,6 +225,7 @@ func TestPermit(t *testing.T) {
 
 func TestPostBind(t *testing.T) {
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
+	tr.UID = "111"
 	ctx := context.Background()
 	cs := kusciaclientsetfake.NewSimpleClientset(tr)
 	trInformerFactory := kusciainformers.NewSharedInformerFactory(cs, 0)
@@ -233,7 +240,7 @@ func TestPostBind(t *testing.T) {
 	nsInformer := informerFactory.Core().V1().Namespaces()
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr"}, 10, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, nil, 10, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
 	registeredPlugins := []st.RegisterPluginFunc{
@@ -260,14 +267,17 @@ func TestPostBind(t *testing.T) {
 			name: "pod1 does not belong to any task resource",
 			pods: []*corev1.Pod{
 				st.MakePod().Name("pod1").Namespace("ns1").UID("pod1").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedtrExist: true,
 		},
 		{
 			name: "pod1 belong to task resource tr",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedtrExist: false,
 		},
 	}
@@ -300,6 +310,7 @@ func TestPostFilter(t *testing.T) {
 	trInformerFactory.Start(ctx.Done())
 
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
+	tr.UID = "111"
 	trInformer.Informer().GetStore().Add(tr)
 
 	fakeClient := clientsetfake.NewSimpleClientset()
@@ -308,7 +319,7 @@ func TestPostFilter(t *testing.T) {
 	nsInformer := informerFactory.Core().V1().Namespaces()
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{"test": "a"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{"test": "a"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
 	registeredPlugins := []st.RegisterPluginFunc{
@@ -325,7 +336,8 @@ func TestPostFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	existingPods, allNodes = util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr"}, 10, 30)
+	existingPods, allNodes = util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"},
+		map[string]string{kusciaapisv1alpha1.TaskResourceKey: "tr"}, 10, 30)
 	for _, pod := range existingPods {
 		pod.Namespace = "ns1"
 	}
@@ -345,17 +357,22 @@ func TestPostFilter(t *testing.T) {
 		{
 			name: "enough pods assigned, do not reject all",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
-				st.MakePod().Name("pod3").Namespace("ns1").Node("node3").UID("pod3").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
+				st.MakePod().Name("pod3").Namespace("ns1").Node("node3").UID("pod3").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedEmptyMsg:     true,
 			snapshotSharedLister: groupPodSnapshot,
 		},
 		{
 			name: "pod failed at filter phase, reject all pods",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedEmptyMsg: false,
 		},
 	}
@@ -390,6 +407,7 @@ func TestPreFilter(t *testing.T) {
 	trInformerFactory.Start(ctx.Done())
 
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
+	tr.UID = "111"
 	trInformer.Informer().GetStore().Add(tr)
 
 	fakeClient := clientsetfake.NewSimpleClientset()
@@ -405,7 +423,7 @@ func TestPreFilter(t *testing.T) {
 	}
 	nsInformer.Informer().GetStore().Add(ns1)
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{"test": "a"}, 60, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{"test": "a"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
 	registeredPlugins := []st.RegisterPluginFunc{
@@ -437,14 +455,16 @@ func TestPreFilter(t *testing.T) {
 		{
 			name: "pod belong to task resource tr, but tr does node exist",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			cleantrInformer:  true,
 			expectedEmptyMsg: false,
 		},
 		{
 			name: "pod belong to task resource tr, but the member less than MinReservedPods",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedEmptyMsg: false,
 		},
 	}
@@ -471,6 +491,7 @@ func TestPreFilter(t *testing.T) {
 
 func TestUnreserve(t *testing.T) {
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
+	tr.UID = "111"
 	ctx := context.Background()
 	cs := kusciaclientsetfake.NewSimpleClientset(tr)
 	trInformerFactory := kusciainformers.NewSharedInformerFactory(cs, 0)
@@ -485,7 +506,7 @@ func TestUnreserve(t *testing.T) {
 	nsInformer := informerFactory.Core().V1().Namespaces()
 	informerFactory.Start(ctx.Done())
 
-	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.LabelTaskResource: "tr"}, 10, 30)
+	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, nil, 10, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
 	registeredPlugins := []st.RegisterPluginFunc{
@@ -512,14 +533,17 @@ func TestUnreserve(t *testing.T) {
 			name: "pod1 does not belong to any task resource",
 			pods: []*corev1.Pod{
 				st.MakePod().Name("pod1").Namespace("ns1").UID("pod1").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedtrExist: true,
 		},
 		{
 			name: "pod1 belong to task resource tr",
 			pods: []*corev1.Pod{
-				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj(),
-				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").Label(kusciaapisv1alpha1.LabelTaskResource, "tr").Obj()},
+				st.MakePod().Name("pod1").Namespace("ns1").Node("node1").UID("pod1").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj(),
+				st.MakePod().Name("pod2").Namespace("ns1").Node("node2").UID("pod2").
+					Annotation(kusciaapisv1alpha1.TaskResourceKey, "tr").Label(kusciaapisv1alpha1.TaskResourceUID, "111").Obj()},
 			expectedtrExist: false,
 		},
 	}

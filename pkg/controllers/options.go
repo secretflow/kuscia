@@ -40,6 +40,8 @@ type Options struct {
 	HealthCheckPort int
 
 	ControllerName string
+
+	EnableWorkloadApprove bool
 }
 
 // NewOptions creates a new options with a default config.

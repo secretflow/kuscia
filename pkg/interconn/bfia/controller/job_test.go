@@ -33,11 +33,10 @@ import (
 	pkgcommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 )
 
-func makeKusciaJob(name string, labels map[string]string) *kusciaapisv1alpha1.KusciaJob {
-	return &kusciaapisv1alpha1.KusciaJob{
+func makeKusciaJob(name string, labels, annotations map[string]string) *kusciaapisv1alpha1.KusciaJob {
+	kj := &kusciaapisv1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: labels,
+			Name: name,
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
 			Initiator: "alice",
@@ -59,6 +58,18 @@ func makeKusciaJob(name string, labels map[string]string) *kusciaapisv1alpha1.Ku
 			},
 		},
 	}
+	if labels == nil {
+		kj.Labels = make(map[string]string)
+	} else {
+		kj.Labels = labels
+	}
+
+	if annotations == nil {
+		kj.Annotations = make(map[string]string)
+	} else {
+		kj.Annotations = annotations
+	}
+	return kj
 }
 
 func TestHandleAddedOrDeletedKusciaJob(t *testing.T) {
@@ -69,7 +80,7 @@ func TestHandleAddedOrDeletedKusciaJob(t *testing.T) {
 		t.Error("new controller failed")
 	}
 
-	job := makeKusciaJob("job-1", map[string]string{common.LabelSelfClusterAsInitiator: "true"})
+	job := makeKusciaJob("job-1", nil, map[string]string{common.SelfClusterAsInitiatorAnnotationKey: "true"})
 
 	tests := []struct {
 		name string
@@ -105,9 +116,9 @@ func TestHandleUpdatedKusciaJob(t *testing.T) {
 		t.Error("new controller failed")
 	}
 
-	kj1 := makeKusciaJob("job-1", map[string]string{common.LabelSelfClusterAsInitiator: "true"})
+	kj1 := makeKusciaJob("job-1", nil, map[string]string{common.SelfClusterAsInitiatorAnnotationKey: "true"})
 	kj1.ResourceVersion = "1"
-	kj2 := makeKusciaJob("job-2", map[string]string{common.LabelSelfClusterAsInitiator: "true"})
+	kj2 := makeKusciaJob("job-2", nil, map[string]string{common.SelfClusterAsInitiatorAnnotationKey: "true"})
 	kj2.ResourceVersion = "2"
 
 	tests := []struct {
@@ -150,10 +161,10 @@ func TestProcessJobStatusSyncNextWorkItem(t *testing.T) {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	kjInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 
-	kj1 := makeKusciaJob("job-1", nil)
+	kj1 := makeKusciaJob("job-1", nil, nil)
 	kj1.Status.Phase = kusciaapisv1alpha1.KusciaJobSucceeded
-	kj2 := makeKusciaJob("job-2", nil)
-	kj2.Spec.Stage = kusciaapisv1alpha1.JobStopStage
+	kj2 := makeKusciaJob("job-2", nil, nil)
+	kj2.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobStopStage)
 	kjInformer.Informer().GetStore().Add(kj1)
 	kjInformer.Informer().GetStore().Add(kj2)
 
@@ -214,8 +225,8 @@ func TestSyncJobHandler(t *testing.T) {
 	nsInformer := kubeInformerFactory.Core().V1().Namespaces()
 	kjInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 
-	kj1 := makeKusciaJob("job-1", nil)
-	kj2 := makeKusciaJob("job-2", map[string]string{common.LabelSelfClusterAsInitiator: "true"})
+	kj1 := makeKusciaJob("job-1", nil, nil)
+	kj2 := makeKusciaJob("job-2", nil, map[string]string{common.SelfClusterAsInitiatorAnnotationKey: "true"})
 	now := metav1.Now()
 	kj2.Status.CompletionTime = &now
 	kjInformer.Informer().GetStore().Add(kj1)
@@ -262,7 +273,7 @@ func TestSyncJobHandler(t *testing.T) {
 func TestGetPartiesDomainInfo(t *testing.T) {
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeFakeClient, 0)
-	kj := makeKusciaJob("job-1", map[string]string{common.LabelSelfClusterAsInitiator: "true"})
+	kj := makeKusciaJob("job-1", nil, map[string]string{common.SelfClusterAsInitiatorAnnotationKey: "true"})
 	nsAlice := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "alice",
@@ -302,14 +313,14 @@ func TestGetReqDomainIDFromKusciaJob(t *testing.T) {
 	}
 	cc := c.(*Controller)
 
-	kj := makeKusciaJob("job-1", nil)
+	kj := makeKusciaJob("job-1", nil, nil)
 	want := "alice"
 	got := cc.getReqDomainIDFromKusciaJob(kj)
 	assert.Equal(t, want, got)
 }
 
 func TestUpdateJobStatus(t *testing.T) {
-	kj := makeKusciaJob("job-1", nil)
+	kj := makeKusciaJob("job-1", nil, nil)
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kj)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	kjInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
@@ -341,7 +352,7 @@ func TestUpdateJobStatus(t *testing.T) {
 }
 
 func TestSetKusciaJobTaskStatus(t *testing.T) {
-	kj := makeKusciaJob("job-1", nil)
+	kj := makeKusciaJob("job-1", nil, nil)
 	tests := []struct {
 		name   string
 		kj     *kusciaapisv1alpha1.KusciaJob

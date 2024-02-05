@@ -22,18 +22,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // GetKusciaJobCondition gets kuscia job condition.
-func GetKusciaJobCondition(status *kusciaapisv1alpha1.KusciaJobStatus, condType kusciaapisv1alpha1.KusciaJobConditionType, generateCond bool) (*kusciaapisv1alpha1.KusciaJobCondition, bool) {
+func GetKusciaJobCondition(status *kusciaapisv1alpha1.KusciaJobStatus,
+	condType kusciaapisv1alpha1.KusciaJobConditionType,
+	generateCond bool) (*kusciaapisv1alpha1.KusciaJobCondition, bool) {
 	for i, cond := range status.Conditions {
 		if cond.Type == condType {
 			return &status.Conditions[i], true
 		}
 	}
+
 	if generateCond {
 		status.Conditions = append(status.Conditions, kusciaapisv1alpha1.KusciaJobCondition{Type: condType, Status: corev1.ConditionFalse})
 		return &status.Conditions[len(status.Conditions)-1], false
@@ -56,14 +60,18 @@ func UpdateKusciaJobStage(kusciaClient kusciaclientset.Interface,
 	retries int) error {
 
 	update := func(kusciaJob *kusciaapisv1alpha1.KusciaJob) {
-		kusciaJob.Spec.Stage = jobStage
+		if kusciaJob.Labels == nil {
+			kusciaJob.Labels = make(map[string]string)
+		}
+		kusciaJob.Labels[common.LabelJobStage] = string(jobStage)
 	}
 
 	hasUpdated := func(kusciaJob *kusciaapisv1alpha1.KusciaJob) bool {
-		if kusciaJob.Spec.Stage == jobStage {
-			return true
+		if kusciaJob.Labels == nil {
+			return false
 		}
-		return false
+
+		return kusciaJob.Labels[common.LabelJobStage] == string(jobStage)
 	}
 
 	update(kj)
@@ -80,7 +88,7 @@ func UpdateKusciaJob(kusciaClient kusciaclientset.Interface,
 	kjName := kj.Name
 	for i, kj := 0, kj; ; i++ {
 		nlog.Infof("update kuscia job %v", kjName)
-		_, err = kusciaClient.KusciaV1alpha1().KusciaJobs().Update(context.Background(), kj, metav1.UpdateOptions{})
+		_, err = kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(context.Background(), kj, metav1.UpdateOptions{})
 		if err == nil {
 			return nil
 		}
@@ -90,7 +98,7 @@ func UpdateKusciaJob(kusciaClient kusciaclientset.Interface,
 			break
 		}
 
-		kj, err = kusciaClient.KusciaV1alpha1().KusciaJobs().Get(context.Background(), kjName, metav1.GetOptions{})
+		kj, err = kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(context.Background(), kjName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("update kuscia job %v spec failed, %v", kjName, err)
 		}
@@ -104,48 +112,17 @@ func UpdateKusciaJob(kusciaClient kusciaclientset.Interface,
 }
 
 // UpdateKusciaJobStatus will update kuscia job status. The function will retry updating if failed.
-func UpdateKusciaJobStatus(kusciaClient kusciaclientset.Interface, rawKj, curKj *kusciaapisv1alpha1.KusciaJob, retryCount int) (err error) {
+func UpdateKusciaJobStatus(kusciaClient kusciaclientset.Interface, rawKj, curKj *kusciaapisv1alpha1.KusciaJob) (err error) {
 	if reflect.DeepEqual(rawKj.Status, curKj.Status) {
 		nlog.Debugf("Kuscia job %v status does not change, skip to update it", curKj.Name)
 		return nil
 	}
-
-	var lastErr error
-	newStatus := curKj.Status.DeepCopy()
-	for i, curKj := 0, curKj; ; i++ {
-		nlog.Infof("Start updating kuscia job %q status", rawKj.Name)
-		if _, err = kusciaClient.KusciaV1alpha1().KusciaJobs().UpdateStatus(context.Background(), curKj, metav1.UpdateOptions{}); err == nil {
-			nlog.Infof("Finish updating kuscia job %q status", rawKj.Name)
-			return nil
-		}
-
-		nlog.Warnf("Failed to update kuscia job %q status, %v", rawKj.Name, err)
-		lastErr = err
-		if i >= retryCount {
-			break
-		}
-
-		curKj, err = kusciaClient.KusciaV1alpha1().KusciaJobs().Get(context.Background(), rawKj.Name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to get the newest kuscia job %q, %v", rawKj.Name, err)
-		}
-
-		if reflect.DeepEqual(curKj.Status, newStatus) {
-			nlog.Infof("Kuscia task %v status is already updated, skip to update it", rawKj.Name)
-			return nil
-		}
-
-		curKj.Status.Phase = newStatus.Phase
-		curKj.Status.Reason = newStatus.Reason
-		curKj.Status.Message = newStatus.Message
-		curKj.Status.StartTime = newStatus.StartTime
-		curKj.Status.CompletionTime = newStatus.CompletionTime
-		curKj.Status.LastReconcileTime = newStatus.LastReconcileTime
-		MergeKusciaJobConditions(curKj, newStatus.Conditions)
-		MergeKusciaJobTaskStatus(curKj, newStatus.TaskStatus)
+	nlog.Infof("Start updating kuscia job %q status", rawKj.Name)
+	if _, err = kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKj, metav1.UpdateOptions{}); err != nil {
+		return err
 	}
-
-	return lastErr
+	nlog.Infof("Finish updating kuscia job %q status", rawKj.Name)
+	return nil
 }
 
 // MergeKusciaJobConditions merges kuscia job conditions.

@@ -73,6 +73,20 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
+
+	// check source domain exists
+	if errorCode, errMsg := CheckDomainExists(s.kusciaClient, request.GetSource()); utils.ResponseCodeSuccess != errorCode {
+		return &kusciaapi.CreateDomainRouteResponse{
+			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
+		}
+	}
+	// check destination domain exists
+	if errorCode, errMsg := CheckDomainExists(s.kusciaClient, request.GetDestination()); utils.ResponseCodeSuccess != errorCode {
+		return &kusciaapi.CreateDomainRouteResponse{
+			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
+		}
+	}
+
 	endpoint := request.Endpoint
 	// build cdr kusciaAPIDomainRoute endpoint
 	cdrEndpoint := v1alpha1.DomainEndpoint{

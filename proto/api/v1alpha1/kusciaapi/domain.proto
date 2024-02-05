@@ -39,6 +39,7 @@ message CreateDomainRequest {
   string role = 3;
   string cert = 4;
   AuthCenter auth_center = 5;
+  string master_domain_id = 6;
 }
 
 message CreateDomainResponse {
@@ -72,6 +73,7 @@ message QueryDomainResponseData {
   repeated DeployTokenStatus deploy_token_statuses = 5;
   map<string, string> annotations = 6;
   AuthCenter auth_center = 7;
+  string master_domain_id = 8;
 }
 
 message NodeStatus {
@@ -88,6 +90,7 @@ message UpdateDomainRequest {
   string role = 3;
   string cert = 4;
   AuthCenter auth_center = 5;
+  string master_domain_id = 6;
 }
 
 message UpdateDomainResponse {

@@ -198,8 +198,8 @@ func BuildServerTLSConfigFromPath(caPath, certPath, keyPath string) (*tls.Config
 
 // BuildServerTLSConfig builds server tls config.
 func BuildServerTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key *rsa.PrivateKey) (*tls.Config, error) {
-	if caCert == nil || cert == nil || key == nil {
-		return nil, fmt.Errorf("load client tls config failed, ca|servercert|serverkey can't be empty")
+	if cert == nil || key == nil {
+		return nil, fmt.Errorf("load client tls config failed, servercert|serverkey can't be empty")
 	}
 
 	var caCertPool *x509.CertPool
@@ -245,8 +245,8 @@ func BuildClientTLSConfigViaPath(caPath, certPath, keyPath string) (*tls.Config,
 
 // BuildClientTLSConfig builds client tls config.
 func BuildClientTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key *rsa.PrivateKey) (*tls.Config, error) {
-	if caCert == nil || cert == nil || key == nil {
-		return nil, fmt.Errorf("load client tls config failed, ca|clientcert|clientkey path can't be empty")
+	if cert == nil || key == nil {
+		return nil, fmt.Errorf("load client tls config failed, clientcert|clientkey path can't be empty")
 	}
 
 	var caCertPool *x509.CertPool
@@ -261,6 +261,16 @@ func BuildClientTLSConfig(caCert *x509.Certificate, cert *x509.Certificate, key 
 		Certificates: certs,
 	}
 	return config, nil
+}
+
+// BuildClientSimpleTLSConfig builds client tls config.
+func BuildClientSimpleTLSConfig(caCert *x509.Certificate) (*tls.Config, error) {
+	if caCert == nil {
+		return nil, fmt.Errorf("load client tls config failed, clientcert path can't be empty")
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AddCert(caCert)
+	return &tls.Config{RootCAs: caCertPool}, nil
 }
 
 // BuildTLSCertificateViaPath builds tls certificate.

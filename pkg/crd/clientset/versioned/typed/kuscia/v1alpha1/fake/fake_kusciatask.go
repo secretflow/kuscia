@@ -31,6 +31,7 @@ import (
 // FakeKusciaTasks implements KusciaTaskInterface
 type FakeKusciaTasks struct {
 	Fake *FakeKusciaV1alpha1
+	ns   string
 }
 
 var kusciatasksResource = schema.GroupVersionResource{Group: "kuscia.secretflow", Version: "v1alpha1", Resource: "kusciatasks"}
@@ -40,7 +41,8 @@ var kusciatasksKind = schema.GroupVersionKind{Group: "kuscia.secretflow", Versio
 // Get takes name of the kusciaTask, and returns the corresponding kusciaTask object, and an error if there is any.
 func (c *FakeKusciaTasks) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.KusciaTask, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(kusciatasksResource, name), &v1alpha1.KusciaTask{})
+		Invokes(testing.NewGetAction(kusciatasksResource, c.ns, name), &v1alpha1.KusciaTask{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -50,7 +52,8 @@ func (c *FakeKusciaTasks) Get(ctx context.Context, name string, options v1.GetOp
 // List takes label and field selectors, and returns the list of KusciaTasks that match those selectors.
 func (c *FakeKusciaTasks) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.KusciaTaskList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(kusciatasksResource, kusciatasksKind, opts), &v1alpha1.KusciaTaskList{})
+		Invokes(testing.NewListAction(kusciatasksResource, kusciatasksKind, c.ns, opts), &v1alpha1.KusciaTaskList{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -71,13 +74,15 @@ func (c *FakeKusciaTasks) List(ctx context.Context, opts v1.ListOptions) (result
 // Watch returns a watch.Interface that watches the requested kusciaTasks.
 func (c *FakeKusciaTasks) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(kusciatasksResource, opts))
+		InvokesWatch(testing.NewWatchAction(kusciatasksResource, c.ns, opts))
+
 }
 
 // Create takes the representation of a kusciaTask and creates it.  Returns the server's representation of the kusciaTask, and an error, if there is any.
 func (c *FakeKusciaTasks) Create(ctx context.Context, kusciaTask *v1alpha1.KusciaTask, opts v1.CreateOptions) (result *v1alpha1.KusciaTask, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(kusciatasksResource, kusciaTask), &v1alpha1.KusciaTask{})
+		Invokes(testing.NewCreateAction(kusciatasksResource, c.ns, kusciaTask), &v1alpha1.KusciaTask{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -87,7 +92,8 @@ func (c *FakeKusciaTasks) Create(ctx context.Context, kusciaTask *v1alpha1.Kusci
 // Update takes the representation of a kusciaTask and updates it. Returns the server's representation of the kusciaTask, and an error, if there is any.
 func (c *FakeKusciaTasks) Update(ctx context.Context, kusciaTask *v1alpha1.KusciaTask, opts v1.UpdateOptions) (result *v1alpha1.KusciaTask, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(kusciatasksResource, kusciaTask), &v1alpha1.KusciaTask{})
+		Invokes(testing.NewUpdateAction(kusciatasksResource, c.ns, kusciaTask), &v1alpha1.KusciaTask{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -98,7 +104,8 @@ func (c *FakeKusciaTasks) Update(ctx context.Context, kusciaTask *v1alpha1.Kusci
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeKusciaTasks) UpdateStatus(ctx context.Context, kusciaTask *v1alpha1.KusciaTask, opts v1.UpdateOptions) (*v1alpha1.KusciaTask, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(kusciatasksResource, "status", kusciaTask), &v1alpha1.KusciaTask{})
+		Invokes(testing.NewUpdateSubresourceAction(kusciatasksResource, "status", c.ns, kusciaTask), &v1alpha1.KusciaTask{})
+
 	if obj == nil {
 		return nil, err
 	}
@@ -108,13 +115,14 @@ func (c *FakeKusciaTasks) UpdateStatus(ctx context.Context, kusciaTask *v1alpha1
 // Delete takes name of the kusciaTask and deletes it. Returns an error if one occurs.
 func (c *FakeKusciaTasks) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(kusciatasksResource, name, opts), &v1alpha1.KusciaTask{})
+		Invokes(testing.NewDeleteActionWithOptions(kusciatasksResource, c.ns, name, opts), &v1alpha1.KusciaTask{})
+
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeKusciaTasks) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(kusciatasksResource, listOpts)
+	action := testing.NewDeleteCollectionAction(kusciatasksResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.KusciaTaskList{})
 	return err
@@ -123,7 +131,8 @@ func (c *FakeKusciaTasks) DeleteCollection(ctx context.Context, opts v1.DeleteOp
 // Patch applies the patch and returns the patched kusciaTask.
 func (c *FakeKusciaTasks) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.KusciaTask, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(kusciatasksResource, name, pt, data, subresources...), &v1alpha1.KusciaTask{})
+		Invokes(testing.NewPatchSubresourceAction(kusciatasksResource, c.ns, name, pt, data, subresources...), &v1alpha1.KusciaTask{})
+
 	if obj == nil {
 		return nil, err
 	}

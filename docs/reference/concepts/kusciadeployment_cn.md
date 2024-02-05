@@ -27,6 +27,7 @@ metadata:
   labels:
     kuscia.secretflow/app-type: serving
   name: secretflow-serving
+  namespace: cross-domain
 spec:
   initiator: alice
   inputConfig: '{"partyConfigs":{"alice":{"serverConfig":{"featureMapping":{"v24":"x24","v22":"x22","v21":"x21","v25":"x25","v23":"x23"}},"modelConfig":{"modelId":"glm-test-1","basePath":"/tmp/alice","sourceMd5":"4216c62acba4a630d5039f917612780b","sourcePath":"examples/alice/glm-test.tar.gz","sourceType":"ST_FILE"},"featureSourceConfig":{"mockOpts":{}},"channel_desc":{"protocol":"http"}},"bob":{"serverConfig":{"featureMapping":{"v6":"x6","v7":"x7","v8":"x8","v9":"x9","v10":"x10"}},"modelConfig":{"modelId":"glm-test-1","basePath":"/tmp/bob","sourceMd5":"1ded1513dab8734e23152ef906c180fc","sourcePath":"examples/bob/glm-test.tar.gz","sourceType":"ST_FILE"},"featureSourceConfig":{"mockOpts":{}},"channel_desc":{"protocol":"http"}}}}'
@@ -62,7 +63,7 @@ kubectl apply -f secretflow-serving.yaml
 1. 运行以下命令查看 KusciaDeployment。
 
 ```shell
-kubectl get kd secretflow-serving
+kubectl get kd secretflow-serving -n cross-domain
 NAME                 TOTALPARTIES   AVAILABLEPARTIES   PHASE       AGE
 secretflow-serving   2              2                  Available   89m
 ```
@@ -77,7 +78,7 @@ secretflow-serving   2              2                  Available   89m
 2. 运行以下命令查看 KusciaDeployment 详细的状态信息。
 
 ```shell
-kubectl get kd secretflow-serving -o jsonpath={.status} | jq
+kubectl get kd secretflow-serving -n cross-domain -o jsonpath={.status} | jq
 {
   "availableParties": 2,
   "lastReconcileTime": "2023-09-19T08:37:27Z",
@@ -193,13 +194,13 @@ secretflow-serving-d7db48cc7-wbqv6   1/1     Running   0          89m
 1. 运行以下命令清理 KusciaDeployment。
 
 ```shell
-kubectl delete kd secretflow-serving
+kubectl delete kd secretflow-serving -n cross-domain
 ```
 
 2. 检查 KusciaDeployment 是否已被清理。
 
 ```shell
-kubectl get kd secretflow-serving
+kubectl get kd secretflow-serving -n cross-domain
 Error from server (NotFound): kusciadeployments.kuscia.secretflow "secretflow-serving" not found
 ```
 
@@ -216,6 +217,7 @@ metadata:
   labels:
     kuscia.secretflow/app-type: serving
   name: secretflow-serving
+  namespace: cross-domain
 spec:
   initiator: alice
   inputConfig: '{"partyConfigs":{"alice":{"serverConfig":{"featureMapping":{"v24":"x24","v22":"x22","v21":"x21","v25":"x25","v23":"x23"}},"modelConfig":{"modelId":"glm-test-1","basePath":"/tmp/alice","sourceMd5":"4216c62acba4a630d5039f917612780b","sourcePath":"examples/alice/glm-test.tar.gz","sourceType":"ST_FILE"},"featureSourceConfig":{"mockOpts":{}},"channel_desc":{"protocol":"http"}},"bob":{"serverConfig":{"featureMapping":{"v6":"x6","v7":"x7","v8":"x8","v9":"x9","v10":"x10"}},"modelConfig":{"modelId":"glm-test-1","basePath":"/tmp/bob","sourceMd5":"1ded1513dab8734e23152ef906c180fc","sourcePath":"examples/bob/glm-test.tar.gz","sourceType":"ST_FILE"},"featureSourceConfig":{"mockOpts":{}},"channel_desc":{"protocol":"http"}}}}'
@@ -348,6 +350,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: AppImage
 metadata:
   name: secretflow-serving-image
+  namespace: cross-domain
 spec:
   configTemplates:
     serving-config.conf: |

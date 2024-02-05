@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,4 +107,20 @@ func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.S
 	}
 
 	return retry.OnError(retry.DefaultBackoff, net.IsConnectionRefused, updateFn)
+}
+
+func GenerateServiceName(prefix, portName string) string {
+	name := fmt.Sprintf("%s-%s", prefix, portName)
+	if len(name) > 62 {
+		value, err := HashString(name)
+		if err != nil {
+			value = strings.Trim(name[:40], "-")
+		}
+
+		name = portName + "-" + value
+		if len(name) > 62 {
+			name = strings.Trim(portName[:10], "-") + "-" + value
+		}
+	}
+	return name
 }

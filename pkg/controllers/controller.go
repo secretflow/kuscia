@@ -65,11 +65,11 @@ const (
 )
 
 type ControllerConfig struct {
-	IsMaster      bool
-	RunMode       common.RunModeType
-	Namespace     string
-	RootDir       string
-	KubeClient    kubernetes.Interface
-	KusciaClient  kusciaclientset.Interface
-	EventRecorder record.EventRecorder
+	RunMode               common.RunModeType
+	Namespace             string
+	RootDir               string
+	KubeClient            kubernetes.Interface
+	KusciaClient          kusciaclientset.Interface
+	EventRecorder         record.EventRecorder
+	EnableWorkloadApprove bool
 }

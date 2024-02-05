@@ -82,6 +82,11 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 			return err
 		}
 
+		if err := modules.CreateCrossNamespace(ctx, conf); err != nil {
+			nlog.Error(err)
+			return err
+		}
+
 		if conf.EnableContainerd {
 			modules.RunContainerd(runCtx, cancel, conf)
 		}

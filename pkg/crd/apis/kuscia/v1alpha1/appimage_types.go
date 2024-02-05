@@ -56,8 +56,12 @@ type AppImageSpec struct {
 type AppImageInfo struct {
 	Name string `json:"name"`
 	Tag  string `json:"tag"`
-	ID   string `json:"id"`
-	Sign string `json:"sign"`
+	// ID of the image. e.g. sha256:f1c20d8cb5c4c69d3997527e4912e794ba3cd7fa26bfaf6afa1383697c80ea9a
+	// If the ID is not empty, domain will verify whether the local image ID matches this value before starting a container.
+	// +optional
+	ID string `json:"id,omitempty"`
+	// +optional
+	Sign string `json:"sign,omitempty"`
 }
 
 // DeployTemplate defines the app deploy template.

@@ -112,7 +112,7 @@ func ExtractDomainDataLabels(p *kusciaapisv1alpha1.DomainData) *kusciaapisv1alph
 	return pp
 }
 
-// ExtractDomainDataSpec is used to extract domaindata spec.
+// ExtractDomainDataSpec is used to extract domainData spec.
 func ExtractDomainDataSpec(p *kusciaapisv1alpha1.DomainData) *kusciaapisv1alpha1.DomainData {
 	pp := &kusciaapisv1alpha1.DomainData{}
 	pp.Namespace = p.Namespace
@@ -126,14 +126,5 @@ func ExtractDomainDataSpec(p *kusciaapisv1alpha1.DomainData) *kusciaapisv1alpha1
 		pp.Annotations = map[string]string{}
 	}
 	pp.Spec = p.Spec
-	return pp
-}
-
-// ExtractDomainDataStatus is used to extract domaindatagrant status.
-func ExtractDomainDataStatus(p *kusciaapisv1alpha1.DomainData) *kusciaapisv1alpha1.DomainData {
-	pp := &kusciaapisv1alpha1.DomainData{}
-	pp.Namespace = p.Namespace
-	pp.Name = p.Name
-	pp.Status = p.Status
 	return pp
 }

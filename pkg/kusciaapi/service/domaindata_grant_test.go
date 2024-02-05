@@ -26,6 +26,12 @@ import (
 )
 
 func TestDomainDataGrant(t *testing.T) {
+
+	domainRes := CreateDomain(kusciaAPIDG.data.DomainId)
+	t.Logf("CreateDomain res : %+v\n", domainRes)
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
 	kusciaAPIDG.conf.KusciaClient.KusciaV1alpha1().DomainDatas(kusciaAPIDG.data.Author).Create(context.Background(), &v1alpha1.DomainData{
 		ObjectMeta: v1.ObjectMeta{
 			Name:      kusciaAPIDG.data.DomaindataId,

@@ -54,11 +54,12 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.3.0.dev20231120
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.3.0b0
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
 SF_IMAGE_REGISTRY=""
+SF_IMAGE_ID=""
 CTR_ROOT=/home/kuscia
 CTR_CERT_ROOT=${CTR_ROOT}/var/certs
 MASTER_MEMORY_LIMIT=2G
@@ -199,6 +200,7 @@ function check_sf_image() {
 
   if docker exec -it $domain_ctr crictl inspecti $sf_image >/dev/null 2>&1; then
     log "Image '${sf_image}' already exists in domain '${DOMAIN_ID}'"
+    SF_IMAGE_ID=$(docker exec -it $domain_ctr sh -c "crictl inspecti ${sf_image} | jq -r .status.id | tr -d ' \t\n\r'")
     return
   fi
 
@@ -228,6 +230,8 @@ function check_sf_image() {
   fi
   docker exec -it $domain_ctr ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import $image_tar
   log "Successfully imported image '${sf_image}' to container '${domain_ctr}' ..."
+
+  SF_IMAGE_ID=$(docker exec -it $domain_ctr sh -c "crictl inspecti ${sf_image} | jq -r .status.id | tr -d ' \t\n\r'")
 }
 
 function create_secretflow_app_image() {
@@ -245,7 +249,7 @@ function create_secretflow_app_image() {
     app_type="secretflow"
   fi
 
-  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${image_repo}" "${image_tag}"  "${app_type}"
+  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${image_repo}" "${image_tag}"  "${app_type}" "${SF_IMAGE_ID}"
   log "Create secretflow app image done"
 }
 
@@ -278,20 +282,6 @@ function generate_env_flag() {
   echo "$env_flag"
 }
 
-function getIPV4Address() {
-  local ipv4=""
-  arch=$(uname -s || true)
-  case $arch in
-  "Linux")
-    ipv4=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}') || true
-    ;;
-  "Darwin")
-    ipv4=$(ipconfig getifaddr en0) || true
-    ;;
-  esac
-  echo $ipv4
-}
-
 function generate_mount_flag() {
   local mount_flag="-v /tmp:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} -v ${DOMAIN_DATA_DIR}:/home/kuscia/var/storage/data -v ${DOMAIN_LOG_DIR}:/home/kuscia/var/stdout"
   echo "$mount_flag"
@@ -300,11 +290,18 @@ function generate_mount_flag() {
 function get_runtime() {
   local conf_file=$1
   local runtime
-  runtime=$(grep '^runtime:' ${conf_file} | cut -d':' -f2 | awk '{$1=$1};1')
+  runtime=$(grep '^runtime:' ${conf_file} 2>/dev/null | cut -d':' -f2 | awk '{$1=$1};1')
   if [[ $runtime == "" ]]; then
     runtime=runc
   fi
   echo "$runtime"
+}
+
+function createVolume() {
+  local VOLUME_NAME=$1
+  if ! docker volume ls --format '{{.Name}}' | grep "^${VOLUME_NAME}$"; then
+      docker volume create $VOLUME_NAME
+  fi
 }
 
 function deploy_autonomy() {
@@ -321,7 +318,6 @@ function deploy_autonomy() {
     log "Starting container $domain_ctr ..."
     env_flag=$(generate_env_flag)
     mount_flag=$(generate_mount_flag)
-    host_ip=$(getIPV4Address)
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       # TODO: to be remove
@@ -333,11 +329,13 @@ function deploy_autonomy() {
       privileged_flag=" --privileged"
     fi
 
+    createVolume "${domain_ctr}-containerd"
+
     docker run -dit${privileged_flag} --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${AUTONOMY_MEMORY_LIMIT} \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
-      --mount source="${domain_ctr}"-containerd,target=/home/kuscia/containerd \
+      -v ${domain_ctr}-containerd:${CTR_ROOT}/containerd \
       -v ${kuscia_conf_file}:/home/kuscia/etc/conf/kuscia.yaml \
       ${env_flag} ${mount_flag} \
       --env NAMESPACE=${DOMAIN_ID} \
@@ -387,7 +385,6 @@ function deploy_lite() {
       exit 1
     fi
 
-    host_ip=$(getIPV4Address)
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       # TODO: to be remove
       docker run -it --rm -v ${conf_dir}:/tmp -v ${DOMAIN_CERTS_DIR}:${CTR_CERT_ROOT} ${KUSCIA_IMAGE} scripts/deploy/init_kuscia_config.sh lite ${DOMAIN_ID} ${MASTER_ENDPOINT} ${DOMAIN_TOKEN} "${ALLOW_PRIVILEGED}"
@@ -399,11 +396,13 @@ function deploy_lite() {
       privileged_flag=" --privileged"
     fi
 
+    createVolume "${domain_ctr}-containerd"
+
     docker run -dit${privileged_flag} --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
-      --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
+      -v ${domain_ctr}-containerd:${CTR_ROOT}/containerd \
       -v ${kuscia_conf_file}:/home/kuscia/etc/conf/kuscia.yaml \
       ${env_flag} ${mount_flag} \
       --env NAMESPACE=${DOMAIN_ID} \
@@ -438,8 +437,6 @@ function deploy_master() {
 
     env_flag=$(generate_env_flag)
     mount_flag=$(generate_mount_flag)
-
-    host_ip=$(getIPV4Address)
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       # TODO: to be remove
@@ -493,8 +490,6 @@ OPTIONS:
     -d              The data directory used to store domain data. It will be mounted into the domain container.
                     You can set Env 'DOMAIN_DATA_DIR' instead.  Default is '{{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-data'.
     -h              Show this help text.
-    -i              The IP address exposed by the domain. You can set Env 'DOMAIN_HOST_IP' instead.
-                    Usually the host IP, default is the IP address of interface eth0.
     -l              The data directory used to store domain logs. It will be mounted into the domain container.
                     You can set Env 'DOMAIN_LOG_DIR' instead.  Default is '{{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-log'.
     -m              (Only used in lite mode) The master endpoint. You can set Env 'MASTER_ENDPOINT' instead.
@@ -526,16 +521,13 @@ autonomy | lite | master | secretpad)
   ;;
 esac
 
-while getopts 'c:s:i:l:n:p:m:t:r:d:k:g:e:u:h' option; do
+while getopts 'c:s:l:n:p:m:t:r:d:k:g:e:u:h' option; do
   case "$option" in
   c)
     KUSCIA_CONFIG_FILE=$(get_absolute_path $OPTARG)
     ;;
   s)
     DOMAIN_CERTS_DIR=$OPTARG
-    ;;
-  i)
-    DOMAIN_HOST_IP=$OPTARG
     ;;
   l)
     DOMAIN_LOG_DIR=$OPTARG
@@ -605,7 +597,6 @@ function init() {
   [[ ${DOMAIN_CERTS_DIR} == "" ]] && DOMAIN_CERTS_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-certs"
   [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-data"
   [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${ROOT}/kuscia-${deploy_mode}-${DOMAIN_ID}-log"
-  [[ ${DOMAIN_HOST_IP} == "" ]] && DOMAIN_HOST_IP=$(getIPV4Address)
 
   pre_check "${DOMAIN_CERTS_DIR}"
   pre_check "${DOMAIN_DATA_DIR}"
@@ -613,7 +604,6 @@ function init() {
 
   log "ROOT=${ROOT}"
   log "DOMAIN_ID=${DOMAIN_ID}"
-  log "DOMAIN_HOST_IP=${DOMAIN_HOST_IP}"
   log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
   log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
   log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"

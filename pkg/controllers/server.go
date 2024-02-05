@@ -22,7 +22,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apiserver/pkg/server/healthz"
@@ -31,6 +30,8 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/record"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
@@ -156,12 +157,13 @@ func (s *server) onStartedLeading(ctx context.Context) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	config := ControllerConfig{
-		RunMode:       s.options.RunMode,
-		Namespace:     s.options.Namespace,
-		RootDir:       s.options.RootDir,
-		KubeClient:    s.kubeClient,
-		KusciaClient:  s.kusciaClient,
-		EventRecorder: s.eventRecorder,
+		RunMode:               s.options.RunMode,
+		Namespace:             s.options.Namespace,
+		RootDir:               s.options.RootDir,
+		KubeClient:            s.kubeClient,
+		KusciaClient:          s.kusciaClient,
+		EventRecorder:         s.eventRecorder,
+		EnableWorkloadApprove: s.options.EnableWorkloadApprove,
 	}
 	for _, cc := range s.controllerConstructions {
 		controller := cc.NewControler(ctx, config)

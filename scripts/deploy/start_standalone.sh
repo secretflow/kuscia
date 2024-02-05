@@ -43,16 +43,12 @@ fi
 CTR_PREFIX=${USER}-kuscia
 CTR_ROOT=/home/kuscia
 CTR_CERT_ROOT=${CTR_ROOT}/var/certs
-MASTER_DOMAIN="kuscia-system"
-ALICE_DOMAIN="alice"
-BOB_DOMAIN="bob"
-MASTER_CTR=${CTR_PREFIX}-master
 FORCE_START=false
 MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.3.0.dev20231120"
+SF_IMAGE_TAG="1.3.0b0"
 SF_IMAGE_REGISTRY=""
 NETWORK_NAME="kuscia-exchange"
 SECRETPAD_USER_NAME=""
@@ -188,20 +184,6 @@ function generate_env_flag() {
   echo $env_flag
 }
 
-function getIPV4Address() {
-  local ipv4=""
-  arch=$(uname -s || true)
-  case $arch in
-  "Linux")
-    ipv4=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}') || true
-    ;;
-  "Darwin")
-    ipv4=$(ipconfig getifaddr en0) || true
-    ;;
-  esac
-  echo $ipv4
-}
-
 function copy_between_containers() {
   local src_file=$1
   local dest_file=$2
@@ -214,11 +196,22 @@ function copy_between_containers() {
   echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_file'"
 }
 
+
+function createVolume() {
+  local VOLUME_NAME=$1
+  if ! docker volume ls --format '{{.Name}}' | grep "^${VOLUME_NAME}$"; then
+      docker volume create $VOLUME_NAME
+  fi
+}
+
 function copy_container_file_to_volume() {
   local src_file=$1
   local dest_volume=$2
   local dest_file=$3
-  docker run -d --rm --name ${CTR_PREFIX}-dummy --mount source=${dest_volume},target=/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
+
+  createVolume ${dest_volume}
+
+  docker run -d --rm --name ${CTR_PREFIX}-dummy -v ${dest_volume}:/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
   copy_between_containers ${src_file} ${CTR_PREFIX}-dummy:/tmp/kuscia/${dest_file} >/dev/null
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
   echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_volume:$CTR_CERT_ROOT/$dest_file'"
@@ -228,7 +221,10 @@ function copy_volume_file_to_container() {
   local src_volume=$1
   local src_file=$2
   local dest_file=$3
-  docker run -d --rm --name ${CTR_PREFIX}-dummy --mount source=${src_volume},target=/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
+
+  createVolume ${src_volume}
+
+  docker run -d --rm --name ${CTR_PREFIX}-dummy -v ${src_volume}:/tmp/kuscia $IMAGE tail -f /dev/null >/dev/null 2>&1
   copy_between_containers ${CTR_PREFIX}-dummy:/tmp/kuscia/${src_file} ${dest_file} >/dev/null
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
   echo "Copy file successfully src_file:'$src_volume/$src_file' to dest_file:'$dest_file'"
@@ -274,16 +270,17 @@ function create_secretpad_user_password() {
 }
 
 function copy_kuscia_api_client_certs() {
-  local volume_path=$1
+  local master_ctr=$1
+  local volume_path=$2
   # generate client certs
-  docker exec -it ${MASTER_CTR} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it ${master_ctr} sh scripts/deploy/init_kusciaapi_client_certs.sh
   # copy result
   tmp_path=${volume_path}/temp/certs
   mkdir -p ${tmp_path}
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/ca.crt ${tmp_path}/ca.crt
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
-  docker cp ${MASTER_CTR}:/${CTR_CERT_ROOT}/token ${tmp_path}/token
+  docker cp ${master_ctr}:/${CTR_CERT_ROOT}/ca.crt ${tmp_path}/ca.crt
+  docker cp ${master_ctr}:/${CTR_CERT_ROOT}/kusciaapi-client.crt ${tmp_path}/client.crt
+  docker cp ${master_ctr}:/${CTR_CERT_ROOT}/kusciaapi-client.key ${tmp_path}/client.pem
+  docker cp ${master_ctr}:/${CTR_CERT_ROOT}/token ${tmp_path}/token
   docker run -d --rm --name ${CTR_PREFIX}-dummy --volume=${volume_path}/secretpad/config:/tmp/temp $IMAGE tail -f /dev/null >/dev/null 2>&1
   docker cp -a ${tmp_path} ${CTR_PREFIX}-dummy:/tmp/temp/
   docker rm -f ${CTR_PREFIX}-dummy >/dev/null 2>&1
@@ -313,16 +310,21 @@ function copy_kuscia_api_lite_client_certs() {
 }
 
 function render_secretpad_config() {
-  local volume_path=$1
+  local master_ctr=$1
+  local volume_path=$2
   local tmpl_path=${volume_path}/secretpad/config/template/application.yaml.tmpl
-  local store_key_password=$2
+  local store_key_password=$3
+  local alice_domain="alice"
+  local bob_domain="bob"
+  local alice_ctr=${CTR_PREFIX}-lite-${alice_domain}
+  local bob_ctr=${CTR_PREFIX}-lite-${bob_domain}
   #local default_login_password
   # create data mesh service
-  log "kuscia_master_ip: '${MASTER_CTR}'"
+  log "kuscia_master_ip: '${master_ctr}'"
   # render kuscia api address
-  sed "s/{{.KUSCIA_API_ADDRESS}}/${MASTER_CTR}/g;
-  s/{{.KUSCIA_API_LITE_ALICE_ADDRESS}}/${CTR_PREFIX}-lite-${ALICE_DOMAIN}/g;
-  s/{{.KUSCIA_API_LITE_BOB_ADDRESS}}/${CTR_PREFIX}-lite-${BOB_DOMAIN}/g" \
+  sed "s/{{.KUSCIA_API_ADDRESS}}/${master_ctr}/g;
+  s/{{.KUSCIA_API_LITE_ALICE_ADDRESS}}/${alice_ctr}/g;
+  s/{{.KUSCIA_API_LITE_BOB_ADDRESS}}/${bob_ctr}/g" \
   ${tmpl_path} >${volume_path}/application_01.yaml
   # render store password
   sed "s/{{.PASSWORD}}/${store_key_password}/g" ${volume_path}/application_01.yaml >${volume_path}/application.yaml
@@ -508,6 +510,9 @@ function start_secretpad() {
   local user_name=$2
   local password=$3
   local secretpad_ctr=${CTR_PREFIX}-secretpad
+  local master_ctr=${CTR_PREFIX}-master
+  local alice_domain="alice"
+  local bob_domain="bob"
   if need_start_docker_container $secretpad_ctr; then
     log "Starting container '$secretpad_ctr' ..."
     secretpad_key_pass="secretpad"
@@ -520,13 +525,13 @@ function start_secretpad() {
     # create secretpad user and password
     create_secretpad_user_password ${volume_path} ${user_name} ${password}
     # copy kuscia api client certs
-    copy_kuscia_api_client_certs ${volume_path}
+    copy_kuscia_api_client_certs ${master_ctr} ${volume_path}
     # copy kuscia api lite:alice client certs
-    copy_kuscia_api_lite_client_certs ${ALICE_DOMAIN} ${volume_path}
+    copy_kuscia_api_lite_client_certs ${alice_domain} ${volume_path}
     # copy kuscia api lite:bob client certs
-    copy_kuscia_api_lite_client_certs ${BOB_DOMAIN} ${volume_path}
+    copy_kuscia_api_lite_client_certs ${bob_domain} ${volume_path}
     # render secretpad config
-    render_secretpad_config ${volume_path} ${secretpad_key_pass}
+    render_secretpad_config ${master_ctr} ${volume_path} ${secretpad_key_pass}
     # run secretpad
     docker run -itd --init --name=${CTR_PREFIX}-secretpad --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
       --volume=${volume_path}/data:/app/data \
@@ -535,7 +540,7 @@ function start_secretpad() {
       --workdir=/app \
       -p 8088:8080 \
       ${SECRETPAD_IMAGE}
-    create_secretpad_svc ${MASTER_CTR} ${CTR_PREFIX}-secretpad kuscia-system
+    create_secretpad_svc ${master_ctr} ${CTR_PREFIX}-secretpad kuscia-system
     probe_secret_pad ${CTR_PREFIX}-secretpad
     log "web server started successfully"
     log "Please visit the website http://localhost:8088 (or http://{the IPAddress of this machine}:8088) to experience the Kuscia web's functions ."
@@ -545,13 +550,15 @@ function start_secretpad() {
 }
 
 function start_lite() {
-  local domain_id=$1
-  local master_endpoint=$2
+  local master_ctr=$1
+  local master_domain=$2
+  local domain_id=$3
+  local master_endpoint=$4
   local domain_ctr=${CTR_PREFIX}-lite-${domain_id}
-  local port=$3
-  local httpPort=$4
-  local grpcPort=$5
-  local volume_path=$6
+  local port=$5
+  local httpPort=$6
+  local grpcPort=$7
+  local volume_path=$8
 
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
@@ -563,30 +570,60 @@ function start_lite() {
       mount_volume_param="-v /tmp:/tmp  -v ${volume_path}/data/${domain_id}:/home/kuscia/var/storage/data "
     fi
 
-    host_ip=$(getIPV4Address)
-    csr_token=$(docker exec -it "${MASTER_CTR}" scripts/deploy/add_domain_lite.sh "${domain_id}")
+    csr_token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" "${master_domain}")
     docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh lite ${domain_id} ${master_endpoint} ${csr_token} "${ALLOW_PRIVILEGED}"
+
+    createVolume "${domain_ctr}-containerd"
+
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT ${env_flag} \
-      --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
+      -v ${domain_ctr}-containerd:${CTR_ROOT}/containerd \
       -e NAMESPACE=${domain_id} \
       ${mount_volume_param} \
-      -p $port:1080 \
+      -p "${port}":1080 \
       -p "${httpPort}":8082 \
       -p "${grpcPort}":8083 \
       -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
       ${IMAGE} bin/kuscia start -c etc/conf/kuscia.yaml
-    probe_gateway_crd ${MASTER_CTR} ${domain_id} ${domain_ctr} 60
+    probe_gateway_crd ${master_ctr} ${domain_id} ${domain_ctr} 60
     log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}'"
   fi
 }
 
+function start_master() {
+  local master_ctr=$1
+  local master_domain=$2
+  local port=$3
+  local httpPort=$4
+  local grpcPort=$5
+  if need_start_docker_container $master_ctr; then
+    log "Starting container '$master_ctr' ..."
+    local certs_volume=${master_ctr}-certs
+    local conf_dir=${ROOT}/${master_ctr}
+    env_flag=$(generate_env_flag)
+    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh master $master_domain
+    docker run -dit --name=${master_ctr} --hostname=${master_ctr} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
+      -e NAMESPACE=$master_domain \
+      -p "${port}":1080 \
+      -p "${httpPort}":8082 \
+      -p "${grpcPort}":8083 \
+      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
+      -v /tmp:/tmp \
+      ${IMAGE} bin/kuscia start -c etc/conf/kuscia.yaml
+    probe_gateway_crd ${master_ctr} ${master_domain} ${master_ctr} 60
+    log "Master '${master_domain}' started successfully"
+    FORCE_START=true
+  fi
+}
+
 function create_cluster_domain_route() {
-  local src_domain=$1
-  local dest_domain=$2
+  local master_ctr=$1
+  local src_domain=$2
+  local dest_domain=$3
+  local dest_ctr=${CTR_PREFIX}-lite-${dest_domain}
   log "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
 
-  docker exec -it ${MASTER_CTR} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} http://${CTR_PREFIX}-lite-${dest_domain}:1080
-  log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${CTR_PREFIX}'-lite-'${dest_domain}':1080"
+  docker exec -it ${master_ctr} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} http://${dest_ctr}:1080
+  log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${dest_ctr}':1080"
 }
 
 function check_sf_image() {
@@ -645,44 +682,159 @@ function check_sf_image() {
 function run_centralized() {
   build_kuscia_network
   local volume_path=$1
-  if need_start_docker_container $MASTER_CTR; then
-    log "Starting container '$MASTER_CTR' ..."
-    local certs_volume=${MASTER_CTR}-certs
-    local conf_dir=${ROOT}/${MASTER_CTR}
-    local host_ip=$(getIPV4Address)
-    env_flag=$(generate_env_flag)
-    docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh master $MASTER_DOMAIN
-    docker run -dit --name=${MASTER_CTR} --hostname=${MASTER_CTR} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
-      -e NAMESPACE=$MASTER_DOMAIN \
-      -p 18080:1080 \
-      -p 18082:8082 \
-      -p 18083:8083 \
-      -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
-      -v /tmp:/tmp \
-      ${IMAGE} bin/kuscia start -c etc/conf/kuscia.yaml
-    probe_gateway_crd ${MASTER_CTR} ${MASTER_DOMAIN} ${MASTER_CTR} 60
-    log "Master '${MASTER_DOMAIN}' started successfully"
-    FORCE_START=true
-  fi
+  local master_domain="kuscia-system"
+  local alice_domain="alice"
+  local bob_domain="bob"
+  local master_ctr=${CTR_PREFIX}-master
+  local alice_ctr=${CTR_PREFIX}-lite-${alice_domain}
+  local bob_ctr=${CTR_PREFIX}-lite-${bob_domain}
 
-  start_lite ${ALICE_DOMAIN} https://${MASTER_CTR}:1080 28080 28082 28083 ${volume_path}
-  start_lite ${BOB_DOMAIN} https://${MASTER_CTR}:1080 38080 38082 38083 ${volume_path}
+  start_master $master_ctr $master_domain 18080 18082 18083
 
-  create_cluster_domain_route ${ALICE_DOMAIN} ${BOB_DOMAIN}
-  create_cluster_domain_route ${BOB_DOMAIN} ${ALICE_DOMAIN}
+  start_lite ${master_ctr} ${master_domain} ${alice_domain} https://${master_ctr}:1080 28080 28082 28083 ${volume_path}
+  start_lite ${master_ctr} ${master_domain} ${bob_domain} https://${master_ctr}:1080 38080 38082 38083 ${volume_path}
 
-  check_sf_image $ALICE_DOMAIN ${CTR_PREFIX}-lite-${ALICE_DOMAIN} ${volume_path}
-  check_sf_image $BOB_DOMAIN ${CTR_PREFIX}-lite-${BOB_DOMAIN} ${volume_path}
+  create_cluster_domain_route ${master_ctr} ${alice_domain} ${bob_domain}
+  create_cluster_domain_route ${master_ctr} ${bob_domain} ${alice_domain}
+
+  check_sf_image $alice_domain ${alice_ctr} ${volume_path}
+  check_sf_image $bob_domain ${bob_ctr} ${volume_path}
 
   # create demo data
-  create_domaindata_alice_table ${MASTER_CTR} ${ALICE_DOMAIN}
-  create_domaindata_bob_table ${MASTER_CTR} ${BOB_DOMAIN}
-  create_domaindatagrant_alice2bob ${CTR_PREFIX}-lite-${ALICE_DOMAIN}
-  create_domaindatagrant_bob2alice ${CTR_PREFIX}-lite-${BOB_DOMAIN}
+  create_domaindata_alice_table ${master_ctr} ${alice_domain}
+  create_domaindata_bob_table ${master_ctr} ${bob_domain}
+  create_domaindatagrant_alice2bob ${alice_ctr}
+  create_domaindatagrant_bob2alice ${bob_ctr}
   # create secretflow app image
-  create_secretflow_app_image ${MASTER_CTR}
+  create_secretflow_app_image ${master_ctr}
 
   log "Kuscia centralized cluster started successfully"
+}
+
+function run_hybrid_centerX2() {
+  build_kuscia_network
+  local transit=$1
+  local volume_path=$2
+  local alice_master_domain="master-alice"
+  local bob_master_domain="master-bob"
+  local alice_domain="alice"
+  local bob_domain="bob"
+  local alice_master_ctr=${CTR_PREFIX}-master-alice
+  local bob_master_ctr=${CTR_PREFIX}-master-bob
+  local alice_ctr=${CTR_PREFIX}-lite-${alice_domain}
+  local bob_ctr=${CTR_PREFIX}-lite-${bob_domain}
+  local p2p_protocol="kuscia"
+
+  start_master $alice_master_ctr $alice_master_domain 8080 8082 8083
+  start_master $bob_master_ctr $bob_master_domain 18080 18082 18083
+
+  start_lite ${alice_master_ctr} ${alice_master_domain} ${alice_domain} https://${alice_master_ctr}:1080 28080 28082 28083 ${volume_path}
+  start_lite ${bob_master_ctr} ${bob_master_domain} ${bob_domain} https://${bob_master_ctr}:1080 38080 38082 38083 ${volume_path}
+
+  build_interconn ${bob_master_ctr} ${alice_master_ctr} ${alice_master_domain} ${bob_master_domain} ${p2p_protocol}
+  build_interconn ${alice_master_ctr} ${bob_master_ctr} ${bob_master_domain} ${alice_master_domain} ${p2p_protocol}
+
+  copy_between_containers ${alice_ctr}:${CTR_CERT_ROOT}/domain.crt ${bob_master_ctr}:${CTR_CERT_ROOT}/${alice_domain}.domain.crt
+  copy_between_containers ${bob_ctr}:${CTR_CERT_ROOT}/domain.crt ${alice_master_ctr}:${CTR_CERT_ROOT}/${bob_domain}.domain.crt
+
+  docker exec -it ${alice_master_ctr} scripts/deploy/add_domain.sh $bob_domain p2p ${p2p_protocol} ${bob_master_domain}
+  docker exec -it ${bob_master_ctr} scripts/deploy/add_domain.sh $alice_domain p2p ${p2p_protocol} ${alice_master_domain}
+
+  if [[ $transit == false ]]; then
+    # alice-bob@alice-master
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    # bob-alice@bob-master
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
+    # alice-bob@bob-master
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    # bob-alice@alice-master
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
+  else
+    # alice to bob =
+    # bob-master to bob +
+    # alice-master to bob transit by bob-master +
+    # alice to bob transit by alice-master
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    # bob to alice =
+    # alice-master to alice +
+    # bob-master to alice transit by alice-master +
+    # bob to alice transit by bob-master
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
+  fi
+
+  check_sf_image $alice_domain ${alice_ctr} ${volume_path}
+  check_sf_image $bob_domain ${bob_ctr} ${volume_path}
+
+  # create demo data
+  create_domaindata_alice_table ${alice_master_ctr} ${alice_domain}
+  create_domaindata_bob_table ${bob_master_ctr} ${bob_domain}
+  create_domaindatagrant_alice2bob ${alice_ctr}
+  create_domaindatagrant_bob2alice ${bob_ctr}
+  # create secretflow app image
+  create_secretflow_app_image ${alice_master_ctr}
+  create_secretflow_app_image ${bob_master_ctr}
+
+  log "Kuscia hybrid cluster centerX2 started successfully"
+}
+
+function run_hybrid_centerXp2p() {
+  build_kuscia_network
+  local transit=$1
+  local volume_path=$2
+  local alice_master_domain="master-alice"
+  local bob_master_domain="bob"
+  local alice_domain="alice"
+  local bob_domain="bob"
+  local alice_master_ctr=${CTR_PREFIX}-master-alice
+  local bob_master_ctr=${CTR_PREFIX}-autonomy-bob
+  local alice_ctr=${CTR_PREFIX}-lite-${alice_domain}
+  local bob_ctr=${CTR_PREFIX}-autonomy-${bob_domain}
+  local p2p_protocol="kuscia"
+
+  start_master $alice_master_ctr $alice_master_domain 8080 8082 8083
+  start_lite ${alice_master_ctr} ${alice_master_domain} ${alice_domain} https://${alice_master_ctr}:1080 18080 18082 18083 ${volume_path}
+  start_autonomy ${bob_domain} 12082 12083 ${p2p_protocol}
+
+  build_interconn ${bob_master_ctr} ${alice_master_ctr} ${alice_master_domain} ${bob_master_domain} ${p2p_protocol}
+  build_interconn ${alice_master_ctr} ${bob_master_ctr} ${bob_master_domain} ${alice_master_domain} ${p2p_protocol}
+
+  copy_between_containers ${alice_ctr}:${CTR_CERT_ROOT}/domain.crt ${bob_master_ctr}:${CTR_CERT_ROOT}/${alice_domain}.domain.crt
+  docker exec -it ${bob_master_ctr} scripts/deploy/add_domain.sh $alice_domain p2p ${p2p_protocol} ${alice_master_domain}
+
+  if [[ $transit == false ]]; then
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain https://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
+  else
+    # alice to bob =
+    # alice-master to bob + (generated already by build interconn)
+    # alice to bob transit by alice-master
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain https://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    # bob to alice =
+    # alice-master to alice +
+    # bob to alice transit by alice-master
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+  fi
+
+  check_sf_image $alice_domain ${alice_ctr} ${volume_path}
+  check_sf_image $bob_domain ${bob_ctr} ${volume_path}
+
+  # create demo data
+  create_domaindata_alice_table ${alice_master_ctr} ${alice_domain}
+  create_domaindata_bob_table ${bob_master_ctr} ${bob_domain}
+  create_domaindatagrant_alice2bob ${alice_ctr}
+  create_domaindatagrant_bob2alice ${bob_ctr}
+  # create secretflow app image
+  create_secretflow_app_image ${alice_master_ctr}
+  create_secretflow_app_image ${bob_master_ctr}
+
+  log "Kuscia hybrid cluster centerXp2p started successfully"
 }
 
 function run_centralized_all() {
@@ -715,11 +867,14 @@ function start_autonomy() {
   if need_start_docker_container $domain_ctr; then
     log "Starting container '$domain_ctr' ..."
     env_flag=$(generate_env_flag $domain_id)
+
     docker run -it --rm -v ${conf_dir}:/tmp ${IMAGE} scripts/deploy/init_kuscia_config.sh autonomy ${domain_id} "" "" "${ALLOW_PRIVILEGED}" ${p2p_protocol}
+
+    createVolume "${domain_ctr}-containerd"
 
     docker run -dit --privileged --name=${domain_ctr} --hostname=${domain_ctr} --restart=always --network=${NETWORK_NAME} -m $AUTONOMY_MEMORY_LIMIT ${env_flag} \
       --env NAMESPACE=${domain_id} \
-      --mount source=${domain_ctr}-containerd,target=${CTR_ROOT}/containerd \
+      -v ${domain_ctr}-containerd:${CTR_ROOT}/containerd \
       -p "$kusciaapi_http_port":8082 \
       -p "$kusciaapi_grpc_port":8083 \
       -v ${conf_dir}/kuscia.yaml:/home/kuscia/etc/conf/kuscia.yaml \
@@ -731,15 +886,15 @@ function start_autonomy() {
 }
 
 function build_interconn() {
-  local member_domain=$1
-  local host_domain=$2
-  local interconn_protocol=$3
-  local member_ctr=${CTR_PREFIX}-autonomy-${member_domain}
-  local host_ctr=${CTR_PREFIX}-autonomy-${host_domain}
+  local host_ctr=$1
+  local member_ctr=$2
+  local member_domain=$3
+  local host_domain=$4
+  local interconn_protocol=$5
 
   log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
-  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol}
+  docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol} ${master_domain}
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}
   log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
@@ -747,26 +902,30 @@ function build_interconn() {
 
 function run_p2p() {
   local p2p_protocol=$1
+  local alice_domain="alice"
+  local bob_domain="bob"
+  local alice_ctr=${CTR_PREFIX}-autonomy-${alice_domain}
+  local bob_ctr=${CTR_PREFIX}-autonomy-${bob_domain}
   build_kuscia_network
   arch_check
 
-  start_autonomy ${ALICE_DOMAIN} 11082 11083 ${p2p_protocol}
-  start_autonomy ${BOB_DOMAIN} 12082 12083 ${p2p_protocol}
+  start_autonomy ${alice_domain} 11082 11083 ${p2p_protocol}
+  start_autonomy ${bob_domain} 12082 12083 ${p2p_protocol}
 
-  build_interconn ${ALICE_DOMAIN} ${BOB_DOMAIN} ${p2p_protocol}
-  build_interconn ${BOB_DOMAIN} ${ALICE_DOMAIN} ${p2p_protocol}
+  build_interconn ${bob_ctr} ${alice_ctr} ${alice_domain} ${bob_domain} ${p2p_protocol}
+  build_interconn ${alice_ctr} ${bob_ctr} ${bob_domain} ${alice_domain} ${p2p_protocol}
 
-  check_sf_image $ALICE_DOMAIN ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}
-  check_sf_image $BOB_DOMAIN ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
+  check_sf_image $alice_domain ${alice_ctr}
+  check_sf_image $bob_domain ${bob_ctr}
 
-  create_secretflow_app_image ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}
-  create_secretflow_app_image ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
+  create_secretflow_app_image ${alice_ctr}
+  create_secretflow_app_image ${bob_ctr}
 
   # create demo data
-  create_domaindata_alice_table ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN}
-  create_domaindata_bob_table ${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN}
-  create_domaindatagrant_alice2bob ${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}
-  create_domaindatagrant_bob2alice ${CTR_PREFIX}-autonomy-${BOB_DOMAIN}
+  create_domaindata_alice_table ${alice_ctr} ${alice_domain}
+  create_domaindata_bob_table ${bob_ctr} ${bob_domain}
+  create_domaindatagrant_alice2bob ${alice_ctr}
+  create_domaindatagrant_bob2alice ${bob_ctr}
   log "Kuscia p2p cluster started successfully"
 }
 
@@ -792,7 +951,7 @@ Common Options:
 
 mode=
 case "$1" in
-center | centralized | p2p)
+center | centralized | p2p | cxc | cxp)
   mode=$1
   shift
   ;;
@@ -800,7 +959,8 @@ esac
 
 interconn_protocol=
 ui=
-while getopts 'p:u:h' option; do
+transit=false
+while getopts 'p:u:th' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG
@@ -815,6 +975,9 @@ while getopts 'p:u:h' option; do
     printf "illegal value for -%s\n" "$option" >&2
     usage
     exit
+    ;;
+  t)
+    transit=true
     ;;
   h)
     usage
@@ -851,6 +1014,12 @@ center)
   ;;
 p2p)
   run_p2p $interconn_protocol
+  ;;
+cxc)
+  run_hybrid_centerX2 $transit
+  ;;
+cxp)
+  run_hybrid_centerXp2p $transit
   ;;
 *)
   printf "unsupported network mode: %s\n" "$mode" >&2

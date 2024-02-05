@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// nolint:dulp
 package handler
 
 import (
@@ -71,17 +72,40 @@ func (h *CreatingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (nee
 
 // createTaskResource is used to create task resources.
 func (h *CreatingHandler) createTaskResources(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
+	interConnDomains := utilsres.GetInterConnParties(trg.Annotations)
+	if utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, trg.Annotations) {
+		for _, party := range trg.Spec.OutOfControlledParties {
+			_, err := h.trLister.TaskResources(party.DomainID).Get(party.TaskResourceName)
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					buildTr, err := h.buildTaskResource(&party, trg, interConnDomains)
+					if err != nil {
+						return err
+					}
+
+					nlog.Infof("Create task resource %v of task resource group %v", party.TaskResourceName, trg.Name)
+					_, err = h.kusciaClient.KusciaV1alpha1().TaskResources(party.DomainID).Create(context.Background(), buildTr, metav1.CreateOptions{})
+					if err != nil && !k8serrors.IsAlreadyExists(err) {
+						return fmt.Errorf("create task resource %v/%v failed, %v", buildTr.Namespace, buildTr.Name, err)
+					}
+				} else {
+					return fmt.Errorf("failed to get task resource %v of task resource group %v", party.TaskResourceName, trg.Name)
+				}
+			}
+		}
+	}
+
 	for _, party := range trg.Spec.Parties {
-		_, err := h.trLister.TaskResources(party.DomainID).Get(party.TaskResourceName)
+		tr, err := h.trLister.TaskResources(party.DomainID).Get(party.TaskResourceName)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				buildTr, err := h.buildTaskResource(&party, trg)
+				buildTr, err := h.buildTaskResource(&party, trg, interConnDomains)
 				if err != nil {
 					return err
 				}
 
 				nlog.Infof("Create task resource %v of task resource group %v", party.TaskResourceName, trg.Name)
-				_, err = h.kusciaClient.KusciaV1alpha1().TaskResources(party.DomainID).Create(context.Background(), buildTr, metav1.CreateOptions{})
+				tr, err = h.kusciaClient.KusciaV1alpha1().TaskResources(party.DomainID).Create(context.Background(), buildTr, metav1.CreateOptions{})
 				if err != nil && !k8serrors.IsAlreadyExists(err) {
 					return fmt.Errorf("create task resource %v/%v failed, %v", buildTr.Namespace, buildTr.Name, err)
 				}
@@ -90,36 +114,42 @@ func (h *CreatingHandler) createTaskResources(trg *kusciaapisv1alpha1.TaskResour
 			}
 		}
 
-		if !utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
-			for _, p := range party.Pods {
-				pod, err := h.podLister.Pods(party.DomainID).Get(p.Name)
-				if err != nil {
-					return err
-				}
+		for _, p := range party.Pods {
+			pod, err := h.podLister.Pods(party.DomainID).Get(p.Name)
+			if err != nil {
+				return err
+			}
 
-				if value, exist := pod.Labels[kusciaapisv1alpha1.LabelTaskResource]; exist && value == party.TaskResourceName {
-					continue
-				}
+			if pod.Labels[kusciaapisv1alpha1.TaskResourceUID] == string(tr.UID) &&
+				pod.Annotations[kusciaapisv1alpha1.TaskResourceKey] == tr.Name {
+				continue
+			}
 
-				podCopy := pod.DeepCopy()
-				if podCopy.Labels == nil {
-					podCopy.Labels = map[string]string{}
-				}
+			podCopy := pod.DeepCopy()
+			if podCopy.Labels == nil {
+				podCopy.Labels = map[string]string{}
+			}
+			if podCopy.Annotations == nil {
+				podCopy.Annotations = map[string]string{}
+			}
 
-				podCopy.Labels[kusciaapisv1alpha1.LabelTaskResource] = party.TaskResourceName
-				oldExtractedPod := utilsres.ExtractPodLabels(pod)
-				newExtractedPod := utilsres.ExtractPodLabels(podCopy)
-				if err = utilsres.PatchPod(context.Background(), h.kubeClient, oldExtractedPod, newExtractedPod); err != nil {
-					return fmt.Errorf("patch pod %v/%v label failed, %v", pod.Namespace, pod.Name, err)
-				}
+			podCopy.Labels[kusciaapisv1alpha1.TaskResourceUID] = string(tr.UID)
+			podCopy.Annotations[kusciaapisv1alpha1.TaskResourceKey] = party.TaskResourceName
+			oldExtractedPod := utilsres.ExtractPodAnnotationsAndLabels(pod)
+			newExtractedPod := utilsres.ExtractPodAnnotationsAndLabels(podCopy)
+			if err = utilsres.PatchPod(context.Background(), h.kubeClient, oldExtractedPod, newExtractedPod); err != nil {
+				return fmt.Errorf("patch pod %v/%v label failed, %v", pod.Namespace, pod.Name, err)
 			}
 		}
 	}
+
 	return nil
 }
 
 // buildTaskResource is used to build task resource.
-func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResourceGroupParty, trg *kusciaapisv1alpha1.TaskResourceGroup) (*kusciaapisv1alpha1.TaskResource, error) {
+func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResourceGroupParty,
+	trg *kusciaapisv1alpha1.TaskResourceGroup,
+	interConnDomains map[string]string) (*kusciaapisv1alpha1.TaskResource, error) {
 	var err error
 	var trPods []kusciaapisv1alpha1.TaskResourcePod
 	trPods, err = h.buildTaskResourcePods(party.DomainID, party.Pods)
@@ -127,23 +157,21 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 		return nil, fmt.Errorf("build task resource %v/%v pods failed, %v", party.DomainID, trg.Name, err.Error())
 	}
 
-	var jobID, taskID, taskAlias, protocolType string
-	if trg.Labels != nil {
-		jobID = trg.Labels[common.LabelJobID]
-		taskID = trg.Labels[common.LabelTaskID]
-		taskAlias = trg.Labels[common.LabelTaskAlias]
+	var jobID, taskID, taskAlias, protocolType, masterDomain string
+	if trg.Annotations != nil {
+		jobID = trg.Annotations[common.JobIDAnnotationKey]
+		taskID = trg.Annotations[common.TaskIDAnnotationKey]
+		taskAlias = trg.Annotations[common.TaskAliasAnnotationKey]
+		masterDomain = trg.Annotations[common.KusciaPartyMasterDomainAnnotationKey]
 		protocolType = trg.Labels[common.LabelInterConnProtocolType]
 	}
 
 	phase := kusciaapisv1alpha1.TaskResourcePhaseReserving
 	condType := kusciaapisv1alpha1.TaskResourceCondReserving
 	condReason := "Create task resource from task resource group"
-	if !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, nil) &&
-		utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
-		phase = kusciaapisv1alpha1.TaskResourcePhaseReserved
-		condType = kusciaapisv1alpha1.TaskResourceCondReserved
-		condReason = "Create task resource for outer domain"
-	}
+
+	isPartner := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
+	minReservedPods := getMinReservedPods(party, isPartner)
 
 	now := metav1.Now()
 	tr := &kusciaapisv1alpha1.TaskResource{
@@ -154,17 +182,21 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 				*metav1.NewControllerRef(trg, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("TaskResourceGroup")),
 			},
 			Labels: map[string]string{
-				common.LabelJobID:             jobID,
-				common.LabelTaskID:            taskID,
-				common.LabelTaskAlias:         taskAlias,
-				common.LabelTaskResourceGroup: trg.Name,
-				common.LabelInitiator:         trg.Spec.Initiator,
+				common.LabelTaskResourceGroupUID: string(trg.UID),
+			},
+			Annotations: map[string]string{
+				common.InitiatorAnnotationKey:               trg.Spec.Initiator,
+				common.JobIDAnnotationKey:                   jobID,
+				common.TaskIDAnnotationKey:                  taskID,
+				common.TaskAliasAnnotationKey:               taskAlias,
+				common.TaskResourceGroupAnnotationKey:       trg.Name,
+				common.KusciaPartyMasterDomainAnnotationKey: masterDomain,
 			},
 		},
 
 		Spec: kusciaapisv1alpha1.TaskResourceSpec{
 			Role:                    party.Role,
-			MinReservedPods:         getMinReservedPods(party),
+			MinReservedPods:         minReservedPods,
 			ResourceReservedSeconds: trg.Spec.ResourceReservedSeconds,
 			Initiator:               trg.Spec.Initiator,
 			Pods:                    trPods,
@@ -182,6 +214,13 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 		},
 	}
 
+	if interConnPartyAnnotation, ok := interConnDomains[party.DomainID]; ok {
+		tr.Annotations[interConnPartyAnnotation] = party.DomainID
+		if protocolType == "" {
+			protocolType = string(utilsres.GetInterConnProtocolTypeByPartyAnnotation(interConnPartyAnnotation))
+		}
+	}
+
 	if protocolType != "" {
 		tr.Labels[common.LabelInterConnProtocolType] = protocolType
 	}
@@ -192,7 +231,7 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 // buildTaskResourcePods is used to build task resource pods info.
 func (h *CreatingHandler) buildTaskResourcePods(namespace string, ps []kusciaapisv1alpha1.TaskResourceGroupPartyPod) ([]kusciaapisv1alpha1.TaskResourcePod, error) {
 	tPods := make([]kusciaapisv1alpha1.TaskResourcePod, 0, len(ps))
-	if utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, namespace) {
+	if utilsres.IsPartnerDomain(h.namespaceLister, namespace) {
 		for _, p := range ps {
 			tPod := kusciaapisv1alpha1.TaskResourcePod{
 				Name: p.Name,
@@ -248,7 +287,11 @@ func findPartyTaskResource(party kusciaapisv1alpha1.TaskResourceGroupParty, trs 
 }
 
 // getMinReservedPods is used to get min reserved pods value.
-func getMinReservedPods(party *kusciaapisv1alpha1.TaskResourceGroupParty) int {
+func getMinReservedPods(party *kusciaapisv1alpha1.TaskResourceGroupParty, isPartner bool) int {
+	if isPartner {
+		return party.MinReservedPods
+	}
+
 	if party.MinReservedPods > 0 && party.MinReservedPods <= len(party.Pods) {
 		return party.MinReservedPods
 	}

@@ -23,8 +23,9 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
@@ -63,30 +64,30 @@ func (h *stopJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) a
 		Code: http.StatusOK,
 	}
 
-	rawKj, err := h.KjLister.Get(req.JobId)
+	rawKj, err := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobId)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			rawKj, err = h.KusciaClient.KusciaV1alpha1().KusciaJobs().Get(context.Background(), req.JobId, metav1.GetOptions{})
+			rawKj, err = h.KusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(context.Background(), req.JobId, metav1.GetOptions{})
 			if k8serrors.IsNotFound(err) {
 				resp.Code = http.StatusBadRequest
-				resp.Msg = common.ErrJobDoesNotExist
+				resp.Msg = bfiacommon.ErrJobDoesNotExist
 				return resp
 			}
 		}
 
 		if err != nil {
 			resp.Code = http.StatusInternalServerError
-			resp.Msg = common.ErrFindJobFailed
+			resp.Msg = bfiacommon.ErrFindJobFailed
 			return resp
 		}
 	}
 
-	if rawKj.Spec.Stage == kusciaapisv1alpha1.JobStopStage {
+	if rawKj.Labels[common.LabelJobStage] == string(kusciaapisv1alpha1.JobStopStage) {
 		return resp
 	}
 
 	kj := rawKj.DeepCopy()
-	if err = utilsres.UpdateKusciaJobStage(h.KusciaClient, kj, kusciaapisv1alpha1.JobStopStage, common.ErrRetries); err != nil {
+	if err = utilsres.UpdateKusciaJobStage(h.KusciaClient, kj, kusciaapisv1alpha1.JobStopStage, bfiacommon.ErrRetries); err != nil {
 		resp.Code = http.StatusInternalServerError
 		resp.Msg = fmt.Sprintf("failed to stop job, %v", err.Error())
 		return resp

@@ -83,7 +83,7 @@ func Test_queryJobStatusAllHandler_Handle(t *testing.T) {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	kjInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 
-	kj := makeKusciaTask("task-1", map[string]string{common.LabelJobID: "job-1"}, "")
+	kj := makeKusciaTask("task-1", map[string]string{common.JobIDAnnotationKey: "job-1"}, nil, "")
 	kjInformer.Informer().GetStore().Add(kj)
 
 	rm := &ResourcesManager{

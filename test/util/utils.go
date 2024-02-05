@@ -39,7 +39,7 @@ func MakeTaskResource(namespace, name string, min int, creationTime *time.Time) 
 	return tr
 }
 
-func MakeNodesAndPods(labels map[string]string, existingPodsNum, allNodesNum int) (existingPods []*corev1.Pod, allNodes []*corev1.Node) {
+func MakeNodesAndPods(labels, annotations map[string]string, existingPodsNum, allNodesNum int) (existingPods []*corev1.Pod, allNodes []*corev1.Node) {
 	type keyVal struct {
 		k string
 		v string
@@ -48,6 +48,12 @@ func MakeNodesAndPods(labels map[string]string, existingPodsNum, allNodesNum int
 	for k, v := range labels {
 		labelPairs = append(labelPairs, keyVal{k: k, v: v})
 	}
+
+	var annotationPairs []keyVal
+	for k, v := range annotations {
+		annotationPairs = append(annotationPairs, keyVal{k: k, v: v})
+	}
+
 	// build nodes
 	for i := 0; i < allNodesNum; i++ {
 		res := map[corev1.ResourceName]string{
@@ -61,8 +67,16 @@ func MakeNodesAndPods(labels map[string]string, existingPodsNum, allNodesNum int
 	for i := 0; i < existingPodsNum; i++ {
 		podWrapper := st.MakePod().Name(fmt.Sprintf("pod%d", i)).Node(fmt.Sprintf("node%d", i%allNodesNum))
 		// apply labels[0], labels[0,1], ..., labels[all] to each pod in turn
-		for _, p := range labelPairs[:i%len(labelPairs)+1] {
-			podWrapper = podWrapper.Label(p.k, p.v)
+		if len(labelPairs) > 0 {
+			for _, p := range labelPairs[:i%len(labelPairs)+1] {
+				podWrapper = podWrapper.Label(p.k, p.v)
+			}
+		}
+
+		if len(annotationPairs) > 0 {
+			for _, p := range annotationPairs[:i%len(annotationPairs)+1] {
+				podWrapper = podWrapper.Annotation(p.k, p.v)
+			}
 		}
 		existingPods = append(existingPods, podWrapper.Obj())
 	}

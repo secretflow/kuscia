@@ -45,7 +45,7 @@ func TestResourceFilter(t *testing.T) {
 		kusciaClient: kusciaFakeClient,
 	}
 
-	kj := makeKusciaJob("job-1", map[string]string{common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA)})
+	kj := makeKusciaJob("job-1", map[string]string{common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA)}, nil)
 	kt := makeKusciaTask("task-1", map[string]string{common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA)})
 	tr := util.MakeTaskResource("ns1", "tr-1", 2, nil)
 	tests := []struct {

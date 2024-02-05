@@ -23,6 +23,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/agent/framework"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/provider/node"
 	"github.com/secretflow/kuscia/pkg/agent/provider/pod"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
@@ -31,8 +32,8 @@ import (
 )
 
 type Factory interface {
-	BuildNodeProvider() (framework.NodeProvider, error)
-	BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (framework.PodProvider, error)
+	BuildNodeProvider() (kri.NodeProvider, error)
+	BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (kri.PodProvider, error)
 }
 
 func NewFactory(agentConfig *config.AgentConfig) (Factory, error) {
@@ -77,7 +78,7 @@ type containerRuntimeFactory struct {
 	agentConfig *config.AgentConfig
 }
 
-func (f *containerRuntimeFactory) BuildNodeProvider() (framework.NodeProvider, error) {
+func (f *containerRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
 	providerCfg := &f.agentConfig.Provider
 
 	cm, err := node.NewCapacityManager(&f.agentConfig.Capacity, f.agentConfig.RootDir, true)
@@ -100,7 +101,7 @@ func (f *containerRuntimeFactory) BuildNodeProvider() (framework.NodeProvider, e
 	return nodeProvider, nil
 }
 
-func (f *containerRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (framework.PodProvider, error) {
+func (f *containerRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (kri.PodProvider, error) {
 	podProviderDep := &pod.CRIProviderDependence{
 		Namespace:        f.agentConfig.Namespace,
 		NodeIP:           f.agentConfig.NodeIP,
@@ -126,7 +127,7 @@ type k8sRuntimeFactory struct {
 	bkClient    kubernetes.Interface
 }
 
-func (f *k8sRuntimeFactory) BuildNodeProvider() (framework.NodeProvider, error) {
+func (f *k8sRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
 	providerCfg := &f.agentConfig.Provider
 
 	cm, err := node.NewCapacityManager(&f.agentConfig.Capacity, f.agentConfig.RootDir, false)
@@ -150,7 +151,7 @@ func (f *k8sRuntimeFactory) BuildNodeProvider() (framework.NodeProvider, error) 
 	return nodeProvider, nil
 }
 
-func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (framework.PodProvider, error) {
+func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (kri.PodProvider, error) {
 	bkCfg := &f.agentConfig.Provider.K8s
 
 	podProviderDep := &pod.K8sProviderDependence{
@@ -161,6 +162,7 @@ func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder reco
 		PodSyncHandler:  podsController,
 		ResourceManager: resourceManager,
 		K8sProviderCfg:  bkCfg,
+		Recorder:        eventRecorder,
 	}
 
 	return pod.NewK8sProvider(podProviderDep)

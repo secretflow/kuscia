@@ -387,14 +387,14 @@ func (r *Runtime) filterCRISandboxes(sandboxes []*runtimeapi.PodSandbox, filter 
 func (r *Runtime) ImageStatus(ctx context.Context, image *runtimeapi.ImageSpec, verbose bool) (*runtimeapi.ImageStatusResponse, error) {
 	nlog.Infof("Get image %q status", image.Image)
 
-	_, err := r.getImageManifest(image.Image)
+	imageManifest, err := r.getImageManifest(image.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get image %q manifest, detail-> %v", image.Image, err)
 	}
 
 	resp := &runtimeapi.ImageStatusResponse{
 		Image: &runtimeapi.Image{
-			Id: image.Image,
+			Id: imageManifest.ID,
 		},
 	}
 	return resp, nil

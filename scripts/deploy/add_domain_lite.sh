@@ -17,7 +17,7 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID "
+usage="$(basename "$0") DOMAIN_ID [MASTER_DOMAIN_ID]"
 
 DOMAIN_ID=$1
 
@@ -25,6 +25,8 @@ if [[ ${DOMAIN_ID} == "" ]]; then
   echo "missing argument: $usage"
   exit 1
 fi
+
+MASTER_DOMAIN_ID=$2
 
 echo "
 apiVersion: kuscia.secretflow/v1alpha1
@@ -35,6 +37,8 @@ metadata:
   name: ${DOMAIN_ID}
 spec:
   cert:
+  role:
+  master: ${MASTER_DOMAIN_ID}
   authCenter:
     authenticationType: Token
     tokenGenMethod: UID-RSA-GEN

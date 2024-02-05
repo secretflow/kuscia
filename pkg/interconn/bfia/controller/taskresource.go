@@ -105,19 +105,24 @@ func (c *Controller) syncTaskResourceHandler(ctx context.Context, key string) (e
 // handleTaskResource handles task resource.
 func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alpha1.TaskResource, key string) error {
 	var jobID, taskID, taskName string
-	if tr.Labels != nil {
-		jobID = tr.Labels[common.LabelJobID]
-		taskID = tr.Labels[common.LabelTaskID]
-		taskName = tr.Labels[common.LabelTaskAlias]
+	if tr.Annotations != nil {
+		jobID = tr.Annotations[common.JobIDAnnotationKey]
+		taskID = tr.Annotations[common.TaskIDAnnotationKey]
+		taskName = tr.Annotations[common.TaskAliasAnnotationKey]
 	}
 
 	if jobID == "" || taskID == "" || taskName == "" {
 		return fmt.Errorf("task resource %v/%v labels job id/task id/task alias can't be empty", tr.Namespace, tr.Name)
 	}
 
-	trs, listErr := c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskID: taskID}))
+	var taskUID string
+	if tr.Labels != nil {
+		taskUID = tr.Labels[common.LabelTaskUID]
+	}
+
+	trs, listErr := c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
 	if listErr != nil {
-		nlog.Errorf("List namespace %v task resources with label %v failed, %v", tr.Namespace, common.LabelTaskID, listErr)
+		nlog.Errorf("List namespace %v task resources with label %v failed, %v", tr.Namespace, common.LabelTaskUID, listErr)
 		return listErr
 	}
 
@@ -148,7 +153,7 @@ func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alp
 
 	go func() {
 		defer c.inflightRequestCache.Delete(cacheKey)
-		rawKt, err := c.ktLister.Get(taskID)
+		rawKt, err := c.ktLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
 		if err != nil {
 			message := fmt.Sprintf("get kuscia task %v failed, %v", taskID, err)
 			c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionFalse, message)
@@ -163,7 +168,7 @@ func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alp
 			return
 		}
 
-		trs, _ = c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskID: taskID}))
+		trs, _ = c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
 		c.setPartyTaskStatuses(kt, tr.Namespace, "", kusciaapisv1alpha1.TaskPending)
 		c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "Start interconn task succeeded")
 	}()

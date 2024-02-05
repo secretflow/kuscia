@@ -69,6 +69,13 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 		}
 	}
 
+	// check domain exists
+	if errorCode, errMsg := CheckDomainExists(s.conf.KusciaClient, request.GetDomainId()); utils.ResponseCodeSuccess != errorCode {
+		return &kusciaapi.CreateDomainDataGrantResponse{
+			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
+		}
+	}
+
 	dd, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.CreateDomainDataGrantResponse{
@@ -88,13 +95,14 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 	dg.Labels = map[string]string{}
 	dg.OwnerReferences = append(dg.OwnerReferences, *metav1.NewControllerRef(dd, v1alpha1.SchemeGroupVersion.WithKind("DomainData")))
 	s.convertData2Spec(&kusciaapi.DomainDataGrantData{
-		Author:       request.DomainId,
-		DomaindataId: request.DomaindataId,
-		GrantDomain:  request.GrantDomain,
-		Limit:        request.Limit,
-		Description:  request.Description,
-		Signature:    request.Signature,
-		DomainId:     request.DomainId,
+		Author:            request.DomainId,
+		DomaindataId:      request.DomaindataId,
+		DomaindatagrantId: request.DomaindatagrantId,
+		GrantDomain:       request.GrantDomain,
+		Limit:             request.Limit,
+		Description:       request.Description,
+		Signature:         request.Signature,
+		DomainId:          request.DomainId,
 	}, dg)
 
 	dg, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.DomainId).Create(ctx, dg, metav1.CreateOptions{})
@@ -117,7 +125,7 @@ func (s *domainDataGrantService) QueryDomainDataGrant(ctx context.Context, reque
 	if err != nil {
 		nlog.Errorf("Query DomainDataGrant failed, error:%s", err.Error())
 		return &kusciaapi.QueryDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataGrant, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrQueryDomainDataGrant), err.Error()),
 		}
 	}
 
@@ -172,7 +180,7 @@ func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("Get DomainDataGrant failed, error:%s", err.Error())
 		return &kusciaapi.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrUpdateDomainDataGrant), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrQueryDomainDataGrant), err.Error()),
 		}
 	}
 
@@ -210,7 +218,7 @@ func (s *domainDataGrantService) DeleteDomainDataGrant(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("Delete domainDataGrantId:%s failed, detail:%s", request.DomaindatagrantId, err.Error())
 		return &kusciaapi.DeleteDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainDataGrant, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrDeleteDomainDataGrant), err.Error()),
 		}
 	}
 	return &kusciaapi.DeleteDomainDataGrantResponse{
@@ -262,7 +270,7 @@ func (s *domainDataGrantService) ListDomainDataGrant(ctx context.Context, reques
 	if err != nil {
 		nlog.Errorf("List DomainData failed, error:%s", err.Error())
 		return &kusciaapi.ListDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrListDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrListDomainDataFailed), err.Error()),
 		}
 	}
 	grantLists := make([]*kusciaapi.DomainDataGrant, len(dataList.Items))

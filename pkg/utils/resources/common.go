@@ -15,19 +15,36 @@
 package resources
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-
-	"regexp"
+	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 )
 
 const k3sRegex = `^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`
+
+// GetMasterDomain is used to get master domain id.
+func GetMasterDomain(domainLister kuscialistersv1alpha1.DomainLister, domainID string) (string, error) {
+	domain, err := domainLister.Get(domainID)
+	if err != nil {
+		return "", err
+	}
+
+	masterDomainID := domainID
+	if domain.Spec.MasterDomain != "" {
+		masterDomainID = domain.Spec.MasterDomain
+	}
+
+	return masterDomainID, nil
+}
 
 // CompareResourceVersion is used to compare resource version.
 func CompareResourceVersion(rv1, rv2 string) bool {
@@ -37,9 +54,16 @@ func CompareResourceVersion(rv1, rv2 string) bool {
 }
 
 // SelfClusterAsInitiator checks if self cluster domain is scheduling party.
-func SelfClusterAsInitiator(nsLister corelisters.NamespaceLister, domainID string, labels map[string]string) bool {
-	if labels != nil && labels[common.LabelSelfClusterAsInitiator] == "true" {
-		return true
+func SelfClusterAsInitiator(nsLister corelisters.NamespaceLister, domainID string, annotations map[string]string) bool {
+	if annotations != nil {
+		switch annotations[common.SelfClusterAsInitiatorAnnotationKey] {
+		case common.True:
+			return true
+		case common.False:
+			return false
+		default:
+
+		}
 	}
 
 	ns, err := nsLister.Get(domainID)
@@ -83,4 +107,29 @@ func ValidateK8sName(val string, feildName string) error {
 	}
 
 	return nil
+}
+
+// IsPartnerDomain check if is partner domain.
+func IsPartnerDomain(nsLister corelisters.NamespaceLister, domainID string) bool {
+	ns, err := nsLister.Get(domainID)
+	if err != nil {
+		return false
+	}
+
+	if ns.Labels != nil &&
+		ns.Labels[common.LabelDomainRole] == string(kusciaapisv1alpha1.Partner) {
+		return true
+	}
+
+	return false
+}
+
+func HashString(input string) (string, error) {
+	hasher := sha256.New()
+	_, err := hasher.Write([]byte(input))
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(hasher.Sum(nil))[:32], nil
 }
