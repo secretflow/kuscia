@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob/handler"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob/metrics"
@@ -42,7 +43,7 @@ import (
 const (
 	maxBackoffLimit     = 3
 	controllerName      = "kuscia-job-controller"
-	maxRetries          = 3
+	maxRetries          = 5
 	statusUpdateRetries = 3
 )
 
@@ -50,6 +51,7 @@ const (
 type Controller struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+
 	// kusciaClient is a clientset for our own API group
 	kusciaClient clientset.Interface
 
@@ -74,6 +76,8 @@ type Controller struct {
 	kusciaTaskSynced cache.InformerSynced
 	kusciaJobLister  kuscialistersv1alpha1.KusciaJobLister
 	kusciaJobSynced  cache.InformerSynced
+	domainLister     kuscialistersv1alpha1.DomainLister
+	domainSynced     cache.InformerSynced
 
 	namespaceLister listers.NamespaceLister
 	namespaceSynced cache.InformerSynced
@@ -89,6 +93,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	kusciaJobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
+	kusciaDomainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 
@@ -100,6 +105,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		kusciaJobLister:       kusciaJobInformer.Lister(),
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
+		domainLister:          kusciaDomainInformer.Lister(),
+		domainSynced:          kusciaDomainInformer.Informer().HasSynced,
 		namespaceLister:       namespaceInformer.Lister(),
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kusciajob"),
@@ -108,10 +115,12 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 
 	controller.handlerFactory = handler.NewKusciaJobPhaseHandlerFactory(&handler.Dependencies{
-		KusciaClient:     kusciaClient,
-		Recorder:         eventRecorder,
-		KusciaTaskLister: kusciaTaskInformer.Lister(),
-		NamespaceLister:  namespaceInformer.Lister(),
+		KusciaClient:          kusciaClient,
+		Recorder:              eventRecorder,
+		KusciaTaskLister:      kusciaTaskInformer.Lister(),
+		NamespaceLister:       namespaceInformer.Lister(),
+		DomainLister:          kusciaDomainInformer.Lister(),
+		EnableWorkloadApprove: config.EnableWorkloadApprove,
 	})
 
 	// kuscia job event handler
@@ -212,7 +221,7 @@ func (c *Controller) handleTaskObject(obj interface{}) {
 			nlog.Debugf("Task %v/%v not belong to this controller, ignore", object.GetNamespace(), object.GetName())
 			return
 		}
-		kusciaJob, err := c.kusciaJobLister.Get(ownerRef.Name)
+		kusciaJob, err := c.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).Get(ownerRef.Name)
 		if err != nil {
 			nlog.Debugf("Ignoring orphaned object %q of kusciaJob %q", object.GetSelfLink(), ownerRef.Name)
 			return
@@ -243,7 +252,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 		return nil
 	}
 	// Get the KusciaJob resource with this namespace/name.
-	preJob, err := c.kusciaJobLister.Get(name)
+	preJob, err := c.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).Get(name)
 	if err != nil {
 		// The KusciaJob resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
@@ -269,9 +278,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 
 	// For kusciaJob, we set default value to field.
 	phase := curJob.Status.Phase
-	if phase == "" {
-		curJob.Status.Phase = kusciaapisv1alpha1.KusciaJobPending
-	}
 
 	// Internal state machine flow.
 	needUpdate, err := c.handlerFactory.KusciaJobPhaseHandlerFor(phase).HandlePhase(curJob)
@@ -291,7 +297,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 		return nil
 	}
 
-	if err = utilsres.UpdateKusciaJobStatus(c.kusciaClient, preJob, curJob, statusUpdateRetries); err != nil {
+	if err = utilsres.UpdateKusciaJobStatus(c.kusciaClient, preJob, curJob); err != nil {
 		return err
 	}
 
@@ -301,8 +307,9 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 
 // kusciaJobDefault will set kuscia job default field.
 func kusciaJobDefault(kusciaJob *kusciaapisv1alpha1.KusciaJob) {
+	// Todo: add awaiting permission state
 	if kusciaJob.Status.Phase == "" {
-		kusciaJob.Status.Phase = kusciaapisv1alpha1.KusciaJobPending
+		kusciaJob.Status.Phase = kusciaapisv1alpha1.KusciaJobInitialized
 	}
 	if kusciaJob.Spec.MaxParallelism == nil {
 		maxParallelism := 1

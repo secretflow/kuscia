@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
@@ -58,8 +59,12 @@ func TestNewTaskResourceGroupPhaseHandlerFactory(t *testing.T) {
 }
 
 func TestUpdatePodAnnotations(t *testing.T) {
-	pod1 := st.MakePod().Namespace("ns1").Name("pod1").Label(common.LabelTaskResourceGroup, "trg1").Obj()
-	pod2 := st.MakePod().Namespace("ns1").Name("pod2").Label(common.LabelTaskResourceGroup, "trg2").Obj()
+	pod1 := st.MakePod().Namespace("ns1").Name("pod1").
+		Annotation(common.TaskResourceGroupAnnotationKey, "trg1").
+		Label(common.LabelTaskResourceGroupUID, "111").Obj()
+	pod2 := st.MakePod().Namespace("ns1").Name("pod2").
+		Annotation(common.TaskResourceGroupAnnotationKey, "trg2").
+		Label(common.LabelTaskResourceGroupUID, "222").Obj()
 	kubeFakeClient := clientsetfake.NewSimpleClientset(pod1)
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
 	podInformer := informerFactory.Core().V1().Pods()
@@ -68,24 +73,24 @@ func TestUpdatePodAnnotations(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		trgName string
+		trgUID  string
 		wantErr bool
 	}{
 		{
 			name:    "failed to patch pod",
-			trgName: "trg2",
+			trgUID:  "222",
 			wantErr: true,
 		},
 		{
 			name:    "succeed to patch pod",
-			trgName: "trg1",
+			trgUID:  "111",
 			wantErr: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := updatePodAnnotations(tt.trgName, podInformer.Lister(), kubeFakeClient)
+			got := updatePodAnnotations(tt.trgUID, podInformer.Lister(), kubeFakeClient)
 			if got != nil != tt.wantErr {
 				t.Errorf("got: %v, want: %v", got != nil, tt.wantErr)
 			}
@@ -95,13 +100,19 @@ func TestUpdatePodAnnotations(t *testing.T) {
 
 func TestPatchTaskResourceStatus(t *testing.T) {
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
+	tr1.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg1",
+	}
 	tr1.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg1",
+		common.LabelTaskResourceGroupUID: "111",
 	}
 
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
+	tr2.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg2",
+	}
 	tr2.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg2",
+		common.LabelTaskResourceGroupUID: "111",
 	}
 
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(tr2)
@@ -122,6 +133,7 @@ func TestPatchTaskResourceStatus(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg1",
+					UID:  types.UID("111"),
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator: "ns1",

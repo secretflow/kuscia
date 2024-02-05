@@ -23,12 +23,16 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	applisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+
+	"github.com/secretflow/kuscia/pkg/common"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -49,6 +53,7 @@ const (
 type Controller struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+	config controllers.ControllerConfig
 	// kubeClient is a standard kubernetes clientset
 	kubeClient kubernetes.Interface
 	// kusciaClient is a clientset for kuscia API group
@@ -74,6 +79,8 @@ type Controller struct {
 	kdSynced       cache.InformerSynced
 	appImageLister kuscialistersv1alpha1.AppImageLister
 	appImageSynced cache.InformerSynced
+	domainLister   kuscialistersv1alpha1.DomainLister
+	domainSynced   cache.InformerSynced
 }
 
 // NewController returns a controller instance.
@@ -87,8 +94,10 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	configMapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	kdInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
 	controller := &Controller{
+		config:                config,
 		kubeClient:            config.KubeClient,
 		kusciaClient:          config.KusciaClient,
 		kubeInformerFactory:   kubeInformerFactory,
@@ -105,13 +114,15 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kdSynced:              kdInformer.Informer().HasSynced,
 		appImageLister:        appImageInformer.Lister(),
 		appImageSynced:        appImageInformer.Informer().HasSynced,
+		domainLister:          domainInformer.Lister(),
+		domainSynced:          domainInformer.Informer().HasSynced,
 		kdQueue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "kusciaDeployment"),
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 
 	kdInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: controller.resourceFilter,
+		FilterFunc: controller.kusciaDeploymentResourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedOrDeletedKusciaDeployment,
 			UpdateFunc: controller.handleUpdatedKusciaDeployment,
@@ -135,12 +146,15 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	return controller
 }
 
-// resourceFilter is used to filter resource.
-func (c *Controller) resourceFilter(obj interface{}) bool {
+// kusciaDeploymentResourceFilter is used to filter resource.
+func (c *Controller) kusciaDeploymentResourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
 		switch t := obj.(type) {
 		case *kusciav1alpha1.KusciaDeployment:
 			if t.DeletionTimestamp != nil {
+				return false
+			}
+			if t.Namespace != common.KusciaCrossDomain {
 				return false
 			}
 			return true
@@ -172,8 +186,9 @@ func (c *Controller) handleAddedOrDeletedKusciaDeployment(obj interface{}) {
 			return
 		}
 	}
+	key, _ := cache.MetaNamespaceKeyFunc(kd)
 
-	c.kdQueue.Add(kd.Name)
+	c.kdQueue.Add(key)
 }
 
 // handleUpdatedKusciaDeployment handles updated kusciaDeployment.
@@ -194,7 +209,9 @@ func (c *Controller) handleUpdatedKusciaDeployment(oldObj, newObj interface{}) {
 		return
 	}
 
-	c.kdQueue.Add(newKd.Name)
+	key, _ := cache.MetaNamespaceKeyFunc(newKd)
+
+	c.kdQueue.Add(key)
 }
 
 // handleAddedOrDeletedDeployment handles added or deleted deployment.
@@ -213,14 +230,14 @@ func (c *Controller) handleAddedOrDeletedDeployment(obj interface{}) {
 		}
 	}
 
-	kdName, err := c.getOwnerRef(deployment)
+	kdKey, err := c.getKusciaDeploymentOwnerKey(deployment)
 	if err != nil {
 		nlog.Warnf("Failed to get deployment %v owner, %v, skip this event", deployment.Name, err)
 		return
 	}
 
-	if kdName != "" {
-		c.kdQueue.Add(kdName)
+	if kdKey != "" {
+		c.kdQueue.Add(kdKey)
 	}
 }
 
@@ -242,14 +259,14 @@ func (c *Controller) handleUpdatedDeployment(oldObj, newObj interface{}) {
 		return
 	}
 
-	kdName, err := c.getOwnerRef(newDeploy)
+	kdKey, err := c.getKusciaDeploymentOwnerKey(newDeploy)
 	if err != nil {
 		nlog.Warnf("Failed to get deployment %v owner, %v, skip this event", newDeploy.Name, err)
 		return
 	}
 
-	if kdName != "" {
-		c.kdQueue.Add(kdName)
+	if kdKey != "" {
+		c.kdQueue.Add(kdKey)
 	}
 }
 
@@ -269,14 +286,14 @@ func (c *Controller) handleDeletedService(obj interface{}) {
 		}
 	}
 
-	kdName, err := c.getOwnerRef(svc)
+	kdKey, err := c.getKusciaDeploymentOwnerKey(svc)
 	if err != nil {
 		nlog.Warnf("Failed to get service %v owner, %v, skip this event", svc.Name, err)
 		return
 	}
 
-	if kdName != "" {
-		c.kdQueue.Add(kdName)
+	if kdKey != "" {
+		c.kdQueue.Add(kdKey)
 	}
 }
 
@@ -296,28 +313,28 @@ func (c *Controller) handleDeletedConfigmap(obj interface{}) {
 		}
 	}
 
-	kdName, err := c.getOwnerRef(cm)
+	kdKey, err := c.getKusciaDeploymentOwnerKey(cm)
 	if err != nil {
 		nlog.Warnf("Failed to get configmap %v owner, %v, skip this event", cm.Name, err)
 		return
 	}
 
-	if kdName != "" {
-		c.kdQueue.Add(kdName)
+	if kdKey != "" {
+		c.kdQueue.Add(kdKey)
 	}
 }
 
-func (c *Controller) getOwnerRef(obj metav1.Object) (string, error) {
-	if ownerRef := metav1.GetControllerOf(obj); ownerRef != nil {
-		if ownerRef.Kind != kusciaDeploymentName {
-			return "", nil
+func (c *Controller) getKusciaDeploymentOwnerKey(obj metav1.Object) (string, error) {
+	if obj.GetLabels() != nil && obj.GetLabels()[common.LabelKusciaOwnerNamespace] != "" {
+		ownerNamespace := obj.GetLabels()[common.LabelKusciaOwnerNamespace]
+		ownerkdName := obj.GetLabels()[common.LabelKusciaDeploymentName]
+		if ownerNamespace != "" && ownerkdName != "" {
+			kdb, err := c.kdLister.KusciaDeployments(ownerNamespace).Get(ownerkdName)
+			if err != nil {
+				return "", err
+			}
+			return ownerNamespace + "/" + kdb.Name, nil
 		}
-
-		kd, err := c.kdLister.Get(ownerRef.Name)
-		if err != nil {
-			return "", err
-		}
-		return kd.Name, nil
 	}
 	return "", nil
 }
@@ -336,7 +353,7 @@ func (c *Controller) Run(workers int) error {
 
 	// Wait for the caches to be synced before starting workers
 	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
-	if !cache.WaitForCacheSync(c.ctx.Done(), c.deploymentSynced, c.namespaceSynced, c.serviceSynced, c.configMapSynced, c.kdSynced, c.appImageSynced) {
+	if !cache.WaitForCacheSync(c.ctx.Done(), c.deploymentSynced, c.namespaceSynced, c.serviceSynced, c.configMapSynced, c.kdSynced, c.appImageSynced, c.domainSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -369,10 +386,20 @@ func (c *Controller) runWorker(ctx context.Context) {
 // converge the two. It then updates the Status block of the resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(ctx context.Context, key string) error {
-	kusciaDeployment, err := c.kdLister.Get(key)
+	ns, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		nlog.Errorf("KusciaDeployment %s split failed: %s", key, err)
+		return err
+	}
+	nlog.Infof("KusciaDeployment found: key=%s, ns=%s, name=%s", key, ns, name)
+	kusciaDeployment, err := c.kdLister.KusciaDeployments(ns).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			nlog.Infof("KusciaDeployment %v maybe deleted, skip handling it", key)
+			nlog.Infof("KusciaDeployment %s/%s maybe deleted, delete resources", ns, key)
+			if err := c.cleanKusciaDeploymentEvent(ctx, ns, name); err != nil {
+				nlog.Errorf("Clean kd %s/%s resources failed: %s", ns, name, err)
+				return err
+			}
 			return nil
 		}
 		return err
@@ -389,6 +416,78 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (c *Controller) cleanKusciaDeploymentEvent(ctx context.Context, ns string, kdName string) error {
+	nsRequirement, nsRequirementErr := labels.NewRequirement(common.LabelKusciaOwnerNamespace, selection.Equals, []string{ns})
+	kdNameRequirement, kdNameRequirementErr := labels.NewRequirement(common.LabelKusciaDeploymentName, selection.Equals, []string{kdName})
+	if nsRequirementErr != nil || kdNameRequirementErr != nil {
+		return fmt.Errorf("make requirement failed: ns=%s, kdName=%s", nsRequirementErr, kdNameRequirementErr)
+	}
+	selector := labels.NewSelector().Add(*nsRequirement, *kdNameRequirement)
+
+	if err := c.deleteService(ctx, selector); err != nil {
+		return err
+	}
+
+	if err := c.deleteDeployment(ctx, selector); err != nil {
+		return err
+	}
+
+	if err := c.deleteConfigMap(ctx, selector); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Controller) deleteService(ctx context.Context, selector labels.Selector) error {
+	services, err := c.serviceLister.List(selector)
+	if err != nil {
+		return err
+	}
+	for _, it := range services {
+		if err := c.kubeClient.CoreV1().Services(it.Namespace).Delete(ctx, it.Name, metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Controller) deleteConfigMap(ctx context.Context, selector labels.Selector) error {
+	configs, err := c.configMapLister.List(selector)
+	if err != nil {
+		return err
+	}
+	namespaces := make([]string, 0)
+	for _, it := range configs {
+		namespaces = append(namespaces, it.Namespace)
+	}
+	for _, ns := range namespaces {
+		if err := c.kubeClient.CoreV1().ConfigMaps(ns).DeleteCollection(ctx, metav1.DeleteOptions{},
+			metav1.ListOptions{LabelSelector: selector.String()}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Controller) deleteDeployment(ctx context.Context, selector labels.Selector) error {
+	deploys, err := c.deploymentLister.List(selector)
+	if err != nil {
+		return err
+	}
+	namespaces := make([]string, 0)
+	for _, d := range deploys {
+		namespaces = append(namespaces, d.Namespace)
+	}
+	for _, ns := range namespaces {
+		if err := c.kubeClient.AppsV1().Deployments(ns).DeleteCollection(ctx, metav1.DeleteOptions{},
+			metav1.ListOptions{LabelSelector: selector.String()}); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

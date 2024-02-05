@@ -77,22 +77,23 @@ type ImageRegistry struct {
 }
 
 type CommonConfig struct {
-	Mode          string `yaml:"mode"`
-	DomainID      string `yaml:"domainID"`
-	DomainKeyData string `yaml:"domainKeyData"`
-	LogLevel      string `yaml:"logLevel"`
+	Mode          string          `yaml:"mode"`
+	DomainID      string          `yaml:"domainID"`
+	DomainKeyData string          `yaml:"domainKeyData"`
+	LogLevel      string          `yaml:"logLevel"`
+	Protocol      common.Protocol `yaml:"protocol"`
 }
 
 type AdvancedConfig struct {
-	ConfLoaders    []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
-	SecretBackends []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
-	KusciaAPI      *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
-	DataMesh       *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
-	DomainRoute    DomainRouteConfig         `yaml:"domainRoute,omitempty"`
-	Agent          config.AgentConfig        `yaml:"agent,omitempty"`
-	Protocol       common.Protocol           `yaml:"protocol"`
-	Debug          bool                      `yaml:"debug"`
-	DebugPort      int                       `yaml:"debugPort"`
+	ConfLoaders           []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
+	SecretBackends        []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
+	KusciaAPI             *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
+	DataMesh              *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
+	DomainRoute           DomainRouteConfig         `yaml:"domainRoute,omitempty"`
+	Agent                 config.AgentConfig        `yaml:"agent,omitempty"`
+	Debug                 bool                      `yaml:"debug"`
+	DebugPort             int                       `yaml:"debugPort"`
+	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
 }
 
 func LoadCommonConfig(configFile string) *CommonConfig {
@@ -165,6 +166,7 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 	kusciaConfig.Master.ClusterToken = master.ClusterToken
 	kusciaConfig.Debug = master.Debug
 	kusciaConfig.DebugPort = master.DebugPort
+	kusciaConfig.EnableWorkloadApprove = master.AdvancedConfig.EnableWorkloadApprove
 }
 
 func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
@@ -195,6 +197,9 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Master.DatastoreEndpoint = autonomy.DatastoreEndpoint
 	kusciaConfig.Debug = autonomy.Debug
 	kusciaConfig.DebugPort = autonomy.DebugPort
+
+	kusciaConfig.Agent.DomainKeyData = autonomy.DomainKeyData
+	kusciaConfig.EnableWorkloadApprove = autonomy.AdvancedConfig.EnableWorkloadApprove
 }
 
 func loadConfig(configFile string, conf interface{}) {

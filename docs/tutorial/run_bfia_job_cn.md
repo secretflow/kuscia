@@ -1,5 +1,7 @@
 # 如何运行一个互联互通银联 BFIA 协议作业
 
+> Tips：由于内部 Kuscia P2P 协议升级，当前版本暂不支持银联 BFIA 协议，适配银联 BFIA 正在进行中。
+
 若你使用第三方算法镜像提交互联互通作业，强烈建议你检查镜像安全性，同时参考[安全加固方案](./security_plan_cn.md)。
 
 本教程以秘密分享-逻辑回归（SS-LR）算子为示例，介绍如何通过互联互通银联 BFIA（Beijing FinTech Industry Alliance 北京金融科技产业联盟）协议运行一个包含两方任务的作业。 
@@ -181,7 +183,7 @@ curl -v -X POST 'http://127.0.0.1:8084/v1/interconn/schedule/job/create' \
 ### 查看所有的 KusciaJob
 
 ```shell
-kubectl get kj
+kubectl get kj -n cross-domain
 ```
 
 你可以看到如下输出：
@@ -198,7 +200,7 @@ job-ss-lr       3s                           3s                  Running
 通过指定`-o yaml`参数，我们能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ss-lr 是提交的作业名称。
 
 ```shell
-kubectl get kj job-ss-lr -o yaml
+kubectl get kj job-ss-lr -n cross-domain -o yaml
 ```
 
 如果任务成功了，你可以看到如下输出：
@@ -264,7 +266,7 @@ status:
 KusciaJob 中的每一个 KusciaTask 都有一个`taskID`，通过`taskID`我们可以查看 KusciaTask 的详细状态。
 
 ```shell
-kubectl get kt job-ss-lr-26e3489ac66e -o yaml
+kubectl get kt job-ss-lr-26e3489ac66e -n cross-domain -o yaml
 ```
 
 KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_cn.md)。
@@ -288,7 +290,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob bash
 2. 查看 KusciaJob 作业状态
 
 ```shell
-kubectl get kj job-ss-lr 
+kubectl get kj job-ss-lr -n cross-domain
 NAME        STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
 job-ss-lr   13s         2s               2s                  Succeeded
 ```

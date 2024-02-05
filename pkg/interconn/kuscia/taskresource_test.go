@@ -18,29 +18,40 @@ import (
 	"context"
 	"testing"
 
-	"k8s.io/client-go/informers"
-	clientsetfake "k8s.io/client-go/kubernetes/fake"
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/interconn/kuscia/hostresources"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
-	"github.com/secretflow/kuscia/test/util"
 )
 
+func makeMockTaskResource(namespace, name string) *v1alpha1.TaskResource {
+	tr := &v1alpha1.TaskResource{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace:   namespace,
+			Name:        name,
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
+		},
+	}
+
+	return tr
+}
+
 func TestHandleUpdatedTaskResource(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
 	cc := c.(*Controller)
 
-	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
-	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
-
+	tr1 := makeMockTaskResource("bob", "tr-1")
+	tr2 := makeMockTaskResource("bob", "tr-2")
 	tr1.ResourceVersion = "1"
 	tr2.ResourceVersion = "2"
 
@@ -73,133 +84,225 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cc.handleUpdatedTaskResource(tt.oldObj, tt.newObj)
-			if cc.taskResourceQueue.Len() != tt.want {
-				t.Errorf("got %v, want %v", cc.taskResourceQueue.Len(), tt.want)
-			}
+			assert.Equal(t, tt.want, cc.taskResourceQueue.Len())
 		})
 	}
 }
 
-func TestSyncTaskResourceHandler(t *testing.T) {
+func TestUpdateTaskSummaryByTaskResource(t *testing.T) {
+	ctx := context.Background()
+	kts := makeMockTaskSummary("bob", "task-1", "1")
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	taskSummaryInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTaskSummaries()
+	taskSummaryInformer.Informer().GetStore().Add(kts)
+
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	domainBob := makeMockDomain("bob")
+	domainInformer.Informer().GetStore().Add(domainBob)
+
+	c := &Controller{
+		kusciaClient:      kusciaFakeClient,
+		domainLister:      domainInformer.Lister(),
+		taskSummaryLister: taskSummaryInformer.Lister(),
+	}
+
+	// task id in label is empty, should return nil.
+	tr := makeMockTaskResource("bob", "tr-1")
+	got := c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// domain doesn't exist, should return not nil.
+	tr = makeMockTaskResource("alice", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, true, got != nil)
+
+	// domain role is not partner, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// task doesn't exist, should return error.
+	tr = makeMockTaskResource("bob", "tr-1")
+	domainBob.Spec.Role = v1alpha1.Partner
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-2"
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, true, got != nil)
+
+	// taskResource status phase is reserving and empty in taskSummary, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	tr.Status.Phase = v1alpha1.TaskResourcePhaseReserving
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// taskResource status phase is reserving and failed in taskSummary, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	tr.Status.Phase = v1alpha1.TaskResourcePhaseReserving
+	kts.Status.ResourceStatus = map[string][]*v1alpha1.TaskSummaryResourceStatus{
+		"bob": {
+			{
+				HostTaskResourceName:   "tr-1",
+				MemberTaskResourceName: "tr-1",
+				TaskResourceStatus: v1alpha1.TaskResourceStatus{
+					Phase: v1alpha1.TaskResourcePhaseFailed,
+				},
+			},
+		},
+	}
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// taskResource status phase is failed and failed in taskSummary, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	tr.Status.Phase = v1alpha1.TaskResourcePhaseFailed
+	kts.Status.ResourceStatus = map[string][]*v1alpha1.TaskSummaryResourceStatus{
+		"bob": {
+			{
+				HostTaskResourceName:   "tr-1",
+				MemberTaskResourceName: "tr-1",
+				TaskResourceStatus: v1alpha1.TaskResourceStatus{
+					Phase: v1alpha1.TaskResourcePhaseFailed,
+				},
+			},
+		},
+	}
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// taskResource status phase is failed and reserving in taskSummary, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	tr.Status.Phase = v1alpha1.TaskResourcePhaseFailed
+	kts.Status.ResourceStatus = map[string][]*v1alpha1.TaskSummaryResourceStatus{
+		"bob": {
+			{
+				HostTaskResourceName:   "tr-1",
+				MemberTaskResourceName: "tr-1",
+				TaskResourceStatus: v1alpha1.TaskResourceStatus{
+					Phase: v1alpha1.TaskResourcePhaseReserving,
+				},
+			},
+		},
+	}
+	got = c.updateTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+}
+
+func TestUpdateHostTaskSummaryByTaskResource(t *testing.T) {
 	ctx := context.Background()
 
-	hostTr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
-	hostTr2.Labels = map[string]string{common.LabelInitiator: "ns2"}
-	hostTr2.ResourceVersion = "10"
+	kts := makeMockTaskSummary("bob", "task-1", "1")
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	deploymentInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
+	jobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
+	taskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
+	taskResourceInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
+	domainDataInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
+	domainDataGrantInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDataGrants()
 
-	hostTr3 := util.MakeTaskResource("ns1", "tr3", 2, nil)
-	hostTr3.Labels = map[string]string{common.LabelInitiator: "ns2"}
-	hostTr3.ResourceVersion = "1"
+	taskSummaryInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTaskSummaries()
+	taskSummaryInformer.Informer().GetStore().Add(kts)
 
-	hostKubeFakeClient := clientsetfake.NewSimpleClientset()
-	hostKusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(hostTr2, hostTr3)
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	domainBob := makeMockDomain("bob")
+	domainInformer.Informer().GetStore().Add(domainBob)
+
+	// prepare hostResourceManager
+	kts1 := makeMockTaskSummary("bob", "task-1", "1")
+	kts2 := makeMockTaskSummary("bob", "task-2", "2")
+	kts2.Status.ResourceStatus = map[string][]*v1alpha1.TaskSummaryResourceStatus{
+		"bob": {
+			{
+				HostTaskResourceName:   "tr-1",
+				MemberTaskResourceName: "tr-1",
+				TaskResourceStatus: v1alpha1.TaskResourceStatus{
+					Phase: v1alpha1.TaskResourcePhaseReserving,
+				},
+			},
+		},
+	}
+	hostKusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts1, kts2)
 	hostresources.GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
 		return &kubeconfig.KubeClients{
-			KubeClient:   hostKubeFakeClient,
 			KusciaClient: hostKusciaFakeClient,
 		}, nil
 	}
-
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
-	kubeInformerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
-	podInformer := kubeInformerFactory.Core().V1().Pods()
-	svcInformer := kubeInformerFactory.Core().V1().Services()
-	cmInformer := kubeInformerFactory.Core().V1().ConfigMaps()
-
-	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
-	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
-
-	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
-	tr1.Labels = map[string]string{
-		common.LabelResourceVersionUnderHostCluster: "2",
-		common.LabelInitiator:                       "ns2",
-	}
-
-	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
-	tr2.Labels = map[string]string{
-		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelInitiator:                       "ns2",
-	}
-
-	tr3 := util.MakeTaskResource("ns1", "tr3", 2, nil)
-	tr3.Labels = map[string]string{
-		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelInitiator:                       "ns2",
-	}
-
-	tr4 := util.MakeTaskResource("ns1", "tr4", 2, nil)
-	tr4.Labels = map[string]string{
-		common.LabelResourceVersionUnderHostCluster: "3",
-		common.LabelInitiator:                       "ns3",
-	}
-
-	trInformer.Informer().GetStore().Add(tr1)
-	trInformer.Informer().GetStore().Add(tr2)
-	trInformer.Informer().GetStore().Add(tr3)
-	trInformer.Informer().GetStore().Add(tr4)
-
 	opt := &hostresources.Options{
-		MemberKubeClient:      kubeFakeClient,
-		MemberKusciaClient:    kusciaFakeClient,
-		MemberPodLister:       podInformer.Lister(),
-		MemberServiceLister:   svcInformer.Lister(),
-		MemberConfigMapLister: cmInformer.Lister(),
-		MemberTrLister:        trInformer.Lister(),
+		MemberKusciaClient:          kusciaFakeClient,
+		MemberDeploymentLister:      deploymentInformer.Lister(),
+		MemberJobLister:             jobInformer.Lister(),
+		MemberTaskLister:            taskInformer.Lister(),
+		MemberTaskResourceLister:    taskResourceInformer.Lister(),
+		MemberDomainDataLister:      domainDataInformer.Lister(),
+		MemberDomainDataGrantLister: domainDataGrantInformer.Lister(),
 	}
 	hrm := hostresources.NewHostResourcesManager(opt)
-	hrm.Register("ns2", "ns1")
-	for !hrm.GetHostResourceAccessor("ns2", "ns1").HasSynced() {
+	hrm.Register("alice", "bob")
+	for !hrm.GetHostResourceAccessor("alice", "bob").HasSynced() {
 	}
 
 	c := &Controller{
-		taskResourceLister:  trInformer.Lister(),
+		kusciaClient:        kusciaFakeClient,
+		domainLister:        domainInformer.Lister(),
+		taskSummaryLister:   taskSummaryInformer.Lister(),
 		hostResourceManager: hrm,
 	}
+	// task id in label is empty, should return nil.
+	tr := makeMockTaskResource("bob", "tr-1")
+	got := c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
 
-	tests := []struct {
-		name    string
-		key     string
-		wantErr bool
-	}{
-		{
-			name:    "invalid task resource key",
-			key:     "ns1/tr1/test",
-			wantErr: false,
-		},
-		{
-			name:    "task resource is not exist in member cluster",
-			key:     "ns1/tr5",
-			wantErr: false,
-		},
-		{
-			name:    "task resource host resource accessor is empty",
-			key:     "ns1/tr4",
-			wantErr: false,
-		},
-		{
-			name:    "task resource is not exit in host cluster",
-			key:     "ns1/tr1",
-			wantErr: false,
-		},
-		{
-			name:    "task resource label resource version is less than task resource resource version in host cluster",
-			key:     "ns1/tr2",
-			wantErr: true,
-		},
-		{
-			name:    "patch task resource successfully",
-			key:     "ns1/tr3",
-			wantErr: false,
-		},
-	}
+	// initiator doesn't exist, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := c.syncTaskResourceHandler(ctx, tt.key)
-			if got != nil != tt.wantErr {
-				t.Errorf("sync task resource failed, got %v, want %v", got, tt.wantErr)
-			}
-		})
-	}
+	// master domain id doesn't exist, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
+	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// taskSummary doesn't exist in host cluster, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-3"
+	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
+	tr.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// task resource status phase is empty, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-1"
+	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
+	tr.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// task resource status phase is reserving but resource version is less than the value in taskSummary, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-2"
+	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
+	tr.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+	tr.Status.Phase = v1alpha1.TaskResourcePhaseReserving
+	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
+
+	// task resource status phase is reserving and resource version is greater than the value in taskSummary, should return nil.
+	tr = makeMockTaskResource("bob", "tr-1")
+	tr.Annotations[common.TaskIDAnnotationKey] = "task-2"
+	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
+	tr.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+	tr.ResourceVersion = "3"
+	tr.Status.Phase = v1alpha1.TaskResourcePhaseReserved
+	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
+	assert.Equal(t, nil, got)
 }

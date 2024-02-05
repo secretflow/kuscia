@@ -9,7 +9,7 @@ IMG := secretflow/kuscia:${TAG}
 TEST_SUITE ?= all
 
 ENVOY_IMAGE ?= secretflow/kuscia-envoy:0.3.0.dev231122
-DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.4.0b0
+DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -100,6 +100,7 @@ docs: ## Build docs.
 
 .PHONY: deps-image
 deps-image:
+	bash hack/k3s/build.sh
 	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image

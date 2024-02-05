@@ -31,10 +31,13 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/kubernetes/pkg/kubelet/events"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/framework"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/provider/pod/kubebackend"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
@@ -53,6 +56,7 @@ type K8sProviderDependence struct {
 	PodSyncHandler  framework.SyncHandler
 	ResourceManager *resource.KubeResourceManager
 	K8sProviderCfg  *config.K8sProviderCfg
+	Recorder        record.EventRecorder
 }
 
 type K8sProvider struct {
@@ -80,6 +84,7 @@ type K8sProvider struct {
 	runtimeClassName string
 
 	leaderElector election.Elector
+	recorder      record.EventRecorder
 }
 
 func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
@@ -94,6 +99,7 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		labelsToAdd:      dep.K8sProviderCfg.LabelsToAdd,
 		annotationsToAdd: dep.K8sProviderCfg.AnnotationsToAdd,
 		runtimeClassName: dep.K8sProviderCfg.RuntimeClassName,
+		recorder:         dep.Recorder,
 	}
 
 	if kp.podDNSPolicy == "" {
@@ -198,8 +204,14 @@ func (kp *K8sProvider) Stop() {
 	return
 }
 
-func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *framework.ReasonCache) error {
+func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *kri.ReasonCache) (retErr error) {
 	nlog.Infof("Sync pod %v", format.Pod(pod))
+
+	defer func() {
+		if retErr != nil {
+			kp.recorder.Eventf(pod, v1.EventTypeWarning, events.FailedCreatePodSandBox, "Failed to sync pod to k8s: %v", retErr)
+		}
+	}()
 
 	newPod := pod.DeepCopy()
 	newPod.ObjectMeta = *kp.normalizeMeta(pod.UID, &pod.ObjectMeta)

@@ -117,22 +117,31 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 
 func TestHandleTaskResource(t *testing.T) {
 	ctx := context.Background()
-	commonLabels := map[string]string{
-		common.LabelJobID:     "job-1",
-		common.LabelTaskID:    "task-1",
-		common.LabelTaskAlias: "task-1",
+	commonAnnotations := map[string]string{
+		common.JobIDAnnotationKey:     "job-1",
+		common.TaskIDAnnotationKey:    "task-1",
+		common.TaskAliasAnnotationKey: "task-1",
 	}
 
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
-	tr1.Labels = commonLabels
+	tr1.Labels = map[string]string{
+		common.LabelTaskUID: "111",
+	}
+	tr1.Annotations = commonAnnotations
 	tr1.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserving
 
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
-	tr2.Labels = commonLabels
+	tr2.Annotations = commonAnnotations
+	tr2.Labels = map[string]string{
+		common.LabelTaskUID: "111",
+	}
 	tr2.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserved
 
 	tr3 := util.MakeTaskResource("ns1", "tr3", 2, nil)
-	tr3.Labels = commonLabels
+	tr3.Annotations = commonAnnotations
+	tr3.Labels = map[string]string{
+		common.LabelTaskUID: "111",
+	}
 	tr3.Status.Phase = kusciaapisv1alpha1.TaskResourcePhaseReserving
 
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(tr1, tr2, tr3)
@@ -151,45 +160,45 @@ func TestHandleTaskResource(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		tr      *kusciaapisv1alpha1.TaskResource
-		labels  map[string]string
-		wantErr bool
+		name        string
+		tr          *kusciaapisv1alpha1.TaskResource
+		annotations map[string]string
+		wantErr     bool
 	}{
 		{
 			name: "label job id is empty",
 			tr:   tr1,
-			labels: map[string]string{
-				common.LabelTaskID:    "task-1",
-				common.LabelTaskAlias: "task-1",
+			annotations: map[string]string{
+				common.TaskIDAnnotationKey:    "task-1",
+				common.TaskAliasAnnotationKey: "task-1",
 			},
 			wantErr: true,
 		},
 		{
 			name: "label task id is empty",
 			tr:   tr1,
-			labels: map[string]string{
-				common.LabelJobID:     "job-1",
-				common.LabelTaskAlias: "task-1",
+			annotations: map[string]string{
+				common.JobIDAnnotationKey:     "job-1",
+				common.TaskAliasAnnotationKey: "task-1",
 			},
 			wantErr: true,
 		},
 		{
 			name: "label task alias is empty",
 			tr:   tr1,
-			labels: map[string]string{
-				common.LabelJobID:     "job-1",
-				common.LabelTaskAlias: "task-1",
+			annotations: map[string]string{
+				common.JobIDAnnotationKey:     "job-1",
+				common.TaskAliasAnnotationKey: "task-1",
 			},
 			wantErr: true,
 		},
 		{
 			name: "existing reserved task resource",
 			tr:   tr1,
-			labels: map[string]string{
-				common.LabelJobID:     "job-1",
-				common.LabelTaskID:    "task-1",
-				common.LabelTaskAlias: "task-1",
+			annotations: map[string]string{
+				common.JobIDAnnotationKey:     "job-1",
+				common.TaskIDAnnotationKey:    "task-1",
+				common.TaskAliasAnnotationKey: "task-1",
 			},
 			wantErr: false,
 		},
@@ -198,7 +207,7 @@ func TestHandleTaskResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.tr != nil {
-				tt.tr.Labels = tt.labels
+				tt.tr.Annotations = tt.annotations
 			}
 			got := c.handleTaskResource(ctx, tt.tr, fmt.Sprintf("%s/%s", tt.tr.Namespace, tt.tr.Name))
 			assert.Equal(t, tt.wantErr, got != nil)
@@ -209,7 +218,8 @@ func TestHandleTaskResource(t *testing.T) {
 func TestSetPartyTaskStatuses(t *testing.T) {
 	kt := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "task-1",
+			Name:      "task-1",
+			Namespace: common.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
 			Initiator: "alice",
@@ -232,7 +242,7 @@ func TestSetPartyTaskStatuses(t *testing.T) {
 	}
 
 	c.setPartyTaskStatuses(kt, "alice", "", "Running")
-	got, err := kusciaFakeClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), kt.Name, metav1.GetOptions{})
+	got, err := kusciaFakeClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), kt.Name, metav1.GetOptions{})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, kusciaapisv1alpha1.TaskRunning, got.Status.PartyTaskStatus[0].Phase)
 }

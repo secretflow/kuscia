@@ -347,7 +347,7 @@ type getResponse struct {
 }
 
 func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.Request) {
-	nlog.Debugf("Receive handshake request, method [%s], host[%s], headers[%s]", r.Method, r.Host, r.Header)
+	nlog.Infof("Receive handshake request, method [%s], host[%s], headers[%s]", r.Method, r.Host, r.Header)
 	if r.Method == http.MethodGet {
 		resp := &getResponse{
 			Namespace: c.gateway.Namespace,

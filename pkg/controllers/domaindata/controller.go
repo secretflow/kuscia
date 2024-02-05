@@ -57,7 +57,6 @@ const (
 type Controller struct {
 	ctx          context.Context
 	cancel       context.CancelFunc
-	IsMaster     bool
 	Namespace    string
 	RootDir      string
 	kubeClient   kubernetes.Interface
@@ -88,7 +87,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		domaindataInformer.Informer().HasSynced,
 	}
 	controller := &Controller{
-		IsMaster:                       config.IsMaster,
 		Namespace:                      config.Namespace,
 		RootDir:                        config.RootDir,
 		kubeClient:                     kubeClient,
@@ -263,7 +261,18 @@ func (c *Controller) syncDomainDataGrantHandler(ctx context.Context, key string)
 		return err
 	}
 	if dg.Spec.Author == namespace {
-		dgGrant, err := c.domaindatagrantLister.DomainDataGrants(dg.Spec.GrantDomain).Get(name)
+		domain, err := c.kusciaClient.KusciaV1alpha1().Domains().Get(c.ctx, dg.Spec.GrantDomain, metav1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("get domain %v err %v", dg.Spec.GrantDomain, err)
+		}
+		// 1. role is partner and master domain not empty => partner master domain
+		// 2. role is partner and master domain empty => grant domain
+		// 3. role is not partner => grant domain
+		destDomain := dg.Spec.GrantDomain
+		if domain.Spec.Role == v1alpha1.Partner && domain.Spec.MasterDomain != "" {
+			destDomain = domain.Spec.MasterDomain
+		}
+		dgGrant, err := c.domaindatagrantLister.DomainDataGrants(destDomain).Get(name)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				err = c.ensureDomainData(dg)
@@ -271,10 +280,14 @@ func (c *Controller) syncDomainDataGrantHandler(ctx context.Context, key string)
 					return fmt.Errorf("ensureDomainData(%s/%s) error:%s", dg.Spec.GrantDomain, dg.Spec.DomainDataID, err.Error())
 				}
 				dgcopy := resources.ExtractDomainDataGrantSpec(dg)
-				dgcopy.Namespace = dg.Spec.GrantDomain
+				dgcopy.Namespace = destDomain
 				dgcopy.Labels[common.LabelOwnerReferences] = dg.Name
 				dgcopy.Labels[common.LabelDomainDataID] = dg.Spec.DomainDataID
-				_, err = c.kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Spec.GrantDomain).Create(c.ctx, dgcopy, metav1.CreateOptions{})
+				if domain.Spec.Role == v1alpha1.Partner {
+					dgcopy.Annotations[common.InitiatorAnnotationKey] = dg.Spec.Author
+					dgcopy.Annotations[common.InterConnKusciaPartyAnnotationKey] = dg.Spec.GrantDomain
+				}
+				_, err = c.kusciaClient.KusciaV1alpha1().DomainDataGrants(destDomain).Create(c.ctx, dgcopy, metav1.CreateOptions{})
 				if err != nil {
 					return fmt.Errorf("create DomainDataGrant(%s/%s) error:%s", dg.Spec.GrantDomain, name, err.Error())
 				}
@@ -384,7 +397,18 @@ func (c *Controller) syncDomainDataHandler(ctx context.Context, key string) erro
 }
 
 func (c *Controller) ensureDomainData(dg *v1alpha1.DomainDataGrant) error {
-	_, err := c.kusciaClient.KusciaV1alpha1().DomainDatas(dg.Spec.GrantDomain).Get(c.ctx, dg.Spec.DomainDataID, metav1.GetOptions{})
+	domain, err := c.kusciaClient.KusciaV1alpha1().Domains().Get(c.ctx, dg.Spec.GrantDomain, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("get domain %v err %v", dg.Spec.GrantDomain, err)
+	}
+	// 1. role is partner and master domain not empty => partner master domain
+	// 2. role is partner and master domain empty => grant domain
+	// 3. role is not partner => grant domain
+	destDomain := dg.Spec.GrantDomain
+	if domain.Spec.Role == v1alpha1.Partner && domain.Spec.MasterDomain != "" {
+		destDomain = domain.Spec.MasterDomain
+	}
+	_, err = c.kusciaClient.KusciaV1alpha1().DomainDatas(destDomain).Get(c.ctx, dg.Spec.DomainDataID, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
 		dd, err := c.kusciaClient.KusciaV1alpha1().DomainDatas(dg.Namespace).Get(c.ctx, dg.Spec.DomainDataID, metav1.GetOptions{})
 		if err != nil {
@@ -392,11 +416,15 @@ func (c *Controller) ensureDomainData(dg *v1alpha1.DomainDataGrant) error {
 		}
 
 		ddCopy := resources.ExtractDomainDataSpec(dd)
-		ddCopy.Namespace = dg.Spec.GrantDomain
+		ddCopy.Namespace = destDomain
 		ddCopy.Labels[common.LabelOwnerReferences] = dd.Name
 		ddCopy.Labels[common.LabelDomainDataVendor] = common.DomainDataVendorGrant
+		if domain.Spec.Role == v1alpha1.Partner {
+			ddCopy.Annotations[common.InitiatorAnnotationKey] = dg.Spec.Author
+			ddCopy.Annotations[common.InterConnKusciaPartyAnnotationKey] = dg.Spec.GrantDomain
+		}
 		ddCopy.Spec.Vendor = common.DomainDataVendorGrant
-		_, err = c.kusciaClient.KusciaV1alpha1().DomainDatas(dg.Spec.GrantDomain).Create(c.ctx, ddCopy, metav1.CreateOptions{})
+		_, err = c.kusciaClient.KusciaV1alpha1().DomainDatas(destDomain).Create(c.ctx, ddCopy, metav1.CreateOptions{})
 		nlog.Infof("Create DomainData %s/%s, because grant %s to %s", dg.Spec.GrantDomain, dg.Spec.DomainDataID, dg.Spec.Author, dg.Spec.GrantDomain)
 		return err
 	}
@@ -426,14 +454,17 @@ func (c *Controller) checkLabels(dg *v1alpha1.DomainDataGrant) (bool, error) {
 	if dgCopy.Labels == nil {
 		dgCopy.Labels = map[string]string{}
 	}
+	if dgCopy.Annotations == nil {
+		dgCopy.Annotations = map[string]string{}
+	}
 
 	if _, ok := dgCopy.Labels[common.LabelInterConnProtocolType]; !ok {
 		dgCopy.Labels[common.LabelInterConnProtocolType] = "kuscia"
 		needUpdate = true
 	}
 
-	if _, ok := dgCopy.Labels[common.LabelInitiator]; !ok {
-		dgCopy.Labels[common.LabelInitiator] = dgCopy.Spec.Author
+	if _, ok := dgCopy.Annotations[common.InitiatorAnnotationKey]; !ok {
+		dgCopy.Annotations[common.InitiatorAnnotationKey] = dgCopy.Spec.Author
 		needUpdate = true
 	}
 

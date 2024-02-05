@@ -25,7 +25,7 @@
     }
   },
   "sf_node_eval_param": {
-    "domain": "preprocessing",
+    "domain": "data_prep",
     "name": "psi",
     "version": "0.0.1",
     "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type"],

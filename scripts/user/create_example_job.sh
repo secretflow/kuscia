@@ -47,6 +47,7 @@ if [[ $SELF_DOMAIN_ID == "" ]] ; then
   echo "can not get self domain id, please check NAMESPACE environment"
   exit 1
 fi
+
 INITIATOR=alice
 if [[ $SELF_DOMAIN_ID == bob ]]; then
   INITIATOR=bob
@@ -87,6 +88,6 @@ template=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g;s~{{.TASK_INPUT_CONFIG}}~${ESCAPE_
 echo "$template" | kubectl apply -f -
 
 echo -e "${GREEN}Job '$JOB_NAME' created successfully. You can use the following command to display job status:
-  kubectl get kj${NC}"
+  kubectl get kj -n cross-domain${NC}"
 
 popd || exit

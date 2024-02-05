@@ -36,9 +36,6 @@ type KusciaV1alpha1Interface interface {
 	DomainRoutesGetter
 	GatewaysGetter
 	InteropConfigsGetter
-	KusciaBetaDeploymentsGetter
-	KusciaBetaJobsGetter
-	KusciaBetaTasksGetter
 	KusciaDeploymentsGetter
 	KusciaDeploymentSummariesGetter
 	KusciaJobsGetter
@@ -94,36 +91,24 @@ func (c *KusciaV1alpha1Client) InteropConfigs() InteropConfigInterface {
 	return newInteropConfigs(c)
 }
 
-func (c *KusciaV1alpha1Client) KusciaBetaDeployments(namespace string) KusciaBetaDeploymentInterface {
-	return newKusciaBetaDeployments(c, namespace)
-}
-
-func (c *KusciaV1alpha1Client) KusciaBetaJobs(namespace string) KusciaBetaJobInterface {
-	return newKusciaBetaJobs(c, namespace)
-}
-
-func (c *KusciaV1alpha1Client) KusciaBetaTasks(namespace string) KusciaBetaTaskInterface {
-	return newKusciaBetaTasks(c, namespace)
-}
-
-func (c *KusciaV1alpha1Client) KusciaDeployments() KusciaDeploymentInterface {
-	return newKusciaDeployments(c)
+func (c *KusciaV1alpha1Client) KusciaDeployments(namespace string) KusciaDeploymentInterface {
+	return newKusciaDeployments(c, namespace)
 }
 
 func (c *KusciaV1alpha1Client) KusciaDeploymentSummaries(namespace string) KusciaDeploymentSummaryInterface {
 	return newKusciaDeploymentSummaries(c, namespace)
 }
 
-func (c *KusciaV1alpha1Client) KusciaJobs() KusciaJobInterface {
-	return newKusciaJobs(c)
+func (c *KusciaV1alpha1Client) KusciaJobs(namespace string) KusciaJobInterface {
+	return newKusciaJobs(c, namespace)
 }
 
 func (c *KusciaV1alpha1Client) KusciaJobSummaries(namespace string) KusciaJobSummaryInterface {
 	return newKusciaJobSummaries(c, namespace)
 }
 
-func (c *KusciaV1alpha1Client) KusciaTasks() KusciaTaskInterface {
-	return newKusciaTasks(c)
+func (c *KusciaV1alpha1Client) KusciaTasks(namespace string) KusciaTaskInterface {
+	return newKusciaTasks(c, namespace)
 }
 
 func (c *KusciaV1alpha1Client) KusciaTaskSummaries(namespace string) KusciaTaskSummaryInterface {

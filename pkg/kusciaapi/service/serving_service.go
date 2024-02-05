@@ -161,7 +161,7 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 		ObjectMeta: metav1.ObjectMeta{
 			Name: request.ServingId,
 			Labels: map[string]string{
-				common.LabelKusciaDeploymentAppType: string(common.ServingAppType),
+				common.LabelKusciaDeploymentAppType: string(common.ServingApp),
 			},
 		},
 		Spec: v1alpha1.KusciaDeploymentSpec{
@@ -171,7 +171,7 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 		},
 	}
 
-	if _, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments().Create(ctx, kd, metav1.CreateOptions{}); err != nil {
+	if _, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Create(ctx, kd, metav1.CreateOptions{}); err != nil {
 		return &kusciaapi.CreateServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCreateServing, err.Error()),
 		}
@@ -536,7 +536,7 @@ func (s *servingService) QueryServing(ctx context.Context, request *kusciaapi.Qu
 		}
 	}
 
-	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments().Get(ctx, servingID, metav1.GetOptions{})
+	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, servingID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.QueryServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrQueryServing, err.Error()),
@@ -626,7 +626,7 @@ func (s *servingService) BatchQueryServingStatus(ctx context.Context, request *k
 }
 
 func (s *servingService) buildServingStatusByID(ctx context.Context, servingID string) (*kusciaapi.ServingStatusDetail, error) {
-	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments().Get(ctx, servingID, metav1.GetOptions{})
+	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, servingID, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -652,7 +652,7 @@ func (s *servingService) UpdateServing(ctx context.Context, request *kusciaapi.U
 		}
 	}
 
-	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments().Get(ctx, request.ServingId, metav1.GetOptions{})
+	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, request.ServingId, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.UpdateServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrUpdateServing, err.Error()),
@@ -681,7 +681,7 @@ func (s *servingService) UpdateServing(ctx context.Context, request *kusciaapi.U
 	}
 
 	if needUpdate {
-		_, err = s.kusciaClient.KusciaV1alpha1().KusciaDeployments().Update(ctx, kdCopy, metav1.UpdateOptions{})
+		_, err = s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Update(ctx, kdCopy, metav1.UpdateOptions{})
 		if err != nil {
 			return &kusciaapi.UpdateServingResponse{
 				Status: utils2.BuildErrorResponseStatus(errorcode.ErrUpdateServing, err.Error()),
@@ -876,7 +876,7 @@ func (s *servingService) DeleteServing(ctx context.Context, request *kusciaapi.D
 		}
 	}
 
-	err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments().Delete(ctx, servingID, metav1.DeleteOptions{})
+	err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Delete(ctx, servingID, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrDeleteServing, err.Error()),

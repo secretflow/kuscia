@@ -8,6 +8,7 @@ domainID: {{.DOMAIN_ID}}
 domainKeyData: {{.DOMAIN_KEY_DATA}}
 # 日志级别 INFO、DEBUG、WARN
 logLevel: INFO
+
 # 数据库连接串，不填默认使用 sqlite
 # 示例：mysql://username:password@tcp(hostname:3306)/database-name
 datastoreEndpoint: ""

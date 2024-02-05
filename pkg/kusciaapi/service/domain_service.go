@@ -30,11 +30,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	consts "github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/constants"
+	weberrorcode "github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -88,15 +90,31 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("role is invalid, must be empty or %s", v1alpha1.Partner)),
 		}
 	}
+	// 1. role is empty, domain to create is located in local party
+	// 2. role is partner, domain to create is located in remote party
+	if request.MasterDomainId != "" && request.MasterDomainId != domainID {
+		domain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, request.MasterDomainId, metav1.GetOptions{})
+		if err != nil {
+			return &kusciaapi.CreateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("check master domain id failed with err %v", err.Error())),
+			}
+		}
+		if domain.Spec.Role != v1alpha1.DomainRole(request.Role) {
+			return &kusciaapi.CreateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("master domain role is %s, but current role is %s", domain.Spec.Role, request.Role)),
+			}
+		}
+	}
 	// build kuscia domain
 	kusciaDomain := &v1alpha1.Domain{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: domainID,
 		},
 		Spec: v1alpha1.DomainSpec{
-			Cert:       request.Cert,
-			Role:       v1alpha1.DomainRole(request.Role),
-			AuthCenter: authCenterConverter(request.AuthCenter),
+			Cert:         request.Cert,
+			Role:         v1alpha1.DomainRole(request.Role),
+			AuthCenter:   authCenterConverter(request.AuthCenter),
+			MasterDomain: request.MasterDomainId,
 		},
 	}
 
@@ -164,6 +182,7 @@ func (s domainService) QueryDomain(ctx context.Context, request *kusciaapi.Query
 			DeployTokenStatuses: deployToken,
 			Annotations:         kusciaDomain.Annotations,
 			AuthCenter:          authCenter,
+			MasterDomainId:      kusciaDomain.Spec.MasterDomain,
 		},
 	}
 }
@@ -185,12 +204,12 @@ func (s domainService) queryKusciaMasterDomain() *kusciaapi.QueryDomainResponse 
 }
 
 func (s domainService) queryKusciaMasterCert() (string, error) {
-	if s.conf.TLS == nil || s.conf.TLS.RootCA == nil {
+	if s.conf.RootCA == nil {
 		errMsg := fmt.Sprintf("master ca cert is nil")
 		nlog.Errorf("Query kuscia-master cert failed, error: %s.", errMsg)
 		return "", errors.New(errMsg)
 	}
-	caCert := base64.StdEncoding.EncodeToString(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: s.conf.TLS.RootCA.Raw}))
+	caCert := base64.StdEncoding.EncodeToString(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: s.conf.RootCA.Raw}))
 	return caCert, nil
 }
 
@@ -214,6 +233,21 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
+	// 1. role is empty, domain to create is located in local party
+	// 2. role is partner, domain to create is located in remote party
+	if request.MasterDomainId != "" && request.MasterDomainId != domainID {
+		domain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, request.MasterDomainId, metav1.GetOptions{})
+		if err != nil {
+			return &kusciaapi.UpdateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("check master domain id failed with err %v", err.Error())),
+			}
+		}
+		if domain.Spec.Role != v1alpha1.DomainRole(request.Role) {
+			return &kusciaapi.UpdateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("master domain role is %s, but current role is %s", domain.Spec.Role, request.Role)),
+			}
+		}
+	}
 	// get latest domain from k8s
 	latestDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 	if err != nil {
@@ -228,9 +262,10 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			ResourceVersion: latestDomain.ResourceVersion,
 		},
 		Spec: v1alpha1.DomainSpec{
-			Cert:       request.Cert,
-			Role:       v1alpha1.DomainRole(role),
-			AuthCenter: authCenterConverter(request.AuthCenter),
+			Cert:         request.Cert,
+			Role:         v1alpha1.DomainRole(role),
+			AuthCenter:   authCenterConverter(request.AuthCenter),
+			MasterDomain: request.MasterDomainId,
 		},
 	}
 	// update kuscia domain
@@ -310,6 +345,14 @@ func (s domainService) BatchQueryDomain(ctx context.Context, request *kusciaapi.
 			Domains: domains,
 		},
 	}
+}
+
+func CheckDomainExists(kusciaclient kusciaclientset.Interface, domainId string) (kusciaError weberrorcode.KusciaErrorCode, errorMsg string) {
+	_, err := kusciaclient.KusciaV1alpha1().Domains().Get(context.Background(), domainId, metav1.GetOptions{})
+	if err != nil {
+		return errorcode.GetDomainErrorCode(err, errorcode.ErrQueryDomain), err.Error()
+	}
+	return utils.ResponseCodeSuccess, ""
 }
 
 func (s domainService) buildDomain(kusciaDomain *v1alpha1.Domain) (*kusciaapi.Domain, []*kusciaapi.DeployTokenStatus) {

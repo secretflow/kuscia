@@ -33,12 +33,13 @@ import (
 
 func NewControllersModule(i *Dependencies) Module {
 	opt := &controllers.Options{
-		ControllerName:  "kuscia-controller-manager",
-		HealthCheckPort: 8090,
-		Workers:         4,
-		RunMode:         i.RunMode,
-		Namespace:       i.DomainID,
-		RootDir:         i.RootDir,
+		ControllerName:        "kuscia-controller-manager",
+		HealthCheckPort:       8090,
+		Workers:               4,
+		RunMode:               i.RunMode,
+		Namespace:             i.DomainID,
+		RootDir:               i.RootDir,
+		EnableWorkloadApprove: i.EnableWorkloadApprove,
 	}
 
 	return controllers.NewServer(

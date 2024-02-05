@@ -23,6 +23,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -57,7 +58,21 @@ func SetKusciaTaskCondition(now metav1.Time, cond *kusciaapisv1alpha1.KusciaTask
 }
 
 // UpdateKusciaTaskStatus updates kuscia task status.
-func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt *kusciaapisv1alpha1.KusciaTask, retryCount int) (err error) {
+func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt *kusciaapisv1alpha1.KusciaTask) (err error) {
+	if reflect.DeepEqual(rawKt.Status, curKt.Status) {
+		nlog.Debugf("Kuscia task %v status does not change, skip to update it", curKt.Name)
+		return nil
+	}
+	nlog.Infof("Start updating kuscia task %q status", rawKt.Name)
+	if _, err = kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKt, metav1.UpdateOptions{}); err != nil {
+		return err
+	}
+	nlog.Infof("Finish updating kuscia task %q status", rawKt.Name)
+	return nil
+}
+
+// UpdateKusciaTaskStatusWithRetry updates kuscia task status with retry.
+func UpdateKusciaTaskStatusWithRetry(kusciaClient kusciaclientset.Interface, rawKt, curKt *kusciaapisv1alpha1.KusciaTask, retryCount int) (err error) {
 	if reflect.DeepEqual(rawKt.Status, curKt.Status) {
 		nlog.Debugf("Kuscia task %v status does not change, skip to update it", curKt.Name)
 		return nil
@@ -67,7 +82,7 @@ func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt
 	newStatus := curKt.Status.DeepCopy()
 	for i, curKt := 0, curKt; ; i++ {
 		nlog.Infof("Start updating kuscia task %q status", rawKt.Name)
-		if _, err = kusciaClient.KusciaV1alpha1().KusciaTasks().UpdateStatus(context.Background(), curKt, metav1.UpdateOptions{}); err == nil {
+		if _, err = kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKt, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia task %q status", rawKt.Name)
 			return nil
 		}
@@ -83,7 +98,7 @@ func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt
 			break
 		}
 
-		curKt, err = kusciaClient.KusciaV1alpha1().KusciaTasks().Get(context.Background(), rawKt.Name, metav1.GetOptions{})
+		curKt, err = kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), rawKt.Name, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get the newest kuscia task %q, %v", rawKt.Name, err)
 		}

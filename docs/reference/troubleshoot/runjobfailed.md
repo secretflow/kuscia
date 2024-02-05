@@ -28,7 +28,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 查看作业信息
 
 ```shell
-kubectl get kj
+kubectl get kj -n cross-domain
 ```
 
 查看作业下任务的详细信息
@@ -37,10 +37,10 @@ kubectl get kj
 
 ```shell
 # 列出所有任务
-kubectl get kt
+kubectl get kt -n cross-domain
 
 # 查看任务的详细信息，任务名称来自上述命令
-kubectl get kt {任务名称} -o yaml
+kubectl get kt {任务名称} -n cross-domain -o yaml
 ```
 
 查看任务 Pod 的详细信息

@@ -104,6 +104,16 @@ func ExtractPodLabels(p *corev1.Pod) *corev1.Pod {
 	return pp
 }
 
+// ExtractPodAnnotationsAndLabels is used to extract pod annotations and labels.
+func ExtractPodAnnotationsAndLabels(p *corev1.Pod) *corev1.Pod {
+	pp := &corev1.Pod{}
+	pp.Namespace = p.Namespace
+	pp.Name = p.Name
+	pp.Labels = p.Labels
+	pp.Annotations = p.Annotations
+	return pp
+}
+
 // ExtractPodSpec is used to extract pod spec.
 func ExtractPodSpec(p *corev1.Pod) *corev1.Pod {
 	automountServiceAccountToken := false

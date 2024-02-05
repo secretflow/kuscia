@@ -79,6 +79,13 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 		}
 	}
 
+	// check domain exists
+	if errorCode, errMsg := CheckDomainExists(s.conf.KusciaClient, request.GetDomainId()); utils.ResponseCodeSuccess != errorCode {
+		return &kusciaapi.CreateDomainDataSourceResponse{
+			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
+		}
+	}
+
 	if request.DatasourceId == "" {
 		name := ""
 		if request.Name != nil {

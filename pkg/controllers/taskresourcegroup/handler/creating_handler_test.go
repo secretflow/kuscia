@@ -63,8 +63,8 @@ func TestCreatingHandlerHandle(t *testing.T) {
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
 
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
-	tr.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg",
+	tr.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg",
 	}
 	trInformer.Informer().GetStore().Add(tr)
 
@@ -125,8 +125,8 @@ func TestCreateTaskResources(t *testing.T) {
 	podInformer.Informer().GetStore().Add(pod)
 
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
-	tr.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg",
+	tr.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg",
 	}
 	trInformer.Informer().GetStore().Add(tr)
 
@@ -276,7 +276,7 @@ func TestBuildTaskResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, got := h.buildTaskResource(&tt.trg.Spec.Parties[0], tt.trg)
+			_, got := h.buildTaskResource(&tt.trg.Spec.Parties[0], tt.trg, nil)
 			if got != nil != tt.wantErr {
 				t.Errorf("got: %v, want: %v", got != nil, tt.wantErr)
 			}
@@ -398,7 +398,7 @@ func TestGetMinReservedPods(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getMinReservedPods(tt.party)
+			got := getMinReservedPods(tt.party, false)
 			if got != tt.want {
 				t.Errorf("got: %v, want: %v", got, tt.want)
 			}

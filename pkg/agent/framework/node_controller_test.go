@@ -31,6 +31,7 @@ import (
 	testclient "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/utils/nodeutils"
 )
 
@@ -422,7 +423,7 @@ func testNode(t *testing.T) *corev1.Node {
 }
 
 type testNodeProvider struct {
-	NodeProvider
+	kri.NodeProvider
 	statusHandlers []func(*corev1.Node)
 }
 

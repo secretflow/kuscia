@@ -198,5 +198,5 @@ DomainDataGrant `spec` 的子字段详细介绍如下：
 - `author`：表示授权方节点 ID，用来标识这条授权是由哪个节点发起的。
 - `domainDataID`：表示这条授权是基于哪个 DomainData 生成的，DomainData Controller 不仅会将 DomainDataGrannt 拷贝给被授权节点，还会将 DomainData 也拷贝过去，因此需要保证 DomainData 是已经存在的。
 - `grantDomain`：表示被授权方节点 ID，请保证该 Domain 已经存在。
-- `signature`：表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。
+- `signature`：表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。该字段为预留字段，暂未开启，填入空字符串即可。
 - `description`：表示用户自定义的描述信息。

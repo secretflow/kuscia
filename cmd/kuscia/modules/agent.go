@@ -25,6 +25,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -66,6 +67,15 @@ func NewAgent(i *Dependencies) Module {
 	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
 	conf.Plugins = i.Agent.Plugins
+
+	// Todo: temporary solution for scql
+	if i.KusciaAPI != nil && i.KusciaAPI.Token != nil {
+		token, err := utils.ReadToken(*i.KusciaAPI.Token)
+		if err != nil {
+			nlog.Fatalf("Parse kuscia api token fail for scql: %v.", err)
+		}
+		conf.KusciaAPIToken = token
+	}
 
 	nlog.Debugf("Agent config is %+v", conf)
 

@@ -29,9 +29,8 @@ import (
 )
 
 func TestHandleAddedorDeletedInteropConfig(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
@@ -45,9 +44,8 @@ func TestHandleAddedorDeletedInteropConfig(t *testing.T) {
 }
 
 func TestHandleUpdatedInteropConfig(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
@@ -102,9 +100,8 @@ func TestRegisterInteropConfig(t *testing.T) {
 		}, nil
 	}
 
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
@@ -171,9 +168,8 @@ func TestRegisterInteropConfig(t *testing.T) {
 }
 
 func TestDeregisterInteropConfig(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
@@ -223,9 +219,8 @@ func TestDeregisterInteropConfig(t *testing.T) {
 }
 
 func TestGetInteropConfigInfo(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
@@ -271,9 +266,8 @@ func TestGetInteropConfigInfo(t *testing.T) {
 }
 
 func TestSetInteropConfigInfo(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}
@@ -306,9 +300,8 @@ func TestSetInteropConfigInfo(t *testing.T) {
 }
 
 func TestDeleteInteropConfigInfo(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	c := NewController(context.Background(), kubeFakeClient, kusciaFakeClient, nil)
+	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
 		t.Error("new controller failed")
 	}

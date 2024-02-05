@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/cache"
 
 	pkgcommon "github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -71,7 +72,7 @@ func (c *Controller) handleAddedOrDeletedKusciaTask(obj interface{}) {
 		return
 	}
 
-	if utilsres.SelfClusterAsInitiator(c.nsLister, task.Spec.Initiator, task.Labels) {
+	if utilsres.SelfClusterAsInitiator(c.nsLister, task.Spec.Initiator, task.Annotations) {
 		c.ktStatusSyncQueue.AddAfter(task.Name, taskStatusSyncInterval)
 	}
 
@@ -86,7 +87,13 @@ func (c *Controller) runTaskWorker(ctx context.Context) {
 
 // syncTaskHandler deals with one pvcKey off the queue.  It returns false when it's time to quit.
 func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error) {
-	rawKt, err := c.ktLister.Get(key)
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		nlog.Errorf("Failed to split task key %v, %v, skip processing it", key, err)
+		return nil
+	}
+
+	rawKt, err := c.ktLister.KusciaTasks(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			nlog.Infof("Kuscia task %v maybe deleted, skip to handle it", key)
@@ -121,7 +128,7 @@ func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error
 
 	task.Labels[pkgcommon.LabelTaskUnschedulable] = pkgcommon.False
 
-	_, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks().Update(ctx, task, metav1.UpdateOptions{})
+	_, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).Update(ctx, task, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update task %v, %v", task, err)
 	}
@@ -197,7 +204,7 @@ func (c *Controller) injectPartyTaskEnv(party *kusciaapisv1alpha1.PartyInfo, tas
 	if ownerRef == nil {
 		return errors.New("failed to get task owner")
 	}
-	kusciaJob, err := c.kjLister.Get(ownerRef.Name)
+	kusciaJob, err := c.kjLister.KusciaJobs(task.Namespace).Get(ownerRef.Name)
 	if err != nil {
 		return fmt.Errorf("failed to get KusciaJob %v", ownerRef.Name)
 	}
@@ -561,7 +568,13 @@ func (c *Controller) processTaskStatusSyncNextWorkItem(ctx context.Context) bool
 		return false
 	}
 
-	rawKt, err := c.ktLister.Get(key.(string))
+	namespace, name, err := cache.SplitMetaNamespaceKey(key.(string))
+	if err != nil {
+		nlog.Errorf("Failed to split job key %v, %v, skip processing it", key, err)
+		return false
+	}
+
+	rawKt, err := c.ktLister.KusciaTasks(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			nlog.Infof("Kuscia task %v maybe deleted, ignore it", key)
@@ -644,7 +657,7 @@ func (c *Controller) processTaskStatusSyncNextWorkItem(ctx context.Context) bool
 			}
 
 			utilsres.MergeKusciaTaskPartyTaskStatus(kt, pts)
-			utilsres.UpdateKusciaTaskStatus(c.kusciaClient, rawKt, kt, statusUpdateRetries)
+			utilsres.UpdateKusciaTaskStatusWithRetry(c.kusciaClient, rawKt, kt, statusUpdateRetries)
 		}()
 	}
 

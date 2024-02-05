@@ -72,7 +72,8 @@ type TaskResourcePod struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
-const LabelTaskResource = GroupName + "/task-resource"
+const TaskResourceKey = GroupName + "/task-resource"
+const TaskResourceUID = GroupName + "/task-resource-uid"
 
 // TaskResourcePhase is a label for the condition of a task resource at the current time.
 type TaskResourcePhase string

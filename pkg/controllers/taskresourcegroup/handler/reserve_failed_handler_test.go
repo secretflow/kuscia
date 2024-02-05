@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
@@ -51,13 +52,19 @@ func TestNewReserveFailedHandler(t *testing.T) {
 
 func TestReserveFailedHandlerHandle(t *testing.T) {
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
+	tr1.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg1",
+	}
 	tr1.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg1",
+		common.LabelTaskResourceGroupUID: "111",
 	}
 
 	tr2 := util.MakeTaskResource("ns1", "tr2", 2, nil)
+	tr2.Annotations = map[string]string{
+		common.TaskResourceGroupAnnotationKey: "trg2",
+	}
 	tr2.Labels = map[string]string{
-		common.LabelTaskResourceGroup: "trg2",
+		common.LabelTaskResourceGroupUID: "222",
 	}
 
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
@@ -88,6 +95,7 @@ func TestReserveFailedHandlerHandle(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg1",
+					UID:  types.UID("111"),
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator: "ns1",
@@ -105,6 +113,7 @@ func TestReserveFailedHandlerHandle(t *testing.T) {
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg2",
+					UID:  types.UID("222"),
 				},
 				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
 					Initiator: "ns1",

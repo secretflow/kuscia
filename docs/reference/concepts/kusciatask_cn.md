@@ -21,6 +21,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaTask
 metadata:
   name: secretflow-task-psi
+  namespace: cross-domain
 spec:
   initiator: alice
   parties:
@@ -28,7 +29,7 @@ spec:
     domainID: alice
   - appImageRef: secretflow-image
     domainID: bob
-  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
 ```
 
 在该示例中:
@@ -55,7 +56,7 @@ kubectl apply -f secretflow-task-psi.yaml
 1. 运行以下命令查看 KusciaTask。
 
 ```shell
-kubectl get kt secretflow-task-psi
+kubectl get kt secretflow-task-psi -n cross-domain
 NAME                  STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
 secretflow-task-psi   7s          7s               7s                  Succeeded
 ```
@@ -70,7 +71,7 @@ secretflow-task-psi   7s          7s               7s                  Succeeded
 2. 运行以下命令查看 KusciaTask 详细的状态信息。
 
 ```shell
-kubectl get kt secretflow-task-psi -o jsonpath={.status} | jq
+kubectl get kt secretflow-task-psi -n cross-domain -o jsonpath={.status} | jq
 {
   "completionTime": "2023-08-21T07:43:34Z",
   "conditions": [
@@ -191,13 +192,13 @@ kubectl get kt secretflow-task-psi -o jsonpath={.status} | jq
 1. 运行以下命令清理 KusciaTask。
 
 ```shell
-kubectl delete kt secretflow-task-psi
+kubectl delete kt secretflow-task-psi -n cross-domain
 ```
 
 2. 检查 KusciaTask 是否已被清理。
 
 ```shell
-kubectl get kt secretflow-task-psi
+kubectl get kt secretflow-task-psi -n cross-domain
 Error from server (NotFound): kusciatasks.kuscia.secretflow "secretflow-task-psi" not found
 ```
 
@@ -210,6 +211,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaTask
 metadata:
   name: task-template
+  namespace: cross-domain
 spec:
   initiator: alice
   scheduleConfig:
@@ -217,7 +219,7 @@ spec:
     resourceReservedSeconds: 30
     lifecycleSeconds: 300
     retryIntervalSeconds: 15
-  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"preprocessing","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
   parties:
     - domainID: alice
       appImageRef: app-template
@@ -382,7 +384,7 @@ KusciaTask `spec` 的子字段详细介绍如下：
 - `parties`：表示所有任务参与方的信息。
   - `parties[].domainID`：表示任务参与方的节点标识。
   - `parties[].appImageRef`：表示任务参与方所依赖的应用镜像名称。
-  - `parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ， kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
+  - `parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
   - `parties[].minReservedPods`：表示任务参与方最小已预留资源的 Pod 数量，默认为空，表示任务参与方所有的 Pod 数量。Kuscia 调度器对每个任务参与方使用 Co-Scheduling 调度策略，
      仅当任务参与方下已预留资源的 Pod 数量大于等于该值时，设置该参与方为已完成预留资源。
   - `parties[].template`：表示任务参与方应用的模版信息。若配置该模版，则使用模版中配置的信息替换从 `parties[].appImageRef` 获取的模版信息。该字段下所包含的子字段含义，请参考概念 [AppImage](./appimage_cn.md)。
@@ -403,7 +405,7 @@ KusciaTask `status` 的子字段详细介绍如下：
 - `message`: 表示 KusciaTask 处于该阶段的详细描述信息，用于对 `reason` 的补充。
 - `conditions`: 表示 KusciaTask 处于该阶段时所包含的一些状况。
   - `conditions[].type`: 表示状况的名称。
-  - `conditions[].status`: 表示该状况是否适用，可能的取值有 `True` 、 `False` 或 `Unknown` 。
+  - `conditions[].status`: 表示该状况是否适用，可能的取值有 `True` 、`False` 或 `Unknown` 。
   - `conditions[].reason`: 表示该状况的原因。
   - `conditions[].message`: 表示该状况的详细信息。
   - `conditions[].lastTransitionTime`: 表示转换为该状态的时间戳。

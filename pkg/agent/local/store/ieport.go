@@ -61,6 +61,9 @@ func (s *store) RegisterImage(image, manifestFile string) error {
 		now := time.Now()
 		manifest.Created = &now
 	}
+	if manifest.ID == "" {
+		manifest.ID = image
+	}
 
 	imageName, err := kii.NewImageName(image)
 	if err != nil {

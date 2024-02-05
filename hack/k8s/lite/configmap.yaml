@@ -31,7 +31,7 @@ data:
 
     # 当 runtime 为 runk 时配置
     runk:
-      # 任务调度到指定的机构 k8s namespace上
+      # 任务调度到指定的机构 k8s namespace 下
       namespace: lite-alice
       # 机构 k8s 集群的 pod dns 配置, 用于解析节点的应用域名, dns 的地址为 pod service 地址, 此处以 "1.1.1.1" 为例
       dnsServers:

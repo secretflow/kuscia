@@ -17,7 +17,7 @@
 
 set -e
 
-usage="$(basename "$0") DOMAIN_ID [ROLE] [INTERCONN_PROTOCOL]"
+usage="$(basename "$0") DOMAIN_ID [ROLE] [INTERCONN_PROTOCOL] [MASTER_DOMAIN_ID]"
 
 DOMAIN_ID=$1
 if [[ ${DOMAIN_ID} == "" ]]; then
@@ -32,6 +32,11 @@ fi
 
 INTERCONN_PROTOCOL=$3
 [ "${INTERCONN_PROTOCOL}" != "" ] || INTERCONN_PROTOCOL="kuscia"
+
+MASTER_DOMAIN_ID=$4
+if [[ $MASTER_DOMAIN_ID == "" ]]; then
+  MASTER_DOMAIN_ID=$DOMAIN_ID
+fi
 
 SELF_DOMAIN_ID=${NAMESPACE}
 if [[ $SELF_DOMAIN_ID == "" ]]; then
@@ -52,6 +57,7 @@ metadata:
 spec:
   cert: ${CERT}
   role: ${ROLE}
+  master: ${MASTER_DOMAIN_ID}
   authCenter:
     authenticationType: Token
     tokenGenMethod: RSA-GEN

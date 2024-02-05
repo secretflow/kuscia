@@ -18,10 +18,12 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/certissuance"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/configrender"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/envimport"
+	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/imagesecurity"
 )
 
 func init() {
 	configrender.Register()
 	certissuance.Register()
 	envimport.Register()
+	imagesecurity.Register()
 }

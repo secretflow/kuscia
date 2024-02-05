@@ -111,13 +111,13 @@ function try_p2p_token_rolling() {
 }
 
 function test_p2p_token_rolling_all() {
-  try_p2p_token_rolling "root-kuscia-autonomy-alice" "root-kuscia-autonomy-bob" "alice-bob" 2
-  try_p2p_token_rolling "root-kuscia-autonomy-bob" "root-kuscia-autonomy-alice" "bob-alice" 2
+  try_p2p_token_rolling ${AUTONOMY_ALICE_CONTAINER} ${AUTONOMY_BOB_CONTAINER} "alice-bob" 2
+  try_p2p_token_rolling ${AUTONOMY_BOB_CONTAINER} ${AUTONOMY_ALICE_CONTAINER} "bob-alice" 2
 }
 
 function test_p2p_token_rolling_party_offline() {
-  local alice_ctr="root-kuscia-autonomy-alice"
-  local bob_ctr="root-kuscia-autonomy-bob"
+  local alice_ctr=${AUTONOMY_ALICE_CONTAINER}
+  local bob_ctr=${AUTONOMY_BOB_CONTAINER}
   local cdr_name="alice-bob"
   local dr_name="alice-bob"
   local src_domain="alice"
@@ -144,8 +144,8 @@ function test_p2p_token_rolling_party_offline() {
 }
 
 function test_p2p_token_rolling_auth_removal() {
-  local alice_ctr="root-kuscia-autonomy-alice"
-  local bob_ctr="root-kuscia-autonomy-bob"
+  local alice_ctr=${AUTONOMY_ALICE_CONTAINER}
+  local bob_ctr=${AUTONOMY_BOB_CONTAINER}
   local cdr_name="alice-bob"
   local dr_name="alice-bob"
   local dst_domain="bob"
@@ -177,8 +177,8 @@ function test_p2p_token_rolling_auth_removal() {
 }
 
 function test_p2p_token_rolling_cert_misconfig() {
-  local alice_ctr="root-kuscia-autonomy-alice"
-  local bob_ctr="root-kuscia-autonomy-bob"
+  local alice_ctr=${AUTONOMY_ALICE_CONTAINER}
+  local bob_ctr=${AUTONOMY_BOB_CONTAINER}
   local dr_name="alice-bob"
   local cdr_name="alice-bob"
   local dst_domain="bob"

@@ -75,6 +75,14 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
 	}
+
+	// check domain exists
+	if errorCode, errMsg := CheckDomainExists(s.conf.KusciaClient, request.GetDomainId()); utils.ResponseCodeSuccess != errorCode {
+		return &kusciaapi.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
+		}
+	}
+
 	// check whether domainData  is existed
 	if request.DomaindataId != "" {
 		// do k8s validate
@@ -99,15 +107,21 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	// normalization request
 	s.normalizationCreateRequest(request)
 	// build kuscia domain
-	Labels := make(map[string]string)
-	Labels[common.LabelDomainDataType] = request.Type
-	Labels[common.LabelDomainDataVendor] = request.Vendor
-	Labels[common.LabelInterConnProtocolType] = "kuscia"
-	Labels[common.LabelInitiator] = request.DomainId
+	Labels := map[string]string{
+		common.LabelDomainDataType:        request.Type,
+		common.LabelDomainDataVendor:      request.Vendor,
+		common.LabelInterConnProtocolType: "kuscia",
+	}
+
+	annotations := map[string]string{
+		common.InitiatorAnnotationKey: request.DomainId,
+	}
+
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   request.DomaindataId,
-			Labels: Labels,
+			Name:        request.DomaindataId,
+			Labels:      Labels,
+			Annotations: annotations,
 		},
 		Spec: v1alpha1.DomainDataSpec{
 			RelativeURI: request.RelativeUri,

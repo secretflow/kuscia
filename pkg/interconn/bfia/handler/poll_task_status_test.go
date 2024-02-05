@@ -85,7 +85,7 @@ func Test_pollTaskStatusHandler_Handle(t *testing.T) {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	ktInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 
-	kt := makeKusciaTask("task-1", map[string]string{common.LabelJobID: "job-1"}, "")
+	kt := makeKusciaTask("task-1", map[string]string{common.JobIDAnnotationKey: "job-1"}, nil, "")
 	ktInformer.Informer().GetStore().Add(kt)
 
 	rm := &ResourcesManager{

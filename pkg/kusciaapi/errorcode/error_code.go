@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dupl
 package errorcode
 
 import (
@@ -32,6 +33,7 @@ const (
 	ErrQueryJobStatus = 11203
 	ErrDeleteJob      = 11204
 	ErrStopJob        = 11205
+	ErrApproveJob     = 11206
 
 	ErrCreateDomain      = 11300
 	ErrQueryDomain       = 11301

@@ -31,7 +31,7 @@ import (
 // KusciaJobsGetter has a method to return a KusciaJobInterface.
 // A group's client should implement this interface.
 type KusciaJobsGetter interface {
-	KusciaJobs() KusciaJobInterface
+	KusciaJobs(namespace string) KusciaJobInterface
 }
 
 // KusciaJobInterface has methods to work with KusciaJob resources.
@@ -51,12 +51,14 @@ type KusciaJobInterface interface {
 // kusciaJobs implements KusciaJobInterface
 type kusciaJobs struct {
 	client rest.Interface
+	ns     string
 }
 
 // newKusciaJobs returns a KusciaJobs
-func newKusciaJobs(c *KusciaV1alpha1Client) *kusciaJobs {
+func newKusciaJobs(c *KusciaV1alpha1Client, namespace string) *kusciaJobs {
 	return &kusciaJobs{
 		client: c.RESTClient(),
+		ns:     namespace,
 	}
 }
 
@@ -64,6 +66,7 @@ func newKusciaJobs(c *KusciaV1alpha1Client) *kusciaJobs {
 func (c *kusciaJobs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.KusciaJob, err error) {
 	result = &v1alpha1.KusciaJob{}
 	err = c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -80,6 +83,7 @@ func (c *kusciaJobs) List(ctx context.Context, opts v1.ListOptions) (result *v1a
 	}
 	result = &v1alpha1.KusciaJobList{}
 	err = c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -96,6 +100,7 @@ func (c *kusciaJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Inte
 	}
 	opts.Watch = true
 	return c.client.Get().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -106,6 +111,7 @@ func (c *kusciaJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Inte
 func (c *kusciaJobs) Create(ctx context.Context, kusciaJob *v1alpha1.KusciaJob, opts v1.CreateOptions) (result *v1alpha1.KusciaJob, err error) {
 	result = &v1alpha1.KusciaJob{}
 	err = c.client.Post().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(kusciaJob).
@@ -118,6 +124,7 @@ func (c *kusciaJobs) Create(ctx context.Context, kusciaJob *v1alpha1.KusciaJob, 
 func (c *kusciaJobs) Update(ctx context.Context, kusciaJob *v1alpha1.KusciaJob, opts v1.UpdateOptions) (result *v1alpha1.KusciaJob, err error) {
 	result = &v1alpha1.KusciaJob{}
 	err = c.client.Put().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		Name(kusciaJob.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -132,6 +139,7 @@ func (c *kusciaJobs) Update(ctx context.Context, kusciaJob *v1alpha1.KusciaJob, 
 func (c *kusciaJobs) UpdateStatus(ctx context.Context, kusciaJob *v1alpha1.KusciaJob, opts v1.UpdateOptions) (result *v1alpha1.KusciaJob, err error) {
 	result = &v1alpha1.KusciaJob{}
 	err = c.client.Put().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		Name(kusciaJob.Name).
 		SubResource("status").
@@ -145,6 +153,7 @@ func (c *kusciaJobs) UpdateStatus(ctx context.Context, kusciaJob *v1alpha1.Kusci
 // Delete takes name of the kusciaJob and deletes it. Returns an error if one occurs.
 func (c *kusciaJobs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		Name(name).
 		Body(&opts).
@@ -159,6 +168,7 @@ func (c *kusciaJobs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -171,6 +181,7 @@ func (c *kusciaJobs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions
 func (c *kusciaJobs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.KusciaJob, err error) {
 	result = &v1alpha1.KusciaJob{}
 	err = c.client.Patch(pt).
+		Namespace(c.ns).
 		Resource("kusciajobs").
 		Name(name).
 		SubResource(subresources...).

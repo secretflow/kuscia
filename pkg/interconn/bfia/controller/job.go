@@ -23,10 +23,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/cache"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/interconn/bfia/adapter"
-	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
@@ -41,7 +43,7 @@ func (c *Controller) handleAddedOrDeletedKusciaJob(obj interface{}) {
 		return
 	}
 
-	if utilsres.SelfClusterAsInitiator(c.nsLister, kj.Spec.Initiator, kj.Labels) {
+	if utilsres.SelfClusterAsInitiator(c.nsLister, kj.Spec.Initiator, kj.Annotations) {
 		queue.EnqueueObjectWithKey(obj, c.kjQueue)
 	} else {
 		c.kjStatusSyncQueue.AddAfter(kj.Name, jobStatusSyncInterval)
@@ -89,7 +91,13 @@ func (c *Controller) processJobStatusSyncNextWorkItem(ctx context.Context) bool 
 		return false
 	}
 
-	rawKj, err := c.kjLister.Get(key.(string))
+	namespace, name, err := cache.SplitMetaNamespaceKey(key.(string))
+	if err != nil {
+		nlog.Errorf("Failed to split job key %v, %v, skip processing it", key, err)
+		return false
+	}
+
+	rawKj, err := c.kjLister.KusciaJobs(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			nlog.Infof("Kuscia job %v maybe deleted, ignore it", key)
@@ -112,7 +120,7 @@ func (c *Controller) processJobStatusSyncNextWorkItem(ctx context.Context) bool 
 		c.kjStatusSyncQueue.AddAfter(key, jobStatusSyncInterval)
 	}()
 
-	if rawKj.Spec.Stage != kusciaapisv1alpha1.JobStartStage {
+	if rawKj.Labels == nil || rawKj.Labels[common.LabelJobStage] != string(kusciaapisv1alpha1.JobStartStage) {
 		return true
 	}
 
@@ -163,7 +171,13 @@ func (c *Controller) processJobStatusSyncNextWorkItem(ctx context.Context) bool 
 // converge the two. It then updates the Status block of the resource
 // with the current status of the resource.
 func (c *Controller) syncJobHandler(ctx context.Context, key string) (err error) {
-	rawKj, err := c.kjLister.Get(key)
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		nlog.Errorf("Failed to split job key %v, %v, skip processing it", key, err)
+		return nil
+	}
+
+	rawKj, err := c.kjLister.KusciaJobs(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			nlog.Infof("Kuscia job %v maybe deleted, skip to handle it", key)
@@ -175,7 +189,7 @@ func (c *Controller) syncJobHandler(ctx context.Context, key string) (err error)
 		return err
 	}
 
-	if !utilsres.SelfClusterAsInitiator(c.nsLister, rawKj.Spec.Initiator, rawKj.Labels) {
+	if !utilsres.SelfClusterAsInitiator(c.nsLister, rawKj.Spec.Initiator, rawKj.Annotations) {
 		return nil
 	}
 
@@ -199,13 +213,13 @@ func (c *Controller) syncJobHandler(ctx context.Context, key string) (err error)
 		return nil
 	}
 
-	nlog.Infof("Handle kuscia job %v with stage %v", kj.Name, kj.Spec.Stage)
-	switch kj.Spec.Stage {
-	case "", kusciaapisv1alpha1.JobCreateStage:
+	nlog.Infof("Handle kuscia job %v with stage %v", kj.Name, kj.Labels[common.LabelJobStage])
+	switch kj.Labels[common.LabelJobStage] {
+	case "", string(kusciaapisv1alpha1.JobCreateStage):
 		c.handleJobCreateStage(ctx, kj)
-	case kusciaapisv1alpha1.JobStopStage:
+	case string(kusciaapisv1alpha1.JobStopStage):
 		c.handleJobStopStage(ctx, kj)
-	case kusciaapisv1alpha1.JobStartStage:
+	case string(kusciaapisv1alpha1.JobStartStage):
 		c.handleJobStartStage(ctx, kj)
 	}
 
@@ -375,7 +389,7 @@ func (c *Controller) stopPartyTasks(ctx context.Context, kj *kusciaapisv1alpha1.
 		wg.Wait()
 		for taskID, domainStopInfo := range taskDomainStopMap {
 			needUpdate := false
-			task, getErr := c.ktLister.Get(taskID)
+			task, getErr := c.ktLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
 			copyTask := task.DeepCopy()
 			if getErr == nil {
 				for domainID, message := range domainStopInfo {
@@ -500,7 +514,7 @@ func (c *Controller) updateJobStatus(curJob *kusciaapisv1alpha1.KusciaJob, taskS
 	jobName := curJob.Name
 	for i, curJob := 0, curJob; ; i++ {
 		nlog.Infof("Start updating kuscia job %q status", jobName)
-		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs().UpdateStatus(context.Background(), curJob, metav1.UpdateOptions{}); err == nil {
+		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(curJob.Namespace).UpdateStatus(context.Background(), curJob, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia job %q status", jobName)
 			return nil
 		}
@@ -510,7 +524,7 @@ func (c *Controller) updateJobStatus(curJob *kusciaapisv1alpha1.KusciaJob, taskS
 			break
 		}
 
-		curJob, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs().Get(context.Background(), jobName, metav1.GetOptions{})
+		curJob, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(curJob.Namespace).Get(context.Background(), jobName, metav1.GetOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to get the newest kuscia job %q, %v", jobName, err)
 		}
@@ -541,7 +555,7 @@ func setKusciaJobTaskStatus(kj *kusciaapisv1alpha1.KusciaJob, status map[string]
 
 	taskPhase := make(map[string]kusciaapisv1alpha1.KusciaTaskPhase)
 	for taskID, icTaskPhase := range status {
-		taskPhase[taskID] = common.InterConnTaskPhaseToKusciaTaskPhase[icTaskPhase]
+		taskPhase[taskID] = bfiacommon.InterConnTaskPhaseToKusciaTaskPhase[icTaskPhase]
 	}
 
 	return utilsres.MergeKusciaJobTaskStatus(kj, taskPhase)

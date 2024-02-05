@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package kuscia
 
 import (
@@ -19,10 +20,12 @@ import (
 	"fmt"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	ikcommon "github.com/secretflow/kuscia/pkg/interconn/kuscia/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
@@ -31,24 +34,24 @@ import (
 // runTaskResourceWorker is a long-running function that will continually call the
 // processNextWorkItem function in order to read and process a message on the work queue.
 func (c *Controller) runTaskResourceWorker(ctx context.Context) {
-	for queue.HandleQueueItem(context.Background(), taskResourceQueueName, c.taskResourceQueue, c.syncTaskResourceHandler, maxRetries) {
+	for queue.HandleQueueItem(ctx, taskResourceQueueName, c.taskResourceQueue, c.syncTaskResourceHandler, maxRetries) {
 	}
 }
 
-// handleAddedTaskResource is used to handle added task resource.
+// handleAddedTaskResource is used to handle added taskResource.
 func (c *Controller) handleAddedTaskResource(obj interface{}) {
 	queue.EnqueueObjectWithKey(obj, c.taskResourceQueue)
 }
 
-// handleUpdatedTaskResource is used to handle updated task resource.
+// handleUpdatedTaskResource is used to handle updated taskResource.
 func (c *Controller) handleUpdatedTaskResource(oldObj, newObj interface{}) {
-	oldTr, ok := oldObj.(*kusciaapisv1alpha1.TaskResource)
+	oldTr, ok := oldObj.(*v1alpha1.TaskResource)
 	if !ok {
 		nlog.Errorf("Object %#v is not a TaskResource", oldObj)
 		return
 	}
 
-	newTr, ok := newObj.(*kusciaapisv1alpha1.TaskResource)
+	newTr, ok := newObj.(*v1alpha1.TaskResource)
 	if !ok {
 		nlog.Errorf("Object %#v is not a TaskResource", newObj)
 		return
@@ -61,75 +64,285 @@ func (c *Controller) handleUpdatedTaskResource(oldObj, newObj interface{}) {
 	queue.EnqueueObjectWithKey(newTr, c.taskResourceQueue)
 }
 
-// handleDeletedTaskResource is used to handle deleted task resource.
-func (c *Controller) handleDeletedTaskResource(obj interface{}) {
-	tr, ok := obj.(*kusciaapisv1alpha1.TaskResource)
-	if !ok {
-		return
-	}
-
-	host := tr.Labels[common.LabelInitiator]
-	hra := c.hostResourceManager.GetHostResourceAccessor(host, tr.Namespace)
-	if hra == nil {
-		nlog.Warnf("Host resource accessor for task resource %v is empty of host/member %v/%v, skip this event...", tr.Name, host, tr.Namespace)
-		return
-	}
-
-	hra.EnqueueTaskResource(fmt.Sprintf("%s/%s", tr.Namespace, tr.Name))
-}
-
-// Todo: Abstract into common interface
 // syncTaskResourceHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the resource
 // with the current status of the resource.
-func (c *Controller) syncTaskResourceHandler(ctx context.Context, key string) (err error) {
+func (c *Controller) syncTaskResourceHandler(ctx context.Context, key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
-		nlog.Errorf("Split pod key %v failed, %v", key, err.Error())
+		nlog.Errorf("Failed to split taskResource key %v, %v, skip processing it", key, err)
 		return nil
 	}
 
-	mTr, err := c.taskResourceLister.TaskResources(namespace).Get(name)
+	originalTr, err := c.taskResourceLister.TaskResources(namespace).Get(name)
 	if err != nil {
+		// taskResource was deleted in cluster
 		if k8serrors.IsNotFound(err) {
-			nlog.Warnf("Can't get task resource %v under member cluster, skip this event...", key)
+			nlog.Infof("Can't get taskResource %v, maybe it was deleted, skip processing it", key)
 			return nil
 		}
 		return err
 	}
 
-	host := mTr.Labels[common.LabelInitiator]
-	hra := c.hostResourceManager.GetHostResourceAccessor(host, namespace)
-	if hra == nil {
-		nlog.Warnf("Host resource accessor for task resource %v is empty of host/member %v/%v, skip this event", key, host, namespace)
+	selfIsInitiator, err := ikcommon.SelfClusterIsInitiator(c.domainLister, originalTr)
+	if err != nil {
+		return err
+	}
+
+	tr := originalTr.DeepCopy()
+	if selfIsInitiator {
+		return c.processTaskSummaryAsInitiator(ctx, tr)
+	}
+
+	return c.processTaskSummaryAsPartner(ctx, tr)
+}
+
+func (c *Controller) processTaskSummaryAsInitiator(ctx context.Context, taskResource *v1alpha1.TaskResource) error {
+	return c.updateTaskSummaryByTaskResource(ctx, taskResource)
+}
+
+func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskResource *v1alpha1.TaskResource) error {
+	taskID := ikcommon.GetObjectAnnotation(taskResource, common.TaskIDAnnotationKey)
+	if taskID == "" {
+		nlog.Warnf("Skip updating taskSummary status based on taskResource %v since task id is empty", ikcommon.GetObjectNamespaceName(taskResource))
 		return nil
+	}
+
+	domain, err := c.domainLister.Get(taskResource.Namespace)
+	if err != nil {
+		return fmt.Errorf("failed to updating taskSummary resource status based on taskResource %v since getting master domain fail, %v", ikcommon.GetObjectNamespaceName(taskResource), err)
+	}
+
+	// only update partner taskResource status
+	if domain.Spec.Role != v1alpha1.Partner {
+		return nil
+	}
+
+	masterDomain := domain.Spec.MasterDomain
+	if masterDomain == "" {
+		masterDomain = domain.Name
+	}
+
+	originalTaskSummary, err := c.taskSummaryLister.KusciaTaskSummaries(masterDomain).Get(taskID)
+	if err != nil {
+		return fmt.Errorf("failed to updating taskSummary status based on taskResource %v since getting taskSummary fail, %v", ikcommon.GetObjectNamespaceName(taskResource), err)
+	}
+
+	updated := false
+	taskSummary := originalTaskSummary.DeepCopy()
+	statusInTaskSummary := getTaskSummaryResourceStatus(taskResource.Namespace, taskResource.Spec.Role, taskSummary)
+	switch taskResource.Status.Phase {
+	case v1alpha1.TaskResourcePhaseReserving:
+		if statusInTaskSummary == nil {
+			updated = true
+			statusInTaskSummary = &v1alpha1.TaskSummaryResourceStatus{}
+			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+			if taskSummary.Status.ResourceStatus == nil {
+				taskSummary.Status.ResourceStatus = make(map[string][]*v1alpha1.TaskSummaryResourceStatus)
+			}
+			taskSummary.Status.ResourceStatus[taskResource.Namespace] = append(taskSummary.Status.ResourceStatus[taskResource.Namespace], statusInTaskSummary)
+			break
+		}
+
+		if !utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.HostTaskResourceVersion) {
+			return nil
+		}
+
+		if statusInTaskSummary.Phase == taskResource.Status.Phase &&
+			statusInTaskSummary.HostTaskResourceName == taskResource.Name {
+			return nil
+		}
+
+		if statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserving ||
+			statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseFailed {
+			updated = true
+			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+		}
+	case v1alpha1.TaskResourcePhaseFailed,
+		v1alpha1.TaskResourcePhaseSchedulable:
+		if statusInTaskSummary == nil {
+			updated = true
+			statusInTaskSummary = &v1alpha1.TaskSummaryResourceStatus{}
+			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+			if taskSummary.Status.ResourceStatus == nil {
+				taskSummary.Status.ResourceStatus = make(map[string][]*v1alpha1.TaskSummaryResourceStatus)
+			}
+			taskSummary.Status.ResourceStatus[taskResource.Namespace] = append(taskSummary.Status.ResourceStatus[taskResource.Namespace], statusInTaskSummary)
+			break
+		}
+
+		if taskResource.Status.Phase == statusInTaskSummary.Phase ||
+			!utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.HostTaskResourceVersion) {
+			return nil
+		}
+
+		if taskResource.Status.Phase != statusInTaskSummary.Phase {
+			updated = true
+			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+		}
+	default:
+	}
+
+	if updated {
+		_, err = c.kusciaClient.KusciaV1alpha1().KusciaTaskSummaries(taskSummary.Namespace).Update(ctx, taskSummary, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update taskSummary %v status based on taskResource %v, %v",
+				ikcommon.GetObjectNamespaceName(taskSummary), ikcommon.GetObjectNamespaceName(taskResource), err)
+		}
+	}
+
+	return nil
+}
+
+func setTaskSummaryResourceStatus(taskResource *v1alpha1.TaskResource, status *v1alpha1.TaskSummaryResourceStatus) {
+	status.Role = taskResource.Spec.Role
+	status.HostTaskResourceName = taskResource.Name
+	status.HostTaskResourceVersion = taskResource.ResourceVersion
+	status.Phase = taskResource.Status.Phase
+	status.LastTransitionTime = taskResource.Status.LastTransitionTime
+
+	if status.Phase == v1alpha1.TaskResourcePhaseSchedulable {
+		status.CompletionTime = taskResource.Status.CompletionTime
+	}
+}
+
+func (c *Controller) processTaskSummaryAsPartner(ctx context.Context, taskResource *v1alpha1.TaskResource) error {
+	return c.updateHostTaskSummaryByTaskResource(ctx, taskResource)
+}
+
+func (c *Controller) updateHostTaskSummaryByTaskResource(ctx context.Context, taskResource *v1alpha1.TaskResource) error {
+	taskID := ikcommon.GetObjectAnnotation(taskResource, common.TaskIDAnnotationKey)
+	if taskID == "" {
+		nlog.Warnf("Skip updating taskSummary status based on taskResource %v since label %v is empty",
+			ikcommon.GetObjectNamespaceName(taskResource), common.TaskIDAnnotationKey)
+		return nil
+	}
+
+	initiator := ikcommon.GetObjectAnnotation(taskResource, common.InitiatorAnnotationKey)
+	if initiator == "" {
+		nlog.Errorf("Skip updating taskSummary status based on taskResource %v since annotation %v is empty",
+			ikcommon.GetObjectNamespaceName(taskResource), common.InitiatorAnnotationKey)
+		return nil
+	}
+
+	masterDomainID := ikcommon.GetObjectAnnotation(taskResource, common.KusciaPartyMasterDomainAnnotationKey)
+	if masterDomainID == "" {
+		nlog.Errorf("Skip updating taskSummary status based on taskResource %v since annotation %v is empty",
+			ikcommon.GetObjectNamespaceName(taskResource), common.KusciaPartyMasterDomainAnnotationKey)
+		return nil
+	}
+
+	if c.hostResourceManager == nil {
+		return fmt.Errorf("host resource manager for taskResource %v is empty of host/member %v/%v, retry",
+			ikcommon.GetObjectNamespaceName(taskResource), initiator, masterDomainID)
+	}
+
+	hostMasterDomainID, err := utilsres.GetMasterDomain(c.domainLister, initiator)
+	if err != nil {
+		nlog.Errorf("Failed to get initiator %v master domain id, %v, skip processing it", initiator, err)
+		return nil
+	}
+	hra := c.hostResourceManager.GetHostResourceAccessor(hostMasterDomainID, masterDomainID)
+	if hra == nil {
+		return fmt.Errorf("host resource accessor for taskResource %v is empty of host/member %v/%v, retry",
+			ikcommon.GetObjectNamespaceName(taskResource), initiator, masterDomainID)
 	}
 
 	if !hra.HasSynced() {
-		return fmt.Errorf("host %v resource accessor has not synced, retry", host)
+		return fmt.Errorf("host %v resource accessor has not synced, retry", initiator)
 	}
 
-	hTr, err := hra.HostTaskResourceLister().TaskResources(namespace).Get(name)
+	hTaskSummary, err := hra.HostTaskSummaryLister().KusciaTaskSummaries(masterDomainID).Get(taskID)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			nlog.Warnf("Task resource %v may be deleted under host %v cluster, skip this event...", key, host)
+			hTaskSummary, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaTaskSummaries(masterDomainID).Get(ctx, taskID, metav1.GetOptions{})
+		}
+		if err != nil {
+			nlog.Errorf("Failed to get taskSummary %v under host %v cluster, %v", taskID, initiator, err)
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+	}
+
+	updated := false
+	taskSummary := hTaskSummary.DeepCopy()
+	statusInTaskSummary := getTaskSummaryResourceStatus(taskResource.Namespace, taskResource.Spec.Role, taskSummary)
+	switch taskResource.Status.Phase {
+	case v1alpha1.TaskResourcePhaseReserving,
+		v1alpha1.TaskResourcePhaseReserved,
+		v1alpha1.TaskResourcePhaseFailed:
+		if statusInTaskSummary == nil {
+			updated = true
+			statusInTaskSummary = &v1alpha1.TaskSummaryResourceStatus{}
+			setHostTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+			if taskSummary.Status.ResourceStatus == nil {
+				taskSummary.Status.ResourceStatus = make(map[string][]*v1alpha1.TaskSummaryResourceStatus)
+			}
+			taskSummary.Status.ResourceStatus[taskResource.Namespace] = append(taskSummary.Status.ResourceStatus[taskResource.Namespace], statusInTaskSummary)
+			break
+		}
+
+		if !utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.MemberTaskResourceVersion) {
 			return nil
 		}
-		nlog.Errorf("Get task resource %v under host %v cluster failed, %v", key, host, err.Error())
-		return err
+
+		if statusInTaskSummary.Phase == taskResource.Status.Phase &&
+			statusInTaskSummary.MemberTaskResourceName == taskResource.Name {
+			return nil
+		}
+
+		if statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserving ||
+			statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserved {
+			updated = true
+			setHostTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+		}
+	default:
 	}
 
-	rvInLabel := mTr.Labels[common.LabelResourceVersionUnderHostCluster]
-	if utilsres.CompareResourceVersion(hTr.ResourceVersion, rvInLabel) {
-		return fmt.Errorf("task resource %v label resource version %v in member cluster is less than the value %v in host cluster, retry", key, rvInLabel, hTr.ResourceVersion)
-	}
-
-	hExtractedTrStatus := utilsres.ExtractTaskResourceStatus(hTr.DeepCopy())
-	mExtractedTrStatus := utilsres.ExtractTaskResourceStatus(mTr.DeepCopy())
-
-	nlog.Infof("Patch member task resource %v/%v status to host %v cluster", hExtractedTrStatus.Namespace, hExtractedTrStatus.Name, host)
-	if err = utilsres.PatchTaskResource(ctx, hra.HostKusciaClient(), hExtractedTrStatus, mExtractedTrStatus); err != nil {
-		return fmt.Errorf("patch member task resource  %v status to host cluster failed, %v", key, err.Error())
+	if updated {
+		_, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaTaskSummaries(taskSummary.Namespace).Update(ctx, taskSummary, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to update host taskSummary %v status based on taskResource %v, %v",
+				ikcommon.GetObjectNamespaceName(taskSummary), ikcommon.GetObjectNamespaceName(taskResource), err)
+		}
 	}
 	return nil
+}
+
+func setHostTaskSummaryResourceStatus(taskResource *v1alpha1.TaskResource, status *v1alpha1.TaskSummaryResourceStatus) {
+	status.Role = taskResource.Spec.Role
+	status.MemberTaskResourceName = taskResource.Name
+	status.MemberTaskResourceVersion = taskResource.ResourceVersion
+	status.Phase = taskResource.Status.Phase
+	status.StartTime = taskResource.Status.StartTime
+	status.LastTransitionTime = taskResource.Status.LastTransitionTime
+}
+
+func getTaskSummaryResourceStatus(domainID, role string, taskSummary *v1alpha1.KusciaTaskSummary) *v1alpha1.TaskSummaryResourceStatus {
+	if len(taskSummary.Status.ResourceStatus) == 0 {
+		return nil
+	}
+
+	statuses, exist := taskSummary.Status.ResourceStatus[domainID]
+	if !exist {
+		return nil
+	}
+
+	for index, status := range statuses {
+		if status.Role == role {
+			return statuses[index]
+		}
+	}
+
+	return nil
+}
+
+func buildTaskResourceStatus(taskResource *v1alpha1.TaskResource) *v1alpha1.TaskResourceStatus {
+	return &v1alpha1.TaskResourceStatus{
+		Phase:              taskResource.Status.Phase,
+		LastTransitionTime: taskResource.Status.LastTransitionTime,
+		StartTime:          taskResource.Status.StartTime,
+	}
 }

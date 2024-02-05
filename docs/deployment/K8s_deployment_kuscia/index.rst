@@ -1,4 +1,4 @@
-K8s 集群部署 kuscia
+K8s 集群部署 Kuscia
 ================
 
 .. toctree::

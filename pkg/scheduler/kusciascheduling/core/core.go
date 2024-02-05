@@ -139,8 +139,8 @@ func (trMgr *TaskResourceManager) PreFilter(ctx context.Context, pod *corev1.Pod
 		return fmt.Errorf("skip schedule partner namespace %v pod", pod.Namespace)
 	}
 
-	trName, tr, labelExist := trMgr.GetTaskResource(pod)
-	if !labelExist {
+	trName, tr, exist := trMgr.GetTaskResource(pod)
+	if !exist {
 		return nil
 	}
 
@@ -157,9 +157,13 @@ func (trMgr *TaskResourceManager) PreFilter(ctx context.Context, pod *corev1.Pod
 			tr.Namespace, trName, tr.Status.Phase, trMgr.buildSiblingStatusInfo(tr))
 	}
 
-	trLabel, _ := GetTaskResourceLabel(pod)
+	trUID, _ := GetTaskResourceUID(pod)
+	if trUID == "" {
+		return fmt.Errorf("failed to get task resource %v/%v uid in pod labels", tr.Namespace, tr.Name)
+	}
+
 	pods, err := trMgr.podLister.Pods(pod.Namespace).List(
-		labels.SelectorFromSet(labels.Set{kusciaapisv1alpha1.LabelTaskResource: trLabel}),
+		labels.SelectorFromSet(labels.Set{kusciaapisv1alpha1.TaskResourceUID: trUID}),
 	)
 
 	if err != nil {
@@ -211,7 +215,6 @@ func (trMgr *TaskResourceManager) Reserve(ctx context.Context, pod *corev1.Pod) 
 		trMgr.taskResourceInfos.Store(getTaskResourceInfoName(tr), trInfos)
 		return
 	}
-
 	trMgr.taskResourceInfos.Store(getTaskResourceInfoName(tr), []taskResourceInfo{trInfo})
 }
 
@@ -253,14 +256,16 @@ func (trMgr *TaskResourceManager) Unreserve(ctx context.Context, tr *kusciaapisv
 	go func() {
 		nlog.Debugf("Patch task resource %v/%v to status phase to failed", tr.Namespace, tr.Name)
 		err = wait.PollImmediate(retryInterval, patchTimeout, patchFn)
-		nlog.Errorf("Patch task resource failed, %v", err)
+		if err != nil {
+			nlog.Errorf("Failed to patch task resource status to failed, %v", err)
+		}
 	}()
 }
 
 // Permit permits a pod to run, if the minReservedPods match, it would send a signal to chan.
 func (trMgr *TaskResourceManager) Permit(ctx context.Context, pod *corev1.Pod) Status {
-	_, tr, labelExist := trMgr.GetTaskResource(pod)
-	if !labelExist {
+	_, tr, exist := trMgr.GetTaskResource(pod)
+	if !exist {
 		return TaskResourceNotSpecified
 	}
 
@@ -279,8 +284,8 @@ func (trMgr *TaskResourceManager) Permit(ctx context.Context, pod *corev1.Pod) S
 
 // PreBind is used to pre-check.
 func (trMgr *TaskResourceManager) PreBind(ctx context.Context, pod *corev1.Pod) (framework.Code, error) {
-	trName, tr, labelExist := trMgr.GetTaskResource(pod)
-	if !labelExist {
+	trName, tr, exist := trMgr.GetTaskResource(pod)
+	if !exist {
 		return framework.Success, nil
 	}
 
@@ -301,7 +306,7 @@ func (trMgr *TaskResourceManager) PreBind(ctx context.Context, pod *corev1.Pod) 
 		return framework.Success, nil
 	}
 
-	nlog.Errorf("Can't schedule the domain %v pod %v because task resource %v status phase isn't schedulable, %v",
+	nlog.Warnf("Can't schedule the domain %v pod %v because task resource %v status phase isn't schedulable, %v",
 		pod.Namespace, pod.Name, tr.Name, err)
 	return framework.Unschedulable, err
 }
@@ -372,18 +377,18 @@ func (trMgr *TaskResourceManager) isSchedulable(waitingTime time.Duration, tr *k
 			return false, nil
 		}
 
-		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseReserved {
-			nlog.Infof("Domain %v pod %v has already reserved resources, waiting it's partner to reserve resources for pods",
-				latestTr.Namespace, pod.Name)
+		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseSchedulable {
+			schedulable = true
+			return true, nil
 		}
 
 		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseFailed {
 			return false, fmt.Errorf("%v", trMgr.buildSiblingStatusInfo(latestTr))
 		}
 
-		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseSchedulable {
-			schedulable = true
-			return true, nil
+		if latestTr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseReserved {
+			nlog.Infof("Domain %v pod %v has already reserved resources, waiting it's partner to reserve resources for pods",
+				latestTr.Namespace, pod.Name)
 		}
 
 		return false, nil
@@ -405,12 +410,12 @@ func (trMgr *TaskResourceManager) buildSiblingStatusInfo(tr *kusciaapisv1alpha1.
 		return ""
 	}
 
-	trgName := tr.Labels[common.LabelTaskResourceGroup]
-	if trgName == "" {
+	trgUID := tr.Labels[common.LabelTaskResourceGroupUID]
+	if trgUID == "" {
 		return ""
 	}
 
-	selector := labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroup: trgName})
+	selector := labels.SelectorFromSet(labels.Set{common.LabelTaskResourceGroupUID: trgUID})
 	trs, err := trMgr.trLister.List(selector)
 	if err != nil {
 		return ""
@@ -457,13 +462,14 @@ func (trMgr *TaskResourceManager) getPatchTaskResourceInfos(name string) (*patch
 // ActivateSiblings stashes the pods belonging to the same TaskResource of the given pod
 // in the given state, with a reserved key "kubernetes.io/pods-to-activate".
 func (trMgr *TaskResourceManager) ActivateSiblings(pod *corev1.Pod, state *framework.CycleState) {
-	trName, _ := GetTaskResourceLabel(pod)
-	if trName == "" {
+	trUID, _ := GetTaskResourceUID(pod)
+	if trUID == "" {
 		return
 	}
 
+	trName, _ := GetTaskResourceName(pod)
 	pods, err := trMgr.podLister.List(
-		labels.SelectorFromSet(labels.Set{kusciaapisv1alpha1.LabelTaskResource: trName}),
+		labels.SelectorFromSet(labels.Set{kusciaapisv1alpha1.TaskResourceUID: trUID}),
 	)
 
 	if err != nil {
@@ -501,9 +507,9 @@ func (trMgr *TaskResourceManager) DeletePermittedTaskResource(tr *kusciaapisv1al
 // CalculateAssignedPods returns the number of pods that has been assigned nodes: assumed or bound.
 func (trMgr *TaskResourceManager) CalculateAssignedPods(tr *kusciaapisv1alpha1.TaskResource, pod *corev1.Pod) int {
 	snapshotReservedCount, trInfos := trMgr.getSnapshotReservedPodsCount(tr, pod)
-	trLabel, _ := GetTaskResourceLabel(pod)
+	trUID, _ := GetTaskResourceUID(pod)
 	pods, err := trMgr.podLister.Pods(pod.Namespace).List(
-		labels.SelectorFromSet(labels.Set{kusciaapisv1alpha1.LabelTaskResource: trLabel}),
+		labels.SelectorFromSet(labels.Set{kusciaapisv1alpha1.TaskResourceUID: trUID}),
 	)
 	if err != nil {
 		return snapshotReservedCount
@@ -554,7 +560,9 @@ func (trMgr *TaskResourceManager) getSnapshotReservedPodsCount(tr *kusciaapisv1a
 				continue
 			}
 
-			if podInfo.Pod.Labels[kusciaapisv1alpha1.LabelTaskResource] == tr.Name && podInfo.Pod.Spec.NodeName != "" {
+			if podInfo.Pod.Annotations != nil &&
+				podInfo.Pod.Annotations[kusciaapisv1alpha1.TaskResourceKey] == tr.Name &&
+				podInfo.Pod.Spec.NodeName != "" {
 				count++
 			}
 		}
@@ -589,7 +597,7 @@ func getScheduledPodsCount(trInfos []taskResourceInfo, pods []*corev1.Pod) int {
 
 // GetTaskResource returns the task resource that a Pod belongs to in cache.
 func (trMgr *TaskResourceManager) GetTaskResource(pod *corev1.Pod) (string, *kusciaapisv1alpha1.TaskResource, bool) {
-	trName, exist := GetTaskResourceLabel(pod)
+	trName, exist := GetTaskResourceName(pod)
 	if trName == "" {
 		return trName, nil, exist
 	}
@@ -602,9 +610,15 @@ func (trMgr *TaskResourceManager) GetTaskResource(pod *corev1.Pod) (string, *kus
 	return trName, tr, exist
 }
 
-// GetTaskResourceLabel get task resource from pod annotations.
-func GetTaskResourceLabel(pod *corev1.Pod) (string, bool) {
-	value, exist := pod.Labels[kusciaapisv1alpha1.LabelTaskResource]
+// GetTaskResourceName get task resource name from pod annotations.
+func GetTaskResourceName(pod *corev1.Pod) (string, bool) {
+	value, exist := pod.Annotations[kusciaapisv1alpha1.TaskResourceKey]
+	return value, exist
+}
+
+// GetTaskResourceUID get task resource uid from pod labels.
+func GetTaskResourceUID(pod *corev1.Pod) (string, bool) {
+	value, exist := pod.Labels[kusciaapisv1alpha1.TaskResourceUID]
 	return value, exist
 }
 

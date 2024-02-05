@@ -29,9 +29,8 @@ type KusciaTaskLister interface {
 	// List lists all KusciaTasks in the indexer.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.KusciaTask, err error)
-	// Get retrieves the KusciaTask from the index for a given name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.KusciaTask, error)
+	// KusciaTasks returns an object that can list and get KusciaTasks.
+	KusciaTasks(namespace string) KusciaTaskNamespaceLister
 	KusciaTaskListerExpansion
 }
 
@@ -53,9 +52,41 @@ func (s *kusciaTaskLister) List(selector labels.Selector) (ret []*v1alpha1.Kusci
 	return ret, err
 }
 
-// Get retrieves the KusciaTask from the index for a given name.
-func (s *kusciaTaskLister) Get(name string) (*v1alpha1.KusciaTask, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
+// KusciaTasks returns an object that can list and get KusciaTasks.
+func (s *kusciaTaskLister) KusciaTasks(namespace string) KusciaTaskNamespaceLister {
+	return kusciaTaskNamespaceLister{indexer: s.indexer, namespace: namespace}
+}
+
+// KusciaTaskNamespaceLister helps list and get KusciaTasks.
+// All objects returned here must be treated as read-only.
+type KusciaTaskNamespaceLister interface {
+	// List lists all KusciaTasks in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
+	List(selector labels.Selector) (ret []*v1alpha1.KusciaTask, err error)
+	// Get retrieves the KusciaTask from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*v1alpha1.KusciaTask, error)
+	KusciaTaskNamespaceListerExpansion
+}
+
+// kusciaTaskNamespaceLister implements the KusciaTaskNamespaceLister
+// interface.
+type kusciaTaskNamespaceLister struct {
+	indexer   cache.Indexer
+	namespace string
+}
+
+// List lists all KusciaTasks in the indexer for a given namespace.
+func (s kusciaTaskNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.KusciaTask, err error) {
+	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
+		ret = append(ret, m.(*v1alpha1.KusciaTask))
+	})
+	return ret, err
+}
+
+// Get retrieves the KusciaTask from the indexer for a given namespace and name.
+func (s kusciaTaskNamespaceLister) Get(name string) (*v1alpha1.KusciaTask, error) {
+	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
 	}

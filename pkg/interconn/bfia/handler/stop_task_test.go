@@ -79,14 +79,14 @@ func Test_stopTaskHandler_GetType(t *testing.T) {
 }
 
 func Test_stopTaskHandler_Handle(t *testing.T) {
-	kt1 := makeKusciaTask("task-1", nil, kusciaapisv1alpha1.TaskSucceeded)
-	kt2 := makeKusciaTask("task-2", nil, kusciaapisv1alpha1.TaskRunning)
+	kt1 := makeKusciaTask("task-1", nil, nil, kusciaapisv1alpha1.TaskSucceeded)
+	kt2 := makeKusciaTask("task-2", nil, nil, kusciaapisv1alpha1.TaskRunning)
 
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kt1, kt2)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	ktInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 
-	kt3 := makeKusciaTask("task-3", nil, kusciaapisv1alpha1.TaskRunning)
+	kt3 := makeKusciaTask("task-3", nil, nil, kusciaapisv1alpha1.TaskRunning)
 	ktInformer.Informer().GetStore().Add(kt1)
 	ktInformer.Informer().GetStore().Add(kt2)
 	ktInformer.Informer().GetStore().Add(kt3)

@@ -35,6 +35,7 @@ func TestFinishedHandler_Handle(t *testing.T) {
 	testKusciaTask := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "abc",
+			UID:  "111",
 		},
 		Status: kusciaapisv1alpha1.KusciaTaskStatus{Phase: kusciaapisv1alpha1.TaskSucceeded},
 	}
@@ -44,7 +45,7 @@ func TestFinishedHandler_Handle(t *testing.T) {
 			Namespace: "ns-a",
 			Name:      "pod-01",
 			Labels: map[string]string{
-				common.LabelTaskID: "abc",
+				common.LabelTaskUID: "111",
 			},
 		},
 		Status: v1.PodStatus{Phase: v1.PodSucceeded},
@@ -62,7 +63,7 @@ func TestFinishedHandler_Handle(t *testing.T) {
 			Namespace: "ns-a",
 			Name:      "cm-01",
 			Labels: map[string]string{
-				common.LabelTaskID: "abc",
+				common.LabelTaskUID: "111",
 			},
 		},
 	}

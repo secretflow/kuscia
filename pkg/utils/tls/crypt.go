@@ -16,6 +16,7 @@ package tls
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -407,4 +408,15 @@ func WriteX509CertToFile(cert *x509.Certificate, filename string) error {
 		Type:  "CERTIFICATE",
 		Bytes: cert.Raw,
 	})
+}
+
+func SignWithRSA(key *rsa.PrivateKey, data string) (string, error) {
+	h := sha256.New()
+	h.Write([]byte(data))
+	digest := h.Sum(nil)
+	sigBytes, err := rsa.SignPKCS1v15(rand.Reader, key, crypto.SHA256, digest)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(sigBytes), nil
 }

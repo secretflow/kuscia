@@ -79,10 +79,10 @@ func Run(ctx context.Context, configFile string) error {
 	}
 	cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
 
+	modules.RunKusciaAPI(runCtx, cancel, conf)
 	modules.RunAgent(runCtx, cancel, conf)
 	modules.RunConfManager(runCtx, cancel, conf)
 	modules.RunDataMesh(runCtx, cancel, conf)
-	modules.RunKusciaAPI(runCtx, cancel, conf)
 	modules.RunNodeExporter(runCtx, cancel, conf)
 	modules.RunSsExporter(runCtx, cancel, conf)
 	modules.RunMetricExporter(runCtx, cancel, conf)

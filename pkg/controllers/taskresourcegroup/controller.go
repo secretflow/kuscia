@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// nolint:dulp
 package taskresourcegroup
 
 import (
@@ -184,13 +185,20 @@ func (c *Controller) matchLabels(obj metav1.Object) bool {
 		return false
 	}
 
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		return false
+	}
+
 	switch obj.(type) {
 	case *corev1.Pod:
-		if labels[kusciaapisv1alpha1.LabelTaskResource] != "" {
+		if annotations[kusciaapisv1alpha1.TaskResourceKey] != "" &&
+			labels[kusciaapisv1alpha1.TaskResourceUID] != "" {
 			return true
 		}
 	case *kusciaapisv1alpha1.TaskResource:
-		if labels[common.LabelTaskResourceGroup] != "" {
+		if annotations[common.TaskResourceGroupAnnotationKey] != "" &&
+			labels[common.LabelTaskResourceGroupUID] != "" {
 			return true
 		}
 	default:
@@ -262,7 +270,7 @@ func (c *Controller) handleAddedOrDeletedTaskResource(obj interface{}) {
 		}
 	}
 
-	c.trgQueue.Add(tr.Labels[common.LabelTaskResourceGroup])
+	c.trgQueue.Add(tr.Annotations[common.TaskResourceGroupAnnotationKey])
 }
 
 // handleUpdatedTaskResource is used to handle updated task resource.
@@ -283,7 +291,7 @@ func (c *Controller) handleUpdatedTaskResource(oldObj, newObj interface{}) {
 		return
 	}
 
-	c.trgQueue.Add(newTr.Labels[common.LabelTaskResourceGroup])
+	c.trgQueue.Add(newTr.Annotations[common.TaskResourceGroupAnnotationKey])
 }
 
 // handleAddedPod is used to handle added pod.
@@ -294,14 +302,14 @@ func (c *Controller) handleAddedPod(obj interface{}) {
 		return
 	}
 
-	trName := pod.Labels[kusciaapisv1alpha1.LabelTaskResource]
+	trName := pod.Annotations[kusciaapisv1alpha1.TaskResourceKey]
 	tr, err := c.trLister.TaskResources(pod.Namespace).Get(trName)
 	if err != nil {
 		nlog.Warnf("Get task resource %v failed, %v", trName, err)
 		return
 	}
 
-	trgName := tr.Labels[common.LabelTaskResourceGroup]
+	trgName := tr.Annotations[common.TaskResourceGroupAnnotationKey]
 	if trgName != "" {
 		c.trgQueue.Add(trgName)
 	}
@@ -391,6 +399,10 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 		phase = kusciaapisv1alpha1.TaskResourceGroupPhasePending
 	}
 
+	if c.skipProcessTrg(trg, phase) {
+		return nil
+	}
+
 	needUpdate, err := c.handlerFactory.GetTaskResourceGroupPhaseHandler(phase).Handle(trg)
 	if err != nil {
 		if c.trgQueue.NumRequeues(key) < maxRetries {
@@ -415,10 +427,23 @@ func failTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) {
 	trg.Status.CompletionTime = &now
 }
 
+func (c *Controller) skipProcessTrg(trg *kusciaapisv1alpha1.TaskResourceGroup, phase kusciaapisv1alpha1.TaskResourceGroupPhase) bool {
+	if phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserving &&
+		!utilsres.SelfClusterAsInitiator(c.namespaceLister, trg.Spec.Initiator, trg.Annotations) {
+		return true
+	}
+	return false
+}
+
 // needHandleExpiredTrg is used to check if trg is expired, if expired, patching the task resource group status phase to failed.
 func (c *Controller) needHandleExpiredTrg(trg *kusciaapisv1alpha1.TaskResourceGroup) bool {
 	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserved ||
 		trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseFailed {
+		return false
+	}
+
+	if !utilsres.SelfClusterAsInitiator(c.namespaceLister, trg.Spec.Initiator, trg.Annotations) &&
+		trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserving {
 		return false
 	}
 

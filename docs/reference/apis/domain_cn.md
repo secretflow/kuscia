@@ -33,12 +33,64 @@
 | role        | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                  |
 | cert        | string                                       | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                       |
 | auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点到中心的授权模式                                                                                                                                    |
+| master_domain_id | string                                  | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
 
 #### 响应（CreateDomainResponse）
 
 | 字段     | 类型                             | 选填 | 描述   |
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+# --cert 是请求服务端进行双向认证使用的证书
+# body 中的 cert 是目标节点的证书，默认为目标节点容器内：/home/kuscia/var/certs/domain.crt 需要转换为 base64 编码
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "bob",
+  "role": "partner",
+  "cert": "base64 of bob domain.crt",
+  "auth_center": {
+    "authentication_type": "Token",
+    "token_gen_method": "UID-RSA-GEN"
+  }
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
+
+请求响应异常结果：假设`authentication_type`传入值为不受支持的枚举值
+
+```json
+{
+  "status": {
+    "code": 11300,
+    "message": "Domain.kuscia.secretflow \"bob\" is invalid: spec.authCenter.authenticationType: Unsupported value: \"token\": supported values: \"Token\", \"MTLS\", \"None\"",
+    "details": []
+  }
+}
+```
+
 
 {#update-domain}
 
@@ -56,12 +108,63 @@
 | domain_id | string                                       | 必填 | 节点 ID                                                        |
 | role      | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
 | cert      | string                                       | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+|master_domain_id             | string                                      | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
 
 #### 响应（UpdateDomainResponse）
 
 | 字段     | 类型                             | 选填 | 描述   |
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+# --cert 是请求服务端进行双向认证使用的证书
+# body 中的 cert 是目标节点的证书，默认为目标节点容器内：/home/kuscia/var/certs/domain.crt 需要转换为 base64 编码
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domain/update' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "bob",
+  "role": "partner",
+  "cert": "base64 of bob domain.crt",
+  "auth_center": {
+    "authentication_type": "Token",
+    "token_gen_method": "RSA-GEN"
+  }
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
+
+请求响应异常结果：假设修改的`domainId`为 `update-bob` 且不存在
+
+```json
+{
+  "status": {
+    "code": 11305,
+    "message": "domains.kuscia.secretflow \"update-bob\" not found",
+    "details": []
+  }
+}
+```
 
 {#delete-domain}
 
@@ -83,6 +186,48 @@
 | 字段     | 类型                             | 选填 | 描述   |
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "bob"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
+
+请求响应异常结果：假设删除的节点为`delete-bob`
+
+```json
+{
+  "status": {
+    "code": 11305,
+    "message": "domains.kuscia.secretflow \"delete-bob\" not found",
+    "details": []
+  }
+}
+```
 
 {#query-domain}
 
@@ -112,6 +257,68 @@
 | data.auth_center           | [AuthCenter](#auth-center)                  | 可选 | 节点到中心的授权模式                                                   |
 | data.node_statuses         | [NodeStatus](#node-status)[]                | 必填 | 物理节点状态                                                       |
 | data.deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 必填 | 部署令牌状态                                                       |
+|master_domain_id             | string                                      | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "bob"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domain_id": "bob",
+    "role": "partner",
+    "cert": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS... base64 encoded str",
+    "node_statuses": [],
+    "deploy_token_statuses": [
+      {
+        "token": "axzdQrZsCqbcPzCjAxCbSzTAZHWTpL6s",
+        "state": "unused",
+        "last_transition_time": "2006-01-02T15:04:05Z"
+      }
+    ],
+    "annotations": {},
+    "auth_center": {
+      "authentication_type": "Token",
+      "token_gen_method": "UID-RSA-GEN"
+    }
+  }
+}
+```
+
+请求响应异常结果：假设请求的`domain_id`为`query-bob`且不存在
+
+```json
+{
+  "status": {
+    "code": 11305,
+    "message": "domains.kuscia.secretflow \"query-bob\" not found",
+    "details": []
+  },
+  "data": null
+}
+```
 
 {#batch-query-domain}
 
@@ -135,6 +342,63 @@
 | status       | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 | data         | BatchQueryDomainResponseData   | 必填 |      |
 | data.domains | [Domain](#domain-entity)[]     | 必填 | 节点列表 |
+
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_ids": [
+    "bob"
+  ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domains": [
+      {
+        "domain_id": "bob",
+        "role": "partner",
+        "cert": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0... base64 encoded str",
+        "node_statuses": []
+      }
+    ]
+  }
+}
+```
+
+请求响应异常结果：假设请求的`domain_ids`包含不存在的 DomainId `batchQuery-bob`
+
+```json
+{
+  "status": {
+    "code": 11305,
+    "message": "domains.kuscia.secretflow \"batchQuery-bob\" not found",
+    "details": []
+  },
+  "data": null
+}
+```
+
 
 ## 公共
 

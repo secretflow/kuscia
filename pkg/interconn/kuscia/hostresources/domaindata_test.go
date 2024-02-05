@@ -12,60 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
 package hostresources
 
 import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/informers"
-	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
-	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 )
 
-func TestHandleAddedOrDeletedDomainData(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
-	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
-	opt := &hostResourcesControllerOptions{
-		host:               "ns1",
-		member:             "ns2",
-		memberKubeClient:   kubeFakeClient,
-		memberKusciaClient: kusciaFakeClient,
-	}
-
-	c, err := newHostResourcesController(opt)
-	if err != nil {
-		t.Error("new controller failed")
-	}
-
+func makeMockDomainData(namespace, name string) *kusciaapisv1alpha1.DomainData {
 	dd := &kusciaapisv1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "ns1",
-			Name:      "dd",
+			Namespace:   namespace,
+			Name:        name,
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
 		},
 	}
-
-	c.handleAddedOrDeletedDomainData(dd)
-	if c.domainDataQueue.Len() != 1 {
-		t.Error("domaindata queue length should be 1")
-	}
+	return dd
 }
 
 func TestHandleUpdatedDomainData(t *testing.T) {
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
-	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	opt := &hostResourcesControllerOptions{
-		host:               "ns1",
-		member:             "ns2",
-		memberKubeClient:   kubeFakeClient,
-		memberKusciaClient: kusciaFakeClient,
+		host:   "alice",
+		member: "bob",
 	}
 
 	c, err := newHostResourcesController(opt)
@@ -73,21 +50,10 @@ func TestHandleUpdatedDomainData(t *testing.T) {
 		t.Error("new controller failed")
 	}
 
-	dd1 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       "ns1",
-			Name:            "dd1",
-			ResourceVersion: "1",
-		},
-	}
-
-	dd2 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       "ns1",
-			Name:            "dd2",
-			ResourceVersion: "2",
-		},
-	}
+	dd1 := makeMockDomainData("bob", "dd-1")
+	dd1.ResourceVersion = "1"
+	dd2 := makeMockDomainData("bob", "dd-2")
+	dd2.ResourceVersion = "2"
 
 	tests := []struct {
 		name   string
@@ -102,13 +68,13 @@ func TestHandleUpdatedDomainData(t *testing.T) {
 			want:   0,
 		},
 		{
-			name:   "domaindata is same",
+			name:   "domain data is same",
 			oldObj: dd1,
 			newObj: dd1,
 			want:   0,
 		},
 		{
-			name:   "domaindata is updated",
+			name:   "domain data is updated",
 			oldObj: dd1,
 			newObj: dd2,
 			want:   1,
@@ -118,149 +84,125 @@ func TestHandleUpdatedDomainData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c.handleUpdatedDomainData(tt.oldObj, tt.newObj)
-			if c.domainDataQueue.Len() != tt.want {
-				t.Errorf("get %v, want %v", c.domainDataQueue.Len(), tt.want)
-			}
+			assert.Equal(t, tt.want, c.domainDataQueue.Len())
 		})
 	}
 }
 
-func TestSyncDomainDataHandler(t *testing.T) {
+func TestHandleDeletedDomainData(t *testing.T) {
+	opt := &hostResourcesControllerOptions{
+		host:   "alice",
+		member: "bob",
+	}
+
+	c, err := newHostResourcesController(opt)
+	if err != nil {
+		t.Error("new controller failed")
+	}
+
+	// resource type is not domain data, queue length should be equal to 0
+	c.handleDeletedDomainData("dd-1")
+	assert.Equal(t, 0, c.domainDataQueue.Len())
+
+	// party domain ids is empty, queue length should be equal to 0
+	dd := makeMockDomainData("bob", "dd-1")
+	c.handleDeletedDomainData(dd)
+	assert.Equal(t, 0, c.domainDataQueue.Len())
+
+	// enqueue deleted domain data, queue length should be equal to 1
+	dd = makeMockDomainData("bob", "dd-1")
+	dd.Annotations[common.InterConnKusciaPartyAnnotationKey] = "bob"
+	c.handleDeletedDomainData(dd)
+	assert.Equal(t, 1, c.domainDataQueue.Len())
+}
+
+func TestDeleteDomainData(t *testing.T) {
 	ctx := context.Background()
-	dd1 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       "ns1",
-			Name:            "dd1",
-			ResourceVersion: "1",
-			Labels: map[string]string{
-				common.LabelInitiator: "ns2",
-			},
-		},
-	}
-
-	dd2 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       "ns1",
-			Name:            "dd2",
-			ResourceVersion: "1",
-			Labels: map[string]string{
-				common.LabelInitiator: "ns2",
-			},
-		},
-	}
-
-	dd3 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       "ns1",
-			Name:            "dd3",
-			ResourceVersion: "10",
-			Labels: map[string]string{
-				common.LabelInitiator: "ns2",
-			},
-		},
-	}
-
-	hostKubeFakeClient := clientsetfake.NewSimpleClientset()
-	hostKusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(dd1, dd2, dd3)
-	GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
-		return &kubeconfig.KubeClients{
-			KubeClient:   hostKubeFakeClient,
-			KusciaClient: hostKusciaFakeClient,
-		}, nil
-	}
-
-	mDomainData2 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "ns1",
-			Name:      "dd2",
-			Labels: map[string]string{
-				common.LabelInitiator:                       "ns2",
-				common.LabelResourceVersionUnderHostCluster: "10",
-			},
-		},
-	}
-
-	mDomainData3 := &kusciaapisv1alpha1.DomainData{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "ns1",
-			Name:      "dd3",
-			Labels: map[string]string{
-				common.LabelInitiator:                       "ns2",
-				common.LabelResourceVersionUnderHostCluster: "1",
-			},
-		},
-	}
-
-	kubeFakeClient := clientsetfake.NewSimpleClientset()
-	kubeInformerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
-	podInformer := kubeInformerFactory.Core().V1().Pods()
-	svcInformer := kubeInformerFactory.Core().V1().Services()
-	cmInformer := kubeInformerFactory.Core().V1().ConfigMaps()
-
-	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(mDomainData3)
+	kusciaFakeClient := fake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
-	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
-	domainDataInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
-	domainDataInformer.Informer().GetStore().Add(mDomainData2)
-	domainDataInformer.Informer().GetStore().Add(mDomainData3)
-
-	opt := &Options{
-		MemberKubeClient:       kubeFakeClient,
-		MemberKusciaClient:     kusciaFakeClient,
-		MemberPodLister:        podInformer.Lister(),
-		MemberServiceLister:    svcInformer.Lister(),
-		MemberConfigMapLister:  cmInformer.Lister(),
-		MemberTrLister:         trInformer.Lister(),
-		MemberDomainDataLister: domainDataInformer.Lister(),
-	}
-	hrm := NewHostResourcesManager(opt)
-	hrm.Register("ns2", "ns1")
-	accessor := hrm.GetHostResourceAccessor("ns2", "ns1")
-	c := accessor.(*hostResourcesController)
-
-	tests := []struct {
-		name    string
-		key     string
-		wantErr bool
-	}{
-		{
-			name:    "invalid domaindata key",
-			key:     "ns1/domaindata/test",
-			wantErr: false,
-		},
-		{
-			name:    "domaindata namespace is not equal to member",
-			key:     "ns3/dd1",
-			wantErr: false,
-		},
-		{
-			name:    "domaindata is not exist in host cluster",
-			key:     "ns1/dd11",
-			wantErr: false,
-		},
-		{
-			name:    "domaindata is not exist in member cluster",
-			key:     "ns1/dd1",
-			wantErr: false,
-		},
-		{
-			name:    "domaindata label resource version is greater than domaindata resource version in host cluster",
-			key:     "ns1/dd2",
-			wantErr: false,
-		},
-		{
-			name:    "domaindata label resource version is less than domaindata resource version in host cluster",
-			key:     "ns1/dd3",
-			wantErr: false,
-		},
+	ddInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
+	opt := &hostResourcesControllerOptions{
+		host:                   "alice",
+		member:                 "bob",
+		memberKusciaClient:     kusciaFakeClient,
+		memberDomainDataLister: ddInformer.Lister(),
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := c.syncDomainDataHandler(ctx, tt.key)
-			if got != nil != tt.wantErr {
-				t.Errorf("got: %v, want: %v", got != nil, tt.wantErr)
-			}
-		})
+	dd1 := makeMockDomainData("bob", "dd-1")
+	ddInformer.Informer().GetStore().Add(dd1)
+
+	c, err := newHostResourcesController(opt)
+	if err != nil {
+		t.Error("new controller failed")
 	}
+
+	// domain data doesn't exist, should return nil
+	got := c.deleteDomainData(ctx, "bob", "dd")
+	assert.Equal(t, nil, got)
+
+	// domain data labels is empty, should return nil
+	got = c.deleteDomainData(ctx, "bob", "dd-1")
+	assert.Equal(t, nil, got)
+
+	// delete domain data, should return nil
+	dd1.Annotations[common.InitiatorAnnotationKey] = "alice"
+	got = c.deleteDomainData(ctx, "bob", "dd-1")
+	assert.Equal(t, nil, got)
+}
+
+func TestCreateDomainData(t *testing.T) {
+	ctx := context.Background()
+	kusciaFakeClient := fake.NewSimpleClientset()
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	domainAlice := &kusciaapisv1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "alice",
+		},
+	}
+	domainInformer.Informer().GetStore().Add(domainAlice)
+	opt := &hostResourcesControllerOptions{
+		host:               "alice",
+		member:             "bob",
+		memberDomainLister: domainInformer.Lister(),
+		memberKusciaClient: kusciaFakeClient,
+	}
+
+	c, err := newHostResourcesController(opt)
+	if err != nil {
+		t.Error("new controller failed")
+	}
+
+	dd := makeMockDomainData("bob", "dd-1")
+	got := c.createDomainData(ctx, dd, "bob")
+	assert.Equal(t, nil, got)
+}
+
+func TestUpdateDomainData(t *testing.T) {
+	ctx := context.Background()
+	dd := makeMockDomainData("bob", "dd")
+	kusciaFakeClient := fake.NewSimpleClientset(dd)
+	opt := &hostResourcesControllerOptions{
+		host:               "alice",
+		member:             "bob",
+		memberKusciaClient: kusciaFakeClient,
+	}
+
+	c, err := newHostResourcesController(opt)
+	if err != nil {
+		t.Error("new controller failed")
+	}
+
+	// host domainData resource version is not greater than member, should return nil
+	memberdd := makeMockDomainData("bob", "dd")
+	hostdd := makeMockDomainData("bob", "dd")
+	got := c.updateDomainData(ctx, hostdd, memberdd)
+	assert.Equal(t, nil, got)
+
+	// update member domain data, should return nil
+	memberdd = makeMockDomainData("bob", "dd")
+	hostdd = makeMockDomainData("bob", "dd")
+	hostdd.ResourceVersion = "2"
+	got = c.updateDomainData(ctx, hostdd, memberdd)
+	assert.Equal(t, nil, got)
 }
