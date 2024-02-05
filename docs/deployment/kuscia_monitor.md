@@ -17,7 +17,7 @@ $ curl $(container_ip):9091/metrics
 ```
 
 ### 2.2 Prometheus/Grafana 监控 Kuscia
-可通过配置Prometheus/Grafana 监控 Kuscia。以 center 模式为例，获取机构某一方（如 root-kuscia-lite-alice）的指标数据，假设容器 IP 地址 container_ip = 172.18.0.3，可获取到容器暴露的指标。创建 prometheus.yml [示例文件](https://github.com/secretflow/kuscia/tree/main/scripts/templates/proemtheus.yml)，将配置文件中的机构容器的ip地址（172.18.0.3）和端口号填入（端口号默认为9091）。
+可通过配置Prometheus/Grafana 监控 Kuscia。以中心化模式为例，获取机构某一方（如 root-kuscia-lite-alice）的指标数据，假设容器 IP 地址 container_ip = 172.18.0.3，可获取到容器暴露的指标。创建 prometheus.yml [示例文件](https://github.com/secretflow/kuscia/tree/main/scripts/templates/proemtheus.yml)，将配置文件中的机构容器的ip地址（172.18.0.3）和端口号填入（端口号默认为9091）。
 启动 Promethus、Grafana 后，在 Grafana 创建指标数据源，可导入 [Grafana 模板文件](https://github.com/secretflow/kuscia/blob/main/scripts/templates/grafana-dashboard-machine.json)，注意将数据源{{Kuscia-datasource}}替换为创建数据源 ID（可通过可视化界面查看，也可通过 curl -s http://admin:admin@localhost:3000/api/datasources 查询）。
 
 ### 2.4 部署 Kuscia-monitor 快速体验监控
