@@ -22,7 +22,7 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 	// read the config
 	_, AggregationMetrics := parse.LoadMetricConfig()
 	clusterAddresses := parse.GetClusterAddress(domainID)
-	localDomainName := domainID //parse.GetLocalDomainName()
+	localDomainName := domainID
 	var MetricTypes = promexporter.NewMetricTypes()
 	var reg *prometheus.Registry
 	reg = promexporter.ProduceRegister()
@@ -41,7 +41,7 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 			// get cluster metrics
 			currentClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
 			if err != nil {
-				nlog.Error("Fail to get ss metric results", err)
+				nlog.Warn("Fail to get ss metric results", err)
 			}
 			// calculate the change values of cluster metrics
 			lastClusterMetricValues, currentClusterMetricValues = ssmetrics.GetMetricChange(lastClusterMetricValues, currentClusterMetricValues)

@@ -43,7 +43,6 @@ func GetClusterAddress(domainID string) map[string][]string {
 	if err != nil {
 		nlog.Error("Fail to parse the results of config_dump", err)
 	}
-	//domainName := GetLocalDomainName()
 	res := make(map[string]interface{})
 	err = jsoniter.Unmarshal(body, &res)
 	configs := jsoniter.Get(body, "configs")

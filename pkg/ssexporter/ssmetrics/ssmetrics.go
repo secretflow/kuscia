@@ -20,7 +20,7 @@ func GetStatisticFromSs() ([]map[string]string, error) {
 	output, err := cmd.CombinedOutput()
 	var tcpStatisticList []map[string]string
 	if err != nil {
-		nlog.Error("Cannot get metrics from ss.", err)
+		nlog.Warn("Cannot get metrics from ss.", err)
 		return tcpStatisticList, err
 	}
 	// parse statistics from ss
@@ -101,7 +101,7 @@ func Sum(metrics []map[string]string, key string) (float64, error) {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Error("fail to parse float", metric[key], "key:", key, "value:", val)
+			nlog.Warn("fail to parse float", metric[key], "key:", key, "value:", val)
 			return sum, err
 		}
 		sum += val
@@ -113,7 +113,7 @@ func Sum(metrics []map[string]string, key string) (float64, error) {
 func Avg(metrics []map[string]string, key string) (float64, error) {
 	sum, err := Sum(metrics, key)
 	if err != nil {
-		nlog.Error("Fail to get the sum of ss metrics", err)
+		nlog.Warn("Fail to get the sum of ss metrics", err)
 		return sum, err
 	}
 	return sum / float64(len(metrics)), nil
@@ -125,7 +125,7 @@ func Max(metrics []map[string]string, key string) (float64, error) {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Error("fail to parse float")
+			nlog.Warn("fail to parse float")
 			return max, err
 		}
 		if val > max {
@@ -141,7 +141,7 @@ func Min(metrics []map[string]string, key string) (float64, error) {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Error("fail to parse float")
+			nlog.Warn("fail to parse float")
 			return min, err
 		}
 		if val < min {
@@ -193,7 +193,7 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 				clusterResults[metricID], err = Min(networkResults, metric)
 			}
 			if err != nil {
-				nlog.Error("Fail to get clusterResults from aggregation functions", err)
+				nlog.Warn("Fail to get clusterResults from aggregation functions", err)
 				return clusterResults, err
 			}
 			if metric == "bytes_send" || metric == "bytes_received" {
@@ -210,13 +210,13 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 	ssResults := make(map[string]float64)
 	ssMetrics, err := GetStatisticFromSs()
 	if err != nil {
-		nlog.Error("Fail to get statistics from ss", err)
+		nlog.Warn("Fail to get statistics from ss", err)
 		return ssResults, err
 	}
 	// get the source/destination IP from domain names
 	hostName, err := os.Hostname()
 	if err != nil {
-		nlog.Error("Fail to get the hostname", err)
+		nlog.Warn("Fail to get the hostname", err)
 		return ssResults, err
 	}
 	sourceIP := parse.GetIPFromDomain(hostName)
