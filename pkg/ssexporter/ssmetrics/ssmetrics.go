@@ -14,16 +14,17 @@ import (
 )
 
 // GetStatisticFromSs get the statistics of network flows from ss
-func GetStatisticFromSs() []map[string]string {
+func GetStatisticFromSs() ([]map[string]string, error) {
 	// execute ss command
 	cmd := exec.Command("ss", "-tio4nO")
 	output, err := cmd.CombinedOutput()
+	var tcpStatisticList []map[string]string
 	if err != nil {
-		nlog.Error("Cannot get metrics from ss.", err)
+		nlog.Warn("Cannot get metrics from ss.", err)
+		return tcpStatisticList, err
 	}
 	// parse statistics from ss
 	lines := strings.Split(string(output), "\n")
-	var tcpStatisticList []map[string]string
 	ssMetrics := make(map[string]string)
 	for idx, line := range lines {
 		if idx < 1 {
@@ -64,7 +65,7 @@ func GetStatisticFromSs() []map[string]string {
 		}
 		tcpStatisticList = append(tcpStatisticList, ssMetrics)
 	}
-	return tcpStatisticList
+	return tcpStatisticList, nil
 }
 
 // Filter filter network flows according to given five-tuple rules
@@ -95,51 +96,59 @@ func Filter(ssMetrics []map[string]string, srcIP string, dstIP string, srcPort s
 }
 
 // Sum an aggregation function to sum up two network metrics
-func Sum(metrics []map[string]string, key string) float64 {
+func Sum(metrics []map[string]string, key string) (float64, error) {
 	sum := 0.0
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Error("fail to parse float", metric[key], "key:", key, "value:", val)
+			nlog.Warn("fail to parse float", metric[key], "key:", key, "value:", val)
+			return sum, err
 		}
 		sum += val
 	}
-	return sum
+	return sum, nil
 }
 
 // Avg an aggregation function to calculate the average of two network metrics
-func Avg(metrics []map[string]string, key string) float64 {
-	return Sum(metrics, key) / float64(len(metrics))
+func Avg(metrics []map[string]string, key string) (float64, error) {
+	sum, err := Sum(metrics, key)
+	if err != nil {
+		nlog.Warn("Fail to get the sum of ss metrics", err)
+		return sum, err
+	}
+	return sum / float64(len(metrics)), nil
 }
 
 // Max an aggregation function to calculate the maximum of two network metrics
-func Max(metrics []map[string]string, key string) float64 {
+func Max(metrics []map[string]string, key string) (float64, error) {
 	max := math.MaxFloat64 * (-1)
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Error("fail to parse float")
+			nlog.Warn("fail to parse float")
+			return max, err
 		}
 		if val > max {
 			max = val
 		}
 	}
-	return max
+	return max, nil
 }
 
 // Min an aggregation function to calculate the minimum of two network metrics
-func Min(metrics []map[string]string, key string) float64 {
+func Min(metrics []map[string]string, key string) (float64, error) {
 	min := math.MaxFloat64
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Error("fail to parse float")
+			nlog.Warn("fail to parse float")
+			return min, err
 		}
 		if val < min {
 			min = val
 		}
 	}
-	return min
+	return min, nil
 }
 
 // Rate an aggregation function to calculate the rate of a network metric between to metrics
@@ -156,54 +165,59 @@ func Alert(metric float64, threshold float64) bool {
 }
 
 // AggregateStatistics aggregate statistics using an aggregation function
-func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods uint) map[string]float64 {
+func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods uint) (map[string]float64, error) {
 	if len(networkResults) == 0 {
-		return clusterResults
+		return clusterResults, nil
 	}
 	for metric, aggFunc := range aggregationMetrics {
+		metricID := localDomainName + ";" + dstDomain + ";" + metric + ";" + aggFunc
 		if metric != "localAddr" && metric != "peerAddr" {
+			var err error
 			if aggFunc == "rate" {
 				if metric == "retran_rate" {
 					threshold := 0.0
-					clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Rate(Sum(networkResults, "retrans")-threshold, Sum(networkResults, "total_connections"))
+					retran_sum, err := Sum(networkResults, "retrans")
+					connect_sum, err := Sum(networkResults, "total_connections")
+					if err != nil {
+						return clusterResults, err
+					}
+					clusterResults[metricID] = Rate(retran_sum-threshold, connect_sum)
 				}
 			} else if aggFunc == "sum" {
-				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Sum(networkResults, metric)
+				clusterResults[metricID], err = Sum(networkResults, metric)
 			} else if aggFunc == "avg" {
-				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Avg(networkResults, metric)
+				clusterResults[metricID], err = Avg(networkResults, metric)
 			} else if aggFunc == "max" {
-				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Max(networkResults, metric)
+				clusterResults[metricID], err = Max(networkResults, metric)
 			} else if aggFunc == "min" {
-				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Min(networkResults, metric)
+				clusterResults[metricID], err = Min(networkResults, metric)
+			}
+			if err != nil {
+				nlog.Warn("Fail to get clusterResults from aggregation functions", err)
+				return clusterResults, err
 			}
 			if metric == "bytes_send" || metric == "bytes_received" {
-				clusterResults[localDomainName+"."+dstDomain+"."+metric+"."+aggFunc] = Rate(clusterResults[localDomainName+"."+dstDomain+"."+metric], float64(MonitorPeriods))
+				clusterResults[metricID] = Rate(clusterResults[metricID], float64(MonitorPeriods))
 			}
 		}
 	}
-	return clusterResults
-}
-
-// ConvertClusterMetrics convert cluster metrics for prometheus
-func ConvertClusterMetrics(ClusterMetrics []string, clusterAddresses map[string][]string) []string {
-	var clusterMetrics []string
-	for clusterName := range clusterAddresses {
-		for _, metric := range ClusterMetrics {
-			str := "cluster." + clusterName + "." + strings.ToLower(metric)
-			clusterMetrics = append(clusterMetrics, str)
-		}
-	}
-	return clusterMetrics
+	return clusterResults, nil
 }
 
 // GetSsMetricResults Get the results of ss statistics after filtering
-func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, AggregationMetrics map[string]string, MonitorPeriods uint) map[string]float64 {
+func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, AggregationMetrics map[string]string, MonitorPeriods uint) (map[string]float64, error) {
 	// get the statistics from SS
-	ssMetrics := GetStatisticFromSs()
+	ssResults := make(map[string]float64)
+	ssMetrics, err := GetStatisticFromSs()
+	if err != nil {
+		nlog.Warn("Fail to get statistics from ss", err)
+		return ssResults, err
+	}
 	// get the source/destination IP from domain names
 	hostName, err := os.Hostname()
 	if err != nil {
-		nlog.Error("Fail to get the hostname", err)
+		nlog.Warn("Fail to get the hostname", err)
+		return ssResults, err
 	}
 	sourceIP := parse.GetIPFromDomain(hostName)
 	destinationIP := make(map[string][]string)
@@ -213,7 +227,6 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 		}
 	}
 	// group metrics by the domain name
-	ssResults := make(map[string]float64)
 	for dstAddr := range destinationIP {
 		// get the connection name
 		endpointName := strings.Split(dstAddr, ":")[0]
@@ -224,10 +237,10 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 				networkResults = append(networkResults, networkResult...)
 			}
 		}
-		ssResults = AggregateStatistics(localDomainName, ssResults, networkResults, AggregationMetrics, endpointName, MonitorPeriods)
+		ssResults, err = AggregateStatistics(localDomainName, ssResults, networkResults, AggregationMetrics, endpointName, MonitorPeriods)
 	}
 
-	return ssResults
+	return ssResults, nil
 }
 
 // GetMetricChange get the change values of metrics

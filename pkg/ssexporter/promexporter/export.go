@@ -54,7 +54,7 @@ var summaries = make(map[string]prometheus.Summary)
 
 func produceMetric(reg *prometheus.Registry,
 	metricID string, metricType string) *prometheus.Registry {
-	splitedMetric := strings.Split(metricID, "__")
+	splitedMetric := strings.Split(metricID, ";")
 	labels := make(map[string]string)
 	labels["type"] = "ss"
 	labels["remote_domain"] = splitedMetric[len(splitedMetric)-3]
@@ -83,12 +83,7 @@ func formalize(metric string) string {
 	metric = strings.ToLower(metric)
 	return metric
 }
-func ProduceMetrics(
-	localDomainName string,
-	clusterAddresses map[string][]string,
-	netMetrics []string,
-	MetricTypes map[string]string,
-	aggregationMetrics map[string]string) *prometheus.Registry {
+func ProduceRegister() *prometheus.Registry {
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(
 		collectors.NewGoCollector(),
@@ -101,7 +96,7 @@ func UpdateMetrics(reg *prometheus.Registry,
 	clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
 		metricID := formalize(metric)
-		splitedMetric := strings.Split(metric, ".")
+		splitedMetric := strings.Split(metric, ";")
 		var metricTypeID string
 		metricTypeID = splitedMetric[len(splitedMetric)-2]
 		metricType, ok := MetricTypes[metricTypeID]

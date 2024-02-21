@@ -28,6 +28,7 @@ import (
 
 type ssExporterModule struct {
 	runMode            pkgcom.RunModeType
+	domainID           string
 	rootDir            string
 	metricUpdatePeriod uint
 	ssExportPort       string
@@ -36,6 +37,7 @@ type ssExporterModule struct {
 func NewSsExporter(i *Dependencies) Module {
 	return &ssExporterModule{
 		runMode:            i.RunMode,
+		domainID:           i.DomainID,
 		rootDir:            i.RootDir,
 		metricUpdatePeriod: i.MetricUpdatePeriod,
 		ssExportPort:       string(i.SsExportPort),
@@ -43,7 +45,7 @@ func NewSsExporter(i *Dependencies) Module {
 }
 
 func (exporter *ssExporterModule) Run(ctx context.Context) error {
-	ssexporter.SsExporter(ctx, exporter.runMode, exporter.metricUpdatePeriod, exporter.ssExportPort)
+	ssexporter.SsExporter(ctx, exporter.runMode, exporter.domainID, exporter.metricUpdatePeriod, exporter.ssExportPort)
 	return nil
 }
 
