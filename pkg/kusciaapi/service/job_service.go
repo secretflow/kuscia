@@ -23,13 +23,15 @@ import (
 	"reflect"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
@@ -85,17 +87,43 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
+
 	// convert createJobRequest to kuscia job
 	tasks := request.Tasks
 	kusciaTasks := make([]v1alpha1.KusciaTaskTemplate, len(tasks))
+
 	for i, task := range tasks {
 		// build kuscia task parties
 		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
+
 		for j, party := range task.Parties {
-			kusicaParties[j] = v1alpha1.Party{
-				DomainID: party.DomainId,
-				Role:     party.Role,
+			// build resources
+			var JobResource *kusciaapi.OverallResource
+			if party.GetResource() != nil {
+				JobResource = &(kusciaapi.OverallResource{
+					Cpu:    party.Resource.Cpu,
+					Memory: party.Resource.Memory,
+				})
+			} else {
+				JobResource = &(kusciaapi.OverallResource{})
 			}
+
+			var template *v1alpha1.PartyResourceTemplate
+			template = &v1alpha1.PartyResourceTemplate{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse((*JobResource).Cpu),
+						corev1.ResourceMemory: resource.MustParse((*JobResource).Memory),
+					},
+				},
+			}
+
+			kusicaParties[j] = v1alpha1.Party{
+				DomainID:        party.DomainId,
+				Role:            party.Role,
+				OverallResource: *template,
+			}
+
 		}
 		// build kuscia task
 		kusciaTask := v1alpha1.KusciaTaskTemplate{

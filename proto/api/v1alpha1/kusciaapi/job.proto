@@ -68,6 +68,13 @@ message Task {
 message Party {
   string domain_id = 1;
   string role = 2; // server or client
+  OverallResource resource = 3; // Resource configuration
+}
+
+message OverallResource {
+  // focus on the overall resources
+  string cpu = 1;
+  string memory = 2;
 }
 
 message DeleteJobRequest {
