@@ -105,7 +105,10 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 					Memory: party.Resource.Memory,
 				})
 			} else {
-				JobResource = &(kusciaapi.OverallResource{})
+				JobResource = &(kusciaapi.OverallResource{
+					Cpu:    "100m",
+					Memory: "200Mi",
+				})
 			}
 
 			var template *v1alpha1.PartyResourceTemplate
