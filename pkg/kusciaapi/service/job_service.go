@@ -25,7 +25,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -42,6 +41,7 @@ import (
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 )
 
 type IJobService interface {
@@ -94,37 +94,52 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 
 	for i, task := range tasks {
 		// build kuscia task parties
-		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
+		kusciaParties := make([]v1alpha1.Party, len(task.Parties))
 
 		for j, party := range task.Parties {
 			// build resources
-			var JobResource *kusciaapi.OverallResource
-			if party.GetResource() != nil {
+			// var JobResource kusciaapi.OverallResource = kusciaapi.OverallResource{}
+			overallCpu := ""
+			overallMemory := ""
+
+			if party.Resource != nil && party.Resource.Cpu != "" {
+				overallCpu = party.Resource.Cpu
+			}
+			if party.Resource != nil && party.Resource.Memory != "" {
+				overallMemory = party.Resource.Memory
+			}
+			/*
 				JobResource = &(kusciaapi.OverallResource{
 					Cpu:    party.Resource.Cpu,
 					Memory: party.Resource.Memory,
 				})
+			*/
+			var template *corev1.ResourceRequirements
+
+			if overallCpu == "" && overallMemory == "" {
+				template = nil
 			} else {
-				JobResource = &(kusciaapi.OverallResource{
-					Cpu:    "100m",
-					Memory: "200Mi",
-				})
+				limitResource := corev1.ResourceList{}
+				if overallCpu != "" {
+					q, err := k8sresource.ParseQuantity(overallCpu)
+					if err == nil {
+						limitResource[corev1.ResourceCPU] = q
+					}
+				}
+				if overallMemory != "" {
+					q, err := k8sresource.ParseQuantity(overallMemory)
+					if err == nil {
+						limitResource[corev1.ResourceMemory] = q
+					}
+				}
+				template = &corev1.ResourceRequirements{
+					Limits: limitResource,
+				}
 			}
-
-			var template *v1alpha1.PartyResourceTemplate
-			template = &v1alpha1.PartyResourceTemplate{
-				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse((*JobResource).Cpu),
-						corev1.ResourceMemory: resource.MustParse((*JobResource).Memory),
-					},
-				},
-			}
-
-			kusicaParties[j] = v1alpha1.Party{
+			kusciaParties[j] = v1alpha1.Party{
 				DomainID:        party.DomainId,
 				Role:            party.Role,
-				OverallResource: *template,
+				OverallResource: template,
 			}
 
 		}
@@ -135,7 +150,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			Dependencies:    task.Dependencies,
 			AppImage:        task.AppImage,
 			TaskInputConfig: task.TaskInputConfig,
-			Parties:         kusicaParties,
+			Parties:         kusciaParties,
 			Priority:        int(task.Priority),
 		}
 		kusciaTasks[i] = kusciaTask

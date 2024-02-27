@@ -1,0 +1,42 @@
+{
+  "apiVersion": "kuscia.secretflow/v1alpha1",
+  "kind": "ClusterDomainRoute",
+  "metadata": {
+    "creationTimestamp": "2024-02-26T20:59:27Z",
+    "generation": 2,
+    "labels": {
+      "kuscia.secertflow/domainroute-partner": "alice",
+      "kuscia.secretflow/clusterdomainroute-destination": "bob",
+      "kuscia.secretflow/clusterdomainroute-source": "alice"
+    },
+    "name": "alice-bob",
+    "ownerReferences": [
+      {
+        "apiVersion": "kuscia.secretflow/v1alpha1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "Domain",
+        "name": "alice",
+        "uid": "3c3a4987-401f-47f8-8a29-4d2c5207103a"
+      }
+    ],
+    "resourceVersion": "707",
+    "uid": "663efd94-a462-482b-8ea6-8cd557613678"
+  },
+  "spec": {
+    "authenticationType": "Token",
+    "destination": "bob",
+    "endpoint": {},
+    "interConnProtocol": "kuscia",
+    "requestHeadersToAdd": {
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IlpNeHA1cFlyWXl6dk5id2VZSnMxZ0g1WDdjUHNqajBrLVFtVmloOVh5TFkifQ.eyJhdWQiOlsiaHR0cHM6Ly9rdWJlcm5ldGVzLmRlZmF1bHQuc3ZjLmNsdXN0ZXIubG9jYWwiLCJrM3MiXSwiZXhwIjoyMDI0MzQxMTY3LCJpYXQiOjE3MDg5ODExNjcsImlzcyI6Imh0dHBzOi8va3ViZXJuZXRlcy5kZWZhdWx0LnN2Yy5jbHVzdGVyLmxvY2FsIiwia3ViZXJuZXRlcy5pbyI6eyJuYW1lc3BhY2UiOiJhbGljZSIsInNlcnZpY2VhY2NvdW50Ijp7Im5hbWUiOiJhbGljZSIsInVpZCI6IjI4YjI1ZDdkLWQ0NWEtNGQ1Ny1hOGI0LWFlMGVkZGEwMjNkZSJ9fSwibmJmIjoxNzA4OTgxMTY3LCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6YWxpY2U6YWxpY2UifQ.E8utZaQ7a3mqylI9wxF9vPaoZZfXQL4yaCdy9TUJlJSwhCyufftSPjdPN40TvOTfY3k7VvGehprk1TdSfC67z704_6quhy0Edm1oUtQR6EhNcMxz2DZyyPJ9mkajdAaSb01B_l8p8uf7TnsFxRwRCuNPQhSSSrmehBTBc4_vlzGdS7T3V8vJDmAMo3D8c_m-b4_vUqcB6k302Y0Nl5CnklHLLIgqgB9dnsplLk6qNKrAsv817jW8_B4m1Brx6DgWXTU_d8grX8zK_T7SMNXYc1aGEKU4c49c63RoODS14FHKzhWL4nZI8tqamFpSKntR4r6YyTG8JHQGdJCUhB_Lmg"
+    },
+    "source": "alice",
+    "tokenConfig": {
+      "destinationPublicKey": "LS0tLS1CRUdJTiBSU0EgUFVCTElDIEtFWS0tLS0tCk1JSUJDZ0tDQVFFQWs0TkQyMS9NRnFPZm1XdE9hd1JoTllvMHhTSGw0T0dZMXdaS1I5c0NmZGxKcWcyazBUd0YKRnBXTXN4YTlSdXlUTk55a0pvUmFpTEMvcjB5Q2g2MFJINzRWSU5YSUE1NG9JbVZwM1F0azNrZlgvWnlvTE5NQQpsdkNWVU5GR0JCbjJOK3Nid2FEa1B5L0hUeXQxSHBIeEZXTGlRVjQ0cC9ZZ1YzWUEwMkpRR0w3T2lmbkl3NXAyCjBWMEExT2lWeEh0QkhtVjJTZ29aYlNnbGx5VmNCTVFnTzUvVTNUR1l1R2pQenNhN3hXWDlSaU1uNm85OW9JdHoKeDNkZGVYWDJDMEtRYlJSalEwRlkxbHpYN0FPL1BBK3BZWlREdDV1S0JYK09FRUFoTFFJdnIvaHQxU2VlWEMvMgpZS1QzQ2xMZllSQk5KNU52Q0N5NkhKempZWmVucndSMGt3SURBUUFCCi0tLS0tRU5EIFJTQSBQVUJMSUMgS0VZLS0tLS0K",
+      "rollingUpdatePeriod": 600,
+      "sourcePublicKey": "LS0tLS1CRUdJTiBSU0EgUFVCTElDIEtFWS0tLS0tCk1JSUJDZ0tDQVFFQTRCd0JYZzRlQi84NTRuUlhTbzRUWXVRM01FOWlRc242LzE2aHZBUVNtajF3eWdBR1lSak8KRXJyTFlvcU1LOWNxbEFMWFFPZVF2dXBYamJxWm53ZEJnYjNBQmZ1UU1CNzhiZ3hCNncxNTdISzVBeEZWQUpVagpTU1hybUtpbDVPNXZWSlhUL2RBYXRrMUtFREpScWVLMEZZU2NCZlQ2eVBrNW1ZY2hQbngrZVhpc3lBQUFkaVlmClhIODgrcVdZckNjWWJiYUdRTXBVa3ZOdCtDZzVkcmFTSmt1dXNvTDFkNHltSGJSMjVKUlMxWXR0ZXFvSW1ibUsKWTNqYWhmZHUyL1JGUDcyTjhHbmdrYkZwbkpHNEl6Z3FJTjYvQ3grSG82emx4dHNhMnMzY2ZkU3U3eWZBZzdiNQp0UzlTcnozbm9VbjI2dWxSS1Y2MWx0MVFxL3JwVkN6MUN3SURBUUFCCi0tLS0tRU5EIFJTQSBQVUJMSUMgS0VZLS0tLS0K",
+      "tokenGenMethod": "RSA-GEN"
+    }
+  }
+}

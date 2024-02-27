@@ -132,12 +132,7 @@ type Party struct {
 	// +optional
 	Role string `json:"role,omitempty"`
 	// +optional
-	OverallResource PartyResourceTemplate `json:"overallResource,omitempty"`
-}
-
-type PartyResourceTemplate struct {
-	// +optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	OverallResource *corev1.ResourceRequirements `json:"overallResource,omitempty"`
 }
 
 // KusciaJobStatus defines the observed state of kuscia job.
