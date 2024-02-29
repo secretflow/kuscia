@@ -6,3 +6,4 @@ K8s 集群部署 Kuscia
 
     K8s_master_lite_cn
     K8s_p2p_cn
+    deploy_with_runp_cn

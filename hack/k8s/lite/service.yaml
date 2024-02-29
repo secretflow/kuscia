@@ -12,6 +12,10 @@ spec:
       port: 1080
       protocol: TCP
       targetPort: 1080
+    - name: envoy-internal
+      port: 80
+      protocol: TCP
+      targetPort: 80
     - name: dns
       port: 53
       protocol: UDP

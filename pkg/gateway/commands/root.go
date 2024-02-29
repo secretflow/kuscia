@@ -75,7 +75,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if !masterConfig.Master {
 		err = controller.RegisterDomain(gwConfig.DomainID, masterConfig.MasterProxy.Path, gwConfig.CsrData, prikey, afterRegisterHook)
 		if err != nil {
-			return fmt.Errorf("RegisterDomain err:%s", err.Error())
+			return fmt.Errorf("register self domain [%s] cert to master error: %s", gwConfig.DomainID, err.Error())
 		}
 
 		for i := 1; i <= defaultHandshakeRetryCount; i++ {
@@ -83,7 +83,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 			if err == nil {
 				break
 			}
-			nlog.Warnf("HandshakeToMaster err: %v", err)
+			nlog.Warnf("HandshakeToMaster error: %v", err)
 			if i == defaultHandshakeRetryCount {
 				return err
 			}

@@ -67,15 +67,21 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 	kusciaAPIConfig.TLS.CommonName = "KusciaAPI"
 	kusciaAPIConfig.RunMode = d.RunMode
 	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
-	kusciaAPIConfig.TLS.Protocol = d.Protocol
 	kusciaAPIConfig.DomainID = d.DomainID
 
+	if d.Protocol == "" {
+		d.Protocol = common.MTLS
+	}
 	switch d.Protocol {
 	case common.NOTLS:
 		kusciaAPIConfig.TLS = nil
 		kusciaAPIConfig.Token = nil
 	case common.TLS:
 		kusciaAPIConfig.TLS.RootCA = nil
+	}
+
+	if kusciaAPIConfig.Protocol == "" {
+		kusciaAPIConfig.Protocol = d.Protocol
 	}
 
 	if kusciaAPIConfig.TLS != nil {
@@ -142,8 +148,7 @@ func (m kusciaAPIModule) readyZ() bool {
 	// init client tls config
 	tlsConfig := m.conf.TLS
 	if tlsConfig != nil {
-
-		if tlsConfig.Protocol == common.TLS {
+		if m.conf.Protocol == common.TLS {
 			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.ServerCert)
 		} else {
 			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)

@@ -11,6 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Removed` for now removed features.
 `Fixed` for any bug fixes.
 `Security` in case of vulnerabilities.
+`Breaking Changed` Breaking for backward-incompatible changes that require user intervention.
+
+## [0.7.0.dev240229] - 2023-02-29
+### Added
+- add the documents of datasource api
+- add kusciaapi errorcode doc
+- add kuscia init command generating kuscia config
+
+### Changed
+- update domain register and handshake error
+- report events when Pod failed to start in RunK mode
+
+### Breaking Changed
+- Change the mounting directory for logs and data of Kuscia deploying with Docker
+  - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-data -> {{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/data.
+  - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-logs -> {{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/logs.
+  - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-certs was deleted.
+### Fixed
+- fix some unit test case
+- fix the issue of inconsistent states among multiple parties in KusciaDeployment
+- fix the issue of ClusterDefine only having unilateral information under KusciaDeployment in P2P scenarios
+- fix kusciaapi grpc role check
+- Upgrade certain dependency packages to fix security vulnerabilities in pkg.
 
 ## [0.6.0.dev240131] - 2023-01-31
 ### Added

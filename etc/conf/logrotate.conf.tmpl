@@ -5,11 +5,11 @@
   dateyesterday
   compress
   delaycompress
-  rotate 3
+  rotate {{.MaxFiles}}
   missingok
   nocreate
   sharedscripts
-  size 128
+  size {{.MaxFileSizeMB}}
   postrotate
     curl -X POST  127.0.0.1:10000/reopen_logs
   endscript

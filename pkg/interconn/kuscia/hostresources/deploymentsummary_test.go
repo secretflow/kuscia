@@ -147,3 +147,48 @@ func TestUpdateMemberDeployment(t *testing.T) {
 	got = c.updateMemberDeployment(ctx, kds)
 	assert.Equal(t, nil, got)
 }
+
+func TestUpdateDeploymentStatus(t *testing.T) {
+	// kd status is empty, should return true
+	kd := makeMockDeployment("cross-domain", "kd-1")
+	kds := makeMockDeploymentSummary("alice", "kd-1")
+	kds.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed
+	kds.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{
+		"alice": {
+			"kd-1": {
+				Phase:             v1alpha1.KusciaDeploymentPhaseFailed,
+				Replicas:          1,
+				AvailableReplicas: 0,
+			},
+		},
+	}
+	got := updateDeploymentStatus(kd, kds, nil)
+	assert.Equal(t, true, got)
+
+	// kd partyDeploymentStatuses is not empty, should return true
+	kd = makeMockDeployment("cross-domain", "kd-1")
+	kd.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{
+		"alice": {
+			"kd-1": {
+				Phase:             v1alpha1.KusciaDeploymentPhaseProgressing,
+				Replicas:          1,
+				AvailableReplicas: 0,
+			},
+		},
+	}
+
+	kds = makeMockDeploymentSummary("alice", "kd-1")
+	kds.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed
+	kds.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{
+		"alice": {
+			"kd-1": {
+				Phase:             v1alpha1.KusciaDeploymentPhaseAvailable,
+				Replicas:          1,
+				AvailableReplicas: 0,
+			},
+		},
+	}
+	got = updateDeploymentStatus(kd, kds, map[string]struct{}{"bob": struct{}{}})
+	assert.Equal(t, true, got)
+
+}

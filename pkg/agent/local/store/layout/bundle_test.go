@@ -28,4 +28,8 @@ func TestBundle(t *testing.T) {
 
 	containerBundle := bundle.GetContainerBundle("aaa")
 	assert.Equal(t, filepath.Join(rootDir, "aaa"), containerBundle.GetRootDirectory())
+	assert.Equal(t, bundleOciRootfsDir, containerBundle.GetOciRootfsName())
+	assert.Equal(t, filepath.Join(rootDir, "aaa", bundleWorkingDir), containerBundle.GetFsWorkingDirPath())
+	assert.Equal(t, filepath.Join(rootDir, "aaa", bundleOciConfigFile), containerBundle.GetOciConfigPath())
+	assert.Equal(t, filepath.Join(rootDir, "aaa", bundleOciRootfsDir), containerBundle.GetOciRootfsPath())
 }

@@ -36,6 +36,7 @@ type KusciaAPIConfig struct {
 	ReadTimeout      int                       `yaml:"readTimeout,omitempty"`
 	IdleTimeout      int                       `yaml:"idleTimeout,omitempty"`
 	Initiator        string                    `yaml:"initiator,omitempty"`
+	Protocol         common.Protocol           `yaml:"protocol"`
 	Token            *TokenConfig              `yaml:"token"`
 	WriteTimeout     int                       `yaml:"-"`
 	TLS              *config.TLSServerConfig   `yaml:"-"`
