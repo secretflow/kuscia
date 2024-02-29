@@ -921,12 +921,13 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 		}
 
 		containers := make([]v1alpha1.Container, ctrNumber)
-		// specTemplate := appImage.Spec.DeployTemplates[0].Spec
 		for ctrIdx, _ := range containers {
 			containers[ctrIdx].Resources = corev1.ResourceRequirements{
 				Limits: limitResource,
 			}
-			containers[ctrIdx].Name = appImage.Spec.DeployTemplates[0].Spec.Containers[ctrIdx].Name
+			if err == nil {
+				containers[ctrIdx].Name = appImage.Spec.DeployTemplates[0].Spec.Containers[ctrIdx].Name
+			}
 		}
 
 		resources := v1alpha1.PartyTemplate{
