@@ -106,9 +106,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			}
 
 			var template *corev1.ResourceRequirements
-			if overallCpu == "" && overallMemory == "" {
-				template = nil
-			} else {
+			if overallCpu != "" || overallMemory != "" {
 				limitResource := corev1.ResourceList{}
 				if overallCpu != "" {
 					q, err := k8sresource.ParseQuantity(overallCpu)

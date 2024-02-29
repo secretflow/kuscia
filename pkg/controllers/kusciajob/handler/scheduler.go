@@ -890,32 +890,33 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 	taskPartyInfos := make([]kusciaapisv1alpha1.PartyInfo, len(template.Parties))
 	for i, p := range template.Parties {
 		// build container resources of tasks
+		var ctrNumber, rplNumber int = 1, 1 // container number and replica number
 		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), template.AppImage, metav1.GetOptions{})
 		if err != nil {
 			nlog.Infof("can not get appImage %s.", template.AppImage)
+			ctrNumber = len(appImage.Spec.DeployTemplates[0].Spec.Containers)
+			rplNumber = int(*(appImage.Spec.DeployTemplates[0].Replicas))
 		}
-		ctrNumber := len(appImage.Spec.DeployTemplates[0].Spec.Containers)
 
 		var everyCpu, everyMemory k8sresource.Quantity
 		var ptr *k8sresource.Quantity
+		var limitResource corev1.ResourceList = corev1.ResourceList{}
 
 		if !isEmpty(p.Resources) && !isEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
 			ptrValue := p.Resources.Limits[corev1.ResourceCPU]
 			ptr = &ptrValue
 			stringValue := ptr.String()
-			stringEveryCpu, _ := splitRSC(stringValue, ctrNumber)
+			stringEveryCpu, _ := splitRSC(stringValue, ctrNumber*rplNumber)
 			everyCpu = k8sresource.MustParse(stringEveryCpu)
+			limitResource[corev1.ResourceCPU] = everyCpu
 		}
 		if !isEmpty(p.Resources) && !isEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
 			ptrValue := p.Resources.Limits[corev1.ResourceMemory]
 			ptr = &ptrValue
 			stringValue := ptr.String()
-			stringEveryMemory, _ := splitRSC(stringValue, ctrNumber)
+			stringEveryMemory, _ := splitRSC(stringValue, ctrNumber*rplNumber)
 			everyMemory = k8sresource.MustParse(stringEveryMemory)
-		}
-		limitResource := corev1.ResourceList{
-			corev1.ResourceCPU:    everyCpu,
-			corev1.ResourceMemory: everyMemory,
+			limitResource[corev1.ResourceMemory] = everyMemory
 		}
 
 		containers := make([]v1alpha1.Container, ctrNumber)
