@@ -12,29 +12,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-// GetLocalDomainName get the name of a local domain
-func GetLocalDomainName() string {
-	resp, err := http.Get("http://localhost:1054/handshake")
-	if err != nil {
-		nlog.Error(err)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-		}
-	}(resp.Body)
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Error(err)
-	}
-	namespace := jsoniter.Get(body, "namespace").ToString()
-	if len(namespace) == 0 {
-		nlog.Error("Cannot parse namespace")
-	}
-	return namespace
-}
-
 // GetIPFromDomain get a list of IP addresses from a local domain name
 func GetIPFromDomain(localDomainName string) []string {
 	ipAddresses, err := net.LookupIP(localDomainName)
@@ -49,7 +26,7 @@ func GetIPFromDomain(localDomainName string) []string {
 }
 
 // GetClusterAddress get the address and port of a remote domain connected by a local domain
-func GetClusterAddress() map[string][]string {
+func GetClusterAddress(domainID string) map[string][]string {
 	endpointAddresses := make(map[string][]string)
 	// get the results of config_dump
 	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
@@ -66,7 +43,6 @@ func GetClusterAddress() map[string][]string {
 	if err != nil {
 		nlog.Error("Fail to parse the results of config_dump", err)
 	}
-	domainName := GetLocalDomainName()
 	res := make(map[string]interface{})
 	err = jsoniter.Unmarshal(body, &res)
 	configs := jsoniter.Get(body, "configs")
@@ -79,7 +55,7 @@ func GetClusterAddress() map[string][]string {
 		loadAssignment := x.Get("cluster", "load_assignment")
 		clusterName := loadAssignment.Get("cluster_name").ToString()
 
-		if !strings.HasPrefix(clusterName, domainName+"-to-") {
+		if !strings.HasPrefix(clusterName, domainID+"-to-") {
 			break
 		}
 		endpoints := loadAssignment.Get("endpoints")
