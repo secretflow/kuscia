@@ -15,13 +15,17 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"strings"
 
+	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -820,7 +824,8 @@ func willStartTasksOf(kusciaJob *kusciaapisv1alpha1.KusciaJob, readyTasks []kusc
 }
 
 // buildWillStartKusciaTask build KusciaTask CR from job's will-start sub-tasks.
-func buildWillStartKusciaTask(nsLister corelisters.NamespaceLister, kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
+func buildWillStartKusciaTask(h *RunningHandler, kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
+	// var nsLister corelisters.NamespaceLister = h.namespaceLister
 	createdTasks := make([]*kusciaapisv1alpha1.KusciaTask, 0)
 
 	isIcJob := isInterConnJob(kusciaJob)
@@ -841,7 +846,7 @@ func buildWillStartKusciaTask(nsLister corelisters.NamespaceLister, kusciaJob *k
 					common.LabelJobUID:     string(kusciaJob.UID),
 				},
 			},
-			Spec: createTaskSpec(kusciaJob.Spec.Initiator, t),
+			Spec: createTaskSpec(h, kusciaJob.Spec.Initiator, t),
 		}
 
 		if isIcJob {
@@ -868,11 +873,11 @@ func buildWillStartKusciaTask(nsLister corelisters.NamespaceLister, kusciaJob *k
 }
 
 // createTaskSpec will make kuscia task spec for kuscia job.
-func createTaskSpec(initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) kusciaapisv1alpha1.KusciaTaskSpec {
+func createTaskSpec(h *RunningHandler, initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) kusciaapisv1alpha1.KusciaTaskSpec {
 	result := kusciaapisv1alpha1.KusciaTaskSpec{
 		Initiator:       initiator,
 		TaskInputConfig: t.TaskInputConfig,
-		Parties:         buildPartiesFromTaskInputConfig(t),
+		Parties:         buildPartiesFromTaskInputConfig(h, t),
 	}
 	if t.ScheduleConfig != nil {
 		result.ScheduleConfig = *t.ScheduleConfig
@@ -881,16 +886,108 @@ func createTaskSpec(initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) k
 }
 
 // buildPartiesFromTaskInputConfig will make kuscia task parties for kuscia job.
-func buildPartiesFromTaskInputConfig(template kusciaapisv1alpha1.KusciaTaskTemplate) []kusciaapisv1alpha1.PartyInfo {
+func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alpha1.KusciaTaskTemplate) []kusciaapisv1alpha1.PartyInfo {
 	taskPartyInfos := make([]kusciaapisv1alpha1.PartyInfo, len(template.Parties))
 	for i, p := range template.Parties {
+		// build container resources of tasks
+		nlog.Infof(">>>>>>>>>>>>>>>> -- %d --\n", i)
+		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), template.AppImage, metav1.GetOptions{})
+		if err != nil {
+			nlog.Infof("can not get appImage. \n")
+		}
+		ctrNumber := len(appImage.Spec.DeployTemplates[0].Spec.Containers)
+
+		var everyCpu, everyMemory k8sresource.Quantity
+		var ptr *k8sresource.Quantity
+		// partyCpu := p.Resource.Limits[corev1.ResourceCPU]
+		// partyMemory := p.Resource.Limits[corev1.ResourceMemory]
+		// nlog.Infof("%v // %v // %v // %v ---\n", partyCpu, partyMemory, isEmpty(partyCpu), isEmpty(partyMemory))
+
+		if !isEmpty(p.Resource) && !isEmpty(p.Resource.Limits[corev1.ResourceCPU]) {
+			ptrValue := p.Resource.Limits[corev1.ResourceCPU]
+			ptr = &ptrValue
+			stringValue := ptr.String()
+			stringEveryCpu, _ := splitRSC(stringValue, ctrNumber)
+			everyCpu = k8sresource.MustParse(stringEveryCpu)
+		}
+		if !isEmpty(p.Resource) && !isEmpty(p.Resource.Limits[corev1.ResourceMemory]) {
+			ptrValue := p.Resource.Limits[corev1.ResourceMemory]
+			ptr = &ptrValue
+			stringValue := ptr.String()
+			stringEveryMemory, _ := splitRSC(stringValue, ctrNumber)
+			everyMemory = k8sresource.MustParse(stringEveryMemory)
+		}
+		limitResource := corev1.ResourceList{
+			corev1.ResourceCPU:    everyCpu,
+			corev1.ResourceMemory: everyMemory,
+		}
+
+		containers := make([]v1alpha1.Container, ctrNumber)
+		// specTemplate := appImage.Spec.DeployTemplates[0].Spec
+		for ctrIdx, _ := range containers {
+			containers[ctrIdx].Resources = corev1.ResourceRequirements{
+				Limits: limitResource,
+			}
+			containers[ctrIdx].Name = appImage.Spec.DeployTemplates[0].Spec.Containers[ctrIdx].Name
+		}
+
+		resource := v1alpha1.PartyTemplate{
+			Spec: v1alpha1.PodSpec{
+				Containers: containers,
+			},
+		}
+
+		if isEmpty(p.Resource) {
+			resource = v1alpha1.PartyTemplate{}
+		}
+
+		// combine all
 		taskPartyInfos[i] = kusciaapisv1alpha1.PartyInfo{
 			DomainID:    p.DomainID,
 			AppImageRef: template.AppImage,
 			Role:        p.Role,
+			Template:    resource,
 		}
 	}
 	return taskPartyInfos
+}
+
+// isEmpty will judge whether data is empty
+func isEmpty(v interface{}) bool {
+	return reflect.DeepEqual(v, reflect.Zero(reflect.TypeOf(v)).Interface())
+}
+
+// SplitRSC will split the resources into N parts
+func splitRSC(rsc string, n int) (string, error) {
+	quantity, err := k8sresource.ParseQuantity(rsc)
+	if err != nil {
+		return "", errors.New("failed to parse resource quantity: " + err.Error())
+	}
+	unit := quantity.Format
+	if unit == k8sresource.DecimalSI {
+		quantity.SetMilli(quantity.MilliValue() / int64(n))
+		return quantity.String(), nil
+	} else {
+		bytes := quantity.Value()
+		bytesPerPart := bytes / int64(n)
+		var result string
+		switch {
+		case bytesPerPart >= 1<<60:
+			result = fmt.Sprintf("%.0fPi", float64(bytesPerPart)/(1<<50))
+		case bytesPerPart >= 1<<50:
+			result = fmt.Sprintf("%.0fTi", float64(bytesPerPart)/(1<<40))
+		case bytesPerPart >= 1<<40:
+			result = fmt.Sprintf("%.0fGi", float64(bytesPerPart)/(1<<30))
+		case bytesPerPart >= 1<<30:
+			result = fmt.Sprintf("%.0fMi", float64(bytesPerPart)/(1<<20))
+		case bytesPerPart >= 1<<20:
+			result = fmt.Sprintf("%.0fKi", float64(bytesPerPart)/(1<<10))
+		default:
+			quantity.Set(bytesPerPart)
+			result = quantity.String()
+		}
+		return result, nil
+	}
 }
 
 // jobTaskSelector will make selector of kuscia task which kuscia job generate.
