@@ -89,7 +89,7 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 		// then we will start KusciaTask
 		for _, t := range willStartKusciaTasks {
 			nlog.Infof("Create kuscia tasks: %s", t.ObjectMeta.Name)
-			_, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Create(context.Background(), t, metav1.CreateOptions{})
+			_, err = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Create(context.Background(), t, metav1.CreateOptions{})
 			if err != nil {
 				if k8serrors.IsAlreadyExists(err) {
 					existTask, err := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(t.Name)

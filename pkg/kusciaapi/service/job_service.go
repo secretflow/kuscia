@@ -98,11 +98,11 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			overallCpu := ""
 			overallMemory := ""
 
-			if party.Resource != nil && party.Resource.Cpu != "" {
-				overallCpu = party.Resource.Cpu
+			if party.Resources != nil && party.Resources.Cpu != "" {
+				overallCpu = party.Resources.Cpu
 			}
-			if party.Resource != nil && party.Resource.Memory != "" {
-				overallMemory = party.Resource.Memory
+			if party.Resources != nil && party.Resources.Memory != "" {
+				overallMemory = party.Resources.Memory
 			}
 
 			var template *corev1.ResourceRequirements
@@ -128,9 +128,9 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			}
 
 			kusicaParties[j] = v1alpha1.Party{
-				DomainID: party.DomainId,
-				Role:     party.Role,
-				Resource: template,
+				DomainID:  party.DomainId,
+				Role:      party.Role,
+				Resources: template,
 			}
 		}
 		// build kuscia task

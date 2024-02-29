@@ -890,28 +890,24 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 	taskPartyInfos := make([]kusciaapisv1alpha1.PartyInfo, len(template.Parties))
 	for i, p := range template.Parties {
 		// build container resources of tasks
-		nlog.Infof(">>>>>>>>>>>>>>>> -- %d --\n", i)
 		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), template.AppImage, metav1.GetOptions{})
 		if err != nil {
-			nlog.Infof("can not get appImage. \n")
+			nlog.Infof("can not get appImage %s.", template.AppImage)
 		}
 		ctrNumber := len(appImage.Spec.DeployTemplates[0].Spec.Containers)
 
 		var everyCpu, everyMemory k8sresource.Quantity
 		var ptr *k8sresource.Quantity
-		// partyCpu := p.Resource.Limits[corev1.ResourceCPU]
-		// partyMemory := p.Resource.Limits[corev1.ResourceMemory]
-		// nlog.Infof("%v // %v // %v // %v ---\n", partyCpu, partyMemory, isEmpty(partyCpu), isEmpty(partyMemory))
 
-		if !isEmpty(p.Resource) && !isEmpty(p.Resource.Limits[corev1.ResourceCPU]) {
-			ptrValue := p.Resource.Limits[corev1.ResourceCPU]
+		if !isEmpty(p.Resources) && !isEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
+			ptrValue := p.Resources.Limits[corev1.ResourceCPU]
 			ptr = &ptrValue
 			stringValue := ptr.String()
 			stringEveryCpu, _ := splitRSC(stringValue, ctrNumber)
 			everyCpu = k8sresource.MustParse(stringEveryCpu)
 		}
-		if !isEmpty(p.Resource) && !isEmpty(p.Resource.Limits[corev1.ResourceMemory]) {
-			ptrValue := p.Resource.Limits[corev1.ResourceMemory]
+		if !isEmpty(p.Resources) && !isEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
+			ptrValue := p.Resources.Limits[corev1.ResourceMemory]
 			ptr = &ptrValue
 			stringValue := ptr.String()
 			stringEveryMemory, _ := splitRSC(stringValue, ctrNumber)
@@ -931,14 +927,14 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 			containers[ctrIdx].Name = appImage.Spec.DeployTemplates[0].Spec.Containers[ctrIdx].Name
 		}
 
-		resource := v1alpha1.PartyTemplate{
+		resources := v1alpha1.PartyTemplate{
 			Spec: v1alpha1.PodSpec{
 				Containers: containers,
 			},
 		}
 
-		if isEmpty(p.Resource) {
-			resource = v1alpha1.PartyTemplate{}
+		if isEmpty(p.Resources) {
+			resources = v1alpha1.PartyTemplate{}
 		}
 
 		// combine all
@@ -946,7 +942,7 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 			DomainID:    p.DomainID,
 			AppImageRef: template.AppImage,
 			Role:        p.Role,
-			Template:    resource,
+			Template:    resources,
 		}
 	}
 	return taskPartyInfos
