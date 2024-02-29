@@ -894,6 +894,7 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), template.AppImage, metav1.GetOptions{})
 		if err != nil {
 			nlog.Infof("can not get appImage %s.", template.AppImage)
+		} else {
 			ctrNumber = len(appImage.Spec.DeployTemplates[0].Spec.Containers)
 			rplNumber = int(*(appImage.Spec.DeployTemplates[0].Replicas))
 		}
