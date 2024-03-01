@@ -105,7 +105,7 @@ message UpdateDomainDataRequest {
     Partition partition = 9;
     // The columns describe the table's schema information.
     repeated DataColumn columns = 10;
-    // The vendor is the one who outputs the domain data, it may be the SecretFlow engine,
+    // Optional , The vendor is the one who outputs the domain data, it may be the SecretFlow engine,
     // another vendor's engine, or manually registered. it's could be manual, secretflow or other vendor string.
     string vendor = 11;
     // file-format only takes effect when the data source type is  localfs or oss. default value is csv

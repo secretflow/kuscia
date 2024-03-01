@@ -15,6 +15,7 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,8 +23,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
+	clientsetfake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
+	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 
 	"github.com/secretflow/kuscia/pkg/utils/common"
 )
@@ -88,4 +94,43 @@ externalTLS:
 `)
 	err := yaml.Unmarshal([]byte(content), config)
 	assert.NoError(t, err)
+}
+
+func Test_InitDependencies(t *testing.T) {
+	rootDir := t.TempDir()
+	domainKeyData, err := tls.GenerateKeyData()
+	assert.NoError(t, err)
+	config := confloader.KusciaConfig{
+		RootDir:        rootDir,
+		DomainID:       "alice",
+		DomainKeyData:  domainKeyData,
+		DomainKeyFile:  filepath.Join(rootDir, "domain.key"),
+		DomainCertFile: filepath.Join(rootDir, "domain.crt"),
+		CAKeyData:      domainKeyData,
+		CAKeyFile:      filepath.Join(rootDir, "ca.key"),
+		CACertFile:     filepath.Join(rootDir, "ca.crt"),
+	}
+	InitDependencies(context.Background(), config)
+}
+
+func mockDependency(t *testing.T) *Dependencies {
+	rootDir := t.TempDir()
+	domainKeyData, err := tls.GenerateKeyData()
+	assert.NoError(t, err)
+	dependency := InitDependencies(context.Background(), confloader.KusciaConfig{
+		RootDir:        rootDir,
+		DomainID:       "alice",
+		DomainKeyData:  domainKeyData,
+		DomainKeyFile:  filepath.Join(rootDir, "domain.key"),
+		DomainCertFile: filepath.Join(rootDir, "domain.crt"),
+		CAKeyData:      domainKeyData,
+		CAKeyFile:      filepath.Join(rootDir, "ca.key"),
+		CACertFile:     filepath.Join(rootDir, "ca.crt"),
+		KusciaAPI:      config.NewDefaultKusciaAPIConfig(rootDir),
+	})
+	dependency.Clients = &kubeconfig.KubeClients{
+		KubeClient:   clientsetfake.NewSimpleClientset(),
+		KusciaClient: kusciaclientsetfake.NewSimpleClientset(),
+	}
+	return dependency
 }

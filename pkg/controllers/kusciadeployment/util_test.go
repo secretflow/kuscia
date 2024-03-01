@@ -15,13 +15,17 @@
 package kusciadeployment
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
@@ -142,6 +146,27 @@ func TestFillAllocatedPorts(t *testing.T) {
 }
 
 func TestGenerateClusterDefineParty(t *testing.T) {
+	kusciaClient := kusciafake.NewSimpleClientset()
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	aliceDomain := &kusciaapisv1alpha1.Domain{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "alice",
+		},
+	}
+	bobDomain := &kusciaapisv1alpha1.Domain{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "bob",
+		},
+		Spec: kusciaapisv1alpha1.DomainSpec{Role: kusciaapisv1alpha1.Partner},
+	}
+	domainInformer.Informer().GetStore().Add(aliceDomain)
+	domainInformer.Informer().GetStore().Add(bobDomain)
+	c := &Controller{
+		kusciaClient: kusciaClient,
+		domainLister: domainInformer.Lister(),
+	}
+
 	tests := []struct {
 		name    string
 		kitInfo *PartyKitInfo
@@ -199,11 +224,47 @@ func TestGenerateClusterDefineParty(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "partner party serviced ports is not empty",
+			kitInfo: &PartyKitInfo{
+				domainID:      "bob",
+				role:          "client",
+				servicedPorts: []string{"domain", "cluster"},
+				dkInfo: &DeploymentKitInfo{
+					deploymentName: "deploy-1",
+					portService:    generatePortServices("deploy-1", []string{"domain", "cluster"}),
+					ports: NamedPorts{
+						"domain": kusciaapisv1alpha1.ContainerPort{
+							Name:     "domain",
+							Port:     8080,
+							Protocol: "HTTP",
+							Scope:    kusciaapisv1alpha1.ScopeDomain,
+						},
+						"cluster": kusciaapisv1alpha1.ContainerPort{
+							Name:     "cluster",
+							Port:     8081,
+							Protocol: "HTTP",
+							Scope:    kusciaapisv1alpha1.ScopeCluster,
+						},
+					},
+				},
+			},
+			want: &proto.Party{
+				Name: "bob",
+				Role: "client",
+				Services: []*proto.Service{
+					{
+						PortName:  "cluster",
+						Endpoints: []string{"deploy-1-cluster.bob.svc"},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateClusterDefineParty(tt.kitInfo)
+			got, _ := c.generateClusterDefineParty(tt.kitInfo)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -504,6 +565,51 @@ func TestGenerateDeploymentName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := generateDeploymentName(tt.kdName, tt.role)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestHandleError(t *testing.T) {
+	ctx := context.Background()
+
+	kd1 := makeTestKusciaDeployment("kd-1", 2, 1, 1)
+	kd2 := makeTestKusciaDeployment("kd-2", 2, 1, 1)
+	kd2.Status.Phase = kusciaapisv1alpha1.KusciaDeploymentPhaseFailed
+
+	kusciaClient := kusciafake.NewSimpleClientset(kd2)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
+	kdInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
+	kdInformer.Informer().GetStore().Add(kd1)
+	c := &Controller{
+		kusciaClient: kusciaClient,
+	}
+
+	tests := []struct {
+		name          string
+		partyKitInfos map[string]*PartyKitInfo
+		preKdStatus   *kusciaapisv1alpha1.KusciaDeploymentStatus
+		kd            *kusciaapisv1alpha1.KusciaDeployment
+		wantErr       bool
+	}{
+		{
+			name:    "kd status is not failed",
+			kd:      kd1,
+			wantErr: false,
+		},
+		{
+			name: "kd status changed to failed",
+			preKdStatus: &kusciaapisv1alpha1.KusciaDeploymentStatus{
+				Phase: kusciaapisv1alpha1.KusciaDeploymentPhaseProgressing,
+			},
+			kd:      kd2,
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := c.handleError(ctx, tt.partyKitInfos, tt.preKdStatus, tt.kd, nil)
+			assert.Equal(t, tt.wantErr, got != nil)
 		})
 	}
 }

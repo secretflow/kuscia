@@ -19,10 +19,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
+	"github.com/secretflow/kuscia/test/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateDomain(t *testing.T) {
@@ -30,6 +30,24 @@ func TestCreateDomain(t *testing.T) {
 		DomainId: kusciaAPIDS.domainID,
 	})
 	assert.NotNil(t, res)
+}
+
+func TestCreateDomainWithCertError(t *testing.T) {
+	res := kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: kusciaAPIDS.domainID,
+		Cert:     "cert",
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, res.Status.Code, int32(errorcode.ErrRequestValidate))
+}
+
+func TestCreateDomainWithCertSuccess(t *testing.T) {
+	res := kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: "test-create-domain-with-cert-success",
+		Cert:     util.MakeBase64EncodeCert(t),
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, res.Status.Code, kusciaAPISuccessStatusCode)
 }
 
 func TestQueryDomain(t *testing.T) {
@@ -45,6 +63,24 @@ func TestUpdateDomain(t *testing.T) {
 		Cert:     "cert",
 	})
 	assert.NotNil(t, res)
+}
+
+func TestUpdateDomainWithCertError(t *testing.T) {
+	res := kusciaAPIDS.UpdateDomain(context.Background(), &kusciaapi.UpdateDomainRequest{
+		DomainId: kusciaAPIDS.domainID,
+		Cert:     "cert",
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, res.Status.Code, int32(errorcode.ErrRequestValidate))
+}
+
+func TestUpdateDomainWithCertSuccess(t *testing.T) {
+	res := kusciaAPIDS.UpdateDomain(context.Background(), &kusciaapi.UpdateDomainRequest{
+		DomainId: kusciaAPIDS.domainID,
+		Cert:     util.MakeBase64EncodeCert(t),
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, res.Status.Code, kusciaAPISuccessStatusCode)
 }
 
 func TestBatchQueryDomain(t *testing.T) {

@@ -43,7 +43,7 @@ func TestCreateDomainData(t *testing.T) {
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
-	t.Logf("CreateDomain res : %+v\n", domainRes)
+
 	assert.NotNil(t, domainRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
 
@@ -67,8 +67,7 @@ func TestCreateDomainData(t *testing.T) {
 		},
 		Columns: col,
 	})
-
-	t.Logf("CreateDomainData res : %+v\n", res)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
 
 	res = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
@@ -83,6 +82,58 @@ func TestCreateDomainData(t *testing.T) {
 		Columns:      nil,
 	})
 	assert.NotNil(t, res)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
+}
+
+func TestCreateDomainDataWithVendor(t *testing.T) {
+	conf := &config.KusciaAPIConfig{
+		KusciaClient: kusciafake.NewSimpleClientset(),
+	}
+	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
+	attr := make(map[string]string)
+	attr["rows"] = "100"
+	col := make([]*v1alpha1.DataColumn, 2)
+	col[0] = &v1alpha1.DataColumn{Name: "id", Type: "string"}
+	col[1] = &v1alpha1.DataColumn{Name: "date", Type: "string"}
+
+	mustomVendor := "mustom-vendor"
+
+	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
+		Header:       nil,
+		DomaindataId: "",
+		DomainId:     domainId,
+		Name:         "test",
+		Type:         "table",
+		RelativeUri:  "a/b/c.csv",
+		DatasourceId: dsID,
+		Attributes:   attr,
+		Partition: &v1alpha1.Partition{
+			Type:   "path",
+			Fields: col[1:],
+		},
+		Columns: col,
+		Vendor:  mustomVendor,
+	})
+	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
+
+	res1 := domainDataService.QueryDomainData(context.Background(), &kusciaapi.QueryDomainDataRequest{
+		Header: nil,
+		Data: &kusciaapi.QueryDomainDataRequestData{
+			DomainId:     domainId,
+			DomaindataId: res.Data.DomaindataId,
+		},
+	})
+	assert.NotNil(t, res1)
+	assert.Equal(t, mustomVendor, res1.Data.Vendor)
 }
 
 func TestQueryDomainData(t *testing.T) {
@@ -95,7 +146,7 @@ func TestQueryDomainData(t *testing.T) {
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
-	t.Logf("CreateDomain res : %+v\n", domainRes)
+
 	assert.NotNil(t, domainRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
 
@@ -127,6 +178,7 @@ func TestQueryDomainData(t *testing.T) {
 		},
 	})
 	assert.NotNil(t, res1)
+	assert.Equal(t, common.DefaultDomainDataVendor, res1.Data.Vendor)
 }
 
 func TestUpdateDomainData(t *testing.T) {
@@ -139,7 +191,7 @@ func TestUpdateDomainData(t *testing.T) {
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
-	t.Logf("CreateDomain res : %+v\n", domainRes)
+
 	assert.NotNil(t, domainRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
 
@@ -176,6 +228,74 @@ func TestUpdateDomainData(t *testing.T) {
 		Columns:      nil,
 	})
 	assert.NotNil(t, res1)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
+}
+
+func TestUpdateDomainDataWithVendor(t *testing.T) {
+	conf := &config.KusciaAPIConfig{
+		KusciaClient: kusciafake.NewSimpleClientset(),
+	}
+	domainDataService := NewDomainDataService(conf)
+	domainService := NewDomainService(conf)
+
+	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: domainId,
+	})
+
+	assert.NotNil(t, domainRes)
+	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
+
+	attr := make(map[string]string)
+	attr["rows"] = "100"
+	col := make([]*v1alpha1.DataColumn, 2)
+	col[0] = &v1alpha1.DataColumn{Name: "id", Type: "string"}
+	col[1] = &v1alpha1.DataColumn{Name: "date", Type: "string"}
+	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
+		Header:       nil,
+		DomaindataId: "",
+		DomainId:     domainId,
+		Name:         "test",
+		Type:         "table",
+		RelativeUri:  "a/b/c.csv",
+		DatasourceId: dsID,
+		Attributes:   attr,
+		Partition: &v1alpha1.Partition{
+			Type:   "path",
+			Fields: col[1:],
+		},
+		Columns: col,
+	})
+
+	assert.NotNil(t, res)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
+
+	mustomVendor := "mustom-vendor"
+	res1 := domainDataService.UpdateDomainData(context.Background(), &kusciaapi.UpdateDomainDataRequest{
+		Header:       nil,
+		DomaindataId: res.Data.DomaindataId,
+		DomainId:     domainId,
+		Name:         "test",
+		Type:         "table",
+		RelativeUri:  "a/b.csv",
+		DatasourceId: dsID,
+		Attributes:   nil,
+		Partition:    nil,
+		Columns:      nil,
+		Vendor:       mustomVendor,
+	})
+	assert.NotNil(t, res1)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
+
+	res2 := domainDataService.QueryDomainData(context.Background(), &kusciaapi.QueryDomainDataRequest{
+		Header: nil,
+		Data: &kusciaapi.QueryDomainDataRequestData{
+			DomainId:     domainId,
+			DomaindataId: res.Data.DomaindataId,
+		},
+	})
+	assert.NotNil(t, res1)
+	assert.Equal(t, mustomVendor, res2.Data.Vendor)
+
 }
 
 func TestDeleteDomainData(t *testing.T) {
@@ -188,7 +308,7 @@ func TestDeleteDomainData(t *testing.T) {
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
-	t.Logf("CreateDomain res : %+v\n", domainRes)
+
 	assert.NotNil(t, domainRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
 
@@ -218,6 +338,7 @@ func TestDeleteDomainData(t *testing.T) {
 		DomainId:     domainId,
 	})
 	assert.NotNil(t, res1)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
 }
 
 func TestBatchQueryDomainData(t *testing.T) {
@@ -230,7 +351,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
-	t.Logf("CreateDomain res : %+v\n", domainRes)
+
 	assert.NotNil(t, domainRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
 
@@ -294,7 +415,7 @@ func TestListDomainData(t *testing.T) {
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
-	t.Logf("CreateDomain res : %+v\n", domainRes)
+
 	assert.NotNil(t, domainRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainRes.Status.Code)
 
@@ -333,7 +454,6 @@ func TestListDomainData(t *testing.T) {
 			Fields: col[1:],
 		},
 		Columns:    col,
-		Vendor:     "manual",
 		FileFormat: v1alpha1.FileFormat_CSV,
 	})
 	res2 := domainDataService.ListDomainData(context.Background(), &kusciaapi.ListDomainDataRequest{

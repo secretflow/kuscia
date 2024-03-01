@@ -27,8 +27,10 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
+	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
@@ -38,6 +40,7 @@ type envoyModule struct {
 	cluster               string
 	id                    string
 	commandLineConfigFile string
+	logrotate             confloader.LogrotateConfig
 }
 
 type EnvoyCommandLineConfig struct {
@@ -83,6 +86,7 @@ func NewEnvoy(i *Dependencies) Module {
 		cluster:               getEnvoyCluster(i.DomainID),
 		id:                    fmt.Sprintf("%s-%s", getEnvoyCluster(i.DomainID), utils.GetHostname()),
 		commandLineConfigFile: "envoy/command-line.yaml",
+		logrotate:             i.Logrorate,
 	}
 }
 
@@ -107,7 +111,13 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	}
 	args = append(args, deltaArgs.Args...)
 	sp := supervisor.NewSupervisor("envoy", nil, -1)
-	go s.logRotate(ctx)
+
+	configFilePath, err := s.renderLogRotateConfig()
+	if err != nil {
+		return err
+	}
+	go s.logRotate(ctx, configFilePath)
+
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/envoy"), args...)
 		cmd.Stdout = os.Stdout
@@ -117,7 +127,18 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	})
 }
 
-func (s *envoyModule) logRotate(ctx context.Context) {
+func (s *envoyModule) renderLogRotateConfig() (configPath string, err error) {
+
+	filePath := filepath.Join(s.rootDir, common.ConfPrefix, "logrotate.conf")
+	tmplFilePath := filepath.Join(s.rootDir, common.ConfPrefix, "logrotate.conf.tmpl")
+
+	if err := utilscommon.RenderConfig(tmplFilePath, filePath, s.logrotate); err != nil {
+		return "", fmt.Errorf("failed to render logrotate config: %w", err)
+	}
+	return filePath, nil
+}
+
+func (s *envoyModule) logRotate(ctx context.Context, filePath string) {
 	for {
 		t := time.Now()
 		n := time.Date(t.Year(), t.Month(), t.Day(), 0, 1, 0, 0, t.Location())
@@ -129,10 +150,11 @@ func (s *envoyModule) logRotate(ctx context.Context) {
 
 		time.Sleep(d)
 
-		cmd := exec.Command("logrotate", filepath.Join(s.rootDir, common.ConfPrefix, "logrotate.conf"))
+		cmd := exec.Command("logrotate", filePath)
 		if err := cmd.Run(); err != nil {
 			nlog.Errorf("Logrotate run error: %v", err)
 		}
+
 	}
 }
 

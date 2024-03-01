@@ -154,7 +154,7 @@ message LocalDataSourceInfo {
 // datasource info for oss
 // oss not support now
 message OssDataSourceInfo {
-    // endpoint oss.xxx.cn-xxx.com or 127.0.0.1:9000
+    // endpoint https://oss.xxx.cn-xxx.com or http://127.0.0.1:9000
     string endpoint = 1;
     // the bucket name of the oss datasource
     string bucket = 2;

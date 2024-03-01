@@ -46,8 +46,9 @@ type KusciaConfig struct {
 	CACertFile     string `yaml:"caFile,omitempty"` // Note: for ca cert will be mounted to agent pod
 	CACertData     string `yaml:"caCertData,omitempty"`
 
-	LogLevel           string `yaml:"logLevel"`
-	MetricUpdatePeriod uint   `yaml:"metricUpdatePeriod,omitempty"` // Unit: second
+	LogLevel           string          `yaml:"logLevel"`
+	Logrotate          LogrotateConfig `yaml:"logrotate,omitempty"`
+	MetricUpdatePeriod uint            `yaml:"metricUpdatePeriod,omitempty"` // Unit: second
 
 	Debug        bool `yaml:"debug"`
 	DebugPort    int  `yaml:"debugPort"`
@@ -133,6 +134,7 @@ func defaultKusciaConfig(rootDir string) KusciaConfig {
 		EnvoyIP:            hostIP,
 		KusciaAPI:          kaconfig.NewDefaultKusciaAPIConfig(rootDir),
 		MetricUpdatePeriod: defaultMetricUpdatePeriod,
+		Logrotate:          LogrotateConfig{3, 128},
 	}
 }
 

@@ -106,10 +106,13 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	}
 	// normalization request
 	s.normalizationCreateRequest(request)
+	// verdor priority using incoming
+	customVendor := request.Vendor
+
 	// build kuscia domain
 	Labels := map[string]string{
 		common.LabelDomainDataType:        request.Type,
-		common.LabelDomainDataVendor:      request.Vendor,
+		common.LabelDomainDataVendor:      customVendor,
 		common.LabelInterConnProtocolType: "kuscia",
 	}
 
@@ -131,7 +134,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Attributes:  request.Attributes,
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
-			Vendor:      request.Vendor,
+			Vendor:      customVendor,
 			Author:      request.DomainId,
 			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
@@ -175,17 +178,22 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 	if err != nil {
 		nlog.Errorf("UpdateDomainData failed, error: %s", err.Error())
 		return &kusciaapi.UpdateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrGetDomainDataFailed), err.Error()),
 		}
 	}
+
 	s.normalizationUpdateRequest(request, originalDomainData.Spec)
 	// build modified domainData
 	labels := make(map[string]string)
 	for key, value := range originalDomainData.Labels {
 		labels[key] = value
 	}
+
+	// verdor priority using incoming
+	customVendor := request.Vendor
+
 	labels[common.LabelDomainDataType] = request.Type
-	labels[common.LabelDomainDataVendor] = request.Vendor
+	labels[common.LabelDomainDataVendor] = customVendor
 	modifiedDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            request.DomaindataId,
@@ -200,7 +208,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			Attributes:  request.Attributes,
 			Partition:   common.Convert2KubePartition(request.Partition),
 			Columns:     common.Convert2KubeColumn(request.Columns),
-			Vendor:      request.Vendor,
+			Vendor:      customVendor,
 			Author:      request.DomainId,
 			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
@@ -222,7 +230,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 		nlog.Debugf("Patch DomainData failed, request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s, error: %s.",
 			request, patchBytes, originalBytes, modifiedBytes, err.Error())
 		return &kusciaapi.UpdateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrPatchDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrPatchDomainDataFailed), err.Error()),
 		}
 	}
 	// construct the response
@@ -463,7 +471,6 @@ func convert2UpdateReq(createReq *kusciaapi.CreateDomainDataRequest) (updateReq 
 		Attributes:   createReq.Attributes,
 		Partition:    createReq.Partition,
 		Columns:      createReq.Columns,
-		Vendor:       createReq.Vendor,
 		FileFormat:   createReq.FileFormat,
 	}
 	return
@@ -495,6 +502,7 @@ func (s domainDataService) normalizationCreateRequest(request *kusciaapi.CreateD
 	if request.DatasourceId == "" {
 		request.DatasourceId = common.DefaultDataSourceID
 	}
+	//fill default vendor
 	if request.Vendor == "" {
 		request.Vendor = common.DefaultDomainDataVendor
 	}

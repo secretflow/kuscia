@@ -4,11 +4,10 @@
 .. toctree::
     :maxdepth: 2
 
+    kuscia_deployment_instructions
     deploy_check
-    deploy_p2p_cn
-    deploy_master_lite_cn
+    Docker_deployment_kuscia/index
     K8s_deployment_kuscia/index
-    deploy_with_runp_cn
     operation_cn
     networkrequirements
     logdescription

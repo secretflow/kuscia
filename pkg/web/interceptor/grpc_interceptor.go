@@ -31,7 +31,6 @@ func GrpcServerTokenInterceptor(tokenData string) grpc.UnaryServerInterceptor {
 		if err != nil {
 			return nil, err
 		}
-		ctx = context.WithValue(ctx, constants.AuthRole, constants.AuthRoleMaster)
 		return handler(ctx, req)
 	}
 }
@@ -44,7 +43,23 @@ func GrpcStreamServerTokenInterceptor(tokenData string) grpc.StreamServerInterce
 		if err != nil {
 			return err
 		}
+		return handler(srv, ss)
+	}
+}
+
+func GrpcServerMasterRoleInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		ctx = context.WithValue(ctx, constants.AuthRole, constants.AuthRoleMaster)
+		ctx = context.WithValue(ctx, constants.SourceDomainKey, constants.AuthRoleMaster)
+		return handler(ctx, req)
+	}
+}
+
+func GrpcStreamServerMasterRoleInterceptor() grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := ss.Context()
+		ctx = context.WithValue(ctx, constants.AuthRole, constants.AuthRoleMaster)
+		ctx = context.WithValue(ctx, constants.SourceDomainKey, constants.AuthRoleMaster)
 		return handler(srv, ss)
 	}
 }

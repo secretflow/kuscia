@@ -80,40 +80,25 @@ func DoHTTPWithRetry(in interface{}, out interface{}, hp *HTTPParam, waitTime ti
 		}
 		time.Sleep(waitTime)
 	}
-
-	return fmt.Errorf("request error, retry at maxtimes:%d, path: %s, err:%s", maxRetryTimes, hp.Path, err.Error())
+	return err
 }
 
-type ErrType int
-
-const (
-	NewHTTPRequestError ErrType = iota
-	InParameterMarshalToJSONError
-	OutParameterRunMarshalFromJSONError
-	ResponseStatusCodeNotOK
-	DoHTTPError
-	IOError
-)
-
-func DoHTTPWithHandler(in interface{}, out interface{}, hp *HTTPParam, handler func(et ErrType, err error)) {
+func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
 	var req *http.Request
 	var err error
 	if hp.Method == http.MethodGet {
 		req, err = http.NewRequest(http.MethodGet, InternalServer+hp.Path, nil)
-		if err != nil && handler != nil {
-			handler(NewHTTPRequestError, err)
-			return
+		if err != nil {
+			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
 	} else {
 		inbody, err := json.Marshal(in)
-		if err != nil && handler != nil {
-			handler(InParameterMarshalToJSONError, err)
-			return
+		if err != nil {
+			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
 		req, err = http.NewRequest(hp.Method, InternalServer+hp.Path, bytes.NewBuffer(inbody))
-		if err != nil && handler != nil {
-			handler(NewHTTPRequestError, err)
-			return
+		if err != nil {
+			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
 	}
 
@@ -126,56 +111,28 @@ func DoHTTPWithHandler(in interface{}, out interface{}, hp *HTTPParam, handler f
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil && handler != nil {
-		handler(DoHTTPError, err)
-		return
+	if err != nil {
+		return fmt.Errorf("send request error, detail -> %s", err.Error())
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	if err != nil && handler != nil {
-		handler(IOError, err)
-		return
+	if err != nil {
+		return fmt.Errorf("read response body error, detail -> %s", err.Error())
 	}
 
-	if resp.StatusCode != http.StatusOK && handler != nil {
+	if resp.StatusCode != http.StatusOK {
 		if len(body) > 200 {
 			body = body[:200]
 		}
-		handler(ResponseStatusCodeNotOK, fmt.Errorf("code: %d, message: %s", resp.StatusCode, string(body)))
-		return
+		return fmt.Errorf("response status code [%d], detail -> %s", resp.StatusCode, string(body))
 	}
 
-	if err := json.Unmarshal(body, out); err != nil && handler != nil {
+	if err := json.Unmarshal(body, out); err != nil {
 		if len(body) > 200 {
 			body = body[:200]
 		}
-		handler(OutParameterRunMarshalFromJSONError, fmt.Errorf("%s, body:%s", err.Error(), string(body)))
-		return
+		return fmt.Errorf("invalid response body, detail -> %s", string(body))
 	}
-}
-
-func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
-	var e error
-	DoHTTPWithHandler(in, out, hp, func(et ErrType, err error) {
-		switch et {
-		case NewHTTPRequestError:
-			e = fmt.Errorf("%s new fail:%v", genErrorPrefix(hp), err)
-		case InParameterMarshalToJSONError:
-			e = fmt.Errorf("%s in parameter marshal to json fail:%v", genErrorPrefix(hp), err)
-		case OutParameterRunMarshalFromJSONError:
-			e = fmt.Errorf("%s out parameter unmarshal from json fail:%v", genErrorPrefix(hp), err)
-		case ResponseStatusCodeNotOK:
-			e = fmt.Errorf("%s get code is not ok: %v", genErrorPrefix(hp), err)
-		case DoHTTPError:
-			e = fmt.Errorf("%s do fail: %v", genErrorPrefix(hp), err)
-		case IOError:
-			e = fmt.Errorf("%s read body fail: %v", genErrorPrefix(hp), err)
-		}
-	})
-	return e
-}
-
-func genErrorPrefix(hp *HTTPParam) string {
-	return fmt.Sprintf("request(method:%s path:%s cluster:%s host:%s)", hp.Method, hp.Path, hp.ClusterName, hp.KusciaHost)
+	return nil
 }

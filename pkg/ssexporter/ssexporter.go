@@ -1,3 +1,17 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package ssexporter
 
 import (
@@ -7,6 +21,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
 	"github.com/secretflow/kuscia/pkg/ssexporter/promexporter"
@@ -24,11 +39,11 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 	clusterAddresses := parse.GetClusterAddress(domainID)
 	localDomainName := domainID
 	var MetricTypes = promexporter.NewMetricTypes()
-	var reg *prometheus.Registry
-	reg = promexporter.ProduceRegister()
+
+	reg := promexporter.ProduceRegister()
 	lastClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriod)
 	if err != nil {
-		nlog.Error("Fail to get ss metric results", err)
+		nlog.Warnf("Fail to get ss metric results, err: %v", err)
 		return err
 	}
 	// export the cluster metrics
@@ -41,7 +56,7 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 			// get cluster metrics
 			currentClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
 			if err != nil {
-				nlog.Warn("Fail to get ss metric results", err)
+				nlog.Warnf("Fail to get ss metric results, err: %v", err)
 			}
 			// calculate the change values of cluster metrics
 			lastClusterMetricValues, currentClusterMetricValues = ssmetrics.GetMetricChange(lastClusterMetricValues, currentClusterMetricValues)

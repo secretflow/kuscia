@@ -37,9 +37,14 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
+const (
+	RsaPrivateKey = "RSA PRIVATE KEY"
+	RsaPublicKey  = "RSA PUBLIC KEY"
+)
+
 func ParsePKCS1PrivateKeyData(data []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(data)
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
+	if block == nil || block.Type != RsaPrivateKey {
 		return nil, fmt.Errorf("invalid private key, should be PEM block format")
 	}
 
@@ -57,11 +62,11 @@ func ParsePKCS1PrivateKey(serverKey string) (*rsa.PrivateKey, error) {
 
 func ParsePKCS1PublicKey(der []byte) (*rsa.PublicKey, error) {
 	if len(der) == 0 {
-		return nil, fmt.Errorf("invalid public key, key is empty")
+		return nil, fmt.Errorf("public key is empty")
 	}
 	block, _ := pem.Decode(der)
-	if block == nil || block.Type != "RSA PUBLIC KEY" {
-		return nil, fmt.Errorf("invalid public key, should be PEM block format")
+	if block == nil || block.Type != RsaPublicKey {
+		return nil, fmt.Errorf("public key should be PEM block format")
 	}
 	return x509.ParsePKCS1PublicKey(block.Bytes)
 }
@@ -85,7 +90,7 @@ func ParsePKCS1CertFromFile(caFilePath string) (*x509.Certificate, error) {
 
 func EncodePKCS1PublicKey(priKey *rsa.PrivateKey) []byte {
 	block := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
+		Type:  RsaPublicKey,
 		Bytes: x509.MarshalPKCS1PublicKey(&priKey.PublicKey),
 	}
 	pubPem := pem.EncodeToMemory(block)
@@ -207,7 +212,7 @@ func VerifySSLKey(key []byte) bool {
 		return false
 	}
 
-	if block.Type == "RSA PRIVATE KEY" {
+	if block.Type == RsaPrivateKey {
 		if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
 			return false
 		}
@@ -234,6 +239,17 @@ func VerifyCert(cert []byte) bool {
 	}
 
 	return true
+}
+
+func VerifyEncodeCert(base64EncodeCert string) error {
+	data, err := base64.StdEncoding.DecodeString(base64EncodeCert)
+	if err != nil {
+		return fmt.Errorf("cert must be encoded with base64")
+	}
+	if !VerifyCert(data) {
+		return fmt.Errorf("cert format is invalid, must be an x509 certificate")
+	}
+	return nil
 }
 
 func ParseEncodedKey(keyDataEncoded, keyFile string) (*rsa.PrivateKey, error) {
@@ -372,6 +388,18 @@ func GenerateKeyCertPairData(rootCAKey *rsa.PrivateKey, rootCACert *x509.Certifi
 	return keyBuf.String(), certBuf.String(), nil
 }
 
+func LoadKeyData(keyFile string) (string, error) {
+	priPemData, err := os.ReadFile(keyFile)
+	if err != nil {
+		return "", err
+	}
+	block, _ := pem.Decode(priPemData)
+	if block == nil || block.Type != RsaPrivateKey {
+		return "", fmt.Errorf("invalid private key, should be PEM block format")
+	}
+	return base64.StdEncoding.EncodeToString(priPemData), nil
+}
+
 func GenerateKeyData() (string, error) {
 	var keyOut bytes.Buffer
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -380,7 +408,7 @@ func GenerateKeyData() (string, error) {
 	}
 
 	err = pem.Encode(&keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  RsaPrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 	return base64.StdEncoding.EncodeToString(keyOut.Bytes()), err
@@ -393,7 +421,7 @@ func WritePrivateKeyToFile(key *rsa.PrivateKey, filename string) error {
 		return fmt.Errorf("create key file [%s] error: %v", filename, err.Error())
 	}
 	return pem.Encode(keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  RsaPrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 }
@@ -408,6 +436,14 @@ func WriteX509CertToFile(cert *x509.Certificate, filename string) error {
 		Type:  "CERTIFICATE",
 		Bytes: cert.Raw,
 	})
+}
+
+func GeneratePrivateKeyToFile(filename string) error {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+	return WritePrivateKeyToFile(priv, filename)
 }
 
 func SignWithRSA(key *rsa.PrivateKey, data string) (string, error) {
