@@ -17,7 +17,6 @@ syntax = "proto3";
 package kuscia.proto.api.v1alpha1.kusciaapi;
 
 import "kuscia/proto/api/v1alpha1/common.proto";
-import "kuscia/proto/api/v1alpha1/kusciaapi/serving.proto";
 
 option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
 option java_package = "org.secretflow.v1alpha1.kusciaapi";
