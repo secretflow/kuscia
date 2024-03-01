@@ -16,7 +16,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -36,6 +35,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	utilcommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
@@ -903,19 +903,19 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 		var ptr *k8sresource.Quantity
 		var limitResource corev1.ResourceList = corev1.ResourceList{}
 
-		if !isEmpty(p.Resources) && !isEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
+		if !utilcommon.IsEmpty(p.Resources) && !utilcommon.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
 			ptrValue := p.Resources.Limits[corev1.ResourceCPU]
 			ptr = &ptrValue
 			stringValue := ptr.String()
-			stringEveryCpu, _ := splitRSC(stringValue, ctrNumber*rplNumber)
+			stringEveryCpu, _ := utilcommon.SplitRSC(stringValue, ctrNumber*rplNumber)
 			everyCpu = k8sresource.MustParse(stringEveryCpu)
 			limitResource[corev1.ResourceCPU] = everyCpu
 		}
-		if !isEmpty(p.Resources) && !isEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
+		if !utilcommon.IsEmpty(p.Resources) && !utilcommon.IsEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
 			ptrValue := p.Resources.Limits[corev1.ResourceMemory]
 			ptr = &ptrValue
 			stringValue := ptr.String()
-			stringEveryMemory, _ := splitRSC(stringValue, ctrNumber*rplNumber)
+			stringEveryMemory, _ := utilcommon.SplitRSC(stringValue, ctrNumber*rplNumber)
 			everyMemory = k8sresource.MustParse(stringEveryMemory)
 			limitResource[corev1.ResourceMemory] = everyMemory
 		}
@@ -936,7 +936,7 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 			},
 		}
 
-		if isEmpty(p.Resources) {
+		if utilcommon.IsEmpty(p.Resources) {
 			resources = v1alpha1.PartyTemplate{}
 		}
 
@@ -949,44 +949,6 @@ func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alp
 		}
 	}
 	return taskPartyInfos
-}
-
-// isEmpty will judge whether data is empty
-func isEmpty(v interface{}) bool {
-	return reflect.DeepEqual(v, reflect.Zero(reflect.TypeOf(v)).Interface())
-}
-
-// SplitRSC will split the resources into N parts
-func splitRSC(rsc string, n int) (string, error) {
-	quantity, err := k8sresource.ParseQuantity(rsc)
-	if err != nil {
-		return "", errors.New("failed to parse resource quantity: " + err.Error())
-	}
-	unit := quantity.Format
-	if unit == k8sresource.DecimalSI {
-		quantity.SetMilli(quantity.MilliValue() / int64(n))
-		return quantity.String(), nil
-	} else {
-		bytes := quantity.Value()
-		bytesPerPart := bytes / int64(n)
-		var result string
-		switch {
-		case bytesPerPart >= 1<<60:
-			result = fmt.Sprintf("%.0fPi", float64(bytesPerPart)/(1<<50))
-		case bytesPerPart >= 1<<50:
-			result = fmt.Sprintf("%.0fTi", float64(bytesPerPart)/(1<<40))
-		case bytesPerPart >= 1<<40:
-			result = fmt.Sprintf("%.0fGi", float64(bytesPerPart)/(1<<30))
-		case bytesPerPart >= 1<<30:
-			result = fmt.Sprintf("%.0fMi", float64(bytesPerPart)/(1<<20))
-		case bytesPerPart >= 1<<20:
-			result = fmt.Sprintf("%.0fKi", float64(bytesPerPart)/(1<<10))
-		default:
-			quantity.Set(bytesPerPart)
-			result = quantity.String()
-		}
-		return result, nil
-	}
 }
 
 // jobTaskSelector will make selector of kuscia task which kuscia job generate.
