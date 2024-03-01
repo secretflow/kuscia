@@ -824,7 +824,7 @@ func willStartTasksOf(kusciaJob *kusciaapisv1alpha1.KusciaJob, readyTasks []kusc
 }
 
 // buildWillStartKusciaTask build KusciaTask CR from job's will-start sub-tasks.
-func buildWillStartKusciaTask(h *RunningHandler, kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
+func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
 	// var nsLister corelisters.NamespaceLister = h.namespaceLister
 	createdTasks := make([]*kusciaapisv1alpha1.KusciaTask, 0)
 
@@ -846,7 +846,7 @@ func buildWillStartKusciaTask(h *RunningHandler, kusciaJob *kusciaapisv1alpha1.K
 					common.LabelJobUID:     string(kusciaJob.UID),
 				},
 			},
-			Spec: createTaskSpec(h, kusciaJob.Spec.Initiator, t),
+			Spec: h.createTaskSpec(kusciaJob.Spec.Initiator, t),
 		}
 
 		if isIcJob {
@@ -873,11 +873,11 @@ func buildWillStartKusciaTask(h *RunningHandler, kusciaJob *kusciaapisv1alpha1.K
 }
 
 // createTaskSpec will make kuscia task spec for kuscia job.
-func createTaskSpec(h *RunningHandler, initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) kusciaapisv1alpha1.KusciaTaskSpec {
+func (h *RunningHandler) createTaskSpec(initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) kusciaapisv1alpha1.KusciaTaskSpec {
 	result := kusciaapisv1alpha1.KusciaTaskSpec{
 		Initiator:       initiator,
 		TaskInputConfig: t.TaskInputConfig,
-		Parties:         buildPartiesFromTaskInputConfig(h, t),
+		Parties:         h.buildPartiesFromTaskInputConfig(t),
 	}
 	if t.ScheduleConfig != nil {
 		result.ScheduleConfig = *t.ScheduleConfig
@@ -886,7 +886,7 @@ func createTaskSpec(h *RunningHandler, initiator string, t kusciaapisv1alpha1.Ku
 }
 
 // buildPartiesFromTaskInputConfig will make kuscia task parties for kuscia job.
-func buildPartiesFromTaskInputConfig(h *RunningHandler, template kusciaapisv1alpha1.KusciaTaskTemplate) []kusciaapisv1alpha1.PartyInfo {
+func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1alpha1.KusciaTaskTemplate) []kusciaapisv1alpha1.PartyInfo {
 	taskPartyInfos := make([]kusciaapisv1alpha1.PartyInfo, len(template.Parties))
 	for i, p := range template.Parties {
 		// build container resources of tasks
