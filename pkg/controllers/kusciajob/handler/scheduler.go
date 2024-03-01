@@ -892,11 +892,18 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 		// build container resources of tasks
 		var ctrNumber, rplNumber int = 1, 1 // container number and replica number
 		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), template.AppImage, metav1.GetOptions{})
+		var deployTemplate v1alpha1.DeployTemplate
 		if err != nil {
 			nlog.Infof("can not get appImage %s.", template.AppImage)
 		} else {
-			ctrNumber = len(appImage.Spec.DeployTemplates[0].Spec.Containers)
-			rplNumber = int(*(appImage.Spec.DeployTemplates[0].Replicas))
+			deployTemplate = appImage.Spec.DeployTemplates[0]
+			for _, dt := range appImage.Spec.DeployTemplates {
+				if dt.Role == p.Role {
+					deployTemplate = dt
+				}
+			}
+			ctrNumber = len(deployTemplate.Spec.Containers)
+			rplNumber = int(*(deployTemplate.Replicas))
 		}
 
 		var everyCpu, everyMemory k8sresource.Quantity
@@ -926,7 +933,7 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 				Limits: limitResource,
 			}
 			if err == nil {
-				containers[ctrIdx].Name = appImage.Spec.DeployTemplates[0].Spec.Containers[ctrIdx].Name
+				containers[ctrIdx].Name = deployTemplate.Spec.Containers[ctrIdx].Name
 			}
 		}
 
