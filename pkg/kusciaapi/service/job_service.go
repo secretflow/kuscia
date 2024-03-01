@@ -95,31 +95,28 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
 		for j, party := range task.Parties {
 			// build resources
-			overallCpu := ""
-			overallMemory := ""
-
-			if party.Resources != nil && party.Resources.Cpu != "" {
-				overallCpu = party.Resources.Cpu
-			}
-			if party.Resources != nil && party.Resources.Memory != "" {
-				overallMemory = party.Resources.Memory
-			}
-
+			limitResource := corev1.ResourceList{}
 			var template *corev1.ResourceRequirements
-			if overallCpu != "" || overallMemory != "" {
-				limitResource := corev1.ResourceList{}
-				if overallCpu != "" {
-					q, err := k8sresource.ParseQuantity(overallCpu)
-					if err == nil {
+			if party.Resources != nil {
+				if party.Resources.Cpu != "" {
+					if q, err := k8sresource.ParseQuantity(party.Resources.Cpu); err == nil {
 						limitResource[corev1.ResourceCPU] = q
+					} else {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parse input cpu resource failed: %v", err.Error())),
+						}
 					}
 				}
-				if overallMemory != "" {
-					q, err := k8sresource.ParseQuantity(overallMemory)
-					if err == nil {
+				if party.Resources.Memory != "" {
+					if q, err := k8sresource.ParseQuantity(party.Resources.Memory); err == nil {
 						limitResource[corev1.ResourceMemory] = q
+					} else {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parse input memory resource failed: %v", err.Error())),
+						}
 					}
 				}
+
 				template = &corev1.ResourceRequirements{
 					Limits: limitResource,
 				}

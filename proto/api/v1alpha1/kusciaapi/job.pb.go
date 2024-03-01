@@ -494,7 +494,7 @@ type Party struct {
 
 	DomainId  string       `protobuf:"bytes,1,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
 	Role      string       `protobuf:"bytes,2,opt,name=role,proto3" json:"role,omitempty"`           // server or client
-	Resources *JobResource `protobuf:"bytes,3,opt,name=resources,proto3" json:"resources,omitempty"` // Resource config for parties
+	Resources *JobResource `protobuf:"bytes,3,opt,name=resources,proto3" json:"resources,omitempty"` // resource config for parties
 }
 
 func (x *Party) Reset() {
@@ -555,8 +555,8 @@ type JobResource struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Cpu    string `protobuf:"bytes,1,opt,name=cpu,proto3" json:"cpu,omitempty"`
-	Memory string `protobuf:"bytes,2,opt,name=memory,proto3" json:"memory,omitempty"`
+	Cpu    string `protobuf:"bytes,1,opt,name=cpu,proto3" json:"cpu,omitempty"`       // hard ceiling of CPU/virtual cores that the containers of certain party can use
+	Memory string `protobuf:"bytes,2,opt,name=memory,proto3" json:"memory,omitempty"` // limited RAMs that the containers of certain party can use
 }
 
 func (x *JobResource) Reset() {
