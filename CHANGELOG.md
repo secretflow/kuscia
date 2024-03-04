@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Security` in case of vulnerabilities.
 `Breaking Changed` Breaking for backward-incompatible changes that require user intervention.
 
-## [0.7.0.dev240229] - 2023-02-29
+## [0.7.0.dev240229] - 2024-02-29
 ### Added
 - add the documents of datasource api
 - add kusciaapi errorcode doc
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade certain dependency packages to fix security vulnerabilities in pkg.
 
 
-## [0.6.0.dev240131] - 2023-01-31
+## [0.6.0.dev240131] - 2024-01-31
 ### Added
 - Upgrade interconnection protocol from kuscia-alpha to kuscia-beta to support interconnection between Kuscia-Master and Kuscia-Autonomy.
 - Kuscia monitor, Kuscia exposes a set of metric data, which can be used as data sources for collection by external monitoring tools (such as Prometheus).
