@@ -28,4 +28,5 @@ type Context struct {
 func InstallCommands(rootCmd *cobra.Command, cmdCtx *Context) {
 	rootCmd.AddCommand(loadCommand(cmdCtx))
 	rootCmd.AddCommand(builtinCommand(cmdCtx))
+	rootCmd.AddCommand(mountCommand(cmdCtx))
 }

@@ -15,7 +15,15 @@
 package util
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/base64"
+	"encoding/pem"
 	"fmt"
+	"math/big"
+	"testing"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +31,9 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 
+	"github.com/google/uuid"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/stretchr/testify/assert"
 )
 
 func MakeTaskResource(namespace, name string, min int, creationTime *time.Time) *kusciaapisv1alpha1.TaskResource {
@@ -160,4 +170,27 @@ func NewFakeSharedLister(pods []*corev1.Pod, nodes []*corev1.Node) framework.Sha
 		havePodsWithAffinityNodeInfoList: havePodsWithAffinityNodeInfoList,
 		havePodsWithRequiredAntiAffinityNodeInfoList: havePodsWithRequiredAntiAffinityNodeInfoList,
 	}
+}
+
+func MakeBase64EncodeCert(t *testing.T) string {
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+
+	certTemplate := x509.Certificate{
+		SerialNumber:          big.NewInt(int64(uuid.New().ID())),
+		Subject:               pkix.Name{CommonName: "Test"},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
+		SubjectKeyId:          []byte{1, 2, 3, 4, 6},
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &privateKey.PublicKey, privateKey)
+	assert.NoError(t, err)
+
+	certBuf := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	return base64.StdEncoding.EncodeToString(certBuf)
 }

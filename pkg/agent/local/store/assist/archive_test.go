@@ -29,8 +29,11 @@ func TestTar(t *testing.T) {
 	assert.NoError(t, os.WriteFile(filepath.Join(srcDir, "a.txt"), []byte("aaa"), 0644))
 	assert.NoError(t, os.WriteFile(filepath.Join(srcDir, "b.txt"), []byte("bbb"), 0644))
 
-	dst, err := os.Create(filepath.Join(rootDir, "dst.tar"))
+	dstPath := filepath.Join(rootDir, "dst.tar")
+	dst, err := os.Create(dstPath)
 	assert.NoError(t, err)
 
 	assert.NoError(t, Tar(srcDir, true, dst))
+	targetDir := filepath.Join(rootDir, "target")
+	assert.NoError(t, ExtractTarFile(targetDir, dstPath, false))
 }

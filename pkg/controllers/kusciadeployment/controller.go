@@ -411,7 +411,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
 			kd.Status.Reason = string(retryProcessingFailed)
 			kd.Status.Message = fmt.Sprintf("process failed after retrying %v times, %v", maxRetries, err)
-			err = c.handleError(ctx, &kusciaDeployment.Status, kd, err)
+			err = c.handleError(ctx, nil, &kusciaDeployment.Status, kd, err)
 		}
 		return err
 	}

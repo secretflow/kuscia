@@ -68,6 +68,7 @@ type Dependencies struct {
 	SecretBackendHolder     *secretbackend.Holder
 	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
 	LogConfig               *nlog.LogConfig
+	Logrorate               confloader.LogrotateConfig
 }
 
 func (d *Dependencies) MakeClients() {
@@ -207,8 +208,8 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	logConfig := &nlog.LogConfig{
 		LogLevel:      kusciaConf.LogLevel,
 		LogPath:       "var/logs/kuscia.log",
-		MaxFileSizeMB: 128,
-		MaxFiles:      3,
+		MaxFileSizeMB: kusciaConf.Logrotate.MaxFileSizeMB,
+		MaxFiles:      kusciaConf.Logrotate.MaxFiles,
 		Compress:      true,
 	}
 	if err := InitLogs(logConfig); err != nil {
@@ -216,7 +217,7 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	}
 	nlog.Debugf("Read kuscia config: %+v", kusciaConf)
 	dependencies.LogConfig = logConfig
-
+	dependencies.Logrorate = kusciaConf.Logrotate
 	// run config loader
 	dependencies.SecretBackendHolder = secretbackend.NewHolder()
 	nlog.Info("Start to init all secret backends ... ")

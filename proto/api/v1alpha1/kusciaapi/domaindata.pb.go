@@ -324,7 +324,7 @@ type UpdateDomainDataRequest struct {
 	Partition *v1alpha1.Partition `protobuf:"bytes,9,opt,name=partition,proto3" json:"partition,omitempty"`
 	// The columns describe the table's schema information.
 	Columns []*v1alpha1.DataColumn `protobuf:"bytes,10,rep,name=columns,proto3" json:"columns,omitempty"`
-	// The vendor is the one who outputs the domain data, it may be the SecretFlow engine,
+	// Optional , The vendor is the one who outputs the domain data, it may be the SecretFlow engine,
 	// another vendor's engine, or manually registered. it's could be manual, secretflow or other vendor string.
 	Vendor string `protobuf:"bytes,11,opt,name=vendor,proto3" json:"vendor,omitempty"`
 	// file-format only takes effect when the data source type is  localfs or oss. default value is csv
