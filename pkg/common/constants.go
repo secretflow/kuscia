@@ -150,6 +150,7 @@ const (
 	EnvTrustedCAFile       = "TRUSTED_CA_FILE"
 	EnvDomainID            = "KUSCIA_DOMAIN_ID"
 	EnvPortNumber          = "KUSCIA_PORT_%s_NUMBER"
+	EnvKusciaAPIProtocol   = "KUSCIA_API_PROTOCOL"
 	EnvKusciaAPIToken      = "KUSCIA_API_TOKEN"
 	EnvKusciaDomainKeyData = "KUSCIA_DOMAIN_KEY_DATA"
 )
@@ -223,4 +224,9 @@ const (
 
 const (
 	GatewayLiveTimeout = 3 * time.Minute
+)
+
+const (
+	DeployTokenUsedState   = "used"
+	DeployTokenUnusedState = "unused"
 )

@@ -1,3 +1,17 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package domain
 
 import (
@@ -6,6 +20,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	pkgcommon "github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -14,9 +29,8 @@ import (
 const (
 	usedLimit   = 1
 	unusedLimit = 1
-	usedState   = "used"
-	unusedState = "unused"
-	tokenSize   = 32
+
+	tokenSize = 32
 )
 
 func (c *Controller) newDomainTokenStatus(domain *kusciaapisv1alpha1.Domain) []kusciaapisv1alpha1.DeployTokenStatus {
@@ -35,9 +49,9 @@ func (c *Controller) newDomainTokenStatus(domain *kusciaapisv1alpha1.Domain) []k
 			continue
 		}
 		state := tokenStatus.State
-		if state == usedState {
+		if state == pkgcommon.DeployTokenUsedState {
 			usedTokens = append(usedTokens, tokenStatus)
-		} else if state == unusedState {
+		} else if state == pkgcommon.DeployTokenUnusedState {
 			unusedTokens = append(unusedTokens, tokenStatus)
 		} else {
 			nlog.Warnf("unsupported token state [%s] with token [%s]", state, tokenStatus.Token)
@@ -67,7 +81,7 @@ func (c *Controller) generateTokenStatus(size int) []kusciaapisv1alpha1.DeployTo
 	for i := 0; i < size; i++ {
 		tokens = append(tokens, kusciaapisv1alpha1.DeployTokenStatus{
 			Token:              generateToken(),
-			State:              unusedState,
+			State:              pkgcommon.DeployTokenUnusedState,
 			LastTransitionTime: metav1.Now(),
 		})
 	}

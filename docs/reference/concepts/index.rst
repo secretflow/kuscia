@@ -8,6 +8,7 @@ Kuscia 概念
     domainroute_cn
     domaindata_cn
     domaindatagrant_cn
+    domaindatasource_cn
     kusciajob_cn
     kusciatask_cn
     kusciadeployment_cn

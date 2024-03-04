@@ -110,7 +110,7 @@ func (c *Controller) updateDeployment(ctx context.Context, deploymentSummary *v1
 	}
 
 	kd := originalKd.DeepCopy()
-	if updateDeploymentPartyStatus(kd, deploymentSummary, partyDomainIDs) {
+	if updateDeploymentStatus(kd, deploymentSummary, partyDomainIDs) {
 		kd.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
 			return err
@@ -119,11 +119,20 @@ func (c *Controller) updateDeployment(ctx context.Context, deploymentSummary *v1
 	return nil
 }
 
-func updateDeploymentPartyStatus(deployment *v1alpha1.KusciaDeployment,
+func updateDeploymentStatus(deployment *v1alpha1.KusciaDeployment,
 	deploymentSummary *v1alpha1.KusciaDeploymentSummary,
 	domainIDs []string) bool {
+	updated := false
+	if deploymentSummary.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed &&
+		deployment.Status.Phase != deploymentSummary.Status.Phase {
+		updated = true
+		deployment.Status.Phase = deploymentSummary.Status.Phase
+		deployment.Status.Reason = deploymentSummary.Status.Reason
+		deployment.Status.Message = deploymentSummary.Status.Message
+	}
+
 	if deploymentSummary.Status.PartyDeploymentStatuses == nil {
-		return false
+		return updated
 	}
 
 	if deployment.Status.PartyDeploymentStatuses == nil {
@@ -131,7 +140,6 @@ func updateDeploymentPartyStatus(deployment *v1alpha1.KusciaDeployment,
 		return true
 	}
 
-	updated := false
 	for _, domainID := range domainIDs {
 		if statusInDeploymentSummary, ok := deploymentSummary.Status.PartyDeploymentStatuses[domainID]; ok {
 			if !reflect.DeepEqual(statusInDeploymentSummary, deployment.Status.PartyDeploymentStatuses[domainID]) {

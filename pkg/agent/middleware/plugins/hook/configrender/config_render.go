@@ -46,6 +46,10 @@ func Register() {
 }
 
 type configRenderConfig struct {
+	kusciaAPIProtocol common.Protocol
+	// Todo: temporary solution for scql
+	kusciaAPIToken string
+	domainKeyData  string
 }
 
 type configRender struct {
@@ -61,6 +65,12 @@ func (cr *configRender) Type() string {
 func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
 	if err := cfg.Config.Decode(&cr.config); err != nil {
 		return err
+	}
+
+	if dependencies != nil {
+		cr.config.kusciaAPIProtocol = dependencies.AgentConfig.KusciaAPIProtocol
+		cr.config.kusciaAPIToken = dependencies.AgentConfig.KusciaAPIToken
+		cr.config.domainKeyData = dependencies.AgentConfig.DomainKeyData
 	}
 
 	hook.Register(common.PluginNameConfigRender, cr)
@@ -331,7 +341,11 @@ func (cr *configRender) makeDataMap(annotations, envs map[string]string) (map[st
 }
 
 func (cr *configRender) makeDataMapFromLocal() map[string]string {
-	return map[string]string{}
+	return map[string]string{
+		common.EnvKusciaAPIProtocol:   string(cr.config.kusciaAPIProtocol),
+		common.EnvKusciaAPIToken:      cr.config.kusciaAPIToken,
+		common.EnvKusciaDomainKeyData: cr.config.domainKeyData,
+	}
 }
 
 func (cr *configRender) makeDataMapFromCM() map[string]string {

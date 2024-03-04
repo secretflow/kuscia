@@ -70,10 +70,10 @@ type AgentLogCfg struct {
 }
 
 type CapacityCfg struct {
-	CPU     string `yaml:"cpu,omitempty"`
-	Memory  string `yaml:"memory,omitempty"`
-	Pods    string `yaml:"pods,omitempty"`
-	Storage string `yaml:"storage,omitempty"`
+	CPU     string `yaml:"cpu"`
+	Memory  string `yaml:"memory"`
+	Pods    string `yaml:"pods"`
+	Storage string `yaml:"storage"`
 }
 
 type KubeConnCfg struct {
@@ -228,6 +228,7 @@ type AgentConfig struct {
 	LogsPath   string `yaml:"logsPath,omitempty"`
 	StdoutPath string `yaml:"stdoutPath,omitempty"`
 
+	KusciaAPIProtocol common.Protocol
 	// Todo: temporary solution for scql
 	KusciaAPIToken string
 	DomainKeyData  string

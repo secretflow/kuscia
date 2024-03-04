@@ -35,6 +35,7 @@ import (
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
 	weberrorcode "github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/utils"
@@ -105,6 +106,16 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 			}
 		}
 	}
+
+	// do cert validate
+	if len(request.Cert) > 0 {
+		if err := tls.VerifyEncodeCert(request.Cert); err != nil {
+			return &kusciaapi.CreateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			}
+		}
+	}
+
 	// build kuscia domain
 	kusciaDomain := &v1alpha1.Domain{
 		ObjectMeta: metav1.ObjectMeta{
@@ -248,6 +259,16 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			}
 		}
 	}
+
+	// do cert validate
+	if len(request.Cert) > 0 {
+		if err := tls.VerifyEncodeCert(request.Cert); err != nil {
+			return &kusciaapi.UpdateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			}
+		}
+	}
+
 	// get latest domain from k8s
 	latestDomain, err := s.kusciaClient.KusciaV1alpha1().Domains().Get(ctx, domainID, metav1.GetOptions{})
 	if err != nil {
