@@ -28,11 +28,11 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func getMetrics(url string) (string, error) {
+func getMetrics(url string) ([]byte, error) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		nlog.Error("Error creating request:", err)
-		return "", err
+		return nil, err
 	}
 	client := http.Client{
 		Timeout: 100 * time.Millisecond,
@@ -40,18 +40,18 @@ func getMetrics(url string) (string, error) {
 	response, err := client.Do(request)
 	if err != nil {
 		nlog.Error("Error sending request:", err)
-		return "", err
+		return nil, err
 	}
 	defer response.Body.Close()
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		nlog.Error("Error reading response body:", err)
-		return "", err
+		return nil, err
 	}
-	return string(responseBody), nil
+	return responseBody, nil
 }
 func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
-	metricsChan := make(chan string, len(metricUrls))
+	metricsChan := make(chan []byte, len(metricUrls))
 	var wg sync.WaitGroup
 
 	for key, url := range metricUrls {
@@ -64,7 +64,7 @@ func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
 				metricsChan <- metrics
 			} else {
 				nlog.Warnf("metrics[%s] query failed", key)
-				metricsChan <- "" // empty metrics
+				metricsChan <- nil // empty metrics
 			}
 		}(key, url)
 	}
@@ -77,7 +77,7 @@ func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	for metrics := range metricsChan {
-		w.Write([]byte(metrics))
+		w.Write(metrics)
 	}
 }
 

@@ -128,6 +128,7 @@ function init_monitor_config(){
     local conf_dir=$2
     local domain_id=$3
     local config_data=$4
+    mkdir -p ${conf_dir}
     if [[ $mode == "center" ]]; then
 	config_data=$(generate_center_config "${config_data}")
         echo "${config_data}" > ${conf_dir}/prometheus.yml
