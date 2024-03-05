@@ -68,6 +68,7 @@ func NewAgent(i *Dependencies) Module {
 	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
 	conf.Plugins = i.Agent.Plugins
 
+	conf.KusciaAPIProtocol = i.KusciaAPI.Protocol
 	// Todo: temporary solution for scql
 	if i.KusciaAPI != nil && i.KusciaAPI.Token != nil {
 		token, err := utils.ReadToken(*i.KusciaAPI.Token)
@@ -76,6 +77,7 @@ func NewAgent(i *Dependencies) Module {
 		}
 		conf.KusciaAPIToken = token
 	}
+	conf.DomainKeyData = i.DomainKeyData
 
 	nlog.Debugf("Agent config is %+v", conf)
 

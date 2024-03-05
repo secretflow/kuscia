@@ -247,13 +247,6 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
 		}
 	}
-
-	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
-	if err != nil {
-		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
-		}
-	}
 	// get domain from context
 	_, domainId := GetRoleAndDomainFromCtx(ctx)
 	if len(domainId) == 0 {
@@ -261,6 +254,14 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
 		}
 	}
+
+	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
+	if err != nil {
+		return &kusciaapi.StopJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
+		}
+	}
+
 	// auth pre handler
 	if err = h.authHandlerJobRetrieve(ctx, job); err != nil {
 		return &kusciaapi.StopJobResponse{

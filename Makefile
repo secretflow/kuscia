@@ -41,7 +41,7 @@ all: build
 
 .PHONY: help
 help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Development
 
@@ -68,8 +68,16 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: verify_error_code
+verify_error_code: ## Verify integrity of error code i18n configuration.
+	bash hack/errorcode/gen_error_code_doc.sh verify pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml
+
+.PHONY: gen_error_code_doc
+gen_error_code_doc: verify_error_code ## Generate error code markdown doc.
+	bash hack/errorcode/gen_error_code_doc.sh doc pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
+
 .PHONY: test
-test: fmt vet ## Run tests.
+test: verify_error_code fmt vet ## Run tests.
 	rm -rf ./test-results
 	mkdir -p test-results
 	go test ./cmd/... -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
@@ -91,11 +99,11 @@ clean: # clean build and test product.
 ##@ Build
 
 .PHONY: build
-build: fmt vet ## Build kuscia binary.
+build: verify_error_code fmt vet ## Build kuscia binary.
 	bash hack/build.sh -t kuscia
 
 .PHONY: docs
-docs: ## Build docs.
+docs: gen_error_code_doc ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
 
 .PHONY: deps-image
