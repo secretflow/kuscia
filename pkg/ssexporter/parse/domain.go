@@ -46,7 +46,7 @@ func GetClusterAddress(domainID string) map[string][]string {
 	// get the results of config_dump
 	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
 	if err != nil {
-		nlog.Error("Fail to get the results of config_dump", err)
+		nlog.Warn("Fail to get the results of config_dump", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/metricexporter/nodeexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
@@ -46,6 +47,8 @@ func NewNodeExporter(i *Dependencies) Module {
 func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 	var args []string
 	args = append(args, "--web.listen-address", ":"+exporter.nodeExportPort)
+	disabledCollectors := nodeexporter.GetDisabledCollectors()
+	args = append(args, disabledCollectors...)
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)
