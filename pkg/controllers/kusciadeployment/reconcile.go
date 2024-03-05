@@ -42,8 +42,6 @@ const (
 
 // ProcessKusciaDeployment processes kuscia deployment resource.
 func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment) (err error) {
-	preKdStatus := kd.Status.DeepCopy()
-
 	updated, err := c.updateKusciaDeploymentAnnotations(kd)
 	if err != nil {
 		nlog.Errorf("UpdateKusciaDeploymentSpec kd=%s/%s failed: %s", kd.Namespace, kd.Name, err)
@@ -58,13 +56,14 @@ func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1al
 		return nil
 	}
 
+	preKdStatus := kd.Status.DeepCopy()
 	partyKitInfos, err := c.buildPartyKitInfos(kd)
 	if err != nil {
-		return c.handleError(ctx, preKdStatus, kd, err)
+		return c.handleError(ctx, partyKitInfos, preKdStatus, kd, err)
 	}
 
 	if err = c.syncResources(ctx, partyKitInfos); err != nil {
-		return c.handleError(ctx, preKdStatus, kd, err)
+		return c.handleError(ctx, partyKitInfos, preKdStatus, kd, err)
 	}
 
 	if c.refreshPartyDeploymentStatuses(kd, partyKitInfos) {
@@ -159,9 +158,14 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 	}
 
 	for _, partyKitInfo := range partyKitInfos {
+		if partyKitInfo.domainID == "" || partyKitInfo.dkInfo == nil || partyKitInfo.dkInfo.deploymentName == "" {
+			continue
+		}
+
 		deployment, err := c.deploymentLister.Deployments(partyKitInfo.domainID).Get(partyKitInfo.dkInfo.deploymentName)
 		if err != nil {
-			nlog.Warnf("Failed to update party deployment %v/%v status for kuscia deployment %v, %v", partyKitInfo.domainID, partyKitInfo.dkInfo.deploymentName, kd.Name, err)
+			nlog.Warnf("Failed to update party deployment %v/%v status for kuscia deployment %v, %v",
+				partyKitInfo.domainID, partyKitInfo.dkInfo.deploymentName, kd.Name, err)
 			continue
 		}
 
@@ -171,21 +175,19 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 		}
 	}
 
+	availableParties := 0
 	hasPartialAvailableParty := false
 	for _, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
 		for _, v := range partyDeploymentStatus {
+			if v.Phase == kusciav1alpha1.KusciaDeploymentPhaseAvailable {
+				availableParties++
+				continue
+			}
+
 			if v.Phase == kusciav1alpha1.KusciaDeploymentPhasePartialAvailable {
 				hasPartialAvailableParty = true
-			}
-		}
-	}
-
-	availableParties := 0
-	for _, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
-		for _, v := range partyDeploymentStatus {
-			if v.Phase == kusciav1alpha1.KusciaDeploymentPhaseAvailable || v.Phase == kusciav1alpha1.KusciaDeploymentPhasePartialAvailable {
 				availableParties++
-				break
+				continue
 			}
 		}
 	}
@@ -196,6 +198,10 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 	}
 
 	kdStatusPhase := kusciav1alpha1.KusciaDeploymentPhaseProgressing
+	if kd.Status.Phase != "" {
+		kdStatusPhase = kd.Status.Phase
+	}
+
 	if availableParties == kd.Status.TotalParties {
 		if hasPartialAvailableParty {
 			kdStatusPhase = kusciav1alpha1.KusciaDeploymentPhasePartialAvailable
@@ -226,10 +232,12 @@ func refreshPartyDeploymentStatus(partyDeploymentStatuses map[string]map[string]
 		CreationTimestamp:   &deployment.CreationTimestamp,
 	}
 
-	if curDepStatus.AvailableReplicas >= curDepStatus.Replicas {
-		curDepStatus.Phase = kusciav1alpha1.KusciaDeploymentPhaseAvailable
-	} else if curDepStatus.AvailableReplicas > 0 {
-		curDepStatus.Phase = kusciav1alpha1.KusciaDeploymentPhasePartialAvailable
+	if curDepStatus.AvailableReplicas > 0 {
+		if curDepStatus.AvailableReplicas >= curDepStatus.Replicas {
+			curDepStatus.Phase = kusciav1alpha1.KusciaDeploymentPhaseAvailable
+		} else {
+			curDepStatus.Phase = kusciav1alpha1.KusciaDeploymentPhasePartialAvailable
+		}
 	}
 
 	partyDepStatuses, ok := partyDeploymentStatuses[deployment.Namespace]
@@ -834,22 +842,6 @@ func (c *Controller) selfParties(kd *kusciav1alpha1.KusciaDeployment) ([]kusciav
 		}
 	}
 	return selfParties, nil
-}
-
-func (c *Controller) isSelfDomain(kd *kusciav1alpha1.KusciaDeployment, domainId string) (bool, error) {
-	for _, p := range kd.Spec.Parties {
-		if p.DomainID != domainId {
-			continue
-		}
-		partyDomain, err := c.domainLister.Get(p.DomainID)
-		if err != nil {
-			return false, err
-		}
-		if partyDomain.Spec.Role == "" {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func (c *Controller) isInitiatorController(kd *kusciav1alpha1.KusciaDeployment) (bool, error) {

@@ -53,20 +53,20 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 ## 部署
 
+- [指南：部署指引][deploy-guide]
 - [指南：部署要求][deploy-check]
-- [指南：多机器部署中心化集群][deploy-master-lite]
-- [指南：多机器部署点对点集群][deploy-p2p]
-- [指南：K8s 集群部署 Kuscia][deploy-k8s-deploy-kuscia]
+- [指南：Docker 多机部署 Kuscia][deploy-kuscia-use-docker]
+- [指南：K8s 集群部署 Kuscia][deploy-kuscia-use-k8s]
 - [指南：使用 RunP 模式部署节点][deploy-with-runp]
 - [常见运维操作][ops-cheatsheet]
 - [网络要求][deploy-networkrequirements]
 - [日志说明][deploy-logdescription]
 - [Kuscia 配置文件][deploy-kuscia_config_cn]
 
+[deploy-guide]: ./deployment/kuscia_deployment_instructions.md
 [deploy-check]: ./deployment/deploy_check.md
-[deploy-master-lite]: ./deployment/deploy_master_lite_cn.md
-[deploy-p2p]: ./deployment/deploy_p2p_cn.md
-[deploy-K8s-deploy-kuscia]: ./deployment/K8s_deployment_kuscia/index.rst
+[deploy-kuscia-use-docker]: ./deployment/Docker_deployment_kuscia/index.rst
+[deploy-kuscia-use-k8s]: ./deployment/K8s_deployment_kuscia/index.rst
 [deploy-with-runp]: ./deployment/deploy_with_runp_cn.md
 [ops-cheatsheet]: ./deployment/operation_cn.md
 [deploy-networkrequirements]: ./deployment/networkrequirements.md

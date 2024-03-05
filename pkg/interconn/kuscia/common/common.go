@@ -158,6 +158,10 @@ func UpdateJobStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSumma
 		return false
 	}
 
+	if job.Labels == nil {
+		job.Labels = make(map[string]string)
+	}
+
 	job.Labels[common.LabelJobStage] = string(jobSummary.Spec.Stage)
 	job.Labels[common.LabelJobStageTrigger] = jobSummary.Spec.StageTrigger
 	return true

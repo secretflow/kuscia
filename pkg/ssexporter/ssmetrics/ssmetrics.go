@@ -1,3 +1,17 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Package ssmetrics collect metrics from ss
 package ssmetrics
 
@@ -20,12 +34,13 @@ func GetStatisticFromSs() ([]map[string]string, error) {
 	output, err := cmd.CombinedOutput()
 	var tcpStatisticList []map[string]string
 	if err != nil {
-		nlog.Warn("Cannot get metrics from ss.", err)
+		nlog.Warnf("Cannot get metrics from ss, error: %v", err)
 		return tcpStatisticList, err
 	}
 	// parse statistics from ss
 	lines := strings.Split(string(output), "\n")
-	ssMetrics := make(map[string]string)
+
+	var ssMetrics map[string]string
 	for idx, line := range lines {
 		if idx < 1 {
 			continue
@@ -101,7 +116,7 @@ func Sum(metrics []map[string]string, key string) (float64, error) {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Warn("fail to parse float", metric[key], "key:", key, "value:", val)
+			nlog.Warnf("fail to parse float: %s, key: %s, value: %f", metric[key], key, val)
 			return sum, err
 		}
 		sum += val
@@ -113,7 +128,7 @@ func Sum(metrics []map[string]string, key string) (float64, error) {
 func Avg(metrics []map[string]string, key string) (float64, error) {
 	sum, err := Sum(metrics, key)
 	if err != nil {
-		nlog.Warn("Fail to get the sum of ss metrics", err)
+		nlog.Warnf("Fail to get the sum of ss metrics, err: %v", err)
 		return sum, err
 	}
 	return sum / float64(len(metrics)), nil
@@ -176,12 +191,12 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if aggFunc == "rate" {
 				if metric == "retran_rate" {
 					threshold := 0.0
-					retran_sum, err := Sum(networkResults, "retrans")
-					connect_sum, err := Sum(networkResults, "total_connections")
+					retranSum, err := Sum(networkResults, "retrans")
+					connectSum, err := Sum(networkResults, "total_connections")
 					if err != nil {
 						return clusterResults, err
 					}
-					clusterResults[metricID] = Rate(retran_sum-threshold, connect_sum)
+					clusterResults[metricID] = Rate(retranSum-threshold, connectSum)
 				}
 			} else if aggFunc == "sum" {
 				clusterResults[metricID], err = Sum(networkResults, metric)
@@ -193,10 +208,10 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 				clusterResults[metricID], err = Min(networkResults, metric)
 			}
 			if err != nil {
-				nlog.Warn("Fail to get clusterResults from aggregation functions", err)
+				nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
 				return clusterResults, err
 			}
-			if metric == "bytes_send" || metric == "bytes_received" {
+			if metric == "bytes_sent" || metric == "bytes_received" {
 				clusterResults[metricID] = Rate(clusterResults[metricID], float64(MonitorPeriods))
 			}
 		}
@@ -210,13 +225,13 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 	ssResults := make(map[string]float64)
 	ssMetrics, err := GetStatisticFromSs()
 	if err != nil {
-		nlog.Warn("Fail to get statistics from ss", err)
+		nlog.Warnf("Fail to get statistics from ss, err: %v", err)
 		return ssResults, err
 	}
 	// get the source/destination IP from domain names
 	hostName, err := os.Hostname()
 	if err != nil {
-		nlog.Warn("Fail to get the hostname", err)
+		nlog.Warnf("Fail to get the hostname, err: %v", err)
 		return ssResults, err
 	}
 	sourceIP := parse.GetIPFromDomain(hostName)

@@ -47,9 +47,6 @@ func Register() {
 type EnvConfig struct {
 	UsePodLabels bool      `yaml:"usePodLabels"`
 	EnvList      []EnvList `yaml:"envList"`
-	// Todo: temporary solution for scql
-	KusciaAPIToken string
-	DomainKeyData  string
 }
 
 type envImport struct {
@@ -81,11 +78,6 @@ func (ci *envImport) Init(dependencies *plugin.Dependencies, cfg *config.PluginC
 	ci.EnvConfig.UsePodLabels = true
 	if err := cfg.Config.Decode(&ci.EnvConfig); err != nil {
 		return err
-	}
-
-	if dependencies != nil {
-		ci.EnvConfig.KusciaAPIToken = dependencies.AgentConfig.KusciaAPIToken
-		ci.EnvConfig.DomainKeyData = dependencies.AgentConfig.DomainKeyData
 	}
 	return nil
 }
@@ -183,37 +175,6 @@ func (ci *envImport) handleGenerateOptionContext(ctx *hook.GenerateContainerOpti
 		}
 	}
 
-	if ctx.Pod.Labels != nil && ctx.Pod.Labels[common.LabelKusciaDeploymentAppType] == string(common.SCQLApp) {
-		foundKusciaAPITokenEnv := false
-		foundDomainKeyDataEnv := false
-		for i, env := range ctx.Opts.Envs {
-			if env.Name == common.EnvKusciaAPIToken {
-				foundKusciaAPITokenEnv = true
-				ctx.Opts.Envs[i].Value = ci.EnvConfig.KusciaAPIToken
-			}
-
-			if env.Name == common.EnvKusciaDomainKeyData {
-				foundDomainKeyDataEnv = true
-				ctx.Opts.Envs[i].Value = ci.EnvConfig.DomainKeyData
-			}
-		}
-
-		if !foundKusciaAPITokenEnv {
-			ctx.Opts.Envs = append(ctx.Opts.Envs, container.EnvVar{
-				Name:  common.EnvKusciaAPIToken,
-				Value: ci.EnvConfig.KusciaAPIToken,
-			})
-		}
-
-		if !foundDomainKeyDataEnv {
-			ctx.Opts.Envs = append(ctx.Opts.Envs, container.EnvVar{
-				Name:  common.EnvKusciaDomainKeyData,
-				Value: ci.EnvConfig.DomainKeyData,
-			})
-		}
-
-	}
-
 	return nil
 }
 
@@ -233,39 +194,6 @@ func (ci *envImport) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) e
 				for _, e := range envs.Envs {
 					ctr.Env = append(ctr.Env, corev1.EnvVar{Name: e.Name, Value: e.Value})
 				}
-			}
-		}
-	}
-
-	if ctx.Pod.Labels != nil && ctx.Pod.Labels[common.LabelKusciaDeploymentAppType] == string(common.SCQLApp) {
-		for i := range pod.Spec.Containers {
-			ctr := &pod.Spec.Containers[i]
-			foundKusciaAPITokenEnv := false
-			foundDomainKeyDataEnv := false
-			for j, env := range ctr.Env {
-				if env.Name == common.EnvKusciaAPIToken {
-					foundKusciaAPITokenEnv = true
-					ctr.Env[j].Value = ci.EnvConfig.KusciaAPIToken
-				}
-
-				if env.Name == common.EnvKusciaDomainKeyData {
-					foundDomainKeyDataEnv = true
-					ctr.Env[j].Value = ci.EnvConfig.DomainKeyData
-				}
-			}
-
-			if !foundKusciaAPITokenEnv {
-				ctr.Env = append(ctr.Env, corev1.EnvVar{
-					Name:  common.EnvKusciaAPIToken,
-					Value: ci.EnvConfig.KusciaAPIToken,
-				})
-			}
-
-			if !foundDomainKeyDataEnv {
-				ctr.Env = append(ctr.Env, corev1.EnvVar{
-					Name:  common.EnvKusciaDomainKeyData,
-					Value: ci.EnvConfig.DomainKeyData,
-				})
 			}
 		}
 	}

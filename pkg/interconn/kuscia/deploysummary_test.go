@@ -124,3 +124,42 @@ func TestUpdateDeployment(t *testing.T) {
 	got = c.updateDeployment(ctx, kds)
 	assert.Equal(t, nil, got)
 }
+
+func TestUpdateDeploymentStatus(t *testing.T) {
+	// kds status is failed and is not equal to kd, should return true
+	kds := makeMockDeploymentSummary("alice", "kd-1")
+	kds.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed
+	kd := makeMockDeployment("cross-domain", "kd-1")
+	got := updateDeploymentStatus(kd, kds, nil)
+	assert.Equal(t, true, got)
+
+	// kds PartyDeploymentStatuses is empty, should return false
+	kds = makeMockDeploymentSummary("alice", "kd-1")
+	kd = makeMockDeployment("cross-domain", "kd-1")
+	got = updateDeploymentStatus(kd, kds, nil)
+	assert.Equal(t, false, got)
+
+	// status is updated, should return true
+	kds = makeMockDeploymentSummary("alice", "kd-1")
+	kds.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{
+		"alice": {
+			"kd-1": {
+				Phase:             v1alpha1.KusciaDeploymentPhaseAvailable,
+				Replicas:          1,
+				AvailableReplicas: 0,
+			},
+		},
+	}
+	kd = makeMockDeployment("cross-domain", "kd-1")
+	kd.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{
+		"alice": {
+			"kd-1": {
+				Phase:             v1alpha1.KusciaDeploymentPhaseProgressing,
+				Replicas:          1,
+				AvailableReplicas: 0,
+			},
+		},
+	}
+	got = updateDeploymentStatus(kd, kds, []string{"alice"})
+	assert.Equal(t, true, got)
+}

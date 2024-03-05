@@ -27,7 +27,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
 ```
 
-启动节点，默认会在当前目录下创建 kuscia-autonomy-alice-certs 目录用来存放 alice 节点的公私钥和证书。默认会在当前目录下创建 kuscia-autonomy-alice-data 目录用来存放 alice 的数据。部署节点需要使用 `deploy.sh` 脚本并传入特定的参数：
+启动节点，默认会在当前目录下创建 ${USER}-kuscia-autonomy-alice/data 目录用来存放 alice 的数据。部署节点需要使用 `deploy.sh` 脚本并传入特定的参数：
 
 ```bash
 # -n 参数传递的是节点 ID。
@@ -56,11 +56,11 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/domain.crt alice.domain.crt
 ```
 
-将 alice 的公钥 alice.domain.crt 拷贝到 bob 的机器上的 kuscia-autonomy-bob-certs 目录中：
+将 alice 的公钥 alice.domain.crt 拷贝到 bob 容器的 /home/kuscia/var/certs/ 目录中：
 
 ```bash
-# [bob 机器] 确保 alice.domain.crt 位于 bob 的 kuscia-autonomy-bob-certs 目录中
-ls kuscia-autonomy-bob-certs/alice.domain.crt
+# [bob 机器] 确保 alice.domain.crt 位于 bob 容器的 /home/kuscia/var/certs/ 目录中
+docker cp alice.domain.crt ${USER}-kuscia-autonomy-bob:/home/kuscia/var/certs/
 ```
 
 在 bob 里添加 alice 的证书等信息：
@@ -79,11 +79,11 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice p
 docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/certs/domain.crt bob.domain.crt
 ```
 
-将 bob 的公钥 bob.domain.crt 拷贝到 alice 的机器上的 kuscia-autonomy-alice-certs 目录中：
+将 bob 的公钥 bob.domain.crt 拷贝到 alice 容器的 /home/kuscia/var/certs/ 目录中：
 
 ```bash
-# [alice 机器] 确保 bob.domain.crt 位于 alice 的 kuscia-autonomy-alice-certs 目录中
-ls kuscia-autonomy-alice-certs/bob.domain.crt
+# [alice 机器] 确保 bob.domain.crt 位于 alice 容器的 /home/kuscia/var/certs/ 目录中
+docker cp bob.domain.crt ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/
 ```
 
 在 bob 里添加 alice 的证书等信息：
@@ -149,10 +149,10 @@ docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpat
 ### 准备测试数据
 - alice 节点准备测试数据
 
-登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-autonomy-alice-data 下
+登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > kuscia-autonomy-alice-data/alice.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > ${USER}-kuscia-autonomy-alice/data/alice.csv
 ```
 为 alice 的测试数据创建 domaindata
 ```bash
@@ -161,7 +161,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/create_domaindata_a
 为 alice 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-autonomy-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(cat kuscia-autonomy-alice-certs/token)" --header 'Content-Type: application/json' -d '{
+docker exec -it ${USER}-kuscia-autonomy-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(docker exec -it ${USER}-kuscia-autonomy-alice cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
  "grant_domain": "bob",
  "description": {"domaindatagrant":"alice-bob"},
  "domain_id": "alice",
@@ -170,10 +170,10 @@ docker exec -it ${USER}-kuscia-autonomy-alice curl -X POST 'https://127.0.0.1:80
 ```
 - bob 节点准备测试数据
 
-登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 kuscia-autonomy-bob-data 下
+登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > kuscia-autonomy-bob-data/bob.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > ${USER}-kuscia-autonomy-bob/data/bob.csv
 ```
 为 bob 的测试数据创建 domaindata
 ```bash
@@ -182,7 +182,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/create_domaindata_bob
 为 bob 的测试数据创建 domaindatagrant
 
 ```bash
-docker exec -it ${USER}-kuscia-autonomy-bob curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(cat kuscia-autonomy-bob-certs/token)" --header 'Content-Type: application/json' -d '{
+docker exec -it ${USER}-kuscia-autonomy-bob curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(docker exec -it ${USER}-kuscia-autonomy-bob cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
  "grant_domain": "alice",
  "description": {"domaindatagrant":"bob-alice"},
  "domain_id": "bob",
