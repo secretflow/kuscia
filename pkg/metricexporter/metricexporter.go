@@ -77,7 +77,9 @@ func metricHandler(metricUrls map[string]string, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	for metrics := range metricsChan {
-		w.Write(metrics)
+		if metrics != nil {
+			w.Write(metrics)
+		}
 	}
 }
 

@@ -47,7 +47,7 @@ func NewNodeExporter(i *Dependencies) Module {
 func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 	var args []string
 	args = append(args, "--web.listen-address", ":"+exporter.nodeExportPort)
-	disabledCollectors := nodeexporter.GetDisabledCollectors()
+	disabledCollectors := getDisabledCollectors()
 	args = append(args, disabledCollectors...)
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
@@ -123,4 +123,50 @@ func RunNodeExporter(ctx context.Context, cancel context.CancelFunc, conf *Depen
 		nlog.Info("Node_exporter is ready")
 	}
 	return m
+}
+
+func getDisabledCollectors() []string {
+	var disabledCollectors []string
+	disabledCollectors = append(disabledCollectors, "--no-collector.bcache",
+		"--no-collector.bonding",
+		"--no-collector.btrfs",
+		"--no-collector.conntrack",
+		"--no-collector.cpufreq",
+		"--no-collector.dmi",
+		"--no-collector.edac",
+		"--no-collector.entropy",
+		"--no-collector.fibrechannel",
+		"--no-collector.hwmon",
+		"--no-collector.infiniband",
+		"--no-collector.ipvs",
+		"--no-collector.mdadm",
+		"--no-collector.netclass",
+		"--no-collector.nfs",
+		"--no-collector.nfsd",
+		"--no-collector.nvme",
+		"--no-collector.os",
+		"--no-collector.powersupplyclass",
+		"--no-collector.pressure",
+		"--no-collector.rapl",
+		"--no-collector.schedstat",
+		"--no-collector.selinux",
+		"--no-collector.softnet",
+		"--no-collector.stat",
+		"--no-collector.tapestats",
+		"--no-collector.textfile",
+		"--no-collector.thermal_zone",
+		"--no-collector.time",
+		"--no-collector.timex",
+		"--no-collector.udp_queues",
+		"--no-collector.uname",
+		"--no-collector.vmstat",
+		"--no-collector.xfs",
+		"--no-collector.zfs",
+		"--no-collector.arp",
+		"--no-collector.cpu_vulnerabilities",
+		"--no-collector.cpu.guest",
+		"--web.disable-exporter-metrics",
+		"--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs|tmpfs)$",
+		"--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var|run|boot|/lib/docker/.+|var/lib/kubelet/.+)($|/)")
+	return disabledCollectors
 }
