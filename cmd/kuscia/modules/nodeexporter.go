@@ -25,7 +25,6 @@ import (
 	"time"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/metricexporter/nodeexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
