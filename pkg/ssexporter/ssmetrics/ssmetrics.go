@@ -50,14 +50,14 @@ func GetStatisticFromSs() ([]map[string]string, error) {
 			continue
 		}
 		ssMetrics = make(map[string]string)
-		ssMetrics["rto"] = "0"
-		ssMetrics["rtt"] = "0"
-		ssMetrics["bytes_sent"] = "0"
-		ssMetrics["bytes_received"] = "0"
-		ssMetrics["total_connections"] = "1"
-		ssMetrics["retrans"] = "0"
-		ssMetrics["localAddr"] = fields[3]
-		ssMetrics["peerAddr"] = fields[4]
+		ssMetrics[parse.MetricRto] = "0"
+		ssMetrics[parse.MetricRTT] = "0"
+		ssMetrics[parse.MetricByteSent] = "0"
+		ssMetrics[parse.MetricBytesReceived] = "0"
+		ssMetrics[parse.MetricTotalConnections] = "1"
+		ssMetrics[parse.MetricRetrans] = "0"
+		ssMetrics[parse.SsLocalAddr] = fields[3]
+		ssMetrics[parse.SsPeerAddr] = fields[4]
 		for idx, field := range fields {
 			if idx < 6 {
 				continue
@@ -65,16 +65,16 @@ func GetStatisticFromSs() ([]map[string]string, error) {
 			kv := strings.Split(field, ":")
 			if len(kv) == 2 {
 				switch kv[0] {
-				case "rto":
-					ssMetrics["rto"] = kv[1]
-				case "rtt":
-					ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
-				case "bytes_sent":
-					ssMetrics["bytes_sent"] = kv[1]
-				case "bytes_received":
-					ssMetrics["bytes_received"] = kv[1]
-				case "retrans":
-					ssMetrics["retrans"] = strings.Split(kv[1], "/")[1]
+				case parse.MetricRto:
+					ssMetrics[parse.MetricRto] = kv[1]
+				case parse.MetricRTT:
+					ssMetrics[parse.MetricRTT] = strings.Split(kv[1], "/")[0]
+				case parse.MetricByteSent:
+					ssMetrics[parse.MetricByteSent] = kv[1]
+				case parse.MetricBytesReceived:
+					ssMetrics[parse.MetricBytesReceived] = kv[1]
+				case parse.MetricRetrans:
+					ssMetrics[parse.MetricRetrans] = strings.Split(kv[1], "/")[1]
 				}
 			}
 		}
@@ -88,8 +88,8 @@ func Filter(ssMetrics []map[string]string, srcIP string, dstIP string, srcPort s
 	// parse the five-tuple rule, wildcard "*" means any field is included
 	var results []map[string]string
 	for _, metrics := range ssMetrics {
-		src := strings.Split(metrics["localAddr"], ":")
-		dst := strings.Split(metrics["peerAddr"], ":")
+		src := strings.Split(metrics[parse.SsLocalAddr], ":")
+		dst := strings.Split(metrics[parse.SsPeerAddr], ":")
 		if (srcIP != "*") && (src[0] != srcIP) {
 			continue
 		}
@@ -186,32 +186,32 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 	}
 	for metric, aggFunc := range aggregationMetrics {
 		metricID := localDomainName + ";" + dstDomain + ";" + metric + ";" + aggFunc
-		if metric != "localAddr" && metric != "peerAddr" {
+		if metric != parse.SsLocalAddr && metric != parse.SsPeerAddr {
 			var err error
-			if aggFunc == "rate" {
-				if metric == "retran_rate" {
+			if aggFunc == parse.AggRate {
+				if metric == parse.MetricRetranRate {
 					threshold := 0.0
-					retranSum, err := Sum(networkResults, "retrans")
-					connectSum, err := Sum(networkResults, "total_connections")
+					retranSum, err := Sum(networkResults, parse.MetricRetrans)
+					connectSum, err := Sum(networkResults, parse.MetricTotalConnections)
 					if err != nil {
 						return clusterResults, err
 					}
 					clusterResults[metricID] = Rate(retranSum-threshold, connectSum)
 				}
-			} else if aggFunc == "sum" {
+			} else if aggFunc == parse.AggSum {
 				clusterResults[metricID], err = Sum(networkResults, metric)
-			} else if aggFunc == "avg" {
+			} else if aggFunc == parse.AggAvg {
 				clusterResults[metricID], err = Avg(networkResults, metric)
-			} else if aggFunc == "max" {
+			} else if aggFunc == parse.AggMax {
 				clusterResults[metricID], err = Max(networkResults, metric)
-			} else if aggFunc == "min" {
+			} else if aggFunc == parse.AggMin {
 				clusterResults[metricID], err = Min(networkResults, metric)
 			}
 			if err != nil {
 				nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
 				return clusterResults, err
 			}
-			if metric == "bytes_sent" || metric == "bytes_received" {
+			if metric == parse.MetricByteSent || metric == parse.MetricBytesReceived {
 				clusterResults[metricID] = Rate(clusterResults[metricID], float64(MonitorPeriods))
 			}
 		}

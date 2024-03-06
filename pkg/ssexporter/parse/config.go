@@ -21,16 +21,35 @@ type MonitorConfig struct {
 	AggMetrics []string
 }
 
+const (
+	MetricRTT              = "rtt"
+	MetricRetrans          = "retrans"
+	MetricTotalConnections = "total_connections"
+	MetricRetranRate       = "retran_rate"
+	MetricRto              = "rto"
+	MetricByteSent         = "bytes_sent"
+	MetricBytesReceived    = "bytes_received"
+	SsLocalAddr            = "localAddr"
+	SsPeerAddr             = "peerAddr"
+
+	AggSum   = "sum"
+	AggAvg   = "avg"
+	AggMax   = "max"
+	AggMin   = "min"
+	AggAlert = "alert"
+	AggRate  = "rate"
+)
+
 // ReadConfig read the configuration and return each entry
 func LoadMetricConfig() ([]string, map[string]string) {
 	var config MonitorConfig
 	config.SsMetrics = append(config.SsMetrics,
-		"rtt",
-		"retrans",
-		"total_connections",
-		"retran_rate")
+		MetricRTT,
+		MetricRetrans,
+		MetricTotalConnections,
+		MetricRetranRate)
 	aggMetrics := make(map[string]string)
-	config.AggMetrics = append(config.AggMetrics, "avg", "sum", "sum", "rate")
+	config.AggMetrics = append(config.AggMetrics, AggAvg, AggSum, AggSum, AggRate)
 	for i, metric := range config.SsMetrics {
 		aggMetrics[metric] = config.AggMetrics[i]
 	}
