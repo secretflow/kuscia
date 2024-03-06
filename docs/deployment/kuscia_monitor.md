@@ -29,11 +29,11 @@ $ make build-monitor
 ```
 - 中心化模式
 ```
-$ ./start_monitor center
+$ ./start_monitor.sh center
 ```
 - p2p模式
 ```
-$ ./start_monitor p2p
+$ ./start_monitor.sh p2p
 ```
 浏览器打开 Granafa 的页面 localhost:3000, 账号密码均为 admin（登陆后可修改密码）。进入后，选择 Dashboard 界面的 machine-center 看板进入监控界面。
 
