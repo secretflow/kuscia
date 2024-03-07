@@ -19,6 +19,8 @@ domainID: alice
 # 注意: 目前节点私钥仅支持 pkcs#1 格式的: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"
 # 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
+# KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
+protocol: NOTLS
 # 日志级别 INFO、DEBUG、WARN
 logLevel: INFO
 # 指标采集周期，单位: 秒
@@ -32,8 +34,6 @@ metricUpdatePeriod: 5
 liteDeployToken: LS0tLS1CRUdJTi
 # 节点连接 master 的地址
 masterEndpoint: https://172.18.0.2:1080
-# KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
-protocol: NOTLS
 
 #############################################################################
 ############               Lite、Autonomy 配置                    ############
@@ -72,8 +72,6 @@ image:
 # 数据库连接串，不填默认使用 sqlite
 # 示例：mysql://username:password@tcp(hostname:3306)/database-name
 datastoreEndpoint: ""
-# KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
-protocol: NOTLS
 # 工作负载审核配置
 # 默认情况下，工作负载审核配置为关闭状态。若开启审核配置，则当本方作为参与方时，所有的 Job 需要调用 KusciaAPI 进行作业审核。生产环境建议开启审核
 enableWorkloadApprove: false
