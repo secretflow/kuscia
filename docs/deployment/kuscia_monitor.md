@@ -21,7 +21,7 @@ $ curl $(container_ip):9091/metrics
 启动 Promethus、Grafana 后，在 Grafana 创建指标数据源，可导入 [Grafana 模板文件](https://github.com/secretflow/kuscia/blob/main/scripts/templates/grafana-dashboard-machine.json)，注意将数据源{{Kuscia-datasource}}替换为创建数据源 ID（可通过可视化界面查看，也可通过 curl -s http://admin:admin@localhost:3000/api/datasources 查询）。
 
 ### 2.4 部署 Kuscia-monitor 快速体验监控
-Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 ${USER}-kuscia-monitor-center 下，点对点模式各参与方的指标分别导入到容器 ${USER}-kuscia-monitor-${DOMAIN_ID}下。
+Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 \${USER}-kuscia-monitor-center 下，点对点模式各参与方的指标分别导入到容器 \${USER}-kuscia-monitor-\${DOMAIN_ID}下。
 在通过 kuscia/scripts/deploy/start_standalone.sh 部署完毕 kuscia 后，利用 kuscia/scripts/deploy/start_monitor.sh 脚本部署 Kuscia-monitor
 在 kuscia 目录下，
 ```
