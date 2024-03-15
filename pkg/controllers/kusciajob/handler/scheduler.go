@@ -16,6 +16,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -890,64 +891,8 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 	taskPartyInfos := make([]kusciaapisv1alpha1.PartyInfo, len(template.Parties))
 	for i, p := range template.Parties {
 		// build container resources of tasks
-		var ctrNumber, rplNumber int = 1, 1 // container number and replica number
-		appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), template.AppImage, metav1.GetOptions{})
-		var deployTemplate v1alpha1.DeployTemplate
-		if err != nil {
-			nlog.Infof("can not get appImage %s.", template.AppImage)
-		} else {
-			deployTemplate = appImage.Spec.DeployTemplates[0]
-			for _, dt := range appImage.Spec.DeployTemplates {
-				if dt.Role == p.Role {
-					deployTemplate = dt
-				}
-			}
-			ctrNumber = len(deployTemplate.Spec.Containers)
-			rplNumber = int(*(deployTemplate.Replicas))
-		}
+		resources := h.buildPartyResourcesFromResourceConfig(p, template.AppImage)
 
-		var everyCpu, everyMemory k8sresource.Quantity
-		var ptr *k8sresource.Quantity
-		var limitResource corev1.ResourceList = corev1.ResourceList{}
-
-		if !utilcommon.IsEmpty(p.Resources) && !utilcommon.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
-			ptrValue := p.Resources.Limits[corev1.ResourceCPU]
-			ptr = &ptrValue
-			stringValue := ptr.String()
-			stringEveryCpu, _ := utilcommon.SplitRSC(stringValue, ctrNumber*rplNumber)
-			everyCpu = k8sresource.MustParse(stringEveryCpu)
-			limitResource[corev1.ResourceCPU] = everyCpu
-		}
-		if !utilcommon.IsEmpty(p.Resources) && !utilcommon.IsEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
-			ptrValue := p.Resources.Limits[corev1.ResourceMemory]
-			ptr = &ptrValue
-			stringValue := ptr.String()
-			stringEveryMemory, _ := utilcommon.SplitRSC(stringValue, ctrNumber*rplNumber)
-			everyMemory = k8sresource.MustParse(stringEveryMemory)
-			limitResource[corev1.ResourceMemory] = everyMemory
-		}
-
-		containers := make([]v1alpha1.Container, ctrNumber)
-		for ctrIdx, _ := range containers {
-			containers[ctrIdx].Resources = corev1.ResourceRequirements{
-				Limits: limitResource,
-			}
-			if err == nil {
-				containers[ctrIdx].Name = deployTemplate.Spec.Containers[ctrIdx].Name
-			}
-		}
-
-		resources := v1alpha1.PartyTemplate{
-			Spec: v1alpha1.PodSpec{
-				Containers: containers,
-			},
-		}
-
-		if utilcommon.IsEmpty(p.Resources) {
-			resources = v1alpha1.PartyTemplate{}
-		}
-
-		// combine all
 		taskPartyInfos[i] = kusciaapisv1alpha1.PartyInfo{
 			DomainID:    p.DomainID,
 			AppImageRef: template.AppImage,
@@ -956,6 +901,114 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 		}
 	}
 	return taskPartyInfos
+}
+
+// buildPartyResourcesFromResourceConfig will fill the resources config of parties
+func (h *RunningHandler) buildPartyResourcesFromResourceConfig(p kusciaapisv1alpha1.Party, appImageName string) v1alpha1.PartyTemplate {
+	var ctrNumber, rplNumber int // container number and replica number
+	ptrDT, err := h.findMatchedDeployTemplate(p, appImageName)
+	var deployTemplate v1alpha1.DeployTemplate = *ptrDT
+	if err != nil {
+		nlog.Warnf("can not get suitable deployTemplate. err: %s", err.Error())
+		return v1alpha1.PartyTemplate{}
+	} else {
+		ctrNumber = len(deployTemplate.Spec.Containers)
+		rplNumber = int(*(deployTemplate.Replicas))
+	}
+
+	var everyCpu, everyMemory k8sresource.Quantity
+	var ptr *k8sresource.Quantity
+	var limitResource corev1.ResourceList = corev1.ResourceList{}
+
+	if !utilcommon.IsEmpty(p.Resources) && !utilcommon.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
+		ptrValue := p.Resources.Limits[corev1.ResourceCPU]
+		ptr = &ptrValue
+		stringValue := ptr.String()
+		stringEveryCpu, _ := utilcommon.SplitRSC(stringValue, ctrNumber*rplNumber)
+		everyCpu = k8sresource.MustParse(stringEveryCpu)
+		limitResource[corev1.ResourceCPU] = everyCpu
+	}
+	if !utilcommon.IsEmpty(p.Resources) && !utilcommon.IsEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
+		ptrValue := p.Resources.Limits[corev1.ResourceMemory]
+		ptr = &ptrValue
+		stringValue := ptr.String()
+		stringEveryMemory, _ := utilcommon.SplitRSC(stringValue, ctrNumber*rplNumber)
+		everyMemory = k8sresource.MustParse(stringEveryMemory)
+		limitResource[corev1.ResourceMemory] = everyMemory
+	}
+
+	containers := make([]v1alpha1.Container, ctrNumber)
+	for ctrIdx, _ := range containers {
+		containers[ctrIdx].Resources = corev1.ResourceRequirements{
+			Limits: limitResource,
+		}
+		if err == nil {
+			containers[ctrIdx].Name = deployTemplate.Spec.Containers[ctrIdx].Name
+		}
+	}
+
+	resources := v1alpha1.PartyTemplate{
+		Spec: v1alpha1.PodSpec{
+			Containers: containers,
+		},
+	}
+
+	if utilcommon.IsEmpty(p.Resources) {
+		resources = v1alpha1.PartyTemplate{}
+	}
+	return resources
+}
+
+// findMatchedDeployTemplate will get the best matched deployTemplate
+func (h *RunningHandler) findMatchedDeployTemplate(p kusciaapisv1alpha1.Party, appImageName string) (*v1alpha1.DeployTemplate, error) {
+	var deployTemplate *v1alpha1.DeployTemplate
+	role := p.Role
+	domainID := p.DomainID
+
+	if appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), appImageName, metav1.GetOptions{}); err == nil {
+		if len(appImage.Spec.DeployTemplates) == 0 {
+			nlog.Warnf("not found any DeployTemplates of appImage %s", appImageName)
+			return nil, errors.New(fmt.Sprintf("not found any DeployTemplates of appImage %s", appImageName))
+		}
+
+		for _, dt := range appImage.Spec.DeployTemplates {
+			// find first matched role
+			if dt.Role == role {
+				deployTemplate = &dt
+				break
+			}
+		}
+
+		if deployTemplate == nil {
+			// party not given role
+			if role == "" {
+				if len(appImage.Spec.DeployTemplates) == 1 {
+					deployTemplate = &appImage.Spec.DeployTemplates[0]
+				} else {
+					// more than one deploy-template, but no one match
+					nlog.Warnf("not found deployment template of appImage(%s) for party(%s)-role(%s)", appImageName, domainID, role)
+					return nil, errors.New(fmt.Sprintf("not found deployment template of appImage(%s) for party(%s)-role(%s)", appImageName, domainID, role))
+				}
+			} else {
+				// party given role, find deployment first empty role
+				for _, dt := range appImage.Spec.DeployTemplates {
+					if dt.Role == "" {
+						deployTemplate = &dt
+						break
+					}
+				}
+			}
+		}
+
+		if deployTemplate == nil {
+			nlog.Warnf("party(%s)'s role is (%s), but not found match deployment template in appImage(%s)", domainID, role, appImageName)
+			return nil, errors.New(fmt.Sprintf("party(%s)'s role is (%s), but not found match deployment template in appImage(%s)", domainID, role, appImageName))
+		}
+	} else {
+		nlog.Warnf("can not get appImage %s. error: %s", appImageName, err.Error())
+		return nil, err
+	}
+	return deployTemplate, nil
 }
 
 // jobTaskSelector will make selector of kuscia task which kuscia job generate.
