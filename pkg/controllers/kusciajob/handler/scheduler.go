@@ -907,11 +907,12 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 func (h *RunningHandler) buildPartyResourcesFromResourceConfig(p kusciaapisv1alpha1.Party, appImageName string) v1alpha1.PartyTemplate {
 	var ctrNumber, rplNumber int // container number and replica number
 	ptrDT, err := h.findMatchedDeployTemplate(p, appImageName)
-	var deployTemplate v1alpha1.DeployTemplate = *ptrDT
+	var deployTemplate v1alpha1.DeployTemplate
 	if err != nil {
 		nlog.Warnf("can not get suitable deployTemplate. err: %s", err.Error())
 		return v1alpha1.PartyTemplate{}
 	} else {
+		deployTemplate = *ptrDT
 		ctrNumber = len(deployTemplate.Spec.Containers)
 		rplNumber = int(*(deployTemplate.Replicas))
 	}
