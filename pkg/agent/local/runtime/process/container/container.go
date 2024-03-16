@@ -231,7 +231,7 @@ func (c *Container) buildStarter() (st.Starter, error) {
 	}
 
 	if stdMode {
-		return st.NewChrootStarter(initConfig)
+		return st.NewProotStarter(initConfig)
 	}
 
 	return st.NewRawStarter(initConfig)
