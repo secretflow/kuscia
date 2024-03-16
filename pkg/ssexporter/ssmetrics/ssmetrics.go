@@ -16,56 +16,63 @@ import (
 // GetStatisticFromSs get the statistics of network flows from ss
 func GetStatisticFromSs() ([]map[string]string, error) {
 	// execute ss command
-	cmd := exec.Command("ss", "-tio4nO")
+	// -H --no-header Suppress header line
+	cmd := exec.Command("ss", "-tio4nH")
 	output, err := cmd.CombinedOutput()
-	var tcpStatisticList []map[string]string
+
 	if err != nil {
-		nlog.Warn("Cannot get metrics from ss.", err)
-		return tcpStatisticList, err
+		nlog.Warnf("Cannot get metrics from ss, error: %v", err)
+		return nil, err
 	}
 	// parse statistics from ss
 	lines := strings.Split(string(output), "\n")
-	ssMetrics := make(map[string]string)
-	for idx, line := range lines {
-		if idx < 1 {
-			continue
+
+	var tcpStatisticList []map[string]string
+	// Combine every two lines and parse them
+	for i := 0; i+1 < len(lines); i += 2 {
+		combinedLine := lines[i] + lines[i+1]
+		// Parse the combined line
+		if ssMetrics := parseCombinedLine(combinedLine); ssMetrics != nil {
+			tcpStatisticList = append(tcpStatisticList, ssMetrics)
 		}
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			continue
-		}
-		ssMetrics = make(map[string]string)
-		ssMetrics["rto"] = "0"
-		ssMetrics["rtt"] = "0"
-		ssMetrics["bytes_sent"] = "0"
-		ssMetrics["bytes_received"] = "0"
-		ssMetrics["total_connections"] = "1"
-		ssMetrics["retrans"] = "0"
-		ssMetrics["localAddr"] = fields[3]
-		ssMetrics["peerAddr"] = fields[4]
-		for idx, field := range fields {
-			if idx < 6 {
-				continue
-			}
-			kv := strings.Split(field, ":")
-			if len(kv) == 2 {
-				switch kv[0] {
-				case "rto":
-					ssMetrics["rto"] = kv[1]
-				case "rtt":
-					ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
-				case "bytes_sent":
-					ssMetrics["bytes_sent"] = kv[1]
-				case "bytes_received":
-					ssMetrics["bytes_received"] = kv[1]
-				case "retrans":
-					ssMetrics["retrans"] = strings.Split(kv[1], "/")[1]
-				}
-			}
-		}
-		tcpStatisticList = append(tcpStatisticList, ssMetrics)
 	}
 	return tcpStatisticList, nil
+}
+
+func parseCombinedLine(line string) map[string]string {
+	fields := strings.Fields(line)
+	if len(fields) < 5 {
+		return nil
+	}
+	ssMetrics := make(map[string]string)
+	ssMetrics["rto"] = "0"
+	ssMetrics["rtt"] = "0"
+	ssMetrics["bytes_sent"] = "0"
+	ssMetrics["bytes_received"] = "0"
+	ssMetrics["total_connections"] = "1"
+	ssMetrics["retrans"] = "0"
+	ssMetrics["localAddr"] = fields[3]
+	ssMetrics["peerAddr"] = fields[4]
+
+	for idx := 6; idx < len(fields); idx++ {
+		field := fields[idx]
+		kv := strings.Split(field, ":")
+		if len(kv) == 2 {
+			switch kv[0] {
+			case "rto":
+				ssMetrics["rto"] = kv[1]
+			case "rtt":
+				ssMetrics["rtt"] = strings.Split(kv[1], "/")[0]
+			case "bytes_sent":
+				ssMetrics["bytes_sent"] = kv[1]
+			case "bytes_received":
+				ssMetrics["bytes_received"] = kv[1]
+			case "retrans":
+				ssMetrics["retrans"] = strings.Split(kv[1], "/")[1]
+			}
+		}
+	}
+	return ssMetrics
 }
 
 // Filter filter network flows according to given five-tuple rules
@@ -101,7 +108,7 @@ func Sum(metrics []map[string]string, key string) (float64, error) {
 	for _, metric := range metrics {
 		val, err := strconv.ParseFloat(metric[key], 64)
 		if err != nil {
-			nlog.Warn("fail to parse float", metric[key], "key:", key, "value:", val)
+			nlog.Warnf("fail to parse float: %s, key: %s, value: %f", metric[key], key, val)
 			return sum, err
 		}
 		sum += val
@@ -113,7 +120,7 @@ func Sum(metrics []map[string]string, key string) (float64, error) {
 func Avg(metrics []map[string]string, key string) (float64, error) {
 	sum, err := Sum(metrics, key)
 	if err != nil {
-		nlog.Warn("Fail to get the sum of ss metrics", err)
+		nlog.Warnf("Fail to get the sum of ss metrics, err: %v", err)
 		return sum, err
 	}
 	return sum / float64(len(metrics)), nil
@@ -176,12 +183,12 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if aggFunc == "rate" {
 				if metric == "retran_rate" {
 					threshold := 0.0
-					retran_sum, err := Sum(networkResults, "retrans")
-					connect_sum, err := Sum(networkResults, "total_connections")
+					retranSum, err := Sum(networkResults, "retrans")
+					connectSum, err := Sum(networkResults, "total_connections")
 					if err != nil {
 						return clusterResults, err
 					}
-					clusterResults[metricID] = Rate(retran_sum-threshold, connect_sum)
+					clusterResults[metricID] = Rate(retranSum-threshold, connectSum)
 				}
 			} else if aggFunc == "sum" {
 				clusterResults[metricID], err = Sum(networkResults, metric)
@@ -193,10 +200,10 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 				clusterResults[metricID], err = Min(networkResults, metric)
 			}
 			if err != nil {
-				nlog.Warn("Fail to get clusterResults from aggregation functions", err)
+				nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
 				return clusterResults, err
 			}
-			if metric == "bytes_send" || metric == "bytes_received" {
+			if metric == "bytes_sent" || metric == "bytes_received" {
 				clusterResults[metricID] = Rate(clusterResults[metricID], float64(MonitorPeriods))
 			}
 		}
@@ -210,13 +217,13 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 	ssResults := make(map[string]float64)
 	ssMetrics, err := GetStatisticFromSs()
 	if err != nil {
-		nlog.Warn("Fail to get statistics from ss", err)
+		nlog.Warnf("Fail to get statistics from ss, err: %v", err)
 		return ssResults, err
 	}
 	// get the source/destination IP from domain names
 	hostName, err := os.Hostname()
 	if err != nil {
-		nlog.Warn("Fail to get the hostname", err)
+		nlog.Warnf("Fail to get the hostname, err: %v", err)
 		return ssResults, err
 	}
 	sourceIP := parse.GetIPFromDomain(hostName)

@@ -35,10 +35,15 @@ type prootStarter struct {
 func NewProotStarter(c *InitConfig) (Starter, error) {
 	s := &prootStarter{}
 
-	mountArgs := buildMountArgs(c.ContainerConfig.Mounts)
-	cmdLine := []string{"/home/kuscia/bin/proot", "-S", c.Rootfs, "-w", c.WorkingDir}
+	mountArgs := buildContainerMountArgs(c.ContainerConfig.Mounts)
+	cmdLine := []string{"/home/kuscia/bin/proot", "-S", c.Rootfs, "-w", c.WorkingDir, "--kill-on-exit"}
+
+	// The -S option will overwrite the home directory in the image.
+	cmdLine = append(cmdLine, fmt.Sprintf("-b %s:/root", filepath.Join(c.Rootfs, "root")))
 	cmdLine = append(cmdLine, mountArgs...)
+
 	cmdLine = append(cmdLine, c.CmdLine...)
+
 	s.Cmd = exec.Command(cmdLine[0], cmdLine[1:]...)
 	s.Cmd.Env = c.Env
 	s.Cmd.SysProcAttr = &syscall.SysProcAttr{
@@ -57,7 +62,7 @@ func NewProotStarter(c *InitConfig) (Starter, error) {
 	return s, nil
 }
 
-func buildMountArgs(mounts []*runtime.Mount) []string {
+func buildContainerMountArgs(mounts []*runtime.Mount) []string {
 	mountArgs := make([]string, len(mounts))
 	for i, mount := range mounts {
 		mountArgs[i] = fmt.Sprintf("-b %s:%s", mount.HostPath, mount.ContainerPath)

@@ -294,3 +294,41 @@ func TestProcessDeploymentAsPartner(t *testing.T) {
 	got = c.processDeploymentAsPartner(ctx, kd)
 	assert.Equal(t, nil, got)
 }
+
+func TestUpdateDeploymentSummaryPartyStatus(t *testing.T) {
+	// kd status is failed and is not equal to kds, should return true
+	kd := makeMockDeployment("cross-domain", "kd-1")
+	kd.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed
+	kds := makeMockDeploymentSummary("alice", "kd-1")
+	got := updateDeploymentSummaryPartyStatus(kd, kds)
+	assert.Equal(t, true, got)
+
+	// kd PartyDeploymentStatuses is empty, should return false
+	kd = makeMockDeployment("cross-domain", "kd-1")
+	got = updateDeploymentSummaryPartyStatus(kd, nil)
+	assert.Equal(t, false, got)
+
+	// self cluster party domain ids is empty, should return false
+	kd = makeMockDeployment("cross-domain", "kd-1")
+	kd.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{}
+	got = updateDeploymentSummaryPartyStatus(kd, nil)
+	assert.Equal(t, false, got)
+
+	// status is updated, should return true
+	kd = makeMockDeployment("cross-domain", "kd-1")
+	kd.Annotations = map[string]string{
+		common.InterConnSelfPartyAnnotationKey: "alice",
+	}
+	kd.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{
+		"alice": {
+			"kd-1": {
+				Phase:             v1alpha1.KusciaDeploymentPhaseProgressing,
+				Replicas:          1,
+				AvailableReplicas: 0,
+			},
+		},
+	}
+	kds = makeMockDeploymentSummary("alice", "kd-1")
+	got = updateDeploymentSummaryPartyStatus(kd, kds)
+	assert.Equal(t, true, got)
+}

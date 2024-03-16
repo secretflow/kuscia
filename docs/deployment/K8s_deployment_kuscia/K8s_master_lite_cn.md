@@ -26,6 +26,10 @@ kubectl create ns kuscia-master
 ### 步骤二：创建 Service
 
 获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/service.yaml) 文件，创建 service
+
+<span style="color:red;">注意：<br>
+1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+
 ```bash
 kubectl create -f service.yaml
 ```
@@ -66,7 +70,14 @@ kubectl create ns lite-alice
 
 ### 步骤二：创建 Service
 
-获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/service.yaml) 文件，如果 master 与 lite 不在一个 K8s 集群内，可以将 master Service 的端口暴露方式改为 [LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer)（公有云，例如：[阿里云](https://help.aliyun.com/zh/ack/serverless-kubernetes/user-guide/use-annotations-to-configure-load-balancing)） 或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport)，并在 Configmap 的  masterEndpoint 字段改为可正常访问的地址，创建 Service
+获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/service.yaml) 文件，如果 master 与 lite 不在一个 K8s 集群内，
+可以将 master Service 的类型改为 [LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer)（公有云，
+例如：[阿里云](https://help.aliyun.com/zh/ack/serverless-kubernetes/user-guide/use-annotations-to-configure-load-balancing)）或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport)，
+并在 Configmap 的 masterEndpoint 字段改为可正常访问的地址，创建 Service。
+
+<span style="color:red;">注意：<br>
+1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+
 ```bash
 kubectl create -f service.yaml
 ```

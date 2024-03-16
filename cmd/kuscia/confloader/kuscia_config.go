@@ -139,9 +139,16 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.Agent.Provider.K8s.LabelsToAdd = lite.Agent.Provider.K8s.LabelsToAdd
 	kusciaConfig.Agent.Provider.K8s.AnnotationsToAdd = lite.Agent.Provider.K8s.AnnotationsToAdd
 	kusciaConfig.Agent.Capacity = lite.Capacity
-	if len(lite.Agent.Plugins) > 0 {
-		kusciaConfig.Agent.Plugins = lite.Agent.Plugins
+
+	for _, p := range lite.Agent.Plugins {
+		for j, pp := range kusciaConfig.Agent.Plugins {
+			if p.Name == pp.Name {
+				kusciaConfig.Agent.Plugins[j] = p
+				break
+			}
+		}
 	}
+
 	kusciaConfig.Master.Endpoint = lite.MasterEndpoint
 	kusciaConfig.DomainRoute.DomainCsrData = generateCsrData(lite.DomainID, lite.DomainKeyData, lite.LiteDeployToken)
 	kusciaConfig.Debug = lite.Debug
@@ -181,9 +188,16 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Agent.Provider.K8s.LabelsToAdd = autonomy.Agent.Provider.K8s.LabelsToAdd
 	kusciaConfig.Agent.Provider.K8s.AnnotationsToAdd = autonomy.Agent.Provider.K8s.AnnotationsToAdd
 	kusciaConfig.Agent.Capacity = autonomy.Capacity
-	if len(autonomy.Agent.Plugins) > 0 {
-		kusciaConfig.Agent.Plugins = autonomy.Agent.Plugins
+
+	for _, p := range autonomy.Agent.Plugins {
+		for j, pp := range kusciaConfig.Agent.Plugins {
+			if p.Name == pp.Name {
+				kusciaConfig.Agent.Plugins[j] = p
+				break
+			}
+		}
 	}
+
 	kusciaConfig.ConfLoaders = autonomy.ConfLoaders
 	kusciaConfig.SecretBackends = autonomy.SecretBackends
 	if autonomy.KusciaAPI != nil {

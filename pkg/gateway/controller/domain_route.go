@@ -55,7 +55,6 @@ import (
 	kusciaextv1alpha1 "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
-	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -75,7 +74,7 @@ const (
 type DomainRouteConfig struct {
 	Namespace       string
 	MasterNamespace string
-	MasterConfig    *config.MasterConfig
+	IsMaster        bool
 	CAKey           *rsa.PrivateKey
 	CACert          *x509.Certificate
 	Prikey          *rsa.PrivateKey
@@ -86,7 +85,7 @@ type DomainRouteConfig struct {
 type DomainRouteController struct {
 	gateway         *kusciaapisv1alpha1.Gateway
 	masterNamespace string
-	masterConfig    *config.MasterConfig
+	isMaser         bool
 	CaCertData      []byte
 	CaCert          *x509.Certificate
 	CaKey           *rsa.PrivateKey
@@ -133,7 +132,7 @@ func NewDomainRouteController(
 		CaCertData:              drConfig.CACert.Raw,
 		CaCert:                  drConfig.CACert,
 		CaKey:                   drConfig.CAKey,
-		masterConfig:            drConfig.MasterConfig,
+		isMaser:                 drConfig.IsMaster,
 		prikey:                  drConfig.Prikey,
 		prikeyData:              drConfig.PrikeyData,
 		kubeClient:              kubeClient,

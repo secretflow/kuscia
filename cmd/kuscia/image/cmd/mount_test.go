@@ -1,4 +1,4 @@
-// Copyright 2023 Ant Group Co., Ltd.
+// Copyright 2024 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package assist
+package cmd
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	storetesting "github.com/secretflow/kuscia/pkg/agent/local/store/testing"
 )
 
-func TestTar(t *testing.T) {
+func TestMountCommand(t *testing.T) {
 	rootDir := t.TempDir()
-	srcDir := filepath.Join(rootDir, "src")
-	assert.NoError(t, os.MkdirAll(srcDir, 0755))
-	assert.NoError(t, os.WriteFile(filepath.Join(srcDir, "a.txt"), []byte("aaa"), 0644))
-	assert.NoError(t, os.WriteFile(filepath.Join(srcDir, "b.txt"), []byte("bbb"), 0644))
 
-	dstPath := filepath.Join(rootDir, "dst.tar")
-	dst, err := os.Create(dstPath)
-	assert.NoError(t, err)
+	context := &Context{
+		StorageDir: filepath.Join(rootDir, "storage"),
+		Store:      storetesting.NewFakeStore(),
+	}
 
-	assert.NoError(t, Tar(srcDir, true, dst))
-	targetDir := filepath.Join(rootDir, "target")
-	assert.NoError(t, ExtractTarFile(targetDir, dstPath, false))
+	cmd := mountCommand(context)
+	args := []string{"123", "app:0.1", filepath.Join(rootDir, "rootfs")}
+	cmd.SetArgs(args)
+	assert.NoError(t, cmd.Execute())
 }

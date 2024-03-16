@@ -394,7 +394,8 @@ func (r *Runtime) ImageStatus(ctx context.Context, image *runtimeapi.ImageSpec, 
 
 	resp := &runtimeapi.ImageStatusResponse{
 		Image: &runtimeapi.Image{
-			Id: imageManifest.ID,
+			Id:       image.Image,
+			RepoTags: []string{imageManifest.ID},
 		},
 	}
 	return resp, nil
