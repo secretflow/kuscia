@@ -17,7 +17,7 @@
 
 {#create-serving}
 
-### 创建Serving
+### 创建 Serving
 
 #### HTTP路径
 
@@ -116,7 +116,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
 
 {#update-serving}
 
-### 更新Serving
+### 更新 Serving
 
 #### HTTP路径
 /api/v1/serving/update
@@ -212,7 +212,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
 
 {#delete-serving}
 
-### 删除Serving
+### 删除 Serving
 
 #### HTTP路径
 /api/v1/serving/delete
@@ -263,7 +263,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' \
 
 {#query-serving}
 
-### 查询Serving
+### 查询 Serving
 
 #### HTTP路径
 
@@ -429,7 +429,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 
 {#batch-query-serving-status}
 
-### 批量查询Serving状态
+### 批量查询 Serving 状态
 
 #### HTTP路径
 
@@ -570,32 +570,32 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 
 ### ServingStatusDetail
 
-| 字段                | 类型                                            | 选填 | 描述                            |
-|-------------------|-----------------------------------------------|----|-------------------------------|
-| state             | string                                        | 必填 | Serving状态                     |
-| reason            | string                                        | 可选 | Serving处于该状态的原因，一般用于描述失败的状态   |
+| 字段                | 类型                                            | 选填 | 描述                           |
+|-------------------|-----------------------------------------------|----|------------------------------|
+| state             | string                                        | 必填 | Serving状态，参考 [State](#state) |
+| reason            | string                                        | 可选 | Serving处于该状态的原因，一般用于描述失败的状态  |
 | message           | string                                        | 可选 | Serving处于该状态的详细信息，一般用于描述失败的状态 |
-| total_parties     | int32                                         | 必填 | 参与方总数                         |
-| available_parties | int32                                         | 必填 | 可用参与方数量                       |
-| create_time       | string                                        | 必填 | 创建时间                          |
-| party_statuses    | [PartyServingStatus](#party-serving-status)[] | 必填 | 参与方状态                         |
+| total_parties     | int32                                         | 必填 | 参与方总数                        |
+| available_parties | int32                                         | 必填 | 可用参与方数量                      |
+| create_time       | string                                        | 必填 | 创建时间                         |
+| party_statuses    | [PartyServingStatus](#party-serving-status)[] | 必填 | 参与方状态                        |
 
 
 {#party-serving-status}
 
 ### PartyServingStatus
 
-| 字段                   | 类型                                                | 选填 | 描述            |
-|----------------------|---------------------------------------------------|----|---------------|
-| domain_id            | string                                            | 必填 | 节点ID          |
-| role                 | string                                            | 可选 | 角色            |
-| state                | string                                            | 必填 | 状态            |
-| replicas             | int32                                             | 必填 | 应用副本总数        |
-| available_replicas   | int32                                             | 必填 | 应用可用副本数       |
-| unavailable_replicas | int32                                             | 必填 | 应用不可用副本数      |
-| updatedReplicas      | int32                                             | 必填 | 最新版本的应用副本数    |
-| create_time          | string                                            | 必填 | 创建时间          |
-| endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息 |
+| 字段                   | 类型                                                | 选填 | 描述                     |
+|----------------------|---------------------------------------------------|----|------------------------|
+| domain_id            | string                                            | 必填 | 节点ID                   |
+| role                 | string                                            | 可选 | 角色                     |
+| state                | string                                            | 必填 | 状态，参考 [State](#state)  |
+| replicas             | int32                                             | 必填 | 应用副本总数                 |
+| available_replicas   | int32                                             | 必填 | 应用可用副本数                |
+| unavailable_replicas | int32                                             | 必填 | 应用不可用副本数               |
+| updatedReplicas      | int32                                             | 必填 | 最新版本的应用副本数             |
+| create_time          | string                                            | 必填 | 创建时间                   |
+| endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息          |
 
 
 {#serving-party-endpoint}
@@ -645,3 +645,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | max_cpu        | string | 可选 | 最大cpu数量。例如："0.1"：表示100毫核；"1"：表示1核           |
 | min_memory     | string | 可选 | 最小memory数量。单位："Mi"，"Gi"；例如："100Mi"：表示100兆字节 |
 | max_memory     | string | 可选 | 最大memory数量。单位："Mi"，"Gi"；例如："100Mi"：表示100兆字节 |
+
+
+{#state}
+
+### State
+
+| Name               | Number | 描述                |
+|-----------         |--------|-------------------|
+| Unknown            | 0      | 未知                |
+| Progressing        | 1      | 发布中，至少有一方不可用      |
+| PartialAvailable   | 2      | 发布完成，至少有一方的多实例不是全部可用 |
+| Available          | 3      | 发布完成，所有方的所有实例都可用  |
+| Failed             | 4      | 发布失败              |

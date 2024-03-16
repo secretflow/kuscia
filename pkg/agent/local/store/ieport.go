@@ -63,6 +63,8 @@ func (s *store) RegisterImage(image, manifestFile string) error {
 	}
 	if manifest.ID == "" {
 		manifest.ID = image
+	} else {
+		manifest.ID = kii.FormatImageID(manifest.ID)
 	}
 
 	imageName, err := kii.NewImageName(image)
@@ -215,7 +217,7 @@ func fromDockerManifest(tempDir string, dockerManifest *DockerPackageManifestIte
 
 	// image_id.json => image_id
 	if strings.HasSuffix(dockerManifest.Config, ".json") {
-		manifest.ID = dockerManifest.Config[:len(dockerManifest.Config)-len(".json")]
+		manifest.ID = kii.FormatImageID(dockerManifest.Config[:len(dockerManifest.Config)-len(".json")])
 	}
 
 	// fill meta info

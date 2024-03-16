@@ -14,3 +14,4 @@
     logdescription
     kuscia_monitor
     kuscia_config_cn
+    kuscia_ports_cn

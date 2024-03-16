@@ -17,9 +17,10 @@ package bean
 import (
 	"context"
 	"fmt"
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"net"
 	"time"
+
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -76,17 +77,22 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		nlog.Fatalf("failed to listen on addr[%s]: %v", addr, err)
 	}
 
+	// set token auth interceptor
 	tokenConfig := s.config.Token
 	if s.config.Token != nil {
 		token, err := utils.ReadToken(*tokenConfig)
 		if err != nil {
 			return err
 		}
-		tokenInterceptor := grpc.UnaryInterceptor(interceptor.GrpcServerTokenInterceptor(token))
+		tokenInterceptor := grpc.ChainUnaryInterceptor(interceptor.GrpcServerTokenInterceptor(token))
 		opts = append(opts, tokenInterceptor)
-		tokenStreamInterceptor := grpc.StreamInterceptor(interceptor.GrpcStreamServerTokenInterceptor(token))
+		tokenStreamInterceptor := grpc.ChainStreamInterceptor(interceptor.GrpcStreamServerTokenInterceptor(token))
 		opts = append(opts, tokenStreamInterceptor)
 	}
+
+	// set master role interceptor
+	opts = append(opts, grpc.ChainUnaryInterceptor(interceptor.GrpcServerMasterRoleInterceptor()))
+	opts = append(opts, grpc.ChainStreamInterceptor(interceptor.GrpcStreamServerMasterRoleInterceptor()))
 
 	// register grpc server
 	server := grpc.NewServer(opts...)

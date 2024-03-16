@@ -391,17 +391,25 @@ func (c *Controller) processDeploymentAsPartner(ctx context.Context, deployment 
 }
 
 func updateDeploymentSummaryPartyStatus(deployment *v1alpha1.KusciaDeployment, deploymentSummary *v1alpha1.KusciaDeploymentSummary) bool {
+	updated := false
+	if deployment.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed &&
+		deployment.Status.Phase != deploymentSummary.Status.Phase {
+		updated = true
+		deploymentSummary.Status.Phase = deployment.Status.Phase
+		deploymentSummary.Status.Reason = deployment.Status.Reason
+		deploymentSummary.Status.Message = deployment.Status.Message
+	}
+
 	if deployment.Status.PartyDeploymentStatuses == nil {
-		return false
+		return updated
 	}
 
 	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(deployment)
 	if domainIDs == nil {
 		nlog.Errorf("Failed to get self cluster party domain ids from kuscia deployment %v, skip processing it", ikcommon.GetObjectNamespaceName(deployment))
-		return false
+		return updated
 	}
 
-	updated := false
 	for _, domainID := range domainIDs {
 		if statusInDeployment, ok := deployment.Status.PartyDeploymentStatuses[domainID]; ok {
 			if deploymentSummary.Status.PartyDeploymentStatuses == nil {
@@ -417,5 +425,6 @@ func updateDeploymentSummaryPartyStatus(deployment *v1alpha1.KusciaDeployment, d
 			}
 		}
 	}
+
 	return updated
 }

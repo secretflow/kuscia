@@ -20,8 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type FackCmd struct {
@@ -184,8 +185,8 @@ func TestSupervisorRun_WaitFailed(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestSupervisorRun_CacnelContext(t *testing.T) {
-	sp := NewSupervisor("WaitFailed", []int{0, 100}, 3)
+func TestSupervisorRun_CancelContext(t *testing.T) {
+	sp := NewSupervisor("CancelContext", []int{100, 100}, 3)
 	sp.minRunningTimeMS = 100
 	ctx, cancel := context.WithCancel(context.Background())
 
