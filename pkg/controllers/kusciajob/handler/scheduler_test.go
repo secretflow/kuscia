@@ -24,6 +24,7 @@ import (
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
@@ -865,7 +866,7 @@ func TestRunningHandler_buildPartyResourcesFromResourceConfig(t *testing.T) {
 		want interface{}
 	}{
 		{
-			name: "Inexistent appImage should return no-resource-config party info",
+			name: "Empty appImage should return no-resource-config party info",
 			args: args{
 				party: kusciaapisv1alpha1.Party{
 					DomainID:  "",
@@ -876,6 +877,52 @@ func TestRunningHandler_buildPartyResourcesFromResourceConfig(t *testing.T) {
 			},
 			want: v1alpha1.PartyTemplate{},
 		},
+		{
+			name: "Inexistent appImage should return no-resource-config party info",
+			args: args{
+				party: kusciaapisv1alpha1.Party{
+					DomainID: "Alice",
+					Role:     "",
+					Resources: &corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    k8sresource.MustParse("2"),
+							corev1.ResourceMemory: k8sresource.MustParse("2Gi"),
+						},
+					},
+				},
+				appImageName: "test-image-1",
+			},
+			want: v1alpha1.PartyTemplate{},
+		},
+		{
+			name: "Existent appImage should return resource-config party info",
+			args: args{
+				party: kusciaapisv1alpha1.Party{
+					DomainID: "Alice",
+					Role:     "server",
+					Resources: &corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU: k8sresource.MustParse("2"),
+						},
+					},
+				},
+				appImageName: "mockImage",
+			},
+			want: v1alpha1.PartyTemplate{
+				Spec: v1alpha1.PodSpec{
+					Containers: []v1alpha1.Container{
+						{
+							Name: "mock-Container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU: k8sresource.MustParse("2"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -884,6 +931,7 @@ func TestRunningHandler_buildPartyResourcesFromResourceConfig(t *testing.T) {
 			kusciaClient := kusciafake.NewSimpleClientset(
 				makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
 				bestEffortIndependent.DeepCopy(),
+				makeMockAppImage("mockImage"),
 			)
 			kubeClient := kubefake.NewSimpleClientset()
 
@@ -932,8 +980,45 @@ func TestRunningHandler_buildPartyResourcesFromResourceConfig(t *testing.T) {
 
 			testPartyTemplate := handler.buildPartyResourcesFromResourceConfig(tt.args.party, tt.args.appImageName)
 
-			assert.Equalf(t, reflect.DeepEqual(testPartyTemplate, tt.want), true, "RunningHandler.buildPartyResourcesFromResourceConfig(%v, %v)", tt.args.party, tt.args.appImageName)
+			assert.Equalf(t, reflect.DeepEqual(testPartyTemplate, tt.want), true, "RunningHandler.buildPartyResourcesFromResourceConfig(%v, %v): \nActual   - %v\nExpected - %v", tt.args.party, tt.args.appImageName, testPartyTemplate, tt.want)
 			return
 		})
+	}
+}
+
+func makeMockAppImage(name string) *v1alpha1.AppImage {
+	replicas := int32(1)
+	return &v1alpha1.AppImage{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.AppImageSpec{
+			Image: v1alpha1.AppImageInfo{
+				Name: "mock-AppImage",
+				Tag:  "latest",
+			},
+			DeployTemplates: []v1alpha1.DeployTemplate{
+				{
+					Name:     "mock-DeployTemplate",
+					Role:     "server",
+					Replicas: &replicas,
+					Spec: v1alpha1.PodSpec{
+						Containers: []v1alpha1.Container{
+							{
+								Name: "mock-Container",
+								Resources: corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceMemory: k8sresource.MustParse("100Mi"),
+										corev1.ResourceCPU:    k8sresource.MustParse("1"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceMemory: k8sresource.MustParse("10Mi"),
+										corev1.ResourceCPU:    k8sresource.MustParse("10m"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
