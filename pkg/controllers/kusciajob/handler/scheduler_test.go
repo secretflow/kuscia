@@ -15,14 +15,20 @@
 package handler
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
+	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -843,6 +849,91 @@ func Test_willStartTasksOf(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.readyTasks = readyTasksOf(tt.args.kusciaJob, tt.args.status)
 			assert.Equalf(t, tt.want, willStartTasksOf(tt.args.kusciaJob, tt.args.readyTasks, tt.args.status), "willStartTasksOf(%v, %v, %v)", tt.args.kusciaJob, tt.args.readyTasks, tt.args.status)
+		})
+	}
+}
+
+func TestRunningHandler_buildPartyResourcesFromResourceConfig(t *testing.T) {
+	type args struct {
+		party        kusciaapisv1alpha1.Party
+		appImageName string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want interface{}
+	}{
+		{
+			name: "Inexistent appImage should return no-resource-config party info",
+			args: args{
+				party: kusciaapisv1alpha1.Party{
+					DomainID:  "",
+					Role:      "",
+					Resources: nil,
+				},
+				appImageName: "",
+			},
+			want: v1alpha1.PartyTemplate{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bestEffortIndependent := makeKusciaJob("Independent", kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
+			kusciaClient := kusciafake.NewSimpleClientset(
+				makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+				bestEffortIndependent.DeepCopy(),
+			)
+			kubeClient := kubefake.NewSimpleClientset()
+
+			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
+			kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 5*time.Minute)
+			nsInformer := kubeInformerFactory.Core().V1().Namespaces()
+			domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+			aliceNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alice",
+				},
+			}
+			bobNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "bob",
+				},
+			}
+			nsInformer.Informer().GetStore().Add(aliceNs)
+			nsInformer.Informer().GetStore().Add(bobNs)
+			aliceD := &kusciaapisv1alpha1.Domain{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alice",
+				},
+				Spec: kusciaapisv1alpha1.DomainSpec{},
+			}
+			bobD := &kusciaapisv1alpha1.Domain{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "bob",
+				},
+				Spec: kusciaapisv1alpha1.DomainSpec{},
+			}
+			nsInformer.Informer().GetStore().Add(aliceNs)
+			nsInformer.Informer().GetStore().Add(bobNs)
+			domainInformer.Informer().GetStore().Add(aliceD)
+			domainInformer.Informer().GetStore().Add(bobD)
+
+			deps := &Dependencies{
+				KusciaClient:     kusciaClient,
+				KusciaTaskLister: kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister(),
+				NamespaceLister:  nsInformer.Lister(),
+				DomainLister:     domainInformer.Lister(),
+			}
+			handler := &RunningHandler{
+				JobScheduler: NewJobScheduler(deps),
+			}
+
+			testPartyTemplate := handler.buildPartyResourcesFromResourceConfig(tt.args.party, tt.args.appImageName)
+
+			assert.Equalf(t, reflect.DeepEqual(testPartyTemplate, tt.want), true, "RunningHandler.buildPartyResourcesFromResourceConfig(%v, %v)", tt.args.party, tt.args.appImageName)
+			return
 		})
 	}
 }
