@@ -44,6 +44,11 @@ class JobServiceStub(object):
                 request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.WatchJobRequest.SerializeToString,
                 response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.WatchJobEventResponse.FromString,
                 )
+        self.ApproveJob = channel.unary_unary(
+                '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/ApproveJob',
+                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.ApproveJobRequest.SerializeToString,
+                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.ApproveJobResponse.FromString,
+                )
 
 
 class JobServiceServicer(object):
@@ -85,6 +90,12 @@ class JobServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ApproveJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_JobServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -117,6 +128,11 @@ def add_JobServiceServicer_to_server(servicer, server):
                     servicer.WatchJob,
                     request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.WatchJobRequest.FromString,
                     response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.WatchJobEventResponse.SerializeToString,
+            ),
+            'ApproveJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.ApproveJob,
+                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.ApproveJobRequest.FromString,
+                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.ApproveJobResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -227,5 +243,22 @@ class JobService(object):
         return grpc.experimental.unary_stream(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/WatchJob',
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.WatchJobRequest.SerializeToString,
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.WatchJobEventResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ApproveJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/ApproveJob',
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.ApproveJobRequest.SerializeToString,
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.ApproveJobResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
