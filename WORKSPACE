@@ -3,15 +3,13 @@ workspace(name = "kuscia")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
-
 maybe(
     http_archive,
-    name = "com_google_protobuf",
-    sha256 = "ba0650be1b169d24908eeddbe6107f011d8df0da5b1a5a4449a913b10e578faf",
-    strip_prefix = "protobuf-3.19.4",
+    sha256 = "2c6a36c7b5a55accae063667ef3c55f2642e67476d96d355ff0acb13dbb47f09",
+    strip_prefix = "protobuf-21.12",
     type = "tar.gz",
     urls = [
-        "https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protobuf-all-3.19.4.tar.gz",
+        "https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protobuf-all-21.12.tar.gz",
     ],
 )
 
