@@ -61,6 +61,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - [常见运维操作][ops-cheatsheet]
 - [网络要求][deploy-networkrequirements]
 - [日志说明][deploy-logdescription]
+- [Kuscia 监控][deploy-kuscia_monitor_cn]
 - [Kuscia 配置文件][deploy-kuscia_config_cn]
 
 [deploy-guide]: ./deployment/kuscia_deployment_instructions.md
@@ -71,6 +72,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [ops-cheatsheet]: ./deployment/operation_cn.md
 [deploy-networkrequirements]: ./deployment/networkrequirements.md
 [deploy-logdescription]: ./deployment/logdescription.md
+[deploy-kuscia_monitor_cn]: ./deployment/kuscia_monitor.md
 [deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
 ## 更多指南
 

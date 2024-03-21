@@ -43,7 +43,7 @@ jobs:
           name: "build package and publish"
           command: |
             conda update -n base -c defaults conda -y
-            conda create -n build python=3.8 -y
+            conda create -n build python=3.10 -y
             conda activate build
 
             cd ..
