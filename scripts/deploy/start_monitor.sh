@@ -24,8 +24,8 @@ else
   NETWORK_NAME=${NETWORK}
 fi
 ROOT=$HOME/kuscia
-CTR_PREFIX=${USER}-kuscia
-MASTER_CTR=${CTR_PREFIX}-master
+DOMAIN_PREFIX=${USER}-kuscia
+MASTER_DOMAIN=${DOMAIN_PREFIX}-master
 ALICE_DOMAIN=alice
 BOB_DOMAIN=bob
 FORCE_START=false
@@ -84,43 +84,33 @@ function generate_config_block(){
     local config_data=$1
     local job_name=$2
     local scrape_interval=$3
-    local ip_addr=$4
+    local domain_name=$4
     local port=$5
     local scheme=$6
     echo -e "${config_data}""
   - job_name: '${job_name}'
     scrape_interval: ${scrape_interval}s
     static_configs:
-      - targets: ['$ip_addr:$port']
+      - targets: ['$domain_name:$port']
     metrics_path: /metrics
     scheme: $scheme
 "
 }
 function generate_center_config(){
     local config_data=$1
-    local alice_ctr=${CTR_PREFIX}"-lite-alice"
-    local bob_ctr=${CTR_PREFIX}"-lite-bob"
-    local master_ip=$(get_container_ipaddr ${MASTER_CTR})
-    local alice_ip=$(get_container_ipaddr ${alice_ctr})
-    local bob_ip=$(get_container_ipaddr ${bob_ctr})
-    config_data=$(generate_config_block "${config_data}" master-node 5 ${master_ip} 9091 http)
-    config_data=$(generate_config_block "${config_data}" alice-node 5 ${alice_ip} 9091 http)
-    config_data=$(generate_config_block "${config_data}" bob-node 5 ${bob_ip} 9091 http)
+    local alice_domain=${DOMAIN_PREFIX}"-lite-alice"
+    local bob_domain=${DOMAIN_PREFIX}"-lite-bob"
+    config_data=$(generate_config_block "${config_data}" master-node 5 ${MASTER_DOMAIN} 9091 http)
+    config_data=$(generate_config_block "${config_data}" alice-node 5 ${alice_domain} 9091 http)
+    config_data=$(generate_config_block "${config_data}" bob-node 5 ${bob_domain} 9091 http)
     echo "${config_data}"
 }
 function generate_p2p_config(){
     local config_data=$1
     local domain_id=$2
-    local domain_ctr=${CTR_PREFIX}"-autonomy-"${domain_id}
-    local domain_ip=$(get_container_ipaddr ${domain_ctr})
-    config_data=$(generate_config_block "${config_data}" "${domain_id}-network" 5 "${domain_ip}" 9091 http)
+    local domain_name=${DOMAIN_PREFIX}"-autonomy-"${domain_id}
+    config_data=$(generate_config_block "${config_data}" "${domain_id}-network" 5 "${domain_name}" 9091 http)
     echo "${config_data}"
-}
-function get_container_ipaddr(){
-    local container_name=$1
-    container_entries=$(docker network inspect kuscia-exchange | jq -r '.[]|select(.Name == "kuscia-exchange")|.Containers|to_entries[]')
-    container_entry=$(echo -e ${container_entries} | jq -r "select(.value.Name==\"${container_name}\") | .value.IPv4Address" | sed 's/\/.*//')
-    echo $container_entry
 }
 
 function init_monitor_config(){
@@ -148,7 +138,7 @@ function start_kuscia_monitor() {
   local grafana_port=$3
   local image_name=$4
   local conf_dir=$5
-  local name=${CTR_PREFIX}-monitor-${domain_id}
+  local name=${DOMAIN_PREFIX}-monitor-${domain_id}
   echo ${name}
   if need_start_docker_container ${name}; then
     docker run -dit --name=${name} --hostname=${name} --restart=always --network=${NETWORK_NAME} -v ${conf_dir}:/home/config/ -p "${prometheus_port}":9090 -p "${grafana_port}":3000 ${image_name}
@@ -156,11 +146,11 @@ function start_kuscia_monitor() {
   fi
 }
 if [ ${MODE} == "center" ]; then
-  init_monitor_config center ${ROOT}/${MASTER_CTR} center "${CONFIG_DATA}"
-  start_kuscia_monitor center 9090 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${MASTER_CTR}/"
+  init_monitor_config center ${ROOT}/${MASTER_DOMAIN} center "${CONFIG_DATA}"
+  start_kuscia_monitor center 9090 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${MASTER_DOMAIN}/"
 elif [ ${MODE} == "p2p" ]; then
-  init_monitor_config p2p ${ROOT}/${CTR_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${ALICE_DOMAIN} 9089 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${CTR_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
-  init_monitor_config p2p ${ROOT}/${CTR_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${BOB_DOMAIN} 9090 3001 docker.io/secretflow/kusica-monitor "${ROOT}/${CTR_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
+  init_monitor_config p2p ${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN} "${CONFIG_DATA}"
+  start_kuscia_monitor ${ALICE_DOMAIN} 9089 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
+  init_monitor_config p2p ${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN} "${CONFIG_DATA}"
+  start_kuscia_monitor ${BOB_DOMAIN} 9090 3001 docker.io/secretflow/kusica-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
 fi
