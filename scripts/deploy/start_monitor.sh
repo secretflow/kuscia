@@ -85,13 +85,12 @@ function generate_config_block(){
     local job_name=$2
     local scrape_interval=$3
     local domain_name=$4
-    local port=$5
-    local scheme=$6
+    local scheme=$5
     echo -e "${config_data}""
   - job_name: '${job_name}'
     scrape_interval: ${scrape_interval}s
     static_configs:
-      - targets: ['$domain_name:$port']
+      - targets: ['$domain_name']
     metrics_path: /metrics
     scheme: $scheme
 "
@@ -100,16 +99,16 @@ function generate_center_config(){
     local config_data=$1
     local alice_domain=${DOMAIN_PREFIX}"-lite-alice"
     local bob_domain=${DOMAIN_PREFIX}"-lite-bob"
-    config_data=$(generate_config_block "${config_data}" master-node 5 ${MASTER_DOMAIN} 9091 http)
-    config_data=$(generate_config_block "${config_data}" alice-node 5 ${alice_domain} 9091 http)
-    config_data=$(generate_config_block "${config_data}" bob-node 5 ${bob_domain} 9091 http)
+    config_data=$(generate_config_block "${config_data}" master 5 ${MASTER_DOMAIN}:9091 http)
+    config_data=$(generate_config_block "${config_data}" alice 5 ${alice_domain}:9091 http)
+    config_data=$(generate_config_block "${config_data}" bob 5 ${bob_domain}:9091 http)
     echo "${config_data}"
 }
 function generate_p2p_config(){
     local config_data=$1
     local domain_id=$2
     local domain_name=${DOMAIN_PREFIX}"-autonomy-"${domain_id}
-    config_data=$(generate_config_block "${config_data}" "${domain_id}-network" 5 "${domain_name}" 9091 http)
+    config_data=$(generate_config_block "${config_data}" "${domain_id}" 5 "${domain_name}:9091" http)
     echo "${config_data}"
 }
 
@@ -120,7 +119,7 @@ function init_monitor_config(){
     local config_data=$4
     mkdir -p ${conf_dir}
     if [[ $mode == "center" ]]; then
-	config_data=$(generate_center_config "${config_data}")
+  config_data=$(generate_center_config "${config_data}")
         echo "${config_data}" > ${conf_dir}/prometheus.yml
     elif [[ $mode == "p2p" ]]; then
         config_data=$(generate_p2p_config "${config_data}" "${domain_id}")
