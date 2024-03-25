@@ -177,7 +177,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "time() - node_boot_time_seconds{instance=~\"${instance}:9091\"}",
+          "expr": "time() - node_boot_time_seconds{instance=~\"${instance}\"}",
           "format": "time_series",
           "fullMetaSearch": false,
           "hide": false,
@@ -308,7 +308,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "count(count(node_cpu_seconds_total{instance=~\"${instance}:9091\", mode='system'}) by (cpu))",
+          "expr": "count(count(node_cpu_seconds_total{instance=~\"${instance}\", mode='system'}) by (cpu))",
           "format": "time_series",
           "instant": true,
           "intervalFactor": 1,
@@ -435,7 +435,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "100 - (avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9091\",mode=\"idle\"}[5m])) * 100)",
+          "expr": "100 - (avg(irate(node_cpu_seconds_total{instance=~\"${instance}\",mode=\"idle\"}[5m])) * 100)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -563,7 +563,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9091\",mode=\"iowait\"}[5m])) * 100",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}\",mode=\"iowait\"}[5m])) * 100",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -692,7 +692,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg((1 - (node_memory_MemAvailable_bytes{instance=~\"${instance}:9091\"} / (node_memory_MemTotal_bytes{instance=~\"${instance}:9091\"})))* 100)",
+          "expr": "avg((1 - (node_memory_MemAvailable_bytes{instance=~\"${instance}\"} / (node_memory_MemTotal_bytes{instance=~\"${instance}\"})))* 100)",
           "format": "time_series",
           "hide": false,
           "interval": "10s",
@@ -775,7 +775,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "sum(node_filefd_allocated{instance=~\"${instance}:9091\"})/sum(node_filefd_maximum{instance=~\"${instance}:9091\"})",
+          "expr": "sum(node_filefd_allocated{instance=~\"${instance}\"})/sum(node_filefd_maximum{instance=~\"${instance}\"})",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -894,7 +894,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=~\"${instance}:9091\",mountpoint=\"/etc/hostname\"} * 100) / node_filesystem_size_bytes {instance=~\"${instance}:9091\",mountpoint=\"/etc/hostname\"}))",
+          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=~\"${instance}\",mountpoint=\"/etc/hostname\"} * 100) / node_filesystem_size_bytes {instance=~\"${instance}\",mountpoint=\"/etc/hostname\"}))",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -1022,7 +1022,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=~\"${instance}:9091\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"} * 100) / node_filesystem_size_bytes {instance=~\"${instance}:9091\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"}))",
+          "expr": "avg(100 - ((node_filesystem_avail_bytes{instance=~\"${instance}\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"} * 100) / node_filesystem_size_bytes {instance=~\"${instance}\",mountpoint=\"$maxmount\",fstype=~\"ext4|xfs\"}))",
           "format": "time_series",
           "interval": "10s",
           "intervalFactor": 1,
@@ -1148,7 +1148,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(node_memory_MemTotal_bytes{instance=~\"${instance}:9091\"})",
+          "expr": "avg(node_memory_MemTotal_bytes{instance=~\"${instance}\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1239,7 +1239,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_load1{instance=~\"${instance}:9091\"}",
+          "expr": "node_load1{instance=~\"${instance}\"}",
           "format": "time_series",
           "instant": false,
           "interval": "10s",
@@ -1255,7 +1255,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_load5{instance=~\"${instance}:9091\"}",
+          "expr": "node_load5{instance=~\"${instance}\"}",
           "format": "time_series",
           "instant": false,
           "interval": "10s",
@@ -1269,7 +1269,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_load15{instance=~\"${instance}:9091\"}",
+          "expr": "node_load15{instance=~\"${instance}\"}",
           "format": "time_series",
           "instant": false,
           "interval": "10s",
@@ -1392,7 +1392,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_filesystem_size_bytes {instance=~\"${instance}:9091\",fstype=~\"ext4|xfs\"}",
+          "expr": "node_filesystem_size_bytes {instance=~\"${instance}\",fstype=~\"ext4|xfs\"}",
           "format": "time_series",
           "instant": true,
           "interval": "10s",
@@ -1550,7 +1550,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_filesystem_size_bytes{instance='$instance:9091',fstype=~\"ext4|xfs\"}",
+          "expr": "node_filesystem_size_bytes{instance='${instance}',fstype=~\"ext4|xfs\"}",
           "format": "table",
           "hide": true,
           "instant": true,
@@ -1564,7 +1564,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_filesystem_avail_bytes {instance='$instance:9091',fstype=~\"ext4|xfs\"}",
+          "expr": "node_filesystem_avail_bytes {instance='${instance}',fstype=~\"ext4|xfs\"}",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1579,7 +1579,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "1-(node_filesystem_free_bytes{instance='$instance:9091',fstype=~\"ext4|xfs\"} / node_filesystem_size_bytes{instance='$instance:9091',fstype=~\"ext4|xfs\"})",
+          "expr": "1-(node_filesystem_free_bytes{instance='${instance}',fstype=~\"ext4|xfs\"} / node_filesystem_size_bytes{instance='${instance}',fstype=~\"ext4|xfs\"})",
           "format": "table",
           "hide": false,
           "instant": true,
@@ -1681,7 +1681,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9091\",mode=\"system\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}\",mode=\"system\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -1694,7 +1694,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9091\",mode=\"user\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}\",mode=\"user\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "User",
@@ -1706,7 +1706,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9091\",mode=\"idle\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}\",mode=\"idle\"}[1m]))",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1719,7 +1719,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}:9091\",mode=\"iowait\"}[1m]))",
+          "expr": "avg(irate(node_cpu_seconds_total{instance=~\"${instance}\",mode=\"iowait\"}[1m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "Iowait",
@@ -1731,7 +1731,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_io_time_seconds_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_io_time_seconds_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{device}}_I/O operations per second%",
@@ -1838,7 +1838,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}:9091\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1852,7 +1852,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}:9091\"} - node_memory_MemAvailable_bytes{instance=~\"${instance}:9091\"}",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}\"} - node_memory_MemAvailable_bytes{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -1865,7 +1865,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemFree_bytes{instance=~\"${instance}:9091\"}",
+          "expr": "node_memory_MemFree_bytes{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1878,7 +1878,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_Buffers_bytes{instance=~\"${instance}:9091\"}",
+          "expr": "node_memory_Buffers_bytes{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1891,7 +1891,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_Cached_bytes{instance=~\"${instance}:9091\"}",
+          "expr": "node_memory_Cached_bytes{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 2,
@@ -1904,7 +1904,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemAvailable_bytes{instance=~\"${instance}:9091\"}",
+          "expr": "node_memory_MemAvailable_bytes{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1918,7 +1918,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}:9091\"} - (node_memory_Cached_bytes{instance=~\"${instance}:9091\"} + node_memory_Buffers_bytes{instance=~\"${instance}:9091\"} + node_memory_MemFree_bytes{instance=~\"${instance}:9091\"})",
+          "expr": "node_memory_MemTotal_bytes{instance=~\"${instance}\"} - (node_memory_Cached_bytes{instance=~\"${instance}\"} + node_memory_Buffers_bytes{instance=~\"${instance}\"} + node_memory_MemFree_bytes{instance=~\"${instance}\"})",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 1,
@@ -2025,7 +2025,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_reads_completed_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_reads_completed_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2039,7 +2039,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_writes_completed_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_writes_completed_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -2052,7 +2052,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "node_disk_io_now{instance=~\"${instance}:9091\"}",
+          "expr": "node_disk_io_now{instance=~\"${instance}\"}",
           "format": "time_series",
           "hide": true,
           "interval": "",
@@ -2161,7 +2161,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_read_bytes_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_read_bytes_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -2174,7 +2174,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_written_bytes_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_written_bytes_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -2283,7 +2283,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_io_time_seconds_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_io_time_seconds_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": true,
           "interval": "",
@@ -2297,7 +2297,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_io_time_weighted_seconds_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_io_time_weighted_seconds_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": true,
           "intervalFactor": 1,
@@ -2309,7 +2309,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_read_time_seconds_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_read_time_seconds_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2322,7 +2322,7 @@
             "type": "prometheus",
             "uid": "{{Kuscia-datasource}}"
           },
-          "expr": "irate(node_disk_write_time_seconds_total{instance=~\"${instance}:9091\"}[1m])",
+          "expr": "irate(node_disk_write_time_seconds_total{instance=~\"${instance}\"}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -2428,7 +2428,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_network_receive_bytes_total{instance=~\"${instance}:9091\",device!~'tap.*'}[5m])*8",
+          "expr": "irate(node_network_receive_bytes_total{instance=~\"${instance}\",device!~'tap.*'}[5m])*8",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{device}}_in Download",
@@ -2442,7 +2442,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_network_transmit_bytes_total{instance=~\"${instance}:9091\",device!~'tap.*'}[5m])*8",
+          "expr": "irate(node_network_transmit_bytes_total{instance=~\"${instance}\",device!~'tap.*'}[5m])*8",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{device}}_out上传",
@@ -2546,7 +2546,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_netstat_Tcp_CurrEstab{instance=~'$instance:9091'}",
+          "expr": "node_netstat_Tcp_CurrEstab{instance=~'${instance}'}",
           "format": "time_series",
           "hide": false,
           "interval": "10s",
@@ -2562,7 +2562,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_sockstat_TCP_tw{instance=~'$instance:9091'}",
+          "expr": "node_sockstat_TCP_tw{instance=~'${instance}'}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "TCP_tw",
@@ -2575,7 +2575,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_netstat_Tcp_ActiveOpens{instance=~'$instance:9091'}[1m])",
+          "expr": "irate(node_netstat_Tcp_ActiveOpens{instance=~'${instance}'}[1m])",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -2589,7 +2589,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "irate(node_netstat_Tcp_PassiveOpens{instance=~'$instance:9091'}[1m])",
+          "expr": "irate(node_netstat_Tcp_PassiveOpens{instance=~'${instance}'}[1m])",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "PassiveOpens",
@@ -2602,7 +2602,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_sockstat_TCP_alloc{instance=~'$instance:9091'}",
+          "expr": "node_sockstat_TCP_alloc{instance=~'${instance}'}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "TCP_alloc",
@@ -2615,7 +2615,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "node_sockstat_TCP_inuse{instance=~'$instance:9091'}",
+          "expr": "node_sockstat_TCP_inuse{instance=~'${instance}'}",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "TCP_inuse",
@@ -2739,7 +2739,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "ss_rtt{instance=\"${instance}:9091\"}",
+          "expr": "ss_rtt{instance=\"${instance}\"}",
           "instant": false,
           "legendFormat": "{${instance}}_avg_rtt",
           "range": true,
@@ -2836,7 +2836,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_tx_bytes_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_upstream_cx_tx_bytes_total{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "instant": false,
           "legendFormat": "{${instance}}_cx_tx_bytes_total",
           "range": true,
@@ -2848,7 +2848,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_rx_bytes_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_upstream_cx_rx_bytes_total{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_cx_rx_bytes_total",
@@ -2861,7 +2861,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_upstream_cx_total{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_cx_total",
@@ -2958,7 +2958,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_connect_fail{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_upstream_cx_connect_fail{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "instant": false,
           "legendFormat": "{${instance}}_cx_connect_fail_rate",
           "range": true,
@@ -2970,7 +2970,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_cx_connect_timeout{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_upstream_cx_connect_timeout{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_cx_connect_timeout_rate",
@@ -2983,7 +2983,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "ss_retran_rate{instance=\"${instance}:9091\"}",
+          "expr": "ss_retran_rate{instance=\"${instance}\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_retran_rate",
@@ -2996,7 +2996,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_rq_timeout{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}/envoy_cluster_upstream_rq_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"} ",
+          "expr": "envoy_cluster_upstream_rq_timeout{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}/envoy_cluster_upstream_rq_total{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"} ",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_rq_timeout_rate",
@@ -3009,7 +3009,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_health_check_failure{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}/envoy_cluster_health_check_attempt{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_health_check_failure{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}/envoy_cluster_health_check_attempt{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "{${instance}}_health_check_fail_rate",
@@ -3110,7 +3110,7 @@
             "uid": "{{Kuscia-datasource}}"
           },
           "editorMode": "code",
-          "expr": "envoy_cluster_upstream_rq_total{instance=\"${instance}:9091\",envoy_cluster_name=~\".+-to-.+-http\"}",
+          "expr": "envoy_cluster_upstream_rq_total{instance=\"${instance}\",envoy_cluster_name=~\".+-to-.+-http\"}",
           "instant": false,
           "legendFormat": "{${instance}}_rq_total",
           "range": true,
@@ -3276,7 +3276,7 @@
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
-        "regex": "/(\\d+\\.\\d+\\.\\d+\\.\\d+)/",
+        "regex": ".*-kuscia-.*",
         "skipUrlSync": false,
         "sort": 1,
         "tagValuesQuery": "",
@@ -3294,7 +3294,7 @@
           "type": "prometheus",
           "uid": "{{Kuscia-datasource}}"
         },
-        "definition": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~\"${instance}:9091\",fstype=~\"ext4|xfs\"}) by (mountpoint))))",
+        "definition": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~\"${instance}\",fstype=~\"ext4|xfs\"}) by (mountpoint))))",
         "hide": 2,
         "includeAll": false,
         "label": "",
@@ -3303,7 +3303,7 @@
         "options": [],
         "query": {
           "qryType": 3,
-          "query": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~\"${instance}:9091\",fstype=~\"ext4|xfs\"}) by (mountpoint))))",
+          "query": "query_result(topk(1,sort_desc (max(node_filesystem_size_bytes{instance=~\"${instance}\",fstype=~\"ext4|xfs\"}) by (mountpoint))))",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -3353,3 +3353,4 @@
   "version": 1,
   "weekStart": ""
 }
+
