@@ -69,7 +69,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       "parties": [
         {
           "domain_id": "alice",
-          "role": "partner"
+          "role": "partner",
+	  "resources": {"cpu": "7000m", "memory": "10000Mi"}
         },
         {
           "domain_id": "bob",
@@ -87,11 +88,13 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       "parties": [
         {
           "domain_id": "alice",
-          "role": "partner"
+          "role": "partner",
+          "resources": {"cpu": "6000m"}
         },
         {
           "domain_id": "bob",
-          "role": "partner"
+          "role": "partner",
+	  "resources": {"memory": "11000Mi"}
         }
       ],
       "alias": "job-split",
@@ -185,7 +188,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "parties": [
           {
             "domain_id": "alice",
-            "role": "partner"
+            "role": "partner",
+	    "resources": {"cpu": "7000m", "memory": "10000Mi"}
           },
           {
             "domain_id": "bob",
@@ -205,11 +209,13 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "parties": [
           {
             "domain_id": "alice",
-            "role": "partner"
+            "role": "partner",
+	    "resources": {"cpu": "6000m"}
           },
           {
             "domain_id": "bob",
-            "role": "partner"
+            "role": "partner",
+	    "resources": {"memory": "11000Mi"}
           }
         ],
         "alias": "job-split",
@@ -534,6 +540,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 |-----------|--------|----|----------|
 | domain_id | string | 必填 | DomainID |
 | role      | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)       |
+| resources | JobResource | 可选 | 参与方资源配置 |
+
+{#JobResource}
+
+### JobResource
+
+| 字段	 | 类型	  | 选填 | 描述 |
+|--------|------------|------|------|
+| cpu	 | string | 可选 | 参与方可用 CPU 资源上限 |
+| memory | string | 可选 | 参与方可用内存资源上限  |
 
 {#party-status}
 
