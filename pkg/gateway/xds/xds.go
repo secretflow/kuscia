@@ -418,25 +418,49 @@ func AddOrUpdateCluster(conf *envoycluster.Cluster) error {
 	lock.Lock()
 	defer lock.Unlock()
 	clusters := snapshot.Resources[types.Cluster].Items
-	delete(clusters, conf.Name)
-	clusters[conf.Name] = types.ResourceWithTTL{Resource: conf}
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range clusters {
+		if k == conf.Name {
+			continue
+		}
+		items[k] = v
+	}
+	items[conf.Name] = types.ResourceWithTTL{Resource: conf}
 
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Cluster].Version)
-	snapshot.Resources[types.Cluster].Version = fmt.Sprintf("%d", oldVersion+1)
+	if err := resetSnapshot(types.Cluster, items); err != nil {
+		return err
+	}
+
 	nlog.Infof("Add cluster:%s", conf.Name)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
+	return nil
 }
 
 func DeleteCluster(name string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	clusters := snapshot.Resources[types.Cluster].Items
-	delete(clusters, name)
+	if len(clusters) == 0 {
+		return nil
+	}
 
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Cluster].Version)
-	snapshot.Resources[types.Cluster].Version = fmt.Sprintf("%d", oldVersion+1)
+	if _, ok := clusters[name]; !ok {
+		return nil
+	}
+
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range clusters {
+		if k == name {
+			continue
+		}
+		items[k] = v
+	}
+
+	if err := resetSnapshot(types.Cluster, items); err != nil {
+		return err
+	}
+
 	nlog.Debugf("Delete cluster:%s", name)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
+	return nil
 }
 
 func QueryCluster(name string) (*envoycluster.Cluster, error) {
@@ -486,13 +510,23 @@ func AddOrUpdateVirtualHost(vh *route.VirtualHost, routeName string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	routes := snapshot.Resources[types.Route].Items
-	rs, ok := routes[routeName]
+	_, ok := routes[routeName]
 	if !ok {
 		nlog.Errorf("Unknown route config name: %s", routeName)
 		return fmt.Errorf("unknown route config name: %s", routeName)
 	}
 
-	routeConfig, ok := rs.Resource.(*route.RouteConfiguration)
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range routes {
+		if k == routeName {
+			res := proto.Clone(routes[k].Resource).(*route.RouteConfiguration)
+			items[k] = types.ResourceWithTTL{Resource: res}
+		} else {
+			items[k] = v
+		}
+	}
+
+	routeConfig, ok := items[routeName].Resource.(*route.RouteConfiguration)
 	if !ok {
 		return fmt.Errorf("resource cannot cast to RouteConfiguration")
 	}
@@ -505,22 +539,33 @@ func AddOrUpdateVirtualHost(vh *route.VirtualHost, routeName string) error {
 	}
 	routeConfig.VirtualHosts = append([]*route.VirtualHost{vh}, routeConfig.VirtualHosts...)
 
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Route].Version)
-	snapshot.Resources[types.Route].Version = fmt.Sprintf("%d", oldVersion+1)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
+	if err := resetSnapshot(types.Route, items); err != nil {
+		return err
+	}
+	return nil
 }
 
 func DeleteVirtualHost(name, routeName string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	routes := snapshot.Resources[types.Route].Items
-	rs, ok := routes[routeName]
+	_, ok := routes[routeName]
 	if !ok {
 		nlog.Errorf("unknown route config name: %s", routeName)
 		return fmt.Errorf("unknown route config name: %s", routeName)
 	}
 
-	routeConfig, ok := rs.Resource.(*route.RouteConfiguration)
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range routes {
+		if k == routeName {
+			res := proto.Clone(routes[k].Resource).(*route.RouteConfiguration)
+			items[k] = types.ResourceWithTTL{Resource: res}
+		} else {
+			items[k] = v
+		}
+	}
+
+	routeConfig, ok := items[routeName].Resource.(*route.RouteConfiguration)
 	if !ok {
 		return fmt.Errorf("resource cannot cast to RouteConfiguration")
 	}
@@ -532,21 +577,31 @@ func DeleteVirtualHost(name, routeName string) error {
 		}
 	}
 
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Route].Version)
-	snapshot.Resources[types.Route].Version = fmt.Sprintf("%d", oldVersion+1)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
+	if err := resetSnapshot(types.Route, items); err != nil {
+		return err
+	}
+	return nil
 }
 
 func DeleteRoute(name, vhName, routeName string) error {
 	lock.Lock()
 	defer lock.Unlock()
 	routes := snapshot.Resources[types.Route].Items
-	rs, ok := routes[routeName]
+	_, ok := routes[routeName]
 	if !ok {
 		return fmt.Errorf("unknown route config name: %s", routeName)
 	}
 
-	routeConfig, ok := rs.Resource.(*route.RouteConfiguration)
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range routes {
+		if k == routeName {
+			res := proto.Clone(routes[k].Resource).(*route.RouteConfiguration)
+			items[k] = types.ResourceWithTTL{Resource: res}
+		} else {
+			items[k] = v
+		}
+	}
+	routeConfig, ok := items[routeName].Resource.(*route.RouteConfiguration)
 	if !ok {
 		return fmt.Errorf("resource cannot cast to RouteConfiguration")
 	}
@@ -569,9 +624,10 @@ func DeleteRoute(name, vhName, routeName string) error {
 		}
 	}
 
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Route].Version)
-	snapshot.Resources[types.Route].Version = fmt.Sprintf("%d", oldVersion+1)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
+	if err := resetSnapshot(types.Route, items); err != nil {
+		return err
+	}
+	return nil
 }
 
 func getHTTPFilterConfig(filterName, listenerName string) (*anypb.Any, error) {
@@ -888,11 +944,22 @@ func updateHTTPFilter(httpFilter *hcm.HttpFilter, listenerName string) error {
 func updateHTTPFilters(filters []*hcm.HttpFilter, listenerName string) error {
 	listeners := snapshot.Resources[types.Listener].Items
 
-	rs, ok := listeners[listenerName]
+	_, ok := listeners[listenerName]
 	if !ok {
 		return fmt.Errorf("unknown listener name: %s", listenerName)
 	}
-	lis, ok := rs.Resource.(*listener.Listener)
+
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range listeners {
+		if k == listenerName {
+			res := proto.Clone(listeners[k].Resource).(*listener.Listener)
+			items[k] = types.ResourceWithTTL{Resource: res}
+		} else {
+			items[k] = v
+		}
+	}
+
+	lis, ok := items[listenerName].Resource.(*listener.Listener)
 	if !ok {
 		return fmt.Errorf("resource cannot cast to listener")
 	}
@@ -944,9 +1011,10 @@ func updateHTTPFilters(filters []*hcm.HttpFilter, listenerName string) error {
 		listeners[tlsLis.Name] = types.ResourceWithTTL{Resource: tlsLis}
 	}
 
-	oldVersion, _ := strconv.Atoi(snapshot.Resources[types.Listener].Version)
-	snapshot.Resources[types.Listener].Version = fmt.Sprintf("%d", oldVersion+1)
-	return snapshotCache.SetSnapshot(ctx, nodeID, snapshot)
+	if err = resetSnapshot(types.Listener, items); err != nil {
+		return err
+	}
+	return nil
 }
 
 func AddDefaultTimeout(action *route.RouteAction) *route.RouteAction {
@@ -957,4 +1025,61 @@ func AddDefaultTimeout(action *route.RouteAction) *route.RouteAction {
 		GrpcTimeoutHeaderMax: &durationpb.Duration{},
 	}
 	return action
+}
+
+func resetSnapshot(ty types.ResponseType, items map[string]types.ResourceWithTTL) error {
+	oldVersion, _ := strconv.Atoi(snapshot.Resources[ty].Version)
+	newVersion := fmt.Sprintf("%d", oldVersion+1)
+
+	var clusterResources, routeResources, listenerResources []types.Resource
+	if ty == types.Cluster {
+		clusterResources = buildResourceFromResourcesItems(items)
+	} else {
+		clusterResources = buildResourcesFromSnapshot(types.Cluster)
+	}
+
+	if ty == types.Route {
+		routeResources = buildResourceFromResourcesItems(items)
+	} else {
+		routeResources = buildResourcesFromSnapshot(types.Route)
+	}
+
+	if ty == types.Listener {
+		listenerResources = buildResourceFromResourcesItems(items)
+	} else {
+		listenerResources = buildResourcesFromSnapshot(types.Listener)
+	}
+
+	newSnapshot, err := cache.NewSnapshot(newVersion, map[resource.Type][]types.Resource{
+		resource.ClusterType:  clusterResources,
+		resource.RouteType:    routeResources,
+		resource.ListenerType: listenerResources,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = snapshotCache.SetSnapshot(ctx, nodeID, newSnapshot)
+	if err != nil {
+		return err
+	}
+	snapshot = newSnapshot
+	return nil
+}
+
+func buildResourceFromResourcesItems(items map[string]types.ResourceWithTTL) []types.Resource {
+	ret := make([]types.Resource, 0, len(items))
+	for _, resourceWithTTL := range items {
+		ret = append(ret, resourceWithTTL.Resource)
+	}
+	return ret
+}
+
+func buildResourcesFromSnapshot(ty types.ResponseType) []types.Resource {
+	items := snapshot.Resources[ty].Items
+	ret := make([]types.Resource, 0, len(items))
+	for _, resourceWithTTL := range items {
+		ret = append(ret, resourceWithTTL.Resource)
+	}
+	return ret
 }
