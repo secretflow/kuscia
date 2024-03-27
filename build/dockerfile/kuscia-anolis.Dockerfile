@@ -1,15 +1,17 @@
+ARG ARCH=amd64
 ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0"
 ARG KUSCIA_ENVOY_IMAGE="secretflow/kuscia-envoy:0.3.0.dev231122"
 ARG PROM_NODE_EXPORTER="prom/node-exporter:v1.7.0"
 
-FROM ${DEPS_IMAGE} as deps
-FROM ${PROM_NODE_EXPORTER} as node_exporter
-FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
+FROM --platform=linux/${ARCH} ${DEPS_IMAGE} as deps
+FROM --platform=linux/${ARCH}  ${PROM_NODE_EXPORTER} as node_exporter
+FROM --platform=linux/${ARCH}  ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
 
-FROM openanolis/anolisos:8.8
+FROM --platform=linux/${ARCH} openanolis/anolisos:8.8
 
 ENV TZ=Asia/Shanghai
 
+ARG ARCH="amd64"
 ARG ROOT_DIR="/home/kuscia"
 RUN yum install -y openssl net-tools which jq logrotate && \
     yum clean all && \
@@ -34,7 +36,7 @@ RUN pushd ${ROOT_DIR}/bin && \
     popd
 
 COPY build/apps/kuscia/kuscia ${ROOT_DIR}/bin
-COPY build/pause/pause.tar ${ROOT_DIR}/pause
+COPY build/pause/pause-${ARCH}.tar ${ROOT_DIR}/pause/pause.tar
 COPY crds/v1alpha1 ${ROOT_DIR}/crds/v1alpha1
 COPY etc ${ROOT_DIR}/etc
 COPY testdata ${ROOT_DIR}/var/storage/data
