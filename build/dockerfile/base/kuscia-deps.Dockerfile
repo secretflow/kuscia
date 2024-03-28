@@ -6,7 +6,6 @@ FROM --platform=linux/${ARCH} ${K3S_IMAGE} as k3s-image
 FROM --platform=linux/${ARCH} openanolis/anolisos:8.8
 
 ARG ARCH=amd64
-
 RUN yum install -y git glibc-static wget gcc make && \
     yum clean all
 
