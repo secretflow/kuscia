@@ -10,7 +10,6 @@ FROM --platform=linux/${ARCH}  ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
 FROM --platform=linux/${ARCH} openanolis/anolisos:8.8
 
 ENV TZ=Asia/Shanghai
-
 ARG ARCH="amd64"
 ARG ROOT_DIR="/home/kuscia"
 RUN yum install -y openssl net-tools which jq logrotate && \
