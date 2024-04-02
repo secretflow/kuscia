@@ -52,13 +52,22 @@ jobs:
       - run:
           name: Build image and publish
           command: |
-            make image
+            make 
+            docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
+            bash hack/k3s/build.sh
+            DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
+            ENVOY_IMAGE = secretflow/kuscia-envoy:latest
+            IMAGE = kuscia:latest
+	        docker buildx build -t ${DEPS_IMAGE} --build-arg ARCH=arm64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+	        docker buildx build -t ${DEPS_IMAGE} --build-arg ARCH=amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+            docker buildx build -t ${IMG} --build-arg ARCH=arm64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+            docker buildx build -t ${IMG} --build-arg ARCH=amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
             CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:latest
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
+            docker tag ${IMAGE} secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
+            docker tag ${IMAGE} secretflow/kuscia:latest
+            docker tag ${IMAGE} secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
+            docker tag ${IMAGE} secretflow/kuscia:${CIRCLETAG}
             docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
-            docker tag $(docker images --format "{{.Repository}}:{{.Tag}}" | sed -n '1p') secretflow/kuscia:${CIRCLETAG}
             docker push secretflow/kuscia:${CIRCLETAG}
             docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
             docker push secretflow/kuscia:latest
