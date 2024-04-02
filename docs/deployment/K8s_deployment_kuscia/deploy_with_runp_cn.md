@@ -27,6 +27,10 @@
 
 2. 下载 Kuscia [配置示例](https://github.com/secretflow/kuscia/blob/main/scripts/templates/kuscia-autonomy.yaml)（以 autonomy 为例），
    将 `runtime` 字段修改为 `runp`，以及填充模板变量，例如 `{{.DOMAIN_ID}}`、`{{.DOMAIN_KEY_DATA}}` 等。 并在启动节点时指定配置文件路径。
+
+<span style="color:red;">注意：<br>
+1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+
    ```bash
    # DOMAIN_KEY_DATA 请用以下命令生成
    docker run -it --rm ${KUSCIA_IMAGE} scripts/deploy/generate_rsa_key.sh
@@ -34,7 +38,6 @@
    # -c 参数传递的是指定的 Kuscia 配置文件路径。
    ./deploy.sh autonomy -n alice -i 1.1.1.1 -p 11001 -k 11002 -g 11003 -c kuscia-autonomy.yaml
    ```
-
 
 ### 在 K8s 集群上部署
 完整的详细流程请参考 [K8s部署中心化集群](./K8s_deployment_kuscia/K8s_master_lite_cn.md) 和 [K8s部署点对点集群](./K8s_deployment_kuscia/K8s_p2p_cn.md)。

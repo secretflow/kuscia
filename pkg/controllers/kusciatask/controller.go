@@ -447,7 +447,6 @@ func (c *Controller) processNextWorkItem() bool {
 			metrics.TaskRequeueCount.WithLabelValues(key).Inc()
 			// Put the item back on the taskQueue to handle any transient errors.
 			c.taskQueue.AddRateLimited(key)
-			nlog.Warnf("Error handling %q, re-queuing", key)
 			return fmt.Errorf("error handling %q, %v", key, err)
 		}
 
@@ -540,11 +539,11 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	}
 
 	// Update kusciatask
-	if err = c.updateTaskStatus(sharedTask, kusciaTask); err != nil {
+	if err = c.updateTaskStatus(sharedTask, kusciaTask); err != nil && !k8serrors.IsConflict(err) {
 		return fmt.Errorf("failed to update status for kusciaTask %q, %v", key, err)
 	}
 
-	nlog.Infof("Finished syncing kusciatask %q (%v)", key, time.Since(startTime))
+	nlog.Infof("Finish syncing KusciaTask %q (%v)", key, time.Since(startTime))
 
 	return nil
 }

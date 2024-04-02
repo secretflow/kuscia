@@ -1,6 +1,7 @@
 apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
+  namespace: cross-domain
   name: {{.JOB_NAME}}
 spec:
   initiator: {{.Initiator}}

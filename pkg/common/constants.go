@@ -57,6 +57,7 @@ const (
 	LabelJobStage = "kuscia.secretflow/job-stage"
 	// LabelJobStageTrigger is a label to specify who trigger the current stage of job.
 	LabelJobStageTrigger = "kuscia.secretflow/job-stage-trigger"
+	LabelJobStageVersion = "kuscia.secretflow/job-stage-version"
 
 	LabelKusciaDeploymentAppType  = "kuscia.secretflow/app-type"
 	LabelKusciaDeploymentUID      = "kuscia.secretflow/kd-uid"
@@ -95,6 +96,7 @@ const (
 	KusciaSchedulerName        = "kuscia-scheduler"
 	KusciaCrossDomain          = "cross-domain"
 	JobCustomFieldsLabelPrefix = "kuscia.job.custom-fields/"
+	ReceiverServiceName        = "receiver"
 )
 
 // annotations

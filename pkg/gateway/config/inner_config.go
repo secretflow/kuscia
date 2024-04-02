@@ -26,55 +26,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restclient.Config) (*MasterConfig, error) {
-	isMaster := false
-	if masterConfig.APIServer != nil {
-		isMaster = true
-	}
-
-	if isMaster {
-		apiCert, err := LoadTLSCertByKubeConfig(kubeConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		protocol, host, port, path, err := utils.ParseURL(kubeConfig.Host)
-		if err != nil {
-			return nil, err
-		}
-
-		var storageCluster *ClusterConfig
-		if masterConfig.KusciaStorage != nil {
-			storageCluster, err = LoadClusterConfig(masterConfig.KusciaStorage.TLSConfig,
-				masterConfig.KusciaStorage.Endpoint)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		var kusciaAPICluster *ClusterConfig
-		if masterConfig.KusciaAPI != nil {
-			kusciaAPICluster, err = LoadClusterConfig(masterConfig.KusciaAPI.TLSConfig, masterConfig.KusciaAPI.Endpoint)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		return &MasterConfig{
-			Master: true,
-			APIServer: &ClusterConfig{
-				Host:     host,
-				Port:     port,
-				Path:     path,
-				Protocol: protocol,
-				TLSCert:  apiCert,
-			},
-			KusciaStorage: storageCluster,
-			KusciaAPI:     kusciaAPICluster,
-			APIWhitelist:  masterConfig.APIWhitelist,
-		}, nil
-	}
-
+func LoadMasterProxyConfig(masterConfig *kusciaconfig.MasterConfig) (*MasterConfig, error) {
 	proxyCluster, err := LoadClusterConfig(masterConfig.TLSConfig, masterConfig.Endpoint)
 	if err != nil {
 		return nil, err
@@ -82,6 +34,49 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 	return &MasterConfig{
 		Master:      false,
 		MasterProxy: proxyCluster,
+	}, nil
+}
+
+func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restclient.Config) (*MasterConfig, error) {
+	apiCert, err := LoadTLSCertByKubeConfig(kubeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	protocol, host, port, path, err := utils.ParseURL(kubeConfig.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	var storageCluster *ClusterConfig
+	if masterConfig.KusciaStorage != nil {
+		storageCluster, err = LoadClusterConfig(masterConfig.KusciaStorage.TLSConfig,
+			masterConfig.KusciaStorage.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var kusciaAPICluster *ClusterConfig
+	if masterConfig.KusciaAPI != nil {
+		kusciaAPICluster, err = LoadClusterConfig(masterConfig.KusciaAPI.TLSConfig, masterConfig.KusciaAPI.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &MasterConfig{
+		Master: true,
+		APIServer: &ClusterConfig{
+			Host:     host,
+			Port:     port,
+			Path:     path,
+			Protocol: protocol,
+			TLSCert:  apiCert,
+		},
+		KusciaStorage: storageCluster,
+		KusciaAPI:     kusciaAPICluster,
+		APIWhitelist:  masterConfig.APIWhitelist,
 	}, nil
 }
 

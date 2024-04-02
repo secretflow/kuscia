@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"strings"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -425,8 +426,9 @@ func (c *Controller) updateKusciaDeploymentStatus(ctx context.Context, kd *kusci
 		kd.Status.TotalParties = len(kd.Spec.Parties)
 	}
 
-	if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
-		return fmt.Errorf("error updating kuscia deployment %v status, %v", kd.Name, err)
+	_, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).UpdateStatus(ctx, kd, metav1.UpdateOptions{})
+	if err != nil && !k8serrors.IsConflict(err) {
+		return fmt.Errorf("failed to updating kuscia deployment %v status, %v", kd.Name, err)
 	}
 
 	return nil

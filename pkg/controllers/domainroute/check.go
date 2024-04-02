@@ -133,8 +133,8 @@ func DoValidate(spec *kusciaapisv1alpha1.DomainRouteSpec) error {
 
 func (c *controller) needRollingToNext(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) bool {
 	if !dr.Status.TokenStatus.RevisionToken.IsReady {
-		rollEslpsedTime := time.Since(dr.Status.TokenStatus.RevisionToken.RevisionTime.Time)
-		if rollEslpsedTime > domainRouteSyncPeriod {
+		rollElapsedTime := time.Since(dr.Status.TokenStatus.RevisionToken.RevisionTime.Time)
+		if rollElapsedTime > domainRouteSyncPeriod {
 			nlog.Warnf("Domainroute %s/%s token is waiting more than %d minutes for ready, so need to re-handshake", dr.Namespace, dr.Name, domainRouteSyncPeriod/time.Minute)
 			return true
 		}

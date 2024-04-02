@@ -37,6 +37,9 @@ const (
 	JobService_QueryJob_FullMethodName            = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/QueryJob"
 	JobService_BatchQueryJobStatus_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/BatchQueryJobStatus"
 	JobService_StopJob_FullMethodName             = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/StopJob"
+	JobService_RestartJob_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/RestartJob"
+	JobService_SuspendJob_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/SuspendJob"
+	JobService_CancelJob_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/CancelJob"
 	JobService_DeleteJob_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/DeleteJob"
 	JobService_WatchJob_FullMethodName            = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/WatchJob"
 	JobService_ApproveJob_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.JobService/ApproveJob"
@@ -50,6 +53,9 @@ type JobServiceClient interface {
 	QueryJob(ctx context.Context, in *QueryJobRequest, opts ...grpc.CallOption) (*QueryJobResponse, error)
 	BatchQueryJobStatus(ctx context.Context, in *BatchQueryJobStatusRequest, opts ...grpc.CallOption) (*BatchQueryJobStatusResponse, error)
 	StopJob(ctx context.Context, in *StopJobRequest, opts ...grpc.CallOption) (*StopJobResponse, error)
+	RestartJob(ctx context.Context, in *RestartJobRequest, opts ...grpc.CallOption) (*RestartJobResponse, error)
+	SuspendJob(ctx context.Context, in *SuspendJobRequest, opts ...grpc.CallOption) (*SuspendJobResponse, error)
+	CancelJob(ctx context.Context, in *CancelJobRequest, opts ...grpc.CallOption) (*CancelJobResponse, error)
 	DeleteJob(ctx context.Context, in *DeleteJobRequest, opts ...grpc.CallOption) (*DeleteJobResponse, error)
 	WatchJob(ctx context.Context, in *WatchJobRequest, opts ...grpc.CallOption) (JobService_WatchJobClient, error)
 	ApproveJob(ctx context.Context, in *ApproveJobRequest, opts ...grpc.CallOption) (*ApproveJobResponse, error)
@@ -93,6 +99,33 @@ func (c *jobServiceClient) BatchQueryJobStatus(ctx context.Context, in *BatchQue
 func (c *jobServiceClient) StopJob(ctx context.Context, in *StopJobRequest, opts ...grpc.CallOption) (*StopJobResponse, error) {
 	out := new(StopJobResponse)
 	err := c.cc.Invoke(ctx, JobService_StopJob_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *jobServiceClient) RestartJob(ctx context.Context, in *RestartJobRequest, opts ...grpc.CallOption) (*RestartJobResponse, error) {
+	out := new(RestartJobResponse)
+	err := c.cc.Invoke(ctx, JobService_RestartJob_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *jobServiceClient) SuspendJob(ctx context.Context, in *SuspendJobRequest, opts ...grpc.CallOption) (*SuspendJobResponse, error) {
+	out := new(SuspendJobResponse)
+	err := c.cc.Invoke(ctx, JobService_SuspendJob_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *jobServiceClient) CancelJob(ctx context.Context, in *CancelJobRequest, opts ...grpc.CallOption) (*CancelJobResponse, error) {
+	out := new(CancelJobResponse)
+	err := c.cc.Invoke(ctx, JobService_CancelJob_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +190,9 @@ type JobServiceServer interface {
 	QueryJob(context.Context, *QueryJobRequest) (*QueryJobResponse, error)
 	BatchQueryJobStatus(context.Context, *BatchQueryJobStatusRequest) (*BatchQueryJobStatusResponse, error)
 	StopJob(context.Context, *StopJobRequest) (*StopJobResponse, error)
+	RestartJob(context.Context, *RestartJobRequest) (*RestartJobResponse, error)
+	SuspendJob(context.Context, *SuspendJobRequest) (*SuspendJobResponse, error)
+	CancelJob(context.Context, *CancelJobRequest) (*CancelJobResponse, error)
 	DeleteJob(context.Context, *DeleteJobRequest) (*DeleteJobResponse, error)
 	WatchJob(*WatchJobRequest, JobService_WatchJobServer) error
 	ApproveJob(context.Context, *ApproveJobRequest) (*ApproveJobResponse, error)
@@ -178,6 +214,15 @@ func (UnimplementedJobServiceServer) BatchQueryJobStatus(context.Context, *Batch
 }
 func (UnimplementedJobServiceServer) StopJob(context.Context, *StopJobRequest) (*StopJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopJob not implemented")
+}
+func (UnimplementedJobServiceServer) RestartJob(context.Context, *RestartJobRequest) (*RestartJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RestartJob not implemented")
+}
+func (UnimplementedJobServiceServer) SuspendJob(context.Context, *SuspendJobRequest) (*SuspendJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuspendJob not implemented")
+}
+func (UnimplementedJobServiceServer) CancelJob(context.Context, *CancelJobRequest) (*CancelJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CancelJob not implemented")
 }
 func (UnimplementedJobServiceServer) DeleteJob(context.Context, *DeleteJobRequest) (*DeleteJobResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteJob not implemented")
@@ -273,6 +318,60 @@ func _JobService_StopJob_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _JobService_RestartJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestartJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(JobServiceServer).RestartJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: JobService_RestartJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(JobServiceServer).RestartJob(ctx, req.(*RestartJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _JobService_SuspendJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuspendJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(JobServiceServer).SuspendJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: JobService_SuspendJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(JobServiceServer).SuspendJob(ctx, req.(*SuspendJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _JobService_CancelJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(JobServiceServer).CancelJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: JobService_CancelJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(JobServiceServer).CancelJob(ctx, req.(*CancelJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _JobService_DeleteJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteJobRequest)
 	if err := dec(in); err != nil {
@@ -352,6 +451,18 @@ var JobService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopJob",
 			Handler:    _JobService_StopJob_Handler,
+		},
+		{
+			MethodName: "RestartJob",
+			Handler:    _JobService_RestartJob_Handler,
+		},
+		{
+			MethodName: "SuspendJob",
+			Handler:    _JobService_SuspendJob_Handler,
+		},
+		{
+			MethodName: "CancelJob",
+			Handler:    _JobService_CancelJob_Handler,
 		},
 		{
 			MethodName: "DeleteJob",

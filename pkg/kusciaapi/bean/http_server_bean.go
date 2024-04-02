@@ -206,6 +206,21 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					RelativePath: "approve",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewApproveJobHandler(jobService))},
 				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "suspend",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewSuspendJobHandler(jobService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "restart",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewRestartJobHandler(jobService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "cancel",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewCancelJobHandler(jobService))},
+				},
 			},
 		},
 		// domain group routes

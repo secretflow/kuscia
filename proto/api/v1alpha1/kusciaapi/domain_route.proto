@@ -52,6 +52,7 @@ message EndpointPort {
   string name = 1;
   int32 port = 2;
   string protocol = 3;
+  bool isTLS = 4;
 }
 
 message TokenConfig {

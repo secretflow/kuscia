@@ -169,8 +169,8 @@ func (ci *certIssuance) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 
 	certsSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-certs", ctx.BkPod.Name),
-			Namespace: ctx.BkPod.Namespace,
+			Name:      "certs",
+			Namespace: ctx.Pod.Namespace,
 		},
 		StringData: map[string]string{},
 	}
