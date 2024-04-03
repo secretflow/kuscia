@@ -17,6 +17,7 @@ package kii
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -97,4 +98,12 @@ type Manifest struct {
 
 	// Type defines the type of the image. Default is Standard.
 	Type ImageType `json:"type"`
+}
+
+func FormatImageID(id string) string {
+	if strings.HasPrefix(id, "sha256:") {
+		return id
+	}
+
+	return fmt.Sprintf("sha256:%s", id)
 }

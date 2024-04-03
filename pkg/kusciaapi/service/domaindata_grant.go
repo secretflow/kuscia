@@ -69,13 +69,6 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 		}
 	}
 
-	// check domain exists
-	if errorCode, errMsg := CheckDomainExists(s.conf.KusciaClient, request.GetDomainId()); utils.ResponseCodeSuccess != errorCode {
-		return &kusciaapi.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
-		}
-	}
-
 	dd, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.CreateDomainDataGrantResponse{
@@ -109,7 +102,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("CreateDomainDataGrant failed, error:%s", err.Error())
 		return &kusciaapi.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrCreateDomainDataGrant), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.CreateDomainDataGrantErrorCode(err, errorcode.ErrCreateDomainDataGrant), err.Error()),
 		}
 	}
 	return &kusciaapi.CreateDomainDataGrantResponse{
@@ -121,6 +114,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 }
 
 func (s *domainDataGrantService) QueryDomainDataGrant(ctx context.Context, request *kusciaapi.QueryDomainDataGrantRequest) *kusciaapi.QueryDomainDataGrantResponse {
+
 	dg, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.DomainId).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("Query DomainDataGrant failed, error:%s", err.Error())
@@ -154,6 +148,7 @@ func (s *domainDataGrantService) BatchQueryDomainDataGrant(ctx context.Context, 
 }
 
 func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, request *kusciaapi.UpdateDomainDataGrantRequest) *kusciaapi.UpdateDomainDataGrantResponse {
+
 	if request.DomaindataId == "" {
 		return &kusciaapi.UpdateDomainDataGrantResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domaindataid cant be null"),

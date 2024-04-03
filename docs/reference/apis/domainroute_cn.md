@@ -65,7 +65,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/create' \
     "ports": [
       {
         "port": 1080,
-        "protocol": "HTTPS"
+        "protocol": "HTTP",
+        "isTLS": true
       }
     ]
   },
@@ -393,10 +394,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 ### EndpointPort
 
-| 字段       | 类型     | 选填 | 描述                 |
-|----------|--------|----|--------------------|
-| port     | int32  | 必填 | 端口号                |
-| protocol | string | 必填 | 端口协议：\[HTTP, GRPC] |
+| 字段      | 类型    | 选填 | 描述                    |
+|----------|--------|------|------------------------|
+| port     | int32  | 必填 | 端口号                   |
+| protocol | string | 必填 | 端口协议：\[HTTP, GRPC]   |
+| isTLS    | bool   | 选填 | 是否开启 TLS，默认为 false |
 
 {#route-endpoint}
 

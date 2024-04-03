@@ -16,6 +16,7 @@ package utils
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +24,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
+
+const KusciaEnvoyMsgHeaderKey = "Kuscia-Error-Message"
 
 type HTTPParam struct {
 	Method       string
@@ -109,7 +114,9 @@ func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
 	for key, val := range hp.Headers {
 		req.Header.Set(key, val)
 	}
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("send request error, detail -> %s", err.Error())
@@ -135,4 +142,51 @@ func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
 		return fmt.Errorf("invalid response body, detail -> %s", string(body))
 	}
 	return nil
+}
+
+func ProbePeerEndpoint(endpointURL string) error {
+
+	if endpointURL == "" {
+		return fmt.Errorf("endpoint URL is empty")
+	}
+
+	req, err := http.NewRequest("GET", endpointURL, nil)
+	if err != nil {
+		return fmt.Errorf("endpoint URL is invalid: %v", err)
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Timeout: time.Second * 5, Transport: tr}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return fmt.Errorf("sending request error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized && hasNonEmptyHeaderValue(resp.Header, KusciaEnvoyMsgHeaderKey) {
+		return nil
+	}
+	nlog.Infof("response header: %+v", resp.Header)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("unexpected status code: %d, read response body error, detail -> %s", resp.StatusCode, err.Error())
+	}
+	respbody := string(body)
+	return fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, respbody)
+
+}
+
+func hasNonEmptyHeaderValue(header http.Header, key string) bool {
+
+	if values, ok := header[key]; ok {
+		if len(values) == 0 {
+			return false
+		}
+		return values[0] != ""
+	}
+	return false
 }

@@ -94,6 +94,7 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 	}
 	cdrEndpoint.Ports = make([]v1alpha1.DomainPort, len(endpoint.Ports))
 	for i, port := range endpoint.Ports {
+		// TODO: Converted `isTLS` is about to be removed
 		drProtocol, isTLS, err := convert2DomainRouteProtocol(port.Protocol)
 		if err != nil {
 			return &kusciaapi.CreateDomainRouteResponse{
@@ -104,7 +105,7 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 			Name:     port.Name,
 			Port:     int(port.Port),
 			Protocol: drProtocol,
-			IsTLS:    isTLS,
+			IsTLS:    isTLS || port.IsTLS,
 		}
 	}
 	// build cdr token config or mtls config

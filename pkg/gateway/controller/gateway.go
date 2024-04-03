@@ -81,6 +81,10 @@ func NewGatewayController(namespace string, prikey *rsa.PrivateKey, kusciaClient
 	return controller, nil
 }
 
+func (c *GatewayController) GatewayName() string {
+	return c.hostname
+}
+
 // Run begins watching and syncing.
 func (c *GatewayController) Run(threadiness int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()

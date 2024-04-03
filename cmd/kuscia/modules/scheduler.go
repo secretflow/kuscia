@@ -65,6 +65,8 @@ func NewScheduler(i *Dependencies) Module {
 	o.Authentication.TolerateInClusterLookupFailure = true
 	o.Authentication.RemoteKubeConfigFileOptional = true
 	o.Authorization.RemoteKubeConfigFileOptional = true
+	o.Authorization.RemoteKubeConfigFile = i.KubeconfigFile
+	o.Authentication.RemoteKubeConfigFile = i.KubeconfigFile
 
 	// Set the PairName but leave certificate directory blank to generate in-memory by default
 	o.SecureServing.ServerCert.CertDirectory = ""

@@ -76,13 +76,6 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 		}
 	}
 
-	// check domain exists
-	if errorCode, errMsg := CheckDomainExists(s.conf.KusciaClient, request.GetDomainId()); utils.ResponseCodeSuccess != errorCode {
-		return &kusciaapi.CreateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
-		}
-	}
-
 	// check whether domainData  is existed
 	if request.DomaindataId != "" {
 		// do k8s validate
@@ -104,6 +97,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
+
 	// normalization request
 	s.normalizationCreateRequest(request)
 	// verdor priority using incoming
@@ -144,7 +138,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	if err != nil {
 		nlog.Errorf("CreateDomainData failed, error: %s", err.Error())
 		return &kusciaapi.CreateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, errorcode.ErrCreateDomainDataFailed), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.CreateDomainDataErrorCode(err, errorcode.ErrCreateDomainDataFailed), err.Error()),
 		}
 	}
 	return &kusciaapi.CreateDomainDataResponse{
@@ -162,6 +156,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+
 	if err := s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),

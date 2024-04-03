@@ -16,54 +16,40 @@ package handler
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corelisters "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/tools/record"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 // FailedHandler will handle kuscia job in Failed phase.
 type FailedHandler struct {
-	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
-	namespaceLister  corelisters.NamespaceLister
-	recorder         record.EventRecorder
+	*JobScheduler
 }
 
 // NewFailedHandler return FailedHandler to handle Failed kuscia job.
 func NewFailedHandler(deps *Dependencies) *FailedHandler {
 	return &FailedHandler{
-		recorder:         deps.Recorder,
-		kusciaTaskLister: deps.KusciaTaskLister,
-		namespaceLister:  deps.NamespaceLister,
+		JobScheduler: NewJobScheduler(deps),
 	}
 }
 
 // HandlePhase implements the KusciaJobPhaseHandler interface.
 // It will do some tail-in work when the job phase is failed.
-func (h *FailedHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (needUpdate bool, err error) {
+func (h *FailedHandler) HandlePhase(job *kusciaapisv1alpha1.KusciaJob) (needUpdate bool, err error) {
 	now := metav1.Now().Rfc3339Copy()
-	asInitiator := false
-	if utilsres.SelfClusterAsInitiator(h.namespaceLister, kusciaJob.Spec.Initiator, kusciaJob.Annotations) {
-		asInitiator = true
+	// handle stage command, check if the stage command matches the phase of job
+	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
+		return true, err
 	}
-
 	allTaskFinished := true
-	for taskID, phase := range kusciaJob.Status.TaskStatus {
+	for taskID, phase := range job.Status.TaskStatus {
 		if phase != kusciaapisv1alpha1.TaskFailed && phase != kusciaapisv1alpha1.TaskSucceeded {
-			if !asInitiator {
-				kusciaJob.Status.TaskStatus[taskID] = kusciaapisv1alpha1.TaskFailed
-				continue
-			}
-
 			task, err := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
 			if err != nil {
 				nlog.Warnf("Get kuscia task %v failed, %v", taskID, err)
-				kusciaJob.Status.TaskStatus[taskID] = kusciaapisv1alpha1.TaskFailed
+				job.Status.TaskStatus[taskID] = kusciaapisv1alpha1.TaskFailed
 				needUpdate = true
 				continue
 			}
@@ -73,19 +59,18 @@ func (h *FailedHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (ne
 			}
 
 			if phase != task.Status.Phase {
-				kusciaJob.Status.TaskStatus[taskID] = task.Status.Phase
+				job.Status.TaskStatus[taskID] = task.Status.Phase
 				needUpdate = true
 			}
 		}
 	}
 
 	if allTaskFinished {
-		if kusciaJob.Status.CompletionTime == nil || !kusciaJob.Status.CompletionTime.Equal(&now) {
-			kusciaJob.Status.CompletionTime = &now
+		if job.Status.CompletionTime == nil {
+			job.Status.CompletionTime = &now
 			needUpdate = true
+			metrics.JobResultStats.WithLabelValues(metrics.Failed).Inc()
 		}
 	}
-
-	metrics.JobResultStats.WithLabelValues(metrics.Failed).Inc()
 	return needUpdate, nil
 }

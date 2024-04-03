@@ -112,28 +112,16 @@ function do_http_probe() {
   local ctr=$1
   local endpoint=$2
   local max_retry=$3
-  local retry=0
-  while [ $retry -lt "$max_retry" ]; do
-    local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}")
-    if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
-      return 0
-    fi
-    sleep 1
-    retry=$((retry + 1))
-  done
+  local enable_mtls=$4
+  local cert_config
+  if [[ "$enable_mtls" == "true" ]]; then
+    cert_config="--cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key"
+  fi
 
-  return 1
-}
-
-function do_https_probe() {
-  local ctr=$1
-  local endpoint=$2
-  local max_retry=$3
   local retry=0
-  while [ $retry -lt "$max_retry" ]; do
+  while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key)
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null ${endpoint} ${cert_config})
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -245,7 +233,7 @@ function create_secretflow_app_image() {
   fi
 
   app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
-  if [[ ${app_type} == "" ]]; then
+  if [[ ${app_type} != "psi" ]]; then
     app_type="secretflow"
   fi
 
@@ -255,7 +243,7 @@ function create_secretflow_app_image() {
 
 function probe_datamesh() {
   local domain_ctr=$1
-  if ! do_https_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30; then
+  if ! do_http_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30 true; then
     echo "[Error] Probe datamesh in container '$domain_ctr' failed." >&2
     echo "You cloud run command that 'docker logs $domain_ctr' to check the log" >&2
   fi
@@ -290,7 +278,7 @@ function generate_mount_flag() {
 function get_runtime() {
   local conf_file=$1
   local runtime
-  runtime=$(grep '^runtime:' ${conf_file} 2>/dev/null | cut -d':' -f2 | awk '{$1=$1};1')
+  runtime=$(grep '^runtime:' ${conf_file} 2>/dev/null | cut -d':' -f2 | awk '{$1=$1};1' | tr -d '\r\n')
   if [[ $runtime == "" ]]; then
     runtime=runc
   fi
@@ -476,7 +464,10 @@ agent:
 }
 
 function get_absolute_path() {
-  echo "$(cd "$(dirname -- "$1")" >/dev/null; pwd -P)/$(basename -- "$1")"
+  echo "$(
+    cd "$(dirname -- "$1")" >/dev/null
+    pwd -P
+  )/$(basename -- "$1")"
 }
 
 usage() {
@@ -507,7 +498,7 @@ OPTIONS:
 
 deploy_mode=
 case "$1" in
-autonomy | lite | master )
+autonomy | lite | master)
   deploy_mode=$1
   shift
   ;;
@@ -596,7 +587,7 @@ fi
 function init() {
   local deploy_mode=$1
   local domain_ctr=${USER}-kuscia-${deploy_mode}-${DOMAIN_ID}
-  if [[ ${deploy_mode} == "master"  ]]; then
+  if [[ ${deploy_mode} == "master" ]]; then
     local domain_ctr=${USER}-kuscia-master
   fi
   [[ ${ROOT} == "" ]] && ROOT=${PWD}
