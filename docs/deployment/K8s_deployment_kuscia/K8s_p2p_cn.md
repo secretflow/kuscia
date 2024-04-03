@@ -13,7 +13,7 @@
 
 ### 前置准备
 
-部署 Autonomy 需提前准备好 Mysql 数据库表并且符合[Kuscia配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 Configmap 中。
+部署 Autonomy 需提前准备好 Mysql 数据库表并且符合 [Kuscia配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 Configmap 中。
 
 ### 步骤一：创建 Namespace
 > 创建 Namespace 需要先获取 create 权限，避免出现 "namespaces is forbidden" 报错
@@ -26,6 +26,10 @@ kubectl create ns autonomy-alice
 ### 步骤二：创建 Service
 
 获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/service.yaml) 文件，创建这个 Service
+
+<span style="color:red;">注意：<br>
+1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+
 ```bash
 kubectl create -f service.yaml
 ```
@@ -212,9 +216,6 @@ kubectl apply -f AppImage.yaml
 ```
 
 ### 执行测试作业
-
-k8s 部署 RunK 模式暂时不支持训练任务。训练任务可以参考[使用 RunP 模式部署节点](../deploy_with_runp_cn.md)
-
 登录到 alice pod
 ```bash
 kubectl exec -it ${alice_pod_name} bash -n autonomy-alice

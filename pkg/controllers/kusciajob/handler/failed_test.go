@@ -17,6 +17,7 @@ package handler
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -26,10 +27,34 @@ import (
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
+
+const (
+	testCaseFailedNormal = iota
+	testCaseFailedRestart
+)
+
+func setJobStageRestart(job *kusciaapisv1alpha1.KusciaJob) {
+	job.Labels = make(map[string]string)
+	job.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobRestartStage)
+	job.Labels[common.LabelJobStageTrigger] = "alice"
+	job.Status.Phase = kusciaapisv1alpha1.KusciaJobFailed
+}
+
+func setJobStage(job *kusciaapisv1alpha1.KusciaJob, testCase int) {
+	switch testCase {
+	case testCaseFailedRestart:
+		setJobStageRestart(job)
+	case testCaseFailedNormal:
+		return
+	}
+}
 
 func TestFailedHandler_HandlePhase(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
@@ -40,6 +65,7 @@ func TestFailedHandler_HandlePhase(t *testing.T) {
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-job-controller"})
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeFakeClient, 0)
+
 	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
 	type fields struct {
 		recorder record.EventRecorder
@@ -48,14 +74,15 @@ func TestFailedHandler_HandlePhase(t *testing.T) {
 		kusciaJob *kusciaapisv1alpha1.KusciaJob
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    bool
-		wantErr assert.ErrorAssertionFunc
+		name     string
+		fields   fields
+		args     args
+		want     bool
+		wantErr  assert.ErrorAssertionFunc
+		testCase int
 	}{
 		{
-			name: "BestEffort mode task{a,[a->b],[a->c],[c->d]} maxParallelism{1} and succeeded{a,b,c,d} should return needUpdate{true} err{nil}",
+			name: "test normal failed",
 			fields: fields{
 				recorder: recorder,
 			},
@@ -65,14 +92,33 @@ func TestFailedHandler_HandlePhase(t *testing.T) {
 			},
 			want:    true,
 			wantErr: assert.NoError,
+		}, {
+			name: "test restart stage",
+			fields: fields{
+				recorder: recorder,
+			},
+			args: args{
+				kusciaJob: makeKusciaJob(KusciaJobForShapeTree,
+					kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil),
+			},
+			want:     true,
+			wantErr:  assert.NoError,
+			testCase: testCaseFailedRestart,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &FailedHandler{
-				namespaceLister: nsInformer.Lister(),
-				recorder:        tt.fields.recorder,
+			setJobStage(tt.args.kusciaJob, tt.testCase)
+			kusciaClient := kusciafake.NewSimpleClientset()
+			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
+			deps := &Dependencies{
+				KusciaClient:          kusciaClient,
+				KusciaTaskLister:      kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister(),
+				NamespaceLister:       nsInformer.Lister(),
+				DomainLister:          kusciaInformerFactory.Kuscia().V1alpha1().Domains().Lister(),
+				EnableWorkloadApprove: true,
 			}
+			s := NewFailedHandler(deps)
 			got, err := s.HandlePhase(tt.args.kusciaJob)
 			if !tt.wantErr(t, err, fmt.Sprintf("HandlePhase(%v)", tt.args.kusciaJob)) {
 				return

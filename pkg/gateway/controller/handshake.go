@@ -33,6 +33,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	clientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -65,12 +66,19 @@ type Token struct {
 	Version int64
 }
 
+type RevisionToken struct {
+	RawToken       []byte
+	PublicKey      *rsa.PublicKey
+	ExpirationTime int64
+	Revision       int32
+}
+
 type AfterRegisterDomainHook func(response *handshake.RegisterResponse)
 
 func (c *DomainRouteController) startHandShakeServer(port uint32) {
 	mux := http.NewServeMux()
 	mux.HandleFunc(utils.GetHandshakePathSuffix(), c.handShakeHandle)
-	if c.masterConfig != nil && c.masterConfig.Master {
+	if c.isMaser {
 		mux.HandleFunc("/register", c.registerHandle)
 	}
 
@@ -307,25 +315,42 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	}
 
 	// The final token is encrypted with the local private key and stored in the status of domainroute
-	tokenEncrypted, err := encryptToken(&c.prikey.PublicKey, token)
+	revisionToken := &RevisionToken{
+		RawToken:       token,
+		PublicKey:      &c.prikey.PublicKey,
+		Revision:       resp.Token.Revision,
+		ExpirationTime: resp.Token.ExpirationTime,
+	}
+
+	return UpdateDomainRouteRevisionToken(c.kusciaClient, dr.Namespace, dr.Name, revisionToken)
+}
+
+func UpdateDomainRouteRevisionToken(kusciaClient clientset.Interface, namespace, drName string, revisionToken *RevisionToken) error {
+	tokenEncrypted, err := encryptToken(revisionToken.PublicKey, revisionToken.RawToken)
 	if err != nil {
 		return err
 	}
-	drLatest, _ := c.domainRouteLister.DomainRoutes(dr.Namespace).Get(dr.Name)
-	drCopy := drLatest.DeepCopy()
-	tn := metav1.Now()
-	drCopy.Status.IsDestinationAuthorized = true
-	drCopy.Status.TokenStatus.RevisionToken.Token = tokenEncrypted
-	drCopy.Status.TokenStatus.RevisionToken.Revision = int64(resp.Token.Revision)
-	drCopy.Status.TokenStatus.RevisionToken.IsReady = true
-	drCopy.Status.TokenStatus.RevisionToken.RevisionTime = tn
-	if drCopy.Spec.TokenConfig.RollingUpdatePeriod == 0 {
-		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
-	} else {
-		tTx := time.Unix(resp.Token.ExpirationTime/int64(time.Second), resp.Token.ExpirationTime%int64(time.Second))
-		drCopy.Status.TokenStatus.RevisionToken.ExpirationTime = metav1.NewTime(tTx)
+	drLatest, err := kusciaClient.KusciaV1alpha1().DomainRoutes(namespace).Get(context.Background(), drName, metav1.GetOptions{})
+	if err != nil {
+		return err
 	}
-	_, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(drCopy.Namespace).UpdateStatus(context.Background(), drCopy, metav1.UpdateOptions{})
+	tn := metav1.Now()
+	drUpdate := drLatest.DeepCopy()
+	drUpdateStatus := &drUpdate.Status
+	drUpdateRevisionToken := &drUpdateStatus.TokenStatus.RevisionToken
+	drUpdateStatus.IsDestinationAuthorized = true
+	drUpdateRevisionToken.Token = tokenEncrypted
+	drUpdateRevisionToken.Revision = int64(revisionToken.Revision)
+	drUpdateRevisionToken.IsReady = true
+	drUpdateRevisionToken.RevisionTime = tn
+	if drUpdate.Spec.TokenConfig.RollingUpdatePeriod == 0 {
+		drUpdateRevisionToken.ExpirationTime = metav1.NewTime(tn.AddDate(100, 0, 0))
+	} else {
+		expirationTime := time.Unix(revisionToken.ExpirationTime/int64(time.Second), revisionToken.ExpirationTime%int64(time.Second))
+		drUpdateRevisionToken.ExpirationTime = metav1.NewTime(expirationTime)
+	}
+
+	_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(drUpdate.Namespace).UpdateStatus(context.Background(), drUpdate, metav1.UpdateOptions{})
 	return err
 }
 
@@ -573,15 +598,17 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, routeKey string) ([]*Token, error) {
 	var tokens []*Token
 	var err error
+	var is3rdParty bool
 
-	if (dr.Spec.Transit != nil && dr.Spec.BodyEncryption == nil) ||
-		(dr.Spec.Transit == nil && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationMTLS) ||
-		(dr.Spec.Transit == nil && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationNone) {
+	is3rdParty = utils.IsThirdPartyTransit(dr.Spec.Transit)
+	if (is3rdParty && dr.Spec.BodyEncryption == nil) ||
+		(!is3rdParty && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationMTLS) ||
+		(!is3rdParty && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationNone) {
 		tokens = append(tokens, &Token{Token: NoopToken})
 		return tokens, err
 	}
 
-	if (dr.Spec.Transit == nil && dr.Spec.AuthenticationType != kusciaapisv1alpha1.DomainAuthenticationToken) ||
+	if (!is3rdParty && dr.Spec.AuthenticationType != kusciaapisv1alpha1.DomainAuthenticationToken) ||
 		dr.Spec.TokenConfig == nil {
 		return tokens, fmt.Errorf("invalid DomainRoute: %v", dr.Spec)
 	}
@@ -671,7 +698,7 @@ func exists(slice []string, val string) bool {
 	return false
 }
 
-func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKey) error {
+func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKey) (*RevisionToken, error) {
 	handshankeReq := &handshake.HandShakeRequest{
 		DomainId:    domainID,
 		RequestTime: time.Now().UnixNano(),
@@ -710,29 +737,34 @@ func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKe
 	if resp.Status.Code != 0 {
 		err := fmt.Errorf("handshake to master fail, return error:%v", resp.Status.Message)
 		nlog.Error(err)
-		return err
+		return nil, err
 	}
 	token, err := decryptToken(prikey, resp.Token.Token, tokenByteSize)
 	if err != nil {
 		nlog.Errorf("decrypt auth token from master error: %s", err.Error())
-		return err
+		return nil, err
 	}
 	c, err := xds.QueryCluster(clusters.GetMasterClusterName())
 	if err != nil {
 		nlog.Error(err)
-		return err
+		return nil, err
 	}
 	if err := clusters.AddMasterProxyVirtualHost(c.Name, pathPrefix, utils.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
 		nlog.Error(err)
-		return err
+		return nil, err
 	}
 	if err = xds.SetKeepAliveForDstCluster(c, true); err != nil {
 		nlog.Error(err)
-		return err
+		return nil, err
 	}
 	if err = xds.AddOrUpdateCluster(c); err != nil {
 		nlog.Error(err)
-		return err
+		return nil, err
 	}
-	return nil
+	return &RevisionToken{
+		RawToken:       token,
+		PublicKey:      &prikey.PublicKey,
+		ExpirationTime: resp.Token.ExpirationTime,
+		Revision:       resp.Token.Revision,
+	}, nil
 }

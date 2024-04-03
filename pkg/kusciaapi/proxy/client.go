@@ -52,6 +52,9 @@ const (
 	DeleteJobPath     = "/api/v1/job/delete"
 	QueryJobPath      = "/api/v1/job/query"
 	StopJobPath       = "/api/v1/job/stop"
+	SuspendJobPath    = "/api/v1/job/suspend"
+	RestartJobPath    = "/api/v1/job/restart"
+	CancelJobPath     = "/api/v1/job/cancel"
 	ApproveJobPath    = "/api/v1/job/approve"
 	BatchQueryJobPath = "/api/v1/job/status/batchQuery"
 	WatchJobPath      = "/api/v1/job/watch"
@@ -101,6 +104,12 @@ type KusciaAPIClient interface {
 	QueryJob(ctx context.Context, request *kusciaapi.QueryJobRequest) (response *kusciaapi.QueryJobResponse, err error)
 
 	StopJob(ctx context.Context, request *kusciaapi.StopJobRequest) (response *kusciaapi.StopJobResponse, err error)
+
+	SuspendJob(ctx context.Context, request *kusciaapi.SuspendJobRequest) (response *kusciaapi.SuspendJobResponse, err error)
+
+	RestartJob(ctx context.Context, request *kusciaapi.RestartJobRequest) (response *kusciaapi.RestartJobResponse, err error)
+
+	CancelJob(ctx context.Context, request *kusciaapi.CancelJobRequest) (response *kusciaapi.CancelJobResponse, err error)
 
 	BatchQueryJob(ctx context.Context, request *kusciaapi.BatchQueryJobStatusRequest) (response *kusciaapi.BatchQueryJobStatusResponse, err error)
 
@@ -232,6 +241,24 @@ func (c *KusciaAPIHttpClient) QueryJob(ctx context.Context, request *kusciaapi.Q
 func (c *KusciaAPIHttpClient) StopJob(ctx context.Context, request *kusciaapi.StopJobRequest) (response *kusciaapi.StopJobResponse, err error) {
 	response = &kusciaapi.StopJobResponse{}
 	err = c.Send(ctx, request, response, StopJobPath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJobRequest) (response *kusciaapi.SuspendJobResponse, err error) {
+	response = &kusciaapi.SuspendJobResponse{}
+	err = c.Send(ctx, request, response, SuspendJobPath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) RestartJob(ctx context.Context, request *kusciaapi.RestartJobRequest) (response *kusciaapi.RestartJobResponse, err error) {
+	response = &kusciaapi.RestartJobResponse{}
+	err = c.Send(ctx, request, response, RestartJobPath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) CancelJob(ctx context.Context, request *kusciaapi.CancelJobRequest) (response *kusciaapi.CancelJobResponse, err error) {
+	response = &kusciaapi.CancelJobResponse{}
+	err = c.Send(ctx, request, response, CancelJobPath)
 	return
 }
 

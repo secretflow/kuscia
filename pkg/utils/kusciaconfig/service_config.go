@@ -38,6 +38,10 @@ type MasterConfig struct {
 	APIWhitelist      []string         `yaml:"apiWhitelist,omitempty"`
 }
 
+func (m *MasterConfig) IsMaster() bool {
+	return m.APIServer != nil
+}
+
 func CheckServiceConfig(config *ServiceConfig, name string) error {
 	if config.Endpoint == "" {
 		return fmt.Errorf("serviceConfig(%s) need specify endpoint", name)

@@ -25,7 +25,7 @@ data:
     runk:
       # 任务调度到指定的机构 K8s namespace 下
       namespace: autonomy-alice
-      # K8s 集群的 pod dns 配置, 用于解析节点的应用域名, dns 的地址为 pod service 地址, 此处以 "1.1.1.1" 为例
+      # K8s 集群的 pod dns 配置, 用于解析节点的应用域名, runk 拉起的 pod 所使用 dns 地址，应配置为 kuscia-autonomy service 的 clusterIP, 此处以 "1.1.1.1" 为例
       dnsServers:
       # - kuscia-dns-lb-server
         - 1.1.1.1

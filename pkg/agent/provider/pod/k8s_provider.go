@@ -16,6 +16,7 @@ package pod
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	kubeinformers "k8s.io/client-go/informers"
 	clientset "k8s.io/client-go/kubernetes"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -46,6 +48,15 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/election"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+)
+
+const (
+	labelOwnerPodName = "kuscia.secretflow/owner-pod-name"
+)
+
+var (
+	resourceMinLifeCycle = 30 * time.Second
+	resourceNameLimit    = 253
 )
 
 type K8sProviderDependence struct {
@@ -216,6 +227,11 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 	newPod := pod.DeepCopy()
 	newPod.ObjectMeta = *kp.normalizeMeta(pod.UID, &pod.ObjectMeta)
 
+	if _, err := kp.podLister.Get(pod.Name); err == nil {
+		nlog.Infof("Pod %q is already exist, skipping", pod.Name)
+		return nil
+	}
+
 	newPod.Spec.DNSPolicy = v1.DNSPolicy(kp.podDNSPolicy)
 	newPod.Spec.DNSConfig = kp.podDNSConfig
 	newPod.Spec.NodeName = ""
@@ -268,23 +284,36 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 		secrets[secret.Name] = secret
 	}
 
-	for i, cm := range configMaps {
+	for _, cm := range configMaps {
 		newCM := cm.DeepCopy()
 		newCM.ObjectMeta = *kp.normalizeMeta(pod.UID, &cm.ObjectMeta)
-		masterCM, err := createSubResource[*v1.ConfigMap](ctx, newCM, kp.configMapLister, kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace))
+		normalizeSubResourceMeta(&newCM.ObjectMeta, newPod.Name)
+
+		_, err := createSubResource[*v1.ConfigMap](ctx, newCM, kp.configMapLister, kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace))
 		if err != nil {
 			return fmt.Errorf("failed to create configmap %v, detail-> %v", newCM.Name, err)
 		}
-		configMaps[i] = masterCM
+		for i, v := range newPod.Spec.Volumes {
+			if v.ConfigMap != nil && v.ConfigMap.Name == cm.Name {
+				newPod.Spec.Volumes[i].ConfigMap.Name = newCM.Name
+			}
+		}
 	}
-	for i, secret := range secrets {
+
+	for _, secret := range secrets {
 		newSecret := secret.DeepCopy()
 		newSecret.ObjectMeta = *kp.normalizeMeta(pod.UID, &secret.ObjectMeta)
-		masterSecret, err := createSubResource[*v1.Secret](ctx, newSecret, kp.secretLister, kp.bkClient.CoreV1().Secrets(kp.bkNamespace))
+		normalizeSubResourceMeta(&newSecret.ObjectMeta, newPod.Name)
+
+		_, err := createSubResource[*v1.Secret](ctx, newSecret, kp.secretLister, kp.bkClient.CoreV1().Secrets(kp.bkNamespace))
 		if err != nil {
 			return fmt.Errorf("failed to create secret %v, detail-> %v", newSecret.Name, err)
 		}
-		secrets[i] = masterSecret
+		for i, v := range newPod.Spec.Volumes {
+			if v.Secret != nil && v.Secret.SecretName == secret.Name {
+				newPod.Spec.Volumes[i].Secret.SecretName = newSecret.Name
+			}
+		}
 	}
 
 	for k, v := range kp.labelsToAdd {
@@ -296,27 +325,9 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 
 	kp.backendPlugin.PreSyncPod(newPod)
 
-	bkMasterPod, err := kp.applyPod(ctx, newPod)
+	_, err := kp.applyPod(ctx, newPod)
 	if err != nil {
 		return fmt.Errorf("failed to apply pod %v, detail-> %v", format.Pod(newPod), err)
-	}
-	owner := &metav1.OwnerReference{
-		APIVersion: "v1",
-		Kind:       "Pod",
-		UID:        bkMasterPod.UID,
-		Name:       bkMasterPod.Name,
-	}
-	for _, cm := range configMaps {
-		newCM := cm.DeepCopy()
-		if err = setSubResourceOwnerReference[*v1.ConfigMap](ctx, newCM, owner, kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace)); err != nil {
-			return fmt.Errorf("failed to update configmap %v owner reference, detail-> %v", newCM.Name, err)
-		}
-	}
-	for _, secret := range secrets {
-		newSecret := secret.DeepCopy()
-		if err = setSubResourceOwnerReference[*v1.Secret](ctx, newSecret, owner, kp.bkClient.CoreV1().Secrets(kp.bkNamespace)); err != nil {
-			return fmt.Errorf("failed to update secret %v owner reference, detail-> %v", newSecret.Name, err)
-		}
 	}
 
 	return nil
@@ -330,7 +341,7 @@ func (kp *K8sProvider) normalizeMeta(sourcePodUID types.UID, meta *metav1.Object
 	for k, v := range meta.Labels {
 		newMeta.Labels[k] = v
 	}
-	newMeta.Labels[common.LabelNodeNamespace] = meta.Namespace
+	newMeta.Labels[common.LabelNodeNamespace] = kp.namespace
 	newMeta.Labels[common.LabelNodeName] = kp.nodeName
 	newMeta.Labels[common.LabelPodUID] = string(sourcePodUID)
 	for k, v := range meta.Annotations {
@@ -342,11 +353,29 @@ func (kp *K8sProvider) normalizeMeta(sourcePodUID types.UID, meta *metav1.Object
 	return newMeta
 }
 
+func normalizeSubResourceMeta(meta *metav1.ObjectMeta, ownerPodName string) {
+	name := fmt.Sprintf("%s-%s", ownerPodName, meta.Name)
+	if len(name) > resourceNameLimit {
+		hash := sha256.Sum256([]byte(name))
+		name = fmt.Sprintf("%x", hash)
+
+		if len(name) > resourceNameLimit {
+			name = name[:resourceNameLimit]
+		}
+	}
+
+	meta.Name = name
+	if meta.Labels == nil {
+		meta.Labels = map[string]string{}
+	}
+	meta.Labels[labelOwnerPodName] = ownerPodName
+}
+
 func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: kp.bkNamespace,
-			Name:      fmt.Sprintf("%s-resolv-config", bkPod.Name),
+			Namespace: kp.namespace,
+			Name:      "resolv-config",
 		},
 		Data: map[string]string{
 			"resolv.conf": kp.resolveConfigData,
@@ -547,18 +576,6 @@ func (kp *K8sProvider) GetPods(ctx context.Context, all bool) ([]*pkgcontainer.P
 	return runningPods, nil
 }
 
-func (kp *K8sProvider) scanConfigMapInVolumes(pod *v1.Pod) []string {
-	var configmaps []string
-	for i := range pod.Spec.Volumes {
-		v := &pod.Spec.Volumes[i]
-		if v.ConfigMap != nil {
-			configmaps = append(configmaps, v.ConfigMap.Name)
-		}
-	}
-
-	return configmaps
-}
-
 func (kp *K8sProvider) handleBackendPodChanged(obj interface{}) {
 	var (
 		object metav1.Object
@@ -599,19 +616,19 @@ type resourceLister[T metav1.Object] interface {
 
 type resourceStub[T metav1.Object] interface {
 	Create(ctx context.Context, object T, opts metav1.CreateOptions) (T, error)
-	Update(ctx context.Context, object T, opts metav1.UpdateOptions) (T, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
 }
 
 func createSubResource[T metav1.Object](ctx context.Context, object T, lister resourceLister[T], stub resourceStub[T]) (T, error) {
-	newObject, err := lister.Get(object.GetName())
+	oldObject, err := lister.Get(object.GetName())
 	if err == nil {
 		nlog.Infof("Resource(%T) %v already exists, skip applying", object, object.GetName())
-		return newObject, nil
+		return oldObject, nil
 	} else if !k8serrors.IsNotFound(err) {
-		return newObject, fmt.Errorf("failed to get resource(%T) %v, detail-> %v", object, object.GetName(), err)
+		return oldObject, fmt.Errorf("failed to get resource(%T) %v, detail-> %v", object, object.GetName(), err)
 	}
 
-	newObject, err = stub.Create(ctx, object, metav1.CreateOptions{})
+	newObject, err := stub.Create(ctx, object, metav1.CreateOptions{})
 	if err != nil {
 		return newObject, fmt.Errorf("failed to create resource(%T) %v, detail-> %v", object, object.GetName(), err)
 	}
@@ -621,27 +638,33 @@ func createSubResource[T metav1.Object](ctx context.Context, object T, lister re
 	return newObject, nil
 }
 
-func setSubResourceOwnerReference[T metav1.Object](ctx context.Context, object T, owner *metav1.OwnerReference, stub resourceStub[T]) error {
-	if object.GetOwnerReferences() != nil {
-		for _, curOwner := range object.GetOwnerReferences() {
-			if curOwner.UID == owner.UID {
-				nlog.Infof("Resource(%T) %v already has owner reference %v, skip updating", object, object.GetName(), owner)
-				return nil
-			}
-		}
+func cleanupSubResource[T metav1.Object](ctx context.Context, object T, podGetter corev1client.PodInterface, stub resourceStub[T]) error {
+	if time.Since(object.GetCreationTimestamp().Time) < resourceMinLifeCycle {
+		return nil
 	}
 
-	object.SetOwnerReferences([]metav1.OwnerReference{*owner})
-	return updateSubResource[T](ctx, object, stub)
-}
-
-func updateSubResource[T metav1.Object](ctx context.Context, object T, stub resourceStub[T]) error {
-	_, err := stub.Update(ctx, object, metav1.UpdateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to update resource(%T) %v, detail-> %v", object, object.GetName(), err)
+	objLabels := object.GetLabels()
+	if objLabels == nil {
+		return nil
 	}
 
-	nlog.Infof("Update resource(%T) %v successfully", object, object.GetName())
+	ownerPodName, ok := objLabels[labelOwnerPodName]
+	if !ok {
+		return nil
+	}
+
+	_, err := podGetter.Get(ctx, ownerPodName, metav1.GetOptions{})
+	if err == nil {
+		return nil
+	} else if !k8serrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get owner pod %s, detail-> %v", ownerPodName, err)
+	}
+
+	if err := stub.Delete(ctx, object.GetName(), metav1.DeleteOptions{}); err != nil {
+		return err
+	}
+
+	nlog.Infof("Cleanup resource(%T) %v successfully", object, object.GetName())
 
 	return nil
 }

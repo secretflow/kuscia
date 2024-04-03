@@ -154,7 +154,7 @@ function start_center_mode() {
   mkdir -p "${test_suite_run_kuscia_dir}"
 
   # Run as Center
-  ./start_standalone.sh center
+  ./kuscia.sh center
 
   # Check centralized container Up
   local master_container_state=$(get_container_state "${MASTER_CONTAINER}")
@@ -191,7 +191,7 @@ function start_p2p_mode() {
   mkdir -p "${test_suite_run_kuscia_dir}"
 
   # Run as P2P
-  ./start_standalone.sh p2p
+  ./kuscia.sh p2p
 
   # Check p2p container Up
   local autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")

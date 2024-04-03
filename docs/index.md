@@ -42,7 +42,8 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - API 参考：[请求和响应][api-request-and-response] | [Domain][api-domain] | [DomainRoute][api-domainroute] | [DomainData][api-domaindata] | [KusciaJob][api-kusciajob] | [Serving][api-serving] | [Health][api-health]
 
 [api-overview]: ./reference/apis/summary_cn.md
-[api-tutorial]: ./tutorial/run_secretflow_with_api_cn.md
+[api-tutorial]: ./tutorial/run_sf_job_with_api_cn.md
+[api-tutorial]: ./tutorial/run_sf_serving_with_api_cn.md
 [api-request-and-response]: ./reference/apis/summary_cn.md#请求和响应约定
 [api-domain]: ./reference/apis/domain_cn.md
 [api-domainroute]: ./reference/apis/domainroute_cn.md
@@ -76,10 +77,12 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
 ## 更多指南
 
+- [如何运行一个 SecretFlow Serving][how-to-bfia]
 - [如何运行一个互联互通银联 BFIA 协议作业][how-to-bfia]
 - [如何运行一个 FATE 作业][how-to-fate]
 - [安全加固方案][how-to-security-plan]
 
+[how-to-serving]: ./tutorial/run_sf_serving_with_api_cn.md
 [how-to-bfia]: ./tutorial/run_bfia_job_cn.md
 [how-to-fate]: ./tutorial/run_fate_cn.md
 [how-to-security-plan]: ./tutorial/security_plan_cn.md
