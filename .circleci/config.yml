@@ -58,10 +58,10 @@ jobs:
             DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
             ENVOY_IMAGE = secretflow/kuscia-envoy:latest
             IMAGE = "kuscia:latest"
-            docker buildx build -t ${DEPS_IMAGE} --build-arg ARCH=arm64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
-            docker buildx build -t ${DEPS_IMAGE} --build-arg ARCH=amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
-            docker buildx build -t ${IMG} --build-arg ARCH=arm64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
-            docker buildx build -t ${IMG} --build-arg ARCH=amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+            docker buildx build -t ${DEPS_IMAGE} --platform linux/arm64 --build-arg ARCH=arm64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+            docker buildx build -t ${DEPS_IMAGE} --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+            docker buildx build -t ${IMG} --platform linux/arm64 --build-arg ARCH=arm64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+            docker buildx build -t ${IMG} --platform linux/amd64 --build-arg ARCH=amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
             CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
             docker tag ${IMAGE} secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
             docker tag ${IMAGE} secretflow/kuscia:latest
