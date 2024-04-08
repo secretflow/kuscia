@@ -103,6 +103,7 @@ func (h *PendingHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (need
 
 	curKtStatus := kusciaTask.Status.DeepCopy()
 	refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, curKtStatus)
+	h.initPartyTaskStatus(kusciaTask, curKtStatus)
 	if !reflect.DeepEqual(kusciaTask.Status, curKtStatus) {
 		needUpdate = true
 		kusciaTask.Status = *curKtStatus
@@ -211,6 +212,26 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 		return fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
 	}
 	return nil
+}
+
+func (h *PendingHandler) initPartyTaskStatus(kusciaTask *kusciaapisv1alpha1.KusciaTask, ktStatus *kusciaapisv1alpha1.KusciaTaskStatus) {
+	for _, party := range kusciaTask.Spec.Parties {
+		setPartyTaskStatus(party, ktStatus)
+	}
+}
+
+func setPartyTaskStatus(partyInfo kusciaapisv1alpha1.PartyInfo, ktStatus *kusciaapisv1alpha1.KusciaTaskStatus) {
+	for _, ptStatus := range ktStatus.PartyTaskStatus {
+		if ptStatus.DomainID == partyInfo.DomainID && ptStatus.Role == partyInfo.Role {
+			return
+		}
+	}
+
+	ktStatus.PartyTaskStatus = append(ktStatus.PartyTaskStatus, kusciaapisv1alpha1.PartyTaskStatus{
+		DomainID: partyInfo.DomainID,
+		Role:     partyInfo.Role,
+		Phase:    kusciaapisv1alpha1.TaskPending,
+	})
 }
 
 func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) bool {

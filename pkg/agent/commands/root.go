@@ -35,7 +35,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/provider"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/agent/source"
-	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -79,16 +78,16 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 		break // context cancelled, agent is shutting down
 	}
 
-	// Create another shared informer factory for Kubernetes secrets and configmaps (not subject to any selectors).
-	scmInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
+	// Create shared informer factory for Kubernetes pods, secrets and configmaps (not subject to any selectors).
+	resourceInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(
 		kubeClient, 0, kubeinformers.WithNamespace(agentConfig.Namespace))
 
 	rm := resource.NewResourceManager(
 		kubeClient,
 		agentConfig.Namespace,
-		scmInformerFactory.Core().V1().Pods().Lister().Pods(agentConfig.Namespace),
-		scmInformerFactory.Core().V1().Secrets().Lister().Secrets(agentConfig.Namespace),
-		scmInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(agentConfig.Namespace))
+		resourceInformerFactory.Core().V1().Pods().Lister().Pods(agentConfig.Namespace),
+		resourceInformerFactory.Core().V1().Secrets().Lister().Secrets(agentConfig.Namespace),
+		resourceInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(agentConfig.Namespace))
 
 	// init provider factory
 	providerFactory, err := provider.NewFactory(agentConfig)
@@ -174,7 +173,7 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	podsController.RegisterProvider(podProvider)
 
 	chStopKubeClient := make(chan struct{})
-	go scmInformerFactory.Start(chStopKubeClient)
+	go resourceInformerFactory.Start(chStopKubeClient)
 
 	chSourceManager := make(chan struct{})
 	if err := sourceManager.Run(chSourceManager); err != nil {
@@ -199,16 +198,4 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 
 	nlog.Info("Agent exited")
 	return nlog.Sync()
-}
-
-func newKubeClient(cfg *config.ApiserverSourceCfg) (*kubernetes.Clientset, error) {
-	clientConfig, err := kubeconfig.BuildClientConfigFromKubeconfig(cfg.KubeconfigFile, cfg.Endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("error building client config, detail-> %v", err)
-	}
-
-	clientConfig.QPS = cfg.QPS
-	clientConfig.Burst = cfg.Burst
-	clientConfig.Timeout = cfg.Timeout
-	return kubernetes.NewForConfig(clientConfig)
 }

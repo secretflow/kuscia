@@ -99,11 +99,17 @@ func (cr *imageSecurity) ExecHook(ctx hook.Context) (*hook.Result, error) {
 		if err != nil {
 			return nil, err
 		}
+		expectedImageID := imageStatus.Image.Id
 
-		if imageStatus.Image.Id != imageID {
+		// adapt process runtime
+		if !strings.HasPrefix(imageStatus.Image.Id, "sha256:") && len(imageStatus.Image.RepoTags) > 0 {
+			expectedImageID = imageStatus.Image.RepoTags[0]
+		}
+
+		if expectedImageID != imageID {
 			return &hook.Result{
 				Terminated: true,
-				Msg:        fmt.Sprintf("image %q ID mismatch, expected %q, actual %q", c.Image, imageID, imageStatus.Image.Id),
+				Msg:        fmt.Sprintf("image %q ID mismatch, expected %q, actual %q", c.Image, expectedImageID, imageID),
 			}, nil
 		}
 	}

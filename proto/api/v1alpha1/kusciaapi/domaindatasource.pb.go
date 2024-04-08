@@ -1069,7 +1069,7 @@ type OssDataSourceInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// endpoint oss.xxx.cn-xxx.com or 127.0.0.1:9000
+	// endpoint https://oss.xxx.cn-xxx.com or http://127.0.0.1:9000
 	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
 	// the bucket name of the oss datasource
 	Bucket string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`

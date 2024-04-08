@@ -1,6 +1,4 @@
-.. _datamesh:
-
-DataMesh
+Kuscia DataMesh API
 ===========
 
 .. toctree::
@@ -8,4 +6,4 @@ DataMesh
 
     summary_cn
     domaindata_cn
-    domaindatagrant_cn
+    domaindatasource_cn

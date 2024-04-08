@@ -121,22 +121,31 @@ function test_p2p_token_rolling_party_offline() {
   local cdr_name="alice-bob"
   local dr_name="alice-bob"
   local src_domain="alice"
-  local period=30
 
   local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
   assertEquals "true" "$ready"
   # party offline
   docker stop $bob_ctr
-  sleep $period
 
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  for i in {1..30}; do
+    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+    if [[ $ready == "false" ]]; then
+      break
+    fi
+    sleep 2
+  done
   assertEquals "false" "$ready"
 
   # back online
   docker start $bob_ctr
-  sleep $period
 
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  for i in {1..30}; do
+    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+    if [[ $ready == "true" ]]; then
+      break
+    fi
+    sleep 2
+  done
   assertEquals "true" "$ready"
 
   # run task
@@ -150,7 +159,6 @@ function test_p2p_token_rolling_auth_removal() {
   local dr_name="alice-bob"
   local dst_domain="bob"
   local src_domain="alice"
-  local period=30
 
   local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
   assertEquals "true" "$ready"
@@ -160,16 +168,26 @@ function test_p2p_token_rolling_auth_removal() {
   # dr removal
   docker exec "$bob_ctr" kubectl delete cdr $cdr_name
 
-  sleep $period
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  for i in {1..30}; do
+    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+    if [[ $ready == "false" ]]; then
+      break
+    fi
+    sleep 2
+  done
   assertEquals "false" "$ready"
 
   # dr restore
   docker cp tmp.json $bob_ctr:/home/kuscia/
   docker exec "$bob_ctr" kubectl create -f /home/kuscia/tmp.json
 
-  sleep $period
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  for i in {1..30}; do
+    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+    if [[ $ready == "true" ]]; then
+      break
+    fi
+    sleep 2
+  done
   assertEquals "true" "$ready"
 
   # run task
@@ -183,21 +201,31 @@ function test_p2p_token_rolling_cert_misconfig() {
   local cdr_name="alice-bob"
   local dst_domain="bob"
   local src_domain="alice"
-  local period=30
+
   local dst_cert=$(docker exec "$alice_ctr" kubectl get domain $dst_domain -o jsonpath='{.spec.cert}')
   local mis_cert=$(docker exec "$alice_ctr" kubectl get domain $src_domain -o jsonpath='{.spec.cert}') # use alice domain cert as misconfigured cert
   # cert mis config
   docker exec "$alice_ctr" kubectl patch domain $dst_domain --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${mis_cert}}]"
 
-  sleep $period
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  for i in {1..30}; do
+    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+    if [[ $ready == "false" ]]; then
+      break
+    fi
+    sleep 2
+  done
   assertEquals "false" "$ready"
 
   # cert restore
   docker exec "$alice_ctr" kubectl patch domain $dst_domain --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${dst_cert}}]"
 
-  sleep $period
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+  for i in {1..30}; do
+    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
+    if [[ $ready == "true" ]]; then
+      break
+    fi
+    sleep 2
+  done
   assertEquals "true" "$ready"
 
   # run task

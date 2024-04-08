@@ -1,5 +1,9 @@
 # 概览
 
+## Data Mesh API 使用场景
+
+Data Mesh API 专为隐私计算应用（如 SecretFlow、TrustedFlow）设计，为其提供获取 DomainData 与 DomainDataSource 信息的能力。隐私计算平台（如 SecretPad）可以使用[KusciaApi](../summary_cn.md)接口实现更广泛的功能。
+
 ## Data Mesh API 约定
 
 Data Mesh API 提供 HTTP 和 GRPC 两种访问方法。

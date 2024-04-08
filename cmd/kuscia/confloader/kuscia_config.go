@@ -70,11 +70,11 @@ type RunkConfig struct {
 	KubeconfigFile string   `yaml:"kubeconfigFile"`
 }
 
-func (runk RunkConfig) convert2K8sProviderCfg() (k8s config.K8sProviderCfg) {
-	k8s.Namespace = runk.Namespace
-	k8s.KubeconfigFile = runk.KubeconfigFile
-	k8s.DNS.Servers = runk.DNSServers
-	return
+func (runk RunkConfig) overwriteK8sProviderCfg(k8sCfg config.K8sProviderCfg) config.K8sProviderCfg {
+	k8sCfg.Namespace = runk.Namespace
+	k8sCfg.KubeconfigFile = runk.KubeconfigFile
+	k8sCfg.DNS.Servers = runk.DNSServers
+	return k8sCfg
 }
 
 type ImageConfig struct {
@@ -154,14 +154,18 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.DataMesh = lite.DataMesh
 	kusciaConfig.Agent.AllowPrivileged = lite.Agent.AllowPrivileged
 	kusciaConfig.Agent.Provider.Runtime = lite.Runtime
-	kusciaConfig.Agent.Provider.K8s = lite.Runk.convert2K8sProviderCfg()
-	kusciaConfig.Agent.Provider.K8s.Backend = lite.Agent.Provider.K8s.Backend
-	kusciaConfig.Agent.Provider.K8s.LabelsToAdd = lite.Agent.Provider.K8s.LabelsToAdd
-	kusciaConfig.Agent.Provider.K8s.AnnotationsToAdd = lite.Agent.Provider.K8s.AnnotationsToAdd
+	kusciaConfig.Agent.Provider.K8s = lite.Runk.overwriteK8sProviderCfg(lite.Agent.Provider.K8s)
 	kusciaConfig.Agent.Capacity = lite.Capacity
-	if len(lite.Agent.Plugins) > 0 {
-		kusciaConfig.Agent.Plugins = lite.Agent.Plugins
+
+	for _, p := range lite.Agent.Plugins {
+		for j, pp := range kusciaConfig.Agent.Plugins {
+			if p.Name == pp.Name {
+				kusciaConfig.Agent.Plugins[j] = p
+				break
+			}
+		}
 	}
+
 	kusciaConfig.Master.Endpoint = lite.MasterEndpoint
 	kusciaConfig.DomainRoute.DomainCsrData = generateCsrData(lite.DomainID, lite.DomainKeyData, lite.LiteDeployToken)
 	kusciaConfig.Debug = lite.Debug
@@ -200,14 +204,18 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.DomainKeyData = autonomy.DomainKeyData
 	kusciaConfig.Agent.AllowPrivileged = autonomy.Agent.AllowPrivileged
 	kusciaConfig.Agent.Provider.Runtime = autonomy.Runtime
-	kusciaConfig.Agent.Provider.K8s = autonomy.Runk.convert2K8sProviderCfg()
-	kusciaConfig.Agent.Provider.K8s.Backend = autonomy.Agent.Provider.K8s.Backend
-	kusciaConfig.Agent.Provider.K8s.LabelsToAdd = autonomy.Agent.Provider.K8s.LabelsToAdd
-	kusciaConfig.Agent.Provider.K8s.AnnotationsToAdd = autonomy.Agent.Provider.K8s.AnnotationsToAdd
+	kusciaConfig.Agent.Provider.K8s = autonomy.Runk.overwriteK8sProviderCfg(autonomy.Agent.Provider.K8s)
 	kusciaConfig.Agent.Capacity = autonomy.Capacity
-	if len(autonomy.Agent.Plugins) > 0 {
-		kusciaConfig.Agent.Plugins = autonomy.Agent.Plugins
+
+	for _, p := range autonomy.Agent.Plugins {
+		for j, pp := range kusciaConfig.Agent.Plugins {
+			if p.Name == pp.Name {
+				kusciaConfig.Agent.Plugins[j] = p
+				break
+			}
+		}
 	}
+
 	kusciaConfig.ConfLoaders = autonomy.ConfLoaders
 	kusciaConfig.SecretBackends = autonomy.SecretBackends
 	if autonomy.KusciaAPI != nil {

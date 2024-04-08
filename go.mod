@@ -25,14 +25,13 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/moby/sys/mount v0.3.3
 	github.com/moby/sys/mountinfo v0.6.2
-	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/opencontainers/image-spec v1.0.2
 	github.com/opencontainers/selinux v1.11.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/rosedblabs/rosedb/v2 v2.3.2
-	github.com/secretflow/kuscia-envoy v0.0.0-20230705094915-8e153baebabc
+	github.com/secretflow/kuscia-envoy v0.0.0-20240402083426-b0884d002f48
 	github.com/shirou/gopsutil/v3 v3.22.6
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
@@ -173,7 +172,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
-	github.com/mrunalp/fileutils v0.5.0 // indirect
+	github.com/mrunalp/fileutils v0.5.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -254,7 +253,7 @@ require (
 )
 
 replace (
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.5
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.12
 	//google.golang.org/protobuf => google.golang.org/protobuf v1.28.1
 	k8s.io/api => k8s.io/api v0.26.11
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.11

@@ -99,7 +99,6 @@ func (c *hostResourcesController) syncJobHandler(ctx context.Context, key string
 		}
 		return err
 	}
-
 	return c.createJob(ctx, hJob)
 }
 

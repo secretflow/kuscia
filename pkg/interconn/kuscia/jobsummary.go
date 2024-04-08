@@ -110,7 +110,11 @@ func (c *Controller) updateJob(ctx context.Context, jobSummary *v1alpha1.KusciaJ
 	job := originalJob.DeepCopy()
 	needUpdate := false
 	if updated := ikcommon.UpdateJobStage(job, jobSummary); updated {
-		needUpdate = true
+		job.Status.LastReconcileTime = ikcommon.GetCurrentTime()
+		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).Update(ctx, job, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if updated := updateJobStatusInfo(job, jobSummary, partyDomainIDs); updated {

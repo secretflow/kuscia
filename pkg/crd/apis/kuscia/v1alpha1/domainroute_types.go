@@ -194,7 +194,11 @@ type DomainRouteSpec struct {
 	// Endpoint defines address for the source to access destination.
 	// +optional
 	Endpoint DomainEndpoint `json:"endpoint,omitempty"`
-	// Transit entity. If it is not empty, the requests between nodes need to be transferred through a third party.
+	// Transit entity. If transitMethod is THIRD-DOMAIN,
+	// requests from source to destination need to be transferred through
+	// a third party, domain field must be set. If transitMethod is
+	// REVERSE-TUNNEL, requests from source to destination need to be
+	// transferred through local gateway chunked transfer encoding.
 	// +optional
 	Transit *Transit `json:"transit,omitempty"`
 	// AuthenticationType describes how destination authenticates the source's request.
@@ -242,10 +246,23 @@ type DomainPort struct {
 
 // Transit defines the information of the transit entity used to forward the request.
 type Transit struct {
-	// DomainTransit means to forward the request through the domain.
+	// TransitMethod means to forward the request through a specific entity, THIRD-DOMAIN by default.
+	// +kubebuilder:validation:Enum=THIRD-DOMAIN;REVERSE-TUNNEL
+	// +optional
+	TransitMethod TransitMethodType `json:"transitMethod"`
+	// DomainTransit defines the information of the third domain.
 	// +optional
 	Domain *DomainTransit `json:"domain,omitempty"`
 }
+
+type TransitMethodType string
+
+const (
+	// TransitMethodThirdDomain means to forward the request through the third domain.
+	TransitMethodThirdDomain TransitMethodType = "THIRD-DOMAIN"
+	// TransitMethodReverseTunnel means to forward the request through reverse tunneling between envoys.
+	TransitMethodReverseTunnel TransitMethodType = "REVERSE-TUNNEL"
+)
 
 // DomainTransit defines the information of the transit domain.
 type DomainTransit struct {

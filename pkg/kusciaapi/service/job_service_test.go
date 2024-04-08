@@ -17,11 +17,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"gotest.tools/v3/assert"
 
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -40,6 +42,52 @@ func TestQueryJob(t *testing.T) {
 	})
 	assert.Equal(t, queryJobResponse.Data.JobId, kusciaAPIJS.jobID)
 	assert.Equal(t, len(queryJobResponse.Data.Tasks), len(kusciaAPIJS.tasks))
+}
+
+func TestSuspendJob(t *testing.T) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, consts.AuthRole, consts.AuthRoleMaster)
+	ctx = context.WithValue(ctx, consts.SourceDomainKey, "alice")
+	kusciaAPIJS.CreateJob(ctx, &kusciaapi.CreateJobRequest{
+		JobId:     kusciaAPIJS.jobID,
+		Initiator: "alice",
+		Tasks:     kusciaAPIJS.tasks,
+	})
+	res := kusciaAPIJS.SuspendJob(ctx, &kusciaapi.SuspendJobRequest{
+		JobId: kusciaAPIJS.jobID,
+	})
+	fmt.Printf("resp:%+v", res)
+	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
+}
+
+func TestRestartJob(t *testing.T) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, consts.AuthRole, consts.AuthRoleMaster)
+	ctx = context.WithValue(ctx, consts.SourceDomainKey, "alice")
+	res := kusciaAPIJS.RestartJob(ctx, &kusciaapi.RestartJobRequest{
+		JobId: kusciaAPIJS.jobID,
+	})
+	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
+}
+
+func TestStopJob(t *testing.T) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, consts.AuthRole, consts.AuthRoleMaster)
+	ctx = context.WithValue(ctx, consts.SourceDomainKey, "alice")
+	res := kusciaAPIJS.StopJob(ctx, &kusciaapi.StopJobRequest{
+		JobId: kusciaAPIJS.jobID,
+	})
+	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
+}
+
+func TestCancelJob(t *testing.T) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, consts.AuthRole, consts.AuthRoleMaster)
+	ctx = context.WithValue(ctx, consts.SourceDomainKey, "alice")
+	res := kusciaAPIJS.CancelJob(ctx, &kusciaapi.CancelJobRequest{
+		JobId: kusciaAPIJS.jobID,
+	})
+	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
 }
 
 func TestBatchQueryJob(t *testing.T) {

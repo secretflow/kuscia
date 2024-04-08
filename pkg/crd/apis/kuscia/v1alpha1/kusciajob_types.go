@@ -59,6 +59,7 @@ const (
 	JobStopStage    JobStage = "Stop"
 	JobCancelStage  JobStage = "Cancel"
 	JobRestartStage JobStage = "Restart"
+	JobSuspendStage JobStage = "Suspend"
 )
 
 // KusciaJobSpec defines the information of kuscia job spec.
@@ -292,6 +293,9 @@ const (
 
 	// KusciaJobApprovalReject means the job is rejected by some parties.
 	KusciaJobApprovalReject KusciaJobPhase = "ApprovalReject"
+
+	// KusciaJobSuspended means the job has been suspended by some parties.
+	KusciaJobSuspended KusciaJobPhase = "Suspended"
 )
 
 type JobStagePhase string
@@ -303,8 +307,17 @@ const (
 	JobStartStageSucceeded JobStagePhase = "JobStartStageSucceeded"
 	JobStartStageFailed    JobStagePhase = "JobStartStageFailed"
 
+	JobRestartStageSucceeded JobStagePhase = "JobRestartStageSucceeded"
+	JobRestartStageFailed    JobStagePhase = "JobRestartStageFailed"
+
 	JobStopStageSucceeded JobStagePhase = "JobStopStageSucceeded"
 	JobStopStageFailed    JobStagePhase = "JobStopStageFailed"
+
+	JobCancelStageSucceeded JobStagePhase = "JobCancelStageSucceeded"
+	JobCancelStageFailed    JobStagePhase = "JobCancelStageFailed"
+
+	JobSuspendStageSucceeded JobStagePhase = "JobSuspendStageSucceeded"
+	JobSuspendStageFailed    JobStagePhase = "JobSuspendStageFailed"
 )
 
 type JobApprovePhase string
