@@ -13,11 +13,8 @@ protobuf 文件。
 | [BatchQueryJobStatus](#batch-query-job-status) | BatchQueryJobStatusRequest | BatchQueryJobStatusResponse  | 批量查询 Job 状态 |
 | [DeleteJob](#delete-job)                       | DeleteJobRequest           | DeleteJobResponse            | 删除 Job      |
 | [StopJob](#stop-job)                           | StopJobRequest             | StopJobResponse              | 停止 Job      |
-| [WatchJob](#watch-job)                         | WatchJobRequest            | WatchJobEventResponse stream | 监听 Job      |
-| [ApproveJob](#approval-job)                    | ApproveJobRequest          | ApproveJobResponse           | 审批 Job      |
-| [SuspendJob](#suspend-job)                     | SuspendJobRequest          | SuspendJobResponse           | 暂停 Job      |
-| [RestartJob](#restart-job)                     | RestartJobRequest          | RestartJobResponse           | 重跑 Job      |
-| [CancelJob](#cancel-job)                       | CancelJobRequest           | CancelJobResponse            | 取消 Job      |
+| [WatchJob](#watch-job)                         | WatchJobRequest            | WatchJobEventResponse stream | 监控 Job      |
+| [ApproveJob](#{#approval-job)                  | ApproveJobRequest          | ApproveJobResponse           | 审批 Job      |
 
 ## 接口详情
 
@@ -414,7 +411,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 |--------|----------------------------------------------|----|---------|
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 停止Job的原因   |
 
 #### 响应（StopJobResponse）
 
@@ -470,7 +466,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | 字段              | 类型                                           | 选填 | 描述      |
 |-----------------|----------------------------------------------|----|---------|
 | header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| timeout_seconds | int64                                        | 可选 | 请求连接的生命周期，服务端将在超时后断开连接，不管是否有活跃事件。超时时间取值范围：[0, 2^31-1]，默认为0，表示不超时。即使在未设置超时时间的情况下, 也会因为网络环境导致断连，客户端根据需求决定是否重新发起请求    |
+| timeout_seconds | int64                                        | 可选 | 超时时间，默认为 0，表示不超时。即使在未设置超时时间的情况下, 也会因为网络环境导致断连，客户端根据需求决定是否重新发起请求    |
 
 #### 响应（WatchJobEventResponse）
 
@@ -486,7 +482,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 #### HTTP 路径
 
-/api/v1/job/approve
+/api/v1/job/approval
 
 #### 请求（ApprovalJobRequest）
 
@@ -505,178 +501,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | data        | ApprovalJobResponseData        |    |       |
 | data.job_id | string                         | 必填 | JobID |
 
-
-{#suspend-job}
-
-### 暂停 Job
-
-#### HTTP 路径
-
-/api/v1/job/suspend
-
-#### 请求（SuspendJobRequest）
-
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
-| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 暂停Job的原因   |
-
-#### 响应（SuspendJobResponse）
-
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | SuspendJobResponseData         |    |       |
-| data.job_id | string                         | 必填 | JobID |
-
-#### 请求示例
-
-发起请求：
-
-```sh
-# 在容器内执行示例
-export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
- --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
- --header 'Content-Type: application/json' \
- --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
- --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
- --cacert ${CTR_CERTS_ROOT}/ca.crt \
- -d '{
-  "job_id": "job-alice-bob-001"
-}'
-```
-
-请求响应成功结果：
-
-```json
-{
-  "status": {
-    "code": 0,
-    "message": "success",
-    "details": []
-  },
-  "data": {
-    "job_id": "job-alice-bob-001"
-  }
-}
-```
-
-
-{#restart-job}
-
-### 重跑 Job
-
-#### HTTP 路径
-
-/api/v1/job/restart
-
-#### 请求（RestartJobRequest）
-
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
-| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 重跑Job的原因   |
-
-#### 响应（RestartJobResponse）
-
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | RestartJobResponseData         |    |       |
-| data.job_id | string                         | 必填 | JobID |
-
-#### 请求示例
-
-发起请求：
-
-```sh
-# 在容器内执行示例
-export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
- --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
- --header 'Content-Type: application/json' \
- --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
- --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
- --cacert ${CTR_CERTS_ROOT}/ca.crt \
- -d '{
-  "job_id": "job-alice-bob-001"
-}'
-```
-
-请求响应成功结果：
-
-```json
-{
-  "status": {
-    "code": 0,
-    "message": "success",
-    "details": []
-  },
-  "data": {
-    "job_id": "job-alice-bob-001"
-  }
-}
-```
-
-{#cancel-job}
-
-### 取消 Job
-
-#### HTTP 路径
-
-/api/v1/job/cancel
-
-#### 请求（CancelJobRequest）
-
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
-| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 取消Job的原因   |
-
-#### 响应（CancelJobResponse）
-
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | CancelJobResponseData          |    |       |
-| data.job_id | string                         | 必填 | JobID |
-
-#### 请求示例
-
-发起请求：
-
-```sh
-# 在容器内执行示例
-export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
- --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
- --header 'Content-Type: application/json' \
- --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
- --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
- --cacert ${CTR_CERTS_ROOT}/ca.crt \
- -d '{
-  "job_id": "job-alice-bob-001"
-}'
-```
-
-请求响应成功结果：
-
-```json
-{
-  "status": {
-    "code": 0,
-    "message": "success",
-    "details": []
-  },
-  "data": {
-    "job_id": "job-alice-bob-001"
-  }
-}
-```
 
 ## 公共
 
@@ -710,6 +534,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 |-----------|--------|----|----------|
 | domain_id | string | 必填 | DomainID |
 | role      | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)       |
+| resources | JobResource | 可选 | 参与方资源配置 |
+
+{#JobResource}
+
+### JobResource
+
+| 字段	 | 类型	  | 选填 | 描述 |
+|--------|------------|------|------|
+| cpu	 | string | 可选 | 参与方可用 CPU 资源上限 |
+| memory | string | 可选 | 参与方可用内存资源上限  |
 
 {#party-status}
 
@@ -789,7 +623,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 {#state}
 
 ### State
-KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state)。
 
 | Name               | Number | 描述    |
 |-----------         |--------|-------|
@@ -798,11 +631,9 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 | Running            | 2      | 运行中   |
 | Succeeded          | 3      | 成功    |
 | Failed             | 4      | 失败    |
-| AwaitingApproval   | 5      | 等待参与方审批 Job   |
-| ApprovalReject     | 6      | Job 被审批为拒绝执行    |
-| Cancelled          | 7      | Job 被取消，被取消的 Job 不可被再次执行    |
-| Suspended          | 8      | Job 被暂停，可通过 Restart 接口重跑   |
-| Initialized        | 9      | Job 初始状态  |
+| AwaitingApproval   | 5      | 等待参与方审批任务   |
+| ApprovalReject     | 6      | 任务被审批为拒绝执行    |
+| Cancelled          | 7      | 任务被取消，被取消的任务不可被再次执行    |
 
 {#job-party-endpoint}
 
