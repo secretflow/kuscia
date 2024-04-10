@@ -22,8 +22,10 @@ import (
 	"strconv"
 	"strings"
 
+	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -974,7 +976,8 @@ func willStartTasksOf(kusciaJob *kusciaapisv1alpha1.KusciaJob, readyTasks []kusc
 }
 
 // buildWillStartKusciaTask build KusciaTask CR from job's will-start sub-tasks.
-func buildWillStartKusciaTask(nsLister corelisters.NamespaceLister, kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
+func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
+	// var nsLister corelisters.NamespaceLister = h.namespaceLister
 	createdTasks := make([]*kusciaapisv1alpha1.KusciaTask, 0)
 
 	isIcJob := isInterConnJob(kusciaJob)
@@ -995,7 +998,7 @@ func buildWillStartKusciaTask(nsLister corelisters.NamespaceLister, kusciaJob *k
 					common.LabelJobUID:     string(kusciaJob.UID),
 				},
 			},
-			Spec: createTaskSpec(kusciaJob.Spec.Initiator, t),
+			Spec: h.createTaskSpec(kusciaJob.Spec.Initiator, t),
 		}
 
 		if isIcJob {
@@ -1022,11 +1025,11 @@ func buildWillStartKusciaTask(nsLister corelisters.NamespaceLister, kusciaJob *k
 }
 
 // createTaskSpec will make kuscia task spec for kuscia job.
-func createTaskSpec(initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) kusciaapisv1alpha1.KusciaTaskSpec {
+func (h *RunningHandler) createTaskSpec(initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) kusciaapisv1alpha1.KusciaTaskSpec {
 	result := kusciaapisv1alpha1.KusciaTaskSpec{
 		Initiator:       initiator,
 		TaskInputConfig: t.TaskInputConfig,
-		Parties:         buildPartiesFromTaskInputConfig(t),
+		Parties:         h.buildPartiesFromTaskInputConfig(t),
 	}
 	if t.ScheduleConfig != nil {
 		result.ScheduleConfig = *t.ScheduleConfig
@@ -1035,16 +1038,88 @@ func createTaskSpec(initiator string, t kusciaapisv1alpha1.KusciaTaskTemplate) k
 }
 
 // buildPartiesFromTaskInputConfig will make kuscia task parties for kuscia job.
-func buildPartiesFromTaskInputConfig(template kusciaapisv1alpha1.KusciaTaskTemplate) []kusciaapisv1alpha1.PartyInfo {
+func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1alpha1.KusciaTaskTemplate) []kusciaapisv1alpha1.PartyInfo {
 	taskPartyInfos := make([]kusciaapisv1alpha1.PartyInfo, len(template.Parties))
 	for i, p := range template.Parties {
+		// build container resources of tasks
+		tpl := h.buildPartyTemplate(p, template.AppImage)
+
 		taskPartyInfos[i] = kusciaapisv1alpha1.PartyInfo{
 			DomainID:    p.DomainID,
 			AppImageRef: template.AppImage,
 			Role:        p.Role,
+			Template:    tpl,
 		}
 	}
 	return taskPartyInfos
+}
+
+// buildPartyTemplate will fill the resources config of parties
+func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImageName string) v1alpha1.PartyTemplate {
+	var ctrNumber, rplNumber int // container number and replica number
+	var deployTemplate v1alpha1.DeployTemplate
+	ptrDT, err := h.findMatchedDeployTemplate(p, appImageName)
+	if err != nil {
+		nlog.Warnf("Can not get suitable deployTemplate. err: %s", err.Error())
+		return v1alpha1.PartyTemplate{}
+	} else {
+		deployTemplate = *ptrDT
+		ctrNumber = len(deployTemplate.Spec.Containers)
+		rplNumber = int(*(deployTemplate.Replicas))
+	}
+
+	var everyCpu, everyMemory k8sresource.Quantity
+	var ptr *k8sresource.Quantity
+	var limitResource = corev1.ResourceList{}
+
+	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
+		ptrValue := p.Resources.Limits[corev1.ResourceCPU]
+		ptr = &ptrValue
+		stringEveryCpu, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		everyCpu = k8sresource.MustParse(stringEveryCpu)
+		limitResource[corev1.ResourceCPU] = everyCpu
+	}
+	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
+		ptrValue := p.Resources.Limits[corev1.ResourceMemory]
+		ptr = &ptrValue
+		stringEveryMemory, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		everyMemory = k8sresource.MustParse(stringEveryMemory)
+		limitResource[corev1.ResourceMemory] = everyMemory
+	}
+
+	containers := deployTemplate.Spec.Containers
+	for ctrIdx, _ := range containers {
+		containers[ctrIdx].Resources = corev1.ResourceRequirements{
+			Limits: limitResource,
+		}
+	}
+
+	resources := v1alpha1.PartyTemplate{
+		Spec: v1alpha1.PodSpec{
+			Containers: containers,
+		},
+	}
+
+	if utilsres.IsEmpty(p.Resources) {
+		resources = v1alpha1.PartyTemplate{}
+	}
+	return resources
+}
+
+// findMatchedDeployTemplate will get the best matched deployTemplate
+func (h *RunningHandler) findMatchedDeployTemplate(p kusciaapisv1alpha1.Party, appImageName string) (*v1alpha1.DeployTemplate, error) {
+	if appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), appImageName, metav1.GetOptions{}); err == nil {
+		var deployTemplate *v1alpha1.DeployTemplate
+		deployTemplate, err := utilsres.SelectDeployTemplate(appImage.Spec.DeployTemplates, p.Role)
+		if err != nil {
+			return nil, err
+		} else {
+			return deployTemplate, nil
+		}
+	} else {
+		nlog.Warnf("Can not get appImage %s. error: %s", appImageName, err.Error())
+		return nil, err
+	}
 }
 
 // jobTaskSelector will make selector of kuscia task which kuscia job generate.
