@@ -78,7 +78,7 @@ jobs:
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
             
             docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
-          
+            
             docker buildx build -t ${DEPS_IMAGE} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
             
             
@@ -90,7 +90,7 @@ jobs:
             
             docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            
+
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
@@ -100,7 +100,7 @@ workflows:
       not:
         equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:
-      - linux_build_kuscia
+      - linux_build_kuscia:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
