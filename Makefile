@@ -5,8 +5,9 @@ KUSCIA_VERSION_TAG = $(shell git describe --tags --always)
 # Get current architecture information
 UNAME_M_OUTPUT := $(shell uname -m)
 
-# To configure the ARCH variable to either arm64 or amd64
-ARCH := $(if $(filter aarch64,$(UNAME_M_OUTPUT)),arm64,$(if $(filter arm64,$(UNAME_M_OUTPUT)),arm64,amd64))
+# To configure the ARCH variable to either arm64 or amd64 or UNAME_M_OUTPUT
+ARCH := $(if $(filter aarch64 arm64,$(UNAME_M_OUTPUT)),arm64,$(if $(filter amd64 x86_64,$(UNAME_M_OUTPUT)),amd64,$(UNAME_M_OUTPUT)))
+
 
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}
 IMG := secretflow/kuscia:${TAG}
@@ -23,15 +24,6 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
-
-#Pull according to ARCH
-define get_pause
-if [ ! -f "./build/pause/pause-${ARCH}.tar" ]; then \
-    docker pull docker.io/rancher/mirrored-pause:3.6 --platform linux/${ARCH}; \
-    docker tag docker.io/rancher/mirrored-pause:3.6 secretflow/pause:3.6; \
-    docker save secretflow/pause:3.6 > ./build/pause/pause-${ARCH}.tar; \
-fi;
-endef
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
@@ -116,7 +108,8 @@ clean: # clean build and test product.
 .PHONY: build
 build: verify_error_code fmt vet ## Build kuscia binary.
 	bash hack/build.sh -t kuscia
-
+	mkdir -p /build/linux/${ARCH}
+	mv /build/apps /build/linux/${ARCH}
 .PHONY: docs
 docs: gen_error_code_doc ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
@@ -124,14 +117,15 @@ docs: gen_error_code_doc ## Build docs.
 .PHONY: deps-image
 deps-image:
 	bash hack/k3s/build.sh
-	docker build -t ${DEPS_IMAGE} --build-arg ARCH=${ARCH} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+	mkdir -p /build/linux/${ARCH}
+	mv /build/k3s /build/linux/${ARCH}
+	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image
 image: export GOOS=linux
 image: export GOARCH=${ARCH}
-image: ##build ## Build docker image with the manager.
-	@$(call get_pause)
-	docker build -t ${IMG} --build-arg ARCH=${ARCH} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+image: build ## Build docker image with the manager.
+	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 
 .PHONY: build-monitor
 build-monitor:

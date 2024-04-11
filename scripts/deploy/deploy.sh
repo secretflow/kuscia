@@ -29,8 +29,7 @@ function log() {
 function arch_check() {
   local arch=$(uname -a)
   if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
-    echo -e "${RED}ARM architecture is not supported by kuscia currently${NC}"
-    exit 1
+    echo "Warning: arm64 architecture. Continuing..."
   elif [[ $arch == *"x86_64"* ]]; then
     echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
   elif [[ $arch == *"amd64"* ]]; then

@@ -21,56 +21,76 @@ parameters:
     type: string
     default: ""
 
+executors:
+  linux_x64_executor: # declares a reusable executor
+    docker:
+      - image: secretflow/ubuntu-base-ci:latest
+    resource_class: 2xlarge
+    shell: /bin/bash --login -eo pipefail
+  linux_aarch64_executor:
+    docker:
+      - image: secretflow/ubuntu-base-ci:latest
+    resource_class: arm.2xlarge
+    shell: /bin/bash --login -eo pipefail
+
+commands:
+  build_kuscia:
+    steps:
+      - run:
+          name: "make build-kuscia/k3s"
+          command: |
+            git config --global --add safe.directory ./
+            make build
+            make deps-image
+      - store_artifacts:
+          path: build
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
-  unit-test:
-    docker:
-      - image: secretflow/kuscia-ci:0.4
-    resource_class: 2xlarge
-    shell: /bin/bash --login -eo pipefail
+  linux_build_kuscia:
+    parameters:
+      executor:
+        type: string
+    executor: <<parameters.executor>>
     steps:
       - checkout
-      - setup_remote_docker
-      - run:
-          name: Test Kuscia
-          command: make test
+      - build_kuscia
   image_publish:
     docker:
       - image: secretflow/kuscia-ci:0.4
     shell: /bin/bash --login -eo pipefail
     steps:
+      - attach_workspace:
+          at: build
       - checkout
       - setup_remote_docker
       - run:
-          name: Login to kuscia docker registry
-          command: |
-            # login kuscia dockerhub registry
-            docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
-            # login kuscia aliyun registry
-            docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
-      - run:
           name: Build image and publish
           command: |
-            make 
-            docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
-            bash hack/k3s/build.sh
+            CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
             DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
             ENVOY_IMAGE = secretflow/kuscia-envoy:latest
-            IMAGE = "kuscia:latest"
-            docker buildx build -t ${DEPS_IMAGE} --platform linux/arm64 --build-arg ARCH=arm64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
-            docker buildx build -t ${DEPS_IMAGE} --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
-            docker buildx build -t ${IMG} --platform linux/arm64 --build-arg ARCH=arm64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
-            docker buildx build -t ${IMG} --platform linux/amd64 --build-arg ARCH=amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
-            CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
-            docker tag ${IMAGE} secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
-            docker tag ${IMAGE} secretflow/kuscia:latest
-            docker tag ${IMAGE} secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
-            docker tag ${IMAGE} secretflow/kuscia:${CIRCLETAG}
-            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:${CIRCLETAG}
-            docker push secretflow/kuscia:${CIRCLETAG}
-            docker push secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
-            docker push secretflow/kuscia:latest
+            IMAGE = "secretflow/kuscia"
+            ALIYUN_IMAGE = "secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
+            
+             # login kuscia dockerhub registry
+            docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
+            
+            docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
+          
+            docker buildx build -t ${DEPS_IMAGE} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
+            
+            
+            docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            
+             # login kuscia aliyun registry
+            docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
+            
+            docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
@@ -80,8 +100,13 @@ workflows:
       not:
         equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:
-      - unit-test
+      - linux_build_kuscia
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - image_publish:
+          requires:
+            - linux_build_kuscia
           filters:
             branches:
               ignore: /.*/

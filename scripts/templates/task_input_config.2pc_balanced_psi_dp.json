@@ -27,14 +27,14 @@
   "sf_node_eval_param": {
     "domain": "data_prep",
     "name": "psi",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type"],
     "attrs": [{
       "ss": ["id1"]
     }, {
       "ss": ["id2"]
     }, {
-      "s": "ECDH_PSI_2PC"
+      "s": "PROTOCOL_ECDH"
     }, {
       "b": true
     }, {
