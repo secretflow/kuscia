@@ -109,7 +109,7 @@ clean: # clean build and test product.
 build: verify_error_code fmt vet ## Build kuscia binary.
 	bash hack/build.sh -t kuscia
 	mkdir -p /build/linux/${ARCH}
-	mv /build/apps /build/linux/${ARCH}
+	mv build/apps /build/linux/${ARCH}
 .PHONY: docs
 docs: gen_error_code_doc ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
@@ -118,7 +118,7 @@ docs: gen_error_code_doc ## Build docs.
 deps-image:
 	bash hack/k3s/build.sh
 	mkdir -p /build/linux/${ARCH}
-	mv /build/k3s /build/linux/${ARCH}
+	mv build/k3s /build/linux/${ARCH}
 	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image
