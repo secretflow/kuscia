@@ -977,7 +977,6 @@ func willStartTasksOf(kusciaJob *kusciaapisv1alpha1.KusciaJob, readyTasks []kusc
 
 // buildWillStartKusciaTask build KusciaTask CR from job's will-start sub-tasks.
 func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
-	// var nsLister corelisters.NamespaceLister = h.namespaceLister
 	createdTasks := make([]*kusciaapisv1alpha1.KusciaTask, 0)
 
 	isIcJob := isInterConnJob(kusciaJob)
