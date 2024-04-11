@@ -41,7 +41,7 @@ commands:
           command: |
             git config --global --add safe.directory ./
             make build
-            make deps-image
+            make k3s-build
       - store_artifacts:
           path: build
 
