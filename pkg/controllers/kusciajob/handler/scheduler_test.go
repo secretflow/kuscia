@@ -15,14 +15,21 @@
 package handler
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
+	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -844,5 +851,174 @@ func Test_willStartTasksOf(t *testing.T) {
 			tt.args.readyTasks = readyTasksOf(tt.args.kusciaJob, tt.args.status)
 			assert.Equalf(t, tt.want, willStartTasksOf(tt.args.kusciaJob, tt.args.readyTasks, tt.args.status), "willStartTasksOf(%v, %v, %v)", tt.args.kusciaJob, tt.args.readyTasks, tt.args.status)
 		})
+	}
+}
+
+func TestRunningHandler_buildPartyTemplate(t *testing.T) {
+	type args struct {
+		party        kusciaapisv1alpha1.Party
+		appImageName string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want interface{}
+	}{
+		{
+			name: "Empty appImage should return no-resource-config party info",
+			args: args{
+				party: kusciaapisv1alpha1.Party{
+					DomainID:  "",
+					Role:      "",
+					Resources: nil,
+				},
+				appImageName: "",
+			},
+			want: v1alpha1.PartyTemplate{},
+		},
+		{
+			name: "Inexistent appImage should return no-resource-config party info",
+			args: args{
+				party: kusciaapisv1alpha1.Party{
+					DomainID: "Alice",
+					Role:     "",
+					Resources: &corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    k8sresource.MustParse("2"),
+							corev1.ResourceMemory: k8sresource.MustParse("2Gi"),
+						},
+					},
+				},
+				appImageName: "test-image-1",
+			},
+			want: v1alpha1.PartyTemplate{},
+		},
+		{
+			name: "Existent appImage should return resource-config party info",
+			args: args{
+				party: kusciaapisv1alpha1.Party{
+					DomainID: "Alice",
+					Role:     "server",
+					Resources: &corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU: k8sresource.MustParse("2"),
+						},
+					},
+				},
+				appImageName: "mockImage",
+			},
+			want: v1alpha1.PartyTemplate{
+				Spec: v1alpha1.PodSpec{
+					Containers: []v1alpha1.Container{
+						{
+							Name: "mock-Container",
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU: k8sresource.MustParse("2"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bestEffortIndependent := makeKusciaJob("Independent", kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
+			kusciaClient := kusciafake.NewSimpleClientset(
+				makeTestKusciaTask("a", bestEffortIndependent.Name, kusciaapisv1alpha1.TaskSucceeded),
+				bestEffortIndependent.DeepCopy(),
+				makeMockAppImage("mockImage"),
+			)
+			kubeClient := kubefake.NewSimpleClientset()
+
+			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
+			kubeInformerFactory := informers.NewSharedInformerFactory(kubeClient, 5*time.Minute)
+			nsInformer := kubeInformerFactory.Core().V1().Namespaces()
+			domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+			aliceNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alice",
+				},
+			}
+			bobNs := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "bob",
+				},
+			}
+			nsInformer.Informer().GetStore().Add(aliceNs)
+			nsInformer.Informer().GetStore().Add(bobNs)
+			aliceD := &kusciaapisv1alpha1.Domain{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "alice",
+				},
+				Spec: kusciaapisv1alpha1.DomainSpec{},
+			}
+			bobD := &kusciaapisv1alpha1.Domain{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "bob",
+				},
+				Spec: kusciaapisv1alpha1.DomainSpec{},
+			}
+			nsInformer.Informer().GetStore().Add(aliceNs)
+			nsInformer.Informer().GetStore().Add(bobNs)
+			domainInformer.Informer().GetStore().Add(aliceD)
+			domainInformer.Informer().GetStore().Add(bobD)
+
+			deps := &Dependencies{
+				KusciaClient:     kusciaClient,
+				KusciaTaskLister: kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister(),
+				NamespaceLister:  nsInformer.Lister(),
+				DomainLister:     domainInformer.Lister(),
+			}
+			handler := &RunningHandler{
+				JobScheduler: NewJobScheduler(deps),
+			}
+
+			testPartyTemplate := handler.buildPartyTemplate(tt.args.party, tt.args.appImageName)
+
+			assert.Equalf(t, reflect.DeepEqual(testPartyTemplate, tt.want), true, "RunningHandler.buildPartyTemplate(%v, %v): \nActual   - %v\nExpected - %v", tt.args.party, tt.args.appImageName, testPartyTemplate, tt.want)
+			return
+		})
+	}
+}
+
+func makeMockAppImage(name string) *v1alpha1.AppImage {
+	replicas := int32(1)
+	return &v1alpha1.AppImage{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.AppImageSpec{
+			Image: v1alpha1.AppImageInfo{
+				Name: "mock-AppImage",
+				Tag:  "latest",
+			},
+			DeployTemplates: []v1alpha1.DeployTemplate{
+				{
+					Name:     "mock-DeployTemplate",
+					Role:     "server",
+					Replicas: &replicas,
+					Spec: v1alpha1.PodSpec{
+						Containers: []v1alpha1.Container{
+							{
+								Name: "mock-Container",
+								Resources: corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceMemory: k8sresource.MustParse("100Mi"),
+										corev1.ResourceCPU:    k8sresource.MustParse("1"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceMemory: k8sresource.MustParse("10Mi"),
+										corev1.ResourceCPU:    k8sresource.MustParse("10m"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
