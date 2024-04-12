@@ -74,6 +74,12 @@ message Task {
 message Party {
   string domain_id = 1;
   string role = 2; // server or client
+  JobResource resources = 3; // resource config for parties
+}
+
+message JobResource {
+  string cpu = 1; // hard ceiling of CPU/virtual cores that the containers of certain party can use
+  string memory = 2; // limited RAMs that the containers of certain party can use
 }
 
 message DeleteJobRequest {
