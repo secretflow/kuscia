@@ -29,13 +29,13 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import os.path
-
 # -- Project information -----------------------------------------------------
 
-project = 'Kuscia'
-copyright = '2023 Ant Group Co., Ltd.'
-author = 'Kuscia authors'
+from importlib.util import find_spec
+
+project = "Kuscia"
+copyright = "2023 Ant Group Co., Ltd."
+author = "Kuscia authors"
 
 # -- General configuration ---------------------------------------------------
 
@@ -43,36 +43,33 @@ author = 'Kuscia authors'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.napoleon',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.graphviz',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.extlinks',
-    'sphinx.ext.autosectionlabel',
-    'myst_parser',
-    "nbsphinx",
-    'sphinxcontrib.actdiag',
-    'sphinxcontrib.blockdiag',
-    'sphinxcontrib.nwdiag',
-    'sphinxcontrib.packetdiag',
-    'sphinxcontrib.rackdiag',
-    'sphinxcontrib.seqdiag',
-    'sphinx_design',
+    "sphinx.ext.napoleon",
+    "sphinx.ext.graphviz",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.autosectionlabel",
+    "myst_parser",
+    "sphinx_design",
 ]
 
-nbsphinx_requirejs_path = ''
+# Link check extension
+if find_spec("sphinx_jsx"):
+    extensions.append("sphinx_jsx")
+
+
+nbsphinx_requirejs_path = ""
 
 # Make sure the target is unique
 autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".venv"]
 
 # Enable TODO
 todo_include_todos = True
@@ -82,20 +79,20 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata_sphinx_theme'
+html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
-html_favicon = '_static/favicon.ico'
+html_favicon = "_static/favicon.ico"
 
 html_css_files = [
-    'css/custom.css',
+    "css/custom.css",
 ]
 
-html_js_files = ['js/custom.js']
+html_js_files = ["js/custom.js"]
 
 html_theme_options = {
     "icon_links": [
@@ -140,9 +137,9 @@ myst_heading_anchors = 6
 # app setup hook
 def setup(app):
     app.add_config_value(
-        'recommonmark_config',
+        "recommonmark_config",
         {
-            'auto_toc_tree_section': 'Contents',
+            "auto_toc_tree_section": "Contents",
         },
         True,
     )
