@@ -36,7 +36,7 @@ var (
 func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string, exportPeriod uint, port string) error {
 	// read the config
 	_, AggregationMetrics := parse.LoadMetricConfig()
-	clusterAddresses := parse.GetClusterAddress(domainID)
+	clusterAddresses, _ := parse.GetClusterAddress(domainID)
 	localDomainName := domainID
 	var MetricTypes = promexporter.NewMetricTypes()
 
@@ -52,7 +52,7 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 	go func(runMode pkgcom.RunModeType, reg *prometheus.Registry, MetricTypes map[string]string, exportPeriods uint, lastClusterMetricValues map[string]float64) {
 		for range ticker.C {
 			// get clusterName and clusterAddress
-			clusterAddresses = parse.GetClusterAddress(domainID)
+			clusterAddresses, _ = parse.GetClusterAddress(domainID)
 			// get cluster metrics
 			currentClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
 			if err != nil {
@@ -65,15 +65,14 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 		}
 	}(runMode, reg, MetricTypes, exportPeriod, lastClusterMetricValues)
 	// export to the prometheus
-	http.Handle(
-		"/ssmetrics", promhttp.HandlerFor(
-			reg,
-			promhttp.HandlerOpts{
-				EnableOpenMetrics: true,
-			}),
-	)
+	ssServer := http.NewServeMux()
+	ssServer.Handle("/ssmetrics", promhttp.HandlerFor(
+		reg,
+		promhttp.HandlerOpts{
+			EnableOpenMetrics: true,
+		}))
 	go func() {
-		if err := http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
+		if err := http.ListenAndServe("0.0.0.0:"+port, ssServer); err != nil {
 			nlog.Error("Fail to start the metric exporterserver", err)
 		}
 	}()

@@ -19,7 +19,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/natefinch/lumberjack"
+	"gopkg.in/natefinch/lumberjack.v2"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 

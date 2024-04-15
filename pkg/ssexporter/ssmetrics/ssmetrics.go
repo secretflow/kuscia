@@ -30,57 +30,63 @@ import (
 // GetStatisticFromSs get the statistics of network flows from ss
 func GetStatisticFromSs() ([]map[string]string, error) {
 	// execute ss command
-	cmd := exec.Command("ss", "-tio4nO")
+	// -H --no-header Suppress header line
+	cmd := exec.Command("ss", "-tio4nH")
 	output, err := cmd.CombinedOutput()
-	var tcpStatisticList []map[string]string
+
 	if err != nil {
 		nlog.Warnf("Cannot get metrics from ss, error: %v", err)
-		return tcpStatisticList, err
+		return nil, err
 	}
 	// parse statistics from ss
 	lines := strings.Split(string(output), "\n")
 
-	var ssMetrics map[string]string
-	for idx, line := range lines {
-		if idx < 1 {
-			continue
+	var tcpStatisticList []map[string]string
+	// Combine every two lines and parse them
+	for i := 0; i+1 < len(lines); i += 2 {
+		combinedLine := lines[i] + lines[i+1]
+		// Parse the combined line
+		if ssMetrics := parseCombinedLine(combinedLine); ssMetrics != nil {
+			tcpStatisticList = append(tcpStatisticList, ssMetrics)
 		}
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			continue
-		}
-		ssMetrics = make(map[string]string)
-		ssMetrics[parse.MetricRto] = "0"
-		ssMetrics[parse.MetricRTT] = "0"
-		ssMetrics[parse.MetricByteSent] = "0"
-		ssMetrics[parse.MetricBytesReceived] = "0"
-		ssMetrics[parse.MetricTotalConnections] = "1"
-		ssMetrics[parse.MetricRetrans] = "0"
-		ssMetrics[parse.SsLocalAddr] = fields[3]
-		ssMetrics[parse.SsPeerAddr] = fields[4]
-		for idx, field := range fields {
-			if idx < 6 {
-				continue
-			}
-			kv := strings.Split(field, ":")
-			if len(kv) == 2 {
-				switch kv[0] {
-				case parse.MetricRto:
-					ssMetrics[parse.MetricRto] = kv[1]
-				case parse.MetricRTT:
-					ssMetrics[parse.MetricRTT] = strings.Split(kv[1], "/")[0]
-				case parse.MetricByteSent:
-					ssMetrics[parse.MetricByteSent] = kv[1]
-				case parse.MetricBytesReceived:
-					ssMetrics[parse.MetricBytesReceived] = kv[1]
-				case parse.MetricRetrans:
-					ssMetrics[parse.MetricRetrans] = strings.Split(kv[1], "/")[1]
-				}
-			}
-		}
-		tcpStatisticList = append(tcpStatisticList, ssMetrics)
 	}
 	return tcpStatisticList, nil
+}
+
+func parseCombinedLine(line string) map[string]string {
+	fields := strings.Fields(line)
+	if len(fields) < 5 {
+		return nil
+	}
+	ssMetrics := make(map[string]string)
+	ssMetrics[parse.MetricRto] = "0"
+	ssMetrics[parse.MetricRTT] = "0"
+	ssMetrics[parse.MetricByteSent] = "0"
+	ssMetrics[parse.MetricBytesReceived] = "0"
+	ssMetrics[parse.MetricTotalConnections] = "1"
+	ssMetrics[parse.MetricRetrans] = "0"
+	ssMetrics[parse.SsLocalAddr] = fields[3]
+	ssMetrics[parse.SsPeerAddr] = fields[4]
+
+	for idx := 6; idx < len(fields); idx++ {
+		field := fields[idx]
+		kv := strings.Split(field, ":")
+		if len(kv) == 2 {
+			switch kv[0] {
+			case parse.MetricRto:
+				ssMetrics[parse.MetricRto] = kv[1]
+			case parse.MetricRTT:
+				ssMetrics[parse.MetricRTT] = strings.Split(kv[1], "/")[0]
+			case parse.MetricByteSent:
+				ssMetrics[parse.MetricByteSent] = kv[1]
+			case parse.MetricBytesReceived:
+				ssMetrics[parse.MetricBytesReceived] = kv[1]
+			case parse.MetricRetrans:
+				ssMetrics[parse.MetricRetrans] = strings.Split(kv[1], "/")[1]
+			}
+		}
+	}
+	return ssMetrics
 }
 
 // Filter filter network flows according to given five-tuple rules

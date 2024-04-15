@@ -663,6 +663,13 @@ func buildJobStatus(now metav1.Time,
 		kjStatus.Phase = currentJobStatusPhase
 	}
 
+	if currentJobStatusPhase == kusciaapisv1alpha1.KusciaJobSucceeded || currentJobStatusPhase == kusciaapisv1alpha1.KusciaJobFailed {
+		if kjStatus.CompletionTime == nil {
+			needUpdate = true
+			kjStatus.CompletionTime = &now
+		}
+	}
+
 	if !reflect.DeepEqual(kjStatus.TaskStatus, currentSubTasksStatus) {
 		needUpdate = true
 		kjStatus.TaskStatus = currentSubTasksStatus

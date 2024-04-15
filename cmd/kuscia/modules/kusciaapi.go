@@ -68,20 +68,15 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 	kusciaAPIConfig.RunMode = d.RunMode
 	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
 	kusciaAPIConfig.DomainID = d.DomainID
+	kusciaAPIConfig.Protocol = d.Protocol
 
-	if d.Protocol == "" {
-		d.Protocol = common.MTLS
-	}
-	switch d.Protocol {
-	case common.NOTLS:
+	protocol := kusciaAPIConfig.Protocol
+	if protocol == "" {
+		kusciaAPIConfig.Protocol = common.MTLS
+		protocol = common.MTLS
+	} else if protocol == common.NOTLS {
 		kusciaAPIConfig.TLS = nil
 		kusciaAPIConfig.Token = nil
-	case common.TLS:
-		kusciaAPIConfig.TLS.RootCA = nil
-	}
-
-	if kusciaAPIConfig.Protocol == "" {
-		kusciaAPIConfig.Protocol = d.Protocol
 	}
 
 	if kusciaAPIConfig.TLS != nil {
