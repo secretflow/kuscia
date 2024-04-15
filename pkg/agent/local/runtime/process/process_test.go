@@ -64,7 +64,7 @@ func Test_RuntimeSandboxAndContainers(t *testing.T) {
 
 	imageStatus, err := runtime.ImageStatus(ctx, &runtimeapi.ImageSpec{Image: "test:01"}, false)
 	assert.NoError(t, err)
-	assert.Equal(t, imageStatus.Image.Id, "abc")
+	assert.Equal(t, imageStatus.Image.Id, "test:01")
 
 	sandboxID, err := runtime.RunPodSandbox(ctx, &runtimeapi.PodSandboxConfig{
 		Metadata: &runtimeapi.PodSandboxMetadata{

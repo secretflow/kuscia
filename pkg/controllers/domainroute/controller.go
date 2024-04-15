@@ -169,7 +169,7 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		return nil
 	}
 
-	// Get the ClusterDomainRoute resource with this namespace/name
+	// Get the DomainRoute resource with this namespace/name
 	dr, err := c.domainRouteLister.DomainRoutes(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {

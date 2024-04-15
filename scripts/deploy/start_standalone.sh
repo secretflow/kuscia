@@ -52,6 +52,13 @@ function log() {
   echo -e "${GREEN}${log_content}${NC}"
 }
 
+function pre_check() {
+  if ! mkdir -p "$1" 2>/dev/null; then
+    echo -e "${RED}User does not have access to create the directory: $1${NC}"
+    exit 1
+  fi
+}
+
 function arch_check() {
   local arch=$(uname -a)
   if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
@@ -121,11 +128,16 @@ function do_http_probe() {
   local ctr=$1
   local endpoint=$2
   local max_retry=$3
+  local enable_mtls=$4
+  local cert_config
+  if [[ "$enable_mtls" == "true" ]]; then
+    cert_config="--cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key"
+  fi
+
   local retry=0
-  while [ $retry -lt $max_retry ]; do
+  while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
-    # TODO support MTLS
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null ${endpoint})
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null ${endpoint} ${cert_config})
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -271,7 +283,7 @@ function create_domaindata_bob_table() {
 
 function probe_datamesh() {
   local domain_ctr=$1
-  if ! do_http_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30; then
+  if ! do_http_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30 true; then
     echo "[Error] Probe datamesh in container '$domain_ctr' failed." >&2
     echo "You cloud run command that 'docker logs $domain_ctr' to check the log" >&2
   fi
@@ -302,7 +314,7 @@ function start_lite() {
     fi
 
     # init kuscia.yaml
-    mkdir -p "${conf_dir}"
+    pre_check ${data_path}
     csr_token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" "${master_domain}" | tr -d '\r\n')
     docker run -it --rm ${IMAGE} kuscia init --mode Lite --domain "${domain_id}" --master-endpoint "${master_endpoint}" --lite-deploy-token "${csr_token}" >"${kuscia_config_file}"
     wrap_kuscia_config_file "${kuscia_config_file}"
@@ -593,7 +605,7 @@ function start_autonomy() {
     env_flag=$(generate_env_flag $domain_id)
 
     # init kuscia.yaml
-    mkdir -p "${conf_dir}"
+    pre_check ${data_path}
     docker run -it --rm ${IMAGE} kuscia init --mode Autonomy --domain "${domain_id}" >"${kuscia_config_file}"
     wrap_kuscia_config_file "${kuscia_config_file}" "${p2p_protocol}"
 

@@ -54,8 +54,14 @@ func NewDomainRoute(i *Dependencies) Module {
 		externalTLS = i.DomainRoute.ExternalTLS
 	}
 
-	if i.Protocol == common.NOTLS {
+	protocol := i.Protocol
+	switch protocol {
+	case common.NOTLS:
 		externalTLS = nil
+	case common.TLS, common.MTLS:
+		externalTLS = &kusciaconfig.TLSConfig{
+			EnableTLS: true,
+		}
 	}
 
 	if externalTLS != nil && externalTLS.EnableTLS {

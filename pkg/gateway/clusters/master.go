@@ -43,47 +43,47 @@ func GetMasterClusterName() string {
 	return fmt.Sprintf("service-%s", utils.ServiceMasterProxy)
 }
 
-func AddMasterClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
-	if !config.Master {
-		masterProxyCluster, err := generateDefaultCluster(utils.ServiceMasterProxy, config.MasterProxy)
-		if err != nil {
-			nlog.Fatalf("Generate masterProxy Cluster fail, %v", err)
-			return err
-		}
-
-		if err := xds.SetKeepAliveForDstCluster(masterProxyCluster, false); err != nil {
-			nlog.Error(err)
-			return err
-		}
-		if err := xds.AddOrUpdateCluster(masterProxyCluster); err != nil {
-			nlog.Error(err)
-			return err
-		}
-		nlog.Infof("add Master cluster:%s", utils.ServiceMasterProxy)
-		waitMasterProxyReady(ctx, config.MasterProxy.Path, config, namespace)
-	} else {
-		config.Namespace = namespace
-		if config.APIServer != nil {
-			if err := addMasterCluster(utils.ServiceAPIServer, namespace, config.APIServer, config.APIWhitelist); err != nil {
-				return err
-			}
-		}
-
-		if config.KusciaStorage != nil {
-			if err := addMasterCluster(utils.ServiceKusciaStorage, namespace, config.KusciaStorage, nil); err != nil {
-				return err
-			}
-		}
-
-		if config.KusciaAPI != nil {
-			if err := addMasterCluster(utils.ServiceKusciaAPI, namespace, config.KusciaAPI, nil); err != nil {
-				return err
-			}
-		}
-		addMasterHandshakeRoute(xds.InternalRoute)
-		addMasterHandshakeRoute(xds.ExternalRoute)
+func AddMasterProxyClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
+	masterProxyCluster, err := generateDefaultCluster(utils.ServiceMasterProxy, config.MasterProxy)
+	if err != nil {
+		nlog.Fatalf("Generate masterProxy Cluster fail, %v", err)
+		return err
 	}
 
+	if err := xds.SetKeepAliveForDstCluster(masterProxyCluster, false); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	if err := xds.AddOrUpdateCluster(masterProxyCluster); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	nlog.Infof("add Master cluster:%s", utils.ServiceMasterProxy)
+	waitMasterProxyReady(ctx, config.MasterProxy.Path, config, namespace)
+	return nil
+}
+
+func AddMasterClusters(ctx context.Context, namespace string, config *config.MasterConfig) error {
+	config.Namespace = namespace
+	if config.APIServer != nil {
+		if err := addMasterCluster(utils.ServiceAPIServer, namespace, config.APIServer, config.APIWhitelist); err != nil {
+			return err
+		}
+	}
+
+	if config.KusciaStorage != nil {
+		if err := addMasterCluster(utils.ServiceKusciaStorage, namespace, config.KusciaStorage, nil); err != nil {
+			return err
+		}
+	}
+
+	if config.KusciaAPI != nil {
+		if err := addMasterCluster(utils.ServiceKusciaAPI, namespace, config.KusciaAPI, nil); err != nil {
+			return err
+		}
+	}
+	addMasterHandshakeRoute(xds.InternalRoute)
+	addMasterHandshakeRoute(xds.ExternalRoute)
 	return nil
 }
 

@@ -462,10 +462,17 @@ func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.
 func convertToGinConf(conf *apiconfig.KusciaAPIConfig) beans.GinBeanConfig {
 	var tlsConfig *beans.TLSServerConfig
 	if conf.TLS != nil {
-		tlsConfig = &beans.TLSServerConfig{
-			CACert:     conf.TLS.RootCA,
-			ServerCert: conf.TLS.ServerCert,
-			ServerKey:  conf.TLS.ServerKey,
+		if conf.Protocol == common.MTLS {
+			tlsConfig = &beans.TLSServerConfig{
+				CACert:     conf.TLS.RootCA,
+				ServerCert: conf.TLS.ServerCert,
+				ServerKey:  conf.TLS.ServerKey,
+			}
+		} else {
+			tlsConfig = &beans.TLSServerConfig{
+				ServerCert: conf.TLS.ServerCert,
+				ServerKey:  conf.TLS.ServerKey,
+			}
 		}
 	}
 	return beans.GinBeanConfig{

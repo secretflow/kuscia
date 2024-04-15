@@ -482,7 +482,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 #### HTTP 路径
 
-/api/v1/job/approval
+/api/v1/job/approve
 
 #### 请求（ApprovalJobRequest）
 

@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Security` in case of vulnerabilities.
 `Breaking Changed` Breaking for backward-incompatible changes that require user intervention.
 
+## [0.7.0b0] - 2024-03-21
+### Added
+- Add serving docs.
+- Add kuscia ports description.
+### Changed
+- Optimize kuscia agent config
+- Update ss metrics
+- Update standalone.sh path pre_check
+- Update scheduler log
+- Update check domain exists
+- Reduce additional metrics of ssexporter
+- Update kuscia config doc
+### Fixed
+- Fix kusciaTask default state
+- Fix domainRoute rolling update and refactor code.
+- Fix datamesh probe
+- Fix invalid repository name
+- Fix the command of getting runtime
+- Fix typos in kusciajob_cn.md and kuscia-monitor.md
+
 ## [0.7.0.dev240229] - 2024-02-29
 ### Added
 - add the documents of datasource api

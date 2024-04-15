@@ -40,7 +40,7 @@ func NewSsExporter(i *Dependencies) Module {
 		domainID:           i.DomainID,
 		rootDir:            i.RootDir,
 		metricUpdatePeriod: i.MetricUpdatePeriod,
-		ssExportPort:       string(i.SsExportPort),
+		ssExportPort:       i.SsExportPort,
 	}
 }
 

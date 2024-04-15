@@ -32,9 +32,11 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 # -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
 ./deploy.sh master -n antgroup-secretflow-master -p 18080 -k 18082
 ```
+
 <span style="color:red;">注意：<br>
 1、如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md) <br>
-2、master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)</span>
+2、master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)<br>
+3、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
 
 建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。
 示例如下：

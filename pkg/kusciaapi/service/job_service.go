@@ -395,20 +395,16 @@ func (h *jobService) BatchQueryJobStatus(ctx context.Context, request *kusciaapi
 
 func (h *jobService) WatchJob(ctx context.Context, request *kusciaapi.WatchJobRequest, eventCh chan<- *kusciaapi.WatchJobEventResponse) error {
 	timeout := request.TimeoutSeconds
-	if timeout < 0 {
-		return fmt.Errorf("timeout seconds must be greater than or equal to 0")
+	if timeout < 0 || timeout > math.MaxInt32 {
+		return fmt.Errorf("timeout seconds must be in [0,2^31-1]")
 	}
-	var timeoutSeconds *int64
+	timeoutSeconds := int64(math.MaxInt32)
 	if request.TimeoutSeconds > 0 {
-		timeoutSeconds = &request.TimeoutSeconds
-	}
-
-	if *timeoutSeconds == 0 {
-		*timeoutSeconds = math.MaxInt64
+		timeoutSeconds = request.TimeoutSeconds
 	}
 
 	w, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Watch(ctx, metav1.ListOptions{
-		TimeoutSeconds: timeoutSeconds,
+		TimeoutSeconds: &timeoutSeconds,
 	})
 	if err != nil {
 		return err
@@ -529,12 +525,13 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 		taskID := kt.TaskID
 		ts := &kusciaapi.TaskStatus{
 			TaskId: taskID,
+			State:  getTaskState(v1alpha1.TaskPending),
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {
 			ts.State = getTaskState(phase)
 			task, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(ctx, taskID, metav1.GetOptions{})
 			if err != nil {
-				nlog.Warnf("found task [%s] occurs error: %v", taskID, err.Error())
+				nlog.Warnf("Failed to get task [%s], %v", taskID, err.Error())
 			} else {
 				taskStatus := task.Status
 				ts.ErrMsg = taskStatus.Message

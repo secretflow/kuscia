@@ -152,7 +152,7 @@ func (s domainDataSourceService) QueryDomainDataSource(ctx context.Context, requ
 		encryptedInfo, exist := kusciaDomainDataSource.Spec.Data[encryptedInfo]
 		if !exist {
 			return &datamesh.QueryDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataSource, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataSource, "datasource crd encryptedInfo field is not exist"),
 			}
 		}
 		info, err = s.decryptInfo(encryptedInfo)
