@@ -102,6 +102,16 @@ func GetDomainRouteErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCo
 	return defaultErrorCode
 }
 
+func CreateDomainDataErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataExists
+	}
+	return defaultErrorCode
+}
+
 func GetDomainDataErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
 	if errors.IsNotFound(err) {
 		return ErrDomainDataNotExists
@@ -112,12 +122,32 @@ func GetDomainDataErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCod
 	return defaultErrorCode
 }
 
+func CreateDomainDataGrantErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataGrantExists
+	}
+	return defaultErrorCode
+}
+
 func GetDomainDataGrantErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
 	if errors.IsNotFound(err) {
 		return ErrDomainDataGrantNotExists
 	}
 	if errors.IsAlreadyExists(err) {
 		return ErrDomainDataGrantExists
+	}
+	return defaultErrorCode
+}
+
+func CreateDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {
+	if errors.IsNotFound(err) {
+		return ErrDomainNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return ErrDomainDataSourceExists
 	}
 	return defaultErrorCode
 }

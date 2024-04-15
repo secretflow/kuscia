@@ -17,6 +17,7 @@ spec:
       spec:
         containers:
           - name: fate-adapter
+            workingDir: /home/kuscia
             command:
               - sh
               - -c

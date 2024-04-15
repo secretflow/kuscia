@@ -41,12 +41,13 @@ func GetIPFromDomain(localDomainName string) []string {
 }
 
 // GetClusterAddress get the address and port of a remote domain connected by a local domain
-func GetClusterAddress(domainID string) map[string][]string {
+func GetClusterAddress(domainID string) (map[string][]string, error) {
 	endpointAddresses := make(map[string][]string)
 	// get the results of config_dump
 	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
 	if err != nil {
-		nlog.Warn("Fail to get the results of config_dump", err)
+		nlog.Error("Fail to get the results of config_dump", err)
+		return endpointAddresses, err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -57,6 +58,7 @@ func GetClusterAddress(domainID string) map[string][]string {
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		nlog.Error("Fail to parse the results of config_dump", err)
+		return endpointAddresses, err
 	}
 	res := make(map[string]interface{})
 	err = jsoniter.Unmarshal(body, &res)
@@ -93,5 +95,5 @@ func GetClusterAddress(domainID string) map[string][]string {
 			}
 		}
 	}
-	return endpointAddresses
+	return endpointAddresses, nil
 }

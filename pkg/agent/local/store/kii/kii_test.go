@@ -68,3 +68,25 @@ func TestParseImageNameFromPath(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatImageID(t *testing.T) {
+	tests := []struct {
+		srcID string
+		dstID string
+	}{
+		{
+			"abc",
+			"sha256:abc",
+		},
+		{
+			"sha256:abc",
+			"sha256:abc",
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("Test %d", i), func(t *testing.T) {
+			assert.Equal(t, tt.dstID, FormatImageID(tt.srcID))
+		})
+	}
+}
