@@ -84,17 +84,3 @@ cc_proto_library(
     name = "flightdm_cc_proto",
     deps = [":flightdm_proto"],
 )
-
-cc_proto_library(
-    name = "domaindata_cc_proto",
-    deps = [
-        ":domaindata_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "domaindatasource_cc_proto",
-    deps = [
-        ":domaindatasource_proto",
-    ],
-)
