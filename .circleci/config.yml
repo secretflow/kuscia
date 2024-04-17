@@ -29,13 +29,26 @@ executors:
     shell: /bin/bash --login -eo pipefail
   linux_aarch64_executor:
     docker:
-      - image: secretflow/kuscia-ci:0.4
+      - image: secretflow/ubuntu-base-ci:latest
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
 
 commands:
   build_kuscia:
     steps:
+      - run:
+          name: "Install Docker"
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+      - run:
+          name: "Start Docker Daemon"
+          command: sudo systemctl start docker
+      - run:
+          name: "Add user to Docker Group"
+          command: |
+            sudo usermod -aG docker circleci
+            newgrp docker
       - run:
           name: "make build-kuscia/k3s"
           command: |
