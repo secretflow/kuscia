@@ -39,15 +39,15 @@ commands:
       - run:
           name: "Install Docker"
           command: |
-            sudo apt-get update
-            sudo apt-get install -y docker.io
+            apt-get update
+            apt-get install -y docker.io
       - run:
           name: "Start Docker Daemon"
-          command: sudo systemctl start docker
+          command: systemctl start docker
       - run:
           name: "Add user to Docker Group"
           command: |
-            sudo usermod -aG docker circleci
+            usermod -aG docker circleci
             newgrp docker
       - run:
           name: "make build-kuscia/k3s"
