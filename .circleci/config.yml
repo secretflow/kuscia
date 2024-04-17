@@ -36,21 +36,9 @@ executors:
 commands:
   build_kuscia:
     steps:
+      - setup_remote_docker
       - run:
-          name: "Install Docker"
-          command: |
-            apt-get update
-            apt-get install -y docker.io
-      - run:
-          name: "Start Docker Daemon"
-          command: systemctl start docker
-      - run:
-          name: "Add user to Docker Group"
-          command: |
-            usermod -aG docker circleci
-            newgrp docker
-      - run:
-          name: "make build-kuscia/k3s"
+          name: "make build"
           command: |
             git config --global --add safe.directory ./
             make build
@@ -91,9 +79,6 @@ jobs:
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
             
             docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
-            
-            docker buildx build -t ${DEPS_IMAGE} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
-            
             
             docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
