@@ -59,10 +59,10 @@ docker exec -it ${USER}-kuscia-master bash
 
 下面的示例展示了一个 KusciaJob， 该任务流完成 2 个任务：
 
-1. job-psi 读取 alice 和 bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。
-2. job-split 读取 alice 和 bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-dataset.csv`、`test-dataset.csv`。
+1. job-psi 读取 alice 和 bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的 `psi-output.csv`。
+2. job-split 读取 alice 和 bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的 `train-dataset.csv`、`test-dataset.csv`。
 
-这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`.metadata.name`指定。
+这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `.metadata.name` 指定。
 
 在 kuscia-master 容器中，在任意路径创建文件 job-best-effort-linear.yaml，内容如下：
 
@@ -71,6 +71,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-best-effort-linear
+  namespace: cross-domain
 spec:
   initiator: alice
   scheduleMode: BestEffort
@@ -103,8 +104,8 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 本教程使用的是 SecretFlow 的算子参数定义，以 SecretFlow 引擎任务为例：
 - `sf_datasource_config`：表示 SecretFlow 输入输出所需要的节点数据源信息。
-- `sf_cluster_desc`：表示 secretflow 集群信息，详情请查阅 [SecretFlow 集群文档](https://www.secretflow.org.cn/docs/secretflow/latest/zh-Hans/component/comp_spec_design#sfclusterdesc)。
-- `sf_node_eval_param`：表示 secretflow 算子的详细配置，详情请查阅 [SecretFlow 算子运行配置文档](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/intro#nodeevalparam)。
+- `sf_cluster_desc`：表示 SecretFlow 集群信息，详情请查阅 [SecretFlow 集群文档](https://www.secretflow.org.cn/docs/secretflow/latest/zh-Hans/component/comp_spec_design#sfclusterdesc)。
+- `sf_node_eval_param`：表示 SecretFlow 算子的详细配置，详情请查阅 [SecretFlow 算子运行配置文档](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/intro#nodeevalparam)。
 - `sf_input_ids`：表示 SecretFlow 输入数据 `id` ，SecretFlow 引擎会将 Kuscia 定义的输入数据 [DomainData](../reference/concepts/domaindata_cn.md) 转换成引擎所需要的 [DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/spec#distdata)。
 - `sf_output_ids`：表示 SecretFlow 输出数据  `id` ，SecretFlow 引擎会将输出的 [DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/spec#distdata) 转换成 Kuscia 的 [DomainData](../reference/concepts/domaindata_cn.md)。
 - `sf_output_uris`：表示 SecretFlow 输出数据路径。
@@ -144,7 +145,7 @@ job-best-effort-linear 就是我们刚刚创建出来的 KusciaJob 。
 
 ### 查看运行中的某个 KusciaJob 的详细状态
 
-通过指定`-o yaml`参数，我们可以以 Yaml 的形式看到 KusciaJob 的详细状态。job-best-effort-linear 是你在 [配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
+通过指定 `-o yaml` 参数，我们可以以 Yaml 的形式看到 KusciaJob 的详细状态。job-best-effort-linear 是你在 [配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
 
 ```shell
 kubectl get kj job-best-effort-linear -n cross-domain -o yaml
@@ -159,6 +160,7 @@ metadata:
   creationTimestamp: "2023-03-30T12:11:41Z"
   generation: 1
   name: job-best-effort-linear
+  namespace: cross-domain
   resourceVersion: "19002"
   uid: 085e10e6-5d3e-43cf-adaa-715d76a6af9b
 spec:
@@ -230,7 +232,7 @@ KusciaTask 的信息这里不再赘述，请查看 [KusciaTask](../reference/con
 当你想清理这个 KusciaJob 时，你可以通过下面的命令完成：
 
 ```shell
-kubectl delete kj job-best-effort-linear
+kubectl delete kj job-best-effort-linear -n cross-domain
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。
