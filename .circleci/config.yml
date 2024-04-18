@@ -38,13 +38,56 @@ commands:
     steps:
       - setup_remote_docker
       - run:
+          name: "install go"
+          command: ｜
+            if [ "$(uname -m)" == "x86_64" ]; then
+            ARCH="amd64"
+            elif [ "$(uname -m)" == "aarch64" ]; then
+            ARCH="arm64"
+            else
+            exit 1
+            fi
+            GOLANG_DIR="/usr/local/go"
+            if ! command -v go &> /dev/null; then
+            wget $GOLANG_URL
+            sudo tar -C $GOLANG_DIR -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+            source ~/.bashrc
+            fi
+      - run:
           name: "make build"
           command: |
             git config --global --add safe.directory ./
-            make k3s-build
+            make build
       - store_artifacts:
           path: build
-
+  build_kuscia_deps:
+    steps:
+      - setup_remote_docker
+      - run:
+          name: "install go"
+          command: ｜
+            if [ "$(uname -m)" == "x86_64" ]; then
+            ARCH="amd64"
+            elif [ "$(uname -m)" == "aarch64" ]; then
+            ARCH="arm64"
+            else
+            exit 1
+            fi
+            GOLANG_DIR="/usr/local/go"
+            if ! command -v go &> /dev/null; then
+            wget $GOLANG_URL
+            sudo tar -C $GOLANG_DIR -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+            source ~/.bashrc
+            fi
+      - run:
+          name: "make build"
+          command: |
+            git config --global --add safe.directory ./
+            make deps-build
+      - store_artifacts:
+          path: build
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
@@ -56,6 +99,14 @@ jobs:
     steps:
       - checkout
       - build_kuscia
+  linux_build_kuscia_deps:
+    parameters:
+      executor:
+        type: string
+    executor: <<parameters.executor>>
+    steps:
+      - checkout
+      - build_kuscia_deps
   image_publish:
     docker:
       - image: secretflow/kuscia-ci:0.4
@@ -98,6 +149,10 @@ workflows:
         equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:
       - linux_build_kuscia:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+      - linux_build_kuscia_deps:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
