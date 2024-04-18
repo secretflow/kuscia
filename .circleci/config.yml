@@ -40,21 +40,22 @@ commands:
       - run:
           name: "install go"
           command: ｜
-            if [ "$(uname -m)" == "x86_64" ]; then
-            ARCH="amd64"
-            elif [ "$(uname -m)" == "aarch64" ]; then
-            ARCH="arm64"
-            else
-            exit 1
-            fi
-            GOLANG_DIR="/usr/local/go"、
+            ARCH=$(uname -m)
+            case "$ARCH" in
+              x86_64) ARCH="amd64";;
+              aarch64) ARCH="arm64";;
+              *) echo "Unsupported architecture"; exit 1;;
+            esac
+            
+            GOLANG_DIR="/usr/local/go"
             GOLANG_VERSION="1.17.5"
-            GOLANG_URL="https://golang.org/dl/go.tar.gz"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            
             if ! command -v go &> /dev/null; then
-            wget $GOLANG_URL
-            tar -C $GOLANG_DIR -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-            echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-            source ~/.bashrc
+              wget "$GOLANG_URL"
+              tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+              echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+              source ~/.bashrc
             fi
       - run:
           name: "make build"
