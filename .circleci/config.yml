@@ -53,6 +53,7 @@ commands:
 
             if ! command -v go &> /dev/null; then
             wget "$GOLANG_URL"
+            mkdir -p "$GOLANG_DIR"
             tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
             source ~/.bashrc
@@ -78,11 +79,12 @@ commands:
             esac
             
             GOLANG_DIR="/usr/local/go"
-            GOLANG_VERSION="1.17.5"
+            GOLANG_VERSION="1.22.2"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             
             if ! command -v go &> /dev/null; then
             wget "$GOLANG_URL"
+            mkdir -p "$GOLANG_DIR"
             tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
             source ~/.bashrc
