@@ -47,10 +47,12 @@ commands:
             else
             exit 1
             fi
-            GOLANG_DIR="/usr/local/go"
+            GOLANG_DIR="/usr/local/go"、
+            GOLANG_VERSION="1.17.5"
+            GOLANG_URL="https://golang.org/dl/go.tar.gz"
             if ! command -v go &> /dev/null; then
             wget $GOLANG_URL
-            sudo tar -C $GOLANG_DIR -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            tar -C $GOLANG_DIR -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
             source ~/.bashrc
             fi
