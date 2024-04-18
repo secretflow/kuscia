@@ -1,0 +1,96 @@
+version: 2.1
+setup: true
+orbs:
+  continuation: circleci/continuation@0.3.1
+
+parameters:
+  GHA_Actor:
+    type: string
+    default: ""
+  GHA_Action:
+    type: string
+    default: ""
+  GHA_Event:
+    type: string
+    default: ""
+  GHA_Meta:
+    type: string
+    default: ""
+
+executors:
+  linux_x64_executor: # declares a reusable executor
+    docker:
+      - image: secretflow/kuscia-ci:0.4
+    resource_class: 2xlarge
+    shell: /bin/bash --login -eo pipefail
+  linux_aarch64_executor:
+    docker:
+      - image: secretflow/ubuntu-base-ci:latest
+    resource_class: arm.2xlarge
+    shell: /bin/bash --login -eo pipefail
+
+commands:
+  build_kuscia_deps:
+    steps:
+      - setup_remote_docker
+      - run:
+          name: "install go"
+          command: |
+            ARCH=$(uname -m)
+            case "$ARCH" in
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
+            esac
+            
+            GOLANG_DIR="/usr/local"
+            GOLANG_VERSION="1.22.2"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            
+            if ! command -v go &> /dev/null; then
+            wget "$GOLANG_URL"
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
+            source ~/.bashrc
+            fi
+      - run:
+          name: "make build"
+          command: |
+            git config --global --add safe.directory ./
+            make deps-build
+      - store_artifacts:
+          path: build
+
+jobs:
+  linux_build_kuscia_deps:
+    parameters:
+      executor:
+        type: string
+    executor: >
+    steps:
+      - checkout
+      - build_kuscia_deps
+
+workflows:
+  build-workflow:
+    triggers:
+      - workflow_dispatch:
+          inputs:
+            GHA_Actor:
+              description: "GitHub Actor"
+              default: ""
+            GHA_Action:
+              description: "GitHub Action"
+              default: ""
+            GHA_Event:
+              description: "GitHub Event"
+              default: ""
+            GHA_Meta:
+              description: "GitHub Meta"
+              default: ""
+    jobs:
+      - linux_build_kuscia_deps:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
