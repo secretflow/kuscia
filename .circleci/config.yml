@@ -40,23 +40,23 @@ commands:
       - run:
           name: "install go"
           command: |
-          ARCH=$(uname -m)
-          case "$ARCH" in
+            ARCH=$(uname -m)
+            case "$ARCH" in
             x86_64) ARCH="amd64";;
             aarch64) ARCH="arm64";;
             *) echo "Unsupported architecture"; exit 1;;
-          esac
+            esac
 
-          GOLANG_DIR="/usr/local/go"
-          GOLANG_VERSION="1.17.5"
-          GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            GOLANG_DIR="/usr/local/go"
+            GOLANG_VERSION="1.17.5"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
-          if ! command -v go &> /dev/null; then
+            if ! command -v go &> /dev/null; then
             wget "$GOLANG_URL"
             tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
             source ~/.bashrc
-          fi
+            fi
       - run:
           name: "make build"
           command: |
@@ -72,9 +72,9 @@ commands:
           command: |
             ARCH=$(uname -m)
             case "$ARCH" in
-              x86_64) ARCH="amd64";;
-              aarch64) ARCH="arm64";;
-              *) echo "Unsupported architecture"; exit 1;;
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
             esac
             
             GOLANG_DIR="/usr/local/go"
@@ -82,10 +82,10 @@ commands:
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             
             if ! command -v go &> /dev/null; then
-              wget "$GOLANG_URL"
-              tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-              echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-              source ~/.bashrc
+            wget "$GOLANG_URL"
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+            source ~/.bashrc
             fi
       - run:
           name: "make build"
@@ -158,9 +158,9 @@ workflows:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-     # - linux_build_kuscia_deps:
-     #     matrix:
-     #       parameters:
+      # - linux_build_kuscia_deps:
+      #     matrix:
+      #       parameters:
       #        executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - image_publish:
           requires:
