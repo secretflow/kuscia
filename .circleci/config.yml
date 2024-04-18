@@ -55,6 +55,7 @@ commands:
             wget "$GOLANG_URL"
             tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
             source ~/.bashrc
             fi
       - run:
@@ -85,6 +86,7 @@ commands:
             wget "$GOLANG_URL"
             tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
             echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
             source ~/.bashrc
             fi
       - run:
