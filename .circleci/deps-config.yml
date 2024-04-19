@@ -83,11 +83,6 @@ workflows:
   build_deps_workflow:
     jobs:
       - build_kuscia_deps:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
           when: manual
       - image_publish:
           requires:
