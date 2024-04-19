@@ -89,7 +89,6 @@ jobs:
           name: Build image and publish
           command: |
             CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
-            DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
             ENVOY_IMAGE = secretflow/kuscia-envoy:latest
             IMAGE = "secretflow/kuscia"
             ALIYUN_IMAGE = "secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
@@ -99,14 +98,14 @@ jobs:
             
             docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
             
-            docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE}  -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE}  -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             
              # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
             
-            docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE}  -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE}  -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
 
 
 # Orchestrate jobs using workflows

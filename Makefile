@@ -115,13 +115,13 @@ docs: gen_error_code_doc ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
 
 .PHONY: deps-build
-k3s-build:
+deps-build:
 	bash hack/k3s/build.sh
 	mkdir -p /build/linux/${ARCH}
 	mv build/k3s /build/linux/${ARCH}
 
 .PHONY: deps-image
-deps-image: k3s-build
+deps-image: deps-build
 	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image
