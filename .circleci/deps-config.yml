@@ -80,7 +80,7 @@ jobs:
             
 
 workflows:
-  build_workflow:
+  build_deps_workflow:
     jobs:
       - build_kuscia_deps:
           filters:
