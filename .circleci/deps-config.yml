@@ -47,13 +47,11 @@ commands:
 
 
 jobs:
-  build_kuscia_deps:
-    machine: true
-    executor: >
+  linux_build_kuscia:
     parameters:
       executor:
-        type: executor
-        default: linux_x64_executor
+        type: string
+    executor: <<parameters.executor>>
     steps:
       - checkout
       - build_kuscia_deps
@@ -83,13 +81,9 @@ workflows:
   build_deps_workflow:
     jobs:
       - build_kuscia_deps:
-          when: manual
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - image_publish:
           requires:
             - build_kuscia_deps
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/
-          when: manual

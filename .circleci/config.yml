@@ -128,6 +128,12 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v.*/
+  build-kuscia-deps-workflow:
+    when:
+      equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+    jobs:
+      - continuation/continue:
+          configuration_path: .circleci/deps-config.yml
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
