@@ -43,7 +43,7 @@ commands:
             echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
             source ~/.bashrc
             fi
-            #test ARM DOCKER
+            #test  DOCKER
             docker ps
       - run:
           name: "make build"
