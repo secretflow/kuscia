@@ -19,7 +19,7 @@ parameters:
     default: ""
   GHA_Meta:
     type: string
-    default: ""
+    default: "publish_kuscia_deps"
 
 executors:
   linux_x64_executor: # declares a reusable executor
@@ -114,7 +114,7 @@ workflows:
   build-workflow:
     when:
       not:
-        equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+        equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
     jobs:
       - linux_build_kuscia:
           matrix:
