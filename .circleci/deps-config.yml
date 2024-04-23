@@ -48,7 +48,6 @@ commands:
           name: "make build"
           command: |
             git config --global --add safe.directory ./
-            
             make deps-build
       - store_artifacts:
           path: build
