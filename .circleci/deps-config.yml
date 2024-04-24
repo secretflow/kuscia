@@ -2,17 +2,18 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
+parameters:
+  test:
+    type: string
+    default: ""
+
 executors:
   linux_x64_executor: #  declares a reusable executor
     docker:
       - image: secretflow/kuscia-ci:0.4
     resource_class: xlarge
     shell: /bin/bash --login -eo pipefail
-  linux_aarch64_executor:
-    docker:
-      - image: secretflow/scql-ci:latest
-    resource_class: arm.xlarge
-    shell: /bin/bash --login -eo pipefail
+
 
 commands:
   build_kuscia_deps:
@@ -23,6 +24,7 @@ commands:
       - run:
           name: "install go"
           command: |
+            echo "test:$test"
             ARCH=$(uname -m)
             case "$ARCH" in
             x86_64) ARCH="amd64";;
@@ -42,11 +44,7 @@ commands:
             echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
             source ~/.bashrc
             fi
-      - run:
-          name: "make build"
-          command: |
-            git config --global --add safe.directory ./
-            make deps-build
+
       - store_artifacts:
           path: build
 # Define a job to be invoked later in a workflow.
@@ -92,8 +90,3 @@ workflows:
       - image_publish:
           requires:
             - linux_build_kuscia_deps
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v.*/

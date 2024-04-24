@@ -89,7 +89,7 @@ jobs:
           name: Build image and publish
           command: |
             CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
-            ENVOY_IMAGE = secretflow/kuscia-envoy:latest
+            ENVOY_IMAGE = secretflow/kuscia-envoy:0.5.0b0
             IMAGE = "secretflow/kuscia"
             ALIYUN_IMAGE = "secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
             
@@ -134,6 +134,7 @@ workflows:
     jobs:
       - continuation/continue:
           configuration_path: .circleci/deps-config.yml
+           parameters: '{"test","123"}'
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
