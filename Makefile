@@ -2,6 +2,13 @@
 # Image URL to use all building image targets
 DATETIME = $(shell date +"%Y%m%d%H%M%S")
 KUSCIA_VERSION_TAG = $(shell git describe --tags --always)
+# Get current architecture information
+UNAME_M_OUTPUT := $(shell uname -m)
+
+# To configure the ARCH variable to either arm64 or amd64 or UNAME_M_OUTPUT
+ARCH := $(if $(filter aarch64 arm64,$(UNAME_M_OUTPUT)),arm64,$(if $(filter amd64 x86_64,$(UNAME_M_OUTPUT)),amd64,$(UNAME_M_OUTPUT)))
+
+
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}
 IMG := secretflow/kuscia:${TAG}
 
@@ -95,25 +102,32 @@ clean: # clean build and test product.
 	-rm -rf ./build/apps
 	-rm -rf ./build/framework
 	-rm -rf ./tmp-crd-code
+	-rm -rf ./build/linux
 
 ##@ Build
 
 .PHONY: build
 build: verify_error_code fmt vet ## Build kuscia binary.
 	bash hack/build.sh -t kuscia
-
+	mkdir -p build/linux/${ARCH}
+	mv build/apps build/linux/${ARCH}
 .PHONY: docs
 docs: gen_error_code_doc ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
 
-.PHONY: deps-image
-deps-image:
+.PHONY: deps-build
+deps-build:
 	bash hack/k3s/build.sh
+	mkdir -p build/linux/${ARCH}
+	mv build/k3s build/linux/${ARCH}
+
+.PHONY: deps-image
+deps-image: deps-build
 	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image
 image: export GOOS=linux
-image: export GOARCH=amd64
+image: export GOARCH=${ARCH}
 image: build ## Build docker image with the manager.
 	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 
