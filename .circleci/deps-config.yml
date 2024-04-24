@@ -2,6 +2,11 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
+parameters:
+  Test:
+    type: string
+    default: "0"
+
 executors:
   linux_x64_executor: #  declares a reusable executor
     docker:
@@ -22,7 +27,7 @@ commands:
       - run:
           name: "install go"
           command: |
-            echo "test:${test}"
+            echo "test:<< pipeline.parameters.Test >>"
             ARCH=$(uname -m)
             case "$ARCH" in
             x86_64) ARCH="amd64";;
