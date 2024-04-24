@@ -20,9 +20,7 @@ parameters:
   GHA_Meta:
     type: string
     default: "publish_kuscia_deps"
-  test:
-    type: string
-    default: ""
+
 
 executors:
   linux_x64_executor: # declares a reusable executor
