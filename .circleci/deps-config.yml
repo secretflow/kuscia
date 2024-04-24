@@ -2,11 +2,6 @@
 # See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
-parameters:
-  test:
-    type: string
-    default: ""
-
 executors:
   linux_x64_executor: #  declares a reusable executor
     docker:
@@ -24,11 +19,10 @@ commands:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 20.10.14
       - run:
           name: "install go"
           command: |
-            echo "test:$test"
+            echo "test:${test}"
             ARCH=$(uname -m)
             case "$ARCH" in
             x86_64) ARCH="amd64";;
