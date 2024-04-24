@@ -19,9 +19,6 @@ parameters:
     default: ""
   GHA_Meta:
     type: string
-    default: "publish_kuscia_deps"
-  Test:
-    type: string
     default: ""
 
 executors:
@@ -137,7 +134,6 @@ workflows:
     jobs:
       - continuation/continue:
           configuration_path: .circleci/deps-config.yml
-
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]

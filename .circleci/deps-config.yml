@@ -3,9 +3,9 @@
 version: 2.1
 
 parameters:
-  Test:
+  Deps_Tag:
     type: string
-    default: "0"
+    default: ""
 
 executors:
   linux_x64_executor: #  declares a reusable executor
@@ -27,7 +27,6 @@ commands:
       - run:
           name: "install go"
           command: |
-            echo "test:<< pipeline.parameters.Test >>"
             ARCH=$(uname -m)
             case "$ARCH" in
             x86_64) ARCH="amd64";;
@@ -77,7 +76,7 @@ jobs:
       - run:
           name: Build image and publish
           command: |
-            DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
+            DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:<< pipeline.parameters.Deps_Tag >>
              # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
             
