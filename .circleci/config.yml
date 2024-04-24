@@ -134,7 +134,7 @@ workflows:
     jobs:
       - continuation/continue:
           configuration_path: .circleci/deps-config.yml
-           parameters: '{"test","123"}'
+          parameters: '{"test","123"}'
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
