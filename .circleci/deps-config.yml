@@ -23,7 +23,6 @@ commands:
       - run:
           name: "install go"
           command: |
-
             ARCH=$(uname -m)
             case "$ARCH" in
             x86_64) ARCH="amd64";;
@@ -43,8 +42,6 @@ commands:
             echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
             source ~/.bashrc
             fi
-            #test  DOCKER
-            docker ps
       - run:
           name: "make build"
           command: |
