@@ -13,7 +13,11 @@ executors:
       - image: secretflow/kuscia-ci:0.4
     resource_class: xlarge
     shell: /bin/bash --login -eo pipefail
-
+  linux_aarch64_executor:
+    docker:
+      - image: secretflow/scql-ci:latest
+    resource_class: arm.xlarge
+    shell: /bin/bash --login -eo pipefail
 
 commands:
   build_kuscia_deps:
@@ -44,7 +48,11 @@ commands:
             echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
             source ~/.bashrc
             fi
-
+      - run:
+          name: "make build"
+          command: |
+            git config --global --add safe.directory ./
+            make deps-build
       - store_artifacts:
           path: build
 # Define a job to be invoked later in a workflow.
