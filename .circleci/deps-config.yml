@@ -82,7 +82,8 @@ jobs:
             
             docker buildx create --name kuscia_deps --platform linux/arm64,linux/amd64 --use
             
-            docker buildx build -t ${DEPS_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
+            docker buildx build -t ${DEPS_IMAGE}:${CIRCLETAG} --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
+            docker buildx build -t ${DEPS_IMAGE}:${CIRCLETAG} --platform linux/arm64 --build-arg ARCH=arm64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
            
             
 
