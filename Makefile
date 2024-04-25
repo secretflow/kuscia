@@ -119,7 +119,7 @@ docs: gen_error_code_doc ## Build docs.
 deps-build:
 	bash hack/k3s/build.sh
 	mkdir -p build/linux/${ARCH}
-	cp -rp build/apps build/linux/${ARCH}
+	cp -rp build/k3s build/linux/${ARCH}
 
 .PHONY: deps-image
 deps-image: deps-build
