@@ -123,13 +123,13 @@ deps-build:
 
 .PHONY: deps-image
 deps-image: deps-build
-	docker buildx build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --load
+	docker buildx build -t ${DEPS_IMAGE} --build-arg ARCH=${ARCH} -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --load
 
 .PHONY: image
 image: export GOOS=linux
 image: export GOARCH=${ARCH}
 image: build ## Build docker image with the manager.
-	docker buildx build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --load
+	docker buildx build -t ${IMG} --build-arg ARCH=${ARCH} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --load
 
 .PHONY: build-monitor
 build-monitor:

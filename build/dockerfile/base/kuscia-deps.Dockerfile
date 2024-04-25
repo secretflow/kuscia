@@ -3,8 +3,7 @@ ARG K3S_IMAGE=rancher/k3s:${K3S_VER}
 FROM ${K3S_IMAGE} as k3s-image
 
 FROM openanolis/anolisos:8.8
-ARG TARGETPLATFORM
-ARG TARGETARCH
+ARG ARCH
 RUN yum install -y git glibc-static wget gcc make && \
     yum clean all
 
@@ -17,7 +16,7 @@ WORKDIR /tmp
 COPY --from=k3s-image /bin/k3s /bin/containerd /bin/containerd-shim-runc-v2 /bin/runc /bin/cni /image/home/kuscia/bin/
 COPY --from=k3s-image /bin/aux /image/bin/aux
 
-COPY build/${TARGETPLATFORM}/k3s /image/home/kuscia/bin/
+COPY build/linux/${ARCH}/k3s /image/home/kuscia/bin/
 
-RUN wget "https://github.com/krallin/tini/releases/download/v0.19.0/tini-${TARGETARCH}" -O /image/home/kuscia/bin/tini; \
+RUN wget "https://github.com/krallin/tini/releases/download/v0.19.0/tini-${ARCH}" -O /image/home/kuscia/bin/tini; \
     chmod +x /image/home/kuscia/bin/tini;
