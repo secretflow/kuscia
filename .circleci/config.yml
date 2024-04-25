@@ -100,19 +100,15 @@ jobs:
             
             docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
             
-            docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64 --build-arg ARCH=arm64  -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${IMAGE}:latest --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${IMAGE}:latest --platform linux/arm64 --build-arg ARCH=arm64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-           
+            docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            
             # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
             
-            docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64 --build-arg ARCH=arm64  -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/amd64 --build-arg ARCH=amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64 --build-arg ARCH=arm64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-         
+            docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows

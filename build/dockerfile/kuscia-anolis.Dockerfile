@@ -10,10 +10,9 @@ FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
 FROM openanolis/anolisos:8.8
 
 ENV TZ=Asia/Shanghai
-ARG ARCH
-
+ARG TARGETPLATFORM
+ARG TARGETARCH
 ARG ROOT_DIR="/home/kuscia"
-
 RUN yum install -y openssl net-tools which jq logrotate && \
     yum clean all && \
     mkdir -p ${ROOT_DIR}/bin && \
@@ -36,8 +35,8 @@ RUN pushd ${ROOT_DIR}/bin && \
     ln -s cni portmap && \
     popd
 
-COPY build/linux/${ARCH}/apps/kuscia/kuscia ${ROOT_DIR}/bin
-COPY build/pause/pause-${ARCH}.tar ${ROOT_DIR}/pause/pause.tar
+COPY build/${TARGETPLATFORM}/apps/kuscia/kuscia ${ROOT_DIR}/bin
+COPY build/pause/pause-${TARGETARCH}.tar ${ROOT_DIR}/pause/pause.tar
 COPY crds/v1alpha1 ${ROOT_DIR}/crds/v1alpha1
 COPY etc ${ROOT_DIR}/etc
 COPY testdata ${ROOT_DIR}/var/storage/data
