@@ -1,4 +1,3 @@
-ARG ARCH=amd64
 ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0"
 ARG KUSCIA_ENVOY_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.5.0b0"
 ARG PROM_NODE_EXPORTER="prom/node-exporter:v1.7.0"
