@@ -119,7 +119,6 @@ docs: gen_error_code_doc ## Build docs.
 deps-build:
 	bash hack/k3s/build.sh
 	mkdir -p build/linux/${ARCH}/k3s
-
 	cp -rp build/k3s/bin build/linux/${ARCH}/k3s
 
 
@@ -142,6 +141,3 @@ integration_test: image ## Run Integration Test
 	mkdir -p run/test
 	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
 	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh ${TEST_SUITE}
-
-
-
