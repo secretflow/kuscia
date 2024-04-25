@@ -119,17 +119,17 @@ docs: gen_error_code_doc ## Build docs.
 deps-build:
 	bash hack/k3s/build.sh
 	mkdir -p build/linux/${ARCH}
-	mv build/k3s build/linux/${ARCH}
+	cp -rp build/apps build/linux/${ARCH}
 
 .PHONY: deps-image
 deps-image: deps-build
-	docker build -t ${DEPS_IMAGE} --build-arg ARCH=${ARCH} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image
 image: export GOOS=linux
 image: export GOARCH=${ARCH}
 image: build ## Build docker image with the manager.
-	docker build -t ${IMG} --build-arg ARCH=${ARCH} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
+	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 
 .PHONY: build-monitor
 build-monitor:
