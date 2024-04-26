@@ -115,9 +115,10 @@ jobs:
 workflows:
   build-workflow:
     when:
-      or:
-        - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-        - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+      not:
+        or:
+          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:
       - linux_build_kuscia:
           matrix:
