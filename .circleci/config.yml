@@ -37,6 +37,34 @@ executors:
     shell: /bin/bash --login -eo pipefail
 
 commands:
+  test:
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: "install go"
+          command: |
+            ARCH=$(uname -m)
+            case "$ARCH" in
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
+            esac
+
+            GOLANG_DIR="/usr/local"
+            GOLANG_VERSION="1.19.17"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+
+            if ! command -v go &> /dev/null; then
+            wget "$GOLANG_URL"
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
+            source ~/.bashrc
+            fi
+      - run:
+          name: Test Kuscia
+          command: make test
   build_kuscia:
     steps:
       - setup_remote_docker
@@ -51,7 +79,7 @@ commands:
             esac
 
             GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.22.2"
+            GOLANG_VERSION="1.19.17"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
@@ -71,6 +99,14 @@ commands:
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
+  unit-test:
+    parameters:
+      executor:
+        type: string
+    executor: <<parameters.executor>>
+    steps:
+      - checkout
+      - test
   linux_build_kuscia:
     parameters:
       executor:
@@ -113,11 +149,18 @@ jobs:
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
+  unit-test:
+    jobs:
+      - unit-test:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
   build-workflow:
     when:
-      or:
-        - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-        - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+      not:
+        or:
+          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:
       - linux_build_kuscia:
           matrix:
