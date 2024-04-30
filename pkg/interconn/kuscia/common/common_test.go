@@ -292,23 +292,23 @@ func TestUpdateJobStage(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "job-1",
 			Namespace: "alice",
+			Labels:    map[string]string{},
 		},
 	}
 
-	// job summary start is stop, should return false
-	kjs.Spec.Stage = kusciaapisv1alpha1.JobStartStage
+	// phase is cancelled: return false
+	kjs.Spec.Stage = kusciaapisv1alpha1.JobCancelStage
+	kj.Status.Phase = kusciaapisv1alpha1.KusciaJobCancelled
 	got := UpdateJobStage(kj, kjs)
 	assert.Equal(t, false, got)
-
-	// job and job summary stage are same, should return false
-	kjs.Spec.Stage = kusciaapisv1alpha1.JobStopStage
-	kj.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobStopStage)
+	// no version: return false
+	kjs.Spec.Stage = kusciaapisv1alpha1.JobStartStage
+	kj.Status.Phase = kusciaapisv1alpha1.KusciaJobRunning
 	got = UpdateJobStage(kj, kjs)
 	assert.Equal(t, false, got)
-
-	// job and job summary stage are same, should return false
-	kjs.Spec.Stage = kusciaapisv1alpha1.JobStopStage
-	kj.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobStartStage)
+	// job summary update stage
+	kjs.Spec.Stage = kusciaapisv1alpha1.JobStartStage
+	kjs.Labels[common.LabelJobStageVersion] = "1"
 	got = UpdateJobStage(kj, kjs)
 	assert.Equal(t, true, got)
 }

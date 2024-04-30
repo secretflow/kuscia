@@ -21,16 +21,21 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
-启动 master，默认会在当前目录下创建 ${USER}-kuscia-master/data、${USER}-kuscia-master/logs、${USER}-kuscia-master/kuscia.yaml 用来存储 master 的数据、日志和配置文件：
+生成 master 节点的配置文件：
+```bash
+# -n 参数传递的是 master 节点 ID，DomainID 需全局唯一，生产环境建议使用公司名称-部门名称-节点名称，如: antgroup-secretflow-master
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "antgroup-secretflow-master" > kuscia_master.yaml
+```
+
+启动 master，默认会在当前目录下创建 ${USER}-kuscia-master/{data、logs} 用来存储 master 的数据、日志：
 
 ```bash
-# -n 参数传递的是Master节点 ID，DomainID需全局唯一，生产环境建议使用公司名称-部门名称-节点名称，如: antgroup-secretflow-master
 # -p 参数传递的是 master 容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 # -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
-./deploy.sh master -n antgroup-secretflow-master -p 18080 -k 18082
+./kuscia.sh start -c kuscia_master.yaml -p 18080 -k 18081
 ```
 
 <span style="color:red;">注意：<br>
@@ -124,18 +129,24 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+```
+
+生成 alice 节点的配置文件：
+```bash
+# --domain 参数传递的是节点 ID
+# --lite-deploy-token 参数传递的是节点部署的 Token
+# --master-endpoint 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是 1.1.1.1，端口是18080
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "abcdefg" > lite_alice.yaml
 ```
 
 启动 alice，默认会在当前目录下创建 ${USER}-kuscia-lite-alice/data 目录用来存放 alice 的数据：
 ```bash
-# -n 参数传递的是节点 ID
-# -t 参数传递的是节点部署的 Token
-# -m 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是1.1.1.1，端口是18080
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
-./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 28080
+# -k 参数传递的是 lite 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081
 ```
-> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g 参数指定下端口号（例如：./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 28080 -k 2008 -g 2009），防止出现端口冲突
+> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081 -g 28082 -q 28083），防止出现端口冲突。
 
 #### 部署 lite 节点 bob
 
@@ -169,18 +180,24 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+```
+
+生成 bob 节点的配置文件：
+```bash
+# --domain 参数传递的是节点 ID
+# --lite-deploy-token 参数传递的是节点部署的 Token
+# --master-endpoint 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是 1.1.1.1，端口是18080
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "hijklmn" > lite_bob.yaml
 ```
 
 启动 bob，默认会在当前目录下创建 ${USER}-kuscia-lite-bob/data 目录用来存放 bob 的数据：
 ```bash
-# -n 参数传递的是节点 ID
-# -t 参数传递的是节点部署的 Token
-# -m 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是1.1.1.1，端口是18080
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
-./deploy.sh lite -n bob -t hijklmn -m https://1.1.1.1:18080 -p 38080
+# -k 参数传递的是 lite 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081
 ```
-> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g 参数指定下端口号（例如：./deploy.sh lite -n alice -t abcdefg -m https://1.1.1.1:18080 -p 38080 -k 2010 -g 2011），防止出现端口冲突
+> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081 -g 38082 -q 38083），防止出现端口冲突。
 
 ### 配置授权
 

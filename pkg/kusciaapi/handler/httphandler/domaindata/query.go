@@ -36,17 +36,6 @@ func NewQueryDomainDataHandler(domainDataService service.IDomainDataService) api
 }
 
 func (h *queryDomainDataHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	req, _ := request.(*kusciaapi.QueryDomainDataRequest)
-	if req.Data == nil {
-		errs.AppendErr(errors.New("request data should not be nil"))
-		return
-	}
-	if req.Data.DomainId == "" {
-		errs.AppendErr(errors.New("request domainID should not be empty"))
-	}
-	if req.Data.DomaindataId == "" {
-		errs.AppendErr(errors.New("request domainDataID should not be empty"))
-	}
 }
 
 func (h *queryDomainDataHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {

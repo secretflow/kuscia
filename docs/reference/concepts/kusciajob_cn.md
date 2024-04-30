@@ -14,6 +14,23 @@
 - **模型训练** 将参与方的训练集作为输入，训练出算法模型。
 - **预测** 将算法模型和测试集作为输入，计算出预测结果。
 
+{#kuscia-state}
+## KusciaJob 状态说明
+
+下图为 KusciaJob 的状态流转图，其中红色字体表示 KusciaAPI 接口操作。
+![KusciaJobState](../../imgs/kuscia_job_state.png)
+
+KusciaJob 在其生命周期中会处于以下几种状态：
+- Initialized: 此时 Job 刚被发起方在发起方侧创建完成，但 Job 信息还未同步至其他参与方。若 Job 已同步至其他所有参与方则 Job 进入 AwaitingApproval 状态。
+- AwaitingApproval: 进入到 AwaitingApproval 状态的 Job 需要各参与方调用 KusciaAPI 的[ ApproveJob 接口](../apis/kusciajob_cn.md#approval-job)进行审核，若参与方设置了自动审核([参见配置文档enableWorkloadApprove字段](../../deployment/kuscia_config_cn.md#configuration-detail))则无需调用 ApproveJob 接口进行审核。待 Job 的所有参与方审核通过则 Job 进入 Pending 状态。若某一参与方审核拒绝则 Job 进入到 ApprovalReject 状态。
+- Pending: 此时 Job 已被所有参与方审批通过，等待 Job 的发起方发起 Start 命令，待所有参与方接收到 Start 信令后，Job 进入到 Running状态（注：仅 BFIA 互联互通协议时发起方会向各参与方显式的发送 Start 信令，在 Kusica 内部协议中无需显式发送 Start 信令，Job 会自动从 Pending 状态进入到 Running 状态）。 
+- Running: 此时 Job 已进入到调度状态，注：Job 是 Running 状态时，'并不意味' 着 Job 中至少有一个 Task 是 Running 状态，因 Job 刚进入 Running 状态时，Task 并未创建完成。 当 Job 的所有 Task 均执行成功时，Job 进入 Succeeded 状态。 当 Job 中的 [关键 Task ](#task-classification) 执行失败，则 Job 进入到 Failed 状态。
+- Suspended: Running 状态的 Job 被某一参与方执行了[ Suspend 操作](../apis/kusciajob_cn.md#suspend-job)，则会进入此状态，执行 Suspend 操作后，Job 中处于 Running 状态的 Task 会被终止掉，Task进入到Failed状态。 Suspended 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
+- Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。 Succeeded 状态是一种终态，终态则不会再流转到其他状态。
+- Failed: 所有 Task 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。 Failed 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
+- ApprovalReject: Job 被某一参与方审批为拒绝执行。 ApprovalReject 状态是一种终态，终态则不会再流转到其他状态。
+- Cancelled: Job 被某一方取消，被取消的 Job 不可被再次执行。 Cancelled 状态是一种终态，终态则不会再流转到其他状态。
+
 ## 用例
 
 以下是一些 KusciaJob 的典型用例:
@@ -267,18 +284,6 @@ kubectl delete kj {job-name} -n cross-domain
 
 来取消一个正在执行的 KusciaJob 或者删除一个已经执行完成的 KusciaJob。这会删除这个 KusciaJob 和这个 KusciaJob 创建的 KusciaTask。
 
-## KusciaJob 的状态
-
-KusciaJob 在其生命周期中会处于以下七种状态：
-
-- Pending: KusciaJob 刚刚被提交，还未进行过调度。
-- Running: 至少有一个 KusciaTask 处于 Running 状态中。
-- Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。
-- Failed: 所有 Task 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。
-- AwaitingApproval: 等待参与方审批任务。
-- ApprovalReject: 任务被某一参与方审批为拒绝执行。
-- Cancelled: 任务被某一方取消，被取消的任务不可被再次执行。
-
 ## 参考
 
 ### 完整定义
@@ -350,14 +355,7 @@ KusciaJob `spec`的子字段详细介绍如下：
 
 KusciaJob `status`的子字段详细介绍如下：
 
-- `phase`：表示 KusciaJob 当前所处的阶段。当前包括以下几种 Phase：
-  - `Pending`：表示 KusciaJob 刚刚被提交，还未进行过调度。
-  - `Running`：表示 至少有一个 KusciaTask 处于 Running 状态中。
-  - `Succeeded`：表示 所有 KusciaTask 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。
-  - `Failed`：所有 KusciaTask 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。
-  - `AwaitingApproval`：等待参与方审批任务。
-  - `ApprovalReject`：任务被某一参与方审批为拒绝执行。
-  - `Cancelled`：任务被某一方取消，被取消的任务不可被再次执行。
+- `phase`：表示 KusciaJob 当前所处的阶段。[状态详见](#kuscia-state)。
 - `taskStatus`：表示 KusciaJob 已经启动的 KusciaTask 状态信息， key 为 KusciaTask 的名称，value 为 KusciaTask 的状态。
 - `startTime`：表示 KusciaJob 第一次被 Kuscia 控制器处理的时间戳。
 - `completionTime`：表示 KusciaJob 运行完成的时间戳。

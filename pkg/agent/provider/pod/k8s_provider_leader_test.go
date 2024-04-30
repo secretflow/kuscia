@@ -34,6 +34,8 @@ import (
 )
 
 func TestK8sProvider_cleanupZombieResources(t *testing.T) {
+	resourceMinLifeCycle = 0
+
 	node1 := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "node1",
@@ -58,6 +60,15 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 			},
 		},
 	}
+	testSecret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "default",
+		},
+		Data: map[string][]byte{
+			"key": []byte("123456"),
+		},
+	}
 
 	rootDir := t.TempDir()
 	resolveConfig := filepath.Join(rootDir, "resolve.conf")
@@ -69,32 +80,32 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 			ResolverConfig: resolveConfig,
 		},
 	}
-	rm := resourcetest.FakeResourceManager("test-namespace", node1, node2)
+	rm := resourcetest.FakeResourceManager("default", node1, node2, testSecret)
 
 	kp := createTestK8sProvider(t, cfg, rm)
 	kp.namespace = "default"
 
 	kp.nodeName = "node1"
-	pod1 := createTestPod("001", "default", "pod1")
+	pod1 := createTestPod("001", "default", "pod1", "test-secret")
 	assert.NoError(t, kp.SyncPod(context.Background(), pod1, nil, nil))
 
 	kp.nodeName = "node2"
-	pod2 := createTestPod("002", "default", "pod2")
+	pod2 := createTestPod("002", "default", "pod2", "test-secret")
 	assert.NoError(t, kp.SyncPod(context.Background(), pod2, nil, nil))
 
 	kp.nodeName = "node3"
-	pod3 := createTestPod("003", "default", "pod3")
+	pod3 := createTestPod("003", "default", "pod3", "test-secret")
 	assert.NoError(t, kp.SyncPod(context.Background(), pod3, nil, nil))
 
 	kp.nodeName = "node4"
-	pod4 := createTestPod("004", "default", "pod4")
+	pod4 := createTestPod("004", "default", "pod4", "test-secret")
 	assert.NoError(t, kp.SyncPod(context.Background(), pod4, nil, nil))
 	assert.NoError(t, kp.KillPod(context.Background(), pod4, pkgcontainer.Pod{}, nil))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	kp.kubeInformerFactory.Start(ctx.Done())
 
-	if !cache.WaitForCacheSync(ctx.Done(), kp.podsSynced, kp.configMapSynced) {
+	if !cache.WaitForCacheSync(ctx.Done(), kp.podsSynced, kp.configMapSynced, kp.secretSynced) {
 		t.Fatal("timeout waiting for caches to sync")
 	}
 
@@ -104,16 +115,17 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 	assertCachedBackendResource(t, kp, "pod4", false, true)
 
 	assert.NoError(t, kp.cleanupZombieResources(ctx))
+	assert.NoError(t, kp.cleanupSubResources(ctx))
 
-	assertBackendResource(t, kp, "pod1", true)
-	assertBackendResource(t, kp, "pod2", false)
-	assertBackendResource(t, kp, "pod3", false)
-	assertBackendResource(t, kp, "pod3", false)
+	assertBackendResource(t, kp, "pod1", true, true)
+	assertBackendResource(t, kp, "pod2", false, false)
+	assertBackendResource(t, kp, "pod3", false, false)
+	assertBackendResource(t, kp, "pod3", false, false)
 
 	cancel()
 }
 
-func createTestPod(uid types.UID, namespace, name string) *v1.Pod {
+func createTestPod(uid types.UID, namespace, name, secretName string) *v1.Pod {
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			UID:       uid,
@@ -126,6 +138,22 @@ func createTestPod(uid types.UID, namespace, name string) *v1.Pod {
 					Name:    "ctr01",
 					Command: []string{"sleep 60"},
 					Image:   "aa/bb:001",
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "test-v",
+							MountPath: "/etc/key",
+						},
+					},
+				},
+			},
+			Volumes: []v1.Volume{
+				{
+					Name: "test-v",
+					VolumeSource: v1.VolumeSource{
+						Secret: &v1.SecretVolumeSource{
+							SecretName: secretName,
+						},
+					},
 				},
 			},
 		},
@@ -133,15 +161,25 @@ func createTestPod(uid types.UID, namespace, name string) *v1.Pod {
 	return pod
 }
 
-func assertCachedBackendResource(t *testing.T, kp *K8sProvider, podName string, podExist, cmExist bool) {
+func assertCachedBackendResource(t *testing.T, kp *K8sProvider, podName string, podExist, subResExist bool) {
 	_, err := kp.podLister.Get(podName)
 	assert.Equal(t, podExist, err == nil)
 
 	_, err = kp.configMapLister.Get(fmt.Sprintf("%s-resolv-config", podName))
-	assert.Equal(t, cmExist, err == nil)
+	assert.Equal(t, subResExist, err == nil)
+
+	secret, err := kp.secretLister.Get(fmt.Sprintf("%s-test-secret", podName))
+	assert.Equal(t, subResExist, err == nil)
+	t.Logf("%#v", secret)
 }
 
-func assertBackendResource(t *testing.T, kp *K8sProvider, podName string, podExist bool) {
+func assertBackendResource(t *testing.T, kp *K8sProvider, podName string, podExist, subResExist bool) {
 	_, err := kp.bkClient.CoreV1().Pods(kp.bkNamespace).Get(context.Background(), podName, metav1.GetOptions{})
 	assert.Equal(t, podExist, err == nil)
+
+	_, err = kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace).Get(context.Background(), fmt.Sprintf("%s-resolv-config", podName), metav1.GetOptions{})
+	assert.Equal(t, subResExist, err == nil)
+
+	_, err = kp.bkClient.CoreV1().Secrets(kp.bkNamespace).Get(context.Background(), fmt.Sprintf("%s-test-secret", podName), metav1.GetOptions{})
+	assert.Equal(t, subResExist, err == nil)
 }

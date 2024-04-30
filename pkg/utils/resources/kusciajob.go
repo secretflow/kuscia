@@ -20,6 +20,7 @@ import (
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
@@ -118,7 +119,7 @@ func UpdateKusciaJobStatus(kusciaClient kusciaclientset.Interface, rawKj, curKj 
 		return nil
 	}
 	nlog.Infof("Start updating kuscia job %q status", rawKj.Name)
-	if _, err = kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKj, metav1.UpdateOptions{}); err != nil {
+	if _, err = kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKj, metav1.UpdateOptions{}); err != nil && !k8serrors.IsConflict(err) {
 		return err
 	}
 	nlog.Infof("Finish updating kuscia job %q status", rawKj.Name)

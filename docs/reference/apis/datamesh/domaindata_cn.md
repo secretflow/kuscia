@@ -10,7 +10,6 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 |--------------------------------------------------|-----------------------------|------------------------------|----------|
 | [CreateDomainData](#create-domain-data)          | CreateDomainDataRequest     | CreateDomainDataResponse     | 创建数据对象   |
 | [UpdateDomainData](#update-domain-data)          | UpdateDomainDataRequest     | UpdateDomainDataResponse     | 更新数据对象   |
-| [DeleteDomainData](#delete-domain-data)          | DeleteDomainDataRequest     | DeleteDomainDataResponse     | 删除数据对象   |
 | [QueryDomainData](#query-domain-data)            | QueryDomainDataRequest      | QueryDomainDataResponse      | 查询数据对象   |
 
 ## 接口详情
@@ -49,6 +48,52 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 | data               | CreateDomainDataResponseData   |    |        |
 | data.domaindata_id | string                         | 必填 | 数据对象ID |
 
+#### 请求示例
+发起请求：
+```bash
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
+-X POST -H 'content-type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--cert ${CTR_CERTS_ROOT}/ca.crt \
+--key ${CTR_CERTS_ROOT}/ca.key \
+-d '{
+ "domain_id": "alice",
+ "domaindata_id": "alice-001",
+ "datasource_id": "demo-oss-datasource",
+ "name": "alice001",
+ "type": "table",
+ "relative_uri": "alice.csv",
+ "columns": [
+   {
+     "name": "id1",
+     "type": "str",
+     "comment": ""
+   },
+   {
+     "name": "marital_single",
+     "type": "float",
+     "comment": ""
+   }
+ ]
+}' 
+```
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domaindata_id": "alice-001"
+  }
+}
+```
+
 {#update-domain-data}
 
 ### 更新数据对象
@@ -77,27 +122,48 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 |--------|--------------------------------|----|------|
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 
-{#delete-domain-data}
+#### 请求示例
+发起请求：
+```bash
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
+-X POST -H 'content-type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--cert ${CTR_CERTS_ROOT}/ca.crt \
+--key ${CTR_CERTS_ROOT}/ca.key \
+ -d '{
+  "domain_id": "alice",
+  "domaindata_id": "alice-001",
+  "datasource_id": "demo-oss-datasource",
+  "name": "alice0010",
+  "type": "table",
+  "relative_uri": "alice.csv",
+  "columns": [
+    {
+      "name": "id1",
+      "type": "str",
+      "comment": ""
+    },
+    {
+      "name": "marital_single",
+      "type": "float",
+      "comment": ""
+    }
+  ]
+}'
+```
+请求响应成功结果：
 
-### 删除数据对象
-
-#### HTTP路径
-/api/v1/datamesh/domaindata/delete
-
-#### 请求（DeleteDomainDataRequest）
-
-| 字段            | 类型                                           | 选填 | 描述      |
-|---------------|----------------------------------------------|----|---------|
-| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| domaindata_id | string                                       | 必填 | 数据对象ID  |
-
-#### 响应（DeleteDomainDataResponse）
-
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
-
-{#query-domain-data}
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  }
+}
+```
 
 ### 查询数据对象
 
@@ -117,6 +183,58 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 |--------|-----------------------------------|----|------|
 | status | [Status](summary_cn.md#status)    | 必填 | 状态信息 |
 | data   | [DomainData](#domain-data-entity) |    |      |
+
+#### 请求示例
+发起请求：
+```bash
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
+-X POST -H 'content-type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--cert ${CTR_CERTS_ROOT}/ca.crt \
+--key ${CTR_CERTS_ROOT}/ca.key \
+ -d '{
+  "domaindata_id": "alice-001"
+}'
+```
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "domaindata_id": "alice-001",
+    "name": "alice0010",
+    "type": "table",
+    "relative_uri": "alice.csv",
+    "datasource_id": "demo-oss-datasource",
+    "attributes": {},
+    "partition": null,
+    "columns": [
+      {
+        "name": "id1",
+        "type": "str",
+        "comment": "",
+        "not_nullable": false
+      },
+      {
+        "name": "marital_single",
+        "type": "float",
+        "comment": "",
+        "not_nullable": false
+      }
+    ],
+    "vendor": "manual",
+    "file_format": "UNKNOWN",
+    "author": "alice"
+  }
+}
+```
 
 ## 公共
 

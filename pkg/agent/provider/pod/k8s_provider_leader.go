@@ -153,6 +153,32 @@ func (kp *K8sProvider) deleteZombiePod(ctx context.Context, bkPod *v1.Pod) error
 	return nil
 }
 
+func (kp *K8sProvider) cleanupSubResources(ctx context.Context) error {
+	configMaps, err := kp.configMapLister.List(labels.SelectorFromSet(labels.Set{common.LabelNodeNamespace: kp.namespace}))
+	if err != nil {
+		return fmt.Errorf("failed to list configmap, detail-> %v", err)
+	}
+
+	secrets, err := kp.secretLister.List(labels.SelectorFromSet(labels.Set{common.LabelNodeNamespace: kp.namespace}))
+	if err != nil {
+		return fmt.Errorf("failed to list secret, detail-> %v", err)
+	}
+
+	for _, configMap := range configMaps {
+		if err := cleanupSubResource[*v1.ConfigMap](ctx, configMap, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace)); err != nil {
+			nlog.Warnf("Failed to cleanup configmap %q: %v", configMap.Name, err)
+		}
+	}
+
+	for _, secret := range secrets {
+		if err := cleanupSubResource[*v1.Secret](ctx, secret, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().Secrets(kp.bkNamespace)); err != nil {
+			nlog.Warnf("Failed to cleanup secret %q: %v", secret.Name, err)
+		}
+	}
+
+	return nil
+}
+
 // onNewLeader is executed when leader is changed.
 func (kp *K8sProvider) onNewLeader(identity string) {
 	nlog.Infof("New leader has been elected: %s", identity)
@@ -172,6 +198,10 @@ func (kp *K8sProvider) onStartedLeading(ctx context.Context) {
 		case <-ticker.C:
 			if err := kp.cleanupZombieResources(context.Background()); err != nil {
 				nlog.Errorf("Failed to cleanup zombie pods: %v", err)
+			}
+
+			if err := kp.cleanupSubResources(context.Background()); err != nil {
+				nlog.Errorf("Failed to cleanup sub resource: %v", err)
 			}
 		}
 	}

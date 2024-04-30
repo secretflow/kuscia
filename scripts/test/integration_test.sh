@@ -130,7 +130,7 @@ fi
 installRequires
 copyTestScripts
 
-docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
+docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 
 if [ "${SELECTED_TEST_SUITE}" == "all" ]; then
   for suite in ${TEST_SUITES}; do

@@ -598,15 +598,17 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, routeKey string) ([]*Token, error) {
 	var tokens []*Token
 	var err error
+	var is3rdParty bool
 
-	if (dr.Spec.Transit != nil && dr.Spec.BodyEncryption == nil) ||
-		(dr.Spec.Transit == nil && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationMTLS) ||
-		(dr.Spec.Transit == nil && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationNone) {
+	is3rdParty = utils.IsThirdPartyTransit(dr.Spec.Transit)
+	if (is3rdParty && dr.Spec.BodyEncryption == nil) ||
+		(!is3rdParty && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationMTLS) ||
+		(!is3rdParty && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationNone) {
 		tokens = append(tokens, &Token{Token: NoopToken})
 		return tokens, err
 	}
 
-	if (dr.Spec.Transit == nil && dr.Spec.AuthenticationType != kusciaapisv1alpha1.DomainAuthenticationToken) ||
+	if (!is3rdParty && dr.Spec.AuthenticationType != kusciaapisv1alpha1.DomainAuthenticationToken) ||
 		dr.Spec.TokenConfig == nil {
 		return tokens, fmt.Errorf("invalid DomainRoute: %v", dr.Spec)
 	}

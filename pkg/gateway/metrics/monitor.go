@@ -30,6 +30,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/controller"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -119,7 +120,7 @@ func (c *ClusterMetricsCollector) collect() {
 
 	if drs, err := c.domainRouteLister.List(labels.Everything()); err == nil {
 		for _, dr := range drs {
-			if dr.Spec.Source != dr.Namespace || dr.Spec.Transit != nil {
+			if dr.Spec.Source != dr.Namespace || utils.IsThirdPartyTransit(dr.Spec.Transit) {
 				continue
 			}
 

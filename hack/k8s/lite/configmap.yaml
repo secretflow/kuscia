@@ -33,7 +33,7 @@ data:
     runk:
       # 任务调度到指定的机构 k8s namespace 下
       namespace: lite-alice
-      # 机构 k8s 集群的 pod dns 配置, 用于解析节点的应用域名, dns 的地址为 pod service 地址, 此处以 "1.1.1.1" 为例
+      # 机构 k8s 集群的 pod dns 配置, 用于解析节点的应用域名, runk 拉起 pod 所使用的 dns 地址，应配置为 kuscia-lite service 的 clusterIP, 此处以 "1.1.1.1" 为例
       dnsServers:
       # - kuscia-dns-lb-server
         - 1.1.1.1
