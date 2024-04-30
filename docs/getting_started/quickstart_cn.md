@@ -50,6 +50,7 @@ macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文
 此外，Kuscia 当前不支持 M1/M2 芯片的 Mac。
 
 ## 部署体验
+> 本文旨在帮助您快速体验 Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
 
 ### 前置操作
 
@@ -66,36 +67,21 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/start_standalone.sh > start_standalone.sh && chmod u+x start_standalone.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 ### 中心化组网模式
 
 ```bash
 # 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master 和两个 Lite 节点 alice 和 bob。
-./start_standalone.sh center
-
-# 登入 master 容器。
-docker exec -it ${USER}-kuscia-master bash
+./kuscia.sh center
 
 # 创建并启动作业（两方 PSI 任务）。
-scripts/user/create_example_job.sh
+docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 
 # 查看作业状态。
-kubectl get kj -n cross-domain
+docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ```
-
-:::{tip}
-
-如果希望体验隐语白屏功能([隐语白屏使用手册官方文档](https://www.secretflow.org.cn/docs/quickstart/mvp-platform))，请使用如下命令完成部署。
-
-```bash
-# 启动集群，会拉起 4 个 docker 容器，包括一个平台页面容器、一个控制平面 master 、两个 Lite 节点 alice 和 bob。
-./start_standalone.sh center -u web
-
-```
-
-:::
 
 {#p2p-network-mode}
 
@@ -103,16 +89,39 @@ kubectl get kj -n cross-domain
 
 ```bash
 # 启动集群，会拉起两个 docker 容器，分别表示 Autonomy 节点 alice 和 bob。
-./start_standalone.sh p2p
+./kuscia.sh p2p
 
-# 登入 alice 节点容器（或 bob 节点容器）。
-docker exec -it ${USER}-kuscia-autonomy-alice bash
-
-# 创建并启动作业（两方 PSI 任务）。
-scripts/user/create_example_job.sh
+# 登入 alice 节点容器（或 bob 节点容器）创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 
 # 查看作业状态。
-kubectl get kj -n cross-domain
+docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
+```
+
+### 中心化 x 中心化组网模式
+
+```bash
+# 启动集群，会拉起 4 个 docker 容器，包括两个控制平面 master-alice、master-bob 和两个 Lite 节点 alice、bob。
+./kuscia.sh cxc
+
+# 登入 master-alice 容器创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-master-alice scripts/user/create_example_job.sh
+
+# 查看作业状态。
+docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
+```
+
+### 中心化 x 点对点组网模式
+
+```bash
+# 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master-alice 和一个 Lite 节点 alice、一个 Autonomy 节点 bob。
+./kuscia.sh cxp
+
+# 登入 master-alice 容器创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-master-alice scripts/user/create_example_job.sh
+
+# 查看作业状态。
+docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
 ```
 
 ## 作业状态

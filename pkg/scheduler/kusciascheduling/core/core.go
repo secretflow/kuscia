@@ -18,6 +18,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -61,6 +62,8 @@ const (
 	Success              Status = "Success"
 	Wait                 Status = "Wait"
 )
+
+var errWaitingForTaskResource = errors.New("waiting for task resource")
 
 // Manager defines the interfaces for TaskResource management.
 type Manager interface {
@@ -145,7 +148,7 @@ func (trMgr *TaskResourceManager) PreFilter(ctx context.Context, pod *corev1.Pod
 	}
 
 	if tr == nil {
-		return fmt.Errorf("failed to get task resource %v/%v for pod", pod.Namespace, trName)
+		return errWaitingForTaskResource
 	}
 
 	if tr.Status.Phase == "" || tr.Status.Phase == kusciaapisv1alpha1.TaskResourcePhasePending {

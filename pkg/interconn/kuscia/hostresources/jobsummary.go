@@ -92,7 +92,7 @@ func (c *hostResourcesController) updateMemberJobByJobSummary(ctx context.Contex
 
 	selfDomainIDs := ikcommon.GetSelfClusterPartyDomainIDs(originalJob)
 	if len(selfDomainIDs) == 0 {
-		nlog.Warnf("Failed to get self party domain ids from job %v, skip processing it", ikcommon.GetObjectNamespaceName(originalJob))
+		nlog.Infof("Party domain ids from job %v not found, skip processing it", ikcommon.GetObjectNamespaceName(originalJob))
 		return nil
 	}
 
@@ -104,7 +104,11 @@ func (c *hostResourcesController) updateMemberJobByJobSummary(ctx context.Contex
 
 	needUpdate := false
 	if ikcommon.UpdateJobStage(job, jobSummary) {
-		needUpdate = true
+		job.Status.LastReconcileTime = ikcommon.GetCurrentTime()
+		if _, err = c.memberKusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).Update(ctx, job, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	if updateJobApproveStatus(job, jobSummary, domainIDMap) {

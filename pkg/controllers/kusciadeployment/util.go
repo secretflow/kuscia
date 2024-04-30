@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"strings"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -156,8 +157,8 @@ func (c *Controller) buildPartyKitInfo(kd *kusciav1alpha1.KusciaDeployment, part
 		dkInfo:                dkInfo,
 	}
 
-	if baseDeployTemplate.NetworkPolicy != nil {
-		kit.portAccessDomains = generatePortAccessDomains(kd.Spec.Parties, baseDeployTemplate.NetworkPolicy)
+	if len(kd.Spec.Parties) > 1 {
+		kit.portAccessDomains = generatePortAccessDomains(kd.Spec.Parties, baseDeployTemplate.NetworkPolicy, ports)
 	}
 
 	return kit, nil
@@ -343,42 +344,59 @@ func generatePortServices(deploymentName string, servicedPorts []string) PortSer
 	return portService
 }
 
-func generatePortAccessDomains(parties []kusciav1alpha1.KusciaDeploymentParty, networkPolicy *kusciav1alpha1.NetworkPolicy) map[string]string {
-	roleDomains := map[string][]string{}
-	for _, party := range parties {
-		if domains, ok := roleDomains[party.Role]; ok {
-			roleDomains[party.Role] = append(domains, party.DomainID)
-		} else {
-			roleDomains[party.Role] = []string{party.DomainID}
-		}
-	}
-
-	portAccessRoles := map[string][]string{}
-	for _, item := range networkPolicy.Ingresses {
-		for _, port := range item.Ports {
-			if domains, ok := portAccessRoles[port.Port]; ok {
-				portAccessRoles[port.Port] = append(domains, item.From.Roles...)
-			} else {
-				portAccessRoles[port.Port] = item.From.Roles
-			}
-		}
-	}
-
+func generatePortAccessDomains(parties []kusciav1alpha1.KusciaDeploymentParty, networkPolicy *kusciav1alpha1.NetworkPolicy, ports NamedPorts) map[string]string {
 	portAccessDomains := map[string]string{}
-	for port, roles := range portAccessRoles {
+	if networkPolicy == nil {
 		domainMap := map[string]struct{}{}
-		for _, role := range roles {
-			for _, domain := range roleDomains[role] {
-				domainMap[domain] = struct{}{}
-			}
+		for _, party := range parties {
+			domainMap[party.DomainID] = struct{}{}
 		}
+
 		domainSlice := make([]string, 0, len(domainMap))
 		for domain := range domainMap {
 			domainSlice = append(domainSlice, domain)
 		}
-		portAccessDomains[port] = strings.Join(domainSlice, ",")
-	}
 
+		for _, port := range ports {
+			if port.Scope == kusciav1alpha1.ScopeCluster {
+				portAccessDomains[port.Name] = strings.Join(domainSlice, ",")
+			}
+		}
+	} else {
+		roleDomains := map[string][]string{}
+		for _, party := range parties {
+			if domains, ok := roleDomains[party.Role]; ok {
+				roleDomains[party.Role] = append(domains, party.DomainID)
+			} else {
+				roleDomains[party.Role] = []string{party.DomainID}
+			}
+		}
+
+		portAccessRoles := map[string][]string{}
+		for _, item := range networkPolicy.Ingresses {
+			for _, port := range item.Ports {
+				if domains, ok := portAccessRoles[port.Port]; ok {
+					portAccessRoles[port.Port] = append(domains, item.From.Roles...)
+				} else {
+					portAccessRoles[port.Port] = item.From.Roles
+				}
+			}
+		}
+
+		for port, roles := range portAccessRoles {
+			domainMap := map[string]struct{}{}
+			for _, role := range roles {
+				for _, domain := range roleDomains[role] {
+					domainMap[domain] = struct{}{}
+				}
+			}
+			domainSlice := make([]string, 0, len(domainMap))
+			for domain := range domainMap {
+				domainSlice = append(domainSlice, domain)
+			}
+			portAccessDomains[port] = strings.Join(domainSlice, ",")
+		}
+	}
 	return portAccessDomains
 }
 
@@ -425,8 +443,9 @@ func (c *Controller) updateKusciaDeploymentStatus(ctx context.Context, kd *kusci
 		kd.Status.TotalParties = len(kd.Spec.Parties)
 	}
 
-	if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).UpdateStatus(ctx, kd, metav1.UpdateOptions{}); err != nil {
-		return fmt.Errorf("error updating kuscia deployment %v status, %v", kd.Name, err)
+	_, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).UpdateStatus(ctx, kd, metav1.UpdateOptions{})
+	if err != nil && !k8serrors.IsConflict(err) {
+		return fmt.Errorf("failed to updating kuscia deployment %v status, %v", kd.Name, err)
 	}
 
 	return nil

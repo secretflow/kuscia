@@ -2,13 +2,20 @@
 # Image URL to use all building image targets
 DATETIME = $(shell date +"%Y%m%d%H%M%S")
 KUSCIA_VERSION_TAG = $(shell git describe --tags --always)
+# Get current architecture information
+UNAME_M_OUTPUT := $(shell uname -m)
+
+# To configure the ARCH variable to either arm64 or amd64 or UNAME_M_OUTPUT
+ARCH := $(if $(filter aarch64 arm64,$(UNAME_M_OUTPUT)),arm64,$(if $(filter amd64 x86_64,$(UNAME_M_OUTPUT)),amd64,$(UNAME_M_OUTPUT)))
+
+
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}
 IMG := secretflow/kuscia:${TAG}
 
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.4.0b0
+ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.5.0b0
 DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -95,25 +102,33 @@ clean: # clean build and test product.
 	-rm -rf ./build/apps
 	-rm -rf ./build/framework
 	-rm -rf ./tmp-crd-code
+	-rm -rf ./build/linux
 
 ##@ Build
 
 .PHONY: build
 build: verify_error_code fmt vet ## Build kuscia binary.
 	bash hack/build.sh -t kuscia
-
+	mkdir -p build/linux/${ARCH}
+	cp -rp build/apps build/linux/${ARCH}
 .PHONY: docs
 docs: gen_error_code_doc ## Build docs.
 	cd docs && pip install -r requirements.txt && make html
 
-.PHONY: deps-image
-deps-image:
+.PHONY: deps-build
+deps-build:
 	bash hack/k3s/build.sh
+	mkdir -p build/linux/${ARCH}/k3s
+	cp -rp build/k3s/bin build/linux/${ARCH}/k3s
+
+
+.PHONY: deps-image
+deps-image: deps-build
 	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
 
 .PHONY: image
 image: export GOOS=linux
-image: export GOARCH=amd64
+image: export GOARCH=${ARCH}
 image: build ## Build docker image with the manager.
 	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 

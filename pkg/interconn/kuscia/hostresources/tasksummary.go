@@ -231,16 +231,20 @@ func (c *hostResourcesController) updateMemberTaskResource(ctx context.Context, 
 		}
 
 		for _, status := range statuses {
+			if status.MemberTaskResourceName == "" {
+				continue
+			}
+
 			originalTr, err := c.memberTaskResourceLister.TaskResources(domainID).Get(status.MemberTaskResourceName)
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
 					originalTr, err = c.memberKusciaClient.KusciaV1alpha1().TaskResources(domainID).Get(ctx, status.MemberTaskResourceName, metav1.GetOptions{})
 				}
 				if err != nil {
-					nlog.Errorf("Failed to get taskResource %v, %v", fmt.Sprintf("%v/%v", domainID, status.MemberTaskResourceName), err)
 					if k8serrors.IsNotFound(err) {
 						return nil
 					}
+					nlog.Errorf("Failed to get taskResource %v, %v", fmt.Sprintf("%v/%v", domainID, status.MemberTaskResourceName), err)
 					return err
 				}
 			}
@@ -274,7 +278,6 @@ func (c *hostResourcesController) updateMemberTaskResource(ctx context.Context, 
 				}
 			}
 		}
-
 	}
 
 	return nil

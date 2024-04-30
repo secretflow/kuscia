@@ -16,6 +16,7 @@ package resources
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -109,18 +110,24 @@ func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.S
 	return retry.OnError(retry.DefaultBackoff, net.IsConnectionRefused, updateFn)
 }
 
+// GenerateServiceName is used to generate service name.
+// Service name generation rules：
+// 1. If the first character is a number, add svc- as a prefix;
+// 2. If the length of the name exceeds 63 characters, it will be truncated to 63 characters.
+// 3. The final name must comply with DNS subdomain naming rules.
 func GenerateServiceName(prefix, portName string) string {
+	prefix = strings.Trim(prefix, "-")
+	portName = strings.Trim(portName, "-")
 	name := fmt.Sprintf("%s-%s", prefix, portName)
-	if len(name) > 62 {
-		value, err := HashString(name)
-		if err != nil {
-			value = strings.Trim(name[:40], "-")
-		}
+	if name[0] >= '0' && name[0] <= '9' {
+		name = "svc-" + name
+	}
 
-		name = portName + "-" + value
-		if len(name) > 62 {
-			name = strings.Trim(portName[:10], "-") + "-" + value
-		}
+	if len(name) > 63 {
+		hash := sha256.Sum256([]byte(name))
+		hashStr := fmt.Sprintf("%x", hash)
+		maxPrefixLen := 63 - 16 - len(portName) - 6
+		name = fmt.Sprintf("svc-%s-%s-%s", prefix[:maxPrefixLen], portName, hashStr[:16])
 	}
 	return name
 }

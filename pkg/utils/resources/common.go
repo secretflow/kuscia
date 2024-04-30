@@ -15,8 +15,6 @@
 package resources
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
@@ -122,14 +120,4 @@ func IsPartnerDomain(nsLister corelisters.NamespaceLister, domainID string) bool
 	}
 
 	return false
-}
-
-func HashString(input string) (string, error) {
-	hasher := sha256.New()
-	_, err := hasher.Write([]byte(input))
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil))[:32], nil
 }

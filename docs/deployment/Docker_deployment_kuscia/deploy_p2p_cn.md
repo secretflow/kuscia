@@ -24,17 +24,24 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/deploy.sh > deploy.sh && chmod u+x deploy.sh
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
-启动节点，默认会在当前目录下创建 ${USER}-kuscia-autonomy-alice/data 目录用来存放 alice 的数据。部署节点需要使用 `deploy.sh` 脚本并传入特定的参数：
+生成 alice 节点配置文件：
+```bash
+# --domain 参数传递的是节点 ID
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml
+```
+
+启动节点，默认会在当前目录下创建 ${USER}-kuscia-autonomy-alice/data 目录用来存放 alice 的数据。部署节点需要使用 `kuscia.sh` 脚本并传入节点配置文件：
 
 ```bash
-# -n 参数传递的是节点 ID。
 # -p 参数传递的是节点容器映射到主机的 HTTPS 端口，保证和主机上现有的端口不冲突即可
 # -k 参数传递的是节点容器 KusciaAPI 映射到主机的 MTLS 端口，保证和主机上现有的端口不冲突即可
-./deploy.sh autonomy -n alice -p 11080 -k 8082
+./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081
 ```
+> 如果多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083），防止出现端口冲突。
+
 <span style="color:red;">注意：<br>
 1、如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md) <br>
 2、alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)<br>
@@ -87,10 +94,10 @@ docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/certs/domain.crt bob.doma
 docker cp bob.domain.crt ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/
 ```
 
-在 bob 里添加 alice 的证书等信息：
+在 alice 里添加 bob 的证书等信息：
 
 ```bash
-# [bob 机器] 添加 alice 的证书等信息
+# [alice 机器] 添加 alice 的证书等信息
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p2p
 ```
 

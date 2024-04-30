@@ -1,0 +1,110 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/configuration-reference
+version: 2.1
+
+parameters:
+  GHA_Actor:
+    type: string
+    default: ""
+  GHA_Action:
+    type: string
+    default: ""
+  GHA_Event:
+    type: string
+    default: ""
+  GHA_Meta:
+    type: string
+    default: ""
+  DEPS_Tag:
+    type: string
+    default: ""
+
+executors:
+  linux_x64_executor: #  declares a reusable executor
+    docker:
+      - image: secretflow/kuscia-ci:0.4
+    resource_class: 2xlarge
+    shell: /bin/bash --login -eo pipefail
+  linux_aarch64_executor:
+    docker:
+      - image: secretflow/ubuntu-base-ci:latest
+    resource_class: arm.2xlarge
+    shell: /bin/bash --login -eo pipefail
+
+commands:
+  build_kuscia_deps:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: "install go"
+          command: |
+            ARCH=$(uname -m)
+            case "$ARCH" in
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
+            esac
+
+            GOLANG_DIR="/opt"
+            GOLANG_VERSION="1.19.13"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+
+            if ! command -v go &> /dev/null; then
+            wget "$GOLANG_URL"
+
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/opt/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
+            source ~/.bashrc
+            fi
+      - run:
+          name: "make build"
+          command: |
+            git config --global --add safe.directory ./
+            make deps-build
+      - store_artifacts:
+          path: build
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/configuration-reference/#jobs
+jobs:
+  linux_build_kuscia_deps:
+    parameters:
+      executor:
+        type: string
+    executor: <<parameters.executor>>
+    steps:
+      - checkout
+      - build_kuscia_deps
+  image_publish:
+    docker:
+      - image: secretflow/kuscia-ci:0.4
+    shell: /bin/bash --login -eo pipefail
+    steps:
+      - attach_workspace:
+          at: build
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build image and publish
+          command: |
+            DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:<< pipeline.parameters.DEPS_Tag >>
+             # login kuscia aliyun registry
+            docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
+
+            docker buildx create --name kuscia_deps --platform linux/arm64,linux/amd64 --use
+
+            docker buildx build -t ${DEPS_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
+
+
+
+workflows:
+  build_deps_workflow:
+    jobs:
+      - linux_build_kuscia_deps:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+      - image_publish:
+          requires:
+            - linux_build_kuscia_deps

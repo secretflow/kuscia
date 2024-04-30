@@ -16,6 +16,7 @@ package pod
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,6 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/client-go/tools/record"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
@@ -46,6 +48,7 @@ func createTestK8sProvider(t *testing.T, cfg *config.K8sProviderCfg, rm *resourc
 		PodSyncHandler:  frameworktest.FakeSyncHandler{},
 		ResourceManager: rm,
 		K8sProviderCfg:  cfg,
+		Recorder:        &record.FakeRecorder{},
 	}
 
 	kp, err := NewK8sProvider(podProviderDep)
@@ -180,26 +183,20 @@ func TestK8sProvider_SyncAndKillPod(t *testing.T) {
 	assert.Equal(t, "resolv-config", newPod.Spec.Volumes[2].Name)
 	assert.Equal(t, "runc", *newPod.Spec.RuntimeClassName)
 
-	newPodConfig, err := kp.configMapLister.Get("config-template")
+	newPodConfig, err := kp.configMapLister.Get("pod01-config-template")
 	assert.NoError(t, err)
 	assert.Equal(t, "abc", newPodConfig.Labels[common.LabelPodUID])
 	assert.Equal(t, "aa=${AA}", newPodConfig.Data["config.yaml"])
-	assert.Equal(t, 1, len(newPodConfig.OwnerReferences))
-	assert.Equal(t, newPod.Name, newPodConfig.OwnerReferences[0].Name)
 
 	newResolveConfig, err := kp.configMapLister.Get("pod01-resolv-config")
 	assert.NoError(t, err)
 	assert.Equal(t, "abc", newPodConfig.Labels[common.LabelPodUID])
 	assert.Equal(t, "nameserver 127.0.0.1", newResolveConfig.Data["resolv.conf"])
-	assert.Equal(t, 1, len(newPodConfig.OwnerReferences))
-	assert.Equal(t, newPod.Name, newPodConfig.OwnerReferences[0].Name)
 
-	newSecret, err := kp.secretLister.Get("test-secret")
+	newSecret, err := kp.secretLister.Get("pod01-test-secret")
 	assert.NoError(t, err)
 	assert.Equal(t, "abc", newSecret.Labels[common.LabelPodUID])
 	assert.Equal(t, "123", newSecret.StringData["secret"])
-	assert.Equal(t, 1, len(newSecret.OwnerReferences))
-	assert.Equal(t, newPod.Name, newSecret.OwnerReferences[0].Name)
 
 	// kill pod
 	assert.NoError(t, kp.KillPod(context.Background(), pod, pkgcontainer.Pod{}, nil))
@@ -207,4 +204,35 @@ func TestK8sProvider_SyncAndKillPod(t *testing.T) {
 	assert.True(t, k8serrors.IsNotFound(err))
 
 	cancel()
+}
+
+func TestNormalizeSubResourceMeta(t *testing.T) {
+	resourceNameLimit = 10
+	tests := []struct {
+		meta         *metav1.ObjectMeta
+		ownerPodName string
+		wantMetaName string
+	}{
+		{
+			meta: &metav1.ObjectMeta{
+				Name: "aaa",
+			},
+			ownerPodName: "pod-01",
+			wantMetaName: "pod-01-aaa",
+		},
+		{
+			meta: &metav1.ObjectMeta{
+				Name: "aaa",
+			},
+			ownerPodName: "pod-001",
+			wantMetaName: "dd2d7b3cd0",
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("Test %d", i), func(t *testing.T) {
+			normalizeSubResourceMeta(tt.meta, tt.ownerPodName)
+			assert.Equal(t, tt.wantMetaName, tt.meta.Name)
+		})
+	}
 }

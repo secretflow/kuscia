@@ -46,6 +46,7 @@ func NewKusciaJobPhaseHandlerFactory(deps *Dependencies) *KusciaJobPhaseHandlerF
 		kusciaapisv1alpha1.KusciaJobAwaitingApproval: NewAwaitingApprovalHandler(deps),
 		kusciaapisv1alpha1.KusciaJobPending:          NewPendingHandler(deps),
 		kusciaapisv1alpha1.KusciaJobRunning:          NewRunningHandler(deps),
+		kusciaapisv1alpha1.KusciaJobSuspended:        NewSuspendedHandler(deps),
 		kusciaapisv1alpha1.KusciaJobSucceeded:        NewSucceededHandler(deps),
 		kusciaapisv1alpha1.KusciaJobFailed:           NewFailedHandler(deps),
 		kusciaapisv1alpha1.KusciaJobApprovalReject:   NewApprovalRejectHandler(deps),
