@@ -18,7 +18,7 @@ jobs:
   golangci:
     strategy:
       matrix:
-        go: ['1.19']
+        go: ['1.19.7']
         # [macos-latest, windows-latest]
         os: [ubuntu-latest]
     name: lint
