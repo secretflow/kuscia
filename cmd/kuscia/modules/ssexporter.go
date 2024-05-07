@@ -97,19 +97,34 @@ func (exporter *ssExporterModule) Name() string {
 	return "ssexporter"
 }
 
-func RunSsExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunSsExporterWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(500 * time.Millisecond)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "ssexporter",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunSsExporter(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunSsExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m := NewSsExporter(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("Ss exporter is ready")
+		nlog.Fatalf("SsTransport wait ready failed: %v", err)
 	}
+	nlog.Info("Ss exporter is ready")
 	return m
 }

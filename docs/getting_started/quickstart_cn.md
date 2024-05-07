@@ -50,6 +50,7 @@ macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文
 此外，Kuscia 当前不支持 M1/M2 芯片的 Mac。
 
 ## 部署体验
+> 本文旨在帮助您快速体验 Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
 
 ### 前置操作
 

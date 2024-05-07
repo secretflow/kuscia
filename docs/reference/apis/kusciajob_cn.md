@@ -725,26 +725,26 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### PartyStatus
 
-| 字段        | 类型                                        | 选填 | 描述            |
-|-----------|-------------------------------------------|----|---------------|
-| domain_id | string                                    | 必填 | 节点 ID         |
+| 字段        | 类型                                        | 选填 | 描述                          |
+|-----------|-------------------------------------------|----|-----------------------------|
+| domain_id | string                                    | 必填 | 节点 ID                       |
 | state     | string                                    | 必填 | 参与方任务状态, 参考 [State](#state) |
-| err_msg   | string                                    | 可选 | 错误信息          |
-| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息 |
+| err_msg   | string                                    | 可选 | 错误信息                        |
+| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息               |
 
 {#task}
 
 ### Task
 
-| 字段                | 类型                | 选填 | 描述                                                                                                                         |
-|-------------------|-------------------|----|----------------------------------------------------------------------------------------------------------------------------|
-| app_image         | string            | 必填 | 任务镜像                                                                                                                       |
-| parties           | [Party](#party)[] | 必填 | 参与方节点 ID                                                                                                                   |
-| alias             | string            | 必填 | 任务别名                                                                                                                       |
-| task_id           | string            | 必填 | 任务 ID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
-| dependencies      | string[]          | 必填 | 依赖任务                                                                                                                       |
-| task_input_config | string            | 必填 | 任务配置                                                                                                                       |
-| priority          | string            | 可选 | 优先级，值越大优先级越高                                                                                                               |
+| 字段                | 类型                | 选填 | 描述                                                                                                                                                       |
+|-------------------|-------------------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| app_image         | string            | 必填 | 任务镜像                                                                                                                                                     |
+| parties           | [Party](#party)[] | 必填 | 参与方节点 ID                                                                                                                                                 |
+| alias             | string            | 必填 | 任务别名，同一个 Job 中唯一，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)                    |
+| task_id           | string            | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| dependencies      | string[]          | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系                                                                                                                   |
+| task_input_config | string            | 必填 | 任务配置                                                                                                                                                     |
+| priority          | string            | 可选 | 优先级，值越大优先级越高                                                                                                                                             |
 
 {#task-config}
 
@@ -755,7 +755,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | app_image         | string            | 必填 | 任务镜像         |
 | parties           | [Party](#party)[] | 必填 | 参与方          |
 | alias             | string            | 必填 | 任务别名         |
-| task_id           | string            | 必填 | 任务 ID        |
+| task_id           | string            | 可选 | 任务 ID        |
 | dependencies      | string[]          | 必填 | 依赖任务         |
 | task_input_config | string            | 必填 | 任务配置         |
 | priority          | string            | 可选 | 优先级，值越大优先级越高 |
@@ -764,15 +764,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### TaskStatus
 
-| 字段          | 类型                             | 选填 | 描述                        |
-|-------------|--------------------------------|----|---------------------------|
-| task_id     | string                         | 可选 | 任务 ID                     |
-| state       | string                         | 必填 | 任务状态，参考 [State](#state)   |
-| err_msg     | string                         | 可选 | 错误信息                      |
-| create_time | string                         | 必填 | 创建事件                      |
-| start_time  | string                         | 必填 | 开始事件                      |
-| end_time    | string                         | 可选 | 结束事件                      |
-| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                       |
+| 字段          | 类型                             | 选填 | 描述                      |
+|-------------|--------------------------------|----|-------------------------|
+| task_id     | string                         | 可选 | 任务 ID                   |
+| alias       | string                         | 必填 | 任务别名                    |
+| state       | string                         | 必填 | 任务状态，参考 [State](#state) |
+| err_msg     | string                         | 可选 | 错误信息                    |
+| create_time | string                         | 必填 | 创建事件                    |
+| start_time  | string                         | 必填 | 开始事件                    |
+| end_time    | string                         | 可选 | 结束事件                    |
+| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                     |
 
 {#event-type}
 

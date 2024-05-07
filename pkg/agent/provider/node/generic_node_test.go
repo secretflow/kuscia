@@ -26,7 +26,7 @@ import (
 func TestGenericNode_ConfigureNode(t *testing.T) {
 	agentConfig := config.DefaultStaticAgentConfig()
 	agentConfig.RootDir = t.TempDir()
-	capacityManager, err := NewCapacityManager(&agentConfig.Capacity, ".", true)
+	capacityManager, err := NewCapacityManager(config.ContainerRuntime, &agentConfig.Capacity, nil, ".", true)
 	assert.NoError(t, err)
 	dep := &GenericNodeDependence{
 		BaseNodeDependence: BaseNodeDependence{

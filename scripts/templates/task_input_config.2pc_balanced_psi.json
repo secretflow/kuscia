@@ -1,55 +1,49 @@
- {
-      "sf_datasource_config": {
-        "bob": {
-          "id": "default-data-source"
-        },
-        "alice": {
-          "id": "default-data-source"
-        }
-      },
-      "sf_cluster_desc": {
-        "parties": ["bob", "alice"],
-        "devices": [{
-          "name": "spu",
-          "type": "spu",
-          "parties": ["bob", "alice"],
-          "config": "{\"runtime_config\":{\"protocol\":\"SEMI2K\",\"field\":\"FM128\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
-        }, {
-          "name": "heu",
-          "type": "heu",
-          "parties": ["bob", "alice"],
-          "config": "{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"
-        }],
-        "ray_fed_config": {
-          "cross_silo_comm_backend": "brpc_link"
-        }
-      },
-      "sf_node_eval_param": {
-        "domain": "data_prep",
-        "name": "psi",
-        "version": "0.0.2",
-        "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "disable_alignment", "skip_duplicates_check", "check_hash_digest", "ecdh_curve"],
-        "attrs": [{
-          "is_na": false,
-          "ss": ["id1"]
-        }, {
-          "is_na": false,
-          "ss": ["id2"]
-        }, {
-          "is_na": false,
-          "s": "PROTOCOL_ECDH"
-        }, {
-          "is_na": true
-        }, {
-          "is_na": true
-        }, {
-          "is_na": true
-        }, {
-          "is_na": false,
-          "s": "CURVE_FOURQ"
-        }]
-      },
-      "sf_output_uris": ["hgpl-qiusyjvx-node-3-output-0"],
-      "sf_input_ids": ["alice-table", "bob-table"],
-      "sf_output_ids": ["hgpl-qiusyjvx-node-3-output-0"]
+{
+  "sf_datasource_config": {
+    "alice": {
+      "id": "default-data-source"
+    },
+    "bob": {
+      "id": "default-data-source"
     }
+  },
+  "sf_cluster_desc": {
+    "parties": ["alice", "bob"],
+    "devices": [{
+      "name": "spu",
+      "type": "spu",
+      "parties": ["alice", "bob"],
+      "config": "{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
+    }, {
+      "name": "heu",
+      "type": "heu",
+      "parties": ["alice", "bob"],
+      "config": "{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"
+    }],
+    "ray_fed_config": {
+      "cross_silo_comm_backend": "brpc_link"
+    }
+  },
+  "sf_node_eval_param": {
+    "domain": "data_prep",
+    "name": "psi",
+    "version": "0.0.2",
+    "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type"],
+    "attrs": [{
+      "ss": ["id1"]
+    }, {
+      "ss": ["id2"]
+    }, {
+      "s": "PROTOCOL_ECDH"
+    }, {
+      "b": true
+    }, {
+      "i64": "1048576"
+    }, {
+      "s": "CURVE_FOURQ"
+    }]
+  },
+  "sf_input_ids": ["alice-table","bob-table"],
+  "sf_output_ids": ["psi-output"],
+  "sf_output_uris": ["psi-output.csv"]
+}

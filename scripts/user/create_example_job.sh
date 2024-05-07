@@ -23,9 +23,8 @@ SUB_HOST_REGEXP="^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?
 
 USAGE="$(basename "$0") [JOB_EXAMPLE] [JOB_NAME]
 JOB_EXAMPLE:
-    PSI                 run psi with default-data-source (default)
-    PSI_WITH_DP         run psi with default-dp-data-source
-    NSJAIL_PSI          run psi via nsjail
+    PSI                 run psi with default-data-source (default).
+    NSJAIL_PSI          run psi via nsjail. Set env 'export ALLOW_PRIVILEGED=true' before deployment.
 "
 JOB_EXAMPLE=$1
 JOB_NAME=$2

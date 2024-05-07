@@ -1,5 +1,5 @@
 ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0"
-ARG KUSCIA_ENVOY_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.5.0b0"
+ARG KUSCIA_ENVOY_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.4.0.dev20240407"
 ARG PROM_NODE_EXPORTER="prom/node-exporter:v1.7.0"
 
 FROM ${DEPS_IMAGE} as deps
@@ -7,13 +7,13 @@ FROM ${DEPS_IMAGE} as deps
 FROM ${PROM_NODE_EXPORTER} as node_exporter
 FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
 
-FROM openanolis/anolisos:8.8
+FROM openanolis/anolisos:23
 
 ENV TZ=Asia/Shanghai
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG ROOT_DIR="/home/kuscia"
-RUN yum install -y openssl net-tools which jq logrotate && \
+RUN yum install -y openssl net-tools which jq logrotate iproute procps-ng && \
     yum clean all && \
     mkdir -p ${ROOT_DIR}/bin && \
     mkdir -p /bin/aux && \

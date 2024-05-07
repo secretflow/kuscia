@@ -325,7 +325,6 @@ func (nc *NodeController) exit() error {
 	nodeFromMaster, err := nc.nodeStub.Get(context.Background(), nc.nmt.Name, emptyGetOptions)
 	if err == nil {
 		nodeFromMaster.Spec.Unschedulable = true
-
 		if err := retry.OnError(retry.DefaultRetry, retriable, func() error {
 			_, err = nc.nodeStub.Update(context.Background(), nodeFromMaster, metav1.UpdateOptions{})
 			return err
@@ -351,7 +350,7 @@ func (nc *NodeController) exit() error {
 
 func retriable(err error) bool {
 	return k8serrors.IsInternalError(err) || k8serrors.IsServiceUnavailable(err) ||
-		net.IsConnectionRefused(err)
+		net.IsConnectionRefused(err) || k8serrors.IsConflict(err)
 }
 
 func (nc *NodeController) Stop() {

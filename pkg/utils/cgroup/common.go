@@ -12,24 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modules
+package cgroup
 
-import (
-	"context"
-	"testing"
-
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+const (
+	DefaultMountPoint = "/sys/fs/cgroup"
+	KusciaAppsGroup   = "/kuscia.apps"
+	K8sIOGroup        = "/k8s.io"
 )
 
-func TestRunEnvoy(t *testing.T) {
-	dependency := &Dependencies{
-		KusciaConfig: confloader.KusciaConfig{
-			RootDir:  "./",
-			DomainID: "alice",
-		},
-	}
+const (
+	// MaxMemoryLimit represents the unlimited cgroup memory.limit_in_bytes value
+	MaxMemoryLimit int64 = 9223372036854771712
+	// MaxCPUQuota represents the unlimited cgroup cpu.cfs_quota_us value
+	MaxCPUQuota int64 = -1
+)
 
-	runCtx, cancel := context.WithCancel(context.Background())
+type Config struct {
+	Group       string
+	Pid         uint64
+	CPUQuota    *int64
+	CPUPeriod   *uint64
+	MemoryLimit *int64
+}
 
-	RunEnvoy(runCtx, cancel, dependency)
+type Manager interface {
+	AddCgroup() error
+	UpdateCgroup() error
+	DeleteCgroup() error
 }

@@ -41,7 +41,8 @@ func SetupSignalHandler() (stopCh <-chan struct{}) {
 		sig := <-c
 		nlog.Infof("Caught signal %v. Shutting down...", sig.String())
 		close(stop)
-		<-c
+		sig2 := <-c
+		nlog.Infof("Caught second signal %v. Exit directly.", sig2.String())
 		os.Exit(1) // second signal. Exit directly.
 	}()
 

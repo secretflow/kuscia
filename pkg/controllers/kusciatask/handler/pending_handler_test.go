@@ -161,7 +161,7 @@ func Test_mergeDeployTemplate(t *testing.T) {
 }
 
 func Test_generatePortAccessDomains(t *testing.T) {
-	testParties := []kusciaapisv1alpha1.PartyInfo{
+	parties := []kusciaapisv1alpha1.PartyInfo{
 		{
 			DomainID: "domain-a",
 			Role:     "server",
@@ -176,13 +176,30 @@ func Test_generatePortAccessDomains(t *testing.T) {
 		},
 	}
 
+	ports := NamedPorts{
+		"port-10000": kusciaapisv1alpha1.ContainerPort{
+			Name:     "port-10000",
+			Port:     10000,
+			Protocol: "HTTP",
+			Scope:    kusciaapisv1alpha1.ScopeCluster,
+		},
+		"port-10001": kusciaapisv1alpha1.ContainerPort{
+			Name:     "port-10001",
+			Port:     10001,
+			Protocol: "HTTP",
+			Scope:    kusciaapisv1alpha1.ScopeDomain,
+		},
+	}
+
 	tests := []struct {
+		name                  string
 		parties               []kusciaapisv1alpha1.PartyInfo
 		networkPolicy         *kusciaapisv1alpha1.NetworkPolicy
 		wantPortAccessDomains map[string][]string
 	}{
 		{
-			parties: testParties,
+			name:    "domain-b,domain-c can access all port, domain-a only can access one port",
+			parties: parties,
 			networkPolicy: &kusciaapisv1alpha1.NetworkPolicy{
 				Ingresses: []kusciaapisv1alpha1.Ingress{
 					{
@@ -216,11 +233,19 @@ func Test_generatePortAccessDomains(t *testing.T) {
 				"port-10002": {"domain-a", "domain-b", "domain-c"},
 			},
 		},
+		{
+			name:          "domain-a, domain-b and domain-c can access cluster ports",
+			parties:       parties,
+			networkPolicy: nil,
+			wantPortAccessDomains: map[string][]string{
+				"port-10000": {"domain-a", "domain-b", "domain-c"},
+			},
+		},
 	}
 
-	for i, tt := range tests {
-		t.Run(fmt.Sprintf("TestCase %d", i), func(t *testing.T) {
-			accessDomains := generatePortAccessDomains(tt.parties, tt.networkPolicy)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			accessDomains := generatePortAccessDomains(tt.parties, tt.networkPolicy, ports)
 
 			accessDomainsConverted := map[string][]string{}
 			for port, domains := range accessDomains {

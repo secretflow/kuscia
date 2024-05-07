@@ -51,6 +51,7 @@ Kuscia 编排任务时期，即当前开源的 Kuscia 。经历了 Coordinator �
 <img src="../imgs/kuscia_layer.png" alt="Kuscia Layer" style="max-width: 100%; height: auto;">
 
 通过这样的分层设计，让每一层聚焦于自己本层的核心职责。平台层专注于终端用户体验及实际的业务场景适配。Kuscia 层专注于解决隐私计算技术生产落地遇到的问题，引擎开发者专注于隐私计算任务核心逻辑的开发，无需考虑复杂的跨域网络环境及不同机构可能存在的异构数据源等问题。
+
 {#why-kuscia}
 ## 为什么需要 Kuscia
 从一个隐私计算引擎开发完成到真正的生产级可用有多远，Kuscia 在隐私计算任务部署、执行、运维等整个生命周期中解决了哪些问题？

@@ -25,7 +25,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 ### 点对点组网模式
 
-证书的配置参考[配置授权](../deployment/deploy_p2p_cn.md#配置授权)
+证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)
 
 这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
 

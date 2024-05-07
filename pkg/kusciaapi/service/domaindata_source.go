@@ -79,16 +79,18 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 		}
 	}
 
-	if request.DatasourceId == "" {
-		name := ""
-		if request.Name != nil {
-			name = *request.Name
-		}
-		request.DatasourceId = common.GenDomainDataID(name)
-	}
-
 	if err = validateDataSourceType(request.Type); err != nil {
 		nlog.Errorf(errCreateDomainDataSource, err.Error())
+		return &kusciaapi.CreateDomainDataSourceResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+
+	if request.DatasourceId == "" {
+		request.DatasourceId = common.GenDomainDataSourceID(request.Type)
+	}
+
+	if err = resources.ValidateK8sName(request.DatasourceId, "datasource_id"); err != nil {
 		return &kusciaapi.CreateDomainDataSourceResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
@@ -123,7 +125,7 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 		dataSource.Spec.Name = *request.Name
 	}
 
-	if request.InfoKey != nil {
+	if request.InfoKey != nil && *request.InfoKey != "" {
 		datasourceInfo, err := s.getDsInfoByKey(ctx, request.Type, *request.InfoKey)
 		if err != nil {
 			return &kusciaapi.CreateDomainDataSourceResponse{

@@ -16,7 +16,6 @@
 package domaindata
 
 import (
-	"errors"
 	"reflect"
 
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
@@ -37,13 +36,6 @@ func NewUpdateDomainDataHandler(domainDataService service.IDomainDataService) ap
 }
 
 func (h *updateDomainDataHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	updateReq, _ := request.(*kusciaapi.UpdateDomainDataRequest)
-	if updateReq.DomainId == "" {
-		errs.AppendErr(errors.New("domainID should not be empty"))
-	}
-	if updateReq.DomaindataId == "" {
-		errs.AppendErr(errors.New("domaindata id should not be empty"))
-	}
 }
 
 func (h *updateDomainDataHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {

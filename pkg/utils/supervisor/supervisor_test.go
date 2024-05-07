@@ -17,17 +17,21 @@ package supervisor
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/jonas.jasas/condchan"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type FackCmd struct {
-	startMock func() error
-	waitMock  func() error
+	startMock       func() error
+	waitMock        func() error
+	pidMock         func() int
+	setOOMScoreMock func() error
 }
 
 func (fc *FackCmd) Start() error {
@@ -46,8 +50,23 @@ func (fc *FackCmd) Wait() error {
 	return nil
 }
 
-func newMockCmd(startMock func() error, waitMock func() error) Cmd {
+func (fc *FackCmd) Pid() int {
+	nlog.Info("fack cmd.pid")
+	if fc.pidMock != nil {
+		return fc.pidMock()
+	}
+	return 0
+}
 
+func (fc *FackCmd) SetOOMScore() error {
+	nlog.Info("fack cmd.setOOMScore")
+	if fc.setOOMScoreMock != nil {
+		return fc.setOOMScoreMock()
+	}
+	return nil
+}
+
+func newMockCmd(startMock func() error, waitMock func() error) Cmd {
 	fack := FackCmd{
 		startMock: startMock,
 		waitMock:  waitMock,
@@ -190,18 +209,31 @@ func TestSupervisorRun_CancelContext(t *testing.T) {
 	sp.minRunningTimeMS = 100
 	ctx, cancel := context.WithCancel(context.Background())
 
+	pv := condchan.New(&sync.Mutex{})
+
 	count := 0
 	go func() {
-		time.Sleep(50 * time.Millisecond)
+		pv.L.Lock()
+		pv.Wait()
+		pv.L.Unlock()
+
 		cancel()
+		nlog.Infof("cancel the context")
 	}()
+
+	// make sure pv.wait had called
+	time.Sleep(20 * time.Millisecond)
 
 	err := sp.Run(ctx, func(ctx context.Context) Cmd {
 		return newMockCmd(nil, func() error {
+			pv.L.Lock()
 			count++
 
+			pv.Signal()
+			pv.L.Unlock()
+
 			select {
-			case <-time.After(300 * time.Millisecond):
+			case <-time.After(3000 * time.Millisecond):
 			case <-ctx.Done():
 			}
 
