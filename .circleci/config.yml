@@ -148,41 +148,41 @@ jobs:
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
-# workflows:
-#   unit-test:
-#     jobs:
-#       - unit-test:
-#           matrix:
-#             parameters:
-#               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-#   build-workflow:
-#     when:
-#       not:
-#         or:
-#           - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-#           - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
-#     jobs:
-#       - linux_build_kuscia:
-#           matrix:
-#             parameters:
-#               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-#       - image_publish:
-#           requires:
-#             - linux_build_kuscia
-#           filters:
-#             branches:
-#               ignore: /.*/
-#             tags:
-#               only: /^v.*/
-#   build-kuscia-deps-workflow:
-#     when:
-#       equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-#     jobs:
-#       - continuation/continue:
-#           configuration_path: .circleci/deps-config.yml
-#   publish-workflow:
-#     when:
-#       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
-#     jobs:
-#       - continuation/continue:
-#           configuration_path: .circleci/release-config.yml
+workflows:
+  unit-test:
+    jobs:
+      - unit-test:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+  build-workflow:
+    when:
+      not:
+        or:
+          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+    jobs:
+      - linux_build_kuscia:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+      - image_publish:
+          requires:
+            - linux_build_kuscia
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+  build-kuscia-deps-workflow:
+    when:
+      equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+    jobs:
+      - continuation/continue:
+          configuration_path: .circleci/deps-config.yml
+  publish-workflow:
+    when:
+      equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+    jobs:
+      - continuation/continue:
+          configuration_path: .circleci/release-config.yml
