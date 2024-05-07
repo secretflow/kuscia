@@ -83,6 +83,18 @@ body:
       placeholder: e.g., secretflow 1.5.0b0
     validations:
       required: true
+  - type: dropdown
+    id: bug-type
+    attributes:
+      label: Bug type
+      description:
+      options:
+        - Job running failed
+        - ClusterDomainRoute not ready
+        - Register Domain failed
+        - others
+    validations:
+      required: true
   - type: textarea
     id: what-happened
     attributes:
