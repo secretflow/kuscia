@@ -26,6 +26,9 @@ import (
 
 	// register driver
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	// OPENSOURCE-CLEANUP REMOVE 2
+	// register mist driver
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/mist"
 )
 
 func Run(ctx context.Context, conf *config.ConfManagerConfig) error {

@@ -1,0 +1,450 @@
+# OPENSOURCE-CLEANUP DELETE_FILE
+# ACI 语法文档：https://yuque.antfin-inc.com/antci/help/syntax-plugins
+
+version: "1.5" #用于使用go-sast
+
+git:
+  depth: 200
+
+stages:
+  - LintAndAnalysis
+  - EnvPrepare
+  - Test
+  - Build
+  - Delivery
+  - IntegrationTest
+  - Extend
+
+parameters:
+  BUILD_IMAGE: "reg.docker.alibaba-inc.com/secretflow/kuscia-dev:0.6"
+  KUSCIA_REPO_URL: "git@gitlab.alipay-inc.com:secretflow/kuscia.git"
+
+only:
+  triggerType:
+    - pullRequest # 创建PR及向PR分支push代码时触发
+    - tagPush
+    - push
+  triggerBranch: # 设置触发分支
+    pushOriginalBranch: # 只有向以下分支提交push才会触发
+      - master
+      - release/*
+      - codereview/*
+      - beta/*
+  targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+    - master
+    - release/*
+    - codereview/*
+    - beta/*
+
+golangCILint:
+  stage: LintAndAnalysis
+  # 开启强制扫描结果卡点
+  allowFailure: false
+  plugin: CMD
+  pluginConfig:
+    encoding: "UTF-8"
+    excludes:
+      - "build/**"
+      - "crd/**"
+      - "hack/**"
+      - "pkg/crd/clientset/**"
+      - "pkg/crd/informers/**"
+      - "pkg/crd/listers/**"
+      - "proto/**"
+      - "*_test.go"
+    taskKind: CMD_GOLANGCI_LINT
+  checkRule:
+    - blocker = 0 && critical = 0 && major = 0
+
+# 蚂蚁编码手册：https://yuque.antfin-inc.com/tb8i41/egiubq/zw54bzd2pgvitnms
+#antStaticAnalysis:
+#  stage: LintAndAnalysis
+#  component: go-sast
+#  inputs:
+#    excludes:
+#      - "build/**"
+#      - "crd/**"
+#      - "hack/**"
+#      - "pkg/crd/clientset/**"
+#      - "pkg/crd/informers/**"
+#      - "pkg/crd/listers/**"
+#      - "pkg/agent/status/**"
+#      - "proto/**"
+#      - "*_test.go"
+#    codePath: "."
+#  config:
+#    execute:
+#      timeout: 1000 #任务超时时间
+#    afterExecute:
+#      checkRule:
+#        - ${{outputs.blocker}} = 0
+
+agent:
+  docker:
+    # image build from docker/dev.Dockerfile
+    image: ${BUILD_IMAGE}
+    resourceRequirements: # 2c4g20g的配置 cpu/memory/ephemeral-storage取值均为整型
+      cpu: 4 # 最大值16
+      memory: 8 # 最大值32
+      ephemeral-storage: 10 # 最大值100
+
+variableExport:
+  stage: EnvPrepare
+  script:
+    - |
+      cd ${WORKSPACE}
+      # Note: git clone requires answer 'yes'
+      ssh-keyscan -t rsa gitlab.alipay-inc.com >> ~/.ssh/known_hosts
+      source $HOME/.bashrc
+
+      git fetch --tags ${KUSCIA_REPO_URL}
+      git describe --tags --always
+
+      export KUSCIA_VERSION_TAG="$(git describe --tags --always)"
+      export BUILD_DATE="$(date +'%Y%m%d-%H%M%S')"
+      export IMAGE_VERSION="ACI-${KUSCIA_VERSION_TAG}-${BUILD_DATE}"
+  variables:
+    - KUSCIA_VERSION_TAG
+    - IMAGE_VERSION
+    - BUILD_DATE
+
+unittest:
+  stage: Test
+  aciTags: DOCKER
+  pluginConfig:
+    appname: mpc-worker
+    source: mpc-worker
+    encoding: "UTF-8"
+  steps:
+    - plugin: clone
+    - plugin: shell
+      resources:
+        cpu: 4
+        mem: 8
+        disk: 10
+      inputs:
+        image: ${BUILD_IMAGE}
+        command:
+          - |
+            set -ex
+            # Note: git clone requires answer 'yes'
+            ssh-keyscan -t rsa gitlab.alipay-inc.com >> ~/.ssh/known_hosts
+            source $HOME/.bashrc
+
+            # cd $WORKSPACE
+            mkdir -p /home/admin
+            ln -s $WORKSPACE /home/admin/dev
+            cd /home/admin/dev
+
+            git fetch --tags ${KUSCIA_REPO_URL}
+            git describe --always
+
+            whoami && cat /proc/cpuinfo | grep process | wc -l && cat /proc/meminfo | grep MemTotal && df -h
+
+            make test
+
+    - plugin: coverage-client-upload-compass
+      inputs:
+        filePath: ./test-results/coverage.xml
+  publisher:
+    junit:
+      testResults: "test-results/TEST-*.xml"
+      allowEmptyResults: true
+  checkRule:
+    - lineCoverage > 50
+#    - changeLineCoverage > 50
+
+build-framework:
+  stage: Build
+  plugin: ANT-BUILD
+  pluginConfig:
+    image: ${BUILD_IMAGE}
+    script:
+      - |
+        set -ex
+        # Note: git clone requires answer 'yes'
+        ssh-keyscan -t rsa gitlab.alipay-inc.com >> ~/.ssh/known_hosts
+        source $HOME/.bashrc
+
+        # add user admin if not exists
+        id -u admin &>/dev/null || useradd admin
+        ln -s $ANTBUILD_WORKSPACE /home/admin/dev
+        cd /home/admin/dev
+        whoami && cat /proc/cpuinfo | grep process | wc -l && cat /proc/meminfo | grep MemTotal && df -h
+
+        # .aci.yaml 开头的 depth 配置没有生效，aci 流水线写死 depth=5，这边强制修改 depth==200
+        git fetch --deepen=200 ${KUSCIA_REPO_URL}
+        git fetch --tags ${KUSCIA_REPO_URL}
+        git describe --always
+
+        make build
+
+    afterScript:
+      - ls
+    outputs:
+      - name: "kuscia-framework"
+        desc: "kuscia framework package"
+        type: custom
+        paths:
+          - build/apps
+          - build/linux
+          - crds
+          - etc
+          - hack
+          - testdata
+          - scripts
+  only:
+    triggerType:
+      - push
+      - tagPush
+      - pullRequest
+    triggerBranch: # 设置触发分支
+      pushOriginalBranch: # 只有向以下分支提交push才会触发
+        - master
+        - release/*
+        - beta/*
+    targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+      - release/*
+      - beta/*
+
+framework-anolis:
+  stage: Delivery
+  plugin: ANT-BUILD
+  pluginConfig:
+    image: ${BUILD_IMAGE}
+    beforeScript:
+      - echo $PWD
+      - ls
+    afterScript:
+      - ls
+    inputs:
+      dependency: build-framework
+      params:
+        - name: DIRECTORY
+          value: ./
+        - name: DOCKERFILE
+          value: build/dockerfile/kuscia-anolis.Dockerfile
+    outputs:
+      - name: "kuscia-anolis"
+        type: image
+        repository: reg.docker.alibaba-inc.com
+        namespace: secretflow
+        desc: "kuscia framework image"
+        tag: ${IMAGE_VERSION}
+  only:
+    triggerType:
+      - push
+      - tagPush
+      - pullRequest
+    triggerBranch: # 设置触发分支
+      pushOriginalBranch: # 只有向以下分支提交push才会触发
+        - master
+        - release/*
+        - beta/*
+    targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+      - release/*
+      - beta/*
+
+framework-alios:
+  stage: Delivery
+  plugin: ANT-BUILD
+  pluginConfig:
+    image: ${BUILD_IMAGE}
+    beforeScript:
+      - echo $PWD
+      - ls
+    afterScript:
+      - ls
+    inputs:
+      dependency: build-framework
+      params:
+        - name: DIRECTORY
+          value: ./
+        - name: DOCKERFILE
+          value: build/dockerfile/kuscia-alios.Dockerfile
+    outputs:
+      - name: "kuscia-alios"
+        type: image
+        repository: reg.docker.alibaba-inc.com
+        namespace: secretflow
+        desc: "kuscia framework image"
+        tag: ${IMAGE_VERSION}
+  only:
+    triggerType:
+      - push
+      - tagPush
+      - pullRequest
+    triggerBranch: # 设置触发分支
+      pushOriginalBranch: # 只有向以下分支提交push才会触发
+        - master
+        - release/*
+        - beta/*
+    targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+      - release/*
+      - beta/*
+
+integration-test:
+  stage: IntegrationTest
+  component: ant-code-build
+  inputs:
+    name: kuscia-aci-integration-test
+    params:
+      - name: image-version
+        value: ${{parameters.IMAGE_VERSION}}
+      - name: user
+        default: admin
+        value: ${{parameters.KUSCIA_VERSION_TAG}}
+    environment:
+      type: LINUX_MACHINE
+      labels:
+        - kuscia_aci_test
+    resources: null
+    buildTasks:
+      - name: Test
+        commands:
+          - |
+            set -ex
+            export USER=${BUILD_PARAMS.user}
+            export KUSCIA_IMAGE=reg.docker.alibaba-inc.com/secretflow/kuscia-anolis:${BUILD_PARAMS.image-version}
+            cd ${ACB_BUILD_DIR} && mkdir test
+
+            echo '#!/bin/bash
+
+            if [ $# -eq 0 ]; then
+              echo "Usage: $0 <file-path>"
+              exit 1
+            fi
+
+            last_line=$(tail -n 1 "$1")
+
+            if echo "$last_line" | grep -q "OK"; then
+              echo "Test succeed."
+              exit 0
+            else
+              echo "Test failed."
+              exit 1
+            fi
+            ' > check.sh
+
+            chmod +x check.sh
+
+            docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
+            script -qec "./test/integration_test.sh all" test_result.log
+      - name: Cleanup
+        commands:
+          - |
+            export USER=${BUILD_PARAMS.user}
+            cd ${ACB_BUILD_DIR}
+            rm -rf test/ code-repo/ $USER-kuscia-master/ $USER-kuscia-lite-alice/ $USER-kuscia-lite-bob/ $USER-kuscia-autonomy-bob/ $USER-kuscia-autonomy-alice/
+            docker rmi reg.docker.alibaba-inc.com/secretflow/kuscia-anolis:${BUILD_PARAMS.image-version}
+      - name: Check
+        commands:
+          - |
+            cd ${ACB_BUILD_DIR}
+            ./check.sh ${ACB_BUILD_DIR}/test_result.log
+    timeout: 7200 # 7200s
+  only:
+    triggerType:
+      - push
+      - tagPush
+      - pullRequest
+    triggerBranch: # 设置触发分支
+      pushOriginalBranch: # 只有向以下分支提交push才会触发
+        - master
+        - release/*
+        - beta/*
+    targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+      - release/*
+      - beta/*
+
+framework-anolis-with-secretflow:
+  stage: Extend
+  plugin: ANT-BUILD
+  pluginConfig:
+    image: ${BUILD_IMAGE}
+    beforeScript:
+      - set -ex
+      - echo $PWD
+      - cp build/dockerfile/kuscia-secretflow.Dockerfile build/dockerfile/kuscia-secretflow-anolis.Dockerfile
+      - export KUSCIA_IMAGE=reg.docker.alibaba-inc.com/secretflow/kuscia-anolis:${IMAGE_VERSION}
+      - sed -i "s|secretflow/kuscia:latest|${KUSCIA_IMAGE}|g" build/dockerfile/kuscia-secretflow-anolis.Dockerfile
+      - ls build/dockerfile
+    afterScript:
+      - ls
+    inputs:
+      dependency: framework-anolis
+      params:
+        - name: DIRECTORY
+          value: ./
+        - name: DOCKERFILE
+          value: build/dockerfile/kuscia-secretflow-anolis.Dockerfile
+    outputs:
+      - name: "kuscia-secretflow-anolis"
+        type: image
+        repository: reg.docker.alibaba-inc.com
+        namespace: secretflow
+        desc: "kuscia framework image with secretflow"
+        tag: ${IMAGE_VERSION}
+  only:
+    triggerType:
+      - push
+      - tagPush
+      # - pullRequest
+    triggerBranch: # 设置触发分支
+      pushOriginalBranch: # 只有向以下分支提交push才会触发
+        # - master # 该步骤比较耗时，先不轻易在 master 上启用
+        - release/*
+        - beta/*
+    targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+      - release/*
+      - beta/*
+
+framework-alios-with-secretflow:
+  stage: Extend
+  plugin: ANT-BUILD
+  pluginConfig:
+    image: ${BUILD_IMAGE}
+    beforeScript:
+      - echo $PWD
+      - cp build/dockerfile/kuscia-secretflow.Dockerfile build/dockerfile/kuscia-secretflow-alios.Dockerfile
+      - export KUSCIA_IMAGE=reg.docker.alibaba-inc.com/secretflow/kuscia-alios:${IMAGE_VERSION}
+      - sed -i "s|secretflow/kuscia:latest|${KUSCIA_IMAGE}|g" build/dockerfile/kuscia-secretflow-alios.Dockerfile
+      - ls
+    afterScript:
+      - ls
+    inputs:
+      dependency: framework-alios
+      params:
+        - name: DIRECTORY
+          value: ./
+        - name: DOCKERFILE
+          value: build/dockerfile/kuscia-secretflow-alios.Dockerfile
+    outputs:
+      - name: "kuscia-secretflow-alios"
+        type: image
+        repository: reg.docker.alibaba-inc.com
+        namespace: secretflow
+        desc: "kuscia framework image with secretflow"
+        tag: ${IMAGE_VERSION}
+  only:
+    triggerType:
+      - push
+      - tagPush
+     # - pullRequest
+    triggerBranch: # 设置触发分支
+      pushOriginalBranch: # 只有向以下分支提交push才会触发
+      #  - master # 该步骤比较耗时，先不轻易在 master 上启用
+        - release/*
+        - beta/*
+    targetBranch: #只有向以下分支提交pullRequest时才触发pipeline执行
+      - release/*
+      - beta/*
+
+build_doc:
+  stage: Build
+  plugin: ANT-BUILD
+  pluginConfig:
+    image: ${BUILD_IMAGE}
+    script:
+      - |
+        curl -kv http://100.83.15.142:8089/kuscia/${ACI_COMMIT_REF_NAME}

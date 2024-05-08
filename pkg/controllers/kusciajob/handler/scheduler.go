@@ -736,6 +736,8 @@ func isInterConnJob(kusciaJob *kusciaapisv1alpha1.KusciaJob) bool {
 }
 
 // kusciaJobHasTaskCycle check whether kusciaJob's tasks has cycles.
+// OPENSOURCE-CLEANUP REMOVE 1
+// Topological sorting, Kahn: https://en.wikipedia.org/wiki/Topological_sorting
 func kusciaJobHasTaskCycle(kusciaJob *kusciaapisv1alpha1.KusciaJob) error {
 	// check dependencies cycle.
 	copyKusciaJob := kusciaJob.DeepCopy()

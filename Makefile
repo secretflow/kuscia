@@ -15,8 +15,10 @@ IMG := secretflow/kuscia:${TAG}
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.4.0.dev20240407
-DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
+# OPENSOURCE-CLEANUP SUB reg.docker.alibaba-inc.com/secretflow/kuscia-envoy:0.6.x.dev20240424 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.4.0.dev20240407
+ENVOY_IMAGE ?= reg.docker.alibaba-inc.com/secretflow/kuscia-envoy:0.6.x.dev20240424
+# OPENSOURCE-CLEANUP SUB reg.docker.alibaba-inc.com/secretflow/kuscia-deps:0.2.0 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
+DEPS_IMAGE ?= reg.docker.alibaba-inc.com/secretflow/kuscia-deps:0.2.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -142,3 +144,16 @@ integration_test: image ## Run Integration Test
 	mkdir -p run/test
 	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
 	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh ${TEST_SUITE}
+
+# OPENSOURCE-CLEANUP REMOVE BEGIN
+
+.PHONY: alios-base-image
+alios-base-image:
+	docker build -t alios7u2-py-base:${DATETIME} --platform linux/amd64 -f ./build/dockerfile/base/kuscia-alios-base.Dockerfile .
+
+.PHONY: alios-image
+alios-image: export GOOS=linux
+alios-image: export GOARCH=amd64
+alios-image: build
+	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-alios.Dockerfile .
+# OPENSOURCE-CLEANUP REMOVE END

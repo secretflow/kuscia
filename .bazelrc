@@ -56,6 +56,9 @@ build:ubsan --linkopt -fsanitize=undefined
 build:macos-asan --features=asan
 build:macos-ubsan --features=ubsan
 
+# OPENSOURCE-CLEANUP REMOVE BEGIN
+build --remote_cache=http://bazelcache-pool.cz00b.alipay.net:8080
+# OPENSOURCE-CLEANUP REMOVE END
 
 test --keep_going
 test --test_output=errors

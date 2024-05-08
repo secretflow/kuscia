@@ -3,6 +3,8 @@ workspace(name = "kuscia")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
+# OPENSOURCE-CLEANUP REMOVE LINE_WITH_KEYWORD DEPS_FAST_MIRROR
+DEPS_FAST_MIRROR = "https://antsys-nebula-archive.cn-hangzhou-alipay-b.oss-cdn.aliyun-inc.com/third_party"
 
 maybe(
     http_archive,

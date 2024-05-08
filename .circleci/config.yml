@@ -52,7 +52,7 @@ commands:
             esac
 
             GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.7"
+            GOLANG_VERSION="1.19.17"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
@@ -79,7 +79,7 @@ commands:
             esac
 
             GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.7"
+            GOLANG_VERSION="1.19.17"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then

@@ -1,3 +1,6 @@
+# OPENSOURCE-CLEANUP REMOVE 2
+# latest image version: reg.docker.alibaba-inc.com/secretflow/kuscia-deps:0.2.0
+# changelog: upgrade k3s from v1.26.6-k3s1 to v1.26.11-k3s2
 ARG K3S_VER=v1.26.11-k3s2
 ARG K3S_IMAGE=rancher/k3s:${K3S_VER}
 FROM ${K3S_IMAGE} as k3s-image

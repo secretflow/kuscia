@@ -22,7 +22,8 @@ function build_k3s() {
   echo "build k3s binary..."
   if [[ $(ls -A "build/k3s") = "" ]];then
     git clone -b $k3s_version --depth 1 https://github.com/k3s-io/k3s.git build/k3s
-    KINE_VERSION="github.com/k3s-io/kine@v0.11.3"
+    # OPENSOURCE-CLEANUP SUB gitlab.alipay-inc.com/secretflow/kuscia-kine@latest github.com/k3s-io/kine@v0.11.3
+    KINE_VERSION="gitlab.alipay-inc.com/secretflow/kuscia-kine@latest"
     pushd build/k3s
     go mod edit -replace github.com/k3s-io/kine="${KINE_VERSION}"
     pushd
