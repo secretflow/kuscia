@@ -67,7 +67,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA,
 		s.config.TLS.ServerCert, s.config.TLS.ServerKey)
 	if err != nil {
-		nlog.Fatalf("Failed to init server tls config: %v", err)
+		nlog.Errorf("Failed to init server tls config: %v", err)
+		return err
 	}
 	creds := credentials.NewTLS(serverTLSConfig)
 	opts = append(opts, grpc.Creds(creds))
@@ -76,7 +77,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	addr := fmt.Sprintf(":%d", s.config.GRPCPort)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		nlog.Fatalf("Failed to listen on addr[%s]: %v", addr, err)
+		nlog.Errorf("Failed to listen on addr[%s]: %v", addr, err)
+		return err
 	}
 
 	// register grpc server

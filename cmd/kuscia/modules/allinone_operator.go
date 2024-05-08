@@ -25,21 +25,21 @@ import (
 )
 
 // TODO: The definition of this function is very ugly, we need to reconsider it later
-func RunOperatorsAllinOne(runctx context.Context, cancel context.CancelFunc, conf *Dependencies, startAgent bool) error {
-	RunInterConn(runctx, cancel, conf)
-	RunController(runctx, cancel, conf)
-	RunScheduler(runctx, cancel, conf)
-	RunDomainRoute(runctx, cancel, conf)
-	RunKusciaAPI(runctx, cancel, conf)
+func RunOperatorsAllinOneWithDestroy(conf *Dependencies) {
+	RunInterConnWithDestroy(conf)
+	RunControllerWithDestroy(conf)
+	RunSchedulerWithDestroy(conf)
+	RunDomainRouteWithDestroy(conf)
+}
 
-	if startAgent {
-		RunAgent(runctx, cancel, conf)
-		RunConfManager(runctx, cancel, conf)
-		RunDataMesh(runctx, cancel, conf)
-		RunTransport(runctx, cancel, conf)
-	}
-
-	return nil
+func RunOperatorsInSubProcessWithDestroy(conf *Dependencies) error {
+	runCtx, cancel := context.WithCancel(context.Background())
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:      "operators",
+		DestroyCh: runCtx.Done(),
+		DestroyFn: cancel,
+	})
+	return RunOperatorsInSubProcess(runCtx, cancel)
 }
 
 func RunOperatorsInSubProcess(ctx context.Context, cancel context.CancelFunc) error {
@@ -59,7 +59,10 @@ func RunOperatorsInSubProcess(ctx context.Context, cancel context.CancelFunc) er
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			return cmd
+			return &ModuleCMD{
+				cmd:   cmd,
+				score: &controllersOOMScore,
+			}
 		})
 
 		nlog.Infof("Controllers subprocess finished with error: %v", err)

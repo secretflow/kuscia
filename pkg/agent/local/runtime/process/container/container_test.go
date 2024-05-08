@@ -59,7 +59,7 @@ func createTestContainer(t *testing.T) *Container {
 	return container
 }
 
-func TestContainer_Start(t *testing.T) {
+func TestContainerStart(t *testing.T) {
 	t.Run("Container normal exited ", func(t *testing.T) {
 		container := createTestContainer(t)
 		assert.NoError(t, container.Create(kii.Plain))
@@ -89,7 +89,7 @@ func TestContainer_Start(t *testing.T) {
 
 }
 
-func Test_Container_generateCmdLine(t *testing.T) {
+func TestContainerGenerateCmdLine(t *testing.T) {
 	tests := []struct {
 		ImageEntrypoint []string
 		ImageCommand    []string
@@ -148,5 +148,14 @@ func Test_Container_generateCmdLine(t *testing.T) {
 			assert.Equal(t, tt.ExpectedCmd, strings.Join(cmdLine, " "))
 		})
 	}
+}
 
+func TestAddCgroup(t *testing.T) {
+	container := createTestContainer(t)
+	container.addCgroup(0)
+}
+
+func TestDeleteCgroup(t *testing.T) {
+	container := createTestContainer(t)
+	container.deleteCgroup(0)
 }

@@ -20,10 +20,29 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
-func TestIsThirdPartyTransit(t *testing.T) {
-	type args struct {
-		transit *v1alpha1.Transit
+type args struct {
+	transit *v1alpha1.Transit
+}
+
+var (
+	argsWithReverseTunnel = args{
+		transit: &v1alpha1.Transit{
+			TransitMethod: v1alpha1.TransitMethodReverseTunnel,
+		},
 	}
+	argsWithThirdDomain = args{
+		transit: &v1alpha1.Transit{
+			TransitMethod: v1alpha1.TransitMethodThirdDomain,
+		},
+	}
+	argsWithEmpty = args{
+		transit: &v1alpha1.Transit{},
+	}
+	argsWithNil = args{nil}
+)
+
+func TestIsThirdPartyTransit(t *testing.T) {
+
 	tests := []struct {
 		name string
 		args args
@@ -32,34 +51,22 @@ func TestIsThirdPartyTransit(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "case 0",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodReverseTunnel,
-				},
-			},
+			args: argsWithReverseTunnel,
 			want: false,
 		},
 		{
 			name: "case 1",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodThirdDomain,
-				},
-			},
+			args: argsWithThirdDomain,
 			want: true,
 		},
 		{
 			name: "case 2",
-			args: args{
-				nil,
-			},
+			args: argsWithNil,
 			want: false,
 		},
 		{
 			name: "case 3",
-			args: args{
-				&v1alpha1.Transit{},
-			},
+			args: argsWithEmpty,
 			want: true,
 		},
 	}
@@ -72,10 +79,8 @@ func TestIsThirdPartyTransit(t *testing.T) {
 	}
 }
 
-func TestIsGatewayTceTransit(t *testing.T) {
-	type args struct {
-		transit *v1alpha1.Transit
-	}
+func TestIsReverseTunnelTransit(t *testing.T) {
+
 	tests := []struct {
 		name string
 		args args
@@ -84,41 +89,67 @@ func TestIsGatewayTceTransit(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "case 0",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodReverseTunnel,
-				},
-			},
+			args: argsWithReverseTunnel,
 			want: true,
 		},
 		{
 			name: "case 1",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodThirdDomain,
-				},
-			},
+			args: argsWithThirdDomain,
 			want: false,
 		},
 		{
 			name: "case 2",
-			args: args{
-				nil,
-			},
+			args: argsWithNil,
 			want: false,
 		},
 		{
 			name: "case 3",
-			args: args{
-				&v1alpha1.Transit{},
-			},
+			args: argsWithEmpty,
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsGatewayTceTransit(tt.args.transit); got != tt.want {
-				t.Errorf("IsGatewayTceTransit() = %v, want %v", got, tt.want)
+			if got := IsReverseTunnelTransit(tt.args.transit); got != tt.want {
+				t.Errorf("IsReverseTunnelTransit() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsTransit(t *testing.T) {
+
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "case 0",
+			args: argsWithReverseTunnel,
+			want: true,
+		},
+		{
+			name: "case 1",
+			args: argsWithThirdDomain,
+			want: true,
+		},
+		{
+			name: "case 2",
+			args: argsWithNil,
+			want: false,
+		},
+		{
+			name: "case 3",
+			args: argsWithEmpty,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsTransit(tt.args.transit); got != tt.want {
+				t.Errorf("IsTransit() = %v, want %v", got, tt.want)
 			}
 		})
 	}

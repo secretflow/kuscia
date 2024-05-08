@@ -38,7 +38,7 @@ const (
 	clusterRoleKind       = "ClusterRole"
 	authCompleted         = "completed"
 	tokenExpiredSeconds   = 3650 * 24 * 3600
-	defaultRollingSeconds = 600
+	defaultRollingSeconds = 86400
 )
 
 // 1. P2P Kusica partner master -> rolebinding + clusterdomainroute + status-update

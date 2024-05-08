@@ -71,7 +71,7 @@ func (m dataMeshModule) Run(ctx context.Context) error {
 func (m dataMeshModule) WaitReady(ctx context.Context) error {
 	timeoutTicker := time.NewTicker(30 * time.Second)
 	defer timeoutTicker.Stop()
-	checkTicker := time.NewTicker(1 * time.Second)
+	checkTicker := time.NewTicker(100 * time.Millisecond)
 	defer checkTicker.Stop()
 	for {
 		select {
@@ -141,7 +141,19 @@ func (m dataMeshModule) readyZ() bool {
 	return true
 }
 
-func RunDataMesh(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunDataMeshWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "datamesh",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunDataMesh(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunDataMesh(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m, err := NewDataMesh(conf)
 	if err != nil {
 		nlog.Error(err)
@@ -149,16 +161,19 @@ func RunDataMesh(ctx context.Context, cancel context.CancelFunc, conf *Dependenc
 		return m
 	}
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("datamesh is ready")
+		nlog.Fatalf("DataMesh wait ready failed: %v", err)
 	}
+	nlog.Info("DataMesh is ready")
 	return m
 }

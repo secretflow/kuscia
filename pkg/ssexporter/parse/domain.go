@@ -28,16 +28,25 @@ import (
 )
 
 // GetIPFromDomain get a list of IP addresses from a local domain name
-func GetIPFromDomain(localDomainName string) []string {
-	ipAddresses, err := net.LookupIP(localDomainName)
-	var ipAddr []string
+func GetIPFromDomain(domainName string) (ipList []string) {
+	if IsIP(domainName) {
+		ipList = append(ipList, domainName)
+		return
+	}
+	ipAddresses, err := net.LookupIP(domainName)
 	if err != nil {
-		nlog.Error("Cannot find IP address:", err)
+		nlog.Warnf("Cannot find IP address: %s", err.Error())
+		return
 	}
 	for _, ip := range ipAddresses {
-		ipAddr = append(ipAddr, ip.String())
+		ipList = append(ipList, ip.String())
 	}
-	return ipAddr
+	return
+}
+
+func IsIP(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+	return ip != nil
 }
 
 // GetClusterAddress get the address and port of a remote domain connected by a local domain

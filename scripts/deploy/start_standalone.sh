@@ -42,7 +42,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.3.0b0"
+SF_IMAGE_TAG="1.5.0b0"
 SF_IMAGE_REGISTRY=""
 NETWORK_NAME="kuscia-exchange"
 VOLUME_PATH="${ROOT}"
@@ -234,7 +234,7 @@ function copy_volume_file_to_container() {
 
 function create_secretflow_app_image() {
   local ctr=$1
-  docker exec -it ${ctr} scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}" "${SF_IMAGE_TAG}"
+  docker exec -it ${ctr} scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}:${SF_IMAGE_TAG}"
   log "create secretflow app image done"
 }
 
@@ -510,6 +510,9 @@ function run_hybrid_centerX2() {
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    # cdr declaration for handshake
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
     # bob to alice =
     # alice-master to alice +
     # bob-master to alice transit by alice-master +
@@ -517,6 +520,9 @@ function run_hybrid_centerX2() {
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
+    # cdr declaration for handshake
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
   fi
 
   check_sf_image $alice_domain ${alice_ctr} ${alice_ctr}
@@ -572,6 +578,9 @@ function run_hybrid_centerXp2p() {
     # bob to alice transit by alice-master
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    # cdr declaration for handshake
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain https://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
   fi
 
   check_sf_image $alice_domain ${alice_ctr} ${alice_ctr}
@@ -735,7 +744,7 @@ esac
 
 interconn_protocol=
 transit=false
-while getopts 'p:t:h' option; do
+while getopts 'p:th' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG

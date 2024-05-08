@@ -2,13 +2,13 @@
 
 ## 前言
 
-本教程帮助你在多台机器上使用 [点对点组网模式](../reference/architecture_cn.md#点对点组网模式) 来部署 Kuscia 集群。
+本教程帮助你在多台机器上使用 [点对点组网模式](../../reference/architecture_cn.md#点对点组网模式) 来部署 Kuscia 集群。
 
 当前 Kuscia 节点之间只支持 Token 的身份认证方式，在跨机器部署的场景下流程较为繁琐，后续本教程会持续更新优化。
 
 ## 前置准备
 
-在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
+在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)
 
 ## 部署流程（基于 TOKEN 认证）
 
@@ -38,14 +38,17 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 ```bash
 # -p 参数传递的是节点容器映射到主机的 HTTPS 端口，保证和主机上现有的端口不冲突即可
 # -k 参数传递的是节点容器 KusciaAPI 映射到主机的 MTLS 端口，保证和主机上现有的端口不冲突即可
+# -a 指定自动导入的引擎镜像，-a none: 不自动导入引擎镜像，-a secretflow（默认）: 自动导入 secretflow 引擎镜像
+# -m 或者 --memory-limit 参数给节点容器设置适当的内存限制。例如，'-m 4GiB 或 --memory-limit=4GiB' 表示限制最大内存 4GiB，'-m -1 或 --memory-limit=-1'表示没有限制，不设置默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。
 ./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081
 ```
-> 如果多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083），防止出现端口冲突。
+> 注意事项：<br>
+> - 如果多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083），防止出现端口冲突。<br>
+> - 目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving 以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)<br>
+> - 如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md) <br>
+> - alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)<br>
+> - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
 
-<span style="color:red;">注意：<br>
-1、如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md) <br>
-2、alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)<br>
-3、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
 
 
 ### 部署 bob 节点
@@ -97,7 +100,7 @@ docker cp bob.domain.crt ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/
 在 alice 里添加 bob 的证书等信息：
 
 ```bash
-# [alice 机器] 添加 alice 的证书等信息
+# [alice 机器] 添加 bob 的证书等信息
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p2p
 ```
 

@@ -15,13 +15,22 @@
 package process
 
 import (
+	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/shirou/gopsutil/v3/process"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-// CheckProcessExists check whether process exists by name
+const (
+	oomScoreAdjMax = 1000
+	oomScoreAdjMin = -1000
+)
+
+// CheckExists check whether process exists by name
 func CheckExists(processName string) bool {
 	// currently running processes.
 	processes, err := process.Processes()
@@ -45,4 +54,25 @@ func CheckExists(processName string) bool {
 	}
 
 	return isExist
+}
+
+// SetOOMScore sets the oom score for the provided pid.
+func SetOOMScore(pid, score int) error {
+	if score > oomScoreAdjMax || score < oomScoreAdjMin {
+		return fmt.Errorf("invalid score %v, oom score must be between %d and %d", score, oomScoreAdjMin, oomScoreAdjMax)
+	}
+
+	path := fmt.Sprintf("/proc/%d/oom_score_adj", pid)
+	f, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err = f.WriteString(strconv.Itoa(score)); err != nil {
+		return err
+	}
+
+	nlog.Infof("Set pid[%v] oom score adj to %v", pid, score)
+	return nil
 }

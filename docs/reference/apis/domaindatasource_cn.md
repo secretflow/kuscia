@@ -98,6 +98,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
           "prefix": "kuscia/",
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
+#         "virtualhost": true (阿里云 OSS 需要配置此项)
+#         "storage_type": "minio" (Minio 需要配置此项)
       }
   },
   "access_directly": true

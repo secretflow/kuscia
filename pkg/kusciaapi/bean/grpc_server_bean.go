@@ -16,10 +16,12 @@ package bean
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 
 	"google.golang.org/grpc"
@@ -31,9 +33,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/tls"
+	tlsutil "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
+	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/interceptor"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -62,7 +65,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
 	}
 	if s.config.TLS != nil {
-		serverTLSConfig, err := tls.BuildServerTLSConfig(s.config.TLS.RootCA, s.config.TLS.ServerCert, s.config.TLS.ServerKey)
+		serverTLSConfig, err := buildServerTLSConfig(s.config.TLS, s.config.Protocol)
 		if err != nil {
 			nlog.Fatalf("Failed to init server tls config: %v", err)
 		}
@@ -114,4 +117,15 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 
 func (s *grpcServerBean) ServerName() string {
 	return "kusciaAPIGrpcServer"
+}
+
+func buildServerTLSConfig(config *frameworkconfig.TLSServerConfig, protocol common.Protocol) (*tls.Config, error) {
+
+	if config == nil {
+		return nil, fmt.Errorf("tls config is empty")
+	}
+	if protocol == common.MTLS {
+		return tlsutil.BuildServerTLSConfig(config.RootCA, config.ServerCert, config.ServerKey)
+	}
+	return tlsutil.BuildServerTLSConfig(nil, config.ServerCert, config.ServerKey)
 }

@@ -54,7 +54,10 @@ func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = os.Environ()
-		return cmd
+		return &ModuleCMD{
+			cmd:   cmd,
+			score: &nodeExporterOOMScore,
+		}
 	})
 }
 
@@ -107,17 +110,34 @@ func (exporter *nodeExporterModule) Name() string {
 	return "nodeexporter"
 }
 
-func RunNodeExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunNodeExporterWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "nodeexporter",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunNodeExporter(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunNodeExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m := NewNodeExporter(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
 		cancel()
+		nlog.Fatalf("NodeExporter wait ready failed: %v", err)
 	} else {
 		nlog.Info("Node_exporter is ready")
 	}

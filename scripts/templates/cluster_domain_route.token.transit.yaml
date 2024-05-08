@@ -15,10 +15,14 @@ spec:
         isTLS: {{.ISTLS}}
         port: {{.PORT}}
   transit:
+    transitMethod: THIRD-DOMAIN
     domain:
       domainID: {{.TRANSIT_DOMAIN}}
+  bodyEncryption:
+   algorithm: AES
   authenticationType: Token
   tokenConfig:
     tokenGenMethod: RSA-GEN
+    rollingUpdatePeriod: 86400
   requestHeadersToAdd:
     Authorization: Bearer {{.TOKEN}}

@@ -135,6 +135,7 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 		ClusterName:  clusterName,
 		KusciaHost:   getHandshakeHost(dr),
 		KusciaSource: dr.Spec.Source,
+		Transit:      utils.IsTransit(dr.Spec.Transit),
 		Headers:      headers}
 	err := utils.DoHTTP(nil, out, hp)
 	if err != nil {
@@ -234,6 +235,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			KusciaSource: dr.Spec.Source,
 			ClusterName:  clusterName,
 			KusciaHost:   getHandshakeHost(dr),
+			Transit:      utils.IsTransit(dr.Spec.Transit),
 		})
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
@@ -293,6 +295,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			KusciaSource: dr.Spec.Source,
 			ClusterName:  clusterName,
 			KusciaHost:   getHandshakeHost(dr),
+			Transit:      utils.IsTransit(dr.Spec.Transit),
 		})
 		if err != nil {
 			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)

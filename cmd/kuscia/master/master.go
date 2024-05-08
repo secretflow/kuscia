@@ -55,27 +55,20 @@ func NewMasterCommand(ctx context.Context) *cobra.Command {
 }
 
 func Run(ctx context.Context, configFile string, onlyControllers bool) error {
-	runCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	kusciaConf := confloader.ReadConfig(configFile, common.RunModeMaster)
 	conf := modules.InitDependencies(ctx, kusciaConf)
 	defer conf.Close()
 
-	var coreDnsModule modules.Module
-	if !onlyControllers {
-		coreDnsModule = modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
-	}
-
 	if onlyControllers {
 		conf.MakeClients()
-		modules.RunOperatorsAllinOne(runCtx, cancel, conf, false)
+		modules.RunOperatorsAllinOneWithDestroy(conf)
 
 		utils.SetupPprof(conf.Debug, conf.CtrDebugPort, true)
 		nlog.Info("Scheduler and controllers are all started")
 		// wait any controller failed
 	} else {
-		if err := modules.RunK3s(runCtx, cancel, conf); err != nil {
+		coreDnsModule := modules.RunCoreDNSWithDestroy(conf)
+		if err := modules.RunK3sWithDestroy(conf); err != nil {
 			nlog.Errorf("k3s start failed: %s", err)
 			return err
 		}
@@ -86,7 +79,7 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		if !ok {
 			return errors.New("coredns module type is invalid")
 		}
-		cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
+		cdsModule.StartControllers(ctx, conf.Clients.KubeClient)
 
 		if err := modules.CreateDefaultDomain(ctx, conf); err != nil {
 			nlog.Error(err)
@@ -102,22 +95,25 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		wg.Add(3)
 		go func() {
 			defer wg.Done()
-			modules.RunOperatorsInSubProcess(runCtx, cancel)
+			modules.RunOperatorsInSubProcessWithDestroy(conf)
 		}()
 		go func() {
 			defer wg.Done()
-			modules.RunEnvoy(runCtx, cancel, conf)
+			modules.RunEnvoyWithDestroy(conf)
 		}()
 		go func() {
 			defer wg.Done()
-			modules.RunConfManager(runCtx, cancel, conf)
+			modules.RunConfManagerWithDestroy(conf)
 		}()
 		wg.Wait()
-		modules.RunNodeExporter(runCtx, cancel, conf)
-		modules.RunSsExporter(runCtx, cancel, conf)
-		modules.RunMetricExporter(runCtx, cancel, conf)
+		modules.RunKusciaAPIWithDestroy(conf)
+		modules.RunNodeExporterWithDestroy(conf)
+		modules.RunSsExporterWithDestroy(conf)
+		modules.RunMetricExporterWithDestroy(conf)
 		utils.SetupPprof(conf.Debug, conf.DebugPort, false)
+
+		modules.SetKusciaOOMScore()
 	}
-	<-runCtx.Done()
+	conf.WaitAllModulesDone(ctx.Done())
 	return nil
 }
