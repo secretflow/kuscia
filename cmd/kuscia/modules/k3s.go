@@ -217,7 +217,10 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		envs := os.Environ()
 		envs = append(envs, "CATTLE_NEW_SIGNED_CERT_EXPIRATION_DAYS=3650")
 		cmd.Env = envs
-		return cmd
+		return &ModuleCMD{
+			cmd:   cmd,
+			score: &k3sOOMScore,
+		}
 	})
 }
 
@@ -244,7 +247,19 @@ func (s *k3sModule) Name() string {
 	return "k3s"
 }
 
-func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) error {
+func RunK3sWithDestroy(conf *Dependencies) error {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "k3s",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	return RunK3s(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) error {
 	// check DatastoreEndpoint
 	if err := datastore.CheckDatastoreEndpoint(conf.Master.DatastoreEndpoint); err != nil {
 		nlog.Error(err)
@@ -254,6 +269,11 @@ func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) 
 
 	m := NewK3s(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()

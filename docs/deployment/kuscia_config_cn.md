@@ -111,7 +111,7 @@ enableWorkloadApprove: false
     - 自动建表：如果提供的数据库账号有建表权限（账号具有`DDL+DML`权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 kuscia 会启动失败。
   - 数据库账户对表中字段至少具有 select、insert、update、delete 操作权限。
 - `protocol`: KusciaAPI 以及节点对外网关使用的通信协议，有三种通信协议可供选择：NOTLS/TLS/MTLS（不区分大小写）。
-  - `NOTLS`: 不使用 TLS 协议，即数据通过未加密的 HTTP 传输，比较安全的内部网络环境或者 Kuscia 已经存在外部网关的情况可以使用该模式。
+  - `NOTLS`: 此模式下，通信并未采用 TLS 协议进行加密，即数据通过未加密的 HTTP 传输。在高度信任且严格管控的内部网络环境，或是已具备外部安全网关防护措施的情况下，可以使用该模式，但在一般情况下，由于存在安全隐患，不推荐使用。
   - `TLS`: 通过 TLS 协议进行加密，即使用 HTTPS 进行安全传输，不需要手动配置证书。
   - `MTLS`: 使用 HTTPS 进行通信，支持双向 TLS 验证，需要手动交换证书以建立安全连接。
 - `enableWorkloadApprove`: 是否开启工作负载审核，默认为 false，即关闭审核。取值范围:[true, false]。

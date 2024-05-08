@@ -16,8 +16,10 @@ package resources
 
 import (
 	"context"
+	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientsetfake "k8s.io/client-go/kubernetes/fake"
@@ -68,6 +70,59 @@ func TestPatchService(t *testing.T) {
 			if got != nil != tt.wantErr {
 				t.Errorf(" got %v, want %v", got != nil, tt.wantErr)
 			}
+		})
+	}
+}
+
+func TestGenerateServiceName(t *testing.T) {
+	tests := []struct {
+		name     string
+		prefix   string
+		portName string
+		expected string
+	}{
+		{
+			name:     "prefix-port is less than 63 characters",
+			prefix:   "service-test-11111111",
+			portName: "domain",
+			expected: "service-test-11111111-domain",
+		},
+		{
+			name:     "prefix-port is equal to 63 characters",
+			prefix:   "abc-012345678-012345678-012345678-012345678-012345678-01",
+			portName: "domain",
+			expected: "abc-012345678-012345678-012345678-012345678-012345678-01-domain",
+		},
+		{
+			name:     "prefix is greater than 63 characters",
+			prefix:   "abc-012345678-012345678-012345678-012345678-012345678-012",
+			portName: "domain",
+			expected: "svc-abc-012345678-012345678-012345678-0-domain",
+		},
+		{
+			name:     "prefix is digital",
+			prefix:   "123-456-789",
+			portName: "domain",
+			expected: "svc-123-456-789-domain",
+		},
+		{
+			name:     "prefix is digital and svc-prefix-port length greater than 63",
+			prefix:   "12-012345678-012345678-012345678-012345678-012345678",
+			portName: "domain",
+			expected: "svc-12-012345678-012345678-012345678-012345678-012345678-domain",
+		},
+		{
+			name:     "prefix is digital and svc-prefix-port length greater than 63",
+			prefix:   "123-012345678-012345678-012345678-012345678-012345678",
+			portName: "domain",
+			expected: "svc-123-012345678-012345678-012345678-0-domain",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GenerateServiceName(tt.prefix, tt.portName)
+			assert.True(t, strings.HasPrefix(got, tt.expected))
 		})
 	}
 }

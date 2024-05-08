@@ -19,9 +19,6 @@ import (
 	"testing"
 	"time"
 
-	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
@@ -33,6 +30,8 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 )
 
 const (
@@ -875,7 +874,7 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 				},
 				appImageName: "",
 			},
-			want: v1alpha1.PartyTemplate{},
+			want: kusciaapisv1alpha1.PartyTemplate{},
 		},
 		{
 			name: "Inexistent appImage should return no-resource-config party info",
@@ -892,7 +891,7 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 				},
 				appImageName: "test-image-1",
 			},
-			want: v1alpha1.PartyTemplate{},
+			want: kusciaapisv1alpha1.PartyTemplate{},
 		},
 		{
 			name: "Existent appImage should return resource-config party info",
@@ -908,9 +907,9 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 				},
 				appImageName: "mockImage",
 			},
-			want: v1alpha1.PartyTemplate{
-				Spec: v1alpha1.PodSpec{
-					Containers: []v1alpha1.Container{
+			want: kusciaapisv1alpha1.PartyTemplate{
+				Spec: kusciaapisv1alpha1.PodSpec{
+					Containers: []kusciaapisv1alpha1.Container{
 						{
 							Name: "mock-Container",
 							Resources: corev1.ResourceRequirements{
@@ -986,22 +985,22 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 	}
 }
 
-func makeMockAppImage(name string) *v1alpha1.AppImage {
+func makeMockAppImage(name string) *kusciaapisv1alpha1.AppImage {
 	replicas := int32(1)
-	return &v1alpha1.AppImage{
+	return &kusciaapisv1alpha1.AppImage{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
-		Spec: v1alpha1.AppImageSpec{
-			Image: v1alpha1.AppImageInfo{
+		Spec: kusciaapisv1alpha1.AppImageSpec{
+			Image: kusciaapisv1alpha1.AppImageInfo{
 				Name: "mock-AppImage",
 				Tag:  "latest",
 			},
-			DeployTemplates: []v1alpha1.DeployTemplate{
+			DeployTemplates: []kusciaapisv1alpha1.DeployTemplate{
 				{
 					Name:     "mock-DeployTemplate",
 					Role:     "server",
 					Replicas: &replicas,
-					Spec: v1alpha1.PodSpec{
-						Containers: []v1alpha1.Container{
+					Spec: kusciaapisv1alpha1.PodSpec{
+						Containers: []kusciaapisv1alpha1.Container{
 							{
 								Name: "mock-Container",
 								Resources: corev1.ResourceRequirements{

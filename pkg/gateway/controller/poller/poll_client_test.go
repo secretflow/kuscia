@@ -52,7 +52,7 @@ func createTestPollConnection(index int) *PollConnection {
 			DialContext: dialer.DialContext,
 		},
 	}
-	pc := NewPollConnection(index, client, "test", "test.alice.svc")
+	pc := NewPollConnection(index, client, "test", "test.alice.svc", "")
 	pc.receiverAddress = "127.0.0.1:12345"
 	pc.forceReconnectIntervalBase = time.Millisecond * 1000
 	pc.forceReconnectIntervalMaxJitter = 1

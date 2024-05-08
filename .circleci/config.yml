@@ -130,18 +130,18 @@ jobs:
             CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
             IMAGE = "secretflow/kuscia"
             ALIYUN_IMAGE = "secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
-            
+
             # login kuscia dockerhub registry
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
-            
+
             docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
-            
+
             docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-            
+
             # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
-            
+
             docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
 

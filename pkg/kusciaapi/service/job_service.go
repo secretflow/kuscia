@@ -26,12 +26,13 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
@@ -42,7 +43,6 @@ import (
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 )
 
 type IJobService interface {
@@ -704,6 +704,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 		taskID := kt.TaskID
 		ts := &kusciaapi.TaskStatus{
 			TaskId: taskID,
+			Alias:  kt.Alias,
 			State:  getTaskState(v1alpha1.TaskPending),
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {

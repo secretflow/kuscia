@@ -36,6 +36,7 @@ type HTTPParam struct {
 	ClusterName  string
 	KusciaSource string
 	KusciaHost   string
+	Transit      bool
 	Headers      map[string]string
 }
 
@@ -89,10 +90,16 @@ func DoHTTPWithRetry(in interface{}, out interface{}, hp *HTTPParam, waitTime ti
 }
 
 func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
+	var handshakeHost string
 	var req *http.Request
 	var err error
+
+	handshakeHost = InternalServer
+	if hp.Transit {
+		handshakeHost = "http://" + hp.KusciaHost
+	}
 	if hp.Method == http.MethodGet {
-		req, err = http.NewRequest(http.MethodGet, InternalServer+hp.Path, nil)
+		req, err = http.NewRequest(http.MethodGet, handshakeHost+hp.Path, nil)
 		if err != nil {
 			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
@@ -101,19 +108,21 @@ func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
 		if err != nil {
 			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
-		req, err = http.NewRequest(hp.Method, InternalServer+hp.Path, bytes.NewBuffer(inbody))
+		req, err = http.NewRequest(hp.Method, handshakeHost+hp.Path, bytes.NewBuffer(inbody))
 		if err != nil {
 			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
 	}
-
+	if !hp.Transit {
+		req.Header.Set(fmt.Sprintf("%s-Cluster", ServiceHandshake), hp.ClusterName)
+	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(fmt.Sprintf("%s-Cluster", ServiceHandshake), hp.ClusterName)
 	req.Header.Set("Kuscia-Source", hp.KusciaSource)
 	req.Header.Set("kuscia-Host", hp.KusciaHost)
 	for key, val := range hp.Headers {
 		req.Header.Set(key, val)
 	}
+
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}

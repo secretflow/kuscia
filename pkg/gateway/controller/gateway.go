@@ -19,19 +19,27 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
+	"reflect"
+	"sort"
 	"sync"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
+
+	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciaextv1alpha1 "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
+	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -40,6 +48,10 @@ import (
 
 const (
 	heartbeatPeriod = 15 * time.Second
+)
+
+var (
+	gwAddrs []string
 )
 
 // GatewayController sync gateway status periodically to master.
@@ -154,7 +166,6 @@ func (c *GatewayController) syncHandler() error {
 		c.lock.Lock()
 		defer c.lock.Unlock()
 
-		status.NetworkStatus = make([]kusciaapisv1alpha1.GatewayEndpointStatus, len(c.networkStatus))
 		status.NetworkStatus = append(status.NetworkStatus, c.networkStatus...)
 	}
 
@@ -164,8 +175,69 @@ func (c *GatewayController) syncHandler() error {
 	_, err = client.UpdateStatus(context.Background(), gatewayCopy, metav1.UpdateOptions{})
 	if err != nil {
 		nlog.Errorf("update gateway(name:%s namespace:%s) fail: %v", c.hostname, c.namespace, err)
+		return err
 	}
-	return err
+	gws, err := c.gatewayLister.Gateways(c.namespace).List(labels.Everything())
+	if err != nil {
+		nlog.Errorf("get gateway list(namespace:%s) fail: %v", c.namespace, err)
+		return err
+	}
+	thresh := time.Now().Add(-2 * heartbeatPeriod)
+	var ga []string
+	for _, gw := range gws {
+		if gw.Status.HeartbeatTime.After(thresh) {
+			ga = append(ga, gw.Status.Address)
+		}
+	}
+	sort.Strings(ga)
+	if !reflect.DeepEqual(gwAddrs, ga) {
+		nlog.Infof("Envoy cluster changed, old: %+v new: %+v", gwAddrs, ga)
+
+		gwAddrs = ga
+		xds.AddOrUpdateCluster(c.createEnvoyCluster(utils.EnvoyClusterName, gwAddrs, 80))
+	}
+	return nil
+}
+
+func (c *GatewayController) createEnvoyCluster(name string, addrs []string, port uint32) *envoycluster.Cluster {
+	exists := map[string]bool{}
+	var endpoints []*endpoint.LbEndpoint
+	for _, addr := range addrs {
+		key := fmt.Sprintf("%s:%d", addr, port)
+		if exists[key] {
+			continue
+		}
+		exists[key] = true
+		endpoints = append(endpoints, &endpoint.LbEndpoint{
+			HostIdentifier: &endpoint.LbEndpoint_Endpoint{
+				Endpoint: &endpoint.Endpoint{
+					Address: &core.Address{
+						Address: &core.Address_SocketAddress{
+							SocketAddress: &core.SocketAddress{
+								Address: addr,
+								PortSpecifier: &core.SocketAddress_PortValue{
+									PortValue: port,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	}
+	cluster := &envoycluster.Cluster{
+		Name: name,
+		LoadAssignment: &endpoint.ClusterLoadAssignment{
+			ClusterName: name,
+			Endpoints: []*endpoint.LocalityLbEndpoints{
+				{
+					LbEndpoints: endpoints,
+				},
+			},
+		},
+	}
+	xds.DecorateCluster(cluster)
+	return cluster
 }
 
 func (c *GatewayController) UpdateStatus(status []*kusciaapisv1alpha1.GatewayEndpointStatus) {

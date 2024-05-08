@@ -9,6 +9,7 @@
 /docs/_build/
 /thirdparty/fate/build/apps/
 /vendor/
+/run/
 # bazel
 bazel-*
 

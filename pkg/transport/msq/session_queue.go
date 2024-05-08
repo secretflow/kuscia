@@ -21,6 +21,7 @@ import (
 	"gitlab.com/jonas.jasas/condchan"
 
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type SessionQueue struct {
@@ -169,6 +170,11 @@ func (s *SessionQueue) waitUntil(check func() bool, cond *condchan.CondChan, tim
 }
 
 func (s *SessionQueue) tryPush(topic string, message *Message, timeout time.Duration) *transerr.TransError {
+	if message.ByteSize() > s.ByteSizeLimit {
+		nlog.Warnf("session queue topic(%s) new message len(%d) max than total buffer size(%d)",
+			topic, message.ByteSize(), s.ByteSizeLimit)
+		return transerr.NewTransError(transerr.BufferOverflow)
+	}
 	checkFn := func() bool {
 		return s.availableToPush(message)
 	}
@@ -180,6 +186,7 @@ func (s *SessionQueue) tryPush(topic string, message *Message, timeout time.Dura
 		return err
 	}
 	if !available {
+		nlog.Infof("not found available buffer for topic(%s), len(%d)", topic, message.ByteSize())
 		return transerr.NewTransError(transerr.BufferOverflow)
 	}
 	s.innerPush(topic, message)

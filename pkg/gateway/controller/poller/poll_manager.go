@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/stathat/consistent"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,9 +45,10 @@ import (
 )
 
 const (
-	processPeriod     = time.Second
-	defaultSyncPeriod = 10 * time.Minute
-	maxRetries        = 16
+	processPeriod          = time.Second
+	defaultSyncPeriod      = 10 * time.Minute
+	maxRetries             = 16
+	defaultGatewayTickTime = 15 * time.Second
 
 	svcPollQueueName = "service-poll-queue"
 	drPollQueueName  = "domain-route-poll-queue"
@@ -54,17 +56,13 @@ const (
 
 type PollState int
 
-const (
-	PollStateUnknown PollState = iota
-	PollStateNotPoll
-	PollStatePolling
-)
-
 type PollManager struct {
 	serviceLister           corelisters.ServiceLister
 	serviceListerSynced     cache.InformerSynced
 	domainRouteLister       kuscialistersv1alpha1.DomainRouteLister
 	domainRouteListerSynced cache.InformerSynced
+	gatewayLister           kuscialistersv1alpha1.GatewayLister
+	gatewayListerSynced     cache.InformerSynced
 	svcQueue                workqueue.RateLimitingInterface
 	drQueue                 workqueue.RateLimitingInterface
 	gatewayName             string
@@ -75,11 +73,14 @@ type PollManager struct {
 	pollers     map[string]map[string]*PollClient
 	pollersLock sync.Mutex
 
-	sourcePollState map[string]PollState
-	pollStateLock   sync.RWMutex
+	receiverDomains     map[string]bool
+	receiverDomainsLock sync.RWMutex
+
+	consist *consistent.Consistent
 }
 
-func NewPollManager(isMaster bool, selfNamespace, gatewayName string, serviceInformer corev1informers.ServiceInformer, domainRouteInformer kusciaextv1alpha1.DomainRouteInformer) (*PollManager, error) {
+func NewPollManager(isMaster bool, selfNamespace, gatewayName string, serviceInformer corev1informers.ServiceInformer,
+	domainRouteInformer kusciaextv1alpha1.DomainRouteInformer, gatewayInformer kusciaextv1alpha1.GatewayInformer) (*PollManager, error) {
 	dialer := &net.Dialer{
 		Timeout: 10 * time.Second,
 	}
@@ -96,11 +97,14 @@ func NewPollManager(isMaster bool, selfNamespace, gatewayName string, serviceInf
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
 		domainRouteLister:       domainRouteInformer.Lister(),
 		domainRouteListerSynced: domainRouteInformer.Informer().HasSynced,
+		gatewayLister:           gatewayInformer.Lister(),
+		gatewayListerSynced:     gatewayInformer.Informer().HasSynced,
 		svcQueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), svcPollQueueName),
 		drQueue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), drPollQueueName),
 		client:                  client,
 		pollers:                 map[string]map[string]*PollClient{},
-		sourcePollState:         map[string]PollState{},
+		receiverDomains:         map[string]bool{},
+		consist:                 consistent.New(),
 	}
 
 	if err := pm.addServiceEventHandler(serviceInformer); err != nil {
@@ -121,8 +125,18 @@ func (pm *PollManager) Run(workers int, stopCh <-chan struct{}) {
 	}()
 
 	nlog.Info("Waiting for informer caches to sync")
-	if !cache.WaitForNamedCacheSync("poll manager", stopCh, pm.serviceListerSynced, pm.domainRouteListerSynced) {
-		nlog.Fatal("failed to wait for caches to sync")
+	if !cache.WaitForNamedCacheSync("poll manager", stopCh, pm.serviceListerSynced, pm.domainRouteListerSynced, pm.gatewayListerSynced) {
+		nlog.Fatal("Failed to wait for caches to sync")
+	}
+
+	gatewayList, err := pm.gatewayLister.List(labels.Everything())
+	if err != nil {
+		nlog.Fatalf("Failed to list gateways: %v", err)
+	}
+	for _, gateway := range gatewayList {
+		if isGatewayAlive(gateway) {
+			pm.consist.Add(gateway.Name)
+		}
 	}
 
 	nlog.Info("Starting poll manager ")
@@ -130,19 +144,94 @@ func (pm *PollManager) Run(workers int, stopCh <-chan struct{}) {
 		go wait.Until(pm.runServiceWorker, processPeriod, stopCh)
 		go wait.Until(pm.runDomainRouteWorker, processPeriod, stopCh)
 	}
+	go pm.runGatewayTicker(stopCh)
 
 	<-stopCh
 	nlog.Info("Shutting down poll manager")
 }
 
 func (pm *PollManager) runServiceWorker() {
-	for queue.HandleQueueItem(context.Background(), svcPollQueueName, pm.svcQueue, pm.syncHandlerService, maxRetries) {
+	for queue.HandleQueueItem(context.Background(), svcPollQueueName, pm.svcQueue, pm.syncHandleService, maxRetries) {
 	}
 }
 
 func (pm *PollManager) runDomainRouteWorker() {
 	for queue.HandleQueueItem(context.Background(), drPollQueueName, pm.drQueue, pm.syncHandleDomainRoute, maxRetries) {
 	}
+}
+
+func (pm *PollManager) runGatewayTicker(stopCh <-chan struct{}) {
+	ticker := time.NewTicker(defaultGatewayTickTime)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stopCh:
+			return
+		case <-ticker.C:
+			if err := pm.updateAliveGateways(); err != nil {
+				nlog.Errorf("Failed to update alive gateways: %v", err)
+			}
+		}
+	}
+}
+
+func (pm *PollManager) updateAliveGateways() error {
+	gatewayList, err := pm.gatewayLister.List(labels.Everything())
+	if err != nil {
+		return err
+	}
+
+	members := pm.consist.Members()
+	aliveGateways := map[string]bool{}
+	for _, gateway := range gatewayList {
+		if isGatewayAlive(gateway) {
+			aliveGateways[gateway.Name] = true
+		}
+	}
+
+	membersChanged := false
+	if len(members) != len(aliveGateways) {
+		nlog.Infof("Current gateway member count is %d, while alive gateway count is %d", len(members), len(aliveGateways))
+		membersChanged = true
+	} else {
+		for _, member := range members {
+			if !aliveGateways[member] {
+				nlog.Infof("Gateway Member %q is not alive now", member)
+				membersChanged = true
+			}
+		}
+	}
+
+	if !membersChanged {
+		return nil
+	}
+
+	var newMembers []string
+	for gatewayName := range aliveGateways {
+		newMembers = append(newMembers, gatewayName)
+	}
+
+	nlog.Infof("Gateway Members changed, old: %+v new: %+v", members, newMembers)
+
+	pm.consist.Set(newMembers)
+	pm.handleAllServices()
+
+	return nil
+}
+
+func isGatewayAlive(gateway *kusciaapisv1alpha1.Gateway) bool {
+	return time.Since(gateway.Status.HeartbeatTime.Time) <= 2*defaultGatewayTickTime
+}
+
+func (pm *PollManager) memberExist(gatewayName string) bool {
+	members := pm.consist.Members()
+	for _, member := range members {
+		if member == gatewayName {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (pm *PollManager) addServiceEventHandler(serviceInformer corev1informers.ServiceInformer) error {
@@ -249,7 +338,7 @@ func (pm *PollManager) domainRouteFilter(dr *kusciaapisv1alpha1.DomainRoute) boo
 	return true
 }
 
-func (pm *PollManager) syncHandlerService(ctx context.Context, key string) error {
+func (pm *PollManager) syncHandleService(ctx context.Context, key string) error {
 	startTime := time.Now()
 	defer func() {
 		nlog.Debugf("Finished syncing service %q (%v)", key, time.Since(startTime))
@@ -260,37 +349,56 @@ func (pm *PollManager) syncHandlerService(ctx context.Context, key string) error
 		return err
 	}
 
-	service, err := pm.serviceLister.Services(namespace).Get(name)
-	if k8serrors.IsNotFound(err) {
-		pm.removePollConnection(name, nil)
-		return nil
-	} else if err != nil {
-		return err
+	domains := map[string]bool{}
+
+	if isDefaultService(key) {
+		domains = pm.buildReceiverDomainsAll(name)
+	} else {
+		service, err := pm.serviceLister.Services(namespace).Get(name)
+		if k8serrors.IsNotFound(err) {
+			pm.setPollConnection(name, nil)
+			return nil
+		} else if err != nil {
+			return err
+		}
+
+		domains = pm.buildReceiverDomainsByService(service)
 	}
 
-	domains := pm.buildReceiverDomainsByService(service)
-
-	pm.addPollConnection(name, domains)
+	pm.setPollConnection(name, domains)
 
 	return nil
 }
 
-func (pm *PollManager) buildReceiverDomainsByService(service *v1.Service) []string {
-	var retDomains []string
+func (pm *PollManager) buildReceiverDomainsByService(service *v1.Service) map[string]bool {
 	if service.Annotations != nil && service.Annotations[common.AccessDomainAnnotationKey] != "" {
+		retDomains := map[string]bool{}
+
 		domains := strings.Split(service.Annotations[common.AccessDomainAnnotationKey], ",")
 		for _, domain := range domains {
-			state := pm.getDomainPollState(domain)
-			if !isPollingState(state) {
+			if !pm.isReceiverDomain(domain) {
 				nlog.Debugf("Need not to poll domain %s", domain)
 				continue
 			}
 
-			// TODO Check if this instance needs to be processed
-			retDomains = append(retDomains, domain)
+			if pm.needSelfPoll(service.Name, domain) {
+				retDomains[domain] = true
+			}
 		}
-	} else {
-		retDomains = pm.getPollingDomains()
+		return retDomains
+	}
+
+	return pm.buildReceiverDomainsAll(service.Name)
+}
+
+func (pm *PollManager) buildReceiverDomainsAll(serviceName string) map[string]bool {
+	retDomains := map[string]bool{}
+
+	receiverDomains := pm.getReceiverDomains()
+	for _, domain := range receiverDomains {
+		if pm.needSelfPoll(serviceName, domain) {
+			retDomains[domain] = true
+		}
 	}
 
 	return retDomains
@@ -309,14 +417,14 @@ func (pm *PollManager) syncHandleDomainRoute(ctx context.Context, key string) er
 
 	dr, err := pm.domainRouteLister.DomainRoutes(pm.selfNamespace).Get(name)
 	if k8serrors.IsNotFound(err) {
-		pm.domainRouteDeleted(sourceDomain)
+		pm.needNotPollSource(sourceDomain)
 		return nil
 	} else if err != nil {
 		return err
 	}
 
 	if dr.Spec.Transit == nil || dr.Spec.Transit.TransitMethod != kusciaapisv1alpha1.TransitMethodReverseTunnel {
-		pm.needNotPollSource(dr)
+		pm.needNotPollSource(dr.Spec.Source)
 		return nil
 	}
 
@@ -327,84 +435,35 @@ func (pm *PollManager) syncHandleDomainRoute(ctx context.Context, key string) er
 	return nil
 }
 
-func (pm *PollManager) getDomainPollState(domain string) PollState {
-	pm.pollStateLock.RLock()
-	defer pm.pollStateLock.RUnlock()
+func (pm *PollManager) needNotPollSource(sourceDomain string) {
+	pm.receiverDomainsLock.Lock()
+	defer pm.receiverDomainsLock.Unlock()
 
-	return pm.sourcePollState[domain]
-}
-
-func (pm *PollManager) getPollingDomains() []string {
-	pm.pollStateLock.RLock()
-	defer pm.pollStateLock.RUnlock()
-
-	var domains []string
-	for domain, state := range pm.sourcePollState {
-		if isPollingState(state) {
-			domains = append(domains, domain)
-		}
-	}
-
-	return domains
-}
-
-func (pm *PollManager) removeDRPollConnection(receiverDomain string) {
-	pm.removePollConnection(utils.ServiceAPIServer, []string{receiverDomain})
-	pm.removePollConnection(utils.ServiceHandshake, []string{receiverDomain})
-
-	pm.handleServicesByDomainRoute(receiverDomain, func(serviceName string, receiverDomain string) {
-		nlog.Infof("Prepare to remove poll connection %q", buildPollerKey(serviceName, receiverDomain))
-		pm.removePollConnection(serviceName, []string{receiverDomain})
-	})
-}
-
-func (pm *PollManager) domainRouteDeleted(sourceDomain string) {
-	pm.pollStateLock.Lock()
-	defer pm.pollStateLock.Unlock()
-
-	if isPollingState(pm.sourcePollState[sourceDomain]) {
-		delete(pm.sourcePollState, sourceDomain)
-		pm.removeDRPollConnection(sourceDomain)
-	}
-}
-
-func (pm *PollManager) needNotPollSource(dr *kusciaapisv1alpha1.DomainRoute) {
-	pm.pollStateLock.Lock()
-	defer pm.pollStateLock.Unlock()
-
-	if isPollingState(pm.sourcePollState[dr.Spec.Source]) {
-		pm.sourcePollState[dr.Spec.Source] = PollStateNotPoll
-		pm.removeDRPollConnection(dr.Spec.Source)
+	if pm.receiverDomains[sourceDomain] {
+		delete(pm.receiverDomains, sourceDomain)
+		pm.handleAllServices()
 	}
 }
 
 func (pm *PollManager) needPollSource(dr *kusciaapisv1alpha1.DomainRoute) error {
-	pm.pollStateLock.Lock()
-	defer pm.pollStateLock.Unlock()
+	pm.receiverDomainsLock.Lock()
+	defer pm.receiverDomainsLock.Unlock()
 
 	source := dr.Spec.Source
-	if pm.sourcePollState[source] == PollStatePolling {
+	if pm.receiverDomains[source] {
 		nlog.Debugf("DomainRoute %s has triggered polling", dr.Name)
 		return nil
 	}
-	pm.sourcePollState[source] = PollStatePolling
+	pm.receiverDomains[source] = true
 
-	receiverDomains := []string{source}
+	nlog.Infof("DomainRoute %s triggered polling", dr.Name)
 
-	if pm.isMaster {
-		pm.addPollConnection(utils.ServiceAPIServer, receiverDomains)
-	}
-	pm.addPollConnection(utils.ServiceHandshake, receiverDomains)
-
-	pm.handleServicesByDomainRoute(source, func(serviceName string, receiverDomain string) {
-		nlog.Infof("Prepare to add poll connection %q", buildPollerKey(serviceName, receiverDomain))
-		pm.addPollConnection(serviceName, []string{receiverDomain})
-	})
+	pm.handleAllServices()
 
 	return nil
 }
 
-func (pm *PollManager) handleServicesByDomainRoute(sourceDomain string, pollConnectionHandler func(string, string)) {
+func (pm *PollManager) handleAllServices() {
 	services, err := pm.serviceLister.Services(pm.selfNamespace).List(labels.Everything())
 	if err != nil {
 		nlog.Errorf("Failed to list services: %v", err)
@@ -415,74 +474,104 @@ func (pm *PollManager) handleServicesByDomainRoute(sourceDomain string, pollConn
 		if !serviceFilter(service) {
 			continue
 		}
-		if service.Annotations != nil && service.Annotations[common.AccessDomainAnnotationKey] != "" {
-			domains := strings.Split(service.Annotations[common.AccessDomainAnnotationKey], ",")
-			for _, domain := range domains {
-				if domain == sourceDomain {
-					pollConnectionHandler(service.Name, domain)
-					break
-				}
-			}
-		} else {
-			pollConnectionHandler(service.Name, sourceDomain)
-		}
+
+		pm.enqueueService(service)
+	}
+
+	defaultServices := []string{utils.ServiceHandshake}
+	if pm.isMaster {
+		defaultServices = append(defaultServices, utils.ServiceAPIServer)
+	}
+
+	for _, service := range defaultServices {
+		pm.svcQueue.Add(service)
 	}
 }
 
-func (pm *PollManager) addPollConnection(serviceName string, domainList []string) {
-	if len(domainList) == 0 {
-		nlog.Debugf("No address for serviceName: %v, skip", serviceName)
-		return
+func (pm *PollManager) needSelfPoll(serviceName string, receiverDomain string) bool {
+	key := buildPollerKey(serviceName, receiverDomain)
+	expected, err := pm.consist.Get(key)
+	if err != nil {
+		nlog.Errorf("Unable to select consistent hash ring for key %q: %v", key, err)
+		return false
 	}
 
+	if expected != pm.gatewayName {
+		nlog.Debugf("Unexpected gateway %q for key %q, expected gateway %q, skip", pm.gatewayName, key, expected)
+		return false
+	}
+
+	return true
+}
+
+func (pm *PollManager) setPollConnection(serviceName string, domains map[string]bool) {
 	pm.pollersLock.Lock()
 	defer pm.pollersLock.Unlock()
 
+	if domains == nil {
+		domains = map[string]bool{}
+	}
+
 	svcPoller, ok := pm.pollers[serviceName]
 	if !ok {
+		if len(domains) == 0 {
+			return
+		}
 		svcPoller = map[string]*PollClient{}
 		pm.pollers[serviceName] = svcPoller
 	}
 
-	for _, domain := range domainList {
-		if _, ok := svcPoller[domain]; ok {
-			continue
+	var addDomainList, removeDomainList []string
+	for domain := range svcPoller {
+		if _, ok := domains[domain]; !ok {
+			removeDomainList = append(removeDomainList, domain)
 		}
-
-		poller := newPollClient(pm.client, serviceName, domain)
-		svcPoller[domain] = poller
-		poller.Start()
-
-		nlog.Infof("Add poll connection: %v", buildPollerKey(serviceName, domain))
 	}
-}
-
-func (pm *PollManager) removePollConnection(serviceName string, domainList []string) {
-	pm.pollersLock.Lock()
-	defer pm.pollersLock.Unlock()
-
-	svcPoller, ok := pm.pollers[serviceName]
-	if !ok {
-		return
-	}
-
-	if len(domainList) == 0 {
-		for domain, poller := range svcPoller {
-			poller.Stop()
-			nlog.Infof("Remove poll connection: %v", buildPollerKey(serviceName, domain))
+	for domain := range domains {
+		if _, ok := svcPoller[domain]; !ok {
+			addDomainList = append(addDomainList, domain)
 		}
-
-		delete(pm.pollers, serviceName)
-		return
 	}
 
-	for _, domain := range domainList {
+	for _, domain := range removeDomainList {
 		if poller, ok := svcPoller[domain]; ok {
 			poller.Stop()
 			delete(svcPoller, domain)
 			nlog.Infof("Remove poll connection: %v", buildPollerKey(serviceName, domain))
 		}
 	}
+	for _, domain := range addDomainList {
+		poller := newPollClient(pm.client, serviceName, domain, pm.selfNamespace)
+		svcPoller[domain] = poller
+		poller.Start()
+
+		nlog.Infof("Add poll connection: %v", buildPollerKey(serviceName, domain))
+	}
+
+	if len(svcPoller) == 0 {
+		delete(pm.pollers, serviceName)
+
+		nlog.Infof("Poll connections of service %q were all removed", serviceName)
+	}
+}
+
+func (pm *PollManager) getReceiverDomains() []string {
+	pm.receiverDomainsLock.RLock()
+	defer pm.receiverDomainsLock.RUnlock()
+
+	var domains []string
+	for domain := range pm.receiverDomains {
+		domains = append(domains, domain)
+	}
+
+	return domains
+}
+
+func (pm *PollManager) isReceiverDomain(domain string) bool {
+	pm.receiverDomainsLock.RLock()
+	defer pm.receiverDomainsLock.RUnlock()
+
+	return pm.receiverDomains[domain]
 }
 
 func buildPollerKey(svcName string, receiverDomain string) string {
@@ -501,6 +590,6 @@ func splitDomainRouteKey(key string) (string, string, error) {
 	return arr[0], arr[1], nil
 }
 
-func isPollingState(state PollState) bool {
-	return state == PollStatePolling
+func isDefaultService(service string) bool {
+	return service == utils.ServiceHandshake || service == utils.ServiceAPIServer
 }

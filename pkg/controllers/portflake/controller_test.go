@@ -62,7 +62,7 @@ func TestPortController(t *testing.T) {
 	pod.Name = "pod_a"
 	pod.Namespace = "ns_a"
 	pod.Labels = map[string]string{
-		common.LabelController: "111",
+		common.LabelController: common.ControllerKusciaTask,
 	}
 	pod.Spec.Containers = []corev1.Container{
 		{

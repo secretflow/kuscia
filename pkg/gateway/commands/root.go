@@ -110,8 +110,10 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(clients.KusciaClient, defaultResync,
 		informers.WithNamespace(gwConfig.DomainID))
 
+	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
+
 	// start GatewayController
-	gwc, err := controller.NewGatewayController(gwConfig.DomainID, prikey, clients.KusciaClient, kusciaInformerFactory.Kuscia().V1alpha1().Gateways())
+	gwc, err := controller.NewGatewayController(gwConfig.DomainID, prikey, clients.KusciaClient, gatewayInformer)
 	if err != nil {
 		return fmt.Errorf("failed to new gateway controller, detail-> %v", err)
 	}
@@ -149,7 +151,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
 	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
 
-	pm, err := poller.NewPollManager(isMaster, gwConfig.DomainID, gwc.GatewayName(), serviceInformer, drInformer)
+	pm, err := poller.NewPollManager(isMaster, gwConfig.DomainID, gwc.GatewayName(), serviceInformer, drInformer, gatewayInformer)
 	go pm.Run(concurrentSyncs, ctx.Done())
 
 	// start runtime metrics collector

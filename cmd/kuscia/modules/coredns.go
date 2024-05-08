@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
@@ -153,9 +154,26 @@ func (s *CorednsModule) Name() string {
 	return "coredns"
 }
 
-func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *confloader.KusciaConfig) Module {
+func RunCoreDNSWithDestroy(conf *Dependencies) Module {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "coredns",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	return RunCoreDNS(runCtx, cancel, &conf.KusciaConfig, shutdownEntry)
+}
+
+func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *confloader.KusciaConfig, shutdownEntry *shutdownHookEntry) Module {
 	m := NewCoreDNS(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
@@ -163,12 +181,9 @@ func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *confloader
 	}()
 
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("coredns is ready")
+		nlog.Fatalf("CoreDNS wait ready failed: %v", err)
 	}
-
+	nlog.Info("CoreDNS is ready")
 	return m
 }
 

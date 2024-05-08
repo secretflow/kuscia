@@ -73,7 +73,10 @@ func (t *transportModule) runAsSubProcess(ctx context.Context) error {
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.CommandContext(ctx, filepath.Join(t.rootDir, transportBinPath), args...)
 		cmd.Env = os.Environ()
-		return cmd
+		return &ModuleCMD{
+			cmd:   cmd,
+			score: &transportOOMScore,
+		}
 	})
 }
 
@@ -111,20 +114,34 @@ func (t *transportModule) readyz(address string) error {
 	return nil
 }
 
-func RunTransport(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunTransportWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:      "transport",
+		DestroyCh: runCtx.Done(),
+		DestroyFn: cancel,
+	})
+	RunTransport(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunTransport(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m := NewTransport(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("transport is ready")
+		nlog.Fatalf("Transport wait ready failed: %v", err)
 	}
+	nlog.Info("transport is ready")
 	return m
 }
 

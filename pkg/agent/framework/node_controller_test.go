@@ -171,14 +171,14 @@ func TestNodeRun(t *testing.T) {
 		t.Fatal(err) // if this returns at all it is an error regardless if err is nil
 	case err := <-waitForEvent(eCtx, nr, func(e watch.Event) bool {
 		node := e.Object.(*corev1.Node)
-		if len(node.Status.Conditions) == 0 {
+		if len(node.Status.Conditions) != len(n.Status.Conditions) {
 			return false
 		}
 
 		// Check if this is a node update we are looking for
 		// Since node updates happen periodically there could be some that occur
 		// before the status update that we are looking for happens.
-		c := node.Status.Conditions[len(n.Status.Conditions)-1]
+		c := node.Status.Conditions[len(node.Status.Conditions)-1]
 		if !c.LastTransitionTime.Equal(&newCondition.LastTransitionTime) {
 			return false
 		}

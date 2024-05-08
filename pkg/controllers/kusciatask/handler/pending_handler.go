@@ -165,6 +165,7 @@ func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusci
 // 2) only local party is controlled in participant cluster
 func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
 	partyKitInfos := map[string]*PartyKitInfo{}
+	selfPartyKitInfos := map[string]*PartyKitInfo{}
 	for i, party := range kusciaTask.Spec.Parties {
 		kit, err := h.buildPartyKitInfo(kusciaTask, &kusciaTask.Spec.Parties[i])
 		if err != nil {
@@ -172,9 +173,13 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 		}
 
 		partyKitInfos[party.DomainID+party.Role] = kit
+
+		if !utilsres.IsPartnerDomain(h.namespacesLister, kit.domainID) {
+			selfPartyKitInfos[party.DomainID+party.Role] = kit
+		}
 	}
 
-	_, err := allocatePorts(kusciaTask, partyKitInfos)
+	_, err := allocatePorts(kusciaTask, selfPartyKitInfos)
 	if err != nil {
 		return err
 	}
@@ -186,11 +191,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
-	for _, partyKitInfo := range partyKitInfos {
-		if utilsres.IsPartnerDomain(h.namespacesLister, partyKitInfo.domainID) {
-			continue
-		}
-
+	for _, partyKitInfo := range selfPartyKitInfos {
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
 			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
@@ -331,8 +332,9 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 		pods:            pods,
 	}
 
-	if deployTemplate.NetworkPolicy != nil {
-		kit.portAccessDomains = generatePortAccessDomains(kusciaTask.Spec.Parties, deployTemplate.NetworkPolicy)
+	// Todo: Consider how to limit the communication between single-party jobs between multiple parties.
+	if len(kusciaTask.Spec.Parties) > 1 {
+		kit.portAccessDomains = generatePortAccessDomains(kusciaTask.Spec.Parties, deployTemplate.NetworkPolicy, ports)
 	}
 
 	return kit, nil
@@ -441,42 +443,59 @@ func generatePortServices(podName string, servicedPorts []string) map[string]str
 }
 
 // generatePortAccessDomains generates domain list with access permission according to the role that has access to a port.
-func generatePortAccessDomains(parties []kusciaapisv1alpha1.PartyInfo, networkPolicy *kusciaapisv1alpha1.NetworkPolicy) map[string]string {
-	roleDomains := map[string][]string{}
-	for _, party := range parties {
-		if domains, ok := roleDomains[party.Role]; ok {
-			roleDomains[party.Role] = append(domains, party.DomainID)
-		} else {
-			roleDomains[party.Role] = []string{party.DomainID}
-		}
-	}
-
-	portAccessRoles := map[string][]string{}
-	for _, item := range networkPolicy.Ingresses {
-		for _, port := range item.Ports {
-			if domains, ok := portAccessRoles[port.Port]; ok {
-				portAccessRoles[port.Port] = append(domains, item.From.Roles...)
-			} else {
-				portAccessRoles[port.Port] = item.From.Roles
-			}
-		}
-	}
-
+func generatePortAccessDomains(parties []kusciaapisv1alpha1.PartyInfo, networkPolicy *kusciaapisv1alpha1.NetworkPolicy, ports NamedPorts) map[string]string {
 	portAccessDomains := map[string]string{}
-	for port, roles := range portAccessRoles {
+	if networkPolicy == nil {
 		domainMap := map[string]struct{}{}
-		for _, role := range roles {
-			for _, domain := range roleDomains[role] {
-				domainMap[domain] = struct{}{}
-			}
+		for _, party := range parties {
+			domainMap[party.DomainID] = struct{}{}
 		}
+
 		domainSlice := make([]string, 0, len(domainMap))
 		for domain := range domainMap {
 			domainSlice = append(domainSlice, domain)
 		}
-		portAccessDomains[port] = strings.Join(domainSlice, ",")
-	}
 
+		for _, port := range ports {
+			if port.Scope == kusciaapisv1alpha1.ScopeCluster {
+				portAccessDomains[port.Name] = strings.Join(domainSlice, ",")
+			}
+		}
+	} else {
+		roleDomains := map[string][]string{}
+		for _, party := range parties {
+			if domains, ok := roleDomains[party.Role]; ok {
+				roleDomains[party.Role] = append(domains, party.DomainID)
+			} else {
+				roleDomains[party.Role] = []string{party.DomainID}
+			}
+		}
+
+		portAccessRoles := map[string][]string{}
+		for _, item := range networkPolicy.Ingresses {
+			for _, port := range item.Ports {
+				if domains, ok := portAccessRoles[port.Port]; ok {
+					portAccessRoles[port.Port] = append(domains, item.From.Roles...)
+				} else {
+					portAccessRoles[port.Port] = item.From.Roles
+				}
+			}
+		}
+
+		for port, roles := range portAccessRoles {
+			domainMap := map[string]struct{}{}
+			for _, role := range roles {
+				for _, domain := range roleDomains[role] {
+					domainMap[domain] = struct{}{}
+				}
+			}
+			domainSlice := make([]string, 0, len(domainMap))
+			for domain := range domainMap {
+				domainSlice = append(domainSlice, domain)
+			}
+			portAccessDomains[port] = strings.Join(domainSlice, ",")
+		}
+	}
 	return portAccessDomains
 }
 
@@ -802,7 +821,7 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 				common.KusciaPartyMasterDomainAnnotationKey: kusciaTask.Annotations[common.KusciaPartyMasterDomainAnnotationKey],
 			},
 			Labels: map[string]string{
-				common.LabelController: kusciaTaskLabelValue,
+				common.LabelController: common.ControllerKusciaTask,
 				common.LabelJobUID:     jobUID,
 				common.LabelTaskUID:    string(kusciaTask.UID),
 			},
@@ -823,7 +842,7 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 
 func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 	labels := map[string]string{
-		common.LabelController: kusciaTaskLabelValue,
+		common.LabelController: common.ControllerKusciaTask,
 		common.LabelTaskUID:    string(partyKit.kusciaTask.UID),
 	}
 
@@ -869,7 +888,7 @@ func (h *PendingHandler) submitConfigMap(cm *v1.ConfigMap) error {
 
 func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo) (*v1.Pod, error) {
 	labels := map[string]string{
-		common.LabelController:              kusciaTaskLabelValue,
+		common.LabelController:              common.ControllerKusciaTask,
 		common.LabelCommunicationRoleServer: "true",
 		common.LabelCommunicationRoleClient: "true",
 		labelKusciaTaskPodIdentity:          podKit.podIdentity,
@@ -1113,6 +1132,7 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 	svc.Labels = map[string]string{
 		common.LabelPortName:  port.Name,
 		common.LabelPortScope: string(port.Scope),
+		common.LabelTaskUID:   string(partyKit.kusciaTask.UID),
 	}
 
 	var protocolType string
@@ -1132,6 +1152,7 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 		common.InitiatorAnnotationKey:    partyKit.kusciaTask.Spec.Initiator,
 		common.ProtocolAnnotationKey:     string(port.Protocol),
 		common.AccessDomainAnnotationKey: partyKit.portAccessDomains[port.Name],
+		common.TaskIDAnnotationKey:       partyKit.kusciaTask.Name,
 	}
 
 	return svc, nil

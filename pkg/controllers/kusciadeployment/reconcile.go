@@ -42,25 +42,25 @@ const (
 
 // ProcessKusciaDeployment processes kuscia deployment resource.
 func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1alpha1.KusciaDeployment) (err error) {
-	updated, err := c.updateKusciaDeploymentAnnotations(kd)
+	conditionNeedUpdate, err := c.updateKusciaDeploymentAnnotations(kd)
 	if err != nil {
 		nlog.Errorf("UpdateKusciaDeploymentSpec kd=%s/%s failed: %s", kd.Namespace, kd.Name, err)
 		return err
 	}
 
+	preKdStatus := kd.Status.DeepCopy()
+	partyKitInfos, kitNeedUpdate, err := c.buildPartyKitInfos(kd)
+	if err != nil {
+		return c.handleError(ctx, partyKitInfos, preKdStatus, kd, err)
+	}
+
 	// We update the spec and status separately.
-	if updated {
+	if conditionNeedUpdate || kitNeedUpdate {
 		_, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).Update(ctx, kd, metav1.UpdateOptions{})
 		if err != nil && !k8serrors.IsConflict(err) {
 			return fmt.Errorf("failed to updating kuscia deployment %v, %v", kd.Name, err)
 		}
 		return nil
-	}
-
-	preKdStatus := kd.Status.DeepCopy()
-	partyKitInfos, err := c.buildPartyKitInfos(kd)
-	if err != nil {
-		return c.handleError(ctx, partyKitInfos, preKdStatus, kd, err)
 	}
 
 	if err = c.syncResources(ctx, partyKitInfos); err != nil {
@@ -601,11 +601,17 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		}
 
 		for _, port := range ctr.Ports {
-			resCtr.Ports = append(resCtr.Ports, corev1.ContainerPort{
+			namedPort, ok := partyKitInfo.dkInfo.ports[port.Name]
+			if !ok {
+				return nil, fmt.Errorf("port %s is not allocated for deployment %s", port.Name, partyKitInfo.dkInfo.deploymentName)
+			}
+			resPort := corev1.ContainerPort{
 				Name:          port.Name,
-				ContainerPort: port.Port,
+				ContainerPort: namedPort.Port,
 				Protocol:      corev1.ProtocolTCP,
-			})
+			}
+
+			resCtr.Ports = append(resCtr.Ports, resPort)
 		}
 
 		protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}

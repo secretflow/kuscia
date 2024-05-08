@@ -79,15 +79,15 @@ func (s *Server) Start(ctx context.Context) error {
 
 	select {
 	case err := <-errChan:
-		nlog.Fatalf("Transport server exit with error: %v", err)
+		nlog.Errorf("Transport server exit with error: %v", err)
 		return err
 	case <-ctx.Done():
 		if err := sr.Shutdown(ctx); err != nil {
 			nlog.Warnf("Transport shutdown fail:%v ", err)
 		}
-		nlog.Fatal("Transport server has been canceled")
+		nlog.Errorf("Transport server has been canceled")
+		return fmt.Errorf("transport server has been canceled")
 	}
-	return nil
 }
 
 func Run(ctx context.Context, configFile string) error {

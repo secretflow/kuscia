@@ -39,11 +39,9 @@ ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍�
 
 domainID、私钥以及 datastoreEndpoint 字段里的数据库连接串（user、password、host、database）需要替换成真实有效的信息，私钥可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 > 注意：<br>
-1、database 名称暂不支持 "-" 特殊字符<br>
-2、目前节点私钥仅支持 pkcs#1 格式: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"<br>
-3、修改 Configmap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效
-
-<span style="color:red;">注意：节点 ID 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
+> - database 名称暂不支持 "-" 特殊字符<br>
+> - 修改 Configmap 配置后，需执行 kubectl delete po {pod-name} -n {namespace} 重新拉起 Pod 生效<br>
+> - 节点 ID 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
 
 获取 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/configmap.yaml) 文件，创建 Configmap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。
 
@@ -87,12 +85,11 @@ ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍�
 
 部署 Configmap 需要提前在 Master 节点 Pod 内生成 domainID 以及 Token，并填写到 Configmap 的 domainID 和 liteDeployToken 字段中，私钥可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成并填写到 domainKeyData 字段中
 > 注意：<br>
-1、目前节点私钥仅支持 pkcs#1 格式: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"<br>
-2、修改 Configmap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效
+> - 目前节点私钥仅支持 pkcs#1 格式: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"<br>
+> - 修改 Configmap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效<br>
+> - 节点 ID 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
 
-<span style="color:red;">注意：节点 ID 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
-
-lite-bob 配置与 lite-alice 一样，下面以 alice 为例：
+lite-bob 配置与 lite-alice 一样，下面以 Alice 为例：
 ```bash
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
 # [pod 内部] 获取节点 Token
@@ -159,18 +156,18 @@ kubectl create -f deployement.yaml
 > PS：目前因为安全性和时间因素，节点之间授权还是需要很多手动的操作，未来会优化。
 
 ```bash
-# 登录 master
+# 登录 Master
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
-# [pod 内部] 创建 alice 到 bob 的授权
+# [pod 内部] 创建 Alice 到 Bob 的授权
 scripts/deploy/create_cluster_domain_route.sh alice bob http://kuscia-lite-bob.lite-bob.svc.cluster.local:1080
-# [pod 内部] 创建 bob 到 alice 的授权
+# [pod 内部] 创建 Bob 到 Alice 的授权
 scripts/deploy/create_cluster_domain_route.sh bob alice http://kuscia-lite-alice.lite-alice.svc.cluster.local:1080
-# [pod 内部] 执行以下命令，查看是否有内容，如果有说明 alice 到 bob 授权建立成功。
+# [pod 内部] 执行以下命令，查看是否有内容，如果有说明 Alice 到 Bob 授权建立成功。
 kubectl get cdr alice-bob -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
-# [pod 内部] 执行以下命令，查看是否有内容，如果有说明 bob 到 alice 授权建立成功
+# [pod 内部] 执行以下命令，查看是否有内容，如果有说明 Bob 到 Alice 授权建立成功
 kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
 ```
-`pod 内部` 在执行 master Pod 内执行 `kubectl get cdr` 返回 Ready 为 True 时，表示授权成功，示例如下：
+`pod 内部` 在执行 Master Pod 内执行 `kubectl get cdr` 返回 Ready 为 True 时，表示授权成功，示例如下：
 ```bash
 NAME                  SOURCE   DESTINATION     HOST                                             AUTHENTICATION   READY
 alice-kuscia-system   alice    kuscia-system                                                    Token            True
@@ -181,71 +178,771 @@ bob-alice             bob      alice           kuscia-lite-alice.lite-alice.svc.
 授权失败，请参考[授权错误排查](../../reference/troubleshoot/networkauthorizationcheck.md)文档
 
 ## 确认部署成功
-### 检查 pod 状态
+### 检查 Pod 状态
 pod 处于 running 状态表示部署成功
 ```bash
 kuebctl get po -n kuscia-master
 kubectl get po -n lite-alice
 ```
 ### 检查数据库连接状态
-数据库内生成表格 kine 并且有数据表示数据库连接成功
+数据库内生成表格 Kine 并且有数据表示数据库连接成功
 
 ## 运行任务
 
-### 准备测试数据
+> RunK 模式不支持使用本地数据训练，请准备[OSS数据](K8s_master_lite_cn.md#准备-oss-测试数据)。使用本地数据请先切换至 RunP 模式，详情请参考 [使用 RunP 运行时部署节点](./deploy_with_runp_cn.md)。
 
-- 登录 master pod
+### 准备本地测试数据
+#### Alice 节点准备本地测试数据
+
+登录到 Alice 节点的 Pod 中
 ```bash
-kubectl exec -it ${master_pod_name} bash -n kuscia-master
+kubectl exec -it ${alice_pod_name} bash -n lite-alice
 ```
 
-为 alice 节点准备测试数据
+为 Alice 节点创建本地数据源
 
-`pod 内部`为 alice 的测试数据创建 domaindata
+创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
 ```bash
-scripts/deploy/create_domaindata_alice_table.sh alice
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
+ --header 'Content-Type: application/json' \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "alice",
+  "datasource_id":"default-data-source",
+  "type":"localfs",
+  "name": "DemoDataSource",
+  "info": {
+      "localfs": {
+          "path": "/home/kuscia/var/storage/data"
+      }
+  },
+  "access_directly": true
+}'
 ```
 
-`pod 内部`为 alice 的测试数据创建 domaindatagrant
+为 Alice 的测试数据创建 DomainData
 ```bash
+# 在 alice 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
+--header 'Content-Type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+-d '{
+  "domaindata_id": "alice-table",
+  "name": "alice.csv",
+  "type": "table",
+  "relative_uri": "alice.csv",
+  "domain_id": "alice",
+  "datasource_id": "default-data-source",
+  "attributes": {
+    "description": "alice demo data"
+  },
+  "columns": [
+    {
+      "comment": "",
+      "name": "id1",
+      "type": "str"
+    },
+    {
+      "comment": "",
+      "name": "age",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "education",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "default",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "balance",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "housing",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "loan",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "day",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "duration",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "campaign",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "pdays",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "previous",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_blue-collar",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_entrepreneur",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_housemaid",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_management",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_retired",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_self-employed",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_services",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_student",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_technician",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_unemployed",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "marital_divorced",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "marital_married",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "marital_single",
+      "type": "float"
+    }
+  ],
+  "vendor": "manual",
+  "author": "alice"
+}'
+```
+
+将 Alice 的 DomainData 授权给 Bob
+```bash
+# 在 alice 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
-     --cert /home/kuscia/var/certs/kusciaapi-server.crt \
-     --key /home/kuscia/var/certs/kusciaapi-server.key \
-     --cacert /home/kuscia/var/certs/ca.crt \
-     --header "Token: $(cat /home/kuscia/var/certs/token)" \
-     --header 'Content-Type: application/json' \
-     -d '{ "grant_domain": "bob",
-           "description": {"domaindatagrant":"alice-bob"},
-           "domain_id": "alice",
-           "domaindata_id": "alice-table"
-     }'
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--header 'Content-Type: application/json' \
+-d '{ "grant_domain": "bob",
+      "description": {"domaindatagrant":"alice-bob"},
+      "domain_id": "alice",
+      "domaindata_id": "alice-table"
+}'
 ```
 
-为 bob 节点准备测试数据
+#### Bob 节点准备本地测试数据
 
-`pod 内部`为 bob 的测试数据创建 domaindata
+登录到 Bob 节点的 Pod 中
 ```bash
-scripts/deploy/create_domaindata_bob_table.sh bob
+kubectl exec -it ${bob_pod_name} bash -n lite-bob
 ```
-`pod 内部`为 bob 的测试数据创建 domaindatagrant
+
+为 Bob 节点创建本地数据源
+
+创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
+```bash
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
+ --header 'Content-Type: application/json' \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "bob",
+  "datasource_id":"default-data-source",
+  "type":"localfs",
+  "name": "DemoDataSource",
+  "info": {
+      "localfs": {
+          "path": "/home/kuscia/var/storage/data"
+      }
+  },
+  "access_directly": true
+}'
+```
+
+为 Bob 的测试数据创建 domaindata
+```bash
+# 在 bob 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
+--header 'Content-Type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+-d '{
+  "domaindata_id": "bob-table",
+  "name": "bob.csv",
+  "type": "table",
+  "relative_uri": "bob.csv",
+  "domain_id": "bob",
+  "datasource_id": "default-data-source",
+  "attributes": {
+    "description": "bob demo data"
+  },
+  "columns": [
+    {
+      "comment": "",
+      "name": "id2",
+      "type": "str"
+    },
+    {
+      "comment": "",
+      "name": "contact_cellular",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "contact_telephone",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "contact_unknown",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_apr",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_aug",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_dec",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_feb",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_jan",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_jul",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_jun",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_mar",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_may",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_nov",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_oct",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_sep",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_failure",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_other",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_success",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_unknown",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "y",
+      "type": "int"
+    }
+  ],
+  "vendor": "manual",
+  "author": "bob"
+}'
+```
+将 Bob 的 DomainData 授权给 Alice
 
 ```bash
+# 在 bob 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
-     --cert /home/kuscia/var/certs/kusciaapi-server.crt \
-     --key /home/kuscia/var/certs/kusciaapi-server.key \
-     --cacert /home/kuscia/var/certs/ca.crt \
-     --header "Token: $(cat /home/kuscia/var/certs/token)" \
-     --header 'Content-Type: application/json' \
-     -d '{ "grant_domain": "alice",
-           "description": {"domaindatagrant":"bob-alice"},
-           "domain_id": "bob",
-           "domaindata_id": "bob-table"
-     }'
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--header 'Content-Type: application/json' \
+-d '{ "grant_domain": "alice",
+      "description": {"domaindatagrant":"bob-alice"},
+      "domain_id": "bob",
+      "domaindata_id": "bob-table"
+}'
+```
+
+### 准备 OSS 测试数据
+#### Alice 节点准备 OSS 数据
+
+请先将 Alice 节点测试数据 [alice.csv](https://github.com/secretflow/kuscia/blob/main/testdata/alice.csv) 上传至 OSS
+
+登录到 Alice 节点的 Pod 中
+```bash
+kubectl exec -it ${alice_pod_name} bash -n lite-alice
+```
+
+为 Alice 节点创建 OSS 数据源
+
+创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
+```bash
+# 在 alice 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
+--header 'Content-Type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+-d '{
+   "domain_id": "alice",
+   "datasource_id":"default-data-source",
+   "type":"oss",
+   "name": "DemoDataSource",
+   "info": {
+      "oss": {
+          "endpoint": "https://oss.xxx.cn-xxx.com",
+          "bucket": "secretflow",
+          "prefix": "kuscia/",
+          "access_key_id":"ak-xxxx",
+          "access_key_secret" :"sk-xxxx"
+#         "virtualhost": true (阿里云 OSS 需要配置此项)
+#         "storage_type": "minio" (Minio 需要配置此项)
+      }
+  },
+  "access_directly": true
+}'
+```
+
+为 Alice 的测试数据创建 DomainData
+```bash
+# 在 alice 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
+--header 'Content-Type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+-d '{
+  "domaindata_id": "alice-table",
+  "name": "alice.csv",
+  "type": "table",
+  "relative_uri": "alice.csv",
+  "domain_id": "alice",
+  "datasource_id": "default-data-source",
+  "attributes": {
+    "description": "alice demo data"
+  },
+  "columns": [
+    {
+      "comment": "",
+      "name": "id1",
+      "type": "str"
+    },
+    {
+      "comment": "",
+      "name": "age",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "education",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "default",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "balance",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "housing",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "loan",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "day",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "duration",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "campaign",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "pdays",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "previous",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_blue-collar",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_entrepreneur",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_housemaid",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_management",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_retired",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_self-employed",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_services",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_student",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_technician",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "job_unemployed",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "marital_divorced",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "marital_married",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "marital_single",
+      "type": "float"
+    }
+  ],
+  "vendor": "manual",
+  "author": "alice"
+}'
+```
+
+将 Alice 的 DomainData 授权给 Bob
+```bash
+# 在 alice 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--header 'Content-Type: application/json' \
+-d '{ "grant_domain": "bob",
+      "description": {"domaindatagrant":"alice-bob"},
+      "domain_id": "alice",
+      "domaindata_id": "alice-table"
+}'
+```
+
+#### Bob 节点准备 OSS 测试数据
+
+请先将 Bob 节点测试数据 [bob.csv](https://github.com/secretflow/kuscia/blob/main/testdata/bob.csv) 上传至 OSS
+
+登录到 Bob 节点的 Pod 中
+```bash
+kubectl exec -it ${bob_pod_name} bash -n lite-bob
+```
+
+为 Bob 节点创建 OSS 数据源
+
+创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
+```bash
+# 在 bob 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
+--header 'Content-Type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+-d '{
+   "domain_id": "bob",
+   "datasource_id":"default-data-source",
+   "type":"oss",
+   "name": "DemoDataSource",
+   "info": {
+      "oss": {
+          "endpoint": "https://oss.xxx.cn-xxx.com",
+          "bucket": "secretflow",
+          "prefix": "kuscia/",
+          "access_key_id":"ak-xxxx",
+          "access_key_secret" :"sk-xxxx"
+#         "virtualhost": true (阿里云 OSS 需要配置此项)
+#         "storage_type": "minio" (Minio 需要配置此项)
+      }
+  },
+  "access_directly": true
+}'
+```
+
+为 Bob 的测试数据创建 DomainData
+```bash
+# 在 bob 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
+--header 'Content-Type: application/json' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+-d '{
+  "domaindata_id": "bob-table",
+  "name": "bob.csv",
+  "type": "table",
+  "relative_uri": "bob.csv",
+  "domain_id": "bob",
+  "datasource_id": "default-data-source",
+  "attributes": {
+    "description": "bob demo data"
+  },
+  "columns": [
+    {
+      "comment": "",
+      "name": "id2",
+      "type": "str"
+    },
+    {
+      "comment": "",
+      "name": "contact_cellular",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "contact_telephone",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "contact_unknown",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_apr",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_aug",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_dec",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_feb",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_jan",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_jul",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_jun",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_mar",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_may",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_nov",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_oct",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "month_sep",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_failure",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_other",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_success",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "poutcome_unknown",
+      "type": "float"
+    },
+    {
+      "comment": "",
+      "name": "y",
+      "type": "int"
+    }
+  ],
+  "vendor": "manual",
+  "author": "bob"
+}'
+```
+
+将 Bob 的 DomainData 授权给 Alice
+```bash
+# 在 bob 容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
+--cacert ${CTR_CERTS_ROOT}/ca.crt \
+--header 'Content-Type: application/json' \
+-d '{ "grant_domain": "alice",
+      "description": {"domaindatagrant":"bob-alice"},
+      "domain_id": "bob",
+      "domaindata_id": "bob-table"
+}'
 ```
 
 ### 创建 AppImage
 
-- 登录到 master pod
+- 登录到 Master pod
 ```bash
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
 ```
@@ -255,7 +952,7 @@ kubectl apply -f AppImage.yaml
 ```
 
 ### 执行测试作业
-- 登录到 master pod
+- 登录到 Master pod
 ```bash
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
 ```
@@ -268,4 +965,9 @@ scripts/user/create_example_job.sh
 `pod 内部`查看作业状态
 ```bash
 kubectl get kj -n cross-domain
+```
+
+Runk 模式可以在 Kuscia Pod 所在集群中执行如下命令查看引擎日志
+```bash
+kubectl logs ${engine_pod_name} -n kuscia-master
 ```

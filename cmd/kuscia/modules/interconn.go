@@ -16,6 +16,7 @@ package modules
 
 import (
 	"context"
+	"time"
 
 	"github.com/secretflow/kuscia/pkg/interconn"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -25,7 +26,19 @@ func NewInterConn(ctx context.Context, deps *Dependencies) (Module, error) {
 	return interconn.NewServer(ctx, deps.Clients)
 }
 
-func RunInterConn(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) {
+func RunInterConnWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "interconn",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunInterConn(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunInterConn(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) {
 	m, err := NewInterConn(ctx, conf)
 	if err != nil {
 		nlog.Error(err)
@@ -34,15 +47,18 @@ func RunInterConn(ctx context.Context, cancel context.CancelFunc, conf *Dependen
 	}
 
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("interconn is ready")
+		nlog.Fatalf("InterConn wait ready failed: %v", err)
 	}
+	nlog.Info("InterConn is ready")
 }
