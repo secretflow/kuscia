@@ -151,12 +151,6 @@ func TestValidateK8sName(t *testing.T) {
 	}
 }
 
-func TestHashString(t *testing.T) {
-	input := "11111111-11111111-11111111-11111111-11111111-11111111-11111111-11111111"
-	output, _ := HashString(input)
-	assert.Equal(t, 32, len(output))
-}
-
 func TestIsEmpty(t *testing.T) {
 	var limitResource corev1.ResourceList
 	assert.Equal(t, IsEmpty(limitResource), true, "IsEmpty() function cannot judge whether the data is empty. ")

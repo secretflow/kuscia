@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
@@ -36,7 +37,69 @@ type KusciaHandler struct {
 
 func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string) []*route.Route {
 	clusterName := fmt.Sprintf("%s-to-%s-%s", dr.Spec.Source, dr.Spec.Destination, dp.Name)
-	action := generateDefaultRouteAction(dr, clusterName)
+	requestToAdd := []*core.HeaderValueOption{
+		{
+			Header: &core.HeaderValue{
+				Key:   interConnProtocolHeader,
+				Value: string(kusciaapisv1alpha1.InterConnKuscia),
+			},
+			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+		},
+		{
+			Header: &core.HeaderValue{
+				Key:   "Kuscia-Host",
+				Value: "%REQ(:authority)%",
+			},
+			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+		},
+		{
+			Header: &core.HeaderValue{
+				Key:   "Kuscia-Source",
+				Value: dr.Spec.Source,
+			},
+			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+		},
+		{
+			Header: &core.HeaderValue{
+				Key:   "Kuscia-Token",
+				Value: token,
+			},
+			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+		},
+	}
+	isReverseTunnel := utils.IsReverseTunnelTransit(dr.Spec.Transit)
+	if isReverseTunnel {
+		clusterName = utils.EnvoyClusterName
+		requestToAdd = append(requestToAdd, &core.HeaderValueOption{
+			Header: &core.HeaderValue{
+				Key:   utils.HeaderTransitFlag,
+				Value: "true",
+			},
+			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+		})
+	}
+	action := xds.AddDefaultTimeout(generateDefaultRouteAction(dr, clusterName))
+	if isReverseTunnel {
+		action.HostRewriteSpecifier = &route.RouteAction_AutoHostRewrite{
+			AutoHostRewrite: wrapperspb.Bool(false),
+		}
+		action.HashPolicy = []*route.RouteAction_HashPolicy{
+			{
+				PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
+					Header: &route.RouteAction_HashPolicy_Header{
+						HeaderName: ":authority",
+					},
+				},
+				Terminal: true,
+			},
+		}
+		action.Timeout = &duration.Duration{
+			Seconds: 300,
+		}
+		action.IdleTimeout = &duration.Duration{
+			Seconds: 300,
+		}
+	}
 	if len(dp.PathPrefix) > 0 {
 		action.PrefixRewrite = strings.TrimSuffix(dp.PathPrefix, "/") + "/"
 	}
@@ -46,40 +109,10 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 				Prefix: "/",
 			},
 		},
-
 		Action: &route.Route_Route{
-			Route: xds.AddDefaultTimeout(action),
+			Route: action,
 		},
-		RequestHeadersToAdd: []*core.HeaderValueOption{
-			{
-				Header: &core.HeaderValue{
-					Key:   interConnProtocolHeader,
-					Value: string(kusciaapisv1alpha1.InterConnKuscia),
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-			{
-				Header: &core.HeaderValue{
-					Key:   "Kuscia-Host",
-					Value: "%REQ(:authority)%",
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-			{
-				Header: &core.HeaderValue{
-					Key:   "Kuscia-Source",
-					Value: dr.Spec.Source,
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-			{
-				Header: &core.HeaderValue{
-					Key:   "Kuscia-Token",
-					Value: token,
-				},
-				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
-			},
-		},
+		RequestHeadersToAdd: requestToAdd,
 	}
 	return []*route.Route{httpRoute}
 }

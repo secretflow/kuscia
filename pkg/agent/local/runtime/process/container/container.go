@@ -32,9 +32,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/local/store"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
+	"github.com/secretflow/kuscia/pkg/utils/cgroup"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/pkg/utils/process"
 )
 
 const (
@@ -99,7 +101,7 @@ func NewContainer(config *runtime.ContainerConfig, logDirectory, sandboxID strin
 		return nil, errors.New("container config must include metadata")
 	}
 
-	cid := common.GenerateID()
+	cid := common.GenerateID(16)
 	name := makeContainerName(metadata, cid)
 
 	imageName, err := kii.NewImageName(config.Image.Image)
@@ -189,6 +191,9 @@ func (c *Container) Start() (retErr error) {
 	c.status.StartedAt = time.Now().UnixNano()
 	c.status.Pid = starter.Command().Process.Pid
 
+	c.addCgroup(c.status.Pid)
+	process.SetOOMScore(c.status.Pid, 0)
+
 	go c.signalOnExit(starter)
 
 	return nil
@@ -235,6 +240,73 @@ func (c *Container) buildStarter() (st.Starter, error) {
 	}
 
 	return st.NewRawStarter(initConfig)
+}
+
+func (c *Container) addCgroup(pid int) {
+	if !cgroup.HasPermission() || pid <= 0 {
+		return
+	}
+
+	var (
+		cpuQuota    *int64
+		cpuPeriod   *uint64
+		memoryLimit *int64
+	)
+
+	if c.Config != nil && c.Config.Linux != nil && c.Config.Linux.Resources != nil {
+		if c.Config.Linux.Resources.CpuQuota > 0 {
+			cpuQuota = &c.Config.Linux.Resources.CpuQuota
+		}
+		if c.Config.Linux.Resources.CpuPeriod > 0 {
+			period := uint64(c.Config.Linux.Resources.CpuPeriod)
+			cpuPeriod = &period
+		}
+		if c.Config.Linux.Resources.MemoryLimitInBytes > 0 {
+			memoryLimit = &c.Config.Linux.Resources.MemoryLimitInBytes
+		}
+	}
+
+	cgroupConfig := &cgroup.Config{
+		Group:       fmt.Sprintf("%s/%s", cgroup.KusciaAppsGroup, c.ID),
+		Pid:         uint64(pid),
+		CPUQuota:    cpuQuota,
+		CPUPeriod:   cpuPeriod,
+		MemoryLimit: memoryLimit,
+	}
+	m, err := cgroup.NewManager(cgroupConfig)
+	if err != nil {
+		nlog.Warnf("New cgroup manager for container[%v] process[%v] failed, details -> %v, skip adding process into cgroup", c.Name, pid, err)
+		return
+	}
+
+	if err = m.AddCgroup(); err != nil {
+		nlog.Warnf("Add cgroup for container[%v] process[%v] failed, details -> %v, skip adding process into cgroup", c.Name, pid, err)
+	}
+}
+
+func (c *Container) deleteCgroup(pid int) {
+	if !cgroup.HasPermission() || pid <= 0 {
+		return
+	}
+
+	cgroupConfig := &cgroup.Config{
+		Group: fmt.Sprintf("%s/%s", cgroup.KusciaAppsGroup, c.ID),
+		Pid:   uint64(pid),
+	}
+	m, err := cgroup.NewManager(cgroupConfig)
+	if err != nil {
+		nlog.Warnf("New cgroup manager for container[%v] process[%v] failed, details -> %v, skip deleting process from cgroup", c.Name, pid, err)
+		return
+	}
+
+	for i := 0; i < 5; i++ {
+		err = m.DeleteCgroup()
+		if err == nil {
+			return
+		}
+		nlog.Warnf("Delete cgroup for container[%v] process[%v] failed, details -> %v, max retry count[5], current retry count[%v]", c.Name, pid, err, i+1)
+		time.Sleep(2 * time.Second)
+	}
 }
 
 // The final execution command follows the following rules：
@@ -305,6 +377,8 @@ func (c *Container) signalOnExit(starter st.Starter) {
 			// all process already exit
 		}
 	}
+
+	go c.deleteCgroup(c.status.Pid)
 
 	if c.status.FinishedAt == 0 {
 		c.status.Pid = 0

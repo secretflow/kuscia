@@ -97,6 +97,7 @@ const (
 	KusciaCrossDomain          = "cross-domain"
 	JobCustomFieldsLabelPrefix = "kuscia.job.custom-fields/"
 	ReceiverServiceName        = "receiver"
+	ControllerKusciaTask       = "kusciatask"
 )
 
 // annotations
@@ -231,4 +232,8 @@ const (
 const (
 	DeployTokenUsedState   = "used"
 	DeployTokenUnusedState = "unused"
+)
+
+const (
+	K3sRegex = `^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`
 )

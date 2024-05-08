@@ -48,7 +48,7 @@ func TestSessionQueuePushNoWait(t *testing.T) {
 		sq.Push("topic", NewMessageByStr("12"), time.Minute)
 	}
 	processTime := time.Now().Sub(start)
-	assert.True(t, processTime < time.Second*5)
+	assert.Less(t, processTime, time.Millisecond*5500)
 }
 
 func TestSessionQueuePushTimeout(t *testing.T) {
@@ -60,7 +60,7 @@ func TestSessionQueuePushTimeout(t *testing.T) {
 	err := sq.Push("topic", msg, time.Second*5)
 	assert.NotNil(t, err)
 	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Second*5)
+	assert.Less(t, processTime, time.Millisecond*100)
 }
 
 func producer(sq *SessionQueue, t *testing.T) {

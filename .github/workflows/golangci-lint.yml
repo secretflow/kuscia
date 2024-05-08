@@ -1,0 +1,49 @@
+name: Golangci-Lint
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+    branches:
+      - main
+      - release/*
+
+permissions:
+  contents: read
+  # Optional: allow read access to pull request. Use with `only-new-issues` option.
+  # pull-requests: read
+
+jobs:
+  golangci:
+    strategy:
+      matrix:
+        go: ['1.19']
+        # [macos-latest, windows-latest]
+        os: [ubuntu-latest]
+    name: lint
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+
+      - name: Install specific version of golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.14.0
+          golangci-lint --version
+      - name: Run golangci-lint
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            LAST_COMMIT_SHA=${{ github.event.before }}
+          else
+            LAST_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
+          fi
+          golangci-lint run --new-from-rev=${LAST_COMMIT_SHA} --out-format=colored-line-number

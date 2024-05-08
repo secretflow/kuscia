@@ -70,6 +70,22 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 
 如果你使用的是 arm 架构的 macOS，请修改`build/dockerfile/kuscia-anolis.Dockerfile`文件，将`FROM openanolis/anolisos:8.8`修改为`FROM openanolis/anolisos:8.4-x86_64`，然后再执行`make build`命令。
 
+### 构建 Kuscia-Secretflow Image
+
+在 kuscia/build/dockerfile 目录下：
+
+执行`docker build -f ./kuscia-secretflow.Dockerfile .`命令会构建出 Kuscia-Secretflow 镜像。Kuscia-Secretflow 镜像在 Kuscia 镜像的基础上集成了 Secretflow 镜像。
+
+需要注意的是，仅 `RunP` 模式下需要构建 kuscia-secretflow 镜像。
+
+kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 1.5.0b0，如果需要指定其他版本，可以使用如下命令：
+
+此处以 Kuscia 0.8.0b0，Secretflow 1.5.0b0 版本为例
+
+```bash
+docker build  --build-arg KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0  --build-arg  SF_VERSION=1.5.0b0 -f ./kuscia-secretflow.Dockerfile .
+```
+
 ### 编译文档
 
 在 Kuscia 项目根目录下：

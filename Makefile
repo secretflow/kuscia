@@ -87,8 +87,8 @@ gen_error_code_doc: verify_error_code ## Generate error code markdown doc.
 test: verify_error_code fmt vet ## Run tests.
 	rm -rf ./test-results
 	mkdir -p test-results
-	go test ./cmd/... -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
-	go test ./pkg/... -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
+	go test ./cmd/... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
+	go test ./pkg/... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
 
 	cat ./test-results/cmd.output.txt | go-junit-report > ./test-results/TEST-cmd.xml
 	cat ./test-results/pkg.output.txt | go-junit-report > ./test-results/TEST-pkg.xml
@@ -118,9 +118,9 @@ docs: gen_error_code_doc ## Build docs.
 .PHONY: deps-build
 deps-build:
 	bash hack/k3s/build.sh
-	mkdir -p build/linux/${ARCH}
+	mkdir -p build/linux/${ARCH}/k3s
 
-	cp -rp build/k3s build/linux/${ARCH}
+	cp -rp build/k3s/bin build/linux/${ARCH}/k3s
 
 
 .PHONY: deps-image

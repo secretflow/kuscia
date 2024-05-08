@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	gocache "github.com/patrickmn/go-cache"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -254,18 +255,27 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 	}
 
 	// try to update poller && receiver rule first
-	if err := c.updatePollerReceiverFilter(dr); err != nil {
-		nlog.Warnf("Failed to update poller or receiver filter: %v", err)
-	}
-
-	is3rdParty := utils.IsThirdPartyTransit(dr.Spec.Transit)
-	if dr.Spec.Source == c.gateway.Namespace && !is3rdParty && dr.Spec.Destination != c.masterNamespace {
-		if err := c.addClusterWithEnvoy(dr); err != nil {
-			return fmt.Errorf("add envoy cluster failed with %s", err.Error())
+	if utils.IsReverseTunnelTransit(dr.Spec.Transit) {
+		if err := c.updatePollerReceiverXds(dr); err != nil {
+			nlog.Warnf("Failed to update poller or receiver filter: %v", err)
+			return err
 		}
 	}
 
-	if (dr.Spec.BodyEncryption != nil || (dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && !is3rdParty)) &&
+	is3rdParty := utils.IsThirdPartyTransit(dr.Spec.Transit)
+	if dr.Spec.Source == c.gateway.Namespace && dr.Spec.Destination != c.masterNamespace {
+		if is3rdParty {
+			if err := c.updateTransitVh(dr); err != nil {
+				return fmt.Errorf("add transit route failed with %s", err.Error())
+			}
+		} else {
+			if err := c.addClusterWithEnvoy(dr); err != nil {
+				return fmt.Errorf("add envoy cluster failed with %s", err.Error())
+			}
+		}
+	}
+
+	if (dr.Spec.BodyEncryption != nil || (dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken)) &&
 		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
 			if dr.Status.TokenStatus.RevisionToken.Token == "" {
@@ -428,29 +438,27 @@ func (c *DomainRouteController) addClusterWithEnvoy(dr *kusciaapisv1alpha1.Domai
 	return nil
 }
 
-func (c *DomainRouteController) updatePollerReceiverFilter(dr *kusciaapisv1alpha1.DomainRoute) error {
+func (c *DomainRouteController) updatePollerReceiverXds(dr *kusciaapisv1alpha1.DomainRoute) error {
 	if dr.Spec.Source == c.gateway.Namespace { // internal
-		if utils.IsGatewayTceTransit(dr.Spec.Transit) {
-			rule := kusciareceiver.ReceiverRule{
-				Source:      dr.Spec.Source,
-				Destination: dr.Spec.Destination,
-			}
-			if err := xds.UpdateReceiverRules(&rule, true); err != nil {
-				return err
-			}
+		rule := kusciareceiver.ReceiverRule{
+			Source:      dr.Spec.Source,
+			Destination: dr.Spec.Destination,
 		}
-
+		if err := xds.UpdateReceiverRules(&rule, true); err != nil {
+			return err
+		}
+		if err := xds.AddOrUpdateVirtualHost(generateReceiverExternalVh(dr), xds.ExternalRoute); err != nil {
+			return err
+		}
+		if err := xds.AddOrUpdateVirtualHost(generateReceiverInternalVh(dr), xds.InternalRoute); err != nil {
+			return err
+		}
 	} else if dr.Spec.Destination == c.gateway.Namespace { // external
-		if !utils.IsThirdPartyTransit(dr.Spec.Transit) {
-			if utils.IsGatewayTceTransit(dr.Spec.Transit) {
-				pollHeader := generatePollHeaders(dr)
-				if err := xds.UpdatePoller(pollHeader, true); err != nil {
-					return err
-				}
-			}
+		pollHeader := generatePollHeaders(dr)
+		if err := xds.UpdatePoller(pollHeader, true); err != nil {
+			return err
 		}
 	}
-
 	return nil
 }
 
@@ -493,10 +501,10 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 
 		// next step with two cases
 		// case1: transit route, just clone routing rule  from source-to-transitDomainID
+		// move up to sync handler
 		if utils.IsThirdPartyTransit(dr.Spec.Transit) {
-			return c.updateRoutingRule(dr)
+			return nil
 		}
-
 		// case2: direct route, add virtualhost: source-to-dest-Protocol
 		if err := xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, token.Token, grpcDegrade),
 			xds.InternalRoute); err != nil {
@@ -535,7 +543,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 		if err := xds.DeleteVirtualHost(name, xds.InternalRoute); err != nil {
 			return fmt.Errorf("delete virtual host %s failed with %v", name, err)
 		}
-		if utils.IsGatewayTceTransit(dr.Spec.Transit) {
+		if utils.IsReverseTunnelTransit(dr.Spec.Transit) {
 			rule := kusciareceiver.ReceiverRule{
 				Source:      dr.Spec.Source,
 				Destination: dr.Spec.Destination,
@@ -576,7 +584,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 			if err := xds.UpdateTokenAuthAndHeaderDecorator(sourceToken, sourceHeader, false); err != nil {
 				return err
 			}
-			if utils.IsGatewayTceTransit(dr.Spec.Transit) {
+			if utils.IsReverseTunnelTransit(dr.Spec.Transit) {
 				sourceHeader := &kusciapoller.Poller_SourceHeader{
 					Source: dr.Spec.Source,
 				}
@@ -590,7 +598,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 	return nil
 }
 
-func (c *DomainRouteController) updateRoutingRule(dr *kusciaapisv1alpha1.DomainRoute) error {
+func (c *DomainRouteController) updateTransitVh(dr *kusciaapisv1alpha1.DomainRoute) error {
 	ns := dr.Spec.Transit.Domain.DomainID
 	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, ns)
 	if ns == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
@@ -645,6 +653,104 @@ func updateDecryptFilter(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) er
 	}
 
 	return xds.UpdateDecryptRules(rule, true)
+}
+
+func generateReceiverExternalVh(dr *kusciaapisv1alpha1.DomainRoute) *route.VirtualHost {
+	return &route.VirtualHost{
+		Name:    fmt.Sprintf("%s-to-%s-receiver-external", dr.Spec.Source, dr.Spec.Destination),
+		Domains: []string{fmt.Sprintf("receiver.%s.svc", dr.Spec.Source)},
+		Routes: []*route.Route{
+			{
+				Match: &route.RouteMatch{
+					PathSpecifier: &route.RouteMatch_Prefix{
+						Prefix: "/",
+					},
+				},
+				Action: &route.Route_Route{
+					Route: &route.RouteAction{
+						ClusterSpecifier: &route.RouteAction_Cluster{
+							Cluster: utils.EnvoyClusterName,
+						},
+						HashPolicy: []*route.RouteAction_HashPolicy{
+							{
+								PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
+									Header: &route.RouteAction_HashPolicy_Header{
+										HeaderName: utils.HeaderTransitHash,
+									},
+								},
+								Terminal: true,
+							},
+						},
+						Timeout: &duration.Duration{
+							Seconds: 300,
+						},
+						IdleTimeout: &duration.Duration{
+							Seconds: 300,
+						},
+					},
+				},
+				RequestHeadersToAdd: []*core.HeaderValueOption{
+					{
+						Header: &core.HeaderValue{
+							Key:   utils.HeaderTransitFlag,
+							Value: "true",
+						},
+						AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+					},
+				},
+				// prevent poll request terminated by envoy
+				RequestHeadersToRemove: []string{"x-envoy-expected-rq-timeout-ms"},
+			},
+		},
+	}
+}
+
+func generateReceiverInternalVh(dr *kusciaapisv1alpha1.DomainRoute) *route.VirtualHost {
+	return &route.VirtualHost{
+		Name:    fmt.Sprintf("%s-to-%s-receiver-internal", dr.Spec.Source, dr.Spec.Destination),
+		Domains: []string{fmt.Sprintf("kuscia-handshake.%s.svc", dr.Spec.Destination)},
+		Routes: []*route.Route{
+			{
+				Match: &route.RouteMatch{
+					PathSpecifier: &route.RouteMatch_Prefix{
+						Prefix: "/",
+					},
+				},
+				Action: &route.Route_Route{
+					Route: &route.RouteAction{
+						ClusterSpecifier: &route.RouteAction_Cluster{
+							Cluster: utils.EnvoyClusterName,
+						},
+						HashPolicy: []*route.RouteAction_HashPolicy{
+							{
+								PolicySpecifier: &route.RouteAction_HashPolicy_Header_{
+									Header: &route.RouteAction_HashPolicy_Header{
+										HeaderName: ":authority",
+									},
+								},
+								Terminal: true,
+							},
+						},
+						Timeout: &duration.Duration{
+							Seconds: 300,
+						},
+						IdleTimeout: &duration.Duration{
+							Seconds: 300,
+						},
+					},
+				},
+				RequestHeadersToAdd: []*core.HeaderValueOption{
+					{
+						Header: &core.HeaderValue{
+							Key:   utils.HeaderTransitFlag,
+							Value: "true",
+						},
+						AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+					},
+				},
+			},
+		},
+	}
 }
 
 func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string, isDefaultRoute bool,
@@ -884,6 +990,9 @@ func (c *DomainRouteController) getClusterNamesByDomainRoute(dr *kusciaapisv1alp
 }
 
 func (c *DomainRouteController) getDefaultClusterNameByDomainRoute(dr *kusciaapisv1alpha1.DomainRoute) string {
+	if utils.IsThirdPartyTransit(dr.Spec.Transit) {
+		return ""
+	}
 	if dr.Spec.Destination == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
 		return clusters.GetMasterClusterName()
 	}
@@ -902,8 +1011,5 @@ func (c *DomainRouteController) getDefaultClusterNameByDomainRoute(dr *kusciaapi
 
 func getHandshakeHost(dr *kusciaapisv1alpha1.DomainRoute) string {
 	ns := dr.Spec.Destination
-	if utils.IsThirdPartyTransit(dr.Spec.Transit) {
-		ns = dr.Spec.Transit.Domain.DomainID
-	}
 	return fmt.Sprintf("%s.%s.svc", utils.ServiceHandshake, ns)
 }

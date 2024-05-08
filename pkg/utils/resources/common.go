@@ -15,8 +15,6 @@
 package resources
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
@@ -25,13 +23,12 @@ import (
 
 	corelisters "k8s.io/client-go/listers/core/v1"
 
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 )
-
-const k3sRegex = `^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`
 
 // GetMasterDomain is used to get master domain id.
 func GetMasterDomain(domainLister kuscialistersv1alpha1.DomainLister, domainID string) (string, error) {
@@ -100,11 +97,11 @@ func IsOuterBFIAInterConnDomain(nsLister corelisters.NamespaceLister, domainID s
 }
 
 // ValidateK8sName checks dns subdomain names
-func ValidateK8sName(val string, feildName string) error {
+func ValidateK8sName(val string, fieldName string) error {
 
-	match, _ := regexp.MatchString(k3sRegex, val)
+	match, _ := regexp.MatchString(common.K3sRegex, val)
 	if !match {
-		errorMsg := fmt.Sprintf("Field '%s' is invalid, Invalid value: '%s': regex used for validation is '%s' ", feildName, val, k3sRegex)
+		errorMsg := fmt.Sprintf("Field '%s' is invalid, Invalid value: '%s': regex used for validation is '%s' ", fieldName, val, common.K3sRegex)
 		return errors.New(errorMsg)
 	}
 
@@ -126,16 +123,6 @@ func IsPartnerDomain(nsLister corelisters.NamespaceLister, domainID string) bool
 	return false
 }
 
-func HashString(input string) (string, error) {
-	hasher := sha256.New()
-	_, err := hasher.Write([]byte(input))
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil))[:32], nil
-}
-
 // IsEmpty will judge whether data is empty
 func IsEmpty(v interface{}) bool {
 	return reflect.DeepEqual(v, reflect.Zero(reflect.TypeOf(v)).Interface())
@@ -151,25 +138,25 @@ func SplitRSC(rsc string, n int) (string, error) {
 	if unit == k8sresource.DecimalSI {
 		quantity.SetMilli(quantity.MilliValue() / int64(n))
 		return quantity.String(), nil
-	} else {
-		bytes := quantity.Value()
-		bytesPerPart := bytes / int64(n)
-		var result string
-		switch {
-		case bytesPerPart >= 1<<60:
-			result = fmt.Sprintf("%.0fPi", float64(bytesPerPart)/(1<<50))
-		case bytesPerPart >= 1<<50:
-			result = fmt.Sprintf("%.0fTi", float64(bytesPerPart)/(1<<40))
-		case bytesPerPart >= 1<<40:
-			result = fmt.Sprintf("%.0fGi", float64(bytesPerPart)/(1<<30))
-		case bytesPerPart >= 1<<30:
-			result = fmt.Sprintf("%.0fMi", float64(bytesPerPart)/(1<<20))
-		case bytesPerPart >= 1<<20:
-			result = fmt.Sprintf("%.0fKi", float64(bytesPerPart)/(1<<10))
-		default:
-			quantity.Set(bytesPerPart)
-			result = quantity.String()
-		}
-		return result, nil
 	}
+
+	bytes := quantity.Value()
+	bytesPerPart := bytes / int64(n)
+	var result string
+	switch {
+	case bytesPerPart >= 1<<60:
+		result = fmt.Sprintf("%.0fPi", float64(bytesPerPart)/(1<<50))
+	case bytesPerPart >= 1<<50:
+		result = fmt.Sprintf("%.0fTi", float64(bytesPerPart)/(1<<40))
+	case bytesPerPart >= 1<<40:
+		result = fmt.Sprintf("%.0fGi", float64(bytesPerPart)/(1<<30))
+	case bytesPerPart >= 1<<30:
+		result = fmt.Sprintf("%.0fMi", float64(bytesPerPart)/(1<<20))
+	case bytesPerPart >= 1<<20:
+		result = fmt.Sprintf("%.0fKi", float64(bytesPerPart)/(1<<10))
+	default:
+		quantity.Set(bytesPerPart)
+		result = quantity.String()
+	}
+	return result, nil
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2022 Ant Group Co., Ltd.
+# Copyright 2024 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,25 +15,6 @@
 # limitations under the License.
 
 set -e
-
-nft_valid=false
-legacy_valid=false
-
-if xtables-legacy-multi iptables -L > /dev/null 2>&1 ; then
-  legacy_valid=true
-fi
-
-if xtables-nft-multi iptables -L > /dev/null 2>&1 ; then
-  nft_valid=true
-fi
-
-if [[ $legacy_valid == true && $nft_valid != true ]]; then
-  export IPTABLES_MODE=legacy
-  iptables -V > /dev/null
-elif [[ $legacy_valid != true && $nft_valid == true ]]; then
-  export IPTABLES_MODE=nft
-  iptables -V > /dev/null
-fi
 
 if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
 	# move the processes from the root group to the /init group,

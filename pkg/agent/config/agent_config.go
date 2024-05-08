@@ -39,6 +39,9 @@ const (
 	defaultK8sClientMaxQPS = 250
 	defaultPodsCapacity    = "500"
 
+	DefaultReservedCPU    = "0.5"
+	DefaultReservedMemory = "500Mi"
+
 	defaultCRIRemoteEndpoint = "unix:///home/kuscia/containerd/run/containerd.sock"
 	defaultResolvConfig      = "/etc/resolv.conf"
 
@@ -74,6 +77,11 @@ type CapacityCfg struct {
 	Memory  string `yaml:"memory"`
 	Pods    string `yaml:"pods"`
 	Storage string `yaml:"storage"`
+}
+
+type ReservedResourcesCfg struct {
+	CPU    string `yaml:"cpu"`
+	Memory string `yaml:"memory"`
 }
 
 type KubeConnCfg struct {
@@ -241,15 +249,16 @@ type AgentConfig struct {
 	// AllowPrivileged if true, securityContext.Privileged will work for container.
 	AllowPrivileged bool `yaml:"allowPrivileged,omitempty"`
 
-	Capacity  CapacityCfg  `yaml:"capacity,omitempty"`
-	Log       AgentLogCfg  `yaml:"log,omitempty"`
-	Source    SourceCfg    `yaml:"source,omitempty"`
-	Framework FrameworkCfg `yaml:"framework,omitempty"`
-	Provider  ProviderCfg  `yaml:"provider,omitempty"`
-	Node      NodeCfg      `yaml:"node,omitempty"`
-	Registry  RegistryCfg  `yaml:"registry,omitempty"`
-	Cert      CertCfg      `yaml:"cert,omitempty"`
-	Plugins   []PluginCfg  `yaml:"plugins,omitempty"`
+	Capacity          CapacityCfg          `yaml:"capacity,omitempty"`
+	ReservedResources ReservedResourcesCfg `yaml:"reservedResources"`
+	Log               AgentLogCfg          `yaml:"log,omitempty"`
+	Source            SourceCfg            `yaml:"source,omitempty"`
+	Framework         FrameworkCfg         `yaml:"framework,omitempty"`
+	Provider          ProviderCfg          `yaml:"provider,omitempty"`
+	Node              NodeCfg              `yaml:"node,omitempty"`
+	Registry          RegistryCfg          `yaml:"registry,omitempty"`
+	Cert              CertCfg              `yaml:"cert,omitempty"`
+	Plugins           []PluginCfg          `yaml:"plugins,omitempty"`
 }
 
 func DefaultStaticAgentConfig() *AgentConfig {
@@ -261,6 +270,10 @@ func DefaultStaticAgentConfig() *AgentConfig {
 
 		Capacity: CapacityCfg{
 			Pods: defaultPodsCapacity,
+		},
+		ReservedResources: ReservedResourcesCfg{
+			CPU:    DefaultReservedCPU,
+			Memory: DefaultReservedMemory,
 		},
 		AllowPrivileged: false,
 		Log: AgentLogCfg{

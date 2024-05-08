@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"strings"
 
-	v1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	k8sresource "k8s.io/apimachinery/pkg/api/resource"
@@ -31,6 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	corelisters "k8s.io/client-go/listers/core/v1"
+
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -185,7 +186,8 @@ func (h *JobScheduler) handleStageCmdStop(now metav1.Time, job *kusciaapisv1alph
 	}
 	// set job phase to failed
 	reason := fmt.Sprintf("Party: %s execute the cmd: %s.", cmdTrigger, cmd)
-	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, reason, "")
+	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, reason, reason)
+	setRunningTaskStatusToFailed(&job.Status)
 	return nil
 }
 
@@ -1061,22 +1063,22 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 	if err != nil {
 		nlog.Warnf("Can not get suitable deployTemplate. err: %s", err.Error())
 		return v1alpha1.PartyTemplate{}
-	} else {
-		deployTemplate = *ptrDT
-		ctrNumber = len(deployTemplate.Spec.Containers)
-		rplNumber = int(*(deployTemplate.Replicas))
 	}
 
-	var everyCpu, everyMemory k8sresource.Quantity
+	deployTemplate = *ptrDT
+	ctrNumber = len(deployTemplate.Spec.Containers)
+	rplNumber = int(*(deployTemplate.Replicas))
+
+	var everyCPU, everyMemory k8sresource.Quantity
 	var ptr *k8sresource.Quantity
 	var limitResource = corev1.ResourceList{}
 
 	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
 		ptrValue := p.Resources.Limits[corev1.ResourceCPU]
 		ptr = &ptrValue
-		stringEveryCpu, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
-		everyCpu = k8sresource.MustParse(stringEveryCpu)
-		limitResource[corev1.ResourceCPU] = everyCpu
+		stringEveryCPU, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		everyCPU = k8sresource.MustParse(stringEveryCPU)
+		limitResource[corev1.ResourceCPU] = everyCPU
 	}
 	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
 		ptrValue := p.Resources.Limits[corev1.ResourceMemory]
@@ -1087,7 +1089,7 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 	}
 
 	containers := deployTemplate.Spec.Containers
-	for ctrIdx, _ := range containers {
+	for ctrIdx := range containers {
 		containers[ctrIdx].Resources = corev1.ResourceRequirements{
 			Limits: limitResource,
 		}
@@ -1107,18 +1109,13 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 
 // findMatchedDeployTemplate will get the best matched deployTemplate
 func (h *RunningHandler) findMatchedDeployTemplate(p kusciaapisv1alpha1.Party, appImageName string) (*v1alpha1.DeployTemplate, error) {
-	if appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), appImageName, metav1.GetOptions{}); err == nil {
-		var deployTemplate *v1alpha1.DeployTemplate
-		deployTemplate, err := utilsres.SelectDeployTemplate(appImage.Spec.DeployTemplates, p.Role)
-		if err != nil {
-			return nil, err
-		} else {
-			return deployTemplate, nil
-		}
-	} else {
+	appImage, err := h.kusciaClient.KusciaV1alpha1().AppImages().Get(context.Background(), appImageName, metav1.GetOptions{})
+	if err != nil {
 		nlog.Warnf("Can not get appImage %s. error: %s", appImageName, err.Error())
 		return nil, err
 	}
+
+	return utilsres.SelectDeployTemplate(appImage.Spec.DeployTemplates, p.Role)
 }
 
 // jobTaskSelector will make selector of kuscia task which kuscia job generate.
@@ -1252,6 +1249,15 @@ func setKusciaJobStatus(now metav1.Time, status *kusciaapisv1alpha1.KusciaJobSta
 	status.LastReconcileTime = &now
 	if status.StartTime == nil {
 		status.StartTime = &now
+	}
+}
+
+// setRunningTaskStatusToFailed
+func setRunningTaskStatusToFailed(status *kusciaapisv1alpha1.KusciaJobStatus) {
+	for k, v := range status.TaskStatus {
+		if v == kusciaapisv1alpha1.TaskPending || v == kusciaapisv1alpha1.TaskRunning {
+			status.TaskStatus[k] = kusciaapisv1alpha1.TaskFailed
+		}
 	}
 }
 

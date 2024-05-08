@@ -19,6 +19,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -30,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -44,44 +45,33 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
 )
 
-func getRegisterRequestHash(regReq *handshake.RegisterRequest) [16]byte {
+func getRegisterRequestHashSha256(regReq *handshake.RegisterRequest) [32]byte {
+	return sha256.Sum256([]byte(fmt.Sprintf("%s_%s_%d", regReq.DomainId, regReq.Csr, regReq.RequestTime)))
+}
+
+// getRegisterRequestHashMd5  deprecated: md5 hash would deprecate soon
+func getRegisterRequestHashMd5(regReq *handshake.RegisterRequest) [16]byte {
 	return md5.Sum([]byte(fmt.Sprintf("%s_%s_%d", regReq.DomainId, regReq.Csr, regReq.RequestTime)))
 }
 
 type RegisterJwtClaims struct {
-	ReqHash [16]byte `json:"req"`
+	ReqHash       [16]byte `json:"req"` // deprecate soon
+	ReqHashSha256 [32]byte `json:"req_hash"`
 	jwt.RegisteredClaims
 }
 
-func RegisterDomain(namespace, path, csrData string, prikey *rsa.PrivateKey, afterRegisterHook AfterRegisterDomainHook) error {
-	regReq := &handshake.RegisterRequest{
-		DomainId:    namespace,
-		Csr:         base64.StdEncoding.EncodeToString([]byte(csrData)),
-		RequestTime: int64(time.Now().Nanosecond()),
-	}
-
-	rjc := &RegisterJwtClaims{
-		ReqHash: getRegisterRequestHash(regReq),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    namespace,
-			Subject:   namespace,
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, rjc)
-	tokenstr, err := token.SignedString(prikey)
+func RegisterDomain(namespace, path, csrData string, priKey *rsa.PrivateKey, afterRegisterHook AfterRegisterDomainHook) error {
+	req, token, err := generateJwtToken(namespace, csrData, priKey)
 	if err != nil {
 		return err
 	}
 	regResp := &handshake.RegisterResponse{}
 	headers := map[string]string{
-		"jwt-token": tokenstr,
+		"jwt-token": token,
 	}
-	registerPath := fmt.Sprintf("%s%s", strings.TrimSuffix(path, "/"), "/register")
-	err = doHTTPWithDefaultRetry(regReq, regResp, &utils.HTTPParam{
+	err = doHTTPWithDefaultRetry(req, regResp, &utils.HTTPParam{
 		Method:       http.MethodPost,
-		Path:         registerPath,
+		Path:         fmt.Sprintf("%s/register", strings.TrimSuffix(path, "/")),
 		KusciaSource: namespace,
 		ClusterName:  clusters.GetMasterClusterName(),
 		KusciaHost:   fmt.Sprintf("%s.master.svc", utils.ServiceHandshake),
@@ -94,6 +84,31 @@ func RegisterDomain(namespace, path, csrData string, prikey *rsa.PrivateKey, aft
 		afterRegisterHook(regResp)
 	}
 	return nil
+}
+
+func generateJwtToken(namespace, csrData string, prikey *rsa.PrivateKey) (req *handshake.RegisterRequest, token string, err error) {
+	req = &handshake.RegisterRequest{
+		DomainId:    namespace,
+		Csr:         base64.StdEncoding.EncodeToString([]byte(csrData)),
+		RequestTime: int64(time.Now().Nanosecond()),
+	}
+
+	rjc := &RegisterJwtClaims{
+		ReqHash:       getRegisterRequestHashMd5(req),
+		ReqHashSha256: getRegisterRequestHashSha256(req),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    namespace,
+			Subject:   namespace,
+		},
+	}
+	tokenData := jwt.NewWithClaims(jwt.SigningMethodRS256, rjc)
+	token, err = tokenData.SignedString(prikey)
+	if err != nil {
+		nlog.Errorf("Signed token failed, error: %s.", err.Error())
+	}
+	return
 }
 
 func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Request) {
@@ -116,13 +131,10 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 		httpErrWrapped(w, err, http.StatusBadRequest)
 		return
 	}
-
-	// Use jwt verify first.
-	// Jwt's token must be signed by domain's private key.
-	// This handler will verify it by public key in csr.
-	err = c.registerVerify(r.Header.Get("jwt-token"), certRequest.PublicKey, &req)
+	// verify jwt token and csr
+	err = verifyRegisterRequest(&req, r.Header.Get("jwt-token"))
 	if err != nil {
-		httpErrWrapped(w, fmt.Errorf(`request jwt verify error, detail -> %s`, err.Error()), http.StatusBadRequest)
+		httpErrWrapped(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -259,7 +271,7 @@ func isCertMatch(certString string, c *x509.Certificate) bool {
 	return true
 }
 
-func (c *DomainRouteController) registerVerify(jwtTokenStr string, pubKey interface{}, req *handshake.RegisterRequest) error {
+func verifyJwtToken(jwtTokenStr string, pubKey interface{}, req *handshake.RegisterRequest) error {
 	rjc := &RegisterJwtClaims{}
 	jwtToken, err := jwt.ParseWithClaims(jwtTokenStr, rjc, func(token *jwt.Token) (interface{}, error) {
 		return pubKey, nil
@@ -268,19 +280,50 @@ func (c *DomainRouteController) registerVerify(jwtTokenStr string, pubKey interf
 		return err
 	}
 	if !jwtToken.Valid {
-		return fmt.Errorf("%s", "jwt token decrpted fail")
+		return fmt.Errorf("%s", "verify jwt failed, detail: jwt token decrpted fail")
 	}
 	if time.Since(rjc.ExpiresAt.Time) > 0 {
-		return fmt.Errorf("%s", "jwt verify error, token expired")
+		return fmt.Errorf("%s", "verify jwt failed, detail: token expired")
 	}
-	hash := getRegisterRequestHash(req)
-	if len(hash) != len(rjc.ReqHash) {
-		return fmt.Errorf("%s", "request body verify error, hash not match")
+	// check sha256 hash
+	if reflect.DeepEqual(getRegisterRequestHashSha256(req), rjc.ReqHashSha256) {
+		return nil
 	}
-	for i := 0; i < len(hash); i++ {
-		if hash[i] != rjc.ReqHash[i] {
-			return fmt.Errorf("%s", "request body verify error, hash not match")
-		}
+	// check md5 hash
+	if reflect.DeepEqual(getRegisterRequestHashMd5(req), rjc.ReqHash) {
+		return nil
+	}
+	return fmt.Errorf("verify jwt failed, detail: the request content doesn't match the hash")
+}
+
+// verifyCSR verify the CN of CSR must be equal with domainID
+func verifyCSR(csr *x509.CertificateRequest, domainID string) error {
+
+	if csr == nil {
+		return fmt.Errorf("csr is nil")
+	}
+	if csr.Subject.CommonName != domainID {
+		return fmt.Errorf("the csr subject common name must be domainID: %s not %s", csr.Subject.CommonName, domainID)
+	}
+	return nil
+}
+
+func verifyRegisterRequest(req *handshake.RegisterRequest, token string) error {
+	// Csr in request must be base64 encoded string
+	// Raw data must be pem format
+	certRequest, err := parseCertRequest(req.Csr)
+	if err != nil {
+		return fmt.Errorf("parse cert request failed, detail: %s", err.Error())
+	}
+	// verify the CN of CSR must be equal with domainID
+	if err = verifyCSR(certRequest, req.DomainId); err != nil {
+		return fmt.Errorf("verify csr failed, detail: %s", err.Error())
+	}
+	// Use jwt verify first.
+	// JWT token must be signed by domain's private key.
+	// This handler will verify it by public key in csr.
+	if err = verifyJwtToken(token, certRequest.PublicKey, req); err != nil {
+		return fmt.Errorf("verify jwt failed, detail: %s", err.Error())
 	}
 	return nil
 }
@@ -312,7 +355,7 @@ func parseCertRequest(certStr string) (*x509.CertificateRequest, error) {
 	}
 	csr, err := x509.ParseCertificateRequest(p.Bytes)
 	if err != nil {
-		err = fmt.Errorf(`csr pem data parse err, %s`, err.Error())
+		err = fmt.Errorf("csr pem data parse error: %s", err.Error())
 		return nil, err
 	}
 	return csr, nil
