@@ -96,18 +96,17 @@ body:
     id: what-happened
     attributes:
       label: What happend and What you expected to happen.
-      description: Describe the bug, exepcted behavior and relevant log output (/home/kuscia/var/logs/kuscia.log).
+      description: Describe the bug, expected behavior.
       placeholder: A bug happened!
       value:
       render: shell
     validations:
       required: true
   - type: textarea
-    id: reproduction-code
+    id: log-output
     attributes:
-      label: Reproduction code to reproduce the issue.
-      description: Provide a reproducible code that is the bare minimum necessary to generate the problem.
-      placeholder: A short code snippet to reproduce the issue.
+      label: Kuscia log output.
+      description: Relevant log output (/home/kuscia/var/logs/kuscia.log)
       value:
       render: shell
     validations:
