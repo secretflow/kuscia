@@ -87,9 +87,8 @@ body:
     id: kuscia-config
     attributes:
       label: Configuration file used to run kuscia.
-      description: Kuscia config file output [kuscia.yaml](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/kuscia_config_cn)
+      description: Kuscia config file output [kuscia.yaml](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/kuscia_config_cn). if having multi parties (e.g. alice, bob),  you can put multi parties kuscia config.
       placeholder: |
-        # if having multi parties (e.g. alice, bob),  you can put multi parties kuscia config
         # alice kuscia.yaml
         mode: Lite
         domainID: alice
@@ -120,9 +119,8 @@ body:
     id: log-output
     attributes:
       label: Kuscia log output.
-      description: Relevant log output (/home/kuscia/var/logs/kuscia.log), [logdescription](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/logdescription)
+      description: Relevant log output (/home/kuscia/var/logs/kuscia.log), [logdescription](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/logdescription). if having multi parties (e.g. alice, bob),  you can put multi parties kuscia log output.
       placeholder: |
-        # if having multi parties (e.g. alice, bob),  you can put multi parties kuscia log output
         # alice kuscia.log
         .......
         # bob kuscia.log
