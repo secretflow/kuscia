@@ -106,7 +106,7 @@ body:
     id: log-output
     attributes:
       label: Kuscia log output.
-      description: Relevant log output (/home/kuscia/var/logs/kuscia.log)
+      description: Relevant log output (/home/kuscia/var/logs/kuscia.log), [logdescription](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/logdescription)
       value:
       render: shell
     validations:
