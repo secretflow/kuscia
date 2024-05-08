@@ -20,10 +20,29 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
-func TestIsThirdPartyTransit(t *testing.T) {
-	type args struct {
-		transit *v1alpha1.Transit
+type args struct {
+	transit *v1alpha1.Transit
+}
+
+var (
+	argsWithReverseTunnel = args{
+		transit: &v1alpha1.Transit{
+			TransitMethod: v1alpha1.TransitMethodReverseTunnel,
+		},
 	}
+	argsWithThirdDomain = args{
+		transit: &v1alpha1.Transit{
+			TransitMethod: v1alpha1.TransitMethodThirdDomain,
+		},
+	}
+	argsWithEmpty = args{
+		transit: &v1alpha1.Transit{},
+	}
+	argsWithNil = args{nil}
+)
+
+func TestIsThirdPartyTransit(t *testing.T) {
+
 	tests := []struct {
 		name string
 		args args
@@ -32,34 +51,22 @@ func TestIsThirdPartyTransit(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "case 0",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodReverseTunnel,
-				},
-			},
+			args: argsWithReverseTunnel,
 			want: false,
 		},
 		{
 			name: "case 1",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodThirdDomain,
-				},
-			},
+			args: argsWithThirdDomain,
 			want: true,
 		},
 		{
 			name: "case 2",
-			args: args{
-				nil,
-			},
+			args: argsWithNil,
 			want: false,
 		},
 		{
 			name: "case 3",
-			args: args{
-				&v1alpha1.Transit{},
-			},
+			args: argsWithEmpty,
 			want: true,
 		},
 	}
@@ -73,9 +80,7 @@ func TestIsThirdPartyTransit(t *testing.T) {
 }
 
 func TestIsReverseTunnelTransit(t *testing.T) {
-	type args struct {
-		transit *v1alpha1.Transit
-	}
+
 	tests := []struct {
 		name string
 		args args
@@ -84,34 +89,22 @@ func TestIsReverseTunnelTransit(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "case 0",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodReverseTunnel,
-				},
-			},
+			args: argsWithReverseTunnel,
 			want: true,
 		},
 		{
 			name: "case 1",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodThirdDomain,
-				},
-			},
+			args: argsWithThirdDomain,
 			want: false,
 		},
 		{
 			name: "case 2",
-			args: args{
-				nil,
-			},
+			args: argsWithNil,
 			want: false,
 		},
 		{
 			name: "case 3",
-			args: args{
-				&v1alpha1.Transit{},
-			},
+			args: argsWithEmpty,
 			want: false,
 		},
 	}
@@ -125,9 +118,7 @@ func TestIsReverseTunnelTransit(t *testing.T) {
 }
 
 func TestIsTransit(t *testing.T) {
-	type args struct {
-		transit *v1alpha1.Transit
-	}
+
 	tests := []struct {
 		name string
 		args args
@@ -136,34 +127,22 @@ func TestIsTransit(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "case 0",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodReverseTunnel,
-				},
-			},
+			args: argsWithReverseTunnel,
 			want: true,
 		},
 		{
 			name: "case 1",
-			args: args{
-				&v1alpha1.Transit{
-					TransitMethod: v1alpha1.TransitMethodThirdDomain,
-				},
-			},
+			args: argsWithThirdDomain,
 			want: true,
 		},
 		{
 			name: "case 2",
-			args: args{
-				nil,
-			},
+			args: argsWithNil,
 			want: false,
 		},
 		{
 			name: "case 3",
-			args: args{
-				&v1alpha1.Transit{},
-			},
+			args: argsWithEmpty,
 			want: false,
 		},
 	}
