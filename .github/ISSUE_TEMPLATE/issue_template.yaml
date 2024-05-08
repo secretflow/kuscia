@@ -83,23 +83,20 @@ body:
       placeholder: e.g., secretflow 1.5.0b0
     validations:
       required: true
-  - type: dropdown
-    id: bug-type
+  - type: textarea
+    id: kuscia-config
     attributes:
-      label: Bug type
-      description:
-      options:
-        - Job running failed
-        - ClusterDomainRoute not ready
-        - Register Domain failed
-        - others
+      label: Configuration file used to run kuscia.
+      description: Kuscia config file output [kuscia.yaml](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/kuscia_config_cn).
+      value:
+      render: shell
     validations:
       required: true
   - type: textarea
     id: what-happened
     attributes:
       label: What happend and What you expected to happen.
-      description: Describe the bug, exepcted behavior and relevant log output.
+      description: Describe the bug, exepcted behavior and relevant log output (/home/kuscia/var/logs/kuscia.log).
       placeholder: A bug happened!
       value:
       render: shell
