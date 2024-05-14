@@ -50,8 +50,9 @@ func (c *Controller) ProcessKusciaDeployment(ctx context.Context, kd *kusciav1al
 
 	// We update the spec and status separately.
 	if updated {
-		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).Update(ctx, kd, metav1.UpdateOptions{}); err != nil {
-			return fmt.Errorf("error updating kuscia deployment %v, %v", kd.Name, err)
+		_, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).Update(ctx, kd, metav1.UpdateOptions{})
+		if err != nil && !k8serrors.IsConflict(err) {
+			return fmt.Errorf("failed to updating kuscia deployment %v, %v", kd.Name, err)
 		}
 		return nil
 	}
@@ -164,8 +165,10 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 
 		deployment, err := c.deploymentLister.Deployments(partyKitInfo.domainID).Get(partyKitInfo.dkInfo.deploymentName)
 		if err != nil {
-			nlog.Warnf("Failed to update party deployment %v/%v status for kuscia deployment %v, %v",
-				partyKitInfo.domainID, partyKitInfo.dkInfo.deploymentName, kd.Name, err)
+			if !k8serrors.IsNotFound(err) {
+				nlog.Warnf("Failed to update party deployment %v/%v status for kuscia deployment %v, %v",
+					partyKitInfo.domainID, partyKitInfo.dkInfo.deploymentName, kd.Name, err)
+			}
 			continue
 		}
 
@@ -784,7 +787,7 @@ func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKi
 
 	if needUpdate {
 		_, err = c.kubeClient.AppsV1().Deployments(deploymentCopy.Namespace).Update(ctx, deploymentCopy, metav1.UpdateOptions{})
-		if err != nil {
+		if err != nil && !k8serrors.IsConflict(err) {
 			return fmt.Errorf("failed to update deployment %v/%v, %v", deploymentCopy.Namespace, deployment.Name, err)
 		}
 	}

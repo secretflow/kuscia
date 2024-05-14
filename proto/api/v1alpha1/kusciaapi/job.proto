@@ -29,6 +29,12 @@ service JobService {
   rpc BatchQueryJobStatus(BatchQueryJobStatusRequest) returns (BatchQueryJobStatusResponse);
 
   rpc StopJob(StopJobRequest)returns (StopJobResponse);
+
+  rpc RestartJob(RestartJobRequest)returns (RestartJobResponse);
+
+  rpc SuspendJob(SuspendJobRequest)returns (SuspendJobResponse);
+
+  rpc CancelJob(CancelJobRequest)returns (CancelJobResponse);
   
   rpc DeleteJob(DeleteJobRequest) returns (DeleteJobResponse);
 
@@ -87,6 +93,7 @@ message DeleteJobResponseData {
 message StopJobRequest {
   RequestHeader header = 1;
   string job_id = 2;
+  string reason = 3;
 }
 
 message StopJobResponse {
@@ -95,6 +102,51 @@ message StopJobResponse {
 }
 
 message StopJobResponseData {
+  string job_id = 1;
+}
+
+message SuspendJobRequest {
+  RequestHeader header = 1;
+  string job_id = 2;
+  string reason = 3;
+}
+
+message SuspendJobResponse {
+  Status status = 1;
+  SuspendJobResponseData data = 2;
+}
+
+message SuspendJobResponseData {
+  string job_id = 1;
+}
+
+message RestartJobRequest {
+  RequestHeader header = 1;
+  string job_id = 2;
+  string reason = 3;
+}
+
+message RestartJobResponse {
+  Status status = 1;
+  RestartJobResponseData data = 2;
+}
+
+message RestartJobResponseData {
+  string job_id = 1;
+}
+
+message CancelJobRequest {
+  RequestHeader header = 1;
+  string job_id = 2;
+  string reason = 3;
+}
+
+message CancelJobResponse {
+  Status status = 1;
+  CancelJobResponseData data = 2;
+}
+
+message CancelJobResponseData {
   string job_id = 1;
 }
 
@@ -171,6 +223,7 @@ message TaskStatus {
   string start_time = 5;
   string end_time = 6;
   repeated PartyStatus parties = 7;
+  string alias = 8;
 }
 
 message PartyStatus {
@@ -190,6 +243,7 @@ enum State {
   AwaitingApproval = 5; // await the partner to approval the job
   ApprovalReject = 6;   // partner reject the job
   Cancelled = 7;        // the job cannot start again when it was cancelled
+  Suspended = 8;        // the job was suspended
 }
 
 enum ApproveResult {

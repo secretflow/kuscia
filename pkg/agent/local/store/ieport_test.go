@@ -77,7 +77,7 @@ func TestStore_LoadImage(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		dir = filepath.Dir(dir)
 	}
-	pauseTarFile := filepath.Join(dir, "build/pause/pause.tar")
+	pauseTarFile := filepath.Join(dir, "build/pause/pause-amd64.tar")
 
 	file, err := os.Open(pauseTarFile)
 	assert.NoError(t, err)

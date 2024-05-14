@@ -5,6 +5,9 @@ p, domain, /api/v1/job/stop, POST
 p, domain, /api/v1/job/watch, POST
 p, domain, /api/v1/job/status/batchQuery, POST
 p, domain, /api/v1/job/approve, POST
+p, domain, /api/v1/job/suspend, POST
+p, domain, /api/v1/job/cancel, POST
+p, domain, /api/v1/job/restart, POST
 
 p, domain, /api/v1/domain/update, POST
 p, domain, /api/v1/domain/query, POST

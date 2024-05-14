@@ -513,6 +513,10 @@ func (c *Controller) updateTaskResourceGroupStatus(ctx context.Context, oldTrg, 
 			return nil
 		}
 
+		if k8serrors.IsConflict(err) {
+			return nil
+		}
+
 		nlog.Warnf("Failed to update task resource group %q status, %v", newTrg.Name, err)
 		if i >= statusUpdateRetries {
 			break

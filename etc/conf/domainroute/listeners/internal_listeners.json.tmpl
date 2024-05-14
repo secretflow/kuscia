@@ -72,6 +72,19 @@
                                 }
                             },
                             {
+                                "name": "envoy.filters.http.kuscia_receiver",
+                                "typed_config": {
+                                    "@type": "type.googleapis.com/envoy.extensions.filters.http.kuscia_receiver.v3.Receiver",
+                                    "self_namespace": "{{.Namespace}}"
+                                }
+                            },
+                            {
+                                "name": "envoy.filters.http.kuscia_poller",
+                                "typed_config": {
+                                    "@type": "type.googleapis.com/envoy.extensions.filters.http.kuscia_poller.v3.Poller"
+                                }
+                            },
+                            {
                                 "name": "envoy.filters.http.router",
                                 "typed_config": {
                                     "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"

@@ -47,7 +47,7 @@ func (h *PendingHandler) handlePending(job *kusciaapisv1alpha1.KusciaJob) (needU
 	defer updateJobTime(now, job)
 	// handle stage command, check if the stage command matches the phase of job
 	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return true, err
+		return hasReconciled, err
 	}
 	// the logic of handle pending status is no different between  self as initiator or as partner
 	// all partner have been created success

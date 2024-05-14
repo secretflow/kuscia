@@ -82,13 +82,6 @@ function join_to_host() {
       <"${ROOT}/scripts/templates/cluster_domain_route.token.transit.yaml")
   fi
   echo "${domain_route_template}" | kubectl apply -f -
-
-  if [[ ${interconn_protocol} == "kuscia" && ${need_interop} == "true" ]]; then
-    INTEROP_CONFIG_TEMPLATE=$(sed "s/{{.MEMBER_DOMAIN_ID}}/${self_domain_id}/g;
-       s/{{.HOST_DOMAIN_ID}}/${host_domain_id}/g" \
-      <"${ROOT}/scripts/templates/interop_config.yaml")
-    echo "${INTEROP_CONFIG_TEMPLATE}" | kubectl apply -f -
-  fi
 }
 
 usage() {

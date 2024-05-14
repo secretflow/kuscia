@@ -37,9 +37,10 @@ func NewSucceededHandler(deps *Dependencies) *SucceededHandler {
 // HandlePhase implements the KusciaJobPhaseHandler interface.
 // It will do some tail-in work when the job phase is Succeeded.
 func (h *SucceededHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) (bool, error) {
-	now := metav1.Now()
-	kusciaJob.Status.CompletionTime = &now
-	kusciaJob.Status.LastReconcileTime = &now
-	metrics.JobResultStats.WithLabelValues(metrics.Succeeded).Inc()
+	if kusciaJob.Status.CompletionTime == nil {
+		now := metav1.Now()
+		kusciaJob.Status.CompletionTime = &now
+		metrics.JobResultStats.WithLabelValues(metrics.Succeeded).Inc()
+	}
 	return true, nil
 }

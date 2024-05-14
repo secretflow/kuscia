@@ -58,6 +58,8 @@ import (
 
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerdecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
+	kusciapoller "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_poller/v3"
+	kusciareceiver "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_receiver/v3"
 	kusciatoken "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -81,6 +83,8 @@ const (
 	tokenAuthFilterName       = "envoy.filters.http.kuscia_token_auth"
 	cryptFilterName           = "envoy.filters.http.kuscia_crypt"
 	headerDecoratorFilterName = "envoy.filters.http.kuscia_header_decorator"
+	receiverFilterName        = "envoy.filters.http.kuscia_receiver"
+	pollerFilterName          = "envoy.filters.http.kuscia_poller"
 )
 
 var (
@@ -99,10 +103,12 @@ var (
 	ctx           context.Context
 	config        *InitConfig
 
-	encryptRules  []*kusciacrypt.CryptRule // for outbound, on port 80
-	decryptRules  []*kusciacrypt.CryptRule // for inbound, on port 1080
-	sourceTokens  []*kusciatoken.TokenAuth_SourceToken
-	appendHeaders []*headerdecorator.HeaderDecorator_SourceHeader
+	encryptRules      []*kusciacrypt.CryptRule // for outbound, on port 80
+	decryptRules      []*kusciacrypt.CryptRule // for inbound, on port 1080
+	sourceTokens      []*kusciatoken.TokenAuth_SourceToken
+	appendHeaders     []*headerdecorator.HeaderDecorator_SourceHeader
+	pollAppendHeaders []*kusciapoller.Poller_SourceHeader
+	receiverRules     []*kusciareceiver.ReceiverRule
 )
 
 type InitConfig struct {
@@ -170,7 +176,6 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 
 func InitSnapshot(ns, instance string, initConfig *InitConfig) {
 	config = initConfig
-
 	// Add the snapshot to the cache
 	var err error
 	configTemplate := ConfigTemplate{
@@ -766,6 +771,37 @@ func generateCryptRules(newRule *kusciacrypt.CryptRule, config []*kusciacrypt.Cr
 	return config
 }
 
+func generateReceiverRulesByListener(newRule *kusciareceiver.ReceiverRule, listenerName string,
+	add bool) []*kusciareceiver.ReceiverRule {
+	// TODO internal/external listener is not the same
+	// if listenerName == InternalListener {
+	// 	receiverRules = generateReceiverRules(newRule, encryptRules, add)
+	// 	return receiverRules
+	// }
+	receiverRules = generateReceiverRules(newRule, receiverRules, add)
+	return receiverRules
+}
+
+func generateReceiverRules(newRule *kusciareceiver.ReceiverRule, config []*kusciareceiver.ReceiverRule,
+	add bool) []*kusciareceiver.ReceiverRule {
+	for i, rule := range config {
+		if rule.Source == newRule.Source && rule.Destination == newRule.Destination && rule.Svc == newRule.Svc {
+			if add {
+				config[i] = newRule
+				return config
+			}
+			config = append(config[:i], config[i+1:]...)
+			return config
+		}
+	}
+
+	// if not return yet, means not found
+	if add {
+		config = append(config, newRule)
+	}
+	return config
+}
+
 func UpdateTokenAuthConfig(config *anypb.Any, newToken *kusciatoken.TokenAuth_SourceToken,
 	add bool) (*hcm.HttpFilter, error) {
 	var tokenAuthFilter kusciatoken.TokenAuth
@@ -934,6 +970,87 @@ func GetTokenAuth() (*kusciatoken.TokenAuth, error) {
 	return &tokenAuthFilter, nil
 }
 
+func UpdatePoller(newHeader *kusciapoller.Poller_SourceHeader, add bool) error {
+	lock.Lock()
+	defer lock.Unlock()
+
+	protoConfig, err := getHTTPFilterConfig(pollerFilterName, InternalListener)
+	if err != nil {
+		return err
+	}
+	var pollerFilter kusciapoller.Poller
+	if err := protoConfig.UnmarshalTo(&pollerFilter); err != nil {
+		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
+	}
+
+	// generate sourceHeaders list
+	found := false
+	for i, header := range pollAppendHeaders {
+		if newHeader.Source == header.Source {
+			if add {
+				pollAppendHeaders[i] = newHeader
+			} else {
+				pollAppendHeaders = append(pollAppendHeaders[:i], pollAppendHeaders[i+1:]...)
+			}
+			found = true
+			break
+		}
+	}
+	if add && !found {
+		pollAppendHeaders = append(pollAppendHeaders, newHeader)
+	}
+
+	pollerFilter.AppendHeaders = pollAppendHeaders
+	pollerFilterConf, err := anypb.New(&pollerFilter)
+	if err != nil {
+		return fmt.Errorf("marshal kuscia filter failed with %v", err)
+	}
+	httpFilter := &hcm.HttpFilter{
+		Name: pollerFilterName,
+		ConfigType: &hcm.HttpFilter_TypedConfig{
+			TypedConfig: pollerFilterConf,
+		},
+	}
+	return updateHTTPFilter(httpFilter, InternalListener)
+}
+
+func UpdateReceiverRules(rule *kusciareceiver.ReceiverRule, add bool) error {
+	lock.Lock()
+	defer lock.Unlock()
+
+	if err := updateReceiverRules(rule, add, ExternalListener); err != nil {
+		return err
+	}
+	if err := updateReceiverRules(rule, add, InternalListener); err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateReceiverRules(rule *kusciareceiver.ReceiverRule, add bool, listenerName string) error {
+	protoConfig, err := getHTTPFilterConfig(receiverFilterName, listenerName)
+	if err != nil {
+		return err
+	}
+	var receiverFilter kusciareceiver.Receiver
+	if err := protoConfig.UnmarshalTo(&receiverFilter); err != nil {
+		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
+	}
+	receiverFilter.Rules = generateReceiverRulesByListener(rule, listenerName, add)
+	receiverFilterConf, err := anypb.New(&receiverFilter)
+	if err != nil {
+		return fmt.Errorf("marshal kuscia filter failed with %v", err)
+	}
+
+	httpFilter := &hcm.HttpFilter{
+		Name: receiverFilterName,
+		ConfigType: &hcm.HttpFilter_TypedConfig{
+			TypedConfig: receiverFilterConf,
+		},
+	}
+	return updateHTTPFilter(httpFilter, listenerName)
+}
+
 func updateHTTPFilter(httpFilter *hcm.HttpFilter, listenerName string) error {
 	httpFilters := []*hcm.HttpFilter{
 		httpFilter,
@@ -941,6 +1058,7 @@ func updateHTTPFilter(httpFilter *hcm.HttpFilter, listenerName string) error {
 	return updateHTTPFilters(httpFilters, listenerName)
 }
 
+// TODO filter add/remove
 func updateHTTPFilters(filters []*hcm.HttpFilter, listenerName string) error {
 	listeners := snapshot.Resources[types.Listener].Items
 

@@ -25,7 +25,9 @@ var (
 		"envoy.filters.http.grpc_http1_reverse_bridge": 0,
 		"envoy.filters.http.kuscia_gress":              1,
 		"envoy.filters.http.kuscia_crypt":              2,
-		"envoy.filters.http.router":                    3,
+		"envoy.filters.http.kuscia_receiver":           3,
+		"envoy.filters.http.kuscia_poller":             4,
+		"envoy.filters.http.router":                    5,
 	}
 
 	externalHTTPFilters = map[string]int{
@@ -34,7 +36,8 @@ var (
 		"envoy.filters.http.kuscia_token_auth":       2,
 		"envoy.filters.http.kuscia_header_decorator": 3,
 		"envoy.filters.http.kuscia_crypt":            4,
-		"envoy.filters.http.router":                  5,
+		"envoy.filters.http.kuscia_receiver":         5,
+		"envoy.filters.http.router":                  6,
 	}
 )
 
