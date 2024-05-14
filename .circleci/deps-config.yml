@@ -3,6 +3,18 @@
 version: 2.1
 
 parameters:
+  GHA_Actor:
+    type: string
+    default: ""
+  GHA_Action:
+    type: string
+    default: ""
+  GHA_Event:
+    type: string
+    default: ""
+  GHA_Meta:
+    type: string
+    default: ""
   DEPS_Tag:
     type: string
     default: ""
@@ -35,7 +47,7 @@ commands:
             esac
 
             GOLANG_DIR="/opt"
-            GOLANG_VERSION="1.19.13"
+            GOLANG_VERSION="1.22.2"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
