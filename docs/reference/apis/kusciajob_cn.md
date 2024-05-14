@@ -13,8 +13,11 @@ protobuf 文件。
 | [BatchQueryJobStatus](#batch-query-job-status) | BatchQueryJobStatusRequest | BatchQueryJobStatusResponse  | 批量查询 Job 状态 |
 | [DeleteJob](#delete-job)                       | DeleteJobRequest           | DeleteJobResponse            | 删除 Job      |
 | [StopJob](#stop-job)                           | StopJobRequest             | StopJobResponse              | 停止 Job      |
-| [WatchJob](#watch-job)                         | WatchJobRequest            | WatchJobEventResponse stream | 监控 Job      |
-| [ApproveJob](#{#approval-job)                  | ApproveJobRequest          | ApproveJobResponse           | 审批 Job      |
+| [WatchJob](#watch-job)                         | WatchJobRequest            | WatchJobEventResponse stream | 监听 Job      |
+| [ApproveJob](#approval-job)                    | ApproveJobRequest          | ApproveJobResponse           | 审批 Job      |
+| [SuspendJob](#suspend-job)                     | SuspendJobRequest          | SuspendJobResponse           | 暂停 Job      |
+| [RestartJob](#restart-job)                     | RestartJobRequest          | RestartJobResponse           | 重跑 Job      |
+| [CancelJob](#cancel-job)                       | CancelJobRequest           | CancelJobResponse            | 取消 Job      |
 
 ## 接口详情
 
@@ -78,7 +81,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       ],
       "alias": "job-psi",
       "dependencies": [],
-      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\",\"left_side\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"},{\"is_na\": false,\"ss\": [\"alice\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
       "priority": 100
     },
     {
@@ -98,7 +101,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       "dependencies": [
         "job-psi"
       ],
-      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
       "priority": 100
     }
   ]
@@ -119,6 +122,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
   }
 }
 ```
+
+:::{tip}
+
+上述请求示例中的引擎镜像基于 SecretFlow `1.6.0b0` 版本。算子参数的 `taskInputConfig` 内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
+
+:::
 
 {#query-job}
 
@@ -197,7 +206,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "dependencies": [
           ""
         ],
-        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\",\"left_side\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"},{\"is_na\": false,\"ss\": [\"alice\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
         "priority": 100
       },
       {
@@ -217,7 +226,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "dependencies": [
           "job-psi"
         ],
-        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"preprocessing\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
+        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
         "priority": 100
       }
     ],
@@ -411,6 +420,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 |--------|----------------------------------------------|----|---------|
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | job_id | string                                       | 必填 | JobID   |
+| reason | string                                       | 可选 | 停止Job的原因   |
 
 #### 响应（StopJobResponse）
 
@@ -466,7 +476,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | 字段              | 类型                                           | 选填 | 描述      |
 |-----------------|----------------------------------------------|----|---------|
 | header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| timeout_seconds | int64                                        | 可选 | 请求连接的生命周期，服务端将在超时后断开连接，不管是否有活跃事件。超时时间默认为0，表示不超时。即使在未设置超时时间的情况下, 也会因为网络环境导致断连，客户端根据需求决定是否重新发起请求    |
+| timeout_seconds | int64                                        | 可选 | 请求连接的生命周期，服务端将在超时后断开连接，不管是否有活跃事件。超时时间取值范围：[0, 2^31-1]，默认为0，表示不超时。即使在未设置超时时间的情况下, 也会因为网络环境导致断连，客户端根据需求决定是否重新发起请求    |
 
 #### 响应（WatchJobEventResponse）
 
@@ -479,6 +489,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 {#approval-job}
 
 ### 审批 Job
+只有在 P2P 组网模式下且[开启 Job 审批](../concepts/kusciajob_cn.md#enable-approval)的情况下才需要调用此接口进行 job 审批。
 
 #### HTTP 路径
 
@@ -501,6 +512,178 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | data        | ApprovalJobResponseData        |    |       |
 | data.job_id | string                         | 必填 | JobID |
 
+
+{#suspend-job}
+
+### 暂停 Job
+
+#### HTTP 路径
+
+/api/v1/job/suspend
+
+#### 请求（SuspendJobRequest）
+
+| 字段     | 类型                                           | 选填 | 描述      |
+|--------|----------------------------------------------|----|---------|
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| job_id | string                                       | 必填 | JobID   |
+| reason | string                                       | 可选 | 暂停Job的原因   |
+
+#### 响应（SuspendJobResponse）
+
+| 字段          | 类型                             | 选填 | 描述    |
+|-------------|--------------------------------|----|-------|
+| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
+| data        | SuspendJobResponseData         |    |       |
+| data.job_id | string                         | 必填 | JobID |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001"
+  }
+}
+```
+
+
+{#restart-job}
+
+### 重跑 Job
+
+#### HTTP 路径
+
+/api/v1/job/restart
+
+#### 请求（RestartJobRequest）
+
+| 字段     | 类型                                           | 选填 | 描述      |
+|--------|----------------------------------------------|----|---------|
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| job_id | string                                       | 必填 | JobID   |
+| reason | string                                       | 可选 | 重跑Job的原因   |
+
+#### 响应（RestartJobResponse）
+
+| 字段          | 类型                             | 选填 | 描述    |
+|-------------|--------------------------------|----|-------|
+| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
+| data        | RestartJobResponseData         |    |       |
+| data.job_id | string                         | 必填 | JobID |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001"
+  }
+}
+```
+
+{#cancel-job}
+
+### 取消 Job
+
+#### HTTP 路径
+
+/api/v1/job/cancel
+
+#### 请求（CancelJobRequest）
+
+| 字段     | 类型                                           | 选填 | 描述      |
+|--------|----------------------------------------------|----|---------|
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| job_id | string                                       | 必填 | JobID   |
+| reason | string                                       | 可选 | 取消Job的原因   |
+
+#### 响应（CancelJobResponse）
+
+| 字段          | 类型                             | 选填 | 描述    |
+|-------------|--------------------------------|----|-------|
+| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
+| data        | CancelJobResponseData          |    |       |
+| data.job_id | string                         | 必填 | JobID |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "job_id": "job-alice-bob-001"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "job_id": "job-alice-bob-001"
+  }
+}
+```
 
 ## 公共
 
@@ -539,26 +722,26 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 ### PartyStatus
 
-| 字段        | 类型                                        | 选填 | 描述            |
-|-----------|-------------------------------------------|----|---------------|
-| domain_id | string                                    | 必填 | 节点 ID         |
+| 字段        | 类型                                        | 选填 | 描述                          |
+|-----------|-------------------------------------------|----|-----------------------------|
+| domain_id | string                                    | 必填 | 节点 ID                       |
 | state     | string                                    | 必填 | 参与方任务状态, 参考 [State](#state) |
-| err_msg   | string                                    | 可选 | 错误信息          |
-| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息 |
+| err_msg   | string                                    | 可选 | 错误信息                        |
+| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息               |
 
 {#task}
 
 ### Task
 
-| 字段                | 类型                | 选填 | 描述                                                                                                                         |
-|-------------------|-------------------|----|----------------------------------------------------------------------------------------------------------------------------|
-| app_image         | string            | 必填 | 任务镜像                                                                                                                       |
-| parties           | [Party](#party)[] | 必填 | 参与方节点 ID                                                                                                                   |
-| alias             | string            | 必填 | 任务别名                                                                                                                       |
-| task_id           | string            | 必填 | 任务 ID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
-| dependencies      | string[]          | 必填 | 依赖任务                                                                                                                       |
-| task_input_config | string            | 必填 | 任务配置                                                                                                                       |
-| priority          | string            | 可选 | 优先级，值越大优先级越高                                                                                                               |
+| 字段                | 类型                | 选填 | 描述                                                                                                                                                       |
+|-------------------|-------------------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| app_image         | string            | 必填 | 任务镜像                                                                                                                                                     |
+| parties           | [Party](#party)[] | 必填 | 参与方节点 ID                                                                                                                                                 |
+| alias             | string            | 必填 | 任务别名，同一个 Job 中唯一，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)                    |
+| task_id           | string            | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| dependencies      | string[]          | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系                                                                                                                   |
+| task_input_config | string            | 必填 | 任务配置                                                                                                                                                     |
+| priority          | string            | 可选 | 优先级，值越大优先级越高                                                                                                                                             |
 
 {#task-config}
 
@@ -569,7 +752,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | app_image         | string            | 必填 | 任务镜像         |
 | parties           | [Party](#party)[] | 必填 | 参与方          |
 | alias             | string            | 必填 | 任务别名         |
-| task_id           | string            | 必填 | 任务 ID        |
+| task_id           | string            | 可选 | 任务 ID        |
 | dependencies      | string[]          | 必填 | 依赖任务         |
 | task_input_config | string            | 必填 | 任务配置         |
 | priority          | string            | 可选 | 优先级，值越大优先级越高 |
@@ -578,15 +761,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 ### TaskStatus
 
-| 字段          | 类型                             | 选填 | 描述                        |
-|-------------|--------------------------------|----|---------------------------|
-| task_id     | string                         | 可选 | 任务 ID                     |
-| state       | string                         | 必填 | 任务状态，参考 [State](#state)   |
-| err_msg     | string                         | 可选 | 错误信息                      |
-| create_time | string                         | 必填 | 创建事件                      |
-| start_time  | string                         | 必填 | 开始事件                      |
-| end_time    | string                         | 可选 | 结束事件                      |
-| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                       |
+| 字段          | 类型                             | 选填 | 描述                      |
+|-------------|--------------------------------|----|-------------------------|
+| task_id     | string                         | 可选 | 任务 ID                   |
+| alias       | string                         | 必填 | 任务别名                    |
+| state       | string                         | 必填 | 任务状态，参考 [State](#state) |
+| err_msg     | string                         | 可选 | 错误信息                    |
+| create_time | string                         | 必填 | 创建事件                    |
+| start_time  | string                         | 必填 | 开始事件                    |
+| end_time    | string                         | 可选 | 结束事件                    |
+| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                     |
 
 {#event-type}
 
@@ -613,6 +797,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 {#state}
 
 ### State
+KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state)。
 
 | Name               | Number | 描述    |
 |-----------         |--------|-------|
@@ -621,9 +806,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | Running            | 2      | 运行中   |
 | Succeeded          | 3      | 成功    |
 | Failed             | 4      | 失败    |
-| AwaitingApproval   | 5      | 等待参与方审批任务   |
-| ApprovalReject     | 6      | 任务被审批为拒绝执行    |
-| Cancelled          | 7      | 任务被取消，被取消的任务不可被再次执行    |
+| AwaitingApproval   | 5      | 等待参与方审批 Job   |
+| ApprovalReject     | 6      | Job 被审批为拒绝执行    |
+| Cancelled          | 7      | Job 被取消，被取消的 Job 不可被再次执行    |
+| Suspended          | 8      | Job 被暂停，可通过 Restart 接口重跑   |
+| Initialized        | 9      | Job 初始状态  |
 
 {#job-party-endpoint}
 

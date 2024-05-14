@@ -255,9 +255,6 @@ kubectl apply -f AppImage.yaml
 ```
 
 ### 执行测试作业
-
-K8s 部署 RunK 模式暂时不支持训练任务。训练任务可以参考[使用 RunP 模式部署节点](../deploy_with_runp_cn.md)
-
 - 登录到 master pod
 ```bash
 kubectl exec -it ${master_pod_name} bash -n kuscia-master

@@ -30,6 +30,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller"
+	"github.com/secretflow/kuscia/pkg/gateway/controller/poller"
 	"github.com/secretflow/kuscia/pkg/gateway/metrics"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -55,15 +56,10 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	priKeyData := tls.EncodePKCS1PublicKey(gwConfig.DomainKey)
 
 	// start xds server and envoy
-	err := StartXds(gwConfig)
-	if err != nil {
+	if err := StartXds(gwConfig); err != nil {
 		return fmt.Errorf("start xds server fail with err: %v", err)
 	}
 	nlog.Infof("Start xds success")
-
-	if err != nil {
-		return fmt.Errorf("failed to load masterConfig, detail-> %v", err)
-	}
 
 	var isMaster bool
 	var masterNamespace string
@@ -73,6 +69,9 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	if isMaster {
 		// add master config
 		masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
+		if err != nil {
+			return fmt.Errorf("failed to load masterConfig, detail-> %v", err)
+		}
 		nlog.Debugf("masterConfig is: %v", masterConfig)
 		// add master Clusters
 		err = clusters.AddMasterClusters(ctx, gwConfig.DomainID, masterConfig)
@@ -81,6 +80,11 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		}
 		nlog.Infof("Add master clusters successfully")
 	} else {
+		if err := utils.ProbePeerEndpoint(gwConfig.MasterConfig.Endpoint); err != nil {
+			return fmt.Errorf("[PROBE] failed to probe master endpoint %s, detail-> %v", gwConfig.MasterConfig.Endpoint, err)
+		}
+		nlog.Infof("[PROBE] success to probe master endpoint %s", gwConfig.MasterConfig.Endpoint)
+		var err error
 		if masterNamespace, err = ConnectToMaster(ctx, gwConfig, clients, afterRegisterHook); err != nil {
 			return err
 		}
@@ -144,6 +148,9 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
 	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
+
+	pm, err := poller.NewPollManager(isMaster, gwConfig.DomainID, gwc.GatewayName(), serviceInformer, drInformer)
+	go pm.Run(concurrentSyncs, ctx.Done())
 
 	// start runtime metrics collector
 	go metrics.MonitorRuntimeMetrics(ctx.Done())

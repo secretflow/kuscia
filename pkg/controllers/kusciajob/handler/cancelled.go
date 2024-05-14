@@ -1,4 +1,4 @@
-// Copyright 2023 Ant Group Co., Ltd.
+// Copyright 2024 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package handler
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
@@ -38,6 +40,10 @@ func (h *CancelledHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) 
 // handleCancelled
 // Cancelled is completed phase
 func (h *CancelledHandler) handleCancelled(job *kusciaapisv1alpha1.KusciaJob) (needUpdateStatus bool, err error) {
-	// do nothing
+	if job.Status.CompletionTime == nil {
+		now := metav1.Now()
+		job.Status.CompletionTime = &now
+		needUpdateStatus = true
+	}
 	return
 }

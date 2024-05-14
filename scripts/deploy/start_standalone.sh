@@ -42,7 +42,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.3.0b0"
+SF_IMAGE_TAG="1.6.0b0"
 SF_IMAGE_REGISTRY=""
 NETWORK_NAME="kuscia-exchange"
 VOLUME_PATH="${ROOT}"
@@ -62,8 +62,7 @@ function pre_check() {
 function arch_check() {
   local arch=$(uname -a)
   if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
-    echo -e "${RED}ARM architecture is not supported by kuscia currently${NC}"
-    exit 1
+    echo "Warning: arm64 architecture. Continuing..."
   elif [[ $arch == *"x86_64"* ]]; then
     echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
   elif [[ $arch == *"amd64"* ]]; then

@@ -134,7 +134,6 @@ func (cs *KusciaScheduling) Name() string {
 // 2. Whether the total number of pods in a TaskResourceGroup is less than its `minReservedMember`.
 func (cs *KusciaScheduling) PreFilter(ctx context.Context, state *framework.CycleState, pod *v1.Pod) (*framework.PreFilterResult, *framework.Status) {
 	if err := cs.trMgr.PreFilter(ctx, pod); err != nil {
-		nlog.Warnf("PreFilter failed for pod %v/%v, %v", pod.Namespace, pod.Name, err)
 		return nil, framework.NewStatus(framework.UnschedulableAndUnresolvable, err.Error())
 	}
 	return nil, framework.NewStatus(framework.Success, "")

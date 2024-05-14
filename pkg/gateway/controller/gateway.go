@@ -81,6 +81,10 @@ func NewGatewayController(namespace string, prikey *rsa.PrivateKey, kusciaClient
 	return controller, nil
 }
 
+func (c *GatewayController) GatewayName() string {
+	return c.hostname
+}
+
 // Run begins watching and syncing.
 func (c *GatewayController) Run(threadiness int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
@@ -150,7 +154,6 @@ func (c *GatewayController) syncHandler() error {
 		c.lock.Lock()
 		defer c.lock.Unlock()
 
-		status.NetworkStatus = make([]kusciaapisv1alpha1.GatewayEndpointStatus, len(c.networkStatus))
 		status.NetworkStatus = append(status.NetworkStatus, c.networkStatus...)
 	}
 

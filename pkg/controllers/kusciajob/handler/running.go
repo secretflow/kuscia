@@ -53,7 +53,7 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 	defer updateJobTime(now, job)
 	// handle stage command, check if the stage command matches the phase of job
 	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return true, err
+		return hasReconciled, err
 	}
 	// set task id
 	if utilsres.SelfClusterAsInitiator(h.namespaceLister, job.Spec.Initiator, job.Annotations) {
@@ -101,7 +101,6 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 						if err != nil {
 							nlog.Errorf("Get exist task %v failed: %v", t.Name, err)
 							setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "CreateTaskFailed", err.Error())
-							job.Status.CompletionTime = &now
 							return true, nil
 						}
 					}
@@ -110,7 +109,6 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 						message := fmt.Sprintf("Failed to create task %v because a task with the same name already exists", t.Name)
 						nlog.Error(message)
 						setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "CreateTaskFailed", message)
-						job.Status.CompletionTime = &now
 						return true, nil
 					}
 				} else {

@@ -29,8 +29,7 @@ function log() {
 function arch_check() {
   local arch=$(uname -a)
   if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
-    echo -e "${RED}ARM architecture is not supported by kuscia currently${NC}"
-    exit 1
+    echo "Warning: arm64 architecture. Continuing..."
   elif [[ $arch == *"x86_64"* ]]; then
     echo -e "${GREEN}x86_64 architecture. Continuing...${NC}"
   elif [[ $arch == *"amd64"* ]]; then
@@ -54,7 +53,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.3.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.6.0b0
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 

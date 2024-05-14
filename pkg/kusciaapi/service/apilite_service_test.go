@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
@@ -69,14 +70,14 @@ type kusciaAPIDomainDataGrant struct {
 	data *kusciaapi.DomainDataGrantData
 }
 
-var kusciaAPIJS *kusciaAPIJobService
-
-var kusciaAPIDS *kusciaAPIDomainService
-
-var kusciaAPIDR *kusciaAPIDomainRoute
-
-var kusciaAPISS *kusciaAPIServingService
-var kusciaAPIDG *kusciaAPIDomainDataGrant
+var (
+	kusciaClient kusciaclientset.Interface
+	kusciaAPIJS  *kusciaAPIJobService
+	kusciaAPIDS  *kusciaAPIDomainService
+	kusciaAPIDR  *kusciaAPIDomainRoute
+	kusciaAPISS  *kusciaAPIServingService
+	kusciaAPIDG  *kusciaAPIDomainDataGrant
+)
 
 var kusciaAPISuccessStatusCode int32 = 0
 
@@ -100,7 +101,7 @@ func TestServiceMain(t *testing.T) {
 	caKey, err := tls.ParsePKCS1PrivateKey(cafile)
 	assert.NoError(t, err)
 	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig("")
-	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
+	kusciaClient = kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
 	kusciaAPIConfig.DomainKey = caKey
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
 	kusciaAPIConfig.KusciaClient = kusciaClient

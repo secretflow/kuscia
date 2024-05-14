@@ -274,7 +274,7 @@ func (c *Controller) enqueueKusciaTask(obj interface{}) {
 	)
 
 	if key, err = cache.DeletionHandlingMetaNamespaceKeyFunc(obj); err != nil {
-		nlog.Errorf("Error building key of kusciatask: %v", err)
+		nlog.Errorf("Error building key of kusciaTask: %v", err)
 	}
 	c.taskQueue.Add(key)
 	nlog.Debugf("Enqueue kusciaTask %q", key)
@@ -293,69 +293,82 @@ func (c *Controller) handleDeletedKusciaTask(obj interface{}) {
 		}
 	}
 
-	c.taskDeleteQueue.Add(fmt.Sprintf("%s/%s", kt.Name, kt.UID))
+	c.enqueueDeletedKusciaTask(kt.Name, string(kt.UID))
 }
 
 // handleTaskResourceGroupObject enqueue the KusciaTask which the task resource group belongs.
 func (c *Controller) handleTaskResourceGroupObject(obj interface{}) {
 	var (
-		object metav1.Object
-		ok     bool
+		trg *kusciaapisv1alpha1.TaskResourceGroup
+		ok  bool
 	)
 
-	if object, ok = obj.(metav1.Object); !ok {
+	if trg, ok = obj.(*kusciaapisv1alpha1.TaskResourceGroup); !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			nlog.Errorf("Error decoding object, invalid type %T", obj)
 			return
 		}
-		object, ok = tombstone.Obj.(metav1.Object)
+		trg, ok = tombstone.Obj.(*kusciaapisv1alpha1.TaskResourceGroup)
 		if !ok {
 			nlog.Errorf("Error decoding object tombstone, invalid type %T", tombstone.Obj)
 			return
 		}
-		nlog.Debugf("Recovered deleted object %q from tombstone", object.GetName())
+		nlog.Debugf("Recovered deleted object %q from tombstone", trg.Name)
 	}
 
-	kusciaTask, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(object.GetName())
+	kt, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(trg.Name)
 	if err != nil {
-		nlog.Debugf("Get kuscia task %v fail, %v, skip processing it", object.GetName(), err)
+		if k8serrors.IsNotFound(err) {
+			kt, err = c.handleNotFoundKusciaTask(trg.Name, trg.Labels)
+			if err == nil {
+				return
+			}
+		}
+		nlog.Debugf("Get kusciaTask %v failed, %v, skip processing it", trg.Name, err)
 		return
 	}
 
-	c.enqueueKusciaTask(kusciaTask)
+	c.enqueueKusciaTask(kt)
 }
 
 // handlePodObject enqueue the KusciaTask which the pod belongs.
 func (c *Controller) handlePodObject(obj interface{}) {
 	var (
-		object metav1.Object
-		ok     bool
+		pod *v1.Pod
+		ok  bool
 	)
 
-	if object, ok = obj.(metav1.Object); !ok {
+	if pod, ok = obj.(*v1.Pod); !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			nlog.Error("Error decoding object, invalid type")
 			return
 		}
-		object, ok = tombstone.Obj.(metav1.Object)
+		pod, ok = tombstone.Obj.(*v1.Pod)
 		if !ok {
 			nlog.Errorf("Error decoding object tombstone, invalid type")
 			return
 		}
-		nlog.Debugf("Recovered deleted object %q from tombstone", object.GetName())
+		nlog.Debugf("Recovered deleted object %q from tombstone", pod.Name)
 	}
 
-	annotations := object.GetAnnotations()
+	annotations := pod.Annotations
 	if annotations != nil && annotations[common.TaskIDAnnotationKey] != "" {
-		kusciaTask, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(annotations[common.TaskIDAnnotationKey])
+		taskID := annotations[common.TaskIDAnnotationKey]
+		kt, err := c.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
 		if err != nil {
-			nlog.Debugf("Get pod %v/%v related kusciaTask %v fail, %v, skip processing it", object.GetNamespace(), object.GetName(),
-				annotations[common.TaskIDAnnotationKey], err)
+			if k8serrors.IsNotFound(err) {
+				kt, err = c.handleNotFoundKusciaTask(taskID, pod.Labels)
+				if err == nil {
+					return
+				}
+			}
+			nlog.Debugf("Get kusciaTask %v failed, %v, skip processing it", taskID, err)
 			return
 		}
-		c.enqueueKusciaTask(kusciaTask)
+
+		c.enqueueKusciaTask(kt)
 	}
 }
 
@@ -399,6 +412,26 @@ func (c *Controller) handleServiceObject(obj interface{}) {
 		c.handlePodObject(pod)
 		return
 	}
+}
+
+func (c *Controller) handleNotFoundKusciaTask(taskID string, labels map[string]string) (*kusciaapisv1alpha1.KusciaTask, error) {
+	kt, err := c.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), taskID, metav1.GetOptions{})
+	if err == nil {
+		return kt, err
+	}
+
+	if k8serrors.IsNotFound(err) && labels != nil {
+		c.enqueueDeletedKusciaTask(taskID, labels[common.LabelTaskUID])
+	}
+	return kt, err
+}
+
+func (c *Controller) enqueueDeletedKusciaTask(taskName, taskUID string) {
+	if taskName == "" || taskUID == "" {
+		return
+	}
+	c.taskDeleteQueue.Add(fmt.Sprintf("%s/%s", taskName, taskUID))
+	nlog.Debugf("Enqueue deleted kusciaTask %q", taskName)
 }
 
 // runWorker is a long-running function that will continually call the
@@ -447,7 +480,6 @@ func (c *Controller) processNextWorkItem() bool {
 			metrics.TaskRequeueCount.WithLabelValues(key).Inc()
 			// Put the item back on the taskQueue to handle any transient errors.
 			c.taskQueue.AddRateLimited(key)
-			nlog.Warnf("Error handling %q, re-queuing", key)
 			return fmt.Errorf("error handling %q, %v", key, err)
 		}
 
@@ -540,11 +572,11 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 	}
 
 	// Update kusciatask
-	if err = c.updateTaskStatus(sharedTask, kusciaTask); err != nil {
+	if err = c.updateTaskStatus(sharedTask, kusciaTask); err != nil && !k8serrors.IsConflict(err) {
 		return fmt.Errorf("failed to update status for kusciaTask %q, %v", key, err)
 	}
 
-	nlog.Infof("Finished syncing kusciatask %q (%v)", key, time.Since(startTime))
+	nlog.Infof("Finish syncing KusciaTask %q (%v)", key, time.Since(startTime))
 
 	return nil
 }

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -50,6 +51,9 @@ type IJobService interface {
 	DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) *kusciaapi.DeleteJobResponse
 	WatchJob(ctx context.Context, request *kusciaapi.WatchJobRequest, event chan<- *kusciaapi.WatchJobEventResponse) error
 	ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) *kusciaapi.ApproveJobResponse
+	SuspendJob(ctx context.Context, request *kusciaapi.SuspendJobRequest) *kusciaapi.SuspendJobResponse
+	RestartJob(ctx context.Context, request *kusciaapi.RestartJobRequest) *kusciaapi.RestartJobResponse
+	CancelJob(ctx context.Context, request *kusciaapi.CancelJobRequest) *kusciaapi.CancelJobResponse
 }
 
 type jobService struct {
@@ -268,16 +272,15 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
 	}
-	// stop kuscia job
-	if job.Labels == nil {
-		job.Labels = make(map[string]string)
-	}
-	job.Labels[common.LabelJobStage] = string(v1alpha1.JobStopStage)
-	job.Labels[common.LabelJobStageTrigger] = domainId
-	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
-	if err != nil {
-		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
+
+	if job.Labels == nil || (job.Labels != nil && job.Labels[common.LabelJobStage] != string(v1alpha1.JobStopStage)) {
+		// stop kuscia job
+		h.setJobStage(job, v1alpha1.JobStopStage, h.Initiator)
+		_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
+		if err != nil {
+			return &kusciaapi.StopJobResponse{
+				Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
+			}
 		}
 	}
 	return &kusciaapi.StopJobResponse{
@@ -296,11 +299,14 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
 		}
 	}
-	if request.Result == kusciaapi.ApproveResult_APPROVE_RESULT_UNKNOWN {
+
+	if request.Result != kusciaapi.ApproveResult_APPROVE_RESULT_ACCEPT &&
+		request.Result != kusciaapi.ApproveResult_APPROVE_RESULT_REJECT {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "approve result must be set"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "request result must be legal"),
 		}
 	}
+
 	// get domain from context
 	role, domainId := GetRoleAndDomainFromCtx(ctx)
 	var domainIds []string
@@ -316,7 +322,7 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 		}
 	}
 	// auth handler
-	if err := h.authHandlerJobApprove(ctx, job); err != nil {
+	if err := h.authHandlerJob(ctx, job); err != nil {
 		return &kusciaapi.ApproveJobResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
 		}
@@ -354,6 +360,168 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 			JobId: jobID,
 		},
 	}
+}
+
+func (h *jobService) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJobRequest) *kusciaapi.SuspendJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	// get domain from context
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+		}
+	}
+	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
+	if err != nil {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendJob, err.Error()),
+		}
+	}
+	// auth handler
+	if err := h.authHandlerJob(ctx, job); err != nil {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
+	if job.Status.Phase != v1alpha1.KusciaJobRunning {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendNotRunningJob, fmt.Sprintf("job: %s current status is %s can not be suspend.", job.Name, job.Status.Phase)),
+		}
+	}
+	nlog.Infof("Suspend job: %s, reason: %s", jobID, request.Reason)
+	// suspend kuscia job
+	h.setJobStage(job, v1alpha1.JobSuspendStage, h.Initiator)
+
+	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
+	if err != nil {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendJob, err.Error()),
+		}
+	}
+	return &kusciaapi.SuspendJobResponse{
+		Status: utils2.BuildSuccessResponseStatus(),
+		Data: &kusciaapi.SuspendJobResponseData{
+			JobId: jobID,
+		},
+	}
+}
+
+func (h *jobService) RestartJob(ctx context.Context, request *kusciaapi.RestartJobRequest) *kusciaapi.RestartJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	// get domain from context
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+		}
+	}
+	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
+	if err != nil {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRestartJob, err.Error()),
+		}
+	}
+	// auth handler
+	if err := h.authHandlerJob(ctx, job); err != nil {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
+	if job.Status.Phase != v1alpha1.KusciaJobFailed && job.Status.Phase != v1alpha1.KusciaJobSuspended {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRestartNotSuspendedOrFailedJob, fmt.Sprintf("job: %s current status is %s can not be restart.", job.Name, job.Status.Phase)),
+		}
+	}
+
+	nlog.Infof("Restart job: %s, reason: %s", jobID, request.Reason)
+
+	if job.Labels == nil || (job.Labels != nil && job.Labels[common.LabelJobStage] != string(v1alpha1.JobRestartStage)) {
+		// restart kuscia job
+		h.setJobStage(job, v1alpha1.JobRestartStage, h.Initiator)
+		_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
+		if err != nil {
+			return &kusciaapi.RestartJobResponse{
+				Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendJob, err.Error()),
+			}
+		}
+	}
+	return &kusciaapi.RestartJobResponse{
+		Status: utils2.BuildSuccessResponseStatus(),
+		Data: &kusciaapi.RestartJobResponseData{
+			JobId: jobID,
+		},
+	}
+}
+
+func (h *jobService) CancelJob(ctx context.Context, request *kusciaapi.CancelJobRequest) *kusciaapi.CancelJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	// get domain from context
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+		}
+	}
+	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
+	if err != nil {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCancelJob, err.Error()),
+		}
+	}
+	// auth handler
+	if err := h.authHandlerJob(ctx, job); err != nil {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+		}
+	}
+	nlog.Infof("Cancel job: %s, reason: %s", jobID, request.Reason)
+	// cancel kuscia job
+	h.setJobStage(job, v1alpha1.JobCancelStage, h.Initiator)
+	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
+	if err != nil {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCancelJob, err.Error()),
+		}
+	}
+	return &kusciaapi.CancelJobResponse{
+		Status: utils2.BuildSuccessResponseStatus(),
+		Data: &kusciaapi.CancelJobResponseData{
+			JobId: jobID,
+		},
+	}
+}
+
+func (h *jobService) setJobStage(job *v1alpha1.KusciaJob, stage v1alpha1.JobStage, domain string) {
+	if job.Labels == nil {
+		job.Labels = make(map[string]string)
+	}
+	job.Labels[common.LabelJobStage] = string(stage)
+	job.Labels[common.LabelJobStageTrigger] = domain
+	jobVersion := "1"
+	if v, ok := job.Labels[common.LabelJobStageVersion]; ok {
+		if iV, err := strconv.Atoi(v); err == nil {
+			jobVersion = strconv.Itoa(iV + 1)
+		}
+	}
+	job.Labels[common.LabelJobStageVersion] = jobVersion
 }
 
 func annotationToDomainList(value string) (domains []string) {
@@ -525,6 +693,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 		taskID := kt.TaskID
 		ts := &kusciaapi.TaskStatus{
 			TaskId: taskID,
+			Alias:  kt.Alias,
 			State:  getTaskState(v1alpha1.TaskPending),
 		}
 		if phase, ok := kusciaJobStatus.TaskStatus[taskID]; ok {
@@ -657,7 +826,7 @@ func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha
 	return true
 }
 
-func (h *jobService) authHandlerJobApprove(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
+func (h *jobService) authHandlerJob(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
 	role, domainId := GetRoleAndDomainFromCtx(ctx)
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
@@ -746,6 +915,8 @@ func getJobState(jobPhase v1alpha1.KusciaJobPhase) string {
 		return kusciaapi.State_ApprovalReject.String()
 	case v1alpha1.KusciaJobCancelled:
 		return kusciaapi.State_Cancelled.String()
+	case v1alpha1.KusciaJobSuspended:
+		return kusciaapi.State_Suspended.String()
 	default:
 		return kusciaapi.State_Unknown.String()
 	}

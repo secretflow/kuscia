@@ -27,20 +27,23 @@
   "sf_node_eval_param": {
     "domain": "data_prep",
     "name": "psi",
-    "version": "0.0.1",
-    "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type"],
+    "version": "0.0.5",
+    "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type","left_side"],
     "attrs": [{
       "ss": ["id1"]
     }, {
       "ss": ["id2"]
     }, {
-      "s": "ECDH_PSI_2PC"
+      "s": "PROTOCOL_ECDH"
     }, {
       "b": true
     }, {
       "i64": "1048576"
     }, {
       "s": "CURVE_FOURQ"
+    }, {
+      "is_na": false,
+      "ss": ["alice"]
     }]
   },
   "sf_input_ids": ["alice-dp-table","bob-dp-table"],

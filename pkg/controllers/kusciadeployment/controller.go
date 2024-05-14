@@ -396,7 +396,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			nlog.Infof("KusciaDeployment %s/%s maybe deleted, delete resources", ns, key)
-			if err := c.cleanKusciaDeploymentEvent(ctx, ns, name); err != nil {
+			if err = c.cleanKusciaDeploymentEvent(ctx, ns, name); err != nil {
 				nlog.Errorf("Clean kd %s/%s resources failed: %s", ns, name, err)
 				return err
 			}

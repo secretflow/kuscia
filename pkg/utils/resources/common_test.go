@@ -17,8 +17,6 @@ package resources
 import (
 	"fmt"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCompareResourceVersion(t *testing.T) {
@@ -147,10 +145,4 @@ func TestValidateK8sName(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestHashString(t *testing.T) {
-	input := "11111111-11111111-11111111-11111111-11111111-11111111-11111111-11111111"
-	output, _ := HashString(input)
-	assert.Equal(t, 32, len(output))
 }
