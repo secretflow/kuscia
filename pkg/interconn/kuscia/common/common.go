@@ -16,6 +16,7 @@ package common
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -143,25 +144,29 @@ func GetJobStage(stage string) v1alpha1.JobStage {
 		return v1alpha1.JobCancelStage
 	case string(v1alpha1.JobRestartStage):
 		return v1alpha1.JobRestartStage
+	case string(v1alpha1.JobSuspendStage):
+		return v1alpha1.JobSuspendStage
 	default:
 		return ""
 	}
 }
 
 func UpdateJobStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) bool {
-	if jobSummary.Spec.Stage != v1alpha1.JobStopStage {
+	if job.Status.Phase == v1alpha1.KusciaJobCancelled {
 		return false
 	}
-
-	jobStage := GetJobStage(GetObjectLabel(job, common.LabelJobStage))
-	if jobStage == jobSummary.Spec.Stage {
+	jobStageVersion := GetObjectLabel(job, common.LabelJobStageVersion)
+	jobSummaryStageVersion := GetObjectLabel(jobSummary, common.LabelJobStageVersion)
+	jobStageVersionNum, _ := strconv.Atoi(jobStageVersion)
+	jobSummaryStageVersionNum, _ := strconv.Atoi(jobSummaryStageVersion)
+	if jobSummaryStageVersionNum <= jobStageVersionNum {
 		return false
 	}
 
 	if job.Labels == nil {
 		job.Labels = make(map[string]string)
 	}
-
+	job.Labels[common.LabelJobStageVersion] = jobSummaryStageVersion
 	job.Labels[common.LabelJobStage] = string(jobSummary.Spec.Stage)
 	job.Labels[common.LabelJobStageTrigger] = jobSummary.Spec.StageTrigger
 	return true

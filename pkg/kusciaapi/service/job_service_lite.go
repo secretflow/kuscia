@@ -100,6 +100,60 @@ func (h *jobServiceLite) StopJob(ctx context.Context, request *kusciaapi.StopJob
 	return resp
 }
 
+func (h *jobServiceLite) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJobRequest) *kusciaapi.SuspendJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	// request the master api
+	resp, err := h.kusciaAPIClient.SuspendJob(ctx, request)
+	if err != nil {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+		}
+	}
+	return resp
+}
+
+func (h *jobServiceLite) RestartJob(ctx context.Context, request *kusciaapi.RestartJobRequest) *kusciaapi.RestartJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	// request the master api
+	resp, err := h.kusciaAPIClient.RestartJob(ctx, request)
+	if err != nil {
+		return &kusciaapi.RestartJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+		}
+	}
+	return resp
+}
+
+func (h *jobServiceLite) CancelJob(ctx context.Context, request *kusciaapi.CancelJobRequest) *kusciaapi.CancelJobResponse {
+	// do validate
+	jobID := request.JobId
+	if jobID == "" {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+		}
+	}
+	// request the master api
+	resp, err := h.kusciaAPIClient.CancelJob(ctx, request)
+	if err != nil {
+		return &kusciaapi.CancelJobResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+		}
+	}
+	return resp
+}
+
 func (h *jobServiceLite) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) *kusciaapi.ApproveJobResponse {
 	// do validate
 	jobID := request.JobId

@@ -28,12 +28,17 @@ const (
 	ErrRequestMasterFailed = 11103
 	ErrLiteAPINotSupport   = 11104
 
-	ErrCreateJob      = 11201
-	ErrQueryJob       = 11202
-	ErrQueryJobStatus = 11203
-	ErrDeleteJob      = 11204
-	ErrStopJob        = 11205
-	ErrApproveJob     = 11206
+	ErrCreateJob                      = 11201
+	ErrQueryJob                       = 11202
+	ErrQueryJobStatus                 = 11203
+	ErrDeleteJob                      = 11204
+	ErrStopJob                        = 11205
+	ErrApproveJob                     = 11206
+	ErrSuspendJob                     = 11207
+	ErrRestartJob                     = 11208
+	ErrCancelJob                      = 11209
+	ErrSuspendNotRunningJob           = 11210
+	ErrRestartNotSuspendedOrFailedJob = 11211
 
 	ErrCreateDomain      = 11300
 	ErrQueryDomain       = 11301

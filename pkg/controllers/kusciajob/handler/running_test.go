@@ -45,6 +45,34 @@ func taskSucceededAssertFunc(t *kusciaapisv1alpha1.KusciaTask) bool {
 	return t != nil && t.Status.Phase == kusciaapisv1alpha1.TaskSucceeded
 }
 
+const (
+	testCaseRunningStart = iota
+	testCaseRunningRestart
+	testCaseRunningSuspend
+	testCaseRunningStop
+	testCaseRunningCancel
+)
+
+func setRunningJobStage(job *kusciaapisv1alpha1.KusciaJob, testCase int) {
+	job.Labels = make(map[string]string)
+	job.Labels[common.LabelJobStageTrigger] = "alice"
+	job.Status.Phase = kusciaapisv1alpha1.KusciaJobRunning
+	switch testCase {
+	case testCaseRunningStart:
+		job.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobStartStage)
+	case testCaseRunningRestart:
+		job.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobRestartStage)
+	case testCaseRunningSuspend:
+		job.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobSuspendStage)
+	case testCaseRunningStop:
+		job.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobStopStage)
+	case testCaseRunningCancel:
+		job.Labels[common.LabelJobStage] = string(kusciaapisv1alpha1.JobCancelStage)
+	default:
+		return
+	}
+}
+
 func TestRunningHandler_HandlePhase(t *testing.T) {
 	bestEffortIndependent := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
@@ -74,6 +102,7 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 		wantErr        assert.ErrorAssertionFunc
 		wantJobPhase   kusciaapisv1alpha1.KusciaJobPhase
 		wantFinalTasks map[string]taskAssertionFunc
+		testcase       int
 	}{
 		{
 			name: "BestEffort mode task{a,b,c,d} maxParallelism{2} and succeeded{a} should return needUpdate{true} err{nil} phase{Running}",
@@ -257,10 +286,101 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 				"b": taskExistAssertFunc,
 				"c": taskExistAssertFunc,
 			},
+		}, {
+			name: "test running start",
+			fields: fields{
+				kusciaClient: kusciafake.NewSimpleClientset(
+					makeTestKusciaTask("a", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictTolerableBLinear.DeepCopy(),
+				),
+				kubeClient: kubefake.NewSimpleClientset(),
+			},
+			args: args{
+				kusciaJob: strictTolerableBLinear.DeepCopy(),
+			},
+			wantNeedUpdate: true,
+			wantErr:        assert.NoError,
+			wantJobPhase:   kusciaapisv1alpha1.KusciaJobRunning,
+			wantFinalTasks: map[string]taskAssertionFunc{
+				"a": taskSucceededAssertFunc,
+				"b": taskExistAssertFunc,
+				"c": taskExistAssertFunc,
+			},
+			testcase: testCaseRunningStart,
+		}, {
+			name: "test running restart",
+			fields: fields{
+				kusciaClient: kusciafake.NewSimpleClientset(
+					makeTestKusciaTask("a", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictTolerableBLinear.DeepCopy(),
+				),
+				kubeClient: kubefake.NewSimpleClientset(),
+			},
+			args: args{
+				kusciaJob: strictTolerableBLinear.DeepCopy(),
+			},
+			wantNeedUpdate: true,
+			wantErr:        assert.NoError,
+			wantJobPhase:   kusciaapisv1alpha1.KusciaJobRunning,
+			testcase:       testCaseRunningRestart,
+		}, {
+			name: "test running suspend",
+			fields: fields{
+				kusciaClient: kusciafake.NewSimpleClientset(
+					makeTestKusciaTask("a", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictTolerableBLinear.DeepCopy(),
+				),
+				kubeClient: kubefake.NewSimpleClientset(),
+			},
+			args: args{
+				kusciaJob: strictTolerableBLinear.DeepCopy(),
+			},
+			wantNeedUpdate: true,
+			wantErr:        assert.NoError,
+			wantJobPhase:   kusciaapisv1alpha1.KusciaJobSuspended,
+			testcase:       testCaseRunningSuspend,
+		}, {
+			name: "test running cancel",
+			fields: fields{
+				kusciaClient: kusciafake.NewSimpleClientset(
+					makeTestKusciaTask("a", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictTolerableBLinear.DeepCopy(),
+				),
+				kubeClient: kubefake.NewSimpleClientset(),
+			},
+			args: args{
+				kusciaJob: strictTolerableBLinear.DeepCopy(),
+			},
+			wantNeedUpdate: true,
+			wantErr:        assert.NoError,
+			wantJobPhase:   kusciaapisv1alpha1.KusciaJobCancelled,
+			testcase:       testCaseRunningCancel,
+		}, {
+			name: "test running stop",
+			fields: fields{
+				kusciaClient: kusciafake.NewSimpleClientset(
+					makeTestKusciaTask("a", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskSucceeded),
+					makeTestKusciaTask("b", strictTolerableBLinear.Name, kusciaapisv1alpha1.TaskFailed),
+					strictTolerableBLinear.DeepCopy(),
+				),
+				kubeClient: kubefake.NewSimpleClientset(),
+			},
+			args: args{
+				kusciaJob: strictTolerableBLinear.DeepCopy(),
+			},
+			wantNeedUpdate: true,
+			wantErr:        assert.NoError,
+			wantJobPhase:   kusciaapisv1alpha1.KusciaJobFailed,
+			testcase:       testCaseRunningStop,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			setRunningJobStage(tt.args.kusciaJob, tt.testcase)
 			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(tt.fields.kusciaClient, 5*time.Minute)
 			kubeInformerFactory := informers.NewSharedInformerFactory(tt.fields.kubeClient, 5*time.Minute)
 			nsInformer := kubeInformerFactory.Core().V1().Namespaces()

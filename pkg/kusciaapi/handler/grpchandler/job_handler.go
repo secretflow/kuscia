@@ -53,6 +53,21 @@ func (h jobHandler) StopJob(ctx context.Context, request *kusciaapi.StopJobReque
 	return res, nil
 }
 
+func (h jobHandler) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJobRequest) (*kusciaapi.SuspendJobResponse, error) {
+	res := h.jobService.SuspendJob(ctx, request)
+	return res, nil
+}
+
+func (h jobHandler) RestartJob(ctx context.Context, request *kusciaapi.RestartJobRequest) (*kusciaapi.RestartJobResponse, error) {
+	res := h.jobService.RestartJob(ctx, request)
+	return res, nil
+}
+
+func (h jobHandler) CancelJob(ctx context.Context, request *kusciaapi.CancelJobRequest) (*kusciaapi.CancelJobResponse, error) {
+	res := h.jobService.CancelJob(ctx, request)
+	return res, nil
+}
+
 func (h jobHandler) BatchQueryJobStatus(ctx context.Context, request *kusciaapi.BatchQueryJobStatusRequest) (*kusciaapi.BatchQueryJobStatusResponse, error) {
 	res := h.jobService.BatchQueryJobStatus(ctx, request)
 	return res, nil

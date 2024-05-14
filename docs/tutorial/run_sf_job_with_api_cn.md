@@ -25,7 +25,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 ### 点对点组网模式
 
-证书的配置参考[配置授权](../deployment/deploy_p2p_cn.md#配置授权)
+证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)
 
 这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
 
@@ -94,7 +94,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 ### 使用 Kuscia 示例数据配置 KusciaJob
 
-下面的示例展示了一个 KusciaJob，该任务流完成 2 个任务：
+此处以[KusciaJob 示例](../reference/apis/kusciajob_cn.md#请求示例)作为任务示例展示，该任务流完成 2 个任务：
 
 1. job-psi 读取 alice 和 bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。
 2. job-split 读取 alice 和 bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-dataset.csv`、`test-dataset.csv`。
@@ -102,39 +102,6 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`job_id`指定。
 
 我们请求[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) 接口来创建并运行这个 KusciaJob。
-
-在 kuscia-master 容器终端中，执行以下命令，内容如下：
-
-```shell
-curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
---header "Token: $(cat /home/kuscia/var/certs/token)" \
---header 'Content-Type: application/json' \
---cert '/home/kuscia/var/certs/kusciaapi-server.crt' \
---key '/home/kuscia/var/certs/kusciaapi-server.key' \
---cacert '/home/kuscia/var/certs/ca.crt' \
--d '{
-    "job_id": "job-best-effort-linear",
-    "initiator": "alice",
-    "max_parallelism": 2,
-    "tasks": [{
-            "app_image": "secretflow-image",
-            "parties": [{"domain_id": "alice"},{"domain_id": "bob"}],
-            "alias": "job-psi",
-            "task_id": "job-psi",
-            "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.1\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"ECDH_PSI_2PC\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
-            "priority": "100"
-        }, {
-            "app_image": "secretflow-image",
-            "parties": [{"domain_id": "alice"},{"domain_id": "bob"}],
-            "alias": "job-split",
-            "task_id": "job-split",
-            "dependencies": ["job-psi"],
-            "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
-            "priority": "100"
-        }
-    ]
-}'
-```
 
 具体字段数据格式和含义请参考[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) ，本文不再赘述。
 

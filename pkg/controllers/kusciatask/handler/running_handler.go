@@ -361,7 +361,9 @@ func buildOuterPartyTaskStatus(taskStatus *kusciaapisv1alpha1.KusciaTaskStatus, 
 	outerPartyTaskStatus := &kusciaapisv1alpha1.PartyTaskStatus{
 		DomainID: trgParty.DomainID,
 		Role:     trgParty.Role,
+		Phase:    kusciaapisv1alpha1.TaskPending,
 	}
+
 	for _, s := range taskStatus.PartyTaskStatus {
 		if s.DomainID == outerPartyTaskStatus.DomainID && s.Role == outerPartyTaskStatus.Role {
 			outerPartyTaskStatus.Phase = s.Phase

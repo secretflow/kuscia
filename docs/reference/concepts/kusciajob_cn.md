@@ -14,6 +14,32 @@
 - **模型训练** 将参与方的训练集作为输入，训练出算法模型。
 - **预测** 将算法模型和测试集作为输入，计算出预测结果。
 
+{#kuscia-state}
+## KusciaJob 状态说明
+
+下图为 KusciaJob 的状态流转图，其中红色字体表示 KusciaAPI 接口操作。
+![KusciaJobState](../../imgs/kuscia_job_state.png)
+
+KusciaJob 在其生命周期中会处于以下几种状态：
+- Initialized: 此时 Job 刚被发起方在发起方侧创建完成，但 Job 信息还未同步至其他参与方。若 Job 已同步至其他所有参与方则 Job 进入 AwaitingApproval 状态。
+- AwaitingApproval: 只有在 P2P 组网模式下且[开启 Job 审批](#enable-approval)的情况下，KusciaJob 才会进入到 AwaitingApproval 状态。AwaitingApproval 状态的 Job 需要参与方调用 KusciaAPI 的[ ApproveJob 接口](../apis/kusciajob_cn.md#approval-job)进行审批。待 Job 的所有参与方审批通过则 Job 进入 Pending 状态。若任一参与方审批拒绝则 Job 进入到 ApprovalReject 状态。
+- Pending: 此时 Job 已被所有参与方审批通过，等待 Job 的发起方发起 Start 命令，待所有参与方接收到 Start 信令后，Job 进入到 Running状态（注：仅 BFIA 互联互通协议时发起方会向各参与方显式的发送 Start 信令，在 Kusica 内部协议中无需显式发送 Start 信令，Job 会自动从 Pending 状态进入到 Running 状态）。
+- Running: 此时 Job 已进入到调度状态，注：Job 是 Running 状态时，'并不意味' 着 Job 中至少有一个 Task 是 Running 状态，因 Job 刚进入 Running 状态时，Task 并未创建完成。 当 Job 的所有 Task 均执行成功时，Job 进入 Succeeded 状态。 当 Job 中的 [关键 Task ](#task-classification) 执行失败，则 Job 进入到 Failed 状态。
+- Suspended: Running 状态的 Job 被某一参与方执行了[ Suspend 操作](../apis/kusciajob_cn.md#suspend-job)，则会进入此状态，执行 Suspend 操作后，Job 中处于 Running 状态的 Task 会被终止掉，Task进入到Failed状态。 Suspended 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
+- Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。 Succeeded 状态是一种终态，终态则不会再流转到其他状态。
+- Failed: 所有 Task 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。 Failed 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
+- ApprovalReject: Job 被某一参与方审批为拒绝执行。 ApprovalReject 状态是一种终态，终态则不会再流转到其他状态。
+- Cancelled: Job 被某一方取消，被取消的 Job 不可被再次执行。 Cancelled 状态是一种终态，终态则不会再流转到其他状态。
+
+{#enable-approval}
+### 开启 Job 审批
+Job 审批即发起方（Alice）执行 Job 时，若参与方（Bob）开启了 Job 审批配置，则需要参与方（Bob）调用 KusciaAPI 进行 Job 审批，审批通过才可在参与方（Bob）侧执行 Job，否则 Job 则一直处于待审批（AwaitingApproval）或审批拒绝（ApprovalReject）的状态不会被调度执行，作为发起方（Alice）无需要调用 KusciaAPI 审批 Job。
+
+在 P2P 组网模式下，可在控制面（Master 或 Autonomy）开启 Job 审批配置。通过修改配置文件 [kuscia.yaml](../../deployment/kuscia_config_cn.md#configuration-detail) 中的 `enableWorkloadApprove` 字段为 `true` 的方式开启 Job 审批，
+开启 Job 审批后，当本方作为参与方时需要调用 [KusciaAPI](../apis/kusciajob_cn.md#approval-job) 进行 Job 审批，审批通过后 Job 才可以在本方执行，否则 Job 不执行。当本方作为发起方时，本方无需审批。
+
+在中心化组网模式下，仅有一个 Master 控制中心，且由唯一的控制中心完成 Job 的调度，所以无法开启 Job 审批配置也无需调用 KusciaAPI 进行 Job 审批。
+
 ## 用例
 
 以下是一些 KusciaJob 的典型用例:
@@ -47,7 +73,7 @@ spec:
     - taskID: job-psi
       alias: job-psi
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -76,6 +102,20 @@ spec:
 - `taskInputConfig`用于指定 KusciaTask 在算子运行时使用的算子参数。其中 job-psi 将会分别读取 alice 和 bob 的 alice.csv 和 bob.csv 进行隐私求交，
   计算出两方的交集数据并分别保存为 alice 和 bob 的 psi-output.csv ，而 job-split 将会读取新产生的两个求交数据，并进行随机分割，
   随机分割的结果也会保存在 alice 和 bob 两方。
+
+:::{tip}
+
+KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。
+
+本教程使用的是 SecretFlow 的算子参数定义，以 SecretFlow `1.6.0b0` 版本引擎任务为例，其他版本请参考[SecretFlow 官网](https://www.secretflow.org.cn/zh-CN/docs/secretflow/main/getting_started)：
+- `sf_datasource_config`：表示 SecretFlow 输入输出所需要的节点数据源信息。
+- `sf_cluster_desc`：表示 SecretFlow 集群信息，详情请查阅 [SecretFlow 集群文档](https://www.secretflow.org.cn/docs/secretflow/latest/zh-Hans/component/comp_spec_design#sfclusterdesc)。
+- `sf_node_eval_param`：表示 SecretFlow 算子的详细配置，详情请查阅 [SecretFlow 算子运行配置文档](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/intro#nodeevalparam)。
+- `sf_input_ids`：表示 SecretFlow 输入数据 `id`，SecretFlow 引擎会将 Kuscia 定义的输入数据 [DomainData](../reference/concepts/domaindata_cn.md) 转换成引擎所需要的 [DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/spec#distdata)。
+- `sf_output_ids`：表示 SecretFlow 输出数据 `id`，SecretFlow 引擎会将输出的 [DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/spec#distdata) 转换成 Kuscia 的 [DomainData](../reference/concepts/domaindata_cn.md)。
+- `sf_output_uris`：表示 SecretFlow 输出数据路径。
+
+:::
 
 ## KusciaJob 的调度
 
@@ -138,7 +178,7 @@ spec:
     - alias: job-psi
       taskID: job-psi
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -181,7 +221,7 @@ spec:
     - alias: job-psi1
       taskID: job-psi1
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -189,7 +229,7 @@ spec:
     - alias: job-psi2
       taskID: job-psi2
       priority: 80
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output2"],"sf_output_uris":["psi-output2.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output2"],"sf_output_uris":["psi-output2.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -219,7 +259,7 @@ spec:
     - alias: job-psi1
       taskID: job-psi1
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -227,7 +267,7 @@ spec:
     - alias: job-psi2
       taskID: job-psi2
       priority: 80
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output1"],"sf_output_uris":["psi-output1.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output1"],"sf_output_uris":["psi-output1.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -267,18 +307,6 @@ kubectl delete kj {job-name} -n cross-domain
 
 来取消一个正在执行的 KusciaJob 或者删除一个已经执行完成的 KusciaJob。这会删除这个 KusciaJob 和这个 KusciaJob 创建的 KusciaTask。
 
-## KusciaJob 的状态
-
-KusciaJob 在其生命周期中会处于以下七种状态：
-
-- Pending: KusciaJob 刚刚被提交，还未进行过调度。
-- Running: 至少有一个 KusciaTask 处于 Running 状态中。
-- Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。
-- Failed: 所有 Task 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。
-- AwaitingApproval: 等待参与方审批任务。
-- ApprovalReject: 任务被某一参与方审批为拒绝执行。
-- Cancelled: 任务被某一方取消，被取消的任务不可被再次执行。
-
 ## 参考
 
 ### 完整定义
@@ -300,7 +328,7 @@ spec:
     - alias: job-psi
       taskID: job-psi
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -350,14 +378,7 @@ KusciaJob `spec`的子字段详细介绍如下：
 
 KusciaJob `status`的子字段详细介绍如下：
 
-- `phase`：表示 KusciaJob 当前所处的阶段。当前包括以下几种 Phase：
-  - `Pending`：表示 KusciaJob 刚刚被提交，还未进行过调度。
-  - `Running`：表示 至少有一个 KusciaTask 处于 Running 状态中。
-  - `Succeeded`：表示 所有 KusciaTask 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。
-  - `Failed`：所有 KusciaTask 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。
-  - `AwaitingApproval`：等待参与方审批任务。
-  - `ApprovalReject`：任务被某一参与方审批为拒绝执行。
-  - `Cancelled`：任务被某一方取消，被取消的任务不可被再次执行。
+- `phase`：表示 KusciaJob 当前所处的阶段。[状态详见](#kuscia-state)。
 - `taskStatus`：表示 KusciaJob 已经启动的 KusciaTask 状态信息， key 为 KusciaTask 的名称，value 为 KusciaTask 的状态。
 - `startTime`：表示 KusciaJob 第一次被 Kuscia 控制器处理的时间戳。
 - `completionTime`：表示 KusciaJob 运行完成的时间戳。

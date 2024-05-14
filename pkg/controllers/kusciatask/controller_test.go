@@ -248,7 +248,7 @@ func TestHandlePodObject(t *testing.T) {
 	cc.kusciaTaskLister = ktInformer.Lister()
 
 	pod1 := st.MakePod().Name("pod1").Obj()
-	pod2 := st.MakePod().Name("pod2").Annotation(common.TaskIDAnnotationKey, kt.Name)
+	pod2 := st.MakePod().Name("pod2").Annotation(common.TaskIDAnnotationKey, kt.Name).Obj()
 
 	tests := []struct {
 		name string

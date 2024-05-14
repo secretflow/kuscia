@@ -57,59 +57,12 @@ docker exec -it ${USER}-kuscia-master bash
 
 ### 使用 Kuscia 示例数据配置 KusciaJob
 
-下面的示例展示了一个 KusciaJob， 该任务流完成 2 个任务：
+此处以[KusciaJob 示例](../reference/concepts/kusciajob_cn.md#创建-kusciajob)作为展示，该任务流完成 2 个任务：
 
-1. job-psi 读取 alice 和 bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。
-2. job-split 读取 alice 和 bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-dataset.csv`、`test-dataset.csv`。
+1. job-psi 读取 alice 和 bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的 `psi-output.csv`。
+2. job-split 读取 alice 和 bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的 `train-dataset.csv`、`test-dataset.csv`。
 
-这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`.metadata.name`指定。
-
-在 kuscia-master 容器中，在任意路径创建文件 job-best-effort-linear.yaml，内容如下：
-
-```yaml
-apiVersion: kuscia.secretflow/v1alpha1
-kind: KusciaJob
-metadata:
-  name: job-best-effort-linear
-spec:
-  initiator: alice
-  scheduleMode: BestEffort
-  maxParallelism: 2
-  tasks:
-    - taskID: job-psi
-      alias: job-psi
-      priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
-      appImage: secretflow-image
-      parties:
-        - domainID: alice
-        - domainID: bob
-    - taskID: job-split
-      alias: job-split
-      priority: 100
-      dependencies: ['job-psi']
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}]},"sf_output_uris":["train-dataset.csv","test-dataset.csv"],"sf_output_ids":["train-dataset","test-dataset"],"sf_input_ids":["psi-output"]}'
-      appImage: secretflow-image
-      parties:
-        - domainID: alice
-        - domainID: bob
-```
-
-:::{tip}
-
-更多有关 KusciaJob 配置的信息，请查看 [KusciaJob](../reference/concepts/kusciajob_cn.md)。
-
-KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。
-
-本教程使用的是 SecretFlow 的算子参数定义，以 SecretFlow 引擎任务为例：
-- `sf_datasource_config`：表示 SecretFlow 输入输出所需要的节点数据源信息。
-- `sf_cluster_desc`：表示 secretflow 集群信息，详情请查阅 [SecretFlow 集群文档](https://www.secretflow.org.cn/docs/secretflow/latest/zh-Hans/component/comp_spec_design#sfclusterdesc)。
-- `sf_node_eval_param`：表示 secretflow 算子的详细配置，详情请查阅 [SecretFlow 算子运行配置文档](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/intro#nodeevalparam)。
-- `sf_input_ids`：表示 SecretFlow 输入数据 `id` ，SecretFlow 引擎会将 Kuscia 定义的输入数据 [DomainData](../reference/concepts/domaindata_cn.md) 转换成引擎所需要的 [DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/spec#distdata)。
-- `sf_output_ids`：表示 SecretFlow 输出数据  `id` ，SecretFlow 引擎会将输出的 [DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/spec#distdata) 转换成 Kuscia 的 [DomainData](../reference/concepts/domaindata_cn.md)。
-- `sf_output_uris`：表示 SecretFlow 输出数据路径。
-
-:::
+这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `.metadata.name` 指定。
 
 ### 使用你自己的数据配置 KusciaJob
 
@@ -144,7 +97,7 @@ job-best-effort-linear 就是我们刚刚创建出来的 KusciaJob 。
 
 ### 查看运行中的某个 KusciaJob 的详细状态
 
-通过指定`-o yaml`参数，我们可以以 Yaml 的形式看到 KusciaJob 的详细状态。job-best-effort-linear 是你在 [配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
+通过指定 `-o yaml` 参数，我们可以以 Yaml 的形式看到 KusciaJob 的详细状态。job-best-effort-linear 是你在 [配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
 
 ```shell
 kubectl get kj job-best-effort-linear -n cross-domain -o yaml
@@ -159,6 +112,7 @@ metadata:
   creationTimestamp: "2023-03-30T12:11:41Z"
   generation: 1
   name: job-best-effort-linear
+  namespace: cross-domain
   resourceVersion: "19002"
   uid: 085e10e6-5d3e-43cf-adaa-715d76a6af9b
 spec:
@@ -173,7 +127,7 @@ spec:
     priority: 100
     taskID: job-psi
     alias: job-psi
-    taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.1","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"ECDH_PSI_2PC"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+    taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["input/receiver_input/key","input/sender_input/key","protocol","precheck_input","bucket_size","curve_type","left_side"],"attrs":[{"ss":["id1"]},{"ss":["id2"]},{"s":"PROTOCOL_ECDH"},{"b":true},{"i64":"1048576"},{"s":"CURVE_FOURQ"},{"is_na": false,"ss": ["alice"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
     tolerable: false
   - appImage: secretflow-image
     dependencies:
@@ -230,7 +184,7 @@ KusciaTask 的信息这里不再赘述，请查看 [KusciaTask](../reference/con
 当你想清理这个 KusciaJob 时，你可以通过下面的命令完成：
 
 ```shell
-kubectl delete kj job-best-effort-linear
+kubectl delete kj job-best-effort-linear -n cross-domain
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。

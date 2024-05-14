@@ -71,14 +71,22 @@ func TestStore_RegisterImage(t *testing.T) {
 }
 
 func TestStore_LoadImage(t *testing.T) {
+	arch := runtime.GOARCH
 	_, filename, _, ok := runtime.Caller(0)
 	assert.True(t, ok)
 	dir := filepath.Dir(filename)
 	for i := 0; i < 4; i++ {
 		dir = filepath.Dir(dir)
 	}
-	pauseTarFile := filepath.Join(dir, "build/pause/pause.tar")
-
+	var pauseTarFile string
+	switch arch {
+	case "aarch64", "arm64":
+		pauseTarFile = filepath.Join(dir, "build/pause/pause-arm64.tar")
+	case "amd64", "x86_64":
+		pauseTarFile = filepath.Join(dir, "build/pause/pause-amd64.tar")
+	default:
+		pauseTarFile = filepath.Join(dir, "build/pause/pause-amd64.tar")
+	}
 	file, err := os.Open(pauseTarFile)
 	assert.NoError(t, err)
 	defer file.Close()

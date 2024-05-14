@@ -49,7 +49,7 @@ proto_library(
 )
 
 cpp_proto_library(
-    name = "domaindatasource_cpp_proto",
+    name = "domaindatasource_cc_proto",
     protos = [
         ":domaindatasource_proto",
     ],

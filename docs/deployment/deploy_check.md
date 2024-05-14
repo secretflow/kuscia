@@ -7,7 +7,9 @@ Kuscia 对操作系统、Docker 版本、处理器型号等有一些要求，部
 我们推荐使用 Docker **20.10 或更高版本**。Docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)，Docker 部署包下载参考[Docker软件包](https://download.docker.com/linux/centos/7/x86_64/stable/Packages/)。
 
 ## 处理器要求
-目前 Kuscia **不支持 Arm 架构**处理器，建议使用基于 **x86** 架构的处理器，我们会在未来支持 Arm 架构的处理器，敬请期待。
+支持的处理器包括：
+- **x86_64**
+- **arm64**
 
 ## 操作系统要求
 支持的操作系统包括：

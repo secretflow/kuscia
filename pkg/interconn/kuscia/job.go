@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -356,13 +357,23 @@ func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJ
 }
 
 func updateJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) bool {
-	// if the stage of job changed to stop, we will prevent updating the job stage
-	if jobSummary.Spec.Stage == v1alpha1.JobStopStage {
+	// if the stage of job changed to cancel, we will prevent updating the job stage
+	if jobSummary.Spec.Stage == v1alpha1.JobCancelStage {
 		return false
 	}
-
 	jobStage := ikcommon.GetJobStage(ikcommon.GetObjectLabel(job, common.LabelJobStage))
 	jobStageTrigger := ikcommon.GetObjectLabel(job, common.LabelJobStageTrigger)
+	jobStageVersion := ikcommon.GetObjectLabel(job, common.LabelJobStageVersion)
+	jobSummaryStageVersion := ikcommon.GetObjectLabel(jobSummary, common.LabelJobStageVersion)
+	jobStageVersionNum, _ := strconv.Atoi(jobStageVersion)
+	jobSummaryStageVersionNum, _ := strconv.Atoi(jobSummaryStageVersion)
+	if jobStageVersionNum <= jobSummaryStageVersionNum {
+		return false
+	}
+	if jobSummary.Labels == nil {
+		jobSummary.Labels = make(map[string]string)
+	}
+	jobSummary.Labels[common.LabelJobStageVersion] = jobStageVersion
 	if jobStage != jobSummary.Spec.Stage {
 		jobSummary.Spec.Stage = jobStage
 		jobSummary.Spec.StageTrigger = jobStageTrigger
@@ -530,19 +541,24 @@ func (c *Controller) updateHostJobSummary(ctx context.Context,
 }
 
 func updateHostJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, masterDomainID string) bool {
-	// if the stage of job becomes stop, we will prevent updating the job stage
-	if jobSummary.Spec.Stage == v1alpha1.JobStopStage {
+	if jobSummary.Spec.Stage == v1alpha1.JobCancelStage {
 		return false
 	}
-
-	jobStage := ikcommon.GetJobStage(ikcommon.GetObjectLabel(job, common.LabelJobStage))
-	if jobStage == v1alpha1.JobStopStage && jobStage != jobSummary.Spec.Stage {
-		jobSummary.Spec.Stage = jobStage
-		jobSummary.Spec.StageTrigger = masterDomainID
-		return true
+	jobStageVersion := ikcommon.GetObjectLabel(job, common.LabelJobStageVersion)
+	jobSummaryStageVersion := ikcommon.GetObjectLabel(jobSummary, common.LabelJobStageVersion)
+	jobStageVersionNum, _ := strconv.Atoi(jobStageVersion)
+	jobSummaryStageVersionNum, _ := strconv.Atoi(jobSummaryStageVersion)
+	if jobStageVersionNum <= jobSummaryStageVersionNum {
+		return false
 	}
-
-	return false
+	jobStage := ikcommon.GetJobStage(ikcommon.GetObjectLabel(job, common.LabelJobStage))
+	if jobSummary.Labels == nil {
+		jobSummary.Labels = make(map[string]string)
+	}
+	jobSummary.Labels[common.LabelJobStageVersion] = jobStageVersion
+	jobSummary.Spec.Stage = jobStage
+	jobSummary.Spec.StageTrigger = masterDomainID
+	return true
 }
 
 func updateHostJobSummaryApproveStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {

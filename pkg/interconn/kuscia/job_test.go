@@ -261,16 +261,22 @@ func TestCreateOrUpdateJobSummary(t *testing.T) {
 }
 
 func TestUpdateJobSummaryStage(t *testing.T) {
-	// stage in job summary is stop, should return false
+	// cancel stage:  don't update
 	kj := makeMockJob("cross-domain", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
-	kjs.Spec.Stage = v1alpha1.JobStopStage
+	kjs.Spec.Stage = v1alpha1.JobCancelStage
 	got := updateJobSummaryStage(kj, kjs)
 	assert.Equal(t, false, got)
-
-	// stage in job and job summary are different, should return true
+	// not version:  don't update
+	kj = makeMockJob("cross-domain", "job-1")
+	kjs = makeMockJobSummary("bob", "job-1")
+	kjs.Spec.Stage = v1alpha1.JobStartStage
+	got = updateJobSummaryStage(kj, kjs)
+	assert.Equal(t, false, got)
+	// new version: update
 	kj = makeMockJob("cross-domain", "job-1")
 	kj.Labels[common.LabelJobStage] = "Start"
+	kj.Labels[common.LabelJobStageVersion] = "1"
 	kjs = makeMockJobSummary("bob", "job-1")
 	kjs.Spec.Stage = v1alpha1.JobCreateStage
 	got = updateJobSummaryStage(kj, kjs)
