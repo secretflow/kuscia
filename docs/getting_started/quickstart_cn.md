@@ -56,10 +56,10 @@ macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文
 
 ```bash
 # Docker Hub 镜像
-export KUSCIA_IMAGE=secretflow/kuscia
+export KUSCIA_IMAGE=secretflow/kuscia:0.8.0b0
 
 # 阿里云镜像（推荐国内用户使用）
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
 ```
 
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
