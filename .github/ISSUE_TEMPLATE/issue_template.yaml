@@ -13,7 +13,7 @@ body:
       description: What type of issue would you like to report?
       multiple: false
       options:
-        - Bug
+        - Bug请问2312312321
         - Build/Install
         - Feature Request
         - Documentation Feature Request
@@ -129,5 +129,4 @@ body:
       render: shell
     validations:
       required: true
-    validations:
-      required: true
+   
