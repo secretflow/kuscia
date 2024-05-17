@@ -129,4 +129,5 @@ body:
       render: shell
     validations:
       required: true
-      请问23123
+    validations:
+      required: true
