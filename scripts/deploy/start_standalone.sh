@@ -234,7 +234,7 @@ function copy_volume_file_to_container() {
 
 function create_secretflow_app_image() {
   local ctr=$1
-  docker exec -it ${ctr} scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}:${SF_IMAGE_TAG}"
+  docker exec -it ${ctr} scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}" "${SF_IMAGE_TAG}"
   log "create secretflow app image done"
 }
 
