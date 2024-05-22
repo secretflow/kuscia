@@ -32,6 +32,14 @@ body:
     validations:
       required: true
   - type: input
+    id: kuscia-version
+    attributes:
+      label: Kuscia Version
+      description:
+      placeholder: e.g., kuscia 0.7.0b0
+    validations:
+      required: true
+  - type: input
     id: link
     attributes:
       label: Link to Relevant Documentation
