@@ -28,7 +28,7 @@
     "domain": "data_prep",
     "name": "psi",
     "version": "0.0.4",
-    "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type","left_side"],
+    "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "ecdh_curve","left_side"],
     "attrs": [{
       "ss": ["id1"]
     }, {
