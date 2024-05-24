@@ -312,7 +312,7 @@ more /home/kuscia/var/storage/job-ss-lr-guest-0/job-ss-lr-{random-id}-result
 当你想清理这个 KusciaJob 时，你可以通过下面的命令完成：
 
 ```shell
-kubectl delete kj job-ss-lr
+kubectl delete kj job-ss-lr -n cross-domain
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。

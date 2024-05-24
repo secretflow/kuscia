@@ -117,7 +117,7 @@ kubectl get kj -n cross-domain
 
 ## 作业状态
 
-如果作业执行成功，则 `kubectl get kj` 命令会显示类似下方的输出，Succeeded 表示成功状态：
+如果作业执行成功，则 `kubectl get kj -n cross-domain` 命令会显示类似下方的输出，Succeeded 表示成功状态：
 
 ```bash
 NAME                             STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
