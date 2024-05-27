@@ -1,10 +1,10 @@
-name: Kuscia Issue Template
+name: Error Issue Template
 description: Thank you for reporting the issue!
 body:
   - type: markdown
     attributes:
       value: |
-        Please make sure that you report a code/doc bug, feature request or build/installation bug on GitHub.
+        Please ensure that you are reporting the consultation issue on GitHub.（Install/Deploy、Running、Document、Other）
         Please post on our [discussions](https://github.com/secretflow/kuscia/discussions) instead if you want to ask questions or share ideas.
   - type: dropdown
     id: issue-type
@@ -13,12 +13,36 @@ body:
       description: What type of issue would you like to report?
       multiple: false
       options:
-        - Bug
-        - Build/Install
-        - Feature Request
-        - Documentation Feature Request
-        - Documentation Bug
+        - Install/Deploy
+        - Running
+        - Document
         - Others
+    validations:
+      required: true
+  - type: dropdown
+    id: searched-for-existing-issues
+    attributes:
+      label: Search for existing issues similar to yours
+      description: Existing [documents](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/) and [issues](https://github.com/secretflow/kuscia/issues)
+      options:
+        - 'Yes'
+        - 'No'
+    validations:
+      required: true
+  - type: input
+    id: OS
+    attributes:
+      label: OS Platform and Distribution
+      description:
+      placeholder: e.g., Linux Ubuntu 18.04
+    validations:
+      required: true
+  - type: input
+    id: kuscia-version
+    attributes:
+      label: Kuscia Version
+      description:
+      placeholder: e.g., kuscia 0.7.0b0
     validations:
       required: true
   - type: dropdown
@@ -32,37 +56,13 @@ body:
     validations:
       required: true
   - type: input
-    id: kuscia-version
+    id: deployment-version
     attributes:
-      label: Kuscia Version
+      label: deployment Version
       description:
-      placeholder: e.g., kuscia 0.7.0b0
+      placeholder: docker/k8s version
     validations:
       required: true
-  - type: input
-    id: OS
-    attributes:
-      label: OS Platform and Distribution
-      description:
-      placeholder: e.g., Linux Ubuntu 18.04
-    validations:
-      required: true
-  - type: input
-    id: docker-version
-    attributes:
-      label: Docker version
-      description: e.g., Docker 20.10.8
-      placeholder: e.g., Docker 20.10.8
-    validations:
-      required: false
-  - type: input
-    id: k8s-version
-    attributes:
-      label: K8s version
-      description:
-      placeholder: e.g., 1.26.11
-    validations:
-      required: false
   - type: dropdown
     id: running-app-type
     attributes:
