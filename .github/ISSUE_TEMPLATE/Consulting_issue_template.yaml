@@ -41,8 +41,8 @@ body:
     id: link
     attributes:
       label: Link to Relevant Documentation
-      description: Link to Relevant Documentation
-      placeholder: For faster problem-solving, if there are relevant documents, please attach a link.
+      description: For faster problem-solving, if there are relevant documents, please attach links.
+      placeholder: e.g.,https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/reference/concepts
     validations:
       required: false
   - type: textarea
