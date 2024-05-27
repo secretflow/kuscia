@@ -24,7 +24,7 @@ body:
   - type: dropdown
     id: searched-for-existing-issues
     attributes:
-      label: Have you searched for existing issues? 
+      label: Search for existing issues similar to yours
       description: Existing [documents](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/) and [issues](https://github.com/secretflow/kuscia/issues)
       options:
         - 'Yes'
