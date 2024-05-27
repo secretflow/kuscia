@@ -125,6 +125,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-ss-lr
+  namespace: cross-domain
 spec:
   initiator: alice
   tasks:
@@ -215,6 +216,7 @@ metadata:
     kuscia.secretflow/interconn-protocol-type: bfia
     kuscia.secretflow/self-cluster-as-initiator: "true"
   name: job-ss-lr
+  namespace: cross-domain
   resourceVersion: "50438"
   uid: 408a03ae-69c2-4fa8-a638-b47b6dbf530f
 spec:

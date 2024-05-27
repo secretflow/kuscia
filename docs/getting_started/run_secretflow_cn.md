@@ -71,6 +71,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-best-effort-linear
+  namespace: cross-domain
 spec:
   initiator: alice
   scheduleMode: BestEffort
@@ -159,6 +160,7 @@ metadata:
   creationTimestamp: "2023-03-30T12:11:41Z"
   generation: 1
   name: job-best-effort-linear
+  namespace: cross-domain
   resourceVersion: "19002"
   uid: 085e10e6-5d3e-43cf-adaa-715d76a6af9b
 spec:
