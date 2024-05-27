@@ -4,7 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Please make sure that you report a Install/Deploy Problem, Running Problem,Document Problem on GitHub.
+        Please ensure that you are reporting the consultation issue on GitHub.（Install/Deploy、Running、Document、Other）
         Please post on our [discussions](https://github.com/secretflow/kuscia/discussions) instead if you want to ask questions or share ideas.
   - type: dropdown
     id: issue-type
@@ -13,9 +13,9 @@ body:
       description: What type of issue would you like to report?
       multiple: false
       options:
-        - Install/Deploy Problem
-        - Running Problem
-        - Document Problem
+        - Install/Deploy
+        - Running
+        - Document
         - Others
     validations:
       required: true
