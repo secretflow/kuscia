@@ -14,8 +14,8 @@
 登录到安装 master 的机器上，假设对外ip是1.1.1.1。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
 ```
 
 指定 Secretflow 版本：
@@ -128,8 +128,8 @@ abcdefg
 接下来，登录到安装 alice 的机器上，假设对外暴露的 IP 是 2.2.2.2。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -178,8 +178,8 @@ hijklmn
 接下来，登录到安装 bob 的机器上，假设对暴露的 IP 是 3.3.3.3。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
 ```
 <span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
 
