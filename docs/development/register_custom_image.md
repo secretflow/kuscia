@@ -95,6 +95,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-best-effort-linear
+  namespace: cross-domain
 spec:
   initiator: alice
   scheduleMode: BestEffort

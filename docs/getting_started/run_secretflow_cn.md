@@ -71,6 +71,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-best-effort-linear
+  namespace: cross-domain
 spec:
   initiator: alice
   scheduleMode: BestEffort
@@ -159,6 +160,7 @@ metadata:
   creationTimestamp: "2023-03-30T12:11:41Z"
   generation: 1
   name: job-best-effort-linear
+  namespace: cross-domain
   resourceVersion: "19002"
   uid: 085e10e6-5d3e-43cf-adaa-715d76a6af9b
 spec:
@@ -230,7 +232,7 @@ KusciaTask 的信息这里不再赘述，请查看 [KusciaTask](../reference/con
 当你想清理这个 KusciaJob 时，你可以通过下面的命令完成：
 
 ```shell
-kubectl delete kj job-best-effort-linear
+kubectl delete kj job-best-effort-linear -n cross-domain
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。
