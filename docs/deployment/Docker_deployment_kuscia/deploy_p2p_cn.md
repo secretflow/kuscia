@@ -18,7 +18,7 @@
 
 指定 Kuscia 使用的镜像版本，这里使用 latest 版本
 ```bash
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
 ```
 
 指定 Secretflow 版本：
