@@ -14,7 +14,7 @@
 登录到安装 master 的机器上，假设对外ip是1.1.1.1。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
+# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
 ```
 
