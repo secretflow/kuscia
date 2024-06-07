@@ -26,15 +26,17 @@ protobuf 文件。
 
 #### 请求（CreateDomainRouteRequest）
 
-| 字段                 | 类型                                          | 选填 | 描述                                                                         |
-|---------------------|----------------------------------------------|----|----------------------------------------------------------------------------|
-| header              | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                    |
-| authentication_type | string                                       | 必填 | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute 概念](../concepts/domainroute_cn.md) |
-| destination         | string                                       | 必填 | 目标节点                                                                       |
-| endpoint            | [RouteEndpoint](#route-endpoint)             | 必填 | 目标节点的地址                                                                    |
-| source              | string                                       | 必填 | 源节点                                                                        |
-| token_config        | [TokenConfig](#token-config)                 | 可选 | Token 相关配置，authenticationType 为`Token`或 bodyEncryption 非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。|
-| mtls_config         | [MtlsConfig](#mtls-config)                   | 可选 | MTLS 相关配置，authenticationType 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。|
+| 字段                 | 类型                                          | 选填  | 描述                                                                                         |
+|---------------------|----------------------------------------------|-----|--------------------------------------------------------------------------------------------|
+| header              | [RequestHeader](summary_cn.md#requestheader) | 可选  | 自定义请求内容                                                                                    |
+| authentication_type | string                                       | 必填  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute 概念](../concepts/domainroute_cn.md)                 |
+| destination         | string                                       | 必填  | 目标节点                                                                                       |
+| endpoint            | [RouteEndpoint](#route-endpoint)             | 可选  | 目标节点的地址，如果没有配置 transit 则必填                                                                 |
+| source              | string                                       | 必填  | 源节点                                                                                        |
+| token_config        | [TokenConfig](#token-config)                 | 可选  | Token 相关配置，authenticationType 为`Token`或 bodyEncryption 非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效 |
+| mtls_config         | [MtlsConfig](#mtls-config)                   | 可选  | MTLS 相关配置，authenticationType 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效                       |
+| transit             | [Transit](#transit)                          | 可选  | 路由转发配置                                                                                     |
+| body_encryption     | [BodyEncryption](#bodyencryption)            | 可选  | 加密配置，一般在经第三方转发时使用，提升安全性                                                                    |
 
 #### 响应（CreateDomainRouteResponse）
 
@@ -187,18 +189,20 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/delete' \
 
 #### 响应（QueryDomainRouteResponse）
 
-| 字段                       | 类型                               | 选填 | 描述                                                                         |
-|--------------------------|----------------------------------|----|----------------------------------------------------------------------------|
-| status                   | [Status](./summary_cn.md#status) | 必填 | 状态信息                                                                       |
-| data                     | QueryDomainRouteResponseData     | 必填 |                                                                            |
-| data.name                | string                           | 必填 | 节点名称                                                                       |
-| data.authentication_type | string                           | 必填 | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute 概念](../concepts/domainroute_cn.md) |
-| data.destination         | string                           | 必填 | 目标节点                                                                       |
-| data.endpoint            | [RouteEndpoint](#route-endpoint) | 必填 | 目标节点的地址，参考 [DomainRoute 概念](../concepts/domainroute_cn.md)                 |
-| data.source              | string                           | 必填 | 源节点                                                                        |
-| data.token_config        | [TokenConfig](#token-config)     | 可选 | Token 配置                                                                   |
-| data.mtls_config         | [MTLSConfig](#mtls-config)       | 可选 | MTLS 配置                                                                    |
-| data.status              | [RouteStatus](#route-status)     | 必填 | 状态                                                                         |
+| 字段                       | 类型                               | 选填  | 描述                                                                         |
+|--------------------------|----------------------------------|-----|----------------------------------------------------------------------------|
+| status                   | [Status](./summary_cn.md#status) | 必填  | 状态信息                                                                       |
+| data                     | QueryDomainRouteResponseData     | 必填  |                                                                            |
+| data.name                | string                           | 必填  | 节点名称                                                                       |
+| data.authentication_type | string                           | 必填  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute 概念](../concepts/domainroute_cn.md) |
+| data.destination         | string                           | 必填  | 目标节点                                                                       |
+| data.endpoint            | [RouteEndpoint](#route-endpoint) | 可选  | 目标节点的地址，参考 [DomainRoute 概念](../concepts/domainroute_cn.md)                 |
+| data.source              | string                           | 必填  | 源节点                                                                        |
+| data.token_config        | [TokenConfig](#token-config)     | 可选  | Token 配置                                                                   |
+| data.mtls_config         | [MTLSConfig](#mtls-config)       | 可选  | MTLS 配置                                                                    |
+| data.transit             | [Transit](#transit)              | 可选  | 路由转发配置                                                                   |
+| data.body_encryption     | [BodyEncryption](#bodyencryption) | 可选  | 加密配置                                                                    |
+| data.status              | [RouteStatus](#route-status)     | 必填  | 状态                                                                         |
 
 #### 请求示例
 
@@ -394,11 +398,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 ### EndpointPort
 
-| 字段      | 类型    | 选填 | 描述                    |
-|----------|--------|------|------------------------|
-| port     | int32  | 必填 | 端口号                   |
-| protocol | string | 必填 | 端口协议：\[HTTP, GRPC]   |
-| isTLS    | bool   | 选填 | 是否开启 TLS，默认为 false |
+| 字段         | 类型    | 选填 | 描述                    |
+|-------------|--------|------|------------------------|
+| port        | int32  | 必填 | 端口号                   |
+| protocol    | string | 必填 | 端口协议：\[HTTP, GRPC]   |
+| isTLS       | bool   | 可选 | 是否开启 TLS，默认为 false |
+| path_prefix | string | 可选 | 如果非空，网关会对发送的请求进行 path rewrite，在请求的path 前加上 path_prefix 的值      |
 
 {#route-endpoint}
 
@@ -438,7 +443,34 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 | 字段                     | 类型     | 选填 | 描述                        |
 |------------------------|--------|----|---------------------------|
-| destination_public_key | string | 必填 | 目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充。   |
+| destination_public_key | string | 必填 | 目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充   |
 | rolling_update_period  | int64  | 必填 | 滚动更新间隔，单位：秒，默认值为 0                                                   |
-| source_public_key      | string | 必填 | 源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充。      |
+| source_public_key      | string | 必填 | 源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充      |
 | token_gen_method       | string | 必填 | 签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性  |
+
+{#transit}
+
+### Transit
+
+详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
+
+| 字段           | 类型                                  | 选填 | 描述                                                                                      |
+| -------------- |-------------------------------------| ---- |-----------------------------------------------------------------------------------------|
+| transit_method | string                              | 必填 | 路由转发类型：\[THIRD-DOMAIN，REVERSE-TUNNEL]。THIRD-DOMAIN 表示经由第三方节点转发，REVERSE-TUNNEL 表示经由反向隧道转发 |
+| domain         | [Transit_Domain](#transit_domain)[] | 可选 | transit_method 为 THIRD-DOMAIN 时需要填写，否则不需要填写       |
+
+{#transit_domain}
+
+#### Transit_Domain
+
+| 字段      | 类型   | 选填 | 描述            |
+| --------- | ------ | ---- | --------------- |
+| domain_id | string | 必填 | 第三方节点 ID |
+
+### BodyEncryption
+
+详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
+
+| 字段             | 类型   | 选填 | 描述                                                            |
+| ---------------- | ------ | ---- | --------------------------------------------------------------- |
+| algorithm        | string | 必填 | 加密方法，当前只支持 AES                                          |

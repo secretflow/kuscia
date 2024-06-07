@@ -2,6 +2,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: hybrid-job
+  namespace: cross-domain
 spec:
   initiator: alice
   scheduleMode: Strict

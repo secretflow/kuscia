@@ -309,7 +309,7 @@ func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 func (cp *CRIProvider) Start(ctx context.Context) error {
 	nlog.Info("Starting CRI provider ...")
 
-	cp.pleg.Start()
+	cp.pleg.Start(ctx.Done())
 
 	cp.startGarbageCollection()
 
@@ -447,6 +447,11 @@ func (cp *CRIProvider) makeMounts(pod *v1.Pod, container *v1.Container, podVolum
 		vol, ok := podVolumes[mount.Name]
 		if !ok {
 			return nil, fmt.Errorf("cannot find volume %q to mount into container %q", mount.Name, container.Name)
+		}
+
+		//
+		if !filepath.IsAbs(mount.MountPath) {
+			mount.MountPath = filepath.Join(container.WorkingDir, mount.MountPath)
 		}
 
 		hostPath := vol.HostPath

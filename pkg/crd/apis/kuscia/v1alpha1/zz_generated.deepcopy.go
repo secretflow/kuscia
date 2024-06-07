@@ -1232,6 +1232,7 @@ func (in *DomainRouteToken) DeepCopyInto(out *DomainRouteToken) {
 	*out = *in
 	in.RevisionTime.DeepCopyInto(&out.RevisionTime)
 	in.ExpirationTime.DeepCopyInto(&out.ExpirationTime)
+	in.HeartBeatTime.DeepCopyInto(&out.HeartBeatTime)
 	if in.EffectiveInstances != nil {
 		in, out := &in.EffectiveInstances, &out.EffectiveInstances
 		*out = make([]string, len(*in))

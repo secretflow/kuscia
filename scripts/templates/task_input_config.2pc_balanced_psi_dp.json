@@ -27,7 +27,7 @@
   "sf_node_eval_param": {
     "domain": "data_prep",
     "name": "psi",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type","left_side"],
     "attrs": [{
       "ss": ["id1"]

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dulp
 package handler
 
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -76,13 +76,11 @@ func (h *JobScheduler) handleStageCommand(now metav1.Time, job *kusciaapisv1alph
 	nlog.Infof("Handle stage trigger: %s send command: %s.", cmdTrigger, stageCmd)
 	switch kusciaapisv1alpha1.JobStage(stageCmd) {
 	case kusciaapisv1alpha1.JobStartStage:
-		return h.handleStageCmdStart(now, job)
+		return h.handleStageCmdStart(job)
 	case kusciaapisv1alpha1.JobStopStage:
-		err = h.handleStageCmdStop(now, job)
-		return true, err
+		return h.handleStageCmdStop(now, job)
 	case kusciaapisv1alpha1.JobCancelStage:
-		err = h.handleStageCmdCancelled(now, job)
-		return true, err
+		return h.handleStageCmdCancelled(now, job)
 	case kusciaapisv1alpha1.JobRestartStage:
 		return h.handleStageCmdRestart(now, job)
 	case kusciaapisv1alpha1.JobSuspendStage:
@@ -92,7 +90,7 @@ func (h *JobScheduler) handleStageCommand(now metav1.Time, job *kusciaapisv1alph
 }
 
 // handleStageCmdStart handles job-start stage.
-func (h *JobScheduler) handleStageCmdStart(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) (hasReconciled bool, err error) {
+func (h *JobScheduler) handleStageCmdStart(job *kusciaapisv1alpha1.KusciaJob) (hasReconciled bool, err error) {
 	// get own party
 	ownP, _, _ := h.getAllParties(job)
 	if job.Status.StageStatus == nil {
@@ -117,6 +115,12 @@ func (h *JobScheduler) handleStageCmdRestart(now metav1.Time, job *kusciaapisv1a
 	// print command log
 	cmd, cmdTrigger, _ := h.getStageCmd(job)
 	nlog.Infof("Job: %s party: %s execute the cmd: %s.", job.Name, cmdTrigger, cmd)
+	// check if job is ValidateFailed
+	validateCond, exist := utilsres.GetKusciaJobCondition(&job.Status, kusciaapisv1alpha1.JobValidated, false)
+	if exist && validateCond.Status == corev1.ConditionFalse {
+		nlog.Infof("Job %s condition %q status is false, skip restarting it", job.Name, kusciaapisv1alpha1.JobValidated)
+		return false, nil
+	}
 	// handle 'failed' and 'suspend' phase
 	if job.Status.Phase == kusciaapisv1alpha1.KusciaJobFailed || job.Status.Phase == kusciaapisv1alpha1.KusciaJobSuspended {
 		// set job phase to 'running'
@@ -166,7 +170,11 @@ func (h *JobScheduler) handleStageCmdRestart(now metav1.Time, job *kusciaapisv1a
 }
 
 // handleStageCmdStop handles job-stop stage.
-func (h *JobScheduler) handleStageCmdStop(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) (err error) {
+func (h *JobScheduler) handleStageCmdStop(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) (bool, error) {
+	if job.Status.Phase == kusciaapisv1alpha1.KusciaJobCancelled ||
+		(job.Status.Phase == kusciaapisv1alpha1.KusciaJobFailed && job.Status.CompletionTime != nil) {
+		return false, nil
+	}
 	// print command log
 	cmd, cmdTrigger, _ := h.getStageCmd(job)
 	nlog.Infof("Job: %s party: %s execute the cmd: %s.", job.Name, cmdTrigger, cmd)
@@ -176,23 +184,29 @@ func (h *JobScheduler) handleStageCmdStop(now metav1.Time, job *kusciaapisv1alph
 		job.Status.StageStatus = make(map[string]kusciaapisv1alpha1.JobStagePhase)
 	}
 	// stop the running task
-	if err = h.stopTasks(now, job); err != nil {
-		nlog.Errorf("Stop 'runnning' task of job: %s  failed, error: %s.", job.Name, err.Error())
-		return err
+	if err := h.stopTasks(now, job); err != nil {
+		nlog.Errorf("Stop 'runnning' task of job: %s failed, error: %s.", job.Name, err.Error())
+		return false, err
 	}
 	// set own stage status
 	for p := range ownP {
 		job.Status.StageStatus[p] = stageStatus
 	}
-	// set job phase to failed
+	// set job and running task phase to failed
+	setRunningTaskStatusToFailed(&job.Status)
 	reason := fmt.Sprintf("Party: %s execute the cmd: %s.", cmdTrigger, cmd)
 	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, reason, reason)
-	setRunningTaskStatusToFailed(&job.Status)
-	return nil
+	if job.Status.CompletionTime == nil {
+		job.Status.CompletionTime = &now
+	}
+	return true, nil
 }
 
 // handleStageCmdCancelled handles job 'cancel' stage.
-func (h *JobScheduler) handleStageCmdCancelled(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) (err error) {
+func (h *JobScheduler) handleStageCmdCancelled(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) (bool, error) {
+	if job.Status.Phase == kusciaapisv1alpha1.KusciaJobCancelled && job.Status.CompletionTime != nil {
+		return false, nil
+	}
 	// print command log
 	cmd, cmdTrigger, _ := h.getStageCmd(job)
 	nlog.Infof("Job: %s party: %s execute the cmd: %s.", job.Name, cmdTrigger, cmd)
@@ -203,18 +217,22 @@ func (h *JobScheduler) handleStageCmdCancelled(now metav1.Time, job *kusciaapisv
 		job.Status.StageStatus = make(map[string]kusciaapisv1alpha1.JobStagePhase)
 	}
 	// stop the running task
-	if err = h.stopTasks(now, job); err != nil {
-		nlog.Errorf("Stop 'runnning' task of job: %s  failed, error: %s.", job.Name, err.Error())
-		return err
+	if err := h.stopTasks(now, job); err != nil {
+		nlog.Errorf("Stop 'runnning' task of job: %s failed, error: %s.", job.Name, err.Error())
+		return false, err
 	}
 	// set own stage status
 	for p := range ownP {
 		job.Status.StageStatus[p] = stageStatus
 	}
-	// set job phase to cancelled
+	// set job phase to cancelled and running task to failed
+	setRunningTaskStatusToFailed(&job.Status)
 	reason := fmt.Sprintf("Party: %s execute the cmd: %s.", cmdTrigger, cmd)
-	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobCancelled, reason, "")
-	return nil
+	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobCancelled, reason, reason)
+	if job.Status.CompletionTime == nil {
+		job.Status.CompletionTime = &now
+	}
+	return true, nil
 }
 
 // handleStageCmdSuspend handles job 'suspend' stage.
@@ -232,7 +250,7 @@ func (h *JobScheduler) handleStageCmdSuspend(now metav1.Time, job *kusciaapisv1a
 	}
 	// stop the running task
 	if err = h.stopTasks(now, job); err != nil {
-		nlog.Errorf("Stop 'runnning' task of job: %s  failed, error: %s.", job.Name, err.Error())
+		nlog.Errorf("Stop 'runnning' task of job: %s failed, error: %s.", job.Name, err.Error())
 		return false, err
 	}
 	// set own stage status
@@ -256,6 +274,11 @@ func updateJobTime(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) {
 		job.Status.StartTime = &now
 	}
 	job.Status.LastReconcileTime = &now
+
+	if job.Status.Phase == kusciaapisv1alpha1.KusciaJobApprovalReject &&
+		job.Status.CompletionTime == nil {
+		job.Status.CompletionTime = &now
+	}
 }
 
 func (h *JobScheduler) validateJob(now metav1.Time, job *kusciaapisv1alpha1.KusciaJob) (needUpdateStatus, validatePass bool) {
@@ -459,7 +482,11 @@ func (h *JobScheduler) stopTasks(now metav1.Time, kusciaJob *kusciaapisv1alpha1.
 			if utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
 				continue
 			}
-			if utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID) {
+			isPartner, err := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
+			if err != nil {
+				return err
+			}
+			if isPartner {
 				continue
 			}
 			found := false
@@ -489,17 +516,21 @@ func (h *JobScheduler) deleteNotSuccessTasks(kusciaJob *kusciaapisv1alpha1.Kusci
 		if phase == kusciaapisv1alpha1.TaskSucceeded {
 			continue
 		}
+		tasks = append(tasks, taskID)
+
 		kt, err := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
 			nlog.Warnf("Get kuscia task %v failed, so skip delete this task, error: %s.", taskID, err.Error())
 			return err
 		}
 		err = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Delete(context.Background(), kt.Name, metav1.DeleteOptions{})
 		if err != nil && !k8serrors.IsNotFound(err) {
-			nlog.Warnf("Delete kuscia task %v failed,  so skip delete this task, error: %s.", taskID, err.Error())
+			nlog.Warnf("Delete kuscia task %v failed, so skip delete this task, error: %s.", taskID, err.Error())
 			return err
 		}
-		tasks = append(tasks, taskID)
 	}
 	for _, v := range tasks {
 		delete(kusciaJob.Status.TaskStatus, v)
@@ -515,20 +546,6 @@ func (h *JobScheduler) kusciaJobValidate(kusciaJob *kusciaapisv1alpha1.KusciaJob
 
 	if len(kusciaJob.Spec.Tasks) == 0 {
 		return fmt.Errorf("kuscia job should include at least one of task")
-	}
-
-	findInitiator := false
-	for _, party := range kusciaJob.Spec.Tasks[0].Parties {
-		if _, err := h.namespaceLister.Get(party.DomainID); err != nil {
-			return fmt.Errorf("can't find party namespace %v under cluster, %v", party.DomainID, err)
-		}
-
-		if party.DomainID == kusciaJob.Spec.Initiator {
-			findInitiator = true
-		}
-	}
-	if !findInitiator {
-		return fmt.Errorf("initiator should be one of task parties")
 	}
 
 	if err := kusciaJobDependenciesExits(kusciaJob); err != nil {
@@ -802,6 +819,9 @@ func buildJobSubTaskStatus(currentSubTasks []*kusciaapisv1alpha1.KusciaTask, job
 	for idx := range currentSubTasks {
 		for _, task := range job.Spec.Tasks {
 			if task.TaskID == currentSubTasks[idx].Name {
+				if currentSubTasks[idx].Status.Phase == "" {
+					currentSubTasks[idx].Status.Phase = kusciaapisv1alpha1.TaskPending
+				}
 				subTaskStatusWithAlias[task.Alias] = currentSubTasks[idx].Status.Phase
 				subTaskStatusWithID[task.TaskID] = currentSubTasks[idx].Status.Phase
 			}
@@ -813,24 +833,18 @@ func buildJobSubTaskStatus(currentSubTasks []*kusciaapisv1alpha1.KusciaTask, job
 // buildJobStatus builds kuscia job status.
 func buildJobStatus(now metav1.Time,
 	kjStatus *kusciaapisv1alpha1.KusciaJobStatus,
-	currentJobStatusPhase kusciaapisv1alpha1.KusciaJobPhase,
-	currentSubTasksStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase) bool {
+	currentJobStatusPhase kusciaapisv1alpha1.KusciaJobPhase) bool {
 	needUpdate := false
 	if kjStatus.Phase != currentJobStatusPhase {
 		needUpdate = true
 		kjStatus.Phase = currentJobStatusPhase
 	}
 
-	if currentJobStatusPhase == kusciaapisv1alpha1.KusciaJobSucceeded || currentJobStatusPhase == kusciaapisv1alpha1.KusciaJobFailed {
+	if currentJobStatusPhase == kusciaapisv1alpha1.KusciaJobSucceeded {
 		if kjStatus.CompletionTime == nil {
 			needUpdate = true
 			kjStatus.CompletionTime = &now
 		}
-	}
-
-	if !reflect.DeepEqual(kjStatus.TaskStatus, currentSubTasksStatus) {
-		needUpdate = true
-		kjStatus.TaskStatus = currentSubTasksStatus
 	}
 
 	return needUpdate
@@ -891,7 +905,10 @@ func jobStatusPhaseFrom(job *kusciaapisv1alpha1.KusciaJob, currentSubTasksStatus
 
 // ShouldReconcile return whether this job need to reconcile again.
 func ShouldReconcile(job *kusciaapisv1alpha1.KusciaJob) bool {
-	if job.Status.Phase == kusciaapisv1alpha1.KusciaJobCancelled || job.Status.Phase == kusciaapisv1alpha1.KusciaJobSucceeded {
+	if (job.Status.Phase == kusciaapisv1alpha1.KusciaJobApprovalReject ||
+		job.Status.Phase == kusciaapisv1alpha1.KusciaJobCancelled ||
+		job.Status.Phase == kusciaapisv1alpha1.KusciaJobSucceeded) &&
+		job.Status.CompletionTime != nil {
 		return false
 	}
 	return true
@@ -978,11 +995,14 @@ func willStartTasksOf(kusciaJob *kusciaapisv1alpha1.KusciaJob, readyTasks []kusc
 }
 
 // buildWillStartKusciaTask build KusciaTask CR from job's will-start sub-tasks.
-func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) []*kusciaapisv1alpha1.KusciaTask {
+func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.KusciaJob, willStartTask []kusciaapisv1alpha1.KusciaTaskTemplate) ([]*kusciaapisv1alpha1.KusciaTask, error) {
 	createdTasks := make([]*kusciaapisv1alpha1.KusciaTask, 0)
-
 	isIcJob := isInterConnJob(kusciaJob)
-	for _, t := range willStartTask {
+	for i, t := range willStartTask {
+		asParticipant, err := h.selfClusterAsParticipant(&willStartTask[i])
+		if err != nil {
+			return nil, err
+		}
 		var taskObject = &kusciaapisv1alpha1.KusciaTask{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: t.TaskID,
@@ -991,8 +1011,9 @@ func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.
 						kusciaapisv1alpha1.SchemeGroupVersion.WithKind(KusciaJobKind)),
 				},
 				Annotations: map[string]string{
-					common.JobIDAnnotationKey:     kusciaJob.Name,
-					common.TaskAliasAnnotationKey: t.Alias,
+					common.JobIDAnnotationKey:                    kusciaJob.Name,
+					common.TaskAliasAnnotationKey:                t.Alias,
+					common.SelfClusterAsParticipantAnnotationKey: strconv.FormatBool(asParticipant),
 				},
 				Labels: map[string]string{
 					common.LabelController: LabelControllerValueKusciaJob,
@@ -1022,7 +1043,20 @@ func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.
 
 		createdTasks = append(createdTasks, taskObject)
 	}
-	return createdTasks
+	return createdTasks, nil
+}
+
+func (h *RunningHandler) selfClusterAsParticipant(task *kusciaapisv1alpha1.KusciaTaskTemplate) (bool, error) {
+	for _, party := range task.Parties {
+		isPartner, err := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
+		if err != nil {
+			return false, err
+		}
+		if !isPartner {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // createTaskSpec will make kuscia task spec for kuscia job.

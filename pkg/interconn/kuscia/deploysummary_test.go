@@ -41,6 +41,7 @@ func makeMockDeploymentSummary(namespace, name string) *v1alpha1.KusciaDeploymen
 }
 
 func TestHandleUpdatedDeploymentSummary(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -88,6 +89,7 @@ func TestHandleUpdatedDeploymentSummary(t *testing.T) {
 }
 
 func TestUpdateDeployment(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kd := makeMockDeployment("cross-domain", "kd-1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kd)
@@ -126,6 +128,7 @@ func TestUpdateDeployment(t *testing.T) {
 }
 
 func TestUpdateDeploymentStatus(t *testing.T) {
+	t.Parallel()
 	// kds status is failed and is not equal to kd, should return true
 	kds := makeMockDeploymentSummary("alice", "kd-1")
 	kds.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed

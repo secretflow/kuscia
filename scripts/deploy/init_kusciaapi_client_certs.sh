@@ -24,15 +24,15 @@ pushd ${ROOT}/var/certs >/dev/null || exit
 CLIENT=kusciaapi-client
 
 #create a PKCS#8 key for client(JAVA native supported), default is PKCS#1
-openssl genpkey -out ${CLIENT}.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048 >/dev/null 2>&1
+openssl genpkey -out ${CLIENT}.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048
 
 #generate the Certificate Signing Request for client
-openssl req -new -key ${CLIENT}.key -out ${CLIENT}.csr -subj "/CN=KusciaAPIClient" >/dev/null 2>&1
+openssl req -new -key ${CLIENT}.key -out ${CLIENT}.csr -subj "/CN=KusciaAPIClient"
 
 #sign it with Root CA for client
 openssl x509  -req -in ${CLIENT}.csr \
     -CA ca.crt -CAkey ca.key  \
     -days 1000 -sha256 -CAcreateserial \
-    -out ${CLIENT}.crt >/dev/null 2>&1
+    -out ${CLIENT}.crt
 
 popd >/dev/null || exit

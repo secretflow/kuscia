@@ -18,8 +18,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"gitlab.com/jonas.jasas/condchan"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type MemControl struct {
@@ -44,6 +45,7 @@ func NewMemControl(config *Config) *MemControl {
 func (mc *MemControl) Prefetch(byteSize uint64, timeout time.Duration) (bool, time.Duration) {
 	leftTimeout := timeout
 	mc.Lock()
+	defer mc.Unlock()
 	available := mc.availableToPush(byteSize)
 	if !available {
 		if byteSize > mc.totalByteSizeLimit {
@@ -68,7 +70,7 @@ func (mc *MemControl) Prefetch(byteSize uint64, timeout time.Duration) (bool, ti
 			}
 
 			if available = mc.availableToPush(byteSize); available {
-				usedTime := time.Now().Sub(start)
+				usedTime := time.Since(start)
 				if leftTimeout > usedTime {
 					leftTimeout -= usedTime
 				} else {
@@ -79,7 +81,6 @@ func (mc *MemControl) Prefetch(byteSize uint64, timeout time.Duration) (bool, ti
 		}
 	}
 
-	defer mc.Unlock()
 	if !available || leftTimeout == 0 {
 		return false, leftTimeout
 	}

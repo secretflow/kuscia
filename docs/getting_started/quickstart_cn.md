@@ -45,9 +45,7 @@ systemctl start docker
 
 ### 关于 macOS
 
-macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
-
-此外，Kuscia 当前不支持 M1/M2 芯片的 Mac。
+macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G）。
 
 ## 部署体验
 > 本文旨在帮助您快速体验 Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
@@ -126,7 +124,7 @@ docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
 
 ## 作业状态
 
-如果作业执行成功，则 `kubectl get kj` 命令会显示类似下方的输出，Succeeded 表示成功状态：
+如果作业执行成功，则 `kubectl get kj -n cross-domain` 命令会显示类似下方的输出，Succeeded 表示成功状态：
 
 ```bash
 NAME                             STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE

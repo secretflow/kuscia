@@ -20,15 +20,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/secretflow/kuscia/test/util"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/secretflow/kuscia/test/util"
 )
 
 func TestTokenCrypt(t *testing.T) {
 	priKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
 
-	pubKey, err := ParsePKCS1PublicKey(EncodePKCS1PublicKey(priKey))
+	pubKey, err := ParseRSAPublicKey(EncodePKCS1PublicKey(priKey))
 	assert.NoError(t, err)
 
 	originToken := make([]byte, 16)
@@ -46,7 +47,7 @@ func TestCryptAndDecrypt(t *testing.T) {
 	priKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
 
-	pubKey, err := ParsePKCS1PublicKey(EncodePKCS1PublicKey(priKey))
+	pubKey, err := ParseRSAPublicKey(EncodePKCS1PublicKey(priKey))
 	assert.NoError(t, err)
 
 	evaluateCryptAndDeCrypt(t, priKey, pubKey, strings.Repeat("a", 174))
@@ -72,4 +73,48 @@ func evaluateCryptAndDeCrypt(t *testing.T, priKey *rsa.PrivateKey, pubKey *rsa.P
 	plaintext, err := DecryptOAEP(priKey, ciphertext)
 	assert.NoError(t, err)
 	assert.Equal(t, text, string(plaintext))
+}
+
+func TestParsePKCS1PrivateKey(t *testing.T) {
+	priKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+
+	keyData := EncodePKCS1PrivateKey(priKey)
+	_, err = ParseKey(keyData, "")
+	assert.NoError(t, err)
+
+	pubkeyData := EncodePKCS1PublicKey(priKey)
+	pubkey, err := ParseRSAPublicKey(pubkeyData)
+	assert.NoError(t, err)
+
+	token := "kuscia123"
+	prefix := "test"
+	ciphertext, err := EncryptPKCS1v15(pubkey, []byte(token), []byte(prefix))
+	assert.NoError(t, err)
+	plaintext, err := DecryptPKCS1v15(priKey, ciphertext, len(token), []byte(prefix))
+	assert.NoError(t, err)
+	assert.Equal(t, token, string(plaintext))
+}
+
+func TestParsePKCS8PrivateKey(t *testing.T) {
+	priKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+
+	keyData, err := EncodePKCS8PrivateKey(priKey)
+	assert.NoError(t, err)
+	_, err = ParseKey(keyData, "")
+	assert.NoError(t, err)
+
+	pubkeyData, err := EncodePKCS8PublicKey(priKey)
+	assert.NoError(t, err)
+	pubkey, err := ParseRSAPublicKey(pubkeyData)
+	assert.NoError(t, err)
+
+	token := "kuscia123"
+	prefix := "test"
+	ciphertext, err := EncryptPKCS1v15(pubkey, []byte(token), []byte(prefix))
+	assert.NoError(t, err)
+	plaintext, err := DecryptPKCS1v15(priKey, ciphertext, len(token), []byte(prefix))
+	assert.NoError(t, err)
+	assert.Equal(t, token, string(plaintext))
 }

@@ -109,18 +109,18 @@ func ValidateK8sName(val string, fieldName string) error {
 }
 
 // IsPartnerDomain check if is partner domain.
-func IsPartnerDomain(nsLister corelisters.NamespaceLister, domainID string) bool {
+func IsPartnerDomain(nsLister corelisters.NamespaceLister, domainID string) (bool, error) {
 	ns, err := nsLister.Get(domainID)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if ns.Labels != nil &&
 		ns.Labels[common.LabelDomainRole] == string(kusciaapisv1alpha1.Partner) {
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }
 
 // IsEmpty will judge whether data is empty

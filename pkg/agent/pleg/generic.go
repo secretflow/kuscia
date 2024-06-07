@@ -131,8 +131,8 @@ func (g *GenericPLEG) Watch() chan *PodLifecycleEvent {
 }
 
 // Start spawns a goroutine to relist periodically.
-func (g *GenericPLEG) Start() {
-	go wait.Until(g.relist, g.relistPeriod, wait.NeverStop)
+func (g *GenericPLEG) Start(stopCh <-chan struct{}) {
+	go wait.Until(g.relist, g.relistPeriod, stopCh)
 }
 
 // Healthy check if PLEG work properly.

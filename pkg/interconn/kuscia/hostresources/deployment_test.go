@@ -41,6 +41,7 @@ func makeMockDeployment(namespace, name string) *v1alpha1.KusciaDeployment {
 }
 
 func TestHandleUpdatedDeployment(t *testing.T) {
+	t.Parallel()
 	opt := &hostResourcesControllerOptions{
 		host:   "alice",
 		member: "bob",
@@ -91,6 +92,7 @@ func TestHandleUpdatedDeployment(t *testing.T) {
 }
 
 func TestHandleDeletedDeployment(t *testing.T) {
+	t.Parallel()
 	opt := &hostResourcesControllerOptions{
 		host:   "alice",
 		member: "bob",
@@ -108,6 +110,7 @@ func TestHandleDeletedDeployment(t *testing.T) {
 }
 
 func TestDeleteDeployment(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -140,6 +143,7 @@ func TestDeleteDeployment(t *testing.T) {
 }
 
 func TestProcessDeployment(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kd1 := makeMockDeployment("cross-domain", "kd-1")
 	kusciaFakeClient := fake.NewSimpleClientset(kd1)

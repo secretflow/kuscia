@@ -54,6 +54,8 @@ type KusciaConfig struct {
 	DebugPort    int  `yaml:"debugPort"`
 	CtrDebugPort int  `yaml:"controllerDebugPort"`
 
+	Image ImageConfig `yaml:"image"`
+
 	Agent                 config.AgentConfig        `yaml:"agent,omitempty"`
 	Master                kusciaconfig.MasterConfig `yaml:"master,omitempty"`
 	ConfManager           cmconf.ConfManagerConfig  `yaml:"confManager,omitempty"`

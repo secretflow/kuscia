@@ -24,6 +24,7 @@ import (
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
@@ -80,13 +81,11 @@ func TestContainerStart(t *testing.T) {
 		assert.NoError(t, container.Start())
 		time.Sleep(100 * time.Millisecond)
 		assert.NoError(t, container.Stop())
-		time.Sleep(100 * time.Millisecond)
-
-		status := container.GetCRIStatus()
-		assert.Equal(t, runtime.ContainerState_CONTAINER_EXITED, status.State)
+		assert.NoError(t, wait.PollImmediate(100*time.Millisecond, 1*time.Second, func() (done bool, err error) {
+			return container.GetCRIStatus().State == runtime.ContainerState_CONTAINER_EXITED, nil
+		}))
 		assert.NoError(t, container.Release())
 	})
-
 }
 
 func TestContainerGenerateCmdLine(t *testing.T) {

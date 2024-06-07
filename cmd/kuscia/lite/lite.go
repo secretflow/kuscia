@@ -78,9 +78,11 @@ func Run(ctx context.Context, configFile string) error {
 	}
 	cdsModule.StartControllers(ctx, conf.Clients.KubeClient)
 
-	modules.RunKusciaAPIWithDestroy(conf)
-	modules.RunAgentWithDestroy(conf)
 	modules.RunConfManagerWithDestroy(conf)
+	// Kuscia API module need to start after Conf Manager module
+	modules.RunKusciaAPIWithDestroy(conf)
+	// Agent module need to start after Kuscia API module
+	modules.RunAgentWithDestroy(conf)
 	modules.RunDataMeshWithDestroy(conf)
 	modules.RunNodeExporterWithDestroy(conf)
 	modules.RunSsExporterWithDestroy(conf)
@@ -88,6 +90,6 @@ func Run(ctx context.Context, configFile string) error {
 	utils.SetupPprof(conf.Debug, conf.DebugPort, false)
 	modules.SetKusciaOOMScore()
 	conf.WaitAllModulesDone(ctx.Done())
-	nlog.Errorf("Lite shut down......")
+	nlog.Errorf("Lite [%s] shut down......", kusciaConf.DomainID)
 	return nil
 }

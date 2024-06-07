@@ -22,6 +22,7 @@ import (
 )
 
 func Test_Options(t *testing.T) {
+	t.Parallel()
 	op := NewOptions()
 	err := op.Validate()
 	assert.NoError(t, err)

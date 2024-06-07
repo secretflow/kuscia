@@ -43,6 +43,7 @@ func makeMockTask(namespace, name string) *v1alpha1.KusciaTask {
 }
 
 func TestHandleUpdatedTask(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -90,6 +91,7 @@ func TestHandleUpdatedTask(t *testing.T) {
 }
 
 func TestHandleDeletedTask(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
@@ -135,6 +137,7 @@ func TestHandleDeletedTask(t *testing.T) {
 }
 
 func TestDeleteTaskCascadedResources(t *testing.T) {
+	t.Parallel()
 	kts := makeMockTaskSummary("bob", "task-1", "1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -150,6 +153,7 @@ func TestDeleteTaskCascadedResources(t *testing.T) {
 }
 
 func TestCreateOrUpdateTaskSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -189,6 +193,7 @@ func TestCreateOrUpdateTaskSummary(t *testing.T) {
 }
 
 func TestUpdateTaskSummaryByTask(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kts := makeMockTaskSummary("bob", "task-1", "1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts)
@@ -215,12 +220,13 @@ func TestUpdateTaskSummaryByTask(t *testing.T) {
 }
 
 func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
+	t.Parallel()
 	domainIDs := []string{"alice", "bob"}
 
 	// party task status is empty in task status, should return false
 	kt := makeMockTask("cross-domain", "task-1")
 	kts := makeMockTaskSummary("bob", "task-1", "1")
-	got := updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs)
+	got := updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// party task status is same for task and task summary, should return false
@@ -234,7 +240,7 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// party task status is empty in task summary but not empty for task, should return true
@@ -244,7 +250,7 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		Phase:    v1alpha1.TaskRunning,
 	}}
 	kts = makeMockTaskSummary("bob", "task-1", "1")
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
 	assert.Equal(t, true, got)
 
 	// party task status is different in task summary and task, should return true
@@ -253,12 +259,12 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
 	}}
-	kts = makeMockTaskSummary("bob", "task-1", "1")
+	kts = makeMockTaskSummary("joke", "task-1", "1")
 	kts.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
-		DomainID: "bob",
+		DomainID: "joke",
 		Phase:    v1alpha1.TaskFailed,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
 	assert.Equal(t, true, got)
 
 	// party task status exist in task but not in task summary, should return true
@@ -272,13 +278,43 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskFailed,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
 	assert.Equal(t, true, got)
+
+	// party task status is different in task summary and task for member, should return true
+	kt = makeMockTask("cross-domain", "task-1")
+	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
+		DomainID: "bob",
+		Phase:    v1alpha1.TaskFailed,
+	}}
+	kts = makeMockTaskSummary("bob", "task-1", "1")
+	kts.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
+		DomainID: "bob",
+		Phase:    v1alpha1.TaskRunning,
+	}}
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, false)
+	assert.Equal(t, true, got)
+
+	// party task status is same in task summary and task for member, should return true
+	kt = makeMockTask("cross-domain", "task-1")
+	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
+		DomainID: "bob",
+		Phase:    v1alpha1.TaskFailed,
+	}}
+	kts = makeMockTaskSummary("bob", "task-1", "1")
+	kts.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
+		DomainID: "bob",
+		Phase:    v1alpha1.TaskFailed,
+	}}
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, false)
+	assert.Equal(t, false, got)
 }
 
 func TestProcessTaskAsPartner(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	kt2 := makeMockTask("cross-domain", "task-2")
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kt2)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	deploymentInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
 	jobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
@@ -331,15 +367,15 @@ func TestProcessTaskAsPartner(t *testing.T) {
 	got = c.processTaskAsPartner(ctx, kt)
 	assert.Equal(t, nil, got)
 
-	// task summary doesn't exist in host cluster, should return nil
-	kt = makeMockTask("cross-domain", "task-2")
+	// task summary doesn't exist in host cluster, delete task and should return nil
 	kt.Annotations[common.InitiatorAnnotationKey] = "alice"
 	kt.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
-	got = c.processTaskAsPartner(ctx, kt)
-	assert.Equal(t, nil, got)
+	got = c.processTaskAsPartner(ctx, kt2)
+	assert.Equal(t, true, got == nil)
 }
 
 func TestUpdateHostTaskSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kts := makeMockTaskSummary("bob", "task-1", "1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts)

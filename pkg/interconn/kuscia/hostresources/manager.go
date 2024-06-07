@@ -30,6 +30,7 @@ type ResourcesManager interface {
 	SetWorkers(worker int)
 	GetHostResourceAccessor(host, member string) ResourcesAccessor
 	Stop()
+	HasSynced() bool
 }
 
 // Options defines some options for host resources manager.
@@ -148,6 +149,22 @@ func (m *hostResourcesManager) GetHostResourceAccessor(host, member string) Reso
 		return nil
 	}
 	return ra
+}
+
+// HasSynced is used to check if there are already resources that have been synchronized.
+func (m *hostResourcesManager) HasSynced() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if len(m.resourceControllers) == 0 {
+		return true
+	}
+
+	for _, rc := range m.resourceControllers {
+		if rc.HasSynced() {
+			return true
+		}
+	}
+	return false
 }
 
 // generateResourceControllerKey is used to generate resource controller key.

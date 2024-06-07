@@ -20,14 +20,18 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/secretbackend"
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -63,6 +67,27 @@ func TestCreateDomainDataSource(t *testing.T) {
 		},
 	})
 	assert.Equal(t, dataSourceID, res.Data.DatasourceId)
+}
+
+func TestCreateDomainDataSource_InfoKeyNotExists(t *testing.T) {
+	dataSourceID := "ds-1"
+	makeInfoKey := "test"
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	res := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomainId,
+		DatasourceId: dataSourceID,
+		Type:         common.DomainDataSourceTypeLocalFS,
+		Info: &kusciaapi.DataSourceInfo{
+			Localfs: &kusciaapi.LocalDataSourceInfo{
+				Path: "./data",
+			},
+		},
+		InfoKey: &makeInfoKey,
+	})
+
+	assert.EqualValues(t, res.Status.Code, errorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource)
 }
 
 func TestUpdateDomainDataSource(t *testing.T) {
@@ -176,6 +201,72 @@ func TestBatchQueryDomainDataSource(t *testing.T) {
 	})
 	assert.Equal(t, int32(0), batchQueryRes.Status.Code)
 	assert.Equal(t, common.DomainDataSourceTypeMysql, batchQueryRes.Data.DatasourceList[0].Type)
+}
+
+func TestListDomainDataSource(t *testing.T) {
+	dataSourceID := "ds-1"
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomainId,
+		DatasourceId: dataSourceID,
+		Type:         common.DomainDataSourceTypeMysql,
+		Info: &kusciaapi.DataSourceInfo{
+			Database: &kusciaapi.DatabaseDataSourceInfo{
+				Endpoint: "127.0.0.1:3306",
+				User:     "root",
+				Password: "passwd",
+				Database: "db-name",
+			},
+		},
+	})
+	assert.Equal(t, dataSourceID, createRes.Data.DatasourceId)
+	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
+		DomainId: mockDomainId,
+	})
+	assert.Equal(t, int32(0), res.Status.Code)
+	assert.Equal(t, common.DomainDataSourceTypeMysql, res.Data.DatasourceList[0].Type)
+}
+
+func TestListDomainDataSource_NotExist(t *testing.T) {
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
+		DomainId: mockDomainId,
+	})
+	assert.Equal(t, int32(0), res.Status.Code)
+	assert.Equal(t, 0, len(res.GetData().DatasourceList))
+}
+
+func TestListDomainDataSource_DomainNotExist(t *testing.T) {
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
+		DomainId: "mock-domain-id",
+	})
+	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrListDomainDataSource), res.Status.Code)
+}
+
+func TestListDomainDataSource_InfoErr(t *testing.T) {
+	dataSourceID := "ds-1"
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	dataSource := &v1alpha1.DomainDataSource{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dataSourceID,
+			Namespace: mockDomainId,
+		},
+		Spec: v1alpha1.DomainDataSourceSpec{
+			Type: "oss",
+		},
+	}
+	_, err := conf.KusciaClient.KusciaV1alpha1().DomainDataSources(mockDomainId).Create(context.Background(), dataSource, metav1.CreateOptions{})
+	assert.NoError(t, err)
+	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
+		DomainId: mockDomainId,
+	})
+	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrListDomainDataSource), res.Status.Code)
 }
 
 func makeDomainDataSourceService(t *testing.T, conf *config.KusciaAPIConfig) IDomainDataSourceService {

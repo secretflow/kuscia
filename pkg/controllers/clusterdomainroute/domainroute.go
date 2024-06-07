@@ -128,6 +128,11 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 		}
 	}
 
+	if IsReady(&cdr.Status) && IsTokenHeartBeatTimeout(cdr.Status.TokenStatus.DestinationTokens) {
+		setCondition(&cdr.Status, newCondition(kusciaapisv1alpha1.ClusterDomainRouteReady, corev1.ConditionFalse, "HeartBeatTimeout", "HeartBeatTimeout"))
+		needUpdate = true
+	}
+
 	if needUpdate {
 		sn := len(cdr.Status.TokenStatus.SourceTokens)
 		dn := len(cdr.Status.TokenStatus.DestinationTokens)
@@ -146,6 +151,37 @@ func (c *controller) syncStatusFromDomainroute(cdr *kusciaapisv1alpha1.ClusterDo
 	}
 
 	return false, nil
+}
+
+func IsTokenHeartBeatTimeout(tokens []kusciaapisv1alpha1.DomainRouteToken) bool {
+	readyTokens := make([]kusciaapisv1alpha1.DomainRouteToken, 0)
+	for _, token := range tokens {
+		if token.IsReady {
+			readyTokens = append(readyTokens, token)
+		}
+	}
+	// no ready tokens
+	if len(readyTokens) <= 0 {
+		return false
+	}
+
+	// heartbeatTime not exists compatible with lower versions
+	noHeartbeat := true
+	for _, token := range readyTokens {
+		noHeartbeat = noHeartbeat && token.HeartBeatTime.Time.IsZero()
+	}
+	if noHeartbeat {
+		return false
+	}
+
+	for _, token := range readyTokens {
+		// heartbeatTime exists and not timeout
+		if !token.HeartBeatTime.Time.IsZero() && time.Since(token.HeartBeatTime.Time) <= 2*common.GatewayHealthCheckDuration {
+			return false
+		}
+	}
+	// heartbeatTime exists and all timeout
+	return true
 }
 
 func newCondition(condType kusciaapisv1alpha1.ClusterDomainRouteConditionType, status corev1.ConditionStatus, reason, message string) *kusciaapisv1alpha1.ClusterDomainRouteCondition {

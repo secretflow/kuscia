@@ -31,6 +31,7 @@ import (
 )
 
 func TestNewTaskResourceGroupPhaseHandlerFactory(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -59,6 +60,7 @@ func TestNewTaskResourceGroupPhaseHandlerFactory(t *testing.T) {
 }
 
 func TestUpdatePodAnnotations(t *testing.T) {
+	t.Parallel()
 	pod1 := st.MakePod().Namespace("ns1").Name("pod1").
 		Annotation(common.TaskResourceGroupAnnotationKey, "trg1").
 		Label(common.LabelTaskResourceGroupUID, "111").Obj()
@@ -99,6 +101,7 @@ func TestUpdatePodAnnotations(t *testing.T) {
 }
 
 func TestPatchTaskResourceStatus(t *testing.T) {
+	t.Parallel()
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
 	tr1.Annotations = map[string]string{
 		common.TaskResourceGroupAnnotationKey: "trg1",

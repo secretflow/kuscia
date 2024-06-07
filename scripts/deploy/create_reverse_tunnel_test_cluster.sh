@@ -88,12 +88,12 @@ function create_kuscia_yaml() {
   if [ ! -d alice ]; then
     mkdir alice
   fi
-  docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" --runtime "runp" --log-level "DEBUG" --datastore-endpoint "mysql://root:password@tcp($hostname:13307)/kine" > alice/kuscia.yaml
+  docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" --runtime "runp" --log-level "DEBUG" --datastore-endpoint "mysql://root:password@tcp($hostname:13307)/kine" > alice/kuscia.yaml 2>&1 || cat alice/kuscia.yaml
 
   if [ ! -d bob ]; then
     mkdir bob
   fi
-  docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "bob" --runtime "runp" --log-level "DEBUG" --datastore-endpoint "mysql://root:password@tcp($hostname:13308)/kine" > bob/kuscia.yaml
+  docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "bob" --runtime "runp" --log-level "DEBUG" --datastore-endpoint "mysql://root:password@tcp($hostname:13308)/kine" > bob/kuscia.yaml 2>&1 || cat bob/kuscia.yaml
 }
 
 function create_load() {

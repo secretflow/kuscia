@@ -70,6 +70,7 @@ func makeMockTaskResource(namespace, name string) *v1alpha1.TaskResource {
 }
 
 func TestHandleUpdatedTaskSummary(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	opt := &hostResourcesControllerOptions{
 		host:               "alice",
@@ -120,8 +121,8 @@ func TestHandleUpdatedTaskSummary(t *testing.T) {
 }
 
 func TestSyncTaskSummaryHandler(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-
 	kts1 := makeMockTaskSummary("bob", "task-1", "1")
 	kts1.Spec.Alias = ""
 	kts2 := makeMockTaskSummary("bob", "task-2", "2")
@@ -185,8 +186,8 @@ func TestSyncTaskSummaryHandler(t *testing.T) {
 }
 
 func TestUpdateMemberJobByTaskSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-
 	hostKusciaFakeClient := fake.NewSimpleClientset()
 	GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
 		return &kubeconfig.KubeClients{
@@ -234,6 +235,7 @@ func TestUpdateMemberJobByTaskSummary(t *testing.T) {
 }
 
 func TestUpdateMemberTask(t *testing.T) {
+	t.Parallel()
 	// status is Running in task summary, should return false
 	kt := makeMockTask("cross-domain", "task-1")
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{
@@ -306,8 +308,8 @@ func TestUpdateMemberTask(t *testing.T) {
 }
 
 func TestUpdateMemberTaskResource(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-
 	hostKusciaFakeClient := fake.NewSimpleClientset()
 	GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
 		return &kubeconfig.KubeClients{

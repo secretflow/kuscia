@@ -426,13 +426,6 @@ func (c *Container) Release() error {
 	c.Lock()
 	defer c.Unlock()
 
-	if c.status.State() == runtime.ContainerState_CONTAINER_RUNNING {
-		nlog.Infof("Container %q is in running state, forcibly stopping", c.ID)
-		if err := c.Stop(); err != nil {
-			return err
-		}
-	}
-
 	if err := c.canRelease(); err != nil {
 		nlog.Errorf("Container %q can not to be released: %v", c.ID, err)
 		return errdefs.ErrCanNotRemove

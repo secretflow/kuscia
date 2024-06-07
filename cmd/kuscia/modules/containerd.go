@@ -76,7 +76,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(s.Root, "bin/containerd"), args...)
+		cmd := exec.Command(filepath.Join(s.Root, "bin/containerd"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
 		return &ModuleCMD{

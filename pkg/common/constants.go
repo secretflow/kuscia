@@ -119,10 +119,11 @@ const (
 
 	TaskSummaryResourceVersionAnnotationKey = "kuscia.secretflow/tasksummary-resource-version"
 
-	JobIDAnnotationKey             = "kuscia.secretflow/job-id"
-	TaskIDAnnotationKey            = "kuscia.secretflow/task-id"
-	TaskAliasAnnotationKey         = "kuscia.secretflow/task-alias"
-	TaskResourceGroupAnnotationKey = "kuscia.secretflow/task-resource-group"
+	JobIDAnnotationKey                    = "kuscia.secretflow/job-id"
+	TaskIDAnnotationKey                   = "kuscia.secretflow/task-id"
+	TaskAliasAnnotationKey                = "kuscia.secretflow/task-alias"
+	TaskResourceGroupAnnotationKey        = "kuscia.secretflow/task-resource-group"
+	SelfClusterAsParticipantAnnotationKey = "kuscia.secretflow/self-cluster-as-participant"
 
 	AccessDomainAnnotationKey = "kuscia.secretflow/access-domain"
 	ProtocolAnnotationKey     = "kuscia.secretflow/protocol"
@@ -175,6 +176,8 @@ const (
 
 	True  = "true"
 	False = "false"
+
+	AuthorizationHeaderName = "Authorization"
 )
 
 const (
@@ -198,6 +201,11 @@ const (
 	RunModeMaster   = "master"
 	RunModeAutonomy = "autonomy"
 	RunModeLite     = "lite"
+)
+
+const (
+	// because master service name is *.master.svc
+	UnSupportedDomainID string = "master"
 )
 
 const (
@@ -226,7 +234,8 @@ const (
 )
 
 const (
-	GatewayLiveTimeout = 3 * time.Minute
+	GatewayLiveTimeout         = 3 * time.Minute
+	GatewayHealthCheckDuration = 15 * time.Second
 )
 
 const (

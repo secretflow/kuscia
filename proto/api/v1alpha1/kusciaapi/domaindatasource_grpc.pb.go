@@ -38,6 +38,7 @@ const (
 	DomainDataSourceService_UpdateDomainDataSource_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/UpdateDomainDataSource"
 	DomainDataSourceService_DeleteDomainDataSource_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/DeleteDomainDataSource"
 	DomainDataSourceService_BatchQueryDomainDataSource_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/BatchQueryDomainDataSource"
+	DomainDataSourceService_ListDomainDataSource_FullMethodName       = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/ListDomainDataSource"
 )
 
 // DomainDataSourceServiceClient is the client API for DomainDataSourceService service.
@@ -49,6 +50,7 @@ type DomainDataSourceServiceClient interface {
 	UpdateDomainDataSource(ctx context.Context, in *UpdateDomainDataSourceRequest, opts ...grpc.CallOption) (*UpdateDomainDataSourceResponse, error)
 	DeleteDomainDataSource(ctx context.Context, in *DeleteDomainDataSourceRequest, opts ...grpc.CallOption) (*DeleteDomainDataSourceResponse, error)
 	BatchQueryDomainDataSource(ctx context.Context, in *BatchQueryDomainDataSourceRequest, opts ...grpc.CallOption) (*BatchQueryDomainDataSourceResponse, error)
+	ListDomainDataSource(ctx context.Context, in *ListDomainDataSourceRequest, opts ...grpc.CallOption) (*ListDomainDataSourceResponse, error)
 }
 
 type domainDataSourceServiceClient struct {
@@ -104,6 +106,15 @@ func (c *domainDataSourceServiceClient) BatchQueryDomainDataSource(ctx context.C
 	return out, nil
 }
 
+func (c *domainDataSourceServiceClient) ListDomainDataSource(ctx context.Context, in *ListDomainDataSourceRequest, opts ...grpc.CallOption) (*ListDomainDataSourceResponse, error) {
+	out := new(ListDomainDataSourceResponse)
+	err := c.cc.Invoke(ctx, DomainDataSourceService_ListDomainDataSource_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DomainDataSourceServiceServer is the server API for DomainDataSourceService service.
 // All implementations must embed UnimplementedDomainDataSourceServiceServer
 // for forward compatibility
@@ -113,6 +124,7 @@ type DomainDataSourceServiceServer interface {
 	UpdateDomainDataSource(context.Context, *UpdateDomainDataSourceRequest) (*UpdateDomainDataSourceResponse, error)
 	DeleteDomainDataSource(context.Context, *DeleteDomainDataSourceRequest) (*DeleteDomainDataSourceResponse, error)
 	BatchQueryDomainDataSource(context.Context, *BatchQueryDomainDataSourceRequest) (*BatchQueryDomainDataSourceResponse, error)
+	ListDomainDataSource(context.Context, *ListDomainDataSourceRequest) (*ListDomainDataSourceResponse, error)
 	mustEmbedUnimplementedDomainDataSourceServiceServer()
 }
 
@@ -134,6 +146,9 @@ func (UnimplementedDomainDataSourceServiceServer) DeleteDomainDataSource(context
 }
 func (UnimplementedDomainDataSourceServiceServer) BatchQueryDomainDataSource(context.Context, *BatchQueryDomainDataSourceRequest) (*BatchQueryDomainDataSourceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchQueryDomainDataSource not implemented")
+}
+func (UnimplementedDomainDataSourceServiceServer) ListDomainDataSource(context.Context, *ListDomainDataSourceRequest) (*ListDomainDataSourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDomainDataSource not implemented")
 }
 func (UnimplementedDomainDataSourceServiceServer) mustEmbedUnimplementedDomainDataSourceServiceServer() {
 }
@@ -239,6 +254,24 @@ func _DomainDataSourceService_BatchQueryDomainDataSource_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DomainDataSourceService_ListDomainDataSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDomainDataSourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DomainDataSourceServiceServer).ListDomainDataSource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DomainDataSourceService_ListDomainDataSource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DomainDataSourceServiceServer).ListDomainDataSource(ctx, req.(*ListDomainDataSourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DomainDataSourceService_ServiceDesc is the grpc.ServiceDesc for DomainDataSourceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -265,6 +298,10 @@ var DomainDataSourceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchQueryDomainDataSource",
 			Handler:    _DomainDataSourceService_BatchQueryDomainDataSource_Handler,
+		},
+		{
+			MethodName: "ListDomainDataSource",
+			Handler:    _DomainDataSourceService_ListDomainDataSource_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

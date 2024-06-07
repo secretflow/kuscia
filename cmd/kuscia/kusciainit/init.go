@@ -11,6 +11,7 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
@@ -22,10 +23,13 @@ func NewInitCommand(ctx context.Context) *cobra.Command {
 		Long:         `Init means init Kuscia config`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if config.DomainID == common.UnSupportedDomainID {
+				nlog.Fatal("Input domain id can't be 'master', please choose another name")
+			}
 			kusciaConfig := config.convert2KusciaConfig()
 			out, err := yaml.Marshal(kusciaConfig)
 			if err != nil {
-				nlog.Fatalf("Invalid kusciaConfig, err: %v", err)
+				nlog.Fatalf("Failed to convert to YAML format, err: %v", err)
 			}
 
 			fmt.Println(string(out))
@@ -60,18 +64,47 @@ type InitConfig struct {
 
 func (config *InitConfig) convert2KusciaConfig() interface{} {
 	var kusciaConfig interface{}
+	if err := validateConfig(config); err != nil {
+		nlog.Fatalf("Invalid config, err: %v", err)
+	}
+
 	mode := strings.ToLower(config.Mode)
 	switch mode {
-	case "lite":
+	case common.RunModeLite:
 		kusciaConfig = config.convert2LiteKusciaConfig()
-	case "master":
+	case common.RunModeMaster:
 		kusciaConfig = config.convert2MasterKusciaConfig()
-	case "autonomy":
+	case common.RunModeAutonomy:
 		kusciaConfig = config.convert2AutonomyKusciaConfig()
 	default:
 		nlog.Fatalf("Unsupported mode: %s", mode)
 	}
 	return kusciaConfig
+}
+
+func validateConfig(config *InitConfig) error {
+	if len(config.DomainID) == 0 {
+		return fmt.Errorf("invalid domain: empty not allowed")
+	}
+
+	err := resources.ValidateK8sName(config.DomainID, "DomainID")
+	if err != nil {
+		return fmt.Errorf("invalid domain: must conform to a regular expression `%s`", common.K3sRegex)
+	}
+
+	// validate runtime
+	mode := strings.ToLower(config.Mode)
+	if mode != common.RunModeMaster {
+		if !isSupportedRuntime(config.Runtime) {
+			return fmt.Errorf("unsupported runtime: %s", config.Runtime)
+		}
+	}
+
+	if !isSupportedProtocol(config.Protocol) {
+		return fmt.Errorf("unsupported protocol: %s", config.Protocol)
+	}
+
+	return nil
 }
 
 func (config *InitConfig) convert2LiteKusciaConfig() confloader.LiteKusciaConfig {
@@ -141,4 +174,26 @@ func loadDomainKeyData(domainKeyFile string) (string, error) {
 		}
 	}
 	return domainKeyData, nil
+}
+
+func isSupportedRuntime(runtime string) bool {
+	switch runtime {
+	case "runc", "runk", "runp":
+		return true
+	default:
+		return false
+	}
+}
+
+func isSupportedProtocol(protocol string) bool {
+	if protocol == "" {
+		return true
+	}
+	protocol = strings.ToUpper(protocol)
+	switch common.Protocol(protocol) {
+	case common.NOTLS, common.TLS, common.MTLS:
+		return true
+	default:
+		return false
+	}
 }

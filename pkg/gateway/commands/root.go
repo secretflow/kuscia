@@ -62,7 +62,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	nlog.Infof("Start xds success")
 
 	var isMaster bool
-	var masterNamespace string
+	var masterConfig *config.MasterConfig
 
 	isMaster = gwConfig.MasterConfig.IsMaster()
 
@@ -85,7 +85,7 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 		}
 		nlog.Infof("[PROBE] success to probe master endpoint %s", gwConfig.MasterConfig.Endpoint)
 		var err error
-		if masterNamespace, err = ConnectToMaster(ctx, gwConfig, clients, afterRegisterHook); err != nil {
+		if masterConfig, err = ConnectToMaster(ctx, gwConfig, clients, afterRegisterHook); err != nil {
 			return err
 		}
 		nlog.Infof("Add master proxy clusters successfully")
@@ -139,14 +139,14 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	// start DomainRoute controller
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	drConfig := &controller.DomainRouteConfig{
-		Namespace:       gwConfig.DomainID,
-		MasterNamespace: masterNamespace,
-		IsMaster:        isMaster,
-		CAKey:           gwConfig.CAKey,
-		CACert:          gwConfig.CACert,
-		Prikey:          prikey,
-		PrikeyData:      priKeyData,
-		HandshakePort:   gwConfig.HandshakePort,
+		Namespace:     gwConfig.DomainID,
+		MasterConfig:  masterConfig,
+		IsMaster:      isMaster,
+		CAKey:         gwConfig.CAKey,
+		CACert:        gwConfig.CACert,
+		Prikey:        prikey,
+		PrikeyData:    priKeyData,
+		HandshakePort: gwConfig.HandshakePort,
 	}
 	drc := controller.NewDomainRouteController(drConfig, clients.KubeClient, clients.KusciaClient, drInformer)
 	go drc.Run(ctx, concurrentSyncs*2, ctx.Done())
@@ -174,11 +174,11 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	return nil
 }
 
-func ConnectToMaster(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients, afterRegisterHook controller.AfterRegisterDomainHook) (string, error) {
+func ConnectToMaster(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfig.KubeClients, afterRegisterHook controller.AfterRegisterDomainHook) (*config.MasterConfig, error) {
 	// load master proxy config
 	masterProxyConfig, err := config.LoadMasterProxyConfig(gwConfig.MasterConfig)
 	if err != nil {
-		return "", fmt.Errorf("load master proxy config faild, detail -> %v", err)
+		return nil, fmt.Errorf("load master proxy config faild, detail -> %v", err)
 	}
 	prikey := gwConfig.DomainKey
 	domainID := gwConfig.DomainID
@@ -186,28 +186,28 @@ func ConnectToMaster(ctx context.Context, gwConfig *config.GatewayConfig, client
 	// add master proxy Clusters
 	err = clusters.AddMasterProxyClusters(ctx, domainID, masterProxyConfig)
 	if err != nil {
-		return "", fmt.Errorf("add master clusters failed, detail-> %v", err)
+		return nil, fmt.Errorf("add master clusters failed, detail-> %v", err)
 	}
 	masterNamespace := masterProxyConfig.Namespace
 	// register domain cert to master
 	err = controller.RegisterDomain(domainID, pathPrefix, gwConfig.CsrData, prikey, afterRegisterHook)
 	if err != nil {
-		return "", fmt.Errorf("register self domain [%s] cert to master failed, detail -> %v", domainID, err)
+		return nil, fmt.Errorf("register self domain [%s] cert to master failed, detail -> %v", domainID, err)
 	}
 	// handshake to master
 	revisionToken, err := handshakeToMasterWithRetry(domainID, pathPrefix, prikey)
 	if err != nil {
-		return "", fmt.Errorf("handshake to master failed, detail -> %v", err)
+		return nil, fmt.Errorf("handshake to master failed, detail -> %v", err)
 	}
 	// check master proxy ready
 	if err := checkMasterProxyReady(ctx, domainID, clients.KubeClient); err != nil {
-		return "", fmt.Errorf("check MasterProxy failed, detail -> %v", err)
+		return nil, fmt.Errorf("check MasterProxy failed, detail -> %v", err)
 	}
 	// update domain route revision token
 	if err := controller.UpdateDomainRouteRevisionToken(clients.KusciaClient, domainID, common.GenDomainRouteName(domainID, masterNamespace), revisionToken); err != nil {
-		return "", fmt.Errorf("update domainroute revision token failed, detail -> %v", err)
+		return nil, fmt.Errorf("update domainroute revision token failed, detail -> %v", err)
 	}
-	return masterNamespace, nil
+	return masterProxyConfig, nil
 }
 
 func checkMasterProxyReady(ctx context.Context, domainID string, kubeClient kubernetes.Interface) error {

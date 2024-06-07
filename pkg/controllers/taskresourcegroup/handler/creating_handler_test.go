@@ -33,6 +33,7 @@ import (
 )
 
 func TestNewCreatingHandler(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -54,6 +55,7 @@ func TestNewCreatingHandler(t *testing.T) {
 }
 
 func TestCreatingHandlerHandle(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -67,6 +69,13 @@ func TestCreatingHandlerHandle(t *testing.T) {
 		common.TaskResourceGroupAnnotationKey: "trg",
 	}
 	trInformer.Informer().GetStore().Add(tr)
+
+	ns1 := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "ns1",
+		},
+	}
+	nsInformer.Informer().GetStore().Add(ns1)
 
 	deps := &Dependencies{
 		KubeClient:      kubeFakeClient,
@@ -113,6 +122,7 @@ func TestCreatingHandlerHandle(t *testing.T) {
 }
 
 func TestCreateTaskResources(t *testing.T) {
+	t.Parallel()
 	pod := st.MakePod().Namespace("ns1").Name("pod").Obj()
 	kubeFakeClient := clientsetfake.NewSimpleClientset(pod)
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
@@ -121,8 +131,14 @@ func TestCreateTaskResources(t *testing.T) {
 	podInformer := informerFactory.Core().V1().Pods()
 	nsInformer := informerFactory.Core().V1().Namespaces()
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
-
 	podInformer.Informer().GetStore().Add(pod)
+
+	ns1 := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "ns1",
+		},
+	}
+	nsInformer.Informer().GetStore().Add(ns1)
 
 	tr := util.MakeTaskResource("ns1", "tr", 2, nil)
 	tr.Annotations = map[string]string{
@@ -146,7 +162,7 @@ func TestCreateTaskResources(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "task resource is not exist",
+			name: "task resource does not exist",
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "trg",
@@ -181,6 +197,7 @@ func TestCreateTaskResources(t *testing.T) {
 }
 
 func TestBuildTaskResource(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -205,6 +222,13 @@ func TestBuildTaskResource(t *testing.T) {
 	}
 	pod1 := st.MakePod().Namespace("ns1").Name("pod1").Containers(containers).Obj()
 	podInformer.Informer().GetStore().Add(pod1)
+
+	ns1 := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "ns1",
+		},
+	}
+	nsInformer.Informer().GetStore().Add(ns1)
 
 	deps := &Dependencies{
 		KubeClient:      kubeFakeClient,
@@ -285,6 +309,7 @@ func TestBuildTaskResource(t *testing.T) {
 }
 
 func TestFindPartyTaskResource(t *testing.T) {
+	t.Parallel()
 	party := kusciaapisv1alpha1.TaskResourceGroupParty{
 		DomainID: "ns1",
 		Pods: []kusciaapisv1alpha1.TaskResourceGroupPartyPod{
@@ -353,6 +378,7 @@ func TestFindPartyTaskResource(t *testing.T) {
 }
 
 func TestGetMinReservedPods(t *testing.T) {
+	t.Parallel()
 	party1 := &kusciaapisv1alpha1.TaskResourceGroupParty{
 		DomainID:        "ns1",
 		MinReservedPods: 2,
@@ -407,6 +433,7 @@ func TestGetMinReservedPods(t *testing.T) {
 }
 
 func TestGenerateTaskResourceName(t *testing.T) {
+	t.Parallel()
 	trName := generateTaskResourceName("tr")
 	ret := strings.Split(trName, "-")
 	if len(ret) != 2 {

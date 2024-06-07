@@ -28,6 +28,7 @@ import (
 )
 
 func TestNewFailedHandler(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	trInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResources()
@@ -44,6 +45,7 @@ func TestNewFailedHandler(t *testing.T) {
 }
 
 func TestFailedHandlerHandle(t *testing.T) {
+	t.Parallel()
 	tr1 := util.MakeTaskResource("ns1", "tr1", 2, nil)
 	tr1.Annotations = map[string]string{
 		common.TaskResourceGroupAnnotationKey: "trg1",

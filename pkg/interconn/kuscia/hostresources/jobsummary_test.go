@@ -40,6 +40,7 @@ func makeMockJobSummary(namespace, name string) *v1alpha1.KusciaJobSummary {
 }
 
 func TestHandleUpdatedJobSummary(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	opt := &hostResourcesControllerOptions{
 		host:               "alice",
@@ -92,6 +93,7 @@ func TestHandleUpdatedJobSummary(t *testing.T) {
 }
 
 func TestUpdateMemberJobByJobSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kj := makeMockJob("cross-domain", "kj-1")
 	kj.Annotations[common.InterConnSelfPartyAnnotationKey] = "bob"
@@ -112,10 +114,10 @@ func TestUpdateMemberJobByJobSummary(t *testing.T) {
 		t.Error("new controller failed")
 	}
 
-	// member job doesn't exist, should return err
+	// member job doesn't exist, should return nil
 	kjs := makeMockJobSummary("bob", "kj-2")
 	got := c.updateMemberJobByJobSummary(ctx, kjs)
-	assert.Equal(t, true, got != nil)
+	assert.Equal(t, nil, got)
 
 	// self cluster party domain id is empty in job, should return nil
 	kjs = makeMockJobSummary("bob", "kj-1")

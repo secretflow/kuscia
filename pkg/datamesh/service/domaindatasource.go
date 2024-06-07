@@ -28,12 +28,12 @@ import (
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 const (
@@ -137,7 +137,7 @@ func (s domainDataSourceService) QueryDomainDataSource(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("QueryDomainDataSource failed, error:%s", err.Error())
 		return &datamesh.QueryDomainDataSourceResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataSource, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrQueryDomainDataSource, err.Error()),
 		}
 	}
 
@@ -145,20 +145,20 @@ func (s domainDataSourceService) QueryDomainDataSource(ctx context.Context, requ
 		info, err = s.getDsInfoByKey(ctx, kusciaDomainDataSource.Spec.Type, kusciaDomainDataSource.Spec.InfoKey)
 		if err != nil {
 			return &datamesh.QueryDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataSource, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrQueryDomainDataSource, err.Error()),
 			}
 		}
 	} else {
 		encryptedInfo, exist := kusciaDomainDataSource.Spec.Data[encryptedInfo]
 		if !exist {
 			return &datamesh.QueryDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataSource, "datasource crd encryptedInfo field is not exist"),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrQueryDomainDataSource, "datasource crd encryptedInfo field is not exist"),
 			}
 		}
 		info, err = s.decryptInfo(encryptedInfo)
 		if err != nil {
 			return &datamesh.QueryDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataSource, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrQueryDomainDataSource, err.Error()),
 			}
 		}
 	}
@@ -183,7 +183,7 @@ func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType 
 	response := s.configurationService.QueryConfiguration(ctx, &confmanager.QueryConfigurationRequest{
 		Ids: []string{infoKey},
 	}, s.conf.KubeNamespace)
-	if response.Status.Code != utils.ResponseCodeSuccess {
+	if !utils.IsSuccessCode(response.Status.Code) {
 		nlog.Errorf("Query info key failed, code: %d, message: %s", response.Status.Code, response.Status.Message)
 		return nil, fmt.Errorf("query info key failed")
 	}

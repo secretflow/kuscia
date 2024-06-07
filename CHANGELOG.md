@@ -15,6 +15,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Security` in case of vulnerabilities.
 `Breaking Changed` Breaking for backward-incompatible changes that require user intervention.
 
+## [v0.10.0.dev240531] - 2024-05-31
+
+### Added
+[Feature] domainRoute now supports setting prefix paths
+[Feature] kuscia job now supports multiple parties (1 party , 2 parties , 3 parties)
+[Feature] appImage's mountPath now supports relative paths
+[Feature] Support for setting DomainRoute reverse tunnel mode through the Kuscia API
+[Feature] Support for PKCS 8 format certificates
+[Feature] Added DataSource List API to KusciaAPI. KusciaAPI Master side supports Query and List DataSource but does not display sensitive information.
+
+### Changed
+[Documentation] Correct description of monitoring metrics in the Kuscia metric documentation
+[scripts] During kuscia init, check that the node ID cannot be master
+[Feature] Remove the trailing "/" from the RelatedURI field when creating domainData via KusciaAPI
+[Feature] Added heartbeat time check to domainRoute, setting it to not ready if it exceeds the threshold
+[Feature] Moved error code definitions in the code to Protobuf
+
+### Breaking Changed
+[NA]
+
+### Fixed
+[Bugfix] Fixed the issue of port conflicts in runp serving multi-replica
+[Bugfix] Fixed the issue of state anomalies being caused by multiple executions of kusciaJob stop and restart
+[Unit Test] Improved the stability and concurrency of unit tests
+
 ## [v0.9.0.dev240430] - 2024-04-30
 
 ### Added

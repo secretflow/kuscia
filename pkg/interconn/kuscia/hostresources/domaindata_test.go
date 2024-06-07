@@ -40,6 +40,7 @@ func makeMockDomainData(namespace, name string) *kusciaapisv1alpha1.DomainData {
 }
 
 func TestHandleUpdatedDomainData(t *testing.T) {
+	t.Parallel()
 	opt := &hostResourcesControllerOptions{
 		host:   "alice",
 		member: "bob",
@@ -90,6 +91,7 @@ func TestHandleUpdatedDomainData(t *testing.T) {
 }
 
 func TestHandleDeletedDomainData(t *testing.T) {
+	t.Parallel()
 	opt := &hostResourcesControllerOptions{
 		host:   "alice",
 		member: "bob",
@@ -117,6 +119,7 @@ func TestHandleDeletedDomainData(t *testing.T) {
 }
 
 func TestDeleteDomainData(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -151,6 +154,7 @@ func TestDeleteDomainData(t *testing.T) {
 }
 
 func TestCreateDomainData(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -179,6 +183,7 @@ func TestCreateDomainData(t *testing.T) {
 }
 
 func TestUpdateDomainData(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	dd := makeMockDomainData("bob", "dd")
 	kusciaFakeClient := fake.NewSimpleClientset(dd)

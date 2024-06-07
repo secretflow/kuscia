@@ -49,7 +49,7 @@ func createCrtString(t *testing.T) (*rsa.PrivateKey, string) {
 	assert.NoError(t, err)
 	testCrt, err := io.ReadAll(f)
 	assert.NoError(t, err)
-	priKey, err := tls.ParsePKCS1PrivateKey(caKeyFile)
+	priKey, err := tls.ParseRSAPrivateKeyFile(caKeyFile)
 	assert.NoError(t, err)
 	return priKey, base64.StdEncoding.EncodeToString(testCrt)
 }

@@ -29,6 +29,7 @@ import (
 )
 
 func TestHandleAddedorDeletedInteropConfig(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -44,6 +45,7 @@ func TestHandleAddedorDeletedInteropConfig(t *testing.T) {
 }
 
 func TestHandleUpdatedInteropConfig(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -91,6 +93,7 @@ func TestHandleUpdatedInteropConfig(t *testing.T) {
 }
 
 func TestRegisterInteropConfig(t *testing.T) {
+	t.Parallel()
 	hostKubeFakeClient := clientsetfake.NewSimpleClientset()
 	hostKusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	hostresources.GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, error) {
@@ -168,6 +171,7 @@ func TestRegisterInteropConfig(t *testing.T) {
 }
 
 func TestDeregisterInteropConfig(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -219,6 +223,7 @@ func TestDeregisterInteropConfig(t *testing.T) {
 }
 
 func TestGetInteropConfigInfo(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -266,6 +271,7 @@ func TestGetInteropConfigInfo(t *testing.T) {
 }
 
 func TestSetInteropConfigInfo(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -300,6 +306,7 @@ func TestSetInteropConfigInfo(t *testing.T) {
 }
 
 func TestDeleteInteropConfigInfo(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
