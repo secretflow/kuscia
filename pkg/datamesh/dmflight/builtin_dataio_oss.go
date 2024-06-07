@@ -30,6 +30,8 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
+const minio string = "minio"
+
 // BuiltinOssIO defined the oss read & write methond
 type BuiltinOssIO struct {
 	batchReadSize int
@@ -46,9 +48,9 @@ func (o *BuiltinOssIO) newOssSession(config *datamesh.OssDataSourceInfo) (*s3.S3
 	nlog.Debugf("Open oss remote endpoint(%s), bucket(%s)", config.Endpoint, config.Bucket)
 	pathStyle := aws.Bool(false)
 	region := ""
-	if strings.ToLower(config.StorageType) == "minio" {
+	if strings.ToLower(config.StorageType) == minio {
 		pathStyle = aws.Bool(true)
-		region = "minio"
+		region = minio
 	} else {
 		region, _ = ParseRegionFromEndpoint(config.Endpoint)
 	}

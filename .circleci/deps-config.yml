@@ -40,26 +40,23 @@ commands:
           name: "install go"
           command: |
             ARCH=$(uname -m)
-            if [ "$ARCH" == "aarch64" ]; then
-            set +e
-            ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
-            ln -sf /usr/bin/bash /bin/sh
-            yum update -y
-            yum install -y  wget make cmake git curl unzip gcc perl-IPC-Cmd
-            GOLANG_DIR="/usr/local"
+            case "$ARCH" in
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
+            esac
+
+            GOLANG_DIR="/opt"
             GOLANG_VERSION="1.19.7"
-            GOLANG_URL="https://golang.google.cn/dl/go${GOLANG_VERSION}.linux-arm64.tar.gz"
-            apt-get update
-            apt-get install -y docker.io
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
             wget "$GOLANG_URL"
-            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-arm64.tar.gz"
-            export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-            echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' | tee -a ~/.bashrc
-            echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> $BASH_ENV
-            set -e
-            fi
+
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/opt/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
+            source ~/.bashrc
             fi
       - run:
           name: "make build"

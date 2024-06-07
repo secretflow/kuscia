@@ -47,15 +47,15 @@ func initLocalFileDataIOTestRequestContext(t *testing.T, filename string, isQuer
 
 	// init ok
 	registLocalFileDomainDataSource(t, conf, common.DefaultDataSourceID)
-	domainDataId := registDomainData(t, conf, common.DefaultDataSourceID, filename)
+	domainDataID := registDomainData(t, conf, common.DefaultDataSourceID, filename)
 	var msg protoreflect.ProtoMessage
 	if isQuery {
 		msg = &datamesh.CommandDomainDataQuery{
-			DomaindataId: domainDataId,
+			DomaindataId: domainDataID,
 		}
 	} else {
 		msg = &datamesh.CommandDomainDataUpdate{
-			DomaindataId: domainDataId,
+			DomaindataId: domainDataID,
 		}
 	}
 	ctx, err := NewDataMeshRequestContext(domainDataService, datasourceService, msg)

@@ -190,9 +190,9 @@ func TestGetFlightInf_DataSource_Invalidate(t *testing.T) {
 	assert.NotNil(t, svr)
 
 	// datasource not registed
-	domainDataId := registDomainData(t, conf, "test-datasouce", filename)
+	domainDataID := registDomainData(t, conf, "test-datasouce", filename)
 	desc, err := DescForCommand(&datamesh.CommandDomainDataQuery{
-		DomaindataId: domainDataId,
+		DomaindataId: domainDataID,
 	})
 	assert.NoError(t, err)
 	info, err := svr.GetFlightInfo(context.Background(), desc)
@@ -242,9 +242,9 @@ func TestGetFlightInf_Success(t *testing.T) {
 	assert.NotNil(t, svr)
 
 	registLocalFileDomainDataSource(t, conf, common.DefaultDataSourceID)
-	domainDataId := registDomainData(t, conf, common.DefaultDataSourceID, filename)
+	domainDataID := registDomainData(t, conf, common.DefaultDataSourceID, filename)
 	desc, err := DescForCommand(&datamesh.CommandDomainDataQuery{
-		DomaindataId: domainDataId,
+		DomaindataId: domainDataID,
 	})
 	assert.NoError(t, err)
 	info, err := svr.GetFlightInfo(context.Background(), desc)
@@ -270,7 +270,7 @@ func TestGetFlightInf_Success(t *testing.T) {
 	assert.NotNil(t, rc)
 	assert.NotNil(t, rc.query)
 	assert.NotNil(t, rc.io)
-	assert.Equal(t, domainDataId, rc.query.DomaindataId)
+	assert.Equal(t, domainDataID, rc.query.DomaindataId)
 }
 
 func TestDoGet_InvalidateTicket(t *testing.T) {

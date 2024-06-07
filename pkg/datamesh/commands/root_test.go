@@ -64,7 +64,7 @@ func newDataMeshTestConfig() *config.DataMeshConfig {
 	return conf
 }
 
-func isTcpPortOpened(address string, timeout time.Duration) bool {
+func isTCPPortOpened(address string, timeout time.Duration) bool {
 	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
 		return false
@@ -87,7 +87,7 @@ func TestFlightServerStartup(t *testing.T) {
 	grpcAddress := fmt.Sprintf("127.0.0.1:%d", conf.GRPCPort)
 
 	assert.NoError(t, wait.Poll(time.Millisecond*100, time.Second, func() (bool, error) {
-		return isTcpPortOpened(grpcAddress, time.Millisecond*20), nil
+		return isTCPPortOpened(grpcAddress, time.Millisecond*20), nil
 	}))
 
 	toc, c1 := context.WithTimeout(ctx, time.Millisecond*100)
@@ -115,7 +115,7 @@ func TestFlightServer_GetFlightInfo_Query_DOGET(t *testing.T) {
 	grpcAddress := fmt.Sprintf("127.0.0.1:%d", conf.GRPCPort)
 
 	assert.NoError(t, wait.Poll(time.Millisecond*100, time.Second, func() (bool, error) {
-		return isTcpPortOpened(grpcAddress, time.Millisecond*20), nil
+		return isTCPPortOpened(grpcAddress, time.Millisecond*20), nil
 	}))
 
 	randstr := md5.Sum([]byte(uuid.New().String()))

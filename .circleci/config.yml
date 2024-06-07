@@ -37,7 +37,7 @@ executors:
     shell: /bin/bash --login -eo pipefail
 
 commands:
-  go_env:
+  test:
     steps:
       - checkout
       - setup_remote_docker
@@ -45,42 +45,50 @@ commands:
           name: "install go"
           command: |
             ARCH=$(uname -m)
+            case "$ARCH" in
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
+            esac
 
-            if [ "$ARCH" == "aarch64" ]; then
-            ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
-            ln -sf /usr/bin/bash /bin/sh
-            yum update -y
-            yum install -y  wget make cmake git curl unzip gcc perl-IPC-Cmd
             GOLANG_DIR="/usr/local"
             GOLANG_VERSION="1.19.7"
-            GOLANG_URL="https://golang.google.cn/dl/go${GOLANG_VERSION}.linux-arm64.tar.gz"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
             wget "$GOLANG_URL"
-            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-arm64.tar.gz"
-            export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-            echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' | tee -a ~/.bashrc
-            echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> $BASH_ENV
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
+            source ~/.bashrc
             fi
-            fi
-  test:
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: "Install the go module"
-          command: |
-            go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
-            go install github.com/t-yuki/gocover-cobertura@latest
-            go install github.com/jstemmer/go-junit-report/v2@latest
-            go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
       - run:
           name: Test Kuscia
           command: make test
   build_kuscia:
     steps:
       - setup_remote_docker
-      - checkout
+      - run:
+          name: "install go"
+          command: |
+            ARCH=$(uname -m)
+            case "$ARCH" in
+            x86_64) ARCH="amd64";;
+            aarch64) ARCH="arm64";;
+            *) echo "Unsupported architecture"; exit 1;;
+            esac
+
+            GOLANG_DIR="/usr/local"
+            GOLANG_VERSION="1.19.7"
+            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+
+            if ! command -v go &> /dev/null; then
+            wget "$GOLANG_URL"
+            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
+            echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
+            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
+            source ~/.bashrc
+            fi
       - run:
           name: "make build"
           command: |
@@ -98,7 +106,6 @@ jobs:
     executor: <<parameters.executor>>
     steps:
       - checkout
-      - go_env
       - test
   linux_build_kuscia:
     parameters:
@@ -107,7 +114,6 @@ jobs:
     executor: <<parameters.executor>>
     steps:
       - checkout
-      - go_env
       - build_kuscia
   image_publish:
     docker:
@@ -160,16 +166,7 @@ workflows:
           - << pipeline.parameters.GHA_Action >>
           - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
           - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
-    filters:
-      branches:
-        ignore: /.*/
-      tags:
-        only: /^v.*/
     jobs:
-      - unit-test:
-          matrix:
-            parameters:
-              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - linux_build_kuscia:
           matrix:
             parameters:
@@ -177,6 +174,11 @@ workflows:
       - image_publish:
           requires:
             - linux_build_kuscia
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
   build-kuscia-deps-workflow:
     when:
       equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]

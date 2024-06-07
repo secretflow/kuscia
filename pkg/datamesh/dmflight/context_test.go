@@ -48,26 +48,26 @@ func initContextTestEnv(t *testing.T) *config.DataMeshConfig {
 	return conf
 }
 
-func registDomainData(t *testing.T, conf *config.DataMeshConfig, dsId, pathName string) string {
-	domainDataId := "data-" + uuid.New().String()
+func registDomainData(t *testing.T, conf *config.DataMeshConfig, dsID, pathName string) string {
+	domainDataID := "data-" + uuid.New().String()
 	_, err := conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Create(context.Background(), &v1alpha1.DomainData{
 		ObjectMeta: v1.ObjectMeta{
-			Name: domainDataId,
+			Name: domainDataID,
 		},
 		Spec: v1alpha1.DomainDataSpec{
 			RelativeURI: pathName,
-			Name:        domainDataId,
+			Name:        domainDataID,
 			Type:        "RAW",
-			DataSource:  dsId,
+			DataSource:  dsID,
 			Author:      conf.KubeNamespace,
 		},
 	}, v1.CreateOptions{})
 	assert.NoError(t, err)
 
-	return domainDataId
+	return domainDataID
 }
 
-func registLocalFileDomainDataSource(t *testing.T, conf *config.DataMeshConfig, dsId string) {
+func registLocalFileDomainDataSource(t *testing.T, conf *config.DataMeshConfig, dsID string) {
 	lfs, err := json.Marshal(&datamesh.DataSourceInfo{
 		Localfs: &datamesh.LocalDataSourceInfo{
 			Path: "/tmp/var",
@@ -79,7 +79,7 @@ func registLocalFileDomainDataSource(t *testing.T, conf *config.DataMeshConfig, 
 
 	_, err = conf.KusciaClient.KusciaV1alpha1().DomainDataSources(conf.KubeNamespace).Create(context.Background(), &v1alpha1.DomainDataSource{
 		ObjectMeta: v1.ObjectMeta{
-			Name: dsId,
+			Name: dsID,
 		},
 		Spec: v1alpha1.DomainDataSourceSpec{
 			Name: dsId,
@@ -152,9 +152,9 @@ func TestGetDataSourceType(t *testing.T) {
 	assert.Equal(t, "", dsType)
 
 	// init ok
-	domainDataId := registDomainData(t, conf, common.DefaultDataSourceID, "localtest.txt")
+	domainDataID := registDomainData(t, conf, common.DefaultDataSourceID, "localtest.txt")
 	ctx, err = NewDataMeshRequestContext(domainDataService, datasourceService, &datamesh.CommandDomainDataQuery{
-		DomaindataId: domainDataId,
+		DomaindataId: domainDataID,
 	})
 
 	assert.NoError(t, err)

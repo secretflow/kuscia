@@ -212,10 +212,10 @@ func TestSessionDeadSessionID(t *testing.T) {
 	assert.NoError(t, wait.Poll(time.Millisecond*100, time.Second*5, func() (bool, error) {
 		sm.Lock()
 		defer sm.Unlock()
-		_, s_exists := sm.sessions["session1"]
-		_, i_exists := sm.deadSessionIDs.sids["session1"]
-		assert.False(t, s_exists && i_exists) // session can't both in sessions and deadsessions
-		return !(s_exists || i_exists), nil
+		_, sExists := sm.sessions["session1"]
+		_, iExists := sm.deadSessionIDs.sids["session1"]
+		assert.False(t, sExists && iExists) // session can't both in sessions and deadsessions
+		return !(sExists || iExists), nil
 	}))
 
 	// sesssion is dead, so can push message again

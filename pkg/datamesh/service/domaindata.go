@@ -239,7 +239,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 
 func (s domainDataService) DeleteDomainData(ctx context.Context, request *datamesh.DeleteDomainDataRequest) *datamesh.DeleteDomainDataResponse {
 	// record the delete operation
-	nlog.Warnf("Delete domainDataId %s", request.DomaindataId)
+	nlog.Warnf("Delete domainDataID %s", request.DomaindataId)
 	// delete kuscia domainData
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {

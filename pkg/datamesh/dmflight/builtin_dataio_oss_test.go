@@ -38,7 +38,7 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
-func registOssDomainDataSource(t *testing.T, conf *config.DataMeshConfig, dsId string) {
+func registOssDomainDataSource(t *testing.T, conf *config.DataMeshConfig, dsID string) {
 	lfs, err := json.Marshal(&datamesh.DataSourceInfo{
 		Oss: &datamesh.OssDataSourceInfo{
 			Endpoint: "",
@@ -51,10 +51,10 @@ func registOssDomainDataSource(t *testing.T, conf *config.DataMeshConfig, dsId s
 
 	_, err = conf.KusciaClient.KusciaV1alpha1().DomainDataSources(conf.KubeNamespace).Create(context.Background(), &v1alpha1.DomainDataSource{
 		ObjectMeta: v1.ObjectMeta{
-			Name: dsId,
+			Name: dsID,
 		},
 		Spec: v1alpha1.DomainDataSourceSpec{
-			Name: dsId,
+			Name: dsID,
 			Type: "oss",
 			Data: map[string]string{
 				"encryptedInfo": strConfig,
@@ -75,15 +75,15 @@ func initOssDataIOTestRequestContext(t *testing.T, filename string, isQuery bool
 
 	// init ok
 	registOssDomainDataSource(t, conf, "oss-data-source")
-	domainDataId := registDomainData(t, conf, "oss-data-source", filename)
+	domainDataID := registDomainData(t, conf, "oss-data-source", filename)
 	var msg protoreflect.ProtoMessage
 	if isQuery {
 		msg = &datamesh.CommandDomainDataQuery{
-			DomaindataId: domainDataId,
+			DomaindataId: domainDataID,
 		}
 	} else {
 		msg = &datamesh.CommandDomainDataUpdate{
-			DomaindataId: domainDataId,
+			DomaindataId: domainDataID,
 		}
 	}
 	ctx, err := NewDataMeshRequestContext(domainDataService, datasourceService, msg)

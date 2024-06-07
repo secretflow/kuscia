@@ -104,7 +104,7 @@ func TestBuildCgroupResource(t *testing.T) {
 	tests := []struct {
 		runtime               string
 		reservedResCfg        *config.ReservedResourcesCfg
-		wantCpuAvailable      int64
+		wantCPUAvailable      int64
 		wantMemAvailable      int64
 		wantCgroupCPUQuota    int64
 		wantCgroupCPUPeriod   int64
@@ -127,7 +127,7 @@ func TestBuildCgroupResource(t *testing.T) {
 
 		err := pa.buildCgroupResource(tt.runtime, tt.reservedResCfg)
 		assert.Nil(t, err)
-		assert.Equal(t, tt.wantCpuAvailable, pa.cpuAvailable.Value())
+		assert.Equal(t, tt.wantCPUAvailable, pa.cpuAvailable.Value())
 		assert.Equal(t, tt.wantMemAvailable, pa.memAvailable.Value())
 		assert.Equal(t, tt.wantCgroupCPUQuota, pointerToInt64(pa.cgroupCPUQuota))
 		assert.Equal(t, tt.wantCgroupCPUPeriod, pointerToUint64(pa.cgroupCPUPeriod))
