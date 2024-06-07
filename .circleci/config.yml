@@ -145,10 +145,9 @@ jobs:
 workflows:
   build-workflow:
     when:
-      not:
-        or:
-          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+      and:
+        - not: << pipeline.parameters.GHA_Action >>
+        - not: << pipeline.parameters.GHA_Meta >>
     jobs:
       - unit-test:
           matrix:
@@ -158,11 +157,15 @@ workflows:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+          filters:
+            branches:
+              only:
+                - main
+                - release/*
       - image_publish:
           filters:
             tags:
-              only:
-                - v*
+              only: /.*/
           requires:
             - linux_build_kuscia
   build-kuscia-deps-workflow:
