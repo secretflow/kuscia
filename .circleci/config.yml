@@ -166,10 +166,6 @@ workflows:
       tags:
         only: /^v.*/
     jobs:
-      - unit-test:
-          matrix:
-            parameters:
-              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - linux_build_kuscia:
           matrix:
             parameters:
