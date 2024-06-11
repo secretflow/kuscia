@@ -42,7 +42,7 @@ commands:
       - checkout
       - setup_remote_docker
       - run:
-          name: Test Kuscia
+          name: "kuscia test"
           command: make test
   build_kuscia:
     steps:
