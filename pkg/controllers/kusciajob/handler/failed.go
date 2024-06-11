@@ -17,8 +17,6 @@ package handler
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciajob/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -41,36 +39,20 @@ func (h *FailedHandler) HandlePhase(job *kusciaapisv1alpha1.KusciaJob) (needUpda
 	now := metav1.Now().Rfc3339Copy()
 	// handle stage command, check if the stage command matches the phase of job
 	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return true, err
-	}
-	allTaskFinished := true
-	for taskID, phase := range job.Status.TaskStatus {
-		if phase != kusciaapisv1alpha1.TaskFailed && phase != kusciaapisv1alpha1.TaskSucceeded {
-			task, err := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
-			if err != nil {
-				nlog.Warnf("Get kuscia task %v failed, %v", taskID, err)
-				job.Status.TaskStatus[taskID] = kusciaapisv1alpha1.TaskFailed
-				needUpdate = true
-				continue
-			}
-
-			if task.Status.Phase != kusciaapisv1alpha1.TaskFailed && task.Status.Phase != kusciaapisv1alpha1.TaskSucceeded {
-				allTaskFinished = false
-			}
-
-			if phase != task.Status.Phase {
-				job.Status.TaskStatus[taskID] = task.Status.Phase
-				needUpdate = true
-			}
-		}
+		return hasReconciled, err
 	}
 
-	if allTaskFinished {
-		if job.Status.CompletionTime == nil {
-			job.Status.CompletionTime = &now
-			needUpdate = true
-			metrics.JobResultStats.WithLabelValues(metrics.Failed).Inc()
-		}
+	if job.Status.CompletionTime != nil {
+		return false, nil
 	}
-	return needUpdate, nil
+
+	// stop the running task
+	if err = h.stopTasks(now, job); err != nil {
+		nlog.Errorf("Stop 'runnning' task of job: %s failed, error: %s.", job.Name, err.Error())
+		return false, err
+	}
+
+	setRunningTaskStatusToFailed(&job.Status)
+	job.Status.CompletionTime = &now
+	return true, nil
 }

@@ -67,9 +67,28 @@ func NewAgent(i *Dependencies) Module {
 	conf.AllowPrivileged = i.Agent.AllowPrivileged
 	conf.Provider.CRI.RemoteImageEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Provider.CRI.RemoteRuntimeEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
-	conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
-	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
-	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
+
+	if i.Image != nil && len(i.Image.Registries) > 0 {
+		defaultRegIdx := 0 // use first registry as default registry
+		for idx, reg := range i.Image.Registries {
+			nlog.Infof("registry(%s), endpoint(%s)", reg.Name, reg.Endpoint)
+			conf.Registry.Allows = append(conf.Registry.Allows, config.RegistryAuth{
+				Repository: reg.Endpoint,
+				Username:   reg.UserName,
+				Password:   reg.Password,
+			})
+
+			if i.Image.DefaultRegistry == reg.Name {
+				defaultRegIdx = idx
+			}
+		}
+
+		conf.Registry.Default = conf.Registry.Allows[defaultRegIdx]
+	} else { // deprecated. remove it 1year later
+		conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
+		conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
+		conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
+	}
 	conf.Plugins = i.Agent.Plugins
 
 	conf.KusciaAPIProtocol = i.KusciaAPI.Protocol

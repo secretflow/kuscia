@@ -39,7 +39,7 @@ func NewMessageByRandomStr(l int) *Message {
 }
 
 func TestTopicQueue(t *testing.T) {
-	queue := NewTopicQueue("topic1")
+	queue := NewTopicQueue("topic1", 5)
 	msg1 := NewMessageByStr("hi")
 	msg2 := NewMessageByStr("world")
 	queue.Push(msg1)

@@ -115,5 +115,6 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		modules.SetKusciaOOMScore()
 	}
 	conf.WaitAllModulesDone(ctx.Done())
+	nlog.Errorf("Master [%s] shut down......", kusciaConf.DomainID)
 	return nil
 }

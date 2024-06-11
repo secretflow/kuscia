@@ -29,10 +29,10 @@ func NewMessage(msg []byte) *Message {
 	}
 }
 
-func NewTopicQueue(topic string) *Topic {
+func NewTopicQueue(topic string, topicQueueCapacity int) *Topic {
 	return &Topic{
 		ByteSize: 0,
-		queue:    make([]*Message, 0, config.TopicQueueCapacity),
+		queue:    make([]*Message, 0, topicQueueCapacity),
 	}
 }
 

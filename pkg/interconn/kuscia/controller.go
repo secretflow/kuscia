@@ -355,7 +355,6 @@ func (c *Controller) Run(workers int) error {
 	}()
 
 	c.hostResourceManager.SetWorkers(workers)
-
 	nlog.Infof("Starting %v", c.Name())
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 
@@ -370,6 +369,14 @@ func (c *Controller) Run(workers int) error {
 		return fmt.Errorf("failed to wait for cache sync for %v", c.Name())
 	}
 	c.registerInteropConfigs()
+	for {
+		if c.hostResourceManager.HasSynced() {
+			nlog.Info("Host resource manager finish syncing resources")
+			break
+		}
+		nlog.Info("Waiting for host resource manager to sync resources...")
+		time.Sleep(2 * time.Second)
+	}
 
 	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())
 	for i := 0; i < workers; i++ {

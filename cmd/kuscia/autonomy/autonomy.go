@@ -95,9 +95,12 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 			modules.RunEnvoyWithDestroy(conf)
 		}()
 		wg.Wait()
-		modules.RunKusciaAPIWithDestroy(conf)
-		modules.RunAgentWithDestroy(conf)
+
 		modules.RunConfManagerWithDestroy(conf)
+		// Kuscia API module need to start after Conf Manager module
+		modules.RunKusciaAPIWithDestroy(conf)
+		// Agent module need to start after Kuscia API module
+		modules.RunAgentWithDestroy(conf)
 		modules.RunDataMeshWithDestroy(conf)
 		modules.RunTransportWithDestroy(conf)
 		modules.RunNodeExporterWithDestroy(conf)
@@ -108,5 +111,6 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		modules.SetKusciaOOMScore()
 	}
 	conf.WaitAllModulesDone(ctx.Done())
+	nlog.Errorf("Autonomy [%s] shut down......", kusciaConf.DomainID)
 	return nil
 }

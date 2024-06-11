@@ -38,40 +38,72 @@ import (
 )
 
 const (
-	RsaPrivateKey = "RSA PRIVATE KEY"
-	RsaPublicKey  = "RSA PUBLIC KEY"
+	RsaPKCS1PrivateKey = "RSA PRIVATE KEY"
+	RsaPKCS8PrivateKey = "PRIVATE KEY"
+	RsaPKCS1PublicKey  = "RSA PUBLIC KEY"
+	RsaPKCS8PublicKey  = "PUBLIC KEY"
+	CERTIFICATE        = "CERTIFICATE"
 )
 
-func ParsePKCS1PrivateKeyData(data []byte) (*rsa.PrivateKey, error) {
+func ParseRSAPrivateKeyData(data []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(data)
-	if block == nil || block.Type != RsaPrivateKey {
+	if block == nil {
 		return nil, fmt.Errorf("invalid private key, should be PEM block format")
 	}
-
-	return x509.ParsePKCS1PrivateKey(block.Bytes)
+	switch block.Type {
+	case RsaPKCS1PrivateKey:
+		return x509.ParsePKCS1PrivateKey(block.Bytes)
+	case RsaPKCS8PrivateKey:
+		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		rsaPriKey, ok := key.(*rsa.PrivateKey)
+		if !ok {
+			return nil, fmt.Errorf("invalid PKCS8 private key")
+		}
+		return rsaPriKey, nil
+	default:
+		return nil, fmt.Errorf("private key type [%s] not supported, must be RSA", block.Type)
+	}
 }
 
-func ParsePKCS1PrivateKey(serverKey string) (*rsa.PrivateKey, error) {
+func ParseRSAPrivateKeyFile(serverKey string) (*rsa.PrivateKey, error) {
 	priPemData, err := os.ReadFile(serverKey)
 	if err != nil {
 		return nil, err
 	}
-
-	return ParsePKCS1PrivateKeyData(priPemData)
+	return ParseRSAPrivateKeyData(priPemData)
 }
 
-func ParsePKCS1PublicKey(der []byte) (*rsa.PublicKey, error) {
+func ParseRSAPublicKey(der []byte) (*rsa.PublicKey, error) {
 	if len(der) == 0 {
 		return nil, fmt.Errorf("public key is empty")
 	}
 	block, _ := pem.Decode(der)
-	if block == nil || block.Type != RsaPublicKey {
+	if block == nil {
 		return nil, fmt.Errorf("public key should be PEM block format")
 	}
-	return x509.ParsePKCS1PublicKey(block.Bytes)
+	blockType := block.Type
+	switch blockType {
+	case RsaPKCS1PublicKey:
+		return x509.ParsePKCS1PublicKey(block.Bytes)
+	case RsaPKCS8PublicKey:
+		pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		rsaPubKey, ok := pubKey.(*rsa.PublicKey)
+		if !ok {
+			return nil, fmt.Errorf("invalid PKCS8 public key")
+		}
+		return rsaPubKey, nil
+	default:
+		return nil, fmt.Errorf("public key type [%s] not supported, must be RSA", block.Type)
+	}
 }
 
-func ParsePKCS1CertData(data []byte) (*x509.Certificate, error) {
+func ParseCertData(data []byte) (*x509.Certificate, error) {
 	certBlock, _ := pem.Decode(data)
 	if certBlock == nil {
 		return nil, fmt.Errorf("format error, must be cert")
@@ -79,22 +111,53 @@ func ParsePKCS1CertData(data []byte) (*x509.Certificate, error) {
 	return x509.ParseCertificate(certBlock.Bytes)
 }
 
-func ParsePKCS1CertFromFile(caFilePath string) (*x509.Certificate, error) {
+func ParseCertFromFile(caFilePath string) (*x509.Certificate, error) {
 	certContent, err := os.ReadFile(caFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	return ParsePKCS1CertData(certContent)
+	return ParseCertData(certContent)
+}
+
+func EncodePKCS1PrivateKey(priKey *rsa.PrivateKey) []byte {
+	block := &pem.Block{
+		Type:  RsaPKCS1PrivateKey,
+		Bytes: x509.MarshalPKCS1PrivateKey(priKey),
+	}
+	return pem.EncodeToMemory(block)
+}
+
+func EncodePKCS8PrivateKey(priKey *rsa.PrivateKey) ([]byte, error) {
+	data, err := x509.MarshalPKCS8PrivateKey(priKey)
+	if err != nil {
+		return nil, err
+	}
+	block := &pem.Block{
+		Type:  RsaPKCS8PrivateKey,
+		Bytes: data,
+	}
+	return pem.EncodeToMemory(block), nil
 }
 
 func EncodePKCS1PublicKey(priKey *rsa.PrivateKey) []byte {
 	block := &pem.Block{
-		Type:  RsaPublicKey,
+		Type:  RsaPKCS1PublicKey,
 		Bytes: x509.MarshalPKCS1PublicKey(&priKey.PublicKey),
 	}
-	pubPem := pem.EncodeToMemory(block)
-	return pubPem
+	return pem.EncodeToMemory(block)
+}
+
+func EncodePKCS8PublicKey(priKey *rsa.PrivateKey) ([]byte, error) {
+	data, err := x509.MarshalPKIXPublicKey(&priKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	block := &pem.Block{
+		Type:  RsaPKCS8PublicKey,
+		Bytes: data,
+	}
+	return pem.EncodeToMemory(block), nil
 }
 
 func EncryptPKCS1v15(pub *rsa.PublicKey, key []byte, prefix []byte) (string, error) {
@@ -104,33 +167,6 @@ func EncryptPKCS1v15(pub *rsa.PublicKey, key []byte, prefix []byte) (string, err
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
-}
-
-func generateRandKey(keysize int) ([]byte, error) {
-	key := make([]byte, keysize)
-	if _, err := io.ReadFull(rand.Reader, key); err != nil {
-		return nil, err
-	}
-	return key, nil
-}
-
-func genKey(keysize int, prefix []byte) ([]byte, error) {
-	key, err := generateRandKey(keysize + len(prefix))
-	if err != nil {
-		return nil, err
-	}
-
-	if len(prefix) > 0 {
-		i := 0
-		for i < len(prefix) {
-			if key[i] != prefix[i] {
-				return key, nil
-			}
-			i++
-		}
-		return genKey(keysize, prefix)
-	}
-	return key, nil
 }
 
 func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int, prefix []byte) ([]byte, error) {
@@ -159,6 +195,33 @@ func DecryptPKCS1v15(priv *rsa.PrivateKey, ciphertext string, keysize int, prefi
 	}
 
 	return key[1:], nil
+}
+
+func generateRandKey(keysize int) ([]byte, error) {
+	key := make([]byte, keysize)
+	if _, err := io.ReadFull(rand.Reader, key); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+func genKey(keysize int, prefix []byte) ([]byte, error) {
+	key, err := generateRandKey(keysize + len(prefix))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(prefix) > 0 {
+		i := 0
+		for i < len(prefix) {
+			if key[i] != prefix[i] {
+				return key, nil
+			}
+			i++
+		}
+		return genKey(keysize, prefix)
+	}
+	return key, nil
 }
 
 func EncryptOAEP(pub *rsa.PublicKey, key []byte) (string, error) {
@@ -207,31 +270,15 @@ func DecryptOAEP(priv *rsa.PrivateKey, ciphertext string) ([]byte, error) {
 }
 
 func VerifySSLKey(key []byte) bool {
-	block, _ := pem.Decode(key)
-	if block == nil {
+	if _, err := ParseRSAPrivateKeyData(key); err != nil {
 		return false
 	}
-
-	if block.Type == RsaPrivateKey {
-		if _, err := x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
-			return false
-		}
-		return true
-	}
-
-	if block.Type == "EC PRIVATE KEY" {
-		if _, err := x509.ParseECPrivateKey(block.Bytes); err != nil {
-			return false
-		}
-		return true
-	}
-
-	return false
+	return true
 }
 
 func VerifyCert(cert []byte) bool {
 	block, _ := pem.Decode(cert)
-	if block == nil || block.Type != "CERTIFICATE" {
+	if block == nil || block.Type != CERTIFICATE {
 		return false
 	}
 	if _, err := x509.ParseCertificate(block.Bytes); err != nil {
@@ -268,7 +315,7 @@ func ParseEncodedKey(keyDataEncoded, keyFile string) (*rsa.PrivateKey, error) {
 			return nil, err
 		}
 		if keyFile != "" && !paths.CheckFileExist(keyFile) {
-			if err = WritePrivateKeyToFile(key, keyFile); err != nil {
+			if err = paths.WriteFile(keyFile, keyDataDecoded); err != nil {
 				return nil, err
 			}
 		}
@@ -283,14 +330,14 @@ func ParseKey(keyData []byte, keyFile string) (key *rsa.PrivateKey, err error) {
 	}
 	// Make key: keyData's priority is higher than keyFile
 	if len(keyData) != 0 {
-		key, err = ParsePKCS1PrivateKeyData(keyData)
+		key, err = ParseRSAPrivateKeyData(keyData)
 		if err == nil {
 			return key, nil
 		}
 		nlog.Errorf("load key data failed: %s, try key file", err)
 	}
 	if key == nil && keyFile != "" {
-		key, err = ParsePKCS1PrivateKey(keyFile)
+		key, err = ParseRSAPrivateKeyFile(keyFile)
 		if err == nil {
 			return key, nil
 		}
@@ -305,14 +352,14 @@ func ParseCert(certData []byte, certFile string) (cert *x509.Certificate, err er
 	}
 	// Make cert:  certData's priority is higher than certFile
 	if len(certData) != 0 {
-		cert, err = ParsePKCS1CertData(certData)
+		cert, err = ParseCertData(certData)
 		if err == nil {
 			return cert, nil
 		}
 		nlog.Errorf("load cert data failed: %s, try cert file", err)
 	}
 	if cert == nil && certFile != "" {
-		cert, err = ParsePKCS1CertFromFile(certFile)
+		cert, err = ParseCertFromFile(certFile)
 		if err == nil {
 			return cert, nil
 		}
@@ -353,7 +400,7 @@ func ParseCertWithGenerated(privateKey *rsa.PrivateKey, subject string, certData
 		return nil, err
 	}
 	err = pem.Encode(certOut, &pem.Block{
-		Type:  "CERTIFICATE",
+		Type:  CERTIFICATE,
 		Bytes: crtRaw,
 	})
 	if err != nil {
@@ -393,9 +440,8 @@ func LoadKeyData(keyFile string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	block, _ := pem.Decode(priPemData)
-	if block == nil || block.Type != RsaPrivateKey {
-		return "", fmt.Errorf("invalid private key, should be PEM block format")
+	if _, err = ParseRSAPrivateKeyData(priPemData); err != nil {
+		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(priPemData), nil
 }
@@ -406,9 +452,8 @@ func GenerateKeyData() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	err = pem.Encode(&keyOut, &pem.Block{
-		Type:  RsaPrivateKey,
+		Type:  RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 	return base64.StdEncoding.EncodeToString(keyOut.Bytes()), err
@@ -421,7 +466,7 @@ func WritePrivateKeyToFile(key *rsa.PrivateKey, filename string) error {
 		return fmt.Errorf("create key file [%s] error: %v", filename, err.Error())
 	}
 	return pem.Encode(keyOut, &pem.Block{
-		Type:  RsaPrivateKey,
+		Type:  RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 }
@@ -433,7 +478,7 @@ func WriteX509CertToFile(cert *x509.Certificate, filename string) error {
 		return fmt.Errorf("create key file [%s] error: %v", filename, err.Error())
 	}
 	return pem.Encode(certOut, &pem.Block{
-		Type:  "CERTIFICATE",
+		Type:  CERTIFICATE,
 		Bytes: cert.Raw,
 	})
 }

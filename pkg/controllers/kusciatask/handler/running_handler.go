@@ -64,42 +64,45 @@ const (
 
 // RunningHandler is used to handle kuscia task which phase is running.
 type RunningHandler struct {
-	kubeClient     kubernetes.Interface
-	kusciaClient   kusciaclientset.Interface
-	trgLister      kuscialistersv1alpha1.TaskResourceGroupLister
-	podsLister     corelisters.PodLister
-	servicesLister corelisters.ServiceLister
-	nsLister       corelisters.NamespaceLister
+	kubeClient      kubernetes.Interface
+	kusciaClient    kusciaclientset.Interface
+	trgLister       kuscialistersv1alpha1.TaskResourceGroupLister
+	podsLister      corelisters.PodLister
+	servicesLister  corelisters.ServiceLister
+	namespaceLister corelisters.NamespaceLister
 }
 
 // NewRunningHandler returns a RunningHandler instance.
 func NewRunningHandler(deps *Dependencies) *RunningHandler {
 	return &RunningHandler{
-		kubeClient:     deps.KubeClient,
-		kusciaClient:   deps.KusciaClient,
-		trgLister:      deps.TrgLister,
-		podsLister:     deps.PodsLister,
-		servicesLister: deps.ServicesLister,
-		nsLister:       deps.NamespacesLister,
+		kubeClient:      deps.KubeClient,
+		kusciaClient:    deps.KusciaClient,
+		trgLister:       deps.TrgLister,
+		podsLister:      deps.PodsLister,
+		servicesLister:  deps.ServicesLister,
+		namespaceLister: deps.NamespacesLister,
 	}
 }
 
 // Handle is used to perform the real logic.
 func (h *RunningHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	now := metav1.Now().Rfc3339Copy()
-
 	trg, err := getTaskResourceGroup(context.Background(), kusciaTask.Name, h.trgLister, h.kusciaClient)
 	if err != nil {
 		return false, fmt.Errorf("get task resource group %v failed, %v", kusciaTask.Name, err)
 	}
 
+	asParticipant, err := selfClusterAsParticipant(h.namespaceLister, kusciaTask)
+	if err != nil {
+		return false, err
+	}
+
 	taskStatus := kusciaTask.Status.DeepCopy()
 	setTaskStatusPhase(taskStatus, trg)
-
 	refreshTaskStatus := false
 	if trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserved ||
 		(trg.Status.Phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserving &&
-			!utilsres.SelfClusterAsInitiator(h.nsLister, trg.Spec.Initiator, trg.Annotations)) {
+			(!asParticipant || !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, trg.Annotations))) {
 		refreshTaskStatus = true
 	}
 
@@ -149,7 +152,6 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 
 	validPartyCount := len(trg.Spec.Parties) + len(trg.Spec.OutOfControlledParties)
 	minReservedMembers := trg.Spec.MinReservedMembers
-
 	if minReservedMembers > validPartyCount-failedPartyCount {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
 		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the threshold %v that meets the conditions for task success. pending party[%v], running party[%v], successful party[%v], failed party[%v]",

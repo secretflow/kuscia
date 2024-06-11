@@ -26,12 +26,12 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	pbv1alpha1 "github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 type IDomainDataService interface {
@@ -57,7 +57,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 		// do k8s validate
 		if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {
 			return &datamesh.CreateDomainDataResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrRequestInvalidate, err.Error()),
 			}
 		}
 		domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
@@ -75,7 +75,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 	datasource, err := s.checkDataSource(ctx, request.DatasourceId, request.Columns)
 	if err != nil {
 		return &datamesh.CreateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataSourceFromKubeFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrGetDomainDataSourceFromKubeFailed, err.Error()),
 		}
 	}
 	if !isFSDataSource(datasource.Spec.Type) {
@@ -116,7 +116,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *datame
 	if err != nil {
 		nlog.Errorf("CreateDomainData failed, error: %s", err.Error())
 		return &datamesh.CreateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateDomainData, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrCreateDomainData, err.Error()),
 		}
 	}
 	return &datamesh.CreateDomainDataResponse{
@@ -133,7 +133,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *datames
 	if err != nil {
 		nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
 		return &datamesh.QueryDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainData, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrQueryDomainData, err.Error()),
 		}
 	}
 	// build domain response
@@ -161,7 +161,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 	if err != nil {
 		nlog.Errorf("UpdateDomainData failed, error: %s", err.Error())
 		return &datamesh.UpdateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataFromKubeFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrGetDomainDataFromKubeFailed, err.Error()),
 		}
 	}
 
@@ -174,7 +174,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 		if err != nil {
 			nlog.Errorf("Query DataSource %s of DomainData %s fail: %v", request.DatasourceId, request.DomaindataId, err)
 			return &datamesh.UpdateDomainDataResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrGetDomainDataSourceFromKubeFailed, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrGetDomainDataSourceFromKubeFailed, err.Error()),
 			}
 		}
 		if !isFSDataSource(datasource.Spec.Type) {
@@ -211,12 +211,12 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 		},
 	}
 	// merge modifiedDomainData to originalDomainData
-	patchBytes, originalBytes, modifiedBytes, err := common.MergeDomainData(originalDomainData, modifiedDomainData)
+	patchBytes, originalBytes, modifiedBytes, err := MergeDomainData(originalDomainData, modifiedDomainData)
 	if err != nil {
 		nlog.Errorf("Merge DomainData failed, request: %+v,error: %s.",
 			request, err.Error())
 		return &datamesh.UpdateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrMergeDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrMergeDomainDataFailed, err.Error()),
 		}
 	}
 	nlog.Debugf("Update DomainData request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s",
@@ -228,7 +228,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 		nlog.Debugf("Patch DomainData failed, request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s, error: %s",
 			request, patchBytes, originalBytes, modifiedBytes, err.Error())
 		return &datamesh.UpdateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrPatchDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrPatchDomainDataFailed, err.Error()),
 		}
 	}
 	// construct the response
@@ -239,13 +239,13 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 
 func (s domainDataService) DeleteDomainData(ctx context.Context, request *datamesh.DeleteDomainDataRequest) *datamesh.DeleteDomainDataResponse {
 	// record the delete operation
-	nlog.Warnf("Delete domainDataId %s", request.DomaindataId)
+	nlog.Warnf("Delete domainDataID %s", request.DomaindataId)
 	// delete kuscia domainData
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
 		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
 		return &datamesh.DeleteDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainDataFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrDeleteDomainDataFailed, err.Error()),
 		}
 	}
 	return &datamesh.DeleteDomainDataResponse{

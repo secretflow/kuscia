@@ -16,6 +16,7 @@ package common
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,7 +157,9 @@ func UpdateJobStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSumma
 	}
 	jobStageVersion := GetObjectLabel(job, common.LabelJobStageVersion)
 	jobSummaryStageVersion := GetObjectLabel(jobSummary, common.LabelJobStageVersion)
-	if jobSummaryStageVersion <= jobStageVersion {
+	jobStageVersionNum, _ := strconv.Atoi(jobStageVersion)
+	jobSummaryStageVersionNum, _ := strconv.Atoi(jobSummaryStageVersion)
+	if jobSummaryStageVersionNum <= jobStageVersionNum {
 		return false
 	}
 

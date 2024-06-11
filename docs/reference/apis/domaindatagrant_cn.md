@@ -31,7 +31,7 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 | 字段            | 类型                                           | 选填 | 描述                                                                                                                             |
 |---------------|----------------------------------------------|----|--------------------------------------------------------------------------------------------------------------------------------|
 | header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| domaindatagrant_id | string | 可选 | 数据对象授权 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| domaindatagrant_id | string | 可选 | 数据对象授权 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | domaindata_id | string | 必填 | 数据对象 ID   |
 | grant_domain  | string | 必填 | 被授权节点ID       |
 | limit         | [GrantLimit](#grant-limit-entity) | 选填 | 授权限制条件  |

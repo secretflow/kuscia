@@ -95,10 +95,21 @@ func (c *Controller) updateJob(ctx context.Context, jobSummary *v1alpha1.KusciaJ
 		if err != nil {
 			nlog.Errorf("Failed to get job %v, %v", jobSummary.Name, err)
 			if k8serrors.IsNotFound(err) {
+				nlog.Infof("Job %v is not found, delete party mirror job and jobSummary %v", jobSummary.Name, ikcommon.GetObjectNamespaceName(jobSummary))
+				if err = c.kusciaClient.KusciaV1alpha1().KusciaJobSummaries(jobSummary.Namespace).Delete(ctx, jobSummary.Name, metav1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
+					return err
+				}
+				if err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(jobSummary.Namespace).Delete(ctx, jobSummary.Name, metav1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
+					return err
+				}
 				return nil
 			}
 			return err
 		}
+	}
+
+	if originalJob.Status.CompletionTime != nil {
+		return nil
 	}
 
 	partyDomainIDs := ikcommon.GetInterConnKusciaPartyDomainIDs(jobSummary)
@@ -163,5 +174,6 @@ func updateJobStatusInfo(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJob
 			updated = true
 		}
 	}
+
 	return updated
 }

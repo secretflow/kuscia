@@ -19,10 +19,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
 func TestDomainDataGrant(t *testing.T) {

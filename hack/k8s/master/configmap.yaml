@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   kuscia.yaml: |-
     # 部署模式
-    mode: Master
+    mode: master
     # 节点ID
     # 示例: domainID: kuscia-system
     domainID: {{.DOMAIN_ID}}
@@ -16,7 +16,6 @@ data:
 
     ####### master节点配置 #########
     # 数据库连接串，不填默认使用
-    # 注意: database 名称暂不支持 "-" 特殊字符
     datastoreEndpoint: "mysql://user:password@tcp(host:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
     # KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
     protocol: NOTLS

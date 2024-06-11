@@ -19,9 +19,9 @@ import (
 	"encoding/json"
 
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -42,13 +42,13 @@ func (h *certificateHandler) GenerateKeyCerts(ctx context.Context, request *kusc
 	kapiResp := &kusciaapi.GenerateKeyCertsResponse{}
 	if err := CopyValue(request, cmReq); err != nil {
 		return &kusciaapi.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrForUnexpected, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrForUnexpected, err.Error()),
 		}, nil
 	}
 	cmResp := h.certificateService.GenerateKeyCerts(ctx, cmReq)
 	if err := CopyValue(cmResp, kapiResp); err != nil {
 		return &kusciaapi.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrForUnexpected, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrForUnexpected, err.Error()),
 		}, nil
 	}
 	return kapiResp, nil

@@ -65,7 +65,7 @@ spec:
 - `.spec.dataSource`：表示 DomainData 所属的数据源。数据源是数据所存放的位置，存在多种类型的数据源，详细请查看 [参考](#refer)。
 - `.spec.name`：表示一个人类可读的名称，仅用作展示，可重复。
 - `.spec.relativeURI`：表示相对于数据源根路径的位置，当前示例的绝对路径为`/home/kuscia/var/storage/data/alice.csv`，详细请查看 [参考](#refer)。
-- `.spec.type`：表示 DomainData 的类型，目前支持 `table`、`model`、`rule`、`report`、`unknown`五种类型，分别表示数据表，模型，规则，报告和未知类型。
+- `.spec.type`：表示 DomainData 的类型，如 `table`、`model`、`rule`、`report`，分别表示数据表，模型，规则，报告。
 - `.spec.vendor`：表示 DomainData 的来源，仅用作标识，详细请查看 [参考](#refer)。
 - `.spec.author`：表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的。
 

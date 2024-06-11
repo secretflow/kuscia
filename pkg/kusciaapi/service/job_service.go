@@ -35,13 +35,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -82,13 +82,13 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	// do validate
 	if err := validateCreateJobRequest(request, h.Initiator); err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// auth handler
 	if err := h.authHandlerJobCreate(ctx, request); err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 	// convert createJobRequest to kuscia job
@@ -107,7 +107,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 						limitResource[corev1.ResourceCPU] = q
 					} else {
 						return &kusciaapi.CreateJobResponse{
-							Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parse input cpu resource failed: %v", err.Error())),
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, fmt.Sprintf("parse input cpu resource failed: %v", err.Error())),
 						}
 					}
 				}
@@ -116,7 +116,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 						limitResource[corev1.ResourceMemory] = q
 					} else {
 						return &kusciaapi.CreateJobResponse{
-							Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parse input memory resource failed: %v", err.Error())),
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, fmt.Sprintf("parse input memory resource failed: %v", err.Error())),
 						}
 					}
 				}
@@ -168,7 +168,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	_, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Create(ctx, kusciaJob, metav1.CreateOptions{})
 	if err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCreateJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrCreateJob, err.Error()),
 		}
 	}
 	return &kusciaapi.CreateJobResponse{
@@ -184,14 +184,14 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.QueryJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// build job status
 	kusciaJob, jobStatus, err := h.buildJobStatusByID(ctx, jobID)
 	if err != nil {
 		return &kusciaapi.QueryJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrQueryJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrQueryJob, err.Error()),
 		}
 	}
 	// custom fields
@@ -250,20 +250,20 @@ func (h *jobService) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJob
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.DeleteJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// auth handler
 	if err := h.authHandlerJobDelete(ctx, jobID); err != nil {
 		return &kusciaapi.DeleteJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 	// delete kuscia job
 	err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Delete(ctx, jobID, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrDeleteJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteJob, err.Error()),
 		}
 	}
 	return &kusciaapi.DeleteJobResponse{
@@ -279,36 +279,39 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// get domain from context
 	_, domainId := GetRoleAndDomainFromCtx(ctx)
 	if len(domainId) == 0 {
 		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
 	}
 
 	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrStopJob, err.Error()),
 		}
 	}
 
 	// auth pre handler
 	if err = h.authHandlerJobRetrieve(ctx, job); err != nil {
 		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// stop kuscia job
-	h.setJobStage(job, v1alpha1.JobStopStage, h.Initiator)
-	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
-	if err != nil {
-		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrStopJob, err.Error()),
+
+	if job.Labels == nil || (job.Labels != nil && job.Labels[common.LabelJobStage] != string(v1alpha1.JobStopStage)) {
+		// stop kuscia job
+		h.setJobStage(job, v1alpha1.JobStopStage, h.Initiator)
+		_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
+		if err != nil {
+			return &kusciaapi.StopJobResponse{
+				Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrStopJob, err.Error()),
+			}
 		}
 	}
 	return &kusciaapi.StopJobResponse{
@@ -324,32 +327,35 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
-	if request.Result == kusciaapi.ApproveResult_APPROVE_RESULT_UNKNOWN {
+
+	if request.Result != kusciaapi.ApproveResult_APPROVE_RESULT_ACCEPT &&
+		request.Result != kusciaapi.ApproveResult_APPROVE_RESULT_REJECT {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "approve result must be set"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "request result must be legal"),
 		}
 	}
+
 	// get domain from context
 	role, domainId := GetRoleAndDomainFromCtx(ctx)
 	var domainIds []string
 	if len(domainId) == 0 {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
 	}
 	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrApproveJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrApproveJob, err.Error()),
 		}
 	}
 	// auth handler
 	if err := h.authHandlerJob(ctx, job); err != nil {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 	nlog.Infof("approve job %s result %v reason %s", jobID, request.Result, request.Reason)
@@ -376,7 +382,7 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).UpdateStatus(ctx, job, metav1.UpdateOptions{})
 	if err != nil {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrApproveJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrApproveJob, err.Error()),
 		}
 	}
 	return &kusciaapi.ApproveJobResponse{
@@ -392,26 +398,31 @@ func (h *jobService) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJ
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// get domain from context
 	_, domainId := GetRoleAndDomainFromCtx(ctx)
 	if len(domainId) == 0 {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
 	}
 	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrSuspendJob, err.Error()),
 		}
 	}
 	// auth handler
 	if err := h.authHandlerJob(ctx, job); err != nil {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
+		}
+	}
+	if job.Status.Phase != v1alpha1.KusciaJobRunning {
+		return &kusciaapi.SuspendJobResponse{
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrSuspendNotRunningJob, fmt.Sprintf("job: %s current status is %s can not be suspend.", job.Name, job.Status.Phase)),
 		}
 	}
 	nlog.Infof("Suspend job: %s, reason: %s", jobID, request.Reason)
@@ -421,7 +432,7 @@ func (h *jobService) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJ
 	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
 	if err != nil {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrSuspendJob, err.Error()),
 		}
 	}
 	return &kusciaapi.SuspendJobResponse{
@@ -437,35 +448,44 @@ func (h *jobService) RestartJob(ctx context.Context, request *kusciaapi.RestartJ
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// get domain from context
 	_, domainId := GetRoleAndDomainFromCtx(ctx)
 	if len(domainId) == 0 {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
 	}
 	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRestartJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRestartJob, err.Error()),
 		}
 	}
 	// auth handler
 	if err := h.authHandlerJob(ctx, job); err != nil {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	nlog.Infof("Restart job: %s, reason: %s", jobID, request.Reason)
-	// restart kuscia job
-	h.setJobStage(job, v1alpha1.JobRestartStage, h.Initiator)
-	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
-	if err != nil {
+	if job.Status.Phase != v1alpha1.KusciaJobFailed && job.Status.Phase != v1alpha1.KusciaJobSuspended {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrSuspendJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRestartNotSuspendedOrFailedJob, fmt.Sprintf("job: %s current status is %s can not be restart.", job.Name, job.Status.Phase)),
+		}
+	}
+
+	nlog.Infof("Restart job: %s, reason: %s", jobID, request.Reason)
+
+	if job.Labels == nil || (job.Labels != nil && job.Labels[common.LabelJobStage] != string(v1alpha1.JobRestartStage)) {
+		// restart kuscia job
+		h.setJobStage(job, v1alpha1.JobRestartStage, h.Initiator)
+		_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
+		if err != nil {
+			return &kusciaapi.RestartJobResponse{
+				Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrSuspendJob, err.Error()),
+			}
 		}
 	}
 	return &kusciaapi.RestartJobResponse{
@@ -481,26 +501,26 @@ func (h *jobService) CancelJob(ctx context.Context, request *kusciaapi.CancelJob
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// get domain from context
 	_, domainId := GetRoleAndDomainFromCtx(ctx)
 	if len(domainId) == 0 {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "source domain header must be set"),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
 	}
 	job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCancelJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrCancelJob, err.Error()),
 		}
 	}
 	// auth handler
 	if err := h.authHandlerJob(ctx, job); err != nil {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 	nlog.Infof("Cancel job: %s, reason: %s", jobID, request.Reason)
@@ -509,7 +529,7 @@ func (h *jobService) CancelJob(ctx context.Context, request *kusciaapi.CancelJob
 	_, err = h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(ctx, job, metav1.UpdateOptions{})
 	if err != nil {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrCancelJob, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrCancelJob, err.Error()),
 		}
 	}
 	return &kusciaapi.CancelJobResponse{
@@ -545,7 +565,7 @@ func (h *jobService) BatchQueryJobStatus(ctx context.Context, request *kusciaapi
 	jobIDs := request.JobIds
 	if err := validateBatchQueryJobStatusRequest(request); err != nil {
 		return &kusciaapi.BatchQueryJobStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// build job status
@@ -554,7 +574,7 @@ func (h *jobService) BatchQueryJobStatus(ctx context.Context, request *kusciaapi
 		_, jobStatusDetail, err := h.buildJobStatusByID(ctx, jobID)
 		if err != nil {
 			return &kusciaapi.BatchQueryJobStatusResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrQueryJobStatus, err.Error()),
+				Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrQueryJobStatus, err.Error()),
 			}
 		}
 		jobStatuses[i] = &kusciaapi.JobStatus{
@@ -773,17 +793,13 @@ func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaap
 	// todo: would allow if the executive node is tee
 	if role == consts.AuthRoleDomain {
 		for _, task := range request.Tasks {
-			withDomain := false
 			for _, p := range task.Parties {
 				if p.GetDomainId() == domainId {
-					withDomain = true
-					break
+					return nil
 				}
 			}
-			if !withDomain {
-				return fmt.Errorf("domain's KusciaAPI could only create the job that the domain as a participant in the job")
-			}
 		}
+		return fmt.Errorf("domain's KusciaAPI could only create the job that the domain as a participant in the job")
 	}
 	return nil
 }
@@ -862,25 +878,21 @@ func validateCreateJobRequest(request *kusciaapi.CreateJobRequest, domainID stri
 	if err := resources.ValidateK8sName(request.JobId, "job_id"); err != nil {
 		return err
 	}
-	// check initiator
-	initiator := request.Initiator
-	if initiator == "" {
-		return fmt.Errorf("initiator can not be empty")
+	// tasks can not be empty
+	if len(request.Tasks) == 0 {
+		return fmt.Errorf("tasks can not be empty")
 	}
-	if domainID != "" && domainID != initiator {
-		return fmt.Errorf("request.initiator is %s, but initiator must be %s in P2P", initiator, domainID)
+	// check initiator
+	if err := validateInitiator(domainID, request.Initiator, request.Tasks); err != nil {
+		return err
 	}
 	// check maxParallelism
 	maxParallelism := request.MaxParallelism
 	if maxParallelism <= 0 {
 		request.MaxParallelism = 1
 	}
-	// tasks can not be empty
-	tasks := request.Tasks
-	if len(tasks) == 0 {
-		return fmt.Errorf("tasks can not be empty")
-	}
 	// taskId, parties can not be empty
+	tasks := request.Tasks
 	for i, task := range tasks {
 		if task.Alias == "" {
 			return fmt.Errorf("task alias can not be empty on tasks[%d]", i)
@@ -896,6 +908,23 @@ func validateCreateJobRequest(request *kusciaapi.CreateJobRequest, domainID stri
 		}
 	}
 	return nil
+}
+
+func validateInitiator(domainID, initiator string, tasks []*kusciaapi.Task) error {
+	if initiator == "" {
+		return fmt.Errorf("initiator can not be empty")
+	}
+	if domainID != "" && domainID != initiator {
+		return fmt.Errorf("initiator is %s, but initiator must be %s in P2P", initiator, domainID)
+	}
+	for _, task := range tasks {
+		for _, party := range task.Parties {
+			if initiator == party.DomainId {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("initiator %s must be one of parties in the job", initiator)
 }
 
 func validateBatchQueryJobStatusRequest(request *kusciaapi.BatchQueryJobStatusRequest) error {

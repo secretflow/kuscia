@@ -19,10 +19,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 	"github.com/secretflow/kuscia/test/util"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateDomain(t *testing.T) {
@@ -32,13 +34,29 @@ func TestCreateDomain(t *testing.T) {
 	assert.NotNil(t, res)
 }
 
+func TestCreateDomain_NameError(t *testing.T) {
+	t.Parallel()
+	ds := &domainService{}
+	res := ds.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: "",
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate), res.Status.Code)
+
+	res = ds.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: "master",
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate), res.Status.Code)
+}
+
 func TestCreateDomainWithCertError(t *testing.T) {
 	res := kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: kusciaAPIDS.domainID,
 		Cert:     "cert",
 	})
 	assert.NotNil(t, res)
-	assert.Equal(t, res.Status.Code, int32(errorcode.ErrRequestValidate))
+	assert.Equal(t, res.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate))
 }
 
 func TestCreateDomainWithCertSuccess(t *testing.T) {
@@ -71,7 +89,7 @@ func TestUpdateDomainWithCertError(t *testing.T) {
 		Cert:     "cert",
 	})
 	assert.NotNil(t, res)
-	assert.Equal(t, res.Status.Code, int32(errorcode.ErrRequestValidate))
+	assert.Equal(t, res.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate))
 }
 
 func TestUpdateDomainWithCertSuccess(t *testing.T) {
@@ -98,5 +116,5 @@ func TestDeleteDomain(t *testing.T) {
 	queryRes := kusciaAPIDS.QueryDomain(context.Background(), &kusciaapi.QueryDomainRequest{
 		DomainId: kusciaAPIDS.domainID,
 	})
-	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrDomainNotExists))
+	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrDomainNotExists))
 }

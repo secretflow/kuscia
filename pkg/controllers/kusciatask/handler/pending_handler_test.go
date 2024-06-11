@@ -76,6 +76,7 @@ func makeTestPendingHandler() *PendingHandler {
 }
 
 func TestPendingHandler_Handle(t *testing.T) {
+	t.Parallel()
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
 
@@ -142,6 +143,7 @@ func TestPendingHandler_Handle(t *testing.T) {
 }
 
 func Test_mergeDeployTemplate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		baseTemplate  *kusciaapisv1alpha1.DeployTemplate
 		partyTemplate *kusciaapisv1alpha1.PartyTemplate
@@ -161,6 +163,7 @@ func Test_mergeDeployTemplate(t *testing.T) {
 }
 
 func Test_generatePortAccessDomains(t *testing.T) {
+	t.Parallel()
 	parties := []kusciaapisv1alpha1.PartyInfo{
 		{
 			DomainID: "domain-a",
@@ -260,6 +263,7 @@ func Test_generatePortAccessDomains(t *testing.T) {
 }
 
 func Test_generatePod(t *testing.T) {
+	t.Parallel()
 	partyKit := &PartyKitInfo{
 		kusciaTask:            makeTestKusciaTaskCase1(),
 		domainID:              "domain-a",

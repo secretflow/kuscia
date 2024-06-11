@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
@@ -52,6 +53,7 @@ type controller struct {
 	cancel context.CancelFunc
 
 	Namespace string
+	rootDir   string
 
 	clusterDomainRouteLister       kuscialistersv1alpha1.ClusterDomainRouteLister
 	clusterDomainRouteListerSynced cache.InformerSynced
@@ -64,6 +66,7 @@ type controller struct {
 	interopLister                  kuscialistersv1alpha1.InteropConfigLister
 	interopListerSynced            cache.InformerSynced
 
+	kubeClient            kubernetes.Interface
 	kusciaClient          kusciaclientset.Interface
 	kusciaInformerFactory informers.SharedInformerFactory
 
@@ -80,8 +83,10 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	cc := &controller{
 		kusciaInformerFactory:          kusciaInformerFactory,
+		kubeClient:                     config.KubeClient,
 		kusciaClient:                   config.KusciaClient,
 		Namespace:                      config.Namespace,
+		rootDir:                        config.RootDir,
 		domainLister:                   domainInformer.Lister(),
 		domainListerSynced:             domainInformer.Informer().HasSynced,
 		clusterDomainRouteLister:       clusterDomainRouteInformer.Lister(),
@@ -240,7 +245,7 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	appendLabels := make(map[string]string, 0)
+	appendLabels := make(map[string]string)
 	appendLabels[common.KusciaSourceKey] = cdr.Spec.Source
 	appendLabels[common.KusciaDestinationKey] = cdr.Spec.Destination
 	if sourceRole == kusciaapisv1alpha1.Partner {
@@ -249,12 +254,18 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		appendLabels[common.LabelDomainRoutePartner] = cdr.Spec.Destination
 	}
 
+	// TODO Update ClusterDomainRoute at the end.
+
 	// Update label must be first.
 	if hasUpdate, err := c.updateLabel(ctx, cdr, appendLabels, nil); err != nil || hasUpdate {
 		return err
 	}
 
 	if hasUpdate, err := c.syncDomainPubKey(ctx, cdr); err != nil || hasUpdate {
+		return err
+	}
+
+	if hasUpdate, err := c.syncServiceToken(ctx, cdr); err != nil || hasUpdate {
 		return err
 	}
 

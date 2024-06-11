@@ -117,7 +117,7 @@ spec:
 在示例中：
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是目标节点的 Namespace。
-* `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 MTLS 和 None（表示不校验）。
+* `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 Token、MTLS 和 None（表示不校验）。
 * `.spec.source`：表示源节点的 Namespace，这里即 alice 的 Namespace。
 * `.spec.destination`：表示目标节点的 Namespace，这里即 bob 的 Namespace。
 * `.spec.requestHeadersToAdd`：表示 bob 侧的 Envoy 转发源节点请求时添加的 headers，示例中 key 为 Authorization 的 header 是 bob 为 
@@ -150,7 +150,7 @@ spec:
 在示例中：
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是源节点的 Namespace。
-* `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 MTLS 和 None（表示不校验）。
+* `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 Token、MTLS 和 None（表示不校验）。
 * `.spec.source`：表示源节点的 Namespace，这里即 alice 的 Namespace。
 * `.spec.destination`：表示目标节点的 Namespace，这里即 bob 的 Namespace。
 * `.spec.endpoint`：表示目标节点表示目标节点的地址。
@@ -199,6 +199,7 @@ spec:
   transit:
     domain:
       domainID: joke
+    transitMethod: THIRD-DOMAIN
   bodyEncryption:
     algorithm: AES 
   requestHeadersToAdd:
@@ -356,6 +357,7 @@ ClusterDomainRoute `spec` 的子字段详细介绍如下：
     * `port`：表示端口号。
     * `protocol`：表示端口协议，支持`HTTP`或`GRPC`。
     * `isTLS`：表示是否开启`HTTPS`或`GRPCS`。
+    * `pathPrefix`: 配置非空时，网关会重写请求的 path。例如，pathPrefix 为 /foo，请求 path 为 /bar，发送给对端的请求 path 会被改写为 /foo/bar。
 * `mTLSConfig`：表示 MTLS 配置，authenticationType 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。
   * `sourceClientCert`：表示 BASE64 编码格式的源节点的客户端证书。
   * `sourceClientPrivateKey`：表示 BASE64 编码格式的源节点的客户端私钥。
@@ -365,7 +367,8 @@ ClusterDomainRoute `spec` 的子字段详细介绍如下：
   * `destinationPublicKey`：表示目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充。
   * `sourcePublicKey`：表示源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充。
   * `tokenGenMethod`：表示 Token 生成算法，使用`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性。
-* `transit`：表示配置中转路由，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke 必须为直连）。若该配置不为空，endpoint 配置项将不生效。
+* `transit`：表示配置路由转发，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke 必须为直连）。若该配置不为空，endpoint 配置项将不生效。具体参考`DomainRoute 进阶`。
+  * `transitMethod`: 表示中转方式，目前支持`THIRD-DOMAIN`和`REVERSE-TUNNEL`两种方式，前者表示经第三方节点转发，后者表示反向隧道。
   * `domain`：表示中转节点的信息。
   * `domainID`：表示中转节点的 ID。
 * `bodyEncryption`：表示 Body 加密配置项，通常在配置转发路由时开启 bodyEncryption。
@@ -393,33 +396,195 @@ ClusterDomainRoute `status` 的子字段详细介绍如下：
     * `destinationTokens[].revisionTime`：表示 Token 时间戳。
     * `destinationTokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。
 
-### 基于ClusterDomainRoute转发实现联通
-实践过程中发现，机构部署中心化集群时，常常会将Master节点和Lite部署在不同的环境中，并且Lite节点只有受限的网络访问能力。这种情形给多机构之间的互联互通造成了困难，Kuscia引入了转发能力，通过复用Lite与Master之间的通道，使得Lite节点可以访问对端机构。
-> 转发能力是Kuscia的通用能力，并不局限于上述情形。
-#### 双中心化集群
-![multi_party_transit.png](../../imgs/centerx2_transit.png)
-A机构部署中心化集群，B机构部署中心化集群，机构Master节点之间可以互通，但是Alice与Bob不互通，希望Alice和Bob共同完成任务。Alice和Bob的联通需要经历两个转发节点「Master-Alice」和「Master-Bob」，当前转发语义只支持一次转发，要实现两次转发，需要两条转发规则配合：
+## DomainRoute 进阶
 
-`Alice->Bob`——如绿色线所示
+进阶部分介绍 DomainRoute 的转发能力。在 Kuscia 架构中，路由转发能力是通过配置 ClusterDomainRoute（CDR）中的 `Transit` 字段来实现的。
+这种配置方式为 Kuscia 提供了灵活组网的核心基础，允许用户根据不同需求定制网络通信路径。Kuscia 支持了两种不同的路由转发能力，
+分别是「`节点转发`」和「`反向隧道`」，两者的配置有所不同，用于解决不同场景下组网面临的问题。
 
-$$[A\stackrel{MA,MB}\longrightarrow B]=[A\stackrel{MA}\longrightarrow B]+[MA\stackrel{MB}\longrightarrow B]$$
+### 节点转发
 
-`Bob->Alice`——如红色线所示
+节点转发，对应的转发类型`transitMethod`为——`THIRD-DOMAIN`，代表请求流量会经第三方节点转发。
 
-$$[B\stackrel{MB,MA}\longrightarrow A]=[B\stackrel{MB}\longrightarrow A]+[MB\stackrel{MA}\longrightarrow A]$$
+#### 什么时候需要节点转发？
 
-Alice记为A，Bob记为B，Master-Alice记为MA，Master-Bob记为MB，转发节点记为箭头上方节点。
+节点转发用于解决网络节点无法直连的问题。以生产中常见的中心化部署为例，我们注意到，出于对安全性的高度重视，机构往往选择将 Master 节点和 Lite 节点部署于不同的网络环境。此外，这些 Lite 节点常常仅具备有限的网络访问权限。这一做法虽然强化了安全防护，却同时给不同机构之间的无缝联接和数据交互带来了挑战。
+![image.png](../../imgs/transit-cxc-cxp.png)
+如上图「中心化-中心化」网络中，Alice 与 Bob 无法直接互联，「中心化—P2P」网络中，Alice 与 Bob 无法直接互联。Kuscia 引入了转发能力，通过复用 Lite 与 Master 之间的通道，使得 Lite 节点可以访问对端机构，实现组网。
+> 转发能力是 Kuscia 的通用能力，并不局限于上述情形。
 
-#### 中心化集群+P2P集群
-![multi_party_transit.png](../../imgs/centerxp2p_transit.png)
-A机构部署中心化集群，B机构部署P2P集群，A机构的Master节点和B机构的P2P节点可以互通，但是Alice与Bob不互通，希望Alice和Bob共同完成任务。Alice和Bob的联通需要经历一个转发节点「Master-Alice」，需要的ClusterDomainRoute为：
+#### 怎样配置节点转发？
 
-`Alice->Bob`——如绿色线所示
+这里为了简单起见，使用路由配置和 CDR 来代指 ClusterDomainRoute，使用$\longrightarrow$代表路由配置指向：
+$Alice\longrightarrow Bob$代表「Alice 到 Bob 的 路由配置」，
+$Alice\stackrel{Mater-Alice}\longrightarrow Bob$代表「Alice 到 Bob 经Master-Alice 转发的 路由配置」。
 
-$$[A\stackrel{MA}\longrightarrow B]$$
+#### 一跳转发
 
-`Bob->Alice`——如红色线所示
+在配置好 $Alice\longrightarrow Bob$ 和 $Bob\longrightarrow Carol$ 路由规则的基础上，如果希望 Alice 能够访问 Carol，需要建立经过 Bob 的中转路由规则 $Alice\stackrel{Bob}\longrightarrow Carol$。**需要注意，如果一条路由转发规则跨不同 Kuscia 集群，一个控制面（Master 或 Autonomy）为一个 Kuscia 集群，不同控制面为不同 Kuscia 集群，需要在每个集群中都应用该规则。** 比如 Alice 与 Carol 分属不同的集群，那么需要在 Alice 所属的集群和 Carol 所属的集群中分别创建 CDR( `kubectl 创建` 或 [调用KusciaAPI创建](../apis/domainroute_cn.md))。
+![image.png](../../imgs/transit-3rd-single.png)
 
-$$[B\stackrel{MA}\longrightarrow A]$$
+##### $Alice\stackrel{Bob}\longrightarrow Carol$配置
 
-Alice记为A，Autonomy-Bob记为B，Master-Alice记为MA，转发节点记为箭头上方节点。
+```bash
+apiVersion: kuscia.secretflow/v1alpha1
+kind: ClusterDomainRoute
+metadata:
+  name: alice-carol
+spec:
+  authenticationType: Token
+  source: alice
+  destination: carol
+  endpoint:
+    host: 172.2.0.2
+    ports:
+      - name: http
+        port: 1080
+        protocol: HTTP
+        isTLS: false
+  transit:
+    transitMethod: THIRD-DOMAIN
+    domain:
+      domainID: bob
+  tokenConfig:
+    tokenGenMethod: RSA-GEN
+    rollingUpdatePeriod: 86400
+```
+
+#### 多跳转发
+
+Kuscia 通过多条连续的「一跳转发」路由规则，实现「多跳转发」能力。
+在配置好 $Alice\longrightarrow Bob$ 、 $Bob\longrightarrow Carol$ 和 $Carol\longrightarrow Joke$路由规则的基础上，希望实现 Alice 访问 Joke，需要建立两条中转路由规则，分别是 $Bob\stackrel{Carol}\longrightarrow Joke$和 $Alice\stackrel{Bob}\longrightarrow Joke$。
+![image.png](../../imgs/transit-3rd-multi.png)
+
+##### $Bob\stackrel{Carol}\longrightarrow Joke$配置
+
+```bash
+apiVersion: kuscia.secretflow/v1alpha1
+kind: ClusterDomainRoute
+metadata:
+  name: bob-joke
+spec:
+  authenticationType: Token
+  source: bob
+  destination: joke
+  endpoint:
+    host: 172.2.0.4
+    ports:
+      - name: http
+        port: 1080
+        protocol: HTTP
+        isTLS: false
+  transit:
+    transitMethod: THIRD-DOMAIN
+    domain:
+      domainID: carol
+  tokenConfig:
+    tokenGenMethod: RSA-GEN
+    rollingUpdatePeriod: 86400
+```
+
+##### $Alice\stackrel{Bob}\longrightarrow Joke$ 配置
+
+```bash
+apiVersion: kuscia.secretflow/v1alpha1
+kind: ClusterDomainRoute
+metadata:
+  name: alice-joke
+spec:
+  authenticationType: Token
+  source: alice
+  destination: joke
+  endpoint:
+    host: 172.2.0.4
+    ports:
+      - name: http
+        port: 1080
+        protocol: HTTP
+        isTLS: false
+  transit:
+    transitMethod: THIRD-DOMAIN
+    domain:
+      domainID: bob
+  tokenConfig:
+    tokenGenMethod: RSA-GEN
+    rollingUpdatePeriod: 86400
+```
+
+#### 转发安全
+
+请求在传输过程中将经由第三方节点，这引发了中间人攻击的潜在风险。若您对于这些中间节点持有疑虑，您可以考虑启用安全加强措施。在这种模式下，通信双方通过 Kuscia 网关实现数据的加密与解密，使用的是基于AES GCM算法的加密机制。**请注意，这种安全增强可能会对系统性能产生一定影响。**
+> authenticationType 必须配置为 Token，才可以启用 AES 加密。转发的端对端加密密钥基于 Token 生成，配置`rollingUpdatePeriod` 后，Token 会进行滚动更新，转发的密钥随之更新版本。
+
+```bash
+apiVersion: kuscia.secretflow/v1alpha1
+kind: ClusterDomainRoute
+metadata:
+  name: alice-carol
+spec:
+  authenticationType: Token
+  bodyEncryption:
+    algorithm: AES
+  source: alice
+  destination: carol
+  endpoint:
+    host: 172.2.0.2
+    ports:
+      - name: http
+        port: 1080
+        protocol: HTTP
+        isTLS: false
+  transit:
+    transitMethod: THIRD-DOMAIN
+    domain:
+      domainID: bob
+  tokenConfig:
+    tokenGenMethod: RSA-GEN
+    rollingUpdatePeriod: 86400
+```
+
+## 反向隧道
+
+反向隧道，对应的转发类型为——`REVERSE-TUNNEL`，代表请求流量会经反向隧道转发。
+
+### 什么时候需要反向隧道？
+
+反向隧道用于解决一类特殊的场景。出于安全性考虑，参与隐私计算的一方机构，能够对外访问公网发起请求，但是不愿意对外直接暴露和监听端口。
+如下图，机构 B 侧的算法容器 Bob 可以对机构 A 侧的算法容器 Alice 发起连接，反过来则不行。
+![image.png](../../imgs/transit-reverse-block.png)
+
+### 反向隧道是怎么实现的？
+
+为了让这种场景下，隐私计算任务可以正常开展，Kuscia 拓展了网关的能力，实现了一种反向隧道，来承接机构 A 对机构 B 发起的请求。
+![image.png](../../imgs/transit-reverse-tunnel.png)
+Alice 向 Bob 发起请求的环节如下：
+
+1. 隧道建立，对应上图中的 ⓪——用户向 Kusica 注册一条类型为 `REVERSE-TUNNEL`、起点为 Alice、终点为 Bob 的路由配置。Bob 侧 Kuscia Gateway 监听到这条配置后，会通过网关向 Alice 发起一次特殊的 HTTP 请求，这条请求到达 Alice 网关后，网关会记录这条请求的信息，回复`200状态码`和`Transfer-Encoding: Chunked`头，维持这条连接。这条连接之后会充当`反向隧道`。
+2. 请求发送，对应上图中的 ①——Alice 向 Bob 发起的「request」到达 Alice 侧网关后，网关会将「request」包装成特殊格式的 「chunked response」，通过`反向隧道`发送给 Bob 侧网关，同时记录请求信息，对应 Ⓐ。请求到达 Bob 侧网关后，网关会将「chunked response」重新包装成「request」，发送给 Bob，对应 Ⓑ。
+3. 响应返回，对应上图中的 ②——Bob 完成请求处理后，返回「response」，到达 Bob 侧网关后，网关会将「response」包装成「request」，发送给 Alice，对应 Ⓒ。请求到达 Alice 侧网关后，网关会从「request」取出数据，包装成「response」，找到记录的请求信息，返回给 Alice，对应 Ⓓ。
+
+### 怎样配置反向隧道？
+
+要配置一条如上图所示的反向隧道路由规则，可以如下所示，设置`Transit`的`transitMethod`字段。**请注意，反向隧道可能会对系统性能产生一定影响。**
+```bash
+apiVersion: kuscia.secretflow/v1alpha1
+kind: ClusterDomainRoute
+metadata:
+  name: alice-bob
+spec:
+  authenticationType: Token
+  source: alice
+  destination: bob
+  endpoint:
+    host: 172.2.0.2
+    ports:
+      - name: http
+        port: 1080
+        protocol: HTTP
+        isTLS: false
+  transit:
+    transitMethod: REVERSE-TUNNEL
+  tokenConfig:
+    tokenGenMethod: RSA-GEN
+    rollingUpdatePeriod: 86400
+```

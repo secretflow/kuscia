@@ -22,7 +22,12 @@ set -o pipefail
 PROTOC=protoc
 
 KUSCIA_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
+PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 echo "${KUSCIA_ROOT}"
+
+if [ ! -d ${KUSCIA_ROOT}/kuscia ]; then
+  ln -s ${PROJECT_ROOT} ${KUSCIA_ROOT}/kuscia
+fi
 
 PROTO_ROOT_PATH=${KUSCIA_ROOT}/kuscia/proto
 

@@ -15,6 +15,8 @@
 package handler
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
@@ -38,6 +40,10 @@ func (h *CancelledHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.KusciaJob) 
 // handleCancelled
 // Cancelled is completed phase
 func (h *CancelledHandler) handleCancelled(job *kusciaapisv1alpha1.KusciaJob) (needUpdateStatus bool, err error) {
-	// do nothing
+	if job.Status.CompletionTime == nil {
+		now := metav1.Now()
+		job.Status.CompletionTime = &now
+		needUpdateStatus = true
+	}
 	return
 }

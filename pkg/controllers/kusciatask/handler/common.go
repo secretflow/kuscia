@@ -28,6 +28,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -42,6 +43,24 @@ const (
 	defaultLifecycleSeconds        = 300
 	defaultRetryIntervalSeconds    = 30
 )
+
+func selfClusterAsParticipant(namespacesLister corelisters.NamespaceLister, kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
+	if kusciaTask.Annotations != nil &&
+		kusciaTask.Annotations[common.SelfClusterAsParticipantAnnotationKey] == common.True {
+		return true, nil
+	}
+
+	for _, party := range kusciaTask.Spec.Parties {
+		isPartner, err := utilsres.IsPartnerDomain(namespacesLister, party.DomainID)
+		if err != nil {
+			return false, err
+		}
+		if !isPartner {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
 func getTaskResourceGroup(ctx context.Context,
 	name string,

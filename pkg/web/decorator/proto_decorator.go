@@ -252,6 +252,17 @@ func InterConnProtoDecoratorMaker(validateFailedCode int32, unexpectedECode int3
 	}
 }
 
+// CustomProtoDecoratorMaker returns custom connection ProtoDecorator.
+func CustomProtoDecoratorMaker(validateFailedHandler ValidateFailedHandler, unexpectedErrorHandler UnexpectedErrorHandler) func(framework.ConfBeanRegistry, api.ProtoHandler) gin.HandlerFunc {
+	return func(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.HandlerFunc {
+		return ProtoDecorator(e, handler, &ProtoDecoratorOptions{
+			ValidateFailedHandler:   validateFailedHandler,
+			UnexpectedErrorHandler:  unexpectedErrorHandler,
+			RenderJSONUseProtoNames: true,
+		})
+	}
+}
+
 // setDefaultErrorResp sets default format error response with the error code.
 func setDefaultErrorResp(errCode int32) func(flow *BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
 	return func(flow *BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {

@@ -17,6 +17,7 @@ package hostresources
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -75,8 +76,18 @@ func (c *hostResourcesController) syncJobSummaryHandler(ctx context.Context, key
 	if err != nil {
 		// JobSummary is deleted under host cluster
 		if k8serrors.IsNotFound(err) {
-			nlog.Infof("JobSummary %v may be deleted under host %v cluster, skip processing it", key, c.host)
-			return nil
+			_, jobErr := c.hostKusciaClient.KusciaV1alpha1().KusciaJobs(namespace).Get(ctx, name, metav1.GetOptions{})
+			if jobErr != nil {
+				if k8serrors.IsNotFound(jobErr) {
+					nlog.Infof("Host job %s/%s is not found, delete job %v", namespace, name, name)
+					err = c.memberKusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Delete(ctx, name, metav1.DeleteOptions{})
+					if k8serrors.IsNotFound(err) {
+						return nil
+					}
+					return err
+				}
+				return fmt.Errorf("failed to get host job %s/%s, %v", namespace, name, jobErr)
+			}
 		}
 		return err
 	}
@@ -87,7 +98,16 @@ func (c *hostResourcesController) syncJobSummaryHandler(ctx context.Context, key
 func (c *hostResourcesController) updateMemberJobByJobSummary(ctx context.Context, jobSummary *kusciaapisv1alpha1.KusciaJobSummary) error {
 	originalJob, err := c.memberJobLister.KusciaJobs(common.KusciaCrossDomain).Get(jobSummary.Name)
 	if err != nil {
-		return err
+		if k8serrors.IsNotFound(err) {
+			originalJob, err = c.memberKusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobSummary.Name, metav1.GetOptions{})
+			if err != nil && k8serrors.IsNotFound(err) {
+				nlog.Infof("Job %s/%s is not found, skip processing it", common.KusciaCrossDomain, jobSummary.Name)
+				return nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	selfDomainIDs := ikcommon.GetSelfClusterPartyDomainIDs(originalJob)

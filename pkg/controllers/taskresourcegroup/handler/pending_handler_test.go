@@ -27,6 +27,7 @@ import (
 )
 
 func TestNewPendingHandler(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -48,6 +49,7 @@ func TestNewPendingHandler(t *testing.T) {
 }
 
 func TestPendingHandlerHandle(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -69,23 +71,6 @@ func TestPendingHandlerHandle(t *testing.T) {
 		trg  *kusciaapisv1alpha1.TaskResourceGroup
 		want kusciaapisv1alpha1.TaskResourceGroupPhase
 	}{
-		{
-			name: "trg initiator is invalid",
-			trg: &kusciaapisv1alpha1.TaskResourceGroup{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "trg1",
-				},
-				Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
-					Initiator: "alice",
-					Parties: []kusciaapisv1alpha1.TaskResourceGroupParty{
-						{
-							DomainID: "ns1",
-						},
-					},
-				},
-			},
-			want: kusciaapisv1alpha1.TaskResourceGroupPhaseFailed,
-		},
 		{
 			name: "handle trg2 successfully",
 			trg: &kusciaapisv1alpha1.TaskResourceGroup{

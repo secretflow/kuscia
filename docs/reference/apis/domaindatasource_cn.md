@@ -13,6 +13,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 | [DeleteDomainDataSource](#delete-domain-data-source) | DeleteDomainDataSourceRequest | DeleteDomainDataSourceResponse     | 删除数据源   |
 | [QueryDomainDataSource](#query-domain-data-source) | QueryDomainDataSourceRequest | QueryDomainDataSourceResponse      | 查询数据源   |
 | [BatchQueryDomainDataSource](#batch-query-domain-data-source) | BatchQueryDomainDataSourceRequest | BatchQueryDomainDataSourceResponse | 批量查询数据源 |
+| [ListDomainDataSource](#list-domain-data-source) | ListDomainDataSourceRequest | ListDomainDataSourceResponse | 列出Domain下全部数据源 |
 
 
 ## 接口详情
@@ -33,7 +34,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 |---------------|----------------------------------------------|----|--------------------------------------------------------------------------------------------------------------------------------|
 | header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | domain_id     | string | 必填 | 节点ID |
-| datasource_id | string | 选填 | 数据源 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| datasource_id | string | 选填 | 数据源 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | type  | string | 必填 | 数据源类型，支持 localfs, oss, mysql     |
 | name   |  string | 可选 | 数据源名称（无需唯一） |
 | info         | [DataSourceInfo](#data-source-info) | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。  |
@@ -401,6 +402,116 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/batchQuery' \
       "datasource_id":"demo-mysql-datasource"
     }
   ]
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "datasource_list": [{
+      "domain_id": "alice",
+      "datasource_id": "demo-local-datasource",
+      "name": "DemoDataSource",
+      "type": "localfs",
+      "status": "",
+      "info": {
+        "localfs": {
+          "path": "/home/kuscia/var/storage/data/alice"
+        },
+        "oss": null,
+        "database": null
+      },
+      "info_key": "",
+      "access_directly": true
+    }, {
+      "domain_id": "alice",
+      "datasource_id": "demo-oss-datasource",
+      "name": "DemoDataSource",
+      "type": "oss",
+      "status": "",
+      "info": {
+        "localfs": null,
+        "oss": {
+          "endpoint": "https://oss.xxx.cn-xxx.com",
+          "bucket": "secretflow",
+          "prefix": "kuscia/",
+          "access_key_id": "ak-xxxx",
+          "access_key_secret": "sk-xxxx",
+          "virtualhost": false,
+          "version": "",
+          "storage_type": ""
+        },
+        "database": null
+      },
+      "info_key": "",
+      "access_directly": true
+    }, {
+      "domain_id": "alice",
+      "datasource_id": "demo-mysql-datasource",
+      "name": "DemoDataSource",
+      "type": "mysql",
+      "status": "",
+      "info": {
+        "localfs": null,
+        "oss": null,
+        "database": {
+          "endpoint": "localhost:3306",
+          "user": "xxxxx",
+          "password": "xxxxx",
+          "database": "kuscia"
+        }
+      },
+      "info_key": "",
+      "access_directly": true
+    }]
+  }
+}
+```
+
+{#list-domain-data-source}
+
+### 列出数据源
+
+#### HTTP 路径
+
+/api/v1/domaindatasource/list
+
+#### 请求（ListDomainDataSourceRequest）
+
+| 字段       | 类型                                                            | 选填 | 描述          |
+|-----------|-----------------------------------------------------------------|-----|--------------|
+| header    | [RequestHeader](summary_cn.md#requestheader)                    | 可选 | 自定义请求内容 |
+| domain_id | string                                                          | 必填 | 节点 ID      |
+
+#### 响应（ListDomainDataSourceResponse）
+
+| 字段     | 类型                                  | 选填 | 描述   |
+|--------|-------------------------------------|----|------|
+| status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
+| data.datasource_list   | [DomainDataSource](#domain-data-source-entity)[] |  可选  |  数据源信息列表    |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# 在容器内执行示例
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+      "domain_id": "alice"
 }'
 ```
 

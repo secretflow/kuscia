@@ -246,7 +246,7 @@ func AllocatePort(namespacedCount map[string]int) (map[string][]int32, error) {
 		provider := GetPortProvider(ns)
 		ports, err := provider.Allocate(count)
 		if err != nil {
-			return nil, fmt.Errorf("failedt to allocate ports for namespace %q, detail-> %v", ns, err)
+			return nil, fmt.Errorf("failed to allocate ports for namespace %q, detail-> %v", ns, err)
 		}
 
 		ret[ns] = ports

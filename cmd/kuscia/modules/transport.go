@@ -71,7 +71,7 @@ func (t *transportModule) runAsSubProcess(ctx context.Context) error {
 
 	sp := supervisor.NewSupervisor(transportModuleName, nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(t.rootDir, transportBinPath), args...)
+		cmd := exec.Command(filepath.Join(t.rootDir, transportBinPath), args...)
 		cmd.Env = os.Environ()
 		return &ModuleCMD{
 			cmd:   cmd,

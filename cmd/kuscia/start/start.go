@@ -24,6 +24,7 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/lite"
 	"github.com/secretflow/kuscia/cmd/kuscia/master"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -38,12 +39,17 @@ func NewStartCommand(ctx context.Context) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			commonConfig := confloader.LoadCommonConfig(configFile)
 			mode := strings.ToLower(commonConfig.Mode)
+
+			if commonConfig.DomainID == common.UnSupportedDomainID {
+				nlog.Fatalf("Domain id can't be 'master', please check input config file(%s)", configFile)
+			}
+
 			switch mode {
-			case "lite":
+			case common.RunModeLite:
 				lite.Run(ctx, configFile)
-			case "master":
+			case common.RunModeMaster:
 				master.Run(ctx, configFile, onlyControllers)
-			case "autonomy":
+			case common.RunModeAutonomy:
 				autonomy.Run(ctx, configFile, onlyControllers)
 			default:
 				nlog.Fatalf("Unsupported mode: %s", commonConfig.Mode)

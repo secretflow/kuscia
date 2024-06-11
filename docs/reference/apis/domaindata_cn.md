@@ -30,18 +30,18 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 
 #### 请求（CreateDomainDataRequest）
 
-| 字段            | 类型                                           | 选填 | 描述                                                                                                                             |
-|---------------|----------------------------------------------|----|--------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                        |
-| domaindata_id | string                                       | 可选 | 数据对象 ID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)   |
-| name          | string                                       | 必填 | 名称                                                                                                                             |
-| type          | string                                       | 必填 | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                    |
-| relative_uri  | string                                       | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                                  |
-| domain_id     | string                                       | 必填 | 节点 ID                                                                                                                          |
-| datasource_id | string                                       | 可选 | 数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                            |
-| attributes    | map<string,string>                           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                  |
-| partition     | [Partition](#partition)                      | 可选 | 暂不支持                                                                                                                           |
-| columns       | [DataColumn](#data-column) array             | 必填 | 列信息                                                                                                                            |
+| 字段            | 类型                                           | 选填 | 描述                                                                                                                          |
+|---------------|----------------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------|
+| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                     |
+| domaindata_id | string                                       | 可选 | 数据对象 ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| name          | string                                       | 必填 | 名称                                                                                                                          |
+| type          | string                                       | 必填 | 类型，如\[table,model,rule,report]，大小写敏感                                                                                 |
+| relative_uri  | string                                       | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                               |
+| domain_id     | string                                       | 必填 | 节点 ID                                                                                                                       |
+| datasource_id | string                                       | 可选 | 数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                         |
+| attributes    | map<string,string>                           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                               |
+| partition     | [Partition](#partition)                      | 可选 | 暂不支持                                                                                                                        |
+| columns       | [DataColumn](#data-column) array             | 必填 | 列信息                                                                                                                         |
 
 {#create-domain-data-response}
 
