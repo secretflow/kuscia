@@ -39,7 +39,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.5.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.6.0b0
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
@@ -71,7 +71,7 @@ function init_k3s_data() {
     pre_check "${K3S_DB_PATH}"
   else
     echo -e "${GREEN}k3s data already exists ${K3S_DB_PATH}...${NC}"
-    read -rp "$(echo -e "${GREEN}Whether to retain k3s data?(y/N): ${NC}")" reuse
+    read -rp "$(echo -e "${GREEN}Whether to retain k3s data?(y/n): ${NC}")" reuse
     reuse=${reuse:-N}
     if [[ "${reuse}" =~ ^([nN][oO]|[nN])$ ]]; then
         rm -rf "${K3S_DB_PATH:?}"/*
@@ -321,9 +321,9 @@ function init_kuscia_conf_file() {
   pre_check "${PWD}/${domain_ctr}"
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}"
+    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   else
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" > "${kuscia_conf_file}"
+    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   fi
   wrap_kuscia_config_file ${kuscia_conf_file}
 }
@@ -452,14 +452,14 @@ function start_kuscia_container() {
     echo -e "${GREEN}skip importing sf image${NC}"
   elif [[ ${IMPORT_SF_IMAGE} = "secretflow"  ]]; then
     if [[ "$domain_type" != "master" ]] && [[ ${runtime} == "runc" ]]; then
-      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/import_engine_image.sh > import_engine_image.sh && chmod u+x import_engine_image.sh
-      bash import_engine_image.sh ${domain_ctr} ${SECRETFLOW_IMAGE}
-      rm -rf import_engine_image.sh
+      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > register_app_image.sh && chmod u+x register_app_image.sh
+      bash register_app_image.sh -c ${domain_ctr} -i ${SECRETFLOW_IMAGE} --import
+      rm -rf register_app_image.sh
     fi
   fi
 
   if [[ "$domain_type" != "lite" ]]; then
-    docker exec -it "${domain_ctr}" scripts/deploy/create_secretflow_app_image.sh "${SECRETFLOW_IMAGE}"
+    docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
     log "Create secretflow app image done"
   fi
   log "$domain_type domain '${domain_id}' deployed successfully"
@@ -474,7 +474,7 @@ function get_config_value() {
 function start_kuscia() {
   local kuscia_conf_file=${KUSCIA_CONFIG_FILE}
   local domain_id=$(get_config_value "$kuscia_conf_file" "domainID")
-  local deploy_mode=$(get_config_value "$kuscia_conf_file" "mode")
+  local deploy_mode=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')
   local master_endpoint=$(get_config_value "$kuscia_conf_file" "masterEndpoint")
   local store_endpoint=$(get_config_value "$kuscia_conf_file" "datastoreEndpoint")
   local runtime=$(get_runtime "$kuscia_conf_file")
@@ -658,7 +658,7 @@ function pre_check_cluster_network() {
   fi
 
   log "Network '${CLUSTER_NETWORK_NAME}' is overlay and swarm scope type."
-  if [ $rm_container ] ;then
+  if [ $rm_container = true ] ;then
     docker rm -f "${container_id}" || true
   fi
 }

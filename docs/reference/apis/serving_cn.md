@@ -28,7 +28,7 @@
 | 字段                   | 类型                                           | 选填 | 描述                                                                                                                            |
 |----------------------|----------------------------------------------|----|-------------------------------------------------------------------------------------------------------------------------------|
 | header               | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                       |
-| serving_id           | string                                       | 必填 | ServingID，满足[DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| serving_id           | string                                       | 必填 | ServingID，满足[RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | serving_input_config | string                                       | 必填 | 预测配置                                                                                                                          |
 | initiator            | string                                       | 必填 | 发起方节点ID                                                                                                                       |
 | parties              | [ServingParty](#serving-party)[]             | 必填 | 参与方信息                                                                                                                         |

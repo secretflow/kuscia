@@ -30,7 +30,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
@@ -38,7 +41,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	"github.com/stretchr/testify/assert"
 )
 
 type kusciaAPIDomainRoute struct {
@@ -69,14 +71,14 @@ type kusciaAPIDomainDataGrant struct {
 	data *kusciaapi.DomainDataGrantData
 }
 
-var kusciaAPIJS *kusciaAPIJobService
-
-var kusciaAPIDS *kusciaAPIDomainService
-
-var kusciaAPIDR *kusciaAPIDomainRoute
-
-var kusciaAPISS *kusciaAPIServingService
-var kusciaAPIDG *kusciaAPIDomainDataGrant
+var (
+	kusciaClient kusciaclientset.Interface
+	kusciaAPIJS  *kusciaAPIJobService
+	kusciaAPIDS  *kusciaAPIDomainService
+	kusciaAPIDR  *kusciaAPIDomainRoute
+	kusciaAPISS  *kusciaAPIServingService
+	kusciaAPIDG  *kusciaAPIDomainDataGrant
+)
 
 var kusciaAPISuccessStatusCode int32 = 0
 
@@ -93,14 +95,14 @@ func TestServiceMain(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
 	err = pem.Encode(keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  tls.RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 	assert.NoError(t, err)
-	caKey, err := tls.ParsePKCS1PrivateKey(cafile)
+	caKey, err := tls.ParseRSAPrivateKeyFile(cafile)
 	assert.NoError(t, err)
 	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig("")
-	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
+	kusciaClient = kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
 	kusciaAPIConfig.DomainKey = caKey
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
 	kusciaAPIConfig.KusciaClient = kusciaClient
@@ -234,7 +236,6 @@ func MakeDomainService(t *testing.T, conf *config.KusciaAPIConfig) IDomainServic
 }
 
 func CreateDomain(domainId string) *kusciaapi.CreateDomainResponse {
-
 	return kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})

@@ -50,7 +50,7 @@ func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 	args = append(args, disabledCollectors...)
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)
+		cmd := exec.Command(filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = os.Environ()

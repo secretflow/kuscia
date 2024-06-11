@@ -17,10 +17,10 @@ package service
 import (
 	"context"
 
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/utils"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -32,14 +32,14 @@ func (s domainRouteServiceLite) CreateDomainRoute(ctx context.Context, request *
 	// do validate
 	if err := validateCreateDomainRouteRequest(request); err != nil {
 		return &kusciaapi.CreateDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// request the master api
 	resp, err := s.kusciaAPIClient.CreateDomainRoute(ctx, request)
 	if err != nil {
 		return &kusciaapi.CreateDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -49,14 +49,14 @@ func (s domainRouteServiceLite) DeleteDomainRoute(ctx context.Context, request *
 	// do validate
 	if err := validateDomainRouteRequest(request); err != nil {
 		return &kusciaapi.DeleteDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// request the master api
 	resp, err := s.kusciaAPIClient.DeleteDomainRoute(ctx, request)
 	if err != nil {
 		return &kusciaapi.DeleteDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -66,14 +66,14 @@ func (s domainRouteServiceLite) QueryDomainRoute(ctx context.Context, request *k
 	// do validate
 	if err := validateDomainRouteRequest(request); err != nil {
 		return &kusciaapi.QueryDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// request the master api
 	resp, err := s.kusciaAPIClient.QueryDomainRoute(ctx, request)
 	if err != nil {
 		return &kusciaapi.QueryDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -84,14 +84,14 @@ func (s domainRouteServiceLite) BatchQueryDomainRouteStatus(ctx context.Context,
 	routeKeys := request.RouteKeys
 	if len(routeKeys) == 0 {
 		return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "DomainRoute keys can not be empty"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "DomainRoute keys can not be empty"),
 		}
 	}
 	for i, key := range routeKeys {
 		if err := validateDomainRouteRequest(key); err != nil {
 			nlog.Errorf("Validate BatchQueryDomainRouteStatusRequest the index: %d of route key, failed: %s.", i, err.Error())
 			return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func (s domainRouteServiceLite) BatchQueryDomainRouteStatus(ctx context.Context,
 	resp, err := s.kusciaAPIClient.BatchQueryDomainRoute(ctx, request)
 	if err != nil {
 		return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp

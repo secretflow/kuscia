@@ -48,7 +48,7 @@ func (h *JobScheduler) handleAwaitingApproval(job *kusciaapisv1alpha1.KusciaJob)
 	defer updateJobTime(now, job)
 	// handle stage command, check if the stage command matches the phase of job
 	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return true, err
+		return hasReconciled, err
 	}
 
 	// Check whether Auto Approval
@@ -80,6 +80,7 @@ func (h *JobScheduler) handleAwaitingApproval(job *kusciaapisv1alpha1.KusciaJob)
 		job.Status.Reason = fmt.Sprintf("Party: %s approval reject.", p)
 		needUpdateStatus = true
 	}
+
 	return needUpdateStatus, nil
 }
 
@@ -103,6 +104,10 @@ func (h *ApprovalRejectHandler) HandlePhase(kusciaJob *kusciaapisv1alpha1.Kuscia
 // handleApprovalReject
 // ApprovalReject is completed phase
 func (h *ApprovalRejectHandler) handleApprovalReject(job *kusciaapisv1alpha1.KusciaJob) (needUpdateStatus bool, err error) {
-	// do nothing
+	if job.Status.CompletionTime == nil {
+		now := metav1.Now()
+		job.Status.CompletionTime = &now
+		needUpdateStatus = true
+	}
 	return
 }

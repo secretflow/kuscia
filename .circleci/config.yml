@@ -143,7 +143,7 @@ jobs:
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  unit-test:
+  build-workflow:
     when:
       and:
         - not: << pipeline.parameters.GHA_Action >>
@@ -153,28 +153,19 @@ workflows:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-  build-workflow:
-    when:
-      not:
-        or:
-          - << pipeline.parameters.GHA_Action >>
-          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
-    filters:
-      branches:
-        ignore: /.*/
-      tags:
-        only: /^v.*/
-    jobs:
-      - unit-test:
-          matrix:
-            parameters:
-              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - linux_build_kuscia:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+          filters:
+            branches:
+              only:
+                - main
+                - release/*
       - image_publish:
+          filters:
+            tags:
+              only: /.*/
           requires:
             - linux_build_kuscia
   build-kuscia-deps-workflow:

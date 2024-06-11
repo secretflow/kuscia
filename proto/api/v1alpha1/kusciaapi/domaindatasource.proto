@@ -31,6 +31,8 @@ service DomainDataSourceService {
     rpc DeleteDomainDataSource(DeleteDomainDataSourceRequest) returns (DeleteDomainDataSourceResponse);
 
     rpc BatchQueryDomainDataSource(BatchQueryDomainDataSourceRequest) returns (BatchQueryDomainDataSourceResponse);
+
+    rpc ListDomainDataSource(ListDomainDataSourceRequest) returns (ListDomainDataSourceResponse);
 }
 
 message CreateDomainDataSourceRequest {
@@ -102,6 +104,17 @@ message BatchQueryDomainDataSourceRequest {
 message BatchQueryDomainDataSourceResponse {
     Status   status = 1;
     DomainDataSourceList data = 2;
+}
+
+message ListDomainDataSourceRequest {
+  RequestHeader header = 1;
+  // couldn't be empty
+  string domain_id = 2;
+}
+
+message ListDomainDataSourceResponse {
+  Status   status = 1;
+  DomainDataSourceList data = 2;
 }
 
 message DomainDataSourceList {

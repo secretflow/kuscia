@@ -29,12 +29,14 @@ import (
 	"google.golang.org/grpc/credentials"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/commands"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
@@ -44,7 +46,8 @@ import (
 )
 
 const (
-	kusciaAPISanDNSName = "kusciaapi"
+	kusciaAPISanDNSName            = "kusciaapi"
+	kusciaAPIInterceptorLoggerPath = "var/logs/kusciaapi.log"
 )
 
 type kusciaAPIModule struct {
@@ -99,7 +102,13 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 			}
 		}
 	}
+	interceptorLogger, err := initInterceptorLogger(d.KusciaConfig)
+	if err != nil {
+		nlog.Errorf("Init Kuscia API interceptor logger failed: %v", err)
+		return nil, err
+	}
 
+	kusciaAPIConfig.InterceptorLog = interceptorLogger
 	nlog.Debugf("Kuscia api config is %+v", kusciaAPIConfig)
 
 	return &kusciaAPIModule{
@@ -107,6 +116,15 @@ func NewKusciaAPI(d *Dependencies) (Module, error) {
 		kusciaClient: d.Clients.KusciaClient,
 		kubeClient:   d.Clients.KubeClient,
 	}, nil
+}
+
+func initInterceptorLogger(kusciaConf confloader.KusciaConfig) (*nlog.NLog, error) {
+	logConfig := initLoggerConfig(kusciaConf, kusciaAPIInterceptorLoggerPath)
+	logWriter, err := zlogwriter.New(logConfig)
+	if err != nil {
+		return nil, err
+	}
+	return nlog.NewNLog(nlog.SetWriter(logWriter), nlog.SetFormatter(nlog.NewGinLogFormatter())), nil
 }
 
 func (m kusciaAPIModule) Run(ctx context.Context) error {

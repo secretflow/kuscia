@@ -28,10 +28,12 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/controller"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
+	"github.com/secretflow/kuscia/pkg/utils/queue"
 )
 
 type endpointController struct {
@@ -39,7 +41,7 @@ type endpointController struct {
 	client kubernetes.Interface
 }
 
-func newEndpointController() (*endpointController, error) {
+func newEndpointControllerWithStop(stopCh <-chan struct{}) (*endpointController, error) {
 	client := fake.NewSimpleClientset()
 
 	informerFactory := informers.NewSharedInformerFactory(client, controller.NoResyncPeriodFunc())
@@ -53,12 +55,19 @@ func newEndpointController() (*endpointController, error) {
 	c.endpointsListerSynced = alwaysReady
 	c.serviceListerSynced = alwaysReady
 
-	informerFactory.Start(wait.NeverStop)
+	informerFactory.Start(stopCh)
+	// fix bug: informerFactory.Start in another coroutine, wait it started
+	informerFactory.WaitForCacheSync(stopCh)
+
 	ec := &endpointController{
 		c,
 		client,
 	}
 	return ec, err
+}
+
+func newEndpointController() (*endpointController, error) {
+	return newEndpointControllerWithStop(wait.NeverStop)
 }
 
 type testCase struct {
@@ -185,45 +194,92 @@ func constructServiceByEndpoints(endpoints *v1.Endpoints) *v1.Service {
 }
 
 func TestEndpoints(t *testing.T) {
-	c, err := newEndpointController()
-	if err != nil {
-		t.Fatal(err)
-	}
+	stopCh := make(chan struct{})
+	c, err := newEndpointControllerWithStop(stopCh)
+	assert.Nil(t, err)
 
-	go c.Run(1, make(<-chan struct{}))
-	time.Sleep(300 * time.Millisecond)
-
-	testCases := []testCase{
-		{
-			endpoints: &v1.Endpoints{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "endpointsA",
-					Namespace: "default",
-					Annotations: map[string]string{
-						common.AccessDomainAnnotationKey: "alice,bob",
-					},
+	endpoints := &v1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "endpointsA",
+			Namespace: "default",
+			Annotations: map[string]string{
+				common.AccessDomainAnnotationKey: "alice,bob",
+			},
+		},
+		Subsets: []v1.EndpointSubset{
+			{
+				Addresses: []v1.EndpointAddress{
+					{IP: FakeServerIP},
 				},
-				Subsets: []v1.EndpointSubset{
-					{
-						Addresses: []v1.EndpointAddress{
-							{IP: FakeServerIP},
-						},
-						Ports: []v1.EndpointPort{
-							{Port: FakeServerPort, Name: "http"},
-						},
-					},
+				Ports: []v1.EndpointPort{
+					{Port: FakeServerPort, Name: "http"},
 				},
 			},
-			add:                  true,
-			expectedAccessDomain: "(alice|bob)",
-			expectedExists:       true,
 		},
 	}
-	c.runCase(t, testCases)
 
-	// delete
-	testCases[0].add = false
-	c.runCase(t, testCases)
+	ctx := context.Background()
+
+	assert.True(t, cache.WaitForCacheSync(stopCh, c.serviceListerSynced, c.endpointsListerSynced))
+
+	svr := constructServiceByEndpoints(endpoints)
+	s1, err := c.client.CoreV1().Services(endpoints.Namespace).Create(ctx, svr, metav1.CreateOptions{})
+	assert.NotNil(t, s1)
+	assert.NoError(t, err)
+	e1, err := c.client.CoreV1().Endpoints(endpoints.Namespace).Create(ctx, endpoints, metav1.CreateOptions{})
+	assert.NotNil(t, e1)
+	assert.NoError(t, err)
+
+	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 60*time.Second, func() (bool, error) {
+		return c.queue.Len() >= 1, nil
+	}))
+
+	for c.queue.Len() > 0 {
+		assert.True(t, queue.HandleQueueItem(ctx, endpointsQueueName, c.queue, c.syncHandler, maxRetries))
+	}
+
+	vhName1 := fmt.Sprintf("service-%s-internal", endpoints.Name)
+	vhName2 := fmt.Sprintf("service-%s-external", endpoints.Name)
+	internalVh, err1 := xds.QueryVirtualHost(vhName1, xds.InternalRoute)
+	externalVh, err2 := xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+
+	var vhs = []*routev3.VirtualHost{
+		internalVh,
+		externalVh,
+	}
+
+	for _, vh := range vhs {
+		n := len(vh.Routes[0].Match.Headers)
+		assert.NotEqual(t, n, 0)
+		assert.NotNil(t, vh.Routes[0].Match.Headers[n-1].GetStringMatch().GetSafeRegex().GetRegex())
+		regex := vh.Routes[0].Match.Headers[n-1].GetStringMatch().
+			GetSafeRegex().GetRegex()
+		assert.Equal(t, "(alice|bob)", regex)
+	}
+
+	assert.NoError(t, c.client.CoreV1().Endpoints(endpoints.Namespace).Delete(ctx, endpoints.Name,
+		metav1.DeleteOptions{}))
+	assert.NoError(t, c.client.CoreV1().Services(endpoints.Namespace).Delete(ctx, endpoints.Name,
+		metav1.DeleteOptions{}))
+
+	assert.NoError(t, wait.PollImmediate(20*time.Millisecond, 10*time.Second, func() (done bool, err error) {
+		return c.queue.Len() >= 1, nil
+	}))
+
+	assert.True(t, queue.HandleQueueItem(ctx, endpointsQueueName, c.queue, c.syncHandler, maxRetries))
+
+	_, err1 = xds.QueryVirtualHost(vhName1, xds.InternalRoute)
+	_, err2 = xds.QueryVirtualHost(vhName2, xds.ExternalRoute)
+
+	assert.Error(t, err1)
+	assert.Error(t, err2)
+
+	c.queue.ShutDown()
+
+	close(stopCh)
 }
 
 func TestService(t *testing.T) {

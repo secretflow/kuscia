@@ -21,9 +21,11 @@ import (
 	"testing"
 
 	"gotest.tools/v3/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -56,6 +58,19 @@ func TestSuspendJob(t *testing.T) {
 	res := kusciaAPIJS.SuspendJob(ctx, &kusciaapi.SuspendJobRequest{
 		JobId: kusciaAPIJS.jobID,
 	})
+	assert.Equal(t, res.Status.Code == 0, false)
+	kj, err := kusciaClient.KusciaV1alpha1().KusciaJobs("cross-domain").Get(ctx, kusciaAPIJS.jobID, metav1.GetOptions{})
+	if err != nil {
+		t.Error(err.Error())
+	}
+	kj.Status.Phase = v1alpha1.KusciaJobRunning
+	kj, err = kusciaClient.KusciaV1alpha1().KusciaJobs("cross-domain").UpdateStatus(ctx, kj, metav1.UpdateOptions{})
+	if err != nil {
+		t.Error(err.Error())
+	}
+	res = kusciaAPIJS.SuspendJob(ctx, &kusciaapi.SuspendJobRequest{
+		JobId: kusciaAPIJS.jobID,
+	})
 	fmt.Printf("resp:%+v", res)
 	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
 }
@@ -65,6 +80,19 @@ func TestRestartJob(t *testing.T) {
 	ctx = context.WithValue(ctx, consts.AuthRole, consts.AuthRoleMaster)
 	ctx = context.WithValue(ctx, consts.SourceDomainKey, "alice")
 	res := kusciaAPIJS.RestartJob(ctx, &kusciaapi.RestartJobRequest{
+		JobId: kusciaAPIJS.jobID,
+	})
+	assert.Equal(t, res.Status.Code == 0, false)
+	kj, err := kusciaClient.KusciaV1alpha1().KusciaJobs("cross-domain").Get(ctx, kusciaAPIJS.jobID, metav1.GetOptions{})
+	if err != nil {
+		t.Error(err.Error())
+	}
+	kj.Status.Phase = v1alpha1.KusciaJobFailed
+	kj, err = kusciaClient.KusciaV1alpha1().KusciaJobs("cross-domain").UpdateStatus(ctx, kj, metav1.UpdateOptions{})
+	if err != nil {
+		t.Error(err.Error())
+	}
+	res = kusciaAPIJS.RestartJob(ctx, &kusciaapi.RestartJobRequest{
 		JobId: kusciaAPIJS.jobID,
 	})
 	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
@@ -105,5 +133,5 @@ func TestDeleteJob(t *testing.T) {
 	queryRes := kusciaAPIJS.QueryJob(context.Background(), &kusciaapi.QueryJobRequest{
 		JobId: kusciaAPIJS.jobID,
 	})
-	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrQueryJob))
+	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrQueryJob))
 }

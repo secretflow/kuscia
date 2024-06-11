@@ -40,6 +40,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciaFake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -104,12 +105,14 @@ func newDomainRouteTestInfo(namespace string, port uint32) *DomainRouteTestInfo 
 		nlog.Fatal(err)
 	}
 	config := &DomainRouteConfig{
-		MasterNamespace: "kuscia",
-		Namespace:       namespace,
-		Prikey:          priKey,
-		HandshakePort:   port,
-		CAKey:           caKey,
-		CACert:          caCert,
+		MasterConfig: &config.MasterConfig{
+			Namespace: "kuscia",
+		},
+		Namespace:     namespace,
+		Prikey:        priKey,
+		HandshakePort: port,
+		CAKey:         caKey,
+		CACert:        caCert,
 	}
 	c := NewDomainRouteController(config, fake.NewSimpleClientset(), kusciaClient, domainRouteInformer)
 	kusciaInformerFactory.Start(wait.NeverStop)

@@ -26,11 +26,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
 	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
 	"k8s.io/kubernetes/pkg/kubelet/util/queue"
@@ -299,65 +300,49 @@ func createPodWorkers() (*podWorkers, map[types.UID][]syncPodRecord) {
 	return w.(*podWorkers), processed
 }
 
-func drainWorkers(podWorkers *podWorkers, numPods int) {
-	for {
-		stillWorking := false
+func drainWorkers(t *testing.T, podWorkers *podWorkers, numPods int) {
+	assert.NoError(t, wait.PollImmediate(10*time.Millisecond, 60*time.Second, func() (bool, error) {
 		podWorkers.podLock.Lock()
+		defer podWorkers.podLock.Unlock()
 		for i := 0; i < numPods; i++ {
 			if s, ok := podWorkers.podSyncStatuses[types.UID(strconv.Itoa(i))]; ok && s.working {
-				stillWorking = true
-				break
+				return false, nil
 			}
 		}
-		podWorkers.podLock.Unlock()
-		if !stillWorking {
-			break
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+		return true, nil
+	}))
 }
 
-func drainWorkersExcept(podWorkers *podWorkers, uids ...types.UID) {
+func drainWorkersExcept(t *testing.T, podWorkers *podWorkers, uids ...types.UID) {
 	set := sets.NewString()
 	for _, uid := range uids {
 		set.Insert(string(uid))
 	}
-	for {
-		stillWorking := false
+
+	assert.NoError(t, wait.PollImmediate(10*time.Millisecond, 60*time.Second, func() (bool, error) {
 		podWorkers.podLock.Lock()
+		defer podWorkers.podLock.Unlock()
 		for k, v := range podWorkers.podSyncStatuses {
-			if set.Has(string(k)) {
-				continue
-			}
-			if v.working {
-				stillWorking = true
-				break
+			if !set.Has(string(k)) && v.working {
+				return false, nil
 			}
 		}
-		podWorkers.podLock.Unlock()
-		if !stillWorking {
-			break
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+		return true, nil
+	}))
 }
 
-func drainAllWorkers(podWorkers *podWorkers) {
-	for {
-		stillWorking := false
+func drainAllWorkers(t *testing.T, podWorkers *podWorkers) {
+	assert.NoError(t, wait.PollImmediate(10*time.Millisecond, 60*time.Second, func() (bool, error) {
 		podWorkers.podLock.Lock()
+		defer podWorkers.podLock.Unlock()
 		for _, worker := range podWorkers.podSyncStatuses {
 			if worker.working {
-				stillWorking = true
-				break
+				return false, nil
 			}
 		}
-		podWorkers.podLock.Unlock()
-		if !stillWorking {
-			break
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+
+		return true, nil
+	}))
 }
 
 func TestUpdatePod(t *testing.T) {
@@ -372,7 +357,7 @@ func TestUpdatePod(t *testing.T) {
 			})
 		}
 	}
-	drainWorkers(podWorkers, numPods)
+	drainWorkers(t, podWorkers, numPods)
 
 	if len(processed) != numPods {
 		t.Errorf("Not all pods processed: %v", len(processed))
@@ -416,7 +401,7 @@ func TestUpdatePodWithTerminatedPod(t *testing.T) {
 		UpdateType: kubetypes.SyncPodKill,
 		RunningPod: orphanedPod,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	if podWorkers.IsPodKnownTerminated(pod.UID) == true {
 		t.Errorf("podWorker state should not be terminated")
 	}
@@ -436,7 +421,7 @@ func TestUpdatePodForRuntimePod(t *testing.T) {
 		UpdateType: kubetypes.SyncPodCreate,
 		RunningPod: &pkgcontainer.Pod{ID: "1", Name: "1", Namespace: "test"},
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	if len(processed) != 0 {
 		t.Fatalf("Not all pods processed: %v", len(processed))
 	}
@@ -446,7 +431,7 @@ func TestUpdatePodForRuntimePod(t *testing.T) {
 		UpdateType: kubetypes.SyncPodKill,
 		RunningPod: &pkgcontainer.Pod{ID: "1", Name: "1", Namespace: "test"},
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	if len(processed) != 1 {
 		t.Fatalf("Not all pods processed: %v", processed)
 	}
@@ -475,7 +460,7 @@ func TestUpdatePodForTerminatedRuntimePod(t *testing.T) {
 		UpdateType: kubetypes.SyncPodKill,
 		RunningPod: &pkgcontainer.Pod{ID: "1", Name: "1", Namespace: "test"},
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	if len(processed) != 0 {
 		t.Fatalf("Not all pods processed: %v", processed)
 	}
@@ -506,7 +491,7 @@ func TestUpdatePodDoesNotForgetSyncPodKill(t *testing.T) {
 			UpdateType: kubetypes.SyncPodUpdate,
 		})
 	}
-	drainWorkers(podWorkers, numPods)
+	drainWorkers(t, podWorkers, numPods)
 	if len(processed) != numPods {
 		t.Errorf("Not all pods processed: %v", len(processed))
 		return
@@ -580,7 +565,7 @@ func TestTerminalPhaseTransition(t *testing.T) {
 		Pod:        newNamedPod("1", "test1", "pod1", false),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe pod running
 	pod1 := podWorkers.podSyncStatuses[types.UID("1")]
@@ -593,7 +578,7 @@ func TestTerminalPhaseTransition(t *testing.T) {
 		Pod:        newNamedPod("1", "test1", "pod1", false),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe pod still running
 	pod1 = podWorkers.podSyncStatuses[types.UID("1")]
@@ -607,7 +592,7 @@ func TestTerminalPhaseTransition(t *testing.T) {
 		Pod:        newNamedPod("1", "test1", "pod1", false),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe pod terminating
 	pod1 = podWorkers.podSyncStatuses[types.UID("1")]
@@ -622,9 +607,7 @@ func TestStaticPodExclusion(t *testing.T) {
 	podWorkers.workerChannelFn = channels.intercept
 
 	testPod := newNamedPod("2-static", "test1", "pod1", true)
-	if !kubetypes.IsStaticPod(testPod) {
-		t.Fatalf("unable to test static pod")
-	}
+	assert.True(t, kubetypes.IsStaticPod(testPod), "unable to test static pod")
 
 	// start two pods with the same name, one static, one apiserver
 	podWorkers.UpdatePod(UpdatePodOptions{
@@ -635,29 +618,19 @@ func TestStaticPodExclusion(t *testing.T) {
 		Pod:        newNamedPod("2-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe both pods running
 	pod1 := podWorkers.podSyncStatuses[types.UID("1-normal")]
-	if pod1.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod1)
-	}
-	pod2 := podWorkers.podSyncStatuses[types.UID("2-static")]
-	if pod2.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod2)
-	}
+	assert.False(t, pod1.IsTerminated())
 
-	if len(processed) != 2 {
-		t.Fatalf("unexpected synced pods: %#v", processed)
-	}
-	if e, a :=
-		[]syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}},
-		processed[types.UID("2-static")]; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(e, a))
-	}
-	if e, a := map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
+	pod2 := podWorkers.podSyncStatuses[types.UID("2-static")]
+	assert.False(t, pod2.IsTerminated())
+
+	assert.Equal(t, 2, len(processed))
+
+	assert.EqualValues(t, []syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}}, processed[types.UID("2-static")])
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname)
 
 	// attempt to start a second and third static pod, which should not start
 	podWorkers.UpdatePod(UpdatePodOptions{
@@ -668,54 +641,29 @@ func TestStaticPodExclusion(t *testing.T) {
 		Pod:        newNamedPod("4-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe both pods running but last pod shouldn't have synced
 	pod1 = podWorkers.podSyncStatuses[types.UID("1-normal")]
-	if pod1.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod1)
-	}
-	pod2 = podWorkers.podSyncStatuses[types.UID("2-static")]
-	if pod2.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod2)
-	}
-	pod3 := podWorkers.podSyncStatuses[types.UID("3-static")]
-	if pod3.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod3)
-	}
-	pod4 := podWorkers.podSyncStatuses[types.UID("4-static")]
-	if pod4.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod4)
-	}
+	assert.False(t, pod1.IsTerminated())
 
-	if len(processed) != 2 {
-		t.Fatalf("unexpected synced pods: %#v", processed)
-	}
-	if expected, actual :=
-		[]syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}},
-		processed[types.UID("2-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
-	if expected, actual :=
-		[]syncPodRecord(nil),
-		processed[types.UID("3-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
-	if expected, actual :=
-		[]syncPodRecord(nil),
-		processed[types.UID("4-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
-	if e, a := map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
-	if e, a := map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
-	// verify all are enqueued
-	if e, a := sets.NewString("1-normal", "2-static", "4-static", "3-static"), podWorkers.workQueue.(*fakeQueue).Set(); !e.Equal(a) {
-		t.Fatalf("unexpected queued items: %s", cmp.Diff(e, a))
-	}
+	pod2 = podWorkers.podSyncStatuses[types.UID("2-static")]
+	assert.False(t, pod2.IsTerminated())
+
+	pod3 := podWorkers.podSyncStatuses[types.UID("3-static")]
+	assert.False(t, pod3.IsTerminated())
+
+	pod4 := podWorkers.podSyncStatuses[types.UID("4-static")]
+	assert.False(t, pod4.IsTerminated())
+
+	assert.Equal(t, 2, len(processed))
+
+	assert.EqualValues(t, []syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}}, processed[types.UID("2-static")])
+	assert.EqualValues(t, []syncPodRecord(nil), processed[types.UID("3-static")])
+	assert.EqualValues(t, []syncPodRecord(nil), processed[types.UID("4-static")])
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname)
+	assert.EqualValues(t, map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname)
+	assert.EqualValues(t, sets.NewString("1-normal", "2-static", "4-static", "3-static"), podWorkers.workQueue.(*fakeQueue).Set())
 
 	// send a basic update for 3-static
 	podWorkers.workQueue.GetWork()
@@ -723,19 +671,13 @@ func TestStaticPodExclusion(t *testing.T) {
 		Pod:        newNamedPod("3-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// 3-static should not be started because 2-static is still running
-	if e, a := map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
-	if e, a := map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname)
+	assert.EqualValues(t, map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname)
 	// the queue should include a single item for 3-static (indicating we need to retry later)
-	if e, a := sets.NewString("3-static"), newUIDSet(podWorkers.workQueue.GetWork()...); !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected queued items: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, sets.NewString("3-static"), newUIDSet(podWorkers.workQueue.GetWork()...))
 
 	// mark 3-static as deleted while 2-static is still running
 	podWorkers.workQueue.GetWork()
@@ -743,63 +685,47 @@ func TestStaticPodExclusion(t *testing.T) {
 		Pod:        newNamedPod("3-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodKill,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe 3-static as terminated because it has never started, but other state should be a no-op
 	pod3 = podWorkers.podSyncStatuses[types.UID("3-static")]
-	if !pod3.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod3)
-	}
+	assert.True(t, pod3.IsTerminated())
+
 	// the queue should be empty because the worker is now done
-	if e, a := sets.NewString(), newUIDSet(podWorkers.workQueue.GetWork()...); !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected queued items: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, sets.NewString(), newUIDSet(podWorkers.workQueue.GetWork()...))
+
 	// 2-static is still running
-	if e, a := map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "2-static"}, podWorkers.startedStaticPodsByFullname)
 	// 3-static and 4-static are both still queued
-	if e, a := map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname)
 
 	// terminate 2-static
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("2-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodKill,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// should observe 2-static as terminated, and 2-static should no longer be reported as the started static pod
 	pod2 = podWorkers.podSyncStatuses[types.UID("2-static")]
-	if !pod2.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod3)
-	}
-	if e, a := map[string]types.UID{}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
-	if e, a := map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+	assert.True(t, pod2.IsTerminated())
+
+	assert.EqualValues(t, map[string]types.UID{}, podWorkers.startedStaticPodsByFullname)
+	assert.EqualValues(t, map[string][]types.UID{"pod1_test1": {"3-static", "4-static"}}, podWorkers.waitingToStartStaticPodsByFullname)
 
 	// simulate a periodic event from the work queue for 4-static
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("4-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// 4-static should be started because 3-static has already terminated
 	pod4 = podWorkers.podSyncStatuses[types.UID("4-static")]
-	if pod4.IsTerminated() {
-		t.Fatalf("unexpected pod state: %#v", pod3)
-	}
-	if e, a := map[string]types.UID{"pod1_test1": "4-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
-	if e, a := map[string][]types.UID{}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+	assert.False(t, pod4.IsTerminated())
+
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "4-static"}, podWorkers.startedStaticPodsByFullname)
+	assert.EqualValues(t, map[string][]types.UID{}, podWorkers.waitingToStartStaticPodsByFullname)
 
 	// initiate a sync with all pods remaining
 	state := podWorkers.SyncKnownPods([]*v1.Pod{
@@ -808,21 +734,19 @@ func TestStaticPodExclusion(t *testing.T) {
 		newNamedPod("3-static", "test1", "pod1", true),
 		newNamedPod("4-static", "test1", "pod1", true),
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// 2-static and 3-static should both be listed as terminated
-	if e, a := map[types.UID]PodWorkerState{
+	assert.EqualValues(t, map[types.UID]PodWorkerState{
 		"1-normal": SyncPod,
 		"2-static": TerminatedPod,
 		"3-static": TerminatedPod,
 		"4-static": SyncPod,
-	}, state; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected actual state: %s", cmp.Diff(e, a))
-	}
+	}, state)
+
 	// 3-static is still in the config, it should still be in our status
-	if status, ok := podWorkers.podSyncStatuses["3-static"]; !ok || status.terminatedAt.IsZero() || !status.finished || status.working {
-		t.Fatalf("unexpected post termination status: %#v", status)
-	}
+	status, ok := podWorkers.podSyncStatuses["3-static"]
+	assert.False(t, !ok || status.terminatedAt.IsZero() || !status.finished || status.working)
 
 	// initiate a sync with 3-static removed
 	state = podWorkers.SyncKnownPods([]*v1.Pod{
@@ -830,20 +754,17 @@ func TestStaticPodExclusion(t *testing.T) {
 		newNamedPod("2-static", "test1", "pod1", true),
 		newNamedPod("4-static", "test1", "pod1", true),
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// expect sync to put 3-static into final state and remove the status
-	if e, a := map[types.UID]PodWorkerState{
+	assert.EqualValues(t, map[types.UID]PodWorkerState{
 		"1-normal": SyncPod,
 		"2-static": TerminatedPod,
 		"3-static": TerminatedPod,
 		"4-static": SyncPod,
-	}, state; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected actual state: %s", cmp.Diff(e, a))
-	}
-	if status, ok := podWorkers.podSyncStatuses["3-static"]; ok {
-		t.Fatalf("unexpected post termination status: %#v", status)
-	}
+	}, state)
+	status, ok = podWorkers.podSyncStatuses["3-static"]
+	assert.False(t, ok, "unexpected post termination status: %#v", status)
 
 	// start a static pod, kill it, then add another one, but ensure the pod worker
 	// for pod 5 doesn't see the kill event (so it remains waiting to start)
@@ -860,58 +781,47 @@ func TestStaticPodExclusion(t *testing.T) {
 		Pod:        newNamedPod("6-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainWorkersExcept(podWorkers, "5-static")
+	drainWorkersExcept(t, podWorkers, "5-static")
 
 	// pod 5 should have termination requested, but hasn't cleaned up
 	pod5 := podWorkers.podSyncStatuses[types.UID("5-static")]
-	if !pod5.IsTerminationRequested() || pod5.IsTerminated() {
-		t.Fatalf("unexpected status for pod 5: %#v", pod5)
-	}
-	if e, a := map[string]types.UID{"pod1_test1": "4-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
-	if e, a := map[string][]types.UID{"pod1_test1": {"5-static", "6-static"}}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+
+	assert.True(t, pod5.IsTerminationRequested())
+	assert.False(t, pod5.IsTerminated())
+
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "4-static"}, podWorkers.startedStaticPodsByFullname)
+	assert.EqualValues(t, map[string][]types.UID{"pod1_test1": {"5-static", "6-static"}}, podWorkers.waitingToStartStaticPodsByFullname)
 
 	// terminate 4-static and wake 6-static
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("4-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodKill,
 	})
-	drainWorkersExcept(podWorkers, "5-static")
+	drainWorkersExcept(t, podWorkers, "5-static")
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("6-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainWorkersExcept(podWorkers, "5-static")
+	drainWorkersExcept(t, podWorkers, "5-static")
 
 	// 5-static should still be waiting, 6-static should have started and synced
 	pod5 = podWorkers.podSyncStatuses[types.UID("5-static")]
-	if !pod5.IsTerminationRequested() || pod5.IsTerminated() {
-		t.Fatalf("unexpected status for pod 5: %#v", pod5)
-	}
-	if e, a := map[string]types.UID{"pod1_test1": "6-static"}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
+	assert.True(t, pod5.IsTerminationRequested())
+	assert.False(t, pod5.IsTerminated())
+
+	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "6-static"}, podWorkers.startedStaticPodsByFullname)
+
 	// no static pods shoud be waiting
-	if e, a := map[string][]types.UID{}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, map[string][]types.UID{}, podWorkers.waitingToStartStaticPodsByFullname)
+
 	// prove 6-static synced
-	if expected, actual :=
-		[]syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}},
-		processed[types.UID("6-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
+	assert.EqualValues(t, []syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}}, processed[types.UID("6-static")])
 
 	// ensure 5-static exits when we deliver the event out of order
 	channels.Channel("5-static").Release()
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	pod5 = podWorkers.podSyncStatuses[types.UID("5-static")]
-	if !pod5.IsTerminated() {
-		t.Fatalf("unexpected status for pod 5: %#v", pod5)
-	}
+	assert.True(t, pod5.IsTerminated())
 
 	// start three more static pods, kill the previous static pod blocking start,
 	// and simulate the second pod of three (8) getting to run first
@@ -927,61 +837,42 @@ func TestStaticPodExclusion(t *testing.T) {
 		Pod:        newNamedPod("9-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("6-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodKill,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("8-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// 7 and 8 should both be waiting still with no syncs
-	if e, a := map[string]types.UID{}, podWorkers.startedStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected started static pods: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, map[string]types.UID{}, podWorkers.startedStaticPodsByFullname)
+
 	// only 7-static can start now, but it hasn't received an event
-	if e, a := map[string][]types.UID{"pod1_test1": {"7-static", "8-static", "9-static"}}, podWorkers.waitingToStartStaticPodsByFullname; !reflect.DeepEqual(e, a) {
-		t.Fatalf("unexpected waiting static pods: %s", cmp.Diff(e, a))
-	}
+	assert.EqualValues(t, map[string][]types.UID{"pod1_test1": {"7-static", "8-static", "9-static"}}, podWorkers.waitingToStartStaticPodsByFullname)
 	// none of the new pods have synced
-	if expected, actual :=
-		[]syncPodRecord(nil),
-		processed[types.UID("7-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
-	if expected, actual :=
-		[]syncPodRecord(nil),
-		processed[types.UID("8-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
-	if expected, actual :=
-		[]syncPodRecord(nil),
-		processed[types.UID("9-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
+	assert.EqualValues(t, []syncPodRecord(nil), processed[types.UID("7-static")])
+	assert.EqualValues(t, []syncPodRecord(nil), processed[types.UID("8-static")])
+	assert.EqualValues(t, []syncPodRecord(nil), processed[types.UID("9-static")])
 
 	// terminate 7-static and wake 8-static
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("7-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodKill,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	podWorkers.UpdatePod(UpdatePodOptions{
 		Pod:        newNamedPod("8-static", "test1", "pod1", true),
 		UpdateType: kubetypes.SyncPodUpdate,
 	})
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 
 	// 8 should have synced
-	if expected, actual :=
-		[]syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}},
-		processed[types.UID("8-static")]; !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("unexpected sync pod calls: %s", cmp.Diff(expected, actual))
-	}
+	assert.EqualValues(t, []syncPodRecord{{name: "pod1", updateType: kubetypes.SyncPodUpdate}}, processed[types.UID("8-static")])
 }
 
 type WorkChannelItem struct {
@@ -1080,7 +971,7 @@ func TestSyncKnownPods(t *testing.T) {
 			UpdateType: kubetypes.SyncPodUpdate,
 		})
 	}
-	drainWorkers(podWorkers, numPods)
+	drainWorkers(t, podWorkers, numPods)
 
 	if len(podWorkers.podUpdates) != numPods {
 		t.Errorf("Incorrect number of open channels %v", len(podWorkers.podUpdates))
@@ -1106,7 +997,7 @@ func TestSyncKnownPods(t *testing.T) {
 			UpdateType: kubetypes.SyncPodKill,
 		})
 	}
-	drainWorkers(podWorkers, numPods)
+	drainWorkers(t, podWorkers, numPods)
 
 	if !podWorkers.ShouldPodContainersBeTerminating(types.UID("0")) {
 		t.Errorf("Expected pod to be terminating")
@@ -1198,7 +1089,7 @@ func TestSyncKnownPods(t *testing.T) {
 			UpdateType: kubetypes.SyncPodKill,
 		})
 	}
-	drainWorkers(podWorkers, numPods)
+	drainWorkers(t, podWorkers, numPods)
 
 	// verify once those pods terminate (via some other flow) the workers are cleared
 	podWorkers.SyncKnownPods(nil)
@@ -1402,7 +1293,7 @@ func TestKillPodNowFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	drainAllWorkers(podWorkers)
+	drainAllWorkers(t, podWorkers)
 	if len(processed) != 1 {
 		t.Fatalf("len(processed) expected: %v, actual: %#v", 1, processed)
 	}

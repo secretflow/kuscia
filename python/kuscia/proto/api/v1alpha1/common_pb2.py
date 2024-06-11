@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import any_pb2 as google_dot_protobuf_dot_any__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&kuscia/proto/api/v1alpha1/common.proto\x12\x19kuscia.proto.api.v1alpha1\x1a\x19google/protobuf/any.proto\"\x9a\x01\n\rRequestHeader\x12S\n\x0e\x63ustom_headers\x18\x01 \x03(\x0b\x32;.kuscia.proto.api.v1alpha1.RequestHeader.CustomHeadersEntry\x1a\x34\n\x12\x43ustomHeadersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"N\n\x06Status\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\x12%\n\x07\x64\x65tails\x18\x03 \x03(\x0b\x32\x14.google.protobuf.Any\"P\n\tPartition\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x35\n\x06\x66ields\x18\x02 \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\"O\n\nDataColumn\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07\x63omment\x18\x03 \x01(\t\x12\x14\n\x0cnot_nullable\x18\x04 \x01(\x08*.\n\nFileFormat\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x07\n\x03\x43SV\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x42Q\n\x1eorg.secretflow.v1alpha1.commonZ/github.com/secretflow/kuscia/proto/api/v1alpha1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n&kuscia/proto/api/v1alpha1/common.proto\x12\x19kuscia.proto.api.v1alpha1\x1a\x19google/protobuf/any.proto\"\x9a\x01\n\rRequestHeader\x12S\n\x0e\x63ustom_headers\x18\x01 \x03(\x0b\x32;.kuscia.proto.api.v1alpha1.RequestHeader.CustomHeadersEntry\x1a\x34\n\x12\x43ustomHeadersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"N\n\x06Status\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\x12%\n\x07\x64\x65tails\x18\x03 \x03(\x0b\x32\x14.google.protobuf.Any\"P\n\tPartition\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x35\n\x06\x66ields\x18\x02 \x03(\x0b\x32%.kuscia.proto.api.v1alpha1.DataColumn\"O\n\nDataColumn\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0f\n\x07\x63omment\x18\x03 \x01(\t\x12\x14\n\x0cnot_nullable\x18\x04 \x01(\x08\"B\n\rErrorResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status*.\n\nFileFormat\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x07\n\x03\x43SV\x10\x01\x12\n\n\x06\x42INARY\x10\x02\x42Q\n\x1eorg.secretflow.v1alpha1.commonZ/github.com/secretflow/kuscia/proto/api/v1alpha1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -25,8 +25,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['DESCRIPTOR']._serialized_options = b'\n\036org.secretflow.v1alpha1.commonZ/github.com/secretflow/kuscia/proto/api/v1alpha1'
   _globals['_REQUESTHEADER_CUSTOMHEADERSENTRY']._options = None
   _globals['_REQUESTHEADER_CUSTOMHEADERSENTRY']._serialized_options = b'8\001'
-  _globals['_FILEFORMAT']._serialized_start=496
-  _globals['_FILEFORMAT']._serialized_end=542
+  _globals['_FILEFORMAT']._serialized_start=564
+  _globals['_FILEFORMAT']._serialized_end=610
   _globals['_REQUESTHEADER']._serialized_start=97
   _globals['_REQUESTHEADER']._serialized_end=251
   _globals['_REQUESTHEADER_CUSTOMHEADERSENTRY']._serialized_start=199
@@ -37,4 +37,6 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_PARTITION']._serialized_end=413
   _globals['_DATACOLUMN']._serialized_start=415
   _globals['_DATACOLUMN']._serialized_end=494
+  _globals['_ERRORRESPONSE']._serialized_start=496
+  _globals['_ERRORRESPONSE']._serialized_end=562
 # @@protoc_insertion_point(module_scope)

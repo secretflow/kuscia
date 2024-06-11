@@ -1,0 +1,129 @@
+// Copyright 2024 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1;
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode";
+option java_package = "org.secretflow.v1alpha1.errorcode";
+
+enum ErrorCode {
+
+  SUCCESS                = 0;
+
+  // Kuscia API
+  KusciaAPIErrRequestValidate     = 11100;
+  KusciaAPIErrForUnexpected       = 11101;
+  KusciaAPIErrAuthFailed          = 11102;
+  KusciaAPIErrRequestMasterFailed = 11103;
+  KusciaAPIErrLiteAPINotSupport   = 11104;
+
+  KusciaAPIErrCreateJob                      = 11201;
+  KusciaAPIErrQueryJob                       = 11202;
+  KusciaAPIErrQueryJobStatus                 = 11203;
+  KusciaAPIErrDeleteJob                      = 11204;
+  KusciaAPIErrStopJob                        = 11205;
+  KusciaAPIErrApproveJob                     = 11206;
+  KusciaAPIErrSuspendJob                     = 11207;
+  KusciaAPIErrRestartJob                     = 11208;
+  KusciaAPIErrCancelJob                      = 11209;
+  KusciaAPIErrSuspendNotRunningJob           = 11210;
+  KusciaAPIErrRestartNotSuspendedOrFailedJob = 11211;
+
+  KusciaAPIErrCreateDomain      = 11300;
+  KusciaAPIErrQueryDomain       = 11301;
+  KusciaAPIErrQueryDomainStatus = 11302;
+  KusciaAPIErrUpdateDomain      = 11303;
+  KusciaAPIErrDeleteDomain      = 11304;
+  KusciaAPIErrDomainNotExists   = 11305;
+  KusciaAPIErrDomainExists      = 11306;
+
+  KusciaAPIErrCreateDomainRoute      = 11400;
+  KusciaAPIErrQueryDomainRoute       = 11401;
+  KusciaAPIErrQueryDomainRouteStatus = 11402;
+  KusciaAPIErrDeleteDomainRoute      = 11403;
+  KusciaAPIErrDomainRouteNotExists   = 11404;
+  KusciaAPIErrDomainRouteExists      = 11405;
+
+  KusciaAPIErrCreateDomainDataFailed = 11500;
+  KusciaAPIErrDeleteDomainDataFailed = 11501;
+  KusciaAPIErrGetDomainDataFailed    = 11502;
+  KusciaAPIErrListDomainDataFailed   = 11503;
+  KusciaAPIErrMergeDomainDataFailed  = 11504;
+  KusciaAPIErrPatchDomainDataFailed  = 11505;
+  KusciaAPIErrDomainDataNotExists    = 11506;
+  KusciaAPIErrDomainDataExists       = 11507;
+
+  KusciaAPIErrCreateServing      = 11600;
+  KusciaAPIErrQueryServing       = 11601;
+  KusciaAPIErrQueryServingStatus = 11602;
+  KusciaAPIErrUpdateServing      = 11603;
+  KusciaAPIErrDeleteServing      = 11604;
+
+  KusciaAPIErrCreateDomainDataGrant    = 11700;
+  KusciaAPIErrUpdateDomainDataGrant    = 11701;
+  KusciaAPIErrQueryDomainDataGrant     = 11702;
+  KusciaAPIErrDeleteDomainDataGrant    = 11703;
+  KusciaAPIErrDomainDataGrantExists    = 11704;
+  KusciaAPIErrDomainDataGrantNotExists = 11705;
+
+  KusciaAPIErrCreateDomainDataSource           = 11800;
+  KusciaAPIErrUpdateDomainDataSource           = 11801;
+  KusciaAPIErrQueryDomainDataSource            = 11802;
+  KusciaAPIErrBatchQueryDomainDataSource       = 11803;
+  KusciaAPIErrDeleteDomainDataSource           = 11804;
+  KusciaAPIErrDomainDataSourceExists           = 11805;
+  KusciaAPIErrDomainDataSourceNotExists        = 11806;
+  KusciaAPIErrDomainDataSourceInfoEncodeFailed = 11807;
+  KusciaAPIErrListDomainDataSource             = 11808;
+
+  // data mesh
+  DataMeshErrRequestInvalidate = 12100;
+  DataMeshErrForUnexpected     = 12101;
+
+  DataMeshErrCreateDomainData            = 12200;
+  DataMeshErrQueryDomainData             = 12201;
+  DataMeshErrGetDomainDataFromKubeFailed = 12202;
+  DataMeshErrMergeDomainDataFailed       = 12203;
+  DataMeshErrPatchDomainDataFailed       = 12204;
+  DataMeshErrDeleteDomainDataFailed      = 12205;
+
+  DataMeshErrCreateDomainDataSource            = 12300;
+  DataMeshErrParseDomainDataSourceFailed       = 12301;
+  DataMeshErrQueryDomainDataSource             = 12302;
+  DataMeshErrDeleteDomainDataSourceFailed      = 12303;
+  DataMeshErrDomainDataSourceExists            = 12304;
+  DataMeshErrDomainDataSourceNotExists         = 12305;
+  DataMeshErrGetDomainDataSourceFromKubeFailed = 12306;
+  DataMeshErrDecodeDomainDataSourceInfoFailed  = 12307;
+  DataMeshErrEncodeDomainDataSourceInfoFailed  = 12308;
+  DataMeshErrMergeDomainDataSourceFailed       = 12309;
+  DataMeshErrPatchDomainDataSourceFailed       = 12310;
+
+  DataMeshErrCreateDomainDataGrant    = 12400;
+  DataMeshErrUpdateDomainDataGrant    = 12401;
+  DataMeshErrQueryDomainDataGrant     = 12402;
+  DataMeshErrDeleteDomainDataGrant    = 12403;
+  DataMeshErrDomainDataGrantExists    = 12404;
+  DataMeshErrDomainDataGrantNotExists = 12405;
+
+  // conf manager
+  ConfManagerErrRequestInvalidate = 2000;
+  ConfManagerErrForUnexpected = 2001;
+  ConfManagerErrCreateConfiguration = 2102;
+  ConfManagerErrQueryConfiguration = 2103;
+  ConfManagerErrGenerateKeyCerts = 2200;
+
+}

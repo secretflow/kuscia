@@ -34,6 +34,7 @@ import (
 )
 
 func TestRunningHandler_Handle(t *testing.T) {
+	t.Parallel()
 	trg1 := &kusciaapisv1alpha1.TaskResourceGroup{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "task-1",
@@ -270,6 +271,7 @@ func makeNamespace(name string, labels map[string]string) *v1.Namespace {
 }
 
 func TestReconcileTaskStatus(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		taskStatus *kusciaapisv1alpha1.KusciaTaskStatus
@@ -653,10 +655,10 @@ func TestReconcileTaskStatus(t *testing.T) {
 			podInformer := kubeInformersFactory.Core().V1().Pods()
 
 			h := &RunningHandler{
-				kubeClient:   kubeClient,
-				kusciaClient: kusciaClient,
-				podsLister:   podInformer.Lister(),
-				nsLister:     nsInformer.Lister(),
+				kubeClient:      kubeClient,
+				kusciaClient:    kusciaClient,
+				podsLister:      podInformer.Lister(),
+				namespaceLister: nsInformer.Lister(),
 			}
 
 			if tt.pods != nil {

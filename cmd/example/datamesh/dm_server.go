@@ -18,6 +18,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -25,20 +26,24 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/datamesh/commands"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/flight/example"
 	kusciaapiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
 const (
@@ -50,6 +55,7 @@ const (
 )
 
 type opts struct {
+	listenAddr        string
 	dataProxyEndpoint string
 	startClient       bool
 	startDataMesh     bool
@@ -57,19 +63,36 @@ type opts struct {
 	testDataType      string
 	outputCSVFilePath string
 	logCfg            *nlog.LogConfig
+	// oss data source
+	ossDataSourceID string
+	ossEndpoint     string
+	ossAccessKey    string
+	ossAccessSecret string
+	ossBucket       string
+	ossPrefix       string
+	ossType         string
 }
 
 func (o *opts) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&o.listenAddr, "listenAddr", "0.0.0.0", "datamesh bind address")
 	fs.StringVar(&o.dataProxyEndpoint, "dataProxyEndpoint", mockDataProxyEndpoint,
 		"data proxy endpoint")
-	fs.BoolVar(&o.startClient, "startClient", true, "startClient")
-	fs.BoolVar(&o.startDataMesh, "startDataMesh", true, "startDataMesh")
+	fs.BoolVar(&o.startClient, "startClient", false, "startTestClient")
+	fs.BoolVar(&o.startDataMesh, "startDataMesh", false, "startDataMeshServer")
 	fs.BoolVar(&o.enableDataMeshTLS, "enableDataMeshTLS", false, "enableDataMeshTLS")
 	fs.StringVar(&o.testDataType, "testDataType", primitivesTestData, "binary or primitives,"+
 		"binary refers to schema [{binary,nullable}], primitives refers to [{bool,nullable},{int64,nullable},{float64,"+
 		"nullable}]")
-	fs.StringVar(&o.outputCSVFilePath, "outputCSVFilePath", "./a.csv",
-		"outputCSVFilePath")
+	fs.StringVar(&o.outputCSVFilePath, "outputCSVFilePath", "./a.csv", "outputCSVFilePath")
+
+	fs.StringVar(&o.ossDataSourceID, "ossDataSource", "", "oss data source id")
+	fs.StringVar(&o.ossEndpoint, "ossEndpoint", "127.0.0.1:9000", "oss endpoint")
+	fs.StringVar(&o.ossAccessKey, "ossAccessKey", "", "oss access key")
+	fs.StringVar(&o.ossAccessSecret, "ossAccessSecret", "", "oss access secret")
+	fs.StringVar(&o.ossBucket, "ossBucket", "", "oss bucket")
+	fs.StringVar(&o.ossPrefix, "ossPrefix", "/", "oss path prefix")
+	fs.StringVar(&o.ossType, "ossType", "oss", "minio/oss")
+
 	o.logCfg = zlogwriter.InstallPFlags(fs)
 }
 
@@ -98,40 +121,26 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 
 			certsConfig, err := createClientCertificate()
 			if err != nil {
-				nlog.Fatalf("create cert file fail :%v", err)
-			}
+				return fmt.Errorf("create cert file fail :%v", err)
 
-			conf := config.NewDefaultDataMeshConfig()
-			conf.ExternalDataProxyList = []config.ExternalDataProxyConfig{
-				{
-					Endpoint: o.dataProxyEndpoint,
-				},
 			}
+			conf := config.NewDefaultDataMeshConfig()
 			conf.KubeNamespace = mockDomain
 			conf.KusciaClient = kusciafake.NewSimpleClientset()
-			conf.DisableTLS = !o.enableDataMeshTLS
+			conf.ListenAddr = o.listenAddr
 
-			privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-			if err != nil {
-				nlog.Fatal("generate domainKey fail")
+			if err := loadConfigFromCmdEnv(conf, certsConfig, o); err != nil {
+				nlog.Fatal(err.Error())
 				return nil
 			}
-			conf.DomainKey = privateKey
 
-			if conf.TLS.ServerKey, err = tls.ParseKey([]byte{}, certsConfig.serverKeyFile); err != nil {
-				return err
-			}
-			if conf.TLS.ServerCert, err = tls.ParseCert([]byte{}, certsConfig.serverCertFile); err != nil {
-				return err
-			}
-			if conf.TLS.RootCA, err = tls.ParseCert([]byte{}, certsConfig.caFile); err != nil {
-				return err
-			}
-
-			if conf.DomainKey, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
-				nlog.Errorf("generate DomainKey fail:%s", err.Error())
+			if err := setupOssDataSource(ctx, conf, o); err != nil {
+				nlog.Fatal(err.Error())
 				return nil
 			}
+
+			paths.EnsureDirectory(common.DefaultDomainDataSourceLocalFSPath, true)
+
 			runCtx, cancel := context.WithCancel(ctx)
 			defer func() {
 				cancel()
@@ -150,8 +159,8 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 				go startClient(cancel, o, certsConfig, conf)
 			}
 
+			wg.Add(1)
 			go func() {
-				wg.Add(1)
 				defer wg.Done()
 				if o.startDataMesh {
 					if err := commands.Run(runCtx, conf, conf.KusciaClient); err != nil {
@@ -173,10 +182,8 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 
 func startMockDataProxy(cancel context.CancelFunc, o *opts) {
 	fmt.Println(o.dataProxyEndpoint)
-	dp := example.NewMockDataProxy(o.dataProxyEndpoint)
-	if err := dp.Start(); err != nil {
-		cancel()
-	}
+	time.Sleep(1000 * time.Second)
+	cancel()
 }
 
 func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig, dmConfig *config.DataMeshConfig) {
@@ -210,4 +217,68 @@ func makeMemConfigurationService() cmservice.IConfigurationService {
 		backend, false,
 	)
 	return configurationService
+}
+
+func loadConfigFromCmdEnv(conf *config.DataMeshConfig, certsConfig *CertsConfig, o *opts) error {
+	conf.DisableTLS = !o.enableDataMeshTLS
+	conf.ExternalDataProxyList = []config.ExternalDataProxyConfig{
+		{
+			Endpoint: o.dataProxyEndpoint,
+		},
+	}
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("generate domainKey fail")
+	}
+	conf.DomainKey = privateKey
+
+	if conf.TLS.ServerKey, err = tls.ParseKey([]byte{}, certsConfig.serverKeyFile); err != nil {
+		return err
+	}
+	if conf.TLS.ServerCert, err = tls.ParseCert([]byte{}, certsConfig.serverCertFile); err != nil {
+		return err
+	}
+	if conf.TLS.RootCA, err = tls.ParseCert([]byte{}, certsConfig.caFile); err != nil {
+		return err
+	}
+
+	if conf.DomainKey, err = rsa.GenerateKey(rand.Reader, 2048); err != nil {
+		return fmt.Errorf("generate DomainKey fail:%s", err.Error())
+	}
+	return nil
+}
+
+func setupOssDataSource(ctx context.Context, conf *config.DataMeshConfig, o *opts) error {
+	if o.ossDataSourceID != "" && o.ossBucket != "" {
+		ossConfig, _ := json.Marshal(&datamesh.DataSourceInfo{
+			Oss: &datamesh.OssDataSourceInfo{
+				Endpoint:        o.ossEndpoint,
+				AccessKeyId:     o.ossAccessKey,
+				AccessKeySecret: o.ossAccessSecret,
+				Bucket:          o.ossBucket,
+				Prefix:          o.ossPrefix,
+				StorageType:     o.ossType,
+				Version:         "s3v4",
+				Virtualhost:     false,
+			}})
+
+		strConfig, _ := tls.EncryptOAEP(&conf.DomainKey.PublicKey, ossConfig)
+
+		_, err := conf.KusciaClient.KusciaV1alpha1().DomainDataSources(mockDomain).Create(ctx, &v1alpha1.DomainDataSource{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: o.ossDataSourceID,
+			},
+			Spec: v1alpha1.DomainDataSourceSpec{
+				URI:            o.ossEndpoint,
+				Type:           common.DomainDataSourceTypeOSS,
+				Name:           o.ossDataSourceID,
+				AccessDirectly: false,
+				Data:           map[string]string{"encryptedInfo": strConfig},
+			},
+		}, v1.CreateOptions{})
+
+		return err
+	}
+	return nil
 }

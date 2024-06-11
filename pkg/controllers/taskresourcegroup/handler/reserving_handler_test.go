@@ -31,6 +31,7 @@ import (
 )
 
 func TestNewReservingHandler(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := clientsetfake.NewSimpleClientset()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(kubeFakeClient, 0)
@@ -52,6 +53,7 @@ func TestNewReservingHandler(t *testing.T) {
 }
 
 func TestReservingHandlerHandle(t *testing.T) {
+	t.Parallel()
 	pod1 := st.MakePod().Namespace("ns1").Name("pod1").
 		Annotation(common.TaskResourceGroupAnnotationKey, "trg1").
 		Label(common.LabelTaskResourceGroupUID, "111").Obj()

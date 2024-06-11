@@ -31,6 +31,7 @@ import (
 )
 
 func TestSucceededHandler_Handle(t *testing.T) {
+	t.Parallel()
 	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 
 	testKusciaTask := &kusciaapisv1alpha1.KusciaTask{

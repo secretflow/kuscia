@@ -37,7 +37,7 @@ func (h *SuspendedHandler) HandlePhase(job *kusciaapisv1alpha1.KusciaJob) (needU
 	now := metav1.Now().Rfc3339Copy()
 	// handle stage command, check if the stage command matches the phase of job
 	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return true, err
+		return hasReconciled, err
 	}
 
 	for taskID, phase := range job.Status.TaskStatus {

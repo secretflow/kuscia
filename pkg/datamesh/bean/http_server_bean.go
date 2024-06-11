@@ -22,11 +22,10 @@ import (
 
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	dmconfig "github.com/secretflow/kuscia/pkg/datamesh/config"
-	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
-	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindata"
-	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindatagrant"
-	"github.com/secretflow/kuscia/pkg/datamesh/handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/httphandler/domaindata"
+	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/httphandler/domaindatagrant"
+	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	apisvc "github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/web/api"
@@ -37,6 +36,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework/beans"
 	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 type httpServerBean struct {
@@ -51,6 +51,7 @@ func NewHTTPServerBean(config *dmconfig.DataMeshConfig) *httpServerBean { // nol
 			ConfigLoader: &frameworkconfig.FlagEnvConfigLoader{
 				Source: frameworkconfig.SourceEnv,
 			},
+			IP:            config.ListenAddr,
 			Port:          int(config.HTTPPort),
 			Debug:         config.Debug,
 			GinBeanConfig: convertToGinConf(config),
@@ -168,15 +169,19 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 
 // protoDecorator is used to wrap handler.
 func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.HandlerFunc {
-	return decorator.InterConnProtoDecoratorMaker(int32(ecode.ErrRequestInvalidate), int32(ecode.ErrForUnexpected))(e, handler)
+	return decorator.InterConnProtoDecoratorMaker(int32(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate), int32(pberrorcode.ErrorCode_DataMeshErrForUnexpected))(e, handler)
 }
 
 func convertToGinConf(conf *dmconfig.DataMeshConfig) beans.GinBeanConfig {
-	var tlsConf = &beans.TLSServerConfig{
-		CACert:     conf.TLS.RootCA,
-		ServerCert: conf.TLS.ServerCert,
-		ServerKey:  conf.TLS.ServerKey,
+	var tlsConf *beans.TLSServerConfig
+	if !conf.DisableTLS {
+		tlsConf = &beans.TLSServerConfig{
+			CACert:     conf.TLS.RootCA,
+			ServerCert: conf.TLS.ServerCert,
+			ServerKey:  conf.TLS.ServerKey,
+		}
 	}
+
 	return beans.GinBeanConfig{
 		Logger:          nil,
 		ReadTimeout:     &conf.ReadTimeout,

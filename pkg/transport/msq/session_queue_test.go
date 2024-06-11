@@ -15,14 +15,15 @@
 package msq
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func initConfig() {
-	config = &Config{
+func NewTestSessionQueue() *SessionQueue {
+	config := &Config{
 		TotalByteSizeLimit:         1024 * 1024,
 		PerSessionByteSizeLimit:    1024,
 		TopicQueueCapacity:         5,
@@ -31,27 +32,25 @@ func initConfig() {
 		CleanIntervalSeconds:       2,
 		NormalizeActiveSeconds:     1,
 	}
-}
-
-func NewTestSessionQueue() *SessionQueue {
-	initConfig()
-	sq := NewSessionQueue()
+	sq := NewSessionQueue(config)
 	return sq
 }
 
 func TestSessionQueuePushNoWait(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 20480
 
 	start := time.Now()
 	for i := 0; i < 1000; i++ {
-		sq.Push("topic", NewMessageByStr("12"), time.Minute)
+		assert.Nil(t, sq.Push("topic", NewMessageByStr("12"), time.Second))
 	}
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.Less(t, processTime, time.Millisecond*5500)
 }
 
 func TestSessionQueuePushTimeout(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 100
 
@@ -59,7 +58,7 @@ func TestSessionQueuePushTimeout(t *testing.T) {
 	msg := NewMessageByRandomStr(101)
 	err := sq.Push("topic", msg, time.Second*5)
 	assert.NotNil(t, err)
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.Less(t, processTime, time.Millisecond*100)
 }
 
@@ -71,6 +70,7 @@ func producer(sq *SessionQueue, t *testing.T) {
 }
 
 func TestSessionQueuePushWait(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 100
 
@@ -92,11 +92,12 @@ func TestSessionQueuePushWait(t *testing.T) {
 	go producer(sq, t)
 
 	<-doneCh
-	processTime := time.Now().Sub(start)
-	assert.True(t, processTime < time.Second*5)
+	processTime := time.Since(start)
+	assert.Less(t, processTime, time.Second*5)
 }
 
 func TestSessionQueuePopNoWait(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 20480
 
@@ -109,11 +110,12 @@ func TestSessionQueuePopNoWait(t *testing.T) {
 		assert.NotNil(t, msg)
 		assert.Nil(t, err)
 	}
-	processTime := time.Now().Sub(start)
-	assert.True(t, processTime < time.Second*5)
+	processTime := time.Since(start)
+	assert.Less(t, processTime, time.Second*5)
 }
 
 func TestSessionQueuePopTimeout(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 20480
 
@@ -121,65 +123,70 @@ func TestSessionQueuePopTimeout(t *testing.T) {
 	msg, err := sq.Pop("topic", time.Second)
 	assert.Nil(t, msg)
 	assert.Nil(t, err)
-	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Second)
+	processTime := time.Since(start)
+	assert.Greater(t, processTime, time.Second)
 }
 
 func TestSessionQueuePopWait(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 20480
 
-	start := time.Now()
 	pushedCount := 0
 	go func() {
 		for i := 0; i < 10; i++ {
-			err := sq.Push("topic", NewMessageByRandomStr(1), time.Second)
+			time.Sleep(time.Millisecond * 10)
+			err := sq.Push("topic", NewMessageByStr(fmt.Sprintf("%d", i)), time.Second)
 			assert.Nil(t, err)
 			pushedCount++
-			time.Sleep(time.Millisecond * 10)
 		}
 	}()
 
 	for i := 0; i < 10; i++ {
+		start := time.Now()
 		msg, err := sq.Pop("topic", time.Millisecond*500)
 		assert.NotNil(t, msg)
 		assert.Nil(t, err)
+		assert.Equal(t, fmt.Sprintf("%d", i), string(msg.Content))
+
+		processTime := time.Since(start)
+		assert.Greater(t, processTime, time.Millisecond)
 	}
 
-	processTime := time.Now().Sub(start)
-	assert.True(t, processTime < 10*time.Second)
+	assert.Equal(t, 10, pushedCount)
 }
 
 func TestSessionQueuePeek(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 20480
 
 	doneCh := make(chan struct{})
-	go func() {
-		for i := 0; i < 10; i++ {
-			err := sq.Push("topic", NewMessageByRandomStr(1), time.Second)
-			time.Sleep(time.Millisecond * 10)
-			assert.Nil(t, err)
-		}
-		close(doneCh)
-	}()
-
 	for i := 0; i < 10; i++ {
 		msg, err := sq.Peek("topic")
 		assert.Nil(t, msg)
 		assert.Nil(t, err)
 	}
 
+	go func() {
+		for i := 0; i < 10; i++ {
+			assert.Nil(t, sq.Push("topic", NewMessageByStr(fmt.Sprintf("%d", i)), time.Second))
+		}
+		close(doneCh)
+	}()
+
 	<-doneCh
 
 	for i := 0; i < 10; i++ {
 		msg, err := sq.Peek("topic")
 		assert.NotNil(t, msg)
+		assert.Equal(t, fmt.Sprintf("%d", i), string(msg.Content))
 		assert.Nil(t, err)
 	}
 }
 
 func TestSessionQueueMultiTopic(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 9
 	err := sq.Push("topic1", NewMessageByStr("hello"), time.Millisecond*100)
@@ -189,13 +196,20 @@ func TestSessionQueueMultiTopic(t *testing.T) {
 	assert.NotNil(t, err)
 
 	msg, err := sq.Peek("topic1")
-	assert.True(t, string(msg.Content) == "hello")
+	assert.Equal(t, "hello", string(msg.Content))
+	assert.Nil(t, err)
 	msg, err = sq.Peek("topic2")
+	assert.Nil(t, msg)
+	assert.Nil(t, err)
 
 	err = sq.Push("topic2", NewMessageByStr("world"), time.Millisecond*100)
 	assert.Nil(t, err)
+	assert.Nil(t, err)
 	msg, err = sq.Peek("topic2")
-	assert.True(t, string(msg.Content) == "world")
+	assert.Equal(t, "world", string(msg.Content))
+	assert.Nil(t, err)
+	assert.Equal(t, "world", string(msg.Content))
+	assert.Nil(t, err)
 
 	err = sq.Push("topic1", NewMessageByStr("hello"), time.Millisecond*100)
 	assert.Nil(t, err)
@@ -209,6 +223,7 @@ func TestSessionQueueMultiTopic(t *testing.T) {
 }
 
 func TestSessionQueueReleaseTopic(t *testing.T) {
+	t.Parallel()
 	sq := NewTestSessionQueue()
 	sq.ByteSizeLimit = 100
 	sq.Push("topic1", NewMessageByStr("hello"), time.Millisecond*100)

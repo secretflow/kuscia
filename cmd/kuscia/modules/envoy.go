@@ -119,7 +119,7 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	go s.logRotate(ctx, configFilePath)
 
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/envoy"), args...)
+		cmd := exec.Command(filepath.Join(s.rootDir, "bin/envoy"), args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = os.Environ()

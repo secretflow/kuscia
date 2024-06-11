@@ -86,8 +86,7 @@ func TestMain(m *testing.M) {
 	httpConfig.Port = 2001
 	msqConfig = msq.DefaultMsgConfig()
 
-	msq.Init(msqConfig)
-	server = NewServer(httpConfig, msq.NewSessionManager())
+	server = NewServer(httpConfig, msq.NewSessionManager(msqConfig))
 	go server.Start(context.Background())
 	// wait server startup
 	time.Sleep(time.Millisecond * 200)
@@ -123,7 +122,7 @@ func TestPeek(t *testing.T) {
 }
 
 func TestPopWithData(t *testing.T) {
-	server.sm = msq.NewSessionManager()
+	server.sm = msq.NewSessionManager(msqConfig)
 
 	popReq, _ := http.NewRequest("POST", generatePath(pop), bytes.NewBuffer(nil))
 	popReq.Header.Set(codec.PtpTopicID, "topic2")
@@ -143,7 +142,7 @@ func TestPopWithData(t *testing.T) {
 	outbound := verifyResponse(t, popReq, transerr.Success)
 	assert.Equal(t, len(outbound.Payload), 10)
 
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.True(t, processTime >= time.Millisecond*50)
 }
 
@@ -160,7 +159,7 @@ func TestPopTimeout(t *testing.T) {
 	outbound := verifyResponse(t, popReq, transerr.Success)
 	assert.True(t, outbound.Payload == nil)
 
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.Greater(t, processTime, time.Millisecond*1500) // 1.5s
 	assert.Less(t, processTime, time.Millisecond*2500)    // 2.5s
 }
@@ -241,7 +240,7 @@ func TestPushWait(t *testing.T) {
 
 	start := time.Now()
 	verifyResponse(t, pushReq, transerr.Success)
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.Greater(t, processTime, time.Millisecond*500) // 0.5s
 	assert.Less(t, processTime, time.Millisecond*2500)   // 2.5s
 }
@@ -255,8 +254,6 @@ func TestBadRequestParam(t *testing.T) {
 
 var sessionCount int = 10
 var topicCount int = 5
-
-var stop bool = false
 
 func producer(t *testing.T, sendSucceedCount, sendFailCount *int64, sessionIdx, topicIdx int) {
 	msgLength := 256 * 1024
@@ -278,7 +275,7 @@ func producer(t *testing.T, sendSucceedCount, sendFailCount *int64, sessionIdx, 
 	resp, err := client.Do(req)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
-	body, err := io.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	outbound, err := server.codec.UnMarshal(body)
 
 	if err == nil && outbound.Code == string(transerr.Success) {
@@ -307,8 +304,8 @@ func consumer(t *testing.T, popMsgCount, popFailCount *int64, sessionIdx, topicI
 	resp, err := client.Do(req)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
-	body, err := io.ReadAll(resp.Body)
-	outbound, err := server.codec.UnMarshal(body)
+	body, _ := io.ReadAll(resp.Body)
+	outbound, _ := server.codec.UnMarshal(body)
 
 	if outbound != nil && outbound.Payload != nil {
 		atomic.AddInt64(popMsgCount, 1)
@@ -361,7 +358,7 @@ func TestPerformance(t *testing.T) {
 		sid := fmt.Sprintf("sessionx-%d", i)
 		for j := 0; j <= topicCount; j++ {
 			topic := fmt.Sprintf("node0-topic-%d", j)
-			for true {
+			for {
 				msg, _ := server.sm.Peek(sid, topic)
 				if msg == nil {
 					break

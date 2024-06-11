@@ -179,6 +179,7 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.DomainRoute.DomainCsrData = GenerateCsrData(lite.DomainID, lite.DomainKeyData, lite.LiteDeployToken)
 	kusciaConfig.Debug = lite.Debug
 	kusciaConfig.DebugPort = lite.DebugPort
+	kusciaConfig.Image = lite.Image
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &lite.AdvancedConfig.Logrotate)
 }
@@ -246,6 +247,7 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Debug = autonomy.Debug
 	kusciaConfig.DebugPort = autonomy.DebugPort
 	kusciaConfig.EnableWorkloadApprove = autonomy.AdvancedConfig.EnableWorkloadApprove
+	kusciaConfig.Image = autonomy.Image
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &autonomy.AdvancedConfig.Logrotate)
 }

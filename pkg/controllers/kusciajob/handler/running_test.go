@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	kubefake "k8s.io/client-go/kubernetes/fake"
@@ -74,6 +73,7 @@ func setRunningJobStage(job *kusciaapisv1alpha1.KusciaJob, testCase int) {
 }
 
 func TestRunningHandler_HandlePhase(t *testing.T) {
+	t.Parallel()
 	bestEffortIndependent := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 	//bestEffortIndependent.Spec.Stage = kusciaapisv1alpha1.JobStartStage
@@ -286,7 +286,8 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 				"b": taskExistAssertFunc,
 				"c": taskExistAssertFunc,
 			},
-		}, {
+		},
+		{
 			name: "test running start",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
@@ -308,7 +309,8 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 				"c": taskExistAssertFunc,
 			},
 			testcase: testCaseRunningStart,
-		}, {
+		},
+		{
 			name: "test running restart",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
@@ -325,7 +327,8 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			wantErr:        assert.NoError,
 			wantJobPhase:   kusciaapisv1alpha1.KusciaJobRunning,
 			testcase:       testCaseRunningRestart,
-		}, {
+		},
+		{
 			name: "test running suspend",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
@@ -342,7 +345,8 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			wantErr:        assert.NoError,
 			wantJobPhase:   kusciaapisv1alpha1.KusciaJobSuspended,
 			testcase:       testCaseRunningSuspend,
-		}, {
+		},
+		{
 			name: "test running cancel",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
@@ -359,7 +363,8 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			wantErr:        assert.NoError,
 			wantJobPhase:   kusciaapisv1alpha1.KusciaJobCancelled,
 			testcase:       testCaseRunningCancel,
-		}, {
+		},
+		{
 			name: "test running stop",
 			fields: fields{
 				kusciaClient: kusciafake.NewSimpleClientset(
@@ -383,6 +388,7 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			setRunningJobStage(tt.args.kusciaJob, tt.testcase)
 			kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(tt.fields.kusciaClient, 5*time.Minute)
 			kubeInformerFactory := informers.NewSharedInformerFactory(tt.fields.kubeClient, 5*time.Minute)
+
 			nsInformer := kubeInformerFactory.Core().V1().Namespaces()
 			domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 			aliceNs := &corev1.Namespace{
@@ -401,19 +407,14 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "alice",
 				},
-				Spec: kusciaapisv1alpha1.DomainSpec{},
 			}
 			bobD := &kusciaapisv1alpha1.Domain{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "bob",
 				},
-				Spec: kusciaapisv1alpha1.DomainSpec{},
 			}
-			nsInformer.Informer().GetStore().Add(aliceNs)
-			nsInformer.Informer().GetStore().Add(bobNs)
 			domainInformer.Informer().GetStore().Add(aliceD)
 			domainInformer.Informer().GetStore().Add(bobD)
-
 			deps := &Dependencies{
 				KusciaClient:     tt.fields.kusciaClient,
 				KusciaTaskLister: kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Lister(),
@@ -425,7 +426,7 @@ func TestRunningHandler_HandlePhase(t *testing.T) {
 			}
 			stopCh := make(<-chan struct{})
 			go kusciaInformerFactory.Start(stopCh)
-			cache.WaitForCacheSync(wait.NeverStop, kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Informer().HasSynced)
+			cache.WaitForCacheSync(stopCh, kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks().Informer().HasSynced)
 
 			gotNeedUpdate, err := h.HandlePhase(tt.args.kusciaJob)
 			if !tt.wantErr(t, err, fmt.Sprintf("HandlePhase(%v)", tt.args.kusciaJob)) {

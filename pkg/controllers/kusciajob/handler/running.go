@@ -17,6 +17,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +54,7 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 	defer updateJobTime(now, job)
 	// handle stage command, check if the stage command matches the phase of job
 	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return true, err
+		return hasReconciled, err
 	}
 	// set task id
 	if utilsres.SelfClusterAsInitiator(h.namespaceLister, job.Spec.Initiator, job.Annotations) {
@@ -73,19 +74,24 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 		nlog.Errorf("List job sub-tasks selector: %s", err)
 		return false, err
 	}
-
 	// compute current status.
 	// NOTE: We don't believe kusciaJob.TaskStatus, we rebuild it from current sub-task status.
 	// MayBe some tasks have been created, but updateStatus failed Or first task creation has been happened,
 	// but updateStatus is delayed.
 	currentSubTasksStatusWithAlias, currentSubTasksStatusWithID := buildJobSubTaskStatus(subTasks, job)
 	currentJobPhase := jobStatusPhaseFrom(job, currentSubTasksStatusWithAlias)
+	if updateJobSubTaskStatus(&job.Status, currentSubTasksStatusWithID) {
+		needUpdateStatus = true
+	}
 
 	// compute ready task and push job when needed.
 	readyTask := readyTasksOf(job, currentSubTasksStatusWithAlias)
 	if currentJobPhase != kusciaapisv1alpha1.KusciaJobFailed && currentJobPhase != kusciaapisv1alpha1.KusciaJobSucceeded {
 		willStartTask := willStartTasksOf(job, readyTask, currentSubTasksStatusWithAlias)
-		willStartKusciaTasks := h.buildWillStartKusciaTask(job, willStartTask)
+		willStartKusciaTasks, err := h.buildWillStartKusciaTask(job, willStartTask)
+		if err != nil {
+			return needUpdateStatus, err
+		}
 		// then we will start KusciaTask
 		for _, t := range willStartKusciaTasks {
 			nlog.Infof("Create kuscia tasks: %s", t.ObjectMeta.Name)
@@ -101,7 +107,6 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 						if err != nil {
 							nlog.Errorf("Get exist task %v failed: %v", t.Name, err)
 							setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "CreateTaskFailed", err.Error())
-							job.Status.CompletionTime = &now
 							return true, nil
 						}
 					}
@@ -110,7 +115,6 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 						message := fmt.Sprintf("Failed to create task %v because a task with the same name already exists", t.Name)
 						nlog.Error(message)
 						setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "CreateTaskFailed", message)
-						job.Status.CompletionTime = &now
 						return true, nil
 					}
 				} else {
@@ -121,6 +125,16 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 		}
 	}
 
-	needUpdateStatus = buildJobStatus(now, &job.Status, currentJobPhase, currentSubTasksStatusWithID)
+	if buildJobStatus(now, &job.Status, currentJobPhase) {
+		needUpdateStatus = true
+	}
 	return needUpdateStatus, nil
+}
+
+func updateJobSubTaskStatus(kjStatus *kusciaapisv1alpha1.KusciaJobStatus, currentSubTasksStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase) bool {
+	if !reflect.DeepEqual(kjStatus.TaskStatus, currentSubTasksStatus) {
+		kjStatus.TaskStatus = currentSubTasksStatus
+		return true
+	}
+	return false
 }

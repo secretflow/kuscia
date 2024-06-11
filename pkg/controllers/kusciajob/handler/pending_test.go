@@ -82,6 +82,7 @@ func setJobStageStatus(job *kusciaapisv1alpha1.KusciaJob, testCase int) {
 }
 
 func TestPendingHandler_HandlePhase(t *testing.T) {
+	t.Parallel()
 	independentJob := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 

@@ -124,9 +124,9 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 		kusciaTokenRevision: fmt.Sprintf("%d", dr.Status.TokenStatus.RevisionToken.Revision),
 	}
 
-	handshakePath := utils.GetHandshakePathSuffix()
-	if !dr.Status.TokenStatus.RevisionToken.IsReady {
-		handshakePath = utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+	handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+	if dr.Spec.Destination == c.getMasterNamespace() {
+		handshakePath = utils.GetHandshakePathOfPrefix(c.getMasterProxyPath())
 	}
 
 	hp := &utils.HTTPParam{
@@ -229,6 +229,9 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	if dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
 		handshankeReq.Type = handShakeTypeUID
 		handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+		if dr.Spec.Destination == c.getMasterNamespace() {
+			handshakePath = utils.GetHandshakePathOfPrefix(c.getMasterProxyPath())
+		}
 		err := doHTTPWithDefaultRetry(handshankeReq, resp, &utils.HTTPParam{
 			Method:       http.MethodPost,
 			Path:         handshakePath,
@@ -272,7 +275,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			nlog.Errorf("DomainRoute %s: destination public key format error, must be base64 encoded", dr.Name)
 			return err
 		}
-		destPubKey, err := tlsutils.ParsePKCS1PublicKey(destPub)
+		destPubKey, err := tlsutils.ParseRSAPublicKey(destPub)
 		if err != nil {
 			return err
 		}
@@ -289,6 +292,9 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		}
 
 		handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
+		if dr.Spec.Destination == c.getMasterNamespace() {
+			handshakePath = utils.GetHandshakePathOfPrefix(c.getMasterProxyPath())
+		}
 		err = doHTTPWithDefaultRetry(handshankeReq, resp, &utils.HTTPParam{
 			Method:       http.MethodPost,
 			Path:         handshakePath,
@@ -426,7 +432,16 @@ func (c *DomainRouteController) checkTokenStatus(domainID, tokenRevision string)
 	}
 	drName := common.GenDomainRouteName(domainID, c.gateway.Namespace)
 	if dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName); err == nil {
-		return checkTokenRevision(tokenRevision, dr)
+		destStatus := checkTokenRevision(tokenRevision, dr)
+		if destStatus == TokenReady {
+			index, token := IndexToken(tokenRevision, dr)
+			token.HeartBeatTime = metav1.Now()
+			dr.Status.TokenStatus.Tokens[index] = token
+			if _, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
+				nlog.Errorf("update domain route fail, detail -> %v", err)
+			}
+		}
+		return destStatus
 	} else if k8serrors.IsNotFound(err) {
 		return NoAuthentication
 	}
@@ -437,19 +452,24 @@ func checkTokenRevision(tokenRevision string, dr *kusciaapisv1alpha1.DomainRoute
 	if tokenRevision == "" {
 		return TokenRevisionInputInvalid
 	}
-	r, err := strconv.Atoi(tokenRevision)
-	if err != nil {
-		return TokenRevisionInputInvalid
+
+	index, token := IndexToken(tokenRevision, dr)
+	if index == -1 {
+		return TokenNotFound
 	}
-	for _, t := range dr.Status.TokenStatus.Tokens {
-		if t.Revision == int64(r) {
-			if t.IsReady {
-				return TokenReady
-			}
-			return TokenNotReady
+	if token.IsReady {
+		return TokenReady
+	}
+	return TokenNotReady
+}
+
+func IndexToken(revision string, dr *kusciaapisv1alpha1.DomainRoute) (int, kusciaapisv1alpha1.DomainRouteToken) {
+	for index, t := range dr.Status.TokenStatus.Tokens {
+		if strconv.FormatInt(t.Revision, 10) == revision {
+			return index, t
 		}
 	}
-	return TokenNotFound
+	return -1, kusciaapisv1alpha1.DomainRouteToken{}
 }
 
 func buildFailedHandshakeReply(code int32, err error) *handshake.HandShakeResponse {
@@ -482,7 +502,7 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 	if err != nil {
 		return buildFailedHandshakeReply(500, fmt.Errorf("invalid source domain [%s] publickey in domainroute [%s], must be based64 encoded string", srcPub, drName))
 	}
-	sourcePubKey, err := tlsutils.ParsePKCS1PublicKey(srcPub)
+	sourcePubKey, err := tlsutils.ParseRSAPublicKey(srcPub)
 	if err != nil {
 		return buildFailedHandshakeReply(500, fmt.Errorf("invalid source domain [%s] publickey in domainroute [%s], error: %s", srcDomain, drName, err.Error()))
 	}

@@ -26,16 +26,15 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func TestSucceededHandler_HandlePhase(t *testing.T) {
+	t.Parallel()
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(nlog.Infof)
 	eventBroadcaster.StartRecordingToSink(
 		&typedcorev1.EventSinkImpl{Interface: kubefake.NewSimpleClientset().CoreV1().Events("default")})
-	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-job-controller"})
 	type fields struct {
 		recorder record.EventRecorder

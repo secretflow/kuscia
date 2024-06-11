@@ -25,6 +25,7 @@ import (
 )
 
 func TestResourceFilter(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		obj  interface{}
@@ -117,6 +118,7 @@ func TestResourceFilter(t *testing.T) {
 }
 
 func TestFilterJob(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		obj  metav1.Object
@@ -157,6 +159,7 @@ func TestFilterJob(t *testing.T) {
 }
 
 func TestFilterDeployment(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		obj  metav1.Object
@@ -197,6 +200,7 @@ func TestFilterDeployment(t *testing.T) {
 }
 
 func TestFilterTask(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		obj  metav1.Object
@@ -254,6 +258,7 @@ func TestFilterTask(t *testing.T) {
 }
 
 func TestFilterTaskResource(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		obj  metav1.Object
@@ -322,6 +327,7 @@ func TestFilterTaskResource(t *testing.T) {
 }
 
 func TestFilterResourceSummary(t *testing.T) {
+	t.Parallel()
 	now := metav1.Now()
 	tests := []struct {
 		name string

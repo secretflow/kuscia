@@ -32,6 +32,7 @@ import (
 )
 
 func TestFailedHandler_Handle(t *testing.T) {
+	t.Parallel()
 	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 
 	kt := &kusciaapisv1alpha1.KusciaTask{
@@ -62,6 +63,7 @@ func TestFailedHandler_Handle(t *testing.T) {
 }
 
 func TestSetTaskResourceGroupFailed(t *testing.T) {
+	t.Parallel()
 	kt := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",

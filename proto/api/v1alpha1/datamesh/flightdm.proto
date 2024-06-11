@@ -17,7 +17,6 @@ syntax = "proto3";
 package kuscia.proto.api.v1alpha1.datamesh;
 
 import "kuscia/proto/api/v1alpha1/datamesh/domaindata.proto";
-import "kuscia/proto/api/v1alpha1/datamesh/domaindatasource.proto";
 
 option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh";
 option java_package = "org.secretflow.v1alpha1.datamesh";
@@ -58,7 +57,7 @@ message CommandDomainDataQuery {
   // column name of DomainData's columns
   repeated string columns = 2;
 
-  // expected content type of flight data from data proxy response
+  // transfer content-type(expected content type of flight data from data proxy response)
   // for domaindata with type != table, the content_type can only be RAW, other types will not take effect
   ContentType  content_type = 3;
   // if content_type is CSV, you can set file_write_options
@@ -72,7 +71,7 @@ message CommandDomainDataUpdate {
   // create an nonexistent domaindata and get a update ticket
   CreateDomainDataRequest domaindata_request = 2;
 
-  // content type of flight data from client request
+  // transfer content-type(content type of flight data from client request)
   // for domaindata with type != table, the content_type can only be RAW, other types will not take effect
   ContentType  content_type = 3;
 
@@ -81,56 +80,4 @@ message CommandDomainDataUpdate {
 
   // extra options varies by datasource type
   map<string, string> extra_options = 5;
-}
-
-message TicketDomainDataQuery {
-  // a unique identifier related to a DomainData query
-  string domaindata_handle = 1;
-}
-
-// call DoAction with ActionCreateDomainDataRequest, return ActionCreateDomainDataResponse
-message ActionCreateDomainDataRequest {
-  CreateDomainDataRequest request = 1;
-}
-
-message ActionCreateDomainDataResponse {
-  CreateDomainDataResponse response = 1;
-}
-
-// call DoAction with ActionQueryDomainDataRequest, return ActionQueryDomainDataResponse
-message ActionQueryDomainDataRequest {
-  QueryDomainDataRequest request = 1;
-}
-
-message ActionQueryDomainDataResponse {
-  QueryDomainDataResponse response = 1;
-}
-
-// call DoAction with ActionUpdateDomainDataRequest, return ActionUpdateDomainDataResponse
-message ActionUpdateDomainDataRequest {
-    UpdateDomainDataRequest request = 1;
-}
-
-message ActionUpdateDomainDataResponse {
-  UpdateDomainDataResponse response = 1;
-}
-
-// call DoAction with ActionDeleteDomainDataRequest, return ActionDeleteDomainDataResponse
-message ActionDeleteDomainDataRequest {
-    DeleteDomainDataRequest request = 1;
-    // not supported now
-    bool physical_deletion = 2;
-}
-
-message ActionDeleteDomainDataResponse {
-  DeleteDomainDataResponse response = 1;
-}
-
-// call DoAction with ActionQueryDomainDataSourceRequest, return ActionQueryDomainDataSourceResponse
-message ActionQueryDomainDataSourceRequest {
-  QueryDomainDataSourceRequest request = 1;
-}
-
-message ActionQueryDomainDataSourceResponse {
-  QueryDomainDataSourceResponse response = 1;
 }

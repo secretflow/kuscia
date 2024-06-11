@@ -36,6 +36,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 type IDomainDataGrantService interface {
@@ -59,26 +60,26 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 
 	if validateErr := validateCreateDomainDataGrantRequest(request); validateErr != nil {
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, validateErr.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, validateErr.Error()),
 		}
 	}
 	if request.GrantDomain == s.conf.KubeNamespace {
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "grantdomain cant be self"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "grantdomain cant be self"),
 		}
 	}
 
 	dd, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, fmt.Sprintf("domaindata [%s] not exists", request.DomaindataId)),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, fmt.Sprintf("domaindata [%s] not exists", request.DomaindataId)),
 		}
 	}
 	if request.DomaindatagrantId != "" {
 		_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(s.conf.KubeNamespace).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
 		if err == nil {
 			return &datamesh.CreateDomainDataGrantResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrCreateDomainDataGrant), fmt.Sprintf("CreateDomainDataGrant failed, because domaindatagrant %s is exist", request.DomaindatagrantId)),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_DataMeshErrCreateDomainDataGrant), fmt.Sprintf("CreateDomainDataGrant failed, because domaindatagrant %s is exist", request.DomaindatagrantId)),
 			}
 		}
 	}
@@ -96,7 +97,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("CreateDomainDataGrant failed, error:%s", err.Error())
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrCreateDomainDataGrant), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_DataMeshErrCreateDomainDataGrant), err.Error()),
 		}
 	}
 
@@ -104,7 +105,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("CreateDomainDataGrant failed, error:%s", err.Error())
 		return &datamesh.CreateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrCreateDomainDataGrant), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_DataMeshErrCreateDomainDataGrant), err.Error()),
 		}
 	}
 	nlog.Infof("Create DomainDataGrant %s/%s", s.conf.KubeNamespace, dg.Name)
@@ -119,14 +120,14 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 func (s *domainDataGrantService) QueryDomainDataGrant(ctx context.Context, request *datamesh.QueryDomainDataGrantRequest) *datamesh.QueryDomainDataGrantResponse {
 	if request.DomaindatagrantId == "" {
 		return &datamesh.QueryDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindatagrantid cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "domaindatagrantid cant be null"),
 		}
 	}
 	dg, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(s.conf.KubeNamespace).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("Query DomainDataGrant failed, error:%s", err.Error())
 		return &datamesh.QueryDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrQueryDomainDataGrant, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrQueryDomainDataGrant, err.Error()),
 		}
 	}
 
@@ -141,38 +142,38 @@ func (s *domainDataGrantService) QueryDomainDataGrant(ctx context.Context, reque
 func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, request *datamesh.UpdateDomainDataGrantRequest) *datamesh.UpdateDomainDataGrantResponse {
 	if request.DomaindatagrantId == "" {
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindatagrantid cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "domaindatagrantid cant be null"),
 		}
 	}
 
 	if request.DomaindataId == "" {
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindata cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "domaindata cant be null"),
 		}
 	}
 
 	_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(s.conf.KubeNamespace).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindata cant be found"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "domaindata cant be found"),
 		}
 	}
 
 	if request.GrantDomain == "" {
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "grantdomain cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "grantdomain cant be null"),
 		}
 	}
 	if request.GrantDomain == s.conf.KubeNamespace {
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "grantdomain cant be self"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "grantdomain cant be self"),
 		}
 	}
 	dg, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(s.conf.KubeNamespace).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("Get DomainDataGrant failed, error:%s", err.Error())
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrUpdateDomainDataGrant), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_DataMeshErrUpdateDomainDataGrant), err.Error()),
 		}
 	}
 
@@ -188,7 +189,7 @@ func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, requ
 	if err != nil {
 		nlog.Errorf("Update DomainDataGrant failed, error:%s", err.Error())
 		return &datamesh.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, errorcode.ErrUpdateDomainDataGrant), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_DataMeshErrUpdateDomainDataGrant), err.Error()),
 		}
 	}
 	nlog.Infof("Update DomainDataGrant %s/%s", s.conf.KubeNamespace, request.DomaindatagrantId)
@@ -200,14 +201,14 @@ func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, requ
 func (s *domainDataGrantService) DeleteDomainDataGrant(ctx context.Context, request *datamesh.DeleteDomainDataGrantRequest) *datamesh.DeleteDomainDataGrantResponse {
 	if request.DomaindatagrantId == "" {
 		return &datamesh.DeleteDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "domaindatagrantid cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate, "domaindatagrantid cant be null"),
 		}
 	}
 	nlog.Warnf("Delete domainDataGrantId %s/%s", s.conf.KubeNamespace, request.DomaindatagrantId)
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(s.conf.KubeNamespace).Delete(ctx, request.DomaindatagrantId, metav1.DeleteOptions{})
 	if err != nil {
 		return &datamesh.DeleteDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrDeleteDomainDataGrant, fmt.Sprintf("Delete domainDataGrantId:%s failed, detail:%s", request.DomaindatagrantId, err.Error())),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_DataMeshErrDeleteDomainDataGrant, fmt.Sprintf("Delete domainDataGrantId:%s failed, detail:%s", request.DomaindatagrantId, err.Error())),
 		}
 	}
 	return &datamesh.DeleteDomainDataGrantResponse{

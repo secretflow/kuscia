@@ -58,6 +58,7 @@ import (
 	kusciaextv1alpha1 "github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
+	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -75,25 +76,25 @@ const (
 )
 
 type DomainRouteConfig struct {
-	Namespace       string
-	MasterNamespace string
-	IsMaster        bool
-	CAKey           *rsa.PrivateKey
-	CACert          *x509.Certificate
-	Prikey          *rsa.PrivateKey
-	PrikeyData      []byte
-	HandshakePort   uint32
+	Namespace     string
+	MasterConfig  *config.MasterConfig
+	IsMaster      bool
+	CAKey         *rsa.PrivateKey
+	CACert        *x509.Certificate
+	Prikey        *rsa.PrivateKey
+	PrikeyData    []byte
+	HandshakePort uint32
 }
 
 type DomainRouteController struct {
-	gateway         *kusciaapisv1alpha1.Gateway
-	masterNamespace string
-	isMaser         bool
-	CaCertData      []byte
-	CaCert          *x509.Certificate
-	CaKey           *rsa.PrivateKey
-	prikey          *rsa.PrivateKey
-	prikeyData      []byte
+	gateway      *kusciaapisv1alpha1.Gateway
+	masterConfig *config.MasterConfig
+	isMaser      bool
+	CaCertData   []byte
+	CaCert       *x509.Certificate
+	CaKey        *rsa.PrivateKey
+	prikey       *rsa.PrivateKey
+	prikeyData   []byte
 
 	kubeClient              kubernetes.Interface
 	kusciaClient            clientset.Interface
@@ -131,7 +132,7 @@ func NewDomainRouteController(
 	}
 	c := &DomainRouteController{
 		gateway:                 gateway,
-		masterNamespace:         drConfig.MasterNamespace,
+		masterConfig:            drConfig.MasterConfig,
 		CaCertData:              drConfig.CACert.Raw,
 		CaCert:                  drConfig.CACert,
 		CaKey:                   drConfig.CAKey,
@@ -202,7 +203,7 @@ func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh
 }
 
 func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stopCh <-chan struct{}) {
-	t := time.NewTicker(15 * time.Second)
+	t := time.NewTicker(common.GatewayHealthCheckDuration)
 	defer t.Stop()
 	for {
 		select {
@@ -263,7 +264,7 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 	}
 
 	is3rdParty := utils.IsThirdPartyTransit(dr.Spec.Transit)
-	if dr.Spec.Source == c.gateway.Namespace && dr.Spec.Destination != c.masterNamespace {
+	if dr.Spec.Source == c.gateway.Namespace && dr.Spec.Destination != c.getMasterNamespace() {
 		if is3rdParty {
 			if err := c.updateTransitVh(dr); err != nil {
 				return fmt.Errorf("add transit route failed with %s", err.Error())
@@ -447,10 +448,20 @@ func (c *DomainRouteController) updatePollerReceiverXds(dr *kusciaapisv1alpha1.D
 		if err := xds.UpdateReceiverRules(&rule, true); err != nil {
 			return err
 		}
-		if err := xds.AddOrUpdateVirtualHost(generateReceiverExternalVh(dr), xds.ExternalRoute); err != nil {
+		// update or add external virtual host
+		if vh, err := generateReceiverExternalVh(dr); err == nil {
+			if err := xds.AddOrUpdateVirtualHost(vh, xds.ExternalRoute); err != nil {
+				return err
+			}
+		} else {
 			return err
 		}
-		if err := xds.AddOrUpdateVirtualHost(generateReceiverInternalVh(dr), xds.InternalRoute); err != nil {
+		// update or add internal virtual host
+		if vh, err := generateReceiverInternalVh(dr); err == nil {
+			if err := xds.AddOrUpdateVirtualHost(vh, xds.InternalRoute); err != nil {
+				return err
+			}
+		} else {
 			return err
 		}
 	} else if dr.Spec.Destination == c.gateway.Namespace { // external
@@ -464,15 +475,14 @@ func (c *DomainRouteController) updatePollerReceiverXds(dr *kusciaapisv1alpha1.D
 
 func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) error {
 	// TODO domain route from current ns to master can't be transit route, is it correct, or else why?
-	if dr.Spec.Destination == c.masterNamespace && dr.Spec.Source == c.gateway.Namespace {
+	if dr.Spec.Destination == c.getMasterNamespace() && dr.Spec.Source == c.gateway.Namespace {
 		token := tokens[len(tokens)-1]
 		cl, err := xds.QueryCluster(clusters.GetMasterClusterName())
 		if err != nil {
 			nlog.Error(err)
 			return err
 		}
-		pathPrefix := utils.GetPrefixIfPresent(dr.Spec.Endpoint)
-		if err := clusters.AddMasterProxyVirtualHost(cl.Name, pathPrefix, utils.ServiceMasterProxy, c.gateway.Namespace, token.Token); err != nil {
+		if err := clusters.AddMasterProxyVirtualHost(cl.Name, c.getMasterProxyPath(), utils.ServiceMasterProxy, c.gateway.Namespace, token.Token); err != nil {
 			nlog.Error(err)
 			return err
 		}
@@ -601,7 +611,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 func (c *DomainRouteController) updateTransitVh(dr *kusciaapisv1alpha1.DomainRoute) error {
 	ns := dr.Spec.Transit.Domain.DomainID
 	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, ns)
-	if ns == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
+	if ns == c.getMasterNamespace() && c.getMasterNamespace() != c.gateway.Namespace {
 		vhName = fmt.Sprintf("%s-internal", clusters.GetMasterClusterName())
 	}
 	vh, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
@@ -655,9 +665,9 @@ func updateDecryptFilter(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) er
 	return xds.UpdateDecryptRules(rule, true)
 }
 
-func generateReceiverExternalVh(dr *kusciaapisv1alpha1.DomainRoute) *route.VirtualHost {
+func generateReceiverExternalVh(dr *kusciaapisv1alpha1.DomainRoute) (*route.VirtualHost, error) {
 	return &route.VirtualHost{
-		Name:    fmt.Sprintf("%s-to-%s-receiver-external", dr.Spec.Source, dr.Spec.Destination),
+		Name:    "receiver-external",
 		Domains: []string{fmt.Sprintf("receiver.%s.svc", dr.Spec.Source)},
 		Routes: []*route.Route{
 			{
@@ -702,13 +712,31 @@ func generateReceiverExternalVh(dr *kusciaapisv1alpha1.DomainRoute) *route.Virtu
 				RequestHeadersToRemove: []string{"x-envoy-expected-rq-timeout-ms"},
 			},
 		},
-	}
+	}, nil
 }
 
-func generateReceiverInternalVh(dr *kusciaapisv1alpha1.DomainRoute) *route.VirtualHost {
+func generateReceiverInternalVh(dr *kusciaapisv1alpha1.DomainRoute) (*route.VirtualHost, error) {
+	vhName := "receiver-internal"
+	vhDomain := fmt.Sprintf("kuscia-handshake.%s.svc", dr.Spec.Destination)
+
+	vh, _ := xds.QueryVirtualHost(vhName, xds.InternalRoute)
+	if vh != nil {
+		var exists bool
+		for _, domain := range vh.Domains {
+			if domain == vhDomain {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			vh.Domains = append(vh.Domains, vhDomain)
+		}
+		return vh, nil
+	}
+
 	return &route.VirtualHost{
-		Name:    fmt.Sprintf("%s-to-%s-receiver-internal", dr.Spec.Source, dr.Spec.Destination),
-		Domains: []string{fmt.Sprintf("kuscia-handshake.%s.svc", dr.Spec.Destination)},
+		Name:    vhName,
+		Domains: []string{vhDomain},
 		Routes: []*route.Route{
 			{
 				Match: &route.RouteMatch{
@@ -750,7 +778,7 @@ func generateReceiverInternalVh(dr *kusciaapisv1alpha1.DomainRoute) *route.Virtu
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort, token string, isDefaultRoute bool,
@@ -962,11 +990,9 @@ func generateRequestHeaders(dr *kusciaapisv1alpha1.DomainRoute) *headerDecorator
 }
 
 func generatePollHeaders(dr *kusciaapisv1alpha1.DomainRoute) *kusciapoller.Poller_SourceHeader {
-	if len(dr.Spec.RequestHeadersToAdd) == 0 {
-		return nil
-	}
 	sourceHeader := &kusciapoller.Poller_SourceHeader{
-		Source: dr.Spec.Source,
+		Source:  dr.Spec.Source,
+		Headers: []*kusciapoller.Poller_HeaderEntry{},
 	}
 	for k, v := range dr.Spec.RequestHeadersToAdd {
 		entry := &kusciapoller.Poller_HeaderEntry{
@@ -980,7 +1006,7 @@ func generatePollHeaders(dr *kusciaapisv1alpha1.DomainRoute) *kusciapoller.Polle
 
 func (c *DomainRouteController) getClusterNamesByDomainRoute(dr *kusciaapisv1alpha1.DomainRoute) []string {
 	var names []string
-	if dr.Spec.Destination == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
+	if dr.Spec.Destination == c.getMasterNamespace() && c.getMasterNamespace() != c.gateway.Namespace {
 		names = append(names, clusters.GetMasterClusterName())
 	}
 	for _, dp := range dr.Spec.Endpoint.Ports {
@@ -993,7 +1019,7 @@ func (c *DomainRouteController) getDefaultClusterNameByDomainRoute(dr *kusciaapi
 	if utils.IsThirdPartyTransit(dr.Spec.Transit) {
 		return ""
 	}
-	if dr.Spec.Destination == c.masterNamespace && c.masterNamespace != c.gateway.Namespace {
+	if dr.Spec.Destination == c.getMasterNamespace() && c.getMasterNamespace() != c.gateway.Namespace {
 		return clusters.GetMasterClusterName()
 	}
 	dps := sortDomainPorts(dr.Spec.Endpoint.Ports)
@@ -1005,6 +1031,20 @@ func (c *DomainRouteController) getDefaultClusterNameByDomainRoute(dr *kusciaapi
 	}
 	if n > 0 {
 		return common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, dps[0].Name)
+	}
+	return ""
+}
+
+func (c *DomainRouteController) getMasterNamespace() string {
+	if c.masterConfig != nil {
+		return c.masterConfig.Namespace
+	}
+	return ""
+}
+
+func (c *DomainRouteController) getMasterProxyPath() string {
+	if c.masterConfig != nil && c.masterConfig.MasterProxy != nil {
+		return c.masterConfig.MasterProxy.Path
 	}
 	return ""
 }

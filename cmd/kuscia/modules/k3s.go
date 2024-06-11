@@ -210,7 +210,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/k3s"), args...)
+		cmd := exec.Command(filepath.Join(s.rootDir, "bin/k3s"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
 

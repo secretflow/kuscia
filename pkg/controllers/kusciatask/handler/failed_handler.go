@@ -47,7 +47,7 @@ func NewFailedHandler(deps *Dependencies, finishedHandler *FinishedHandler) *Fai
 // Handle is used to perform the real logic.
 func (h *FailedHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	h.setTaskResourceGroupFailed(kusciaTask)
-	updateStatuses(kusciaTask)
+	setPartyTaskStatusFailed(kusciaTask)
 	needUpdate, err := h.FinishedHandler.Handle(kusciaTask)
 	if err != nil {
 		return false, err
@@ -79,8 +79,20 @@ func (h *FailedHandler) setTaskResourceGroupFailed(kusciaTask *kusciaapisv1alpha
 	}
 }
 
-func updateStatuses(kusciaTask *kusciaapisv1alpha1.KusciaTask) {
+func setPartyTaskStatusFailed(kusciaTask *kusciaapisv1alpha1.KusciaTask) {
 	// if task failed, set the all party task status to failed
+	if len(kusciaTask.Status.PartyTaskStatus) == 0 {
+		for _, party := range kusciaTask.Spec.Parties {
+			kusciaTask.Status.PartyTaskStatus = append(kusciaTask.Status.PartyTaskStatus,
+				kusciaapisv1alpha1.PartyTaskStatus{
+					DomainID: party.DomainID,
+					Role:     party.Role,
+					Phase:    kusciaapisv1alpha1.TaskFailed,
+				})
+		}
+		return
+	}
+
 	for idx, status := range kusciaTask.Status.PartyTaskStatus {
 		if status.Phase == kusciaapisv1alpha1.TaskPending || status.Phase == kusciaapisv1alpha1.TaskRunning {
 			kusciaTask.Status.PartyTaskStatus[idx].Phase = kusciaapisv1alpha1.TaskFailed

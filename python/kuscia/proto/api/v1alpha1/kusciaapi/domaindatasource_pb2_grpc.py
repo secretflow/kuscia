@@ -39,6 +39,11 @@ class DomainDataSourceServiceStub(object):
                 request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.BatchQueryDomainDataSourceRequest.SerializeToString,
                 response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.BatchQueryDomainDataSourceResponse.FromString,
                 )
+        self.ListDomainDataSource = channel.unary_unary(
+                '/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/ListDomainDataSource',
+                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.ListDomainDataSourceRequest.SerializeToString,
+                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.ListDomainDataSourceResponse.FromString,
+                )
 
 
 class DomainDataSourceServiceServicer(object):
@@ -74,6 +79,12 @@ class DomainDataSourceServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListDomainDataSource(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DomainDataSourceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -101,6 +112,11 @@ def add_DomainDataSourceServiceServicer_to_server(servicer, server):
                     servicer.BatchQueryDomainDataSource,
                     request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.BatchQueryDomainDataSourceRequest.FromString,
                     response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.BatchQueryDomainDataSourceResponse.SerializeToString,
+            ),
+            'ListDomainDataSource': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListDomainDataSource,
+                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.ListDomainDataSourceRequest.FromString,
+                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.ListDomainDataSourceResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -194,5 +210,22 @@ class DomainDataSourceService(object):
         return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/BatchQueryDomainDataSource',
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.BatchQueryDomainDataSourceRequest.SerializeToString,
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.BatchQueryDomainDataSourceResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ListDomainDataSource(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataSourceService/ListDomainDataSource',
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.ListDomainDataSourceRequest.SerializeToString,
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_domaindatasource__pb2.ListDomainDataSourceResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

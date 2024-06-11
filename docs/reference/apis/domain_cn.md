@@ -29,11 +29,11 @@
 | 字段          | 类型                                           | 选填 | 描述                                                                                                                                            |
 |-------------|----------------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | header      | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                       |
-| domain_id   | string                                       | 必填 | 节点 ID 需要符合 DNS 子域名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| domain_id   | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | role        | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                  |
-| cert        | string                                       | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                       |
-| auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点到中心的授权模式                                                                                                                                    |
-| master_domain_id | string                                  | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+| cert        | string                                       | 可选 | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                       |
+| auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点到中心的授权模式，中心化模式需要填写该字段                                                                                                                                    |
+| master_domain_id | string                                  | 可选 | Master Domain ID，中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填                                                                                                                                       |
 
 #### 响应（CreateDomainResponse）
 
@@ -107,8 +107,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 | header    | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                      |
 | domain_id | string                                       | 必填 | 节点 ID                                                        |
 | role      | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| cert      | string                                       | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
-|master_domain_id             | string                                      | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+| cert      | string                                       | 可选 | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+|master_domain_id             | string                                      | 可选 | Master Domain ID，中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填                                                                                                                                       |
 
 #### 响应（UpdateDomainResponse）
 
@@ -252,12 +252,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
 | data                       | QueryDomainResponseData                     |    |                                                              |
 | data.domain_id             | string                                      | 必填 | 节点 ID                                                        |
 | data.role                  | string                                      | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| data.cert                  | string                                      | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+| data.cert                  | string                                      | 可选 | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
 | data.annotations           | map[string]string                           | 可选 | 节点的额外信息，比如是否是内置节点等                                           |
-| data.auth_center           | [AuthCenter](#auth-center)                  | 可选 | 节点到中心的授权模式                                                   |
+| data.auth_center           | [AuthCenter](#auth-center)                  | 可选 | 节点到中心的授权模式，当部署模式为中心化时，需要填写该字段                                                   |
 | data.node_statuses         | [NodeStatus](#node-status)[]                | 必填 | 物理节点状态                                                       |
 | data.deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 必填 | 部署令牌状态                                                       |
-|master_domain_id             | string                                      | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+|master_domain_id             | string                                      | 可选 | Master Domain ID，中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填                                                                                                                                       |
 
 #### 请求示例
 
@@ -410,7 +410,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 |-----------------------|---------------------------------------------|----|--------------------------------------------------------------|
 | domain_id             | string                                      | 必填 | 节点 ID                                                        |
 | role                  | string                                      | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| cert                  | string                                      | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+| cert                  | string                                      | 可选 | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
 | node_statuses         | [NodeStatus](#node-status)[]                | 必填 | 真实物理节点状态                                                     |
 | deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 必填 | 部署令牌状态                                                       |
 
