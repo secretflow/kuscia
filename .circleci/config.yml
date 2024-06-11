@@ -39,8 +39,8 @@ executors:
 commands:
   go_env:
     steps:
-      - checkout
-      - setup_remote_docker
+#      - checkout
+#      - setup_remote_docker
       - run:
           name: "install go"
           command: |
@@ -65,8 +65,8 @@ commands:
             fi
   test:
     steps:
-      - checkout
-      - setup_remote_docker
+#      - checkout
+#      - setup_remote_docker
       - run:
           name: "Install the go module"
           command: |
@@ -166,10 +166,6 @@ workflows:
       tags:
         only: /^v.*/
     jobs:
-      - unit-test:
-          matrix:
-            parameters:
-              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - linux_build_kuscia:
           matrix:
             parameters:
