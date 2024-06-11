@@ -156,7 +156,6 @@ workflows:
   build-workflow:
     when:
       and:
-        - not: << pipeline.parameters.GHA_Action >>
         - not: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
         - not: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     filters:
