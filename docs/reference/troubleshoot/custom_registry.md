@@ -20,14 +20,14 @@ Kuscia支持自动拉取远程的应用镜像（比如：secretflow等），这�
 ```
 
 ### 公开镜像仓库
-如果使用公开的镜像仓库 （示例：`registry.cn-hangzhou.cr.aliyuncs.com`），对应的配置如下：
+如果使用公开的镜像仓库 （示例：`secretflow-registry.cn-hangzhou.cr.aliyuncs.com`），对应的配置如下：
 
 ```
 - image:
   - defaultRegistry: aliyun #随意，只需要对应到<image.registries[0].name>即可
   - registries:
     - name: aliyun
-      endpoint: registry.cn-hangzhou.cr.aliyuncs.com/secretflow
+      endpoint: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow
 ```
 
 
