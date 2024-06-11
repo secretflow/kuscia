@@ -155,17 +155,20 @@ workflows:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
   build-workflow:
     when:
-      not:
-        or:
-          - equal: << pipeline.parameters.GHA_Action >>
-          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
+      and:
+        - not: << pipeline.parameters.GHA_Action >>
+        - not equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+        - not equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     filters:
       branches:
         ignore: /.*/
       tags:
         only: /^v.*/
     jobs:
+      - unit-test:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - linux_build_kuscia:
           matrix:
             parameters:
