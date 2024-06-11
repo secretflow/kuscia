@@ -32,48 +32,15 @@ executors:
     shell: /bin/bash --login -eo pipefail
   linux_aarch64_executor:
     docker:
-      - image: secretflow/ubuntu-base-ci:latest
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:arm-test
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
 
 commands:
-  go_env:
-    steps:
-#      - checkout
-#      - setup_remote_docker
-      - run:
-          name: "install go"
-          command: |
-            ARCH=$(uname -m)
-
-            if [ "$ARCH" == "aarch64" ]; then
-            ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
-            ln -sf /usr/bin/bash /bin/sh
-            yum update -y
-            yum install -y  wget make cmake git curl unzip gcc perl-IPC-Cmd
-            GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.7"
-            GOLANG_URL="https://golang.google.cn/dl/go${GOLANG_VERSION}.linux-arm64.tar.gz"
-
-            if ! command -v go &> /dev/null; then
-            wget "$GOLANG_URL"
-            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-arm64.tar.gz"
-            export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
-            echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' | tee -a ~/.bashrc
-            echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> $BASH_ENV
-            fi
-            fi
   test:
     steps:
-#      - checkout
-#      - setup_remote_docker
-      - run:
-          name: "Install the go module"
-          command: |
-            go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
-            go install github.com/t-yuki/gocover-cobertura@latest
-            go install github.com/jstemmer/go-junit-report/v2@latest
-            go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+      - checkout
+      - setup_remote_docker
       - run:
           name: Test Kuscia
           command: make test
@@ -98,7 +65,6 @@ jobs:
     executor: <<parameters.executor>>
     steps:
       - checkout
-      - go_env
       - test
   linux_build_kuscia:
     parameters:
@@ -107,7 +73,6 @@ jobs:
     executor: <<parameters.executor>>
     steps:
       - checkout
-      - go_env
       - build_kuscia
   image_publish:
     docker:
