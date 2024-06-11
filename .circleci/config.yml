@@ -125,11 +125,11 @@ workflows:
           - not: << pipeline.parameters.GHA_Action >>
           - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
           - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
-    filters:
-      branches:
-        ignore: /.*/
-      tags:
-        only: /^v.*/
+#    filters:
+#      branches:
+#        ignore: /.*/
+#      tags:
+#        only: /^v.*/
     jobs:
       - linux_build_kuscia:
           matrix:
