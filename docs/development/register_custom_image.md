@@ -56,7 +56,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 ./register_app_image.sh -c root-kuscia-autonomy-alice -i secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/scql:latest -f appimage.yaml --import
 ```
 
-### 中心化模式模式
+### 中心化模式
 - Master 节点注册 Appimage 即可，下面以 root-kuscia-master 为例
 
 ```shell

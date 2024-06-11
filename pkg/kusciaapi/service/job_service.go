@@ -793,17 +793,13 @@ func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaap
 	// todo: would allow if the executive node is tee
 	if role == consts.AuthRoleDomain {
 		for _, task := range request.Tasks {
-			withDomain := false
 			for _, p := range task.Parties {
 				if p.GetDomainId() == domainId {
-					withDomain = true
-					break
+					return nil
 				}
 			}
-			if !withDomain {
-				return fmt.Errorf("domain's KusciaAPI could only create the job that the domain as a participant in the job")
-			}
 		}
+		return fmt.Errorf("domain's KusciaAPI could only create the job that the domain as a participant in the job")
 	}
 	return nil
 }

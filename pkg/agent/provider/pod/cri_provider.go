@@ -449,7 +449,6 @@ func (cp *CRIProvider) makeMounts(pod *v1.Pod, container *v1.Container, podVolum
 			return nil, fmt.Errorf("cannot find volume %q to mount into container %q", mount.Name, container.Name)
 		}
 
-		//
 		if !filepath.IsAbs(mount.MountPath) {
 			mount.MountPath = filepath.Join(container.WorkingDir, mount.MountPath)
 		}

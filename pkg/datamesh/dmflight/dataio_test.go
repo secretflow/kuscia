@@ -19,13 +19,13 @@ import (
 	"errors"
 	"testing"
 
+	gomonkeyv2 "github.com/agiledragon/gomonkey/v2"
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/stretchr/testify/assert"
-	gomonkeyv2 "github.com/agiledragon/gomonkey/v2"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"

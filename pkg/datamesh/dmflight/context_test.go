@@ -82,7 +82,7 @@ func registLocalFileDomainDataSource(t *testing.T, conf *config.DataMeshConfig, 
 			Name: dsID,
 		},
 		Spec: v1alpha1.DomainDataSourceSpec{
-			Name: dsId,
+			Name: dsID,
 			Type: "localfs",
 			Data: map[string]string{
 				"encryptedInfo": strConfig,
