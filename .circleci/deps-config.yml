@@ -66,8 +66,7 @@ jobs:
       - run:
           name: Build image and publish
           command: |
-            #DEPS_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:<< pipeline.parameters.DEPS_Tag >>
-            DEPS_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:test
+            DEPS_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:<< pipeline.parameters.DEPS_Tag >>
              # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
 
@@ -83,7 +82,7 @@ workflows:
       - linux_build_kuscia_deps:
           matrix:
             parameters:
-              executor: [ "linux_x64_executor" ]
+              executor: [ "linux_x64_executor" , "linux_aarch64_executor" ]
       - image_publish:
           requires:
             - linux_build_kuscia_deps
