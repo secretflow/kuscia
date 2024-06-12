@@ -171,7 +171,7 @@ workflows:
       - linux_build_kuscia_deps:
           matrix:
             parameters:
-              resource_class: ["2xlarge", "arm.2xlarge"]
+              resource_class: ["2xlarge", "arm.xlarge"]
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
