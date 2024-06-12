@@ -78,9 +78,9 @@ jobs:
       - image: cimg/deploy:2023.06.1
     shell: /bin/bash --login -eo pipefail
     parameters:
-      executor:
+      resource_class:
         type: string
-    executor: <<parameters.executor>>
+    resource_class: << parameters.resource_class >>
     steps:
       - checkout
       - setup_remote_docker
@@ -171,7 +171,7 @@ workflows:
       - linux_build_kuscia_deps:
           matrix:
             parameters:
-              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+              resource_class: ["2xlarge", "arm.2xlarge"]
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
