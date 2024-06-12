@@ -61,8 +61,7 @@ commands:
             - linux
   build_kuscia_deps:
     steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
       - run:
           name: "make build"
           command: |
