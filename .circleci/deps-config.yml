@@ -40,7 +40,8 @@ commands:
           name: "make build"
           command: |
             git config --global --add safe.directory ./
-            make deps-build
+            #make deps-build
+            docker ps
       - store_artifacts:
           path: build
 # Define a job to be invoked later in a workflow.
@@ -74,15 +75,13 @@ jobs:
 
             docker buildx build -t ${DEPS_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
 
-
-
 workflows:
   build_deps_workflow:
     jobs:
       - linux_build_kuscia_deps:
           matrix:
             parameters:
-              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+              executor: [ "linux_x64_executor" ]
       - image_publish:
           requires:
             - linux_build_kuscia_deps
