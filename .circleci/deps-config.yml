@@ -82,7 +82,7 @@ workflows:
       - linux_build_kuscia_deps:
           matrix:
             parameters:
-              executor: [ "linux_x64_executor" , "linux_aarch64_executor" ]
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
       - image_publish:
           requires:
             - linux_build_kuscia_deps
