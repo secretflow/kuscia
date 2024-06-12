@@ -171,7 +171,7 @@ workflows:
       - linux_build_kuscia_deps:
           matrix:
             parameters:
-              executor: [ "linux_x64_executor" ]
+              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
