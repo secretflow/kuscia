@@ -61,8 +61,6 @@ commands:
             - linux
   build_kuscia_deps:
     steps:
-      - checkout
-      - setup_remote_docker
       - run:
           name: "make build"
           command: |
@@ -81,6 +79,7 @@ jobs:
     executor: <<parameters.executor>>
     steps:
       - checkout
+      - setup_remote_docker
       - build_kuscia_deps
   unit-test:
     parameters:
