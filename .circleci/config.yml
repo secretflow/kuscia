@@ -113,7 +113,7 @@ jobs:
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  build-kuscia-workflow:
+  kuscia-workflow:
     when:
       and:
         - not: << pipeline.parameters.GHA_Action >>
