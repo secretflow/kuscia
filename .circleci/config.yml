@@ -59,9 +59,29 @@ commands:
           root: /tmp/build
           paths:
             - linux
+  build_kuscia_deps:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: "make build"
+          command: |
+            git config --global --add safe.directory ./
+            #make deps-build
+            docker ps
+      - store_artifacts:
+          path: build
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
+  linux_build_kuscia_deps:
+    parameters:
+      executor:
+        type: string
+    executor: <<parameters.executor>>
+    steps:
+      - checkout
+      - build_kuscia_deps
   unit-test:
     parameters:
       executor:
@@ -114,39 +134,41 @@ jobs:
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-#  kuscia-workflow:
-#    when:
-#      and:
-#        - not: << pipeline.parameters.GHA_Action >>
-#        - not: << pipeline.parameters.GHA_Meta >>
-#    jobs:
-#      - unit-test:
-#          matrix:
-#            parameters:
-#              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-#      - linux_build_kuscia:
-#          matrix:
-#            parameters:
-#              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-#          filters:
-#            branches:
-#              ignore: /.*/
-#            tags:
-#              only: /^v.*/
-#      - image_publish:
-#          requires:
-#            - linux_build_kuscia
-#          filters:
-#            branches:
-#              ignore: /.*/
-#            tags:
-#              only: /^v.*/
+  #  kuscia-workflow:
+  #    when:
+  #      and:
+  #        - not: << pipeline.parameters.GHA_Action >>
+  #        - not: << pipeline.parameters.GHA_Meta >>
+  #    jobs:
+  #      - unit-test:
+  #          matrix:
+  #            parameters:
+  #              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+  #      - linux_build_kuscia:
+  #          matrix:
+  #            parameters:
+  #              executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+  #          filters:
+  #            branches:
+  #              ignore: /.*/
+  #            tags:
+  #              only: /^v.*/
+  #      - image_publish:
+  #          requires:
+  #            - linux_build_kuscia
+  #          filters:
+  #            branches:
+  #              ignore: /.*/
+  #            tags:
+  #              only: /^v.*/
   build-kuscia-deps-workflow:
-#    when:
-#      equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
+    #    when:
+    #      equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
     jobs:
-      - continuation/continue:
-          configuration_path: .circleci/deps-config.yml
+      - linux_build_kuscia_deps:
+          matrix:
+            parameters:
+              executor: [ "linux_x64_executor" ]
   publish-workflow:
     when:
       equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
