@@ -92,6 +92,7 @@ jobs:
           command: |
             set -ex
             mv /tmp/build/linux ./build/
+            CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
             IMAGE="secretflow/kuscia"
             ALIYUN_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
 
