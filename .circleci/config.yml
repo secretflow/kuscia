@@ -37,6 +37,16 @@ executors:
     shell: /bin/bash --login -eo pipefail
 
 commands:
+  build_kuscia_deps:
+    steps:
+      - run:
+          name: "make build"
+          command: |
+            git config --global --add safe.directory ./
+            #make deps-build
+            docker ps
+      - store_artifacts:
+          path: build
   test:
     steps:
       - checkout
@@ -59,20 +69,14 @@ commands:
           root: /tmp/build
           paths:
             - linux
-  build_kuscia_deps:
-    steps:
-      - run:
-          name: "make build"
-          command: |
-            git config --global --add safe.directory ./
-            #make deps-build
-            docker ps
-      - store_artifacts:
-          path: build
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
   linux_build_kuscia_deps:
+    docker:
+      - image: cimg/deploy:2023.06.1
+    shell: /bin/bash --login -eo pipefail
     parameters:
       executor:
         type: string
