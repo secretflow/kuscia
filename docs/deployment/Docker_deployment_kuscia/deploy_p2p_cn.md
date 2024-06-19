@@ -2,13 +2,13 @@
 
 ## 前言
 
-本教程帮助你在多台机器上使用 [点对点组网模式](../reference/architecture_cn.md#点对点组网模式) 来部署 Kuscia 集群。
+本教程帮助你在多台机器上使用 [点对点组网模式](../../reference/architecture_cn.md#点对点组网模式) 来部署 Kuscia 集群。
 
 当前 Kuscia 节点之间只支持 Token 的身份认证方式，在跨机器部署的场景下流程较为繁琐，后续本教程会持续更新优化。
 
 ## 前置准备
 
-在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
+在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)
 
 ## 部署流程（基于 TOKEN 认证）
 
@@ -49,8 +49,8 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 > 如果多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083），防止出现端口冲突。
 
 <span style="color:red;">注意：<br>
-1、如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md) <br>
-2、alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](./kuscia_config_cn.md#id3)<br>
+1、如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md) <br>
+2、alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)<br>
 3、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
 
 
@@ -156,9 +156,9 @@ docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpat
 ```
 当命令执行成功得到返回结果时表示授权成功
 
-授权失败，请参考[授权错误排查](../reference/troubleshoot/networkauthorizationcheck.md)文档
+授权失败，请参考[授权错误排查](../../reference/troubleshoot/networkauthorizationcheck.md)文档
 
-<span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
+<span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)</span>
 
 ### 准备测试数据
 - alice 节点准备测试数据
@@ -215,4 +215,4 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 ```bash
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
 ```
-任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../../reference/troubleshoot/networktroubleshoot.md)排查
