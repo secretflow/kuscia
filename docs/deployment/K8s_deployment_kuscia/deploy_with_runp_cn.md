@@ -22,7 +22,7 @@
 其中，使用 RunP 部署的不同点是：
 1. 使用 `kuscia-secretflow` 镜像。
    ```bash
-   export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-secretflow:0.8.0b0
+   export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-secretflow
    ```
 
 2. 下载 Kuscia [配置示例](https://github.com/secretflow/kuscia/blob/main/scripts/templates/kuscia-autonomy.yaml)（以 autonomy 为例），
@@ -61,7 +61,7 @@
      template:
        spec:
          containers:
-           - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-secretflow:0.8.0b0
+           - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-secretflow:latest
          # 可以设置为 false，降低对 K8s 集群权限的依赖（可选）
          automountServiceAccountToken: false
    ```

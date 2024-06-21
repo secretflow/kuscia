@@ -24,7 +24,7 @@ import (
 func Test_RunKusciaAPI(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
 	dependency := mockDependency(t)
-	_ = RunKusciaAPI(runCtx, cancel, dependency)
+	_ = RunKusciaAPI(runCtx, cancel, dependency, nil)
 	cancel()
 	runCtx.Done()
 }
@@ -36,7 +36,7 @@ func Test_RunKusciaAPIWithTLS(t *testing.T) {
 	dependency.KusciaAPI.GRPCPort = 8011
 	dependency.KusciaAPI.HTTPInternalPort = 8012
 	dependency.Protocol = common.TLS
-	RunKusciaAPI(runCtx, cancel, dependency)
+	RunKusciaAPI(runCtx, cancel, dependency, nil)
 	cancel()
 }
 
@@ -47,7 +47,7 @@ func Test_RunKusciaAPIWithMTLS(t *testing.T) {
 	dependency.KusciaAPI.GRPCPort = 8021
 	dependency.KusciaAPI.HTTPInternalPort = 8022
 	dependency.Protocol = common.MTLS
-	RunKusciaAPI(runCtx, cancel, dependency)
+	RunKusciaAPI(runCtx, cancel, dependency, nil)
 	cancel()
 }
 
@@ -58,6 +58,6 @@ func Test_RunKusciaAPIWithNOTLS(t *testing.T) {
 	dependency.KusciaAPI.GRPCPort = 8031
 	dependency.KusciaAPI.HTTPInternalPort = 8032
 	dependency.Protocol = common.NOTLS
-	RunKusciaAPI(runCtx, cancel, dependency)
+	RunKusciaAPI(runCtx, cancel, dependency, nil)
 	cancel()
 }

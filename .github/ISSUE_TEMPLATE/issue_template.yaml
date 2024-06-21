@@ -1,0 +1,131 @@
+name: Kuscia Issue Template
+description: Thank you for reporting the issue!
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please make sure that you report a code/doc bug, feature request or build/installation bug on GitHub.
+        Please post on our [discussions](https://github.com/secretflow/kuscia/discussions) instead if you want to ask questions or share ideas.
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What type of issue would you like to report?
+      multiple: false
+      options:
+        - Bug
+        - Build/Install
+        - Feature Request
+        - Documentation Feature Request
+        - Documentation Bug
+        - Others
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment
+      description: Kuscia Deployed by
+      options:
+        - docker
+        - k8s
+    validations:
+      required: true
+  - type: input
+    id: kuscia-version
+    attributes:
+      label: Kuscia Version
+      description:
+      placeholder: e.g., kuscia 0.7.0b0
+    validations:
+      required: true
+  - type: input
+    id: OS
+    attributes:
+      label: OS Platform and Distribution
+      description:
+      placeholder: e.g., Linux Ubuntu 18.04
+    validations:
+      required: true
+  - type: input
+    id: docker-version
+    attributes:
+      label: Docker version
+      description: e.g., Docker 20.10.8
+      placeholder: e.g., Docker 20.10.8
+    validations:
+      required: false
+  - type: input
+    id: k8s-version
+    attributes:
+      label: K8s version
+      description:
+      placeholder: e.g., 1.26.11
+    validations:
+      required: false
+  - type: dropdown
+    id: running-app-type
+    attributes:
+      label: App Running type
+      description: which app running on kuscia
+      options:
+        - secretflow
+        - serving
+        - scql
+        - others
+    validations:
+      required: true
+  - type: input
+    id: running-app-version
+    attributes:
+      label: App Running version
+      description: App running version
+      placeholder: e.g., secretflow 1.5.0b0
+    validations:
+      required: true
+  - type: textarea
+    id: kuscia-config
+    attributes:
+      label: Configuration file used to run kuscia.
+      description: Kuscia config file output [kuscia.yaml](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/kuscia_config_cn). if having multi parties (e.g. alice, bob),  you can put multi parties kuscia config.
+      placeholder: |
+        # alice kuscia.yaml
+        mode: Lite
+        domainID: alice
+        logLevel: INFO
+        ........
+        ........
+        # bob kuscia.yaml
+        mode: Lite
+        domainID: bob
+        logLevel: INFO
+        ........
+        ........
+      value:
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happend and What you expected to happen.
+      description: Describe the bug, expected behavior.
+      placeholder: A bug happened!
+      value:
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: log-output
+    attributes:
+      label: Kuscia log output.
+      description: Relevant log output (/home/kuscia/var/logs/kuscia.log), [logdescription](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/deployment/logdescription). if having multi parties (e.g. alice, bob),  you can put multi parties kuscia log output.
+      placeholder: |
+        # alice kuscia.log
+        .......
+        # bob kuscia.log
+        .......
+      value:
+      render: shell
+    validations:
+      required: true

@@ -178,7 +178,7 @@ func (s domainDataSourceService) QueryDomainDataSource(ctx context.Context, requ
 	return resp
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType string, infoKey string) (*datamesh.DataSourceInfo, error) {
 	response := s.configurationService.QueryConfiguration(ctx, &confmanager.QueryConfigurationRequest{
 		Ids: []string{infoKey},
@@ -203,7 +203,7 @@ func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType 
 	return info, err
 }
 
-// nolint:dulp
+//nolint:dupl
 func parseDataSourceURI(sourceType string, info *datamesh.DataSourceInfo) (uri string, err error) {
 	if info == nil {
 		return "", errors.New("info is nil")
@@ -241,7 +241,7 @@ func parseDataSourceURI(sourceType string, info *datamesh.DataSourceInfo) (uri s
 	return
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) encryptInfo(dataSourceType string, info *datamesh.DataSourceInfo) (uri string, encInfo string, err error) {
 	uri, err = parseDataSourceURI(dataSourceType, info)
 	if err != nil {
@@ -263,7 +263,7 @@ func (s domainDataSourceService) encryptInfo(dataSourceType string, info *datame
 	return
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) decryptInfo(cipherInfo string) (*datamesh.DataSourceInfo, error) {
 	plaintext, err := tls.DecryptOAEP(s.conf.DomainKey, cipherInfo)
 	if err != nil {

@@ -52,7 +52,7 @@ commands:
             esac
 
             GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.17"
+            GOLANG_VERSION="1.19.7"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
@@ -79,7 +79,7 @@ commands:
             esac
 
             GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.17"
+            GOLANG_VERSION="1.19.7"
             GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
 
             if ! command -v go &> /dev/null; then
@@ -148,6 +148,10 @@ jobs:
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
   unit-test:
+    when:
+      and:
+        - not: << pipeline.parameters.GHA_Action >>
+        - not: << pipeline.parameters.GHA_Meta >>
     jobs:
       - unit-test:
           matrix:
@@ -157,6 +161,7 @@ workflows:
     when:
       not:
         or:
+          - << pipeline.parameters.GHA_Action >>
           - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
           - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
     jobs:

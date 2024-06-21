@@ -2,7 +2,7 @@
 ############                       Common Configs                ############
 #############################################################################
 # Deploy mode
-mode: Lite
+mode: lite
 # Domain ID
 domainID: alice
 # Domain RSA private key encoded with base64。

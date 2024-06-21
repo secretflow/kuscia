@@ -57,5 +57,5 @@ func Test_RunDomainRoute(t *testing.T) {
 		},
 	}
 	runCtx, cancel := context.WithCancel(context.Background())
-	RunDomainRoute(runCtx, cancel, dependency)
+	RunDomainRoute(runCtx, cancel, dependency, nil)
 }

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package modules
 
 import (
 	"context"
+	"time"
 
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
@@ -84,20 +85,34 @@ func NewControllersModule(i *Dependencies) Module {
 	)
 }
 
-func RunController(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunControllerWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "controllers",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunController(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunController(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m := NewControllersModule(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("controllers is ready")
+		nlog.Fatalf("Controllers wait ready failed: %v", err)
 	}
-
+	nlog.Info("Controllers is ready")
 	return m
 }

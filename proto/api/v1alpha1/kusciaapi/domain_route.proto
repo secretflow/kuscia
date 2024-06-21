@@ -34,8 +34,16 @@ message CreateDomainRouteRequest {
   string destination = 3;
   RouteEndpoint endpoint = 4;
   string source = 5;
-  TokenConfig token_config = 6; // option
-  MTLSConfig mtls_config = 7; // option
+  TokenConfig token_config = 6; // optional
+  MTLSConfig mtls_config = 7; // optional
+  // Transit entity. If transitMethod is THIRD-DOMAIN,
+  // requests from source to destination need to be transferred through
+  // a third party, domain field must be set. If transitMethod is
+  // REVERSE-TUNNEL, requests from source to destination need to be
+  // transferred through local gateway chunked transfer encoding.
+  // optional
+  Transit transit = 8;
+  BodyEncryption body_encryption = 9; // optional
 }
 
 enum AuthenticationType {
@@ -53,6 +61,7 @@ message EndpointPort {
   int32 port = 2;
   string protocol = 3;
   bool isTLS = 4;
+  string path_prefix = 5;
 }
 
 message TokenConfig {
@@ -66,6 +75,30 @@ message MTLSConfig {
   string tls_ca = 1;
   string source_client_private_key = 2;
   string source_client_cert = 3;
+}
+
+// Transit defines the information of the transit entity used to forward the request.
+message Transit {
+  message Domain {
+    string domain_id = 1;
+  }
+  // transit_method means to forward the request through a specific entity.
+  // Supports the following types:
+  // 1. THIRD-DOMAIN: means to forward the request through the third domain
+  // 2. REVERSE-TUNNEL: means to forward the request through reverse tunneling between envoys.
+  string transit_method = 1;
+  // domain defines the information of the third domain.
+  // optional
+  Domain domain = 2;
+}
+
+enum BodyEncryptionAlgorithmType {
+  AES = 0;
+  SM4 = 1;
+}
+
+message BodyEncryption {
+  string algorithm = 1;
 }
 
 message CreateDomainRouteResponse {
@@ -107,6 +140,8 @@ message QueryDomainRouteResponseData {
   TokenConfig token_config = 6;
   MTLSConfig mtls_config = 7;
   RouteStatus status = 8;
+  Transit transit = 9;
+  BodyEncryption body_encryption = 10;
 }
 
 message RouteStatus {

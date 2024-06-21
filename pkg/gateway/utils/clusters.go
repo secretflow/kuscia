@@ -25,4 +25,5 @@ const (
 	ServiceKusciaStorage = "kusciastorage"
 	ServiceHandshake     = "kuscia-handshake"
 	ServiceKusciaAPI     = "kusciaapi"
+	EnvoyClusterName     = "envoy-cluster"
 )

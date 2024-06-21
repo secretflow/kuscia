@@ -19,13 +19,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/google/uuid"
+	"github.com/secretflow/kuscia/pkg/utils/common"
 )
 
 func GenDomainDataID(dataName string) (dataID string) {
 	// reserve the valid characters in the string
 	reg, _ := regexp.Compile("[^a-zA-Z0-9/-]+")
 	s1 := reg.ReplaceAllString(dataName, "")
+	s1 = strings.ToLower(s1)
 	// remove the invalid characters ['0-9' and '-'] at the beginning of the string
 	reg, _ = regexp.Compile("^[0-9/-]+")
 	prefix := reg.ReplaceAllString(s1, "")
@@ -37,7 +38,15 @@ func GenDomainDataID(dataName string) (dataID string) {
 		prefix = prefix + "-"
 	}
 
-	return prefix + uuid.NewString()
+	return prefix + common.GenerateID(16)
+}
+
+// GenDomainDataSourceID generates data source id
+func GenDomainDataSourceID(domainDataSourceType string) string {
+	if len(domainDataSourceType) == 0 {
+		return common.GenerateID(16)
+	}
+	return fmt.Sprintf("%s-%s", domainDataSourceType, common.GenerateID(16))
 }
 
 func GenDomainRouteName(src, dest string) string {

@@ -15,7 +15,7 @@ IMG := secretflow/kuscia:${TAG}
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.5.0b0
+ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.0b0
 DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.0b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -83,12 +83,16 @@ verify_error_code: ## Verify integrity of error code i18n configuration.
 gen_error_code_doc: verify_error_code ## Generate error code markdown doc.
 	bash hack/errorcode/gen_error_code_doc.sh doc pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
 
+.PHONY: check_code
+check_code: verify_error_code fmt vet ## check code format
+	echo "FINISH"
+
 .PHONY: test
-test: verify_error_code fmt vet ## Run tests.
+test: ## Run tests.
 	rm -rf ./test-results
 	mkdir -p test-results
-	go test ./cmd/... -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
-	go test ./pkg/... -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
+	go test ./cmd/... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
+	go test ./pkg/... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
 
 	cat ./test-results/cmd.output.txt | go-junit-report > ./test-results/TEST-cmd.xml
 	cat ./test-results/pkg.output.txt | go-junit-report > ./test-results/TEST-pkg.xml
@@ -107,7 +111,7 @@ clean: # clean build and test product.
 ##@ Build
 
 .PHONY: build
-build: verify_error_code fmt vet ## Build kuscia binary.
+build: check_code ## Build kuscia binary.
 	bash hack/build.sh -t kuscia
 	mkdir -p build/linux/${ARCH}
 	cp -rp build/apps build/linux/${ARCH}

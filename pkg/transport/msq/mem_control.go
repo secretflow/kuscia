@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"gitlab.com/jonas.jasas/condchan"
 )
 
@@ -45,6 +46,11 @@ func (mc *MemControl) Prefetch(byteSize uint64, timeout time.Duration) (bool, ti
 	mc.Lock()
 	available := mc.availableToPush(byteSize)
 	if !available {
+		if byteSize > mc.totalByteSizeLimit {
+			nlog.Warnf("input body size(%d) max than maxByteLimit(%d), so skip it", byteSize, mc.totalByteSizeLimit)
+			return false, leftTimeout
+		}
+
 		start := time.Now()
 		timeCh := time.After(timeout)
 		waitTimeout := false

@@ -159,15 +159,19 @@ func (c *PortController) handleDeploymentEvent(deployment *appsv1.Deployment, ev
 	portProvider := port.GetPortProvider(deployment.Namespace)
 	switch event {
 	case ResourceEventAdd:
-		portProvider.AddIndeed(deployment.Name, podPorts)
+		portProvider.AddIndeed(buildDeploymentOwnerName(deployment.Name), podPorts)
 	case ResourceEventDelete:
-		portProvider.DeleteIndeed(deployment.Name, podPorts)
+		portProvider.DeleteIndeed(buildDeploymentOwnerName(deployment.Name), podPorts)
 	default:
 		nlog.Errorf("Unsupported deployment event: %v", event)
 	}
 }
 
 func (c *PortController) handlePodEvent(pod *corev1.Pod, event ResourceEvent) {
+	if pod.Labels == nil || pod.Labels[common.LabelController] != common.ControllerKusciaTask {
+		return
+	}
+
 	nlog.Debugf("Receive pod event [%v], namespace=%v, pod name=%v", event, pod.Namespace, pod.Name)
 
 	// fetch pod ports
@@ -181,9 +185,9 @@ func (c *PortController) handlePodEvent(pod *corev1.Pod, event ResourceEvent) {
 	portProvider := port.GetPortProvider(pod.Namespace)
 	switch event {
 	case ResourceEventAdd:
-		portProvider.AddIndeed(pod.Name, podPorts)
+		portProvider.AddIndeed(buildPodOwnerName(pod.Name), podPorts)
 	case ResourceEventDelete:
-		portProvider.DeleteIndeed(pod.Name, podPorts)
+		portProvider.DeleteIndeed(buildPodOwnerName(pod.Name), podPorts)
 	default:
 		nlog.Errorf("Unsupported pod event: %v", event)
 	}
@@ -235,4 +239,12 @@ func (c *PortController) Stop() {
 
 func (c *PortController) Name() string {
 	return controllerName
+}
+
+func buildDeploymentOwnerName(deploymentName string) string {
+	return fmt.Sprintf("deployment:%s", deploymentName)
+}
+
+func buildPodOwnerName(podName string) string {
+	return fmt.Sprintf("pod:%s", podName)
 }

@@ -69,6 +69,13 @@ type DomainDataSpec struct {
 	FileFormat string `json:"fileFormat,omitempty"`
 }
 
+const (
+	DomainDataTableType  = "table"
+	DomainDataModelType  = "model"
+	DomainDataRuleType   = "rule"
+	DomainDataReportType = "report"
+)
+
 type Partition struct {
 	// enum path, odps
 	Type string `json:"type"`

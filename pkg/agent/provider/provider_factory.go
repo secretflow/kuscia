@@ -16,6 +16,8 @@ package provider
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -27,6 +29,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/provider/node"
 	"github.com/secretflow/kuscia/pkg/agent/provider/pod"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
+	"github.com/secretflow/kuscia/pkg/utils/cgroup"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -81,10 +84,16 @@ type containerRuntimeFactory struct {
 func (f *containerRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
 	providerCfg := &f.agentConfig.Provider
 
-	cm, err := node.NewCapacityManager(&f.agentConfig.Capacity, f.agentConfig.RootDir, true)
+	cm, err := node.NewCapacityManager(f.agentConfig.Provider.Runtime,
+		&f.agentConfig.Capacity,
+		&f.agentConfig.ReservedResources,
+		f.agentConfig.RootDir,
+		true)
 	if err != nil {
 		return nil, err
 	}
+
+	initCgroup(cm, f.agentConfig.Provider.Runtime)
 
 	nodeDep := &node.GenericNodeDependence{
 		BaseNodeDependence: node.BaseNodeDependence{
@@ -99,6 +108,73 @@ func (f *containerRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) 
 	nodeProvider := node.NewGenericNodeProvider(nodeDep)
 
 	return nodeProvider, nil
+}
+
+func initCgroup(cm *node.CapacityManager, runtime string) {
+	if cm == nil || (runtime != config.ProcessRuntime && runtime != config.ContainerRuntime) {
+		return
+	}
+
+	if !cgroup.HasPermission() {
+		return
+	}
+
+	set := func(cm *node.CapacityManager, runtime string) {
+		for i := 0; ; i++ {
+			err := setCgroup(cm, runtime)
+			if err == nil {
+				nlog.Infof("Finish initializing cgroup")
+				return
+			}
+
+			if !os.IsNotExist(err) {
+				nlog.Warnf("Init cgroup failed. details -> %v", err)
+				return
+			}
+
+			time.Sleep(5 * time.Second)
+		}
+	}
+
+	switch runtime {
+	case config.ProcessRuntime:
+		set(cm, runtime)
+	case config.ContainerRuntime:
+		// Asynchronously waiting for containerd to create cgroup
+		go set(cm, runtime)
+	default:
+	}
+}
+
+func setCgroup(cm *node.CapacityManager, runtime string) error {
+	switch runtime {
+	case config.ProcessRuntime:
+		m, err := newCgroupManager(cm, cgroup.KusciaAppsGroup)
+		if err != nil {
+			return err
+		}
+		return m.AddCgroup()
+	case config.ContainerRuntime:
+		m, err := newCgroupManager(cm, cgroup.K8sIOGroup)
+		if err != nil {
+			return err
+		}
+		return m.UpdateCgroup()
+	default:
+		nlog.Warnf("Unknown runtime %q, skip initializing cgroup", runtime)
+	}
+	return nil
+}
+
+func newCgroupManager(cm *node.CapacityManager, group string) (cgroup.Manager, error) {
+	conf := &cgroup.Config{
+		Group:       group,
+		Pid:         0,
+		CPUQuota:    cm.GetCgroupCPUQuota(),
+		CPUPeriod:   cm.GetCgroupCPUPeriod(),
+		MemoryLimit: cm.GetCgroupMemoryLimit(),
+	}
+	return cgroup.NewManager(conf)
 }
 
 func (f *containerRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (kri.PodProvider, error) {
@@ -130,7 +206,11 @@ type k8sRuntimeFactory struct {
 func (f *k8sRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
 	providerCfg := &f.agentConfig.Provider
 
-	cm, err := node.NewCapacityManager(&f.agentConfig.Capacity, f.agentConfig.RootDir, false)
+	cm, err := node.NewCapacityManager(f.agentConfig.Provider.Runtime,
+		&f.agentConfig.Capacity,
+		&f.agentConfig.ReservedResources,
+		f.agentConfig.RootDir,
+		false)
 	if err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package grpchandler
 
 import (
@@ -51,4 +51,8 @@ func (h *domainDataSourceHandler) QueryDomainDataSource(ctx context.Context, req
 
 func (h *domainDataSourceHandler) BatchQueryDomainDataSource(ctx context.Context, request *kusciaapi.BatchQueryDomainDataSourceRequest) (*kusciaapi.BatchQueryDomainDataSourceResponse, error) {
 	return h.domainDataSourceService.BatchQueryDomainDataSource(ctx, request), nil
+}
+
+func (h *domainDataSourceHandler) ListDomainDataSource(ctx context.Context, request *kusciaapi.ListDomainDataSourceRequest) (*kusciaapi.ListDomainDataSourceResponse, error) {
+	return h.domainDataSourceService.ListDomainDataSource(ctx, request), nil
 }

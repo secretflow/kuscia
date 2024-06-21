@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -87,25 +87,27 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 		}
 	}
 
+	cdrEndpoint := v1alpha1.DomainEndpoint{}
 	endpoint := request.Endpoint
-	// build cdr kusciaAPIDomainRoute endpoint
-	cdrEndpoint := v1alpha1.DomainEndpoint{
-		Host: endpoint.Host,
-	}
-	cdrEndpoint.Ports = make([]v1alpha1.DomainPort, len(endpoint.Ports))
-	for i, port := range endpoint.Ports {
-		// TODO: Converted `isTLS` is about to be removed
-		drProtocol, isTLS, err := convert2DomainRouteProtocol(port.Protocol)
-		if err != nil {
-			return &kusciaapi.CreateDomainRouteResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrCreateDomainRoute), err.Error()),
+	if endpoint != nil {
+		// build cdr kusciaAPIDomainRoute endpoint
+		cdrEndpoint.Host = endpoint.Host
+		cdrEndpoint.Ports = make([]v1alpha1.DomainPort, len(endpoint.Ports))
+		for i, port := range endpoint.Ports {
+			// TODO: Converted `isTLS` is about to be removed
+			drProtocol, isTLS, err := convert2DomainRouteProtocol(port.Protocol)
+			if err != nil {
+				return &kusciaapi.CreateDomainRouteResponse{
+					Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrCreateDomainRoute), err.Error()),
+				}
 			}
-		}
-		cdrEndpoint.Ports[i] = v1alpha1.DomainPort{
-			Name:     port.Name,
-			Port:     int(port.Port),
-			Protocol: drProtocol,
-			IsTLS:    isTLS || port.IsTLS,
+			cdrEndpoint.Ports[i] = v1alpha1.DomainPort{
+				Name:       port.Name,
+				Port:       int(port.Port),
+				Protocol:   drProtocol,
+				IsTLS:      isTLS || port.IsTLS,
+				PathPrefix: port.PathPrefix,
+			}
 		}
 	}
 	// build cdr token config or mtls config
@@ -127,6 +129,7 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 			SourcePublicKey:      tokenConfig.SourcePublicKey,
 			DestinationPublicKey: tokenConfig.DestinationPublicKey,
 			TokenGenMethod:       v1alpha1.TokenGenMethodType(tokenConfig.TokenGenMethod),
+			RollingUpdatePeriod:  int(tokenConfig.RollingUpdatePeriod),
 		}
 	case string(v1alpha1.DomainAuthenticationMTLS):
 		cdrAuthenticationType = v1alpha1.DomainAuthenticationMTLS
@@ -142,6 +145,25 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 	case string(v1alpha1.DomainAuthenticationNone):
 		cdrAuthenticationType = v1alpha1.DomainAuthenticationNone
 	}
+	// build transit config
+	var transit *v1alpha1.Transit
+	if request.Transit != nil {
+		transit = &v1alpha1.Transit{
+			TransitMethod: v1alpha1.TransitMethodType(request.Transit.TransitMethod),
+		}
+		if request.Transit.Domain != nil {
+			transit.Domain = &v1alpha1.DomainTransit{
+				DomainID: request.Transit.Domain.DomainId,
+			}
+		}
+	}
+	// build body encryption
+	var bodyEncryption *v1alpha1.BodyEncryption
+	if request.BodyEncryption != nil {
+		bodyEncryption = &v1alpha1.BodyEncryption{
+			Algorithm: v1alpha1.BodyEncryptionAlgorithmType(request.BodyEncryption.Algorithm),
+		}
+	}
 	// build cdr
 	clusterDomainRoute := &v1alpha1.ClusterDomainRoute{
 		ObjectMeta: metav1.ObjectMeta{
@@ -155,6 +177,8 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 				AuthenticationType: cdrAuthenticationType,
 				TokenConfig:        cdrTokenConfig,
 				MTLSConfig:         cdrMtlsConfig,
+				Transit:            transit,
+				BodyEncryption:     bodyEncryption,
 			},
 		},
 	}
@@ -223,9 +247,10 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 	routePorts := make([]*kusciaapi.EndpointPort, len(cdrEndpoint.Ports))
 	for i, port := range cdrEndpoint.Ports {
 		routePorts[i] = &kusciaapi.EndpointPort{
-			Name:     port.Name,
-			Port:     int32(port.Port),
-			Protocol: string(port.Protocol),
+			Name:       port.Name,
+			Port:       int32(port.Port),
+			Protocol:   string(port.Protocol),
+			PathPrefix: port.PathPrefix,
 		}
 	}
 	routeEndpoint := &kusciaapi.RouteEndpoint{
@@ -253,6 +278,28 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 		}
 	case v1alpha1.DomainAuthenticationNone:
 	}
+
+	// build transit
+	var apiTransit *kusciaapi.Transit
+	if cdrSpec.Transit != nil {
+		apiTransit = &kusciaapi.Transit{
+			TransitMethod: string(cdrSpec.Transit.TransitMethod),
+		}
+		if cdrSpec.Transit.Domain != nil {
+			apiTransit.Domain = &kusciaapi.Transit_Domain{
+				DomainId: cdrSpec.Transit.Domain.DomainID,
+			}
+		}
+	}
+
+	// build BodyEncryption
+	var bodyEncryption *kusciaapi.BodyEncryption
+	if cdrSpec.BodyEncryption != nil {
+		bodyEncryption = &kusciaapi.BodyEncryption{
+			Algorithm: string(cdrSpec.BodyEncryption.Algorithm),
+		}
+	}
+
 	// build kusciaAPIDomainRoute mtls config
 	return &kusciaapi.QueryDomainRouteResponse{
 		Status: utils.BuildSuccessResponseStatus(),
@@ -265,6 +312,8 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 			TokenConfig:        routeTokenConfig,
 			MtlsConfig:         routeMtlsConfig,
 			Status:             buildRouteStatus(cdr),
+			Transit:            apiTransit,
+			BodyEncryption:     bodyEncryption,
 		},
 	}
 }
@@ -373,12 +422,26 @@ func validateCreateDomainRouteRequest(request *kusciaapi.CreateDomainRouteReques
 	if request.Destination == "" {
 		return fmt.Errorf("destination can not be empty")
 	}
-	if request.Endpoint == nil || len(request.Endpoint.Ports) == 0 {
-		return fmt.Errorf("endpoint can not be empty")
-	}
+
 	if request.AuthenticationType == "" {
 		return fmt.Errorf("authentication type can not be empty")
 	}
+
+	if request.Transit == nil {
+		if request.Endpoint == nil || len(request.Endpoint.Ports) == 0 {
+			return fmt.Errorf("endpoint can not be empty when transit is not set")
+		}
+	} else {
+		if request.Transit.TransitMethod == "" {
+			return fmt.Errorf("tranist method is required when transit is not empty")
+		}
+		if request.Transit.TransitMethod == string(v1alpha1.TransitMethodThirdDomain) {
+			if request.Transit.Domain == nil || request.Transit.Domain.DomainId == "" {
+				return fmt.Errorf("domain is required when transit method is third domain")
+			}
+		}
+	}
+
 	return nil
 }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package handler
 
 import (
@@ -165,6 +165,7 @@ func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusci
 // 2) only local party is controlled in participant cluster
 func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.KusciaTask) error {
 	partyKitInfos := map[string]*PartyKitInfo{}
+	selfPartyKitInfos := map[string]*PartyKitInfo{}
 	for i, party := range kusciaTask.Spec.Parties {
 		kit, err := h.buildPartyKitInfo(kusciaTask, &kusciaTask.Spec.Parties[i])
 		if err != nil {
@@ -172,9 +173,13 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 		}
 
 		partyKitInfos[party.DomainID+party.Role] = kit
+
+		if !utilsres.IsPartnerDomain(h.namespacesLister, kit.domainID) {
+			selfPartyKitInfos[party.DomainID+party.Role] = kit
+		}
 	}
 
-	_, err := allocatePorts(kusciaTask, partyKitInfos)
+	_, err := allocatePorts(kusciaTask, selfPartyKitInfos)
 	if err != nil {
 		return err
 	}
@@ -186,11 +191,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
-	for _, partyKitInfo := range partyKitInfos {
-		if utilsres.IsPartnerDomain(h.namespacesLister, partyKitInfo.domainID) {
-			continue
-		}
-
+	for _, partyKitInfo := range selfPartyKitInfos {
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
 			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
@@ -820,7 +821,7 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 				common.KusciaPartyMasterDomainAnnotationKey: kusciaTask.Annotations[common.KusciaPartyMasterDomainAnnotationKey],
 			},
 			Labels: map[string]string{
-				common.LabelController: kusciaTaskLabelValue,
+				common.LabelController: common.ControllerKusciaTask,
 				common.LabelJobUID:     jobUID,
 				common.LabelTaskUID:    string(kusciaTask.UID),
 			},
@@ -841,7 +842,7 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 
 func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 	labels := map[string]string{
-		common.LabelController: kusciaTaskLabelValue,
+		common.LabelController: common.ControllerKusciaTask,
 		common.LabelTaskUID:    string(partyKit.kusciaTask.UID),
 	}
 
@@ -887,7 +888,7 @@ func (h *PendingHandler) submitConfigMap(cm *v1.ConfigMap) error {
 
 func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo) (*v1.Pod, error) {
 	labels := map[string]string{
-		common.LabelController:              kusciaTaskLabelValue,
+		common.LabelController:              common.ControllerKusciaTask,
 		common.LabelCommunicationRoleServer: "true",
 		common.LabelCommunicationRoleClient: "true",
 		labelKusciaTaskPodIdentity:          podKit.podIdentity,

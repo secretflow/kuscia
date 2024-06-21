@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -24,7 +24,9 @@ import (
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -96,9 +98,38 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 		// build kuscia task parties
 		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
 		for j, party := range task.Parties {
+			// build resources
+			limitResource := corev1.ResourceList{}
+			var resource *corev1.ResourceRequirements
+			if party.Resources != nil {
+				if party.Resources.Cpu != "" {
+					if q, err := k8sresource.ParseQuantity(party.Resources.Cpu); err == nil {
+						limitResource[corev1.ResourceCPU] = q
+					} else {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parse input cpu resource failed: %v", err.Error())),
+						}
+					}
+				}
+				if party.Resources.Memory != "" {
+					if q, err := k8sresource.ParseQuantity(party.Resources.Memory); err == nil {
+						limitResource[corev1.ResourceMemory] = q
+					} else {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, fmt.Sprintf("parse input memory resource failed: %v", err.Error())),
+						}
+					}
+				}
+
+				resource = &corev1.ResourceRequirements{
+					Limits: limitResource,
+				}
+			}
+
 			kusicaParties[j] = v1alpha1.Party{
-				DomainID: party.DomainId,
-				Role:     party.Role,
+				DomainID:  party.DomainId,
+				Role:      party.Role,
+				Resources: resource,
 			}
 		}
 		// build kuscia task
