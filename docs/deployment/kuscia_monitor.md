@@ -3,7 +3,7 @@ Kuscia 暴露了一些指标数据，可作为数据源供外部观测工具采�
 ## 1 监控能力
 | 指标 |来源模块 | 集成 | 介绍 |
 | -- | ---------------------- | --------------------- | ------------------------------------------------------------ |
-| 机器指标 | node_exporter | 已集成 | 机器CPU/MEM/DISK/LOAD等核心指标 |
+| 机器指标 | node_exporter | 已集成 | Kuscia 所在容器的 CPU/MEM/DISK/LOAD 等核心指标 |
 |   网络指标   |    envoy/ss    |    已集成      |   网络收发，QPS等指标    |
 |   引擎指标   |    -    |   未集成    |     运行在kuscia上各引擎的指标，如： secretflow/serving/psi/scql/...等 |
 |    Kuscia-API指标  |    kuscia-api    |      未集成     |    kuscia-api 错误/QPS等指标         |

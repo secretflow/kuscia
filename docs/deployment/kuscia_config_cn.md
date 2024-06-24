@@ -10,14 +10,13 @@ Kuscia 的配置文件由公共配置和每个模式的特殊配置组成，具�
 ############                       公共配置                       ############
 #############################################################################
 # 部署模式
-mode: Lite
+mode: lite
 # 节点ID
 # 生产环境使用时建议将domainID设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如：
 # domainID: mycompany-secretflow-trainlite
 domainID: alice
 # 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发
-# 注意: 目前节点私钥仅支持 pkcs#1 格式的: "BEGIN RSA PRIVATE KEY/END RSA PRIVATE KEY"
-# 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0 scripts/deploy/generate_rsa_key.sh" 生成私钥
+# 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
 # KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
 protocol: NOTLS
@@ -72,8 +71,8 @@ image:
 # 数据库连接串，不填默认使用 sqlite
 # 示例：mysql://username:password@tcp(hostname:3306)/database-name
 datastoreEndpoint: ""
-# 工作负载审核配置
-# 默认情况下，工作负载审核配置为关闭状态。若开启审核配置，则当本方作为参与方时，所有的 Job 需要调用 KusciaAPI 进行作业审核。生产环境建议开启审核
+# 工作负载审批配置，注：仅P2P组网时此配置才生效，中心化组网时执行 KusciaJob 无需审批。
+# 默认情况下，工作负载审批配置为关闭状态。若开启审批配置，则当本方作为参与方时，所有的 Job 需要调用 KusciaAPI 进行作业审批。生产环境建议开启审批
 enableWorkloadApprove: false
 ```
 
@@ -82,7 +81,7 @@ enableWorkloadApprove: false
 ### 配置项详解
 - `mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, 不同部署模式详情请参考[这里](../reference/architecture_cn)
 - `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names), 生产环境使用时建议将 domainID 设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite
-- `domainKeyData`: 节点私钥配置, 用于节点间的通信认证（通过 2 方的证书来生成通讯的身份令牌），节点应用的证书签发（为了加强通讯安全性，Kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。）。可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0 scripts/deploy/generate_rsa_key.sh` 生成
+- `domainKeyData`: 节点私钥配置, 用于节点间的通信认证（通过 2 方的证书来生成通讯的身份令牌），节点应用的证书签发（为了加强通讯安全性，Kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。）。可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
 - `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取Token](../deployment/deploy_master_lite_cn.md#lite-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](./../reference/troubleshoot/private_key_loss.md)
 - `masterEndpoint`: 节点连接 Master 的地址，比如 https://172.18.0.2:1080
@@ -111,10 +110,10 @@ enableWorkloadApprove: false
     - 自动建表：如果提供的数据库账号有建表权限（账号具有`DDL+DML`权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 kuscia 会启动失败。
   - 数据库账户对表中字段至少具有 select、insert、update、delete 操作权限。
 - `protocol`: KusciaAPI 以及节点对外网关使用的通信协议，有三种通信协议可供选择：NOTLS/TLS/MTLS（不区分大小写）。
-  - `NOTLS`: 不使用 TLS 协议，即数据通过未加密的 HTTP 传输，比较安全的内部网络环境或者 Kuscia 已经存在外部网关的情况可以使用该模式。
+  - `NOTLS`: 此模式下，通信并未采用 TLS 协议进行加密，即数据通过未加密的 HTTP 传输。在高度信任且严格管控的内部网络环境，或是已具备外部安全网关防护措施的情况下，可以使用该模式，但在一般情况下，由于存在安全隐患，不推荐使用。
   - `TLS`: 通过 TLS 协议进行加密，即使用 HTTPS 进行安全传输，不需要手动配置证书。
   - `MTLS`: 使用 HTTPS 进行通信，支持双向 TLS 验证，需要手动交换证书以建立安全连接。
-- `enableWorkloadApprove`: 是否开启工作负载审核，默认为 false，即关闭审核。取值范围:[true, false]。
+- `enableWorkloadApprove`: 是否开启工作负载审批，默认为 false，即关闭审批。取值范围:[true, false]。注：仅P2P组网时此配置才生效，中心化组网时执行 KusciaJob 无需审批。
 
 {#configuration-example}
 ### 配置示例

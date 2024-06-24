@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package clusterdomainroute
 
 import (
@@ -23,10 +23,13 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/secretflow/kuscia/pkg/common"
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 func (c *controller) syncDomainPubKey(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute) (bool, error) {
@@ -99,6 +102,61 @@ func getPublickeyFromCert(certString string) ([]byte, error) {
 		Bytes: x509.MarshalPKCS1PublicKey(rsaPub),
 	}
 	return pem.EncodeToMemory(block), nil
+}
+
+func (c *controller) syncServiceToken(ctx context.Context, cdr *kusciaapisv1alpha1.ClusterDomainRoute) (bool, error) {
+	ns := cdr.Spec.Source
+	domain, err := c.domainLister.Get(ns)
+	if err != nil {
+		return false, fmt.Errorf("get domain %s fail: %v", ns, err.Error())
+	}
+
+	syncFun := func() (bool, error) {
+		key := common.AuthorizationHeaderName
+
+		if cdr.Spec.RequestHeadersToAdd != nil && cdr.Spec.RequestHeadersToAdd[key] != "" {
+			return false, nil
+		}
+
+		ownerRef := metav1.NewControllerRef(domain, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("Domain"))
+
+		if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, c.rootDir, domain.Name, ownerRef); err != nil {
+			return false, err
+		}
+
+		serviceToken, err := resources.CreateServiceToken(context.Background(), c.kubeClient, domain.Name)
+		if err != nil {
+			return false, err
+		}
+
+		value := fmt.Sprintf("Bearer %s", serviceToken.Status.Token)
+		cdrCopy := cdr.DeepCopy()
+
+		if cdrCopy.Spec.RequestHeadersToAdd == nil {
+			cdrCopy.Spec.RequestHeadersToAdd = map[string]string{}
+		}
+
+		cdrCopy.Spec.RequestHeadersToAdd[key] = value
+
+		_, err = c.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Update(ctx, cdrCopy, metav1.UpdateOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		nlog.Infof("ClusterDomainRoute %s update k3s token", cdr.Name)
+
+		return true, nil
+	}
+
+	if domain.Spec.Role == kusciaapisv1alpha1.Partner &&
+		len(domain.Spec.InterConnProtocols) > 0 &&
+		domain.Spec.InterConnProtocols[0] == kusciaapisv1alpha1.InterConnKuscia {
+		if domain.Spec.MasterDomain == domain.Name || domain.Spec.MasterDomain == "" {
+			return syncFun()
+		}
+	}
+
+	return false, nil
 }
 
 func (c *controller) getDomainRole(cdr *kusciaapisv1alpha1.ClusterDomainRoute) (kusciaapisv1alpha1.DomainRole,

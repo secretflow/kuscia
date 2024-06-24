@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -44,6 +44,7 @@ var (
 	errDeleteDomainDataSource     = "DeleteDomainDataSource failed, %v"
 	errQueryDomainDataSource      = "QueryDomainDataSource failed, %v"
 	errBatchQueryDomainDataSource = "BatchQueryDomainDataSource failed, %v"
+	errListDomainDataSource       = "ListDomainDataSource failed, %v"
 )
 
 const (
@@ -56,6 +57,7 @@ type IDomainDataSourceService interface {
 	DeleteDomainDataSource(ctx context.Context, request *kusciaapi.DeleteDomainDataSourceRequest) *kusciaapi.DeleteDomainDataSourceResponse
 	QueryDomainDataSource(ctx context.Context, request *kusciaapi.QueryDomainDataSourceRequest) *kusciaapi.QueryDomainDataSourceResponse
 	BatchQueryDomainDataSource(ctx context.Context, request *kusciaapi.BatchQueryDomainDataSourceRequest) *kusciaapi.BatchQueryDomainDataSourceResponse
+	ListDomainDataSource(ctx context.Context, request *kusciaapi.ListDomainDataSourceRequest) *kusciaapi.ListDomainDataSourceResponse
 }
 
 type domainDataSourceService struct {
@@ -79,16 +81,18 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 		}
 	}
 
-	if request.DatasourceId == "" {
-		name := ""
-		if request.Name != nil {
-			name = *request.Name
-		}
-		request.DatasourceId = common.GenDomainDataID(name)
-	}
-
 	if err = validateDataSourceType(request.Type); err != nil {
 		nlog.Errorf(errCreateDomainDataSource, err.Error())
+		return &kusciaapi.CreateDomainDataSourceResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+		}
+	}
+
+	if request.DatasourceId == "" {
+		request.DatasourceId = common.GenDomainDataSourceID(request.Type)
+	}
+
+	if err = resources.ValidateK8sName(request.DatasourceId, "datasource_id"); err != nil {
 		return &kusciaapi.CreateDomainDataSourceResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
@@ -123,7 +127,7 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 		dataSource.Spec.Name = *request.Name
 	}
 
-	if request.InfoKey != nil {
+	if request.InfoKey != nil && *request.InfoKey != "" {
 		datasourceInfo, err := s.getDsInfoByKey(ctx, request.Type, *request.InfoKey)
 		if err != nil {
 			return &kusciaapi.CreateDomainDataSourceResponse{
@@ -351,8 +355,76 @@ func (s domainDataSourceService) BatchQueryDomainDataSource(ctx context.Context,
 	}
 }
 
+func (s domainDataSourceService) ListDomainDataSource(ctx context.Context, request *kusciaapi.ListDomainDataSourceRequest) *kusciaapi.ListDomainDataSourceResponse {
+	if request.DomainId == "" {
+		return &kusciaapi.ListDomainDataSourceResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "request domainID can't be empty"),
+		}
+	}
+	if err := s.validateRetrieveRequest(request.DomainId); err != nil {
+		nlog.Errorf(errListDomainDataSource, err.Error())
+		return &kusciaapi.ListDomainDataSourceResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrListDomainDataSource, err.Error()),
+		}
+	}
+	var data []*kusciaapi.DomainDataSource
+	dsList, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(request.GetDomainId()).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		nlog.Errorf("List DomainDataSource failed, %v", err.Error())
+		goto returnErr
+
+	}
+	for _, ds := range dsList.Items {
+		var info *kusciaapi.DataSourceInfo
+		// master mode could not decrypt Info, only autonomy and lite need decrypt Info
+		if s.conf.RunMode != common.RunModeMaster {
+			if info, err = s.decryptDatasourceInfo(ctx, &ds); err != nil {
+				goto returnErr
+			}
+		}
+		ids := &kusciaapi.DomainDataSource{
+			DomainId:       ds.Namespace,
+			DatasourceId:   ds.Name,
+			Name:           ds.Spec.Name,
+			Type:           ds.Spec.Type,
+			Info:           info,
+			InfoKey:        ds.Spec.InfoKey,
+			AccessDirectly: ds.Spec.AccessDirectly}
+		data = append(data, ids)
+	}
+
+	return &kusciaapi.ListDomainDataSourceResponse{
+		Status: utils.BuildSuccessResponseStatus(),
+		Data:   &kusciaapi.DomainDataSourceList{DatasourceList: data},
+	}
+returnErr:
+	nlog.Error(err.Error())
+	return &kusciaapi.ListDomainDataSourceResponse{
+		Status: utils.BuildErrorResponseStatus(errorcode.ErrListDomainDataSource, err.Error()),
+	}
+}
+
+func (s domainDataSourceService) decryptDatasourceInfo(ctx context.Context, ds *v1alpha1.DomainDataSource) (info *kusciaapi.DataSourceInfo, err error) {
+	if len(ds.Spec.InfoKey) != 0 {
+		info, err = s.getDsInfoByKey(ctx, ds.Spec.Type, ds.Spec.InfoKey)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		encryptedInfo, exist := ds.Spec.Data[encryptedInfo]
+		if !exist {
+			return nil, fmt.Errorf("missing datasource info for %s", ds.Spec.Name)
+		}
+		info, err = s.decryptInfo(encryptedInfo)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return info, err
+}
+
 func (s domainDataSourceService) getDomainDataSource(ctx context.Context, domainID, dataSourceID string) (*kusciaapi.DomainDataSource, error) {
-	if err := s.validateRequestIdentity(domainID); err != nil {
+	if err := s.validateRetrieveRequest(domainID); err != nil {
 		return nil, err
 	}
 
@@ -366,18 +438,9 @@ func (s domainDataSourceService) getDomainDataSource(ctx context.Context, domain
 	}
 
 	var info *kusciaapi.DataSourceInfo
-	if len(kusciaDataSource.Spec.InfoKey) != 0 {
-		info, err = s.getDsInfoByKey(ctx, kusciaDataSource.Spec.Type, kusciaDataSource.Spec.InfoKey)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		encryptedInfo, exist := kusciaDataSource.Spec.Data[encryptedInfo]
-		if !exist {
-			return nil, fmt.Errorf("missing datasource info for %s", kusciaDataSource.Spec.Name)
-		}
-		info, err = s.decryptInfo(encryptedInfo)
-		if err != nil {
+	// master mode could not decrypt Info, only autonomy and lite need decrypt Info
+	if s.conf.RunMode != common.RunModeMaster {
+		if info, err = s.decryptDatasourceInfo(ctx, kusciaDataSource); err != nil {
 			return nil, err
 		}
 	}
@@ -405,24 +468,37 @@ func (s domainDataSourceService) validateRequestIdentity(domainID string) error 
 	if s.conf.RunMode == common.RunModeMaster {
 		return errors.New("master's kuscia api can't operate domain data source")
 	}
-
 	if domainID == "" {
 		return errors.New("domain id can not be empty")
 	}
-
 	// do k8s validate
 	if err := resources.ValidateK8sName(domainID, "domain_id"); err != nil {
 		return err
 	}
-
 	if domainID != s.conf.Initiator {
 		return fmt.Errorf("domain %v can't operate domain %v data source", s.conf.Initiator, domainID)
 	}
-
 	return nil
 }
 
-// nolint:dulp
+func (s domainDataSourceService) validateRetrieveRequest(domainID string) error {
+	if s.conf.RunMode == common.RunModeMaster {
+		return nil
+	}
+	if domainID == "" {
+		return errors.New("domain id can not be empty")
+	}
+	// do k8s validate
+	if err := resources.ValidateK8sName(domainID, "domain_id"); err != nil {
+		return err
+	}
+	if domainID != s.conf.Initiator {
+		return fmt.Errorf("domain %v can't operate domain %v data source", s.conf.Initiator, domainID)
+	}
+	return nil
+}
+
+//nolint:dupl
 func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType string, infoKey string) (*kusciaapi.DataSourceInfo, error) {
 	response := s.configurationService.QueryConfiguration(ctx, &confmanager.QueryConfigurationRequest{
 		Ids: []string{infoKey},
@@ -447,7 +523,7 @@ func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType 
 	return info, err
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) encryptInfo(dataSourceType string, info *kusciaapi.DataSourceInfo) (uri string, encInfo string, err error) {
 	uri, err = parseDataSourceURI(dataSourceType, info)
 	if err != nil {
@@ -469,7 +545,7 @@ func (s domainDataSourceService) encryptInfo(dataSourceType string, info *kuscia
 	return
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) decryptInfo(cipherInfo string) (*kusciaapi.DataSourceInfo, error) {
 	plaintext, err := tls.DecryptOAEP(s.conf.DomainKey, cipherInfo)
 	if err != nil {
@@ -507,7 +583,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.D
 	return &dsInfo, nil
 }
 
-// nolint:dulp
+//nolint:dupl
 func parseDataSourceURI(sourceType string, info *kusciaapi.DataSourceInfo) (uri string, err error) {
 	if info == nil {
 		return "", errors.New("info is nil")

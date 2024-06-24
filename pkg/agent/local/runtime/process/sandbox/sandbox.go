@@ -65,7 +65,7 @@ type Sandbox struct {
 func NewSandbox(config *runtime.PodSandboxConfig, ip, rootDir string) (s *Sandbox, retErr error) {
 	s = &Sandbox{
 		MetaData: MetaData{
-			ID:        common.GenerateID(),
+			ID:        common.GenerateID(16),
 			Config:    config,
 			IP:        ip,
 			CreatedAt: time.Now(),

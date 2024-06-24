@@ -18,10 +18,19 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
+const (
+	HeaderTransitHash = "Kuscia-Transit-Hash"
+	HeaderTransitFlag = "Kuscia-Transit-Flag"
+)
+
+func IsTransit(transit *v1alpha1.Transit) bool {
+	return transit != nil && (transit.TransitMethod == v1alpha1.TransitMethodReverseTunnel || transit.TransitMethod == v1alpha1.TransitMethodThirdDomain)
+}
+
 func IsThirdPartyTransit(transit *v1alpha1.Transit) bool {
 	return transit != nil && (transit.TransitMethod == "" || transit.TransitMethod == v1alpha1.TransitMethodThirdDomain)
 }
 
-func IsGatewayTceTransit(transit *v1alpha1.Transit) bool {
+func IsReverseTunnelTransit(transit *v1alpha1.Transit) bool {
 	return transit != nil && transit.TransitMethod == v1alpha1.TransitMethodReverseTunnel
 }

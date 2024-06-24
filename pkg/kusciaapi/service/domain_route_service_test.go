@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -58,6 +58,75 @@ func TestCreateDomainRoute(t *testing.T) {
 	t.Log(fmt.Sprintf("CreateDomainRoute res : %+v\n", res))
 	assert.NotNil(t, res)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
+}
+
+func TestCreateDomainRouteWithTransit(t *testing.T) {
+	domainRoutes := []kusciaapi.CreateDomainRouteRequest{
+		buildTestCreateDomainRouteRequest(),
+		buildTestCreateDomainRouteRequest(),
+		buildTestCreateDomainRouteRequest(),
+		buildTestCreateDomainRouteRequest(),
+		buildTestCreateDomainRouteRequest(),
+	}
+
+	domainRoutes[0].Transit = &kusciaapi.Transit{
+		TransitMethod: "THIRD-DOMAIN",
+	}
+	domainRoutes[1].Transit = &kusciaapi.Transit{}
+	domainRoutes[2].Transit = &kusciaapi.Transit{
+		TransitMethod: "REVERSE-TUNNEL",
+	}
+
+	domainRoutes[3].Transit = &kusciaapi.Transit{
+		TransitMethod: "THIRD-DOMAIN",
+		Domain: &kusciaapi.Transit_Domain{
+			DomainId: "test-domain",
+		},
+	}
+
+	tests := []struct {
+		request *kusciaapi.CreateDomainRouteRequest
+		code    int32
+	}{
+		{
+			request: &domainRoutes[0],
+			code:    errorcode.ErrRequestValidate,
+		},
+		{
+			request: &domainRoutes[1],
+			code:    errorcode.ErrRequestValidate,
+		},
+		{
+			request: &domainRoutes[2],
+			code:    0,
+		},
+		{
+			request: &domainRoutes[3],
+			code:    0,
+		},
+		{
+			request: &domainRoutes[4],
+			code:    0,
+		},
+	}
+
+	createDomainRes := CreateDomain(kusciaAPIDR.source)
+	assert.NotNil(t, createDomainRes)
+	assert.True(t, createDomainRes.Status.Code == 0 || createDomainRes.Status.Code == 11306)
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("Test %d", i), func(t *testing.T) {
+			kusciaAPIDR.DeleteDomainRoute(context.Background(), &kusciaapi.DeleteDomainRouteRequest{
+				Source:      tt.request.Source,
+				Destination: tt.request.Destination,
+			})
+
+			res := kusciaAPIDR.CreateDomainRoute(context.Background(), tt.request)
+			assert.NotNil(t, res)
+			assert.Equal(t, tt.code, res.Status.Code)
+		})
+	}
+
 }
 
 func TestQueryRoute(t *testing.T) {
@@ -118,8 +187,12 @@ func TestConvertDomainRouteProtocol(t *testing.T) {
 }
 
 func createDomainRoute() *kusciaapi.CreateDomainRouteResponse {
+	request := buildTestCreateDomainRouteRequest()
+	return kusciaAPIDR.CreateDomainRoute(context.Background(), &request)
+}
 
-	return kusciaAPIDR.CreateDomainRoute(context.Background(), &kusciaapi.CreateDomainRouteRequest{
+func buildTestCreateDomainRouteRequest() kusciaapi.CreateDomainRouteRequest {
+	return kusciaapi.CreateDomainRouteRequest{
 		Source:             kusciaAPIDR.source,
 		Destination:        kusciaAPIDR.destination,
 		AuthenticationType: string(v1alpha1.DomainAuthenticationToken),
@@ -138,5 +211,5 @@ func createDomainRoute() *kusciaapi.CreateDomainRouteResponse {
 			SourcePublicKey:      "source pk",
 			TokenGenMethod:       "RSA",
 		},
-	})
+	}
 }

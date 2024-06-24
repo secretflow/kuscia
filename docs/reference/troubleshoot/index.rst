@@ -16,3 +16,4 @@
     private_key_loss
     protocol_describe
     docker_cpp_copy
+    docker_memory_limit

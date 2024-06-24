@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package modules
 
 import (
@@ -21,8 +21,11 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,6 +40,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
+	"github.com/secretflow/kuscia/pkg/utils/process"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/logs"
 )
@@ -69,6 +73,106 @@ type Dependencies struct {
 	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
 	LogConfig               *nlog.LogConfig
 	Logrorate               confloader.LogrotateConfig
+	destroyFuncs            []DestroyFunc
+	stopCh                  chan struct{}
+	stopped                 int32 // 0: not stopped 1: stopped
+	lock                    sync.Mutex
+}
+
+type DestroyFunc struct {
+	Name              string
+	DestroyFn         func()
+	DestroyCh         <-chan struct{}
+	ShutdownHookEntry *shutdownHookEntry
+}
+
+func (d *Dependencies) Destroy() {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	nlog.Infof("Begin to destroy modules......")
+	size := len(d.destroyFuncs)
+	if size > 0 {
+		for i := size - 1; i >= 0; i-- {
+			destroy := d.destroyFuncs[i]
+			nlog.Infof("Module [%s] begin to destroy", destroy.Name)
+			destroy.DestroyFn()
+			shutdownEntry := destroy.ShutdownHookEntry
+			if shutdownEntry != nil {
+				nlog.Infof("module[%s] shutdown entry found", destroy.Name)
+				shutdownEntry.WaitDown()
+			}
+		}
+	}
+	nlog.Infof("End to destroy modules......")
+}
+
+func (d *Dependencies) RegisterDestroyFunc(destroyFunc DestroyFunc) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	nlog.Infof("Add destroyFunc [%s]", destroyFunc.Name)
+	d.destroyFuncs = append(d.destroyFuncs, destroyFunc)
+}
+
+func (d *Dependencies) Stop() <-chan struct{} {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	for _, destroy := range d.destroyFuncs {
+		go func(f DestroyFunc) {
+			<-f.DestroyCh
+			nlog.Errorf("Module[%s] receive stop", f.Name)
+			if atomic.CompareAndSwapInt32(&d.stopped, 0, 1) {
+				close(d.stopCh)
+			}
+		}(destroy)
+	}
+	return d.stopCh
+}
+
+func (d *Dependencies) WaitAllModulesDone(stop <-chan struct{}) {
+	select {
+	// receive signal exit
+	case <-stop:
+		nlog.Infof("receive signal exit....")
+		// receive module exit
+	case <-d.Stop():
+		nlog.Infof("receive module exit....")
+	}
+	d.Destroy()
+}
+
+type shutdownHookEntry struct {
+	lock    sync.Mutex
+	closed  bool
+	closeCh chan struct{}
+	timeOut time.Duration
+}
+
+func newShutdownHookEntry(timeout time.Duration) *shutdownHookEntry {
+	return &shutdownHookEntry{
+		timeOut: timeout,
+		closeCh: make(chan struct{}),
+	}
+}
+
+func (s *shutdownHookEntry) RunShutdown() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if !s.closed {
+		close(s.closeCh)
+		s.closed = true
+	}
+}
+
+func (s *shutdownHookEntry) WaitDown() {
+	timeout := s.timeOut
+	timeoutTicker := time.NewTicker(timeout)
+	defer timeoutTicker.Stop()
+	select {
+	case <-timeoutTicker.C:
+		nlog.Warnf("exceed timeout: %s", timeout.String())
+	case <-s.closeCh:
+		nlog.Infof("shut down with closeCh close")
+	}
 }
 
 func (d *Dependencies) MakeClients() {
@@ -204,6 +308,7 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	dependencies := &Dependencies{
 		KusciaConfig: kusciaConf,
 	}
+	dependencies.stopCh = make(chan struct{})
 	// init log
 	logConfig := &nlog.LogConfig{
 		LogLevel:      kusciaConf.LogLevel,
@@ -284,4 +389,41 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	dependencies.NodeExportPort = "9100"
 	dependencies.MetricExportPort = "9091"
 	return dependencies
+}
+
+type ModuleCMD struct {
+	cmd   *exec.Cmd
+	score *int
+}
+
+func (c *ModuleCMD) Start() error {
+	return c.cmd.Start()
+}
+
+func (c *ModuleCMD) Wait() error {
+	return c.cmd.Wait()
+}
+
+func (c *ModuleCMD) Pid() int {
+	if c.cmd != nil && c.cmd.Process != nil {
+		return c.cmd.Process.Pid
+	}
+	return 0
+}
+
+func (c *ModuleCMD) SetOOMScore() error {
+	if c.score == nil {
+		return nil
+	}
+	return process.SetOOMScore(c.Pid(), *c.score)
+}
+
+func SetKusciaOOMScore() {
+	if err := process.SetOOMScore(1, initProcessOOMScore); err != nil {
+		nlog.Warnf("Set init process oom_score_adj failed, %v, skip setting it", err)
+	}
+
+	if err := process.SetOOMScore(os.Getpid(), kusciaOOMScore); err != nil {
+		nlog.Warnf("Set kuscia controllers process oom_score_adj failed, %v, skip setting it", err)
+	}
 }

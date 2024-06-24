@@ -37,14 +37,15 @@ import (
 )
 
 type LiteKusciaConfig struct {
-	CommonConfig    `yaml:",inline"`
-	LiteDeployToken string             `yaml:"liteDeployToken"`
-	MasterEndpoint  string             `yaml:"masterEndpoint"`
-	Runtime         string             `yaml:"runtime"`
-	Runk            RunkConfig         `yaml:"runk"`
-	Capacity        config.CapacityCfg `yaml:"capacity"`
-	Image           ImageConfig        `yaml:"image"`
-	AdvancedConfig  `yaml:",inline"`
+	CommonConfig      `yaml:",inline"`
+	LiteDeployToken   string                      `yaml:"liteDeployToken"`
+	MasterEndpoint    string                      `yaml:"masterEndpoint"`
+	Runtime           string                      `yaml:"runtime"`
+	Runk              RunkConfig                  `yaml:"runk"`
+	Capacity          config.CapacityCfg          `yaml:"capacity"`
+	ReservedResources config.ReservedResourcesCfg `yaml:"reservedResources"`
+	Image             ImageConfig                 `yaml:"image"`
+	AdvancedConfig    `yaml:",inline"`
 }
 
 type MasterKusciaConfig struct {
@@ -56,11 +57,12 @@ type MasterKusciaConfig struct {
 
 type AutomonyKusciaConfig struct {
 	CommonConfig      `yaml:",inline"`
-	Runtime           string             `yaml:"runtime"`
-	Runk              RunkConfig         `yaml:"runk"`
-	Capacity          config.CapacityCfg `yaml:"capacity"`
-	Image             ImageConfig        `yaml:"image"`
-	DatastoreEndpoint string             `yaml:"datastoreEndpoint"`
+	Runtime           string                      `yaml:"runtime"`
+	Runk              RunkConfig                  `yaml:"runk"`
+	Capacity          config.CapacityCfg          `yaml:"capacity"`
+	ReservedResources config.ReservedResourcesCfg `yaml:"reservedResources"`
+	Image             ImageConfig                 `yaml:"image"`
+	DatastoreEndpoint string                      `yaml:"datastoreEndpoint"`
 	AdvancedConfig    `yaml:",inline"`
 }
 
@@ -157,6 +159,13 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.Agent.Provider.K8s = lite.Runk.overwriteK8sProviderCfg(lite.Agent.Provider.K8s)
 	kusciaConfig.Agent.Capacity = lite.Capacity
 
+	if lite.ReservedResources.CPU != "" {
+		kusciaConfig.Agent.ReservedResources.CPU = lite.ReservedResources.CPU
+	}
+	if lite.ReservedResources.Memory != "" {
+		kusciaConfig.Agent.ReservedResources.Memory = lite.ReservedResources.Memory
+	}
+
 	for _, p := range lite.Agent.Plugins {
 		for j, pp := range kusciaConfig.Agent.Plugins {
 			if p.Name == pp.Name {
@@ -167,7 +176,7 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	}
 
 	kusciaConfig.Master.Endpoint = lite.MasterEndpoint
-	kusciaConfig.DomainRoute.DomainCsrData = generateCsrData(lite.DomainID, lite.DomainKeyData, lite.LiteDeployToken)
+	kusciaConfig.DomainRoute.DomainCsrData = GenerateCsrData(lite.DomainID, lite.DomainKeyData, lite.LiteDeployToken)
 	kusciaConfig.Debug = lite.Debug
 	kusciaConfig.DebugPort = lite.DebugPort
 
@@ -206,6 +215,13 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Agent.Provider.Runtime = autonomy.Runtime
 	kusciaConfig.Agent.Provider.K8s = autonomy.Runk.overwriteK8sProviderCfg(autonomy.Agent.Provider.K8s)
 	kusciaConfig.Agent.Capacity = autonomy.Capacity
+
+	if autonomy.ReservedResources.CPU != "" {
+		kusciaConfig.Agent.ReservedResources.CPU = autonomy.ReservedResources.CPU
+	}
+	if autonomy.ReservedResources.Memory != "" {
+		kusciaConfig.Agent.ReservedResources.Memory = autonomy.ReservedResources.Memory
+	}
 
 	for _, p := range autonomy.Agent.Plugins {
 		for j, pp := range kusciaConfig.Agent.Plugins {
@@ -255,7 +271,7 @@ func loadConfig(configFile string, conf interface{}) {
 	}
 }
 
-func generateCsrData(domainID, domainKeyData, deployToken string) string {
+func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
 	domainKeyDataDecoded, err := base64.StdEncoding.DecodeString(domainKeyData)
 	if err != nil {
 		nlog.Fatalf("Load domain key file error: %v", err.Error())

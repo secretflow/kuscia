@@ -1,6 +1,6 @@
-ARG KUSCIA_IMAGE="secretflow/kuscia:0.8.0b0"
+ARG KUSCIA_IMAGE="secretflow/kuscia:0.9.0b0"
 
-FROM secretflow/anolis8-python:3.10.13 as python 
+FROM secretflow/anolis8-python:3.10.13 as python
 
 FROM ${KUSCIA_IMAGE}
 

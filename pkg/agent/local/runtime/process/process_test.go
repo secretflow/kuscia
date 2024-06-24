@@ -128,6 +128,9 @@ func Test_RuntimeSandboxAndContainers(t *testing.T) {
 
 	assert.NoError(t, runtime.StopContainer(ctx, containerID, 0))
 
+	// make sure process killed
+	time.Sleep(100 * time.Millisecond)
+
 	assert.NoError(t, runtime.StopPodSandbox(ctx, sandboxID))
 
 	time.Sleep(100 * time.Millisecond)

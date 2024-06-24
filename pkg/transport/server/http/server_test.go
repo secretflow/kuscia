@@ -49,12 +49,18 @@ var httpConfig *config.ServerConfig
 var msqConfig *msq.Config
 
 func NewRandomStr(l int) []byte {
-	str := "0123456789abcdefghijklmnopqrstuvwxyz"
-	bytes := []byte(str)
+	const str = "0123456789abcdefghijklmnopqrstuvwxyz"
 	content := make([]byte, l, l)
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < l; i++ {
-		content[i] = bytes[r.Intn(len(bytes))]
+	for l > 0 {
+		c := len(str)
+		if l < len(str) {
+			c = l
+		}
+
+		for i := 0; i < c; i++ {
+			l--
+			content[l] = str[i]
+		}
 	}
 	return content
 }
@@ -71,7 +77,7 @@ func verifyResponse(t *testing.T, req *http.Request, code transerr.ErrorCode) *c
 	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	outbound, err := server.codec.UnMarshal(body)
-	assert.Equal(t, outbound.Code, string(code))
+	assert.Equal(t, string(code), outbound.Code)
 	return outbound
 }
 
@@ -83,7 +89,8 @@ func TestMain(m *testing.M) {
 	msq.Init(msqConfig)
 	server = NewServer(httpConfig, msq.NewSessionManager())
 	go server.Start(context.Background())
-	time.Sleep(time.Second * 2)
+	// wait server startup
+	time.Sleep(time.Millisecond * 200)
 	os.Exit(m.Run())
 }
 
@@ -117,11 +124,6 @@ func TestPeek(t *testing.T) {
 
 func TestPopWithData(t *testing.T) {
 	server.sm = msq.NewSessionManager()
-	go func() {
-		time.Sleep(time.Second * 1)
-		err := server.sm.Push("session3", "node0-topic2", &msq.Message{Content: NewRandomStr(10)}, time.Second)
-		assert.Nil(t, err)
-	}()
 
 	popReq, _ := http.NewRequest("POST", generatePath(pop), bytes.NewBuffer(nil))
 	popReq.Header.Set(codec.PtpTopicID, "topic2")
@@ -131,12 +133,18 @@ func TestPopWithData(t *testing.T) {
 	params.Add("timeout", "5")
 	popReq.URL.RawQuery = params.Encode()
 
+	go func() {
+		time.Sleep(time.Millisecond * 100)
+		err := server.sm.Push("session3", "node0-topic2", &msq.Message{Content: NewRandomStr(10)}, time.Second)
+		assert.Nil(t, err)
+	}()
+
 	start := time.Now()
 	outbound := verifyResponse(t, popReq, transerr.Success)
 	assert.Equal(t, len(outbound.Payload), 10)
 
 	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Second)
+	assert.True(t, processTime >= time.Millisecond*50)
 }
 
 func TestPopTimeout(t *testing.T) {
@@ -153,7 +161,8 @@ func TestPopTimeout(t *testing.T) {
 	assert.True(t, outbound.Payload == nil)
 
 	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Second*2 && processTime <= time.Second*3)
+	assert.Greater(t, processTime, time.Millisecond*1500) // 1.5s
+	assert.Less(t, processTime, time.Millisecond*2500)    // 2.5s
 }
 
 func TestReleaseTopic(t *testing.T) {
@@ -195,12 +204,22 @@ func TestReleaseSession(t *testing.T) {
 }
 
 func TestTooLargeBody(t *testing.T) {
-	pushReq, _ := http.NewRequest("POST", generatePath(invoke), bytes.NewBuffer(NewRandomStr(int(httpConfig.
-		ReqBodyMaxSize+1))))
-	pushReq.Header.Set(codec.PtpTopicID, "topic2")
-	pushReq.Header.Set(codec.PtpSessionID, "session7")
-	pushReq.Header.Set(codec.PtpSourceNodeID, "node0")
-	verifyResponse(t, pushReq, transerr.BodyTooLarge)
+	{
+		pushReq, _ := http.NewRequest("POST", generatePath(invoke), bytes.NewBuffer(NewRandomStr(int(httpConfig.
+			ReqBodyMaxSize+1))))
+		pushReq.Header.Set(codec.PtpTopicID, "topic2")
+		pushReq.Header.Set(codec.PtpSessionID, "session7")
+		pushReq.Header.Set(codec.PtpSourceNodeID, "node0")
+		verifyResponse(t, pushReq, transerr.BodyTooLarge)
+	}
+
+	{ // session buffer is too small
+		pushReq, _ := http.NewRequest("POST", generatePath(invoke), bytes.NewBuffer(NewRandomStr(int(msq.DefaultMsgConfig().PerSessionByteSizeLimit+1))))
+		pushReq.Header.Set(codec.PtpTopicID, "topic2")
+		pushReq.Header.Set(codec.PtpSessionID, "session7")
+		pushReq.Header.Set(codec.PtpSourceNodeID, "node0")
+		verifyResponse(t, pushReq, transerr.BufferOverflow)
+	}
 }
 
 func TestPushWait(t *testing.T) {
@@ -223,8 +242,8 @@ func TestPushWait(t *testing.T) {
 	start := time.Now()
 	verifyResponse(t, pushReq, transerr.Success)
 	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Second && processTime <= time.Second*2)
-
+	assert.Greater(t, processTime, time.Millisecond*500) // 0.5s
+	assert.Less(t, processTime, time.Millisecond*2500)   // 2.5s
 }
 
 func TestBadRequestParam(t *testing.T) {
@@ -239,12 +258,13 @@ var topicCount int = 5
 
 var stop bool = false
 
-func producer(t *testing.T, sendSucceedCount, sendFailCount *int64) {
+func producer(t *testing.T, sendSucceedCount, sendFailCount *int64, sessionIdx, topicIdx int) {
 	msgLength := 256 * 1024
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	sid := fmt.Sprintf("sessionx-%d", r.Intn(sessionCount))
-	topic := fmt.Sprintf("topic-%d", r.Intn(topicCount))
-	content := NewRandomStr(r.Intn(msgLength) + 256*1024)
+	sid := fmt.Sprintf("sessionx-%d", sessionIdx)
+	topic := fmt.Sprintf("topic-%d", topicIdx)
+	content := NewRandomStr(r.Intn(msgLength) + 128*1024)
+	nlog.Infof("new send content length=%d", len(content))
 
 	req, _ := http.NewRequest("POST", generatePath(invoke), bytes.NewBuffer(content))
 	req.Header.Set(codec.PtpTopicID, topic)
@@ -265,16 +285,15 @@ func producer(t *testing.T, sendSucceedCount, sendFailCount *int64) {
 		atomic.AddInt64(sendSucceedCount, 1)
 	} else {
 		if outbound != nil {
-			nlog.Warnf("%v", outbound)
+			nlog.Warnf("producer failed with: %v", outbound)
 		}
 		atomic.AddInt64(sendFailCount, 1)
 	}
 }
 
-func consumer(t *testing.T, popMsgCount, popFailCount *int64) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	sid := fmt.Sprintf("sessionx-%d", r.Intn(sessionCount))
-	topic := fmt.Sprintf("topic-%d", r.Intn(topicCount))
+func consumer(t *testing.T, popMsgCount, popFailCount *int64, sessionIdx, topicIdx int) {
+	sid := fmt.Sprintf("sessionx-%d", sessionIdx)
+	topic := fmt.Sprintf("topic-%d", topicIdx)
 
 	req, _ := http.NewRequest("POST", generatePath(pop), bytes.NewBuffer(nil))
 	req.Header.Set(codec.PtpTopicID, topic)
@@ -307,21 +326,26 @@ func TestPerformance(t *testing.T) {
 	var sendFailCount int64 = 0
 
 	var workerCount int = 5
-	stop := false
 	wg := sync.WaitGroup{}
 	wg.Add(workerCount * 2)
 
 	produceFn := func(idx int) {
-		for !stop {
-			producer(t, &sendSucceedCount, &sendFailCount)
+		for i := 0; i < sessionCount/workerCount; i++ {
+			for j := 0; j < topicCount; j++ {
+				producer(t, &sendSucceedCount, &sendFailCount, idx*workerCount+i, j)
+			}
 		}
+
 		wg.Done()
 	}
 
 	consumerFn := func(idx int) {
-		for !stop {
-			consumer(t, &popMsgCount, &popFailCount)
+		for i := 0; i < sessionCount/workerCount; i++ {
+			for j := 0; j < topicCount; j++ {
+				consumer(t, &popMsgCount, &popFailCount, idx*workerCount+i, j)
+			}
 		}
+
 		wg.Done()
 	}
 
@@ -329,8 +353,7 @@ func TestPerformance(t *testing.T) {
 		go produceFn(i)
 		go consumerFn(i)
 	}
-	time.Sleep(time.Second * 20)
-	stop = true
+
 	wg.Wait()
 
 	var leftCount int64 = 0
@@ -348,10 +371,10 @@ func TestPerformance(t *testing.T) {
 		}
 	}
 
-	// assert.Equal(t, sendFailCount, 0)
-	// assert.Equal(t, popFailCount, 0)
+	assert.Equal(t, int64(0), sendFailCount)
+	assert.Equal(t, int64(0), popFailCount)
 	assert.Equal(t, sendSucceedCount, popMsgCount+leftCount)
-	fmt.Printf("sendSucceedCount=%d sendFailCount=%d\n", sendSucceedCount, sendFailCount)
-	fmt.Printf("popMsgCount=%d popFailCount=%d leftCount=%d totalRecvCount=%d\n",
+	nlog.Infof("sendSucceedCount=%d sendFailCount=%d", sendSucceedCount, sendFailCount)
+	nlog.Infof("popMsgCount=%d popFailCount=%d leftCount=%d totalRecvCount=%d",
 		popMsgCount, popFailCount, leftCount, leftCount+popMsgCount)
 }

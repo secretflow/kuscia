@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	DefaultMaxNotVerifiedPortAge = 60 * 5
+	DefaultMaxNotVerifiedPortAge = 30
 )
 
 type BaseInfo struct {
@@ -65,6 +65,9 @@ func (pp *Provider) addPort(port int) {
 
 func (pp *Provider) Allocate(count int) ([]int32, error) {
 	nlog.Debugf("Allocate port, count=%v, namespace=%v", count, pp.namespace)
+	if count <= 0 {
+		return []int32{}, nil
+	}
 
 	choosePorts := make(map[int]bool, count)
 
@@ -125,7 +128,7 @@ func (pp *Provider) addPortIndeed(owner string, port int) error {
 	if !ok {
 		info = &BaseInfo{owner: owner}
 		pp.ports[port] = info
-	} else if len(info.owner) > 0 {
+	} else if info.owner != "" && info.owner != owner {
 		return fmt.Errorf("port conflict, current owner=%v, new owner=%v, namespace=%v", info.owner, owner, pp.namespace)
 	} else {
 		info.owner = owner

@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -93,14 +94,81 @@ func TestFillClusterDefine(t *testing.T) {
 	}
 }
 
+func TestAllocatePorts(t *testing.T) {
+	partyKitInfos := map[string]*PartyKitInfo{
+		"alice": {
+			domainID: "alice",
+			dkInfo: &DeploymentKitInfo{
+				ports: NamedPorts{
+					"domain": kusciaapisv1alpha1.ContainerPort{
+						Name:     "domain",
+						Port:     8080,
+						Protocol: "HTTP",
+						Scope:    kusciaapisv1alpha1.ScopeDomain,
+					},
+				},
+				allocatedPorts: nil,
+			},
+		},
+		"bob": {
+			domainID: "bob",
+			dkInfo: &DeploymentKitInfo{
+				ports: NamedPorts{
+					"domain": kusciaapisv1alpha1.ContainerPort{
+						Name:     "domain",
+						Port:     9080,
+						Protocol: "HTTP",
+						Scope:    kusciaapisv1alpha1.ScopeDomain,
+					},
+					"cluster": kusciaapisv1alpha1.ContainerPort{
+						Name:     "cluster",
+						Port:     9081,
+						Protocol: "HTTP",
+						Scope:    kusciaapisv1alpha1.ScopeCluster,
+					},
+				},
+				allocatedPorts: nil,
+			},
+		},
+		"carol": {
+			domainID: "carol",
+			dkInfo: &DeploymentKitInfo{
+				ports:          NamedPorts{},
+				allocatedPorts: nil,
+			},
+		},
+	}
+
+	kd := makeTestKusciaDeployment("kd-1", 2, 1, 1)
+
+	needUpdate, err := allocatePorts(kd, partyKitInfos)
+	assert.NoError(t, err)
+	assert.True(t, needUpdate)
+	assert.True(t, kd.Annotations[common.AllocatedPortsAnnotationKey] != "")
+
+	alicePorts := partyKitInfos["alice"].dkInfo.allocatedPorts
+	assert.NotNil(t, alicePorts)
+	assert.Equal(t, 1, len(alicePorts.Ports))
+
+	bobPorts := partyKitInfos["bob"].dkInfo.allocatedPorts
+	assert.NotNil(t, bobPorts)
+	assert.Equal(t, 2, len(bobPorts.Ports))
+
+	carolPorts := partyKitInfos["carol"].dkInfo.allocatedPorts
+	assert.NotNil(t, carolPorts)
+	assert.Equal(t, 0, len(carolPorts.Ports))
+}
+
 func TestFillAllocatedPorts(t *testing.T) {
 	tests := []struct {
-		name   string
-		dkInfo *DeploymentKitInfo
-		want   *proto.AllocatedPorts
+		name       string
+		partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts
+		dkInfo     *DeploymentKitInfo
+		want       *proto.AllocatedPorts
 	}{
 		{
-			name: "ports is empty",
+			name:       "ports is empty",
+			partyPorts: &kusciaapisv1alpha1.PartyAllocatedPorts{NamedPort: map[string]int32{}},
 			dkInfo: &DeploymentKitInfo{
 				deploymentName: "deploy-1",
 				ports:          nil,
@@ -111,7 +179,8 @@ func TestFillAllocatedPorts(t *testing.T) {
 			},
 		},
 		{
-			name: "ports is not empty",
+			name:       "ports is not empty",
+			partyPorts: &kusciaapisv1alpha1.PartyAllocatedPorts{NamedPort: map[string]int32{"domain": 10000}},
 			dkInfo: &DeploymentKitInfo{
 				deploymentName: "deploy-1",
 				ports: NamedPorts{
@@ -128,7 +197,7 @@ func TestFillAllocatedPorts(t *testing.T) {
 				Ports: []*proto.Port{
 					{
 						Name:     "domain",
-						Port:     8080,
+						Port:     10000,
 						Scope:    string(kusciaapisv1alpha1.ScopeDomain),
 						Protocol: "HTTP",
 					},
@@ -139,7 +208,7 @@ func TestFillAllocatedPorts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fillAllocatedPorts(tt.dkInfo)
+			assert.NoError(t, fillAllocatedPorts(tt.partyPorts, tt.dkInfo))
 			assert.Equal(t, tt.want, tt.dkInfo.allocatedPorts)
 		})
 	}

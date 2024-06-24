@@ -14,8 +14,8 @@
 登录到安装 master 的机器上，假设对外ip是1.1.1.1。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
+# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
 
 指定 Secretflow 版本：
@@ -41,13 +41,15 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 ```bash
 # -p 参数传递的是 master 容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 # -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+# -a 指定自动导入的引擎镜像，-a none: 不自动导入引擎镜像，-a secretflow（默认）: 自动导入 secretflow 引擎镜像
+# -m 或者 --memory-limit 参数给节点容器设置适当的内存限制。例如，'-m 4GiB 或 --memory-limit=4GiB' 表示限制最大内存 4GiB，'-m -1 或 --memory-limit=-1'表示没有限制，不设置默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。
 ./kuscia.sh start -c kuscia_master.yaml -p 18080 -k 18081
 ```
-
-<span style="color:red;">注意：<br>
-1、如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md) <br>
-2、master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)<br>
-3、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+> 注意事项：<br>
+> - 目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving 以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)<br>
+> - 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md) <br>
+> - master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)<br>
+> - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
 
 建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。
 示例如下：
@@ -128,8 +130,8 @@ abcdefg
 接下来，登录到安装 alice 的机器上，假设对外暴露的 IP 是 2.2.2.2。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
+# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -178,8 +180,8 @@ hijklmn
 接下来，登录到安装 bob 的机器上，假设对暴露的 IP 是 3.3.3.3。
 指定 Kuscia 版本：
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.8.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
+# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
 <span style="color:red;">注意：节点 id 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)</span>
 
@@ -228,7 +230,7 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr
 
 当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 alice 和 bob 之间授权建立成功。
 
-<span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)</span>
+<span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 ### 运行任务
 接下来，我们运行一个测试任务以验证部署是否成功。
@@ -293,4 +295,4 @@ docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ```
-任务运行遇到网络错误时，可以参考[这里](../../reference/troubleshoot/networktroubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查

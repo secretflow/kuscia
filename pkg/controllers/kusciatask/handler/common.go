@@ -34,8 +34,6 @@ const (
 	labelKusciaTaskPodIdentity = "kuscia.secretflow/pod-identity"
 	labelKusciaTaskPodRole     = "kuscia.secretflow/pod-role"
 
-	kusciaTaskLabelValue = "kusciatask"
-
 	configTemplateVolumeName = "config-template"
 )
 

@@ -37,15 +37,19 @@ import (
 
 func TestPollManager_Run(t *testing.T) {
 	testServices := makeTestServices()
+	testGateways := makeTestGateways()
 	kubeClient := kubefake.NewSimpleClientset(testServices...)
 	kusciaClient := kusciafake.NewSimpleClientset(makeTestDomainRoutes()...)
+	_, err := kusciaClient.KusciaV1alpha1().Gateways("alice").Create(context.Background(), &testGateways[0], metav1.CreateOptions{})
+	assert.NoError(t, err)
 
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	svcInformer := kubeInformersFactory.Core().V1().Services()
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
+	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
 
-	pm, err := NewPollManager(true, "alice", "alice-01", svcInformer, drInformer)
+	pm, err := NewPollManager(true, "alice", "alice-01", svcInformer, drInformer, gatewayInformer)
 	assert.NoError(t, err)
 	stopCh := make(chan struct{})
 	defer close(stopCh)
@@ -53,7 +57,7 @@ func TestPollManager_Run(t *testing.T) {
 	go kubeInformersFactory.Start(stopCh)
 	go kusciaInformerFactory.Start(stopCh)
 
-	cache.WaitForNamedCacheSync("poll manager", stopCh, pm.serviceListerSynced, pm.domainRouteListerSynced)
+	cache.WaitForNamedCacheSync("poll manager", stopCh, pm.serviceListerSynced, pm.domainRouteListerSynced, pm.gatewayListerSynced)
 
 	pollerExist := func(serviceName, receiverDomain string) bool {
 		pm.pollersLock.Lock()
@@ -101,6 +105,54 @@ func TestPollManager_Run(t *testing.T) {
 			}
 		}
 		assert.True(t, pollClientExist)
+	})
+
+	pollerCounts := func() int {
+		pm.pollersLock.Lock()
+		defer pm.pollersLock.Unlock()
+		counts := 0
+		for _, svcPollers := range pm.pollers {
+			counts += len(svcPollers)
+		}
+
+		return counts
+	}
+
+	t.Run("Add and delete gateway", func(t *testing.T) {
+		prePollerCounts := pollerCounts()
+		gatewayInterface := kusciaClient.KusciaV1alpha1().Gateways("alice")
+		assert.NoError(t, err)
+
+		gw, err := gatewayInterface.Create(context.Background(), &testGateways[1], metav1.CreateOptions{})
+		assert.NoError(t, err)
+
+		curPollerCounts := 0
+		for i := 0; i < 50; i++ {
+			assert.NoError(t, pm.updateAliveGateways())
+			time.Sleep(100 * time.Millisecond)
+			curPollerCounts = pollerCounts()
+			if prePollerCounts != curPollerCounts {
+				break
+			}
+		}
+		assert.NotEqual(t, prePollerCounts, curPollerCounts)
+
+		err = kusciaClient.KusciaV1alpha1().Gateways("alice").Delete(context.Background(), gw.Name, metav1.DeleteOptions{})
+		assert.NoError(t, err)
+
+		curPollerCounts = 0
+		for i := 0; i < 50; i++ {
+			assert.NoError(t, pm.updateAliveGateways())
+
+			time.Sleep(100 * time.Millisecond)
+
+			curPollerCounts = pollerCounts()
+			if prePollerCounts == curPollerCounts {
+				break
+			}
+		}
+		assert.Equal(t, prePollerCounts, curPollerCounts)
+
 	})
 
 	t.Run("update domain route", func(t *testing.T) {
@@ -251,6 +303,33 @@ func makeTestDomainRoutes() []runtime.Object {
 			Spec: kusciaapisv1alpha1.DomainRouteSpec{
 				Source:      "carol",
 				Destination: "alice",
+			},
+		},
+	}
+}
+
+func makeTestGateways() []kusciaapisv1alpha1.Gateway {
+	return []kusciaapisv1alpha1.Gateway{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "alice-01",
+				Namespace: "alice",
+			},
+			Status: kusciaapisv1alpha1.GatewayStatus{
+				HeartbeatTime: metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "alice-02",
+				Namespace: "alice",
+			},
+			Status: kusciaapisv1alpha1.GatewayStatus{
+				HeartbeatTime: metav1.Time{
+					Time: time.Now(),
+				},
 			},
 		},
 	}

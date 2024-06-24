@@ -85,7 +85,7 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 	readyTask := readyTasksOf(job, currentSubTasksStatusWithAlias)
 	if currentJobPhase != kusciaapisv1alpha1.KusciaJobFailed && currentJobPhase != kusciaapisv1alpha1.KusciaJobSucceeded {
 		willStartTask := willStartTasksOf(job, readyTask, currentSubTasksStatusWithAlias)
-		willStartKusciaTasks := buildWillStartKusciaTask(h.namespaceLister, job, willStartTask)
+		willStartKusciaTasks := h.buildWillStartKusciaTask(job, willStartTask)
 		// then we will start KusciaTask
 		for _, t := range willStartKusciaTasks {
 			nlog.Infof("Create kuscia tasks: %s", t.ObjectMeta.Name)

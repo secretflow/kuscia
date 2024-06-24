@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -30,6 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -39,7 +41,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	"github.com/stretchr/testify/assert"
 )
 
 type kusciaAPIDomainRoute struct {
@@ -94,11 +95,11 @@ func TestServiceMain(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
 	err = pem.Encode(keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  tls.RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	})
 	assert.NoError(t, err)
-	caKey, err := tls.ParsePKCS1PrivateKey(cafile)
+	caKey, err := tls.ParseRSAPrivateKeyFile(cafile)
 	assert.NoError(t, err)
 	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig("")
 	kusciaClient = kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
@@ -235,7 +236,6 @@ func MakeDomainService(t *testing.T, conf *config.KusciaAPIConfig) IDomainServic
 }
 
 func CreateDomain(domainId string) *kusciaapi.CreateDomainResponse {
-
 	return kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: domainId,
 	})
