@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   kuscia.yaml: |-
     # 部署模式
-    mode: Master
+    mode: master
     # 节点ID
     # 示例: domainID: kuscia-system
     domainID: {{.DOMAIN_ID}}

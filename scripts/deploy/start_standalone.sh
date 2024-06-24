@@ -510,6 +510,9 @@ function run_hybrid_centerX2() {
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    # cdr declaration for handshake
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $bob_domain http://${bob_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
     # bob to alice =
     # alice-master to alice +
     # bob-master to alice transit by alice-master +
@@ -517,6 +520,9 @@ function run_hybrid_centerX2() {
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
+    # cdr declaration for handshake
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $bob_master_domain
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
   fi
 
   check_sf_image $alice_domain ${alice_ctr} ${alice_ctr}
@@ -572,6 +578,9 @@ function run_hybrid_centerXp2p() {
     # bob to alice transit by alice-master
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol} -x $alice_master_domain
+    # cdr declaration for handshake
+    docker exec -it ${bob_master_ctr} scripts/deploy/join_to_host.sh $alice_domain $bob_domain https://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $bob_domain $alice_domain http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
   fi
 
   check_sf_image $alice_domain ${alice_ctr} ${alice_ctr}
@@ -735,7 +744,7 @@ esac
 
 interconn_protocol=
 transit=false
-while getopts 'p:t:h' option; do
+while getopts 'p:th' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG

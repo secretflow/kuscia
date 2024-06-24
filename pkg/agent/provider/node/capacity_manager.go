@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/utils/cgroup"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -44,11 +45,16 @@ type CapacityManager struct {
 
 	podTotal     resource.Quantity
 	podAvailable resource.Quantity
+
+	cgroupCPUQuota    *int64
+	cgroupCPUPeriod   *uint64
+	cgroupMemoryLimit *int64
 }
 
-func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity bool) (*CapacityManager, error) {
+func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg *config.ReservedResourcesCfg, rootDir string, localCapacity bool) (*CapacityManager, error) {
 	pa := &CapacityManager{}
-	nlog.Infof("Capacity Manager, cfg:%v, rootDir: %s, localCapacity:%v", cfg, rootDir, localCapacity)
+	nlog.Infof("Capacity Manager, runtime: %v, capacityCfg:%v, reservedResCfg: %v, rootDir: %s, localCapacity:%v",
+		runtime, cfg, reservedResCfg, rootDir, localCapacity)
 	if localCapacity {
 		memStat, err := mem.VirtualMemory()
 		if err != nil {
@@ -57,7 +63,13 @@ func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity b
 		if cfg.Memory == "" {
 			pa.memTotal = *resource.NewQuantity(int64(memStat.Total), resource.BinarySI)
 		}
+
 		pa.memAvailable = *resource.NewQuantity(int64(memStat.Available), resource.BinarySI)
+		memoryLimit, err := cgroup.GetMemoryLimit(cgroup.DefaultMountPoint)
+		if err == nil && memoryLimit > 0 && memoryLimit < int64(memStat.Available) {
+			pa.memTotal = *resource.NewQuantity(memoryLimit, resource.BinarySI)
+			pa.memAvailable = pa.memTotal.DeepCopy()
+		}
 
 		if cfg.CPU == "" {
 			// One cpu, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers
@@ -69,6 +81,14 @@ func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity b
 			cfg.CPU = strconv.Itoa(cpus)
 			pa.cpuTotal = *resource.NewQuantity(int64(cpus), resource.BinarySI)
 			pa.cpuAvailable = pa.cpuTotal.DeepCopy()
+			cpuQuota, cpuPeriod, err := cgroup.GetCPUQuotaAndPeriod(cgroup.DefaultMountPoint)
+			if err == nil && cpuQuota > 0 && cpuPeriod > 0 {
+				availableCPU := cpuQuota / cpuPeriod
+				if availableCPU > 0 && availableCPU < pa.cpuAvailable.Value() {
+					pa.cpuTotal = *resource.NewQuantity(availableCPU, resource.BinarySI)
+					pa.cpuAvailable = pa.cpuTotal.DeepCopy()
+				}
+			}
 		}
 
 		if cfg.Storage == "" {
@@ -106,6 +126,7 @@ func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity b
 			pa.memAvailable = memory.DeepCopy()
 		}
 	}
+
 	if pa.memTotal.Cmp(pa.memAvailable) < 0 {
 		// total memory in config is smaller than available memory
 		pa.memAvailable = pa.memTotal.DeepCopy()
@@ -132,7 +153,66 @@ func NewCapacityManager(cfg *config.CapacityCfg, rootDir string, localCapacity b
 	pa.podTotal = pods.DeepCopy()
 	pa.podAvailable = pods.DeepCopy()
 
+	err = pa.buildCgroupResource(runtime, reservedResCfg)
+	if err != nil {
+		return nil, err
+	}
+
 	return pa, nil
+}
+
+func (pa *CapacityManager) buildCgroupResource(runtime string, reservedResCfg *config.ReservedResourcesCfg) error {
+	if reservedResCfg == nil {
+		return nil
+	}
+
+	if runtime != config.ProcessRuntime && runtime != config.ContainerRuntime {
+		return nil
+	}
+
+	reservedCPU, err := resource.ParseQuantity(reservedResCfg.CPU)
+	if err != nil {
+		return fmt.Errorf("failed to parse reserved cpu %q, detail-> %v", reservedResCfg.CPU, err)
+	}
+
+	if reservedCPU.MilliValue() <= 0 {
+		reservedCPU, _ = resource.ParseQuantity(config.DefaultReservedCPU)
+	}
+
+	if pa.cpuAvailable.Cmp(reservedCPU) < 0 {
+		return fmt.Errorf("available cpu %v is less than reserved cpu %v", pa.cpuAvailable.String(), reservedCPU.String())
+	}
+
+	cpuPeriod := uint64(100000)
+	availableCPU := pa.cpuAvailable.MilliValue() - reservedCPU.MilliValue()
+	cpuQuota := availableCPU * 100
+	pa.cgroupCPUQuota = &cpuQuota
+	pa.cgroupCPUPeriod = &cpuPeriod
+	if reservedCPU.MilliValue() > 500 {
+		pa.cpuAvailable.SetMilli(availableCPU)
+	}
+
+	nlog.Infof("Total cpu: %v, available cpu: %v, cpu quota: %v, cpu period: %v", pa.cpuTotal.String(), pa.cpuAvailable.String(), cpuQuota, *pa.cgroupCPUPeriod)
+
+	reservedMemory, err := resource.ParseQuantity(reservedResCfg.Memory)
+	if err != nil {
+		return fmt.Errorf("failed to parse reserved memory %q, detail-> %v", reservedResCfg.Memory, err)
+	}
+
+	if reservedMemory.MilliValue() <= 0 {
+		reservedMemory, _ = resource.ParseQuantity(config.DefaultReservedMemory)
+	}
+
+	if pa.memAvailable.Cmp(reservedMemory) < 0 {
+		return fmt.Errorf("available memory %d is less than reserved memory %d", pa.cpuTotal.Value(), reservedCPU.Value())
+	}
+
+	availableMemory := pa.memAvailable.Value() - reservedMemory.Value()
+	pa.cgroupMemoryLimit = &availableMemory
+	pa.memAvailable.Set(availableMemory)
+
+	nlog.Infof("Total memory: %v, available memory: %v", pa.memTotal.Value(), pa.memAvailable.Value())
+	return nil
 }
 
 // Capacity returns a resource list containing the capacity limits.
@@ -152,4 +232,16 @@ func (pa *CapacityManager) Allocatable() v1.ResourceList {
 		"storage": pa.storageAvailable,
 		"pods":    pa.podAvailable,
 	}
+}
+
+func (pa *CapacityManager) GetCgroupCPUQuota() *int64 {
+	return pa.cgroupCPUQuota
+}
+
+func (pa *CapacityManager) GetCgroupCPUPeriod() *uint64 {
+	return pa.cgroupCPUPeriod
+}
+
+func (pa *CapacityManager) GetCgroupMemoryLimit() *int64 {
+	return pa.cgroupMemoryLimit
 }

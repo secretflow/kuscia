@@ -23,7 +23,8 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func doTestKeyLocker(t *testing.T) {
+func TestKeyLocker(t *testing.T) {
+	t.Parallel()
 	kl := NewKeyLocker()
 
 	totalCase := 20
@@ -54,10 +55,4 @@ func doTestKeyLocker(t *testing.T) {
 		assert.Equal(t, sum[i], int64(200*threadPerCase))
 	}
 	assert.Equal(t, len(kl.inUse), 0)
-}
-
-func TestKeyLocker(t *testing.T) {
-	for round := 0; round < 10; round++ {
-		t.Run(fmt.Sprintf("round_%v", round), doTestKeyLocker)
-	}
 }

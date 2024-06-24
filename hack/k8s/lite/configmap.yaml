@@ -6,7 +6,7 @@ metadata:
 data:
   kuscia.yaml: |-
     # 启动模式
-    mode: Lite
+    mode: lite
     # 节点ID
     # 示例: domainID: alice
     domainID: {{.DOMAIN_ID}}

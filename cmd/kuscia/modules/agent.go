@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"time"
@@ -51,6 +52,9 @@ func NewAgent(i *Dependencies) Module {
 	conf.StdoutPath = filepath.Join(i.RootDir, common.StdoutPrefix)
 	if conf.Node.NodeName == "" {
 		conf.Node.NodeName = hostname
+	}
+	if conf.Provider.Runtime == config.ContainerRuntime {
+		conf.Node.KeepNodeOnExit = true
 	}
 	conf.APIVersion = k8sVersion
 	conf.AgentVersion = fmt.Sprintf("%v", meta.AgentVersionString())
@@ -88,11 +92,24 @@ func NewAgent(i *Dependencies) Module {
 }
 
 func (agent *agentModule) Run(ctx context.Context) error {
+	if agent.conf.Provider.Runtime == config.ProcessRuntime {
+		err := agent.execPreCmds(ctx)
+		if err != nil {
+			nlog.Warn(err)
+		}
+	}
 	return commands.RunRootCommand(ctx, agent.conf, agent.clients.KubeClient)
 }
 
+func (agent *agentModule) execPreCmds(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, "sh", "-c", filepath.Join(agent.conf.RootDir, "scripts/deploy/cgroup_pre_detect.sh"))
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
 func (agent *agentModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(300 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	select {
 	case <-commands.ReadyChan:
 		return nil
@@ -107,19 +124,34 @@ func (agent *agentModule) Name() string {
 	return "agent"
 }
 
-func RunAgent(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunAgentWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := newShutdownHookEntry(2 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "agent",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunAgent(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunAgent(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m := NewAgent(conf)
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("Agent is ready")
+		nlog.Fatalf("Agent wait ready failed: %v", err)
 	}
+	nlog.Info("Agent is ready")
 	return m
 }

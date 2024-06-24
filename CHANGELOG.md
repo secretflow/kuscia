@@ -15,6 +15,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `Security` in case of vulnerabilities.
 `Breaking Changed` Breaking for backward-incompatible changes that require user intervention.
 
+## [v0.9.0.dev240430] - 2024-04-30
+
+### Added
+
+- [Documentation] SCQL on Kuscia Tutorial.
+- [Feature] Support for ARM architecture.
+- [Feature] Support for reverse tunneling multiple replicas.
+- [Feature] New CGROUP restrictions under RunP and RunC for Kuscia nodes.
+
+### Changed
+
+- [Security Hardening] Change the node registration request's MD5 hash to Sha256.
+- [Security Hardening] Node certificate issuance requires the CN field to be a Domain name.
+- [Script] kuscia.sh upgrade retains k3s resources, memory restrictions.
+- [KusciaAPI] KusciaJob's TaskStatus new field alias.
+- [Integration Testing] Improved integration testing stability.
+- [Optimization] Modified the Access-Domain information that allows access to the Service.
+- [Upgrade] Upgraded the dependent Envoy version to 1.29.4.
+
+### Fixed
+
+- Fixed the issue where the kusciaTask status was incorrect when stopping a KusciaJob.
+- Fixed the issue of nodes not scheduling applications upon deletion/upgrade.
+- Fixed the issue of not being able to delete task sub-resources.
+- Fixed the issue where Service name was too long, causing task creation to fail.
+
 ## [v0.8.0.dev240331] - 2024-03-31
 
 ### Added

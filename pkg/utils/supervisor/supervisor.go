@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"os/exec"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -36,6 +35,8 @@ const defaultMinRunningTimeMS = 3000
 type Cmd interface {
 	Start() error
 	Wait() error
+	Pid() int
+	SetOOMScore() error
 }
 
 type Supervisor struct {
@@ -117,13 +118,6 @@ func (s *Supervisor) Run(ctx context.Context, startup func(ctx context.Context) 
 	}
 }
 
-func getCmdProcessID(c Cmd) int {
-	if cmd, ok := c.(*exec.Cmd); ok && cmd != nil && cmd.Process != nil {
-		return cmd.Process.Pid
-	}
-	return 0
-}
-
 func (s *Supervisor) runProcess(ctx context.Context, cmd Cmd) error {
 	stime := time.Now()
 	if cmd == nil {
@@ -131,18 +125,22 @@ func (s *Supervisor) runProcess(ctx context.Context, cmd Cmd) error {
 	}
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("start process(%d) failed with %v", getCmdProcessID(cmd), err)
+		return fmt.Errorf("start process(%d) failed with %v", cmd.Pid(), err)
+	}
+
+	if err := cmd.SetOOMScore(); err != nil {
+		nlog.Warnf("Set process(%d) oom_score_adj failed, %v, skip setting it", cmd.Pid(), err)
 	}
 
 	err := cmd.Wait()
 	if err != nil { // process exit failed
-		nlog.Warnf("Process(%d) exit with error: %v", getCmdProcessID(cmd), err)
+		nlog.Warnf("Process(%d) exit with error: %v", cmd.Pid(), err)
 	} else {
-		nlog.Infof("Process(%d) exit normally", getCmdProcessID(cmd))
+		nlog.Infof("Process(%d) exit normally", cmd.Pid())
 	}
 
 	if dt := time.Since(stime); dt.Milliseconds() <= int64(s.minRunningTimeMS) {
-		tmerr := fmt.Sprintf("process(%d) only existed %d ms, less than %d ms", getCmdProcessID(cmd), dt.Milliseconds(), s.minRunningTimeMS)
+		tmerr := fmt.Sprintf("process(%d) only existed %d ms, less than %d ms", cmd.Pid(), dt.Milliseconds(), s.minRunningTimeMS)
 		if err != nil {
 			return fmt.Errorf("%s, with error: %v", tmerr, err)
 		}

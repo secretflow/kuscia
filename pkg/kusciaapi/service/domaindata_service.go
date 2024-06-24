@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -58,25 +58,37 @@ func NewDomainDataService(config *config.KusciaAPIConfig) IDomainDataService {
 }
 
 func (s domainDataService) CreateDomainData(ctx context.Context, request *kusciaapi.CreateDomainDataRequest) *kusciaapi.CreateDomainDataResponse {
-	// do validate
+	// validate domainID
 	if request.DomainId == "" {
 		return &kusciaapi.CreateDomainDataResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "domain id can not be empty"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "request domain id can not be empty"),
 		}
 	}
-	// do k8s validate
 	if err := resources.ValidateK8sName(request.DomainId, "domain_id"); err != nil {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
 	}
+	// validate data type
+	if request.Type == "" {
+		return &kusciaapi.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "request type can not be empty"),
+		}
+	}
+	// validate relative_uri
+	if request.RelativeUri == "" {
+		return &kusciaapi.CreateDomainDataResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "request relative_uri can not be empty"),
+		}
+	}
+	// validate lite request
 	if err := s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
 		}
 	}
 
-	// check whether domainData  is existed
+	// check whether domainData is existed
 	if request.DomaindataId != "" {
 		// do k8s validate
 		if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {

@@ -6,7 +6,7 @@ metadata:
 data:
   kuscia.yaml: |-
     # 启动模式
-    mode: Autonomy
+    mode: autonomy
 
     # 节点ID
     # 示例: domainID: alice

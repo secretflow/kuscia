@@ -45,7 +45,7 @@ systemctl start docker
 
 ### 关于 macOS
 
-macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G) 。
+macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G）。
 
 ## 部署体验
 > 本文旨在帮助您快速体验 Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
@@ -56,10 +56,10 @@ macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文
 
 ```bash
 # Docker Hub 镜像
-export KUSCIA_IMAGE=secretflow/kuscia:0.8.0b0
+export KUSCIA_IMAGE=secretflow/kuscia
 
 # 阿里云镜像（推荐国内用户使用）
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.8.0b0
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
 
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
@@ -124,7 +124,7 @@ docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
 
 ## 作业状态
 
-如果作业执行成功，则 `kubectl get kj -n cross-domain` 命令会显示类似下方的输出，Succeeded 表示成功状态：
+如果作业执行成功，则 `kubectl get kj` 命令会显示类似下方的输出，Succeeded 表示成功状态：
 
 ```bash
 NAME                             STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE

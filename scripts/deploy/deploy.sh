@@ -330,8 +330,8 @@ function deploy_autonomy() {
       --env NAMESPACE=${DOMAIN_ID} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
-    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     probe_gateway_crd "${domain_ctr}" "${DOMAIN_ID}" "${domain_ctr}" 60
+    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
 
     log "Container ${domain_ctr} started successfully"
   fi
@@ -398,8 +398,8 @@ function deploy_lite() {
       --env NAMESPACE=${DOMAIN_ID} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
-    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     probe_datamesh "$domain_ctr"
+    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
 
     log "Lite domain '${DOMAIN_ID}' started successfully"
   fi
@@ -441,8 +441,8 @@ function deploy_master() {
       ${env_flag} ${mount_flag} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
-    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     probe_gateway_crd "${domain_ctr}" ${master_domain_id} "${domain_ctr}" 60
+    docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     log "Master '${master_domain_id}' started successfully"
   fi
   create_secretflow_app_image "${domain_ctr}"

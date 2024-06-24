@@ -116,7 +116,7 @@ func (m kusciaAPIModule) Run(ctx context.Context) error {
 func (m kusciaAPIModule) WaitReady(ctx context.Context) error {
 	timeoutTicker := time.NewTicker(30 * time.Second)
 	defer timeoutTicker.Stop()
-	checkTicker := time.NewTicker(1 * time.Second)
+	checkTicker := time.NewTicker(100 * time.Millisecond)
 	defer checkTicker.Stop()
 	for {
 		select {
@@ -239,7 +239,19 @@ func (m kusciaAPIModule) readyZ() bool {
 	return res.Data.Ready
 }
 
-func RunKusciaAPI(ctx context.Context, cancel context.CancelFunc, conf *Dependencies) Module {
+func RunKusciaAPIWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "kusciaapi",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunKusciaAPI(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunKusciaAPI(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
 	m, err := NewKusciaAPI(conf)
 	if err != nil {
 		nlog.Error(err)
@@ -247,16 +259,19 @@ func RunKusciaAPI(ctx context.Context, cancel context.CancelFunc, conf *Dependen
 		return m
 	}
 	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
 		if err := m.Run(ctx); err != nil {
 			nlog.Error(err)
 			cancel()
 		}
 	}()
 	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		nlog.Info("kuscia api is ready")
+		nlog.Fatalf("KusciaApi wait ready failed: %v", err)
 	}
+	nlog.Info("KusciaApi is ready")
 	return m
 }

@@ -379,21 +379,16 @@ func TestPerformance(t *testing.T) {
 	var popFailCount int64 = 0
 
 	var workerCount int = 5
-	stop = false
 	wg := sync.WaitGroup{}
 	wg.Add(workerCount * 2)
 
 	produceFn := func(idx int) {
-		for !stop {
-			producer(t, &pushSucceedCount, &pushFailCount)
-		}
+		producer(t, &pushSucceedCount, &pushFailCount)
 		wg.Done()
 	}
 
 	consumerFn := func(idx int) {
-		for !stop {
-			consumer(t, &popSucceedCount, &popFailCount)
-		}
+		consumer(t, &popSucceedCount, &popFailCount)
 		wg.Done()
 	}
 
@@ -401,19 +396,7 @@ func TestPerformance(t *testing.T) {
 		go produceFn(i)
 		go consumerFn(i)
 	}
-	start := time.Now()
-	go func() {
-		for !stop {
-			time.Sleep(time.Second * 30)
 
-			fmt.Printf("-----Current time: %s, Cost: %s----\n", time.Now().Format(time.RFC3339), time.Now().Sub(start))
-			fmt.Printf("pushSucceedCount=%d pushFailCount=%d\n", pushSucceedCount, pushFailCount)
-			fmt.Printf("popSucceedCount=%d popFailCount=%d \n\n\n", popSucceedCount, popFailCount)
-		}
-	}()
-
-	time.Sleep(time.Second * 20)
-	stop = true
 	wg.Wait()
 
 	var leftCount int64 = 0
@@ -433,8 +416,8 @@ func TestPerformance(t *testing.T) {
 
 	assert.Equal(t, pushSucceedCount, popSucceedCount+leftCount)
 
-	fmt.Printf("pushSucceedCount=%d pushFailCount=%d\n", pushSucceedCount, pushFailCount)
-	fmt.Printf("popSucceedCount=%d popFailCount=%d leftCount=%d totalRecvCount=%d\n",
+	fmt.Printf("pushSucceedCount=%d pushFailCount=%d", pushSucceedCount, pushFailCount)
+	nlog.Infof("popSucceedCount=%d popFailCount=%d leftCount=%d totalRecvCount=%d",
 		popSucceedCount, popFailCount, leftCount, leftCount+popSucceedCount)
 }
 
@@ -474,6 +457,17 @@ func TestLoadOverrideGrpcTransConfig(t *testing.T) {
 
 	newServer := NewServer(newGrpcConfig, msq.NewSessionManager())
 	go newServer.Start(context.Background())
+
+	for i := 0; i < 10; i++ {
+		if dial, err := grpc.Dial("127.0.0.1:9091",
+			grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
+			// because server start in new coroutine, may not started here
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			assert.NoError(t, dial.Close())
+			break
+		}
+	}
 
 	dial, err := grpc.Dial("127.0.0.1:9091",
 		grpc.WithTransportCredentials(insecure.NewCredentials()))

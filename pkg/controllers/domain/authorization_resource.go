@@ -15,30 +15,25 @@
 package domain
 
 import (
+	"context"
 	"fmt"
-	"path/filepath"
 
-	authenticationv1 "k8s.io/api/authentication/v1"
-	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 
 	constants "github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
-	authorizationHeader   = "Authorization"
 	serviceAccountKind    = "ServiceAccount"
 	clusterRoleKind       = "ClusterRole"
 	authCompleted         = "completed"
-	tokenExpiredSeconds   = 3650 * 24 * 3600
-	defaultRollingSeconds = 600
+	defaultRollingSeconds = 86400
 )
 
 // 1. P2P Kusica partner master -> rolebinding + clusterdomainroute + status-update
@@ -65,7 +60,7 @@ func (c *Controller) handleP2pKusciaPartnerMaster(domain *kusciaapisv1alpha1.Dom
 	saName := domain.Name
 	ns := domain.Name
 
-	if err := c.createRoleBinding(ns, domainID, ownerRef); err != nil {
+	if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, c.RootDir, domainID, ownerRef); err != nil {
 		return err
 	}
 
@@ -95,7 +90,7 @@ func (c *Controller) handleOthers(domain *kusciaapisv1alpha1.Domain) error {
 	saName := domain.Name
 	ns := domain.Name
 
-	if err := c.createRoleBinding(ns, domainID, ownerRef); err != nil {
+	if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, c.RootDir, domainID, ownerRef); err != nil {
 		return err
 	}
 
@@ -129,79 +124,6 @@ func (c *Controller) updateDomainAuthStatus(domain *kusciaapisv1alpha1.Domain) e
 	}
 	if _, err := c.kusciaClient.KusciaV1alpha1().Domains().Update(c.ctx, newDomain, metav1.UpdateOptions{}); err != nil {
 		nlog.Errorf("Update domain [%s] auth label error: %s", domain.Name, err.Error())
-		return err
-	}
-	return nil
-}
-
-// Create apiServer auth token
-func (c *Controller) createToken(ns, saName string) (*authenticationv1.TokenRequest, error) {
-	tokenRes, err := c.kubeClient.CoreV1().ServiceAccounts(ns).CreateToken(c.ctx, saName, &authenticationv1.TokenRequest{
-		Spec: authenticationv1.TokenRequestSpec{
-			ExpirationSeconds: pointer.Int64(tokenExpiredSeconds),
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		nlog.Errorf("Create serviceAccount [%s] token error: %v", saName, err.Error())
-		return nil, err
-	}
-	return tokenRes, nil
-}
-
-// Create domain roleBinding if not exists
-func (c *Controller) createRoleBinding(ns, domainID string, ownerRef *metav1.OwnerReference) error {
-	// create service account if not exists
-	sa := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: domainID,
-			OwnerReferences: []metav1.OwnerReference{
-				*ownerRef,
-			},
-		},
-	}
-	if _, err := c.kubeClient.CoreV1().ServiceAccounts(domainID).Create(c.ctx, sa, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
-		nlog.Errorf("Create serviceAccount [%s] error: %v", sa.Name, err.Error())
-		return err
-	}
-
-	// create domain role if not exists
-	roleFilePath := filepath.Join(c.RootDir, "etc/conf", "domain-namespace-res.yaml")
-	role := &rbacv1.Role{}
-	input := struct {
-		DomainID string
-	}{
-		DomainID: domainID,
-	}
-	if err := common.RenderRuntimeObject(roleFilePath, role, input); err != nil {
-		return err
-	}
-	role.OwnerReferences = append(role.OwnerReferences, *ownerRef)
-	if _, err := c.kubeClient.RbacV1().Roles(domainID).Create(c.ctx, role, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
-		nlog.Errorf("Create role [%s] error: %v", role.Name, err.Error())
-		return err
-	}
-
-	// create domain roleBinding if not exists
-	roleBinding := &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            domainID,
-			OwnerReferences: []metav1.OwnerReference{*ownerRef},
-		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind:      serviceAccountKind,
-				Name:      domainID,
-				Namespace: ns,
-			},
-		},
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: rbacv1.GroupName,
-			Kind:     role.Kind,
-			Name:     role.Name,
-		},
-	}
-	if _, err := c.kubeClient.RbacV1().RoleBindings(domainID).Create(c.ctx, roleBinding, metav1.CreateOptions{}); err != nil && !k8serrors.IsAlreadyExists(err) {
-		nlog.Errorf("Create roleBinding [%s] error: %v", roleBinding.Name, err.Error())
 		return err
 	}
 	return nil
@@ -258,7 +180,7 @@ func (c *Controller) createClusterDomainRoute(ns, saName string, domain *kusciaa
 			},
 		},
 	}
-	tokenRes, err := c.createToken(ns, saName)
+	tokenRes, err := resources.CreateServiceToken(context.Background(), c.kubeClient, domain.Name)
 	if err != nil {
 		return err
 	}
@@ -277,7 +199,7 @@ func (c *Controller) createClusterDomainRoute(ns, saName string, domain *kusciaa
 }
 
 func buildAuthorizationHeader(token string) (string, string) {
-	return authorizationHeader, fmt.Sprintf("Bearer %s", token)
+	return constants.AuthorizationHeaderName, fmt.Sprintf("Bearer %s", token)
 }
 
 func shouldCreateOrUpdate(domain *kusciaapisv1alpha1.Domain) bool {

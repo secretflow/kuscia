@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:dupl
 package utils
 
 import (
@@ -72,7 +73,7 @@ func TestIsThirdPartyTransit(t *testing.T) {
 	}
 }
 
-func TestIsGatewayTceTransit(t *testing.T) {
+func TestIsReverseTunnelTransit(t *testing.T) {
 	type args struct {
 		transit *v1alpha1.Transit
 	}
@@ -117,8 +118,60 @@ func TestIsGatewayTceTransit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsGatewayTceTransit(tt.args.transit); got != tt.want {
-				t.Errorf("IsGatewayTceTransit() = %v, want %v", got, tt.want)
+			if got := IsReverseTunnelTransit(tt.args.transit); got != tt.want {
+				t.Errorf("IsReverseTunnelTransit() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsTransit(t *testing.T) {
+	type args struct {
+		transit *v1alpha1.Transit
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "case 0",
+			args: args{
+				&v1alpha1.Transit{
+					TransitMethod: v1alpha1.TransitMethodReverseTunnel,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "case 1",
+			args: args{
+				&v1alpha1.Transit{
+					TransitMethod: v1alpha1.TransitMethodThirdDomain,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "case 2",
+			args: args{
+				nil,
+			},
+			want: false,
+		},
+		{
+			name: "case 3",
+			args: args{
+				&v1alpha1.Transit{},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsTransit(tt.args.transit); got != tt.want {
+				t.Errorf("IsTransit() = %v, want %v", got, tt.want)
 			}
 		})
 	}

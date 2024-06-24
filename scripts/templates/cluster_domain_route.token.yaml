@@ -17,6 +17,6 @@ spec:
   authenticationType: Token
   tokenConfig:
     tokenGenMethod: RSA-GEN
-    rollingUpdatePeriod: 600
+    rollingUpdatePeriod: 86400
   requestHeadersToAdd:
     Authorization: Bearer {{.TOKEN}}

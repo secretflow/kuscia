@@ -62,8 +62,14 @@ function download_grpcurl() {
   "Darwin x86_64" )
     package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/grpcurl_1.8.8_osx_x86_64.tar.gz"
     ;;
+  "Linux aarch64" )
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/grpcurl_1.8.8_linux_arm64.tar.gz"
+    ;;
+  "Darwin arm64" )
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/grpcurl_1.8.8_osx_arm64.tar.gz"
+    ;;
   *)
-    echo "Unsupported Arch"
+    echo "Unsupported OS"
     exit 1
     ;;
   esac
@@ -93,6 +99,12 @@ function download_jq() {
     ;;
   "Darwin x86_64" )
     package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/jq-osx-amd64"
+    ;;
+  "Linux aarch64" )
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/jq-linux64-arm64"
+    ;;
+  "Darwin arm64" )
+    package_url="https://secretflow-data.oss-cn-shanghai.aliyuncs.com/package/jq-macos-arm64"
     ;;
   *)
     echo "Unsupported OS"

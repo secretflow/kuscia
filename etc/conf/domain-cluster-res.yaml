@@ -12,6 +12,7 @@ rules:
   - get
   - patch
   - update
+  - delete
 - apiGroups:
   - ""
   resources:

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package autonomy
 
 import (
@@ -47,35 +47,28 @@ func NewAutonomyCommand(ctx context.Context) *cobra.Command {
 }
 
 func Run(ctx context.Context, configFile string, onlyControllers bool) error {
-	runCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	kusciaConf := confloader.ReadConfig(configFile, common.RunModeAutonomy)
 	conf := modules.InitDependencies(ctx, kusciaConf)
 	defer conf.Close()
 
-	var coreDnsModule modules.Module
-	if !onlyControllers {
-		coreDnsModule = modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
-	}
-
 	if onlyControllers {
 		conf.MakeClients()
-		modules.RunOperatorsAllinOne(runCtx, cancel, conf, true)
+		modules.RunOperatorsAllinOneWithDestroy(conf)
 
 		utils.SetupPprof(conf.Debug, conf.CtrDebugPort, true)
 		nlog.Info("Scheduler and controllers are all started")
 		// wait any controller failed
 	} else {
-		modules.RunK3s(runCtx, cancel, conf)
+		coreDNSModule := modules.RunCoreDNSWithDestroy(conf)
+		modules.RunK3sWithDestroy(conf)
 		// make clients after k3s start
 		conf.MakeClients()
 
-		cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
+		cdsModule, ok := coreDNSModule.(*modules.CorednsModule)
 		if !ok {
 			return errors.New("coredns module type is invalid")
 		}
-		cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
+		cdsModule.StartControllers(ctx, conf.Clients.KubeClient)
 
 		if err := modules.CreateDefaultDomain(ctx, conf); err != nil {
 			nlog.Error(err)
@@ -88,25 +81,35 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		}
 
 		if conf.EnableContainerd {
-			modules.RunContainerd(runCtx, cancel, conf)
+			modules.RunContainerdWithDestroy(conf)
 		}
 
 		wg := sync.WaitGroup{}
 		wg.Add(2)
 		go func() {
 			defer wg.Done()
-			modules.RunOperatorsInSubProcess(runCtx, cancel)
+			modules.RunOperatorsInSubProcessWithDestroy(conf)
 		}()
 		go func() {
 			defer wg.Done()
-			modules.RunEnvoy(runCtx, cancel, conf)
+			modules.RunEnvoyWithDestroy(conf)
 		}()
 		wg.Wait()
-		modules.RunNodeExporter(runCtx, cancel, conf)
-		modules.RunSsExporter(runCtx, cancel, conf)
-		modules.RunMetricExporter(runCtx, cancel, conf)
+
+		modules.RunConfManagerWithDestroy(conf)
+		// Kuscia API module need to start after Conf Manager module
+		modules.RunKusciaAPIWithDestroy(conf)
+		// Agent module need to start after Kuscia API module
+		modules.RunAgentWithDestroy(conf)
+		modules.RunDataMeshWithDestroy(conf)
+		modules.RunTransportWithDestroy(conf)
+		modules.RunNodeExporterWithDestroy(conf)
+		modules.RunSsExporterWithDestroy(conf)
+		modules.RunMetricExporterWithDestroy(conf)
 		utils.SetupPprof(conf.Debug, conf.DebugPort, false)
+
+		modules.SetKusciaOOMScore()
 	}
-	<-runCtx.Done()
+	conf.WaitAllModulesDone(ctx.Done())
 	return nil
 }

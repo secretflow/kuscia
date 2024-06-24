@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -39,6 +40,7 @@ type PollConnection struct {
 	connID          string
 	client          *http.Client
 	receiverAddress string
+	hashPolicyValue string
 	serviceName     string
 	connected       chan struct{}
 	disconnected    chan struct{}
@@ -51,11 +53,12 @@ type PollConnection struct {
 	pollRetryInterval               time.Duration
 }
 
-func NewPollConnection(index int, client *http.Client, receiverDomain, serviceName string) *PollConnection {
+func NewPollConnection(index int, client *http.Client, receiverDomain, pollerDomain, serviceName string) *PollConnection {
 	return &PollConnection{
 		connID:                          fmt.Sprintf("%s:%s:%d", serviceName, receiverDomain, index),
 		client:                          client,
 		receiverAddress:                 fmt.Sprintf("%s.%s.svc", common.ReceiverServiceName, receiverDomain),
+		hashPolicyValue:                 fmt.Sprintf("%s.%s.svc", serviceName, pollerDomain),
 		serviceName:                     serviceName,
 		connected:                       make(chan struct{}),
 		disconnected:                    make(chan struct{}),
@@ -119,6 +122,7 @@ func (conn *PollConnection) connect(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	req.Header.Set(utils.HeaderTransitHash, conn.hashPolicyValue)
 
 	resp, err := conn.client.Do(req)
 	if err != nil {
@@ -142,14 +146,16 @@ type PollClient struct {
 	client         *http.Client
 	serviceName    string
 	receiverDomain string
+	pollerDomain   string
 }
 
-func newPollClient(client *http.Client, serviceName, receiverDomain string) *PollClient {
+func newPollClient(client *http.Client, serviceName, receiverDomain, pollerDomain string) *PollClient {
 	return &PollClient{
 		client:         client,
 		serviceName:    serviceName,
 		stopCh:         make(chan struct{}),
 		receiverDomain: receiverDomain,
+		pollerDomain:   pollerDomain,
 	}
 }
 
@@ -169,7 +175,7 @@ func (pc *PollClient) pollReceiver() {
 			nlog.Infof("Stop poll connection %v", buildPollerKey(pc.serviceName, pc.receiverDomain))
 			return
 		default:
-			conn := NewPollConnection(index, pc.client, pc.receiverDomain, pc.serviceName)
+			conn := NewPollConnection(index, pc.client, pc.receiverDomain, pc.pollerDomain, pc.serviceName)
 			conn.Start(ctx)
 			index++
 			if index > 999999 {

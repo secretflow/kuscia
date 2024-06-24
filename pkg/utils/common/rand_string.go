@@ -30,8 +30,8 @@ func GenerateRandomBytes(l int) []byte {
 }
 
 // GenerateID generates a random unique id.
-func GenerateID() string {
-	b := make([]byte, 16)
+func GenerateID(len int) string {
+	b := make([]byte, len)
 	rand.Read(b)
 	return hex.EncodeToString(b)
 }

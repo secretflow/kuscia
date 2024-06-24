@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package lite
 
 import (
@@ -26,6 +26,7 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func NewLiteCommand(ctx context.Context) *cobra.Command {
@@ -44,50 +45,51 @@ func NewLiteCommand(ctx context.Context) *cobra.Command {
 }
 
 func Run(ctx context.Context, configFile string) error {
-	runCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	kusciaConf := confloader.ReadConfig(configFile, common.RunModeLite)
 	conf := modules.InitDependencies(ctx, kusciaConf)
 	defer conf.Close()
 
-	coreDnsModule := modules.RunCoreDNS(runCtx, cancel, &kusciaConf)
+	coreDNSModule := modules.RunCoreDNSWithDestroy(conf)
 
 	conf.MakeClients()
 
 	if conf.EnableContainerd {
-		modules.RunContainerd(runCtx, cancel, conf)
+		modules.RunContainerdWithDestroy(conf)
 	}
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 	go func() {
 		defer wg.Done()
-		modules.RunDomainRoute(runCtx, cancel, conf)
+		modules.RunEnvoyWithDestroy(conf)
 	}()
 	go func() {
 		defer wg.Done()
-		modules.RunEnvoy(runCtx, cancel, conf)
+		modules.RunDomainRouteWithDestroy(conf)
 	}()
 	go func() {
 		defer wg.Done()
-		modules.RunTransport(runCtx, cancel, conf)
+		modules.RunTransportWithDestroy(conf)
 	}()
 	wg.Wait()
 
-	cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
+	cdsModule, ok := coreDNSModule.(*modules.CorednsModule)
 	if !ok {
 		return errors.New("coredns module type is invalid")
 	}
-	cdsModule.StartControllers(runCtx, conf.Clients.KubeClient)
+	cdsModule.StartControllers(ctx, conf.Clients.KubeClient)
 
-	modules.RunKusciaAPI(runCtx, cancel, conf)
-	modules.RunAgent(runCtx, cancel, conf)
-	modules.RunConfManager(runCtx, cancel, conf)
-	modules.RunDataMesh(runCtx, cancel, conf)
-	modules.RunNodeExporter(runCtx, cancel, conf)
-	modules.RunSsExporter(runCtx, cancel, conf)
-	modules.RunMetricExporter(runCtx, cancel, conf)
+	modules.RunConfManagerWithDestroy(conf)
+	// Kuscia API module need to start after Conf Manager module
+	modules.RunKusciaAPIWithDestroy(conf)
+	// Agent module need to start after Kuscia API module
+	modules.RunAgentWithDestroy(conf)
+	modules.RunDataMeshWithDestroy(conf)
+	modules.RunNodeExporterWithDestroy(conf)
+	modules.RunSsExporterWithDestroy(conf)
+	modules.RunMetricExporterWithDestroy(conf)
 	utils.SetupPprof(conf.Debug, conf.DebugPort, false)
-
-	<-runCtx.Done()
+	modules.SetKusciaOOMScore()
+	conf.WaitAllModulesDone(ctx.Done())
+	nlog.Errorf("Lite shut down......")
 	return nil
 }
