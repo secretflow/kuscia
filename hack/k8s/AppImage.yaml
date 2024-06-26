@@ -56,4 +56,4 @@ spec:
     id: abc
     name: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8
     sign: abc
-    tag: 1.6.0b0
+    tag: 1.7.0b0

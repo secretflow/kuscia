@@ -125,7 +125,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 
 :::{tip}
 
-上述请求示例中的引擎镜像基于 SecretFlow `1.6.0b0` 版本。算子参数的 `taskInputConfig` 内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
+上述请求示例中的引擎镜像基于 SecretFlow `1.7.0b0` 版本。算子参数的 `taskInputConfig` 内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
 
 :::
 
