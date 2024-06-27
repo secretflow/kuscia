@@ -107,7 +107,7 @@ spec:
 
 KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。
 
-本教程使用的是 SecretFlow 的算子参数定义，以 SecretFlow `1.6.0b0` 版本引擎任务为例，其他版本请参考[SecretFlow 官网](https://www.secretflow.org.cn/zh-CN/docs/secretflow/main/getting_started)：
+本教程使用的是 SecretFlow 的算子参数定义，以 SecretFlow `1.7.0b0` 版本引擎任务为例，其他版本请参考[SecretFlow 官网](https://www.secretflow.org.cn/zh-CN/docs/secretflow/main/getting_started)：
 - `sf_datasource_config`：表示 SecretFlow 输入输出所需要的节点数据源信息。
 - `sf_cluster_desc`：表示 SecretFlow 集群信息，详情请查阅 [SecretFlow 集群文档](https://www.secretflow.org.cn/docs/secretflow/latest/zh-Hans/component/comp_spec_design#sfclusterdesc)。
 - `sf_node_eval_param`：表示 SecretFlow 算子的详细配置，详情请查阅 [SecretFlow 算子运行配置文档](https://www.secretflow.org.cn/docs/spec/latest/zh-Hans/intro#nodeevalparam)。
