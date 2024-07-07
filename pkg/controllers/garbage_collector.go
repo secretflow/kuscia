@@ -2,14 +2,10 @@ package controllers
 
 import (
 	"context"
-	//"fmt"
 	"time"
-
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"github.com/secretflow/kuscia/pkg/controllers/domaindata"
 )
 
 // GC manages garbage collection of dead containers.
