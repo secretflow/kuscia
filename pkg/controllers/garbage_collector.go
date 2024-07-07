@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GC manages garbage collection of dead containers.
 type GC interface {
 	GarbageCollectDomainDatas() error
 	GarbageCollectKusciaJobs() error
@@ -20,12 +19,6 @@ type GC interface {
 	UpdateDomainDataState(name string, namespace string, runDieState bool) error
 }
 
-// SourcesReadyProvider knows how to determine if configuration sources are ready.
-// type SourcesReadyProvider interface {
-// 	AllReady() bool
-// }
-
-// TODO: Preferentially remove pod infra containers.
 type realKusciaJobDomainDataGC struct {
 	ctx                   context.Context
 	KusciaJobsname        []string
@@ -36,10 +29,6 @@ type realKusciaJobDomainDataGC struct {
 	runDieDomainDataState []bool
 	kusciaClient          kusciaclientset.Interface
 }
-
-// NewDomaindataGC creates a new instance of GC with the specified policy.
-// func NewDomaindataGC(runtime Runtime, policy GCPolicy, sourcesReadyProvider SourcesReadyProvider) (GC, error) {
-// func NewDomaindataGC(name string, namespace string, policy GCPolicy, jobdomainState JobDomainState, deleteFunc func(namespace string, name string) error) (GC, error) {
 func NewKusciaJobDomaindataGC(ctx context.Context, kusciaClient kusciaclientset.Interface) (GC, error) {
 	return &realKusciaJobDomainDataGC{
 		ctx:          ctx,
@@ -61,11 +50,6 @@ func (dgc *realKusciaJobDomainDataGC) GarbageCollectDomainDatas() error {
 			nlog.Infof("Finished checking after 1 minutes")
 		}
 	}
-	// 	if dgc.sourcesReadyProvider.AllReady() {
-	// 		return dgc.runtime.GarbageCollect(ctx, dgc.policy)
-	// 	}
-
-	//return nil
 }
 func (dgc *realKusciaJobDomainDataGC) GarbageCollectKusciaJobs() error {
 	ticker := time.NewTicker(1 * time.Minute)
@@ -128,23 +112,20 @@ func (dgc *realKusciaJobDomainDataGC) DeleteAllUnusedKusciaJobs() error {
 
 	nlog.Infof("KusciaJob(%s/%s), will deleted  dkc dkc", dgc.KusciaJobsnamespace[0], dgc.KusciaJobsname[0])
 	dgc.kusciaClient.KusciaV1alpha1().KusciaJobs(dgc.KusciaJobsnamespace[0]).Delete(dgc.ctx, dgc.KusciaJobsname[0], metav1.DeleteOptions{})
-	//nlog.Infof("delete KusciaJob namespace = %s , name = %s ", dgc.KusciaJobsnamespace[0], dgc.KusciaJobsname[0])
+
 	dgc.KusciaJobsnamespace = dgc.KusciaJobsnamespace[1:]
 	dgc.KusciaJobsname = dgc.KusciaJobsname[1:]
-	//nlog.Infof("lllllllllllllllllllllllltest first delete inininini")
+	
 	return nil
 }
 func (dgc *realKusciaJobDomainDataGC) DeleteAllUnusedDomainDatas() error {
 	nlog.Info("Attempting to delete unused domaindatas")
-	// 调用同一包中的未导出函数
-	//nlog.Infof("lllllllllllllllllllllllltest ininininin")
-
-	//nlog.Infof("lllllllllllllllllllllllltest first ininininin")
+	
 	nlog.Infof("DomainData(%s/%s), will deleted  dgc dgc", dgc.DomainDatasnamespace[0], dgc.DomainDatasname[0])
 	dgc.kusciaClient.KusciaV1alpha1().DomainDatas(dgc.DomainDatasnamespace[0]).Delete(dgc.ctx, dgc.DomainDatasname[0], metav1.DeleteOptions{})
 	dgc.DomainDatasnamespace = dgc.DomainDatasnamespace[1:]
 	dgc.DomainDatasname = dgc.DomainDatasname[1:]
-	//nlog.Infof("lllllllllllllllllllllllltest first delete inininini")
+	
 	return nil
 }
 func (dgc *realKusciaJobDomainDataGC) AddKusciaJobs(name string, namespace string, runDieState bool) error {
