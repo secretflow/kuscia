@@ -3,140 +3,99 @@ package controllers
 import (
 	"context"
 	"time"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 type GC interface {
-	GarbageCollectDomainDatas() error
-	GarbageCollectKusciaJobs() error
-	DeleteAllUnusedDomainDatas() error
-	DeleteAllUnusedKusciaJobs() error
-	AddKusciaJobs(name string, namespace string, runDieState bool) error
-	AddDomainDatas(name string, namespace string, runDieState bool) error
-	UpdateKusciaJobState(name string, namespace string, runDieState bool) error
-	UpdateDomainDataState(name string, namespace string, runDieState bool) error
+	GarbageCollectDomaindata()
+  GarbageCollectKusciajob()
+	DeleteAllUnusedResourceDomaindata()
+  DeleteAllUnusedResourceKusciajob()
 }
 
-type realKusciaJobDomainDataGC struct {
-	ctx                   context.Context
-	KusciaJobsname        []string
-	KusciaJobsnamespace   []string
-	DomainDatasname       []string
-	DomainDatasnamespace  []string
-	runDieKusciaJobState  []bool
-	runDieDomainDataState []bool
-	kusciaClient          kusciaclientset.Interface
+type GCInfo struct {
+	name string
+
+	namespace string
+
+	runTime time.Time
 }
-func NewKusciaJobDomaindataGC(ctx context.Context, kusciaClient kusciaclientset.Interface) (GC, error) {
-	return &realKusciaJobDomainDataGC{
-		ctx:          ctx,
-		kusciaClient: kusciaClient,
+
+type GCController struct {
+	ctx                   context.Context
+	kusciaClient          kusciaclientset.Interface
+	kusciaInformerFactory kusciainformers.SharedInformerFactory
+	kusciaJobLister       kuscialistersv1alpha1.KusciaJobLister
+	domaindataLister      kuscialistersv1alpha1.DomainDataLister
+	gcInfo                GCInfo
+}
+
+func NewGCController(ctx context.Context, config ControllerConfig) (GC, error) {
+	kusciaClient := config.KusciaClient
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, time.Minute)
+	domaindataInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
+	kusciaJobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
+
+	return &GCController{
+		ctx:                   ctx,
+		kusciaClient:          kusciaClient,
+		kusciaInformerFactory: kusciaInformerFactory,
+		kusciaJobLister:       kusciaJobInformer.Lister(),
+		domaindataLister:      domaindataInformer.Lister(),
 	}, nil
 }
-func (dgc *realKusciaJobDomainDataGC) GarbageCollectDomainDatas() error {
+
+func (dgc *GCController) GarbageCollectDomaindata() {
+
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			if dgc.runDieDomainDataState[0] {
-				dgc.DeleteAllUnusedDomainDatas()
+			ddgs, _ := dgc.domaindataLister.List(labels.Everything())
+			for _, ddg := range ddgs {
+				dgc.gcInfo.name = ddg.Name
+				dgc.gcInfo.namespace = ddg.Namespace
+				break
 			}
-			//dgc.runDieDomainDataState[0] = true  // for test
-		case <-time.After(1 * time.Minute):
-			nlog.Infof("Finished checking after 1 minutes")
+      //if dgc.gcInfo.runTime>60:
+      dgc.DeleteAllUnusedResourceDomaindata()
 		}
 	}
+
 }
-func (dgc *realKusciaJobDomainDataGC) GarbageCollectKusciaJobs() error {
+func (dgc *GCController) GarbageCollectKusciajob() {
+
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			if dgc.runDieKusciaJobState[0] {
-				dgc.DeleteAllUnusedKusciaJobs()
+			ddgs, _ := dgc.kusciaJobLister.List(labels.Everything())
+			for _, ddg := range ddgs {
+				dgc.gcInfo.name = ddg.Name
+				dgc.gcInfo.namespace = ddg.Namespace
+				break
 			}
-			//dgc.runDieKusciaJobState[0] = true  // for test
-		case <-time.After(1 * time.Minute):
-			nlog.Infof("Finished checking after 1 minutes")
+      //if dgc.gcInfo.runTime>60:
+      dgc.DeleteAllUnusedResourceKusciajob()
 		}
 	}
 
-	//return nil
 }
-func indicesOf(slice []string, item string) []int {
-	var indices []int
-	for i, v := range slice {
-		if v == item {
-			indices = append(indices, i)
-		}
-	}
-	return indices
+func (dgc *GCController) DeleteAllUnusedResourceKusciajob() {
+	dgc.kusciaClient.KusciaV1alpha1().KusciaJobs(dgc.gcInfo.namespace).Delete(dgc.ctx, dgc.gcInfo.name, metav1.DeleteOptions{})
 }
-func intersectionInt(slice1, slice2 []int) []int {
-	elementMap := make(map[int]bool)
-	for _, v := range slice1 {
-		elementMap[v] = true
-	}
-	var intersection []int
-	for _, v := range slice2 {
-		if elementMap[v] {
-			intersection = append(intersection, v)
-			delete(elementMap, v)
-		}
-	}
-
-	return intersection
-}
-func (dgc *realKusciaJobDomainDataGC) UpdateKusciaJobState(name string, namespace string, runDieState bool) error {
-	indexNamespace := indicesOf(dgc.KusciaJobsnamespace, namespace)
-	indexName := indicesOf(dgc.KusciaJobsname, name)
-	intersection := intersectionInt(indexNamespace, indexName)
-	dgc.runDieKusciaJobState[intersection[0]] = runDieState
-	return nil
-}
-func (dgc *realKusciaJobDomainDataGC) UpdateDomainDataState(name string, namespace string, runDieState bool) error {
-	indexNamespace := indicesOf(dgc.DomainDatasnamespace, namespace)
-	indexName := indicesOf(dgc.DomainDatasname, name)
-	intersection := intersectionInt(indexNamespace, indexName)
-	dgc.runDieDomainDataState[intersection[0]] = runDieState
-	return nil
-}
-func (dgc *realKusciaJobDomainDataGC) DeleteAllUnusedKusciaJobs() error {
-	nlog.Info("Attempting to delete unused KusciaJobs")
-
-	nlog.Infof("KusciaJob(%s/%s), will deleted  dkc dkc", dgc.KusciaJobsnamespace[0], dgc.KusciaJobsname[0])
-	dgc.kusciaClient.KusciaV1alpha1().KusciaJobs(dgc.KusciaJobsnamespace[0]).Delete(dgc.ctx, dgc.KusciaJobsname[0], metav1.DeleteOptions{})
-
-	dgc.KusciaJobsnamespace = dgc.KusciaJobsnamespace[1:]
-	dgc.KusciaJobsname = dgc.KusciaJobsname[1:]
-	
-	return nil
-}
-func (dgc *realKusciaJobDomainDataGC) DeleteAllUnusedDomainDatas() error {
-	nlog.Info("Attempting to delete unused domaindatas")
-	
-	nlog.Infof("DomainData(%s/%s), will deleted  dgc dgc", dgc.DomainDatasnamespace[0], dgc.DomainDatasname[0])
-	dgc.kusciaClient.KusciaV1alpha1().DomainDatas(dgc.DomainDatasnamespace[0]).Delete(dgc.ctx, dgc.DomainDatasname[0], metav1.DeleteOptions{})
-	dgc.DomainDatasnamespace = dgc.DomainDatasnamespace[1:]
-	dgc.DomainDatasname = dgc.DomainDatasname[1:]
-	
-	return nil
-}
-func (dgc *realKusciaJobDomainDataGC) AddKusciaJobs(name string, namespace string, runDieState bool) error {
-	dgc.KusciaJobsname = append(dgc.KusciaJobsname, name)
-	dgc.KusciaJobsnamespace = append(dgc.KusciaJobsnamespace, namespace)
-	dgc.runDieKusciaJobState = append(dgc.runDieKusciaJobState, runDieState)
-	return nil
-}
-func (dgc *realKusciaJobDomainDataGC) AddDomainDatas(name string, namespace string, runDieState bool) error {
-	dgc.DomainDatasname = append(dgc.DomainDatasname, name)
-	dgc.DomainDatasnamespace = append(dgc.DomainDatasnamespace, namespace)
-	dgc.runDieDomainDataState = append(dgc.runDieDomainDataState, runDieState)
-	return nil
+func (dgc *GCController) DeleteAllUnusedResourceDomaindata() {
+	dgc.kusciaClient.KusciaV1alpha1().KusciaJobs(dgc.gcInfo.namespace).Delete(dgc.ctx, dgc.gcInfo.name, metav1.DeleteOptions{})
 }
