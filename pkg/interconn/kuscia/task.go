@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package kuscia
 
 import (
@@ -145,7 +145,7 @@ func (c *Controller) processTaskAsInitiator(ctx context.Context, task *v1alpha1.
 	return c.createOrUpdateTaskSummary(ctx, task)
 }
 
-// createOrUpdateJobSummary creates or updates job summary.
+// createOrUpdateTaskSummary creates or updates job summary.
 func (c *Controller) createOrUpdateTaskSummary(ctx context.Context, task *v1alpha1.KusciaTask) error {
 	masterDomains, err := ikcommon.GetPartyMasterDomains(c.domainLister, task)
 	if err != nil {
@@ -166,6 +166,9 @@ func (c *Controller) createOrUpdateTaskSummary(ctx context.Context, task *v1alph
 			return err
 		}
 
+		if taskSummary.Status.CompletionTime != nil {
+			continue
+		}
 		// update taskSummary
 		if err = c.updateTaskSummaryByTask(ctx, task, taskSummary.DeepCopy()); err != nil {
 			return err
@@ -205,23 +208,19 @@ func (c *Controller) createTaskSummary(ctx context.Context, task *v1alpha1.Kusci
 }
 
 func (c *Controller) updateTaskSummaryByTask(ctx context.Context, task *v1alpha1.KusciaTask, taskSummary *v1alpha1.KusciaTaskSummary) error {
-	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(task)
-	if domainIDs == nil {
-		nlog.Warnf("failed to get self cluster party domain ids from task %v, skip processing it", ikcommon.GetObjectNamespaceName(task))
-		return nil
-	}
-
 	now := ikcommon.GetCurrentTime()
 	needUpdate := false
 	if task.Status.Phase != taskSummary.Status.Phase {
 		needUpdate = true
 		taskSummary.Status.Phase = task.Status.Phase
-		if taskSummary.Status.Phase == v1alpha1.TaskSucceeded {
-			taskSummary.Status.CompletionTime = now
-		}
 	}
 
-	if updateTaskSummaryPartyTaskStatus(task, taskSummary, domainIDs) {
+	if task.Status.CompletionTime != nil && taskSummary.Status.CompletionTime == nil {
+		needUpdate = true
+		taskSummary.Status.CompletionTime = task.Status.CompletionTime
+	}
+
+	if updateTaskSummaryPartyTaskStatus(task, taskSummary, true) {
 		needUpdate = true
 	}
 
@@ -236,7 +235,7 @@ func (c *Controller) updateTaskSummaryByTask(ctx context.Context, task *v1alpha1
 	return nil
 }
 
-func updateTaskSummaryPartyTaskStatus(task *v1alpha1.KusciaTask, taskSummary *v1alpha1.KusciaTaskSummary, domainIDs []string) bool {
+func updateTaskSummaryPartyTaskStatus(task *v1alpha1.KusciaTask, taskSummary *v1alpha1.KusciaTaskSummary, isHost bool) bool {
 	if len(task.Status.PartyTaskStatus) == 0 || reflect.DeepEqual(task.Status.PartyTaskStatus, taskSummary.Status.PartyTaskStatus) {
 		return false
 	}
@@ -246,36 +245,53 @@ func updateTaskSummaryPartyTaskStatus(task *v1alpha1.KusciaTask, taskSummary *v1
 		return true
 	}
 
-	var partyTaskStatusInTask []v1alpha1.PartyTaskStatus
-	for _, domainID := range domainIDs {
-		for i, pts := range task.Status.PartyTaskStatus {
-			if domainID == pts.DomainID {
-				partyTaskStatusInTask = append(partyTaskStatusInTask, task.Status.PartyTaskStatus[i])
+	ptsInTaskSummaryMap := make(map[string]v1alpha1.PartyTaskStatus)
+	for _, pts := range taskSummary.Status.PartyTaskStatus {
+		key := fmt.Sprintf("%s:%s", pts.DomainID, pts.Role)
+		ptsInTaskSummaryMap[key] = pts
+	}
+
+	updated := false
+	if isHost {
+		for _, pts := range task.Status.PartyTaskStatus {
+			if pts.DomainID == taskSummary.Namespace {
+				continue
+			}
+			key := fmt.Sprintf("%s:%s", pts.DomainID, pts.Role)
+			if !reflect.DeepEqual(ptsInTaskSummaryMap[key], pts) {
+				updated = true
+				ptsInTaskSummaryMap[key] = pts
+			}
+		}
+	} else {
+		domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(task)
+		if len(domainIDs) == 0 {
+			nlog.Warnf("Failed to get self cluster party domain ids from task %v, skip updating host task summary party task status", ikcommon.GetObjectNamespaceName(task))
+			return false
+		}
+
+		ptsInTaskMap := make(map[string]v1alpha1.PartyTaskStatus)
+		for _, domainID := range domainIDs {
+			for _, pts := range task.Status.PartyTaskStatus {
+				if domainID == pts.DomainID {
+					key := fmt.Sprintf("%s:%s", pts.DomainID, pts.Role)
+					ptsInTaskMap[key] = pts
+				}
+			}
+		}
+
+		for key, pts := range ptsInTaskMap {
+			if !reflect.DeepEqual(ptsInTaskSummaryMap[key], pts) {
+				updated = true
+				ptsInTaskSummaryMap[key] = pts
 			}
 		}
 	}
 
-	updated := false
-	for i, pts := range partyTaskStatusInTask {
-		found := false
-		for j, jsPts := range taskSummary.Status.PartyTaskStatus {
-			if pts.DomainID == jsPts.DomainID && pts.Role == jsPts.Role {
-				found = true
-				if pts.Phase != jsPts.Phase {
-					taskSummary.Status.PartyTaskStatus[j].Phase = pts.Phase
-					updated = true
-				}
-
-				if pts.Message != jsPts.Message {
-					taskSummary.Status.PartyTaskStatus[j].Message = pts.Message
-					updated = true
-				}
-			}
-		}
-
-		if !found {
-			taskSummary.Status.PartyTaskStatus = append(taskSummary.Status.PartyTaskStatus, partyTaskStatusInTask[i])
-			updated = true
+	if updated {
+		taskSummary.Status.PartyTaskStatus = nil
+		for _, status := range ptsInTaskSummaryMap {
+			taskSummary.Status.PartyTaskStatus = append(taskSummary.Status.PartyTaskStatus, status)
 		}
 	}
 
@@ -319,10 +335,18 @@ func (c *Controller) processTaskAsPartner(ctx context.Context, task *v1alpha1.Ku
 		if err != nil {
 			nlog.Errorf("Failed to get taskSummary %v from host %v cluster, %v", task.Name, initiator, err)
 			if k8serrors.IsNotFound(err) {
-				return nil
+				nlog.Infof("Host taskSummary %s/%s is not found, delete task %v", masterDomainID, task.Name, ikcommon.GetObjectNamespaceName(task))
+				err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).Delete(ctx, task.Name, metav1.DeleteOptions{})
+				if k8serrors.IsNotFound(err) {
+					return nil
+				}
 			}
 			return err
 		}
+	}
+
+	if hTaskSummary.Status.CompletionTime != nil {
+		return nil
 	}
 
 	return c.updateHostTaskSummary(ctx, hra.HostKusciaClient(), task, hTaskSummary.DeepCopy())
@@ -333,14 +357,8 @@ func (c *Controller) updateHostTaskSummary(ctx context.Context,
 	task *v1alpha1.KusciaTask,
 	taskSummary *v1alpha1.KusciaTaskSummary) error {
 
-	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(task)
-	if domainIDs == nil {
-		nlog.Warnf("Failed to get self cluster party domain ids from task %v, skip processing it", ikcommon.GetObjectNamespaceName(task))
-		return nil
-	}
-
 	needUpdate := false
-	if updateHostTaskSummaryPartyTaskStatus(task, taskSummary, domainIDs) {
+	if updateTaskSummaryPartyTaskStatus(task, taskSummary, false) {
 		needUpdate = true
 	}
 
@@ -353,8 +371,4 @@ func (c *Controller) updateHostTaskSummary(ctx context.Context,
 	}
 
 	return nil
-}
-
-func updateHostTaskSummaryPartyTaskStatus(task *v1alpha1.KusciaTask, taskSummary *v1alpha1.KusciaTaskSummary, domainIDs []string) bool {
-	return updateTaskSummaryPartyTaskStatus(task, taskSummary, domainIDs)
 }

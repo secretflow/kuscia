@@ -17,11 +17,11 @@ package grpchandler
 import (
 	"context"
 
-	"github.com/secretflow/kuscia/pkg/confmanager/errorcode"
 	"github.com/secretflow/kuscia/pkg/confmanager/interceptor"
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 // configurationHandler GRPC Handler
@@ -40,7 +40,7 @@ func (h *configurationHandler) CreateConfiguration(ctx context.Context, request 
 	tlsCert := interceptor.TLSCertFromGRPCContext(ctx)
 	if tlsCert == nil || len(tlsCert.OrganizationalUnit) == 0 {
 		return &confmanager.CreateConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "require client tls ou"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrRequestInvalidate, "require client tls ou"),
 		}, nil
 	}
 	response := h.configurationService.CreateConfiguration(ctx, request, tlsCert.OrganizationalUnit[0])
@@ -51,7 +51,7 @@ func (h *configurationHandler) QueryConfiguration(ctx context.Context, request *
 	tlsCert := interceptor.TLSCertFromGRPCContext(ctx)
 	if tlsCert == nil || len(tlsCert.OrganizationalUnit) == 0 {
 		return &confmanager.QueryConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "require client tls ou"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrRequestInvalidate, "require client tls ou"),
 		}, nil
 	}
 	response := h.configurationService.QueryConfiguration(ctx, request, tlsCert.OrganizationalUnit[0])

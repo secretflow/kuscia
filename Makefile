@@ -15,8 +15,8 @@ IMG := secretflow/kuscia:${TAG}
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.0b0
-DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.0b0
+ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.4.0.dev20240407
+DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -77,11 +77,11 @@ vet: ## Run go vet against code.
 
 .PHONY: verify_error_code
 verify_error_code: ## Verify integrity of error code i18n configuration.
-	bash hack/errorcode/gen_error_code_doc.sh verify pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml
+	bash hack/errorcode/gen_error_code_doc.sh verify proto/api/v1alpha1/errorcode/error_code.proto hack/errorcode/i18n/errorcode.zh-CN.toml
 
 .PHONY: gen_error_code_doc
 gen_error_code_doc: verify_error_code ## Generate error code markdown doc.
-	bash hack/errorcode/gen_error_code_doc.sh doc pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
+	bash hack/errorcode/gen_error_code_doc.sh doc proto/api/v1alpha1/errorcode/error_code.proto hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
 
 .PHONY: check_code
 check_code: verify_error_code fmt vet ## check code format

@@ -34,7 +34,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 |---------------|----------------------------------------------|----|--------------------------------------------------------------------------------------------------------------------------------|
 | header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | domain_id     | string | 必填 | 节点ID |
-| datasource_id | string | 选填 | 数据源 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| datasource_id | string | 选填 | 数据源 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | type  | string | 必填 | 数据源类型，支持 localfs, oss, mysql     |
 | name   |  string | 可选 | 数据源名称（无需唯一） |
 | info         | [DataSourceInfo](#data-source-info) | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。  |
@@ -45,10 +45,10 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 #### 响应（CreateDomainDataSourceResponse）
 
-| 字段                 | 类型                             | 选填 | 描述      |
-|--------------------|--------------------------------|----|---------|
-| status             | [Status](summary_cn.md#status) | 必填 | 状态信息    |
-| data.datasource_id | string                         | 必填 | 数据源 ID |
+| 字段                 | 类型                             | 描述      |
+|--------------------|--------------------------------|---------|
+| status             | [Status](summary_cn.md#status) | 状态信息    |
+| data.datasource_id | string                         | 数据源 ID |
 
 #### 请求示例
 
@@ -172,9 +172,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 
 #### 响应（UpdateDomainDataSourceResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -233,9 +233,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/update' \
 
 #### 响应（DeleteDomainDataSourceResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -276,7 +276,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/delete' \
 
 /api/v1/domaindatasource/query
 
-#### 请求（QueryDomainGrantRequest）
+#### 请求（QueryDomainDataSourceRequest）
 
 | 字段     | 类型                                                            | 选填 | 描述      |
 |--------|---------------------------------------------------------------|-----|--------------|
@@ -284,12 +284,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/delete' \
 | domain_id             | string                                         | 必填 | 节点 ID   |
 | datasource_id    | string                                         | 必填 | 数据源 ID |
 
-#### 响应（QueryDomainGrantResponse）
+#### 响应（QueryDomainDataSourceResponse）
 
-| 字段     | 类型                                | 选填 | 描述   |
-|--------|--------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)               | 必填 | 状态信息 |
-| data   | [DomainDataSource](#domain-data-source-entity) |  可选  |   数据源信息    |
+| 字段     | 类型                                | 描述   |
+|--------|--------------------------------------|------|
+| status | [Status](summary_cn.md#status)               | 状态信息 |
+| data   | [DomainDataSource](#domain-data-source-entity) |   数据源信息    |
 
 #### 请求示例
 
@@ -369,10 +369,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/query' \
 
 #### 响应（BatchQueryDomainDataSourceResponse）
 
-| 字段     | 类型                                  | 选填 | 描述   |
-|--------|-------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
-| data.datasource_list   | [DomainDataSource](#domain-data-source-entity)[] |  可选  |  数据源信息列表    |
+| 字段     | 类型                                  | 描述   |
+|--------|-------------------------------------|------|
+| status | [Status](summary_cn.md#status)      | 状态信息 |
+| data.datasource_list   | [DomainDataSource](#domain-data-source-entity)[] |  数据源信息列表    |
 
 #### 请求示例
 
@@ -492,10 +492,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/batchQuery' \
 
 #### 响应（ListDomainDataSourceResponse）
 
-| 字段     | 类型                                  | 选填 | 描述   |
-|--------|-------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
-| data.datasource_list   | [DomainDataSource](#domain-data-source-entity)[] |  可选  |  数据源信息列表    |
+| 字段     | 类型                                  | 描述   |
+|--------|-------------------------------------|------|
+| status | [Status](summary_cn.md#status)      | 状态信息 |
+| data.datasource_list   | [DomainDataSource](#domain-data-source-entity)[] |  数据源信息列表    |
 
 #### 请求示例
 
@@ -645,13 +645,13 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 
 ### DomainDataSource
 
-| 字段 | 类型 | 选填 | 描述 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| domain_id   | string             | 必填 | 节点 ID   |
-| datasource_id         | string             | 必填 | 数据源唯一标识                       |
-| name    | string            | 选填 |     数据源名称    |
-| type   | string             | 必填 | 数据源类型，支持 localfs, oss, mysql  |
-| status         | string             | 必填 | 数据源的状态，暂未支持校验数据源的状态，现为空字符串                    |
-| info         | [DataSourceInfo](#data-source-info) | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。  |
-| info_key     | string | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。 |
-| access_directly     | bool | 可选 |  隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false: 应用可通过 DataProxy 访问数据源（DataProxy暂未支持）。当前建设设置为 true 。|
+| 字段 | 类型 | 描述 |
+|---------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| domain_id   | string             | 节点 ID   |
+| datasource_id         | string             | 数据源唯一标识                       |
+| name    | string            |     数据源名称    |
+| type   | string             | 数据源类型，支持 localfs, oss, mysql  |
+| status         | string             | 据源的状态，暂未支持校验数据源的状态，现为空字符串                    |
+| info         | [DataSourceInfo](#data-source-info) | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。  |
+| info_key     | string |  info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。 |
+| access_directly     | bool |  隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false: 应用可通过 DataProxy 访问数据源（DataProxy暂未支持）。当前建设设置为 true 。|

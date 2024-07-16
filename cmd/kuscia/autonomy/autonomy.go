@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package autonomy
 
 import (
@@ -59,12 +59,12 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		nlog.Info("Scheduler and controllers are all started")
 		// wait any controller failed
 	} else {
-		coreDNSModule := modules.RunCoreDNSWithDestroy(conf)
+		coreDnsModule := modules.RunCoreDNSWithDestroy(conf)
 		modules.RunK3sWithDestroy(conf)
 		// make clients after k3s start
 		conf.MakeClients()
 
-		cdsModule, ok := coreDNSModule.(*modules.CorednsModule)
+		cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
 		if !ok {
 			return errors.New("coredns module type is invalid")
 		}
@@ -111,5 +111,6 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		modules.SetKusciaOOMScore()
 	}
 	conf.WaitAllModulesDone(ctx.Done())
+	nlog.Errorf("Autonomy [%s] shut down......", kusciaConf.DomainID)
 	return nil
 }

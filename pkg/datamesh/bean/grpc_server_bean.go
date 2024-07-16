@@ -27,14 +27,16 @@ import (
 
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
-	"github.com/secretflow/kuscia/pkg/datamesh/handler/grpchandler"
+	"github.com/secretflow/kuscia/pkg/datamesh/dmflight"
 	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/grpchandler"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
+	"github.com/secretflow/kuscia/pkg/web/interceptor"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 type grpcServerBean struct {
@@ -60,6 +62,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	// init grpc server opts
 	opts := []grpc.ServerOption{
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeOut) * time.Second),
+		grpc.ChainUnaryInterceptor(interceptor.UnaryRecoverInterceptor(pberrorcode.ErrorCode_DataMeshErrForUnexpected)),
+		grpc.StreamInterceptor(interceptor.StreamRecoverInterceptor(pberrorcode.ErrorCode_DataMeshErrForUnexpected)),
 	}
 
 	if !s.config.DisableTLS {
@@ -73,7 +77,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	}
 
 	// listen on grpc port
-	addr := fmt.Sprintf(":%d", s.config.GRPCPort)
+	addr := fmt.Sprintf("%s:%d", s.config.ListenAddr, s.config.GRPCPort)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		nlog.Fatalf("Failed to listen on addr[%s]: %v", addr, err)
@@ -88,15 +92,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(datasourceService))
 	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 
-	// register flight service
-	if s.config.ExternalDataProxyList != nil && len(s.config.ExternalDataProxyList) > 0 {
-		dpConf := &s.config.ExternalDataProxyList[0]
-		metaSrv, err := flight2.NewMetaServer(domainDataService, datasourceService, dpConf)
-		if err != nil {
-			nlog.Fatalf("Failed to create meta server: %v", err)
-		}
-		flight.RegisterFlightServiceServer(server, grpchandler.NewFlightMetaHandler(metaSrv))
-	}
+	flight.RegisterFlightServiceServer(server, dmflight.NewDataMeshFlightHandler(domainDataService, datasourceService, s.config.ExternalDataProxyList))
 
 	reflection.Register(server)
 

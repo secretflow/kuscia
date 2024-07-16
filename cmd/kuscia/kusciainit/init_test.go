@@ -4,10 +4,11 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestKusciaInitCommand_ConfigConvert_Master(t *testing.T) {
@@ -121,10 +122,10 @@ func TestKusciaInitCommand_ConfigConvert_Autonomy(t *testing.T) {
 
 func TestLoadDomainKeyData_FileExists(t *testing.T) {
 	t.Parallel()
-	validkeyFile := path.Join(t.TempDir(), "domain.key")
-	assert.Nil(t, tls.GeneratePrivateKeyToFile(validkeyFile))
+	validKeyFile := path.Join(t.TempDir(), "domain.key")
+	assert.Nil(t, tls.GeneratePrivateKeyToFile(validKeyFile))
 
-	_, err := loadDomainKeyData(validkeyFile)
+	_, err := loadDomainKeyData(validKeyFile)
 	assert.Nil(t, err)
 }
 

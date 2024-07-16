@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package modules
 
 import (
@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -47,6 +48,7 @@ import (
 
 var (
 	k3sDataDirPrefix              = "var/k3s/"
+	kusciaLogPath                 = "var/logs/kuscia.log"
 	defaultInterConnSchedulerPort = 8084
 	defaultEndpointForLite        = "http://apiserver.master.svc"
 )
@@ -70,6 +72,7 @@ type Dependencies struct {
 	KusciaKubeConfig        string
 	EnableContainerd        bool
 	SecretBackendHolder     *secretbackend.Holder
+	Image                   *confloader.ImageConfig
 	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
 	LogConfig               *nlog.LogConfig
 	Logrorate               confloader.LogrotateConfig
@@ -147,7 +150,7 @@ type shutdownHookEntry struct {
 	timeOut time.Duration
 }
 
-func newShutdownHookEntry(timeout time.Duration) *shutdownHookEntry {
+func NewShutdownHookEntry(timeout time.Duration) *shutdownHookEntry {
 	return &shutdownHookEntry{
 		timeOut: timeout,
 		closeCh: make(chan struct{}),
@@ -304,25 +307,31 @@ func InitLogs(logConfig *nlog.LogConfig) error {
 	return nil
 }
 
+func initLoggerConfig(kusciaConf confloader.KusciaConfig, logPath string) *nlog.LogConfig {
+	return &nlog.LogConfig{
+		LogPath:       logPath,
+		LogLevel:      kusciaConf.LogLevel,
+		MaxFileSizeMB: kusciaConf.Logrotate.MaxFileSizeMB,
+		MaxFiles:      kusciaConf.Logrotate.MaxFiles,
+		Compress:      true,
+	}
+}
+
 func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *Dependencies {
 	dependencies := &Dependencies{
 		KusciaConfig: kusciaConf,
 	}
 	dependencies.stopCh = make(chan struct{})
 	// init log
-	logConfig := &nlog.LogConfig{
-		LogLevel:      kusciaConf.LogLevel,
-		LogPath:       "var/logs/kuscia.log",
-		MaxFileSizeMB: kusciaConf.Logrotate.MaxFileSizeMB,
-		MaxFiles:      kusciaConf.Logrotate.MaxFiles,
-		Compress:      true,
-	}
+	logConfig := initLoggerConfig(kusciaConf, kusciaLogPath)
 	if err := InitLogs(logConfig); err != nil {
 		nlog.Fatal(err)
 	}
+
 	nlog.Debugf("Read kuscia config: %+v", kusciaConf)
 	dependencies.LogConfig = logConfig
 	dependencies.Logrorate = kusciaConf.Logrotate
+	dependencies.Image = &kusciaConf.Image
 	// run config loader
 	dependencies.SecretBackendHolder = secretbackend.NewHolder()
 	nlog.Info("Start to init all secret backends ... ")
@@ -402,6 +411,17 @@ func (c *ModuleCMD) Start() error {
 
 func (c *ModuleCMD) Wait() error {
 	return c.cmd.Wait()
+}
+
+func (c *ModuleCMD) Stop() error {
+	if c.cmd != nil && c.cmd.Process != nil {
+		// Windows doesn't support Interrupt
+		if runtime.GOOS == "windows" {
+			return c.cmd.Process.Signal(os.Kill)
+		}
+		return c.cmd.Process.Signal(os.Interrupt)
+	}
+	return nil
 }
 
 func (c *ModuleCMD) Pid() int {

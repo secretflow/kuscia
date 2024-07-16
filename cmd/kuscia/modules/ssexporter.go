@@ -99,7 +99,7 @@ func (exporter *ssExporterModule) Name() string {
 
 func RunSsExporterWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(500 * time.Millisecond)
+	shutdownEntry := NewShutdownHookEntry(500 * time.Millisecond)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "ssexporter",
 		DestroyCh:         runCtx.Done(),

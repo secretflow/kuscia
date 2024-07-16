@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -33,6 +33,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -64,24 +65,24 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 	// do validate
 	if err := validateCreateDomainRouteRequest(request); err != nil {
 		return &kusciaapi.CreateDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// auth pre handler
 	if err := s.authHandlerViaDestination(ctx, request); err != nil {
 		return &kusciaapi.CreateDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 
 	// check source domain exists
-	if errorCode, errMsg := CheckDomainExists(s.kusciaClient, request.GetSource()); utils.ResponseCodeSuccess != errorCode {
+	if errorCode, errMsg := CheckDomainExists(s.kusciaClient, request.GetSource()); pberrorcode.ErrorCode_SUCCESS != errorCode {
 		return &kusciaapi.CreateDomainRouteResponse{
 			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
 		}
 	}
 	// check destination domain exists
-	if errorCode, errMsg := CheckDomainExists(s.kusciaClient, request.GetDestination()); utils.ResponseCodeSuccess != errorCode {
+	if errorCode, errMsg := CheckDomainExists(s.kusciaClient, request.GetDestination()); pberrorcode.ErrorCode_SUCCESS != errorCode {
 		return &kusciaapi.CreateDomainRouteResponse{
 			Status: utils.BuildErrorResponseStatus(errorCode, errMsg),
 		}
@@ -98,7 +99,7 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 			drProtocol, isTLS, err := convert2DomainRouteProtocol(port.Protocol)
 			if err != nil {
 				return &kusciaapi.CreateDomainRouteResponse{
-					Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrCreateDomainRoute), err.Error()),
+					Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainRoute), err.Error()),
 				}
 			}
 			cdrEndpoint.Ports[i] = v1alpha1.DomainPort{
@@ -186,7 +187,7 @@ func (s domainRouteService) CreateDomainRoute(ctx context.Context, request *kusc
 	_, err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, clusterDomainRoute, metav1.CreateOptions{})
 	if err != nil {
 		return &kusciaapi.CreateDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrCreateDomainRoute), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainRoute), err.Error()),
 		}
 	}
 	return &kusciaapi.CreateDomainRouteResponse{
@@ -198,13 +199,13 @@ func (s domainRouteService) DeleteDomainRoute(ctx context.Context, request *kusc
 	// do validate
 	if err := validateDomainRouteRequest(request); err != nil {
 		return &kusciaapi.DeleteDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// auth pre handler
 	if err := s.authHandlerViaDestination(ctx, request); err != nil {
 		return &kusciaapi.DeleteDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 	// delete cluster domain kusciaAPIDomainRoute
@@ -212,7 +213,7 @@ func (s domainRouteService) DeleteDomainRoute(ctx context.Context, request *kusc
 	err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Delete(ctx, name, metav1.DeleteOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrDeleteDomainRoute), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainRoute), err.Error()),
 		}
 	}
 	return &kusciaapi.DeleteDomainRouteResponse{
@@ -224,13 +225,13 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 	// do validate
 	if err := validateDomainRouteRequest(request); err != nil {
 		return &kusciaapi.QueryDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// auth pre handler
 	if err := s.authHandlerViaDstAndSrc(ctx, request); err != nil {
 		return &kusciaapi.QueryDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 	// get cdr from k8s
@@ -238,7 +239,7 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 	cdr, err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.QueryDomainRouteResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrQueryDomainRoute), err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrQueryDomainRoute), err.Error()),
 		}
 	}
 	cdrSpec := cdr.Spec
@@ -323,20 +324,20 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 	routeKeys := request.RouteKeys
 	if len(routeKeys) == 0 {
 		return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "DomainRoute keys can not be empty"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "DomainRoute keys can not be empty"),
 		}
 	}
 	for i, key := range routeKeys {
 		if err := validateDomainRouteRequest(key); err != nil {
 			nlog.Errorf("Validate BatchQueryDomainRouteStatusRequest the index: %d of route key, failed: %s.", i, err.Error())
 			return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 			}
 		}
 		// auth handler
 		if err := s.authHandlerViaDstAndSrc(ctx, key); err != nil {
 			return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrAuthFailed, err.Error()),
+				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 			}
 		}
 	}
@@ -348,7 +349,7 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 		cdr, err := s.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return &kusciaapi.BatchQueryDomainRouteStatusResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, errorcode.ErrQueryDomainRouteStatus), err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainRouteErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrQueryDomainRouteStatus), err.Error()),
 			}
 		}
 		routeStatuses[i] = &kusciaapi.DomainRouteStatus{

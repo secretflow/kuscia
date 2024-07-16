@@ -34,7 +34,7 @@ protobuf 文件。
 | 字段              | 类型                                           | 选填 | 描述                                                                                                                         |
 |-----------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------|
 | header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                    |
-| job_id          | string                                       | 必填 | JobID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| job_id          | string                                       | 必填 | JobID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | initiator       | string                                       | 必填 | 发起方节点 ID                                                                                                                   |
 | max_parallelism | int32                                        | 可选 | 并发度，参考 [KusciaJob 概念](../concepts/kusciajob_cn.md)                                                                         |
 | tasks           | [Task](#task)[]                              | 必填 | 任务参数                                                                                                                       |
@@ -42,11 +42,11 @@ protobuf 文件。
 
 #### 响应（CreateJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | CreateJobResponseData          |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | CreateJobResponseData          |       |
+| data.job_id | string                         | JobID |
 
 #### 请求示例
 
@@ -81,7 +81,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       ],
       "alias": "job-psi",
       "dependencies": [],
-      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\",\"left_side\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"},{\"is_na\": false,\"ss\": [\"alice\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
       "priority": 100
     },
     {
@@ -125,7 +125,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 
 :::{tip}
 
-上述请求示例中的引擎镜像基于 SecretFlow `1.7.0b0` 版本。算子参数的 `taskInputConfig` 内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
+上述请求示例中的引擎镜像基于 SecretFlow `1.6.0b0` 版本。算子参数的 `taskInputConfig` 内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
 
 :::
 
@@ -146,15 +146,15 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 
 #### 响应（QueryJobResponse）
 
-| 字段                   | 类型                                    | 选填 | 描述     |
-|----------------------|---------------------------------------|----|--------|
-| status               | [Status](summary_cn.md#status)        | 必填 | 状态信息   |
-| data                 | QueryJobResponseData                  |    |        |
-| data.job_id          | string                                | 必填 | JobID  |
-| data.initiator       | string                                | 必填 | 发起方    |
-| data.max_parallelism | int32                                 | 必填 | 并发度    |
-| data.tasks           | [TaskConfig](#task-config)[]          | 必填 | 任务列表   |
-| data.status          | [JobStatusDetail](#job-status-detail) | 必填 | Job 状态 |
+| 字段                   | 类型                                    | 描述     |
+|----------------------|---------------------------------------|--------|
+| status               | [Status](summary_cn.md#status)        | 状态信息   |
+| data                 | QueryJobResponseData                  |        |
+| data.job_id          | string                                | JobID  |
+| data.initiator       | string                                | 发起方    |
+| data.max_parallelism | int32                                 | 并发度    |
+| data.tasks           | [TaskConfig](#task-config)[]          | 任务列表   |
+| data.status          | [JobStatusDetail](#job-status-detail) | Job 状态 |
 | data.custom_fields | map<string, string> | 可选 | 自定义参数                                                                                                             |
 
 #### 请求示例
@@ -206,7 +206,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "dependencies": [
           ""
         ],
-        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"input/receiver_input/key\",\"input/sender_input/key\",\"protocol\",\"precheck_input\",\"bucket_size\",\"curve_type\",\"left_side\"],\"attrs\":[{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]},{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"i64\":\"1048576\"},{\"s\":\"CURVE_FOURQ\"},{\"is_na\": false,\"ss\": [\"alice\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
         "priority": 100
       },
       {
@@ -278,11 +278,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
 
 #### 响应（BatchQueryJobStatusResponse）
 
-| 字段        | 类型                              | 选填 | 描述       |
-|-----------|---------------------------------|----|----------|
-| status    | [Status](summary_cn.md#status)  | 必填 | 状态信息     |
-| data      | BatchQueryJobStatusResponseData |    |          |
-| data.jobs | [JobStatus](#job-status)[]      | 必填 | Job 状态列表 |
+| 字段        | 类型                              | 描述       |
+|-----------|---------------------------------|----------|
+| status    | [Status](summary_cn.md#status)  | 状态信息     |
+| data      | BatchQueryJobStatusResponseData |         |
+| data.jobs | [JobStatus](#job-status)[]      | Job 状态列表 |
 
 #### 请求示例
 
@@ -367,11 +367,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 
 #### 响应（DeleteJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | DeleteJobResponseData          |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | DeleteJobResponseData          |       |
+| data.job_id | string                         | JobID |
 
 #### 请求示例
 
@@ -424,11 +424,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 
 #### 响应（StopJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | StopJobResponseData            |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | StopJobResponseData            |       |
+| data.job_id | string                         | JobID |
 
 #### 请求示例
 
@@ -480,10 +480,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 #### 响应（WatchJobEventResponse）
 
-| 字段     | 类型                       | 选填 | 描述     |
-|--------|--------------------------|----|--------|
-| 类型     | [EventType](#event-type) | 必填 | 事件类型   |
-| object | [JobStatus](#job-status) | 必填 | Job 状态 |
+| 字段     | 类型                       | 描述     |
+|--------|--------------------------|--------|
+| 类型     | [EventType](#event-type) | 事件类型   |
+| object | [JobStatus](#job-status) | Job 状态 |
 
 
 {#approval-job}
@@ -500,17 +500,17 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | 字段              | 类型                                           | 选填 | 描述                                                                                                                         |
 |-----------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------|
 | header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                    |
-| job_id          | string                                       | 必填 | JobID，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| job_id          | string                                       | 必填 | JobID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | result          | [ApproveResult](approve-result)              | 必填 | 审批结果，接收或拒绝，接收则作业(job)可以执行，拒绝则作业不可执行                                                                                                                   | |
 | reason          | string                                       | 可选 | 接收或拒绝的理由                                                                                                                     |
 
 #### 响应（ApprovalJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | ApprovalJobResponseData        |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | ApprovalJobResponseData        |       |
+| data.job_id | string                         | JobID |
 
 
 {#suspend-job}
@@ -531,11 +531,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 #### 响应（SuspendJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | SuspendJobResponseData         |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | SuspendJobResponseData         |       |
+| data.job_id | string                         | JobID |
 
 #### 请求示例
 
@@ -589,11 +589,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
 
 #### 响应（RestartJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | RestartJobResponseData         |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | RestartJobResponseData         |       |
+| data.job_id | string                         | JobID |
 
 #### 请求示例
 
@@ -646,11 +646,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
 
 #### 响应（CancelJobResponse）
 
-| 字段          | 类型                             | 选填 | 描述    |
-|-------------|--------------------------------|----|-------|
-| status      | [Status](summary_cn.md#status) | 必填 | 状态信息  |
-| data        | CancelJobResponseData          |    |       |
-| data.job_id | string                         | 必填 | JobID |
+| 字段          | 类型                             | 描述    |
+|-------------|--------------------------------|-------|
+| status      | [Status](summary_cn.md#status) | 状态信息  |
+| data        | CancelJobResponseData          |      |
+| data.job_id | string                         | JobID |
 
 #### 请求示例
 
@@ -691,23 +691,23 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### JobStatus
 
-| 字段     | 类型                                    | 选填 | 描述       |
-|--------|---------------------------------------|----|----------|
-| job_id | string                                | 必填 | JobID    |
-| status | [JobStatusDetail](#job-status-detail) | 必填 | Job 状态详情 |
+| 字段     | 类型                                    | 描述       |
+|--------|---------------------------------------|----------|
+| job_id | string                                | JobID    |
+| status | [JobStatusDetail](#job-status-detail) | Job 状态详情 |
 
 {#job-status-detail}
 
 ### JobStatusDetail
 
-| 字段          | 类型                           | 选填 | 描述                       |
-|-------------|------------------------------|----|--------------------------|
-| state       | string                       | 必填 | 作业状态, 参考 [State](#state) |
-| err_msg     | string                       | 可选 | 错误信息                     |
-| create_time | string                       | 必填 | 创建时间                     |
-| start_time  | string                       | 必填 | 启动时间                     |
-| end_time    | string                       | 可选 | 结束时间                     |
-| tasks       | [TaskStatus](#task-status)[] | 必填 | 任务列表                     |
+| 字段          | 类型                           | 描述                       |
+|-------------|------------------------------|--------------------------|
+| state       | string                       | 作业状态, 参考 [State](#state) |
+| err_msg     | string                       | 错误信息                     |
+| create_time | string                       | 创建时间                     |
+| start_time  | string                       | 启动时间                     |
+| end_time    | string                       | 结束时间                     |
+| tasks       | [TaskStatus](#task-status)[] | 任务列表                     |
 
 {#party}
 
@@ -732,12 +732,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### PartyStatus
 
-| 字段        | 类型                                        | 选填 | 描述                          |
-|-----------|-------------------------------------------|----|-----------------------------|
-| domain_id | string                                    | 必填 | 节点 ID                       |
-| state     | string                                    | 必填 | 参与方任务状态, 参考 [State](#state) |
-| err_msg   | string                                    | 可选 | 错误信息                        |
-| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息               |
+| 字段        | 类型                                        | 描述                          |
+|-----------|-------------------------------------------|-----------------------------|
+| domain_id | string                                    | 节点 ID                       |
+| state     | string                                    | 参与方任务状态, 参考 [State](#state) |
+| err_msg   | string                                    | 错误信息                        |
+| endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 应用对外暴露的访问地址信息               |
 
 {#task}
 
@@ -747,8 +747,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 |-------------------|-------------------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | app_image         | string            | 必填 | 任务镜像                                                                                                                                                     |
 | parties           | [Party](#party)[] | 必填 | 参与方节点 ID                                                                                                                                                 |
-| alias             | string            | 必填 | 任务别名，同一个 Job 中唯一，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)                    |
-| task_id           | string            | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| alias             | string            | 必填 | 任务别名，同一个 Job 中唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)                    |
+| task_id           | string            | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | dependencies      | string[]          | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系                                                                                                                   |
 | task_input_config | string            | 必填 | 任务配置                                                                                                                                                     |
 | priority          | string            | 可选 | 优先级，值越大优先级越高                                                                                                                                             |
@@ -757,30 +757,30 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### TaskConfig
 
-| 字段                | 类型                | 选填 | 描述           |
-|-------------------|-------------------|----|--------------|
-| app_image         | string            | 必填 | 任务镜像         |
-| parties           | [Party](#party)[] | 必填 | 参与方          |
-| alias             | string            | 必填 | 任务别名         |
-| task_id           | string            | 可选 | 任务 ID        |
-| dependencies      | string[]          | 必填 | 依赖任务         |
-| task_input_config | string            | 必填 | 任务配置         |
-| priority          | string            | 可选 | 优先级，值越大优先级越高 |
+| 字段                | 类型                | 描述           |
+|-------------------|-------------------|--------------|
+| app_image         | string            | 任务镜像         |
+| parties           | [Party](#party)[] | 参与方          |
+| alias             | string            | 任务别名         |
+| task_id           | string            | 任务 ID        |
+| dependencies      | string[]          | 依赖任务         |
+| task_input_config | string            | 任务配置         |
+| priority          | string            | 优先级，值越大优先级越高 |
 
 {#task-status}
 
 ### TaskStatus
 
-| 字段          | 类型                             | 选填 | 描述                      |
-|-------------|--------------------------------|----|-------------------------|
-| task_id     | string                         | 可选 | 任务 ID                   |
-| alias       | string                         | 必填 | 任务别名                    |
-| state       | string                         | 必填 | 任务状态，参考 [State](#state) |
-| err_msg     | string                         | 可选 | 错误信息                    |
-| create_time | string                         | 必填 | 创建事件                    |
-| start_time  | string                         | 必填 | 开始事件                    |
-| end_time    | string                         | 可选 | 结束事件                    |
-| parties     | [PartyStatus](#party-status)[] | 必填 | 参与方                     |
+| 字段          | 类型                             | 描述                      |
+|-------------|--------------------------------|-------------------------|
+| task_id     | string                         | 任务 ID                   |
+| alias       | string                         | 任务别名                    |
+| state       | string                         | 任务状态，参考 [State](#state) |
+| err_msg     | string                         | 错误信息                    |
+| create_time | string                         | 创建事件                    |
+| start_time  | string                         | 开始事件                    |
+| end_time    | string                         | 结束事件                    |
+| parties     | [PartyStatus](#party-status)[] | 参与方                     |
 
 {#event-type}
 
@@ -826,8 +826,8 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 
 ### JobPartyEndpoint
 
-| 字段        | 类型     | 选填 | 描述                                                                                                  |
-|-----------|--------|---|-----------------------------------------------------------------------------------------------------|
-| port_name | string | 必填 | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name` |
-| scope     | string | 必填 | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
-| endpoint  | string | 必填 | 应用服务访问地址                                                                                            |
+| 字段        | 类型     | 描述                                                                                                  |
+|-----------|--------|-----------------------------------------------------------------------------------------------------|
+| port_name | string | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name` |
+| scope     | string | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
+| endpoint  | string | 应用服务访问地址                                                                                            |

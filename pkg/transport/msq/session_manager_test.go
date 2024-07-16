@@ -20,10 +20,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func NewTestSessionManager() *SessionManager {
-	config = &Config{
+	config := &Config{
 		TotalByteSizeLimit:         1024,
 		PerSessionByteSizeLimit:    512,
 		TopicQueueCapacity:         5,
@@ -32,10 +33,11 @@ func NewTestSessionManager() *SessionManager {
 		CleanIntervalSeconds:       2,
 		NormalizeActiveSeconds:     1,
 	}
-	return NewSessionManager()
+	return NewSessionManager(config)
 }
 
 func TestSessionManagerNormalPushAndPush(t *testing.T) {
+	t.Parallel()
 	sm := NewTestSessionManager()
 
 	// session queue full
@@ -72,6 +74,7 @@ func TestSessionManagerNormalPushAndPush(t *testing.T) {
 }
 
 func TestSessionManagerMemControl(t *testing.T) {
+	t.Parallel()
 	sm := NewTestSessionManager()
 
 	sm.Push("session1", "topic", NewMessageByRandomStr(500), time.Millisecond*100)
@@ -87,82 +90,140 @@ func TestSessionManagerMemControl(t *testing.T) {
 	}()
 
 	err = sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Second)
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.True(t, processTime >= time.Millisecond*500)
 	assert.Nil(t, err)
 }
 
 func TestWaitTwice(t *testing.T) {
+	t.Parallel()
 	sm := NewTestSessionManager()
 
-	sm.Push("session1", "topic", NewMessageByRandomStr(512), time.Millisecond*100)
-	sm.Push("session2", "topic", NewMessageByRandomStr(500), time.Millisecond*100)
-	sm.Push("session3", "topic", NewMessageByRandomStr(12), time.Millisecond*100)
+	assert.Nil(t, sm.Push("session1", "topic", NewMessageByRandomStr(512), time.Millisecond*100))
+	assert.Nil(t, sm.Push("session2", "topic", NewMessageByRandomStr(500), time.Millisecond*100))
+	assert.Nil(t, sm.Push("session3", "topic", NewMessageByRandomStr(12), time.Millisecond*100))
 
+	// total buffer is full, so return error
+	err := sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*20)
+	assert.NotNil(t, err)
+
+	// session1's buffer is full, so return error
+	sm.Peek("session3", "topic")
+	err = sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*20)
+	assert.NotNil(t, err)
+
+	// clean session1
+	sm.Peek("session1", "topic")
 	start := time.Now()
-	go func() {
-		time.Sleep(time.Millisecond * 300)
-		sm.Peek("session2", "topic")
-		time.Sleep(time.Millisecond * 200)
-		sm.Peek("session1", "topic")
-	}()
-
-	err := sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*600)
-	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Millisecond*500)
+	err = sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*100)
 	assert.Nil(t, err)
+
+	processTime := time.Since(start)
+	assert.Less(t, processTime, time.Millisecond*10)
+}
+
+func getQuickExpireConfig() *Config {
+	return &Config{
+		TotalByteSizeLimit:         1024,
+		PerSessionByteSizeLimit:    512,
+		TopicQueueCapacity:         5,
+		DeadSessionIDExpireSeconds: 1,
+		SessionExpireSeconds:       1,
+		CleanIntervalSeconds:       1,
+		NormalizeActiveSeconds:     1,
+	}
+
+}
+
+func TestSessionExpired_Inactivate(t *testing.T) {
+	t.Parallel()
+	sm := NewSessionManager(getQuickExpireConfig())
+
+	assert.Nil(t, sm.Push("session1", "topic", NewMessageByRandomStr(500), time.Millisecond*100))
+	assert.Equal(t, 0, len(sm.deadSessionIDs.sids))
+
+	assert.NoError(t, wait.Poll(time.Millisecond*100, time.Second*2, func() (bool, error) {
+		sm.cleanInactiveSession()
+		return len(sm.deadSessionIDs.sids) != 0, nil
+	}))
+
+	assert.Contains(t, sm.deadSessionIDs.sids, "session1")
+	assert.NotContains(t, sm.sessions, "session1")
 }
 
 func TestSessionExpired(t *testing.T) {
-	sm := NewTestSessionManager()
+	t.Parallel()
+	sm := NewSessionManager(getQuickExpireConfig())
 	stopCh := make(chan struct{})
 	sm.StartCleanLoop(stopCh)
 
 	sm.Push("session1", "topic", NewMessageByRandomStr(500), time.Millisecond*100)
-	time.Sleep(time.Second * 5)
+	assert.NoError(t, wait.Poll(time.Millisecond*100, time.Second*3, func() (bool, error) {
+		sm.Lock()
+		defer sm.Unlock()
+		_, ok := sm.sessions["session1"]
+		return !ok, nil
+	}))
+
+	// session1 is dead
 	msg, err := sm.Peek("session1", "topic")
 	assert.NotNil(t, err)
 	assert.Nil(t, msg)
-	err = sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100)
-	assert.NotNil(t, err)
 
-	sm.Push("session2", "topic", NewMessageByRandomStr(500), time.Millisecond*100)
-	go func() {
-		for true {
-			select {
-			case <-stopCh:
-				break
-			default:
-				{
-					time.Sleep(time.Second)
-					_, err := sm.Peek("session2", "topic")
-					assert.Nil(t, err)
-				}
-			}
-		}
-	}()
-	time.Sleep(time.Second * 5)
-	_, err = sm.Pop("session2", "topic", time.Millisecond*100)
-	assert.Nil(t, err)
+	// session is dead, but not cleaned, so push return error
+	assert.NotNil(t, sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100))
+
+	close(stopCh)
+}
+
+func TestSessionExpired_KeepAlive(t *testing.T) {
+	t.Parallel()
+	config := getQuickExpireConfig()
+	config.SessionExpireSeconds = 2
+	sm := NewSessionManager(config)
+	stopCh := make(chan struct{})
+	sm.StartCleanLoop(stopCh)
+
+	assert.Nil(t, sm.Push("session2", "topic", NewMessageByRandomStr(500), time.Millisecond*100))
+	go wait.Until(func() {
+		_, err := sm.Peek("session2", "topic")
+		assert.Nil(t, err)
+	}, time.Millisecond*200, stopCh)
+
+	for i := 0; i < 4; i++ {
+		_, ok := sm.sessions["session2"]
+		assert.True(t, ok) // session still exists
+		time.Sleep(time.Millisecond * 500)
+	}
+
 	close(stopCh)
 }
 
 func TestSessionDeadSessionID(t *testing.T) {
-	sm := NewTestSessionManager()
-	sm.Push("session1", "topic", NewMessageByRandomStr(500), time.Millisecond*100)
+	t.Parallel()
+	sm := NewSessionManager(getQuickExpireConfig())
+	assert.Nil(t, sm.Push("session1", "topic", NewMessageByRandomStr(500), time.Millisecond*100))
 	sm.ReleaseSession("session1")
-	err := sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100)
-	assert.NotNil(t, err)
+	assert.NotNil(t, sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100))
 
 	stopCh := make(chan struct{})
 	sm.StartCleanLoop(stopCh)
-	time.Sleep(time.Second * 8)
-	err = sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100)
-	assert.Nil(t, err)
+
+	assert.NoError(t, wait.Poll(time.Millisecond*100, time.Second*5, func() (bool, error) {
+		sm.Lock()
+		defer sm.Unlock()
+		_, sExists := sm.sessions["session1"]
+		_, iExists := sm.deadSessionIDs.sids["session1"]
+		assert.False(t, sExists && iExists) // session can't both in sessions and deadsessions
+		return !(sExists || iExists), nil
+	}))
+
+	// sesssion is dead, so can push message again
+	assert.Nil(t, sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100))
 }
 
 func TestRefreshSessionActiveMark(t *testing.T) {
-	config.NormalizeActiveSeconds = 2
+	t.Parallel()
 	sm := NewTestSessionManager()
 	sm.Push("session1", "topic", NewMessageByRandomStr(10), time.Millisecond*100)
 	time.Sleep(time.Second)
@@ -180,6 +241,7 @@ func TestRefreshSessionActiveMark(t *testing.T) {
 }
 
 func TestReleaseTopicAndSession(t *testing.T) {
+	t.Parallel()
 	sm := NewTestSessionManager()
 	sm.Push("session1", "topic1", NewMessageByRandomStr(10), time.Millisecond*100)
 	sm.Push("session1", "topic2", NewMessageByRandomStr(10), time.Millisecond*100)
@@ -203,6 +265,7 @@ func TestReleaseTopicAndSession(t *testing.T) {
 }
 
 func TestSessionReleasedDuringWait(t *testing.T) {
+	t.Parallel()
 	sm := NewTestSessionManager()
 	sm.Push("session1", "topic1", NewMessageByRandomStr(400), time.Millisecond*100)
 
@@ -213,7 +276,7 @@ func TestSessionReleasedDuringWait(t *testing.T) {
 
 	start := time.Now()
 	err := sm.Push("session1", "topic1", NewMessageByRandomStr(200), time.Second*2)
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 
 	assert.True(t, processTime > time.Second && processTime < time.Second*2)
 	assert.NotNil(t, err)
@@ -229,7 +292,7 @@ func TestSessionReleasedDuringWait(t *testing.T) {
 
 	start = time.Now()
 	_, err = sm.Pop("session2", "topic1", time.Second*2)
-	processTime = time.Now().Sub(start)
+	processTime = time.Since(start)
 	assert.True(t, processTime > time.Second && processTime < time.Second*2)
 	assert.NotNil(t, err)
 }

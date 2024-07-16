@@ -23,16 +23,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 )
 
 func TestFailedHandler_Handle(t *testing.T) {
-	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
+	t.Parallel()
 
 	kt := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
@@ -62,6 +60,7 @@ func TestFailedHandler_Handle(t *testing.T) {
 }
 
 func TestSetTaskResourceGroupFailed(t *testing.T) {
+	t.Parallel()
 	kt := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package modules
 
 import (
@@ -54,7 +54,7 @@ func RunOperatorsInSubProcess(ctx context.Context, cancel context.CancelFunc) er
 			}
 			args := append(os.Args[1:], "--controllers")
 			nlog.Infof("Subprocess args: %v", args)
-			cmd := exec.CommandContext(ctx, path, args...)
+			cmd := exec.Command(path, args...)
 			cmd.Env = os.Environ()
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout

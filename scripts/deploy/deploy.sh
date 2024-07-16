@@ -53,7 +53,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.6.0b0
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
@@ -308,7 +308,7 @@ function deploy_autonomy() {
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       mkdir -p "${conf_dir}"
-      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Autonomy --domain "${DOMAIN_ID}" >"${kuscia_config_file}"
+      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Autonomy --domain "${DOMAIN_ID}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
       wrap_kuscia_config_file "${kuscia_config_file}"
     fi
 
@@ -330,7 +330,7 @@ function deploy_autonomy() {
       --env NAMESPACE=${DOMAIN_ID} \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
-    probe_gateway_crd "${domain_ctr}" "${DOMAIN_ID}" "${domain_ctr}" 60
+    probe_datamesh "${domain_ctr}"
     docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
 
     log "Container ${domain_ctr} started successfully"
@@ -376,7 +376,7 @@ function deploy_lite() {
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       mkdir -p "${conf_dir}"
-      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Lite --domain "${DOMAIN_ID}" --master-endpoint "${MASTER_ENDPOINT}" --lite-deploy-token "${DOMAIN_TOKEN}" >"${kuscia_config_file}"
+      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Lite --domain "${DOMAIN_ID}" --master-endpoint "${MASTER_ENDPOINT}" --lite-deploy-token "${DOMAIN_TOKEN}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
       wrap_kuscia_config_file "${kuscia_config_file}"
     fi
 
@@ -429,7 +429,7 @@ function deploy_master() {
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       mkdir -p "${conf_dir}"
-      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Master --domain "$master_domain_id" >"${kuscia_config_file}"
+      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Master --domain "$master_domain_id" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
     fi
 
     docker run -dit --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${MASTER_MEMORY_LIMIT} \

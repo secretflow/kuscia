@@ -109,6 +109,7 @@ func setDomain(testCase int, nsInformer clientcorev1.NamespaceInformer, domainIn
 }
 
 func TestInitializedHandler_HandlePhase(t *testing.T) {
+	t.Parallel()
 	independentJob := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 	independentJob2 := makeKusciaJob(KusciaJobForShapeIndependent,

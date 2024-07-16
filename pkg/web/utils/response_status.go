@@ -15,15 +15,11 @@
 package utils
 
 import (
-	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
-const (
-	ResponseCodeSuccess = 0
-)
-
-func BuildErrorResponseStatus(errCode errorcode.KusciaErrorCode, msg string) *v1alpha1.Status {
+func BuildErrorResponseStatus(errCode errorcode.ErrorCode, msg string) *v1alpha1.Status {
 	return &v1alpha1.Status{
 		Code:    int32(errCode),
 		Message: msg,
@@ -32,7 +28,11 @@ func BuildErrorResponseStatus(errCode errorcode.KusciaErrorCode, msg string) *v1
 
 func BuildSuccessResponseStatus() *v1alpha1.Status {
 	return &v1alpha1.Status{
-		Code:    ResponseCodeSuccess,
+		Code:    int32(errorcode.ErrorCode_SUCCESS),
 		Message: "success",
 	}
+}
+
+func IsSuccessCode(code int32) bool {
+	return code == int32(errorcode.ErrorCode_SUCCESS)
 }

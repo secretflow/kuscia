@@ -42,16 +42,15 @@ Kuscia 暴露的监控指标项
 | 模块 |指标 | 类型 | 含义 |
 | -- | ---------------------- | --------------------- | ------------------------------------------------------------ |
 | CPU | node_cpu_seconds_total | Counter | CPU 总使用时间(可计算cpu使用率)|
-| CPU | node_cpu_frequency_max_hertz | Gauge | 可统计CPU核数(无直接核数指标，可用lspu替代) |
 | MEM | node_memory_MemTotal_bytes | Gauge | 总内存字节数|
 | MEM | node_memory_MemAvailable_bytes | Gauge | 可用内存字节数(可计算内存使用率)  |
 | MEM | process_virtual_memory_max_bytes | Gauge | 最大虚拟内存字节数 |
 | MEM | process_virtual_memory_bytes| Gauge | 当前虚拟内存字节数 |
 | DISK | node_disk_io_now | Counter | 磁盘 io 次数 |
-| DISK | node_disk_io_time | Counter | 磁盘 io 时间 |
+| DISK | node_disk_io_time_seconds_total | Counter | 磁盘 io 时间 |
 | DISK | node_disk_read_bytes_total | Counter | 磁盘读取总字节数 |
 | DISK | node_disk_read_time_seconds_total | Counter | 磁盘读取总时间 |
-| DISK | node_disk_write_bytes_total | Counter | 磁盘写入总字节数 |
+| DISK | node_disk_written_bytes_total | Counter | 磁盘写入总字节数 |
 | DISK | node_disk_write_time_seconds_total | Counter | 磁盘写入总时间 |
 | DISK | node_filesystem_avail_bytes | Gauge | 可用磁盘字节数 |
 | DISK | node_filesystem_size_bytes | Gauge | 总磁盘字节数 |
@@ -70,16 +69,16 @@ Kuscia 暴露的监控指标项
 | NET | node_netstat_Tcp_PassiveOpens | Gauge | 当前 TCP 处在passive_open 的总连接数 |
 | NET | node_sockstat_TCP_alloc| Gauge | 当前 TCP 处在 allocate 状态的总连接数 |
 | NET | node_sockstat_TCP_inuse| Gauge | 当前 TCP 处在inuse 状态的总连接数 |
-| NET | avg_rtt | Gauge |tcp连接的流平均往返时延（Round Trip Tie） |
-| NET | max_rtt | Gauge |tcp连接的流最大往返时延（Round Trip Tie） |
-| NET | retrains | Counter | tcp重传次数 |
-| NET | retrain_rate | Gauge | tcp重传率 （重传次数/总连接） |
-| ENVOY | upstream_rq_total | Counter | 上游（envoy作为服务器端）请求总数 |
-| ENVOY | upstream_cx_total | Counter | 上游（envoy作为服务器端））连接总数 |
-| ENVOY | upstream_cx_tx_bytes_total | Counter | 上游（envoy作为服务器端）发送连接字节总数 |
-| ENVOY | upstream_cx_rx_bytes_total | Counter | 上游（envoy作为服务器端）接收连接字节总数 |
-| ENVOY | health_check.attempt | Counter | envoy 针对上游服务器集群健康检查次数 |
-| ENVOY | health_check.failure | Counter | envoy 针对上游服务器集群立即失败的健康检查次数（如 HTTP 50 错误）以及网络故障导致的失败次数 |
-| ENVOY | upstream_cx_connect_fail | Counter | 上游（envoy作为服务器端）总连接失败次数 |
-| ENVOY | upstream_cx_connect_timeout | Counter | 上游（envoy作为服务器端）总连接超时次数 |
-| ENVOY | upstream_rq_timeout | Counter | 上游（envoy作为服务器端）等待响应超时的总请求次数 |
+| NET | ss_rtt | Gauge |tcp连接的流平均往返时延（Round Trip Tie） |
+| NET | ss_retrans | Counter | tcp重传次数 |
+| NET | ss_retran_rate | Gauge | tcp重传率 （重传次数/总连接） |
+| NET | ss_total_connections | Counter | 与各个Domain的 TCP 连接数 |
+| ENVOY | envoy_cluster_upstream_rq_total | Counter | 上游（envoy作为服务器端）请求总数 |
+| ENVOY | envoy_cluster_upstream_cx_total | Counter | 上游（envoy作为服务器端））连接总数 |
+| ENVOY | envoy_cluster_upstream_cx_tx_bytes_total | Counter | 上游（envoy作为服务器端）发送连接字节总数 |
+| ENVOY | envoy_cluster_upstream_cx_rx_bytes_total | Counter | 上游（envoy作为服务器端）接收连接字节总数 |
+| ENVOY | envoy_cluster_health_check_attempt | Counter | envoy 针对上游服务器集群健康检查次数 |
+| ENVOY | envoy_cluster_health_check_failure | Counter | envoy 针对上游服务器集群立即失败的健康检查次数（如 HTTP 50 错误）以及网络故障导致的失败次数 |
+| ENVOY | envoy_cluster_upstream_cx_connect_fail | Counter | 上游（envoy作为服务器端）总连接失败次数 |
+| ENVOY | envoy_cluster_upstream_cx_connect_timeout | Counter | 上游（envoy作为服务器端）总连接超时次数 |
+| ENVOY | envoy_cluster_upstream_rq_timeout | Counter | 上游（envoy作为服务器端）等待响应超时的总请求次数 |

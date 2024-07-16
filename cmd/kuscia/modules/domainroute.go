@@ -130,7 +130,7 @@ func (d *domainRouteModule) Name() string {
 
 func RunDomainRouteWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(2 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(2 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "domainroute",
 		DestroyCh:         runCtx.Done(),

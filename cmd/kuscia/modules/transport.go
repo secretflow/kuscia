@@ -71,7 +71,7 @@ func (t *transportModule) runAsSubProcess(ctx context.Context) error {
 
 	sp := supervisor.NewSupervisor(transportModuleName, nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(t.rootDir, transportBinPath), args...)
+		cmd := exec.Command(filepath.Join(t.rootDir, transportBinPath), args...)
 		cmd.Env = os.Environ()
 		return &ModuleCMD{
 			cmd:   cmd,
@@ -116,7 +116,7 @@ func (t *transportModule) readyz(address string) error {
 
 func RunTransportWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:      "transport",
 		DestroyCh: runCtx.Done(),

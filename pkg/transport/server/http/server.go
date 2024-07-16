@@ -96,8 +96,7 @@ func Run(ctx context.Context, configFile string) error {
 		return err
 	}
 
-	msq.Init(transConfig.MsqConfig)
-	sessionManager := msq.NewSessionManager()
+	sessionManager := msq.NewSessionManager(transConfig.MsqConfig)
 	server := NewServer(transConfig.HTTPConfig, sessionManager)
 	return server.Start(ctx)
 }

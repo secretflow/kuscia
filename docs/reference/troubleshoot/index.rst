@@ -17,3 +17,5 @@
     protocol_describe
     docker_cpp_copy
     docker_memory_limit
+    k8s_ulimit_check
+    custom_registry

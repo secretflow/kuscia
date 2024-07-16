@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -33,14 +33,14 @@ func (h *jobServiceLite) CreateJob(ctx context.Context, request *kusciaapi.Creat
 	// do validate
 	if err := validateCreateJobRequest(request, h.Initiator); err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.CreateJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.CreateJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -51,14 +51,14 @@ func (h *jobServiceLite) QueryJob(ctx context.Context, request *kusciaapi.QueryJ
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.QueryJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.QueryJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.QueryJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -69,14 +69,14 @@ func (h *jobServiceLite) DeleteJob(ctx context.Context, request *kusciaapi.Delet
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.DeleteJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.DeleteJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.DeleteJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -87,14 +87,14 @@ func (h *jobServiceLite) StopJob(ctx context.Context, request *kusciaapi.StopJob
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.StopJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.StopJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -105,14 +105,14 @@ func (h *jobServiceLite) SuspendJob(ctx context.Context, request *kusciaapi.Susp
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.SuspendJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -123,14 +123,14 @@ func (h *jobServiceLite) RestartJob(ctx context.Context, request *kusciaapi.Rest
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.RestartJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -141,14 +141,14 @@ func (h *jobServiceLite) CancelJob(ctx context.Context, request *kusciaapi.Cance
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.CancelJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -159,19 +159,19 @@ func (h *jobServiceLite) ApproveJob(ctx context.Context, request *kusciaapi.Appr
 	jobID := request.JobId
 	if jobID == "" {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "job id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "job id can not be empty"),
 		}
 	}
 	if request.Result == kusciaapi.ApproveResult_APPROVE_RESULT_UNKNOWN {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, "approve result must be set"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "approve result must be set"),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.ApproveJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp
@@ -181,14 +181,14 @@ func (h *jobServiceLite) BatchQueryJobStatus(ctx context.Context, request *kusci
 	// do validate
 	if err := validateBatchQueryJobStatusRequest(request); err != nil {
 		return &kusciaapi.BatchQueryJobStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestValidate, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// request the master api
 	resp, err := h.kusciaAPIClient.BatchQueryJob(ctx, request)
 	if err != nil {
 		return &kusciaapi.BatchQueryJobStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrRequestMasterFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestMasterFailed, err.Error()),
 		}
 	}
 	return resp

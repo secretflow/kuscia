@@ -44,6 +44,7 @@ func makeMockDeployment(namespace, name string) *v1alpha1.KusciaDeployment {
 }
 
 func TestHandleUpdatedDeployment(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -91,6 +92,7 @@ func TestHandleUpdatedDeployment(t *testing.T) {
 }
 
 func TestHandleDeletedDeployment(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
@@ -126,6 +128,7 @@ func TestHandleDeletedDeployment(t *testing.T) {
 }
 
 func TestDeleteDeploymentCascadedResources(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	kdInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
@@ -147,6 +150,7 @@ func TestDeleteDeploymentCascadedResources(t *testing.T) {
 }
 
 func TestCreateOrUpdateMirrorDeployments(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	bobKd := makeMockDeployment("bob", "kd-1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(bobKd)
@@ -185,6 +189,7 @@ func TestCreateOrUpdateMirrorDeployments(t *testing.T) {
 }
 
 func TestCreateOrUpdateDeploymentSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	bobKds := makeMockDeploymentSummary("bob", "kd-1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(bobKds)
@@ -233,6 +238,7 @@ func TestCreateOrUpdateDeploymentSummary(t *testing.T) {
 }
 
 func TestProcessDeploymentAsPartner(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -296,6 +302,7 @@ func TestProcessDeploymentAsPartner(t *testing.T) {
 }
 
 func TestUpdateDeploymentSummaryPartyStatus(t *testing.T) {
+	t.Parallel()
 	// kd status is failed and is not equal to kds, should return true
 	kd := makeMockDeployment("cross-domain", "kd-1")
 	kd.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed

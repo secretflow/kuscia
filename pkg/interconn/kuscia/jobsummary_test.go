@@ -41,6 +41,7 @@ func makeMockJobSummary(namespace, name string) *v1alpha1.KusciaJobSummary {
 }
 
 func TestHandleUpdatedJobSummary(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -88,6 +89,7 @@ func TestHandleUpdatedJobSummary(t *testing.T) {
 }
 
 func TestUpdateJob(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kj := makeMockJob("cross-domain", "job-1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kj)
@@ -101,10 +103,10 @@ func TestUpdateJob(t *testing.T) {
 		jobLister:    jobInformer.Lister(),
 	}
 
-	// job doesn't exist, should return nil
+	// job doesn't exist, delete mirror job and job summary, should return nil
 	kjs := makeMockJobSummary("bob", "job-2")
 	got := c.updateJob(ctx, kjs)
-	assert.Equal(t, nil, got)
+	assert.Equal(t, true, got == nil)
 
 	// job party domain ids is empty, should return nil
 	kjs = makeMockJobSummary("bob", "job-1")
@@ -120,6 +122,7 @@ func TestUpdateJob(t *testing.T) {
 }
 
 func TestUpdateJobStatusInfo(t *testing.T) {
+	t.Parallel()
 	domainIDs := []string{"bob"}
 	// all status in job and job summary are empty, should return false
 	kj := makeMockJob("cross-domain", "job-1")

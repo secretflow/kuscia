@@ -34,7 +34,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -89,7 +88,7 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 }
 
 func Test_KusciaJobControllerHandleTaskSucceed(t *testing.T) {
-	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
+	t.Parallel()
 	testKusciaJob := makeKusciaJob()
 	aliceNs := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -156,7 +155,7 @@ func waitAndChangeKusciaTaskStatus(t *testing.T, c *Controller, expectTaskCount 
 }
 
 func Test_KusciaTaskControllerHandlerTaskFailed(t *testing.T) {
-	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
+	t.Parallel()
 	testKusciaJob := makeKusciaJob()
 	aliceNs := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

@@ -15,7 +15,7 @@ _sym_db = _symbol_database.Default()
 from kuscia.proto.api.v1alpha1 import common_pb2 as kuscia_dot_proto_dot_api_dot_v1alpha1_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6kuscia/proto/api/v1alpha1/kusciaapi/domain_route.proto\x12#kuscia.proto.api.v1alpha1.kusciaapi\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xea\x02\n\x18\x43reateDomainRouteRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x1b\n\x13\x61uthentication_type\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x44\n\x08\x65ndpoint\x18\x04 \x01(\x0b\x32\x32.kuscia.proto.api.v1alpha1.kusciaapi.RouteEndpoint\x12\x0e\n\x06source\x18\x05 \x01(\t\x12\x46\n\x0ctoken_config\x18\x06 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.TokenConfig\x12\x44\n\x0bmtls_config\x18\x07 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.MTLSConfig\"_\n\rRouteEndpoint\x12\x0c\n\x04host\x18\x01 \x01(\t\x12@\n\x05ports\x18\x02 \x03(\x0b\x32\x31.kuscia.proto.api.v1alpha1.kusciaapi.EndpointPort\"<\n\x0c\x45ndpointPort\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x10\n\x08protocol\x18\x03 \x01(\t\"\x81\x01\n\x0bTokenConfig\x12\x1e\n\x16\x64\x65stination_public_key\x18\x01 \x01(\t\x12\x1d\n\x15rolling_update_period\x18\x02 \x01(\x03\x12\x19\n\x11source_public_key\x18\x03 \x01(\t\x12\x18\n\x10token_gen_method\x18\x04 \x01(\t\"[\n\nMTLSConfig\x12\x0e\n\x06tls_ca\x18\x01 \x01(\t\x12!\n\x19source_client_private_key\x18\x02 \x01(\t\x12\x1a\n\x12source_client_cert\x18\x03 \x01(\t\"\xa0\x01\n\x19\x43reateDomainRouteResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12P\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x42.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRouteResponseData\"-\n\x1d\x43reateDomainRouteResponseData\x12\x0c\n\x04name\x18\x01 \x01(\t\"y\n\x18\x44\x65leteDomainRouteRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x0e\n\x06source\x18\x02 \x01(\t\"N\n\x19\x44\x65leteDomainRouteResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"x\n\x17QueryDomainRouteRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\x12\x0e\n\x06source\x18\x03 \x01(\t\"\x9e\x01\n\x18QueryDomainRouteResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12O\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x41.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRouteResponseData\"\x84\x03\n\x1cQueryDomainRouteResponseData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1b\n\x13\x61uthentication_type\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x44\n\x08\x65ndpoint\x18\x04 \x01(\x0b\x32\x32.kuscia.proto.api.v1alpha1.kusciaapi.RouteEndpoint\x12\x0e\n\x06source\x18\x05 \x01(\t\x12\x46\n\x0ctoken_config\x18\x06 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.TokenConfig\x12\x44\n\x0bmtls_config\x18\x07 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.MTLSConfig\x12@\n\x06status\x18\x08 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.RouteStatus\"-\n\x0bRouteStatus\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\"\xa7\x01\n\"BatchQueryDomainRouteStatusRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12G\n\nroute_keys\x18\x02 \x03(\x0b\x32\x33.kuscia.proto.api.v1alpha1.kusciaapi.DomainRouteKey\"5\n\x0e\x44omainRouteKey\x12\x0e\n\x06source\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\"\xb4\x01\n#BatchQueryDomainRouteStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12Z\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32L.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRouteStatusResponseData\"q\n\'BatchQueryDomainRouteStatusResponseData\x12\x46\n\x06routes\x18\x01 \x03(\x0b\x32\x36.kuscia.proto.api.v1alpha1.kusciaapi.DomainRouteStatus\"\x88\x01\n\x11\x44omainRouteStatus\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\x12\x0e\n\x06source\x18\x03 \x01(\t\x12@\n\x06status\x18\x04 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.RouteStatus*)\n\x12\x41uthenticationType\x12\t\n\x05Token\x10\x00\x12\x08\n\x04MTLS\x10\x01\x32\x83\x05\n\x12\x44omainRouteService\x12\x92\x01\n\x11\x43reateDomainRoute\x12=.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRouteRequest\x1a>.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRouteResponse\x12\x92\x01\n\x11\x44\x65leteDomainRoute\x12=.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainRouteRequest\x1a>.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainRouteResponse\x12\x8f\x01\n\x10QueryDomainRoute\x12<.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRouteRequest\x1a=.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRouteResponse\x12\xb0\x01\n\x1b\x42\x61tchQueryDomainRouteStatus\x12G.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRouteStatusRequest\x1aH.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRouteStatusResponseB^\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapib\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6kuscia/proto/api/v1alpha1/kusciaapi/domain_route.proto\x12#kuscia.proto.api.v1alpha1.kusciaapi\x1a&kuscia/proto/api/v1alpha1/common.proto\"\xf7\x03\n\x18\x43reateDomainRouteRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x1b\n\x13\x61uthentication_type\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x44\n\x08\x65ndpoint\x18\x04 \x01(\x0b\x32\x32.kuscia.proto.api.v1alpha1.kusciaapi.RouteEndpoint\x12\x0e\n\x06source\x18\x05 \x01(\t\x12\x46\n\x0ctoken_config\x18\x06 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.TokenConfig\x12\x44\n\x0bmtls_config\x18\x07 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.MTLSConfig\x12=\n\x07transit\x18\x08 \x01(\x0b\x32,.kuscia.proto.api.v1alpha1.kusciaapi.Transit\x12L\n\x0f\x62ody_encryption\x18\t \x01(\x0b\x32\x33.kuscia.proto.api.v1alpha1.kusciaapi.BodyEncryption\"_\n\rRouteEndpoint\x12\x0c\n\x04host\x18\x01 \x01(\t\x12@\n\x05ports\x18\x02 \x03(\x0b\x32\x31.kuscia.proto.api.v1alpha1.kusciaapi.EndpointPort\"`\n\x0c\x45ndpointPort\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x10\n\x08protocol\x18\x03 \x01(\t\x12\r\n\x05isTLS\x18\x04 \x01(\x08\x12\x13\n\x0bpath_prefix\x18\x05 \x01(\t\"\x81\x01\n\x0bTokenConfig\x12\x1e\n\x16\x64\x65stination_public_key\x18\x01 \x01(\t\x12\x1d\n\x15rolling_update_period\x18\x02 \x01(\x03\x12\x19\n\x11source_public_key\x18\x03 \x01(\t\x12\x18\n\x10token_gen_method\x18\x04 \x01(\t\"[\n\nMTLSConfig\x12\x0e\n\x06tls_ca\x18\x01 \x01(\t\x12!\n\x19source_client_private_key\x18\x02 \x01(\t\x12\x1a\n\x12source_client_cert\x18\x03 \x01(\t\"\x83\x01\n\x07Transit\x12\x16\n\x0etransit_method\x18\x01 \x01(\t\x12\x43\n\x06\x64omain\x18\x02 \x01(\x0b\x32\x33.kuscia.proto.api.v1alpha1.kusciaapi.Transit.Domain\x1a\x1b\n\x06\x44omain\x12\x11\n\tdomain_id\x18\x01 \x01(\t\"#\n\x0e\x42odyEncryption\x12\x11\n\talgorithm\x18\x01 \x01(\t\"\xa0\x01\n\x19\x43reateDomainRouteResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12P\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x42.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRouteResponseData\"-\n\x1d\x43reateDomainRouteResponseData\x12\x0c\n\x04name\x18\x01 \x01(\t\"y\n\x18\x44\x65leteDomainRouteRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x0e\n\x06source\x18\x02 \x01(\t\"N\n\x19\x44\x65leteDomainRouteResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\"x\n\x17QueryDomainRouteRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\x12\x0e\n\x06source\x18\x03 \x01(\t\"\x9e\x01\n\x18QueryDomainRouteResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12O\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x41.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRouteResponseData\"\x91\x04\n\x1cQueryDomainRouteResponseData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1b\n\x13\x61uthentication_type\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x03 \x01(\t\x12\x44\n\x08\x65ndpoint\x18\x04 \x01(\x0b\x32\x32.kuscia.proto.api.v1alpha1.kusciaapi.RouteEndpoint\x12\x0e\n\x06source\x18\x05 \x01(\t\x12\x46\n\x0ctoken_config\x18\x06 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.TokenConfig\x12\x44\n\x0bmtls_config\x18\x07 \x01(\x0b\x32/.kuscia.proto.api.v1alpha1.kusciaapi.MTLSConfig\x12@\n\x06status\x18\x08 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.RouteStatus\x12=\n\x07transit\x18\t \x01(\x0b\x32,.kuscia.proto.api.v1alpha1.kusciaapi.Transit\x12L\n\x0f\x62ody_encryption\x18\n \x01(\x0b\x32\x33.kuscia.proto.api.v1alpha1.kusciaapi.BodyEncryption\"-\n\x0bRouteStatus\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\"\xa7\x01\n\"BatchQueryDomainRouteStatusRequest\x12\x38\n\x06header\x18\x01 \x01(\x0b\x32(.kuscia.proto.api.v1alpha1.RequestHeader\x12G\n\nroute_keys\x18\x02 \x03(\x0b\x32\x33.kuscia.proto.api.v1alpha1.kusciaapi.DomainRouteKey\"5\n\x0e\x44omainRouteKey\x12\x0e\n\x06source\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\"\xb4\x01\n#BatchQueryDomainRouteStatusResponse\x12\x31\n\x06status\x18\x01 \x01(\x0b\x32!.kuscia.proto.api.v1alpha1.Status\x12Z\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32L.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRouteStatusResponseData\"q\n\'BatchQueryDomainRouteStatusResponseData\x12\x46\n\x06routes\x18\x01 \x03(\x0b\x32\x36.kuscia.proto.api.v1alpha1.kusciaapi.DomainRouteStatus\"\x88\x01\n\x11\x44omainRouteStatus\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65stination\x18\x02 \x01(\t\x12\x0e\n\x06source\x18\x03 \x01(\t\x12@\n\x06status\x18\x04 \x01(\x0b\x32\x30.kuscia.proto.api.v1alpha1.kusciaapi.RouteStatus*)\n\x12\x41uthenticationType\x12\t\n\x05Token\x10\x00\x12\x08\n\x04MTLS\x10\x01*/\n\x1b\x42odyEncryptionAlgorithmType\x12\x07\n\x03\x41\x45S\x10\x00\x12\x07\n\x03SM4\x10\x01\x32\x83\x05\n\x12\x44omainRouteService\x12\x92\x01\n\x11\x43reateDomainRoute\x12=.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRouteRequest\x1a>.kuscia.proto.api.v1alpha1.kusciaapi.CreateDomainRouteResponse\x12\x92\x01\n\x11\x44\x65leteDomainRoute\x12=.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainRouteRequest\x1a>.kuscia.proto.api.v1alpha1.kusciaapi.DeleteDomainRouteResponse\x12\x8f\x01\n\x10QueryDomainRoute\x12<.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRouteRequest\x1a=.kuscia.proto.api.v1alpha1.kusciaapi.QueryDomainRouteResponse\x12\xb0\x01\n\x1b\x42\x61tchQueryDomainRouteStatus\x12G.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRouteStatusRequest\x1aH.kuscia.proto.api.v1alpha1.kusciaapi.BatchQueryDomainRouteStatusResponseB^\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapib\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -23,44 +23,52 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'kuscia.proto.api.v1alpha1.k
 if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['DESCRIPTOR']._options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n!org.secretflow.v1alpha1.kusciaapiZ9github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi'
-  _globals['_AUTHENTICATIONTYPE']._serialized_start=2680
-  _globals['_AUTHENTICATIONTYPE']._serialized_end=2721
+  _globals['_AUTHENTICATIONTYPE']._serialized_start=3169
+  _globals['_AUTHENTICATIONTYPE']._serialized_end=3210
+  _globals['_BODYENCRYPTIONALGORITHMTYPE']._serialized_start=3212
+  _globals['_BODYENCRYPTIONALGORITHMTYPE']._serialized_end=3259
   _globals['_CREATEDOMAINROUTEREQUEST']._serialized_start=136
-  _globals['_CREATEDOMAINROUTEREQUEST']._serialized_end=498
-  _globals['_ROUTEENDPOINT']._serialized_start=500
-  _globals['_ROUTEENDPOINT']._serialized_end=595
-  _globals['_ENDPOINTPORT']._serialized_start=597
-  _globals['_ENDPOINTPORT']._serialized_end=657
-  _globals['_TOKENCONFIG']._serialized_start=660
-  _globals['_TOKENCONFIG']._serialized_end=789
-  _globals['_MTLSCONFIG']._serialized_start=791
-  _globals['_MTLSCONFIG']._serialized_end=882
-  _globals['_CREATEDOMAINROUTERESPONSE']._serialized_start=885
-  _globals['_CREATEDOMAINROUTERESPONSE']._serialized_end=1045
-  _globals['_CREATEDOMAINROUTERESPONSEDATA']._serialized_start=1047
-  _globals['_CREATEDOMAINROUTERESPONSEDATA']._serialized_end=1092
-  _globals['_DELETEDOMAINROUTEREQUEST']._serialized_start=1094
-  _globals['_DELETEDOMAINROUTEREQUEST']._serialized_end=1215
-  _globals['_DELETEDOMAINROUTERESPONSE']._serialized_start=1217
-  _globals['_DELETEDOMAINROUTERESPONSE']._serialized_end=1295
-  _globals['_QUERYDOMAINROUTEREQUEST']._serialized_start=1297
-  _globals['_QUERYDOMAINROUTEREQUEST']._serialized_end=1417
-  _globals['_QUERYDOMAINROUTERESPONSE']._serialized_start=1420
-  _globals['_QUERYDOMAINROUTERESPONSE']._serialized_end=1578
-  _globals['_QUERYDOMAINROUTERESPONSEDATA']._serialized_start=1581
-  _globals['_QUERYDOMAINROUTERESPONSEDATA']._serialized_end=1969
-  _globals['_ROUTESTATUS']._serialized_start=1971
-  _globals['_ROUTESTATUS']._serialized_end=2016
-  _globals['_BATCHQUERYDOMAINROUTESTATUSREQUEST']._serialized_start=2019
-  _globals['_BATCHQUERYDOMAINROUTESTATUSREQUEST']._serialized_end=2186
-  _globals['_DOMAINROUTEKEY']._serialized_start=2188
-  _globals['_DOMAINROUTEKEY']._serialized_end=2241
-  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSE']._serialized_start=2244
-  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSE']._serialized_end=2424
-  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSEDATA']._serialized_start=2426
-  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSEDATA']._serialized_end=2539
-  _globals['_DOMAINROUTESTATUS']._serialized_start=2542
-  _globals['_DOMAINROUTESTATUS']._serialized_end=2678
-  _globals['_DOMAINROUTESERVICE']._serialized_start=2724
-  _globals['_DOMAINROUTESERVICE']._serialized_end=3367
+  _globals['_CREATEDOMAINROUTEREQUEST']._serialized_end=639
+  _globals['_ROUTEENDPOINT']._serialized_start=641
+  _globals['_ROUTEENDPOINT']._serialized_end=736
+  _globals['_ENDPOINTPORT']._serialized_start=738
+  _globals['_ENDPOINTPORT']._serialized_end=834
+  _globals['_TOKENCONFIG']._serialized_start=837
+  _globals['_TOKENCONFIG']._serialized_end=966
+  _globals['_MTLSCONFIG']._serialized_start=968
+  _globals['_MTLSCONFIG']._serialized_end=1059
+  _globals['_TRANSIT']._serialized_start=1062
+  _globals['_TRANSIT']._serialized_end=1193
+  _globals['_TRANSIT_DOMAIN']._serialized_start=1166
+  _globals['_TRANSIT_DOMAIN']._serialized_end=1193
+  _globals['_BODYENCRYPTION']._serialized_start=1195
+  _globals['_BODYENCRYPTION']._serialized_end=1230
+  _globals['_CREATEDOMAINROUTERESPONSE']._serialized_start=1233
+  _globals['_CREATEDOMAINROUTERESPONSE']._serialized_end=1393
+  _globals['_CREATEDOMAINROUTERESPONSEDATA']._serialized_start=1395
+  _globals['_CREATEDOMAINROUTERESPONSEDATA']._serialized_end=1440
+  _globals['_DELETEDOMAINROUTEREQUEST']._serialized_start=1442
+  _globals['_DELETEDOMAINROUTEREQUEST']._serialized_end=1563
+  _globals['_DELETEDOMAINROUTERESPONSE']._serialized_start=1565
+  _globals['_DELETEDOMAINROUTERESPONSE']._serialized_end=1643
+  _globals['_QUERYDOMAINROUTEREQUEST']._serialized_start=1645
+  _globals['_QUERYDOMAINROUTEREQUEST']._serialized_end=1765
+  _globals['_QUERYDOMAINROUTERESPONSE']._serialized_start=1768
+  _globals['_QUERYDOMAINROUTERESPONSE']._serialized_end=1926
+  _globals['_QUERYDOMAINROUTERESPONSEDATA']._serialized_start=1929
+  _globals['_QUERYDOMAINROUTERESPONSEDATA']._serialized_end=2458
+  _globals['_ROUTESTATUS']._serialized_start=2460
+  _globals['_ROUTESTATUS']._serialized_end=2505
+  _globals['_BATCHQUERYDOMAINROUTESTATUSREQUEST']._serialized_start=2508
+  _globals['_BATCHQUERYDOMAINROUTESTATUSREQUEST']._serialized_end=2675
+  _globals['_DOMAINROUTEKEY']._serialized_start=2677
+  _globals['_DOMAINROUTEKEY']._serialized_end=2730
+  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSE']._serialized_start=2733
+  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSE']._serialized_end=2913
+  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSEDATA']._serialized_start=2915
+  _globals['_BATCHQUERYDOMAINROUTESTATUSRESPONSEDATA']._serialized_end=3028
+  _globals['_DOMAINROUTESTATUS']._serialized_start=3031
+  _globals['_DOMAINROUTESTATUS']._serialized_end=3167
+  _globals['_DOMAINROUTESERVICE']._serialized_start=3262
+  _globals['_DOMAINROUTESERVICE']._serialized_end=3905
 # @@protoc_insertion_point(module_scope)

@@ -143,7 +143,7 @@ func (m dataMeshModule) readyZ() bool {
 
 func RunDataMeshWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "datamesh",
 		DestroyCh:         runCtx.Done(),

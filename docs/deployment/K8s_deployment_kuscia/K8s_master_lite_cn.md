@@ -38,10 +38,13 @@ kubectl create -f service.yaml
 ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍参考[Kuscia配置](../kuscia_config_cn.md)
 
 domainID、私钥以及 datastoreEndpoint 字段里的数据库连接串（user、password、host、database）需要替换成真实有效的信息，私钥可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
-> 注意：<br>
-> - database 名称暂不支持 "-" 特殊字符<br>
-> - 修改 Configmap 配置后，需执行 kubectl delete po {pod-name} -n {namespace} 重新拉起 Pod 生效<br>
-> - 节点 ID 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
+
+:::{tip}
+
+- 修改 Configmap 配置后，需执行 kubectl delete po {pod-name} -n {namespace} 重新拉起 Pod 生效
+- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
+
+:::
 
 获取 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/configmap.yaml) 文件，创建 Configmap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。
 
@@ -84,9 +87,13 @@ kubectl create -f service.yaml
 ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍参考[Kuscia配置](../kuscia_config_cn.md)
 
 部署 Configmap 需要提前在 Master 节点 Pod 内生成 domainID 以及 Token，并填写到 Configmap 的 domainID 和 liteDeployToken 字段中，私钥可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成并填写到 domainKeyData 字段中
-> 注意：<br>
-> - 修改 Configmap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效<br>
-> - 节点 ID 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)
+
+:::{tip}
+
+- 修改 Configmap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效
+- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
+
+:::
 
 lite-bob 配置与 lite-alice 一样，下面以 Alice 为例：
 ```bash

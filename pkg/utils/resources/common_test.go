@@ -161,14 +161,14 @@ func TestIsEmpty(t *testing.T) {
 }
 
 func TestSplitRSC(t *testing.T) {
-	input := "1000"
+	var input string = "1000"
 	output, err := SplitRSC(input, 5)
 	assert.Equal(t, output, "200", "SplitRSC() function cannot handle the k8sresource.DecimalSI. ")
 	assert.Nil(t, err, "SplitRSC() function cannot handle the k8sresource.DecimalSI. ")
 
 	inputSlice := [6]string{"100Pi", "200T", "300Gi", "400M", "500Ki", "0.5Pi"}
 	stdOutputSlice := [6]string{"102400Ti", "100T", "76800Mi", "50M", "32000", "16384Gi"}
-	for k := range inputSlice {
+	for k, _ := range inputSlice {
 		output, err = SplitRSC(inputSlice[k], 1<<k)
 		assert.Equal(t, output, stdOutputSlice[k], "SplitRSC() function cannot handle the unit (Pi, Ti, Gi, Mi, Ki). ")
 		assert.Nil(t, err, "SplitRSC() function cannot handle the unit (Pi, Ti, Gi, Mi, Ki). ")

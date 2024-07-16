@@ -42,7 +42,7 @@ MASTER_MEMORY_LIMIT=2G
 LITE_MEMORY_LIMIT=4G
 AUTONOMY_MEMORY_LIMIT=6G
 SF_IMAGE_NAME="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8"
-SF_IMAGE_TAG="1.7.0b0"
+SF_IMAGE_TAG="1.6.0b0"
 SF_IMAGE_REGISTRY=""
 NETWORK_NAME="kuscia-exchange"
 VOLUME_PATH="${ROOT}"
@@ -315,7 +315,7 @@ function start_lite() {
     # init kuscia.yaml
     pre_check ${data_path}
     csr_token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" "${master_domain}" | tr -d '\r\n')
-    docker run -it --rm ${IMAGE} kuscia init --mode Lite --domain "${domain_id}" --master-endpoint "${master_endpoint}" --lite-deploy-token "${csr_token}" >"${kuscia_config_file}"
+    docker run -it --rm ${IMAGE} kuscia init --mode Lite --domain "${domain_id}" --master-endpoint "${master_endpoint}" --lite-deploy-token "${csr_token}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
     wrap_kuscia_config_file "${kuscia_config_file}"
 
     createVolume "${domain_ctr}-containerd"
@@ -353,7 +353,7 @@ function start_master() {
     # init kuscia.yaml
     mkdir -p "${conf_dir}"
     kuscia_config_file="${conf_dir}/kuscia.yaml"
-    docker run -it --rm ${IMAGE} kuscia init --mode Master --domain "${master_domain}" >"${kuscia_config_file}"
+    docker run -it --rm ${IMAGE} kuscia init --mode Master --domain "${master_domain}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
 
     # start kuscia
     docker run -dit --name=${master_ctr} --hostname=${master_ctr} --restart=always --network=${NETWORK_NAME} -m $MASTER_MEMORY_LIMIT ${env_flag} \
@@ -614,7 +614,7 @@ function start_autonomy() {
 
     # init kuscia.yaml
     pre_check ${data_path}
-    docker run -it --rm ${IMAGE} kuscia init --mode Autonomy --domain "${domain_id}" >"${kuscia_config_file}"
+    docker run -it --rm ${IMAGE} kuscia init --mode Autonomy --domain "${domain_id}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
     wrap_kuscia_config_file "${kuscia_config_file}" "${p2p_protocol}"
 
     createVolume "${domain_ctr}-containerd"

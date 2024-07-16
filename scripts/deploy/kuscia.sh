@@ -39,7 +39,7 @@ fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.6.0b0
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
@@ -321,9 +321,9 @@ function init_kuscia_conf_file() {
   pre_check "${PWD}/${domain_ctr}"
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}"
+    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   else
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" > "${kuscia_conf_file}"
+    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   fi
   wrap_kuscia_config_file ${kuscia_conf_file}
 }
@@ -452,14 +452,14 @@ function start_kuscia_container() {
     echo -e "${GREEN}skip importing sf image${NC}"
   elif [[ ${IMPORT_SF_IMAGE} = "secretflow"  ]]; then
     if [[ "$domain_type" != "master" ]] && [[ ${runtime} == "runc" ]]; then
-      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/import_engine_image.sh > import_engine_image.sh && chmod u+x import_engine_image.sh
-      bash import_engine_image.sh ${domain_ctr} ${SECRETFLOW_IMAGE}
-      rm -rf import_engine_image.sh
+      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > register_app_image.sh && chmod u+x register_app_image.sh
+      bash register_app_image.sh -c ${domain_ctr} -i ${SECRETFLOW_IMAGE} --import
+      rm -rf register_app_image.sh
     fi
   fi
 
   if [[ "$domain_type" != "lite" ]]; then
-    docker exec -it "${domain_ctr}" scripts/deploy/create_secretflow_app_image.sh "${SECRETFLOW_IMAGE}"
+    docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
     log "Create secretflow app image done"
   fi
   log "$domain_type domain '${domain_id}' deployed successfully"
@@ -616,8 +616,8 @@ function start_cxp_cluster() {
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh ${alice_domain} ${bob_domain} https://${bob_ctr}:1080 -i false -x ${alice_master_domain} -p ${p2p_protocol}
     docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh $alice_master_domain ${alice_domain} http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
     docker exec -it ${bob_ctr} scripts/deploy/join_to_host.sh ${bob_domain} ${alice_domain} http://${alice_ctr}:1080 -i false -x ${alice_master_domain} -p ${p2p_protocol}
-    docker exec -it ${bob_ctr} scripts/deploy/join_to_host.sh ${alice_domain} ${bob_domain} https://${bob_ctr}:1080 -i false -x ${alice_master_domain} -p ${p2p_protocol}
-    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh ${bob_domain} ${alice_domain} http://${alice_ctr}:1080 -i false -x ${alice_master_domain} -p ${p2p_protocol}
+    docker exec -it ${bob_ctr} scripts/deploy/join_to_host.sh ${alice_domain} ${bob_domain} https://${bob_ctr}:1080 -i false -p ${p2p_protocol}
+    docker exec -it ${alice_master_ctr} scripts/deploy/join_to_host.sh ${bob_domain} ${alice_domain} http://${alice_ctr}:1080 -i false -p ${p2p_protocol}
   fi
 
   docker exec -it ${alice_ctr} scripts/deploy/init_example_data.sh ${alice_domain}

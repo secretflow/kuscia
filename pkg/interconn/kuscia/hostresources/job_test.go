@@ -44,6 +44,7 @@ func makeMockJob(namespace, name string) *v1alpha1.KusciaJob {
 }
 
 func TestHandleUpdatedJob(t *testing.T) {
+	t.Parallel()
 	opt := &hostResourcesControllerOptions{
 		host:   "alice",
 		member: "bob",
@@ -94,6 +95,7 @@ func TestHandleUpdatedJob(t *testing.T) {
 }
 
 func TestHandleDeletedJob(t *testing.T) {
+	t.Parallel()
 	opt := &hostResourcesControllerOptions{
 		host:   "alice",
 		member: "bob",
@@ -111,6 +113,7 @@ func TestHandleDeletedJob(t *testing.T) {
 }
 
 func TestSyncJobHandler(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	hostKj1 := makeMockJob("bob", "kj-1")
 	hostKj2 := makeMockJob("bob", "kj-2")

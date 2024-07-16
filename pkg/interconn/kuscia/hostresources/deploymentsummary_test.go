@@ -41,6 +41,7 @@ func makeMockDeploymentSummary(namespace, name string) *v1alpha1.KusciaDeploymen
 }
 
 func TestHandleUpdatedDeploymentSummary(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	opt := &hostResourcesControllerOptions{
 		host:               "alice",
@@ -93,6 +94,7 @@ func TestHandleUpdatedDeploymentSummary(t *testing.T) {
 }
 
 func TestUpdateMemberDeployment(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kd := makeMockDeployment("cross-domain", "kd-1")
 	kusciaFakeClient := fake.NewSimpleClientset(kd)
@@ -149,6 +151,7 @@ func TestUpdateMemberDeployment(t *testing.T) {
 }
 
 func TestUpdateDeploymentStatus(t *testing.T) {
+	t.Parallel()
 	// kd status is empty, should return true
 	kd := makeMockDeployment("cross-domain", "kd-1")
 	kds := makeMockDeploymentSummary("alice", "kd-1")
