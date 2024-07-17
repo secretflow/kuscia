@@ -24,8 +24,8 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 指定 Secretflow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
-export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+# 使用的 Secretflow 镜像，这里使用 1.8.0b0 版本镜像
+export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.8.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
