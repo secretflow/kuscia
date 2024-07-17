@@ -88,7 +88,7 @@ envList:
 - envs:
   - name: image
     value: secretflow
-  selectors: 
+  selectors:
   - key: secretflow-anolis8
     value: image`,
 			envs: nil,
@@ -100,7 +100,7 @@ envList:
 - envs:
   - name: image
     value: secretflow
-  selectors: 
+  selectors:
   - key: maintainer
     value: secretflow-contact@service.alipay.com`,
 			envs: []pkgcontainer.EnvVar{
@@ -117,7 +117,7 @@ envList:
 - envs:
   - name: test
     value: test
-  selectors: 
+  selectors:
   - key: name
     type: pod
     value: alice`,
@@ -135,7 +135,7 @@ envList:
 - envs:
   - name: test
     value: test
-  selectors: 
+  selectors:
   - key: name
     type: pod
     value: bob`,
@@ -150,7 +150,7 @@ envList:
     value: test
   - name: image
     value: secretflow
-  selectors: 
+  selectors:
   - key: name
     value: alice
   - key: maintainer
@@ -175,7 +175,7 @@ envList:
     value: test
   - name: image
     value: secretflow
-  selectors: 
+  selectors:
   - key: name
     value: alice
   - key: maintainer

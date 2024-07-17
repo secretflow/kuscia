@@ -36,6 +36,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/agent/source"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/runtime"
 )
 
 var (
@@ -46,6 +47,15 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	nlog.Infof("Run root command, Namespace=%v", agentConfig.Namespace)
 	if agentConfig.Namespace == "" {
 		return fmt.Errorf("agent can not start with an empty domain id, you must restart agent with flag --namespace=DOMAIN_ID")
+	}
+
+	// print kernel params
+	for _, param := range runtime.CurrentKernel().List() {
+		if param.IsMatch {
+			nlog.Infof("Key=%s, Match(%v), Value(%s), Description(%s)", param.Key, param.IsMatch, param.Value, param.Description)
+		} else {
+			nlog.Warnf("Key=%s, Match(%v), Value(%s), Description(%s)", param.Key, param.IsMatch, param.Value, param.Description)
+		}
 	}
 
 	// load plugins

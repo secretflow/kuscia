@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package domainroute
 
 import (
@@ -199,10 +199,9 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		if namespace == dr.Spec.Source {
 			if c.needRollingToNext(ctx, dr) {
 				return c.preRollingSourceDomainRoute(ctx, dr)
-			} else {
-				if hasUpdate, err := c.ensureInitializer(ctx, dr); err != nil || hasUpdate {
-					return err
-				}
+			}
+			if hasUpdate, err := c.ensureInitializer(ctx, dr); err != nil || hasUpdate {
+				return err
 			}
 
 			if dr.Status.TokenStatus.RevisionToken.IsReady {

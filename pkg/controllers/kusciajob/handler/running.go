@@ -103,18 +103,17 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 						if k8serrors.IsNotFound(err) {
 							existTask, err = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), t.Name, metav1.GetOptions{})
 						}
-
 						if err != nil {
 							nlog.Errorf("Get exist task %v failed: %v", t.Name, err)
-							setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "CreateTaskFailed", err.Error())
+							setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, string(kusciaapisv1alpha1.CreateTaskFailed), err.Error())
 							return true, nil
 						}
 					}
 
-					if existTask.Annotations == nil || existTask.Annotations[common.JobIDAnnotationKey] != job.Name {
-						message := fmt.Sprintf("Failed to create task %v because a task with the same name already exists", t.Name)
+					if existTask.Labels == nil || existTask.Labels[common.LabelJobUID] != string(job.UID) {
+						message := fmt.Sprintf("Failed to create task %v because of a task with the same name already exists", t.Name)
 						nlog.Error(message)
-						setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "CreateTaskFailed", message)
+						setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, string(kusciaapisv1alpha1.CreateTaskFailed), message)
 						return true, nil
 					}
 				} else {

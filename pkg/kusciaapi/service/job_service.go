@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -283,8 +283,8 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 		}
 	}
 	// get domain from context
-	_, domainId := GetRoleAndDomainFromCtx(ctx)
-	if len(domainId) == 0 {
+	_, domainID := GetRoleAndDomainFromCtx(ctx)
+	if len(domainID) == 0 {
 		return &kusciaapi.StopJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -339,9 +339,9 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 	}
 
 	// get domain from context
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
-	var domainIds []string
-	if len(domainId) == 0 {
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	var domainIDs []string
+	if len(domainID) == 0 {
 		return &kusciaapi.ApproveJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -366,13 +366,13 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 	if role == consts.AuthRoleMaster {
 		// get self cluster parties
 		if selfParties, ok := job.Annotations[common.InterConnSelfPartyAnnotationKey]; ok {
-			domainIds = annotationToDomainList(selfParties)
+			domainIDs = annotationToDomainList(selfParties)
 		}
 	} else { // role is domain
 		// domain just approval itself party not all self cluster parties
-		domainIds = append(domainIds, domainId)
+		domainIDs = append(domainIDs, domainID)
 	}
-	for _, v := range domainIds {
+	for _, v := range domainIDs {
 		if job.Status.ApproveStatus == nil {
 			job.Status.ApproveStatus = make(map[string]v1alpha1.JobApprovePhase)
 		}
@@ -402,8 +402,8 @@ func (h *jobService) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJ
 		}
 	}
 	// get domain from context
-	_, domainId := GetRoleAndDomainFromCtx(ctx)
-	if len(domainId) == 0 {
+	_, domainID := GetRoleAndDomainFromCtx(ctx)
+	if len(domainID) == 0 {
 		return &kusciaapi.SuspendJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -452,8 +452,8 @@ func (h *jobService) RestartJob(ctx context.Context, request *kusciaapi.RestartJ
 		}
 	}
 	// get domain from context
-	_, domainId := GetRoleAndDomainFromCtx(ctx)
-	if len(domainId) == 0 {
+	_, domainID := GetRoleAndDomainFromCtx(ctx)
+	if len(domainID) == 0 {
 		return &kusciaapi.RestartJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -505,8 +505,8 @@ func (h *jobService) CancelJob(ctx context.Context, request *kusciaapi.CancelJob
 		}
 	}
 	// get domain from context
-	_, domainId := GetRoleAndDomainFromCtx(ctx)
-	if len(domainId) == 0 {
+	_, domainID := GetRoleAndDomainFromCtx(ctx)
+	if len(domainID) == 0 {
 		return &kusciaapi.CancelJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -789,12 +789,14 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 }
 
 func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaapi.CreateJobRequest) error {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
-	// todo: would allow if the executive node is tee
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if domainID == request.Initiator {
+		return nil
+	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range request.Tasks {
 			for _, p := range task.Parties {
-				if p.GetDomainId() == domainId {
+				if p.GetDomainId() == domainID {
 					return nil
 				}
 			}
@@ -804,16 +806,19 @@ func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaap
 	return nil
 }
 
-func (h *jobService) authHandlerJobDelete(ctx context.Context, jobId string) error {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
+func (h *jobService) authHandlerJobDelete(ctx context.Context, jobID string) error {
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
 	if role == consts.AuthRoleDomain {
-		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobId, metav1.GetOptions{})
+		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
+		if domainID == kusciaJob.Spec.Initiator {
+			return nil
+		}
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainId {
+				if p.DomainID == domainID {
 					return nil
 				}
 			}
@@ -824,11 +829,14 @@ func (h *jobService) authHandlerJobDelete(ctx context.Context, jobId string) err
 }
 
 func (h *jobService) authHandlerJobRetrieve(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if domainID == kusciaJob.Spec.Initiator {
+		return nil
+	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainId {
+				if p.DomainID == domainID {
 					return nil
 				}
 			}
@@ -839,11 +847,14 @@ func (h *jobService) authHandlerJobRetrieve(ctx context.Context, kusciaJob *v1al
 }
 
 func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) bool {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if domainID == kusciaJob.Spec.Initiator {
+		return true
+	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainId {
+				if p.DomainID == domainID {
 					return true
 				}
 			}
@@ -854,11 +865,14 @@ func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha
 }
 
 func (h *jobService) authHandlerJob(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if domainID == kusciaJob.Spec.Initiator {
+		return nil
+	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainId {
+				if p.DomainID == domainID {
 					return nil
 				}
 			}
@@ -917,14 +931,7 @@ func validateInitiator(domainID, initiator string, tasks []*kusciaapi.Task) erro
 	if domainID != "" && domainID != initiator {
 		return fmt.Errorf("initiator is %s, but initiator must be %s in P2P", initiator, domainID)
 	}
-	for _, task := range tasks {
-		for _, party := range task.Parties {
-			if initiator == party.DomainId {
-				return nil
-			}
-		}
-	}
-	return fmt.Errorf("initiator %s must be one of parties in the job", initiator)
+	return nil
 }
 
 func validateBatchQueryJobStatusRequest(request *kusciaapi.BatchQueryJobStatusRequest) error {
@@ -942,38 +949,38 @@ func validateBatchQueryJobStatusRequest(request *kusciaapi.BatchQueryJobStatusRe
 func getJobState(jobPhase v1alpha1.KusciaJobPhase) string {
 	switch jobPhase {
 	case "", v1alpha1.KusciaJobPending:
-		return kusciaapi.State_Pending.String()
+		return kusciaapi.JobState_Pending.String()
 	case v1alpha1.KusciaJobRunning:
-		return kusciaapi.State_Running.String()
+		return kusciaapi.JobState_Running.String()
 	case v1alpha1.KusciaJobFailed:
-		return kusciaapi.State_Failed.String()
+		return kusciaapi.JobState_Failed.String()
 	case v1alpha1.KusciaJobSucceeded:
-		return kusciaapi.State_Succeeded.String()
+		return kusciaapi.JobState_Succeeded.String()
 	case v1alpha1.KusciaJobAwaitingApproval:
-		return kusciaapi.State_AwaitingApproval.String()
+		return kusciaapi.JobState_AwaitingApproval.String()
 	case v1alpha1.KusciaJobApprovalReject:
-		return kusciaapi.State_ApprovalReject.String()
+		return kusciaapi.JobState_ApprovalReject.String()
 	case v1alpha1.KusciaJobCancelled:
-		return kusciaapi.State_Cancelled.String()
+		return kusciaapi.JobState_Cancelled.String()
 	case v1alpha1.KusciaJobSuspended:
-		return kusciaapi.State_Suspended.String()
+		return kusciaapi.JobState_Suspended.String()
 	default:
-		return kusciaapi.State_Unknown.String()
+		return kusciaapi.JobState_Unknown.String()
 	}
 }
 
 func getTaskState(taskPhase v1alpha1.KusciaTaskPhase) string {
 	switch taskPhase {
 	case "", v1alpha1.TaskPending:
-		return kusciaapi.State_Pending.String()
+		return kusciaapi.JobState_Pending.String()
 	case v1alpha1.TaskRunning:
-		return kusciaapi.State_Running.String()
+		return kusciaapi.JobState_Running.String()
 	case v1alpha1.TaskFailed:
-		return kusciaapi.State_Failed.String()
+		return kusciaapi.JobState_Failed.String()
 	case v1alpha1.TaskSucceeded:
-		return kusciaapi.State_Succeeded.String()
+		return kusciaapi.JobState_Succeeded.String()
 	default:
-		return kusciaapi.State_Unknown.String()
+		return kusciaapi.JobState_Unknown.String()
 	}
 }
 

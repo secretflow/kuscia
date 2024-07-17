@@ -28,10 +28,10 @@ local_datasource_id = "default-data-source"
 
 local_dir = "/tmp/datamesh/var/client"
 
-def get_file_md5(filepath):
+def get_file_sha256(filepath):
     with open(filepath, "r") as file:
         content = file.read()
-        return hashlib.md5(content.encode()).hexdigest()
+        return hashlib.sha256(content.encode()).hexdigest()
 
 def new_file_name(ext):
     return 'test_' + datetime.now().strftime("%Y%m%d_%H%M%S") + ext
@@ -82,7 +82,7 @@ def test_binary_file_download(datasource_id, local_dir):
     download_path = os.path.join(local_dir, "download-"+domaindata_id+".raw")
     datamesh.download_to_file(domaindata_id, download_path, dmapi.FileFormat.BINARY)
     print("download to file: ", download_path)
-    print("[OUTPUT] file md5=", get_file_md5(download_path))
+    print("[OUTPUT] file sha256=", get_file_sha256(download_path))
 
     with open(download_path, "r") as file:
         content = file.read()
@@ -98,7 +98,7 @@ def test_csv_file_download(datasource_id, local_dir):
     download_path = os.path.join(local_dir, "download-"+domaindata_id+".csv")
     datamesh.download_to_file(domaindata_id, download_path, dmapi.FileFormat.CSV)
     print("download to file: ", download_path)
-    print("[OUTPUT] file md5=", get_file_md5(download_path))
+    print("[OUTPUT] file sha256=", get_file_sha256(download_path))
 
     with open(download_path, "r") as file:
         content = file.read()
@@ -128,7 +128,7 @@ logging.root.setLevel(logging.DEBUG)
 datamesh.init("127.0.0.1:8071")
 
 
-print("[INPUT] init file md5=", get_file_md5(os.path.join(local_dir, "local-test.csv")))
+print("[INPUT] init file sha256=", get_file_sha256(os.path.join(local_dir, "local-test.csv")))
 
 #test_binary_file_upload(local_datasource_id, local_dir)
 

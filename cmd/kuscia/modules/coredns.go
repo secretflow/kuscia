@@ -17,10 +17,12 @@ package modules
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coredns/caddy"
@@ -28,9 +30,9 @@ import (
 	"github.com/coredns/coredns/plugin"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/coredns"
+	"github.com/secretflow/kuscia/pkg/utils/lock"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
@@ -88,13 +90,14 @@ type CorednsModule struct {
 	coreDNSInstance *coredns.KusciaCoreDNS
 }
 
-func NewCoreDNS(conf *confloader.KusciaConfig) Module {
+func NewCoreDNS(conf *ModuleRuntimeConfigs) (Module, error) {
 	return &CorednsModule{
+
 		rootDir:   conf.RootDir,
 		namespace: conf.DomainID,
 		envoyIP:   conf.EnvoyIP,
 		readyChan: make(chan struct{}),
-	}
+	}, nil
 }
 
 func (s *CorednsModule) Run(ctx context.Context) error {
@@ -136,55 +139,29 @@ func (s *CorednsModule) Run(ctx context.Context) error {
 	}
 
 	s.readyChan <- struct{}{}
-	// Twiddle your thumbs
-	instance.Wait()
-	return nil
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		instance.Wait()
+	}()
+
+	select {
+	case <-ctx.Done():
+		instance.Stop()
+		return nil
+	case <-lock.NewWaitGroupChannel(wg):
+		return errors.New("core dns run failed")
+	}
 }
 
 func (s *CorednsModule) WaitReady(ctx context.Context) error {
-	select {
-	case <-s.readyChan:
-		return ctx.Err()
-	case <-ctx.Done():
-		return ctx.Err()
-	}
+	return WaitChannelReady(ctx, s.readyChan, 60*time.Second)
 }
 
 func (s *CorednsModule) Name() string {
 	return "coredns"
-}
-
-func RunCoreDNSWithDestroy(conf *Dependencies) Module {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "coredns",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	return RunCoreDNS(runCtx, cancel, &conf.KusciaConfig, shutdownEntry)
-}
-
-func RunCoreDNS(ctx context.Context, cancel context.CancelFunc, conf *confloader.KusciaConfig, shutdownEntry *shutdownHookEntry) Module {
-	m := NewCoreDNS(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("CoreDNS wait ready failed: %v", err)
-	}
-	nlog.Info("CoreDNS is ready")
-	return m
 }
 
 func (s *CorednsModule) StartControllers(ctx context.Context, kubeclient kubernetes.Interface) {

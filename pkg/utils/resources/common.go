@@ -98,10 +98,9 @@ func IsOuterBFIAInterConnDomain(nsLister corelisters.NamespaceLister, domainID s
 
 // ValidateK8sName checks dns subdomain names
 func ValidateK8sName(val string, fieldName string) error {
-
 	match, _ := regexp.MatchString(common.K3sRegex, val)
 	if !match {
-		errorMsg := fmt.Sprintf("Field '%s' is invalid, Invalid value: '%s': regex used for validation is '%s' ", fieldName, val, common.K3sRegex)
+		errorMsg := fmt.Sprintf("Field %q is invalid, invalid value: %q: regex used for validation is %q ", fieldName, val, common.K3sRegex)
 		return errors.New(errorMsg)
 	}
 

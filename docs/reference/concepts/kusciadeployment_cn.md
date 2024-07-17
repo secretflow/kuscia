@@ -69,6 +69,7 @@ secretflow-serving   2              2                  Available   89m
 ```
 
 上述命令输出内容，各列字段的含义如下：
+
 - `NAME`：表示 KusciaDeployment 的名称。
 - `TOTALPARTIES`：表示所有参与方个数。
 - `AVAILABLEPARTIES`：表示可用参与方个数。
@@ -315,7 +316,7 @@ KusciaDeployment `spec` 的子字段详细介绍如下：
 
 KusciaDeployment `status` 的子字段详细介绍如下：
 
-- `phase`：表示 KusciaDeployment 当前所处的阶段。当前包括以下几种 PHASE：
+- `phase`：表示 KusciaDeployment 当前所处的阶段。当前包括以下几种类型：
   - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。KusciaDeployment Controller 会根据 KusciaDeployment 的描述信息，在各参与方节点下创建相关的资源，例如：Deployment、Configmap、Service 等。
   - `PartialAvailable`：表示所有参与方可用，但是在某些参与方节点下，应用可用副本数小于期望副本数。
   - `Available`：表示所有参与方可用，且各个参与方下应用可用副本数等于期望副本数。
@@ -331,82 +332,10 @@ KusciaDeployment `status` 的子字段详细介绍如下：
   - `alice.secretflow-serving.conditions`：表示名称为`secretflow-serving`的 Deployment 资源的详细状况信息。
   - `alice.secretflow-serving.creationTimestamp`：表示名称为`secretflow-serving`的 Deployment 资源的创建时间。
   - `alice.secretflow-serving.phase`：表示名称为`secretflow-serving`的 Deployment 资源的状态。当前包括以下几种 PHASE：
-    - `Progressing`：表示该资源正在被 K3s Deployment Controller 处理。
+    - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。
     - `PartialAvailable`：表示该参与方下的应用部分可用，即应用可用副本数小于期望副本数。
     - `Available`：表示该参与方下的应用全部可用，即应用可用副本数等于期望副本数。
   - `alice.secretflow-serving.replicas`：表示应用期望副本数。
   - `alice.secretflow-serving.availableReplicas`：表示应用可用副本数。
   - `alice.secretflow-serving.unavailableReplicas`：表示应用不可用副本数。
   - `alice.secretflow-serving.updatedReplicas`：表示应用已更新的副本数。
-
-{#sf-serving-appimage}
-
-### Serving AppImage
-
-下面是名称为`secretflow-serving-image`的 AppImage 定义。有关 AppImage 的详细介绍，请参考 [AppImage](./appimage_cn.md)。
-
-```yaml
-apiVersion: kuscia.secretflow/v1alpha1
-kind: AppImage
-metadata:
-  name: secretflow-serving-image
-  namespace: cross-domain
-spec:
-  configTemplates:
-    serving-config.conf: |
-      {
-        "serving_id": "{{.SERVING_ID}}",
-        "input_config": "{{.INPUT_CONFIG}}",
-        "cluster_def": "{{.CLUSTER_DEFINE}}",
-        "allocated_ports": "{{.ALLOCATED_PORTS}}"
-      }
-  deployTemplates:
-  - name: secretflow
-    replicas: 1
-    spec:
-      containers:
-      - command:
-        - sh
-        - -c
-        - ./secretflow_serving --flagfile=conf/gflags.conf --config_mode=kuscia --serving_config_file=/etc/kuscia/serving-config.conf
-        configVolumeMounts:
-        - mountPath: /etc/kuscia/serving-config.conf
-          subPath: serving-config.conf
-        name: secretflow
-        ports:
-        - name: service
-          port: 53509
-          protocol: HTTP
-          scope: Cluster
-        - name: internal
-          port: 53510
-          protocol: HTTP
-          scope: Domain
-        - name: brpc-builtin
-          port: 53511
-          protocol: HTTP
-          scope: Domain
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 53511
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 53511
-        startupProbe:
-          failureThreshold: 30
-          httpGet:
-            path: /health
-            port: 53511
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        workingDir: /root/sf_serving
-      restartPolicy: Never
-  image:
-    id: abc
-    name: secretflow/serving-anolis8
-    sign: abc
-    tag: latest
-```

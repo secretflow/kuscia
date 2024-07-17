@@ -104,22 +104,19 @@ func TestWaitTwice(t *testing.T) {
 	assert.Nil(t, sm.Push("session3", "topic", NewMessageByRandomStr(12), time.Millisecond*100))
 
 	// total buffer is full, so return error
-	err := sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*20)
-	assert.NotNil(t, err)
+	assert.NotNil(t, sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*20))
 
 	// session1's buffer is full, so return error
 	sm.Peek("session3", "topic")
-	err = sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*20)
-	assert.NotNil(t, err)
+	assert.NotNil(t, sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*20))
 
 	// clean session1
 	sm.Peek("session1", "topic")
 	start := time.Now()
-	err = sm.Push("session1", "topic", NewMessageByRandomStr(12), time.Millisecond*100)
-	assert.Nil(t, err)
+	assert.Nil(t, sm.Push("session1", "topic", NewMessageByRandomStr(12), 2*time.Second))
 
 	processTime := time.Since(start)
-	assert.Less(t, processTime, time.Millisecond*10)
+	assert.Less(t, processTime, time.Second) // normally less than 10ms, but test machine may run slowly
 }
 
 func getQuickExpireConfig() *Config {

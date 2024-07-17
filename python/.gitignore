@@ -1,7 +1,6 @@
 eggs/
 .eggs/
 build/
-deploy/
 develop-eggs/
 dist/
 wheels/

@@ -55,15 +55,16 @@ func (h *JobScheduler) handleInitialized(job *kusciaapisv1alpha1.KusciaJob) (nee
 	if !ok {
 		return true, nil
 	}
+
+	ownP, _, _ := h.getAllParties(job)
 	// label job with initiator and interConn parties,To notify the interOp controller handle inter connection job.
-	hasUpdated, err := h.annotateKusciaJob(job)
+	hasUpdated, err := h.annotateKusciaJob(job, ownP)
 	if err != nil {
 		return true, err
 	}
 	if hasUpdated {
 		return false, nil
 	}
-	ownP, _, _ := h.getAllParties(job)
 	if job.Status.StageStatus == nil {
 		job.Status.StageStatus = make(map[string]kusciaapisv1alpha1.JobStagePhase)
 	}

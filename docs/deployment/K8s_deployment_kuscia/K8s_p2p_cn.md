@@ -5,7 +5,7 @@
 
 目前 Kuscia 在部署到 K8s 上时，隐私计算任务的运行态支持 RunK 和 RunP 两种模式， RunC 模式目前需要部署 Kuscia 的 Pod 有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)
 
-本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod）， RunP 模式的部署请参考 [使用进程运行时部署节点](../deploy_with_runp_cn.md)。
+本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod）， RunP 模式的部署请参考 [使用进程运行时部署节点](./deploy_with_runp_cn.md)。
 
 ![k8s_master_lite_deploy](../../imgs/k8s_deploy_autonomy.png)
 
@@ -41,7 +41,7 @@ domainID、私钥以及 datastoreEndpoint 字段里的数据库连接串（user�
 
 :::{tip}
 - 修改 Configmap 配置后，需执行 kubectl delete po {pod-name} -n {namespace} 重新拉起 Pod 生效
-- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
+- 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
 :::
 
 特殊说明：为了使 ServiceAccount 具有创建、查看、删除等资源权限，RunK 模式提供两种方式：
@@ -72,7 +72,7 @@ kubectl create -f deployment.yaml
 
 Alice 和 Bob 授权之前可以先检测下相互之间的通信是否正常
 
-建议使用 curl -kvvv http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080;（此处以 HTTP 为例，HTTPS 可以删除 Configmap 里的 Protocol: NOTLS 字段，重启 Pod 生效。[LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer) 或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport) 方式可以用 curl -kvvv http://ip:port）检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized
+建议使用 curl -kvvv http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080;（此处以 HTTP 为例，HTTPS 可以删除 Configmap 里的 Protocol: NOTLS 字段，重启 Pod 生效。[LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer) 或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport) 方式可以用 curl -kvvv http://ip:port）检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是节点ID和版本信息
 
 示例参考[这里](../K8s_deployment_kuscia/K8s_master_lite_cn.md#id6)
 
@@ -123,7 +123,7 @@ NAME        SOURCE   DESTINATION   HOST                                         
 alice-bob   alice    bob           kuscia-autonomy-bob.autonomy-bob.svc.cluster.local   Token            True
 bob-alice   bob      alice                                                              Token            True
 ```
-授权失败，请参考[授权错误排查](../../reference/troubleshoot/networkauthorizationcheck.md)文档
+授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)文档
 
 ## 确认部署成功
 ### 检查 Pod 状态
@@ -924,7 +924,7 @@ scripts/user/create_example_job.sh
 kubectl get kj -n cross-domain
 ```
 
-`pod 外部`Runk 模式可以在 Kuscia Pod 所在集群中执行如下命令查看引擎日志
+`pod 外部` RunK 模式可以在 Kuscia Pod 所在集群中执行如下命令查看引擎日志
 ```bash
 kubectl logs ${engine_pod_name} -n autonomy-alice
 ```

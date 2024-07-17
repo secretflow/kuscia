@@ -43,7 +43,8 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 - `Secretflow` 引擎模版：[app_image.secretflow.yaml](https://github.com/secretflow/kuscia/blob/main/scripts/templates/app_image.secretflow.yaml)
 - `Serving` 引擎模版：[app_image.serving.yaml](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.1b0/topics/deployment/serving_on_kuscia#appimage)
 - `SCQL` 引擎模版：[app_image.scql.yaml](https://www.secretflow.org.cn/zh-CN/docs/scql/main/topics/deployment/run-scql-on-kuscia)
-- 其他自定义算法镜像参考：[AppImage](https://www.secretflow.org.cn/zh-CN/docs/kuscia/main/reference/concepts/appimage_cn)
+- 其他自定义算法镜像参考：[AppImage](../reference/concepts/appimage_cn)
+- 自定义算法配置文件渲染参考： [配置文件渲染](../troubleshoot/config_render.md)
 
 ## 加载自定义算法镜像到节点容器
 

@@ -15,12 +15,8 @@
 package modules
 
 import (
-	"bytes"
 	"context"
-	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io"
 	"sync/atomic"
 	"time"
 
@@ -28,12 +24,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/confmanager/commands"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
-	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
-	"github.com/secretflow/kuscia/pkg/web/constants"
-	"github.com/secretflow/kuscia/pkg/web/utils"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
+	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
 const (
@@ -42,10 +34,11 @@ const (
 )
 
 type confManagerModule struct {
+	moduleRuntimeBase
 	conf *config.ConfManagerConfig
 }
 
-func NewConfManager(ctx context.Context, d *Dependencies) (Module, error) {
+func NewConfManager(d *ModuleRuntimeConfigs) (Module, error) {
 	// overwrite config
 	conf := config.NewDefaultConfManagerConfig()
 	if d.ConfManager.HTTPPort != 0 {
@@ -86,11 +79,8 @@ func NewConfManager(ctx context.Context, d *Dependencies) (Module, error) {
 		conf.DomainCertValue = &atomic.Value{}
 		conf.DomainCertValue.Store(d.DomainCert)
 	}
-	secretBackend := findSecretBackend(d.SecretBackendHolder, conf.Backend)
-	if secretBackend == nil {
-		return nil, fmt.Errorf("failed to find secret backend %s for cm", conf.Backend)
-	}
-	conf.BackendDriver = secretBackend
+
+	conf.BackendDriver = d.SecretBackendHolder.Get(conf.Backend)
 
 	nlog.Debugf("Conf manager config is %+v", conf)
 
@@ -104,120 +94,17 @@ func NewConfManager(ctx context.Context, d *Dependencies) (Module, error) {
 	}
 
 	return &confManagerModule{
+		moduleRuntimeBase: moduleRuntimeBase{
+			name:         "config",
+			readyTimeout: 60 * time.Second,
+			rdz: readyz.NewFuncReadyZ(func(ctx context.Context) error {
+				return KusciaServiceReadyZ(&conf.TLS, conf.HTTPPort)
+			}),
+		},
 		conf: conf,
 	}, nil
 }
 
-func findSecretBackend(s *secretbackend.Holder, name string) secretbackend.SecretDriver {
-	return s.Get(name)
-}
-
-func (m confManagerModule) Run(ctx context.Context) error {
+func (m *confManagerModule) Run(ctx context.Context) error {
 	return commands.Run(ctx, m.conf)
-}
-
-func (m confManagerModule) WaitReady(ctx context.Context) error {
-	timeoutTicker := time.NewTicker(30 * time.Second)
-	defer timeoutTicker.Stop()
-	checkTicker := time.NewTicker(1 * time.Second)
-	defer checkTicker.Stop()
-	for {
-		select {
-		case <-checkTicker.C:
-			if m.readyZ() {
-				return nil
-			}
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timeoutTicker.C:
-			return fmt.Errorf("wait confmanager ready timeout")
-		}
-	}
-}
-
-func (m confManagerModule) Name() string {
-	return "confmanager"
-}
-
-func (m confManagerModule) readyZ() bool {
-	var clientTLSConfig *tls.Config
-	var err error
-	// init client tls config
-	tlsConfig := m.conf.TLS
-	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
-	if err != nil {
-		nlog.Errorf("local tls config error: %v", err)
-		return false
-	}
-
-	// check http server ready
-	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", constants.SchemaHTTPS, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
-	body, err := json.Marshal(&kusciaapi.HealthRequest{})
-	if err != nil {
-		nlog.Errorf("marshal health request error: %v", err)
-		return false
-	}
-	resp, err := httpClient.Post(httpURL, constants.HTTPDefaultContentType, bytes.NewReader(body))
-	if err != nil {
-		nlog.Errorf("send health request error: %v", err)
-		return false
-	}
-	if resp == nil || resp.Body == nil {
-		nlog.Error("resp must has body")
-		return false
-	}
-	defer resp.Body.Close()
-	healthResp := &kusciaapi.HealthResponse{}
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Errorf("read response body error: %v", err)
-		return false
-	}
-	if err = json.Unmarshal(respBytes, healthResp); err != nil {
-		nlog.Errorf("Unmarshal health response error: %v", err)
-		return false
-	}
-	if healthResp.Data == nil || !healthResp.Data.Ready {
-		return false
-	}
-	nlog.Infof("http/https server is ready")
-	return true
-}
-
-func RunConfManagerWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "confmanager",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunConfManager(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunConfManager(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m, err := NewConfManager(ctx, conf)
-	if err != nil {
-		nlog.Error(err)
-		cancel()
-		return m
-	}
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("ConfManager wait ready failed: %v", err)
-	}
-	nlog.Info("ConfManager is ready")
-	return m
 }

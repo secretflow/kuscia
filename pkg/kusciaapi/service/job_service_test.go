@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -71,7 +70,6 @@ func TestSuspendJob(t *testing.T) {
 	res = kusciaAPIJS.SuspendJob(ctx, &kusciaapi.SuspendJobRequest{
 		JobId: kusciaAPIJS.jobID,
 	})
-	fmt.Printf("resp:%+v", res)
 	assert.Equal(t, res.Data.JobId, kusciaAPIJS.jobID)
 }
 
