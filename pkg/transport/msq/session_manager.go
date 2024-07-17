@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type Session struct {
@@ -32,16 +33,17 @@ type Session struct {
 type SessionManager struct {
 	sync.RWMutex
 
-	sessions           map[string]*Session
-	deadSessionIDs     *DeadSessionID
-	activeSessionIDs   SessionIDPQ
-	normalizeTimeScale time.Duration
-	memControl         *MemControl
+	config           *Config
+	sessions         map[string]*Session
+	deadSessionIDs   *DeadSessionID
+	activeSessionIDs SessionIDPQ
+	memControl       *MemControl
 }
 
-func NewSessionManager() *SessionManager {
+func NewSessionManager(config *Config) *SessionManager {
 	return &SessionManager{
 		RWMutex:        sync.RWMutex{},
+		config:         config,
 		sessions:       make(map[string]*Session),
 		deadSessionIDs: NewDeadSessionID(config),
 		memControl:     NewMemControl(config),
@@ -58,7 +60,8 @@ func (s *SessionManager) StartCleanLoop(stopCh <-chan struct{}) {
 		}
 		round++
 	}
-	cleanInterval := time.Duration(config.CleanIntervalSeconds>>1) * time.Second
+
+	cleanInterval := time.Duration((s.config.CleanIntervalSeconds*1000)>>1) * time.Millisecond
 	go wait.Until(cleanFn, cleanInterval, stopCh)
 }
 
@@ -70,6 +73,7 @@ func (s *SessionManager) Push(sid, topic string, message *Message, timeout time.
 
 	ok, leftTime := s.memControl.Prefetch(message.ByteSize(), timeout)
 	if !ok {
+		nlog.Warnf("All session queue total buffer(len=%d) size can't fit message(len=%d)", s.memControl.totalByteSizeLimit, message.ByteSize())
 		return transerr.NewTransError(transerr.BufferOverflow)
 	}
 
@@ -159,7 +163,7 @@ func (s *SessionManager) GetOrCreateSession(sid string, refresh bool) (*SessionQ
 
 func (s *SessionManager) cleanInactiveSession() {
 	currentTimestamp := s.normalizedNowTimestamp()
-	expireDuration := config.SessionExpireSeconds / config.NormalizeActiveSeconds
+	expireDuration := s.config.SessionExpireSeconds / s.config.NormalizeActiveSeconds
 	inactiveQueues := make([]*SessionQueue, 0)
 
 	s.Lock()
@@ -216,7 +220,7 @@ func (s *SessionManager) createSessionQueue(sid string) (*SessionQueue, *transer
 		return nil, transerr.NewTransError(transerr.SessionReleased)
 	}
 
-	sessionQueue := NewSessionQueue()
+	sessionQueue := NewSessionQueue(s.config)
 	SessionIDItem := NewSessionIDItem(sid, s.normalizedNowTimestamp())
 	session := &Session{
 		Queue:      sessionQueue,
@@ -242,5 +246,5 @@ func (s *SessionManager) deleteSessionQueue(sid string) {
 }
 
 func (s *SessionManager) normalizedNowTimestamp() int64 {
-	return time.Now().Unix() / config.NormalizeActiveSeconds
+	return time.Now().Unix() / s.config.NormalizeActiveSeconds
 }

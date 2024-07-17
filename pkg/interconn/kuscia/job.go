@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package kuscia
 
 import (
@@ -308,31 +308,48 @@ func (c *Controller) createJobSummary(ctx context.Context, job *v1alpha1.KusciaJ
 }
 
 func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) error {
-	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(job)
-	if domainIDs == nil {
-		nlog.Errorf("Failed to get self cluster party domain ids from job %v, skip processing it", ikcommon.GetObjectNamespaceName(job))
-		return nil
-	}
-
 	needUpdate := false
 	if job.Status.Phase != jobSummary.Status.Phase {
 		needUpdate = true
 		jobSummary.Status.Phase = job.Status.Phase
+		if isCompleted(jobSummary) {
+			jobSummary.Status.CompletionTime = job.Status.CompletionTime
+		}
+	}
+
+	if jobSummary.Status.Reason != job.Status.Reason {
+		needUpdate = true
+		jobSummary.Status.Reason = job.Status.Reason
+	}
+
+	if job.Status.Message != jobSummary.Status.Message {
+		needUpdate = true
+		if job.Status.Phase == v1alpha1.KusciaJobFailed {
+			jobParties := job.Annotations[common.InterConnSelfPartyAnnotationKey]
+			jobSummary.Status.Message = fmt.Sprintf("party[%s] job failed info: %s", jobParties, job.Status.Message)
+		} else {
+			jobSummary.Status.Message = job.Status.Message
+		}
 	}
 
 	if updateJobSummaryStage(job, jobSummary) {
 		needUpdate = true
 	}
 
-	if updateJobSummaryApproveStatus(job, jobSummary, domainIDs) {
+	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(job)
+	if len(domainIDs) == 0 {
+		nlog.Warnf("The self cluster party domain ids from job %v are empty", ikcommon.GetObjectNamespaceName(job))
+	}
+
+	if updateJobSummaryApproveStatus(job, jobSummary, domainIDs, true) {
 		needUpdate = true
 	}
 
-	if updateJobSummaryStageStatus(job, jobSummary, domainIDs) {
+	if updateJobSummaryStageStatus(job, jobSummary, domainIDs, true) {
 		needUpdate = true
 	}
 
-	if updateJobSummaryPartyTaskCreateStatus(job, jobSummary, domainIDs) {
+	if updateJobSummaryPartyTaskCreateStatus(job, jobSummary, domainIDs, true) {
 		needUpdate = true
 	}
 
@@ -354,6 +371,15 @@ func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJ
 	}
 
 	return nil
+}
+
+func isCompleted(jobSummary *v1alpha1.KusciaJobSummary) bool {
+	if jobSummary.Status.Phase == v1alpha1.KusciaJobSucceeded ||
+		jobSummary.Status.Phase == v1alpha1.KusciaJobFailed ||
+		jobSummary.Status.Phase == v1alpha1.KusciaJobCancelled {
+		return true
+	}
+	return false
 }
 
 func updateJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) bool {
@@ -382,7 +408,7 @@ func updateJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJ
 	return false
 }
 
-func updateJobSummaryApproveStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {
+func updateJobSummaryApproveStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string, isHost bool) bool {
 	if len(job.Status.ApproveStatus) == 0 || reflect.DeepEqual(job.Status.ApproveStatus, jobSummary.Status.ApproveStatus) {
 		return false
 	}
@@ -393,17 +419,29 @@ func updateJobSummaryApproveStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1
 	}
 
 	updated := false
-	for _, domainID := range domainIDs {
-		if job.Status.ApproveStatus[domainID] != jobSummary.Status.ApproveStatus[domainID] {
-			updated = true
-			jobSummary.Status.ApproveStatus[domainID] = job.Status.ApproveStatus[domainID]
+	if isHost {
+		for domainID, status := range job.Status.ApproveStatus {
+			// party jobSummary under host cluster should be updated by remote member party
+			if domainID == jobSummary.Namespace {
+				continue
+			}
+			if jobSummary.Status.ApproveStatus[domainID] != status {
+				updated = true
+				jobSummary.Status.ApproveStatus[domainID] = status
+			}
+		}
+	} else {
+		for _, domainID := range domainIDs {
+			if job.Status.ApproveStatus[domainID] != jobSummary.Status.ApproveStatus[domainID] {
+				updated = true
+				jobSummary.Status.ApproveStatus[domainID] = job.Status.ApproveStatus[domainID]
+			}
 		}
 	}
-
 	return updated
 }
 
-func updateJobSummaryStageStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {
+func updateJobSummaryStageStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string, isHost bool) bool {
 	if len(job.Status.StageStatus) == 0 || reflect.DeepEqual(job.Status.StageStatus, jobSummary.Status.StageStatus) {
 		return false
 	}
@@ -414,17 +452,29 @@ func updateJobSummaryStageStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.K
 	}
 
 	updated := false
-	for _, domainID := range domainIDs {
-		if job.Status.StageStatus[domainID] != jobSummary.Status.StageStatus[domainID] {
-			updated = true
-			jobSummary.Status.StageStatus[domainID] = job.Status.StageStatus[domainID]
+	if isHost {
+		for domainID, status := range job.Status.StageStatus {
+			if domainID == jobSummary.Namespace {
+				continue
+			}
+			if jobSummary.Status.StageStatus[domainID] != status {
+				updated = true
+				jobSummary.Status.StageStatus[domainID] = status
+			}
+		}
+	} else {
+		for _, domainID := range domainIDs {
+			if job.Status.StageStatus[domainID] != jobSummary.Status.StageStatus[domainID] {
+				updated = true
+				jobSummary.Status.StageStatus[domainID] = job.Status.StageStatus[domainID]
+			}
 		}
 	}
 
 	return updated
 }
 
-func updateJobSummaryPartyTaskCreateStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {
+func updateJobSummaryPartyTaskCreateStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string, isHost bool) bool {
 	if len(job.Status.PartyTaskCreateStatus) == 0 || reflect.DeepEqual(job.Status.PartyTaskCreateStatus, jobSummary.Status.PartyTaskCreateStatus) {
 		return false
 	}
@@ -435,10 +485,22 @@ func updateJobSummaryPartyTaskCreateStatus(job *v1alpha1.KusciaJob, jobSummary *
 	}
 
 	updated := false
-	for _, domainID := range domainIDs {
-		if !reflect.DeepEqual(job.Status.PartyTaskCreateStatus[domainID], jobSummary.Status.PartyTaskCreateStatus[domainID]) {
-			updated = true
-			jobSummary.Status.PartyTaskCreateStatus[domainID] = job.Status.PartyTaskCreateStatus[domainID]
+	if isHost {
+		for domainID, status := range job.Status.PartyTaskCreateStatus {
+			if domainID == jobSummary.Namespace {
+				continue
+			}
+			if !reflect.DeepEqual(jobSummary.Status.PartyTaskCreateStatus[domainID], status) {
+				updated = true
+				jobSummary.Status.PartyTaskCreateStatus[domainID] = job.Status.PartyTaskCreateStatus[domainID]
+			}
+		}
+	} else {
+		for _, domainID := range domainIDs {
+			if !reflect.DeepEqual(job.Status.PartyTaskCreateStatus[domainID], jobSummary.Status.PartyTaskCreateStatus[domainID]) {
+				updated = true
+				jobSummary.Status.PartyTaskCreateStatus[domainID] = job.Status.PartyTaskCreateStatus[domainID]
+			}
 		}
 	}
 
@@ -492,7 +554,19 @@ func (c *Controller) processJobAsPartner(ctx context.Context, job *v1alpha1.Kusc
 		if err != nil {
 			nlog.Errorf("Get JobSummary %v from host %v cluster failed, %v", job.Name, initiator, err)
 			if k8serrors.IsNotFound(err) {
-				return nil
+				// check mirror job if exist
+				_, jobErr := hra.HostKusciaClient().KusciaV1alpha1().KusciaJobs(masterDomainID).Get(ctx, job.Name, metav1.GetOptions{})
+				if jobErr != nil {
+					if k8serrors.IsNotFound(jobErr) {
+						nlog.Infof("Host job %s/%s is not found, delete job %v", masterDomainID, job.Name, ikcommon.GetObjectNamespaceName(job))
+						err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).Delete(ctx, job.Name, metav1.DeleteOptions{})
+						if k8serrors.IsNotFound(err) {
+							return nil
+						}
+						return err
+					}
+					return fmt.Errorf("failed to get host job %s/%s, %v", masterDomainID, job.Name, jobErr)
+				}
 			}
 			return err
 		}
@@ -530,6 +604,10 @@ func (c *Controller) updateHostJobSummary(ctx context.Context,
 		needUpdate = true
 	}
 
+	if updateHostJobSummaryStatusPhase(job, jobSummary) {
+		needUpdate = true
+	}
+
 	if needUpdate {
 		jobSummary.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err := kusciaClient.KusciaV1alpha1().KusciaJobSummaries(jobSummary.Namespace).Update(ctx, jobSummary, metav1.UpdateOptions{}); err != nil {
@@ -538,6 +616,25 @@ func (c *Controller) updateHostJobSummary(ctx context.Context,
 	}
 
 	return nil
+}
+
+func updateHostJobSummaryStatusPhase(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) bool {
+	if job.Status.Phase == v1alpha1.KusciaJobFailed &&
+		job.Status.Phase != jobSummary.Status.Phase &&
+		job.Status.CompletionTime != nil &&
+		job.Status.Reason != "" &&
+		job.Status.Reason != jobSummary.Status.Reason {
+		switch job.Status.Reason {
+		case string(v1alpha1.ValidateFailed), string(v1alpha1.CreateTaskFailed):
+			jobParties := job.Annotations[common.InterConnSelfPartyAnnotationKey]
+			jobSummary.Status.Phase = job.Status.Phase
+			jobSummary.Status.Reason = job.Status.Reason
+			jobSummary.Status.Message = fmt.Sprintf("party[%s] job failed info: %s", jobParties, job.Status.Message)
+			jobSummary.Status.CompletionTime = job.Status.CompletionTime
+			return true
+		}
+	}
+	return false
 }
 
 func updateHostJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, masterDomainID string) bool {
@@ -562,13 +659,13 @@ func updateHostJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.Kus
 }
 
 func updateHostJobSummaryApproveStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {
-	return updateJobSummaryApproveStatus(job, jobSummary, domainIDs)
+	return updateJobSummaryApproveStatus(job, jobSummary, domainIDs, false)
 }
 
 func updateHostJobSummaryStageStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {
-	return updateJobSummaryStageStatus(job, jobSummary, domainIDs)
+	return updateJobSummaryStageStatus(job, jobSummary, domainIDs, false)
 }
 
 func updateHostJobSummaryPartyTaskCreateStatus(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {
-	return updateJobSummaryPartyTaskCreateStatus(job, jobSummary, domainIDs)
+	return updateJobSummaryPartyTaskCreateStatus(job, jobSummary, domainIDs, false)
 }

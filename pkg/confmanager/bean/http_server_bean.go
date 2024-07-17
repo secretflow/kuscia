@@ -18,12 +18,13 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	cmconfig "github.com/secretflow/kuscia/pkg/confmanager/config"
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/configuration"
 	"github.com/secretflow/kuscia/pkg/confmanager/interceptor"
 	"github.com/secretflow/kuscia/pkg/confmanager/service"
-	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	apisvc "github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/web/api"
@@ -33,8 +34,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/beans"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
-
-	"github.com/gin-gonic/gin"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 type httpServerBean struct {
@@ -129,7 +129,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 
 // protoDecorator is used to wrap handler.
 func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.HandlerFunc {
-	return decorator.InterConnProtoDecoratorMaker(int32(ecode.ErrRequestInvalidate), int32(ecode.ErrForUnexpected))(e, handler)
+	return decorator.InterConnProtoDecoratorMaker(int32(pberrorcode.ErrorCode_DataMeshErrRequestInvalidate), int32(pberrorcode.ErrorCode_DataMeshErrForUnexpected))(e, handler)
 }
 
 func convertToGinConf(conf *cmconfig.ConfManagerConfig) beans.GinBeanConfig {

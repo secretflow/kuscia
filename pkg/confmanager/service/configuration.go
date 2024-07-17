@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/secretflow/kuscia/pkg/confmanager/errorcode"
 	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 const (
@@ -55,27 +55,27 @@ func NewConfigurationService(backend secretbackend.SecretDriver, enableAuth bool
 func (s *configurationService) CreateConfiguration(ctx context.Context, request *confmanager.CreateConfigurationRequest, ou string) confmanager.CreateConfigurationResponse {
 	if ou == "" {
 		return confmanager.CreateConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "tls ou must not be empty"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrRequestInvalidate, "tls ou must not be empty"),
 		}
 	}
 
 	if request.Id == "" {
 		return confmanager.CreateConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "confID must not be empty"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrRequestInvalidate, "confID must not be empty"),
 		}
 	}
 
 	if ou != GroupKuscia {
 		if err := s.backend.Set(s.groupPermissionKey(ou, request.Id), ""); err != nil {
 			return confmanager.CreateConfigurationResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateConfiguration, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrCreateConfiguration, err.Error()),
 			}
 		}
 	}
 
 	if err := s.backend.Set(request.Id, request.Content); err != nil {
 		return confmanager.CreateConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrCreateConfiguration, err.Error()),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrCreateConfiguration, err.Error()),
 		}
 	}
 
@@ -88,13 +88,13 @@ func (s *configurationService) CreateConfiguration(ctx context.Context, request 
 func (s *configurationService) QueryConfiguration(ctx context.Context, request *confmanager.QueryConfigurationRequest, ou string) confmanager.QueryConfigurationResponse {
 	if ou == "" {
 		return confmanager.QueryConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "tls ou must not be empty"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrRequestInvalidate, "tls ou must not be empty"),
 		}
 	}
 
 	if len(request.GetIds()) == 0 {
 		return confmanager.QueryConfigurationResponse{
-			Status: utils.BuildErrorResponseStatus(errorcode.ErrRequestInvalidate, "ids length must not be zero"),
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_ConfManagerErrRequestInvalidate, "ids length must not be zero"),
 		}
 	}
 

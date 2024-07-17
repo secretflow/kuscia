@@ -22,12 +22,12 @@ parameters:
 executors:
   linux_x64_executor: #  declares a reusable executor
     docker:
-      - image: secretflow/kuscia-ci:0.4
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.5
     resource_class: 2xlarge
     shell: /bin/bash --login -eo pipefail
   linux_aarch64_executor:
     docker:
-      - image: secretflow/ubuntu-base-ci:latest
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.5
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
 
@@ -36,28 +36,6 @@ commands:
     steps:
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: "install go"
-          command: |
-            ARCH=$(uname -m)
-            case "$ARCH" in
-            x86_64) ARCH="amd64";;
-            aarch64) ARCH="arm64";;
-            *) echo "Unsupported architecture"; exit 1;;
-            esac
-
-            GOLANG_DIR="/opt"
-            GOLANG_VERSION="1.19.7"
-            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-
-            if ! command -v go &> /dev/null; then
-            wget "$GOLANG_URL"
-
-            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-            echo 'export PATH=$PATH:/opt/go/bin' | tee -a ~/.bashrc
-            echo 'export PATH=$PATH:/opt/go/bin' >> $BASH_ENV
-            source ~/.bashrc
-            fi
       - run:
           name: "make build"
           command: |
@@ -78,7 +56,7 @@ jobs:
       - build_kuscia_deps
   image_publish:
     docker:
-      - image: secretflow/kuscia-ci:0.4
+      - image: cimg/deploy:2023.06.1
     shell: /bin/bash --login -eo pipefail
     steps:
       - attach_workspace:
@@ -88,7 +66,7 @@ jobs:
       - run:
           name: Build image and publish
           command: |
-            DEPS_IMAGE = secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:<< pipeline.parameters.DEPS_Tag >>
+            DEPS_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:<< pipeline.parameters.DEPS_Tag >>
              # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
 

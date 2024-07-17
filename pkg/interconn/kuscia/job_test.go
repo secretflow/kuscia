@@ -44,6 +44,7 @@ func makeMockJob(namespace, name string) *v1alpha1.KusciaJob {
 }
 
 func TestHandleUpdatedJob(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -91,6 +92,7 @@ func TestHandleUpdatedJob(t *testing.T) {
 }
 
 func TestHandleDeletedJob(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
@@ -138,6 +140,7 @@ func TestHandleDeletedJob(t *testing.T) {
 }
 
 func TestDeleteJobCascadedResources(t *testing.T) {
+	t.Parallel()
 	kj := makeMockJob("bob", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kj, kjs)
@@ -157,6 +160,7 @@ func TestDeleteJobCascadedResources(t *testing.T) {
 }
 
 func TestCreateMirrorJobs(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	jobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
@@ -178,6 +182,7 @@ func TestCreateMirrorJobs(t *testing.T) {
 }
 
 func TestBuildMirrorJobs(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	jobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
@@ -224,6 +229,7 @@ func TestBuildMirrorJobs(t *testing.T) {
 }
 
 func TestCreateOrUpdateJobSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
@@ -261,6 +267,7 @@ func TestCreateOrUpdateJobSummary(t *testing.T) {
 }
 
 func TestUpdateJobSummaryStage(t *testing.T) {
+	t.Parallel()
 	// cancel stage:  don't update
 	kj := makeMockJob("cross-domain", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
@@ -284,11 +291,12 @@ func TestUpdateJobSummaryStage(t *testing.T) {
 }
 
 func TestUpdateJobSummaryApproveStatus(t *testing.T) {
+	t.Parallel()
 	domainIDs := []string{"bob"}
 	// job approve status is empty, should return false
 	kj := makeMockJob("cross-domain", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
-	got := updateJobSummaryApproveStatus(kj, kjs, domainIDs)
+	got := updateJobSummaryApproveStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// approve status in job and job summary are same, should return false
@@ -300,7 +308,7 @@ func TestUpdateJobSummaryApproveStatus(t *testing.T) {
 	kjs.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
 		"bob": v1alpha1.JobAccepted,
 	}
-	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// approve status in job summary is empty but not empty in job, should return true
@@ -309,7 +317,7 @@ func TestUpdateJobSummaryApproveStatus(t *testing.T) {
 		"bob": v1alpha1.JobAccepted,
 	}
 	kjs = makeMockJobSummary("bob", "job-1")
-	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, true, got)
 
 	// approve status in job and job summary are different, should return true
@@ -317,20 +325,45 @@ func TestUpdateJobSummaryApproveStatus(t *testing.T) {
 	kj.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
 		"bob": v1alpha1.JobAccepted,
 	}
+	kjs = makeMockJobSummary("joke", "job-1")
+	kjs.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
+		"joke": v1alpha1.JobRejected,
+	}
+	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs, true)
+	assert.Equal(t, true, got)
+
+	// approve status in job and job summary are different for member, should return true
+	kj = makeMockJob("cross-domain", "job-1")
+	kj.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
+		"bob": v1alpha1.JobAccepted,
+	}
 	kjs = makeMockJobSummary("bob", "job-1")
 	kjs.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
-		"bob": v1alpha1.JobRejected,
+		"alice": v1alpha1.JobRejected,
 	}
-	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs, false)
 	assert.Equal(t, true, got)
+
+	// approve status in job and job summary are same for member, should return false
+	kj = makeMockJob("cross-domain", "job-1")
+	kj.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
+		"bob": v1alpha1.JobAccepted,
+	}
+	kjs = makeMockJobSummary("bob", "job-1")
+	kjs.Status.ApproveStatus = map[string]v1alpha1.JobApprovePhase{
+		"bob": v1alpha1.JobAccepted,
+	}
+	got = updateJobSummaryApproveStatus(kj, kjs, domainIDs, false)
+	assert.Equal(t, false, got)
 }
 
 func TestUpdateJobSummaryStageStatus(t *testing.T) {
+	t.Parallel()
 	domainIDs := []string{"bob"}
 	// job stage status is empty, should return false
 	kj := makeMockJob("cross-domain", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
-	got := updateJobSummaryStageStatus(kj, kjs, domainIDs)
+	got := updateJobSummaryStageStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// stage status in job and job summary are same, should return false
@@ -342,7 +375,7 @@ func TestUpdateJobSummaryStageStatus(t *testing.T) {
 	kjs.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
 		"bob": v1alpha1.JobCreateStageFailed,
 	}
-	got = updateJobSummaryStageStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryStageStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// stage status in job summary is empty but not empty in job, should return true
@@ -351,28 +384,53 @@ func TestUpdateJobSummaryStageStatus(t *testing.T) {
 		"bob": v1alpha1.JobCreateStageFailed,
 	}
 	kjs = makeMockJobSummary("bob", "job-1")
-	got = updateJobSummaryStageStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryStageStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, true, got)
 
 	// stage status in job and job summary are different, should return true
 	kj = makeMockJob("cross-domain", "job-1")
 	kj.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
-		"bob": v1alpha1.JobStopStageSucceeded,
+		"alice": v1alpha1.JobStopStageSucceeded,
+	}
+	kjs = makeMockJobSummary("joke", "job-1")
+	kjs.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
+		"joke": v1alpha1.JobCreateStageSucceeded,
+	}
+	got = updateJobSummaryStageStatus(kj, kjs, domainIDs, true)
+	assert.Equal(t, true, got)
+
+	// stage status in job and job summary are different for member, should return true
+	kj = makeMockJob("cross-domain", "job-1")
+	kj.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
+		"alice": v1alpha1.JobStopStageSucceeded,
 	}
 	kjs = makeMockJobSummary("bob", "job-1")
 	kjs.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
 		"bob": v1alpha1.JobCreateStageSucceeded,
 	}
-	got = updateJobSummaryStageStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryStageStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, true, got)
+
+	// stage status in job and job summary are same for member, should return false
+	kj = makeMockJob("cross-domain", "job-1")
+	kj.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
+		"bob": v1alpha1.JobCreateStageSucceeded,
+	}
+	kjs = makeMockJobSummary("bob", "job-1")
+	kjs.Status.StageStatus = map[string]v1alpha1.JobStagePhase{
+		"bob": v1alpha1.JobCreateStageSucceeded,
+	}
+	got = updateJobSummaryStageStatus(kj, kjs, domainIDs, true)
+	assert.Equal(t, false, got)
 }
 
 func TestUpdateJobSummaryPartyTaskCreateStatus(t *testing.T) {
+	t.Parallel()
 	domainIDs := []string{"bob"}
 	// job party task create status is empty, should return false
 	kj := makeMockJob("cross-domain", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
-	got := updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs)
+	got := updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// party task create status in job and job summary are same, should return false
@@ -390,7 +448,7 @@ func TestUpdateJobSummaryPartyTaskCreateStatus(t *testing.T) {
 			Phase:    v1alpha1.KusciaTaskCreateSucceeded,
 		}},
 	}
-	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, false, got)
 
 	// party task create status in job summary is empty but not empty in job, should return true
@@ -402,7 +460,7 @@ func TestUpdateJobSummaryPartyTaskCreateStatus(t *testing.T) {
 		}},
 	}
 	kjs = makeMockJobSummary("bob", "job-1")
-	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs)
+	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs, true)
 	assert.Equal(t, true, got)
 
 	// party task create status in job and job summary are different, should return true
@@ -413,6 +471,42 @@ func TestUpdateJobSummaryPartyTaskCreateStatus(t *testing.T) {
 			Phase:    v1alpha1.KusciaTaskCreateFailed,
 		}},
 	}
+	kjs = makeMockJobSummary("joke", "job-1")
+	kjs.Status.PartyTaskCreateStatus = map[string][]v1alpha1.PartyTaskCreateStatus{
+		"joke": {{
+			DomainID: "joke",
+			Phase:    v1alpha1.KusciaTaskCreateSucceeded,
+		}},
+	}
+	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs, true)
+	assert.Equal(t, true, got)
+
+	// party task create status in job and job summary are different for member, should return true
+	kj = makeMockJob("cross-domain", "job-1")
+	kj.Status.PartyTaskCreateStatus = map[string][]v1alpha1.PartyTaskCreateStatus{
+		"bob": {{
+			DomainID: "bob",
+			Phase:    v1alpha1.KusciaTaskCreateFailed,
+		}},
+	}
+	kjs = makeMockJobSummary("bob", "job-1")
+	kjs.Status.PartyTaskCreateStatus = map[string][]v1alpha1.PartyTaskCreateStatus{
+		"alice": {{
+			DomainID: "alice",
+			Phase:    v1alpha1.KusciaTaskCreateSucceeded,
+		}},
+	}
+	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs, false)
+	assert.Equal(t, true, got)
+
+	// party task create status in job and job summary are same for member, should return false
+	kj = makeMockJob("cross-domain", "job-1")
+	kj.Status.PartyTaskCreateStatus = map[string][]v1alpha1.PartyTaskCreateStatus{
+		"bob": {{
+			DomainID: "bob",
+			Phase:    v1alpha1.KusciaTaskCreateSucceeded,
+		}},
+	}
 	kjs = makeMockJobSummary("bob", "job-1")
 	kjs.Status.PartyTaskCreateStatus = map[string][]v1alpha1.PartyTaskCreateStatus{
 		"bob": {{
@@ -420,11 +514,12 @@ func TestUpdateJobSummaryPartyTaskCreateStatus(t *testing.T) {
 			Phase:    v1alpha1.KusciaTaskCreateSucceeded,
 		}},
 	}
-	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs)
-	assert.Equal(t, true, got)
+	got = updateJobSummaryPartyTaskCreateStatus(kj, kjs, domainIDs, false)
+	assert.Equal(t, false, got)
 }
 
 func TestUpdateJobSummaryTaskStatus(t *testing.T) {
+	t.Parallel()
 	// job task status is empty, should return false
 	kj := makeMockJob("cross-domain", "job-1")
 	kjs := makeMockJobSummary("bob", "job-1")
@@ -457,8 +552,10 @@ func TestUpdateJobSummaryTaskStatus(t *testing.T) {
 }
 
 func TestProcessJobAsPartner(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
+	kj2 := makeMockJob("cross-domain", "job-2")
+	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kj2)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0)
 	deploymentInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
 	jobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
@@ -512,14 +609,14 @@ func TestProcessJobAsPartner(t *testing.T) {
 	assert.Equal(t, nil, got)
 
 	// job summary doesn't exist in host cluster, should return nil
-	kj = makeMockJob("cross-domain", "job-2")
-	kj.Annotations[common.InitiatorAnnotationKey] = "alice"
-	kj.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
-	got = c.processJobAsPartner(ctx, kj)
+	kj2.Annotations[common.InitiatorAnnotationKey] = "alice"
+	kj2.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
+	got = c.processJobAsPartner(ctx, kj2)
 	assert.Equal(t, nil, got)
 }
 
 func TestUpdateHostJobSummary(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kjs := makeMockJobSummary("bob", "job-1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kjs)

@@ -24,6 +24,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
@@ -49,6 +50,7 @@ type KusciaAPIConfig struct {
 	DomainCertValue  *atomic.Value             `yaml:"-"`
 	ConfDir          string                    `yaml:"-"`
 	DomainID         string                    `yaml:"-"`
+	InterceptorLog   *nlog.NLog                `yaml:"-"`
 }
 
 type TokenConfig struct {

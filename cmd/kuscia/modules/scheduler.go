@@ -112,7 +112,7 @@ func (s *schedulerModule) Name() string {
 
 func RunSchedulerWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "kusciascheduler",
 		DestroyCh:         runCtx.Done(),

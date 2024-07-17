@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+// nolint:dulp
 package handler
 
 import (
@@ -170,7 +170,10 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 	condType := kusciaapisv1alpha1.TaskResourceCondReserving
 	condReason := "Create task resource from task resource group"
 
-	isPartner := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
+	isPartner, err := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
+	if err != nil {
+		return nil, err
+	}
 	minReservedPods := getMinReservedPods(party, isPartner)
 
 	now := metav1.Now()
@@ -231,7 +234,11 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 // buildTaskResourcePods is used to build task resource pods info.
 func (h *CreatingHandler) buildTaskResourcePods(namespace string, ps []kusciaapisv1alpha1.TaskResourceGroupPartyPod) ([]kusciaapisv1alpha1.TaskResourcePod, error) {
 	tPods := make([]kusciaapisv1alpha1.TaskResourcePod, 0, len(ps))
-	if utilsres.IsPartnerDomain(h.namespaceLister, namespace) {
+	isPartner, err := utilsres.IsPartnerDomain(h.namespaceLister, namespace)
+	if err != nil {
+		return nil, err
+	}
+	if isPartner {
 		for _, p := range ps {
 			tPod := kusciaapisv1alpha1.TaskResourcePod{
 				Name: p.Name,

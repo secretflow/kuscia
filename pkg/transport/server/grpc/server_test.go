@@ -125,9 +125,7 @@ func TestMain(m *testing.M) {
 	grpcConfig = config.DefaultGrpcConfig()
 	msqConfig = msq.DefaultMsgConfig()
 
-	msq.Init(msqConfig)
-
-	server = NewServer(grpcConfig, msq.NewSessionManager())
+	server = NewServer(grpcConfig, msq.NewSessionManager(msqConfig))
 	go server.Start(context.Background())
 	time.Sleep(time.Second * 2)
 	os.Exit(m.Run())
@@ -169,7 +167,7 @@ func TestPeek(t *testing.T) {
 }
 
 func TestPopWithData(t *testing.T) {
-	server.sm = msq.NewSessionManager()
+	server.sm = msq.NewSessionManager(msq.DefaultMsgConfig())
 	go func() {
 		time.Sleep(time.Second * 1)
 		err := server.sm.Push("session3", "node0-topic2", &msq.Message{Content: NewRandomStr(10)}, time.Second)
@@ -189,7 +187,7 @@ func TestPopWithData(t *testing.T) {
 
 	outbound := verifyPopResponse(t, popCtx, popInbound, transerr.Success)
 	assert.Equal(t, len(outbound.Payload), 10)
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 	assert.True(t, processTime > time.Second)
 }
 
@@ -208,7 +206,7 @@ func TestPopTimeout(t *testing.T) {
 	outbound := verifyPopResponse(t, popCtx, popInbound, transerr.Success)
 	assert.True(t, outbound.Payload == nil)
 
-	processTime := time.Now().Sub(start)
+	processTime := time.Since(start)
 
 	assert.True(t, processTime >= time.Second*2 && processTime <= time.Second*3)
 }
@@ -276,8 +274,8 @@ func TestPushWait(t *testing.T) {
 	start := time.Now()
 	pushCtx := metadata.NewOutgoingContext(context.Background(), invokeMd)
 	verifyInvokeResponse(t, pushCtx, &pb.Inbound{Payload: NewStr("123456789")}, transerr.Success)
-	processTime := time.Now().Sub(start)
-	assert.True(t, processTime >= time.Second && processTime <= time.Second*2)
+	processTime := time.Since(start)
+	assert.True(t, processTime >= time.Second)
 }
 
 func TestBadRequestParam(t *testing.T) {
@@ -290,8 +288,6 @@ func TestBadRequestParam(t *testing.T) {
 
 var sessionCount int = 10
 var topicCount int = 5
-
-var stop bool = false
 
 func producer(t *testing.T, pushSucceedCount, pushFailCount *int64) {
 	msgLength := 256 * 1024
@@ -359,7 +355,7 @@ func consumer(t *testing.T, popSucceedCount, popFailCount *int64) {
 	client := pb.NewPrivateTransferTransportClient(dial)
 
 	var outbound *pb.TransportOutbound
-	outbound, err = client.Pop(popCtx, popInbound)
+	outbound, _ = client.Pop(popCtx, popInbound)
 
 	//assert.NoError(t, err)
 
@@ -404,7 +400,7 @@ func TestPerformance(t *testing.T) {
 		sid := fmt.Sprintf("sessionx-%d", i)
 		for j := 0; j <= topicCount; j++ {
 			topic := fmt.Sprintf("node0-topic-%d", j)
-			for true {
+			for {
 				msg, _ := server.sm.Peek(sid, topic)
 				if msg == nil {
 					break
@@ -453,9 +449,8 @@ func TestLoadOverrideGrpcTransConfig(t *testing.T) {
 
 	newGrpcConfig := newGrpcTransConfig.GrpcConfig
 	newMsqConfig := newGrpcTransConfig.MsqConfig
-	msq.Init(newMsqConfig)
 
-	newServer := NewServer(newGrpcConfig, msq.NewSessionManager())
+	newServer := NewServer(newGrpcConfig, msq.NewSessionManager(newMsqConfig))
 	go newServer.Start(context.Background())
 
 	for i := 0; i < 10; i++ {

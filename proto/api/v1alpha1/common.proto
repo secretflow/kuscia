@@ -61,3 +61,7 @@ enum FileFormat {
 	CSV     = 1;
 	BINARY  = 2;
 }
+
+message ErrorResponse {
+		Status status = 1;
+}

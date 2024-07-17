@@ -66,6 +66,11 @@ func (fc *FackCmd) SetOOMScore() error {
 	return nil
 }
 
+func (fc *FackCmd) Stop() error {
+	nlog.Info("fack cmd.stop")
+	return nil
+}
+
 func newMockCmd(startMock func() error, waitMock func() error) Cmd {
 	fack := FackCmd{
 		startMock: startMock,
@@ -160,7 +165,7 @@ func TestSupervisorRun_MaxFailedCount(t *testing.T) {
 	})
 
 	assert.NotNil(t, err)
-	assert.Equal(t, 5, count)
+	assert.Equal(t, 6, count)
 }
 
 func TestSupervisorRun_RestartAlways(t *testing.T) {

@@ -26,6 +26,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/embedstrings"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
@@ -67,9 +68,28 @@ func NewAgent(i *Dependencies) Module {
 	conf.AllowPrivileged = i.Agent.AllowPrivileged
 	conf.Provider.CRI.RemoteImageEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
 	conf.Provider.CRI.RemoteRuntimeEndpoint = fmt.Sprintf("unix://%s", i.ContainerdSock)
-	conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
-	conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
-	conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
+
+	if i.Image != nil && len(i.Image.Registries) > 0 {
+		defaultRegIdx := 0 // use first registry as default registry
+		for idx, reg := range i.Image.Registries {
+			nlog.Infof("registry(%s), endpoint(%s)", reg.Name, reg.Endpoint)
+			conf.Registry.Allows = append(conf.Registry.Allows, config.RegistryAuth{
+				Repository: reg.Endpoint,
+				Username:   reg.UserName,
+				Password:   reg.Password,
+			})
+
+			if i.Image.DefaultRegistry == reg.Name {
+				defaultRegIdx = idx
+			}
+		}
+
+		conf.Registry.Default = conf.Registry.Allows[defaultRegIdx]
+	} else { // deprecated. remove it 1year later
+		conf.Registry.Default.Repository = os.Getenv("REGISTRY_ENDPOINT")
+		conf.Registry.Default.Username = os.Getenv("REGISTRY_USERNAME")
+		conf.Registry.Default.Password = os.Getenv("REGISTRY_PASSWORD")
+	}
 	conf.Plugins = i.Agent.Plugins
 
 	conf.KusciaAPIProtocol = i.KusciaAPI.Protocol
@@ -102,7 +122,7 @@ func (agent *agentModule) Run(ctx context.Context) error {
 }
 
 func (agent *agentModule) execPreCmds(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "sh", "-c", filepath.Join(agent.conf.RootDir, "scripts/deploy/cgroup_pre_detect.sh"))
+	cmd := exec.CommandContext(ctx, "sh", "-c", embedstrings.CGrouptPreDetectScript)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
@@ -126,7 +146,7 @@ func (agent *agentModule) Name() string {
 
 func RunAgentWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(2 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(2 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "agent",
 		DestroyCh:         runCtx.Done(),

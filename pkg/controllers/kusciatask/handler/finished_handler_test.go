@@ -32,6 +32,7 @@ import (
 )
 
 func TestFinishedHandler_Handle(t *testing.T) {
+	t.Parallel()
 	testKusciaTask := &kusciaapisv1alpha1.KusciaTask{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "abc",

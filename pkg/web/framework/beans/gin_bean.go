@@ -107,6 +107,7 @@ func (b *GinBean) Init(e framework.ConfBeanRegistry) error {
 func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error {
 	mux := http.NewServeMux()
 	mux.Handle("/", b.Engine)
+
 	normalizeConfig(&b.GinBeanConfig)
 	addr := fmt.Sprintf(":%d", b.Port)
 	if b.IP != "" {
@@ -120,6 +121,7 @@ func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error
 		MaxHeaderBytes: *b.MaxHeaderBytes,
 		IdleTimeout:    time.Duration(*b.IdleTimeout) * time.Second,
 	}
+
 	// init server tls config
 	if b.TLSServerConfig != nil {
 		var err error

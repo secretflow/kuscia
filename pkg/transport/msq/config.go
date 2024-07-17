@@ -48,12 +48,6 @@ type Config struct {
 	CleanIntervalSeconds int64 `yaml:"cleanIntervalSeconds,omitempty"`
 }
 
-var config *Config
-
-func Init(conf *Config) {
-	config = conf
-}
-
 func DefaultMsgConfig() *Config {
 	return &Config{
 		TotalByteSizeLimit:         1024 * 1024 * 1024 * 16,

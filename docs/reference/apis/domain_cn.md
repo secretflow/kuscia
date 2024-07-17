@@ -29,17 +29,17 @@
 | 字段          | 类型                                           | 选填 | 描述                                                                                                                                            |
 |-------------|----------------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | header      | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                       |
-| domain_id   | string                                       | 必填 | 节点 ID 需要符合 DNS 子域名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
-| role        | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                  |
-| cert        | string                                       | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)                                                                                       |
-| auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点到中心的授权模式                                                                                                                                    |
-| master_domain_id | string                                  | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+| domain_id   | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| role        | string                                       | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md) |
+| cert        | string                                       | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md) |
+| auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点的授权模式 |
+| master_domain_id | string                                  | 可选 | Master Domain ID（未来预留字段），中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填；普通中心化模式，点对点模式不需要填写 |
 
 #### 响应（CreateDomainResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -59,7 +59,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
  -d '{
   "domain_id": "bob",
   "role": "partner",
-  "cert": "base64 of bob domain.crt",
+  "cert": "bob-domain.crt",
   "auth_center": {
     "authentication_type": "Token",
     "token_gen_method": "UID-RSA-GEN"
@@ -107,14 +107,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 | header    | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                      |
 | domain_id | string                                       | 必填 | 节点 ID                                                        |
 | role      | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| cert      | string                                       | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
-|master_domain_id             | string                                      | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+| cert      | string                                       | 可选 | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+|master_domain_id             | string                     | 可选 | Master Domain ID（未来预留字段），中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填 ；普通中心化模式，点对点模式不需要填写 |
 
 #### 响应（UpdateDomainResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -183,9 +183,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/update' \
 
 #### 响应（DeleteDomainResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -246,18 +246,18 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
 
 #### 响应（QueryDomainResponse）
 
-| 字段                         | 类型                                          | 选填 | 描述                                                           |
-|----------------------------|---------------------------------------------|----|--------------------------------------------------------------|
-| status                     | [Status](summary_cn.md#status)              | 必填 | 状态信息                                                         |
-| data                       | QueryDomainResponseData                     |    |                                                              |
-| data.domain_id             | string                                      | 必填 | 节点 ID                                                        |
-| data.role                  | string                                      | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| data.cert                  | string                                      | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
-| data.annotations           | map[string]string                           | 可选 | 节点的额外信息，比如是否是内置节点等                                           |
-| data.auth_center           | [AuthCenter](#auth-center)                  | 可选 | 节点到中心的授权模式                                                   |
-| data.node_statuses         | [NodeStatus](#node-status)[]                | 必填 | 物理节点状态                                                       |
-| data.deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 必填 | 部署令牌状态                                                       |
-|master_domain_id             | string                                      | 可选 | Master Domain ID，不填默认自身，中心化集群Lite节点必填                                                                                                                                       |
+| 字段                         | 类型                                          | 描述                                                           |
+|----------------------------|---------------------------------------------|--------------------------------------------------------------|
+| status                     | [Status](summary_cn.md#status)              |  状态信息                                                         |
+| data                       | QueryDomainResponseData                     |                                                              |
+| data.domain_id             | string                                      |  节点 ID                                                        |
+| data.role                  | string                                      |  角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
+| data.cert                  | string                                      | 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+| data.annotations           | map[string]string                           | 节点的额外信息，比如是否是内置节点等 |
+| data.auth_center           | [AuthCenter](#auth-center)                  |  节点到中心的授权模式            |
+| data.node_statuses         | [NodeStatus](#node-status)[]                |  物理节点状态                                                       |
+| data.deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 部署令牌状态                                                       |
+| master_domain_id             | string                                      |  Master Domain ID（未来预留字段） |
 
 #### 请求示例
 
@@ -337,11 +337,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
 
 #### 响应（ BatchQueryDomainResponse）
 
-| 字段           | 类型                             | 选填 | 描述   |
-|--------------|--------------------------------|----|------|
-| status       | [Status](summary_cn.md#status) | 必填 | 状态信息 |
-| data         | BatchQueryDomainResponseData   | 必填 |      |
-| data.domains | [Domain](#domain-entity)[]     | 必填 | 节点列表 |
+| 字段           | 类型                             | 描述   |
+|--------------|--------------------------------|------|
+| status       | [Status](summary_cn.md#status) | 状态信息 |
+| data         | BatchQueryDomainResponseData   |     |
+| data.domains | [Domain](#domain-entity)[]     |  节点列表 |
 
 
 #### 请求示例
@@ -406,25 +406,25 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 
 ### Domain
 
-| 字段                    | 类型                                          | 选填 | 描述                                                           |
-|-----------------------|---------------------------------------------|----|--------------------------------------------------------------|
-| domain_id             | string                                      | 必填 | 节点 ID                                                        |
-| role                  | string                                      | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| cert                  | string                                      | 可选 | BASE64 的计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
-| node_statuses         | [NodeStatus](#node-status)[]                | 必填 | 真实物理节点状态                                                     |
-| deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 必填 | 部署令牌状态                                                       |
+| 字段                    | 类型                                          | 描述                                                           |
+|-----------------------|---------------------------------------------|--------------------------------------------------------------|
+| domain_id             | string                                      | 节点 ID                                                        |
+| role                  | string                                      | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
+| cert                  | string                                      | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
+| node_statuses         | [NodeStatus](#node-status)[]                | 真实物理节点状态                                                     |
+| deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 部署令牌状态                                                       |
 
 {#node-status}
 
 ### NodeStatus
 
-| 字段                   | 类型     | 选填 | 描述                                           |
-|----------------------|--------|----|----------------------------------------------|
-| name                 | string | 必填 | 节点名称                                         |
-| status               | string | 必填 | 节点状态                                         |
-| version              | string | 必填 | 节点 Agent 版本                                  |
-| last_heartbeat_time  | string | 必填 | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
-| last_transition_time | string | 必填 | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
+| 字段                   | 类型     | 描述                                           |
+|----------------------|--------|----------------------------------------------|
+| name                 | string | 节点名称                                         |
+| status               | string | 节点状态                                         |
+| version              | string | 节点 Agent 版本                                  |
+| last_heartbeat_time  | string | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
+| last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 
 {#auth-center}
 
@@ -432,15 +432,15 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 
 | 字段                  | 类型     | 选填 | 描述                                 |
 |---------------------|--------|----|------------------------------------|
-| authentication_type | string | 必填 | 节点到中心授权类型，目前仅支持 Token              |
-| token_gen_method    | string | 必填 | 节点到中心 Token 生成类型，目前仅支持 UID-RSA-GEN |
+| authentication_type | string | 必填 | 目前仅支持 Token              |
+| token_gen_method    | string | 必填 | Token 生成类型，中心化模式请填 `UID-RSA-GEN`，点对点模式请填写 `RSA-GEN` |
 
 {#deploy-token-status}
 
 ### DeployTokenStatus
 
-| 字段                   | 类型     | 选填 | 描述                                           |
-|----------------------|--------|----|----------------------------------------------|
-| token                | string | 必填 | 部署令牌                                         |
-| state                | string | 必填 | 部署令牌状态 used, unsed                           |
-| last_transition_time | string | 必填 | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
+| 字段                   | 类型     | 描述                                           |
+|----------------------|--------|----------------------------------------------|
+| token                | string | 部署令牌                                         |
+| state                | string | 部署令牌状态 used, unsed                           |
+| last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |

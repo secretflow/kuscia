@@ -55,7 +55,6 @@ func (h *PendingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool
 	validatedCond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourceGroupValidated)
 	utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionTrue, "")
 	if err := validate(trg); err != nil {
-		nlog.Error(err)
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
 		utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionFalse,
 			fmt.Sprintf("Validate task resouce group failed, %v", err.Error()))
@@ -92,25 +91,6 @@ func validate(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
 
 	if totalParty == 0 {
 		return fmt.Errorf("parties in task resource group %v can't be empty", trg.Name)
-	}
-
-	foundInitiator := false
-	for _, party := range trg.Spec.Parties {
-		if party.DomainID == trg.Spec.Initiator {
-			foundInitiator = true
-			break
-		}
-	}
-
-	for _, party := range trg.Spec.OutOfControlledParties {
-		if party.DomainID == trg.Spec.Initiator {
-			foundInitiator = true
-			break
-		}
-	}
-
-	if !foundInitiator {
-		return fmt.Errorf("task resource group initiator %v should be one of parties", trg.Spec.Initiator)
 	}
 
 	return nil

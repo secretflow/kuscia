@@ -57,7 +57,7 @@ capacity:
 
 # agent 镜像配置
 image:
-  pullPolicy: #使用镜像仓库|使用本地
+  pullPolicy: #是否允许拉取远程镜像(remote)|仅使用本地已导入镜像(local)
   defaultRegistry: ""
   registries:
     - name: ""
@@ -80,7 +80,7 @@ enableWorkloadApprove: false
 
 ### 配置项详解
 - `mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, 不同部署模式详情请参考[这里](../reference/architecture_cn)
-- `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 DNS 子域名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names), 生产环境使用时建议将 domainID 设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite
+- `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names), 生产环境使用时建议将 domainID 设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite
 - `domainKeyData`: 节点私钥配置, 用于节点间的通信认证（通过 2 方的证书来生成通讯的身份令牌），节点应用的证书签发（为了加强通讯安全性，Kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。）。可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
 - `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取Token](../deployment/deploy_master_lite_cn.md#lite-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](./../reference/troubleshoot/private_key_loss.md)
@@ -95,17 +95,17 @@ enableWorkloadApprove: false
   - `memory`: 内存大小，如 8Gi
   - `pods`: pods 数，如 500
   - `storage`: 磁盘容量，如 100Gi
-- `image`: 节点镜像配置, 暂未实现
-  - `pullPolicy`: 镜像策略，使用本地镜像仓库还是远程镜像仓库
-  - `defaultRegistry`: 默认镜像
-  - `registries`: 镜像仓库配置，类型数组
+- `image`: 节点镜像配置, 目前仅支持配置1个镜像仓库（更多请参考：[自定义镜像仓库](../reference/troubleshoot/custom_registry.md)）
+  - `pullPolicy`: [暂不支持] 镜像策略，使用本地镜像仓库还是远程镜像仓库；可选值有remote/local，不区分大小写，默认为local；当为remote时，如果发现本地镜像不存在，会根据registry账密自动拉取远程的镜像；如果为local时，镜像需要手动导入kuscia内，如果镜像没有导入kuscia，任务会启动失败。local模式因为不拉取远程镜像，安全性会更高，但会有易用性的损失，用户可结合业务场景自行选择。
+  - `defaultRegistry`: 默认镜像仓库(对应registries中其中一个registry的name字段)
+  - `registries`: 镜像仓库配置。
     - `name`: 镜像仓库名
     - `endpoint`: 镜像仓库地址
-    - `username`: 镜像仓库用户名
-    - `password`: 镜像仓库密码
+    - `username`: 镜像仓库用户名（公开仓库可不填）
+    - `password`: 镜像仓库密码（公开仓库可不填）
 - `datastoreEndpoint`: 数据库连接串，不填默认使用 sqlite。示例：`mysql://username:password@tcp(hostname:3306)/database-name`使用mysql数据库存储需要符合以下规范：
-  - database 数据库名称暂不支持 "-"。
-  - 创建数据库和表 kine ，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。
+  - 提前创建好 Database。
+  - 创建 kine 表，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。
     - 手动建表：如果机构建表是被管控的，或者提供的数据库账号没有建表权限，可以提前手动建立好数据表，kuscia 识别到数据表存在后，会自动跳过建表。
     - 自动建表：如果提供的数据库账号有建表权限（账号具有`DDL+DML`权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 kuscia 会启动失败。
   - 数据库账户对表中字段至少具有 select、insert、update、delete 操作权限。
@@ -121,21 +121,73 @@ enableWorkloadApprove: false
 - [Master 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-master.yaml)
 - [Autonomy 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-autonomy.yaml)
 
+### 快速生成配置文件
+Kuscia 为您提供了快速生成 kuscia.yaml 文件的小工具，参数及示例如下：
+
+- `-e, --datastore-endpoint <string>`
+  - 描述：指定用于连接数据存储的数据库数据源名称（DSN）连接字符串。
+  - 使用示例：`--datastore-endpoint "mysql://username:password@tcp(hostname:3306)/database-name"`
+
+- `-d, --domain <string>`
+  - 描述：设定必须遵守 DNS 子域命名规则的 Domain ID，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)。
+  - 使用示例：`--domain "alice"`
+
+- `-f, --domain-key-file <string>`
+  - 描述：指定域的 RSA 私钥文件的路径。如果未提供，将生成新的域 RSA 密钥。
+  - 使用示例：`--domain-key-file "/path/to/domain/key.pem"`
+
+- `--enable-workload-approve`
+  - 描述：设置后可自动批准工作负载的配置，只在 master 以及 autonomy 模式下才会生成该配置属性，默认为 false，使用该参数即表示该值为 true。
+  - 使用示例：`--enable-workload-approve`
+
+- `-t, --lite-deploy-token <string>`
+  - 描述：用于验证连接到主服务器时由 Lite 客户端使用的部署令牌。
+  - 使用示例：`--lite-deploy-token "abcdefg"`
+
+- `-l, --log-level <string>`
+  - 描述：设置日志记录级别。可接受的值有 INFO、DEBUG 和 WARN，默认为 INFO。
+  - 使用示例：`--log-level "DEBUG"`
+
+- `-m, --master-endpoint <string>`
+  - 描述：指定 Lite 客户端应连接的主服务器端点。
+  - 使用示例：`--master-endpoint "https://1.1.1.1:18080"`
+
+- `--mode <string>`
+  - 描述：设置域的部署模式。有效选项为 Master、Lite 和 Autonomy（不区分大小写）。
+  - 使用示例：`--mode "Lite"`
+
+- `-p, --protocol <string>`
+  - 描述：指定用于 KusciaAPI 和网关的协议。选项包括 NOTLS、TLS 和 MTLS，不指定时默认为 MTLS。
+  - 使用示例：`--protocol "TLS"`
+
+- `-r, --runtime <string>`
+  - 描述：定义要使用的域运行时。有效选项为 runc、runk 和 runp，默认为 runc。
+  - 使用示例：`--runtime "runc"`
+
+Kuscia init 使用示例如下：
+```bash
+# 指定 Kuscia 使用的镜像版本，这里使用 latest 版本
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+
+# 命令执行后建议提前检查下生成的文件，避免配置文件错误导致的部署启动问题
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "abcdefg" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
+```
+
 ## 修改默认配置文件
-如果使用 [start_standalone.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/start_standalone.sh) 或者 [deploy.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/deploy.sh) 脚本部署的 kuscia，kuscia.yaml 文件路径默认是在以下位置（其他部署模式可以借鉴）。
+如果使用 [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh) 脚本部署的 Kuscia，kuscia.yaml 文件路径默认是在以下位置（其他部署模式可以借鉴）。
 - 宿主机路径：
-  - master：\${PWD}/\${USER}-kuscia-master/kuscia.yaml
-  - lite：\${PWD}/\${USER}-kuscia-lite-domainID/kuscia.yaml
-  - autonomy：\${PWD}/\${USER}-kuscia-autonomy-domainID/kuscia.yaml
+  - master：{PWD}/{USER}-kuscia-master/kuscia.yaml
+  - lite：{PWD}/{USER}-kuscia-lite-domainID/kuscia.yaml
+  - autonomy：{PWD}/{USER}-kuscia-autonomy-domainID/kuscia.yaml
 - 容器内路径：/home/kuscia/etc/conf/kuscia.yaml
 
 宿主机路径下修改 kuscia.yaml 配置后，重启容器 `docker restart ${container_name}` 生效。
 > Tips：如果要修改 Protocol 字段，请确保对该字段有充足的理解，否则会导致 KusciaAPI 调用失败或者和其他节点的通讯异常。详情参考[Protocol 通信协议](../reference/troubleshoot/protocol_describe.md)。
 
 ## 指定配置文件
-如果使用 [deploy.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/deploy.sh) 脚本部署的 Kuscia，可以指定配置文件，示例：
+如果使用 [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh) 脚本部署的 Kuscia，可以指定配置文件，示例：
 ```bash
 # -c 参数传递的是指定的 Kuscia 配置文件路径。
-./deploy.sh autonomy -n alice -p 11080 -k 8082 -c kuscia-autonomy.yaml
+./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081
 ```
 其中，kuscia-autonomy.yaml 可参考 [配置示例](#configuration-example)

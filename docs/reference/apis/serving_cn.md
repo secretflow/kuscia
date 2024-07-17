@@ -28,7 +28,7 @@
 | 字段                   | 类型                                           | 选填 | 描述                                                                                                                            |
 |----------------------|----------------------------------------------|----|-------------------------------------------------------------------------------------------------------------------------------|
 | header               | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                       |
-| serving_id           | string                                       | 必填 | ServingID，满足[DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| serving_id           | string                                       | 必填 | ServingID，满足[RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | serving_input_config | string                                       | 必填 | 预测配置                                                                                                                          |
 | initiator            | string                                       | 必填 | 发起方节点ID                                                                                                                       |
 | parties              | [ServingParty](#serving-party)[]             | 必填 | 参与方信息                                                                                                                         |
@@ -36,9 +36,9 @@
 
 #### 响应（CreateServingResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -133,9 +133,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
 
 #### 响应（UpdateServingResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -226,9 +226,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
 
 #### 响应（DeleteServingResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 
 #### 请求示例
@@ -278,14 +278,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' \
 
 #### 响应（QueryServingResponse）
 
-| 字段                        | 类型                                            | 选填 | 描述        |
-|---------------------------|-----------------------------------------------|----|-----------|
-| status                    | [Status](summary_cn.md#status)                | 必填 | 状态信息      |
-| data                      | QueryServingResponseData                      |    |           |
-| data.serving_input_config | string                                        | 必填 | 预测配置      |
-| data.initiator            | string                                        | 必填 | 发起方节点ID   |
-| data.parties              | [ServingParty](#serving-party)[]              | 必填 | 参与方信息     |
-| data.status               | [ServingStatusDetail](#serving-status-detail) | 必填 | Serving状态 |
+| 字段                        | 类型                                            | 描述        |
+|---------------------------|-----------------------------------------------|-----------|
+| status                    | [Status](summary_cn.md#status)                | 状态信息      |
+| data                      | QueryServingResponseData                      |         |
+| data.serving_input_config | string                                        | 预测配置      |
+| data.initiator            | string                                        | 发起方节点ID   |
+| data.parties              | [ServingParty](#serving-party)[]              | 参与方信息     |
+| data.status               | [ServingStatusDetail](#serving-status-detail) | Serving状态 |
 
 #### 请求示例
 
@@ -445,11 +445,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 
 #### 响应（BatchQueryServingStatusResponse）
 
-| 字段            | 类型                                  | 选填 | 描述          |
-|---------------|-------------------------------------|----|-------------|
-| status        | [Status](summary_cn.md#status)      | 必填 | 状态信息        |
-| data          | BatchQueryServingStatusResponseData |    |             |
-| data.servings | [ServingStatus](#serving-status)[]  | 必填 | Serving状态列表 |
+| 字段            | 类型                                  | 描述          |
+|---------------|-------------------------------------|-------------|
+| status        | [Status](summary_cn.md#status)      | 状态信息        |
+| data          | BatchQueryServingStatusResponseData |            |
+| data.servings | [ServingStatus](#serving-status)[]  | Serving状态列表 |
 
 #### 请求示例
 
@@ -560,42 +560,42 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 
 ### ServingStatus
 
-| 字段         | 类型                                            | 选填 | 描述          |
-|------------|-----------------------------------------------|----|-------------|
-| serving_id | string                                        | 必填 | ServingID   |
-| status     | [ServingStatusDetail](#serving-status-detail) | 必填 | Serving状态详情 |
+| 字段         | 类型                                            | 描述          |
+|------------|-----------------------------------------------|-------------|
+| serving_id | string                                        | ServingID   |
+| status     | [ServingStatusDetail](#serving-status-detail) | Serving状态详情 |
 
 
 {#serving-status-detail}
 
 ### ServingStatusDetail
 
-| 字段                | 类型                                            | 选填 | 描述                           |
-|-------------------|-----------------------------------------------|----|------------------------------|
-| state             | string                                        | 必填 | Serving状态，参考 [State](#state) |
-| reason            | string                                        | 可选 | Serving处于该状态的原因，一般用于描述失败的状态  |
-| message           | string                                        | 可选 | Serving处于该状态的详细信息，一般用于描述失败的状态 |
-| total_parties     | int32                                         | 必填 | 参与方总数                        |
-| available_parties | int32                                         | 必填 | 可用参与方数量                      |
-| create_time       | string                                        | 必填 | 创建时间                         |
-| party_statuses    | [PartyServingStatus](#party-serving-status)[] | 必填 | 参与方状态                        |
+| 字段                | 类型                                            | 描述                           |
+|-------------------|-----------------------------------------------|------------------------------|
+| state             | string                                        | Serving状态，参考 [State](#state) |
+| reason            | string                                        | Serving处于该状态的原因，一般用于描述失败的状态  |
+| message           | string                                        | Serving处于该状态的详细信息，一般用于描述失败的状态 |
+| total_parties     | int32                                         | 参与方总数                        |
+| available_parties | int32                                         | 可用参与方数量                      |
+| create_time       | string                                        | 创建时间                         |
+| party_statuses    | [PartyServingStatus](#party-serving-status)[] | 参与方状态                        |
 
 
 {#party-serving-status}
 
 ### PartyServingStatus
 
-| 字段                   | 类型                                                | 选填 | 描述                     |
-|----------------------|---------------------------------------------------|----|------------------------|
-| domain_id            | string                                            | 必填 | 节点ID                   |
-| role                 | string                                            | 可选 | 角色                     |
-| state                | string                                            | 必填 | 状态，参考 [State](#state)  |
-| replicas             | int32                                             | 必填 | 应用副本总数                 |
-| available_replicas   | int32                                             | 必填 | 应用可用副本数                |
-| unavailable_replicas | int32                                             | 必填 | 应用不可用副本数               |
-| updatedReplicas      | int32                                             | 必填 | 最新版本的应用副本数             |
-| create_time          | string                                            | 必填 | 创建时间                   |
-| endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 必填 | 应用对外暴露的访问地址信息          |
+| 字段                   | 类型                                                | 描述                     |
+|----------------------|---------------------------------------------------|------------------------|
+| domain_id            | string                                            | 节点ID                   |
+| role                 | string                                            | 角色                     |
+| state                | string                                            | 状态，参考 [State](#state)  |
+| replicas             | int32                                             | 应用副本总数                 |
+| available_replicas   | int32                                             | 应用可用副本数                |
+| unavailable_replicas | int32                                             | 应用不可用副本数               |
+| updatedReplicas      | int32                                             | 最新版本的应用副本数             |
+| create_time          | string                                            | 创建时间                   |
+| endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 应用对外暴露的访问地址信息          |
 
 
 {#serving-party-endpoint}

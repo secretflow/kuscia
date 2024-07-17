@@ -28,9 +28,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/secretbackend"
 	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -86,7 +87,7 @@ func TestCreateDomainDataSource_InfoKeyNotExists(t *testing.T) {
 		InfoKey: &makeInfoKey,
 	})
 
-	assert.EqualValues(t, res.Status.Code, errorcode.ErrCreateDomainDataSource)
+	assert.EqualValues(t, res.Status.Code, errorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource)
 }
 
 func TestUpdateDomainDataSource(t *testing.T) {
@@ -244,7 +245,7 @@ func TestListDomainDataSource_DomainNotExist(t *testing.T) {
 	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
 		DomainId: "mock-domain-id",
 	})
-	assert.Equal(t, int32(errorcode.ErrListDomainDataSource), res.Status.Code)
+	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrListDomainDataSource), res.Status.Code)
 }
 
 func TestListDomainDataSource_InfoErr(t *testing.T) {
@@ -265,7 +266,7 @@ func TestListDomainDataSource_InfoErr(t *testing.T) {
 	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
 		DomainId: mockDomainId,
 	})
-	assert.Equal(t, int32(errorcode.ErrListDomainDataSource), res.Status.Code)
+	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrListDomainDataSource), res.Status.Code)
 }
 
 func makeDomainDataSourceService(t *testing.T, conf *config.KusciaAPIConfig) IDomainDataSourceService {

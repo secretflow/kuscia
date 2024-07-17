@@ -12,17 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
 	"context"
+	"encoding/base64"
+	"strings"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 	"github.com/secretflow/kuscia/test/util"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateDomain(t *testing.T) {
@@ -32,13 +35,29 @@ func TestCreateDomain(t *testing.T) {
 	assert.NotNil(t, res)
 }
 
+func TestCreateDomain_NameError(t *testing.T) {
+	t.Parallel()
+	ds := &domainService{}
+	res := ds.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: "",
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate), res.Status.Code)
+
+	res = ds.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
+		DomainId: "master",
+	})
+	assert.NotNil(t, res)
+	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate), res.Status.Code)
+}
+
 func TestCreateDomainWithCertError(t *testing.T) {
 	res := kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
 		DomainId: kusciaAPIDS.domainID,
 		Cert:     "cert",
 	})
 	assert.NotNil(t, res)
-	assert.Equal(t, res.Status.Code, int32(errorcode.ErrRequestValidate))
+	assert.Equal(t, res.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate))
 }
 
 func TestCreateDomainWithCertSuccess(t *testing.T) {
@@ -71,7 +90,7 @@ func TestUpdateDomainWithCertError(t *testing.T) {
 		Cert:     "cert",
 	})
 	assert.NotNil(t, res)
-	assert.Equal(t, res.Status.Code, int32(errorcode.ErrRequestValidate))
+	assert.Equal(t, res.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate))
 }
 
 func TestUpdateDomainWithCertSuccess(t *testing.T) {
@@ -98,5 +117,45 @@ func TestDeleteDomain(t *testing.T) {
 	queryRes := kusciaAPIDS.QueryDomain(context.Background(), &kusciaapi.QueryDomainRequest{
 		DomainId: kusciaAPIDS.domainID,
 	})
-	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrDomainNotExists))
+	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrDomainNotExists))
+}
+
+func TestGetValidCert(t *testing.T) {
+	t.Parallel()
+
+	rawContent := util.MakeCertString(t)
+
+	//var res string
+	var err error
+
+	ds := &domainService{}
+	assert.NotNil(t, ds)
+
+	_, err = ds.getValidCert(rawContent)
+	assert.NoError(t, err)
+
+	// base64 1 times
+	input1 := base64.StdEncoding.EncodeToString([]byte(rawContent))
+	_, err = ds.getValidCert(input1)
+	assert.NoError(t, err)
+
+	// remove begin/end
+	input2 := strings.TrimSuffix(strings.TrimPrefix(rawContent, "-----BEGIN CERTIFICATE-----"), "-----END CERTIFICATE-----")
+	_, err = ds.getValidCert(input2)
+	assert.NoError(t, err)
+
+	// remove all "\n"
+	input3 := strings.ReplaceAll(input2, "\n", "")
+	_, err = ds.getValidCert(input3)
+	assert.NoError(t, err)
+
+	// base64 2 times
+	input4 := base64.StdEncoding.EncodeToString([]byte(input1))
+	_, err = ds.getValidCert(input4)
+	assert.NoError(t, err)
+
+	// has "\r"
+	input5 := strings.ReplaceAll(rawContent, "\n", "\r\n")
+	_, err = ds.getValidCert(input5)
+	assert.NoError(t, err)
 }

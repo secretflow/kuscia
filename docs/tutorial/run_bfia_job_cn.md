@@ -125,6 +125,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-ss-lr
+  namespace: cross-domain
 spec:
   initiator: alice
   tasks:
@@ -215,6 +216,7 @@ metadata:
     kuscia.secretflow/interconn-protocol-type: bfia
     kuscia.secretflow/self-cluster-as-initiator: "true"
   name: job-ss-lr
+  namespace: cross-domain
   resourceVersion: "50438"
   uid: 408a03ae-69c2-4fa8-a638-b47b6dbf530f
 spec:
@@ -312,7 +314,7 @@ more /home/kuscia/var/storage/job-ss-lr-guest-0/job-ss-lr-{random-id}-result
 当你想清理这个 KusciaJob 时，你可以通过下面的命令完成：
 
 ```shell
-kubectl delete kj job-ss-lr
+kubectl delete kj job-ss-lr -n cross-domain
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。

@@ -41,8 +41,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	flight2 "github.com/secretflow/kuscia/pkg/datamesh/flight"
-	"github.com/secretflow/kuscia/pkg/datamesh/flight/example"
+	"github.com/secretflow/kuscia/pkg/datamesh/dmflight"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
@@ -83,7 +82,7 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 		mysqlDatasourceID string
 	)
 
-	m.flightClient, err = createFlightClient(metaServerEndpoint, config)
+	m.flightClient, _ = createFlightClient(metaServerEndpoint, config)
 	if localDatasourceID, err = m.createLocalFsDataSource(); err != nil {
 		return err
 	}
@@ -188,15 +187,14 @@ func (m *MockFlightClient) createDataSource(createDatasourceReq *kusciaapi.Creat
 		nlog.Warn(err)
 		return "", err
 	}
-	nlog.Infof("data-source-id:%s, type is:%s", resp.Data.DatasourceId, createDatasourceReq.Type)
+	nlog.Infof("Data-source-id:%s, type is:%s", resp.Data.DatasourceId, createDatasourceReq.Type)
 	return resp.Data.DatasourceId, nil
 }
 
 func (m *MockFlightClient) QueryDataSource(datasourceID string) error {
-	queryDatasourceReq := &datamesh.ActionQueryDomainDataSourceRequest{
-		Request: &datamesh.QueryDomainDataSourceRequest{
-			DatasourceId: datasourceID,
-		},
+	queryDatasourceReq := &datamesh.QueryDomainDataSourceRequest{
+
+		DatasourceId: datasourceID,
 	}
 	msg, err := proto.Marshal(queryDatasourceReq)
 	if err != nil {
@@ -217,34 +215,32 @@ func (m *MockFlightClient) QueryDataSource(datasourceID string) error {
 		return err
 	}
 
-	var queryDatasourceResp datamesh.ActionQueryDomainDataSourceResponse
+	var queryDatasourceResp datamesh.QueryDomainDataSourceResponse
 	if err := proto.Unmarshal(result.Body, &queryDatasourceResp); err != nil {
 		nlog.Warnf("Unmarshal ActionQueryDomainDataSourceResponse err: %v", err)
 		return err
 	}
 
-	dsResp := queryDatasourceResp.Response.Data
-	nlog.Infof("dsType is %s, dsInfo:%v", dsResp.Type, dsResp.Info)
+	dsResp := queryDatasourceResp.Data
+	nlog.Infof("DsType is %s, dsInfo:%v", dsResp.Type, dsResp.Info)
 	return nil
 }
 
 func (m *MockFlightClient) createDomainData(datasourceID string) (string, error) {
-	cols, err := common.ArrowSchema2DataMeshColumns(example.Records[m.testDataType][0].Schema())
+	cols, err := common.ArrowSchema2DataMeshColumns(Records[m.testDataType][0].Schema())
 	nlog.Infof("DomainData Cols:%v", cols)
 	if err != nil {
 		return "", err
 	}
-	createDomainDataReq := &datamesh.ActionCreateDomainDataRequest{
-		Request: &datamesh.CreateDomainDataRequest{
-			Header:       nil,
-			DomaindataId: fmt.Sprintf("%s-%d", m.testDataType, time.Now().UnixNano()),
-			Name:         m.testDataType,
-			Type:         "table",
-			RelativeUri:  "b.csv", // for mysql table, RelativeUri should be "dbName.tableName"
-			DatasourceId: datasourceID,
-			Columns:      cols,
-			FileFormat:   v1alpha1.FileFormat_CSV,
-		},
+	createDomainDataReq := &datamesh.CreateDomainDataRequest{
+		Header:       nil,
+		DomaindataId: fmt.Sprintf("%s-%d", m.testDataType, time.Now().UnixNano()),
+		Name:         m.testDataType,
+		Type:         "table",
+		RelativeUri:  "b.csv", // for mysql table, RelativeUri should be "dbName.tableName"
+		DatasourceId: datasourceID,
+		Columns:      cols,
+		FileFormat:   v1alpha1.FileFormat_CSV,
 	}
 	msg, err := proto.Marshal(createDomainDataReq)
 	if err != nil {
@@ -266,12 +262,12 @@ func (m *MockFlightClient) createDomainData(datasourceID string) (string, error)
 		nlog.Warnf("Recv ActionCreateDomainDataResponse err: %v", err)
 	}
 
-	var createDomainDataResp datamesh.ActionCreateDomainDataResponse
+	var createDomainDataResp datamesh.CreateDomainDataResponse
 	if err := proto.Unmarshal(result.Body, &createDomainDataResp); err != nil {
 		nlog.Warnf("Unmarshal ActionCreateDomainDataResponse err: %v", err)
 		return "", err
 	}
-	domainDataID := createDomainDataResp.Response.Data.DomaindataId
+	domainDataID := createDomainDataResp.Data.DomaindataId
 	return domainDataID, nil
 }
 
@@ -283,7 +279,7 @@ func (m *MockFlightClient) getData(domainDataID string, useRawData bool) error {
 	if useRawData {
 		cmd.ContentType = datamesh.ContentType_RAW
 	}
-	desc, err := flight2.DescForCommand(cmd)
+	desc, err := dmflight.DescForCommand(cmd)
 	if err != nil {
 		nlog.Warnf(err.Error())
 		return err
@@ -335,7 +331,7 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 			},
 		},
 	}
-	desc, err := flight2.DescForCommand(cmd)
+	desc, err := dmflight.DescForCommand(cmd)
 	if err != nil {
 		nlog.Warnf(err.Error())
 		return err
@@ -348,16 +344,8 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 	}
 
 	dpURI := flightInfo.Endpoint[0].Location[0].Uri
-	ticket, err := flight2.GetTicketDomainDataQuery(flightInfo.Endpoint[0].Ticket)
-	if err != nil {
-		nlog.Warnf("GetTicketDomainDataQuery fail:%v", err)
-	}
-	ticketID := ticket.DomaindataHandle
-
-	putDesc, err := flight2.DescForCommand(ticket)
-	if err != nil {
-		nlog.Warnf("Generate put desc fail:%v", err)
-	}
+	ticket := flightInfo.Endpoint[0].Ticket
+	ticketID := ticket.GetTicket()
 
 	flightClient, err := createFlightClient(dpURI, nil)
 	if err != nil {
@@ -368,10 +356,10 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 	var records []arrow.Record
 	if m.testDataType == binaryTestData {
 		nlog.Infof("MakeBinaryRecords ")
-		records = example.MakeBinaryRecords()
+		records = MakeBinaryRecords()
 	} else {
 		nlog.Infof("MakePrimitiveRecords ")
-		records = example.MakePrimitiveRecords()
+		records = MakePrimitiveRecords()
 	}
 
 	stream, err := flightClient.DoPut(context.Background())
@@ -380,30 +368,36 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 		return err
 	}
 
+	if err := stream.SendMsg(&flight.Ticket{
+		Ticket: ticketID,
+	}); err != nil {
+		nlog.Warnf("Send tick to stream Fail:%v", err)
+		return err
+	}
+
 	wr := flight.NewRecordWriter(stream, ipc.WithSchema(records[0].Schema()))
-	wr.SetFlightDescriptor(putDesc)
 	defer wr.Close()
 
 	for idx, r := range records {
 		if err := wr.WriteWithAppMetadata(r, []byte(fmt.Sprintf("%d_%s", idx,
 			ticketID)) /*metadata*/); err != nil {
-			nlog.Warnf("write data to data proxy fail:%v", err)
+			nlog.Warnf("Write data to data proxy fail:%v", err)
 			return err
 		}
 
 	}
 	pr, err := stream.Recv()
 	if err != nil {
-		nlog.Warnf("recv error when write data to data proxy:%v", err)
+		nlog.Warnf("Recv error when write data to data proxy:%v", err)
 		return err
 	}
 
 	acked := pr.GetAppMetadata()
 	if len(acked) > 0 {
-		nlog.Infof("got metadata:%s", string(acked))
+		nlog.Infof("Got metadata:%s", string(acked))
 	}
 	stream.CloseSend()
-	nlog.Infof("put data succ")
+	nlog.Infof("Put data succ")
 	return nil
 }
 
@@ -424,7 +418,7 @@ func writeStructureCSV(writer io.Writer, r *flight.Reader) error {
 		idx++
 	}
 	w.Flush()
-	nlog.Infof("client get data succ")
+	nlog.Infof("Client get data succ")
 	return nil
 }
 
@@ -454,7 +448,7 @@ func createFlightClient(endpoint string, config *CertsConfig) (flight.Client, er
 	if len(uriSlice) == 2 {
 		endpoint = uriSlice[1]
 	}
-	nlog.Infof("endpoint is %s", endpoint)
+	nlog.Infof("Endpoint is %s", endpoint)
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
@@ -476,7 +470,7 @@ func createFlightClient(endpoint string, config *CertsConfig) (flight.Client, er
 
 	conn, err := grpc.Dial(endpoint, dialOpts...)
 	if err != nil {
-		nlog.Errorf("create grpc conn to %s fail: %v", endpoint, err)
+		nlog.Errorf("Create grpc conn to %s fail: %v", endpoint, err)
 		return nil, err
 	}
 	return flight.NewClientFromConn(conn, nil), nil
@@ -492,16 +486,16 @@ func createClientCertificate() (*CertsConfig, error) {
 	signingKeyFile := filepath.Join(certsDir, "ca.key")
 
 	if err := paths.EnsureDirectory(certsDir, true); err != nil {
-		nlog.Warnf("cannot create certs dir: %v", err)
+		nlog.Warnf("Cannot create certs dir: %v", err)
 	}
 
 	if err := tls.CreateCAFile("testca", signingCertFile, signingKeyFile); err != nil {
-		nlog.Warnf("create ca file fail: %v", err)
+		nlog.Warnf("Create ca file fail: %v", err)
 		return nil, err
 	}
 	DomainCACert, err := tls.ParseCert(nil, signingCertFile)
 	if err != nil {
-		nlog.Warnf("parser domainCaCert fail:%v, err", err)
+		nlog.Warnf("Parser domainCaCert fail:%v, err", err)
 		return nil, err
 	}
 
