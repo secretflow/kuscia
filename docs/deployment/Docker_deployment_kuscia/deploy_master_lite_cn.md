@@ -17,15 +17,15 @@
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# 使用的 Kuscia 镜像，这里使用 0.10.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 指定 Secretflow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.6.0b0 版本镜像
-export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.6.0b0
+# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
+export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -153,8 +153,8 @@ abcdefg
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# 使用的 Kuscia 镜像，这里使用 0.10.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -215,8 +215,8 @@ hijklmn
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# 使用的 Kuscia 镜像，这里使用 0.10.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：

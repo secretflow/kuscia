@@ -16,17 +16,16 @@
 
 登录到安装 alice 的机器上，本文为叙述方便，假定节点 ID 为 alice ，对外可访问的 PORT 是 11080 。
 
-指定 Kuscia 使用的镜像版本，这里使用 latest 版本
-
+指定 Kuscia 使用的镜像版本，这里使用 0.10.0b0 版本
 ```bash
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 指定 Secretflow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.6.0b0 版本镜像
-export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.6.0b0
+# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
+export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
