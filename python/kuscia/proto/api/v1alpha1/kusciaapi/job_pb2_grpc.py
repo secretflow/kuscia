@@ -34,6 +34,21 @@ class JobServiceStub(object):
                 request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.StopJobRequest.SerializeToString,
                 response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.StopJobResponse.FromString,
                 )
+        self.RestartJob = channel.unary_unary(
+                '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/RestartJob',
+                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.RestartJobRequest.SerializeToString,
+                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.RestartJobResponse.FromString,
+                )
+        self.SuspendJob = channel.unary_unary(
+                '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/SuspendJob',
+                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.SuspendJobRequest.SerializeToString,
+                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.SuspendJobResponse.FromString,
+                )
+        self.CancelJob = channel.unary_unary(
+                '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/CancelJob',
+                request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.CancelJobRequest.SerializeToString,
+                response_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.CancelJobResponse.FromString,
+                )
         self.DeleteJob = channel.unary_unary(
                 '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/DeleteJob',
                 request_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.DeleteJobRequest.SerializeToString,
@@ -73,6 +88,24 @@ class JobServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def StopJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RestartJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SuspendJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CancelJob(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -118,6 +151,21 @@ def add_JobServiceServicer_to_server(servicer, server):
                     servicer.StopJob,
                     request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.StopJobRequest.FromString,
                     response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.StopJobResponse.SerializeToString,
+            ),
+            'RestartJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.RestartJob,
+                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.RestartJobRequest.FromString,
+                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.RestartJobResponse.SerializeToString,
+            ),
+            'SuspendJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.SuspendJob,
+                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.SuspendJobRequest.FromString,
+                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.SuspendJobResponse.SerializeToString,
+            ),
+            'CancelJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.CancelJob,
+                    request_deserializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.CancelJobRequest.FromString,
+                    response_serializer=kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.CancelJobResponse.SerializeToString,
             ),
             'DeleteJob': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteJob,
@@ -209,6 +257,57 @@ class JobService(object):
         return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/StopJob',
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.StopJobRequest.SerializeToString,
             kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.StopJobResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def RestartJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/RestartJob',
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.RestartJobRequest.SerializeToString,
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.RestartJobResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SuspendJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/SuspendJob',
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.SuspendJobRequest.SerializeToString,
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.SuspendJobResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def CancelJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/kuscia.proto.api.v1alpha1.kusciaapi.JobService/CancelJob',
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.CancelJobRequest.SerializeToString,
+            kuscia_dot_proto_dot_api_dot_v1alpha1_dot_kusciaapi_dot_job__pb2.CancelJobResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

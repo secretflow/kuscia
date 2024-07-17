@@ -95,7 +95,7 @@ spec:
 - 有两个 KusciaTask 将会被依次创建，分别是用于隐私求交的 job-psi 和用于随机分割的 job-split。 KusciaJob Controller 将会先创建 job-psi，
   当 job-psi 任务成功后，job-split 才会被创建，这个依赖关系由 job-split 的`dependencies`指定。**创建的 KusciaTask 的`.metadata.name`将会由这里的
   `taskID`指定。若你自行指定该 `taskID`，那么你应当保证当前系统中没有同名的 KusciaTask ，同时还需要保证所有的`taskID`满足
-  [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)**。
+  [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)**。
   若你不指定 KusciaJob 中的 taskID，则 KusciaJob Controller 会生成该 taskID。
 - `parties`指定了任务参与方的 ID 和角色，这个字段说明了这个算子将会在哪些参与方以什么角色执行。
 - `appImage`用于表明 KusciaTask 在多方计算中执行的算法镜像。你可以通过查看 [AppImage](./appimage_cn.md) 获得更多的信息。
@@ -365,7 +365,7 @@ KusciaJob `spec`的子字段详细介绍如下：
 - `maxParallelism`：表示可以同时处于 Running 状态的任务的最大数量，可选，默认为 1，范围为 1-128。
 - `tasks`：表示要执行的任务列表，最多 128 个。
   - `alias`：表示任务的别名，必填。KusciaJob 中所有任务的别名不能重复。
-  - `tasks[].taskID`：用作任务依赖标识，全局唯一，满足 [DNS 子域名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)。
+  - `tasks[].taskID`：用作任务依赖标识，全局唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。
      若任务发起方为 Kuscia 中的节点，且未指定该标识，则 KusciaJob Controller 会生成全局唯一的任务标识。
   - `tasks[].priority`：表示任务优先级，根据 maxParallelism，当存在多个 KusciaTask 可以被创建时，该值较高的优先被创建。
   - `tasks[].tolerable`：表示是否可以容忍任务失败，详见 [任务分类](#task-classification)。

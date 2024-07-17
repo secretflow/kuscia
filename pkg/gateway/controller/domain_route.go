@@ -203,7 +203,7 @@ func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh
 }
 
 func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stopCh <-chan struct{}) {
-	t := time.NewTicker(15 * time.Second)
+	t := time.NewTicker(common.GatewayHealthCheckDuration)
 	defer t.Stop()
 	for {
 		select {

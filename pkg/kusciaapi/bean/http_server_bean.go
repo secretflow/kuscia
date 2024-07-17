@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package bean
 
 import (
 	"context"
 	"crypto/rsa"
+	"fmt"
 	"net/http"
 	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
-	ecode "github.com/secretflow/kuscia/pkg/datamesh/errorcode"
 	apiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domain"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindata"
@@ -49,6 +50,8 @@ import (
 	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
 	"github.com/secretflow/kuscia/pkg/web/interceptor"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 type httpServerBean struct {
@@ -106,7 +109,7 @@ func (s *httpServerBean) externalGinInit(e framework.ConfBeanRegistry) error {
 		return err
 	}
 	// recover middleware
-	s.externalGinBean.Use(gin.Recovery())
+	s.externalGinBean.Use(gin.Recovery(), interceptor.HTTPServerLoggingInterceptor(*s.config.InterceptorLog))
 	// auth token
 	tokenConfig := s.config.Token
 	if tokenConfig != nil {
@@ -476,7 +479,25 @@ func newCertService(config *apiconfig.KusciaAPIConfig) cmservice.ICertificateSer
 
 // protoDecorator is used to wrap handler.
 func protoDecorator(e framework.ConfBeanRegistry, handler api.ProtoHandler) gin.HandlerFunc {
-	return decorator.InterConnProtoDecoratorMaker(int32(ecode.ErrRequestInvalidate), int32(ecode.ErrForUnexpected))(e, handler)
+	return decorator.CustomProtoDecoratorMaker(setKusciaAPIErrorResp(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate), setKusciaAPIErrorResp(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected))(e, handler)
+}
+
+func setKusciaAPIErrorResp(errCode pberrorcode.ErrorCode) func(flow *decorator.BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
+	return func(flow *decorator.BizFlow, errs *errorcode.Errs) (response api.ProtoResponse) {
+
+		wrappedErr := fmt.Errorf("%s", errs)
+		resp := v1alpha1.ErrorResponse{
+			Status: &v1alpha1.Status{
+				Code:    int32(errCode),
+				Message: wrappedErr.Error(),
+			},
+		}
+		bytes, _ := protojson.Marshal(&resp)
+		response = &api.AnyStringProto{
+			Content: string(bytes),
+		}
+		return response
+	}
 }
 
 func convertToGinConf(conf *apiconfig.KusciaAPIConfig) beans.GinBeanConfig {

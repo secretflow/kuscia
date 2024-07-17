@@ -90,6 +90,7 @@ func makeTestKusciaTask(phase kusciaapisv1alpha1.KusciaTaskPhase) *kusciaapisv1a
 }
 
 func TestNewController(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -104,6 +105,7 @@ func TestNewController(t *testing.T) {
 }
 
 func TestControllerRun(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -123,6 +125,7 @@ func TestControllerRun(t *testing.T) {
 }
 
 func TestEnqueueKusciaTask(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -140,6 +143,7 @@ func TestEnqueueKusciaTask(t *testing.T) {
 }
 
 func TestHandleTaskResourceGroupObject(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -229,6 +233,7 @@ func TestHandleTaskResourceGroupObject(t *testing.T) {
 }
 
 func TestHandlePodObject(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -281,6 +286,7 @@ func TestHandlePodObject(t *testing.T) {
 }
 
 func TestProcessNextWorkItem(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -329,6 +335,7 @@ func TestProcessNextWorkItem(t *testing.T) {
 }
 
 func TestFailKusciaTask(t *testing.T) {
+	t.Parallel()
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
@@ -348,6 +355,7 @@ func TestFailKusciaTask(t *testing.T) {
 }
 
 func TestUpdateTaskStatus(t *testing.T) {
+	t.Parallel()
 	pendingKt := makeTestKusciaTask(kusciaapisv1alpha1.TaskPending)
 	runningKt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
 	kubeFakeClient := kubefake.NewSimpleClientset()
@@ -367,6 +375,7 @@ func TestUpdateTaskStatus(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
+	t.Parallel()
 	kt := makeTestKusciaTask(kusciaapisv1alpha1.TaskRunning)
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kusciaFakeClient := kusciafake.NewSimpleClientset(kt)

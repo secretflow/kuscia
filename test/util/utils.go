@@ -23,6 +23,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,8 +33,9 @@ import (
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 
 	"github.com/google/uuid"
-	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/stretchr/testify/assert"
+
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
 func MakeTaskResource(namespace, name string, min int, creationTime *time.Time) *kusciaapisv1alpha1.TaskResource {
@@ -173,7 +175,14 @@ func NewFakeSharedLister(pods []*corev1.Pod, nodes []*corev1.Node) framework.Sha
 }
 
 func MakeBase64EncodeCert(t *testing.T) string {
+	return base64.StdEncoding.EncodeToString(makeCertificate(t))
+}
 
+func MakeCertString(t *testing.T) string {
+	return strings.TrimSuffix(string(makeCertificate(t)), "\n")
+}
+
+func makeCertificate(t *testing.T) []byte {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
 
@@ -190,7 +199,6 @@ func MakeBase64EncodeCert(t *testing.T) string {
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &certTemplate, &certTemplate, &privateKey.PublicKey, privateKey)
 	assert.NoError(t, err)
-
 	certBuf := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	return base64.StdEncoding.EncodeToString(certBuf)
+	return certBuf
 }

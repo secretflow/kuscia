@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package clusterdomainroute
 
 import (
@@ -245,7 +245,7 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	appendLabels := make(map[string]string, 0)
+	appendLabels := make(map[string]string)
 	appendLabels[common.KusciaSourceKey] = cdr.Spec.Source
 	appendLabels[common.KusciaDestinationKey] = cdr.Spec.Destination
 	if sourceRole == kusciaapisv1alpha1.Partner {

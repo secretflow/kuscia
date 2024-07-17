@@ -396,6 +396,8 @@ ClusterDomainRoute `status` 的子字段详细介绍如下：
     * `destinationTokens[].revisionTime`：表示 Token 时间戳。
     * `destinationTokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。
 
+{#domain-route-advance}
+
 ## DomainRoute 进阶
 
 进阶部分介绍 DomainRoute 的转发能力。在 Kuscia 架构中，路由转发能力是通过配置 ClusterDomainRoute（CDR）中的 `Transit` 字段来实现的。

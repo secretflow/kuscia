@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package handler
 
 import (
@@ -102,16 +102,16 @@ func (h *PendingHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (need
 	}
 
 	curKtStatus := kusciaTask.Status.DeepCopy()
-	refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, curKtStatus)
 	h.initPartyTaskStatus(kusciaTask, curKtStatus)
+	refreshKtResourcesStatus(h.kubeClient, h.podsLister, h.servicesLister, curKtStatus)
 	if !reflect.DeepEqual(kusciaTask.Status, curKtStatus) {
 		needUpdate = true
 		kusciaTask.Status = *curKtStatus
 		kusciaTask.Status.LastReconcileTime = &now
 	}
 
-	if h.taskRunning(now, kusciaTask) {
-		return true, nil
+	if updated, err := h.taskRunning(now, kusciaTask); updated || err != nil {
+		return updated, err
 	}
 
 	if updated, err := h.taskExpired(now, kusciaTask); updated || err != nil {
@@ -146,7 +146,7 @@ func (h *PendingHandler) prepareTaskResources(now metav1.Time, kusciaTask *kusci
 		}
 
 		if err = h.createTaskResources(kusciaTask); err != nil {
-			needUpdate = utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", fmt.Sprintf("Failed to create kusciaTask related resources, %v", err))
+			needUpdate = utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionFalse, "KusciaTaskCreateFailed", err.Error())
 			return needUpdate, err
 		}
 		utilsres.SetKusciaTaskCondition(now, cond, v1.ConditionTrue, "", "")
@@ -174,7 +174,11 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 
 		partyKitInfos[party.DomainID+party.Role] = kit
 
-		if !utilsres.IsPartnerDomain(h.namespacesLister, kit.domainID) {
+		isPartner, err := utilsres.IsPartnerDomain(h.namespacesLister, kit.domainID)
+		if err != nil {
+			return err
+		}
+		if !isPartner {
 			selfPartyKitInfos[party.DomainID+party.Role] = kit
 		}
 	}
@@ -235,7 +239,23 @@ func setPartyTaskStatus(partyInfo kusciaapisv1alpha1.PartyInfo, ktStatus *kuscia
 	})
 }
 
-func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) bool {
+func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
+	// if self cluster is not participant, skip creating related sub resources.
+	// waiting for other parties to run the task.
+	asParticipant, err := selfClusterAsParticipant(h.namespacesLister, kusciaTask)
+	if err != nil {
+		return false, err
+	}
+	if !asParticipant {
+		for _, status := range kusciaTask.Status.PartyTaskStatus {
+			if status.Phase != "" && status.Phase != kusciaapisv1alpha1.TaskPending {
+				kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskRunning
+				kusciaTask.Status.LastReconcileTime = &now
+				return true, nil
+			}
+		}
+	}
+
 	// Check if there is a pod in running status,
 	// If there is, it indicates that the task status can be converted to running
 	for _, podStatus := range kusciaTask.Status.PodStatuses {
@@ -243,10 +263,10 @@ func (h *PendingHandler) taskRunning(now metav1.Time, kusciaTask *kusciaapisv1al
 		if pod != nil && pod.Status.Phase != v1.PodPending {
 			kusciaTask.Status.Phase = kusciaapisv1alpha1.TaskRunning
 			kusciaTask.Status.LastReconcileTime = &now
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (h *PendingHandler) taskExpired(now metav1.Time, kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
@@ -276,6 +296,20 @@ func generateMessageBy(trg *kusciaapisv1alpha1.TaskResourceGroup) string {
 }
 
 func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.KusciaTask, party *kusciaapisv1alpha1.PartyInfo) (*PartyKitInfo, error) {
+	kit := &PartyKitInfo{
+		kusciaTask: kusciaTask,
+		domainID:   party.DomainID,
+		role:       party.Role,
+	}
+
+	asParticipant, err := selfClusterAsParticipant(h.namespacesLister, kusciaTask)
+	if err != nil {
+		return nil, err
+	}
+	if !asParticipant {
+		return kit, nil
+	}
+
 	appImage, err := h.appImagesLister.Get(party.AppImageRef)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get appImage %q from cache, %v", party.AppImageRef, err)
@@ -319,24 +353,18 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 		minReservedPods = replicas
 	}
 
-	kit := &PartyKitInfo{
-		kusciaTask:      kusciaTask,
-		domainID:        party.DomainID,
-		role:            party.Role,
-		image:           fmt.Sprintf("%s:%s", appImage.Spec.Image.Name, appImage.Spec.Image.Tag),
-		imageID:         appImage.Spec.Image.ID,
-		deployTemplate:  deployTemplate,
-		configTemplates: appImage.Spec.ConfigTemplates,
-		servicedPorts:   servicedPorts,
-		minReservedPods: minReservedPods,
-		pods:            pods,
-	}
+	kit.image = fmt.Sprintf("%s:%s", appImage.Spec.Image.Name, appImage.Spec.Image.Tag)
+	kit.imageID = appImage.Spec.Image.ID
+	kit.deployTemplate = deployTemplate
+	kit.configTemplates = appImage.Spec.ConfigTemplates
+	kit.servicedPorts = servicedPorts
+	kit.minReservedPods = minReservedPods
+	kit.pods = pods
 
 	// Todo: Consider how to limit the communication between single-party jobs between multiple parties.
 	if len(kusciaTask.Spec.Parties) > 1 {
 		kit.portAccessDomains = generatePortAccessDomains(kusciaTask.Spec.Parties, deployTemplate.NetworkPolicy, ports)
 	}
-
 	return kit, nil
 }
 
@@ -738,13 +766,16 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 }
 
 func (h *PendingHandler) createTaskResourceGroup(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitInfos map[string]*PartyKitInfo) error {
-	trg := h.generateTaskResourceGroup(kusciaTask, partyKitInfos)
+	trg, err := h.generateTaskResourceGroup(kusciaTask, partyKitInfos)
+	if err != nil {
+		return err
+	}
 	return h.submitTaskResourceGroup(trg)
 }
 
 // generateTaskResourceGroup use selfControlled partyKitInfos to create trg.Spec.Parties
 // and adjust trg.Spec.MinReservedMembers by minus the amount of out of controlled parties
-func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitInfos map[string]*PartyKitInfo) *kusciaapisv1alpha1.TaskResourceGroup {
+func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitInfos map[string]*PartyKitInfo) (*kusciaapisv1alpha1.TaskResourceGroup, error) {
 	var (
 		resourceReservedSeconds = defaultResourceReservedSeconds
 		lifeCycleSeconds        = defaultLifecycleSeconds
@@ -765,12 +796,15 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 
 	var trgParties, outOfControlledParties []kusciaapisv1alpha1.TaskResourceGroupParty
 	for _, partyKitInfo := range partyKitInfos {
-		isPartner := utilsres.IsPartnerDomain(h.namespacesLister, partyKitInfo.domainID)
+		isPartner, err := utilsres.IsPartnerDomain(h.namespacesLister, partyKitInfo.domainID)
+		if err != nil {
+			return nil, err
+		}
 		if isPartner {
 			outOfControlledParties = append(outOfControlledParties, kusciaapisv1alpha1.TaskResourceGroupParty{
 				Role:            partyKitInfo.role,
 				DomainID:        partyKitInfo.domainID,
-				MinReservedPods: partyKitInfo.minReservedPods,
+				MinReservedPods: 1,
 			})
 			continue
 		}
@@ -837,7 +871,7 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 		},
 	}
 
-	return trg
+	return trg, nil
 }
 
 func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {

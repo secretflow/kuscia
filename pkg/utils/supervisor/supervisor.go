@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -36,6 +37,7 @@ type Cmd interface {
 	Start() error
 	Wait() error
 	Pid() int
+	Stop() error
 	SetOOMScore() error
 }
 
@@ -71,43 +73,59 @@ func (s *Supervisor) Run(ctx context.Context, startup func(ctx context.Context) 
 		return errors.New("input startup callback is nil")
 	}
 	nlog.Infof("[%s] start and watch subprocess", s.tag)
-
 	isFirstRun := true
+	var cmd Cmd
+	exit := false
+	var lock sync.Mutex
+	go func() {
+		<-ctx.Done()
+		lock.Lock()
+		defer lock.Unlock()
+		if err := s.stopProcess(cmd); err != nil {
+			nlog.Errorf("[%s] failed to stop process, detail -> %v", s.tag, err)
+		}
+		exit = true
+	}()
+
 	for {
 		isEveryTimeFailed := true
 		s.restartIntervalIndex = 0
-		for i := 0; i <= s.maxRestartCount; i++ {
-			nlog.Infof("[%s] try to start new process", s.tag)
-			if err := s.runProcess(ctx, startup(ctx)); err != nil {
-				nlog.Warnf("[%s] run process failed with %v", s.tag, err)
-				if isFirstRun {
-					// if first time start process failed, exit at once
-					return fmt.Errorf("startup process failed at first time, so stop at once, error: %v", err)
-				}
+		intervalMS := 0
 
-				isFirstRun = false
-				if s.restartIntervalIndex < len(s.restartIntervalMS)-1 {
-					s.restartIntervalIndex++
-				}
-			} else { // process run success or longer than minRunningTimeMS
-				isFirstRun = false
-				isEveryTimeFailed = false
-				s.restartIntervalIndex = 0
-				break
-			}
-
-			// wait restart again
-			intervalMS := s.restartIntervalMS[s.restartIntervalIndex]
-			if intervalMS > 0 {
-				nlog.Debugf("[%s] process exited, restart again after %d ms", s.tag, intervalMS)
-				select {
-				case <-time.After(time.Duration(intervalMS * int(time.Millisecond))):
-				case <-ctx.Done():
-					nlog.Warnf("[%s] context had done, no need to wait to restart", s.tag)
+		for i := 0; i < s.maxRestartCount; i++ {
+			select {
+			case <-ctx.Done():
+				nlog.Warnf("[%s] context had done, no need to wait to restart", s.tag)
+				return fmt.Errorf("context had done, no need to wait to restart")
+			case <-time.After(time.Duration(intervalMS * int(time.Millisecond))):
+				nlog.Infof("[%s] try to start new process", s.tag)
+				lock.Lock()
+				if exit {
+					lock.Unlock()
 					return fmt.Errorf("context had done, no need to wait to restart")
 				}
-			}
+				cmd = startup(ctx)
+				lock.Unlock()
+				if err := s.runProcess(cmd); err != nil {
+					nlog.Warnf("[%s] run process failed, detail -> %v", s.tag, err)
+					if isFirstRun {
+						// if first time start process failed, exit at once
+						return fmt.Errorf("startup process failed at first time, so stop at once, error: %v", err)
+					}
 
+					isFirstRun = false
+					if s.restartIntervalIndex < len(s.restartIntervalMS)-1 {
+						s.restartIntervalIndex++
+					}
+				} else { // process run success or longer than minRunningTimeMS
+					isFirstRun = false
+					isEveryTimeFailed = false
+					s.restartIntervalIndex = 0
+					break
+				}
+				// wait restart again
+				intervalMS = s.restartIntervalMS[s.restartIntervalIndex]
+			}
 		}
 
 		if isEveryTimeFailed {
@@ -118,34 +136,45 @@ func (s *Supervisor) Run(ctx context.Context, startup func(ctx context.Context) 
 	}
 }
 
-func (s *Supervisor) runProcess(ctx context.Context, cmd Cmd) error {
+func (s *Supervisor) runProcess(cmd Cmd) error {
 	stime := time.Now()
 	if cmd == nil {
 		return errors.New("create subprocess failed")
 	}
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("start process(%d) failed with %v", cmd.Pid(), err)
+		return fmt.Errorf("start process [%s][%d] failed with %v", s.tag, cmd.Pid(), err)
 	}
 
 	if err := cmd.SetOOMScore(); err != nil {
-		nlog.Warnf("Set process(%d) oom_score_adj failed, %v, skip setting it", cmd.Pid(), err)
+		nlog.Warnf("Set process [%s][%d] oom_score_adj failed, %v, skip setting it", s.tag, cmd.Pid(), err)
 	}
 
 	err := cmd.Wait()
 	if err != nil { // process exit failed
-		nlog.Warnf("Process(%d) exit with error: %v", cmd.Pid(), err)
+		nlog.Warnf("Process [%s][%d] exit with error: %v", s.tag, cmd.Pid(), err)
 	} else {
-		nlog.Infof("Process(%d) exit normally", cmd.Pid())
+		nlog.Infof("Process [%s][%d] exit normally", s.tag, cmd.Pid())
 	}
 
 	if dt := time.Since(stime); dt.Milliseconds() <= int64(s.minRunningTimeMS) {
-		tmerr := fmt.Sprintf("process(%d) only existed %d ms, less than %d ms", cmd.Pid(), dt.Milliseconds(), s.minRunningTimeMS)
+		tmerr := fmt.Sprintf("process [%s][%d] only existed %d ms, less than %d ms", s.tag, cmd.Pid(), dt.Milliseconds(), s.minRunningTimeMS)
 		if err != nil {
 			return fmt.Errorf("%s, with error: %v", tmerr, err)
 		}
 		return errors.New(tmerr)
 	}
 
+	return nil
+}
+
+func (s *Supervisor) stopProcess(cmd Cmd) error {
+	if cmd == nil {
+		return nil
+	}
+	nlog.Warnf("Context done, begin to stop process [%s][%d]", s.tag, cmd.Pid())
+	if err := cmd.Stop(); err != nil {
+		return fmt.Errorf("stop process [%s][%d] failed with %v", s.tag, cmd.Pid(), err)
+	}
 	return nil
 }

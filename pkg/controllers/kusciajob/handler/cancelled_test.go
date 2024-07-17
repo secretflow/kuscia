@@ -29,17 +29,16 @@ import (
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	kusciascheme "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func TestCancelledHandler_HandlePhase(t *testing.T) {
+	t.Parallel()
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(nlog.Infof)
 	eventBroadcaster.StartRecordingToSink(
 		&typedcorev1.EventSinkImpl{Interface: kubefake.NewSimpleClientset().CoreV1().Events("default")})
-	assert.NoError(t, kusciascheme.AddToScheme(scheme.Scheme))
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-job-controller"})
 	kubeFakeClient := kubefake.NewSimpleClientset()
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeFakeClient, 0)

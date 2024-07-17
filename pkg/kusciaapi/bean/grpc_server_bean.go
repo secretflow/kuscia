@@ -21,13 +21,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/secretflow/kuscia/pkg/common"
-	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/secretflow/kuscia/pkg/common"
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/grpchandler"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
@@ -38,6 +37,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/interceptor"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -63,6 +63,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	// init grpc server opts
 	opts := []grpc.ServerOption{
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
+		grpc.ChainUnaryInterceptor(interceptor.UnaryRecoverInterceptor(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected)),
+		grpc.StreamInterceptor(interceptor.StreamRecoverInterceptor(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected)),
 	}
 	if s.config.TLS != nil {
 		serverTLSConfig, err := buildServerTLSConfig(s.config.TLS, s.config.Protocol)
@@ -79,7 +81,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	if err != nil {
 		nlog.Fatalf("failed to listen on addr[%s]: %v", addr, err)
 	}
-
+	opts = append(opts, grpc.ChainUnaryInterceptor(interceptor.GrpcServerLoggingInterceptor(*s.config.InterceptorLog)))
 	// set token auth interceptor
 	tokenConfig := s.config.Token
 	if s.config.Token != nil {
@@ -92,7 +94,6 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		tokenStreamInterceptor := grpc.ChainStreamInterceptor(interceptor.GrpcStreamServerTokenInterceptor(token))
 		opts = append(opts, tokenStreamInterceptor)
 	}
-
 	// set master role interceptor
 	opts = append(opts, grpc.ChainUnaryInterceptor(interceptor.GrpcServerMasterRoleInterceptor()))
 	opts = append(opts, grpc.ChainStreamInterceptor(interceptor.GrpcStreamServerMasterRoleInterceptor()))

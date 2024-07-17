@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -31,7 +31,7 @@ func TestCreateDomainRouteWithAllDomainNotExists(t *testing.T) {
 	res := createDomainRoute()
 	t.Logf("CreateDomainRoute res : %+v\n", res)
 	assert.NotNil(t, res)
-	assert.Equal(t, int32(errorcode.ErrDomainNotExists), res.Status.Code)
+	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrDomainNotExists), res.Status.Code)
 }
 
 func TestCreateDomainRouteWithSourceDomainNotExists(t *testing.T) {
@@ -44,7 +44,7 @@ func TestCreateDomainRouteWithSourceDomainNotExists(t *testing.T) {
 	res := createDomainRoute()
 	t.Log(fmt.Sprintf("CreateDomainRoute res : %+v\n", res))
 	assert.NotNil(t, res)
-	assert.Equal(t, int32(errorcode.ErrDomainNotExists), res.Status.Code)
+	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrDomainNotExists), res.Status.Code)
 }
 
 func TestCreateDomainRoute(t *testing.T) {
@@ -90,11 +90,11 @@ func TestCreateDomainRouteWithTransit(t *testing.T) {
 	}{
 		{
 			request: &domainRoutes[0],
-			code:    errorcode.ErrRequestValidate,
+			code:    int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate),
 		},
 		{
 			request: &domainRoutes[1],
-			code:    errorcode.ErrRequestValidate,
+			code:    int32(errorcode.ErrorCode_KusciaAPIErrRequestValidate),
 		},
 		{
 			request: &domainRoutes[2],
@@ -163,7 +163,7 @@ func TestDeleteRoute(t *testing.T) {
 		Source:      kusciaAPIDR.source,
 		Destination: kusciaAPIDR.destination,
 	})
-	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrDomainRouteNotExists))
+	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrDomainRouteNotExists))
 }
 
 func TestConvertDomainRouteProtocol(t *testing.T) {

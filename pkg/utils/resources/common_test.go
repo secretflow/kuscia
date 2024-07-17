@@ -161,7 +161,7 @@ func TestIsEmpty(t *testing.T) {
 }
 
 func TestSplitRSC(t *testing.T) {
-	input := "1000"
+	var input = "1000"
 	output, err := SplitRSC(input, 5)
 	assert.Equal(t, output, "200", "SplitRSC() function cannot handle the k8sresource.DecimalSI. ")
 	assert.Nil(t, err, "SplitRSC() function cannot handle the k8sresource.DecimalSI. ")

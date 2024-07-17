@@ -102,9 +102,12 @@ type DomainRouteToken struct {
 	// Timestamp representing the time when this revision created.
 	// +optional
 	RevisionTime metav1.Time `json:"revisionTime,omitempty"`
-	// Timestamp representing the time when this revision expirated.
+	// Timestamp representing the time when this revision expired.
 	// +optional
 	ExpirationTime metav1.Time `json:"expirationTime,omitempty"`
+	// Timestamp representing the time when this revision heartbeat.
+	// +optional
+	HeartBeatTime metav1.Time `json:"heartBeatTime,omitempty"`
 	// Record effective instances
 	// +optional
 	EffectiveInstances []string `json:"effectiveInstances,omitempty"`

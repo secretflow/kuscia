@@ -43,6 +43,7 @@ func makeMockTaskResource(namespace, name string) *v1alpha1.TaskResource {
 }
 
 func TestHandleUpdatedTaskResource(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -90,6 +91,7 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 }
 
 func TestUpdateTaskSummaryByTaskResource(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	kts := makeMockTaskSummary("bob", "task-1", "1")
 	kusciaFakeClient := kusciaclientsetfake.NewSimpleClientset(kts)
@@ -194,6 +196,7 @@ func TestUpdateTaskSummaryByTaskResource(t *testing.T) {
 }
 
 func TestUpdateHostTaskSummaryByTaskResource(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	kts := makeMockTaskSummary("bob", "task-1", "1")

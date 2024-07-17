@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package master
 
 import (
@@ -67,7 +67,7 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		nlog.Info("Scheduler and controllers are all started")
 		// wait any controller failed
 	} else {
-		coreDNSModule := modules.RunCoreDNSWithDestroy(conf)
+		coreDnsModule := modules.RunCoreDNSWithDestroy(conf)
 		if err := modules.RunK3sWithDestroy(conf); err != nil {
 			nlog.Errorf("k3s start failed: %s", err)
 			return err
@@ -75,7 +75,7 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		// make clients after k3s start
 		conf.MakeClients()
 
-		cdsModule, ok := coreDNSModule.(*modules.CorednsModule)
+		cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
 		if !ok {
 			return errors.New("coredns module type is invalid")
 		}
@@ -115,5 +115,6 @@ func Run(ctx context.Context, configFile string, onlyControllers bool) error {
 		modules.SetKusciaOOMScore()
 	}
 	conf.WaitAllModulesDone(ctx.Done())
+	nlog.Errorf("Master [%s] shut down......", kusciaConf.DomainID)
 	return nil
 }

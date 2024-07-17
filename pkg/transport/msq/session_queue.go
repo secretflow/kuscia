@@ -25,8 +25,9 @@ import (
 )
 
 type SessionQueue struct {
-	ByteSizeLimit uint64
-	ByteSize      uint64
+	ByteSizeLimit      uint64
+	ByteSize           uint64
+	topicQueueCapacity int
 
 	released bool
 
@@ -37,13 +38,14 @@ type SessionQueue struct {
 	topics map[string]*Topic
 }
 
-func NewSessionQueue() *SessionQueue {
+func NewSessionQueue(config *Config) *SessionQueue {
 	sq := &SessionQueue{
-		ByteSizeLimit: config.PerSessionByteSizeLimit,
-		ByteSize:      0,
-		released:      false,
-		mtx:           sync.Mutex{},
-		topics:        make(map[string]*Topic),
+		ByteSizeLimit:      config.PerSessionByteSizeLimit,
+		ByteSize:           0,
+		topicQueueCapacity: config.TopicQueueCapacity,
+		released:           false,
+		mtx:                sync.Mutex{},
+		topics:             make(map[string]*Topic),
 	}
 
 	sq.notEmpty = condchan.New(&sq.mtx)
@@ -128,7 +130,7 @@ func (s *SessionQueue) getTopic(topic string) *Topic {
 		return topicQueue
 	}
 
-	topicQueue = NewTopicQueue(topic)
+	topicQueue = NewTopicQueue(topic, s.topicQueueCapacity)
 	s.topics[topic] = topicQueue
 	return topicQueue
 }
@@ -166,12 +168,16 @@ func (s *SessionQueue) waitUntil(check func() bool, cond *condchan.CondChan, tim
 		return false, transerr.NewTransError(transerr.SessionReleased)
 	}
 
+	if !available && waitTimeout {
+		nlog.Warnf("Message wait buffer timeout after [%s]", timeout.String())
+	}
+
 	return available, nil
 }
 
 func (s *SessionQueue) tryPush(topic string, message *Message, timeout time.Duration) *transerr.TransError {
 	if message.ByteSize() > s.ByteSizeLimit {
-		nlog.Warnf("session queue topic(%s) new message len(%d) max than total buffer size(%d)",
+		nlog.Warnf("Session queue topic(%s) new message len(%d) max than total buffer size(%d)",
 			topic, message.ByteSize(), s.ByteSizeLimit)
 		return transerr.NewTransError(transerr.BufferOverflow)
 	}
@@ -186,7 +192,7 @@ func (s *SessionQueue) tryPush(topic string, message *Message, timeout time.Dura
 		return err
 	}
 	if !available {
-		nlog.Infof("not found available buffer for topic(%s), len(%d)", topic, message.ByteSize())
+		nlog.Infof("Not found available buffer for topic(%s), len(%d)", topic, message.ByteSize())
 		return transerr.NewTransError(transerr.BufferOverflow)
 	}
 	s.innerPush(topic, message)

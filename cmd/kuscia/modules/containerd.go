@@ -23,6 +23,7 @@ import (
 	"time"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/embedstrings"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
@@ -76,7 +77,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(s.Root, "bin/containerd"), args...)
+		cmd := exec.Command(filepath.Join(s.Root, "bin/containerd"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
 		return &ModuleCMD{
@@ -87,7 +88,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 }
 
 func (s *containerdModule) execPreCmds(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "sh", "-c", filepath.Join(s.Root, "scripts/deploy/iptables_pre_detect.sh"))
+	cmd := exec.CommandContext(ctx, "sh", "-c", embedstrings.IPTablesPreDetectScript)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	err := cmd.Run()
@@ -95,7 +96,7 @@ func (s *containerdModule) execPreCmds(ctx context.Context) error {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "sh", "-c", filepath.Join(s.Root, "scripts/deploy/cgroup_pre_detect.sh"))
+	cmd = exec.CommandContext(ctx, "sh", "-c", embedstrings.CGrouptPreDetectScript)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
@@ -150,7 +151,7 @@ func (s *containerdModule) Name() string {
 
 func RunContainerdWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "containerd",
 		DestroyCh:         runCtx.Done(),

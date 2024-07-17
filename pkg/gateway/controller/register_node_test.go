@@ -18,6 +18,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -25,7 +26,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 
+	gomonkeyv2 "github.com/agiledragon/gomonkey/v2"
+
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
@@ -100,7 +104,7 @@ func generateTestKey(t *testing.T, namespace string) (csr string, key *rsa.Priva
 	if err != nil {
 		t.Errorf("Generate key data failed, error: %s.", err.Error())
 	}
-	rawKey, err := base64.StdEncoding.DecodeString(keyStr)
+	rawKey, _ := base64.StdEncoding.DecodeString(keyStr)
 	key, err = tls.ParseKey(rawKey, "")
 	if err != nil {
 		t.Errorf("Parse key data failed, error: %s.", err.Error())
@@ -109,12 +113,22 @@ func generateTestKey(t *testing.T, namespace string) (csr string, key *rsa.Priva
 	return
 }
 
-func TestRegisterDomain(t *testing.T) {
+func TestRegisterDomain_ServerNotExists(t *testing.T) {
+	t.Parallel()
 	csr, key := generateTestKey(t, utAlice)
-	_ = RegisterDomain("alice", "test", csr, key, nil)
+
+	// try to mock http request
+	gomonkeyv2.ApplyFunc(utils.DoHTTPWithRetry, func(i interface{}, out interface{}, hp *utils.HTTPParam, d time.Duration, tm int) error {
+		assert.Equal(t, http.MethodPost, hp.Method)
+		assert.Equal(t, utAlice, hp.KusciaSource)
+		return nil
+	})
+
+	assert.NoError(t, RegisterDomain("alice", "test", csr, key, nil))
 }
 
 func TestVerifyRequest(t *testing.T) {
+	t.Parallel()
 	csr, key := generateTestKey(t, utAlice)
 	req, token, err := generateJwtToken(utAlice, csr, key)
 	assert.NoError(t, err, "generateJwtToken failed")
@@ -123,6 +137,7 @@ func TestVerifyRequest(t *testing.T) {
 }
 
 func TestVerifyCSRcn(t *testing.T) {
+	t.Parallel()
 	// request domain is alice but csr is bob
 	csr, key := generateTestKey(t, utBob)
 	req, token, err := generateJwtToken(utAlice, csr, key)
@@ -132,6 +147,7 @@ func TestVerifyCSRcn(t *testing.T) {
 }
 
 func TestCompatibility(t *testing.T) {
+	t.Parallel()
 	// token md5 vs claim (ma5\sha256)
 	csr, key := generateTestKey(t, utAlice)
 	req, token, err := generateJwtTokenMd5(utAlice, csr, key)

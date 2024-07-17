@@ -20,6 +20,7 @@ const (
 	SchemaHTTP             = "http"
 	HealthAPI              = "/healthZ"
 	TokenHeader            = "Token"
+	XForwardHostHeader     = "x-forward-host"
 	ContentTypeHeader      = "Content-Type"
 	HTTPDefaultContentType = "application/json"
 	SourceDomainHeader     = "Kuscia-Source"

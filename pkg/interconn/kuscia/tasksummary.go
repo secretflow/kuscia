@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package kuscia
 
 import (
 	"context"
-	"fmt"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,7 +66,7 @@ func (c *Controller) handleUpdatedTaskSummary(oldObj, newObj interface{}) {
 // syncTaskSummaryHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the resource
 // with the current status of the resource.
-func (c *Controller) syncTaskSummaryHandler(ctx context.Context, key string) (err error) {
+func (c *Controller) syncTaskSummaryHandler(ctx context.Context, key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		nlog.Errorf("Failed to split taskSummary key %v, %v, skip processing it", key, err)
@@ -91,43 +90,53 @@ func (c *Controller) syncTaskSummaryHandler(ctx context.Context, key string) (er
 	}
 
 	taskSummary := originalTs.DeepCopy()
-	if updateErr := c.updateTask(ctx, taskSummary, partyDomainIDs); updateErr != nil {
-		err = updateErr
-	}
-
-	if updateErr := c.updateTaskResource(ctx, taskSummary, partyDomainIDs); updateErr != nil {
-		err = updateErr
-	}
-
-	return err
-}
-
-func (c *Controller) updateTask(ctx context.Context, taskSummary *v1alpha1.KusciaTaskSummary, domainIDs []string) error {
-	originalTask, err := c.taskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskSummary.Name)
-	if err != nil {
+	if shouldReturn, err := c.updateTask(ctx, taskSummary, partyDomainIDs); shouldReturn || err != nil {
 		return err
 	}
 
-	tsRvInTask := ikcommon.GetObjectAnnotation(originalTask, common.TaskSummaryResourceVersionAnnotationKey)
-	if !utilsres.CompareResourceVersion(taskSummary.ResourceVersion, tsRvInTask) {
-		nlog.Infof("TaskSummary resource version is not greater than the annotation value in task %v, skip updating task", originalTask.Name)
-		return nil
+	if err = c.updateTaskResource(ctx, taskSummary, partyDomainIDs); err != nil {
+		return err
+	}
+	return err
+}
+
+func (c *Controller) updateTask(ctx context.Context, taskSummary *v1alpha1.KusciaTaskSummary, domainIDs []string) (bool, error) {
+	originalTask, err := c.taskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskSummary.Name)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			originalTask, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(ctx, taskSummary.Name, metav1.GetOptions{})
+		}
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				nlog.Infof("Task %v is not found, delete taskSummary %v", taskSummary.Name, ikcommon.GetObjectNamespaceName(taskSummary))
+				err = c.kusciaClient.KusciaV1alpha1().KusciaTaskSummaries(taskSummary.Namespace).Delete(ctx, taskSummary.Name, metav1.DeleteOptions{})
+				if k8serrors.IsNotFound(err) {
+					return true, nil
+				}
+				return true, err
+			}
+		}
+		nlog.Errorf("Failed to get task %v, %v", taskSummary.Name, err)
+		return true, err
+	}
+
+	if taskSummary.Status.CompletionTime != nil {
+		return true, nil
 	}
 
 	task := originalTask.DeepCopy()
 	needUpdate := false
 	if updated := updateTaskPartyStatus(task, taskSummary, domainIDs); updated {
-		task.Annotations[common.TaskSummaryResourceVersionAnnotationKey] = taskSummary.ResourceVersion
 		needUpdate = true
 	}
 
 	if needUpdate {
 		task.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).UpdateStatus(ctx, task, metav1.UpdateOptions{}); err != nil {
-			return err
+			return true, err
 		}
 	}
-	return nil
+	return false, nil
 }
 
 func updateTaskPartyStatus(task *v1alpha1.KusciaTask, taskSummary *v1alpha1.KusciaTaskSummary, domainIDs []string) bool {
@@ -184,9 +193,18 @@ func (c *Controller) updateTaskResource(ctx context.Context, taskSummary *v1alph
 		}
 
 		for _, status := range statuses {
+			if status.HostTaskResourceName == "" {
+				continue
+			}
 			originalTr, err := c.taskResourceLister.TaskResources(domainID).Get(status.HostTaskResourceName)
 			if err != nil {
-				return fmt.Errorf("failed to update taskResource based on taskSummary %v, %v", ikcommon.GetObjectNamespaceName(taskSummary), err)
+				if k8serrors.IsNotFound(err) {
+					originalTr, err = c.kusciaClient.KusciaV1alpha1().TaskResources(domainID).Get(ctx, status.HostTaskResourceName, metav1.GetOptions{})
+				}
+				if err != nil {
+					nlog.Errorf("Failed to get taskResource based on taskSummary %v, %v", ikcommon.GetObjectNamespaceName(taskSummary), err)
+					return err
+				}
 			}
 
 			tsRvInTaskResource := ikcommon.GetObjectAnnotation(originalTr, common.TaskSummaryResourceVersionAnnotationKey)

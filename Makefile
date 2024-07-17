@@ -77,11 +77,11 @@ vet: ## Run go vet against code.
 
 .PHONY: verify_error_code
 verify_error_code: ## Verify integrity of error code i18n configuration.
-	bash hack/errorcode/gen_error_code_doc.sh verify pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml
+	bash hack/errorcode/gen_error_code_doc.sh verify proto/api/v1alpha1/errorcode/error_code.proto hack/errorcode/i18n/errorcode.zh-CN.toml
 
 .PHONY: gen_error_code_doc
 gen_error_code_doc: verify_error_code ## Generate error code markdown doc.
-	bash hack/errorcode/gen_error_code_doc.sh doc pkg/kusciaapi/errorcode/error_code.go hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
+	bash hack/errorcode/gen_error_code_doc.sh doc proto/api/v1alpha1/errorcode/error_code.proto hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
 
 .PHONY: check_code
 check_code: verify_error_code fmt vet ## check code format

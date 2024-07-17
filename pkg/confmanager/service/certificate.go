@@ -27,11 +27,11 @@ import (
 
 	"github.com/google/uuid"
 
-	cmerrorcode "github.com/secretflow/kuscia/pkg/confmanager/errorcode"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
+	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 const (
@@ -68,19 +68,19 @@ func (s *certificateService) GenerateKeyCerts(ctx context.Context, request *conf
 
 	if errs := s.ValidateGenerateKeyCertsRequest(ctx, request); errs != nil {
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrRequestInvalidate, errs.String()),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrRequestInvalidate, errs.String()),
 		}
 	}
 
 	if s.certValue == nil || s.certValue.Load() == nil {
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "can not find domain cert"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "can not find domain cert"),
 		}
 	}
 	domainCert, ok := s.certValue.Load().(*x509.Certificate)
 	if !ok {
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "domain cert is not valid"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "domain cert is not valid"),
 		}
 	}
 
@@ -100,13 +100,13 @@ func (s *certificateService) GenerateKeyCerts(ctx context.Context, request *conf
 	key, cert, err := tlsutils.GenerateX509KeyPairStruct(domainCert, s.privateKey, certTmpl)
 	if err != nil {
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "build key certs failed"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "build key certs failed"),
 		}
 	}
 	certEncoded, err := tlsutils.EncodeCert(cert)
 	if err != nil {
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "build key certs failed"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "build key certs failed"),
 		}
 	}
 	var keyEncoded string
@@ -115,26 +115,26 @@ func (s *certificateService) GenerateKeyCerts(ctx context.Context, request *conf
 		keyEncoded, err = tlsutils.EncodeRsaKeyToPKCS1(key)
 		if err != nil {
 			return &confmanager.GenerateKeyCertsResponse{
-				Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "build key certs failed"),
+				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "build key certs failed"),
 			}
 		}
 	case KeyTypeForPCKS8:
 		keyEncoded, err = tlsutils.EncodeRsaKeyToPKCS8(key)
 		if err != nil {
 			return &confmanager.GenerateKeyCertsResponse{
-				Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "build key certs failed"),
+				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "build key certs failed"),
 			}
 		}
 	default:
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "not implemented key encoded form"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "not implemented key encoded form"),
 		}
 	}
 
 	domainCertEncoded, err := tlsutils.EncodeCert(domainCert)
 	if err != nil {
 		return &confmanager.GenerateKeyCertsResponse{
-			Status: utils.BuildErrorResponseStatus(cmerrorcode.ErrGenerateKeyCerts, "build key certs failed"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "build key certs failed"),
 		}
 	}
 

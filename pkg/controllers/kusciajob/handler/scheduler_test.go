@@ -140,6 +140,7 @@ func makeKusciaJob(shape string, mode kusciaapisv1alpha1.KusciaJobScheduleMode, 
 }
 
 func Test_kusciaJobValidate(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		kusciaJob *kusciaapisv1alpha1.KusciaJob
 	}
@@ -200,6 +201,7 @@ func Test_kusciaJobValidate(t *testing.T) {
 }
 
 func Test_readyTasksOf(t *testing.T) {
+	t.Parallel()
 	noDependencies := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 	linearDependencies := makeKusciaJob(KusciaJobForShapeTree,
@@ -317,6 +319,7 @@ func Test_readyTasksOf(t *testing.T) {
 }
 
 func Test_jobStatusPhaseFrom_BestEffort(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		job                   *kusciaapisv1alpha1.KusciaJob
 		currentSubTasksStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase
@@ -422,6 +425,7 @@ func Test_jobStatusPhaseFrom_BestEffort(t *testing.T) {
 }
 
 func Test_jobStatusPhaseFrom_BestEffort_TolerableB(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		job                   *kusciaapisv1alpha1.KusciaJob
 		currentSubTasksStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase
@@ -541,6 +545,7 @@ func Test_jobStatusPhaseFrom_BestEffort_TolerableB(t *testing.T) {
 }
 
 func Test_jobStatusPhaseFrom_Strict(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		job                   *kusciaapisv1alpha1.KusciaJob
 		currentSubTasksStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase
@@ -671,6 +676,7 @@ func Test_jobStatusPhaseFrom_Strict(t *testing.T) {
 }
 
 func Test_jobStatusPhaseFrom_Strict_TolerableB(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		job                   *kusciaapisv1alpha1.KusciaJob
 		currentSubTasksStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase
@@ -764,6 +770,7 @@ func Test_jobStatusPhaseFrom_Strict_TolerableB(t *testing.T) {
 }
 
 func Test_willStartTasksOf(t *testing.T) {
+	t.Parallel()
 	linearDependencies := makeKusciaJob(KusciaJobForShapeTree,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 	type args struct {
@@ -854,6 +861,7 @@ func Test_willStartTasksOf(t *testing.T) {
 }
 
 func TestRunningHandler_buildPartyTemplate(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		party        kusciaapisv1alpha1.Party
 		appImageName string

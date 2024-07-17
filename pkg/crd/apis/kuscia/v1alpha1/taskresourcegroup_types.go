@@ -73,7 +73,7 @@ type TaskResourceGroupSpec struct {
 	// Initiator represents who initiated the task.
 	Initiator string `json:"initiator"`
 	// Parties represents the parties' whose task resource is controlled by self cluster.
-	Parties []TaskResourceGroupParty `json:"parties"`
+	Parties []TaskResourceGroupParty `json:"parties,omitempty"`
 	// Out Of Controlled Parties, namely all partner parties in participant cluster
 	OutOfControlledParties []TaskResourceGroupParty `json:"outOfControlledParties,omitempty"`
 }

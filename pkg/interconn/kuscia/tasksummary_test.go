@@ -54,6 +54,7 @@ func makeMockTaskSummary(namespace, name, rv string) *v1alpha1.KusciaTaskSummary
 }
 
 func TestHandleUpdatedTaskSummary(t *testing.T) {
+	t.Parallel()
 	kusciaFakeClient := fake.NewSimpleClientset()
 	c := NewController(context.Background(), nil, kusciaFakeClient, nil)
 	if c == nil {
@@ -99,6 +100,7 @@ func TestHandleUpdatedTaskSummary(t *testing.T) {
 }
 
 func TestUpdateTask(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 
 	kt1 := makeMockTask("cross-domain", "task-1")
@@ -143,7 +145,7 @@ func TestUpdateTask(t *testing.T) {
 			name:        "can't find task by taskSummary",
 			taskSummary: ts3,
 			domainIDs:   []string{"bob"},
-			wantErr:     true,
+			wantErr:     false,
 		},
 		{
 			name:        "update task by taskSummary",
@@ -155,13 +157,14 @@ func TestUpdateTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := c.updateTask(ctx, tt.taskSummary, tt.domainIDs)
+			_, got := c.updateTask(ctx, tt.taskSummary, tt.domainIDs)
 			assert.Equal(t, tt.wantErr, got != nil)
 		})
 	}
 }
 
 func TestUpdateTaskPartyStatus(t *testing.T) {
+	t.Parallel()
 	// partyTaskStatus in taskSummary is empty,  should return false.
 	domainIDs := []string{"bob"}
 	kt := makeMockTask("cross-domain", "task-1")
@@ -205,6 +208,7 @@ func TestUpdateTaskPartyStatus(t *testing.T) {
 }
 
 func TestUpdateTaskResource(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	tr1 := makeMockTaskResource("bob", "tr-1")
 	tr1.Annotations[common.TaskSummaryResourceVersionAnnotationKey] = "1"

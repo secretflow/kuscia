@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package lite
 
 import (
@@ -49,7 +49,7 @@ func Run(ctx context.Context, configFile string) error {
 	conf := modules.InitDependencies(ctx, kusciaConf)
 	defer conf.Close()
 
-	coreDNSModule := modules.RunCoreDNSWithDestroy(conf)
+	coreDnsModule := modules.RunCoreDNSWithDestroy(conf)
 
 	conf.MakeClients()
 
@@ -72,7 +72,7 @@ func Run(ctx context.Context, configFile string) error {
 	}()
 	wg.Wait()
 
-	cdsModule, ok := coreDNSModule.(*modules.CorednsModule)
+	cdsModule, ok := coreDnsModule.(*modules.CorednsModule)
 	if !ok {
 		return errors.New("coredns module type is invalid")
 	}
@@ -90,6 +90,6 @@ func Run(ctx context.Context, configFile string) error {
 	utils.SetupPprof(conf.Debug, conf.DebugPort, false)
 	modules.SetKusciaOOMScore()
 	conf.WaitAllModulesDone(ctx.Done())
-	nlog.Errorf("Lite shut down......")
+	nlog.Errorf("Lite [%s] shut down......", kusciaConf.DomainID)
 	return nil
 }

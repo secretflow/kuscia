@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package modules
 
 import (
@@ -87,7 +87,7 @@ func NewControllersModule(i *Dependencies) Module {
 
 func RunControllerWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "controllers",
 		DestroyCh:         runCtx.Done(),

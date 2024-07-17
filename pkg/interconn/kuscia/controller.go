@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package kuscia
 
 import (
@@ -295,8 +295,7 @@ func filterTask(obj metav1.Object) bool {
 func matchAnnotations(annotations map[string]string) bool {
 	if annotations == nil ||
 		annotations[common.InitiatorAnnotationKey] == "" ||
-		annotations[common.InterConnKusciaPartyAnnotationKey] == "" ||
-		annotations[common.InterConnSelfPartyAnnotationKey] == "" {
+		annotations[common.InterConnKusciaPartyAnnotationKey] == "" {
 		return false
 	}
 
@@ -355,7 +354,6 @@ func (c *Controller) Run(workers int) error {
 	}()
 
 	c.hostResourceManager.SetWorkers(workers)
-
 	nlog.Infof("Starting %v", c.Name())
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 
@@ -370,6 +368,14 @@ func (c *Controller) Run(workers int) error {
 		return fmt.Errorf("failed to wait for cache sync for %v", c.Name())
 	}
 	c.registerInteropConfigs()
+	for {
+		if c.hostResourceManager.HasSynced() {
+			nlog.Info("Host resource manager finish syncing resources")
+			break
+		}
+		nlog.Info("Waiting for host resource manager to sync resources...")
+		time.Sleep(2 * time.Second)
+	}
 
 	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())
 	for i := 0; i < workers; i++ {

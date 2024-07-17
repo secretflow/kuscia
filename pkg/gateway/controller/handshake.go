@@ -432,7 +432,16 @@ func (c *DomainRouteController) checkTokenStatus(domainID, tokenRevision string)
 	}
 	drName := common.GenDomainRouteName(domainID, c.gateway.Namespace)
 	if dr, err := c.domainRouteLister.DomainRoutes(c.gateway.Namespace).Get(drName); err == nil {
-		return checkTokenRevision(tokenRevision, dr)
+		destStatus := checkTokenRevision(tokenRevision, dr)
+		if destStatus == TokenReady {
+			index, token := IndexToken(tokenRevision, dr)
+			token.HeartBeatTime = metav1.Now()
+			dr.Status.TokenStatus.Tokens[index] = token
+			if _, err = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{}); err != nil {
+				nlog.Errorf("update domain route fail, detail -> %v", err)
+			}
+		}
+		return destStatus
 	} else if k8serrors.IsNotFound(err) {
 		return NoAuthentication
 	}
@@ -443,19 +452,24 @@ func checkTokenRevision(tokenRevision string, dr *kusciaapisv1alpha1.DomainRoute
 	if tokenRevision == "" {
 		return TokenRevisionInputInvalid
 	}
-	r, err := strconv.Atoi(tokenRevision)
-	if err != nil {
-		return TokenRevisionInputInvalid
+
+	index, token := IndexToken(tokenRevision, dr)
+	if index == -1 {
+		return TokenNotFound
 	}
-	for _, t := range dr.Status.TokenStatus.Tokens {
-		if t.Revision == int64(r) {
-			if t.IsReady {
-				return TokenReady
-			}
-			return TokenNotReady
+	if token.IsReady {
+		return TokenReady
+	}
+	return TokenNotReady
+}
+
+func IndexToken(revision string, dr *kusciaapisv1alpha1.DomainRoute) (int, kusciaapisv1alpha1.DomainRouteToken) {
+	for index, t := range dr.Status.TokenStatus.Tokens {
+		if strconv.FormatInt(t.Revision, 10) == revision {
+			return index, t
 		}
 	}
-	return TokenNotFound
+	return -1, kusciaapisv1alpha1.DomainRouteToken{}
 }
 
 func buildFailedHandshakeReply(code int32, err error) *handshake.HandShakeResponse {

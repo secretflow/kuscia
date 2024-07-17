@@ -14,7 +14,7 @@
 
 ### 安装 Protoc
 
-[Protoc 安装教程](https://github.com/protocolbuffers/protobuf)
+[Protoc 安装教程](https://github.com/protocolbuffers/protobuf/blob/main/README.md#protobuf-compiler-installation)
 
 ### 安装 Docker
 
@@ -64,7 +64,7 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 
 在 Kuscia 项目根目录下：
 
-执行`make image`命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。目前 Kuscia 暂时仅支持构建 linux/amd64 的 Anolis 镜像。
+执行`make image`命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。
 
 如果你想依赖指定的 Kuscia-Envoy 镜像构建 Kuscia 镜像，你可以通过 `make image KUSCIA_ENVOY_IMAGE=${KUSCIA_ENVOY_IMAGE}` 来指定依赖镜像的名称。
 

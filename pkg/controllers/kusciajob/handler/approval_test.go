@@ -82,6 +82,7 @@ func setJobApprovalStatus(job *kusciaapisv1alpha1.KusciaJob, testCase int) {
 }
 
 func TestAwaitingApprovalHandler_HandlePhase(t *testing.T) {
+	t.Parallel()
 	independentJob := makeKusciaJob(KusciaJobForShapeIndependent,
 		kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort, 2, nil)
 

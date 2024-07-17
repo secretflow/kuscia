@@ -54,11 +54,11 @@ func (h *JobScheduler) handleAwaitingApproval(job *kusciaapisv1alpha1.KusciaJob)
 	// Check whether Auto Approval
 	if ok, _ := common.SelfClusterIsInitiator(h.domainLister, job); !ok { //not initiator
 		if !h.enableWorkloadApprove {
+			if job.Status.ApproveStatus == nil {
+				job.Status.ApproveStatus = make(map[string]kusciaapisv1alpha1.JobApprovePhase)
+			}
 			ownP, _, _ := h.getAllParties(job)
 			for p := range ownP {
-				if job.Status.ApproveStatus == nil {
-					job.Status.ApproveStatus = make(map[string]kusciaapisv1alpha1.JobApprovePhase)
-				}
 				job.Status.ApproveStatus[p] = kusciaapisv1alpha1.JobAccepted
 				needUpdateStatus = true
 			}

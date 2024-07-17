@@ -27,12 +27,12 @@ parameters:
 executors:
   linux_x64_executor: # declares a reusable executor
     docker:
-      - image: secretflow/kuscia-ci:0.4
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.5
     resource_class: 2xlarge
     shell: /bin/bash --login -eo pipefail
   linux_aarch64_executor:
     docker:
-      - image: secretflow/ubuntu-base-ci:latest
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.5
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
 
@@ -40,62 +40,25 @@ commands:
   test:
     steps:
       - checkout
-      - setup_remote_docker
       - run:
-          name: "install go"
-          command: |
-            ARCH=$(uname -m)
-            case "$ARCH" in
-            x86_64) ARCH="amd64";;
-            aarch64) ARCH="arm64";;
-            *) echo "Unsupported architecture"; exit 1;;
-            esac
-
-            GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.7"
-            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-
-            if ! command -v go &> /dev/null; then
-            wget "$GOLANG_URL"
-            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-            echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
-            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
-            source ~/.bashrc
-            fi
-      - run:
-          name: Test Kuscia
+          name: "kuscia test"
           command: make test
   build_kuscia:
     steps:
-      - setup_remote_docker
-      - run:
-          name: "install go"
-          command: |
-            ARCH=$(uname -m)
-            case "$ARCH" in
-            x86_64) ARCH="amd64";;
-            aarch64) ARCH="arm64";;
-            *) echo "Unsupported architecture"; exit 1;;
-            esac
-
-            GOLANG_DIR="/usr/local"
-            GOLANG_VERSION="1.19.7"
-            GOLANG_URL="https://golang.org/dl/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-
-            if ! command -v go &> /dev/null; then
-            wget "$GOLANG_URL"
-            tar -C "$GOLANG_DIR" -xzf "go${GOLANG_VERSION}.linux-${ARCH}.tar.gz"
-            echo 'export PATH=$PATH:/usr/local/go/bin' | tee -a ~/.bashrc
-            echo 'export PATH=$PATH:/usr/local/go/bin' >> $BASH_ENV
-            source ~/.bashrc
-            fi
+      - checkout
       - run:
           name: "make build"
           command: |
             git config --global --add safe.directory ./
             make build
-      - store_artifacts:
-          path: build
+            
+            DIR="/tmp/build/linux"
+            mkdir -p $DIR
+            cp -rf ./build/linux/* $DIR
+      - persist_to_workspace:
+          root: /tmp/build
+          paths:
+            - linux
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
@@ -117,19 +80,21 @@ jobs:
       - build_kuscia
   image_publish:
     docker:
-      - image: secretflow/kuscia-ci:0.4
+      - image: cimg/deploy:2023.06.1
     shell: /bin/bash --login -eo pipefail
     steps:
-      - attach_workspace:
-          at: build
       - checkout
       - setup_remote_docker
+      - attach_workspace:
+          at: /tmp/build
       - run:
           name: Build image and publish
           command: |
+            set -ex
+            mv /tmp/build/linux ./build/
             CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
-            IMAGE = "secretflow/kuscia"
-            ALIYUN_IMAGE = "secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
+            IMAGE="secretflow/kuscia"
+            ALIYUN_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
 
             # login kuscia dockerhub registry
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
@@ -137,17 +102,19 @@ jobs:
             docker buildx create --name kuscia --platform linux/arm64,linux/amd64 --use
 
             docker buildx build -t ${IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
+            #docker buildx build -t ${IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
 
             # login kuscia aliyun registry
             docker login -u ${ALIYUN_DOCKER_USERNAME} -p ${ALIYUN_DOCKER_PASSWORD}  secretflow-registry.cn-hangzhou.cr.aliyuncs.com
 
+            #docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
 
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  unit-test:
+  kuscia-workflow:
     when:
       and:
         - not: << pipeline.parameters.GHA_Action >>
@@ -157,18 +124,15 @@ workflows:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
-  build-workflow:
-    when:
-      not:
-        or:
-          - << pipeline.parameters.GHA_Action >>
-          - equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]
-          - equal: [ "publish_pypi", << pipeline.parameters.GHA_Meta >> ]
-    jobs:
       - linux_build_kuscia:
           matrix:
             parameters:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
       - image_publish:
           requires:
             - linux_build_kuscia

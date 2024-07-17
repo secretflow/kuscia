@@ -50,7 +50,7 @@ func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 	args = append(args, disabledCollectors...)
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)
+		cmd := exec.Command(filepath.Join(exporter.rootDir, "bin/node_exporter"), args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = os.Environ()
@@ -112,7 +112,7 @@ func (exporter *nodeExporterModule) Name() string {
 
 func RunNodeExporterWithDestroy(conf *Dependencies) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "nodeexporter",
 		DestroyCh:         runCtx.Done(),

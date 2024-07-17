@@ -156,7 +156,7 @@ func (s *CorednsModule) Name() string {
 
 func RunCoreDNSWithDestroy(conf *Dependencies) Module {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "coredns",
 		DestroyCh:         runCtx.Done(),

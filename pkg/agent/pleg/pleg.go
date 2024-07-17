@@ -51,7 +51,7 @@ type PodLifecycleEvent struct {
 
 // PodLifecycleEventGenerator contains functions for generating pod life cycle events.
 type PodLifecycleEventGenerator interface {
-	Start()
+	Start(stopCh <-chan struct{})
 	Watch() chan *PodLifecycleEvent
 	Healthy() (bool, error)
 }

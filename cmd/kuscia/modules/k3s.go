@@ -210,7 +210,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
-		cmd := exec.CommandContext(ctx, filepath.Join(s.rootDir, "bin/k3s"), args...)
+		cmd := exec.Command(filepath.Join(s.rootDir, "bin/k3s"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
 
@@ -249,7 +249,7 @@ func (s *k3sModule) Name() string {
 
 func RunK3sWithDestroy(conf *Dependencies) error {
 	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := newShutdownHookEntry(1 * time.Second)
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
 	conf.RegisterDestroyFunc(DestroyFunc{
 		Name:              "k3s",
 		DestroyCh:         runCtx.Done(),
