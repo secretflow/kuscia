@@ -37,6 +37,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/pkg/utils/process"
+	runenv "github.com/secretflow/kuscia/pkg/utils/runtime"
 )
 
 const (
@@ -192,7 +193,10 @@ func (c *Container) Start() (retErr error) {
 	c.status.Pid = starter.Command().Process.Pid
 
 	c.addCgroup(c.status.Pid)
-	process.SetOOMScore(c.status.Pid, 0)
+
+	if runenv.Permission.HasSetOOMScorePermission() {
+		process.SetOOMScore(c.status.Pid, 0)
+	}
 
 	go c.signalOnExit(starter)
 
@@ -364,6 +368,7 @@ func (c *Container) generateProcessEnv() []string {
 
 func (c *Container) signalOnExit(starter st.Starter) {
 	cmdErr := starter.Wait()
+	nlog.Infof("Container %q got process (%d) exit signal, err=%v", c.ID, starter.Command().Process.Pid, cmdErr)
 
 	c.Lock()
 	defer c.Unlock()
@@ -386,7 +391,7 @@ func (c *Container) signalOnExit(starter st.Starter) {
 		c.status.ExitCode = starter.Command().ProcessState.ExitCode()
 	}
 
-	nlog.Infof("Container %q exited, state=%v, err=%v", c.ID, starter.Command().ProcessState.String(), cmdErr)
+	nlog.Infof("Container %q exited, state=%v", c.ID, starter.Command().ProcessState.String())
 }
 
 func (c *Container) canStart() error {

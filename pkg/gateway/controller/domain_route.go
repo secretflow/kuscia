@@ -24,10 +24,18 @@ import (
 	"sync"
 	"time"
 
+	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
+	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/duration"
 	gocache "github.com/patrickmn/go-cache"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -37,21 +45,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
-	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
-	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	"google.golang.org/protobuf/types/known/wrapperspb"
-
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerDecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
 	kusciapoller "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_poller/v3"
 	kusciareceiver "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_receiver/v3"
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
-
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	clientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -189,7 +187,7 @@ func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh
 	}
 
 	go c.startHandShakeServer(c.handshakePort)
-	go c.checkConnectionHealthy(ctx, stopCh)
+	go c.checkConnectionHealthy(stopCh)
 	nlog.Info("Starting workers")
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -202,7 +200,7 @@ func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh
 	nlog.Info("Shutting down workers")
 }
 
-func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stopCh <-chan struct{}) {
+func (c *DomainRouteController) checkConnectionHealthy(stopCh <-chan struct{}) {
 	t := time.NewTicker(common.GatewayHealthCheckDuration)
 	defer t.Stop()
 	for {

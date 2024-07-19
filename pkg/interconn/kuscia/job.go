@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package kuscia
 
 import (
@@ -308,12 +308,6 @@ func (c *Controller) createJobSummary(ctx context.Context, job *v1alpha1.KusciaJ
 }
 
 func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) error {
-	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(job)
-	if domainIDs == nil {
-		nlog.Errorf("Failed to get self cluster party domain ids from job %v, skip processing it", ikcommon.GetObjectNamespaceName(job))
-		return nil
-	}
-
 	needUpdate := false
 	if job.Status.Phase != jobSummary.Status.Phase {
 		needUpdate = true
@@ -323,8 +317,28 @@ func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJ
 		}
 	}
 
+	if jobSummary.Status.Reason != job.Status.Reason {
+		needUpdate = true
+		jobSummary.Status.Reason = job.Status.Reason
+	}
+
+	if job.Status.Message != jobSummary.Status.Message {
+		needUpdate = true
+		if job.Status.Phase == v1alpha1.KusciaJobFailed {
+			jobParties := job.Annotations[common.InterConnSelfPartyAnnotationKey]
+			jobSummary.Status.Message = fmt.Sprintf("party[%s] job failed info: %s", jobParties, job.Status.Message)
+		} else {
+			jobSummary.Status.Message = job.Status.Message
+		}
+	}
+
 	if updateJobSummaryStage(job, jobSummary) {
 		needUpdate = true
+	}
+
+	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(job)
+	if len(domainIDs) == 0 {
+		nlog.Warnf("The self cluster party domain ids from job %v are empty", ikcommon.GetObjectNamespaceName(job))
 	}
 
 	if updateJobSummaryApproveStatus(job, jobSummary, domainIDs, true) {
@@ -590,6 +604,10 @@ func (c *Controller) updateHostJobSummary(ctx context.Context,
 		needUpdate = true
 	}
 
+	if updateHostJobSummaryStatusPhase(job, jobSummary) {
+		needUpdate = true
+	}
+
 	if needUpdate {
 		jobSummary.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err := kusciaClient.KusciaV1alpha1().KusciaJobSummaries(jobSummary.Namespace).Update(ctx, jobSummary, metav1.UpdateOptions{}); err != nil {
@@ -598,6 +616,25 @@ func (c *Controller) updateHostJobSummary(ctx context.Context,
 	}
 
 	return nil
+}
+
+func updateHostJobSummaryStatusPhase(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) bool {
+	if job.Status.Phase == v1alpha1.KusciaJobFailed &&
+		job.Status.Phase != jobSummary.Status.Phase &&
+		job.Status.CompletionTime != nil &&
+		job.Status.Reason != "" &&
+		job.Status.Reason != jobSummary.Status.Reason {
+		switch job.Status.Reason {
+		case string(v1alpha1.ValidateFailed), string(v1alpha1.CreateTaskFailed):
+			jobParties := job.Annotations[common.InterConnSelfPartyAnnotationKey]
+			jobSummary.Status.Phase = job.Status.Phase
+			jobSummary.Status.Reason = job.Status.Reason
+			jobSummary.Status.Message = fmt.Sprintf("party[%s] job failed info: %s", jobParties, job.Status.Message)
+			jobSummary.Status.CompletionTime = job.Status.CompletionTime
+			return true
+		}
+	}
+	return false
 }
 
 func updateHostJobSummaryStage(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, masterDomainID string) bool {

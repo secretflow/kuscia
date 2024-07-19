@@ -21,6 +21,7 @@ import (
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
@@ -47,12 +48,12 @@ type DataMeshConfig struct {
 	TLS            config.TLSServerConfig
 	KusciaClient   kusciaclientset.Interface
 	KubeNamespace  string
-
-	DisableTLS            bool                      `yaml:"disableTLS,omitempty"`
-	ExternalDataProxyList []ExternalDataProxyConfig `yaml:"externalDataProxyList,omitempty"`
+	DisableTLS     bool              `yaml:"disableTLS,omitempty"`
+	DataProxyList  []DataProxyConfig `yaml:"dataProxyList,omitempty"`
+	InterceptorLog *nlog.NLog        `yaml:"-"`
 }
 
-type ExternalDataProxyConfig struct {
+type DataProxyConfig struct {
 	Endpoint        string                  `yaml:"endpoint,omitempty"`
 	ClientTLSConfig *kusciaconfig.TLSConfig `yaml:"clientTLSConfig,omitempty"`
 	// DatasourceTypes claims which dataSources proxy by this dataProxy, empty means all types that builtin dataProxy unsupported

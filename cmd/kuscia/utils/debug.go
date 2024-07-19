@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package utils
 
 import (
@@ -23,20 +23,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func SetupPprof(debug bool, debugPort int, onlyControllers bool) {
+func SetupPprof(debug bool, debugPort int) {
 	if debug {
 		if debugPort <= 0 {
 			debugPort = 28080
-			if onlyControllers {
-				debugPort = 28180
-			}
 		}
 
-		if onlyControllers {
-			nlog.Infof("Controllers debug port is %v", debugPort)
-		} else {
-			nlog.Infof("Common debug port is %v", debugPort)
-		}
+		nlog.Infof("Common debug port is %v", debugPort)
 
 		mux := http.NewServeMux()
 		mux.HandleFunc("/debug/pprof/", pprof.Index)

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package kuscia
 
 import (
@@ -295,8 +295,7 @@ func filterTask(obj metav1.Object) bool {
 func matchAnnotations(annotations map[string]string) bool {
 	if annotations == nil ||
 		annotations[common.InitiatorAnnotationKey] == "" ||
-		annotations[common.InterConnKusciaPartyAnnotationKey] == "" ||
-		annotations[common.InterConnSelfPartyAnnotationKey] == "" {
+		annotations[common.InterConnKusciaPartyAnnotationKey] == "" {
 		return false
 	}
 

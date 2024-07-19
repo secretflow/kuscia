@@ -19,28 +19,45 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"time"
 
+	"github.com/shirou/gopsutil/v3/disk"
+	"golang.org/x/sys/unix"
+
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/embedstrings"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/pkg/utils/readyz"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
 
 type containerdModule struct {
-	Socket    string
-	Root      string
-	LogConfig nlog.LogConfig
+	moduleRuntimeBase
+	Socket      string
+	Root        string
+	Snapshotter string
+	LogConfig   nlog.LogConfig
 }
 
-func NewContainerd(i *Dependencies) Module {
+func NewContainerd(i *ModuleRuntimeConfigs) (Module, error) {
 	return &containerdModule{
-		Root:      i.RootDir,
-		Socket:    i.ContainerdSock,
-		LogConfig: *i.LogConfig,
-	}
+		moduleRuntimeBase: moduleRuntimeBase{
+			rdz: readyz.NewFuncReadyZ(func(ctx context.Context) error {
+				return checkContainerdReadyZ(ctx, i.RootDir, i.ContainerdSock)
+			}),
+			readyTimeout: 60 * time.Second,
+			name:         "containerd",
+		},
+		Root:        i.RootDir,
+		Socket:      i.ContainerdSock,
+		Snapshotter: autoDetectSnapshotter(i.RootDir),
+		LogConfig:   *i.LogConfig,
+	}, nil
 }
 
 func (s *containerdModule) Run(ctx context.Context) error {
@@ -87,93 +104,57 @@ func (s *containerdModule) Run(ctx context.Context) error {
 }
 
 func (s *containerdModule) execPreCmds(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "sh", "-c", filepath.Join(s.Root, "scripts/deploy/iptables_pre_detect.sh"))
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	cmd = exec.CommandContext(ctx, "sh", "-c", filepath.Join(s.Root, "scripts/deploy/cgroup_pre_detect.sh"))
+	cmd := exec.CommandContext(ctx, "sh", "-c", embedstrings.IPTablesPreDetectScript)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
 }
 
-func (s *containerdModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-	tickerReady := time.NewTicker(time.Second)
-	defer tickerReady.Stop()
-	for {
-		select {
-		case <-tickerReady.C:
-			if _, err := os.Stat(s.Socket); err != nil {
-				continue
+func autoDetectSnapshotter(root string) string {
+	path := path.Join(root, "containerd")
+	if !paths.CheckDirExist(path) {
+		path = root
+	}
+
+	if usage, err := disk.Usage(path); err == nil {
+		if usage.Fstype == "" { // overlayfs `disk`` is supported now
+			stat := unix.Statfs_t{}
+			err := unix.Statfs(path, &stat)
+			if err == nil && stat.Type == 0x794C7630 {
+				usage.Fstype = "overlay"
 			}
-			if err := s.importPauseImage(ctx); err != nil {
-				nlog.Errorf("Unable to import pause image: %v", err)
-				continue
-			}
-			return nil
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			return fmt.Errorf("wait containerd ready timeout")
+		}
+
+		nlog.Infof("Path(%s)'s fstype is %s", path, usage.Fstype)
+		if usage.Fstype == "overlay" {
+			nlog.Warnf("Containerd path(%s)'s fstype is overlay, so snapshotter set to native", path)
+			nlog.Warnf("Snapshotter set to native need more disk, recommend: docker run -v {volume}:%s secretflow/kuscia/containerd", path)
+			return "native"
 		}
 	}
+
+	return "overlayfs"
 }
 
-func (s *containerdModule) importPauseImage(ctx context.Context) error {
+func checkContainerdReadyZ(ctx context.Context, root, sock string) error {
+	if _, err := os.Stat(sock); err != nil {
+		return err
+	}
+	containerdSock := filepath.Join(root, "/containerd/run/containerd.sock")
+	pause := filepath.Join(root, "/pause/pause.tar")
+
 	args := []string{
-		fmt.Sprintf("-a=%s/containerd/run/containerd.sock", s.Root),
+		fmt.Sprintf("-a=%s", containerdSock),
 		"-n=k8s.io",
 		"images",
 		"import",
-		fmt.Sprintf("%s/pause/pause.tar", s.Root),
+		pause,
 	}
 
-	cmd := exec.CommandContext(ctx, filepath.Join(s.Root, "bin/ctr"), args...)
+	cmd := exec.CommandContext(ctx, filepath.Join(root, "bin/ctr"), args...)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to run command %q, detail-> %v", cmd, err)
 	}
 
 	return nil
-}
-
-func (s *containerdModule) Name() string {
-	return "containerd"
-}
-
-func RunContainerdWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "containerd",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunContainerd(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunContainerd(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m := NewContainerd(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("Containerd wait ready failed: %v", err)
-	}
-	nlog.Info("Containerd is ready")
-	return m
 }

@@ -192,6 +192,7 @@ const (
 	DomainDataSourceTypeLocalFS        = "localfs"
 	DomainDataSourceTypeOSS            = "oss"
 	DomainDataSourceTypeMysql          = "mysql"
+	DomainDataSourceTypeODPS           = "odps"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )
 
@@ -244,5 +245,6 @@ const (
 )
 
 const (
-	K3sRegex = `^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`
+	K3sRegex               = `^[a-z0-9]([a-z0-9.-]{0,61}[a-z0-9])?$`
+	ServiceNamePrefixRegex = `^[a-z]([-a-z0-9]{0,46}[a-z0-9])?$`
 )

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package kuscia
 
 import (
@@ -120,7 +120,7 @@ func (c *Controller) updateJob(ctx context.Context, jobSummary *v1alpha1.KusciaJ
 
 	job := originalJob.DeepCopy()
 	needUpdate := false
-	if updated := ikcommon.UpdateJobStage(job, jobSummary); updated {
+	if ikcommon.UpdateJobStage(job, jobSummary) {
 		job.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).Update(ctx, job, metav1.UpdateOptions{}); err != nil {
 			return err
@@ -128,7 +128,11 @@ func (c *Controller) updateJob(ctx context.Context, jobSummary *v1alpha1.KusciaJ
 		return nil
 	}
 
-	if updated := updateJobStatusInfo(job, jobSummary, partyDomainIDs); updated {
+	if updateJobStatusInfo(job, jobSummary, partyDomainIDs) {
+		needUpdate = true
+	}
+
+	if updateJobStatusPhase(job, jobSummary) {
 		needUpdate = true
 	}
 
@@ -139,6 +143,23 @@ func (c *Controller) updateJob(ctx context.Context, jobSummary *v1alpha1.KusciaJ
 		}
 	}
 	return nil
+}
+
+func updateJobStatusPhase(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) bool {
+	if jobSummary.Status.Phase == v1alpha1.KusciaJobFailed &&
+		jobSummary.Status.Phase != job.Status.Phase &&
+		jobSummary.Status.CompletionTime != nil &&
+		jobSummary.Status.Reason != "" &&
+		jobSummary.Status.Reason != job.Status.Reason {
+		switch jobSummary.Status.Reason {
+		case string(v1alpha1.ValidateFailed), string(v1alpha1.CreateTaskFailed):
+			job.Status.Phase = jobSummary.Status.Phase
+			job.Status.Reason = jobSummary.Status.Reason
+			job.Status.Message = jobSummary.Status.Message
+			return true
+		}
+	}
+	return false
 }
 
 func updateJobStatusInfo(job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary, domainIDs []string) bool {

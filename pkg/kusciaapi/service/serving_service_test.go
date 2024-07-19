@@ -28,6 +28,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
@@ -68,6 +69,249 @@ func TestDeleteServing(t *testing.T) {
 		ServingId: kusciaAPISS.servingID,
 	})
 	assert.Equal(t, res.Status.Code, int32(0))
+}
+
+func TestValidateCreateServingRequest(t *testing.T) {
+	tests := []struct {
+		name              string
+		expectedInitiator string
+		req               *kusciaapi.CreateServingRequest
+		wantErr           bool
+	}{
+		{
+			name:    "request serving id is invalid",
+			req:     &kusciaapi.CreateServingRequest{},
+			wantErr: true,
+		},
+		{
+			name:              "request initiator doesn't match",
+			expectedInitiator: "alice",
+			req: &kusciaapi.CreateServingRequest{
+				ServingId: "test",
+				Initiator: "bob",
+			},
+			wantErr: true,
+		},
+		{
+			name:              "request parties is empty",
+			expectedInitiator: "alice",
+			req: &kusciaapi.CreateServingRequest{
+				ServingId: "test",
+				Initiator: "alice",
+			},
+			wantErr: true,
+		},
+		{
+			name:              "request party appimage is empty",
+			expectedInitiator: "alice",
+			req: &kusciaapi.CreateServingRequest{
+				ServingId: "test",
+				Initiator: "alice",
+				Parties: []*kusciaapi.ServingParty{{
+					DomainId: "alice",
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name:              "request party service name prefix doesn't match regex",
+			expectedInitiator: "alice",
+			req: &kusciaapi.CreateServingRequest{
+				ServingId: "test",
+				Initiator: "alice",
+				Parties: []*kusciaapi.ServingParty{{
+					DomainId:          "alice",
+					AppImage:          "test",
+					ServiceNamePrefix: "00Abd",
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name:              "request party service name prefix length is invalid",
+			expectedInitiator: "alice",
+			req: &kusciaapi.CreateServingRequest{
+				ServingId: "test",
+				Initiator: "alice",
+				Parties: []*kusciaapi.ServingParty{{
+					DomainId:          "alice",
+					AppImage:          "test",
+					ServiceNamePrefix: "svc-11111111-11111111-11111111-11111111-11111111-11111111",
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name:              "request is valid",
+			expectedInitiator: "alice",
+			req: &kusciaapi.CreateServingRequest{
+				ServingId: "test",
+				Initiator: "alice",
+				Parties: []*kusciaapi.ServingParty{{
+					DomainId:          "alice",
+					AppImage:          "test",
+					ServiceNamePrefix: "s-11111111-11111111-11111111-11111111-11111111-1",
+				}},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := validateCreateServingRequest(tt.expectedInitiator, tt.req)
+			assert.Equal(t, tt.wantErr, got != nil)
+		})
+	}
+}
+
+func TestValidateBatchQueryServingStatusRequest(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *kusciaapi.BatchQueryServingStatusRequest
+		wantErr bool
+	}{
+		{
+			name:    "request data is empty",
+			req:     &kusciaapi.BatchQueryServingStatusRequest{},
+			wantErr: true,
+		},
+		{
+			name: "request data serving id is empty",
+			req: &kusciaapi.BatchQueryServingStatusRequest{
+				ServingIds: []string{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "request is valid",
+			req: &kusciaapi.BatchQueryServingStatusRequest{
+				ServingIds: []string{"test"},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := validateBatchQueryServingStatusRequest(tt.req)
+			assert.Equal(t, tt.wantErr, got != nil)
+		})
+	}
+}
+
+func TestAuthenticateServingRequest(t *testing.T) {
+	parentCtx := context.WithValue(context.Background(), constants.SourceDomainKey, "alice")
+	tests := []struct {
+		name    string
+		ctx     context.Context
+		parties []*kusciaapi.ServingParty
+		wantErr bool
+	}{
+		{
+			name:    "request from master",
+			ctx:     context.WithValue(parentCtx, constants.AuthRole, constants.AuthRoleMaster),
+			parties: nil,
+			wantErr: false,
+		},
+		{
+			name:    "request from domain and domain doesn't exist in party",
+			ctx:     context.WithValue(parentCtx, constants.AuthRole, constants.AuthRoleDomain),
+			parties: nil,
+			wantErr: true,
+		},
+		{
+			name: "request from domain and domain exist in party",
+			ctx:  context.WithValue(parentCtx, constants.AuthRole, constants.AuthRoleDomain),
+			parties: []*kusciaapi.ServingParty{{
+				DomainId: "alice",
+			}},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := authenticateServingRequest(tt.ctx, tt.parties)
+			assert.Equal(t, tt.wantErr, got != nil)
+		})
+	}
+}
+
+func TestSelfAsParticipant(t *testing.T) {
+	parentCtx := context.WithValue(context.Background(), constants.SourceDomainKey, "alice")
+	tests := []struct {
+		name string
+		ctx  context.Context
+		kd   *v1alpha1.KusciaDeployment
+		want bool
+	}{
+		{
+			name: "request from master",
+			ctx:  context.WithValue(parentCtx, constants.AuthRole, constants.AuthRoleMaster),
+			kd:   nil,
+			want: true,
+		},
+		{
+			name: "request from domain and domain doesn't exist in party",
+			ctx:  context.WithValue(parentCtx, constants.AuthRole, constants.AuthRoleDomain),
+			kd: &v1alpha1.KusciaDeployment{
+				Spec: v1alpha1.KusciaDeploymentSpec{
+					Parties: []v1alpha1.KusciaDeploymentParty{{
+						DomainID: "bob",
+					}},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "request from domain and domain exist in party",
+			ctx:  context.WithValue(parentCtx, constants.AuthRole, constants.AuthRoleDomain),
+			kd: &v1alpha1.KusciaDeployment{
+				Spec: v1alpha1.KusciaDeploymentSpec{
+					Parties: []v1alpha1.KusciaDeploymentParty{{
+						DomainID: "alice",
+					}},
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := selfAsParticipant(tt.ctx, tt.kd)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestBuildKusciaDeployment(t *testing.T) {
+	replicas := int32(2)
+	parties := []*kusciaapi.ServingParty{{
+		DomainId: "alice",
+		AppImage: "mockImageName",
+		Replicas: &replicas,
+		UpdateStrategy: &kusciaapi.UpdateStrategy{
+			Type: "Recreate",
+		},
+		Resources: []*kusciaapi.Resource{{
+			MinCpu:    "1",
+			MaxCpu:    "1",
+			MinMemory: "1Gi",
+			MaxMemory: "1Gi",
+		}},
+	}}
+
+	s := kusciaAPISS.IServingService.(*servingService)
+	req := &kusciaapi.CreateServingRequest{
+		ServingId: "test",
+		Parties:   parties,
+	}
+
+	got, err := s.buildKusciaDeployment(context.Background(), req)
+	assert.Equal(t, true, got != nil)
+	assert.Equal(t, nil, err)
 }
 
 func TestBuildKusciaDeploymentPartyStrategy(t *testing.T) {
@@ -695,7 +939,7 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 	s := servingService{kusciaClient: kusciaClient}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := s.updateKusciaDeploymentParty(context.Background(), tt.servingID, tt.kd, tt.party)
+			got, _ := s.updateKusciaDeploymentParty(context.Background(), tt.kd, tt.party)
 			assert.Equal(t, tt.want, got)
 		})
 	}

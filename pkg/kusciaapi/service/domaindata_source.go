@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -147,6 +147,13 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 		dataSource.Spec.InfoKey = *request.InfoKey
 		dataSource.Spec.URI = uri
 	} else {
+
+		if err = validateDataSourceInfo(request.Type, request.Info); err != nil {
+			return &kusciaapi.CreateDomainDataSourceResponse{
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrRequestValidate), err.Error()),
+			}
+		}
+
 		uri, encInfo, err := s.encryptInfo(request.Type, request.Info)
 		if err != nil {
 			nlog.Errorf(errCreateDomainDataSource, err.Error())
@@ -264,6 +271,11 @@ func (s domainDataSourceService) updateDataSource(dataSource *v1alpha1.DomainDat
 		if infoType == "" {
 			infoType = dataSource.Spec.Type
 		}
+
+		if err := validateDataSourceInfo(request.Type, request.Info); err != nil {
+			return false, err
+		}
+
 		uri, encInfo, err := s.encryptInfo(infoType, request.Info)
 		if err != nil {
 			return false, err
@@ -460,8 +472,9 @@ func (s domainDataSourceService) getDomainDataSource(ctx context.Context, domain
 func validateDataSourceType(t string) error {
 	if t != common.DomainDataSourceTypeOSS &&
 		t != common.DomainDataSourceTypeMysql &&
-		t != common.DomainDataSourceTypeLocalFS {
-		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql]", t)
+		t != common.DomainDataSourceTypeLocalFS &&
+		t != common.DomainDataSourceTypeODPS {
+		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps]", t)
 	}
 	return nil
 }
@@ -500,7 +513,7 @@ func (s domainDataSourceService) validateRetrieveRequest(domainID string) error 
 	return nil
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType string, infoKey string) (*kusciaapi.DataSourceInfo, error) {
 	response := s.configurationService.QueryConfiguration(ctx, &confmanager.QueryConfigurationRequest{
 		Ids: []string{infoKey},
@@ -525,7 +538,7 @@ func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType 
 	return info, err
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) encryptInfo(dataSourceType string, info *kusciaapi.DataSourceInfo) (uri string, encInfo string, err error) {
 	uri, err = parseAndNormalizeDataSource(dataSourceType, info)
 	if err != nil {
@@ -547,7 +560,7 @@ func (s domainDataSourceService) encryptInfo(dataSourceType string, info *kuscia
 	return
 }
 
-// nolint:dulp
+//nolint:dupl
 func (s domainDataSourceService) decryptInfo(cipherInfo string) (*kusciaapi.DataSourceInfo, error) {
 	plaintext, err := tls.DecryptOAEP(s.conf.DomainKey, cipherInfo)
 	if err != nil {
@@ -561,6 +574,7 @@ func (s domainDataSourceService) decryptInfo(cipherInfo string) (*kusciaapi.Data
 }
 
 // connectionStr in secretBackend is a json format string
+// nolint:dulp
 func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.DataSourceInfo, error) {
 	var dsInfo kusciaapi.DataSourceInfo
 	var err error
@@ -575,6 +589,9 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.D
 	case common.DomainDataSourceTypeLocalFS:
 		dsInfo.Localfs = &kusciaapi.LocalDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Localfs)
+	case common.DomainDataSourceTypeODPS:
+		dsInfo.Odps = &kusciaapi.OdpsDataSourceInfo{}
+		err = json.Unmarshal(connectionBytes, dsInfo.Odps)
 	default:
 		err = fmt.Errorf("invalid datasourceType:%s", sourceType)
 	}
@@ -585,7 +602,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.D
 	return &dsInfo, nil
 }
 
-// nolint:dulp
+//nolint:dupl
 func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceInfo) (uri string, err error) {
 	if info == nil {
 		return "", errors.New("info is nil")
@@ -624,10 +641,84 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 			return
 		}
 		uri = ""
+	case common.DomainDataSourceTypeODPS:
+		if isInvalid(info.Odps == nil) {
+			return
+		}
+		uri = info.Odps.Endpoint + "/" + info.Odps.Project
 	default:
-		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql]", sourceType)
+		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps]", sourceType)
 		nlog.Error(err)
 		return
 	}
 	return
+}
+
+func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) error {
+
+	if info == nil {
+		return fmt.Errorf("data source info cannot be nil")
+	}
+
+	switch sourceType {
+	case common.DomainDataSourceTypeLocalFS:
+		if info.Localfs == nil {
+			return fmt.Errorf("localfs info is nil")
+		}
+		if info.Localfs.Path == "" {
+			return fmt.Errorf("localfs 'path' is empty")
+		}
+	case common.DomainDataSourceTypeOSS:
+		if info.Oss == nil {
+			return fmt.Errorf("oss info is nil")
+		}
+		if info.Oss.Endpoint == "" {
+			return fmt.Errorf("oss 'endpoint' is empty")
+		}
+		if info.Oss.Bucket == "" {
+			return fmt.Errorf("oss 'bucket' is empty")
+		}
+		if info.Oss.AccessKeyId == "" {
+			return fmt.Errorf("oss 'access_key_id' is empty")
+		}
+		if info.Oss.AccessKeySecret == "" {
+			return fmt.Errorf("oss 'access_key_secret' is empty")
+		}
+	case common.DomainDataSourceTypeMysql:
+		if info.Database == nil {
+			return fmt.Errorf("mysql info is nil")
+		}
+		if info.Database.Endpoint == "" {
+			return fmt.Errorf("mysql 'endpoint' is empty")
+		}
+		if info.Database.Database == "" {
+			return fmt.Errorf("mysql 'database' is empty")
+		}
+		if info.Database.User == "" {
+			return fmt.Errorf("mysql 'user' is empty")
+		}
+		if info.Database.Password == "" {
+			return fmt.Errorf("mysql 'password' is empty")
+		}
+	case common.DomainDataSourceTypeODPS:
+		if info.Odps == nil {
+			return fmt.Errorf("odps info is nil")
+		}
+		if info.Odps.Endpoint == "" {
+			return fmt.Errorf("odps 'endpoint' is empty")
+		}
+		if info.Odps.Project == "" {
+			return fmt.Errorf("odps 'project' is empty")
+		}
+		if info.Odps.AccessKeyId == "" {
+			return fmt.Errorf("odps 'access_key_id' is empty")
+		}
+		if info.Odps.AccessKeySecret == "" {
+			return fmt.Errorf("odps 'access_key_secret' is empty")
+		}
+	default:
+		return fmt.Errorf("invalid datasource type:%s", sourceType)
+
+	}
+	return nil
 }

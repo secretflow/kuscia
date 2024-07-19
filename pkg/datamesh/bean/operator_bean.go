@@ -19,7 +19,7 @@ import (
 
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"

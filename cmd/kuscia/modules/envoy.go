@@ -18,8 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,10 +30,12 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	utilscommon "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/readyz"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
 
 type envoyModule struct {
+	moduleRuntimeBase
 	rootDir               string
 	cluster               string
 	id                    string
@@ -47,47 +47,29 @@ type EnvoyCommandLineConfig struct {
 	Args []string `yaml:"args,omitempty"`
 }
 
-func (s *envoyModule) readyz(host string) error {
-	cl := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, host+"/ready", nil)
-	if err != nil {
-		nlog.Errorf("NewRequest error:%s", err.Error())
-		return err
-	}
-	resp, err := cl.Do(req)
-	if err != nil {
-		nlog.Errorf("Get ready err:%s", err.Error())
-		return err
-	}
-	if resp == nil || resp.Body == nil {
-		nlog.Error("Resp must has body")
-		return fmt.Errorf("resp must has body")
-	}
-	defer resp.Body.Close()
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Error("ReadAll fail")
-		return err
-	}
-
-	if string(respBytes)[:len(respBytes)-1] != "LIVE" {
-		return errors.New("not ready")
-	}
-	return nil
-}
-
 func getEnvoyCluster(domain string) string {
 	return fmt.Sprintf("kuscia-gateway-%s", domain)
 }
 
-func NewEnvoy(i *Dependencies) Module {
+func NewEnvoy(i *ModuleRuntimeConfigs) (Module, error) {
 	return &envoyModule{
+		moduleRuntimeBase: moduleRuntimeBase{
+			name:         "envoy",
+			readyTimeout: 60 * time.Second,
+			rdz: readyz.NewHTTPReadyZ("http://127.0.0.1:10000/ready", 200, func(body []byte) error {
+				res := string(body[:len(body)-1])
+				if res != "LIVE" {
+					return errors.New("response is not live")
+				}
+				return nil
+			}),
+		},
 		rootDir:               i.RootDir,
 		cluster:               getEnvoyCluster(i.DomainID),
 		id:                    fmt.Sprintf("%s-%s", getEnvoyCluster(i.DomainID), utils.GetHostname()),
 		commandLineConfigFile: "envoy/command-line.yaml",
 		logrotate:             i.Logrorate,
-	}
+	}, nil
 }
 
 func (s *envoyModule) Run(ctx context.Context) error {
@@ -151,7 +133,12 @@ func (s *envoyModule) logRotate(ctx context.Context, filePath string) {
 			d = n.Sub(t)
 		}
 
-		time.Sleep(d)
+		select {
+		case <-ctx.Done():
+			nlog.Warnf("Context done, exit logRotate")
+			return
+		case <-time.After(d):
+		}
 
 		cmd := exec.Command("logrotate", filePath)
 		if err := cmd.Run(); err != nil {
@@ -159,29 +146,6 @@ func (s *envoyModule) logRotate(ctx context.Context, filePath string) {
 		}
 
 	}
-}
-
-func (s *envoyModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(60 * time.Second)
-	defer ticker.Stop()
-	tickerReady := time.NewTicker(100 * time.Millisecond)
-	defer tickerReady.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-tickerReady.C:
-			if nil == s.readyz("http://127.0.0.1:10000") {
-				return nil
-			}
-		case <-ticker.C:
-			return fmt.Errorf("wait envoy ready timeout")
-		}
-	}
-}
-
-func (s *envoyModule) Name() string {
-	return "envoy"
 }
 
 func (s *envoyModule) readCommandArgs() (*EnvoyCommandLineConfig, error) {
@@ -193,36 +157,4 @@ func (s *envoyModule) readCommandArgs() (*EnvoyCommandLineConfig, error) {
 	var config EnvoyCommandLineConfig
 	err = yaml.Unmarshal(data, &config)
 	return &config, err
-}
-
-func RunEnvoyWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "envoy",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunEnvoy(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunEnvoy(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m := NewEnvoy(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("Envoy wait ready failed: %v", err)
-	}
-	nlog.Info("Envoy is ready")
-	return m
 }

@@ -15,9 +15,10 @@
 package common
 
 import (
-	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGenDomainDataID(t *testing.T) {
