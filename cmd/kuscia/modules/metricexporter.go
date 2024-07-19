@@ -31,6 +31,7 @@ type metricExporterModule struct {
 	nodeExportPort   string
 	ssExportPort     string
 	metricExportPort string
+	labels           map[string]string
 }
 
 func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {

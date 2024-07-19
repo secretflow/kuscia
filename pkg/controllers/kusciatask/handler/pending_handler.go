@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package handler
 
 import (
@@ -998,6 +998,10 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		if ctr.ImagePullPolicy == "" {
 			ctr.ImagePullPolicy = v1.PullIfNotPresent
 		}
+		if ctr.MetricProbe != nil {
+			labels["metric-path"] = strings.ReplaceAll(ctr.MetricProbe.Path, "/", "")
+			labels["metric-port"] = fmt.Sprintf("%d", ctr.MetricProbe.Port)
+		}
 
 		resCtr := v1.Container{
 			Name:                     ctr.Name,
@@ -1015,6 +1019,8 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			SecurityContext:          ctr.SecurityContext,
 			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}
+
+		nlog.Info("!!!!!!MetricProbe:", ctr.MetricProbe)
 
 		for _, port := range ctr.Ports {
 			namedPort, ok := podKit.ports[port.Name]
@@ -1097,6 +1103,10 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		})
 	}
 
+	// 输出 Pod 的 annotations和labels
+	nlog.Infof("Pod %s annotations: %v", pod.Name, pod.Annotations)
+	nlog.Infof("Pod %s labels: %v", pod.Name, pod.Labels)
+
 	return pod, nil
 }
 
@@ -1131,7 +1141,6 @@ func (h *PendingHandler) submitPod(pod *v1.Pod) (*v1.Pod, error) {
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return nil, err
 	}
-
 	return listerPod, nil
 }
 

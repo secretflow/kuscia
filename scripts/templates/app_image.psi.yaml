@@ -1,7 +1,7 @@
 apiVersion: kuscia.secretflow/v1alpha1
 kind: AppImage
 metadata:
-  name: psi-image
+  name: secretflow-image
 spec:
   configTemplates:
     task-config.conf: |
@@ -12,27 +12,109 @@ spec:
         "allocated_ports": "{{.ALLOCATED_PORTS}}"
       }
   deployTemplates:
-    - name: psi
+    - name: secretflow
       replicas: 1
       spec:
         containers:
-          - args:
-              - -c
-              - /root/main --kuscia /etc/kuscia/task-config.conf
-            command:
+          - command:
               - sh
+            args:
+              - -c
+              - "python -m secretflow.kuscia.entry ./kuscia/task-config.conf"
+            configVolumeMounts:
+              - mountPath: ./kuscia/task-config.conf
+                subPath: task-config.conf
+            name: secretflow
+            ports:
+              - name: spu
+                port: 20000
+                protocol: GRPC
+                scope: Cluster
+              - name: fed
+                port: 20001
+                protocol: GRPC
+                scope: Cluster
+              - name: global
+                port: 20002
+                protocol: GRPC
+                scope: Domain
+              - name: node-manager
+                port: 20003
+                protocol: GRPC
+                scope: Local
+              - name: object-manager
+                port: 20004
+                protocol: GRPC
+                scope: Local
+              - name: client-server
+                port: 20005
+                protocol: GRPC
+                scope: Local
+            workingDir: /root
+            metricProbe: 
+              path: /metrics
+              port: 9094
+        restartPolicy: Never
+  image:
+    name: {{.SF_IMAGE_NAME}}
+    tag: {{.SF_IMAGE_TAG}}
+---
+apiVersion: kuscia.secretflow/v1alpha1
+kind: AppImage
+metadata:
+  name: secretflow-nsjail-image
+spec:
+  configTemplates:
+    task-config.conf: |
+      {
+        "task_id": "{{.TASK_ID}}",
+        "task_input_config": "{{.TASK_INPUT_CONFIG}}",
+        "task_cluster_def": "{{.TASK_CLUSTER_DEFINE}}",
+        "allocated_ports": "{{.ALLOCATED_PORTS}}"
+      }
+  deployTemplates:
+    - name: secretflow
+      replicas: 1
+      spec:
+        containers:
+          - command:
+              - sh
+            args:
+              - -c
+              - "sh .nsjail/run.sh"
             configVolumeMounts:
               - mountPath: /etc/kuscia/task-config.conf
                 subPath: task-config.conf
             name: secretflow
             ports:
-              - name: psi
-                port: 54509
-                protocol: HTTP
+              - name: spu
+                port: 20000
+                protocol: GRPC
                 scope: Cluster
-            workingDir: /work
+              - name: fed
+                port: 20001
+                protocol: GRPC
+                scope: Cluster
+              - name: global
+                port: 20002
+                protocol: GRPC
+                scope: Domain
+              - name: node-manager
+                port: 20003
+                protocol: GRPC
+                scope: Local
+              - name: object-manager
+                port: 20004
+                protocol: GRPC
+                scope: Local
+              - name: client-server
+                port: 20005
+                protocol: GRPC
+                scope: Local
+            workingDir: /root
+            securityContext:
+              privileged: true
         restartPolicy: Never
   image:
-    id: {{.SF_IMAGE_ID}}
     name: {{.SF_IMAGE_NAME}}
     tag: {{.SF_IMAGE_TAG}}
