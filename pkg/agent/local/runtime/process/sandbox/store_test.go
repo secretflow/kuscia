@@ -24,6 +24,7 @@ import (
 )
 
 func TestStore(t *testing.T) {
+	t.Parallel()
 	rootDir := t.TempDir()
 	s := NewStore(rootDir)
 
@@ -58,10 +59,14 @@ func TestStore(t *testing.T) {
 	sandboxList := s.List()
 	assert.Equal(t, 1, len(sandboxList))
 
+	_, err = os.Stat(sandboxRootDir)
+	assert.NoError(t, err)
+
 	s.cleanupInterval = 10 * time.Millisecond
 	s.sandboxProtectionTime = 0
-	s.Monitor()
-	time.Sleep(1 * time.Second)
+	assert.NoError(t, s.cleanup(s.sandboxRootDir))
+
 	_, err = os.Stat(sandboxRootDir)
 	assert.ErrorIs(t, err, os.ErrNotExist)
+
 }

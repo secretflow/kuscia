@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package handler
 
 import (
@@ -125,6 +125,7 @@ func (h *JobScheduler) handleStageCmdRestart(now metav1.Time, job *kusciaapisv1a
 	if job.Status.Phase == kusciaapisv1alpha1.KusciaJobFailed || job.Status.Phase == kusciaapisv1alpha1.KusciaJobSuspended {
 		// set job phase to 'running'
 		job.Status.Phase = kusciaapisv1alpha1.KusciaJobRunning
+		job.Status.CompletionTime = nil
 		partyStage := kusciaapisv1alpha1.JobRestartStageSucceeded
 		job.Status.Message = fmt.Sprintf("This job is restarted by %s", cmdTrigger)
 		job.Status.Reason = fmt.Sprintf("Party: %s execute the cmd: %s.", cmdTrigger, cmd)
@@ -295,8 +296,8 @@ func (h *JobScheduler) validateJob(now metav1.Time, job *kusciaapisv1alpha1.Kusc
 		return true, true
 	}
 	// validate failed
-	utilsres.SetKusciaJobCondition(now, jobValidatedCond, corev1.ConditionFalse, "ValidateFailed", fmt.Sprintf("Validate job failed, %v", err.Error()))
-	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, "KusciaJobValidateFailed", "")
+	utilsres.SetKusciaJobCondition(now, jobValidatedCond, corev1.ConditionFalse, string(v1alpha1.ValidateFailed), fmt.Sprintf("Validate job failed, %v", err.Error()))
+	setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, string(v1alpha1.ValidateFailed), "")
 	return true, false
 }
 
@@ -417,7 +418,6 @@ func (h *JobScheduler) isAllPartyRestartSuccess(job *kusciaapisv1alpha1.KusciaJo
 }
 
 func (h *JobScheduler) isAllPartyRestartComplete(job *kusciaapisv1alpha1.KusciaJob) bool {
-
 	for _, party := range h.getParties(job) {
 		stageStatus, ok := job.Status.StageStatus[party.DomainID]
 		if !ok {
@@ -558,10 +558,19 @@ func (h *JobScheduler) kusciaJobValidate(kusciaJob *kusciaapisv1alpha1.KusciaJob
 // update labels and annotations value
 // 1 inter connection protocol
 // 2 SelfClusterAsInitiator
-func (h *JobScheduler) annotateKusciaJob(job *kusciaapisv1alpha1.KusciaJob) (hasUpdate bool, err error) {
+func (h *JobScheduler) annotateKusciaJob(job *kusciaapisv1alpha1.KusciaJob, ownParties map[string]kusciaapisv1alpha1.Party) (hasUpdate bool, err error) {
 	if job.Annotations != nil {
 		if _, ok := job.Annotations[common.InterConnSelfPartyAnnotationKey]; ok {
 			return false, nil
+		}
+
+		// for job which initiator doesn't participate
+		// and will not annotate kuscia.secretflow/interconn-self-parties
+		// so, choose kuscia.secretflow/self-cluster-as-initiator to decide if need return
+		if len(ownParties) == 0 {
+			if _, ok := job.Annotations[common.SelfClusterAsInitiatorAnnotationKey]; ok {
+				return false, nil
+			}
 		}
 	}
 	// annotate SelfClusterAsInitiator true or false
@@ -623,6 +632,7 @@ func (h *JobScheduler) annotateInterConn(job *kusciaapisv1alpha1.KusciaJob) (err
 		kusciaDomainList []string
 		selfDomainList   []string
 	)
+
 	for _, party := range h.getParties(job) {
 		ns, err := h.namespaceLister.Get(party.DomainID)
 		if err != nil {
@@ -872,7 +882,7 @@ func jobStatusPhaseFrom(job *kusciaapisv1alpha1.KusciaJob, currentSubTasksStatus
 	// Ready task means it can be scheduled but not scheduled.
 	criticalTasks := tasks.criticalTaskMap()
 	readyTasks := tasks.readyTaskMap()
-	nlog.Infof("jobStatusPhaseFrom readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
+	nlog.Infof("JobStatusPhaseFrom readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
 		readyTasks.ToShortString(), tasks.ToShortString(), job.Name)
 
 	// all subtasks succeed and all critical subtasks succeeded means the job is succeeded.
@@ -887,12 +897,20 @@ func jobStatusPhaseFrom(job *kusciaapisv1alpha1.KusciaJob, currentSubTasksStatus
 			return kusciaapisv1alpha1.KusciaJobFailed
 		}
 	case kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort:
-		// in BestEffort mode, has no readyTask subtasks and running subtasks, and least one critical subtasks is failed.
-		if len(readyTasks) == 0 && !tasks.AnyMatch(taskRunning) &&
-			criticalTasks.AnyMatch(taskFailed) {
-			nlog.Infof("jobStatusPhaseFrom failed readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
-				readyTasks.ToShortString(), tasks.ToShortString(), job.Name)
-			return kusciaapisv1alpha1.KusciaJobFailed
+		// if job is interconn type, any subtasks failed means the job is failed.
+		if isInterConnJob(job) {
+			if tasks.AnyMatch(taskFailed) {
+				nlog.Infof("Interconn jobStatusPhaseFrom failed readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
+					readyTasks.ToShortString(), tasks.ToShortString(), job.Name)
+				return kusciaapisv1alpha1.KusciaJobFailed
+			}
+		} else {
+			// in BestEffort mode, has no readyTask subtasks and running subtasks, and least one critical subtasks is failed.
+			if len(readyTasks) == 0 && !tasks.AnyMatch(taskRunning) && criticalTasks.AnyMatch(taskFailed) {
+				nlog.Infof("JobStatusPhaseFrom failed readyTasks=%+v, tasks=%+v, kusciaJobId=%s",
+					readyTasks.ToShortString(), tasks.ToShortString(), job.Name)
+				return kusciaapisv1alpha1.KusciaJobFailed
+			}
 		}
 	default:
 		// unreachable code, return Failed. Mode will be validated when this job committed.

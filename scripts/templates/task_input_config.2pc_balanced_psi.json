@@ -28,22 +28,21 @@
     "domain": "data_prep",
     "name": "psi",
     "version": "0.0.5",
-    "attr_paths": ["input/receiver_input/key", "input/sender_input/key", "protocol", "precheck_input", "bucket_size", "curve_type", "left_side"],
+    "attr_paths": ["protocol", "sort_result", "allow_duplicate_keys", "allow_duplicate_keys/yes/join_type", "allow_duplicate_keys/yes/join_type/left_join/left_side", "input/receiver_input/key", "input/sender_input/key"],
     "attrs": [{
-      "ss": ["id1"]
-    }, {
-      "ss": ["id2"]
-    }, {
       "s": "PROTOCOL_ECDH"
     }, {
       "b": true
     }, {
-      "i64": "1048576"
+      "s": "yes"
     }, {
-      "s": "CURVE_FOURQ"
+      "s": "left_join"
     }, {
-      "is_na": false,
       "ss": ["alice"]
+    }, {
+      "ss": ["id1"]
+    }, {
+      "ss": ["id2"]
     }]
   },
   "sf_input_ids": ["alice-table","bob-table"],

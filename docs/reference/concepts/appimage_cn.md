@@ -221,7 +221,7 @@ spec:
       networkPolicy:
         ingresses:
           - from:
-              roles: 
+              roles:
                 - client
             ports:
               - port: global
@@ -272,7 +272,7 @@ spec:
                 path: /healthz
                 port: 8080
               failureThreshold: 30
-              periodSeconds: 10   
+              periodSeconds: 10
             imagePullPolicy: IfNotPresent
             workingDir: /work
         restartPolicy: Never
@@ -343,11 +343,7 @@ AppImage `metadata` 的子字段详细介绍如下：
 
 AppImage `spec` 的子字段详细介绍如下：
 
-- `configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为`task-config.conf`。 在`task-config.conf`配置文件中，当前定义有4个字段，含义分别如下所示：
-  - `task_id`：表示任务的 ID。当前内容为占位符`{{.TASK_ID}}`。在 Kuscia Agent 启动应用时，会用真实的`task_id`值替换占位符`{{.TASK_ID}}`。
-  - `task_input_config`：表示任务的输入参数配置。当前内容为占位符`{{.TASK_INPUT_CONFIG}}`。在 Kuscia Agent 启动应用时，会用真实的`task_input_config`值替换占位符`{{.TASK_INPUT_CONFIG}}`。
-  - `task_input_cluster_def`：表示任务所有参与方访问地址信息配置。当前内容为占位符`{{.TASK_CLUSTER_DEFINE}}`。在 Kuscia Agent 启动应用时，会用真实的`task_input_cluster_def`值替换占位符`{{.TASK_CLUSTER_DEFINE}}`。
-  - `allocated_ports`：表示任务应用启动分配的端口信息配置。当前内容为占位符`{{.ALLOCATED_PORTS}}`。在 Kuscia Agent 启动应用时，会用真实的`allocated_ports`值替换占位符`{{.ALLOCATED_PORTS}}`。
+- `configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为`task-config.conf`。 更多的信息请 [参考这里](../../troubleshoot/config_render.md)
 - `deployTemplates`：表示应用部署模版配置信息。Kuscia 控制器会根据该名称和角色，选择合适的 AppImage。若在 AppImage 没有查询到符合的部署模版，则将使用第一个部署模版。
   - `deployTemplates[].name`：表示应用部署模版名称。
   - `deployTemplates[].role`：表示应用作为该角色时，使用的部署模版配置。这里的角色可以由应用自定义，示例：Host/Guest；如果应用不需要区分角色部署，这里可以填空。

@@ -32,9 +32,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
+	consts "github.com/secretflow/kuscia/pkg/web/constants"
 	utils2 "github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
@@ -43,6 +45,10 @@ import (
 const (
 	recreateDeploymentStrategyType      string = "Recreate"
 	rollingUpdateDeploymentStrategyType string = "RollingUpdate"
+)
+
+const (
+	servingAuthErrMsg = "domain's kuscia api could only handle the serving that the domain as a participant in the serving"
 )
 
 type IServingService interface {
@@ -60,87 +66,175 @@ type servingService struct {
 }
 
 func NewServingService(config *config.KusciaAPIConfig) IServingService {
-	return &servingService{
-		Initiator:    config.Initiator,
-		kubeClient:   config.KubeClient,
-		kusciaClient: config.KusciaClient,
+	switch config.RunMode {
+	case common.RunModeLite:
+		return &servingServiceLite{
+			Initiator:       config.Initiator,
+			kusciaAPIClient: proxy.NewKusciaAPIClient(""),
+		}
+	default:
+		return &servingService{
+			Initiator:    config.Initiator,
+			kubeClient:   config.KubeClient,
+			kusciaClient: config.KusciaClient,
+		}
 	}
 }
 
 func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.CreateServingRequest) *kusciaapi.CreateServingResponse {
-	if request.ServingId == "" {
-		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving id can not be empty"),
-		}
-	}
-
-	// do k8s validate
-	if err := resources.ValidateK8sName(request.ServingId, "serving_id"); err != nil {
+	if err := validateCreateServingRequest(s.Initiator, request); err != nil {
 		return &kusciaapi.CreateServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 
-	if request.ServingInputConfig == "" {
+	if err := authenticateServingRequest(ctx, request.Parties); err != nil {
 		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving input config can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
 
-	if request.Initiator == "" {
+	if err := s.checkIfExist(ctx, common.KusciaCrossDomain, request); err != nil {
 		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "initiator can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrCreateServing, err.Error()),
 		}
 	}
 
-	if s.Initiator != "" && s.Initiator != request.Initiator {
+	kd, err := s.buildKusciaDeployment(ctx, request)
+	if err != nil {
 		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, fmt.Sprintf("initiator must be %s in P2P", request.Initiator)),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrCreateServing, err.Error()),
 		}
+	}
+
+	if _, err = s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Create(ctx, kd, metav1.CreateOptions{}); err != nil {
+		return &kusciaapi.CreateServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrCreateServing, err.Error()),
+		}
+	}
+
+	return &kusciaapi.CreateServingResponse{
+		Status: utils2.BuildSuccessResponseStatus(),
+	}
+}
+
+func validateCreateServingRequest(expectedInitiator string, request *kusciaapi.CreateServingRequest) error {
+	if err := validateServingID(request.ServingId); err != nil {
+		return err
+	}
+
+	if err := resources.ValidateK8sName(request.ServingId, "serving_id"); err != nil {
+		return err
+	}
+
+	initiator := request.Initiator
+	if initiator == "" {
+		return fmt.Errorf("initiator can not be empty")
+	}
+
+	if expectedInitiator != "" && expectedInitiator != initiator {
+		return fmt.Errorf("initiator must be %s in P2P", expectedInitiator)
 	}
 
 	if len(request.Parties) == 0 {
-		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "parties can not be empty"),
-		}
+		return fmt.Errorf("parties can not be empty")
 	}
 
 	foundInitiator := false
 	for i, party := range request.Parties {
-		if party.AppImage == "" {
-			return &kusciaapi.CreateServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, fmt.Sprintf("appimage can not be empty in parties[%d]", i)),
-			}
+		if err := validateServingParty(party, i); err != nil {
+			return err
 		}
-		if party.DomainId == "" {
-			return &kusciaapi.CreateServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, fmt.Sprintf("domain id can not be empty in parties[%d]", i)),
-			}
-		}
-		if party.DomainId == request.Initiator {
+
+		if party.DomainId == initiator {
 			foundInitiator = true
 		}
 	}
 	if !foundInitiator {
-		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "initiator should be one of the parties"),
+		return fmt.Errorf("initiator %s should be one of the parties", initiator)
+	}
+	return nil
+}
+
+func validateServingID(servingID string) error {
+	if servingID == "" {
+		return fmt.Errorf("serving id can not be empty")
+	}
+	return nil
+}
+
+func validateServingParty(party *kusciaapi.ServingParty, index int) error {
+	if party.AppImage == "" {
+		return fmt.Errorf("appimage can't be empty in parties[%d]", index)
+	}
+	if party.DomainId == "" {
+		return fmt.Errorf("domain id can't be empty in parties[%d]", index)
+	}
+	if party.ServiceNamePrefix != "" {
+		if err := resources.ValidateServiceNamePrefix(party.ServiceNamePrefix, "service_name_prefix"); err != nil {
+			return fmt.Errorf("service name prefix is invalid in parties[%d], %s", index, err.Error())
 		}
 	}
+	return nil
+}
 
+func (s *servingService) checkIfExist(ctx context.Context, domainID string, request *kusciaapi.CreateServingRequest) error {
+	_, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(domainID).Get(ctx, request.ServingId, metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	if err == nil {
+		return fmt.Errorf("serving %q already exists, please ensure that the name is not duplicated", fmt.Sprintf("%s/%s", domainID, request.ServingId))
+	}
+
+	for _, party := range request.Parties {
+		_, err = s.kubeClient.AppsV1().Deployments(party.DomainId).Get(ctx, request.ServingId, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if err == nil {
+			return fmt.Errorf("k8s deployment %q of sub resources for serving already exists, "+
+				"please ensure that the name is not duplicated", fmt.Sprintf("%s/%s", domainID, request.ServingId))
+		}
+	}
+	return nil
+}
+
+func (s *servingService) checkDeploymentIfExist(ctx context.Context, domainID, servingID string) error {
+	_, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(domainID).Get(ctx, servingID, metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	if err == nil {
+		return fmt.Errorf("kuscia deployment %s/%s already exists, please ensure that the name is not duplicated", domainID, servingID)
+	}
+
+	if domainID != common.KusciaCrossDomain {
+		_, err = s.kubeClient.AppsV1().Deployments(domainID).Get(ctx, servingID, metav1.GetOptions{})
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if err == nil {
+			return fmt.Errorf("k8s deployment %s/%s already exists, please ensure that the name is not duplicated", domainID, servingID)
+		}
+	}
+	return nil
+}
+
+func (s *servingService) buildKusciaDeployment(ctx context.Context, request *kusciaapi.CreateServingRequest) (*v1alpha1.KusciaDeployment, error) {
 	kdParties := make([]v1alpha1.KusciaDeploymentParty, len(request.Parties))
 	for i, party := range request.Parties {
 		kdParties[i] = v1alpha1.KusciaDeploymentParty{
-			DomainID:    party.DomainId,
-			AppImageRef: party.AppImage,
-			Role:        party.Role,
+			DomainID:          party.DomainId,
+			AppImageRef:       party.AppImage,
+			Role:              party.Role,
+			ServiceNamePrefix: party.ServiceNamePrefix,
 		}
 
 		s.fillKusciaDeploymentPartyReplicas(&kdParties[i], party.Replicas)
 		strategy, err := s.buildKusciaDeploymentPartyStrategy(request.Parties[i])
 		if err != nil {
-			return &kusciaapi.CreateServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
-			}
+			return nil, err
 		}
 		if strategy != nil {
 			kdParties[i].Template.Strategy = strategy
@@ -148,9 +242,7 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 
 		containers, err := s.buildKusciaDeploymentPartyContainers(ctx, request.Parties[i])
 		if err != nil {
-			return &kusciaapi.CreateServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
-			}
+			return nil, err
 		}
 		if len(containers) > 0 {
 			kdParties[i].Template.Spec.Containers = containers
@@ -159,7 +251,8 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 
 	kd := &v1alpha1.KusciaDeployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: request.ServingId,
+			Namespace: common.KusciaCrossDomain,
+			Name:      request.ServingId,
 			Labels: map[string]string{
 				common.LabelKusciaDeploymentAppType: string(common.ServingApp),
 			},
@@ -170,16 +263,7 @@ func (s *servingService) CreateServing(ctx context.Context, request *kusciaapi.C
 			Parties:     kdParties,
 		},
 	}
-
-	if _, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Create(ctx, kd, metav1.CreateOptions{}); err != nil {
-		return &kusciaapi.CreateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrCreateServing, err.Error()),
-		}
-	}
-
-	return &kusciaapi.CreateServingResponse{
-		Status: utils2.BuildSuccessResponseStatus(),
-	}
+	return kd, nil
 }
 
 func (s *servingService) fillKusciaDeploymentPartyReplicas(kdParty *v1alpha1.KusciaDeploymentParty, replicas *int32) {
@@ -465,6 +549,91 @@ func (s *servingService) buildServingResource(ctrName string, ctrResources corev
 	return append(resources, res)
 }
 
+func (s *servingService) QueryServing(ctx context.Context, request *kusciaapi.QueryServingRequest) *kusciaapi.QueryServingResponse {
+	servingID := request.ServingId
+	if err := validateServingID(servingID); err != nil {
+		return &kusciaapi.QueryServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
+		}
+	}
+
+	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, servingID, metav1.GetOptions{})
+	if err != nil {
+		return &kusciaapi.QueryServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
+		}
+	}
+
+	if asParticipant := selfAsParticipant(ctx, kd); !asParticipant {
+		return &kusciaapi.QueryServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, "serving not found"),
+		}
+	}
+
+	parties, err := s.buildServingParties(ctx, kd)
+	if err != nil {
+		return &kusciaapi.QueryServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
+		}
+	}
+
+	status, err := s.buildServingStatusDetail(ctx, kd)
+	if err != nil {
+		return &kusciaapi.QueryServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
+		}
+	}
+
+	return &kusciaapi.QueryServingResponse{
+		Status: utils2.BuildSuccessResponseStatus(),
+		Data: &kusciaapi.QueryServingResponseData{
+			ServingInputConfig: kd.Spec.InputConfig,
+			Initiator:          kd.Spec.Initiator,
+			Parties:            parties,
+			Status:             status,
+		},
+	}
+}
+
+func selfAsParticipant(ctx context.Context, kd *v1alpha1.KusciaDeployment) bool {
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain {
+		for _, party := range kd.Spec.Parties {
+			if party.DomainID == domainID {
+				return true
+			}
+		}
+		return false
+	}
+	return true
+}
+
+func (s *servingService) buildServingParties(ctx context.Context, kd *v1alpha1.KusciaDeployment) ([]*kusciaapi.ServingParty, error) {
+	parties := make([]*kusciaapi.ServingParty, len(kd.Spec.Parties))
+	for i, party := range kd.Spec.Parties {
+		partyTemplate, err := s.getAppImageTemplate(ctx, party.AppImageRef, party.Role)
+		if err != nil {
+			return nil, err
+		}
+
+		resources, err := s.buildServingResources(ctx, kd, &kd.Spec.Parties[i], partyTemplate)
+		if err != nil {
+			return nil, err
+		}
+
+		parties[i] = &kusciaapi.ServingParty{
+			AppImage:          party.AppImageRef,
+			Role:              party.Role,
+			DomainId:          party.DomainID,
+			Replicas:          party.Template.Replicas,
+			UpdateStrategy:    s.buildServingUpdateStrategy(&kd.Spec.Parties[i]),
+			Resources:         resources,
+			ServiceNamePrefix: party.ServiceNamePrefix,
+		}
+	}
+	return parties, nil
+}
+
 func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alpha1.KusciaDeployment) (*kusciaapi.ServingStatusDetail, error) {
 	if len(kd.Status.PartyDeploymentStatuses) == 0 {
 		return nil, nil
@@ -506,7 +675,7 @@ func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alp
 			partyStatuses = append(partyStatuses, &kusciaapi.PartyServingStatus{
 				DomainId:            domainID,
 				Role:                statusInfo.Role,
-				State:               string(statusInfo.Phase),
+				State:               getServingState(statusInfo.Phase),
 				Replicas:            statusInfo.Replicas,
 				AvailableReplicas:   statusInfo.AvailableReplicas,
 				UnavailableReplicas: statusInfo.UnavailableReplicas,
@@ -518,7 +687,7 @@ func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alp
 	}
 
 	return &kusciaapi.ServingStatusDetail{
-		State:            string(kd.Status.Phase),
+		State:            getServingState(kd.Status.Phase),
 		Message:          kd.Status.Message,
 		Reason:           kd.Status.Reason,
 		TotalParties:     int32(kd.Status.TotalParties),
@@ -528,92 +697,36 @@ func (s *servingService) buildServingStatusDetail(ctx context.Context, kd *v1alp
 	}, nil
 }
 
-func (s *servingService) QueryServing(ctx context.Context, request *kusciaapi.QueryServingRequest) *kusciaapi.QueryServingResponse {
-	servingID := request.ServingId
-	if servingID == "" {
-		return &kusciaapi.QueryServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving id can not be empty"),
-		}
-	}
-
-	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, servingID, metav1.GetOptions{})
-	if err != nil {
-		return &kusciaapi.QueryServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
-		}
-	}
-
-	servingParties := make([]*kusciaapi.ServingParty, len(kd.Spec.Parties))
-	for i, party := range kd.Spec.Parties {
-		partyTemplate, err := s.getAppImageTemplate(ctx, party.AppImageRef, party.Role)
-		if err != nil {
-			return &kusciaapi.QueryServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
-			}
-		}
-
-		resources, err := s.buildServingResources(ctx, kd, &kd.Spec.Parties[i], partyTemplate)
-		if err != nil {
-			return &kusciaapi.QueryServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
-			}
-		}
-		servingParties[i] = &kusciaapi.ServingParty{
-			AppImage:       party.AppImageRef,
-			Role:           party.Role,
-			DomainId:       party.DomainID,
-			Replicas:       party.Template.Replicas,
-			UpdateStrategy: s.buildServingUpdateStrategy(&kd.Spec.Parties[i]),
-			Resources:      resources,
-		}
-	}
-
-	status, err := s.buildServingStatusDetail(ctx, kd)
-	if err != nil {
-		return &kusciaapi.QueryServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServing, err.Error()),
-		}
-	}
-
-	return &kusciaapi.QueryServingResponse{
-		Status: utils2.BuildSuccessResponseStatus(),
-		Data: &kusciaapi.QueryServingResponseData{
-			ServingInputConfig: kd.Spec.InputConfig,
-			Initiator:          kd.Spec.Initiator,
-			Parties:            servingParties,
-			Status:             status,
-		},
-	}
-}
-
 func (s *servingService) BatchQueryServingStatus(ctx context.Context, request *kusciaapi.BatchQueryServingStatusRequest) *kusciaapi.BatchQueryServingStatusResponse {
-	servingIDs := request.ServingIds
-	if len(servingIDs) == 0 {
+	if err := validateBatchQueryServingStatusRequest(request); err != nil {
 		return &kusciaapi.BatchQueryServingStatusResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving ids can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 
-	for _, servingID := range servingIDs {
-		if servingID == "" {
+	servingStatuses := make([]*kusciaapi.ServingStatus, 0)
+	for _, servingID := range request.ServingIds {
+		kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, servingID, metav1.GetOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				continue
+			}
 			return &kusciaapi.BatchQueryServingStatusResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving id can not be empty"),
+				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServingStatus, err.Error()),
 			}
 		}
-	}
 
-	servingStatuses := make([]*kusciaapi.ServingStatus, len(servingIDs))
-	for i, servingID := range servingIDs {
-		servingStatusDetail, err := s.buildServingStatusByID(ctx, servingID)
+		if asParticipant := selfAsParticipant(ctx, kd); !asParticipant {
+			continue
+		}
+
+		status, err := s.buildServingStatus(ctx, kd)
 		if err != nil {
 			return &kusciaapi.BatchQueryServingStatusResponse{
 				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryServingStatus, err.Error()),
 			}
 		}
-		servingStatuses[i] = &kusciaapi.ServingStatus{
-			ServingId: servingID,
-			Status:    servingStatusDetail,
-		}
+		servingStatuses = append(servingStatuses, status)
 	}
 
 	return &kusciaapi.BatchQueryServingStatusResponse{
@@ -622,27 +735,38 @@ func (s *servingService) BatchQueryServingStatus(ctx context.Context, request *k
 			Servings: servingStatuses,
 		},
 	}
-
 }
 
-func (s *servingService) buildServingStatusByID(ctx context.Context, servingID string) (*kusciaapi.ServingStatusDetail, error) {
-	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, servingID, metav1.GetOptions{})
+func validateBatchQueryServingStatusRequest(request *kusciaapi.BatchQueryServingStatusRequest) error {
+	servingIDs := request.ServingIds
+	if len(servingIDs) == 0 {
+		return fmt.Errorf("serving ids can not be empty")
+	}
+
+	for _, servingID := range servingIDs {
+		if err := validateServingID(servingID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *servingService) buildServingStatus(ctx context.Context, kd *v1alpha1.KusciaDeployment) (*kusciaapi.ServingStatus, error) {
+	status, err := s.buildServingStatusDetail(ctx, kd)
 	if err != nil {
 		return nil, err
 	}
 
-	statusDetail, err := s.buildServingStatusDetail(ctx, kd)
-	if err != nil {
-		return nil, err
-	}
-
-	return statusDetail, nil
+	return &kusciaapi.ServingStatus{
+		ServingId: kd.Name,
+		Status:    status,
+	}, nil
 }
 
 func (s *servingService) UpdateServing(ctx context.Context, request *kusciaapi.UpdateServingRequest) *kusciaapi.UpdateServingResponse {
-	if request.ServingId == "" {
+	if err := validateServingID(request.ServingId); err != nil {
 		return &kusciaapi.UpdateServingResponse{
-			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving id can not be empty"),
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 
@@ -659,41 +783,65 @@ func (s *servingService) UpdateServing(ctx context.Context, request *kusciaapi.U
 		}
 	}
 
-	needUpdate := false
+	if asParticipant := selfAsParticipant(ctx, kd); !asParticipant {
+		return &kusciaapi.UpdateServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrUpdateServing, "serving not found"),
+		}
+	}
+
+	var inputConfig *string
+	if request.ServingInputConfig == "" {
+		inputConfig = nil
+	} else {
+		inputConfig = &request.ServingInputConfig
+	}
+
 	kdCopy := kd.DeepCopy()
-	if request.ServingInputConfig != "" && request.ServingInputConfig != kdCopy.Spec.InputConfig {
-		nlog.Infof("Serving %v input config updated from %v to %v", request.ServingId, kdCopy.Spec.InputConfig,
-			request.ServingInputConfig)
-		needUpdate = true
-		kdCopy.Spec.InputConfig = request.ServingInputConfig
-	}
-
-	for i := range request.Parties {
-		updated, err := s.updateKusciaDeploymentParty(ctx, request.ServingId, kdCopy, request.Parties[i])
-		if err != nil {
-			return &kusciaapi.UpdateServingResponse{
-				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
-			}
-		}
-		if updated {
-			needUpdate = true
+	needUpdate, err := s.updateKusciaDeployment(ctx, kdCopy, inputConfig, request.Parties)
+	if err != nil {
+		return &kusciaapi.UpdateServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrUpdateServing, err.Error()),
 		}
 	}
-
 	if needUpdate {
-		_, err = s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Update(ctx, kdCopy, metav1.UpdateOptions{})
+		_, err = s.kusciaClient.KusciaV1alpha1().KusciaDeployments(kdCopy.Namespace).Update(ctx, kdCopy, metav1.UpdateOptions{})
 		if err != nil {
 			return &kusciaapi.UpdateServingResponse{
 				Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrUpdateServing, err.Error()),
 			}
 		}
 	}
+
 	return &kusciaapi.UpdateServingResponse{
 		Status: utils2.BuildSuccessResponseStatus(),
 	}
 }
 
-func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servingID string, kd *v1alpha1.KusciaDeployment, party *kusciaapi.ServingParty) (bool, error) {
+func (s *servingService) updateKusciaDeployment(ctx context.Context,
+	kd *v1alpha1.KusciaDeployment,
+	inputConfig *string,
+	parties []*kusciaapi.ServingParty) (bool, error) {
+	needUpdate := false
+	if inputConfig != nil && *inputConfig != kd.Spec.InputConfig {
+		nlog.Infof("Kuscia Deployment %v/%v input config updated from %v to %v",
+			kd.Namespace, kd.Name, kd.Spec.InputConfig, inputConfig)
+		needUpdate = true
+		kd.Spec.InputConfig = *inputConfig
+	}
+
+	for i := range parties {
+		updated, err := s.updateKusciaDeploymentParty(ctx, kd, parties[i])
+		if err != nil {
+			return false, err
+		}
+		if updated {
+			needUpdate = true
+		}
+	}
+	return needUpdate, nil
+}
+
+func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, kd *v1alpha1.KusciaDeployment, party *kusciaapi.ServingParty) (bool, error) {
 	if party == nil {
 		return false, nil
 	}
@@ -703,8 +851,11 @@ func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servin
 	for i, kdParty := range kd.Spec.Parties {
 		if party.DomainId == kdParty.DomainID && party.Role == kdParty.Role {
 			findParty = true
+			if party.AppImage == "" {
+				party.AppImage = kdParty.AppImageRef
+			}
 			if party.AppImage != "" && party.AppImage != kdParty.AppImageRef {
-				nlog.Infof("Serving %v party domainID/role %v/%v appimage updated from %v to %v", servingID, kdParty.DomainID,
+				nlog.Infof("Serving %v party domainID/role %v/%v appimage updated from %v to %v", kd.Name, kdParty.DomainID,
 					kdParty.Role, kdParty.AppImageRef, party.AppImage)
 				if _, err := s.getAppImage(ctx, party.AppImage); err != nil {
 					return false, err
@@ -715,7 +866,7 @@ func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servin
 
 			if party.Replicas != nil {
 				if kdParty.Template.Replicas == nil || *party.Replicas != *kdParty.Template.Replicas {
-					nlog.Infof("Serving %v party domainID/role %v/%v replicas updated from %v to %v", servingID, kdParty.DomainID,
+					nlog.Infof("Serving %v party domainID/role %v/%v replicas updated from %v to %v", kd.Name, kdParty.DomainID,
 						kdParty.Role, s.printReplicas(kdParty.Template.Replicas), s.printReplicas(party.Replicas))
 					needUpdate = true
 					kd.Spec.Parties[i].Template.Replicas = party.Replicas
@@ -729,7 +880,7 @@ func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servin
 				}
 
 				if !reflect.DeepEqual(newPartyStrategy, kdParty.Template.Strategy) {
-					nlog.Infof("Serving %v party domainID/role %v/%v strategy updated from %v to %v", servingID, kdParty.DomainID,
+					nlog.Infof("Serving %v party domainID/role %v/%v strategy updated from %v to %v", kd.Name, kdParty.DomainID,
 						kdParty.Role, kdParty.Template.Strategy.String(), newPartyStrategy.String())
 					needUpdate = true
 					kd.Spec.Parties[i].Template.Strategy = newPartyStrategy
@@ -743,7 +894,7 @@ func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servin
 						return false, err
 					}
 					if len(containers) > 0 {
-						nlog.Infof("Serving %v party domainID/role %v/%v resources updated from empty to %v", servingID, kdParty.DomainID,
+						nlog.Infof("Serving %v party domainID/role %v/%v resources updated from empty to %v", kd.Name, kdParty.DomainID,
 							kdParty.Role, s.printContainersResource(containers))
 						needUpdate = true
 						kd.Spec.Parties[i].Template.Spec.Containers = containers
@@ -765,7 +916,7 @@ func (s *servingService) updateKusciaDeploymentParty(ctx context.Context, servin
 								return false, err
 							}
 							if updated {
-								nlog.Infof("Serving %v party domainID/role %v/%v container %v resources updated from %v to %v", servingID, kdParty.DomainID,
+								nlog.Infof("Serving %v party domainID/role %v/%v container %v resources updated from %v to %v", kd.Name, kdParty.DomainID,
 									kdParty.Role, ctr.Name, s.printContainerResource(*preResources), partyResource.String())
 								needUpdate = true
 							}
@@ -869,20 +1020,62 @@ func (s *servingService) printContainersResource(containers []v1alpha1.Container
 }
 
 func (s *servingService) DeleteServing(ctx context.Context, request *kusciaapi.DeleteServingRequest) *kusciaapi.DeleteServingResponse {
-	servingID := request.ServingId
-	if servingID == "" {
+	if err := validateServingID(request.ServingId); err != nil {
 		return &kusciaapi.DeleteServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, "serving id can not be empty"),
 		}
 	}
 
-	err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Delete(ctx, servingID, metav1.DeleteOptions{})
+	kd, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Get(ctx, request.ServingId, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.DeleteServingResponse{
 			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrDeleteServing, err.Error()),
 		}
 	}
+
+	if asParticipant := selfAsParticipant(ctx, kd); !asParticipant {
+		return &kusciaapi.DeleteServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrDeleteServing, "serving not found"),
+		}
+	}
+
+	if err = s.kusciaClient.KusciaV1alpha1().KusciaDeployments(common.KusciaCrossDomain).Delete(ctx, request.ServingId, metav1.DeleteOptions{}); err != nil {
+		return &kusciaapi.DeleteServingResponse{
+			Status: utils2.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrDeleteServing, err.Error()),
+		}
+	}
+
 	return &kusciaapi.DeleteServingResponse{
 		Status: utils2.BuildSuccessResponseStatus(),
+	}
+}
+
+func authenticateServingRequest(ctx context.Context, parties []*kusciaapi.ServingParty) error {
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain {
+		for _, party := range parties {
+			if party.DomainId == domainID {
+				return nil
+			}
+		}
+		return fmt.Errorf(servingAuthErrMsg)
+	}
+	return nil
+}
+
+func getServingState(phase v1alpha1.KusciaDeploymentPhase) string {
+	switch phase {
+	case "":
+		return kusciaapi.ServingState_Pending.String()
+	case v1alpha1.KusciaDeploymentPhaseProgressing:
+		return kusciaapi.ServingState_Progressing.String()
+	case v1alpha1.KusciaDeploymentPhasePartialAvailable:
+		return kusciaapi.ServingState_PartialAvailable.String()
+	case v1alpha1.KusciaDeploymentPhaseAvailable:
+		return kusciaapi.ServingState_Available.String()
+	case v1alpha1.KusciaDeploymentPhaseFailed:
+		return kusciaapi.ServingState_Failed.String()
+	default:
+		return kusciaapi.ServingState_Unknown.String()
 	}
 }

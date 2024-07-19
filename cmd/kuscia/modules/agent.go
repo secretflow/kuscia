@@ -26,6 +26,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/embedstrings"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
@@ -41,7 +42,7 @@ type agentModule struct {
 	clients *kubeconfig.KubeClients
 }
 
-func NewAgent(i *Dependencies) Module {
+func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 	conf := &i.Agent
 	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
@@ -107,70 +108,27 @@ func NewAgent(i *Dependencies) Module {
 	return &agentModule{
 		conf:    conf,
 		clients: i.Clients,
-	}
+	}, nil
 }
 
 func (agent *agentModule) Run(ctx context.Context) error {
-	if agent.conf.Provider.Runtime == config.ProcessRuntime {
-		err := agent.execPreCmds(ctx)
-		if err != nil {
+	if agent.conf.Provider.Runtime != config.K8sRuntime {
+		// runc/runp both need run this
+		cmd := exec.CommandContext(ctx, "sh", "-c", embedstrings.CGrouptPreDetectScript)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		if err := cmd.Run(); err != nil {
 			nlog.Warn(err)
 		}
 	}
+
 	return commands.RunRootCommand(ctx, agent.conf, agent.clients.KubeClient)
 }
 
-func (agent *agentModule) execPreCmds(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "sh", "-c", filepath.Join(agent.conf.RootDir, "scripts/deploy/cgroup_pre_detect.sh"))
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	return cmd.Run()
-}
-
 func (agent *agentModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(60 * time.Second)
-	select {
-	case <-commands.ReadyChan:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-ticker.C:
-		return fmt.Errorf("wait agent ready timeout")
-	}
+	return WaitChannelReady(ctx, commands.ReadyChan, 60*time.Second)
 }
 
 func (agent *agentModule) Name() string {
 	return "agent"
-}
-
-func RunAgentWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(2 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "agent",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunAgent(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunAgent(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m := NewAgent(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("Agent wait ready failed: %v", err)
-	}
-	nlog.Info("Agent is ready")
-	return m
 }

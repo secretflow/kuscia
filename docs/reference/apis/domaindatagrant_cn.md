@@ -43,11 +43,11 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 
 #### 响应（CreateDomainDataGrantResponse）
 
-| 字段                 | 类型                             | 选填 | 描述      |
-|--------------------|--------------------------------|----|---------|
-| status             | [Status](summary_cn.md#status) | 必填 | 状态信息    |
-| data               | CreateDomainDataGrantResponseData   |  选填  | 授权信息结果        |
-| data.domaindatagrant_id | string                         | 必填 | 数据对象授权 ID |
+| 字段                 | 类型                             | 描述      |
+|--------------------|--------------------------------|---------|
+| status             | [Status](summary_cn.md#status) | 状态信息    |
+| data               | CreateDomainDataGrantResponseData   | 授权信息结果        |
+| data.domaindatagrant_id | string                         | 数据对象授权 ID |
 
 #### 请求示例
 
@@ -107,9 +107,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/create' \
 
 #### 响应（UpdateDomainDataGrantResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) |  状态信息 |
 
 #### 请求示例
 
@@ -162,9 +162,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/update' \
 
 #### 响应（DeleteDomainDataGrantResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -215,10 +215,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/delete' \
 
 #### 响应（QueryDomainGrantResponse）
 
-| 字段     | 类型                                | 选填 | 描述   |
-|--------|--------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)               | 必填 | 状态信息 |
-| data   | [DomainDataGrant](#domain-data-grant-entity) |  可选  |   授权信息    |
+| 字段     | 类型                                | 描述   |
+|--------|--------------------------------------|------|
+| status | [Status](summary_cn.md#status)               | 状态信息 |
+| data   | [DomainDataGrant](#domain-data-grant-entity) |   授权信息    |
 
 #### 请求示例
 
@@ -306,10 +306,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/query' \
 
 #### 响应（BatchQueryDomainDataGrantResponse）
 
-| 字段     | 类型                                  | 选填 | 描述   |
-|--------|-------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
-| data   | [DomainDataGrant](#domain-data-grant-entity)[] |  可选  |  授权信息列表    |
+| 字段     | 类型                                  | 描述   |
+|--------|-------------------------------------|------|
+| status | [Status](summary_cn.md#status)      | 状态信息 |
+| data   | [DomainDataGrant](#domain-data-grant-entity)[] |  授权信息列表    |
 
 #### 请求示例
 
@@ -402,36 +402,36 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 
 ### DomainDataGrant
 
-| 字段 | 类型 | 选填 | 描述 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| data | [DomainDataGrantData](#domain-data-grant-data-entity)       | 必填 | 数据对象ID  |
-| status | [DomainDataGrantStatus](#domain-data-grant-status-entity)   | 必填 | 数据对象授权 ID |
+| 字段 | 类型 | 描述 |
+|---------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| data | [DomainDataGrantData](#domain-data-grant-data-entity)       | 数据对象ID  |
+| status | [DomainDataGrantStatus](#domain-data-grant-status-entity)   | 数据对象授权 ID |
 
 {#domain-data-grant-data-entity}
 
 ### DomainDataGrantData
 
-| 字段 | 类型 | 选填 | 描述 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| domaindatagrant_id    | string | 必填 | 数据对象授权 ID |
-| author                | string | 必填 | 数据对象授权方节点 ID |
-| domaindata_id         | string | 必填 | 数据对象 ID  |
-| grant_domain          | string | 必填 | 被授权节点 ID       |
-| limit                 | [GrantLimit](#grant-limit-entity) | 选填 | 授权限制条件  |
-| description           | map<string, string> | 可选 | 自定义描述 |
-| domain_id             | string | 必填 | 授权信息所有者节点 ID |
-| signature             | string | 可选 | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，暂时为空字符串 |
+| 字段 | 类型 | 描述 |
+|---------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| domaindatagrant_id    | string |数据对象授权 ID |
+| author                | string |  数据对象授权方节点 ID |
+| domaindata_id         | string | 数据对象 ID  |
+| grant_domain          | string | 被授权节点 ID       |
+| limit                 | [GrantLimit](#grant-limit-entity) | 授权限制条件  |
+| description           | map<string, string> |  自定义描述 |
+| domain_id             | string | 授权信息所有者节点 ID |
+| signature             | string | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，暂时为空字符串 |
 
 {#domain-data-grant-status-entity}
 
 ### DomainDataGrantStatus
 
-| 字段 | 类型 | 选填 | 描述 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| phase                     | string        | 必填 | 状态                                      |
-| message                   | string        | 可选 | 状态描述信息                               |
-| records                   | UseRecord[]   | 选填 | 授权使用记录                               |
-| records[].use_time        | int64         | 选填 | 读取授权信息时间，Unix 时间戳，精确到纳秒      |
-| records[].grant_domain    | string        | 选填 | 被授权节点 ID                              |
-| records[].component       | string        | 选填 | 使用授权的组件                             |
-| records[].output          | string        | 选填 | 使用授权的任务输出                          |
+| 字段 | 类型 | 描述 |
+|---------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| phase                     | string        | 状态                                      |
+| message                   | string        | 状态描述信息                               |
+| records                   | UseRecord[]   | 授权使用记录                               |
+| records[].use_time        | int64         | 读取授权信息时间，Unix 时间戳，精确到纳秒      |
+| records[].grant_domain    | string        | 被授权节点 ID                              |
+| records[].component       | string        | 使用授权的组件                             |
+| records[].output          | string        | 使用授权的任务输出                          |

@@ -19,12 +19,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/secretflow/kuscia/pkg/agent/local/store/assist"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-
 	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
+	"github.com/secretflow/kuscia/pkg/utils/assist"
 	"github.com/secretflow/kuscia/pkg/utils/lock"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
@@ -118,7 +117,7 @@ func (m *Mounter) mountPlain(manifest *kii.Manifest, targetDir string, adjustLin
 	for _, layerHash := range manifest.Layers {
 		tarFile := m.localLayout.GetLayerTarFile(layerHash)
 
-		if err := assist.ExtractTarFile(targetDir, tarFile, adjustLink); err != nil {
+		if err := assist.ExtractTarFile(targetDir, tarFile, adjustLink, true); err != nil {
 			return fmt.Errorf("mount image fail, layer=%v, err-> %v", layerHash, err)
 		}
 	}
@@ -140,7 +139,7 @@ func (m *Mounter) unpackAndGetLayer(layerHash string) (string, error) {
 	}
 
 	// do unpack
-	if err := assist.ExtractTarFile(unpack, m.localLayout.GetLayerTarFile(layerHash), false); err != nil {
+	if err := assist.ExtractTarFile(unpack, m.localLayout.GetLayerTarFile(layerHash), false, true); err != nil {
 		_ = os.RemoveAll(unpack)
 		return "", fmt.Errorf("extract image fail, layer=%v, err-> %v", layerHash, err)
 	}

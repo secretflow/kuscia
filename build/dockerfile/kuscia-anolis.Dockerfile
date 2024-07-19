@@ -1,13 +1,14 @@
-ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.5.0b0"
-ARG KUSCIA_ENVOY_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.0.dev20240611"
-ARG PROM_NODE_EXPORTER="prom/node-exporter:v1.7.0"
+ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.0b0"
+ARG KUSCIA_ENVOY_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.0b0"
+ARG PROM_NODE_EXPORTER="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/node-exporter:v1.7.0"
+ARG BASE_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/anolisos:23"
 
 FROM ${DEPS_IMAGE} as deps
 
 FROM ${PROM_NODE_EXPORTER} as node_exporter
 FROM ${KUSCIA_ENVOY_IMAGE} as kuscia_envoy
 
-FROM openanolis/anolisos:23
+FROM ${BASE_IMAGE}
 
 ENV TZ=Asia/Shanghai
 ARG TARGETPLATFORM
@@ -19,6 +20,7 @@ RUN yum install -y openssl net-tools which jq logrotate iproute procps-ng && \
     mkdir -p /bin/aux && \
     mkdir -p ${ROOT_DIR}/scripts && \
     mkdir -p ${ROOT_DIR}/var/storage && \
+    mkdir -p ${ROOT_DIR}/var/k3s/server/db && \
     mkdir -p ${ROOT_DIR}/pause
 
 COPY --from=deps /image/home/kuscia/bin ${ROOT_DIR}/bin

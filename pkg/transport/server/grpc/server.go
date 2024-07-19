@@ -16,11 +16,12 @@ package grpc
 
 import (
 	"fmt"
-	"github.com/secretflow/kuscia/pkg/transport/server/common"
-	"google.golang.org/grpc/metadata"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/secretflow/kuscia/pkg/transport/server/common"
+	"google.golang.org/grpc/metadata"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/netutil"

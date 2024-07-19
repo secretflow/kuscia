@@ -12,7 +12,7 @@ ClusterDomainRoute 用于在中心化网络中配置 Lite 节点之间的路由�
 
 ## 中心化集群配置 Lite 访问 Master 的授权
 
-在中心化集群中配置 Lite 访问 Master 的授权，需要在 Master 的 Namespace 下创建一条 DomainRoute。  
+在中心化集群中配置 Lite 访问 Master 的授权，需要在 Master 的 Namespace 下创建一条 DomainRoute。
 
 在 Kuscia 中不同节点的服务域名是通过 Namespace 来区分的。Kuscia 支持多个中心化网络互联，为了区分不同的中心化网络中 Master 侧的服务（ApiServer 等），
 故而给 Master 也分配了 Namespace。
@@ -28,7 +28,7 @@ spec:
   source: alice
   destination: master
   requestHeadersToAdd:
-    Authorization: Bearer 781292.db7bc3a58fc5f07e 
+    Authorization: Bearer 781292.db7bc3a58fc5f07e
 ```
 在示例中
 * `.metadata.name`：表示路由规则的名称。
@@ -120,7 +120,7 @@ spec:
 * `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 Token、MTLS 和 None（表示不校验）。
 * `.spec.source`：表示源节点的 Namespace，这里即 alice 的 Namespace。
 * `.spec.destination`：表示目标节点的 Namespace，这里即 bob 的 Namespace。
-* `.spec.requestHeadersToAdd`：表示 bob 侧的 Envoy 转发源节点请求时添加的 headers，示例中 key 为 Authorization 的 header 是 bob 为 
+* `.spec.requestHeadersToAdd`：表示 bob 侧的 Envoy 转发源节点请求时添加的 headers，示例中 key 为 Authorization 的 header 是 bob 为
   alice 分配访问 K3s 的令牌，
 这个 header 仅在目标节点为调度方时有必要配置。
 
@@ -175,9 +175,9 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: DomainRoute
 metadata:
   name: alice-bob
-  namespace: alice 
+  namespace: alice
 spec:
-  authenticationType: Token 
+  authenticationType: Token
   source: alice
   destination: bob
   endpoint:
@@ -192,7 +192,7 @@ spec:
     sourceClientPrivateKey: BASE64<PriKey>
     tlsCA: BASE64<CA>
   tokenConfig:
-    rollingUpdatePeriod: 0 
+    rollingUpdatePeriod: 0
     destinationPublicKey: BASE64<publicKey>
     sourcePublicKey: BASE64<publicKey>
     tokenGenMethod: RSA-GEN
@@ -201,7 +201,7 @@ spec:
       domainID: joke
     transitMethod: THIRD-DOMAIN
   bodyEncryption:
-    algorithm: AES 
+    algorithm: AES
   requestHeadersToAdd:
     Authorization: Bearer 781293.db7bc3a58fc5f07f
 status:
@@ -211,12 +211,12 @@ status:
       revision: 1
       revisionTime: "2023-03-30T12:02:32Z"
       token: BASE64<token>
-    tokens: 
+    tokens:
     - effectiveInstances:
-      - 4c07d28fe469 
+      - 4c07d28fe469
       revision: 1
       revisionTime: "2023-03-30T12:02:32Z"
-      token: BASE64<token> 
+      token: BASE64<token>
 ```
 
 DomainRoute `metadata` 的子字段详细介绍如下：
@@ -270,7 +270,7 @@ DomainRoute `status` 的子字段详细介绍如下：
     * `tokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。
     * `tokens[].isReady`：表示 Token 是否生效。
     * `tokens[].expirationTime`：表示 Token 何时过期。
-  
+
 
 ### ClusterDomainRoute-template
 
@@ -295,7 +295,7 @@ spec:
   mTLSConfig:
     sourceClientCert:  BASE64<Cert>
     sourceClientPrivateKey: BASE64<PriKey>
-    tlsCA:  BASE64<CA> 
+    tlsCA:  BASE64<CA>
   tokenConfig:
     rollingUpdatePeriod: 0
     destinationPublicKey: BASE64<publicKey>
@@ -308,11 +308,11 @@ spec:
     algorithm: AES
   requestHeadersToAdd:
     Authorization: Bearer 781293.db7bc3a58fc5f07f
-status: 
+status:
   conditions:
-    - lastTransitionTime: "2023-03-30T12:02:33Z" 
+    - lastTransitionTime: "2023-03-30T12:02:33Z"
       lastUpdateTime: "2023-03-30T12:02:33Z"
-      message: clusterdomainroute finish rolling revision 1 
+      message: clusterdomainroute finish rolling revision 1
       reason: PostRollingUpdate
       status: "False"
       type: Running
@@ -395,6 +395,8 @@ ClusterDomainRoute `status` 的子字段详细介绍如下：
     * `destinationTokens[].revision`：表示 Token 的版本。
     * `destinationTokens[].revisionTime`：表示 Token 时间戳。
     * `destinationTokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。
+
+{#domain-route-advance}
 
 ## DomainRoute 进阶
 
@@ -543,17 +545,17 @@ spec:
     rollingUpdatePeriod: 86400
 ```
 
-## 反向隧道
+### 反向隧道
 
 反向隧道，对应的转发类型为——`REVERSE-TUNNEL`，代表请求流量会经反向隧道转发。
 
-### 什么时候需要反向隧道？
+#### 什么时候需要反向隧道？
 
 反向隧道用于解决一类特殊的场景。出于安全性考虑，参与隐私计算的一方机构，能够对外访问公网发起请求，但是不愿意对外直接暴露和监听端口。
 如下图，机构 B 侧的算法容器 Bob 可以对机构 A 侧的算法容器 Alice 发起连接，反过来则不行。
 ![image.png](../../imgs/transit-reverse-block.png)
 
-### 反向隧道是怎么实现的？
+#### 反向隧道是怎么实现的？
 
 为了让这种场景下，隐私计算任务可以正常开展，Kuscia 拓展了网关的能力，实现了一种反向隧道，来承接机构 A 对机构 B 发起的请求。
 ![image.png](../../imgs/transit-reverse-tunnel.png)
@@ -563,7 +565,7 @@ Alice 向 Bob 发起请求的环节如下：
 2. 请求发送，对应上图中的 ①——Alice 向 Bob 发起的「request」到达 Alice 侧网关后，网关会将「request」包装成特殊格式的 「chunked response」，通过`反向隧道`发送给 Bob 侧网关，同时记录请求信息，对应 Ⓐ。请求到达 Bob 侧网关后，网关会将「chunked response」重新包装成「request」，发送给 Bob，对应 Ⓑ。
 3. 响应返回，对应上图中的 ②——Bob 完成请求处理后，返回「response」，到达 Bob 侧网关后，网关会将「response」包装成「request」，发送给 Alice，对应 Ⓒ。请求到达 Alice 侧网关后，网关会从「request」取出数据，包装成「response」，找到记录的请求信息，返回给 Alice，对应 Ⓓ。
 
-### 怎样配置反向隧道？
+#### 怎样配置反向隧道？
 
 要配置一条如上图所示的反向隧道路由规则，可以如下所示，设置`Transit`的`transitMethod`字段。**请注意，反向隧道可能会对系统性能产生一定影响。**
 ```bash

@@ -10,10 +10,10 @@
 * 否。该类端口仅需局域网内使用，无需暴露给合作方。
 
 
-| 协议       | 端口号 | 说明                                                                                                                                            | 是否需要暴露给合作方 |
-| ------------ | -------- |-----------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| HTTP/HTTPS | 1080   | 节点之间的认证鉴权端口。在创建节点之间路由时需要指定，可参考[创建节点路由](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)                                        | 是          |
-| HTTP       | 80     | 访问节点中应用的端口。例如：可通过此端口访问 Serving 服务进行预测打分，可参考[使用 SecretFlow Serving 进行预测](../tutorial/run_sf_serving_with_api_cn.md#使用-secretflow-serving-进行预测) | 否          |
-| HTTP/HTTPS | 8082   | 节点 KusciaAPI 的访问端口，可参考[如何使用 KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)                                                       | 否          |
-| GRPC/GRPCS | 8083   | 节点 KusciaAPI 的访问端口，可参考[如何使用 KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)                                                       | 否          |
-| HTTP       | 9091   | 节点 Metrics 指标采集端口，可参考 [Kuscia 监控](./kuscia_monitor)                                                                                           | 否          |
+| 协议       | 端口号 | 说明                                                                                                                                            | 是否需要暴露给合作方 | 部署脚本对应参数 |
+| ------------ | -------- |-----------------------------------------------------------------------------------------------------------------------------------------------|------------|---------|
+| HTTP/HTTPS | 1080   | 节点之间的认证鉴权端口。在创建节点之间路由时需要指定，可参考[创建节点路由](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)                                        | 是          | -p |
+| HTTP       | 80     | 访问节点中应用的端口。例如：可通过此端口访问 Serving 服务进行预测打分，可参考[使用 SecretFlow Serving 进行预测](../tutorial/run_sf_serving_with_api_cn.md#使用-secretflow-serving-进行预测) | 否          | -q |
+| HTTP/HTTPS | 8082   | 节点 KusciaAPI 的访问端口，可参考[如何使用 KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)                                                       | 否          | -k |
+| GRPC/GRPCS | 8083   | 节点 KusciaAPI 的访问端口，可参考[如何使用 KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)                                                       | 否          | -g |
+| HTTP       | 9091   | 节点 Metrics 指标采集端口，可参考 [Kuscia 监控](./kuscia_monitor)                                                                                           | 否          | -x |

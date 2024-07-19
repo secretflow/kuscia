@@ -221,7 +221,7 @@ func makeMemConfigurationService() cmservice.IConfigurationService {
 
 func loadConfigFromCmdEnv(conf *config.DataMeshConfig, certsConfig *CertsConfig, o *opts) error {
 	conf.DisableTLS = !o.enableDataMeshTLS
-	conf.ExternalDataProxyList = []config.ExternalDataProxyConfig{
+	conf.DataProxyList = []config.DataProxyConfig{
 		{
 			Endpoint: o.dataProxyEndpoint,
 		},

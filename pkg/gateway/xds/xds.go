@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:all
 package xds
 
 import (
@@ -31,6 +31,10 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_bridge/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
@@ -39,6 +43,7 @@ import (
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
@@ -50,23 +55,14 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
 
-	// envoy build-in plugins for Unmarshal listeners
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_bridge/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
-
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
+	_ "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_gress/v3"
 	headerdecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
 	kusciapoller "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_poller/v3"
 	kusciareceiver "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_receiver/v3"
 	kusciatoken "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
-
+	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-
-	// kuscia extend plugins for Unmarshal listeners
-	_ "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	_ "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_gress/v3"
 )
 
 const (
@@ -126,6 +122,7 @@ type ConfigTemplate struct {
 	Instance     string
 	ExternalPort uint32
 	LogPrefix    string
+	Version      string // kuscia version
 }
 
 func NewXdsServer(port uint32, id string) {
@@ -157,9 +154,20 @@ func runServer(ctx context.Context, srv server.Server, port uint32) {
 
 	registerServer(grpcServer, srv)
 
-	nlog.Infof("Management server listening on %d", port)
-	if err = grpcServer.Serve(lis); err != nil {
-		nlog.Fatal(err)
+	ch := make(chan struct{})
+	go func() {
+		defer close(ch)
+		nlog.Infof("Management server listening on %d", port)
+		if err = grpcServer.Serve(lis); err != nil {
+			nlog.Fatal(err)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		// notity server stop
+		grpcServer.Stop()
+	case <-ch:
 	}
 }
 
@@ -183,6 +191,7 @@ func InitSnapshot(ns, instance string, initConfig *InitConfig) {
 		Instance:     instance,
 		ExternalPort: config.ExternalPort,
 		LogPrefix:    config.Logdir,
+		Version:      meta.KusciaVersionString(),
 	}
 	snapshot, err = cache.NewSnapshot("1", map[resource.Type][]types.Resource{
 		resource.ClusterType:  generateClusters(config.Basedir),
@@ -198,7 +207,6 @@ func InitSnapshot(ns, instance string, initConfig *InitConfig) {
 }
 
 func generateListeners(configTemplate ConfigTemplate, config *InitConfig) []types.Resource {
-
 	listenerConfPath := path.Join(config.Basedir, "listeners")
 	dir, err := os.ReadDir(listenerConfPath)
 	if err != nil {
@@ -256,6 +264,7 @@ func generateListeners(configTemplate ConfigTemplate, config *InitConfig) []type
 			}
 			listeners = append(listeners, tlsLis)
 		}
+
 		listeners = append(listeners, &lis)
 	}
 
@@ -318,6 +327,7 @@ func generateRoutes(configTemplate ConfigTemplate, basedir string) []types.Resou
 		if err := protojson.Unmarshal(data.Bytes(), &routeConfig); err != nil {
 			nlog.Fatal(err)
 		}
+
 		routes = append(routes, &routeConfig)
 	}
 
@@ -771,13 +781,7 @@ func generateCryptRules(newRule *kusciacrypt.CryptRule, config []*kusciacrypt.Cr
 	return config
 }
 
-func generateReceiverRulesByListener(newRule *kusciareceiver.ReceiverRule, listenerName string,
-	add bool) []*kusciareceiver.ReceiverRule {
-	// TODO internal/external listener is not the same
-	// if listenerName == InternalListener {
-	// 	receiverRules = generateReceiverRules(newRule, encryptRules, add)
-	// 	return receiverRules
-	// }
+func generateReceiverRulesByListener(newRule *kusciareceiver.ReceiverRule, add bool) []*kusciareceiver.ReceiverRule {
 	receiverRules = generateReceiverRules(newRule, receiverRules, add)
 	return receiverRules
 }
@@ -1036,7 +1040,7 @@ func updateReceiverRules(rule *kusciareceiver.ReceiverRule, add bool, listenerNa
 	if err := protoConfig.UnmarshalTo(&receiverFilter); err != nil {
 		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
 	}
-	receiverFilter.Rules = generateReceiverRulesByListener(rule, listenerName, add)
+	receiverFilter.Rules = generateReceiverRulesByListener(rule, add)
 	receiverFilterConf, err := anypb.New(&receiverFilter)
 	if err != nil {
 		return fmt.Errorf("marshal kuscia filter failed with %v", err)

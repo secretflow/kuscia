@@ -19,6 +19,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -73,10 +74,11 @@ type AgentLogCfg struct {
 }
 
 type CapacityCfg struct {
-	CPU     string `yaml:"cpu"`
-	Memory  string `yaml:"memory"`
-	Pods    string `yaml:"pods"`
-	Storage string `yaml:"storage"`
+	CPU              string `yaml:"cpu"`
+	Memory           string `yaml:"memory"`
+	Pods             string `yaml:"pods"`
+	Storage          string `yaml:"storage"`
+	EphemeralStorage string `yaml:"ephemeralStorage"`
 }
 
 type ReservedResourcesCfg struct {
@@ -229,6 +231,9 @@ type AgentConfig struct {
 	APIVersion   string `yaml:"apiVersion,omitempty"`
 	AgentVersion string `yaml:"agentVersion,omitempty"`
 
+	// Location to check disk pressure
+	DiskPressurePath string `yaml:"diskPressurePath,omitempty"`
+
 	// If k3s is built into the node, it is a head node.
 	Head bool `yaml:"head"`
 
@@ -267,6 +272,8 @@ func DefaultStaticAgentConfig() *AgentConfig {
 
 		LogsPath:   defaultLogsPath,
 		StdoutPath: defaultStdoutPath,
+
+		DiskPressurePath: path.Join(defaultRootDir, common.DefaultDomainDataSourceLocalFSPath),
 
 		Capacity: CapacityCfg{
 			Pods: defaultPodsCapacity,
@@ -358,10 +365,6 @@ func LoadOverrideConfig(config *AgentConfig, configPath string) (*AgentConfig, e
 	return config, err
 }
 
-func LoadStaticAgentConfig(configPath string) (*AgentConfig, error) {
-	return LoadOverrideConfig(DefaultStaticAgentConfig(), configPath)
-}
-
 // LoadAgentConfig loads the given json configuration files.
 func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 	config, err := LoadOverrideConfig(DefaultAgentConfig(), configPath)
@@ -381,6 +384,10 @@ func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 	}
 	if err := paths.EnsureDirectory(config.StdoutPath, true); err != nil {
 		return nil, err
+	}
+
+	if config.DiskPressurePath == "" {
+		config.DiskPressurePath = path.Join(config.RootDir, common.DefaultDomainDataSourceLocalFSPath)
 	}
 
 	if config.NodeIP == "" {

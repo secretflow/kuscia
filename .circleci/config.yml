@@ -51,7 +51,7 @@ commands:
           command: |
             git config --global --add safe.directory ./
             make build
-            
+
             DIR="/tmp/build/linux"
             mkdir -p $DIR
             cp -rf ./build/linux/* $DIR

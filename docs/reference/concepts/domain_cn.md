@@ -147,7 +147,7 @@ metadata:
 spec:
   role: partner
   cert: base64<certificate>
-  interConnProtocols: 
+  interConnProtocols:
   - kuscia
   resourceQuota:
     podMaxCount: 100
@@ -182,6 +182,6 @@ Domain `status` 的子字段详细介绍如下：
   - `nodeStatuses[].lastTransitionTime`：表示 Kuscia Agent 最近一次发生更新的时间。
   - `nodeStatuses[].name`：表示 Kuscia Agent 的名称。
   - `nodeStatuses[].status`：表示 Kuscia Agent 的状态。支持两种取值 `Ready` 、`NotReady` 。
-    - `Ready`：表示 Kusica Agent 状态正常。 
-    - `NotReady`：表示 Kusica Agent 状态异常。 
+    - `Ready`：表示 Kusica Agent 状态正常。
+    - `NotReady`：表示 Kusica Agent 状态异常。
   - `nodeStatuses[].version`：表示 Kuscia Agent 的版本。

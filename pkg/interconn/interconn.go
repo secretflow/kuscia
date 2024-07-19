@@ -138,7 +138,7 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 
 // onStoppedLeading is executed when leader stopped.
 func (s *Server) onStoppedLeading() {
-	nlog.Warnf("Server %v leading stopped", s.Name())
+	nlog.Warnf("Server %v leading stopped", serverName)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	for _, c := range s.controllers {
@@ -150,10 +150,7 @@ func (s *Server) onStoppedLeading() {
 func (s *Server) controllerIsEmpty() bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	if s.controllers == nil {
-		return true
-	}
-	return false
+	return s.controllers == nil
 }
 
 func (s *Server) WaitReady(ctx context.Context) error {

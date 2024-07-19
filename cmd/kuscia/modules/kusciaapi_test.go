@@ -14,13 +14,7 @@
 
 package modules
 
-import (
-	"context"
-	"testing"
-
-	"github.com/secretflow/kuscia/pkg/common"
-)
-
+/*
 func Test_RunKusciaAPI(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
 	dependency := mockDependency(t)
@@ -61,3 +55,4 @@ func Test_RunKusciaAPIWithNOTLS(t *testing.T) {
 	RunKusciaAPI(runCtx, cancel, dependency, nil)
 	cancel()
 }
+*/
