@@ -219,7 +219,7 @@ task_cluster_define: "{{.TASK_CLUSTER_DEFINE}}"
 		"TASK_ID":             "abc",
 		"TASK_CLUSTER_DEFINE": string(taskInputConfigBytes),
 	}
-	data, err := cr.makeDataMap(map[string]string{}, envs)
+	data, err := cr.makeDataMap(map[string]string{}, map[string]string{}, envs)
 	assert.NoError(t, err)
 	t.Logf("%+v", data)
 
