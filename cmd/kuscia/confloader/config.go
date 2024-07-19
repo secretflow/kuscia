@@ -69,6 +69,7 @@ type KusciaConfig struct {
 	CoreDNSBackUpConf     string                    `yaml:"-"`
 	RunMode               common.RunModeType        `yaml:"-"`
 	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
+	HostIP                string                    `yaml:"hostIP,omitempty"`
 }
 
 type SecretBackendConfig struct {

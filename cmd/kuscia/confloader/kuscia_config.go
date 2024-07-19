@@ -64,6 +64,7 @@ type AutomonyKusciaConfig struct {
 	Image             ImageConfig                 `yaml:"image"`
 	DatastoreEndpoint string                      `yaml:"datastoreEndpoint"`
 	AdvancedConfig    `yaml:",inline"`
+	HostIP            string `yaml:"hostIP"`
 }
 
 type RunkConfig struct {
@@ -208,6 +209,7 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 }
 
 func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
+	kusciaConfig.HostIP = autonomy.HostIP
 	kusciaConfig.LogLevel = autonomy.LogLevel
 	kusciaConfig.DomainID = autonomy.DomainID
 	kusciaConfig.CAKeyData = autonomy.DomainKeyData
