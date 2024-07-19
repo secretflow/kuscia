@@ -15,16 +15,13 @@
 package configrender
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
-	"text/template"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,8 +31,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	resourcetest "github.com/secretflow/kuscia/pkg/agent/resource/testing"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
 func setupTestConfigRender(t *testing.T) *configRender {
@@ -185,7 +180,6 @@ func assertFileContent(t *testing.T, file string, content string) {
 }
 
 func TestConfigFormat(t *testing.T) {
-	t.Parallel()
 	cr := setupTestConfigRender(t)
 
 	tests := []struct {
@@ -219,7 +213,7 @@ task_cluster_define: "{{.TASK_CLUSTER_DEFINE}}"
 		"TASK_ID":             "abc",
 		"TASK_CLUSTER_DEFINE": string(taskInputConfigBytes),
 	}
-	data, err := cr.makeDataMap(map[string]string{}, envs)
+	data, err := cr.makeDataMap(map[string]string{}, map[string]string{}, envs)
 	assert.NoError(t, err)
 	t.Logf("%+v", data)
 
@@ -256,162 +250,4 @@ task_cluster_define: "{{.TASK_CLUSTER_DEFINE}}"
 			assert.Equal(t, "abc", conf["task_id"])
 		})
 	}
-}
-
-func TestMergeDataMaps_WithJsonMap(t *testing.T) {
-	t.Parallel()
-	dst := buildStructMap(map[string]string{
-		"KEY1": "{\"xyz\":1}",
-		"KEY2": "124",
-	})
-
-	assert.Len(t, dst, 2)
-	assert.Contains(t, dst, "KEY1")
-	assert.Contains(t, dst, "KEY2")
-
-	assert.Contains(t, dst["KEY1"], "xyz")
-	assert.Equal(t, dst["KEY1"].(map[string]interface{})["xyz"], float64(1))
-}
-
-func TestBuildStructMap_WithJsonArray(t *testing.T) {
-	t.Parallel()
-	dst := buildStructMap(map[string]string{
-		"KEY1": "[1,2,3]",
-		"KEY2": "[\"1\"]",
-	})
-
-	assert.Len(t, dst, 2)
-	assert.Contains(t, dst, "KEY1")
-	assert.Contains(t, dst, "KEY2")
-
-	assert.Len(t, dst["KEY1"], 3)
-	assert.Len(t, dst["KEY2"], 1)
-	assert.Len(t, dst["KEY2"], 1)
-	assert.Equal(t, dst["KEY1"], []interface{}{float64(1), float64(2), float64(3)})
-	assert.Equal(t, dst["KEY2"], []interface{}{"1"})
-}
-
-func TestBuildStructMap_WithJsonMapArray(t *testing.T) {
-	t.Parallel()
-	dst := buildStructMap(map[string]string{
-		"KEY3": "[{\"xyz\":\"1\"}]",
-		"KEY4": "{\"xyz\":[\"2\"]}",
-	})
-
-	assert.Len(t, dst, 2)
-	assert.Contains(t, dst, "KEY3")
-	assert.Contains(t, dst, "KEY4")
-
-	assert.Len(t, dst["KEY3"], 1)
-	assert.NotNil(t, dst["KEY3"].([]interface{})[0])
-	assert.Contains(t, dst["KEY3"].([]interface{})[0], "xyz")
-	assert.Contains(t, dst["KEY3"].([]interface{})[0].(map[string]interface{})["xyz"], "1")
-
-	assert.Contains(t, dst["KEY4"], "xyz")
-	assert.Equal(t, dst["KEY4"].(map[string]interface{})["xyz"], []interface{}{"2"})
-}
-
-func TestBuildStructMap_WithStruct(t *testing.T) {
-	t.Parallel()
-	cr := setupTestConfigRender(t)
-
-	configTemplate := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}}"
-	}`
-
-	taskInputConfigBytes, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(&appconfig.ClusterDefine{
-		SelfPartyIdx: 1,
-	})
-	assert.NoError(t, err)
-	envs := map[string]string{
-		"TASK_ID":             "abc",
-		"TASK_CLUSTER_DEFINE": string(taskInputConfigBytes),
-	}
-	data, err := cr.makeDataMap(map[string]string{}, envs)
-	assert.NoError(t, err)
-	t.Logf("%+v", data)
-
-	rootDir := t.TempDir()
-
-	templateFile := filepath.Join(rootDir, "template.conf")
-	assert.NoError(t, os.WriteFile(templateFile, []byte(configTemplate), 0644))
-
-	configFile := filepath.Join(rootDir, "file.conf")
-
-	assert.NoError(t, cr.renderConfigFile(templateFile, configFile, data))
-
-	f, err := os.ReadFile(configFile)
-	assert.NoError(t, err)
-
-	var conf interface{}
-	assert.NoError(t, json.Unmarshal(f, &conf))
-
-	t.Logf("Unmarshal config=%+v", conf)
-
-	r := conf.(map[string]interface{})
-	assert.Equal(t, "abc", r["task_id"])
-	assert.Equal(t, "1", r["my_party"])
-}
-
-func TestBuildStructMap_WithOrg(t *testing.T) {
-	configTemplate := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}"
-	}`
-
-	taskInputConfigBytes, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(&appconfig.ClusterDefine{
-		SelfPartyIdx: 1,
-		Parties: []*appconfig.Party{
-			{
-				Name: "xyz",
-			},
-		},
-	})
-	assert.NoError(t, err)
-	nlog.Infof("byte=%s", string(taskInputConfigBytes))
-
-	var value interface{}
-	assert.NoError(t, json.Unmarshal(taskInputConfigBytes, &value))
-
-	data := make(map[string]interface{})
-	data["TASK_CLUSTER_DEFINE"] = value
-	data["TASK_ID"] = "abc"
-
-	tmpl, err := template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate)
-	assert.NoError(t, err)
-
-	var buf bytes.Buffer
-	assert.NoError(t, tmpl.Execute(&buf, data))
-	nlog.Infof(buf.String())
-
-	var test interface{}
-	assert.NoError(t, json.Unmarshal(buf.Bytes(), &test))
-	assert.Equal(t, "1", test.(map[string]interface{})["my_party"])
-
-	configTemplate1 := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}",
-		"p1_name": "{{.TASK_CLUSTER_DEFINE.parties[0].name}}"
-	}`
-
-	_, err = template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate1)
-	assert.Error(t, err)
-
-	configTemplate2 := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}",
-		"p1_name": "{{.TASK_CLUSTER_DEFINE.parties[name=test].name}}"
-	}`
-
-	_, err = template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate2)
-	assert.Error(t, err)
 }
