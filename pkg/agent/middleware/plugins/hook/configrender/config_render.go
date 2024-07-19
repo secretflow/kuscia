@@ -177,7 +177,7 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 		}
 	}
 
-	data, err := cr.makeDataMap(ctx.Pod.Annotations, ctx.pod.Labels, envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, pod.Labels, envs)
 	if err != nil {
 		return err
 	}
