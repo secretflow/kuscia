@@ -83,7 +83,6 @@ func BuildMetricURL(baseURL string, labels map[string]string) (string, error) {
 	return fullURL, nil
 }
 
-
 func metricHandler(fullURLs []string, w http.ResponseWriter) {
 	metricsChan := make(chan []byte, len(fullURLs))
 	var wg sync.WaitGroup
@@ -129,7 +128,7 @@ func MetricExporter(ctx context.Context, metricURLs map[string]string, port stri
 	nlog.Infof("Start to export metrics on port %s...", port)
 	var fullURLs []string
 	for _, baseURL := range metricURLs {
-		fullURLs = append(fullURLs, baseURL) 
+		fullURLs = append(fullURLs, baseURL)
 	}
 
 	metricServer := http.NewServeMux()
@@ -139,7 +138,7 @@ func MetricExporter(ctx context.Context, metricURLs map[string]string, port stri
 
 	go func() {
 		nlog.Infof("Starting metric server on port %s", port)
-		
+
 		if err := http.ListenAndServe("0.0.0.0:"+port, metricServer); err != nil {
 			nlog.Error("Fail to start the metric exporterserver", err)
 		}

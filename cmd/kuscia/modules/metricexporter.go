@@ -21,6 +21,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
@@ -66,7 +67,7 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		exporter.metricURLs["app-metrics"] = labelsURL
 	}
 
-	return exporter
+	return exporter, nil
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {

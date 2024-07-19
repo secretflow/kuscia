@@ -177,7 +177,7 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 		}
 	}
 
-	data, err := cr.makeDataMap(ctx.Pod.Annotations,pod.Labels, envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, pod.Labels, envs)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) err
 		envs[env.Name] = env.Value
 	}
 
-	data, err := cr.makeDataMap(ctx.Pod.Annotations,ctx.Pod.Labels envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, ctx.Pod.Labels, envs)
 	if err != nil {
 		return err
 	}
