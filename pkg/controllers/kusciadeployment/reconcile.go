@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package kusciadeployment
 
 import (
@@ -122,11 +122,11 @@ func (c *Controller) computeExceptGeneratedAnnotations(kd *kusciav1alpha1.Kuscia
 	if err != nil {
 		return nil, err
 	}
-	selfPartiesDomainIds := make([]string, 0)
+	selfPartiesDomainIDs := make([]string, 0)
 	for _, p := range selfParties {
-		selfPartiesDomainIds = append(selfPartiesDomainIds, p.DomainID)
+		selfPartiesDomainIDs = append(selfPartiesDomainIDs, p.DomainID)
 	}
-	annotations[common.InterConnSelfPartyAnnotationKey] = strings.Join(selfPartiesDomainIds, "_")
+	annotations[common.InterConnSelfPartyAnnotationKey] = strings.Join(selfPartiesDomainIDs, "_")
 
 	return annotations, nil
 }
@@ -290,7 +290,11 @@ func (c *Controller) syncService(ctx context.Context, partyKitInfos map[string]*
 
 	for _, partyKitInfo := range partyKitInfos {
 		for portName, serviceName := range partyKitInfo.dkInfo.portService {
-			if _, err = c.serviceLister.Services(partyKitInfo.domainID).Get(serviceName); err != nil {
+			svc, err := c.serviceLister.Services(partyKitInfo.domainID).Get(serviceName)
+			if err != nil && k8serrors.IsNotFound(err) {
+				svc, err = c.kubeClient.CoreV1().Services(partyKitInfo.domainID).Get(ctx, serviceName, metav1.GetOptions{})
+			}
+			if err != nil {
 				if k8serrors.IsNotFound(err) {
 					if err = c.createService(ctx, partyKitInfo, portName, serviceName); err != nil {
 						partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
@@ -300,6 +304,14 @@ func (c *Controller) syncService(ctx context.Context, partyKitInfos map[string]*
 					}
 					continue
 				}
+				return err
+			}
+
+			if svc.Labels == nil || svc.Labels[common.LabelKubernetesDeploymentName] != partyKitInfo.dkInfo.deploymentName {
+				err = fmt.Errorf("domain %s service %s already exist, please ensure that the service name can't be duplicated", partyKitInfo.domainID, svc.Name)
+				partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
+				partyKitInfo.kd.Status.Reason = string(createServiceFailed)
+				partyKitInfo.kd.Status.Message = err.Error()
 				return err
 			}
 		}
@@ -338,7 +350,7 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 		common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
 	}
 
-	if port.Scope != kusciav1alpha1.ScopeDomain {
+	if port.Scope == kusciav1alpha1.ScopeCluster {
 		labels[common.LabelLoadBalancer] = string(common.DomainRouteLoadBalancer)
 	}
 
@@ -387,7 +399,11 @@ func (c *Controller) syncConfigMap(ctx context.Context, partyKitInfos map[string
 
 	for _, partyKitInfo := range partyKitInfos {
 		if len(partyKitInfo.configTemplates) > 0 && partyKitInfo.configTemplatesCMName != "" {
-			if _, err = c.configMapLister.ConfigMaps(partyKitInfo.domainID).Get(partyKitInfo.configTemplatesCMName); err != nil {
+			cm, err := c.configMapLister.ConfigMaps(partyKitInfo.domainID).Get(partyKitInfo.configTemplatesCMName)
+			if err != nil && k8serrors.IsNotFound(err) {
+				cm, err = c.kubeClient.CoreV1().ConfigMaps(partyKitInfo.domainID).Get(ctx, partyKitInfo.configTemplatesCMName, metav1.GetOptions{})
+			}
+			if err != nil {
 				if k8serrors.IsNotFound(err) {
 					if err = c.createConfigMap(ctx, partyKitInfo); err != nil {
 						partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
@@ -397,6 +413,14 @@ func (c *Controller) syncConfigMap(ctx context.Context, partyKitInfos map[string
 					}
 					continue
 				}
+				return err
+			}
+
+			if cm.Labels == nil || cm.Labels[common.LabelKubernetesDeploymentName] != partyKitInfo.dkInfo.deploymentName {
+				err = fmt.Errorf("domain %s configmap %s already exist, please ensure that the configmap name can't be duplicated", partyKitInfo.domainID, cm.Name)
+				partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
+				partyKitInfo.kd.Status.Reason = string(createConfigMapFailed)
+				partyKitInfo.kd.Status.Message = err.Error()
 				return err
 			}
 		}
@@ -448,7 +472,11 @@ func (c *Controller) syncDeployment(ctx context.Context, partyKitInfos map[strin
 	}()
 
 	for _, partyKitInfo := range partyKitInfos {
-		if _, err = c.deploymentLister.Deployments(partyKitInfo.domainID).Get(partyKitInfo.dkInfo.deploymentName); err != nil {
+		deployment, err := c.deploymentLister.Deployments(partyKitInfo.domainID).Get(partyKitInfo.dkInfo.deploymentName)
+		if err != nil && k8serrors.IsNotFound(err) {
+			deployment, err = c.kubeClient.AppsV1().Deployments(partyKitInfo.domainID).Get(ctx, partyKitInfo.dkInfo.deploymentName, metav1.GetOptions{})
+		}
+		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				if err = c.createDeployment(ctx, partyKitInfo); err != nil {
 					partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
@@ -458,6 +486,14 @@ func (c *Controller) syncDeployment(ctx context.Context, partyKitInfos map[strin
 				}
 				continue
 			}
+			return err
+		}
+
+		if deployment.Labels == nil || deployment.Labels[common.LabelKusciaDeploymentName] != partyKitInfo.kd.Name {
+			err = fmt.Errorf("domain %s deployment %s already exist, please ensure that the deployment name can't be duplicated", partyKitInfo.domainID, deployment.Name)
+			partyKitInfo.kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
+			partyKitInfo.kd.Status.Reason = string(createDeploymentFailed)
+			partyKitInfo.kd.Status.Message = err.Error()
 			return err
 		}
 
@@ -823,20 +859,6 @@ func buildAffinity(affinity *corev1.Affinity, deploymentName string) {
 			affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i].PodAffinityTerm.LabelSelector = labelSelector
 		}
 	}
-}
-
-func (c *Controller) ownDomains(kd *kusciav1alpha1.KusciaDeployment) ([]*kusciav1alpha1.Domain, error) {
-	ownDomains := make([]*kusciav1alpha1.Domain, 0)
-	for _, p := range kd.Spec.Parties {
-		partyDomain, err := c.domainLister.Get(p.DomainID)
-		if err != nil {
-			return nil, err
-		}
-		if partyDomain.Spec.Role == "" {
-			ownDomains = append(ownDomains, partyDomain)
-		}
-	}
-	return ownDomains, nil
 }
 
 func (c *Controller) selfParties(kd *kusciav1alpha1.KusciaDeployment) ([]kusciav1alpha1.KusciaDeploymentParty, error) {

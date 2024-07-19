@@ -15,30 +15,23 @@
 package modules
 
 import (
-	"bytes"
 	"context"
-	"crypto/tls"
-	"encoding/json"
-	"fmt"
-	"io"
 	"time"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/datamesh/commands"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
-	"github.com/secretflow/kuscia/pkg/web/constants"
-	"github.com/secretflow/kuscia/pkg/web/utils"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
+	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
 type dataMeshModule struct {
+	moduleRuntimeBase
 	conf         *config.DataMeshConfig
 	kusciaClient kusciaclientset.Interface
 }
 
-func NewDataMesh(d *Dependencies) (Module, error) {
+func NewDataMesh(d *ModuleRuntimeConfigs) (Module, error) {
 	conf := config.NewDefaultDataMeshConfig()
 	conf.RootDir = d.RootDir
 	conf.DomainKey = d.DomainKey
@@ -46,7 +39,7 @@ func NewDataMesh(d *Dependencies) (Module, error) {
 	// override data proxy config
 	if d.DataMesh != nil {
 		conf.DisableTLS = d.DataMesh.DisableTLS
-		conf.ExternalDataProxyList = d.DataMesh.ExternalDataProxyList
+		conf.DataProxyList = d.DataMesh.DataProxyList
 	}
 
 	conf.TLS.RootCA = d.CACert
@@ -55,125 +48,29 @@ func NewDataMesh(d *Dependencies) (Module, error) {
 		return nil, err
 	}
 
+	// set log
+	interceptorLogger, err := initInterceptorLogger(d.KusciaConfig, dateMeshInterceptorLoggerPath)
+	if err != nil {
+		nlog.Errorf("Init DataMesh interceptor logger failed: %v", err)
+		return nil, err
+	}
+	conf.InterceptorLog = interceptorLogger
 	// set namespace
 	conf.KubeNamespace = d.DomainID
 	nlog.Infof("Datamesh namespace:%s.", d.DomainID)
 	return &dataMeshModule{
+		moduleRuntimeBase: moduleRuntimeBase{
+			name:         "datamesh",
+			readyTimeout: 60 * time.Second,
+			rdz: readyz.NewFuncReadyZ(func(ctx context.Context) error {
+				return KusciaServiceReadyZ(&conf.TLS, conf.HTTPPort)
+			}),
+		},
 		conf:         conf,
 		kusciaClient: d.Clients.KusciaClient,
 	}, nil
 }
 
-func (m dataMeshModule) Run(ctx context.Context) error {
+func (m *dataMeshModule) Run(ctx context.Context) error {
 	return commands.Run(ctx, m.conf, m.kusciaClient)
-}
-
-func (m dataMeshModule) WaitReady(ctx context.Context) error {
-	timeoutTicker := time.NewTicker(30 * time.Second)
-	defer timeoutTicker.Stop()
-	checkTicker := time.NewTicker(100 * time.Millisecond)
-	defer checkTicker.Stop()
-	for {
-		select {
-		case <-checkTicker.C:
-			if m.readyZ() {
-				return nil
-			}
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timeoutTicker.C:
-			return fmt.Errorf("wait datamesh ready timeout")
-		}
-	}
-}
-
-func (m dataMeshModule) Name() string {
-	return "datamesh"
-}
-
-func (m dataMeshModule) readyZ() bool {
-	var clientTLSConfig *tls.Config
-	var err error
-	schema := constants.SchemaHTTP
-	// init client tls config
-	tlsConfig := m.conf.TLS
-	clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
-	if err != nil {
-		nlog.Errorf("local tls config error: %v", err)
-		return false
-	}
-	schema = constants.SchemaHTTPS
-
-	// check http server ready
-	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
-	body, err := json.Marshal(&kusciaapi.HealthRequest{})
-	if err != nil {
-		nlog.Errorf("marshal health request error: %v", err)
-		return false
-	}
-	resp, err := httpClient.Post(httpURL, constants.HTTPDefaultContentType, bytes.NewReader(body))
-	if err != nil {
-		nlog.Errorf("send health request error: %v", err)
-		return false
-	}
-	if resp == nil || resp.Body == nil {
-		nlog.Error("resp must has body")
-		return false
-	}
-	defer resp.Body.Close()
-	healthResp := &kusciaapi.HealthResponse{}
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Errorf("read response body error: %v", err)
-		return false
-	}
-	if err = json.Unmarshal(respBytes, healthResp); err != nil {
-		nlog.Errorf("Unmarshal health response error: %v", err)
-		return false
-	}
-
-	if healthResp.Data == nil || !healthResp.Data.Ready {
-		return false
-	}
-
-	nlog.Infof("http server is ready")
-	return true
-}
-
-func RunDataMeshWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "datamesh",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunDataMesh(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunDataMesh(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m, err := NewDataMesh(conf)
-	if err != nil {
-		nlog.Error(err)
-		cancel()
-		return m
-	}
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("DataMesh wait ready failed: %v", err)
-	}
-	nlog.Info("DataMesh is ready")
-	return m
 }

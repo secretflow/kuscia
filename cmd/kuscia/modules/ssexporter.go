@@ -17,16 +17,15 @@ package modules
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/ssexporter"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
 type ssExporterModule struct {
+	moduleRuntimeBase
 	runMode            pkgcom.RunModeType
 	domainID           string
 	rootDir            string
@@ -34,97 +33,24 @@ type ssExporterModule struct {
 	ssExportPort       string
 }
 
-func NewSsExporter(i *Dependencies) Module {
+func NewSsExporter(i *ModuleRuntimeConfigs) (Module, error) {
+	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.SsExportPort)
 	return &ssExporterModule{
+		moduleRuntimeBase: moduleRuntimeBase{
+			name:         "ssexporter",
+			readyTimeout: 60 * time.Second,
+			rdz: readyz.NewHTTPReadyZ(readyURI, 404, func(body []byte) error {
+				return nil
+			}),
+		},
 		runMode:            i.RunMode,
 		domainID:           i.DomainID,
 		rootDir:            i.RootDir,
 		metricUpdatePeriod: i.MetricUpdatePeriod,
 		ssExportPort:       i.SsExportPort,
-	}
+	}, nil
 }
 
 func (exporter *ssExporterModule) Run(ctx context.Context) error {
-	ssexporter.SsExporter(ctx, exporter.runMode, exporter.domainID, exporter.metricUpdatePeriod, exporter.ssExportPort)
-	return nil
-}
-
-func (exporter *ssExporterModule) readyz(host string) error {
-	cl := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, host, nil)
-	if err != nil {
-		nlog.Errorf("NewRequest error:%s", err.Error())
-		return err
-	}
-	resp, err := cl.Do(req)
-	if err != nil {
-		nlog.Errorf("Get ready err:%s", err.Error())
-		return err
-	}
-	if resp == nil || resp.Body == nil {
-		nlog.Error("Resp must has body")
-		return fmt.Errorf("resp must has body")
-	}
-	defer resp.Body.Close()
-	_, err = io.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Error("ReadAll fail")
-		return err
-	}
-	return nil
-}
-
-func (exporter *ssExporterModule) WaitReady(ctx context.Context) error {
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-	tickerReady := time.NewTicker(time.Second)
-	defer tickerReady.Stop()
-	for {
-		select {
-		case <-tickerReady.C:
-			if nil == exporter.readyz("http://localhost:"+exporter.ssExportPort) {
-				return nil
-			}
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			return fmt.Errorf("wait metric exporter ready timeout")
-		}
-	}
-}
-
-func (exporter *ssExporterModule) Name() string {
-	return "ssexporter"
-}
-
-func RunSsExporterWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(500 * time.Millisecond)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "ssexporter",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunSsExporter(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunSsExporter(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m := NewSsExporter(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("SsTransport wait ready failed: %v", err)
-	}
-	nlog.Info("Ss exporter is ready")
-	return m
+	return ssexporter.SsExporter(ctx, exporter.runMode, exporter.domainID, exporter.metricUpdatePeriod, exporter.ssExportPort)
 }

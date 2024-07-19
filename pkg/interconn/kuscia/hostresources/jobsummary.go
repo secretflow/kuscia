@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package hostresources
 
 import (
@@ -143,6 +143,10 @@ func (c *hostResourcesController) updateMemberJobByJobSummary(ctx context.Contex
 		needUpdate = true
 	}
 
+	if updateJobStatusPhase(job, jobSummary) {
+		needUpdate = true
+	}
+
 	if needUpdate {
 		job.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err = c.memberKusciaClient.KusciaV1alpha1().KusciaJobs(job.Namespace).UpdateStatus(ctx, job, metav1.UpdateOptions{}); err != nil {
@@ -150,6 +154,23 @@ func (c *hostResourcesController) updateMemberJobByJobSummary(ctx context.Contex
 		}
 	}
 	return nil
+}
+
+func updateJobStatusPhase(job *kusciaapisv1alpha1.KusciaJob, jobSummary *kusciaapisv1alpha1.KusciaJobSummary) bool {
+	if jobSummary.Status.Phase == kusciaapisv1alpha1.KusciaJobFailed &&
+		jobSummary.Status.Phase != job.Status.Phase &&
+		jobSummary.Status.CompletionTime != nil &&
+		jobSummary.Status.Reason != "" &&
+		jobSummary.Status.Reason != job.Status.Reason {
+		switch jobSummary.Status.Reason {
+		case string(kusciaapisv1alpha1.ValidateFailed), string(kusciaapisv1alpha1.CreateTaskFailed):
+			job.Status.Phase = jobSummary.Status.Phase
+			job.Status.Reason = jobSummary.Status.Reason
+			job.Status.Message = jobSummary.Status.Message
+			return true
+		}
+	}
+	return false
 }
 
 func updateJobApproveStatus(job *kusciaapisv1alpha1.KusciaJob, jobSummary *kusciaapisv1alpha1.KusciaJobSummary, domainIDMap map[string]struct{}) bool {

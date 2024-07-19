@@ -53,6 +53,10 @@
 | `/home/kuscia/var/logs/envoy/envoy.log`      |  envoy 代理的日志文件,记录了 envoy 网关的运行状态、连接情况、流量信息以及问题排查等相关的内容        |
 | `/home/kuscia/var/stdout/pods/alice_xxxx/xxx/*.log` |  任务的标准输出(stdout)的内容  |
 
+:::{tip}
+K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl logs ${engine_pod_name} -n xxx` 查看任务的标准输出日志
+:::
+
 ### envoy 日志格式
 
 `internal.log` 日志格式如下：

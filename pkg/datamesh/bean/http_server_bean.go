@@ -22,10 +22,10 @@ import (
 
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	dmconfig "github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
-	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/httphandler/domaindata"
-	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/httphandler/domaindatagrant"
-	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/httphandler/domaindatasource"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/v1handler/httphandler/domaindata"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/v1handler/httphandler/domaindatagrant"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/v1handler/httphandler/domaindatasource"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	apisvc "github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/web/api"
@@ -36,6 +36,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/framework/beans"
 	frameworkconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/framework/router"
+	"github.com/secretflow/kuscia/pkg/web/interceptor"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
@@ -66,6 +67,9 @@ func (s *httpServerBean) Validate(errs *errorcode.Errs) {
 func (s *httpServerBean) Init(e framework.ConfBeanRegistry) error {
 	if err := s.ginBean.Init(e); err != nil {
 		return err
+	}
+	if s.config.InterceptorLog != nil {
+		s.ginBean.Use(interceptor.HTTPServerLoggingInterceptor(*s.config.InterceptorLog))
 	}
 	s.registerGroupRoutes(e)
 	return nil

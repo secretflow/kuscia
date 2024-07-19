@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +29,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
+
+	"github.com/secretflow/kuscia/pkg/common"
 )
 
 // PatchService is used to patch service.
@@ -130,4 +133,12 @@ func GenerateServiceName(prefix, portName string) string {
 		name = fmt.Sprintf("svc-%s-%s-%s", prefix[:maxPrefixLen], portName, hashStr[:16])
 	}
 	return name
+}
+
+func ValidateServiceNamePrefix(val string, fieldName string) error {
+	match, _ := regexp.MatchString(common.ServiceNamePrefixRegex, val)
+	if !match {
+		return fmt.Errorf("field %q is invalid, invalid value: %q: regex used for validation is %q ", fieldName, val, common.ServiceNamePrefixRegex)
+	}
+	return nil
 }

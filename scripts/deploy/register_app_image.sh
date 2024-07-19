@@ -89,6 +89,7 @@ function import_engine_image() {
 
      local image_tar=/tmp/${image_tag}.tar
      docker save ${IMAGE} -o ${image_tar}
+     docker cp ${image_tar} ${KUSCIA_CONTAINER_NAME}:/tmp
      docker exec -it ${KUSCIA_CONTAINER_NAME} ctr -a=/home/kuscia/containerd/run/containerd.sock -n=k8s.io images import ${image_tar}
      if docker exec -it ${KUSCIA_CONTAINER_NAME} crictl inspecti ${IMAGE} >/dev/null 2>&1; then
         echo -e "${GREEN}image ${IMAGE} import successfully${NC}"
@@ -96,6 +97,7 @@ function import_engine_image() {
         echo -e "${RED}error: ${IMAGE} import failed${NC}"
      fi
      rm -rf ${image_tar}
+     docker exec -it ${KUSCIA_CONTAINER_NAME} rm -rf ${image_tar}
   fi
 }
 
@@ -125,12 +127,18 @@ function register_default_app_image() {
      image_tag=${IMAGE##*:}
   fi
   local app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
-  if [[ ${app_type} != "psi" ]]; then
+  if [[ ${app_type} != "psi" ]] && [[ ${app_type} != "dataproxy" ]]; then
      app_type="secretflow"
   fi
-  app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
+  if [[ ${app_type} == "secretflow" ]] || [[ ${app_type} == "psi" ]]; then
+    app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.SF_IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
+  else
+    app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
+    s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
+    < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
+  fi
   echo "${app_image_template}" | kubectl apply -f -
 }
 

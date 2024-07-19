@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package main
 
 import (
@@ -55,7 +55,6 @@ import (
 	_ "github.com/coredns/coredns/plugin/template"
 	_ "github.com/coredns/coredns/plugin/transfer"
 	_ "github.com/coredns/coredns/plugin/whoami"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	kubectlcmd "k8s.io/kubectl/pkg/cmd"
@@ -64,10 +63,6 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/kusciainit"
 	"github.com/secretflow/kuscia/cmd/kuscia/start"
 	_ "github.com/secretflow/kuscia/pkg/agent/middleware/plugins"
-
-	"github.com/secretflow/kuscia/cmd/kuscia/autonomy"
-	"github.com/secretflow/kuscia/cmd/kuscia/lite"
-	"github.com/secretflow/kuscia/cmd/kuscia/master"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/signals"
 )
@@ -85,13 +80,11 @@ func main() {
 	// shecduler will register version flag when kuscia process init. clear it.
 	pflag.CommandLine = nil
 	ctx := signals.NewKusciaContextWithStopCh(signals.SetupSignalHandler())
-	rootCmd.AddCommand(autonomy.NewAutonomyCommand(ctx))
-	rootCmd.AddCommand(lite.NewLiteCommand(ctx))
-	rootCmd.AddCommand(master.NewMasterCommand(ctx))
 	rootCmd.AddCommand(image.NewImageCommand(ctx))
 	rootCmd.AddCommand(start.NewStartCommand(ctx))
 	rootCmd.AddCommand(kusciainit.NewInitCommand(ctx))
 	rootCmd.AddCommand(kubectlcmd.NewDefaultKubectlCommand())
+	rootCmd.AddCommand(NewKernelCheckCommand(ctx))
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

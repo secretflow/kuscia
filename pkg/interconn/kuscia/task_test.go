@@ -221,16 +221,17 @@ func TestUpdateTaskSummaryByTask(t *testing.T) {
 
 func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 	t.Parallel()
-	domainIDs := []string{"alice", "bob"}
 
 	// party task status is empty in task status, should return false
 	kt := makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kts := makeMockTaskSummary("bob", "task-1", "1")
-	got := updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
+	got := updateTaskSummaryPartyTaskStatus(kt, kts, true)
 	assert.Equal(t, false, got)
 
 	// party task status is same for task and task summary, should return false
 	kt = makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
@@ -240,21 +241,23 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, true)
 	assert.Equal(t, false, got)
 
 	// party task status is empty in task summary but not empty for task, should return true
 	kt = makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
 	}}
 	kts = makeMockTaskSummary("bob", "task-1", "1")
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, true)
 	assert.Equal(t, true, got)
 
 	// party task status is different in task summary and task, should return true
 	kt = makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
@@ -264,11 +267,12 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "joke",
 		Phase:    v1alpha1.TaskFailed,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, true)
 	assert.Equal(t, true, got)
 
 	// party task status exist in task but not in task summary, should return true
 	kt = makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
 		DomainID: "alice",
 		Phase:    v1alpha1.TaskRunning,
@@ -278,11 +282,12 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskFailed,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, true)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, true)
 	assert.Equal(t, true, got)
 
 	// party task status is different in task summary and task for member, should return true
 	kt = makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskFailed,
@@ -292,11 +297,12 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskRunning,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, false)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, false)
 	assert.Equal(t, true, got)
 
 	// party task status is same in task summary and task for member, should return true
 	kt = makeMockTask("cross-domain", "task-1")
+	kt.Annotations = map[string]string{common.InterConnSelfPartyAnnotationKey: "alice_bob"}
 	kt.Status.PartyTaskStatus = []v1alpha1.PartyTaskStatus{{
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskFailed,
@@ -306,7 +312,7 @@ func TestUpdateTaskSummaryPartyTaskStatus(t *testing.T) {
 		DomainID: "bob",
 		Phase:    v1alpha1.TaskFailed,
 	}}
-	got = updateTaskSummaryPartyTaskStatus(kt, kts, domainIDs, false)
+	got = updateTaskSummaryPartyTaskStatus(kt, kts, false)
 	assert.Equal(t, false, got)
 }
 

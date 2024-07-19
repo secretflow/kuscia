@@ -32,19 +32,20 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/google/uuid"
-	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/dmflight"
-	"github.com/secretflow/kuscia/pkg/utils/network"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/paths"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	"github.com/secretflow/kuscia/pkg/datamesh/config"
+	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
+	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
 const datameshTestNamespace = "datamesh-test"
@@ -144,7 +145,7 @@ func TestFlightServer_GetFlightInfo_Query_DOGET(t *testing.T) {
 	defer c1()
 
 	// [CommandDomainDataQuery] try to read file from dataproxy
-	fd, err := dmflight.DescForCommand(&datamesh.CommandDomainDataQuery{
+	fd, err := utils.DescForCommand(&datamesh.CommandDomainDataQuery{
 		DomaindataId: "test-data",
 		ContentType:  datamesh.ContentType_RAW,
 	})
@@ -157,7 +158,7 @@ func TestFlightServer_GetFlightInfo_Query_DOGET(t *testing.T) {
 	assert.NotNil(t, finfo.Endpoint[0].Ticket)
 	assert.NotEqual(t, 0, len(finfo.Endpoint[0].Location))
 	assert.NotNil(t, finfo.Endpoint[0].Location[0])
-	assert.Equal(t, dmflight.BuiltinFlightServerEndpointURI, finfo.Endpoint[0].Location[0].Uri)
+	assert.Equal(t, utils.BuiltinFlightServerEndpointURI, finfo.Endpoint[0].Location[0].Uri)
 
 	nlog.Infof("tick %s", string(finfo.Endpoint[0].Ticket.GetTicket()))
 
@@ -178,7 +179,7 @@ func TestFlightServer_GetFlightInfo_Query_DOGET(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 
-	r, err := flight.NewRecordReader(reader, ipc.WithSchema(dmflight.GenerateBinaryDataArrowSchema()))
+	r, err := flight.NewRecordReader(reader, ipc.WithSchema(utils.GenerateBinaryDataArrowSchema()))
 	assert.NoError(t, err)
 	assert.True(t, r.Next())
 	data := r.Record()

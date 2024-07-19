@@ -25,8 +25,8 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 
-	"github.com/secretflow/kuscia/pkg/agent/local/store/assist"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
+	"github.com/secretflow/kuscia/pkg/utils/assist"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
@@ -94,7 +94,7 @@ func (s *store) LoadImage(imageReader io.Reader) error {
 
 	nlog.Infof("Parsing external image package ...")
 
-	if err = assist.Untar(tempDir, false, false, imageReader); err != nil {
+	if err = assist.Untar(tempDir, false, false, imageReader, true); err != nil {
 		return err
 	}
 

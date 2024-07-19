@@ -16,10 +16,13 @@ package configrender
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -31,6 +34,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	"github.com/secretflow/kuscia/pkg/agent/utils/format"
 	"github.com/secretflow/kuscia/pkg/common"
+	uc "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
@@ -195,16 +199,12 @@ func (cr *configRender) renderConfigMap(srcConfigMap *v1.ConfigMap, data map[str
 	newData := map[string]string{}
 
 	for key, value := range srcConfigMap.Data {
-		tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Parse(value)
+		config, err := cr.renderConfig(value, data)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse config template, detail-> %v", err)
+			return nil, err
 		}
 
-		var buf bytes.Buffer
-		if err = tmpl.Execute(&buf, data); err != nil {
-			return nil, fmt.Errorf("failed to execute config template, detail-> %v", err)
-		}
-		newData[key] = buf.String()
+		newData[key] = config
 	}
 
 	dstConfigMap.Data = newData
@@ -294,27 +294,65 @@ func (cr *configRender) renderConfigFile(templateFile, configFile string, data m
 		return err
 	}
 
-	tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Parse(string(templateContent))
+	configContent, err := cr.renderConfig(string(templateContent), data)
 	if err != nil {
-		return fmt.Errorf("failed to parse config template, detail-> %v", err)
-	}
-
-	var buf bytes.Buffer
-	if err = tmpl.Execute(&buf, data); err != nil {
-		return fmt.Errorf("failed to execute config template, detail-> %v", err)
+		return err
 	}
 
 	info, err := os.Stat(templateFile)
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(configFile, buf.Bytes(), info.Mode()); err != nil {
+	if err = os.WriteFile(configFile, []byte(configContent), info.Mode()); err != nil {
 		return fmt.Errorf("failed to write config file %q, detail-> %v", configFile, err)
 	}
 
 	nlog.Debugf("Render config template file succeed, templateFile=%v, configFile=%v", templateFile, configFile)
 
 	return nil
+}
+
+func (cr *configRender) renderConfig(templateContent string, data map[string]string) (string, error) {
+	// replace {{{pattern}}} --> {{kuscia "pattern"}}
+	re := regexp.MustCompile(`\{\{\{.+\}\}\}`)
+	result := re.ReplaceAllStringFunc(templateContent, func(match string) string {
+		submatch := re.FindStringSubmatch(match)
+		if len(submatch) > 0 {
+			return "{{kuscia " + "\"" + submatch[0][3:len(submatch[0])-3] + "\"" + "}}"
+		}
+		return match
+	})
+
+	// use to replace values
+	kusciaQueryValue := func(query string) string {
+		value := uc.QueryByFields(buildStructMap(data), query)
+		if value == nil {
+			return ""
+		}
+
+		if _, ok := value.(string); ok {
+			return value.(string)
+		}
+		output, _ := json.Marshal(value)
+		return string(output)
+	}
+
+	tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Funcs(template.FuncMap{"kuscia": kusciaQueryValue}).Parse(string(result))
+	if err != nil {
+		return "", fmt.Errorf("failed to parse config template, detail-> %v", err)
+	}
+
+	quoteData := make(map[string]string)
+	for k, v := range data {
+		quoteData[k] = strings.Trim(strconv.Quote(v), "\"")
+	}
+
+	var buf bytes.Buffer
+	if err = tmpl.Execute(&buf, quoteData); err != nil {
+		return "", fmt.Errorf("failed to execute config template, detail-> %v", err)
+	}
+
+	return buf.String(), nil
 }
 
 func (cr *configRender) makeDataMap(annotations, envs map[string]string) (map[string]string, error) {
@@ -362,6 +400,35 @@ func (cr *configRender) makeDataMapFromKubeStorage() (map[string]string, error) 
 // are all uppercase letters, so the keys are converted to uppercase letters here.
 func mergeDataMap(dst map[string]string, src map[string]string) {
 	for k, v := range src {
-		dst[strings.ToUpper(k)] = strings.Trim(strconv.Quote(v), "\"")
+		dst[strings.ToUpper(k)] = v
 	}
+}
+
+func buildStructMap(value map[string]string) map[string]interface{} {
+	result := make(map[string]interface{})
+	for k, v := range value {
+		result[k] = v
+
+		// try json
+		var payload interface{}
+		if err := json.Unmarshal([]byte(v), &payload); err == nil {
+			switch reflect.TypeOf(payload).Kind() {
+			case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
+				result[k] = payload
+			}
+
+		}
+
+		// TODO: try yaml
+		//yamlPayload := make(map[string]interface{})
+		//if err := yaml.Unmarshal([]byte(v), &yamlPayload); err == nil {
+		//	switch reflect.TypeOf(yamlPayload).Kind() {
+		//	case reflect.Array, reflect.Map, reflect.Slice:
+		//		result[k] = yamlPayload
+		//	default:
+		//	}
+		//}
+	}
+
+	return result
 }

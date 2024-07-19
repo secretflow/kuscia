@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -82,6 +83,10 @@ func TestContainerStart(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		assert.NoError(t, container.Stop())
 		assert.NoError(t, wait.PollImmediate(100*time.Millisecond, 1*time.Second, func() (done bool, err error) {
+			// make sure process had exited
+			return syscall.Kill(container.starter.Command().Process.Pid, 0) == syscall.ESRCH, nil
+		}))
+		assert.NoError(t, wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
 			return container.GetCRIStatus().State == runtime.ContainerState_CONTAINER_EXITED, nil
 		}))
 		assert.NoError(t, container.Release())

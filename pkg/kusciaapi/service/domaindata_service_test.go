@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -30,7 +30,7 @@ import (
 
 var (
 	dsID     = common.DefaultDataSourceID
-	domainId = "domain-data-unit-test-namespace"
+	domainID = "domain-data-unit-test-namespace"
 )
 
 func TestCreateDomainData(t *testing.T) {
@@ -41,7 +41,7 @@ func TestCreateDomainData(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -55,7 +55,7 @@ func TestCreateDomainData(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -72,7 +72,7 @@ func TestCreateDomainData(t *testing.T) {
 	res = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/d.csv",
@@ -93,7 +93,7 @@ func TestCreateDomainDataWithVendor(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -110,7 +110,7 @@ func TestCreateDomainDataWithVendor(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -128,7 +128,7 @@ func TestCreateDomainDataWithVendor(t *testing.T) {
 	res1 := domainDataService.QueryDomainData(context.Background(), &kusciaapi.QueryDomainDataRequest{
 		Header: nil,
 		Data: &kusciaapi.QueryDomainDataRequestData{
-			DomainId:     domainId,
+			DomainId:     domainID,
 			DomaindataId: res.Data.DomaindataId,
 		},
 	})
@@ -144,7 +144,7 @@ func TestQueryDomainData(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -158,7 +158,7 @@ func TestQueryDomainData(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -173,7 +173,7 @@ func TestQueryDomainData(t *testing.T) {
 	res1 := domainDataService.QueryDomainData(context.Background(), &kusciaapi.QueryDomainDataRequest{
 		Header: nil,
 		Data: &kusciaapi.QueryDomainDataRequestData{
-			DomainId:     domainId,
+			DomainId:     domainID,
 			DomaindataId: res.Data.DomaindataId,
 		},
 	})
@@ -189,7 +189,7 @@ func TestUpdateDomainData(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -203,7 +203,7 @@ func TestUpdateDomainData(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -218,7 +218,7 @@ func TestUpdateDomainData(t *testing.T) {
 	res1 := domainDataService.UpdateDomainData(context.Background(), &kusciaapi.UpdateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b.csv",
@@ -239,7 +239,7 @@ func TestUpdateDomainDataWithVendor(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -253,7 +253,7 @@ func TestUpdateDomainDataWithVendor(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -273,7 +273,7 @@ func TestUpdateDomainDataWithVendor(t *testing.T) {
 	res1 := domainDataService.UpdateDomainData(context.Background(), &kusciaapi.UpdateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b.csv",
@@ -289,7 +289,7 @@ func TestUpdateDomainDataWithVendor(t *testing.T) {
 	res2 := domainDataService.QueryDomainData(context.Background(), &kusciaapi.QueryDomainDataRequest{
 		Header: nil,
 		Data: &kusciaapi.QueryDomainDataRequestData{
-			DomainId:     domainId,
+			DomainId:     domainID,
 			DomaindataId: res.Data.DomaindataId,
 		},
 	})
@@ -306,7 +306,7 @@ func TestDeleteDomainData(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -320,7 +320,7 @@ func TestDeleteDomainData(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -335,7 +335,7 @@ func TestDeleteDomainData(t *testing.T) {
 	res1 := domainDataService.DeleteDomainData(context.Background(), &kusciaapi.DeleteDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
-		DomainId:     domainId,
+		DomainId:     domainID,
 	})
 	assert.NotNil(t, res1)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
@@ -349,7 +349,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -363,7 +363,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -378,7 +378,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 	res1 := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -392,11 +392,11 @@ func TestBatchQueryDomainData(t *testing.T) {
 	})
 	datas := make([]*kusciaapi.QueryDomainDataRequestData, 2)
 	datas[0] = &kusciaapi.QueryDomainDataRequestData{
-		DomainId:     domainId,
+		DomainId:     domainID,
 		DomaindataId: res.Data.DomaindataId,
 	}
 	datas[1] = &kusciaapi.QueryDomainDataRequestData{
-		DomainId:     domainId,
+		DomainId:     domainID,
 		DomaindataId: res1.Data.DomaindataId,
 	}
 	res2 := domainDataService.BatchQueryDomainData(context.Background(), &kusciaapi.BatchQueryDomainDataRequest{
@@ -413,7 +413,7 @@ func TestListDomainData(t *testing.T) {
 	domainService := NewDomainService(conf)
 
 	domainRes := domainService.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainId,
+		DomainId: domainID,
 	})
 
 	assert.NotNil(t, domainRes)
@@ -427,7 +427,7 @@ func TestListDomainData(t *testing.T) {
 	_ = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -443,7 +443,7 @@ func TestListDomainData(t *testing.T) {
 	_ = domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
-		DomainId:     domainId,
+		DomainId:     domainID,
 		Name:         "test",
 		Type:         "table",
 		RelativeUri:  "a/b/c.csv",
@@ -459,7 +459,7 @@ func TestListDomainData(t *testing.T) {
 	res2 := domainDataService.ListDomainData(context.Background(), &kusciaapi.ListDomainDataRequest{
 		Header: nil,
 		Data: &kusciaapi.ListDomainDataRequestData{
-			DomainId:         domainId,
+			DomainId:         domainID,
 			DomaindataType:   "table",
 			DomaindataVendor: "manual",
 		},

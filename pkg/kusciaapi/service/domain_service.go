@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -111,8 +112,10 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 	}
 
 	// do cert validate
-	if len(request.Cert) > 0 {
-		if err := tls.VerifyEncodeCert(request.Cert); err != nil {
+	inputCert := request.Cert
+	if len(inputCert) > 0 {
+		var err error
+		if inputCert, err = s.getValidCert(inputCert); err != nil {
 			return &kusciaapi.CreateDomainResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 			}
@@ -125,7 +128,7 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 			Name: domainID,
 		},
 		Spec: v1alpha1.DomainSpec{
-			Cert:         request.Cert,
+			Cert:         inputCert,
 			Role:         v1alpha1.DomainRole(request.Role),
 			AuthCenter:   authCenterConverter(request.AuthCenter),
 			MasterDomain: request.MasterDomainId,
@@ -219,7 +222,7 @@ func (s domainService) queryKusciaMasterDomain() *kusciaapi.QueryDomainResponse 
 
 func (s domainService) queryKusciaMasterCert() (string, error) {
 	if s.conf.RootCA == nil {
-		errMsg := fmt.Sprintf("master ca cert is nil")
+		errMsg := "master ca cert is nil"
 		nlog.Errorf("Query kuscia-master cert failed, error: %s.", errMsg)
 		return "", errors.New(errMsg)
 	}
@@ -264,8 +267,10 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 	}
 
 	// do cert validate
+	inputCert := request.Cert
 	if len(request.Cert) > 0 {
-		if err := tls.VerifyEncodeCert(request.Cert); err != nil {
+		var err error
+		if inputCert, err = s.getValidCert(inputCert); err != nil {
 			return &kusciaapi.UpdateDomainResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 			}
@@ -286,7 +291,7 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			ResourceVersion: latestDomain.ResourceVersion,
 		},
 		Spec: v1alpha1.DomainSpec{
-			Cert:         request.Cert,
+			Cert:         inputCert,
 			Role:         v1alpha1.DomainRole(role),
 			AuthCenter:   authCenterConverter(request.AuthCenter),
 			MasterDomain: request.MasterDomainId,
@@ -371,8 +376,8 @@ func (s domainService) BatchQueryDomain(ctx context.Context, request *kusciaapi.
 	}
 }
 
-func CheckDomainExists(kusciaClient kusciaclientset.Interface, domainId string) (kusciaError pberrorcode.ErrorCode, errorMsg string) {
-	_, err := kusciaClient.KusciaV1alpha1().Domains().Get(context.Background(), domainId, metav1.GetOptions{})
+func CheckDomainExists(kusciaClient kusciaclientset.Interface, domainID string) (kusciaError pberrorcode.ErrorCode, errorMsg string) {
+	_, err := kusciaClient.KusciaV1alpha1().Domains().Get(context.Background(), domainID, metav1.GetOptions{})
 	if err != nil {
 		return errorcode.GetDomainErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrQueryDomain), err.Error()
 	}
@@ -432,11 +437,67 @@ type RequestWithDomainID interface {
 }
 
 func (s domainService) authHandler(ctx context.Context, request RequestWithDomainID) error {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
 	if role == constants.AuthRoleDomain {
-		if request.GetDomainId() != domainId {
-			return fmt.Errorf("domain's kusciaAPI could only operate its own Domain, request.DomainID must be %s not %s", domainId, request.GetDomainId())
+		if request.GetDomainId() != domainID {
+			return fmt.Errorf("domain's kusciaAPI could only operate its own Domain, request.DomainID must be %s not %s", domainID, request.GetDomainId())
 		}
 	}
 	return nil
+}
+
+func (s domainService) getValidCert(inputCert string) (string, error) {
+	var orgError error
+
+	inputCert = strings.Trim(inputCert, "\n")
+
+	if orgError = tls.VerifyEncodeCert(inputCert); orgError == nil {
+		return inputCert, nil
+	}
+
+	// compatible with raw cert
+	inputCert1 := base64.StdEncoding.EncodeToString([]byte(inputCert))
+	if err := tls.VerifyEncodeCert(inputCert1); err == nil {
+		return inputCert1, nil
+	}
+
+	// input cert remove begin and end
+	if !strings.HasPrefix(inputCert, "-----BEGIN CERTIFICATE-----") {
+		inputCert2 := "-----BEGIN CERTIFICATE-----\n" + inputCert + "\n-----END CERTIFICATE-----"
+		inputCert2 = base64.StdEncoding.EncodeToString([]byte(inputCert2))
+		if err := tls.VerifyEncodeCert(inputCert2); err == nil {
+			return inputCert2, nil
+		}
+	}
+
+	// input cret removed "\n"
+	if !strings.Contains(inputCert, "\n") {
+		if len(inputCert) >= 1040 {
+			inputCert3 := "-----BEGIN CERTIFICATE-----\n"
+			for i := 0; i < 16; i++ {
+				inputCert3 = inputCert3 + inputCert[(i*64):(i+1)*64] + "\n"
+			}
+			inputCert3 = inputCert3 + "-----END CERTIFICATE-----"
+
+			inputCert3 = base64.StdEncoding.EncodeToString([]byte(inputCert3))
+			if err := tls.VerifyEncodeCert(inputCert3); err == nil {
+				return inputCert3, nil
+			}
+		}
+	}
+
+	// input cert base64 encode 2 times
+	if inputCert4, err := base64.StdEncoding.DecodeString(inputCert); err == nil {
+		if err := tls.VerifyEncodeCert(string(inputCert4)); err == nil {
+			return string(inputCert4), nil
+		}
+	}
+
+	// copy from window, has "\r"
+	if strings.Contains(inputCert, "\r") {
+		inputCert5 := strings.ReplaceAll(inputCert, "\r", "")
+		return s.getValidCert(inputCert5)
+	}
+
+	return "", orgError
 }
