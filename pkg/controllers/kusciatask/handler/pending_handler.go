@@ -1020,8 +1020,6 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			TerminationMessagePolicy: v1.TerminationMessageFallbackToLogsOnError,
 		}
 
-		nlog.Info("!!!!!!MetricProbe:", ctr.MetricProbe)
-
 		for _, port := range ctr.Ports {
 			namedPort, ok := podKit.ports[port.Name]
 			if !ok {
@@ -1102,11 +1100,6 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			},
 		})
 	}
-
-	// 输出 Pod 的 annotations和labels
-	nlog.Infof("Pod %s annotations: %v", pod.Name, pod.Annotations)
-	nlog.Infof("Pod %s labels: %v", pod.Name, pod.Labels)
-
 	return pod, nil
 }
 

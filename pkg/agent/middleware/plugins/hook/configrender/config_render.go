@@ -83,35 +83,27 @@ func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.Plug
 func (cr *configRender) CanExec(ctx hook.Context) bool {
 	switch ctx.Point() {
 	case hook.PointMakeMounts:
-		nlog.Info("!!!!!!!CanExec: PointMakeMounts")
 		mCtx, ok := ctx.(*hook.MakeMountsContext)
 		if !ok {
-			nlog.Info("!!!!!!CanExec: invalid context type for PointMakeMounts")
 			return false
 		}
 
 		if mCtx.Mount.Name != mCtx.Pod.Annotations[common.ConfigTemplateVolumesAnnotationKey] {
-			nlog.Info("!!!!!!CanExec: Mount name does not match annotation for PointMakeMounts")
 			return false
 		}
 
 		return true
 	case hook.PointK8sProviderSyncPod:
-		nlog.Info("!!!!!!!CanExec: PointK8sProviderSyncPod")
 		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
 		if !ok {
-			nlog.Info("!!!!!!CanExec: invalid context type for PointK8sProviderSyncPod")
 			return false
 		}
-
 		if syncPodCtx.BkPod.Annotations[common.ConfigTemplateVolumesAnnotationKey] == "" {
-			nlog.Info("!!!!!!CanExec: annotation is empty for PointK8sProviderSyncPod")
 			return false
 		}
 
 		return true
 	default:
-		nlog.Info("!!!!!!CanExec: invalid point")
 		return false
 	}
 }
@@ -120,13 +112,10 @@ func (cr *configRender) CanExec(ctx hook.Context) bool {
 // It renders the configuration template and writes the generated real configuration content to a new file/directory.
 // The value of hostPath will be replaced by the new file/directory path.
 func (cr *configRender) ExecHook(ctx hook.Context) (*hook.Result, error) {
-	nlog.Info("Entering ExecHook") // 测试语句
-
 	result := &hook.Result{}
 
 	switch ctx.Point() {
 	case hook.PointMakeMounts:
-		nlog.Info("!!!!!!ExecHook: PointMakeMounts")
 		mCtx, ok := ctx.(*hook.MakeMountsContext)
 		if !ok {
 			return nil, fmt.Errorf("invalid context type %T", ctx)
@@ -138,17 +127,13 @@ func (cr *configRender) ExecHook(ctx hook.Context) (*hook.Result, error) {
 
 		return result, nil
 	case hook.PointK8sProviderSyncPod:
-		nlog.Info("!!!!!!ExecHook: PointK8sProviderSyncPod")
 		syncPodCtx, ok := ctx.(*hook.K8sProviderSyncPodContext)
 		if !ok {
 			return nil, fmt.Errorf("invalid context type %T", ctx)
 		}
-
-		nlog.Info("!!!!!!Before calling handleSyncPodContext")
 		if err := cr.handleSyncPodContext(syncPodCtx); err != nil {
 			return nil, fmt.Errorf("failed to handle sync pod context: %v", err)
 		}
-		nlog.Info("!!!!!!fter calling handleSyncPodContext")
 		return result, nil
 	default:
 		return nil, fmt.Errorf("invalid point %v", ctx.Point())
@@ -156,8 +141,6 @@ func (cr *configRender) ExecHook(ctx hook.Context) (*hook.Result, error) {
 }
 
 func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) error {
-	nlog.Info("!!!!!!Entering handleSyncPodContext")
-
 	pod := ctx.BkPod
 	var configVolume *v1.Volume
 	for _, volume := range pod.Spec.Volumes {
@@ -177,14 +160,6 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 		return fmt.Errorf("failed to get config map %q, detail-> %v", configVolume.ConfigMap.Name, err)
 	}
 
-	nlog.Info("!!!!!!这里是测试语句")
-
-	// 输出Pod的Annotations信息
-	nlog.Infof("Pod Annotations: %+v", pod.Annotations)
-
-	// 输出Pod的Labels信息
-	nlog.Infof("Pod Labels: %+v", pod.Labels)
-
 	// TODO Let's assume that the environment variables of each container are not conflicting
 	envs := map[string]string{}
 	for _, c := range pod.Spec.Containers {
@@ -198,13 +173,11 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 	//传递 annotations 和 labels
 	data, err := cr.makeDataMap(ctx.Pod.Annotations, pod.Labels, envs)
 	if err != nil {
-		nlog.Errorf("!!!!!!Failed to make data map, detail-> %v", err)
 		return err
 	}
 
 	dstConfigMap, err := cr.renderConfigMap(srcConfigMap, data)
 	if err != nil {
-		nlog.Errorf("!!!!!!Failed to render config map %q, detail-> %v", srcConfigMap.Name, err)
 		return fmt.Errorf("failed to render config map %q, detail-> %v", srcConfigMap.Name, err)
 	}
 
@@ -237,14 +210,6 @@ func (cr *configRender) renderConfigMap(srcConfigMap *v1.ConfigMap, data map[str
 }
 
 func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) error {
-	nlog.Info("Entering handleMakeMountsContext")
-
-	// 输出 Pod 的 Annotations 信息
-	nlog.Infof("Pod Annotations: %+v", ctx.Pod.Annotations)
-
-	// 输出 Pod 的 Labels 信息
-	nlog.Infof("Pod Labels: %+v", ctx.Pod.Labels)
-
 	envs := map[string]string{}
 	for _, env := range ctx.Envs {
 		envs[env.Name] = env.Value

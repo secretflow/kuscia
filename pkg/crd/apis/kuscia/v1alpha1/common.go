@@ -75,7 +75,6 @@ type IngressPort struct {
 // 定义MetricProbe字段
 type MetricProbe struct {
 	Path string `json:"path,omitempty"`
-	//!!!!!!!!!这里的unit16进行了更改
 	Port uint16 `json:"port,omitempty"`
 }
 
@@ -119,7 +118,7 @@ type Container struct {
 	// +optional
 	StartupProbe *corev1.Probe `json:"startupProbe,omitempty"`
 	// +optional
-	MetricProbe *MetricProbe `json:"metricProbe,omitempty"` //这里将类型从string修改为了*MetricProbe
+	MetricProbe *MetricProbe `json:"metricProbe,omitempty"` 
 	// +optional
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// SecurityContext only privileged works now.

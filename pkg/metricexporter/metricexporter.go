@@ -57,25 +57,16 @@ func BuildMetricURL(baseURL string, labels map[string]string) (string, error) {
 	metricPath := "/" + labels["metric-path"]
 	metricPort := labels["metric-port"]
 
-	nlog.Infof("Base URL: %s", baseURL)
-	nlog.Infof("Metric Path: %s", metricPath)
-	nlog.Infof("Metric Port: %s", metricPort)
-
 	u, err := url.Parse(baseURL)
-	//!!!!!!这里是新加上的
 	if err != nil {
 		err = fmt.Errorf("Failed to parse base URL %s: URL is invalid or incorrectly formatted: %v", baseURL, err)
 		return "", err
 	}
 
-	nlog.Infof("Parsed URL: %s", u.String())
-
 	if metricPort != "" {
 		u.Host = fmt.Sprintf("%s:%s", u.Hostname(), metricPort)
 	}
 
-	nlog.Infof("Updated Host: %s", u.Host)
-	//!!!!!!!!!这里是新加上的
 	if metricPath == "" {
 		err = fmt.Errorf("Metric path is empty in labels for base URL %s", baseURL)
 		return "", err
@@ -84,9 +75,7 @@ func BuildMetricURL(baseURL string, labels map[string]string) (string, error) {
 	u.Path = metricPath
 
 	fullURL := u.String()
-	nlog.Infof("Constructed metric URL: %s", fullURL)
 
-	//!!!!!!!!!这里是新加上的
 	if fullURL == "" {
 		err = fmt.Errorf("Constructed URL is empty after combining base URL %s with metric path %s", baseURL, metricPath)
 		return "", err
@@ -96,7 +85,6 @@ func BuildMetricURL(baseURL string, labels map[string]string) (string, error) {
 }
 
 func metricHandler(fullURLs []string, w http.ResponseWriter) {
-	nlog.Info("Entering metricHandler") //确认请求达到该函数
 	metricsChan := make(chan []byte, len(fullURLs))
 	var wg sync.WaitGroup
 
@@ -104,8 +92,6 @@ func metricHandler(fullURLs []string, w http.ResponseWriter) {
 		wg.Add(1)
 		go func(fullURL string) {
 			defer wg.Done()
-
-			nlog.Infof("Fetching metrics from %s", fullURL)
 
 			metrics, err := getMetrics(fullURL)
 			if err == nil {
@@ -133,7 +119,6 @@ func metricHandler(fullURLs []string, w http.ResponseWriter) {
 }
 
 func getAppMetricURL(labels map[string]string) (string, error) {
-	// 直接从 labels 生成一个单独的 URL
 	labelsURL, err := BuildMetricURL("http://localhost", labels)
 	if err != nil {
 		return "", fmt.Errorf("Error building URL from labels: %v", err)
@@ -144,10 +129,9 @@ func getAppMetricURL(labels map[string]string) (string, error) {
 func MetricExporter(ctx context.Context, metricURLs map[string]string, port string) {
 	nlog.Infof("Start to export metrics on port %s...", port)
 
-	// 构建所有的 metric URLs
 	var fullURLs []string
 	for _, baseURL := range metricURLs {
-		fullURLs = append(fullURLs, baseURL) //保持原来的 metricURLs 不变
+		fullURLs = append(fullURLs, baseURL)
 	}
 
 	metricServer := http.NewServeMux()
@@ -157,7 +141,6 @@ func MetricExporter(ctx context.Context, metricURLs map[string]string, port stri
 	})
 
 	go func() {
-		nlog.Infof("Starting metric server on port %s", port)
 		if err := http.ListenAndServe("0.0.0.0:"+port, metricServer); err != nil {
 			nlog.Error("Fail to start the metric exporterserver", err)
 		}
