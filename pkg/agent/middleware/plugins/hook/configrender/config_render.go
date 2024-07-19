@@ -98,6 +98,7 @@ func (cr *configRender) CanExec(ctx hook.Context) bool {
 		if !ok {
 			return false
 		}
+
 		if syncPodCtx.BkPod.Annotations[common.ConfigTemplateVolumesAnnotationKey] == "" {
 			return false
 		}
@@ -131,6 +132,7 @@ func (cr *configRender) ExecHook(ctx hook.Context) (*hook.Result, error) {
 		if !ok {
 			return nil, fmt.Errorf("invalid context type %T", ctx)
 		}
+
 		if err := cr.handleSyncPodContext(syncPodCtx); err != nil {
 			return nil, fmt.Errorf("failed to handle sync pod context: %v", err)
 		}
@@ -141,6 +143,7 @@ func (cr *configRender) ExecHook(ctx hook.Context) (*hook.Result, error) {
 }
 
 func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) error {
+
 	pod := ctx.BkPod
 	var configVolume *v1.Volume
 	for _, volume := range pod.Spec.Volumes {
@@ -320,7 +323,7 @@ func (cr *configRender) makeDataMap(annotations, labels, envs map[string]string)
 	var err error
 
 	mergeDataMap(mergedData, envs)
-	mergeDataMap(mergedData, labels) // 合并 labels
+	mergeDataMap(mergedData, labels) 
 
 	data := cr.makeDataMapFromLocal()
 	mergeDataMap(mergedData, data)
