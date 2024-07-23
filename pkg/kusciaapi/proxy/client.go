@@ -47,7 +47,7 @@ const (
 	QueryDomainDataPath      = "/api/v1/domaindata/query"
 	BatchQueryDomainDataPath = "/api/v1/domaindata/batchQuery"
 	ListDomainDataPath       = "/api/v1/domaindata/list"
-	// TODO LLY-UMF Model API
+	// Model API
 	UploadModelPath = "/api/v1/model/upload"
 	// Kuscia Job
 	CreateJobPath     = "/api/v1/job/create"
@@ -222,7 +222,6 @@ func (c *KusciaAPIHttpClient) ListDomainData(ctx context.Context, request *kusci
 	return
 }
 
-// TODO LLY-UMF client UploadModel
 func (c *KusciaAPIHttpClient) UploadModel(ctx context.Context, request *kusciaapi.UploadModelRequest) (response *kusciaapi.UploadModelResponse, err error) {
 	response = &kusciaapi.UploadModelResponse{}
 	err = c.Send(ctx, request, response, UploadModelPath)

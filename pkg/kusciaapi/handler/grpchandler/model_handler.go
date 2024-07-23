@@ -19,7 +19,6 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
-// TODO LLY-UMF 待生成
 type modelHandler struct {
 	modelService service.IModelService
 	kusciaapi.UnimplementedModelServiceServer

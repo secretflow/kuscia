@@ -26,7 +26,6 @@ import (
 	"os"
 )
 
-// TODO LLY-UMF 待生成
 type IModelService interface {
 	UploadModel(ctx context.Context, request *kusciaapi.UploadModelRequest) *kusciaapi.UploadModelResponse
 }
@@ -42,8 +41,6 @@ func NewModelService(config *config.KusciaAPIConfig) IModelService {
 }
 
 func (m modelService) UploadModel(ctx context.Context, request *kusciaapi.UploadModelRequest) *kusciaapi.UploadModelResponse {
-	// TODO LLY-UMF implement me -- UploadModel UploadModelRequest & UploadModelResponse 是自动生成 -- model.pb.go by model.proto
-	// TODO LLY-UMF 接收文件并存放于 /home/kuscia/var/storage/data/
 	filePath := common.DefaultModelLocalFSPath + "/" + request.GetFilename()
 
 	err := os.WriteFile(filePath, request.GetContent(), 0755)
