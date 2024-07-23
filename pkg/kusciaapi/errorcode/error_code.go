@@ -85,6 +85,8 @@ const (
 	ErrDomainDataSourceExists           = 11805
 	ErrDomainDataSourceNotExists        = 11806
 	ErrDomainDataSourceInfoEncodeFailed = 11907
+
+	ErrUploadModelFailed = 12000
 )
 
 func GetDomainErrorCode(err error, defaultErrorCode errorcode.KusciaErrorCode) errorcode.KusciaErrorCode {

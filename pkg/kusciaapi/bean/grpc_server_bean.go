@@ -108,6 +108,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterServingServiceServer(server, grpchandler.NewServingHandler(service.NewServingService(s.config)))
 	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 	kusciaapi.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(newCertService(s.config)))
+	// TODO LLY-UMF RegisterModelServiceServer
+	kusciaapi.RegisterModelServiceServer(server, grpchandler.NewModelHandler(service.NewModelService(s.config)))
 	reflection.Register(server)
 	nlog.Infof("grpc server listening on %s", addr)
 

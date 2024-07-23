@@ -57,7 +57,8 @@ type TokenConfig struct {
 
 func NewDefaultKusciaAPIConfig(rootDir string) *KusciaAPIConfig {
 	return &KusciaAPIConfig{
-		HTTPPort:         8082,
+		HTTPPort: 8082,
+		// TODO LLY-UMF 默认端口配置
 		GRPCPort:         8083,
 		HTTPInternalPort: 8092,
 		ConnectTimeout:   5,
