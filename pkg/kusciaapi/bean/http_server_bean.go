@@ -36,6 +36,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/job"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/middleware"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/model"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/serving"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
@@ -165,6 +166,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	servingService := service.NewServingService(s.config)
 	healthService := service.NewHealthService()
 	certService := newCertService(s.config)
+	modelService := service.NewModelService(s.config)
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
 		// job group routes
@@ -420,6 +422,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "generate",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, certificate.NewGenerateKeyCertsHandler(certService))},
+				},
+			},
+		},
+		// model group routes
+		{
+			Group: "api/v1/model",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "upload",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, model.NewUploadModelHandler(modelService))},
 				},
 			},
 		},
