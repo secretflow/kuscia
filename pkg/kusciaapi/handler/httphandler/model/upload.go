@@ -15,6 +15,7 @@
 package model
 
 import (
+	"io"
 	"reflect"
 
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
@@ -37,7 +38,15 @@ func (h uploadModelHandler) Validate(context *api.BizContext, request api.ProtoR
 }
 
 func (h uploadModelHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	context.Request.ParseMultipartForm(10 << 20)
+	Filename := context.PostForm("Filename")
+	tmpFile, _, _ := context.Request.FormFile("Content")
+	defer tmpFile.Close()
+	bytes, _ := io.ReadAll(tmpFile)
+
 	uploadRequest, _ := request.(*kusciaapi.UploadModelRequest)
+	uploadRequest.Filename = Filename
+	uploadRequest.Content = bytes
 	return h.modelService.UploadModel(context.Context, uploadRequest)
 }
 
