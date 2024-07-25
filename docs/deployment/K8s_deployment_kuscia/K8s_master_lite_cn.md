@@ -113,7 +113,7 @@ kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="u
 
 获取 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/configmap.yaml) 文件，创建 Configmap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。
 ```bash
-kubectl create -f comfigmap.yaml
+kubectl create -f configmap.yaml
 ```
 
 ### 步骤四（可选）：创建 RBAC
@@ -155,7 +155,7 @@ kubectl create -f rbac.yaml
 
 获取 [deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/deployment.yaml) 文件，创建 deployment
 ```bash
-kubectl create -f deployement.yaml
+kubectl create -f deployment.yaml
 ```
 
 ### 创建 lite-alice、lite-bob 之间的授权
@@ -187,7 +187,7 @@ bob-alice             bob      alice           kuscia-lite-alice.lite-alice.svc.
 ### 检查 Pod 状态
 pod 处于 running 状态表示部署成功
 ```bash
-kuebctl get po -n kuscia-master
+kubectl get po -n kuscia-master
 kubectl get po -n lite-alice
 ```
 ### 检查数据库连接状态
