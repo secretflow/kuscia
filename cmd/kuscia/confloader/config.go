@@ -56,20 +56,20 @@ type KusciaConfig struct {
 
 	Image ImageConfig `yaml:"image"`
 
-	Agent                 config.AgentConfig        `yaml:"agent,omitempty"`
-	Master                kusciaconfig.MasterConfig `yaml:"master,omitempty"`
-	ConfManager           cmconf.ConfManagerConfig  `yaml:"confManager,omitempty"`
-	KusciaAPI             *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
-	SecretBackends        []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
-	ConfLoaders           []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
-	DataMesh              *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
-	DomainRoute           DomainRouteConfig         `yaml:"domainRoute,omitempty"`
-	Protocol              common.Protocol           `yaml:"protocol"`
-	EnvoyIP               string                    `yaml:"-"`
-	CoreDNSBackUpConf     string                    `yaml:"-"`
-	RunMode               common.RunModeType        `yaml:"-"`
-	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
-	HostIP                string                    `yaml:"hostIP,omitempty"`
+	Agent                 config.AgentConfig          `yaml:"agent,omitempty"`
+	Master                kusciaconfig.MasterConfig   `yaml:"master,omitempty"`
+	ConfManager           cmconf.ConfManagerConfig    `yaml:"confManager,omitempty"`
+	KusciaAPI             *kaconfig.KusciaAPIConfig   `yaml:"kusciaAPI,omitempty"`
+	SecretBackends        []SecretBackendConfig       `yaml:"secretBackends,omitempty"`
+	ConfLoaders           []ConfigLoaderConfig        `yaml:"confLoaders,omitempty"`
+	DataMesh              *dmconfig.DataMeshConfig    `yaml:"dataMesh,omitempty"`
+	DomainRoute           DomainRouteConfig           `yaml:"domainRoute,omitempty"`
+	Protocol              common.Protocol             `yaml:"protocol"`
+	EnvoyIP               string                      `yaml:"-"`
+	CoreDNSBackUpConf     string                      `yaml:"-"`
+	RunMode               common.RunModeType          `yaml:"-"`
+	EnableWorkloadApprove bool                        `yaml:"enableWorkloadApprove,omitempty"`
+	CertSubjectAltName    kaconfig.CertSubjectAltName `yaml:"certSubjectAltName"`
 }
 
 type SecretBackendConfig struct {

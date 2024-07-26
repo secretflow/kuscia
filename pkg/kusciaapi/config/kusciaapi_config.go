@@ -29,29 +29,34 @@ import (
 )
 
 type KusciaAPIConfig struct {
-	HTTPPort         int32                     `yaml:"HTTPPort,omitempty"`
-	HTTPInternalPort int32                     `yaml:"HTTPInternalPort,omitempty"`
-	GRPCPort         int32                     `yaml:"GRPCPort,omitempty"`
-	Debug            bool                      `yaml:"debug,omitempty"`
-	ConnectTimeout   int                       `yaml:"connectTimeout,omitempty"`
-	ReadTimeout      int                       `yaml:"readTimeout,omitempty"`
-	IdleTimeout      int                       `yaml:"idleTimeout,omitempty"`
-	Initiator        string                    `yaml:"initiator,omitempty"`
-	Protocol         common.Protocol           `yaml:"protocol"`
-	Token            *TokenConfig              `yaml:"token"`
-	WriteTimeout     int                       `yaml:"-"`
-	TLS              *config.TLSServerConfig   `yaml:"-"`
-	DomainKey        *rsa.PrivateKey           `yaml:"-"`
-	RootCAKey        *rsa.PrivateKey           `yaml:"-"`
-	RootCA           *x509.Certificate         `yaml:"-"`
-	KusciaClient     kusciaclientset.Interface `yaml:"-"`
-	KubeClient       kubernetes.Interface      `yaml:"-"`
-	RunMode          common.RunModeType        `yaml:"-"`
-	DomainCertValue  *atomic.Value             `yaml:"-"`
-	ConfDir          string                    `yaml:"-"`
-	DomainID         string                    `yaml:"-"`
-	InterceptorLog   *nlog.NLog                `yaml:"-"`
-	HostIP           string                    `yaml:"hostIP"`
+	HTTPPort           int32                     `yaml:"HTTPPort,omitempty"`
+	HTTPInternalPort   int32                     `yaml:"HTTPInternalPort,omitempty"`
+	GRPCPort           int32                     `yaml:"GRPCPort,omitempty"`
+	Debug              bool                      `yaml:"debug,omitempty"`
+	ConnectTimeout     int                       `yaml:"connectTimeout,omitempty"`
+	ReadTimeout        int                       `yaml:"readTimeout,omitempty"`
+	IdleTimeout        int                       `yaml:"idleTimeout,omitempty"`
+	Initiator          string                    `yaml:"initiator,omitempty"`
+	Protocol           common.Protocol           `yaml:"protocol"`
+	Token              *TokenConfig              `yaml:"token"`
+	WriteTimeout       int                       `yaml:"-"`
+	TLS                *config.TLSServerConfig   `yaml:"-"`
+	DomainKey          *rsa.PrivateKey           `yaml:"-"`
+	RootCAKey          *rsa.PrivateKey           `yaml:"-"`
+	RootCA             *x509.Certificate         `yaml:"-"`
+	KusciaClient       kusciaclientset.Interface `yaml:"-"`
+	KubeClient         kubernetes.Interface      `yaml:"-"`
+	RunMode            common.RunModeType        `yaml:"-"`
+	DomainCertValue    *atomic.Value             `yaml:"-"`
+	ConfDir            string                    `yaml:"-"`
+	DomainID           string                    `yaml:"-"`
+	InterceptorLog     *nlog.NLog                `yaml:"-"`
+	CertSubjectAltName CertSubjectAltName        `yaml:"certSubjectAltName"`
+}
+
+type CertSubjectAltName struct {
+	IPAddresses []string `yaml:"IPAddresses"`
+	DNSNames    []string `yaml:"DNSNames"`
 }
 
 type TokenConfig struct {

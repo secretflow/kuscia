@@ -80,7 +80,6 @@ type Dependencies struct {
 	stopCh                  chan struct{}
 	stopped                 int32 // 0: not stopped 1: stopped
 	lock                    sync.Mutex
-	HostIP                  string
 }
 
 type DestroyFunc struct {
@@ -333,7 +332,7 @@ func InitDependencies(ctx context.Context, kusciaConf confloader.KusciaConfig) *
 	dependencies.LogConfig = logConfig
 	dependencies.Logrorate = kusciaConf.Logrotate
 	dependencies.Image = &kusciaConf.Image
-	dependencies.HostIP = kusciaConf.HostIP
+	dependencies.CertSubjectAltName = kusciaConf.CertSubjectAltName
 	// run config loader
 	dependencies.SecretBackendHolder = secretbackend.NewHolder()
 	nlog.Info("Start to init all secret backends ... ")
