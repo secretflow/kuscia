@@ -15,6 +15,7 @@
 package grpchandler
 
 import (
+	"context"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
@@ -28,4 +29,8 @@ func NewModelHandler(modelService service.IModelService) kusciaapi.ModelServiceS
 	return &modelHandler{
 		modelService: modelService,
 	}
+}
+
+func (h modelHandler) UploadModel(ctx context.Context, request *kusciaapi.UploadModelRequest) (*kusciaapi.UploadModelResponse, error) {
+	return h.modelService.UploadModel(ctx, request), nil
 }
