@@ -125,6 +125,7 @@ apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
   name: job-ss-lr
+  namespace: cross-domain
 spec:
   initiator: alice
   tasks:

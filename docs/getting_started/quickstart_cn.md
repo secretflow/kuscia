@@ -21,7 +21,7 @@
 
 资源：8 core / 16G memory / 200G hard disk
 
-CPU 架构：x86
+CPU 架构：x86、ARM64
 
 > 单机体验版需要部署多个节点和平台，且要预留资源运行各类隐私计算任务，所以这里的资源需求要比节点最低资源大一些
 
@@ -124,7 +124,7 @@ docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
 
 ## 作业状态
 
-如果作业执行成功，则 `kubectl get kj` 命令会显示类似下方的输出，Succeeded 表示成功状态：
+如果作业执行成功，则 `kubectl get kj -n cross-domain` 命令会显示类似下方的输出，Succeeded 表示成功状态：
 
 ```bash
 NAME                             STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
