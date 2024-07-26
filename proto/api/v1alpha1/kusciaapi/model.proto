@@ -22,14 +22,14 @@ option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
 option java_package = "org.secretflow.v1alpha1.kusciaapi";
 
 service ModelService {
-  rpc UploadModel(stream UploadModelRequest) returns (UploadModelResponse);
+  rpc UploadModel(UploadModelRequest) returns (UploadModelResponse);
 }
 
 message UploadModelRequest {
     // model filename
     string filename = 1;
-    // model file content
-    bytes content = 2;
+    // model file content(base64)
+    string content = 2;
 }
 
 message UploadModelResponse {

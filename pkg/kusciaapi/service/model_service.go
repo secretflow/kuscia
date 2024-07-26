@@ -17,6 +17,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
@@ -43,9 +44,16 @@ func NewModelService(config *config.KusciaAPIConfig) IModelService {
 func (m modelService) UploadModel(ctx context.Context, request *kusciaapi.UploadModelRequest) *kusciaapi.UploadModelResponse {
 	filePath := common.DefaultModelLocalFSPath + "/" + request.GetFilename()
 
-	err := os.WriteFile(filePath, request.GetContent(), 0755)
+	bytes, errDecode := base64.StdEncoding.DecodeString(request.GetContent())
+	if errDecode != nil {
+		nlog.Errorf("UploadModel file base64 decode failed, error: %s", errDecode.Error())
+		return &kusciaapi.UploadModelResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.ErrUploadModelFailed, errDecode.Error()),
+		}
+	}
+	err := os.WriteFile(filePath, bytes, 0755)
 	if err != nil {
-		nlog.Errorf("UploadModel failed, error: %s", err.Error())
+		nlog.Errorf("UploadModel write file failed, error: %s", err.Error())
 		return &kusciaapi.UploadModelResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.ErrUploadModelFailed, err.Error()),
 		}
