@@ -81,6 +81,9 @@ func NewControllersModule(i *Dependencies) Module {
 			{
 				NewControler: portflake.NewController,
 			},
+			{
+				NewControler: controllers.NewGCController,
+			},
 		},
 	)
 }
