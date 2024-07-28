@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package modules
 
 import (
-	"context"
-	"time"
-
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
@@ -29,10 +26,9 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/portflake"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func NewControllersModule(i *Dependencies) Module {
+func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 	opt := &controllers.Options{
 		ControllerName:        "kuscia-controller-manager",
 		HealthCheckPort:       8090,
@@ -81,41 +77,10 @@ func NewControllersModule(i *Dependencies) Module {
 			{
 				NewControler: portflake.NewController,
 			},
+
 			{
-				NewControler: controllers.NewGCController,
+				NewControler: controllers.NewKusciajobGCController,
 			},
 		},
-	)
-}
-
-func RunControllerWithDestroy(conf *Dependencies) {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "controllers",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	RunController(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunController(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
-	m := NewControllersModule(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Fatalf("Controllers wait ready failed: %v", err)
-	}
-	nlog.Info("Controllers is ready")
-	return m
+	), nil
 }
