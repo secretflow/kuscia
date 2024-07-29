@@ -56,14 +56,15 @@ type MasterKusciaConfig struct {
 }
 
 type AutomonyKusciaConfig struct {
-	CommonConfig      `yaml:",inline"`
-	Runtime           string                      `yaml:"runtime"`
-	Runk              RunkConfig                  `yaml:"runk"`
-	Capacity          config.CapacityCfg          `yaml:"capacity"`
-	ReservedResources config.ReservedResourcesCfg `yaml:"reservedResources"`
-	Image             ImageConfig                 `yaml:"image"`
-	DatastoreEndpoint string                      `yaml:"datastoreEndpoint"`
-	AdvancedConfig    `yaml:",inline"`
+	CommonConfig       `yaml:",inline"`
+	Runtime            string                      `yaml:"runtime"`
+	Runk               RunkConfig                  `yaml:"runk"`
+	Capacity           config.CapacityCfg          `yaml:"capacity"`
+	ReservedResources  config.ReservedResourcesCfg `yaml:"reservedResources"`
+	Image              ImageConfig                 `yaml:"image"`
+	DatastoreEndpoint  string                      `yaml:"datastoreEndpoint"`
+	AdvancedConfig     `yaml:",inline"`
+	CertSubjectAltName kaconfig.CertSubjectAltName `yaml:"certSubjectAltName"`
 }
 
 type RunkConfig struct {
@@ -208,6 +209,7 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 }
 
 func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
+	kusciaConfig.CertSubjectAltName = autonomy.CertSubjectAltName
 	kusciaConfig.LogLevel = autonomy.LogLevel
 	kusciaConfig.DomainID = autonomy.DomainID
 	kusciaConfig.CAKeyData = autonomy.DomainKeyData

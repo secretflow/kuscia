@@ -77,6 +77,9 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
 	kusciaAPIConfig.DomainID = d.DomainID
 	kusciaAPIConfig.Protocol = d.Protocol
+	kusciaAPIConfig.CertSubjectAltName = d.CertSubjectAltName
+
+	kusciaAPIConfig.CertSubjectAltName.DNSNames = append(kusciaAPIConfig.CertSubjectAltName.DNSNames, kusciaAPISanDNSName)
 
 	protocol := kusciaAPIConfig.Protocol
 	if protocol == "" {
@@ -88,7 +91,7 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 	}
 
 	if kusciaAPIConfig.TLS != nil {
-		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(nil, []string{kusciaAPISanDNSName}); err != nil {
+		if err := kusciaAPIConfig.TLS.LoadFromDataOrFile(kusciaAPIConfig.CertSubjectAltName.IPAddresses, kusciaAPIConfig.CertSubjectAltName.DNSNames); err != nil {
 			return nil, err
 		}
 	}
