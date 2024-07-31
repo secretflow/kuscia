@@ -107,6 +107,5 @@ func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, d
 				}
 			}
 		}
-		time.Sleep(time.Second)
 	}
 }
