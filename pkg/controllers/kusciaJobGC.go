@@ -90,17 +90,20 @@ func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, d
 			return
 		case <-ticker.C:
 			kusciaJobListers, _ := kgc.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).List(labels.Everything())
-			if len(kusciaJobListers) > 1000 {
-				for _, kusciajob := range kusciaJobListers {
-					if kusciajob.Status.CompletionTime != nil {
-						kusciajobTime := kusciajob.Status.CompletionTime.Time
-						difference := time.Since(kusciajobTime)
-						if difference >= deleteDDL {
-							kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(kusciajob.Namespace).Delete(ctx, kusciajob.Name, metav1.DeleteOptions{})
-							nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v days)", kusciajob.Name, difference.Hours()/24)
+			batchSize := 1000
+			for i, kusciajob := range kusciaJobListers {
+				if kusciajob.Status.CompletionTime != nil {
+					kusciajobTime := kusciajob.Status.CompletionTime.Time
+					difference := time.Since(kusciajobTime)
+					if difference >= deleteDDL {
+						kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(kusciajob.Namespace).Delete(ctx, kusciajob.Name, metav1.DeleteOptions{})
+						nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v days)", kusciajob.Name, difference.Hours()/24)
 
-						}
 					}
+				}
+				if (i+1)%batchSize == 0 {
+					nlog.Info("KusciajobGC Sleeping for 1 second...")
+					time.Sleep(1 * time.Second)
 				}
 			}
 		}
