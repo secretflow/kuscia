@@ -29,7 +29,6 @@ type KusciajobGCController struct {
 	kusciaTaskSynced      cache.InformerSynced
 	kusciaJobSynced       cache.InformerSynced
 	namespaceSynced       cache.InformerSynced
-	deleteDDL             float64
 }
 
 func NewKusciajobGCController(ctx context.Context, config ControllerConfig) IController {
@@ -52,7 +51,6 @@ func NewKusciajobGCController(ctx context.Context, config ControllerConfig) ICon
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 	}
 	gcController.ctx, gcController.cancel = context.WithCancel(ctx)
-	gcController.deleteDDL = 0 //Can be set
 	return gcController
 }
 
@@ -67,7 +65,7 @@ func (kgc *KusciajobGCController) Run(workers int) error {
 	}
 
 	nlog.Info("Starting GCworkers")
-	kgc.GarbageCollectKusciajob(kgc.ctx)
+	kgc.GarbageCollectKusciajob(kgc.ctx, 3*24*time.Hour)
 	return nil
 }
 
@@ -82,29 +80,30 @@ func (kgc *KusciajobGCController) Name() string {
 	return GCcontrollerName
 }
 
-func (kgc *KusciajobGCController) DeleteAllUnusedResourceKusciajob(ctx context.Context, name string, namespace string) {
-	kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(namespace).Delete(ctx, name, metav1.DeleteOptions{})
-}
-
-func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context) {
+func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, deleteDDL time.Duration) {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case <-ticker.C:
 			kusciaJobListers, _ := kgc.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).List(labels.Everything())
-			for _, kusciajob := range kusciaJobListers {
-				if kusciajob.Status.CompletionTime != nil {
-					kusciajobTime := kusciajob.Status.CompletionTime.Time
-					difference := time.Since(kusciajobTime)
-					if difference.Hours()/24 >= kgc.deleteDDL {
-						kgc.DeleteAllUnusedResourceKusciajob(ctx, kusciajob.Name, kusciajob.Namespace)
-						nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v days)", kusciajob.Name, difference.Hours()/24)
+			if len(kusciaJobListers) > 1000 {
+				for _, kusciajob := range kusciaJobListers {
+					if kusciajob.Status.CompletionTime != nil {
+						kusciajobTime := kusciajob.Status.CompletionTime.Time
+						difference := time.Since(kusciajobTime)
+						if difference >= deleteDDL {
+							kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(kusciajob.Namespace).Delete(ctx, kusciajob.Name, metav1.DeleteOptions{})
+							nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v days)", kusciajob.Name, difference.Hours()/24)
 
+						}
 					}
 				}
 			}
 		}
+		time.Sleep(time.Second)
 	}
 }
