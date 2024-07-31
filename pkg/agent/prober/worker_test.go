@@ -33,6 +33,7 @@ import (
 	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/agent/prober/results"
 	"github.com/secretflow/kuscia/pkg/agent/status"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func init() {
@@ -268,6 +269,7 @@ func TestCleanUp(t *testing.T) {
 	m := newTestManager()
 
 	for _, probeType := range [...]probeType{liveness, readiness, startup} {
+		nlog.Infof("probeType=%v", probeType)
 		key := probeKey{testPodUID, testContainerName, probeType}
 		w := newTestWorker(m, probeType, v1.Probe{})
 		m.statusManager.SetPodStatus(w.pod, getTestRunningStatusWithStarted(probeType != startup))
@@ -279,25 +281,19 @@ func TestCleanUp(t *testing.T) {
 			ready, _ := resultsManager(m, probeType).Get(testContainerID)
 			return ready == results.Success, nil
 		}
-		if ready, _ := condition(); !ready {
-			if err := wait.Poll(100*time.Millisecond, wait.ForeverTestTimeout, condition); err != nil {
-				t.Fatalf("[%s] Error waiting for worker ready: %v", probeType, err)
-			}
-		}
+
+		assert.NoError(t, wait.PollImmediate(50*time.Millisecond, wait.ForeverTestTimeout, condition))
 
 		for i := 0; i < 10; i++ {
 			w.stop() // Stop should be callable multiple times without consequence.
 		}
-		if err := waitForWorkerExit(t, m, []probeKey{key}); err != nil {
-			t.Fatalf("[%s] error waiting for worker exit: %v", probeType, err)
-		}
+		assert.NoError(t, waitForWorkerExit(t, m, []probeKey{key}))
 
-		if _, ok := resultsManager(m, probeType).Get(testContainerID); ok {
-			t.Errorf("[%s] Expected result to be cleared.", probeType)
-		}
-		if _, ok := m.workers[key]; ok {
-			t.Errorf("[%s] Expected worker to be cleared.", probeType)
-		}
+		_, ok := resultsManager(m, probeType).Get(testContainerID)
+		assert.False(t, ok, "[%s] Expected result to be cleared.", probeType)
+
+		_, ok = m.workers[key]
+		assert.False(t, ok, "[%s] Expected worker to be cleared.", probeType)
 	}
 }
 

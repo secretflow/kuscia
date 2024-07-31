@@ -41,7 +41,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/datamesh/dmflight"
+	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
@@ -222,7 +222,7 @@ func (m *MockFlightClient) QueryDataSource(datasourceID string) error {
 	}
 
 	dsResp := queryDatasourceResp.Data
-	nlog.Infof("DsType is %s, dsInfo:%v", dsResp.Type, dsResp.Info)
+	nlog.Infof("DataSourceType is %s, dsInfo:%v", dsResp.Type, dsResp.Info)
 	return nil
 }
 
@@ -279,7 +279,7 @@ func (m *MockFlightClient) getData(domainDataID string, useRawData bool) error {
 	if useRawData {
 		cmd.ContentType = datamesh.ContentType_RAW
 	}
-	desc, err := dmflight.DescForCommand(cmd)
+	desc, err := utils.DescForCommand(cmd)
 	if err != nil {
 		nlog.Warnf(err.Error())
 		return err
@@ -331,7 +331,7 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 			},
 		},
 	}
-	desc, err := dmflight.DescForCommand(cmd)
+	desc, err := utils.DescForCommand(cmd)
 	if err != nil {
 		nlog.Warnf(err.Error())
 		return err

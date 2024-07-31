@@ -265,6 +265,13 @@ type KusciaJobCondition struct {
 	LastTransitionTime *metav1.Time `json:"lastTransitionTime,omitempty"`
 }
 
+type KusciaJobReason string
+
+const (
+	ValidateFailed   KusciaJobReason = "ValidateFailed"
+	CreateTaskFailed KusciaJobReason = "CreateTaskFailed"
+)
+
 // KusciaJobPhase defines current status of this kuscia job.
 type KusciaJobPhase string
 

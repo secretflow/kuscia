@@ -65,6 +65,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
 		grpc.ChainUnaryInterceptor(interceptor.UnaryRecoverInterceptor(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected)),
 		grpc.StreamInterceptor(interceptor.StreamRecoverInterceptor(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected)),
+		grpc.MaxRecvMsgSize(256 * 1024 * 1024), // 256MB
 	}
 	if s.config.TLS != nil {
 		serverTLSConfig, err := buildServerTLSConfig(s.config.TLS, s.config.Protocol)

@@ -1,7 +1,7 @@
-ARG KUSCIA_IMAGE="secretflow/kuscia:latest"
+ARG KUSCIA_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest"
+ARG PYTHON_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/anolis8-python:3.10.13"
 
-FROM secretflow/anolis8-python:3.10.13 as python
-
+FROM ${PYTHON_IMAGE} as python
 FROM ${KUSCIA_IMAGE}
 
 COPY --from=python /root/miniconda3/envs/secretflow/bin/ /usr/local/bin/
@@ -12,7 +12,7 @@ RUN yum install -y protobuf libnl3 libgomp && \
     grep -rl '#!/root/miniconda3/envs/secretflow/bin' /usr/local/bin/ | xargs sed -i -e 's/#!\/root\/miniconda3\/envs\/secretflow/#!\/usr\/local/g' && \
     rm /usr/local/bin/openssl
 
-ARG SF_VERSION="1.6.0b0"
+ARG SF_VERSION="1.7.0b0"
 RUN pip install secretflow-lite==${SF_VERSION} --extra-index-url https://mirrors.aliyun.com/pypi/simple/ && rm -rf /root/.cache
 
 RUN kuscia image builtin secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:${SF_VERSION} --store /home/kuscia/var/images

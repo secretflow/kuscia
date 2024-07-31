@@ -47,11 +47,11 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 
 #### 响应（CreateDomainDataResponse）
 
-| 字段                 | 类型                             | 选填 | 描述      |
-|--------------------|--------------------------------|----|---------|
-| status             | [Status](summary_cn.md#status) | 必填 | 状态信息    |
-| data               | CreateDomainDataResponseData   |    |         |
-| data.domaindata_id | string                         | 必填 | 数据对象 ID |
+| 字段                 | 类型                             | 描述      |
+|--------------------|--------------------------------|---------|
+| status             | [Status](summary_cn.md#status) | 状态信息    |
+| data               | CreateDomainDataResponseData   |       |
+| data.domaindata_id | string                         | 数据对象 ID |
 
 #### 请求示例
 
@@ -128,9 +128,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/create' \
 
 #### 响应（UpdateDomainDataResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -197,9 +197,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/update' \
 
 #### 响应（DeleteDomainDataResponse）
 
-| 字段     | 类型                             | 选填 | 描述   |
-|--------|--------------------------------|----|------|
-| status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
+| 字段     | 类型                             | 描述   |
+|--------|--------------------------------|------|
+| status | [Status](summary_cn.md#status) | 状态信息 |
 
 #### 请求示例
 
@@ -249,10 +249,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/delete' \
 
 #### 响应（QueryDomainResponse）
 
-| 字段     | 类型                                | 选填 | 描述   |
-|--------|-----------------------------------|----|------|
-| status | [Status](summary_cn.md#status)    | 必填 | 状态信息 |
-| data   | [DomainData](#domain-data-entity) |    |      |
+| 字段     | 类型                                | 描述   |
+|--------|-----------------------------------|------|
+| status | [Status](summary_cn.md#status)    | 状态信息 |
+| data   | [DomainData](#domain-data-entity) |       |
 
 #### 请求示例
 
@@ -346,10 +346,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/query' \
 
 #### 响应（BatchQueryDomainDataResponse）
 
-| 字段     | 类型                                  | 选填 | 描述   |
-|--------|-------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
-| data   | [DomainDataList](#domain-data-list) |    |      |
+| 字段     | 类型                                  | 描述   |
+|--------|-------------------------------------|------|
+| status | [Status](summary_cn.md#status)      |  状态信息 |
+| data   | [DomainDataList](#domain-data-list) |       |
 
 #### 请求示例
 
@@ -439,10 +439,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/batchQuery' \
 
 #### 响应（ListDomainDataResponse）
 
-| 字段     | 类型                                  | 选填 | 描述   |
-|--------|-------------------------------------|----|------|
-| status | [Status](summary_cn.md#status)      | 必填 | 状态信息 |
-| data   | [DomainDataList](#domain-data-list) |    |      |
+| 字段     | 类型                                  |  描述   |
+|--------|-------------------------------------|------|
+| status | [Status](summary_cn.md#status)      |  状态信息 |
+| data   | [DomainDataList](#domain-data-list) |      |
 
 #### 请求示例
 
@@ -537,27 +537,27 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
 
 ### DomainDataList
 
-| 字段              | 类型                                  | 选填 | 描述     |
-|-----------------|-------------------------------------|----|--------|
-| domaindata_list | [DomainData](#domain-data-entity)[] | 必填 | 数据对象列表 |
+| 字段              | 类型                                  | 描述     |
+|-----------------|-------------------------------------|--------|
+| domaindata_list | [DomainData](#domain-data-entity)[] | 数据对象列表 |
 
 {#domain-data-entity}
 
 ### DomainData
 
-| 字段            | 类型                           | 选填 | 描述                                                                                                                               |
-|---------------|------------------------------|----|----------------------------------------------------------------------------------------------------------------------------------|
-| domaindata_id | string                       | 必填 | 数据对象 ID                                                                                                                          |
-| name          | string                       | 必填 | 名称                                                                                                                               |
-| type          | string                       | 必填 | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                      |
-| relative_uri  | string                       | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                                    |
-| domain_id     | string                       | 必填 | 节点 ID                                                                                                                            |
-| datasource_id | string                       | 必填 | 数据源 ID，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                                          |
-| attributes    | map<string,string>           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                    |
-| partition     | [Partition](#partition)      | 可选 | 暂不支持                                                                                                                             |
-| columns       | [DataColumn](#data-column)[] | 必填 | 列信息                                                                                                                              |
-| vendor        | string                       | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md) |
-| author        | string                       | 可选 | 表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的 |
+| 字段            | 类型                           | 描述                                                                                                                               |
+|---------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| domaindata_id | string                       | 数据对象 ID                                                                                                                          |
+| name          | string                       | 名称                                                                                                                               |
+| type          | string                       | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                      |
+| relative_uri  | string                       | 相对数据源所在位置的路径，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                                    |
+| domain_id     | string                       | 节点 ID                                                                                                                            |
+| datasource_id | string                       | 数据源 ID，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                                          |
+| attributes    | map<string,string>           | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../concepts/domaindata_cn.md)                                                    |
+| partition     | [Partition](#partition)      | 暂不支持                                                                                                                             |
+| columns       | [DataColumn](#data-column)[] | 列信息                                                                                                                              |
+| vendor        | string                       | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md) |
+| author        | string                       | 表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的 |
 
 {#partition}
 

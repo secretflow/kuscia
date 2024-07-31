@@ -104,6 +104,7 @@ message ServingParty {
   optional int32 replicas = 4;
   UpdateStrategy update_strategy = 5;
   repeated Resource resources = 6;
+  string service_name_prefix = 7;
 }
 
 // Container resource.
@@ -161,4 +162,20 @@ message ServingPartyEndpoint {
   string scope = 2;
   // service access address.
   string endpoint = 3;
+}
+
+message ServingState {
+  enum State{
+    Unknown = 0;
+    // Serving has not been processed yet.
+    Pending = 1;
+    // Serving is publishing, at least one of the parties is unavailable.
+    Progressing = 2;
+    // Serving publication completed, at least one party's multiple instances are not all available.
+    PartialAvailable = 3;
+    // Serving publication completed, all app instances from all parties are available.
+    Available = 4;
+    // Serving publication failed.
+    Failed = 5;
+  }
 }

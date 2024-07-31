@@ -27,9 +27,9 @@ import (
 
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/dmflight"
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
-	"github.com/secretflow/kuscia/pkg/datamesh/v1handler/grpchandler"
+	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/handler"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/v1handler/grpchandler"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
@@ -64,6 +64,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeOut) * time.Second),
 		grpc.ChainUnaryInterceptor(interceptor.UnaryRecoverInterceptor(pberrorcode.ErrorCode_DataMeshErrForUnexpected)),
 		grpc.StreamInterceptor(interceptor.StreamRecoverInterceptor(pberrorcode.ErrorCode_DataMeshErrForUnexpected)),
+		grpc.MaxRecvMsgSize(256 * 1024 * 1024), // 256MB
 	}
 
 	if !s.config.DisableTLS {
@@ -75,7 +76,10 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		creds := credentials.NewTLS(serverTLSConfig)
 		opts = append(opts, grpc.Creds(creds))
 	}
-
+	// set logger
+	if s.config.InterceptorLog != nil {
+		opts = append(opts, grpc.ChainUnaryInterceptor(interceptor.GrpcServerLoggingInterceptor(*s.config.InterceptorLog)))
+	}
 	// listen on grpc port
 	addr := fmt.Sprintf("%s:%d", s.config.ListenAddr, s.config.GRPCPort)
 	lis, err := net.Listen("tcp", addr)
@@ -92,7 +96,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(datasourceService))
 	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 
-	flight.RegisterFlightServiceServer(server, dmflight.NewDataMeshFlightHandler(domainDataService, datasourceService, s.config.ExternalDataProxyList))
+	flight.RegisterFlightServiceServer(server, handler.NewDataMeshFlightHandler(domainDataService, datasourceService, s.config.DataProxyList))
 
 	reflection.Register(server)
 

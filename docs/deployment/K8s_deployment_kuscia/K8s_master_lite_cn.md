@@ -5,7 +5,7 @@
 
 目前 Kuscia 在部署到 K8s 上时，隐私计算任务的运行态支持 RunK 和 RunP 两种模式， RunC 模式目前需要部署 Kuscia 的 Pod 有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)
 
-本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod）， RunP 模式的部署请参考 [使用进程运行时部署节点](../deploy_with_runp_cn.md)。
+本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod）， RunP 模式的部署请参考 [使用进程运行时部署节点](./deploy_with_runp_cn.md)。
 
 ![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)
 
@@ -42,7 +42,7 @@ domainID、私钥以及 datastoreEndpoint 字段里的数据库连接串（user�
 :::{tip}
 
 - 修改 Configmap 配置后，需执行 kubectl delete po {pod-name} -n {namespace} 重新拉起 Pod 生效
-- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
+- 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
 
 :::
 
@@ -91,7 +91,7 @@ ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍�
 :::{tip}
 
 - 修改 Configmap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效
-- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
+- 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
 
 :::
 
@@ -113,7 +113,7 @@ kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="u
 
 获取 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/configmap.yaml) 文件，创建 Configmap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。
 ```bash
-kubectl create -f comfigmap.yaml
+kubectl create -f configmap.yaml
 ```
 
 ### 步骤四（可选）：创建 RBAC
@@ -148,14 +148,14 @@ kubectl create -f rbac.yaml
 < server: kuscia-gateway
 <
 * Connection #0 to host kuscia-master.kuscia-master.svc.cluster.local left intact
-unauthorized.
+{"domain":"alice","instance":"xyz","kuscia":"v0.1","reason":"unauthorized."}
 ```
 
 <span style="color:red;">注意：如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)</span>
 
 获取 [deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/deployment.yaml) 文件，创建 deployment
 ```bash
-kubectl create -f deployement.yaml
+kubectl create -f deployment.yaml
 ```
 
 ### 创建 lite-alice、lite-bob 之间的授权
@@ -181,13 +181,13 @@ bob-kuscia-system     bob      kuscia-system                                    
 alice-bob             alice    bob             kuscia-lite-bob.lite-bob.svc.cluster.local       Token            True
 bob-alice             bob      alice           kuscia-lite-alice.lite-alice.svc.cluster.local   Token            True
 ```
-授权失败，请参考[授权错误排查](../../reference/troubleshoot/networkauthorizationcheck.md)文档
+授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)文档
 
 ## 确认部署成功
 ### 检查 Pod 状态
 pod 处于 running 状态表示部署成功
 ```bash
-kuebctl get po -n kuscia-master
+kubectl get po -n kuscia-master
 kubectl get po -n lite-alice
 ```
 ### 检查数据库连接状态
@@ -973,7 +973,7 @@ scripts/user/create_example_job.sh
 kubectl get kj -n cross-domain
 ```
 
-Runk 模式可以在 Kuscia Pod 所在集群中执行如下命令查看引擎日志
+RunK 模式可以在 Kuscia Pod 所在集群中执行如下命令查看引擎日志
 ```bash
 kubectl logs ${engine_pod_name} -n kuscia-master
 ```

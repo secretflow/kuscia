@@ -74,5 +74,6 @@ func SetOOMScore(pid, score int) error {
 	}
 
 	nlog.Infof("Set pid[%v] oom score adj to %v", pid, score)
+
 	return nil
 }

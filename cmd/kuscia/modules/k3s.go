@@ -34,18 +34,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/datastore"
+	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/network"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/ljwriter"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/pkg/utils/process"
-	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
-
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
+	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 )
 
 type k3sModule struct {
@@ -59,92 +63,24 @@ type k3sModule struct {
 	hostIP            string
 	enableAudit       bool
 	LogConfig         nlog.LogConfig
+	conf              *ModuleRuntimeConfigs
+
+	// ready
+	readyCh    chan struct{}
+	readyError error
 }
 
-func (s *k3sModule) readyz(host string) error {
-
-	// check k3s process
-	if !process.CheckExists("k3s") {
-		errMsg := "process [k3s] is not exists"
-		nlog.Error(errMsg)
-		return errors.New(errMsg)
-	}
-
-	cl := http.Client{}
-	// check file exist
-	serverCaFilePath := filepath.Join(s.dataDir, "server/tls/server-ca.crt")
-	clientAdminCrtFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.crt")
-	clientAdminKeyFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.key")
-
-	if fileExistError := paths.CheckAllFileExist(serverCaFilePath, clientAdminCrtFilePath, clientAdminKeyFilePath); fileExistError != nil {
-		err := fmt.Errorf("%s. Please check the k3s service is running successfully ", fileExistError)
-		nlog.Error(err)
-		return err
-	}
-
-	caCertFile, err := os.ReadFile(serverCaFilePath)
-	if err != nil {
-		nlog.Error(err)
-		return err
-	}
-	caCertPool := x509.NewCertPool()
-	if !caCertPool.AppendCertsFromPEM(caCertFile) {
-		msg := "caCertFile format error"
-		nlog.Error(msg)
-		return fmt.Errorf("%s", msg)
-	}
-	certPEMBlock, err := os.ReadFile(clientAdminCrtFilePath)
-	if err != nil {
-		nlog.Error(err)
-		return err
-	}
-
-	keyPEMBlock, err := os.ReadFile(clientAdminKeyFilePath)
-	if err != nil {
-		nlog.Error(err)
-		return err
-	}
-
-	cert, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
-	if err != nil {
-		nlog.Error(err)
-		return err
-	}
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			RootCAs:      caCertPool,
-			Certificates: []tls.Certificate{cert},
-		},
-	}
-	cl.Transport = tr
-	req, err := http.NewRequest(http.MethodGet, host+"/readyz", nil)
-	if err != nil {
-		nlog.Errorf("NewRequest error:%s", err.Error())
-		return err
-	}
-	resp, err := cl.Do(req)
-	if err != nil {
-		nlog.Errorf("Get ready err:%s", err.Error())
-		return err
-	}
-	if resp == nil || resp.Body == nil {
-		nlog.Error("resp must has body")
-		return fmt.Errorf("resp must has body")
-	}
-	defer resp.Body.Close()
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		nlog.Error("ReadAll fail")
-		return err
-	}
-	if string(respBytes) != "ok" {
-		return errors.New("not ready")
-	}
-	return nil
+type kusciaConfig struct {
+	serverCertFile         string
+	clientKeyFile          string
+	clientCertFile         string
+	clusterRoleFile        string
+	clusterRoleBindingFile string
+	kubeConfigTmplFile     string
+	kubeConfig             string
 }
 
-func NewK3s(i *Dependencies) Module {
+func NewK3s(i *ModuleRuntimeConfigs) (Module, error) {
 	var clusterToken string
 	clusterToken = i.Master.ClusterToken
 	if clusterToken == "" {
@@ -153,6 +89,11 @@ func NewK3s(i *Dependencies) Module {
 	hostIP, err := network.GetHostIP()
 	if err != nil {
 		nlog.Fatal(err)
+	}
+	// check DatastoreEndpoint
+	if err := datastore.CheckDatastoreEndpoint(i.Master.DatastoreEndpoint); err != nil {
+		nlog.Errorf("k3s check datastore endpoint failed with: %s", err.Error())
+		return nil, err
 	}
 	return &k3sModule{
 		rootDir:           i.RootDir,
@@ -165,7 +106,9 @@ func NewK3s(i *Dependencies) Module {
 		datastoreEndpoint: i.Master.DatastoreEndpoint,
 		clusterToken:      clusterToken,
 		LogConfig:         *i.LogConfig,
-	}
+		conf:              i,
+		readyCh:           make(chan struct{}),
+	}, nil
 }
 
 func (s *k3sModule) Run(ctx context.Context) error {
@@ -205,11 +148,20 @@ func (s *k3sModule) Run(ctx context.Context) error {
 	}
 
 	sp := supervisor.NewSupervisor("k3s", nil, -1)
-	s.LogConfig.LogPath = filepath.Join(s.rootDir, pkgcom.LogPrefix, "k3s.log")
+	s.LogConfig.LogPath = buildK3sLogPath(s.rootDir)
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 
-	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
+	go func() {
+		s.readyError = s.startCheckReady(ctx)
+		if s.readyError == nil {
+			s.readyError = s.initKusciaEnvAfterReady(ctx)
+		}
+		close(s.readyCh)
+		nlog.Infof("close k3s ready chan")
+	}()
+
+	err := sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.Command(filepath.Join(s.rootDir, "bin/k3s"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n
@@ -222,9 +174,29 @@ func (s *k3sModule) Run(ctx context.Context) error {
 			score: &k3sOOMScore,
 		}
 	})
+
+	if err != nil {
+		readK3sLog(s.LogConfig.LogPath, 10)
+	}
+
+	return err
 }
 
 func (s *k3sModule) WaitReady(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-s.readyCh:
+		nlog.Infof("k3s is ready now")
+		return s.readyError
+	}
+}
+
+func (s *k3sModule) Name() string {
+	return "k3s"
+}
+
+func (s *k3sModule) startCheckReady(ctx context.Context) error {
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 	tickerReady := time.NewTicker(time.Second)
@@ -243,65 +215,129 @@ func (s *k3sModule) WaitReady(ctx context.Context) error {
 	}
 }
 
-func (s *k3sModule) Name() string {
-	return "k3s"
-}
-
-func RunK3sWithDestroy(conf *Dependencies) error {
-	runCtx, cancel := context.WithCancel(context.Background())
-	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
-	conf.RegisterDestroyFunc(DestroyFunc{
-		Name:              "k3s",
-		DestroyCh:         runCtx.Done(),
-		DestroyFn:         cancel,
-		ShutdownHookEntry: shutdownEntry,
-	})
-	return RunK3s(runCtx, cancel, conf, shutdownEntry)
-}
-
-func RunK3s(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) error {
-	// check DatastoreEndpoint
-	if err := datastore.CheckDatastoreEndpoint(conf.Master.DatastoreEndpoint); err != nil {
-		nlog.Error(err)
-		cancel()
+func (s *k3sModule) initKusciaEnvAfterReady(ctx context.Context) error {
+	if err := applyCRD(s.conf); err != nil {
+		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		return err
+	}
+	if err := applyKusciaResources(s.conf); err != nil {
+		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		return err
+	}
+	if err := genKusciaKubeConfig(s.conf); err != nil {
+		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
 		return err
 	}
 
-	m := NewK3s(conf)
-	go func() {
-		defer func() {
-			if shutdownEntry != nil {
-				shutdownEntry.RunShutdown()
-			}
-		}()
-		if err := m.Run(ctx); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-	}()
-	if err := m.WaitReady(ctx); err != nil {
-		nlog.Error(err)
-		cancel()
-	} else {
-		if err = applyCRD(conf); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-		if err = applyKusciaResources(conf); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-		if err = genKusciaKubeConfig(conf); err != nil {
-			nlog.Error(err)
-			cancel()
-		}
-		nlog.Info("k3s is ready")
+	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(s.conf.KubeconfigFile, s.conf.ApiserverEndpoint)
+	if err != nil {
+		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		return err
 	}
 
+	s.conf.Clients = clients
+
+	if err := createDefaultDomain(ctx, s.conf); err != nil {
+		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		return err
+	}
+	nlog.Infof("registed namespace %s without error", s.conf.DomainID)
+
+	if err := createCrossNamespace(ctx, s.conf); err != nil {
+		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		return err
+	}
+
+	nlog.Infof("K3s init done")
+
+	return nil
+
+}
+
+func (s *k3sModule) readyz(host string) error {
+	// check k3s process
+	if !process.CheckExists("k3s") {
+		errMsg := "process [k3s] is not exists"
+		nlog.Error(errMsg)
+		return errors.New(errMsg)
+	}
+
+	// check file exist
+	serverCaFilePath := filepath.Join(s.dataDir, "server/tls/server-ca.crt")
+	clientAdminCrtFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.crt")
+	clientAdminKeyFilePath := filepath.Join(s.dataDir, "server/tls/client-admin.key")
+
+	if fileExistError := paths.CheckAllFileExist(serverCaFilePath, clientAdminCrtFilePath, clientAdminKeyFilePath); fileExistError != nil {
+		err := fmt.Errorf("%s. waiting k3s service starting", fileExistError)
+		nlog.Warn(err)
+		return err
+	}
+
+	caCertFile, err := os.ReadFile(serverCaFilePath)
+	if err != nil {
+		nlog.Error(err)
+		return err
+	}
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCertFile) {
+		msg := "caCertFile format error"
+		nlog.Error(msg)
+		return fmt.Errorf("%s", msg)
+	}
+	certPEMBlock, err := os.ReadFile(clientAdminCrtFilePath)
+	if err != nil {
+		nlog.Error(err)
+		return err
+	}
+
+	keyPEMBlock, err := os.ReadFile(clientAdminKeyFilePath)
+	if err != nil {
+		nlog.Error(err)
+		return err
+	}
+
+	cert, err := tls.X509KeyPair(certPEMBlock, keyPEMBlock)
+	if err != nil {
+		nlog.Error(err)
+		return err
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs:      caCertPool,
+			Certificates: []tls.Certificate{cert},
+		},
+	}
+
+	cl := http.Client{}
+	cl.Transport = tr
+	req, err := http.NewRequest(http.MethodGet, host+"/readyz", nil)
+	if err != nil {
+		nlog.Errorf("NewRequest error:%s", err.Error())
+		return err
+	}
+	resp, err := cl.Do(req)
+	if err != nil {
+		nlog.Errorf("Get ready err:%s", err.Error())
+		return err
+	}
+	if resp == nil || resp.Body == nil {
+		nlog.Error("resp must has body")
+		return fmt.Errorf("resp must has body")
+	}
+	defer resp.Body.Close()
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		nlog.Error("ReadAll fail")
+		return err
+	}
+	if string(respBytes) != "ok" {
+		return errors.New("not ready")
+	}
 	return nil
 }
 
-func applyCRD(conf *Dependencies) error {
+func applyCRD(conf *ModuleRuntimeConfigs) error {
 	dirPath := filepath.Join(conf.RootDir, "crds/v1alpha1")
 	dirs, err := os.ReadDir(dirPath)
 	if err != nil {
@@ -323,7 +359,7 @@ func applyCRD(conf *Dependencies) error {
 	return nil
 }
 
-func genKusciaKubeConfig(conf *Dependencies) error {
+func genKusciaKubeConfig(conf *ModuleRuntimeConfigs) error {
 	c := &kusciaConfig{
 		serverCertFile:         filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/server-ca.crt"),
 		clientKeyFile:          filepath.Join(conf.RootDir, k3sDataDirPrefix, "server/tls/client-ca.key"),
@@ -392,7 +428,7 @@ func genKusciaKubeConfig(conf *Dependencies) error {
 	return nil
 }
 
-func applyKusciaResources(conf *Dependencies) error {
+func applyKusciaResources(conf *ModuleRuntimeConfigs) error {
 	// apply kuscia clusterRole
 	resourceFiles := []string{
 		filepath.Join(conf.RootDir, pkgcom.ConfPrefix, "domain-cluster-res.yaml"),
@@ -409,7 +445,7 @@ func applyKusciaResources(conf *Dependencies) error {
 	return nil
 }
 
-func applyFile(conf *Dependencies, file string) error {
+func applyFile(conf *ModuleRuntimeConfigs, file string) error {
 	cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", file)
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
@@ -421,12 +457,108 @@ func applyFile(conf *Dependencies, file string) error {
 	return nil
 }
 
-type kusciaConfig struct {
-	serverCertFile         string
-	clientKeyFile          string
-	clientCertFile         string
-	clusterRoleFile        string
-	clusterRoleBindingFile string
-	kubeConfigTmplFile     string
-	kubeConfig             string
+func createDefaultDomain(ctx context.Context, conf *ModuleRuntimeConfigs) error {
+	nlog.Infof("try to regist namespace: %s", conf.DomainID)
+	certRaw, err := os.ReadFile(conf.DomainCertFile)
+	if err != nil {
+		return err
+	}
+
+	certStr := base64.StdEncoding.EncodeToString(certRaw)
+	_, err = conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Create(ctx, &kusciaapisv1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: conf.DomainID,
+		},
+		Spec: kusciaapisv1alpha1.DomainSpec{
+			Cert: certStr,
+		}}, metav1.CreateOptions{})
+	if k8serrors.IsAlreadyExists(err) {
+		dm, err := conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Get(ctx, conf.DomainID, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if dm.Spec.Cert != certStr {
+			nlog.Warnf("domain %s cert is not match, will update", conf.DomainID)
+			dm.Spec.Cert = certStr
+			_, err = conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Update(ctx, dm, metav1.UpdateOptions{})
+			return err
+		}
+		return nil
+	}
+
+	return err
+}
+
+func createCrossNamespace(ctx context.Context, conf *ModuleRuntimeConfigs) error {
+	if _, err := conf.Clients.KubeClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: pkgcom.KusciaCrossDomain,
+		},
+	}, metav1.CreateOptions{}); err != nil {
+		if !k8serrors.IsAlreadyExists(err) {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// readK3sLog read the last N lines of k3s log
+func readK3sLog(k3sLogFilePath string, nLastLine int) {
+	lines, readFileErr := readLastNLinesAsString(k3sLogFilePath, nLastLine)
+	if readFileErr != nil {
+		nlog.Errorf("[k3s] read k3s file error: %v", readFileErr)
+	} else {
+		nlog.Errorf("[k3s] Log content: %s [k3s] Log end", lines)
+	}
+}
+
+// readLastNLinesAsString read the last N lines of a file as string
+func readLastNLinesAsString(filePath string, n int) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	stat, err := file.Stat()
+	if err != nil {
+		return "", err
+	}
+	fileSize := stat.Size()
+
+	buf := make([]byte, 0)
+	newlineChar := byte('\n')
+
+	for offset := int64(1); offset <= fileSize; offset++ {
+		_, err = file.Seek(-offset, io.SeekEnd)
+		if err != nil {
+			return "", err
+		}
+
+		b := make([]byte, 1)
+		_, err = file.Read(b)
+		if err != nil {
+			return "", err
+		}
+
+		if b[0] == newlineChar {
+			if len(buf) > 0 { // Avoid appending empty lines at the end of file
+				n--
+			}
+			if n == 0 {
+				break
+			}
+		}
+		buf = append([]byte{b[0]}, buf...)
+	}
+
+	return string(buf), nil
+}
+
+// buildK3sLogPath build the absolute path of k3s log
+func buildK3sLogPath(rootDir string) string {
+	return filepath.Join(rootDir, pkgcom.LogPrefix, "k3s.log")
 }

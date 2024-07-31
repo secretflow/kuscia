@@ -22,8 +22,8 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/secretflow/kuscia/pkg/agent/local/store/assist"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
+	"github.com/secretflow/kuscia/pkg/utils/assist"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 

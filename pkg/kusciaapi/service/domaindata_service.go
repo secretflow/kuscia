@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dulp
+//nolint:dupl
 package service
 
 import (
@@ -28,7 +28,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/datamesh/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
@@ -555,9 +555,9 @@ func (s domainDataService) normalizationUpdateRequest(request *kusciaapi.UpdateD
 }
 
 func (s domainDataService) authHandler(ctx context.Context, request RequestWithDomainID) error {
-	role, domainId := GetRoleAndDomainFromCtx(ctx)
-	if role == consts.AuthRoleDomain && request.GetDomainId() != domainId {
-		return fmt.Errorf("domain's kusciaAPI could only operate its own DomainData, request.DomainID must be %s not %s", domainId, request.GetDomainId())
+	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain && request.GetDomainId() != domainID {
+		return fmt.Errorf("domain's kusciaAPI could only operate its own DomainData, request.DomainID must be %s not %s", domainID, request.GetDomainId())
 	}
 	return nil
 }

@@ -36,7 +36,7 @@ func (e *KusciaCoreDNS) Start(ctx context.Context, kubeClient kubernetes.Interfa
 	return nil
 }
 
-func startEndpointsController(ctx context.Context, kubeClient kubernetes.Interface, n *KusciaCoreDNS, namespace string) {
+func startEndpointsController(ctx context.Context, kubeClient kubernetes.Interface, n *KusciaCoreDNS, _ string) {
 	defer runtime.HandleCrash()
 	c := NewEndpointsController(ctx, kubeClient, n, n.Namespace)
 	nlog.Infof("Starting endpoint controller, namespace: %s", n.Namespace)

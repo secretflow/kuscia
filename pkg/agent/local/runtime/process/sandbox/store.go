@@ -100,7 +100,8 @@ func (s *Store) Monitor() {
 		for {
 			select {
 			case <-s.stopCh:
-				break
+				nlog.Infof("exit store monitor...")
+				return
 			case <-ticker.C:
 				if err := s.cleanup(s.sandboxRootDir); err != nil {
 					nlog.Errorf("Failed to cleanup sandbox root directory: %v", err)
