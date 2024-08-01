@@ -1,18 +1,18 @@
 package controllers
 
 import (
-	"context"
-	"fmt"
+  "context"
+  "fmt"
 	"github.com/secretflow/kuscia/pkg/common"
-	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
-	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/tools/cache"
-	"time"
+  kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+  kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+  kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+  "github.com/secretflow/kuscia/pkg/utils/nlog"
+  metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+  "k8s.io/apimachinery/pkg/labels"
+  kubeinformers "k8s.io/client-go/informers"
+  "k8s.io/client-go/tools/cache"
+  "time"
 )
 
 const (
@@ -29,6 +29,7 @@ type KusciajobGCController struct {
 	kusciaTaskSynced      cache.InformerSynced
 	kusciaJobSynced       cache.InformerSynced
 	namespaceSynced       cache.InformerSynced
+  kusciajobGCDuration   time.Duration
 }
 
 func NewKusciajobGCController(ctx context.Context, config ControllerConfig) IController {
@@ -49,6 +50,7 @@ func NewKusciajobGCController(ctx context.Context, config ControllerConfig) ICon
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
+    kusciajobGCDuration:   config.GCDuration,
 	}
 	gcController.ctx, gcController.cancel = context.WithCancel(ctx)
 	return gcController
@@ -65,7 +67,7 @@ func (kgc *KusciajobGCController) Run(workers int) error {
 	}
 
 	nlog.Info("Starting GCworkers")
-	kgc.GarbageCollectKusciajob(kgc.ctx, 3*24*time.Hour)
+	kgc.GarbageCollectKusciajob(kgc.ctx)
 	return nil
 }
 
@@ -80,7 +82,8 @@ func (kgc *KusciajobGCController) Name() string {
 	return GCcontrollerName
 }
 
-func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, deleteDDL time.Duration) {
+func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context) {  
+  nlog.Infof("kusciajobGCDuration is %v",kgc.kusciajobGCDuration)
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
@@ -95,9 +98,9 @@ func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, d
 				if kusciajob.Status.CompletionTime != nil {
 					kusciajobTime := kusciajob.Status.CompletionTime.Time
 					difference := time.Since(kusciajobTime)
-					if difference >= deleteDDL {
+					if difference >= kgc.kusciajobGCDuration {
 						kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(kusciajob.Namespace).Delete(ctx, kusciajob.Name, metav1.DeleteOptions{})
-						nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v days)", kusciajob.Name, difference.Hours()/24)
+						nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v)", kusciajob.Name, difference)
 
 					}
 				}

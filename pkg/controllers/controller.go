@@ -24,6 +24,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+	"time"
 )
 
 type IController interface {
@@ -72,4 +73,5 @@ type ControllerConfig struct {
 	KusciaClient          kusciaclientset.Interface
 	EventRecorder         record.EventRecorder
 	EnableWorkloadApprove bool
+	GCDuration            time.Duration
 }
