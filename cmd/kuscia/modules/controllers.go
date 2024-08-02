@@ -26,7 +26,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/portflake"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
-	"time"
 )
 
 func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
@@ -38,7 +37,7 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 		Namespace:             i.DomainID,
 		RootDir:               i.RootDir,
 		EnableWorkloadApprove: i.EnableWorkloadApprove,
-		GCDuration:            3 * 24 * time.Hour,
+		GCDuration:            i.GCDuration,
 	}
 
 	return controllers.NewServer(

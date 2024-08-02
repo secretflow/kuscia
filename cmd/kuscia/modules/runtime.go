@@ -35,6 +35,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/logs"
+	"time"
 )
 
 type ModuleRuntimeConfigs struct {
@@ -60,6 +61,7 @@ type ModuleRuntimeConfigs struct {
 	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
 	LogConfig               *nlog.LogConfig
 	Logrorate               confloader.LogrotateConfig
+	GCDuration              time.Duration
 }
 
 func (d *ModuleRuntimeConfigs) Close() {
@@ -147,6 +149,9 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 	dependencies := &ModuleRuntimeConfigs{
 		KusciaConfig: kusciaConf,
 	}
+	//init GCDuration
+	dependencies.GCDuration = kusciaConf.GCDuration
+
 	// init log
 	logConfig := initLoggerConfig(kusciaConf, kusciaLogPath)
 	if err := InitLogs(logConfig); err != nil {
