@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	GCcontrollerName = "KusciajobGC_controller"
-	batchSize        = 1000
+	GCcontrollerName  = "KusciajobGC_controller"
+	batchSize         = 1000
+	defaultGCDuration = 60 * 24 * time.Hour
 )
 
 type KusciajobGCController struct {
@@ -52,7 +53,7 @@ func NewKusciajobGCController(ctx context.Context, config controllers.Controller
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
-		kusciajobGCDuration:   config.GCDuration,
+		kusciajobGCDuration:   defaultGCDuration,
 	}
 	gcController.ctx, gcController.cancel = context.WithCancel(ctx)
 	return gcController
