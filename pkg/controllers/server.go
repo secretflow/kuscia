@@ -154,7 +154,6 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 		KusciaClient:          s.kusciaClient,
 		EventRecorder:         s.eventRecorder,
 		EnableWorkloadApprove: s.options.EnableWorkloadApprove,
-		GCDuration:            s.options.GCDuration,
 	}
 	for _, cc := range s.controllerConstructions {
 		controller := cc.NewControler(ctx, config)
