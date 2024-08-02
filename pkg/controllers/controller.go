@@ -24,7 +24,6 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
-	"time"
 )
 
 type IController interface {
