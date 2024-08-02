@@ -27,10 +27,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/portflake"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
-	"time"
 )
-
-const defaultGCDuration = 60 * 24 * time.Hour
 
 func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 	opt := &controllers.Options{
@@ -41,7 +38,6 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 		Namespace:             i.DomainID,
 		RootDir:               i.RootDir,
 		EnableWorkloadApprove: i.EnableWorkloadApprove,
-		GCDuration:            defaultGCDuration,
 	}
 
 	return controllers.NewServer(
