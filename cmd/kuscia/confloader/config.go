@@ -32,7 +32,7 @@ var (
 	defaultRootDir            = "/home/kuscia/"
 	defaultEndpointForMaster  = "https://127.0.0.1:6443"
 	defaultMetricUpdatePeriod = uint(5)
-	defaultGCDuration         = 3 * 24 * time.Hour
+	defaultGCDuration         = 60 * 24 * time.Hour
 )
 
 type KusciaConfig struct {
