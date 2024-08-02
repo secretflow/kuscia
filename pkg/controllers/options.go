@@ -20,7 +20,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"time"
 )
 
 // Options is the main context object for the domain controller.
@@ -43,7 +42,6 @@ type Options struct {
 	ControllerName string
 
 	EnableWorkloadApprove bool
-	GCDuration            time.Duration
 }
 
 // NewOptions creates a new options with a default config.
