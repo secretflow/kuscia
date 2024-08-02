@@ -21,12 +21,16 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
 	"github.com/secretflow/kuscia/pkg/controllers/domaindata"
 	"github.com/secretflow/kuscia/pkg/controllers/domainroute"
+	"github.com/secretflow/kuscia/pkg/controllers/garbagecollection"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciadeployment"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/portflake"
 	"github.com/secretflow/kuscia/pkg/controllers/taskresourcegroup"
+	"time"
 )
+
+const defaultGCDuration = 60 * 24 * time.Hour
 
 func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 	opt := &controllers.Options{
@@ -37,7 +41,7 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 		Namespace:             i.DomainID,
 		RootDir:               i.RootDir,
 		EnableWorkloadApprove: i.EnableWorkloadApprove,
-		GCDuration:            i.GCDuration,
+		GCDuration:            defaultGCDuration,
 	}
 
 	return controllers.NewServer(
@@ -80,7 +84,7 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 			},
 
 			{
-				NewControler: controllers.NewKusciajobGCController,
+				NewControler: garbagecollection.NewKusciajobGCController,
 			},
 		},
 	), nil
