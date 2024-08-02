@@ -25,14 +25,12 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"time"
 )
 
 var (
 	defaultRootDir            = "/home/kuscia/"
 	defaultEndpointForMaster  = "https://127.0.0.1:6443"
 	defaultMetricUpdatePeriod = uint(5)
-	defaultGCDuration         = 60 * 24 * time.Hour
 )
 
 type KusciaConfig struct {
@@ -71,7 +69,6 @@ type KusciaConfig struct {
 	CoreDNSBackUpConf     string                    `yaml:"-"`
 	RunMode               common.RunModeType        `yaml:"-"`
 	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
-	GCDuration            time.Duration             `yaml:"gcDuration,omitempty"`
 }
 
 type SecretBackendConfig struct {
@@ -140,7 +137,6 @@ func defaultKusciaConfig(rootDir string) KusciaConfig {
 		KusciaAPI:          kaconfig.NewDefaultKusciaAPIConfig(rootDir),
 		MetricUpdatePeriod: defaultMetricUpdatePeriod,
 		Logrotate:          LogrotateConfig{3, 128},
-		GCDuration:         defaultGCDuration,
 	}
 }
 
