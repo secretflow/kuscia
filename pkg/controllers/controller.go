@@ -73,5 +73,4 @@ type ControllerConfig struct {
 	KusciaClient          kusciaclientset.Interface
 	EventRecorder         record.EventRecorder
 	EnableWorkloadApprove bool
-	GCDuration            time.Duration
 }
