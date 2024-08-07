@@ -1,3 +1,17 @@
+// Copyright 2024 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package garbagecollection
 
 import (
@@ -18,8 +32,8 @@ import (
 
 const (
 	GCcontrollerName  = "KusciajobGC_controller"
-	batchSize         = 1000
-	defaultGCDuration = 60 * 24 * time.Hour
+	batchSize         = 100
+	defaultGCDuration = 30 * 24 * time.Hour
 )
 
 type KusciajobGCController struct {
@@ -38,8 +52,8 @@ type KusciajobGCController struct {
 func NewKusciajobGCController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
 	kubeClient := config.KubeClient
 	kusciaClient := config.KusciaClient
-	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, time.Minute)
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Minute)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
 
 	kusciaJobInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaJobs()
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
@@ -87,7 +101,7 @@ func (kgc *KusciajobGCController) Name() string {
 
 func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context) {
 	nlog.Infof("kusciajobGCDuration is %v", kgc.kusciajobGCDuration)
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -109,7 +123,7 @@ func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context) {
 				}
 				if (i+1)%batchSize == 0 {
 					nlog.Info("KusciajobGC Sleeping for 1 second...")
-					time.Sleep(1 * time.Second)
+					time.Sleep(5 * time.Second)
 				}
 			}
 		}
