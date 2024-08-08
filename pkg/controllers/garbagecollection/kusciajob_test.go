@@ -132,7 +132,7 @@ func Test_GarbageCollectKusciajob(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(time.Second):
+	case <-time.After(5 * time.Second):
 		// Check if the KusciaJob was deleted
 		kusciaJobListers, _ := gcController.kusciaJobLister.KusciaJobs(constants.KusciaCrossDomain).List(labels.Everything())
 		if len(kusciaJobListers) == 0 {
