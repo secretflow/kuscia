@@ -122,7 +122,7 @@ func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context) {
 					}
 				}
 				if (i+1)%batchSize == 0 {
-					nlog.Info("KusciajobGC Sleeping for 1 second...")
+					nlog.Info("KusciajobGC Sleeping for 5 second...")
 					time.Sleep(5 * time.Second)
 				}
 			}
