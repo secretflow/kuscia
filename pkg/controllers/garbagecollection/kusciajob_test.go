@@ -35,25 +35,26 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
+	//kusciajob "github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 )
 
 func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 	parties := []kusciaapisv1alpha1.Party{
-		{Role: "client", DomainID: "alice"},
-		{Role: "client", DomainID: "bob"},
+		{Role: "client", DomainID: "hello"},
+		{Role: "client", DomainID: "world"},
 	}
 	return &kusciaapisv1alpha1.KusciaJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "secretflow-job",
+			Name:      "secretflow-job-test",
 			Namespace: constants.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaJobSpec{
-			Initiator:    "alice",
+			Initiator:    "hello",
 			ScheduleMode: kusciaapisv1alpha1.KusciaJobScheduleModeBestEffort,
 			Tasks: []kusciaapisv1alpha1.KusciaTaskTemplate{
 				{
-					Alias:           "a",
-					TaskID:          "a",
+					Alias:           "h",
+					TaskID:          "h",
 					Priority:        100,
 					TaskInputConfig: "meta://secretflow-1/task-input-config",
 					AppImage:        "test-image-1",
@@ -61,13 +62,13 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 					Dependencies:    []string{},
 				},
 				{
-					Alias:           "b",
-					TaskID:          "b",
+					Alias:           "w",
+					TaskID:          "w",
 					Priority:        100,
 					TaskInputConfig: "meta://secretflow-1/task-input-config2",
 					AppImage:        "test-image-2",
 					Parties:         parties,
-					Dependencies:    []string{"a"},
+					Dependencies:    []string{"h"},
 				},
 			},
 		},
@@ -91,13 +92,13 @@ func Test_GarbageCollectKusciajob(t *testing.T) {
 	testKusciaJob := makeKusciaJob()
 	aliceNs := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "alice",
+			Name: "hello",
 		},
 	}
 
 	bobNs := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "bob",
+			Name: "world",
 		},
 	}
 
