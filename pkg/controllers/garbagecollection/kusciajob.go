@@ -73,7 +73,7 @@ func NewKusciajobGCController(ctx context.Context, config controllers.Controller
 	return gcController
 }
 
-func (kgc *KusciajobGCController) Run(workers int) error {
+func (kgc *KusciajobGCController) Run(flag int) error {
 	nlog.Info("Starting KusciaJobGC controller")
 	kgc.kusciaInformerFactory.Start(kgc.ctx.Done())
 	kgc.kubeInformerFactory.Start(kgc.ctx.Done())
@@ -84,7 +84,11 @@ func (kgc *KusciajobGCController) Run(workers int) error {
 	}
 
 	nlog.Info("Starting GCworkers")
-	kgc.GarbageCollectKusciajob(kgc.ctx)
+	if flag == 1 {
+		kgc.GarbageCollectKusciajob(kgc.ctx, time.NewTicker(2*time.Second))
+	} else {
+		kgc.GarbageCollectKusciajob(kgc.ctx, nil)
+	}
 	return nil
 }
 
@@ -99,11 +103,12 @@ func (kgc *KusciajobGCController) Name() string {
 	return GCcontrollerName
 }
 
-func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context) {
+func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, ticker *time.Ticker) {
 	nlog.Infof("kusciajobGCDuration is %v", kgc.kusciajobGCDuration)
-	ticker := time.NewTicker(10 * time.Minute)
+	if ticker == nil {
+		ticker = time.NewTicker(10 * time.Minute)
+	}
 	defer ticker.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
