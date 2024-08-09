@@ -21,6 +21,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
@@ -31,11 +32,12 @@ type metricExporterModule struct {
 	nodeExportPort   string
 	ssExportPort     string
 	metricExportPort string
+	labels           map[string]string
 }
 
 func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.MetricExportPort)
-	return &metricExporterModule{
+	exporter := &metricExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
 			name:         "metricexporter",
 			readyTimeout: 60 * time.Second,
@@ -52,7 +54,20 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
 			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
 		},
-	}, nil
+		labels: map[string]string{
+			"metric-path": "metrics",
+			"metric-port": "9094", // 假设 metric-port 为 9094
+		},
+	}
+
+	labelsURL, err := metricexporter.BuildMetricURL("http://localhost", exporter.labels)
+	if err != nil {
+		nlog.Errorf("Error building URL from labels: %v", err)
+	} else {
+		exporter.metricURLs["app-metrics"] = labelsURL
+	}
+
+	return exporter, nil
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
