@@ -89,6 +89,8 @@ enum ErrorCode {
   KusciaAPIErrDomainDataSourceInfoEncodeFailed = 11807;
   KusciaAPIErrListDomainDataSource             = 11808;
 
+  KusciaAPIErrUploadModelFailed = 12000;
+
   // data mesh
   DataMeshErrRequestInvalidate = 12100;
   DataMeshErrForUnexpected     = 12101;

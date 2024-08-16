@@ -47,6 +47,8 @@ const (
 	QueryDomainDataPath      = "/api/v1/domaindata/query"
 	BatchQueryDomainDataPath = "/api/v1/domaindata/batchQuery"
 	ListDomainDataPath       = "/api/v1/domaindata/list"
+	// Model API
+	UploadModelPath = "/api/v1/model/upload"
 	// Kuscia Job
 	CreateJobPath     = "/api/v1/job/create"
 	DeleteJobPath     = "/api/v1/job/delete"
@@ -217,6 +219,12 @@ func (c *KusciaAPIHttpClient) BatchQueryDomainData(ctx context.Context, request 
 func (c *KusciaAPIHttpClient) ListDomainData(ctx context.Context, request *kusciaapi.ListDomainDataRequest) (response *kusciaapi.ListDomainDataResponse, err error) {
 	response = &kusciaapi.ListDomainDataResponse{}
 	err = c.Send(ctx, request, response, ListDomainDataPath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) UploadModel(ctx context.Context, request *kusciaapi.UploadModelRequest) (response *kusciaapi.UploadModelResponse, err error) {
+	response = &kusciaapi.UploadModelResponse{}
+	err = c.Send(ctx, request, response, UploadModelPath)
 	return
 }
 
