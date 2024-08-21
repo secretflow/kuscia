@@ -22,6 +22,7 @@ data:
     # runc or runk
     runtime: runk
 
+    # runk 配置， 目前是通过挂载 servicetoken 的方式，非 kubeconfigFile
     runk:
       # 任务调度到指定的机构 K8s namespace 下
       namespace: autonomy-alice
@@ -37,6 +38,10 @@ data:
       cpu: 4
       memory: 4Gi
       storage: 100Gi
+      ephemeralStorage: 200Gi
+
+    # 数据库连接串，不填默认使用 sqlite (dsnXXXX) dns://
+    datastoreEndpoint: "mysql://user:password@tcp(host:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
 
     # agent 镜像配置, 使用私有仓库存储镜像时配置(默认无需配置)
     image:
@@ -48,8 +53,5 @@ data:
           username: ""
           password: ""
 
-    ####### master节点配置 #########
-    # 数据库连接串，不填默认使用 sqlite (dsnXXXX) dns://
-    datastoreEndpoint: "mysql://user:password@tcp(host:3306)/database?charset=utf8mb4&parseTime=True&loc=Local"
     # KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
     protocol: NOTLS

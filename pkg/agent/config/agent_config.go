@@ -400,3 +400,7 @@ func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 
 	return config, nil
 }
+
+func DefaultImageStoreDir() string {
+	return defaultLocalImageRootDir
+}

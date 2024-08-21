@@ -38,12 +38,6 @@ if [[ $MASTER_DOMAIN_ID == "" ]]; then
   MASTER_DOMAIN_ID=$DOMAIN_ID
 fi
 
-SELF_DOMAIN_ID=${NAMESPACE}
-if [[ $SELF_DOMAIN_ID == "" ]]; then
-  echo "can not get self domain id, please check NAMESPACE environment"
-  exit 1
-fi
-
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 CERT=$(base64 $ROOT/var/certs/${DOMAIN_ID}.domain.crt | tr -d "\n")
 

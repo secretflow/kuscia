@@ -114,6 +114,7 @@ function apply_appimage_crd() {
     image_line=$(awk '/^  image:/{print NR; exit}' $APP_IMAGE_FILE)
     head -n "$((image_line - 1))" $APP_IMAGE_FILE > /tmp/engine_appimage.yaml
     echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> /tmp/engine_appimage.yaml
+    docker cp /tmp/engine_appimage.yaml ${KUSCIA_CONTAINER_NAME}:/tmp
     docker exec -it ${KUSCIA_CONTAINER_NAME} kubectl apply -f /tmp/engine_appimage.yaml
     rm -rf /tmp/engine_appimage.yaml
   fi

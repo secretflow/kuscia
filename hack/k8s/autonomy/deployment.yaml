@@ -4,7 +4,7 @@ metadata:
   name: kuscia-autonomy-alice
   namespace: autonomy-alice
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kuscia-autonomy-alice
@@ -21,13 +21,6 @@ spec:
             - start
             - -c
             - etc/conf/kuscia.yaml
-          env:
-            - name: REGISTRY_ENDPOINT
-              value: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow
-            - name: NAMESPACE
-              value: alice
-            - name: TZ
-              value: Asia/Shanghai
           image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
           imagePullPolicy: Always
           name: alice

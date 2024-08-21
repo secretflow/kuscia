@@ -120,16 +120,35 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 						}
 					}
 				}
-
 				resource = &corev1.ResourceRequirements{
 					Limits: limitResource,
 				}
 			}
+			var bandwidthLimits []v1alpha1.BandwidthLimit
+			if len(party.BandwidthLimits) > 0 {
+				for _, bw := range party.BandwidthLimits {
+					if bw.LimitKbps <= 0 {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "bandwidth limit kbps can not be zero or negative"),
+						}
+					}
+					if bw.DestinationId == "" {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "bandwidth limit destination id can not be empty"),
+						}
+					}
+					bandwidthLimits = append(bandwidthLimits, v1alpha1.BandwidthLimit{
+						DestinationID: bw.DestinationId,
+						LimitKBps:     bw.LimitKbps,
+					})
+				}
+			}
 
 			kusicaParties[j] = v1alpha1.Party{
-				DomainID:  party.DomainId,
-				Role:      party.Role,
-				Resources: resource,
+				DomainID:       party.DomainId,
+				Role:           party.Role,
+				Resources:      resource,
+				BandwidthLimit: bandwidthLimits,
 			}
 		}
 		// build kuscia task
@@ -211,9 +230,17 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 		taskParties := task.Parties
 		parties := make([]*kusciaapi.Party, len(taskParties))
 		for j, party := range taskParties {
+			var bandwidthLimits []*kusciaapi.BandwidthLimit
+			for _, bw := range party.BandwidthLimit {
+				bandwidthLimits = append(bandwidthLimits, &kusciaapi.BandwidthLimit{
+					DestinationId: bw.DestinationID,
+					LimitKbps:     bw.LimitKBps,
+				})
+			}
 			parties[j] = &kusciaapi.Party{
-				DomainId: party.DomainID,
-				Role:     party.Role,
+				DomainId:        party.DomainID,
+				Role:            party.Role,
+				BandwidthLimits: bandwidthLimits,
 			}
 		}
 

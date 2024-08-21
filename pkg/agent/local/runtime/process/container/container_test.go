@@ -64,7 +64,7 @@ func createTestContainer(t *testing.T) *Container {
 func TestContainerStart(t *testing.T) {
 	t.Run("Container normal exited ", func(t *testing.T) {
 		container := createTestContainer(t)
-		assert.NoError(t, container.Create(kii.Plain))
+		assert.NoError(t, container.Create())
 		assert.NoError(t, container.Start())
 
 		time.Sleep(time.Second)
@@ -78,7 +78,7 @@ func TestContainerStart(t *testing.T) {
 		container := createTestContainer(t)
 		container.Config.Command = []string{"sleep"}
 		container.Config.Args = []string{"60"}
-		assert.NoError(t, container.Create(kii.Plain))
+		assert.NoError(t, container.Create())
 		assert.NoError(t, container.Start())
 		time.Sleep(100 * time.Millisecond)
 		assert.NoError(t, container.Stop())

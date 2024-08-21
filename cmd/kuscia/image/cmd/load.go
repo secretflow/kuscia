@@ -15,17 +15,20 @@
 package cmd
 
 import (
-	"compress/gzip"
 	"io"
 	"os"
+	"path"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/utils"
+	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // loadCommand represents the load command
-func loadCommand(cmdCtx *Context) *cobra.Command {
+func loadCommand(cmdCtx *utils.Context) *cobra.Command {
 	var input string
 
 	loadCmd := &cobra.Command{
@@ -44,46 +47,38 @@ kuscia image load --input app.tar
 `,
 		Args: cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			file := os.Stdin
-
-			var err error
-			if input != "" {
-				file, err = os.Open(input)
+			tmpFile := ""
+			if input == "" {
+				tmpFile = path.Join("/tmp", uuid.NewString())
+				file, err := os.OpenFile(tmpFile, os.O_WRONLY|os.O_CREATE, 0666)
 				if err != nil {
-					nlog.Fatal(err)
+					nlog.Fatalf("open tmp file(%s) failed with %s", tmpFile, err.Error())
 				}
 				defer file.Close()
+
+				if _, err := io.Copy(file, os.Stdin); err != nil {
+					nlog.Fatalf("copy stdin err: %v", err)
+				}
+
+				input = tmpFile
 			}
 
-			if err := loadImage(cmdCtx, file); err != nil {
-				nlog.Fatal(err)
+			if tmpFile != "" {
+				defer os.Remove(tmpFile)
+			}
+
+			if cmdCtx.RuntimeType == config.ProcessRuntime {
+				if err := cmdCtx.Store.LoadImage(input); err != nil {
+					nlog.Fatal(err.Error())
+				}
+			} else {
+				if err := utils.RunContainerdCmd(cmd.Context(), "ctr", "-a=/home/kuscia/containerd/run/containerd.sock", "-n=k8s.io", "images", "import", "--no-unpack", input); err != nil {
+					nlog.Fatal(err.Error())
+				}
 			}
 		},
 	}
 
 	loadCmd.Flags().StringVarP(&input, "input", "i", "", "read from tar archive file, instead of STDIN")
 	return loadCmd
-}
-
-func loadImage(cmdCtx *Context, input io.ReadSeeker) error {
-	header := make([]byte, 2)
-	_, err := input.Read(header)
-	if err != nil {
-		return err
-	}
-	if _, err := input.Seek(0, io.SeekStart); err != nil {
-		return err
-	}
-
-	var reader io.Reader
-	if header[0] == 31 && header[1] == 139 {
-		reader, err = gzip.NewReader(input)
-		if err != nil {
-			return err
-		}
-	} else {
-		reader = input
-	}
-
-	return cmdCtx.Store.LoadImage(reader)
 }

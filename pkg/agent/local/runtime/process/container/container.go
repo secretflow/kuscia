@@ -109,9 +109,14 @@ func NewContainer(config *runtime.ContainerConfig, logDirectory, sandboxID strin
 	if err != nil {
 		return nil, err
 	}
-	manifest, err := imageStore.GetImageManifest(imageName)
+	manifest, err := imageStore.GetImageManifest(imageName, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if manifest == nil {
+		nlog.Warnf("image(%s) is not exists", imageName.Image)
+		return nil, fmt.Errorf("image(%s) is not exists", imageName.Image)
 	}
 
 	containerBundle := sandboxBundle.GetContainerBundle(name)
@@ -145,11 +150,11 @@ func makeContainerName(c *runtime.ContainerMetadata, containerID string) string 
 	}, "_")
 }
 
-func (c *Container) Create(mountType kii.MountType) error {
+func (c *Container) Create() error {
 	c.Lock()
 	defer c.Unlock()
 
-	if err := c.imageStore.MountImage(c.imageName, mountType, c.bundle.GetFsWorkingDirPath(), c.bundle.GetOciRootfsPath()); err != nil {
+	if err := c.imageStore.MountImage(c.imageName, c.bundle.GetFsWorkingDirPath(), c.bundle.GetOciRootfsPath()); err != nil {
 		return err
 	}
 
