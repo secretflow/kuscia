@@ -104,6 +104,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 		action.PrefixRewrite = strings.TrimSuffix(dp.PathPrefix, "/") + "/"
 	}
 	httpRoute := &route.Route{
+		Name: xds.DefaultRouteName,
 		Match: &route.RouteMatch{
 			PathSpecifier: &route.RouteMatch_Prefix{
 				Prefix: "/",

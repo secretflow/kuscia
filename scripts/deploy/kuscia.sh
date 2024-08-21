@@ -15,10 +15,6 @@
 # limitations under the License.
 #
 
-if [[ "$DATAPROXY_IMAGE" == "" ]]; then
-  DATAPROXY_IMAGE=registry.cn-hangzhou.aliyuncs.com/oasis-stack/dataproxy:0.1-20240614181540
-fi
-
 set -e
 
 GREEN='\033[0;32m'
@@ -42,10 +38,19 @@ if [[ ${KUSCIA_IMAGE} == "" ]]; then
 fi
 log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
+if ! docker image inspect ${KUSCIA_IMAGE} &>/dev/null; then
+  docker pull ${KUSCIA_IMAGE}
+fi
+
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
   SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
 fi
 log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
+
+if [[ "$DATAPROXY_IMAGE" == "" ]]; then
+  DATAPROXY_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/dataproxy:0.1.0b1
+fi
+log "DATAPROXY_IMAGE=${DATAPROXY_IMAGE}"
 
 function arch_check() {
   local arch
@@ -75,10 +80,16 @@ function init_k3s_data() {
   local kuscia_tmp_container="kuscia_tmp_${random}"
   OLD_DOMAIN_K3S_DB_DIR="${HOME}/kuscia/${domain_ctr}/k3s"
   if [ -d "${DOMAIN_K3S_DB_DIR}" ]; then
-    echo -e "${GREEN}k3s data already exists ${DOMAIN_K3S_DB_DIR}...${NC}"
-    read -rp "$(echo -e "${GREEN}Whether to retain k3s data?(y/n): ${NC}")" reuse
-    reuse=${reuse:-N}
-    if [[ "${reuse}" =~ ^([nN][oO]|[nN])$ ]]; then
+      echo -e "${GREEN}k3s data already exists ${DOMAIN_K3S_DB_DIR}...${NC}"
+      while true; do
+        read -rp "$(echo -e "${GREEN}Whether to retain k3s data?(y/n): ${NC}")" reuse
+        if [[ "$reuse" =~ ^[yYnN]$ ]]; then
+          break
+        else
+          echo -e "${GREEN}Invalid input, please enter 'y' or 'n'!${NC}"
+        fi
+      done
+    if [[ "${reuse}" =~ ^[nN]$ ]]; then
        docker run -itd --name=${kuscia_tmp_container} \
         --volume=${DOMAIN_K3S_DB_DIR}:${CTR_ROOT}/var/k3s/server/db \
         --workdir=/home/kuscia ${KUSCIA_IMAGE} bash
@@ -88,11 +99,22 @@ function init_k3s_data() {
   else
     pre_check "${DOMAIN_K3S_DB_DIR}"
     if [ -d "${OLD_DOMAIN_K3S_DB_DIR}" ]; then
-      docker run -itd --name=${kuscia_tmp_container} \
-        --volume=${OLD_DOMAIN_K3S_DB_DIR}/server/db:${CTR_ROOT}/var/k3s/server/db \
-        --workdir=/home/kuscia ${KUSCIA_IMAGE} bash
-      docker cp ${kuscia_tmp_container}:${CTR_ROOT}/var/k3s/server/db/. ${DOMAIN_K3S_DB_DIR}
-      docker rm -f ${kuscia_tmp_container}
+      echo -e "${GREEN}k3s data already exists ${OLD_DOMAIN_K3S_DB_DIR}...${NC}"
+      while true; do
+        read -rp "$(echo -e "${GREEN}Whether to retain k3s data?(y/n): ${NC}")" reuse
+        if [[ "$reuse" =~ ^[yYnN]$ ]]; then
+          break
+        else
+          echo -e "${GREEN}Invalid input, please enter 'y' or 'n'!${NC}"
+        fi
+      done
+      if [[ "${reuse}" =~ ^[yY]$ ]]; then
+        docker run -itd --name=${kuscia_tmp_container} \
+          --volume=${OLD_DOMAIN_K3S_DB_DIR}/server/db:${CTR_ROOT}/var/k3s/server/db \
+          --workdir=/home/kuscia ${KUSCIA_IMAGE} bash
+        docker cp ${kuscia_tmp_container}:${CTR_ROOT}/var/k3s/server/db/. ${DOMAIN_K3S_DB_DIR}
+        docker rm -f ${kuscia_tmp_container}
+      fi
     fi
   fi
 }
@@ -200,7 +222,7 @@ function do_http_probe() {
   local retry=0
   while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null ${endpoint} ${cert_config})
+    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null ${endpoint} ${cert_config} | tr -d '\r\n')
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -238,17 +260,6 @@ function probe_gateway_crd() {
   done
   echo "[Error] Probe gateway in namespace '$domain' failed. Please check envoy log in container, path: ${CTR_ROOT}/var/logs/envoy" >&2
   exit 1
-}
-
-function generate_env_flag() {
-  local env_flag
-  local env_file=${ROOT}/env.list
-  if [ -e $env_file ]; then
-    env_flag="--env-file $env_file"
-  else
-    env_flag="--env REGISTRY_ENDPOINT=${SF_IMAGE_REGISTRY}"
-  fi
-  echo $env_flag
 }
 
 function createVolume() {
@@ -292,9 +303,6 @@ function get_runtime() {
   local conf_file=$1
   local runtime
   runtime=$(grep '^runtime:' ${conf_file} | cut -d':' -f2 | awk '{$1=$1};1' | tr -d '\r\n')
-  if [[ $runtime == "" ]]; then
-    runtime=runc
-  fi
   echo "$runtime"
 }
 
@@ -325,7 +333,7 @@ function build_interconn() {
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol} ${master_domain}
 
-  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080
+  docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}
   log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
 }
 
@@ -336,7 +344,7 @@ function init_kuscia_conf_file() {
   local kuscia_conf_file=$4
   local master_endpoint=$5
   local master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
-  pre_check "${PWD}/${domain_ctr}"
+  pre_check "${DOMAIN_WORK_DIR}"
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
     docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
@@ -344,15 +352,34 @@ function init_kuscia_conf_file() {
     docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   fi
   [[ ${dataproxy} == "true" ]] && dataproxy_config ${kuscia_conf_file}
-  wrap_kuscia_config_file ${kuscia_conf_file}
+  wrap_kuscia_config_file ${kuscia_conf_file} "${interconn_protocol}"
+}
+
+function enable_rootless() {
+  local deploy_mode=$1
+  local runtime=$2
+  if [[ ${ROOTLESS} == "true" ]]; then
+      if [[ $(id -u) == '0' || ${runtime} == "runc" ]]; then
+          ROOTLESS=false
+      fi
+  fi
 }
 
 function init() {
   local domain_ctr=$1
+  local runtime=$2
+  local deploy_mode=$3
+
   [[ ${ROOT} == "" ]] && ROOT=${PWD}
-  [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${ROOT}/${domain_ctr}/data"
-  [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${ROOT}/${domain_ctr}/logs"
-  [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${ROOT}/${domain_ctr}/k3s"
+  DOMAIN_WORK_DIR="${ROOT}/${domain_ctr}"
+  enable_rootless ${deploy_mode} ${runtime}
+  if [[ ${ROOTLESS} == "true" ]]; then
+      DOMAIN_WORK_DIR="${ROOT}/${domain_ctr}-rootless"
+  fi
+  DOMAIN_DNS_CONFIG=${DOMAIN_WORK_DIR}/.resolv.conf
+  [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${DOMAIN_WORK_DIR}/data"
+  [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${DOMAIN_WORK_DIR}/logs"
+  [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${DOMAIN_WORK_DIR}/k3s"
 
   pre_check "${DOMAIN_DATA_DIR}"
   pre_check "${DOMAIN_LOG_DIR}"
@@ -373,15 +400,14 @@ function init() {
 function start_container() {
   local domain_ctr=$1
   local domain_id=$2
-  local env_flag=$3
-  local kuscia_conf_file=$4
-  local mount_flag=$5
-  local memory_limit=$6
-  local domain_host_port=$7
-  local kusciaapi_http_port=$8
-  local kusciaapi_grpc_port=$9
-  local domain_host_internal_port=${10}
-  local metrics_port=${11}
+  local kuscia_conf_file=$3
+  local mount_flag=$4
+  local memory_limit=$5
+  local domain_host_port=$6
+  local kusciaapi_http_port=$7
+  local kusciaapi_grpc_port=$8
+  local domain_host_internal_port=${9}
+  local metrics_port=${10}
   local mountcontainerd=""
   local export_port="-p ${domain_host_internal_port}:80 \
     -p ${domain_host_port}:1080 \
@@ -399,18 +425,28 @@ function start_container() {
      mountcontainerd="-v ${domain_ctr}-containerd:${CTR_ROOT}/containerd"
      privileged_flag=" --privileged"
   fi
+
+  if [[ ${runtime} == "runp" && $(uname) == "Linux" ]]; then
+      capability_opts="--cap-add=SYS_PTRACE"
+  fi
+
   log "domain_hostname=${domain_hostname}"
 
   if [[ ${mode} == "start" ]] && [[ "${CLUSTERED}" == true ]]; then
     local_network_name=${CLUSTER_NETWORK_NAME}
   fi
   log "network=${local_network_name}"
+  enable_rootless ${domain_type} ${runtime}
+  [[ ${ROOTLESS} == "true" ]] && {
+    docker run --rm $KUSCIA_IMAGE cat /etc/resolv.conf > ${DOMAIN_DNS_CONFIG}
+    dns_flag="-v ${DOMAIN_DNS_CONFIG}:${CTR_ROOT}/var/tmp/resolv.conf --dns=127.0.0.1"
+    user_flag="--user $(id -u):kuscia"
+  }
 
-  docker run -dit${privileged_flag} --name="${domain_ctr}" --hostname="${domain_hostname}" --restart=always --network=${local_network_name} ${memory_limit} \
-    ${export_port} ${mountcontainerd} \
+  docker run -dit${privileged_flag} ${user_flag} --name="${domain_ctr}" --hostname="${domain_hostname}" --restart=always --network=${local_network_name} ${memory_limit} \
+    ${export_port} ${mountcontainerd} ${capability_opts} \
     -v ${kuscia_conf_file}:${CTR_ROOT}/etc/conf/kuscia.yaml \
-    ${env_flag} ${mount_flag} \
-    --env NAMESPACE="${domain_id}" \
+    ${mount_flag} ${dns_flag} ${user_flag} \
     "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 }
 
@@ -427,10 +463,8 @@ function start_kuscia_container() {
   local kusciaapi_grpc_port=${10}
   local domain_host_internal_port=${11}
   local metrics_port=${12}
-  local env_flag
   local memory_limit
   local limit
-  env_flag=$(generate_env_flag)
 
   local domain_hostname
   domain_hostname=$(generate_hostname "${domain_ctr}") || { echo -e "${RED}Failed to generate hostname${NC}"; exit 1; }
@@ -462,7 +496,8 @@ function start_kuscia_container() {
   build_kuscia_network
 
   if [[ ${init_kuscia_conf_file} = "true" ]]; then
-    local kuscia_conf_file="${PWD}/${domain_ctr}/kuscia.yaml"
+    DOMAIN_WORK_DIR="${PWD}/${domain_ctr}"
+    local kuscia_conf_file="${DOMAIN_WORK_DIR}/kuscia.yaml"
     init_kuscia_conf_file "${domain_type}" "${domain_id}" "${domain_ctr}" "${kuscia_conf_file}" "${master_endpoint}"
   fi
 
@@ -475,7 +510,7 @@ function start_kuscia_container() {
         local mount_flag=$(generate_mount_flag)
       fi
     fi
-    start_container "${domain_ctr}" "${domain_id}" "${env_flag}" "${kuscia_conf_file}" "${mount_flag}" "${memory_limit}" "${domain_host_port}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}" "${domain_hostname}"
+    start_container "${domain_ctr}" "${domain_id}" "${kuscia_conf_file}" "${mount_flag}" "${memory_limit}" "${domain_host_port}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}" "${domain_hostname}"
     [[ "$domain_type" != "lite" ]] && probe_gateway_crd "${domain_ctr}" "${domain_id}" "${domain_hostname}" 60
     [[ "$domain_type" != "master" ]] && probe_datamesh "${domain_ctr}"
   fi
@@ -484,14 +519,14 @@ function start_kuscia_container() {
     echo -e "${GREEN}skip importing sf image${NC}"
   elif [[ ${IMPORT_SF_IMAGE} = "secretflow"  ]]; then
     if [[ "$domain_type" != "master" ]] && [[ ${runtime} == "runc" ]]; then
-      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > register_app_image.sh && chmod u+x register_app_image.sh
-      bash register_app_image.sh -c ${domain_ctr} -i ${SECRETFLOW_IMAGE} --import
-      rm -rf register_app_image.sh
+      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
+      bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${SECRETFLOW_IMAGE} --import
+      rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
     fi
-    if [[ "$domain_type" != "lite" ]]; then
-      docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
-      log "Create secretflow app image done"
-    fi
+  fi
+  if [[ "$domain_type" != "lite" ]]; then
+    docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
+    log "Create secretflow app image done"
   fi
 
   if [[ $dataproxy == true ]]; then
@@ -520,7 +555,7 @@ function start_kuscia() {
   local kusciaapi_grpc_port=${KUSCIAAPI_GRPC_PORT:-13083}
   local metrics_port=${METRICS_PORT:-13084}
 
-  wrap_kuscia_config_file ${kuscia_conf_file}
+  wrap_kuscia_config_file ${kuscia_conf_file} ${interconn_protocol}
   local ctr_prefix=${USER}-kuscia
   local master_ctr=${ctr_prefix}-master
   local domain_ctr="${ctr_prefix}-${deploy_mode}-${domain_id}"
@@ -529,7 +564,7 @@ function start_kuscia() {
   fi
   [[ ${dataproxy} == "true" ]] && dataproxy_config ${kuscia_conf_file}
   [[ ${DOMAIN_HOST_PORT} == "" ]] && { printf "empty domain host port\n" >&2; exit 1; }
-  init ${domain_ctr}
+  init ${domain_ctr} ${runtime} ${deploy_mode}
   local mount_flag=$(generate_mount_flag)
   start_kuscia_container "${deploy_mode}" "${domain_id}" "$runtime" "$master_endpoint" "${domain_ctr}" "false" "${mount_flag}" "${DOMAIN_HOST_PORT}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}"
 }
@@ -554,11 +589,12 @@ function start_data_proxy() {
    local max_test_counter=30
    local wait_time=4
    local counter=0
+   local kusciaapi_endpoint="http://localhost:8082/api/v1/serving"
    # import dataproxy image
    if [[ "$deploy_mode" != "master" ]] && [[ ${runtime} == "runc" ]]; then
-      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > register_app_image.sh && chmod u+x register_app_image.sh
-      bash register_app_image.sh -c ${domain_ctr} -i ${DATAPROXY_IMAGE} --import
-      rm -rf register_app_image.sh
+      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
+      bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${DATAPROXY_IMAGE} --import
+      rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
    fi
 
    # register dataproxy appimage
@@ -576,13 +612,14 @@ function start_data_proxy() {
           header+=("--cert" "${CTR_CERT_ROOT}/kusciaapi-server.crt")
           header+=("--key" "${CTR_CERT_ROOT}/kusciaapi-server.key")
           header+=("--cacert" "${CTR_CERT_ROOT}/ca.crt")
+          kusciaapi_endpoint="https://localhost:8082/api/v1/serving"
       fi
-      local query_response=$(docker exec -it "${domain_ctr}" curl -k -X POST 'https://localhost:8082/api/v1/serving/query' "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}")
+      local query_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/query" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}")
       if echo "$query_response" | grep -q '"code":0'; then
-        docker exec -it "${domain_ctr}" curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}"
+        docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/delete" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}"
       fi
       while [[ "$counter" -lt "$max_test_counter" ]]; do
-        local deploy_response=$(docker exec -it "${domain_ctr}" curl -k -X POST 'https://localhost:8082/api/v1/serving/create' "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\",\"initiator\":\"${domain_id}\",\"parties\":[{\"domain_id\":\"${domain_id}\",\"app_image\":\"dataproxy-image\",\"service_name_prefix\":\"dataproxy\"}]}")
+        local deploy_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/create" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\",\"initiator\":\"${domain_id}\",\"parties\":[{\"domain_id\":\"${domain_id}\",\"app_image\":\"dataproxy-image\",\"service_name_prefix\":\"dataproxy\"}]}")
         if echo "$deploy_response" | grep -q '"code":0'; then
           break
           rm -rf token
@@ -785,6 +822,8 @@ Common Options:
                       You can set Env 'DOMAIN_DATA_DIR' instead.  Default is '{{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/data'.
     -l                The data directory used to store domain logs. It will be mounted into the domain container.
                       You can set Env 'DOMAIN_LOG_DIR' instead.  Default is '{{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/logs'.
+    -s                The data directory used to store k3s data. It will be mounted into the domain container.
+                      You can set Env 'DOMAIN_K3S_DB_DIR' instead.  Default is '{{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/k3s'.
     -m,--memory-limit Set an appropriate memory limit. For example, '-m 4GiB or --memory-limit=4GiB','-1' means no limit.Default master mode 2GiB,lite mode 4GiB,autonomy mode 6GiB.
     -p                The port exposed by domain. You can set Env 'DOMAIN_HOST_PORT' instead.
     -q                (Only used in autonomy or lite mode)The port exposed for internal use by domain. You can set Env 'DOMAIN_HOST_INTERNAL_PORT' instead.
@@ -792,7 +831,8 @@ Common Options:
     -k                (Only used in autonomy or master mode)The http port exposed by KusciaAPI , default is 13082. You can set Env 'KUSCIAAPI_HTTP_PORT' instead.
     -g                (Only used in autonomy or master mode)The grpc port exposed by KusciaAPI, default is 13083. You can set Env 'KUSCIAAPI_GRPC_PORT' instead.
     -x                The node Metrics indicator collection port provides monitoring service for Kuscia.You can set Env 'METRICS_PORT' instead.
-    --cluster         (Only used in Multi-machine mode) This parameter can be used when deploying a single node. In a multi-copy scenario, the cluster network will be used. For example: '--cluster'"
+    --cluster         (Only used in Multi-machine mode) This parameter can be used when deploying a single node. In a multi-copy scenario, the cluster network will be used. For example: '--cluster'
+    --rootless        Kuscia run with non-root user, rootless is only effective on lite and autonomy with runp runtime, or master mode"
 }
 
 mode=
@@ -820,6 +860,9 @@ for arg in "$@"; do
         --cluster)
             CLUSTERED=true
             ;;
+        --rootless)
+            ROOTLESS=true
+            ;;
         --data-proxy)
             dataproxy=true
             ;;
@@ -832,7 +875,7 @@ done
 interconn_protocol=
 transit=false
 set -- "${NEW_ARGS[@]}"
-while getopts 'P:a:c:d:l:m:p:q:tk:g:x:h' option; do
+while getopts 'P:a:c:d:l:m:p:q:s:tk:g:x:h' option; do
   case "$option" in
   P)
     interconn_protocol=$OPTARG
@@ -861,6 +904,9 @@ while getopts 'P:a:c:d:l:m:p:q:tk:g:x:h' option; do
     ;;
   q)
     DOMAIN_HOST_INTERNAL_PORT=$OPTARG
+    ;;
+  s)
+    DOMAIN_K3S_DB_DIR=$OPTARG
     ;;
   t)
     transit=true

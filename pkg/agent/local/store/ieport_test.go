@@ -24,12 +24,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/secretflow/kuscia/pkg/agent/local/mounter"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
 )
 
 func TestStore_RegisterImage(t *testing.T) {
+	t.Parallel()
 	rootDir := t.TempDir()
-	s, err := NewStore(filepath.Join(rootDir, "store"))
+	s, err := NewDockerStore(filepath.Join(rootDir, "store"), mounter.Plain)
 	assert.NoError(t, err)
 
 	testManifest := kii.Manifest{
@@ -63,7 +65,7 @@ func TestStore_RegisterImage(t *testing.T) {
 			image, err := kii.NewImageName(tt.image)
 			assert.NoError(t, err)
 			assert.True(t, s.CheckImageExist(image))
-			manifest, err := s.GetImageManifest(image)
+			manifest, err := s.GetImageManifest(image, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.imageID, manifest.ID)
 		})
@@ -71,6 +73,7 @@ func TestStore_RegisterImage(t *testing.T) {
 }
 
 func TestStore_LoadImage(t *testing.T) {
+	t.Parallel()
 	arch := runtime.GOARCH
 	_, filename, _, ok := runtime.Caller(0)
 	assert.True(t, ok)
@@ -87,15 +90,13 @@ func TestStore_LoadImage(t *testing.T) {
 	default:
 		pauseTarFile = filepath.Join(dir, "build/pause/pause-amd64.tar")
 	}
-	file, err := os.Open(pauseTarFile)
-	assert.NoError(t, err)
-	defer file.Close()
+
 	rootDir := t.TempDir()
 
-	s, err := NewStore(rootDir)
+	s, err := NewDockerStore(rootDir, mounter.Plain)
 	assert.NoError(t, err)
 
-	assert.NoError(t, s.LoadImage(file))
+	assert.NoError(t, s.LoadImage(pauseTarFile))
 	image, err := kii.NewImageName("secretflow/pause:3.6")
 	assert.NoError(t, err)
 	assert.True(t, s.CheckImageExist(image))

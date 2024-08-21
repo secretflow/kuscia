@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -34,6 +35,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
@@ -654,6 +656,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 	return
 }
 
+// validateDataSourceInfo validate data source info
 func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) error {
 
 	if info == nil {
@@ -707,6 +710,9 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		if info.Odps.Endpoint == "" {
 			return fmt.Errorf("odps 'endpoint' is empty")
 		}
+		if !isValidURL(info.Odps.Endpoint) {
+			return fmt.Errorf("odps 'endpoint' is invalid, should contain the prefix: http or https")
+		}
 		if info.Odps.Project == "" {
 			return fmt.Errorf("odps 'project' is empty")
 		}
@@ -721,4 +727,19 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 
 	}
 	return nil
+}
+
+// isValidURL checks if the endpoint is a valid URL.
+func isValidURL(endpoint string) bool {
+
+	parse, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+
+	if parse.Host == "" {
+		return false
+	}
+
+	return parse.Scheme == constants.SchemaHTTP || parse.Scheme == constants.SchemaHTTPS
 }
