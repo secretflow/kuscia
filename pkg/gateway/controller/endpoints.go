@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
@@ -84,7 +86,8 @@ type EndpointsController struct {
 	whitelistChecker      utils.WhitelistChecker
 	clientCert            *xds.TLSCert
 	// kubeClient is a standard kubernetes clientset
-	kubeClient kubernetes.Interface
+	kubeClient   kubernetes.Interface
+	serviceStore sync.Map
 }
 
 func NewEndpointsController(isMaster bool, kubeClient kubernetes.Interface,
@@ -107,6 +110,7 @@ func NewEndpointsController(isMaster bool, kubeClient kubernetes.Interface,
 		whitelistChecker:      whitelistChecker,
 		clientCert:            clientCert,
 		kubeClient:            kubeClient,
+		serviceStore:          sync.Map{},
 	}
 
 	ec.addServiceEventHandler(serviceInformer)
@@ -216,7 +220,7 @@ func (ec *EndpointsController) syncHandler(ctx context.Context, key string) erro
 		return err
 	}
 	if service == nil {
-		return deleteService(name)
+		return ec.deleteService(namespace, name)
 	}
 
 	portScope := service.Labels[common.LabelPortScope]
@@ -242,10 +246,62 @@ func (ec *EndpointsController) syncHandler(ctx context.Context, key string) erro
 		return err
 	}
 	if endpoints == nil {
-		return deleteService(name)
+		return ec.deleteService(namespace, name)
 	}
-
 	return ec.AddEnvoyClusterByEndpoints(service, endpoints, protocol, namespace, name, accessDomains)
+}
+
+func parseBandwidthConfig(service *v1.Service) map[string]int64 {
+	limitMap := map[string]int64{}
+	for k, v := range service.Annotations {
+		if strings.HasPrefix(k, common.TaskBandwidthLimitAnnotationPrefix) {
+			dest := strings.TrimPrefix(k, common.TaskBandwidthLimitAnnotationPrefix)
+			limit, _ := strconv.ParseInt(v, 10, 64)
+			if limit > 0 {
+				limitMap[dest] = limit
+			}
+		}
+	}
+	return limitMap
+}
+
+func (ec *EndpointsController) addBandwidthLimitToInternalVh(namespace string, service *v1.Service) error {
+	ec.serviceStore.Store(service.Name, service)
+	for dest, limit := range parseBandwidthConfig(service) {
+		taskID := service.Annotations[common.TaskIDAnnotationKey]
+		vhName := fmt.Sprintf("%s-to-%s", namespace, dest)
+		if err := xds.UpdateBandwidthLimit(vhName, taskID, service.Name, &limit, true); err != nil {
+			nlog.Errorf("Update bandwidth limit (%s) fail with %v", vhName, err)
+			return err
+		}
+		if err := xds.UpdateVirtualHostByName(vhName, xds.InternalRoute); err != nil {
+			nlog.Errorf("Update virtual host (%s) fail with %v", vhName, err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (ec *EndpointsController) deleteBandwidthLimitFromInternalVh(namespace string, name string) error {
+	v, ok := ec.serviceStore.LoadAndDelete(name)
+	if !ok {
+		nlog.Warn(fmt.Sprintf("service %s/%s not found", namespace, name))
+		return nil
+	}
+	service := v.(*v1.Service)
+	for dest := range parseBandwidthConfig(service) {
+		taskID := service.Annotations[common.TaskIDAnnotationKey]
+		vhName := fmt.Sprintf("%s-to-%s", namespace, dest)
+		if err := xds.UpdateBandwidthLimit(vhName, taskID, service.Name, nil, false); err != nil {
+			nlog.Errorf("Delete bandwidth limit (%s) fail with %v", vhName, err)
+			return err
+		}
+		if err := xds.UpdateVirtualHostByName(vhName, xds.InternalRoute); err != nil {
+			nlog.Errorf("Delete virtual host (%s) fail with %v", vhName, err)
+			return err
+		}
+	}
+	return nil
 }
 
 func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service, protocol string, namespace string,
@@ -268,7 +324,7 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 		return err
 	}
 
-	return updateService(ec.kubeClient, service)
+	return ec.addOrUpdateService(ec.kubeClient, service)
 }
 
 func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, endpoints *v1.Endpoints, protocol string, namespace string,
@@ -300,25 +356,30 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 		return err
 	}
 
-	return updateService(ec.kubeClient, service)
+	return ec.addOrUpdateService(ec.kubeClient, service)
 }
 
-func updateService(kubeClient kubernetes.Interface, service *v1.Service) error {
-	var err error
+func (ec *EndpointsController) addOrUpdateService(kubeClient kubernetes.Interface, service *v1.Service) error {
 	if _, ok := service.Annotations[common.ReadyTimeAnnotationKey]; !ok {
 		now := metav1.Now().Rfc3339Copy()
 		at := map[string]string{
 			common.ReadyTimeAnnotationKey: apiutils.TimeRfc3339String(&now),
 		}
-		err = utilsres.UpdateServiceAnnotations(kubeClient, service, at)
-		if err != nil {
+		if err := utilsres.UpdateServiceAnnotations(kubeClient, service, at); err != nil {
 			nlog.Errorf("update service add annotations fail: %s/%s-%v", service.Namespace, service.Name, err)
+			return err
 		}
 	}
-	return err
+	if err := ec.addBandwidthLimitToInternalVh(service.Namespace, service); err != nil {
+		return fmt.Errorf("add bandwidth limit of service %s failed with %v", service.Name, err)
+	}
+	return nil
 }
 
-func deleteService(name string) error {
+func (ec *EndpointsController) deleteService(namespace string, name string) error {
+	if err := ec.deleteBandwidthLimitFromInternalVh(namespace, name); err != nil {
+		return fmt.Errorf("delete bandwidth limit of service %s failed with %v", name, err)
+	}
 	if err := xds.DeleteVirtualHost(fmt.Sprintf("service-%s-internal", name), xds.InternalRoute); err != nil {
 		return fmt.Errorf("delete virtual host %s failed with %v", name, err)
 	}
@@ -440,8 +501,7 @@ func (ec *EndpointsController) generateVirtualHost(namespace string, name string
 					StringMatch: &matcher.StringMatcher{
 						MatchPattern: &matcher.StringMatcher_SafeRegex{
 							SafeRegex: &matcher.RegexMatcher{
-								EngineType: &matcher.RegexMatcher_GoogleRe2{},
-								Regex:      accessDomainRegex,
+								Regex: accessDomainRegex,
 							},
 						},
 					},

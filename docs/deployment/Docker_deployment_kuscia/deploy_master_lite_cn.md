@@ -59,6 +59,8 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 - 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)。
 - master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
 - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
+- 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
+- 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
 :::
 
 建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。

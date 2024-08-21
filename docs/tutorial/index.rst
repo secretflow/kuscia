@@ -9,6 +9,7 @@
     run_bfia_job_cn
     run_fate_cn
     run_scql_on_kuscia_cn
+    upgrade_engine.md
 
 .. toctree::
     :maxdepth: 1

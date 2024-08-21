@@ -59,6 +59,7 @@ import (
 	"github.com/spf13/pflag"
 	kubectlcmd "k8s.io/kubectl/pkg/cmd"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/container"
 	"github.com/secretflow/kuscia/cmd/kuscia/image"
 	"github.com/secretflow/kuscia/cmd/kuscia/kusciainit"
 	"github.com/secretflow/kuscia/cmd/kuscia/start"
@@ -81,6 +82,7 @@ func main() {
 	pflag.CommandLine = nil
 	ctx := signals.NewKusciaContextWithStopCh(signals.SetupSignalHandler())
 	rootCmd.AddCommand(image.NewImageCommand(ctx))
+	rootCmd.AddCommand(container.NewContainerCommand(ctx))
 	rootCmd.AddCommand(start.NewStartCommand(ctx))
 	rootCmd.AddCommand(kusciainit.NewInitCommand(ctx))
 	rootCmd.AddCommand(kubectlcmd.NewDefaultKubectlCommand())

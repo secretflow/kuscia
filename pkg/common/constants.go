@@ -125,6 +125,8 @@ const (
 	TaskResourceGroupAnnotationKey        = "kuscia.secretflow/task-resource-group"
 	SelfClusterAsParticipantAnnotationKey = "kuscia.secretflow/self-cluster-as-participant"
 
+	TaskBandwidthLimitAnnotationPrefix = "kuscia.secretflow/bandwidth-limit-"
+
 	AccessDomainAnnotationKey = "kuscia.secretflow/access-domain"
 	ProtocolAnnotationKey     = "kuscia.secretflow/protocol"
 	ReadyTimeAnnotationKey    = "kuscia.secretflow/ready-time"

@@ -19,6 +19,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -135,7 +136,7 @@ func InitLogs(logConfig *nlog.LogConfig) error {
 
 func initLoggerConfig(kusciaConf confloader.KusciaConfig, logPath string) *nlog.LogConfig {
 	return &nlog.LogConfig{
-		LogPath:       logPath,
+		LogPath:       path.Join(kusciaConf.RootDir, logPath),
 		LogLevel:      kusciaConf.LogLevel,
 		MaxFileSizeMB: kusciaConf.Logrotate.MaxFileSizeMB,
 		MaxFiles:      kusciaConf.Logrotate.MaxFiles,
@@ -147,7 +148,6 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 	dependencies := &ModuleRuntimeConfigs{
 		KusciaConfig: kusciaConf,
 	}
-
 	// init log
 	logConfig := initLoggerConfig(kusciaConf, kusciaLogPath)
 	if err := InitLogs(logConfig); err != nil {

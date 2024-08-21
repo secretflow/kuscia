@@ -16,7 +16,6 @@ package store
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +46,7 @@ const (
 	dockerManifestLayerSuffix = "/layer.tar"
 )
 
-func (s *store) RegisterImage(image, manifestFile string) error {
+func (s *dockerStore) RegisterImage(image, manifestFile string) error {
 
 	var manifest kii.Manifest
 	if manifestFile != "" {
@@ -84,7 +83,11 @@ func (s *store) RegisterImage(image, manifestFile string) error {
 	return nil
 }
 
-func (s *store) LoadImage(imageReader io.Reader) error {
+func (s *dockerStore) LoadImage(tarFile string) error {
+	imageReader, err := os.Open(tarFile)
+	if err != nil {
+		return err
+	}
 	// step 1: create temp working dir
 	tempDir, err := s.layout.GetTemporaryDir("img-load-")
 	if err != nil {

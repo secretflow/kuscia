@@ -132,6 +132,9 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable=metrics-server",
 		"--kube-apiserver-arg=event-ttl=10m",
 	}
+	if !pkgcom.IsRootUser() {
+		args = append(args, "--rootless")
+	}
 	if s.datastoreEndpoint != "" {
 		args = append(args, "--datastore-endpoint="+s.datastoreEndpoint)
 	}

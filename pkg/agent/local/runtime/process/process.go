@@ -22,6 +22,7 @@ import (
 
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
+	"github.com/secretflow/kuscia/pkg/agent/local/mounter"
 	"github.com/secretflow/kuscia/pkg/agent/local/runtime/empty"
 	ctr "github.com/secretflow/kuscia/pkg/agent/local/runtime/process/container"
 	"github.com/secretflow/kuscia/pkg/agent/local/runtime/process/errdefs"
@@ -48,11 +49,10 @@ type Runtime struct {
 	hostIP         string
 
 	sandboxRootDir string
-	mountType      kii.MountType
 }
 
 func NewRuntime(dep *RuntimeDependence) (*Runtime, error) {
-	imageStore, err := store.NewStore(dep.ImageRootDir)
+	imageStore, err := store.NewOCIStore(dep.ImageRootDir, mounter.Plain)
 	if err != nil {
 		return nil, errors.New("failed to create image store")
 	}
@@ -72,7 +72,6 @@ func NewRuntime(dep *RuntimeDependence) (*Runtime, error) {
 		containerStore: containerStore,
 		hostIP:         dep.HostIP,
 		sandboxRootDir: dep.SandboxRootDir,
-		mountType:      kii.Plain,
 	}, nil
 }
 
@@ -101,7 +100,7 @@ func (r *Runtime) CreateContainer(ctx context.Context, podSandboxID string, conf
 		return "", fmt.Errorf("failed to add container %q into store: %w", id, err)
 	}
 
-	if err := container.Create(r.mountType); err != nil {
+	if err := container.Create(); err != nil {
 		return "", fmt.Errorf("failed to prepare container %q environment, detail-> %v", container.ID, err)
 	}
 
@@ -383,37 +382,29 @@ func (r *Runtime) filterCRISandboxes(sandboxes []*runtimeapi.PodSandbox, filter 
 
 	return filtered
 }
-
 func (r *Runtime) ImageStatus(ctx context.Context, image *runtimeapi.ImageSpec, verbose bool) (*runtimeapi.ImageStatusResponse, error) {
 	nlog.Infof("Get image %q status", image.Image)
+	imageName, err := kii.NewImageName(image.Image)
+	if err != nil {
+		return nil, err
+	}
 
-	imageManifest, err := r.getImageManifest(image.Image)
+	imageManifest, err := r.imageStore.GetImageManifest(imageName, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get image %q manifest, detail-> %v", image.Image, err)
 	}
 
-	resp := &runtimeapi.ImageStatusResponse{
-		Image: &runtimeapi.Image{
+	resp := &runtimeapi.ImageStatusResponse{}
+	if imageManifest != nil {
+		resp.Image = &runtimeapi.Image{
 			Id:       image.Image,
 			RepoTags: []string{imageManifest.ID},
-		},
+		}
 	}
+
 	return resp, nil
 }
 
 func (r *Runtime) PullImage(ctx context.Context, image *runtimeapi.ImageSpec, auth *runtimeapi.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
-	return "", errors.New("pulling images is not supported currently")
-}
-
-func (r *Runtime) getImageManifest(image string) (*kii.Manifest, error) {
-	nlog.Infof("Get image %q manifest", image)
-	imageName, err := kii.NewImageName(image)
-	if err != nil {
-		return nil, err
-	}
-	manifest, err := r.imageStore.GetImageManifest(imageName)
-	if err != nil {
-		return nil, err
-	}
-	return manifest, nil
+	return image.Image, r.imageStore.PullImage(image.Image, auth)
 }
