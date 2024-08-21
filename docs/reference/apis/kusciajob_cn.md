@@ -718,6 +718,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | domain_id | string | 必填 | DomainID |
 | role      | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)       |
 | resources | JobResource | 可选 | 参与方资源配置 |
+| bandwidth_limits | [BandwidthLimit](#bandwidth-limit)[] | 可选 | 节点请求其他节点的带宽限制配置 |
 
 {#JobResource}
 
@@ -831,3 +832,13 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 | port_name | string | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name` |
 | scope     | string | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
 | endpoint  | string | 应用服务访问地址                                                                                            |
+
+
+{#bandwidth-limit}
+
+### BandwidthLimit
+
+| 字段        | 类型                | 选填 | 描述                                                                                                                                                       |
+|-----------|-------------------|----|---------------------------------------------------------------------|
+| destination_id | string            | 必填 | 目标节点     ID                                                                                                                                                 |
+| limit_kbps     | int64            | 必填 | 带宽限制，单位为 KiB/s                                                                                                                                                 |

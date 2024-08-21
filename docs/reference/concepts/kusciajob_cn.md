@@ -332,7 +332,19 @@ spec:
       appImage: secretflow-image
       parties:
         - domainID: alice
+          resources:
+            limits: {"cpu": 2, "memory": "4Gi"}
+            requests: {"cpu": 1, "memory": "2Gi"}
+          bandwidthLimits:
+          - destinationID: bob
+            limitKBps: 1000
         - domainID: bob
+          resources:
+            limits: {"cpu": 2, "memory": "4Gi"}
+            requests: {"cpu": 1, "memory": "2Gi"}
+          bandwidthLimits:
+          - destinationID: alice
+            limitKBps: 1000
     - alias: job-split
       taskID: job-split
       priority: 100
@@ -375,6 +387,10 @@ KusciaJob `spec`的子字段详细介绍如下：
   - `tasks[].parties`：表示任务参与方的信息。
     - `tasks[].parties[].domainID`：表示任务参与方的节点 ID。
     - `tasks[].parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，Kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
+    - `tasks[].parties[].resources`：表示任务参与方的资源信息，详见 [K8s 资源要求和限制](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)。
+    - `tasks[].parties[].bandwidthLimits`：任务参与方的带宽限制信息。
+      - `tasks[].parties[].bandwidthLimits[].destinationID`：表示限制 `tasks[].parties[].domainID` 发出，目的地为 `destinationID` 的 HTTP 流量 Request/Response 整体带宽。
+      - `tasks[].parties[].bandwidthLimits[].limitKBps`：表示上述带宽限制的取值，单位为 KiB/s。
 
 KusciaJob `status`的子字段详细介绍如下：
 

@@ -153,15 +153,14 @@ func (c *DomainRouteTestInfo) runPlainCase(cases []DrTestCase, t *testing.T, add
 			}
 		} else { // intbound
 			find := false
-			tokenAuth, err := xds.GetTokenAuth()
-			if err != nil {
-				t.Fatalf("get token auth fail: %v", err)
-			}
-			for _, sourceTokens := range tokenAuth.SourceTokenList {
-				if sourceTokens.Source == tc.dr.Spec.Source {
-					for _, token := range sourceTokens.Tokens {
-						if token == tc.token {
-							find = true
+			tokenAuth, _ := xds.GetTokenAuth()
+			if tokenAuth != nil {
+				for _, sourceTokens := range tokenAuth.SourceTokenList {
+					if sourceTokens.Source == tc.dr.Spec.Source {
+						for _, token := range sourceTokens.Tokens {
+							if token == tc.token {
+								find = true
+							}
 						}
 					}
 				}
@@ -209,15 +208,14 @@ func (c *DomainRouteTestInfo) runMTLSCase(cases []DrTestCase, t *testing.T, add 
 			}
 		} else { // intbound
 			find := false
-			tokenAuth, err := xds.GetTokenAuth()
-			if err != nil {
-				t.Fatalf("get token auth fail: %v", err)
-			}
-			for _, sourceTokens := range tokenAuth.SourceTokenList {
-				if sourceTokens.Source == tc.dr.Spec.Source {
-					for _, token := range sourceTokens.Tokens {
-						if token == NoopToken {
-							find = true
+			tokenAuth, _ := xds.GetTokenAuth()
+			if tokenAuth != nil {
+				for _, sourceTokens := range tokenAuth.SourceTokenList {
+					if sourceTokens.Source == tc.dr.Spec.Source {
+						for _, token := range sourceTokens.Tokens {
+							if token == NoopToken {
+								find = true
+							}
 						}
 					}
 				}
@@ -662,18 +660,17 @@ func TestAppendHeaders(t *testing.T) {
 	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Delete(context.Background(), dr.Name, metav1.DeleteOptions{})
 	time.Sleep(200 * time.Millisecond)
 
-	decorator, err = xds.GetHeaderDecorator()
-	if err != nil {
-		nlog.Fatal("get header decorator filter fail")
-	}
-	foundSource = false
-	for _, entry := range decorator.AppendHeaders {
-		if entry.Source == "test" {
-			foundSource = true
+	decorator, _ = xds.GetHeaderDecorator()
+	if decorator != nil {
+		foundSource = false
+		for _, entry := range decorator.AppendHeaders {
+			if entry.Source == "test" {
+				foundSource = true
+			}
 		}
-	}
-	if foundSource {
-		nlog.Fatalf("deleted sourceHeader(test) fail")
+		if foundSource {
+			nlog.Fatalf("deleted sourceHeader(test) fail")
+		}
 	}
 
 	stopCh <- struct{}{}

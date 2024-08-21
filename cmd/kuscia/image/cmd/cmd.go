@@ -17,16 +17,14 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/secretflow/kuscia/pkg/agent/local/store"
+	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 )
 
-type Context struct {
-	StorageDir string
-	Store      store.Store
-}
-
-func InstallCommands(rootCmd *cobra.Command, cmdCtx *Context) {
+func InstallCommands(rootCmd *cobra.Command, cmdCtx *utils.Context) {
 	rootCmd.AddCommand(loadCommand(cmdCtx))
 	rootCmd.AddCommand(builtinCommand(cmdCtx))
+	rootCmd.AddCommand(pullCommand(cmdCtx))
+	rootCmd.AddCommand(listCommand(cmdCtx))
+	rootCmd.AddCommand(tagCommand(cmdCtx))
 	rootCmd.AddCommand(mountCommand(cmdCtx))
 }

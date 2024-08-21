@@ -28,10 +28,9 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
+	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
-
-	"github.com/secretflow/kuscia/pkg/utils/common"
 )
 
 func Test_LoadCaDomainKeyAndCert(t *testing.T) {

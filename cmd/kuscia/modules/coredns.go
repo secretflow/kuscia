@@ -102,9 +102,11 @@ func NewCoreDNS(conf *ModuleRuntimeConfigs) (Module, error) {
 
 func (s *CorednsModule) Run(ctx context.Context) error {
 	defer close(s.readyChan)
-	if err := prepareResolvConf(s.rootDir); err != nil {
-		nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
-		return err
+	if common.IsRootUser() {
+		if err := prepareResolvConf(s.rootDir); err != nil {
+			nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
+			return err
+		}
 	}
 
 	plugin.Register(
@@ -135,6 +137,7 @@ func (s *CorednsModule) Run(ctx context.Context) error {
 		ServerTypeName: serverType,
 	})
 	if err != nil {
+		nlog.Errorf("start coredns error: %v", err)
 		return err
 	}
 

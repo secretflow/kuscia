@@ -15,4 +15,10 @@ spec:
       appImage: '{{.APP_IMAGE}}'
       parties:
         - domainID: alice
+          bandwidthLimits:
+          - destinationID: bob
+            limitKBps: 100
         - domainID: bob
+          bandwidthLimits:
+          - destinationID: alice
+            limitKBps: 100
