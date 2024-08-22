@@ -381,6 +381,7 @@ function init() {
   [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${DOMAIN_WORK_DIR}/logs"
   [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${DOMAIN_WORK_DIR}/k3s"
 
+  pre_check "${DOMAIN_WORK_DIR}"
   pre_check "${DOMAIN_DATA_DIR}"
   pre_check "${DOMAIN_LOG_DIR}"
 
