@@ -115,7 +115,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 
 	// normalization request
 	s.normalizationCreateRequest(request)
-	// verdor priority using incoming
+	// vendor priority using incoming
 	customVendor := request.Vendor
 
 	// build kuscia domain
@@ -508,11 +508,11 @@ func (s domainDataService) normalizationCreateRequest(request *kusciaapi.CreateD
 	if request.DomaindataId == "" {
 		request.DomaindataId = common.GenDomainDataID(request.Name)
 	}
-	//fill default datasource id
+	// fill default datasource id
 	if request.DatasourceId == "" {
 		request.DatasourceId = common.DefaultDataSourceID
 	}
-	//fill default vendor
+	// fill default vendor
 	if request.Vendor == "" {
 		request.Vendor = common.DefaultDomainDataVendor
 	}

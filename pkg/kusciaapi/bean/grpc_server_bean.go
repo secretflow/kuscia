@@ -98,6 +98,8 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	// set master role interceptor
 	opts = append(opts, grpc.ChainUnaryInterceptor(interceptor.GrpcServerMasterRoleInterceptor()))
 	opts = append(opts, grpc.ChainStreamInterceptor(interceptor.GrpcStreamServerMasterRoleInterceptor()))
+	// opts = append(opts, grpc.MaxRecvMsgSize(math.MaxInt32))
+	opts = append(opts, grpc.MaxRecvMsgSize(100))
 
 	// register grpc server
 	server := grpc.NewServer(opts...)
