@@ -9,9 +9,9 @@
 在 K8s 模式中，非 root 用户部署需要对 root 用户部署的 deployment 和 configmap 部署模板进行一些修改。
 
 我们已经为您准备好了修改后的模板文件，您只需参考[k8s 部署文档](./K8s_p2p_cn.md)进行部署即可，本文不做过多赘述。
-- autonomy：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rootless/configmap.yaml)
-- master：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/rootless/configmap.yaml)
-- lite：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/rootless/configmap.yaml)
+- autonomy：[deployment.yaml](https://github.com/secretflow/kuscia/blob/release/0.11.x/hack/k8s/autonomy/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/release/0.11.x/hack/k8s/autonomy/rootless/configmap.yaml)
+- master：[deployment.yaml](https://github.com/secretflow/kuscia/blob/release/0.11.x/hack/k8s/master/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/release/0.11.x/hack/k8s/master/rootless/configmap.yaml)
+- lite：[deployment.yaml](https://github.com/secretflow/kuscia/blob/release/0.11.x/hack/k8s/lite/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/release/0.11.x/hack/k8s/lite/rootless/configmap.yaml)
 
 :::{tip}
 1. 目前支持 [RunP](deploy_with_runp_cn.md) 或者 RunK 模式以非 root 用户来部署 Kuscia。
