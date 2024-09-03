@@ -128,7 +128,7 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 		return arrow.PrimitiveTypes.Uint16
 	case "uint32":
 		return arrow.PrimitiveTypes.Uint32
-	case "uint64":
+	case "uint64", "uint":
 		return arrow.PrimitiveTypes.Uint64
 	case "float32":
 		return arrow.PrimitiveTypes.Float32

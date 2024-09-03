@@ -59,6 +59,8 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 - 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)。
 - master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
 - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
+- 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
+- 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
 :::
 
 建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。
@@ -284,13 +286,17 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr
 登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > ${USER}-kuscia-lite-alice/data/alice.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
+docker cp /tmp/alice.csv ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
+rm -rf /tmp/alice.csv
 ```
 
 登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-bob/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > ${USER}-kuscia-lite-bob/data/bob.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
+docker cp /tmp/bob.csv ${USER}-kuscia-lite-bob:/home/kuscia/var/storage/data/
+rm -rf /tmp/bob.csv
 ```
 
 ##### 创建测试数据表

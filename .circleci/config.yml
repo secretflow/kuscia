@@ -27,12 +27,12 @@ parameters:
 executors:
   linux_x64_executor: # declares a reusable executor
     docker:
-      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.5
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.6
     resource_class: 2xlarge
     shell: /bin/bash --login -eo pipefail
   linux_aarch64_executor:
     docker:
-      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.5
+      - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.6
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
 
@@ -92,9 +92,14 @@ jobs:
           command: |
             set -ex
             mv /tmp/build/linux ./build/
-            CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
             IMAGE="secretflow/kuscia"
             ALIYUN_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia"
+
+            if [[ ! -z "${CIRCLE_TAG}" ]]; then
+              CIRCLETAG=$(echo ${CIRCLE_TAG} | sed 's/v//')
+            elif [[ "${CIRCLE_BRANCH}" =~ ^release.* ]]; then
+              CIRCLETAG="latest"
+            fi
 
             # login kuscia dockerhub registry
             docker login -u secretflow -p ${DOCKER_DEPLOY_TOKEN}
@@ -130,7 +135,7 @@ workflows:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
           filters:
             branches:
-              ignore: /.*/
+              only: /^release.*/
             tags:
               only: /^v.*/
       - image_publish:
@@ -138,7 +143,7 @@ workflows:
             - linux_build_kuscia
           filters:
             branches:
-              ignore: /.*/
+              only: /^release.*/
             tags:
               only: /^v.*/
   build-kuscia-deps-workflow:

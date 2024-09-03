@@ -89,6 +89,12 @@ enum ErrorCode {
   KusciaAPIErrDomainDataSourceInfoEncodeFailed = 11807;
   KusciaAPIErrListDomainDataSource             = 11808;
 
+  KusciaAPIErrCreateConfig        = 11900;
+  KusciaAPIErrQueryConfig          = 11901;
+  KusciaAPIErrUpdateConfig         = 11902;
+  KusciaAPIErrDeleteConfig        = 11903;
+  KusciaAPIErrBatchQueryConfig     = 11904;
+
   // data mesh
   DataMeshErrRequestInvalidate = 12100;
   DataMeshErrForUnexpected     = 12101;
@@ -122,8 +128,10 @@ enum ErrorCode {
   // conf manager
   ConfManagerErrRequestInvalidate = 2000;
   ConfManagerErrForUnexpected = 2001;
-  ConfManagerErrCreateConfiguration = 2102;
-  ConfManagerErrQueryConfiguration = 2103;
+  ConfManagerErrCreateConfig = 2102;
+  ConfManagerErrQueryConfig = 2103;
+  ConfManagerErrUpdateConfig = 2104;
+  ConfManagerErrDeleteConfig = 2105;
+  ConfManagerErrBatchQueryConfig = 2106;
   ConfManagerErrGenerateKeyCerts = 2200;
-
 }

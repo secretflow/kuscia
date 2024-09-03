@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
@@ -178,7 +179,7 @@ func loadDomainKeyData(domainKeyFile string) (string, error) {
 
 func isSupportedRuntime(runtime string) bool {
 	switch runtime {
-	case "runc", "runk", "runp":
+	case config.ContainerRuntime, config.K8sRuntime, config.ProcessRuntime:
 		return true
 	default:
 		return false

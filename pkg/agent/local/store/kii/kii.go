@@ -24,18 +24,11 @@ import (
 	"k8s.io/kubernetes/pkg/util/parsers"
 )
 
-type MountType string
-
-const (
-	// Plain unpacks all layers to same directory, override files with same filename
-	Plain MountType = "plain"
-)
-
 type ImageType string
 
 const (
-	ImageTypeStandard = "Standard" // Standard OCI image
-	ImageTypeBuiltIn  = "BuiltIn"  // Built in image without layers
+	ImageTypeStandard ImageType = "Standard" // Standard OCI image
+	ImageTypeBuiltIn  ImageType = "BuiltIn"  // Built in image without layers
 )
 
 type ImageName struct {

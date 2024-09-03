@@ -41,11 +41,12 @@ import (
 )
 
 type httpServerBean struct {
-	config  *dmconfig.DataMeshConfig
-	ginBean beans.GinBean
+	config          *dmconfig.DataMeshConfig
+	ginBean         beans.GinBean
+	cmConfigService cmservice.IConfigService
 }
 
-func NewHTTPServerBean(config *dmconfig.DataMeshConfig) *httpServerBean { // nolint: golint
+func NewHTTPServerBean(config *dmconfig.DataMeshConfig, cmConfigService cmservice.IConfigService) *httpServerBean { // nolint: golint
 	return &httpServerBean{
 		config: config,
 		ginBean: beans.GinBean{
@@ -57,6 +58,7 @@ func NewHTTPServerBean(config *dmconfig.DataMeshConfig) *httpServerBean { // nol
 			Debug:         config.Debug,
 			GinBeanConfig: convertToGinConf(config),
 		},
+		cmConfigService: cmConfigService,
 	}
 }
 
@@ -86,7 +88,7 @@ func (s *httpServerBean) ServerName() string {
 
 func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 	domainDataService := service.NewDomainDataService(s.config)
-	domainDataSourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
+	domainDataSourceService := service.NewDomainDataSourceService(s.config, s.cmConfigService)
 	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	healthService := apisvc.NewHealthService()
 	// define router groups

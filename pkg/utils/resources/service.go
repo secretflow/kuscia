@@ -118,6 +118,7 @@ func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.S
 // 1. If the first character is a number, add svc- as a prefix;
 // 2. If the length of the name exceeds 63 characters, it will be truncated to 63 characters.
 // 3. The final name must comply with DNS subdomain naming rules.
+// 4. Services derivate from same task may have same prefix and different portName suffix segment.
 func GenerateServiceName(prefix, portName string) string {
 	prefix = strings.Trim(prefix, "-")
 	portName = strings.Trim(portName, "-")
@@ -127,10 +128,10 @@ func GenerateServiceName(prefix, portName string) string {
 	}
 
 	if len(name) > 63 {
-		hash := sha256.Sum256([]byte(name))
+		hash := sha256.Sum256([]byte(prefix))
 		hashStr := fmt.Sprintf("%x", hash)
 		maxPrefixLen := 63 - 16 - len(portName) - 6
-		name = fmt.Sprintf("svc-%s-%s-%s", prefix[:maxPrefixLen], portName, hashStr[:16])
+		name = fmt.Sprintf("svc-%s-%s-%s", prefix[:maxPrefixLen], hashStr[:16], portName)
 	}
 	return name
 }

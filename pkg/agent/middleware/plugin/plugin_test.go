@@ -15,6 +15,7 @@
 package plugin
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func (p *mockPluginA) Type() string {
 	return mockPluginType
 }
 
-func (p *mockPluginA) Init(dependencies *Dependencies, cfg *config.PluginCfg) error {
+func (p *mockPluginA) Init(ctx context.Context, dependencies *Dependencies, cfg *config.PluginCfg) error {
 	return nil
 }
 
@@ -43,7 +44,7 @@ func (p *mockPluginService) Type() string {
 	return mockPluginType
 }
 
-func (p *mockPluginService) Init(dependencies *Dependencies, cfg *config.PluginCfg) error {
+func (p *mockPluginService) Init(ctx context.Context, dependencies *Dependencies, cfg *config.PluginCfg) error {
 	return nil
 }
 
@@ -70,7 +71,7 @@ plugins:
 
 		Register("mock_plugin_a", &mockPluginA{})
 
-		assert.NoError(t, Init(dep))
+		assert.NoError(t, Init(context.Background(), dep))
 	})
 
 	t.Run("setup failed", func(t *testing.T) {
@@ -83,7 +84,7 @@ plugins:
 		assert.NoError(t, yaml.Unmarshal([]byte(configYaml), &agentConfig))
 		dep := &Dependencies{AgentConfig: agentConfig}
 
-		assert.ErrorContains(t, Init(dep), "not registered")
+		assert.ErrorContains(t, Init(context.Background(), dep), "not registered")
 	})
 
 }

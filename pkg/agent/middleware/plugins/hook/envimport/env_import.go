@@ -72,7 +72,7 @@ func (ci *envImport) Type() string {
 }
 
 // Init implements the plugin.Plugin interface.
-func (ci *envImport) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
+func (ci *envImport) Init(ctx context.Context, dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
 	ci.initialized = true
 	hook.Register(common.PluginNameEnvImport, ci)
 	ci.EnvConfig.UsePodLabels = true

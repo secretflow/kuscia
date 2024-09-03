@@ -32,12 +32,21 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
   - secrets
   - endpoints
   - namespaces
   verbs:
   - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+  - patch
   - list
   - watch
 - apiGroups:

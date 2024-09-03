@@ -1,7 +1,21 @@
 # KusciaTask
 
 在 Kuscia 中，任务是用 KusciaTask 描述的。如果要运行一个任务，那么需要创建一个 KusciaTask。KusciaTask Controller 将会根据 KusciaTask 的描述信息，在参与方节点下创建任务相关的资源。
-具体用例请参考下文。
+
+
+{#kuscia-task-state}
+## 状态说明
+
+下图为 KusciaTask(KT) 的状态流转图。
+
+![KusciaTaskState](../../imgs/kuscia_task_state.png)
+
+KusciaTask 在其生命周期中会处于以下几种状态：
+- Pending: 此时 KusciaTask 正在被处理。
+- Running: 此时 KusciaTask 正处于运行状态。当至少有一方的应用 Pod 为 Running 时，会进入此状态。
+- Succeeded: 此时 KusciaTask 运行成功。
+- Failed: 此时 KusciaTask 运行失败。当预处理任务出错或任务运行过程中出错时，会进入该状态。
+
 
 ## 用例
 
@@ -29,7 +43,7 @@ spec:
     domainID: alice
   - appImageRef: secretflow-image
     domainID: bob
-  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
 ```
 
 在该示例中:
@@ -60,7 +74,7 @@ spec:
     resourceReservedSeconds: 30
     lifecycleSeconds: 300
     retryIntervalSeconds: 15
-  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
   parties:
     - domainID: alice
       appImageRef: app-template
@@ -232,7 +246,7 @@ KusciaTask `spec` 的子字段详细介绍如下：
 
 KusciaTask `status` 的子字段详细介绍如下：
 
-- `phase`：表示 KusciaTask 当前所处的阶段。当前包括以下几种 PHASE：
+- `phase`：表示 KusciaTask 当前所处的阶段。[状态流转详情](#kuscia-task-state)。当前包括以下几种 PHASE：
   - `Pending`：表示 KusciaTask 被创建，然后 KusciaTask Controller 会根据 KusciaTask 的描述信息，创建跟 KusciaTask 相关的任务资源，例如：Configmap、Service、Pod 等。
   - `Running`：表示 KusciaTask 正处于运行状态。
   - `Succeeded`：表示 KusciaTask 运行成功。

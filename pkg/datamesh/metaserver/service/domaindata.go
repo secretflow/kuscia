@@ -351,10 +351,11 @@ func CheckColType(cols []*pbv1alpha1.DataColumn, dsType string) error {
 		col.Type = strings.ToLower(col.Type)
 		if dsType == common.DomainDataSourceTypeMysql {
 			switch col.Type {
-			case "int64":
-			case "float64":
+			case "int", "int8", "int16", "int32", "int64":
+			case "uint", "uint8", "uint16", "uint32", "uint64":
+			case "float", "float32", "float64":
 			case "bool":
-			case "string":
+			case "string", "str":
 				return nil
 			default:
 				err := fmt.Errorf("Col[%s].Type=%s is invalid for mysql", col.Name, col.Type)

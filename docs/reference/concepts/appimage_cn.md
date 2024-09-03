@@ -44,15 +44,12 @@ spec:
             name: secretflow
             ports:
               - name: spu
-                port: 54509
                 protocol: GRPC
                 scope: Cluster
               - name: fed
-                port: 8080
                 protocol: GRPC
                 scope: Cluster
               - name: global
-                port: 8081
                 protocol: GRPC
                 scope: Domain
             workingDir: /work
@@ -77,7 +74,6 @@ spec:
     - `.spec.deployTemplates[0].spec.containers[0].name`：表示应用容器名称。
     - `.spec.deployTemplates[0].spec.containers[0].ports`：表示应用容器的启动端口。该字段下主要包含以下子字段：
       - `.spec.deployTemplates[0].spec.containers[0].ports[].name`：表示应用容器的端口名称。
-      - `.spec.deployTemplates[0].spec.containers[0].ports[].port`：表示应用容器的端口号。
       - `.spec.deployTemplates[0].spec.containers[0].ports[].protocol`：表示应用容器的端口使用的协议类型。
       - `.spec.deployTemplates[0].spec.containers[0].ports[].scope`：表示应用端口使用范围。支持三种模式：`Cluster`、`Domain`、`Local`。
     - `.spec.deployTemplates[0].spec.containers[0].workingDir`：表示应用容器的工作目录。
@@ -139,15 +135,12 @@ spec:
             name: secretflow
             ports:
               - name: spu
-                port: 54509
                 protocol: GRPC
                 scope: Cluster
               - name: fed
-                port: 8080
                 protocol: GRPC
                 scope: Cluster
               - name: global
-                port: 8082
                 protocol: GRPC
                 scope: Domain
             workingDir: /work
@@ -172,7 +165,6 @@ kubectl apply -f secretflow-image.yaml
 ```shell
 kubectl get appimage secretflow-image -o  yaml | grep '\- name: global' -A 3
         - name: global
-          port: 8082
           protocol: GRPC
           scope: Domain
 ```
@@ -238,7 +230,6 @@ spec:
             name: app
             ports:
               - name: global
-                port: 8080
                 protocol: TCP
                 scope: Cluster
             envFrom:
@@ -264,13 +255,13 @@ spec:
             livenessProbe:
               httpGet:
                 path: /healthz
-                port: 8080
+                port: global
               failureThreshold: 1
               periodSeconds: 20
             startupProbe:
               httpGet:
                 path: /healthz
-                port: 8080
+                port: global
               failureThreshold: 30
               periodSeconds: 10
             imagePullPolicy: IfNotPresent
@@ -292,7 +283,6 @@ spec:
             name: app
             ports:
               - name: global
-                port: 8080
                 protocol: TCP
                 scope: Cluster
             envFrom:
@@ -318,13 +308,13 @@ spec:
             livenessProbe:
               httpGet:
                 path: /healthz
-                port: 8080
+                port: global
               failureThreshold: 1
               periodSeconds: 20
             startupProbe:
               httpGet:
                 path: /healthz
-                port: 8080
+                port: global
               failureThreshold: 30
               periodSeconds: 10
             imagePullPolicy: IfNotPresent
@@ -360,7 +350,6 @@ AppImage `spec` 的子字段详细介绍如下：
       - `deployTemplates[].spec.containers[].name`：表示应用容器的名称。
       - `deployTemplates[].spec.containers[].ports`：表示应用容器的启动端口。
         - `.spec.deployTemplates[].spec.containers[].ports[].name`：表示应用容器的端口名称。
-        - `.spec.deployTemplates[].spec.containers[].ports[].port`：表示应用容器的端口号。
         - `.spec.deployTemplates[].spec.containers[].ports[].protocol`：表示应用容器的端口使用的协议类型。支持两种类型：`HTTP`、`GRPC`。
         - `.spec.deployTemplates[].spec.containers[].ports[].scope`：表示应用端口使用范围。支持三种模式：`Cluster`、`Domain`、`Local`。Kuscia 会根据 scope 取值的不同，限制 port 的网络访问策略。具体含义如下所示：
           - `Cluster`：表示该 port 用于节点外部和节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。

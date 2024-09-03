@@ -26,13 +26,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	kubefake "k8s.io/client-go/kubernetes/fake"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -234,7 +233,7 @@ func MakeMockDomain(domainID string) *v1alpha1.Domain {
 		ObjectMeta: metav1.ObjectMeta{Name: domainID},
 		Spec: v1alpha1.DomainSpec{
 			Cert:         "mockcert",
-			Role:         v1alpha1.DomainRole("partner"),
+			Role:         "partner",
 			MasterDomain: "mockmasterdomain",
 		},
 	}

@@ -39,7 +39,11 @@ func (c *Controller) syncDomainStatuses() {
 	}
 
 	for _, dm := range domains {
-		if err := c.syncDomainStatus(dm); err != nil {
+		if isPartner(dm) {
+			continue
+		}
+
+		if err = c.syncDomainStatus(dm); err != nil {
 			nlog.Warnf("Update domain node status failed, %v", err.Error())
 		}
 	}

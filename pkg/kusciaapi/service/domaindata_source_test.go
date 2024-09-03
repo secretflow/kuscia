@@ -22,20 +22,20 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/confmanager/driver"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
-	"github.com/secretflow/kuscia/pkg/secretbackend"
-	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
-var mockDomainId = "alice"
+var mockDomainID = "alice"
 
 func makeDomainDataSourceServiceConfig(t *testing.T) *config.KusciaAPIConfig {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -44,10 +44,10 @@ func makeDomainDataSourceServiceConfig(t *testing.T) *config.KusciaAPIConfig {
 	}
 	return &config.KusciaAPIConfig{
 		DomainKey:    privateKey,
-		KusciaClient: kusciafake.NewSimpleClientset(MakeMockDomain(mockDomainId)),
+		KusciaClient: kusciafake.NewSimpleClientset(MakeMockDomain(mockDomainID)),
 		RunMode:      common.RunModeLite,
 		Initiator:    "alice",
-		DomainID:     mockDomainId,
+		DomainID:     mockDomainID,
 	}
 }
 
@@ -57,7 +57,7 @@ func TestCreateDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	res := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeLocalFS,
 		Info: &kusciaapi.DataSourceInfo{
@@ -76,7 +76,7 @@ func TestCreateDomainDataSource_InfoKeyNotExists(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	res := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeLocalFS,
 		Info: &kusciaapi.DataSourceInfo{
@@ -96,7 +96,7 @@ func TestUpdateDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -112,7 +112,7 @@ func TestUpdateDomainDataSource(t *testing.T) {
 
 	updateRes := dsService.UpdateDomainDataSource(context.Background(), &kusciaapi.UpdateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -127,7 +127,7 @@ func TestUpdateDomainDataSource(t *testing.T) {
 	assert.Equal(t, int32(0), updateRes.Status.Code)
 
 	queryRes := dsService.QueryDomainDataSource(context.Background(), &kusciaapi.QueryDomainDataSourceRequest{
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 	})
 
@@ -144,7 +144,7 @@ func TestDeleteDomainDataSource(t *testing.T) {
 
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -159,13 +159,13 @@ func TestDeleteDomainDataSource(t *testing.T) {
 	assert.Equal(t, dataSourceID, createRes.Data.DatasourceId)
 
 	deleteRes := dsService.DeleteDomainDataSource(context.Background(), &kusciaapi.DeleteDomainDataSourceRequest{
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 	})
 	assert.Equal(t, int32(0), deleteRes.Status.Code)
 
 	queryRes := dsService.QueryDomainDataSource(context.Background(), &kusciaapi.QueryDomainDataSourceRequest{
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 	})
 	assert.NotEqual(t, int32(0), queryRes.Status.Code)
@@ -177,7 +177,7 @@ func TestBatchQueryDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -194,7 +194,7 @@ func TestBatchQueryDomainDataSource(t *testing.T) {
 	batchQueryRes := dsService.BatchQueryDomainDataSource(context.Background(), &kusciaapi.BatchQueryDomainDataSourceRequest{
 		Data: []*kusciaapi.QueryDomainDataSourceRequestData{
 			{
-				DomainId:     mockDomainId,
+				DomainId:     mockDomainID,
 				DatasourceId: dataSourceID,
 			},
 		},
@@ -209,7 +209,7 @@ func TestListDomainDataSource(t *testing.T) {
 	dsService := makeDomainDataSourceService(t, conf)
 	createRes := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
 		Header:       nil,
-		DomainId:     mockDomainId,
+		DomainId:     mockDomainID,
 		DatasourceId: dataSourceID,
 		Type:         common.DomainDataSourceTypeMysql,
 		Info: &kusciaapi.DataSourceInfo{
@@ -223,7 +223,7 @@ func TestListDomainDataSource(t *testing.T) {
 	})
 	assert.Equal(t, dataSourceID, createRes.Data.DatasourceId)
 	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
-		DomainId: mockDomainId,
+		DomainId: mockDomainID,
 	})
 	assert.Equal(t, int32(0), res.Status.Code)
 	assert.Equal(t, common.DomainDataSourceTypeMysql, res.Data.DatasourceList[0].Type)
@@ -233,7 +233,7 @@ func TestListDomainDataSource_NotExist(t *testing.T) {
 	conf := makeDomainDataSourceServiceConfig(t)
 	dsService := makeDomainDataSourceService(t, conf)
 	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
-		DomainId: mockDomainId,
+		DomainId: mockDomainID,
 	})
 	assert.Equal(t, int32(0), res.Status.Code)
 	assert.Equal(t, 0, len(res.GetData().DatasourceList))
@@ -255,32 +255,34 @@ func TestListDomainDataSource_InfoErr(t *testing.T) {
 	dataSource := &v1alpha1.DomainDataSource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dataSourceID,
-			Namespace: mockDomainId,
+			Namespace: mockDomainID,
 		},
 		Spec: v1alpha1.DomainDataSourceSpec{
 			Type: "oss",
 		},
 	}
-	_, err := conf.KusciaClient.KusciaV1alpha1().DomainDataSources(mockDomainId).Create(context.Background(), dataSource, metav1.CreateOptions{})
+	_, err := conf.KusciaClient.KusciaV1alpha1().DomainDataSources(mockDomainID).Create(context.Background(), dataSource, metav1.CreateOptions{})
 	assert.NoError(t, err)
 	res := dsService.ListDomainDataSource(context.Background(), &kusciaapi.ListDomainDataSourceRequest{
-		DomainId: mockDomainId,
+		DomainId: mockDomainID,
 	})
 	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrListDomainDataSource), res.Status.Code)
 }
 
 func makeDomainDataSourceService(t *testing.T, conf *config.KusciaAPIConfig) IDomainDataSourceService {
-	return NewDomainDataSourceService(conf, makeMemConfigurationService(t))
+	return NewDomainDataSourceService(conf, makeConfigService(t))
 }
 
-func makeMemConfigurationService(t *testing.T) cmservice.IConfigurationService {
-	backend, err := secretbackend.NewSecretBackendWith("mem", map[string]any{})
+func makeConfigService(t *testing.T) cmservice.IConfigService {
+	kubeClient := kubefake.NewSimpleClientset()
+	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	assert.Nil(t, err)
-	assert.NotNil(t, backend)
-	configurationService, err := cmservice.NewConfigurationService(
-		backend, false,
-	)
+	configService, err := cmservice.NewConfigService(context.Background(), &cmservice.ConfigServiceConfig{
+		DomainID:   "alice",
+		DomainKey:  privateKey,
+		Driver:     driver.CRDDriverType,
+		KubeClient: kubeClient,
+	})
 	assert.Nil(t, err)
-	assert.NotNil(t, configurationService)
-	return configurationService
+	return configService
 }
