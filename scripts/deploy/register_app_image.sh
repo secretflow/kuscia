@@ -134,7 +134,7 @@ function register_default_app_image() {
     app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.SF_IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
-  else 
+  else
     app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")

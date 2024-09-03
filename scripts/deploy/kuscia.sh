@@ -343,13 +343,13 @@ function init_kuscia_conf_file() {
   local domain_ctr=$3
   local kuscia_conf_file=$4
   local master_endpoint=$5
-  local runtime=${RUNTIME:-"runc"}
+  local runtime="runc"
   local master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
+    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   else
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
+    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   fi
   [[ ${dataproxy} == "true" ]] && dataproxy_config ${kuscia_conf_file}
   wrap_kuscia_config_file ${kuscia_conf_file} "${interconn_protocol}"
@@ -597,7 +597,7 @@ function start_data_proxy() {
    local counter=0
    local kusciaapi_endpoint="http://localhost:8082/api/v1/serving"
    # import dataproxy image
-   if [[ "$deploy_mode" != "master" ]]; then
+   if [[ "$deploy_mode" != "master" ]] && [[ ${runtime} == "runc" ]]; then
       docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
       bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${DATAPROXY_IMAGE} --import
       rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
@@ -610,9 +610,9 @@ function start_data_proxy() {
    fi
 
    # deployment dataproxy
-   if [[ "$deploy_mode" != "master" ]]; then
+   if [[ "$deploy_mode" != "master" ]] && [[ ${runtime} == "runc" ]]; then
       if [[ ${protocol} != "notls" ]]; then
-          docker cp ${domain_ctr}:/home/kuscia/var/certs/token .   
+          docker cp ${domain_ctr}:/home/kuscia/var/certs/token .
           declare -a header
           header+=("--header" "Token: $(cat token)")
           header+=("--cert" "${CTR_CERT_ROOT}/kusciaapi-server.crt")
@@ -646,7 +646,7 @@ function start_center_cluster() {
   local bob_domain=bob
   local ctr_prefix=${USER}-kuscia
   local master_ctr=${ctr_prefix}-master
-  local runtime=${RUNTIME:-"runc"}
+  local runtime="runc"
   local privileged_flag=" --privileged"
   local alice_ctr=${ctr_prefix}-lite-${alice_domain}
   local bob_ctr=${ctr_prefix}-lite-${bob_domain}
@@ -664,7 +664,7 @@ function start_p2p_cluster() {
   local alice_domain=alice
   local bob_domain=bob
   local ctr_prefix=${USER}-kuscia
-  local runtime=${RUNTIME:-"runc"}
+  local runtime="runc"
   local p2p_protocol=$1
   local privileged_flag=" --privileged"
   local alice_ctr=${ctr_prefix}-autonomy-${alice_domain}
@@ -682,7 +682,7 @@ function start_cxc_cluster() {
   local alice_domain=alice
   local bob_domain=bob
   local ctr_prefix=${USER}-kuscia
-  local runtime=${RUNTIME:-"runc"}
+  local runtime="runc"
   local privileged_flag=" --privileged"
   local alice_ctr=${ctr_prefix}-lite-cxc-${alice_domain}
   local bob_ctr=${ctr_prefix}-lite-cxc-${bob_domain}
@@ -730,7 +730,7 @@ function start_cxp_cluster() {
   local alice_domain=alice
   local bob_domain=bob
   local ctr_prefix=${USER}-kuscia
-  local runtime=${RUNTIME:-"runc"}
+  local runtime="runc"
   local privileged_flag=" --privileged"
   local alice_ctr=${ctr_prefix}-lite-cxp-${alice_domain}
   local bob_ctr=${ctr_prefix}-autonomy-cxp-${bob_domain}
@@ -871,9 +871,6 @@ for arg in "$@"; do
             ;;
         --data-proxy)
             dataproxy=true
-            ;;
-        --runp)
-            RUNTIME=runp
             ;;
         *)
             NEW_ARGS+=("$arg")
