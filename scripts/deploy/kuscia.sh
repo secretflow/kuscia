@@ -343,7 +343,6 @@ function init_kuscia_conf_file() {
   local domain_ctr=$3
   local kuscia_conf_file=$4
   local master_endpoint=$5
-  local runtime="runc"
   local master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
