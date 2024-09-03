@@ -596,7 +596,7 @@ function start_data_proxy() {
    local counter=0
    local kusciaapi_endpoint="http://localhost:8082/api/v1/serving"
    # import dataproxy image
-   if [[ "$deploy_mode" != "master" ]]; then
+   if [[ "$deploy_mode" != "master" ]] && [[ ${runtime} == "runc" ]]; then
       docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
       bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${DATAPROXY_IMAGE} --import
       rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
@@ -609,7 +609,7 @@ function start_data_proxy() {
    fi
 
    # deployment dataproxy
-   if [[ "$deploy_mode" != "master" ]] && [[ ${runtime} == "runc" ]]; then
+   if [[ "$deploy_mode" != "master" ]]; then
       if [[ ${protocol} != "notls" ]]; then
           docker cp ${domain_ctr}:/home/kuscia/var/certs/token .
           declare -a header
