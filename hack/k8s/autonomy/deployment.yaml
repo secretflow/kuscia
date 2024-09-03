@@ -4,7 +4,7 @@ metadata:
   name: kuscia-autonomy-alice
   namespace: autonomy-alice
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kuscia-autonomy-alice
