@@ -344,7 +344,6 @@ function init_kuscia_conf_file() {
   local kuscia_conf_file=$4
   local master_endpoint=$5
   local master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
-  pre_check "${DOMAIN_WORK_DIR}"
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
     docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
@@ -376,26 +375,29 @@ function init() {
   if [[ ${ROOTLESS} == "true" ]]; then
       DOMAIN_WORK_DIR="${ROOT}/${domain_ctr}-rootless"
   fi
-  DOMAIN_DNS_CONFIG=${DOMAIN_WORK_DIR}/.resolv.conf
-  [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${DOMAIN_WORK_DIR}/data"
-  [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${DOMAIN_WORK_DIR}/logs"
-  [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${DOMAIN_WORK_DIR}/k3s"
-
+  DOMAIN_IMAGE_WORK_DIR="${DOMAIN_WORK_DIR}/images"
   pre_check "${DOMAIN_WORK_DIR}"
-  pre_check "${DOMAIN_DATA_DIR}"
-  pre_check "${DOMAIN_LOG_DIR}"
+  pre_check "${DOMAIN_IMAGE_WORK_DIR}"
 
   log "ROOT=${ROOT}"
   log "DOMAIN_ID=${domain_id}"
-  log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
-  log "DOMAIN_HOST_INTERNAL_PORT=${domain_host_internal_port}"
-  log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
-  log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
-  log "DOMAIN_K3S_DB_DIR=${DOMAIN_K3S_DB_DIR}"
-  log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
-  log "KUSCIAAPI_HTTP_PORT=${kusciaapi_http_port}"
-  log "KUSCIAAPI_GRPC_PORT=${kusciaapi_grpc_port}"
-  log "METRICS_PORT"=${metrics_port}
+  log "DOMAIN_WORK_DIR=${DOMAIN_WORK_DIR}"
+
+  if [[ $mode == "start" ]]; then
+    [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${DOMAIN_WORK_DIR}/data"
+    [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${DOMAIN_WORK_DIR}/logs"
+    [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${DOMAIN_WORK_DIR}/k3s"
+    pre_check "${DOMAIN_DATA_DIR}"
+    pre_check "${DOMAIN_LOG_DIR}"   
+    log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
+    log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
+    log "DOMAIN_K3S_DB_DIR=${DOMAIN_K3S_DB_DIR}"
+    log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
+    log "DOMAIN_HOST_INTERNAL_PORT=${domain_host_internal_port}"  
+    log "KUSCIAAPI_HTTP_PORT=${kusciaapi_http_port}"
+    log "KUSCIAAPI_GRPC_PORT=${kusciaapi_grpc_port}"
+    log "METRICS_PORT"=${metrics_port}
+  fi
 }
 
 function start_container() {
@@ -439,6 +441,7 @@ function start_container() {
   log "network=${local_network_name}"
   enable_rootless ${domain_type} ${runtime}
   [[ ${ROOTLESS} == "true" ]] && {
+    DOMAIN_DNS_CONFIG=${DOMAIN_WORK_DIR}/.resolv.conf
     docker run --rm $KUSCIA_IMAGE cat /etc/resolv.conf > ${DOMAIN_DNS_CONFIG}
     dns_flag="-v ${DOMAIN_DNS_CONFIG}:${CTR_ROOT}/var/tmp/resolv.conf --dns=127.0.0.1"
     user_flag="--user $(id -u):kuscia"
@@ -447,6 +450,7 @@ function start_container() {
   docker run -dit${privileged_flag} ${user_flag} --name="${domain_ctr}" --hostname="${domain_hostname}" --restart=always --network=${local_network_name} ${memory_limit} \
     ${export_port} ${mountcontainerd} ${capability_opts} \
     -v ${kuscia_conf_file}:${CTR_ROOT}/etc/conf/kuscia.yaml \
+    -v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images \
     ${mount_flag} ${dns_flag} ${user_flag} \
     "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 }
@@ -497,7 +501,7 @@ function start_kuscia_container() {
   build_kuscia_network
 
   if [[ ${init_kuscia_conf_file} = "true" ]]; then
-    DOMAIN_WORK_DIR="${PWD}/${domain_ctr}"
+    init ${domain_ctr} ${runtime} ${deploy_type}
     local kuscia_conf_file="${DOMAIN_WORK_DIR}/kuscia.yaml"
     init_kuscia_conf_file "${domain_type}" "${domain_id}" "${domain_ctr}" "${kuscia_conf_file}" "${master_endpoint}"
   fi
