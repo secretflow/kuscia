@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/model"
 	"net/http"
 	"sync/atomic"
 
@@ -168,6 +169,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	servingService := service.NewServingService(s.config)
 	healthService := service.NewHealthService()
 	certService := newCertService(s.config)
+	modelService := service.NewModelService(s.config)
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
 		// job group routes
@@ -428,6 +430,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "generate",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, certificate.NewGenerateKeyCertsHandler(certService))},
+				},
+			},
+		},
+		// model group routes
+		{
+			Group: "api/v1/model",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "upload",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, model.NewUploadModelHandler(modelService))},
 				},
 			},
 		},

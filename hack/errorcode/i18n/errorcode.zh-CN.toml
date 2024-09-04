@@ -114,3 +114,5 @@ error_code_11210_description = "暂停Job失败，无法暂停非Running状态Jo
 error_code_11210_solution = "仅Running状态Job可执行暂停"
 error_code_11211_description = "重跑Job失败，无法重跑非Failed或Suspended状态Job"
 error_code_11211_solution = "仅Failed或Suspended状态Job可执行重跑"
+error_code_12000_description = "模型文件上传处理异常"
+error_code_12000_solution = "模型文件上传处理异常，参考接口异常返回或日志中确认具体错误原因"

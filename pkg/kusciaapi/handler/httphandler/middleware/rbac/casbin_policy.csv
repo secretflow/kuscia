@@ -25,6 +25,8 @@ p, domain, /api/v1/domaindata/query, POST
 p, domain, /api/v1/domaindata/batchQuery, POST
 p, domain, /api/v1/domaindata/list, POST
 
+p, domain, /api/v1/model/upload, POST
+
 p, domain, /api/v1/serving/create, POST
 p, domain, /api/v1/serving/update, POST
 p, domain, /api/v1/serving/delete, POST
