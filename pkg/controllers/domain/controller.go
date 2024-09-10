@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	listerscorev1 "k8s.io/client-go/listers/core/v1"
+	rbaclisters "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -43,6 +44,7 @@ import (
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -58,6 +60,7 @@ const (
 
 const (
 	resourceQuotaName = "resource-limitation"
+	domainConfigName  = "domain-config"
 )
 
 const (
@@ -80,6 +83,8 @@ type Controller struct {
 	domainLister          kuscialistersv1alpha1.DomainLister
 	namespaceLister       listerscorev1.NamespaceLister
 	nodeLister            listerscorev1.NodeLister
+	configmapLister       listerscorev1.ConfigMapLister
+	roleLister            rbaclisters.RoleLister
 	workqueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
@@ -94,6 +99,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	resourceQuotaInformer := kubeInformerFactory.Core().V1().ResourceQuotas()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	configmapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
+	roleInformer := kubeInformerFactory.Rbac().V1().Roles()
 
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
@@ -103,6 +110,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		domainInformer.Informer().HasSynced,
 		namespaceInformer.Informer().HasSynced,
 		nodeInformer.Informer().HasSynced,
+		configmapInformer.Informer().HasSynced,
+		roleInformer.Informer().HasSynced,
 	}
 	controller := &Controller{
 		RunMode:               config.RunMode,
@@ -116,6 +125,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		domainLister:          domainInformer.Lister(),
 		namespaceLister:       namespaceInformer.Lister(),
 		nodeLister:            nodeInformer.Lister(),
+		configmapLister:       configmapInformer.Lister(),
+		roleLister:            roleInformer.Lister(),
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
 		recorder:              eventRecorder,
 		cacheSyncs:            cacheSyncs,
@@ -126,6 +137,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addNamespaceEventHandler(namespaceInformer)
 	controller.addDomainEventHandler(domainInformer)
 	controller.addResourceQuotaEventHandler(resourceQuotaInformer)
+	controller.addConfigMapHandler(configmapInformer)
 
 	return controller
 }
@@ -236,6 +248,30 @@ func (c *Controller) addResourceQuotaEventHandler(rqInformer informerscorev1.Res
 	})
 }
 
+// addConfigMapHandler is used to add event handler for configmap informer.
+func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInformer) {
+	cmInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: func(obj interface{}) bool {
+			switch t := obj.(type) {
+			case *apicorev1.ConfigMap:
+				return c.matchLabels(t)
+			case cache.DeletedFinalStateUnknown:
+				if cm, ok := t.Obj.(*apicorev1.ConfigMap); ok {
+					return c.matchLabels(cm)
+				}
+				return false
+			default:
+				return false
+			}
+		},
+
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc:    c.enqueueConfigMap,
+			DeleteFunc: c.enqueueConfigMap,
+		},
+	})
+}
+
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -263,6 +299,12 @@ func (c *Controller) enqueueResourceQuota(obj interface{}) {
 // This method should *not* be passed resources of any type other than namespace.
 func (c *Controller) enqueueNamespace(obj interface{}) {
 	queue.EnqueueObjectWithKey(obj, c.workqueue)
+}
+
+// enqueueConfigMap puts a configmap resource onto the workqueue.
+// This method should *not* be passed resources of any type other than resource quota.
+func (c *Controller) enqueueConfigMap(obj interface{}) {
+	queue.EnqueueObjectWithKeyNamespace(obj, c.workqueue)
 }
 
 // Run will set up the event handlers for types we are interested in, as well
@@ -342,9 +384,21 @@ func (c *Controller) create(domain *kusciaapisv1alpha1.Domain) error {
 		return err
 	}
 
-	if err := c.createResourceQuota(domain); err != nil {
-		nlog.Warnf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
+	if err := c.createOrUpdateDomainRole(domain); err != nil {
+		nlog.Warnf("Create or update domain %v role failed: %v", domain.Name, err.Error())
 		return err
+	}
+
+	if !isPartner(domain) {
+		if err := c.createDomainConfig(domain); err != nil {
+			nlog.Warnf("Create domain %v configmap failed: %v", domain.Name, err.Error())
+			return err
+		}
+
+		if err := c.createResourceQuota(domain); err != nil {
+			nlog.Warnf("Create domain %v resource quota failed: %v", domain.Name, err.Error())
+			return err
+		}
 	}
 
 	if shouldCreateOrUpdate(domain) {
@@ -364,8 +418,8 @@ func (c *Controller) update(domain *kusciaapisv1alpha1.Domain) error {
 		return err
 	}
 
-	if err := c.updateResourceQuota(domain); err != nil {
-		nlog.Warnf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
+	if err := c.createOrUpdateDomainRole(domain); err != nil {
+		nlog.Warnf("Create or update domain %v role failed: %v", domain.Name, err.Error())
 		return err
 	}
 
@@ -377,12 +431,28 @@ func (c *Controller) update(domain *kusciaapisv1alpha1.Domain) error {
 		return nil
 	}
 
-	if err := c.syncDomainStatus(domain); err != nil {
-		nlog.Warnf("sync domain %v status failed: %v", domain.Name, err.Error())
-		return err
-	}
+	if !isPartner(domain) {
+		if err := c.createDomainConfig(domain); err != nil {
+			nlog.Warnf("Create domain %v configmap failed: %v", domain.Name, err.Error())
+			return err
+		}
 
+		if err := c.updateResourceQuota(domain); err != nil {
+			nlog.Warnf("Update domain %v resource quota failed: %v", domain.Name, err.Error())
+			return err
+		}
+
+		if err := c.syncDomainStatus(domain); err != nil {
+			nlog.Warnf("sync domain %v status failed: %v", domain.Name, err.Error())
+			return err
+		}
+	}
 	return nil
+}
+
+func (c *Controller) createOrUpdateDomainRole(domain *kusciaapisv1alpha1.Domain) error {
+	ownerRef := apismetav1.NewControllerRef(domain, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("Domain"))
+	return resources.CreateOrUpdateRole(context.Background(), c.kubeClient, c.roleLister, c.RootDir, domain.Name, ownerRef)
 }
 
 // delete is used to delete resource under domain.
@@ -397,4 +467,11 @@ func (c *Controller) delete(name string) error {
 
 func (c *Controller) Name() string {
 	return controllerName
+}
+
+func isPartner(domain *kusciaapisv1alpha1.Domain) bool {
+	if domain.Spec.Role == kusciaapisv1alpha1.Partner {
+		return true
+	}
+	return false
 }

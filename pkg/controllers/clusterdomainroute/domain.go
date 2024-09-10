@@ -120,7 +120,11 @@ func (c *controller) syncServiceToken(ctx context.Context, cdr *kusciaapisv1alph
 
 		ownerRef := metav1.NewControllerRef(domain, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("Domain"))
 
-		if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, c.rootDir, domain.Name, ownerRef); err != nil {
+		if err = resources.CreateOrUpdateRole(context.Background(), c.kubeClient, c.roleLister, c.rootDir, domain.Name, ownerRef); err != nil {
+			return false, err
+		}
+
+		if err = resources.CreateRoleBinding(context.Background(), c.kubeClient, domain.Name, ownerRef); err != nil {
 			return false, err
 		}
 

@@ -43,8 +43,8 @@ type CapacityManager struct {
 	storageTotal     resource.Quantity
 	storageAvailable resource.Quantity
 
-	ephemeralStorageTotal     resource.Quantity
-	ephemeralStorageAvailable resource.Quantity
+	ephemeralStorageTotal     *resource.Quantity
+	ephemeralStorageAvailable *resource.Quantity
 
 	podTotal     resource.Quantity
 	podAvailable resource.Quantity
@@ -102,15 +102,6 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 			pa.storageAvailable = *resource.NewQuantity(int64(storageStat.Free), resource.BinarySI)
 			pa.storageTotal = *resource.NewQuantity(int64(storageStat.Total), resource.BinarySI)
 		}
-
-		if cfg.EphemeralStorage == "" {
-			storageStat, err := disk.Usage(rootDir)
-			if err != nil {
-				return nil, fmt.Errorf("failed to stat disk usage[%s], detail-> %v", rootDir, err)
-			}
-			pa.ephemeralStorageAvailable = *resource.NewQuantity(int64(storageStat.Free), resource.BinarySI)
-			pa.ephemeralStorageTotal = *resource.NewQuantity(int64(storageStat.Total), resource.BinarySI)
-		}
 	}
 
 	if pa.cpuTotal.IsZero() || pa.cpuAvailable.IsZero() {
@@ -154,14 +145,13 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 		pa.storageAvailable = storageQuantity.DeepCopy()
 	}
 
-	if pa.ephemeralStorageTotal.IsZero() || pa.ephemeralStorageAvailable.IsZero() {
+	if cfg.EphemeralStorage != "" {
 		storageQuantity, err := resource.ParseQuantity(cfg.EphemeralStorage)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse ephemeral storage %q, detail-> %v", cfg.EphemeralStorage, err)
 		}
-
-		pa.ephemeralStorageTotal = storageQuantity.DeepCopy()
-		pa.ephemeralStorageAvailable = storageQuantity.DeepCopy()
+		pa.ephemeralStorageTotal = &storageQuantity
+		pa.ephemeralStorageAvailable = &storageQuantity
 	}
 
 	podsCap := cfg.Pods
@@ -239,23 +229,29 @@ func (pa *CapacityManager) buildCgroupResource(runtime string, reservedResCfg *c
 
 // Capacity returns a resource list containing the capacity limits.
 func (pa *CapacityManager) Capacity() v1.ResourceList {
-	return v1.ResourceList{
-		v1.ResourceCPU:              pa.cpuTotal,
-		v1.ResourceMemory:           pa.memTotal,
-		v1.ResourceStorage:          pa.storageTotal,
-		v1.ResourceEphemeralStorage: pa.ephemeralStorageTotal,
-		"pods":                      pa.podTotal,
+	rl := v1.ResourceList{
+		v1.ResourceCPU:     pa.cpuTotal,
+		v1.ResourceMemory:  pa.memTotal,
+		v1.ResourceStorage: pa.storageTotal,
+		"pods":             pa.podTotal,
 	}
+	if pa.ephemeralStorageTotal != nil {
+		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageTotal
+	}
+	return rl
 }
 
 func (pa *CapacityManager) Allocatable() v1.ResourceList {
-	return v1.ResourceList{
-		v1.ResourceCPU:              pa.cpuAvailable,
-		v1.ResourceMemory:           pa.memAvailable,
-		v1.ResourceStorage:          pa.storageAvailable,
-		v1.ResourceEphemeralStorage: pa.ephemeralStorageAvailable,
-		"pods":                      pa.podAvailable,
+	rl := v1.ResourceList{
+		v1.ResourceCPU:     pa.cpuAvailable,
+		v1.ResourceMemory:  pa.memAvailable,
+		v1.ResourceStorage: pa.storageAvailable,
+		"pods":             pa.podAvailable,
 	}
+	if pa.ephemeralStorageAvailable != nil {
+		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageAvailable
+	}
+	return rl
 }
 
 func (pa *CapacityManager) GetCgroupCPUQuota() *int64 {

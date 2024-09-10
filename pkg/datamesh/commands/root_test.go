@@ -34,8 +34,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -53,8 +55,16 @@ const datameshTestNamespace = "datamesh-test"
 func newDataMeshTestConfig() *config.DataMeshConfig {
 	conf := config.NewDefaultDataMeshConfig()
 
+	configmap := corev1.ConfigMap{
+		ObjectMeta: v1.ObjectMeta{
+			Namespace: datameshTestNamespace,
+			Name:      "domain-config",
+		},
+	}
+
 	conf.KubeNamespace = datameshTestNamespace
 	conf.KusciaClient = kusciafake.NewSimpleClientset()
+	conf.KubeClient = kubefake.NewSimpleClientset(&configmap)
 	conf.DisableTLS = true
 	conf.ListenAddr = "127.0.0.1"
 	conf.GRPCPort, _ = network.BuiltinPortAllocator.Next()

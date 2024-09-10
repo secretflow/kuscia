@@ -18,24 +18,22 @@ package garbagecollection
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
+	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
 	constants "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-	//kusciajob "github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 )
 
 func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
@@ -88,7 +86,7 @@ func makeKusciaJob() *kusciaapisv1alpha1.KusciaJob {
 	}
 }
 
-func Test_GarbageCollectKusciajob(t *testing.T) {
+func Test_GarbageCollectKusciaJob(t *testing.T) {
 	testKusciaJob := makeKusciaJob()
 	aliceNs := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -108,7 +106,7 @@ func Test_GarbageCollectKusciajob(t *testing.T) {
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "kuscia-job-gccontroller"})
 
-	c := NewKusciajobGCController(context.TODO(), controllers.ControllerConfig{
+	c := NewKusciaJobGCController(context.TODO(), controllers.ControllerConfig{
 		KubeClient:    kubeClient,
 		KusciaClient:  kusciaClient,
 		EventRecorder: eventRecorder,
@@ -118,28 +116,18 @@ func Test_GarbageCollectKusciajob(t *testing.T) {
 		assert.NoError(t, c.Run(1))
 	}()
 
-	gcController, ok := c.(*KusciajobGCController)
-	if !ok {
-		t.Errorf("Failed to assert type *KusciajobGCController")
-		return
-	}
+	gcController, ok := c.(*KusciaJobGCController)
+	assert.True(t, ok, "Failed to assert type *KusciaJobGCController")
 
 	// Modify the KusciaJob to be outdated
 	testKusciaJob.Status.CompletionTime = &metav1.Time{Time: time.Now().Add(-defaultGCDuration - time.Hour)}
 	_, err := kusciaClient.KusciaV1alpha1().KusciaJobs(constants.KusciaCrossDomain).Update(context.TODO(), testKusciaJob, metav1.UpdateOptions{})
-	if err != nil {
-		t.Errorf("Failed to update KusciaJob: %v", err)
-		return
-	}
+	assert.NoError(t, err, "Failed to update KusciaJob")
 
 	select {
 	case <-time.After(5 * time.Second):
 		// Check if the KusciaJob was deleted
-		kusciaJobListers, _ := gcController.kusciaJobLister.KusciaJobs(constants.KusciaCrossDomain).List(labels.Everything())
-		if len(kusciaJobListers) == 0 {
-			fmt.Printf("Successfully deleted outdated kusciajob\n")
-		} else {
-			t.Errorf("Error getting %v KusciaJobs\n", len(kusciaJobListers))
-		}
+		kusciaJobs, _ := gcController.kusciaJobLister.KusciaJobs(constants.KusciaCrossDomain).List(labels.Everything())
+		assert.Emptyf(t, kusciaJobs, "Error getting %d KusciaJobs", len(kusciaJobs))
 	}
 }

@@ -17,26 +17,28 @@ package garbagecollection
 import (
 	"context"
 	"fmt"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/tools/cache"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/tools/cache"
-	"time"
 )
 
 const (
-	GCcontrollerName  = "KusciajobGC_controller"
+	GCControllerName  = "kuscia-job-gc-controller"
 	batchSize         = 100
 	defaultGCDuration = 30 * 24 * time.Hour
 )
 
-type KusciajobGCController struct {
+type KusciaJobGCController struct {
 	ctx                   context.Context
 	cancel                context.CancelFunc
 	kusciaClient          kusciaclientset.Interface
@@ -46,10 +48,10 @@ type KusciajobGCController struct {
 	kusciaTaskSynced      cache.InformerSynced
 	kusciaJobSynced       cache.InformerSynced
 	namespaceSynced       cache.InformerSynced
-	kusciajobGCDuration   time.Duration
+	kusciaJobGCDuration   time.Duration
 }
 
-func NewKusciajobGCController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+func NewKusciaJobGCController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
 	kubeClient := config.KubeClient
 	kusciaClient := config.KusciaClient
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
@@ -59,7 +61,7 @@ func NewKusciajobGCController(ctx context.Context, config controllers.Controller
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 
-	gcController := &KusciajobGCController{
+	gcController := &KusciaJobGCController{
 		kusciaClient:          kusciaClient,
 		kusciaInformerFactory: kusciaInformerFactory,
 		kubeInformerFactory:   kubeInformerFactory,
@@ -67,44 +69,44 @@ func NewKusciajobGCController(ctx context.Context, config controllers.Controller
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		kusciaJobSynced:       kusciaJobInformer.Informer().HasSynced,
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
-		kusciajobGCDuration:   defaultGCDuration,
+		kusciaJobGCDuration:   defaultGCDuration,
 	}
 	gcController.ctx, gcController.cancel = context.WithCancel(ctx)
 	return gcController
 }
 
-func (kgc *KusciajobGCController) Run(flag int) error {
+func (kgc *KusciaJobGCController) Run(flag int) error {
 	nlog.Info("Starting KusciaJobGC controller")
 	kgc.kusciaInformerFactory.Start(kgc.ctx.Done())
 	kgc.kubeInformerFactory.Start(kgc.ctx.Done())
 
-	nlog.Infof("Waiting for informer cache to sync for %v", kgc.Name())
+	nlog.Infof("Waiting for informer cache to sync for `%s`", kgc.Name())
 	if ok := cache.WaitForCacheSync(kgc.ctx.Done(), kgc.kusciaTaskSynced, kgc.kusciaJobSynced, kgc.namespaceSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	nlog.Info("Starting GCworkers")
+	nlog.Info("Starting GC workers")
 	if flag == 1 {
-		kgc.GarbageCollectKusciajob(kgc.ctx, time.NewTicker(2*time.Second))
+		kgc.GarbageCollectKusciaJob(kgc.ctx, time.NewTicker(2*time.Second))
 	} else {
-		kgc.GarbageCollectKusciajob(kgc.ctx, nil)
+		kgc.GarbageCollectKusciaJob(kgc.ctx, nil)
 	}
 	return nil
 }
 
-func (kgc *KusciajobGCController) Stop() {
+func (kgc *KusciaJobGCController) Stop() {
 	if kgc.cancel != nil {
 		kgc.cancel()
 		kgc.cancel = nil
 	}
 }
 
-func (kgc *KusciajobGCController) Name() string {
-	return GCcontrollerName
+func (kgc *KusciaJobGCController) Name() string {
+	return GCControllerName
 }
 
-func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, ticker *time.Ticker) {
-	nlog.Infof("kusciajobGCDuration is %v", kgc.kusciajobGCDuration)
+func (kgc *KusciaJobGCController) GarbageCollectKusciaJob(ctx context.Context, ticker *time.Ticker) {
+	nlog.Infof("KusciaJob GC Duration is %v", kgc.kusciaJobGCDuration)
 	if ticker == nil {
 		ticker = time.NewTicker(10 * time.Minute)
 	}
@@ -114,20 +116,24 @@ func (kgc *KusciajobGCController) GarbageCollectKusciajob(ctx context.Context, t
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			kusciaJobListers, _ := kgc.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).List(labels.Everything())
+			kusciaJobs, _ := kgc.kusciaJobLister.KusciaJobs(common.KusciaCrossDomain).List(labels.Everything())
 			kusciaJobClient := kgc.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain)
-			for i, kusciajob := range kusciaJobListers {
-				if kusciajob.Status.CompletionTime != nil {
-					kusciajobTime := kusciajob.Status.CompletionTime.Time
-					durationTime := time.Since(kusciajobTime)
-					if durationTime >= kgc.kusciajobGCDuration {
-						kusciaJobClient.Delete(ctx, kusciajob.Name, metav1.DeleteOptions{})
-						nlog.Infof("Delete outdated kusciajob %v (Outdated duration %v)", kusciajob.Name, durationTime)
+			for i, kusciaJob := range kusciaJobs {
+				if kusciaJob.Status.CompletionTime != nil {
+					kusciaJobTime := kusciaJob.Status.CompletionTime.Time
+					durationTime := time.Since(kusciaJobTime)
+					if durationTime >= kgc.kusciaJobGCDuration {
+						err := kusciaJobClient.Delete(ctx, kusciaJob.Name, metav1.DeleteOptions{})
+						if err != nil {
+							nlog.Errorf("Delete outdated kusciaJob `%s` error: %v", kusciaJob.Name, err)
+							continue
+						}
+						nlog.Infof("Delete outdated kusciaJob `%s` (Outdated duration %v)", kusciaJob.Name, durationTime)
 
 					}
 				}
 				if (i+1)%batchSize == 0 {
-					nlog.Info("KusciajobGC Sleeping for 5 second...")
+					nlog.Info("Kuscia Job GC Sleeping for 5 second...")
 					time.Sleep(5 * time.Second)
 				}
 			}

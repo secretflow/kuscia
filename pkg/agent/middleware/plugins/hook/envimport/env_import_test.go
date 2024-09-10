@@ -213,7 +213,7 @@ envList:
 			assert.NoError(t, err)
 
 			ci := &envImport{}
-			err = ci.Init(nil, &pluginCfg)
+			err = ci.Init(context.Background(), nil, &pluginCfg)
 			assert.NoError(t, err)
 
 			ctx := &hook.GenerateContainerOptionContext{
@@ -295,7 +295,7 @@ envList:
 			assert.NoError(t, err)
 
 			ci := &envImport{}
-			err = ci.Init(nil, &pluginCfg)
+			err = ci.Init(context.Background(), nil, &pluginCfg)
 			assert.NoError(t, err)
 
 			pod := corev1.Pod{

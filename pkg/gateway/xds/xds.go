@@ -31,11 +31,6 @@ import (
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_bridge/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
-	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
 	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
@@ -43,7 +38,7 @@ import (
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	runtimeservice "github.com/envoyproxy/go-control-plane/envoy/service/runtime/v3"
 	secretservice "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	matcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
@@ -52,15 +47,25 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
+	// envoy build-in plugins for Unmarshal listeners
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
+	bandwidth_limitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_bridge/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	_ "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_gress/v3"
+
+	// kuscia extend plugins for Unmarshal listeners
 	headerdecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
-	kusciapoller "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_poller/v3"
-	kusciareceiver "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_receiver/v3"
 	kusciatoken "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
+
+	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -73,14 +78,7 @@ const (
 	ExternalListener         = "external-listener"
 	InternalListener         = "internal-listener"
 	InternalTLSPort          = 443
-)
-
-const (
-	tokenAuthFilterName       = "envoy.filters.http.kuscia_token_auth"
-	cryptFilterName           = "envoy.filters.http.kuscia_crypt"
-	headerDecoratorFilterName = "envoy.filters.http.kuscia_header_decorator"
-	receiverFilterName        = "envoy.filters.http.kuscia_receiver"
-	pollerFilterName          = "envoy.filters.http.kuscia_poller"
+	DefaultRouteName         = "default"
 )
 
 var (
@@ -98,13 +96,6 @@ var (
 	lock          sync.Mutex
 	ctx           context.Context
 	config        *InitConfig
-
-	encryptRules      []*kusciacrypt.CryptRule // for outbound, on port 80
-	decryptRules      []*kusciacrypt.CryptRule // for inbound, on port 1080
-	sourceTokens      []*kusciatoken.TokenAuth_SourceToken
-	appendHeaders     []*headerdecorator.HeaderDecorator_SourceHeader
-	pollAppendHeaders []*kusciapoller.Poller_SourceHeader
-	receiverRules     []*kusciareceiver.ReceiverRule
 )
 
 type InitConfig struct {
@@ -125,10 +116,16 @@ type ConfigTemplate struct {
 	Version      string // kuscia version
 }
 
+type RouteLimitConfig struct {
+	Services  []string
+	LimitKbps int64
+}
+
 func NewXdsServer(port uint32, id string) {
 	// Create a cache
 	snapshotCache = cache.NewSnapshotCache(false, cache.IDHash{}, nil)
 	nodeID = id
+	virtualHostLimits = map[string]map[string]*RouteLimitConfig{}
 
 	// Run the xDS server
 	ctx = context.Background()
@@ -521,6 +518,116 @@ func QueryVirtualHost(name, routeName string) (*route.VirtualHost, error) {
 	return nil, fmt.Errorf("cannot find virtual host (%s) in route (%s)", name, routeName)
 }
 
+// svc name is combined with two segments, prefix and port name,
+// in the form of ${prefix}-${portname}.
+// svc from same task has same prefix, but different port name.
+// for example, secretflow-task-20240619143203-single-psi-0-spu is combined with
+// prefix secretflow-task-20240619143203-single-psi-0 and port name spu.
+// this function can merge prefix of svc names, then generate a much simpler
+// match expression than simply expand regex.
+// secretflow-task-20240619143203-single-psi-0-spu +
+// secretflow-task-20240619143203-single-psi-0-fed +
+// secretflow-task-20240619143203-single-psi-0-global
+// -> secretflow-task-20240619143203-single-psi-0
+func dedupServicePrefix(svcNames []string) []string {
+	m := make(map[string]bool)
+	for _, svcName := range svcNames {
+		if idx := strings.LastIndex(svcName, "-"); idx > 0 {
+			m[svcName[:idx]] = true
+		} else {
+			m[svcName] = true
+		}
+	}
+	var res []string
+	for prefix := range m {
+		res = append(res, prefix)
+	}
+	return res
+}
+
+func generateMatchExpr(svcNames []string) string {
+	var expr string
+	for i, svc := range dedupServicePrefix(svcNames) {
+		if i == 0 {
+			expr = fmt.Sprintf("%s.*", svc)
+		} else {
+			expr += fmt.Sprintf("|%s.*", svc)
+		}
+	}
+	return expr
+}
+
+func updateVhLimitRoute(vh *route.VirtualHost, tasks map[string]*RouteLimitConfig) {
+	var defaultRoute *route.Route
+	var routes []*route.Route
+	for _, route := range vh.Routes {
+		// remove older task limit config
+		if !strings.HasSuffix(route.Name, "bandwidth-limit") {
+			routes = append(routes, route)
+			// find default route
+			if route.Name == DefaultRouteName {
+				defaultRoute = route
+			}
+		}
+	}
+	vh.Routes = routes
+	if len(tasks) == 0 || defaultRoute == nil {
+		return
+	}
+	// in reverse tunnel cluster mode, envoy uses traffic redirection and consistent
+	// hashing to ensure that the traffic is routed to the intended node.
+	// This approach, however, results in duplicate traffic, envoy need to exclude
+	// redirected traffic in bandwidth limit case.
+	var isReverseTunnel bool
+	if defaultRoute.GetRoute() != nil && defaultRoute.GetRoute().GetClusterSpecifier() != nil {
+		if defaultRoute.GetRoute().GetCluster() == utils.EnvoyClusterName {
+			isReverseTunnel = true
+		}
+	}
+	// add or update routes
+	for task, cfg := range tasks {
+		if cfg.LimitKbps == 0 {
+			continue
+		}
+		r := proto.Clone(defaultRoute).(*route.Route)
+		r.Name = fmt.Sprintf("%s-bandwidth-limit", task)
+		r.Match.Headers = []*route.HeaderMatcher{
+			{
+				Name: ":authority", // match host
+				HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
+					StringMatch: &matcherv3.StringMatcher{
+						MatchPattern: &matcherv3.StringMatcher_SafeRegex{
+							SafeRegex: &matcherv3.RegexMatcher{
+								Regex: generateMatchExpr(cfg.Services),
+							},
+						},
+					},
+				},
+			},
+		}
+		if isReverseTunnel {
+			r.Match.Headers = append(r.Match.Headers, &route.HeaderMatcher{
+				Name:                 utils.HeaderTransitFlag,
+				HeaderMatchSpecifier: &route.HeaderMatcher_PresentMatch{PresentMatch: false},
+			})
+		}
+		bandwidthConfig, _ := anypb.New(&bandwidth_limitv3.BandwidthLimit{
+			StatPrefix:   "kuscia_bandwidth_limit",
+			FillInterval: &durationpb.Duration{Nanos: 1e8}, // 0.1s
+			EnableMode:   bandwidth_limitv3.BandwidthLimit_REQUEST_AND_RESPONSE,
+			LimitKbps:    &wrapperspb.UInt64Value{Value: uint64(cfg.LimitKbps)},
+		})
+		r.TypedPerFilterConfig["envoy.filters.http.bandwidth_limit"] = bandwidthConfig
+		for i, route := range vh.Routes {
+			if route.Name == task {
+				vh.Routes[i] = r
+				return
+			}
+		}
+		vh.Routes = append([]*route.Route{r}, vh.Routes...)
+	}
+}
+
 func AddOrUpdateVirtualHost(vh *route.VirtualHost, routeName string) error {
 	lock.Lock()
 	defer lock.Unlock()
@@ -545,9 +652,68 @@ func AddOrUpdateVirtualHost(vh *route.VirtualHost, routeName string) error {
 	if !ok {
 		return fmt.Errorf("resource cannot cast to RouteConfiguration")
 	}
+	// internal route only
+	if routeName == InternalRoute {
+		updateVhLimitRoute(vh, virtualHostLimits[vh.Name])
+	}
 
 	for i := range routeConfig.VirtualHosts {
 		if routeConfig.VirtualHosts[i].Name == vh.Name {
+			routeConfig.VirtualHosts = append(routeConfig.VirtualHosts[:i], routeConfig.VirtualHosts[i+1:]...)
+			break
+		}
+	}
+	routeConfig.VirtualHosts = append([]*route.VirtualHost{vh}, routeConfig.VirtualHosts...)
+
+	if err := resetSnapshot(types.Route, items); err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateVirtualHostByName(vhName string, routeName string) error {
+	lock.Lock()
+	defer lock.Unlock()
+	routes := snapshot.Resources[types.Route].Items
+	_, ok := routes[routeName]
+	if !ok {
+		nlog.Errorf("Unknown route config name: %s", routeName)
+		return fmt.Errorf("unknown route config name: %s", routeName)
+	}
+
+	items := make(map[string]types.ResourceWithTTL)
+	for k, v := range routes {
+		if k == routeName {
+			res := proto.Clone(routes[k].Resource).(*route.RouteConfiguration)
+			items[k] = types.ResourceWithTTL{Resource: res}
+		} else {
+			items[k] = v
+		}
+	}
+
+	routeConfig, ok := items[routeName].Resource.(*route.RouteConfiguration)
+	if !ok {
+		return fmt.Errorf("resource cannot cast to RouteConfiguration")
+	}
+
+	var vh *route.VirtualHost
+	for i := range routeConfig.VirtualHosts {
+		if routeConfig.VirtualHosts[i].Name == vhName {
+			vh = routeConfig.VirtualHosts[i]
+			break
+		}
+	}
+
+	if vh == nil {
+		return fmt.Errorf("cannot find virtual host (%s) in route (%s)", vhName, routeName)
+	}
+	// internal route only
+	if routeName == InternalRoute {
+		updateVhLimitRoute(vh, virtualHostLimits[vh.Name])
+	}
+
+	for i := range routeConfig.VirtualHosts {
+		if routeConfig.VirtualHosts[i].Name == vhName {
 			routeConfig.VirtualHosts = append(routeConfig.VirtualHosts[:i], routeConfig.VirtualHosts[i+1:]...)
 			break
 		}
@@ -645,6 +811,12 @@ func DeleteRoute(name, vhName, routeName string) error {
 	return nil
 }
 
+func GetHTTPFilterConfig(filterName, listenerName string) (*anypb.Any, error) {
+	lock.Lock()
+	defer lock.Unlock()
+	return getHTTPFilterConfig(filterName, listenerName)
+}
+
 func getHTTPFilterConfig(filterName, listenerName string) (*anypb.Any, error) {
 	filterNames := []string{
 		filterName,
@@ -697,259 +869,11 @@ func getHTTPFilterConfigs(filterNames []string, listenerName string) ([]*anypb.A
 	return filters, nil
 }
 
-func UpdateEncryptRules(rule *kusciacrypt.CryptRule, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	protoConfig, err := getHTTPFilterConfig(cryptFilterName, InternalListener)
-	if err != nil {
-		return err
-	}
-	var cryptFilter kusciacrypt.Crypt
-	if err := protoConfig.UnmarshalTo(&cryptFilter); err != nil {
-		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
-	}
-	cryptFilter.EncryptRules = generateCryptRulesByListener(rule, InternalListener, add)
-	cryptFilterConf, err := anypb.New(&cryptFilter)
-	if err != nil {
-		return fmt.Errorf("marshal kuscia filter failed with %v", err)
-	}
-
-	httpFilter := &hcm.HttpFilter{
-		Name: cryptFilterName,
-		ConfigType: &hcm.HttpFilter_TypedConfig{
-			TypedConfig: cryptFilterConf,
-		},
-	}
-	return updateHTTPFilter(httpFilter, InternalListener)
-}
-
-func UpdateDecryptRules(rule *kusciacrypt.CryptRule, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	protoConfig, err := getHTTPFilterConfig(cryptFilterName, ExternalListener)
-	if err != nil {
-		return err
-	}
-	var cryptFilter kusciacrypt.Crypt
-	if err := protoConfig.UnmarshalTo(&cryptFilter); err != nil {
-		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
-	}
-	cryptFilter.DecryptRules = generateCryptRulesByListener(rule, ExternalListener, add)
-	cryptFilterConf, err := anypb.New(&cryptFilter)
-	if err != nil {
-		return fmt.Errorf("marshal kuscia filter failed with %v", err)
-	}
-
-	httpFilter := &hcm.HttpFilter{
-		Name: cryptFilterName,
-		ConfigType: &hcm.HttpFilter_TypedConfig{
-			TypedConfig: cryptFilterConf,
-		},
-	}
-	return updateHTTPFilter(httpFilter, ExternalListener)
-}
-
-func generateCryptRulesByListener(newRule *kusciacrypt.CryptRule, listenerName string,
-	add bool) []*kusciacrypt.CryptRule {
-	if listenerName == InternalListener {
-		encryptRules = generateCryptRules(newRule, encryptRules, add)
-		return encryptRules
-	}
-	decryptRules = generateCryptRules(newRule, decryptRules, add)
-	return decryptRules
-}
-
-func generateCryptRules(newRule *kusciacrypt.CryptRule, config []*kusciacrypt.CryptRule,
-	add bool) []*kusciacrypt.CryptRule {
-	for i, rule := range config {
-		if rule.Source == newRule.Source && rule.Destination == newRule.Destination {
-			if add {
-				config[i] = newRule
-				return config
-			}
-			config = append(config[:i], config[i+1:]...)
-			return config
-		}
-	}
-
-	// if not return yet, means not found
-	if add {
-		config = append(config, newRule)
-	}
-	return config
-}
-
-func generateReceiverRulesByListener(newRule *kusciareceiver.ReceiverRule, add bool) []*kusciareceiver.ReceiverRule {
-	receiverRules = generateReceiverRules(newRule, receiverRules, add)
-	return receiverRules
-}
-
-func generateReceiverRules(newRule *kusciareceiver.ReceiverRule, config []*kusciareceiver.ReceiverRule,
-	add bool) []*kusciareceiver.ReceiverRule {
-	for i, rule := range config {
-		if rule.Source == newRule.Source && rule.Destination == newRule.Destination && rule.Svc == newRule.Svc {
-			if add {
-				config[i] = newRule
-				return config
-			}
-			config = append(config[:i], config[i+1:]...)
-			return config
-		}
-	}
-
-	// if not return yet, means not found
-	if add {
-		config = append(config, newRule)
-	}
-	return config
-}
-
-func UpdateTokenAuthConfig(config *anypb.Any, newToken *kusciatoken.TokenAuth_SourceToken,
-	add bool) (*hcm.HttpFilter, error) {
-	var tokenAuthFilter kusciatoken.TokenAuth
-	if err := config.UnmarshalTo(&tokenAuthFilter); err != nil {
-		return nil, fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
-	}
-
-	// generate sourceTokens
-	found := false
-	for i, rule := range sourceTokens {
-		if newToken.Source == rule.Source {
-			if add {
-				sourceTokens[i] = newToken
-			} else {
-				sourceTokens = append(sourceTokens[:i], sourceTokens[i+1:]...)
-			}
-			found = true
-			break
-		}
-	}
-	if add && !found {
-		sourceTokens = append(sourceTokens, newToken)
-	}
-
-	tokenAuthFilter.SourceTokenList = sourceTokens
-	tokenAuthFilterConf, err := anypb.New(&tokenAuthFilter)
-	if err != nil {
-		return nil, fmt.Errorf("marshal kuscia filter failed with %v", err)
-	}
-
-	httpFilter := &hcm.HttpFilter{
-		Name: tokenAuthFilterName,
-		ConfigType: &hcm.HttpFilter_TypedConfig{
-			TypedConfig: tokenAuthFilterConf,
-		},
-	}
-	return httpFilter, nil
-}
-
-func UpdateHeaderDecorator(newHeader *headerdecorator.HeaderDecorator_SourceHeader, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	if !add && len(appendHeaders) == 0 {
-		return nil
-	}
-
-	protoConfig, err := getHTTPFilterConfig(headerDecoratorFilterName, ExternalListener)
-	if err != nil {
-		return err
-	}
-	httpFilter, err := UpdateHeaderDecoratorConfig(protoConfig, newHeader, add)
-	if err != nil {
-		return err
-	}
-
-	return updateHTTPFilter(httpFilter, ExternalListener)
-}
-
-func UpdateHeaderDecoratorConfig(config *anypb.Any, newHeader *headerdecorator.HeaderDecorator_SourceHeader,
-	add bool) (*hcm.HttpFilter, error) {
-	var decorator headerdecorator.HeaderDecorator
-	if err := config.UnmarshalTo(&decorator); err != nil {
-		return nil, fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
-	}
-
-	// generate sourceHeaders list
-	found := false
-	for i, header := range appendHeaders {
-		if newHeader.Source == header.Source {
-			if add {
-				appendHeaders[i] = newHeader
-			} else {
-				appendHeaders = append(appendHeaders[:i], appendHeaders[i+1:]...)
-			}
-			found = true
-			break
-		}
-	}
-	if add && !found {
-		appendHeaders = append(appendHeaders, newHeader)
-	}
-
-	decorator.AppendHeaders = appendHeaders
-	decoratorFilterConf, err := anypb.New(&decorator)
-	if err != nil {
-		return nil, fmt.Errorf("marshal kuscia filter failed with %v", err)
-	}
-
-	httpFilter := &hcm.HttpFilter{
-		Name: headerDecoratorFilterName,
-		ConfigType: &hcm.HttpFilter_TypedConfig{
-			TypedConfig: decoratorFilterConf,
-		},
-	}
-	return httpFilter, nil
-}
-
-func UpdateTokenAuthAndHeaderDecorator(newToken *kusciatoken.TokenAuth_SourceToken,
-	newHeader *headerdecorator.HeaderDecorator_SourceHeader, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	var filterNames []string
-	if newToken != nil && (add || len(sourceTokens) != 0) {
-		filterNames = append(filterNames, tokenAuthFilterName)
-	}
-	if newHeader != nil && (add || len(appendHeaders) != 0) {
-		filterNames = append(filterNames, headerDecoratorFilterName)
-	}
-	if len(filterNames) == 0 {
-		return nil
-	}
-
-	protoConfigs, err := getHTTPFilterConfigs(filterNames, ExternalListener)
-	if err != nil {
-		return err
-	}
-
-	var filters []*hcm.HttpFilter
-	for i, config := range protoConfigs {
-		var filter *hcm.HttpFilter
-		var err error
-		switch filterNames[i] {
-		case tokenAuthFilterName:
-			filter, err = UpdateTokenAuthConfig(config, newToken, add)
-		case headerDecoratorFilterName:
-			filter, err = UpdateHeaderDecoratorConfig(config, newHeader, add)
-		default:
-			return fmt.Errorf("invalid filter %s", filterNames[i])
-		}
-		if err != nil {
-			return nil
-		}
-		filters = append(filters, filter)
-	}
-
-	return updateHTTPFilters(filters, ExternalListener)
-}
-
 func GetHeaderDecorator() (*headerdecorator.HeaderDecorator, error) {
 	lock.Lock()
 	defer lock.Unlock()
-	protoConfig, err := getHTTPFilterConfig(headerDecoratorFilterName, ExternalListener)
+
+	protoConfig, err := getHTTPFilterConfig(HeaderDecoratorFilterName, ExternalListener)
 	if err != nil {
 		return nil, err
 	}
@@ -963,7 +887,8 @@ func GetHeaderDecorator() (*headerdecorator.HeaderDecorator, error) {
 func GetTokenAuth() (*kusciatoken.TokenAuth, error) {
 	lock.Lock()
 	defer lock.Unlock()
-	protoConfig, err := getHTTPFilterConfig(tokenAuthFilterName, ExternalListener)
+
+	protoConfig, err := getHTTPFilterConfig(TokenAuthFilterName, ExternalListener)
 	if err != nil {
 		return nil, err
 	}
@@ -974,96 +899,7 @@ func GetTokenAuth() (*kusciatoken.TokenAuth, error) {
 	return &tokenAuthFilter, nil
 }
 
-func UpdatePoller(newHeader *kusciapoller.Poller_SourceHeader, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	protoConfig, err := getHTTPFilterConfig(pollerFilterName, InternalListener)
-	if err != nil {
-		return err
-	}
-	var pollerFilter kusciapoller.Poller
-	if err := protoConfig.UnmarshalTo(&pollerFilter); err != nil {
-		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
-	}
-
-	// generate sourceHeaders list
-	found := false
-	for i, header := range pollAppendHeaders {
-		if newHeader.Source == header.Source {
-			if add {
-				pollAppendHeaders[i] = newHeader
-			} else {
-				pollAppendHeaders = append(pollAppendHeaders[:i], pollAppendHeaders[i+1:]...)
-			}
-			found = true
-			break
-		}
-	}
-	if add && !found {
-		pollAppendHeaders = append(pollAppendHeaders, newHeader)
-	}
-
-	pollerFilter.AppendHeaders = pollAppendHeaders
-	pollerFilterConf, err := anypb.New(&pollerFilter)
-	if err != nil {
-		return fmt.Errorf("marshal kuscia filter failed with %v", err)
-	}
-	httpFilter := &hcm.HttpFilter{
-		Name: pollerFilterName,
-		ConfigType: &hcm.HttpFilter_TypedConfig{
-			TypedConfig: pollerFilterConf,
-		},
-	}
-	return updateHTTPFilter(httpFilter, InternalListener)
-}
-
-func UpdateReceiverRules(rule *kusciareceiver.ReceiverRule, add bool) error {
-	lock.Lock()
-	defer lock.Unlock()
-
-	if err := updateReceiverRules(rule, add, ExternalListener); err != nil {
-		return err
-	}
-	if err := updateReceiverRules(rule, add, InternalListener); err != nil {
-		return err
-	}
-	return nil
-}
-
-func updateReceiverRules(rule *kusciareceiver.ReceiverRule, add bool, listenerName string) error {
-	protoConfig, err := getHTTPFilterConfig(receiverFilterName, listenerName)
-	if err != nil {
-		return err
-	}
-	var receiverFilter kusciareceiver.Receiver
-	if err := protoConfig.UnmarshalTo(&receiverFilter); err != nil {
-		return fmt.Errorf("unmarshal kuscia filter failed with %s", err.Error())
-	}
-	receiverFilter.Rules = generateReceiverRulesByListener(rule, add)
-	receiverFilterConf, err := anypb.New(&receiverFilter)
-	if err != nil {
-		return fmt.Errorf("marshal kuscia filter failed with %v", err)
-	}
-
-	httpFilter := &hcm.HttpFilter{
-		Name: receiverFilterName,
-		ConfigType: &hcm.HttpFilter_TypedConfig{
-			TypedConfig: receiverFilterConf,
-		},
-	}
-	return updateHTTPFilter(httpFilter, listenerName)
-}
-
-func updateHTTPFilter(httpFilter *hcm.HttpFilter, listenerName string) error {
-	httpFilters := []*hcm.HttpFilter{
-		httpFilter,
-	}
-	return updateHTTPFilters(httpFilters, listenerName)
-}
-
-// TODO filter add/remove
-func updateHTTPFilters(filters []*hcm.HttpFilter, listenerName string) error {
+func updateHTTPFilters(filterMap map[string]protoreflect.ProtoMessage, listenerName string) error {
 	listeners := snapshot.Resources[types.Listener].Items
 
 	_, ok := listeners[listenerName]
@@ -1092,18 +928,21 @@ func updateHTTPFilters(filters []*hcm.HttpFilter, listenerName string) error {
 		return fmt.Errorf("unmarshal hcm failed with %s", err.Error())
 	}
 
-	// remove old http filter firstly
-	for _, filter := range filters {
-		for i := range httpManager.HttpFilters {
-			if httpManager.HttpFilters[i].Name == filter.Name {
-				httpManager.HttpFilters = append(httpManager.HttpFilters[:i], httpManager.HttpFilters[i+1:]...)
-				break
-			}
+	var filters []*hcm.HttpFilter
+	for _, filter := range httpManager.HttpFilters {
+		if _, ok := mutableFilters[filter.Name]; !ok {
+			filters = append(filters, filter)
 		}
 	}
+	for name, filter := range filterMap {
+		typedConfig, _ := anypb.New(filter)
+		filters = append(filters, &hcm.HttpFilter{
+			Name:       name,
+			ConfigType: &hcm.HttpFilter_TypedConfig{TypedConfig: typedConfig},
+		})
+	}
 
-	httpManager.HttpFilters = append(httpManager.HttpFilters, filters...)
-
+	httpManager.HttpFilters = filters
 	if listenerName == InternalListener {
 		httpManager.HttpFilters = sortInternalFilters(httpManager.HttpFilters)
 	} else if listenerName == ExternalListener {

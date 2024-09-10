@@ -61,8 +61,9 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	// load plugins
 	pluginDependencies := &plugin.Dependencies{
 		AgentConfig: agentConfig,
+		KubeClient:  kubeClient,
 	}
-	if err := plugin.Init(pluginDependencies); err != nil {
+	if err := plugin.Init(ctx, pluginDependencies); err != nil {
 		return err
 	}
 

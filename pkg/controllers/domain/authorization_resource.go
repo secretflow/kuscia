@@ -36,7 +36,7 @@ const (
 	defaultRollingSeconds = 86400
 )
 
-// 1. P2P Kusica partner master -> rolebinding + clusterdomainroute + status-update
+// 1. P2P Kuscia partner master -> rolebinding + clusterdomainroute + status-update
 // 2. P2P Kuscia partner lite -> [clusterdomainroute❌] + status-update
 // 3. Others -> rolebinding + clusterrolebinding + clusterdomainroute + status-update
 func (c *Controller) createOrUpdateAuth(domain *kusciaapisv1alpha1.Domain) error {
@@ -60,7 +60,7 @@ func (c *Controller) handleP2pKusciaPartnerMaster(domain *kusciaapisv1alpha1.Dom
 	saName := domain.Name
 	ns := domain.Name
 
-	if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, c.RootDir, domainID, ownerRef); err != nil {
+	if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, domainID, ownerRef); err != nil {
 		return err
 	}
 
@@ -90,7 +90,7 @@ func (c *Controller) handleOthers(domain *kusciaapisv1alpha1.Domain) error {
 	saName := domain.Name
 	ns := domain.Name
 
-	if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, c.RootDir, domainID, ownerRef); err != nil {
+	if err := resources.CreateRoleBinding(context.Background(), c.kubeClient, domainID, ownerRef); err != nil {
 		return err
 	}
 

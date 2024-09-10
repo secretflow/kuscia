@@ -48,36 +48,35 @@ type ICertificateService interface {
 }
 
 type certificateService struct {
-	certValue  *atomic.Value
-	privateKey *rsa.PrivateKey
+	DomainCertValue *atomic.Value
+	DomainKey       *rsa.PrivateKey
 }
 
-type CertConfig struct {
-	CertValue  *atomic.Value
-	PrivateKey *rsa.PrivateKey
+type CertificateServiceConfig struct {
+	DomainCertValue *atomic.Value
+	DomainKey       *rsa.PrivateKey
 }
 
-func NewCertificateService(config CertConfig) (ICertificateService, error) {
+func NewCertificateService(conf *CertificateServiceConfig) ICertificateService {
 	return &certificateService{
-		certValue:  config.CertValue,
-		privateKey: config.PrivateKey,
-	}, nil
+		DomainCertValue: conf.DomainCertValue,
+		DomainKey:       conf.DomainKey,
+	}
 }
 
 func (s *certificateService) GenerateKeyCerts(ctx context.Context, request *confmanager.GenerateKeyCertsRequest) *confmanager.GenerateKeyCertsResponse {
-
 	if errs := s.ValidateGenerateKeyCertsRequest(ctx, request); errs != nil {
 		return &confmanager.GenerateKeyCertsResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrRequestInvalidate, errs.String()),
 		}
 	}
 
-	if s.certValue == nil || s.certValue.Load() == nil {
+	if s.DomainCertValue == nil || s.DomainCertValue.Load() == nil {
 		return &confmanager.GenerateKeyCertsResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "can not find domain cert"),
 		}
 	}
-	domainCert, ok := s.certValue.Load().(*x509.Certificate)
+	domainCert, ok := s.DomainCertValue.Load().(*x509.Certificate)
 	if !ok {
 		return &confmanager.GenerateKeyCertsResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "domain cert is not valid"),
@@ -97,7 +96,7 @@ func (s *certificateService) GenerateKeyCerts(ctx context.Context, request *conf
 		certTmpl.NotAfter = time.Now().Add(time.Duration(request.DurationSec) * time.Second)
 	}
 
-	key, cert, err := tlsutils.GenerateX509KeyPairStruct(domainCert, s.privateKey, certTmpl)
+	key, cert, err := tlsutils.GenerateX509KeyPairStruct(domainCert, s.DomainKey, certTmpl)
 	if err != nil {
 		return &confmanager.GenerateKeyCertsResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_ConfManagerErrGenerateKeyCerts, "build key certs failed"),

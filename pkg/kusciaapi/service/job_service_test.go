@@ -133,3 +133,83 @@ func TestDeleteJob(t *testing.T) {
 	})
 	assert.Equal(t, queryRes.Status.Code, int32(errorcode.ErrorCode_KusciaAPIErrQueryJob))
 }
+
+func TestBuildScheduleConfigForKusciaTask(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *kusciaapi.ScheduleConfig
+		want *v1alpha1.ScheduleConfig
+	}{
+		{
+			name: "input is empty",
+			sc:   nil,
+			want: nil,
+		},
+		{
+			name: "input is not empty",
+			sc: &kusciaapi.ScheduleConfig{
+				TaskTimeoutSeconds:                  0,
+				ResourceReservedSeconds:             0,
+				ResourceReallocationIntervalSeconds: 0,
+			},
+			want: &v1alpha1.ScheduleConfig{
+				LifecycleSeconds:        300,
+				ResourceReservedSeconds: 30,
+				RetryIntervalSeconds:    30,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildScheduleConfigForKusciaTask(tt.sc)
+			if tt.want == nil {
+				assert.Equal(t, tt.want, got)
+			} else {
+				assert.Equal(t, tt.want.LifecycleSeconds, got.LifecycleSeconds)
+				assert.Equal(t, tt.want.ResourceReservedSeconds, got.ResourceReservedSeconds)
+				assert.Equal(t, tt.want.RetryIntervalSeconds, got.RetryIntervalSeconds)
+			}
+		})
+	}
+}
+
+func TestBuildScheduleConfigForKusciaAPI(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *v1alpha1.ScheduleConfig
+		want *kusciaapi.ScheduleConfig
+	}{
+		{
+			name: "input is empty",
+			sc:   nil,
+			want: nil,
+		},
+		{
+			name: "input is not empty",
+			sc: &v1alpha1.ScheduleConfig{
+				LifecycleSeconds:        0,
+				ResourceReservedSeconds: 0,
+				RetryIntervalSeconds:    0,
+			},
+			want: &kusciaapi.ScheduleConfig{
+				TaskTimeoutSeconds:                  300,
+				ResourceReservedSeconds:             30,
+				ResourceReallocationIntervalSeconds: 30,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildScheduleConfigForKusciaAPI(tt.sc)
+			if tt.want == nil {
+				assert.Equal(t, tt.want, got)
+			} else {
+				assert.Equal(t, tt.want.TaskTimeoutSeconds, got.TaskTimeoutSeconds)
+				assert.Equal(t, tt.want.ResourceReservedSeconds, got.ResourceReservedSeconds)
+				assert.Equal(t, tt.want.ResourceReallocationIntervalSeconds, got.ResourceReallocationIntervalSeconds)
+			}
+		})
+	}
+}

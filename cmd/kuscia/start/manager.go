@@ -165,8 +165,8 @@ func (kmm *kusciaModuleManager) Start(ctx context.Context, mode common.RunModeTy
 		var readyModule *moduleInfo
 		select {
 		case newCreateModule := <-kmm.newlyModuleCh:
-			nlog.Infof("new created module")
 			go func() {
+				nlog.Infof("new created module: %v", newCreateModule.name)
 				newCreateModule.readyError = newCreateModule.instance.WaitReady(ctx)
 				kmm.readyModuleCh <- newCreateModule
 			}()
@@ -335,7 +335,6 @@ func (kmm *kusciaModuleManager) runModule(ctx context.Context, mc *moduleInfo, c
 		defer kmm.wg.Done()
 		defer mc.finishWG.Done()
 		err := mc.instance.Run(mc.ctx)
-
 		if err != nil {
 			nlog.Infof("[Module] %s is finished with err=%s", mc.name, err.Error())
 			kmm.runFailedModuleCh <- mc

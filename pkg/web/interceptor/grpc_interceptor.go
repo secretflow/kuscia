@@ -73,24 +73,28 @@ func GrpcServerLoggingInterceptor(logger nlog.NLog) grpc.UnaryServerInterceptor 
 				ResponseBody: emptyBody,
 			}
 
-			if reqByte, reqMarshalErr := json.Marshal(utils.StructToMap(req, sensitiveFields...)); reqMarshalErr != nil {
-				errors = append(errors, reqMarshalErr)
-				reqByte = emptyBody
-			} else {
-				logContext.RequestBody = reqByte
+			if !hasSensitiveGRPCPathPrefix(logContext.RequestPath) {
+				errors = adjustGRPCRequestAndResponse(logContext, req, resp)
 			}
-
-			if respByte, respMarshalErr := json.Marshal(utils.StructToMap(resp, sensitiveFields...)); respMarshalErr != nil {
-				errors = append(errors, respMarshalErr)
-				respByte = emptyBody
-			} else {
-				logContext.ResponseBody = respByte
-			}
-
 			printfLoggerContext(logger, logContext)
 		})
 		return handler(ctx, req)
 	}
+}
+
+func adjustGRPCRequestAndResponse(ctx *loggerContext, req, resp any) (errors []error) {
+	if reqByte, reqMarshalErr := json.Marshal(utils.StructToMap(req, sensitiveFields...)); reqMarshalErr != nil {
+		errors = append(errors, reqMarshalErr)
+	} else {
+		ctx.RequestBody = reqByte
+	}
+
+	if respByte, respMarshalErr := json.Marshal(utils.StructToMap(resp, sensitiveFields...)); respMarshalErr != nil {
+		errors = append(errors, respMarshalErr)
+	} else {
+		ctx.ResponseBody = respByte
+	}
+	return errors
 }
 
 // GrpcStreamServerLoggingInterceptor defines the stream interceptor used to log RPC requests made with a stream.

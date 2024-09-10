@@ -43,6 +43,7 @@ func NewIOServer() *IOServer {
 		ioChannels: map[string]DataMeshDataIOInterface{
 			common.DomainDataSourceTypeLocalFS: NewBuiltinLocalFileIOChannel(),
 			common.DomainDataSourceTypeOSS:     NewBuiltinOssIOChannel(),
+			common.DomainDataSourceTypeMysql:   NewBuiltinMySQLIOChannel(),
 		},
 	}
 }

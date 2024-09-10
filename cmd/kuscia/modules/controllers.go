@@ -80,7 +80,7 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 			},
 
 			{
-				NewControler: garbagecollection.NewKusciajobGCController,
+				NewControler: garbagecollection.NewKusciaJobGCController,
 			},
 		},
 	), nil

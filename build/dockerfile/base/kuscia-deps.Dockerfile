@@ -1,19 +1,21 @@
 ARG K3S_VER=v1.26.11-k3s2
-ARG K3S_IMAGE=rancher/k3s:${K3S_VER}
+ARG K3S_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k3s:${K3S_VER}
+ARG PROOT_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
+FROM ${PROOT_IMAGE} as proot-image
 FROM ${K3S_IMAGE} as k3s-image
 
-FROM openanolis/anolisos:8.8
+FROM secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/anolisos:23
 ARG TARGETPLATFORM
 ARG TARGETARCH
 RUN yum install -y git glibc-static wget gcc make && \
     yum clean all
 
 RUN mkdir -p /image/home/kuscia/bin && \
-    mkdir -p /image/bin/aux && \
-    curl https://proot.gitlab.io/proot/bin/proot -o /image/home/kuscia/bin/proot && chmod u+x /image/home/kuscia/bin/proot
+    mkdir -p /image/bin/aux
 
 WORKDIR /tmp
 
+COPY --from=proot-image /root/proot/src/proot /image/home/kuscia/bin/
 COPY --from=k3s-image /bin/k3s /bin/containerd /bin/containerd-shim-runc-v2 /bin/runc /bin/cni /image/home/kuscia/bin/
 COPY --from=k3s-image /bin/aux /image/bin/aux
 

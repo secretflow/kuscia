@@ -561,7 +561,7 @@ spec:
 ![image.png](../../imgs/transit-reverse-tunnel.png)
 Alice 向 Bob 发起请求的环节如下：
 
-1. 隧道建立，对应上图中的 ⓪——用户向 Kusica 注册一条类型为 `REVERSE-TUNNEL`、起点为 Alice、终点为 Bob 的路由配置。Bob 侧 Kuscia Gateway 监听到这条配置后，会通过网关向 Alice 发起一次特殊的 HTTP 请求，这条请求到达 Alice 网关后，网关会记录这条请求的信息，回复`200状态码`和`Transfer-Encoding: Chunked`头，维持这条连接。这条连接之后会充当`反向隧道`。
+1. 隧道建立，对应上图中的 ⓪——用户向 Kuscia 注册一条类型为 `REVERSE-TUNNEL`、起点为 Alice、终点为 Bob 的路由配置。Bob 侧 Kuscia Gateway 监听到这条配置后，会通过网关向 Alice 发起一次特殊的 HTTP 请求，这条请求到达 Alice 网关后，网关会记录这条请求的信息，回复`200状态码`和`Transfer-Encoding: Chunked`头，维持这条连接。这条连接之后会充当`反向隧道`。
 2. 请求发送，对应上图中的 ①——Alice 向 Bob 发起的「request」到达 Alice 侧网关后，网关会将「request」包装成特殊格式的 「chunked response」，通过`反向隧道`发送给 Bob 侧网关，同时记录请求信息，对应 Ⓐ。请求到达 Bob 侧网关后，网关会将「chunked response」重新包装成「request」，发送给 Bob，对应 Ⓑ。
 3. 响应返回，对应上图中的 ②——Bob 完成请求处理后，返回「response」，到达 Bob 侧网关后，网关会将「response」包装成「request」，发送给 Alice，对应 Ⓒ。请求到达 Alice 侧网关后，网关会从「request」取出数据，包装成「response」，找到记录的请求信息，返回给 Alice，对应 Ⓓ。
 

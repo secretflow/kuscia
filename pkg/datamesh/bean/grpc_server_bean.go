@@ -40,12 +40,14 @@ import (
 )
 
 type grpcServerBean struct {
-	config *config.DataMeshConfig
+	config          *config.DataMeshConfig
+	cmConfigService cmservice.IConfigService
 }
 
-func NewGrpcServerBean(config *config.DataMeshConfig) *grpcServerBean { // nolint: golint
+func NewGrpcServerBean(config *config.DataMeshConfig, cmConfigService cmservice.IConfigService) *grpcServerBean { // nolint: golint
 	return &grpcServerBean{
-		config: config,
+		config:          config,
+		cmConfigService: cmConfigService,
 	}
 }
 
@@ -91,7 +93,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	server := grpc.NewServer(opts...)
 	// get operator bean
 	domainDataService := service.NewDomainDataService(s.config)
-	datasourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
+	datasourceService := service.NewDomainDataSourceService(s.config, s.cmConfigService)
 	datamesh.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(domainDataService))
 	datamesh.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(datasourceService))
 	datamesh.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))

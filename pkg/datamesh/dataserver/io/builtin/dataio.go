@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"io"
 
+	csvEncoding "encoding/csv"
+
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
 	"github.com/apache/arrow/go/v13/arrow/csv"
@@ -32,6 +34,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
+
+const CSVDefaultNullValue = "NULL"
 
 type DataMeshDataIOInterface interface {
 	Read(ctx context.Context, rc *utils.DataMeshRequestContext, w utils.RecordWriter) error
@@ -51,7 +55,7 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 	}
 	schema, _ := utils.GenerateArrowSchema(data)
 	// use csv reader,ignore first row, first row is headline.
-	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true))
+	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true), csv.WithNullReader(true, CSVDefaultNullValue))
 	defer csvReader.Release()
 	defer func() {
 		if r := recover(); r != nil {
@@ -81,6 +85,7 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 	err = csvReader.Err()
 	if err != nil {
 		nlog.Errorf("Read domaindata(%s) csv failed, %s", data.DomaindataId, err.Error())
+		return err
 	}
 	nlog.Infof("Domaindata(%s), file(%s) finish read and send, total row: %d.", data.DomaindataId, data.RelativeUri, iCount)
 	return nil
@@ -127,7 +132,7 @@ func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, r
 	}
 	nlog.Infof("Domaindata(%s) writer schema(%s) and reader schema(%s)", data.GetDomaindataId(), schema.String(), reader.Schema().String())
 	// use csv reader,ignore first row, first row is headline.
-	csvWriter := csv.NewWriter(w, reader.Schema(), csv.WithHeader(true))
+	csvWriter := csv.NewWriter(w, reader.Schema(), csv.WithHeader(true), csv.WithNullWriter(CSVDefaultNullValue))
 	iCount := 0
 	for reader.Next() {
 		record := reader.Record()
@@ -135,9 +140,21 @@ func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, r
 		if err := csvWriter.Write(record); err != nil {
 			nlog.Warnf("Domaindata(%s) write content to remote failed with error: %s", data.GetDomaindataId(), err.Error())
 			return err
-
 		}
 		iCount++
+	}
+	if iCount == 0 {
+		// manually write header to avoid read header EOF
+		headers := make([]string, len(reader.Schema().Fields()))
+		for i := range headers {
+			headers[i] = reader.Schema().Field(i).Name
+		}
+		fileWriter := csvEncoding.NewWriter(w)
+		if writeErr := fileWriter.Write(headers); writeErr != nil {
+			nlog.Warnf("Domaindata(%s) write empty csv header failed: %s", data.GetDomaindataId(), writeErr.Error())
+			return writeErr
+		}
+		fileWriter.Flush()
 	}
 	nlog.Infof("Domaindata(%s) write total row: %d.", data.GetDomaindataId(), iCount)
 	if err := reader.Err(); err != nil {

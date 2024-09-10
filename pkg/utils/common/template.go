@@ -17,6 +17,7 @@ package common
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
 	"regexp"
@@ -77,83 +78,23 @@ func RenderRuntimeObject(configPathTmpl string, object runtime.Object, input int
 func QueryByFields(value any, query string) (res any) {
 	defer func() {
 		if r := recover(); r != nil {
+			nlog.Errorf("Recovered from panic: %v", r)
 			res = nil
 		}
 	}()
 
-	toString := func(v any) string {
-		if _, ok := v.(string); ok {
-			return v.(string)
+	originalData := map[string]any{}
+	v, ok := value.(map[string]any)
+	if ok {
+		for k := range v {
+			originalData[k] = v[k]
 		}
-
-		s, _ := json.Marshal(v)
-		return string(s)
 	}
 
-	// eg: .v1.v2
-	byName := func(value any, field string) any {
-		switch reflect.TypeOf(value).Kind() {
-		case reflect.Map:
-			v := reflect.ValueOf(value).MapIndex(reflect.ValueOf(field))
-			if !v.IsValid() || v.IsZero() {
-				return nil
-			}
-			return v.Interface()
-		default:
-		}
-		return nil
-	}
+	return findValue(query, value, originalData)
+}
 
-	// eg: .v1[0]
-	byIdx := func(value any, index string) any {
-		switch reflect.TypeOf(value).Kind() {
-		case reflect.Array, reflect.Slice:
-			idx, err := strconv.Atoi(index)
-			if err != nil {
-				return nil
-			}
-
-			// invalidate index
-			arrlength := reflect.ValueOf(value).Len()
-			if idx >= arrlength || idx <= -arrlength {
-				return nil
-			}
-			// Support negative indices
-			idx = (idx + arrlength) % arrlength
-			v := reflect.ValueOf(value).Index(idx)
-			if !v.IsValid() || v.IsZero() {
-				return nil
-			}
-			return v.Interface()
-		default:
-		}
-		return nil
-	}
-
-	// eg: .v1[key=value]
-	byFilter := func(value any, key, match string) any {
-		switch reflect.TypeOf(value).Kind() {
-		case reflect.Array, reflect.Slice:
-			arr := reflect.ValueOf(value)
-			for i := 0; i < arr.Len(); i++ {
-				item := arr.Index(i).Interface()
-				switch reflect.TypeOf(item).Kind() {
-				case reflect.Map:
-					v := reflect.ValueOf(item).MapIndex(reflect.ValueOf(key))
-					if v.IsValid() && !v.IsZero() && toString(v.Interface()) == match {
-						return item
-					}
-				default:
-				}
-
-			}
-		default:
-			nlog.Infof("type=%s", reflect.TypeOf(value).Kind().String())
-		}
-		return nil
-
-	}
-
+func findValue(query string, value any, originalData map[string]any) any {
 	fields := strings.Split(query, ".")
 	for _, field := range fields {
 		if value == nil {
@@ -165,7 +106,7 @@ func QueryByFields(value any, query string) (res any) {
 		}
 
 		if strings.Contains(field, "[") {
-			// match: val[1] or val[key=value]
+			// match: val[1] or val[key=value] or val[v1.v2]
 			re := regexp.MustCompile(`^(.+)\[(.+)\]$`)
 			kv := re.FindStringSubmatch(field)
 			if len(kv) != 3 {
@@ -181,15 +122,90 @@ func QueryByFields(value any, query string) (res any) {
 			if strings.Contains(kv[2], "=") {
 				matcher := strings.SplitN(kv[2], "=", 2)
 				value = byFilter(tmpval, matcher[0], matcher[1])
+			} else if strings.Contains(kv[2], "#") {
+				subQuery := strings.ReplaceAll(kv[2], "#", ".")
+				index := findValue(subQuery, originalData, originalData)
+				value = byIdx(tmpval, fmt.Sprintf("%v", index))
 			} else {
 				value = byIdx(tmpval, kv[2])
 			}
 		} else {
 			value = byName(value, field)
-
 		}
 	}
 	return value
+}
+
+func toString(v any) string {
+	if _, ok := v.(string); ok {
+		return v.(string)
+	}
+
+	s, _ := json.Marshal(v)
+	return string(s)
+}
+
+// eg: .v1.v2
+func byName(value any, field string) any {
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Map:
+		v := reflect.ValueOf(value).MapIndex(reflect.ValueOf(field))
+		if !v.IsValid() || v.IsZero() {
+			return nil
+		}
+		return v.Interface()
+	default:
+	}
+	return nil
+}
+
+// eg: .v1[0]
+func byIdx(value any, index string) any {
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Array, reflect.Slice:
+		idx, err := strconv.Atoi(index)
+		if err != nil {
+			return nil
+		}
+
+		// invalidate index
+		arrlength := reflect.ValueOf(value).Len()
+		if idx >= arrlength || idx <= -arrlength {
+			return nil
+		}
+		// Support negative indices
+		idx = (idx + arrlength) % arrlength
+		v := reflect.ValueOf(value).Index(idx)
+		if !v.IsValid() || v.IsZero() {
+			return nil
+		}
+		return v.Interface()
+	default:
+	}
+	return nil
+}
+
+// eg: .v1[key=value]
+func byFilter(value any, key, match string) any {
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Array, reflect.Slice:
+		arr := reflect.ValueOf(value)
+		for i := 0; i < arr.Len(); i++ {
+			item := arr.Index(i).Interface()
+			switch reflect.TypeOf(item).Kind() {
+			case reflect.Map:
+				v := reflect.ValueOf(item).MapIndex(reflect.ValueOf(key))
+				if v.IsValid() && !v.IsZero() && toString(v.Interface()) == match {
+					return item
+				}
+			default:
+			}
+
+		}
+	default:
+		nlog.Infof("type=%s", reflect.TypeOf(value).Kind().String())
+	}
+	return nil
 }
 
 var Decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)

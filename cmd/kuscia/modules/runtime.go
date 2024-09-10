@@ -19,6 +19,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -28,7 +29,6 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/secretbackend"
 	trconfig "github.com/secretflow/kuscia/pkg/transport/config"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -55,7 +55,6 @@ type ModuleRuntimeConfigs struct {
 	MetricExportPort        string
 	KusciaKubeConfig        string
 	EnableContainerd        bool
-	SecretBackendHolder     *secretbackend.Holder
 	Image                   *confloader.ImageConfig
 	DomainCertByMasterValue atomic.Value // the value is <*x509.Certificate>
 	LogConfig               *nlog.LogConfig
@@ -63,9 +62,6 @@ type ModuleRuntimeConfigs struct {
 }
 
 func (d *ModuleRuntimeConfigs) Close() {
-	if d.SecretBackendHolder != nil {
-		d.SecretBackendHolder.CloseAll()
-	}
 }
 
 func (d *ModuleRuntimeConfigs) LoadCaDomainKeyAndCert() error {
@@ -135,7 +131,7 @@ func InitLogs(logConfig *nlog.LogConfig) error {
 
 func initLoggerConfig(kusciaConf confloader.KusciaConfig, logPath string) *nlog.LogConfig {
 	return &nlog.LogConfig{
-		LogPath:       logPath,
+		LogPath:       path.Join(kusciaConf.RootDir, logPath),
 		LogLevel:      kusciaConf.LogLevel,
 		MaxFileSizeMB: kusciaConf.Logrotate.MaxFileSizeMB,
 		MaxFiles:      kusciaConf.Logrotate.MaxFiles,
@@ -158,34 +154,8 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 	dependencies.LogConfig = logConfig
 	dependencies.Logrorate = kusciaConf.Logrotate
 	dependencies.Image = &kusciaConf.Image
-	// run config loader
-	dependencies.SecretBackendHolder = secretbackend.NewHolder()
-	nlog.Info("Start to init all secret backends ... ")
-	for _, sbc := range dependencies.SecretBackends {
-		if err := dependencies.SecretBackendHolder.Init(sbc.Name, sbc.Driver, sbc.Params); err != nil {
-			nlog.Fatalf("Init secret backend name=%s params=%+v failed: %s", sbc.Name, sbc.Params, err)
-		}
-	}
-	if len(dependencies.SecretBackends) == 0 {
-		nlog.Warnf("Init all secret backend but no provider found, creating default mem type")
-		if err := dependencies.SecretBackendHolder.Init(common.DefaultSecretBackendName, common.DefaultSecretBackendType, map[string]any{}); err != nil {
-			nlog.Fatalf("Init default secret backend failed: %s", err)
-		}
-	}
-	nlog.Info("Finish Initializing all secret backends")
-
-	configLoaders, err := confloader.NewConfigLoaderChain(ctx, dependencies.KusciaConfig.ConfLoaders, dependencies.SecretBackendHolder)
-	if err != nil {
-		nlog.Fatalf("Init config loader failed: %s", err)
-	}
-	if err = configLoaders.Load(ctx, &dependencies.KusciaConfig); err != nil {
-		nlog.Errorf("Load config by configloader failed: %s", err)
-	}
-
-	nlog.Debugf("After config loader handle, kuscia config is %+v", dependencies.KusciaConfig)
-
 	// make runtime dir
-	err = dependencies.EnsureDir()
+	err := dependencies.EnsureDir()
 	if err != nil {
 		nlog.Fatal(err)
 	}

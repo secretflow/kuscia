@@ -15,6 +15,7 @@
 package certissuance
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -131,7 +132,7 @@ func TestCertIssuanceWithGenerateOptCtx(t *testing.T) {
 	}
 
 	ci := &certIssuance{}
-	assert.NoError(t, ci.Init(dep, nil))
+	assert.NoError(t, ci.Init(context.Background(), dep, nil))
 
 	tests := []struct {
 		ctx                  *hook.GenerateContainerOptionContext
@@ -264,7 +265,7 @@ func TestCertIssuanceWithSyncPodContext(t *testing.T) {
 	}
 
 	ci := &certIssuance{}
-	assert.NoError(t, ci.Init(dep, nil))
+	assert.NoError(t, ci.Init(context.Background(), dep, nil))
 
 	tests := []struct {
 		ctx                  *hook.K8sProviderSyncPodContext

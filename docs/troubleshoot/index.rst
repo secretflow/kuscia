@@ -23,3 +23,4 @@
     config_render
     kuscia_mysql_kine
     kernel_params
+    create_fsnotify_failed
