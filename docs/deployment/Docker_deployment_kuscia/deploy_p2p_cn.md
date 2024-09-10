@@ -38,7 +38,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 
 ```bash
 # --domain 参数传递的是节点 ID
-docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml 2>&1 || autonomy_alice.yaml
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml 2>&1 || cat autonomy_alice.yaml
 ```
 
 建议检查生成的文件，避免配置文件错误导致的部署启动问题。
@@ -59,6 +59,8 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 - 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
 - alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
 - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)。如果多个 Autonomy 节点部署在同一个物理机上，可以用 -p -k -g -q -x 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083 -x 11084），防止出现端口冲突。
+- 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
+- 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
 :::
 
 ### 部署 bob 节点
@@ -185,7 +187,9 @@ docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpat
 登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > ${USER}-kuscia-autonomy-alice/data/alice.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
+docker cp /tmp/alice.csv ${USER}-kuscia-autonomy-alice:/home/kuscia/var/storage/data/
+rm -rf /tmp/alice.csv
 ```
 
 为 alice 的测试数据创建 domaindata
@@ -210,7 +214,9 @@ docker exec -it ${USER}-kuscia-autonomy-alice curl -X POST 'https://127.0.0.1:80
 登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > ${USER}-kuscia-autonomy-bob/data/bob.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
+docker cp /tmp/bob.csv ${USER}-kuscia-autonomy-bob:/home/kuscia/var/storage/data/
+rm -rf /tmp/bob.csv
 ```
 
 为 bob 的测试数据创建 domaindata

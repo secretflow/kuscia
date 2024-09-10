@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/secretflow/kuscia/pkg/confmanager/driver"
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/datamesh/bean"
@@ -40,29 +42,40 @@ func Run(ctx context.Context, conf *config.DataMeshConfig, kusciaClient kusciacl
 	kusciaInformerFactory.Start(ctx.Done())
 	// wait for all caches to sync
 	kusciaInformerFactory.WaitForCacheSync(ctx.Done())
-	if err := injectBean(conf, appEngine); err != nil {
+	if err := injectBean(ctx, conf, appEngine); err != nil {
 		return err
 	}
 	return appEngine.Run(ctx)
 }
 
-func injectBean(conf *config.DataMeshConfig, appEngine *engine.Engine) error {
+func injectBean(ctx context.Context, conf *config.DataMeshConfig, appEngine *engine.Engine) error {
+	// init cm service
+	cmConfigService, err := cmservice.NewConfigService(ctx, &cmservice.ConfigServiceConfig{
+		DomainID:   conf.KubeNamespace,
+		DomainKey:  conf.DomainKey,
+		Driver:     driver.CRDDriverType,
+		KubeClient: conf.KubeClient,
+	})
+	if err != nil {
+		return fmt.Errorf("init cm config service for datamesh failed, %s", err.Error())
+	}
+
 	// inject http server bean
-	httpServer := bean.NewHTTPServerBean(conf)
+	httpServer := bean.NewHTTPServerBean(conf, cmConfigService)
 	serverName := httpServer.ServerName()
-	err := appEngine.UseBeanWithConfig(serverName, httpServer)
+	err = appEngine.UseBeanWithConfig(serverName, httpServer)
 	if err != nil {
 		return fmt.Errorf("inject bean %s failed: %v", serverName, err.Error())
 	}
 	// inject grpc server bean
-	grpcServer := bean.NewGrpcServerBean(conf)
+	grpcServer := bean.NewGrpcServerBean(conf, cmConfigService)
 	serverName = grpcServer.ServerName()
 	err = appEngine.UseBeanWithConfig(serverName, grpcServer)
 	if err != nil {
 		return fmt.Errorf("inject bean %s failed: %v", serverName, err.Error())
 	}
 	// inject operator bean
-	opServer := bean.NewOperatorBean(conf)
+	opServer := bean.NewOperatorBean(conf, cmConfigService)
 	serverName = opServer.ServerName()
 	err = appEngine.UseBeanWithConfig(serverName, opServer)
 	if err != nil {

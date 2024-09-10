@@ -16,6 +16,7 @@ package certissuance
 
 import (
 	"bytes"
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -70,7 +71,7 @@ func (ci *certIssuance) Type() string {
 }
 
 // Init implements the plugin.Plugin interface.
-func (ci *certIssuance) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
+func (ci *certIssuance) Init(ctx context.Context, dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
 	if dependencies.AgentConfig.DomainCAKey == nil || dependencies.AgentConfig.DomainCACert == nil {
 		nlog.Infof("Plugin cert-issuance will not be registered, signingCert=%v, signingKey=%v", dependencies.AgentConfig.DomainCACert, dependencies.AgentConfig.DomainCAKey)
 		return nil

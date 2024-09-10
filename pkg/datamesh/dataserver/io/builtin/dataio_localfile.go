@@ -26,6 +26,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
@@ -86,6 +87,12 @@ func (fio *BuiltinLocalFileIO) Write(ctx context.Context, rc *utils.DataMeshRequ
 	if _, err := os.Stat(filePath); err == nil {
 		nlog.Infof("DomainData(%s) file(%s) file exists, can't upload", data.DomaindataId, filePath)
 		return status.Errorf(codes.AlreadyExists, "file exists, can't upload %s", data.RelativeUri)
+	}
+
+	dirPath := path.Dir(filePath)
+	if err := paths.EnsurePath(dirPath, true); err != nil {
+		nlog.Warnf("DomainData(%s) directory(%s) create failed with error: %s", data.DomaindataId, dirPath, err.Error())
+		return err
 	}
 
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR, 0644)

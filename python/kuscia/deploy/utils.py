@@ -57,7 +57,7 @@ def get_random_filename(hint: str = None) -> str:
         length = random.randint(20, 60)
         characters = string.ascii_letters + string.digits
         hint = "".join(random.choice(characters) for i in range(length))
-    name = hashlib.md5(hint.encode("utf-8")).hexdigest()
+    name = hashlib.sha256(hint.encode("utf-8")).hexdigest()
     return name
 
 

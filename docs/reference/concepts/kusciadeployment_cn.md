@@ -5,7 +5,18 @@
 
 基于 KusciaDeployment，你可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。
 
-具体用例请参考下文。
+{#kuscia-deployment-state}
+## 状态说明
+
+下图为 KusciaDeployment(KD) 的状态流转图。
+
+![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)
+
+KusciaDeployment 在其生命周期中会处于以下几种状态：
+- Progressing: 此时 KusciaDeployment 正在被处理，至少有一方不可用。
+- PartialAvailable: 此时所有参与方可用，但是至少有一方非全部应用实例可用。
+- Available: 此时所有参与方可用，且各参与方下的全部应用实例可用。
+- Failed: 处理 KusciaDeployment 资源失败。在该状态下，若解决了失败的根因，可通过更新 KusciaDeployment，恢复 KusciaDeployment 的状态。
 
 ## 用例
 
@@ -45,9 +56,9 @@ spec:
 - `.spec.initiator`：表示发起方的节点标识，当前示例为`alice`。
 - `.spec.inputConfig`：表示输入参数配置。当前，该字段中的内容是临时的，预计下一期会有调整，后续也会补充该字段中的内容详细解释。
 - `.spec.parties`：表示所有参与方的信息。当前示例中，该字段包含以下子字段：
-  - `.spec.parties[0].appImageRef`：表示节点标识为`alice`的参与方所依赖的应用镜像 AppImage 名称为`secretflow-serving-image`，详细定义请参考 [Serving Appimage](#sf-serving-appimage)
+  - `.spec.parties[0].appImageRef`：表示节点标识为`alice`的参与方所依赖的应用镜像 AppImage 名称为`secretflow-serving-image`，详细定义请参考 [Serving Appimage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)
   - `.spec.parties[0].domainID`：表示参与方节点标识为`alice`。
-  - `.spec.parties[1].appImageRef`：表示节点标识为`bob`的参与方所依赖的应用镜像 AppImage 名称为`secretflow-serving-image`，详细定义请参考 [Serving Appimage](#sf-serving-appimage)
+  - `.spec.parties[1].appImageRef`：表示节点标识为`bob`的参与方所依赖的应用镜像 AppImage 名称为`secretflow-serving-image`，详细定义请参考 [Serving Appimage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)
   - `.spec.parties[1].domainID`：表示参与方节点标识为`bob`。
 
 1. 运行以下命令创建 KusciaDeployment。
@@ -316,7 +327,7 @@ KusciaDeployment `spec` 的子字段详细介绍如下：
 
 KusciaDeployment `status` 的子字段详细介绍如下：
 
-- `phase`：表示 KusciaDeployment 当前所处的阶段。当前包括以下几种类型：
+- `phase`：表示 KusciaDeployment 当前所处的阶段。[状态流转详情](#kuscia-deployment-state)。当前包括以下几种 PHASE：
   - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。KusciaDeployment Controller 会根据 KusciaDeployment 的描述信息，在各参与方节点下创建相关的资源，例如：Deployment、Configmap、Service 等。
   - `PartialAvailable`：表示所有参与方可用，但是在某些参与方节点下，应用可用副本数小于期望副本数。
   - `Available`：表示所有参与方可用，且各个参与方下应用可用副本数等于期望副本数。

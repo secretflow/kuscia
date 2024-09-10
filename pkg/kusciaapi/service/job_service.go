@@ -96,7 +96,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	kusciaTasks := make([]v1alpha1.KusciaTaskTemplate, len(tasks))
 	for i, task := range tasks {
 		// build kuscia task parties
-		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
+		kusciaParties := make([]v1alpha1.Party, len(task.Parties))
 		for j, party := range task.Parties {
 			// build resources
 			limitResource := corev1.ResourceList{}
@@ -120,16 +120,35 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 						}
 					}
 				}
-
 				resource = &corev1.ResourceRequirements{
 					Limits: limitResource,
 				}
 			}
+			var bandwidthLimits []v1alpha1.BandwidthLimit
+			if len(party.BandwidthLimits) > 0 {
+				for _, bw := range party.BandwidthLimits {
+					if bw.LimitKbps <= 0 {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "bandwidth limit kbps can not be zero or negative"),
+						}
+					}
+					if bw.DestinationId == "" {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "bandwidth limit destination id can not be empty"),
+						}
+					}
+					bandwidthLimits = append(bandwidthLimits, v1alpha1.BandwidthLimit{
+						DestinationID: bw.DestinationId,
+						LimitKBps:     bw.LimitKbps,
+					})
+				}
+			}
 
-			kusicaParties[j] = v1alpha1.Party{
-				DomainID:  party.DomainId,
-				Role:      party.Role,
-				Resources: resource,
+			kusciaParties[j] = v1alpha1.Party{
+				DomainID:       party.DomainId,
+				Role:           party.Role,
+				Resources:      resource,
+				BandwidthLimit: bandwidthLimits,
 			}
 		}
 		// build kuscia task
@@ -139,9 +158,14 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			Dependencies:    task.Dependencies,
 			AppImage:        task.AppImage,
 			TaskInputConfig: task.TaskInputConfig,
-			Parties:         kusicaParties,
+			Parties:         kusciaParties,
 			Priority:        int(task.Priority),
 		}
+
+		if task.ScheduleConfig != nil {
+			kusciaTask.ScheduleConfig = buildScheduleConfigForKusciaTask(task.ScheduleConfig)
+		}
+
 		kusciaTasks[i] = kusciaTask
 	}
 
@@ -179,6 +203,30 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	}
 }
 
+func buildScheduleConfigForKusciaTask(sc *kusciaapi.ScheduleConfig) *v1alpha1.ScheduleConfig {
+	if sc == nil {
+		return nil
+	}
+
+	if sc.TaskTimeoutSeconds <= 0 {
+		sc.TaskTimeoutSeconds = 300
+	}
+
+	if sc.ResourceReservedSeconds <= 0 {
+		sc.ResourceReservedSeconds = 30
+	}
+
+	if sc.ResourceReallocationIntervalSeconds <= 0 {
+		sc.ResourceReallocationIntervalSeconds = 30
+	}
+
+	return &v1alpha1.ScheduleConfig{
+		ResourceReservedSeconds: int(sc.ResourceReservedSeconds),
+		LifecycleSeconds:        int(sc.TaskTimeoutSeconds),
+		RetryIntervalSeconds:    int(sc.ResourceReallocationIntervalSeconds),
+	}
+}
+
 func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRequest) *kusciaapi.QueryJobResponse {
 	// do validate
 	jobID := request.JobId
@@ -211,9 +259,17 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 		taskParties := task.Parties
 		parties := make([]*kusciaapi.Party, len(taskParties))
 		for j, party := range taskParties {
+			var bandwidthLimits []*kusciaapi.BandwidthLimit
+			for _, bw := range party.BandwidthLimit {
+				bandwidthLimits = append(bandwidthLimits, &kusciaapi.BandwidthLimit{
+					DestinationId: bw.DestinationID,
+					LimitKbps:     bw.LimitKBps,
+				})
+			}
 			parties[j] = &kusciaapi.Party{
-				DomainId: party.DomainID,
-				Role:     party.Role,
+				DomainId:        party.DomainID,
+				Role:            party.Role,
+				BandwidthLimits: bandwidthLimits,
 			}
 		}
 
@@ -227,6 +283,11 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 			TaskInputConfig: task.TaskInputConfig,
 			Priority:        int32(task.Priority),
 		}
+
+		if task.ScheduleConfig != nil {
+			taskConfig.ScheduleConfig = buildScheduleConfigForKusciaAPI(task.ScheduleConfig)
+		}
+
 		taskConfigs[i] = taskConfig
 	}
 
@@ -243,6 +304,30 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 		},
 	}
 	return jobResponse
+}
+
+func buildScheduleConfigForKusciaAPI(sc *v1alpha1.ScheduleConfig) *kusciaapi.ScheduleConfig {
+	if sc == nil {
+		return nil
+	}
+
+	if sc.LifecycleSeconds <= 0 {
+		sc.LifecycleSeconds = 300
+	}
+
+	if sc.ResourceReservedSeconds <= 0 {
+		sc.ResourceReservedSeconds = 30
+	}
+
+	if sc.RetryIntervalSeconds <= 0 {
+		sc.RetryIntervalSeconds = 30
+	}
+
+	return &kusciaapi.ScheduleConfig{
+		TaskTimeoutSeconds:                  int32(sc.LifecycleSeconds),
+		ResourceReservedSeconds:             int32(sc.ResourceReservedSeconds),
+		ResourceReallocationIntervalSeconds: int32(sc.RetryIntervalSeconds),
+	}
 }
 
 func (h *jobService) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) *kusciaapi.DeleteJobResponse {

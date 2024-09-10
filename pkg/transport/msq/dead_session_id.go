@@ -64,13 +64,6 @@ func (ds *DeadSessionID) Clean() {
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func nowMs() int64 {
 	return time.Now().UnixMilli()
 }

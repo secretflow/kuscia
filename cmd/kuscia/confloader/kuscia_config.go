@@ -30,6 +30,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
+	cmconfig "github.com/secretflow/kuscia/pkg/confmanager/config"
 	dmconfig "github.com/secretflow/kuscia/pkg/datamesh/config"
 	kaconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -106,16 +107,15 @@ type LogrotateConfig struct {
 }
 
 type AdvancedConfig struct {
-	ConfLoaders           []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
-	SecretBackends        []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
-	KusciaAPI             *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
-	DataMesh              *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
-	DomainRoute           DomainRouteConfig         `yaml:"domainRoute,omitempty"`
-	Agent                 config.AgentConfig        `yaml:"agent,omitempty"`
-	Debug                 bool                      `yaml:"debug,omitempty"`
-	DebugPort             int                       `yaml:"debugPort,omitempty"`
-	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
-	Logrotate             LogrotateConfig           `yaml:"logrotate,omitempty"`
+	KusciaAPI             *kaconfig.KusciaAPIConfig   `yaml:"kusciaAPI,omitempty"`
+	ConfManager           *cmconfig.ConfManagerConfig `yaml:"confManager,omitempty"`
+	DataMesh              *dmconfig.DataMeshConfig    `yaml:"dataMesh,omitempty"`
+	DomainRoute           DomainRouteConfig           `yaml:"domainRoute,omitempty"`
+	Agent                 config.AgentConfig          `yaml:"agent,omitempty"`
+	Debug                 bool                        `yaml:"debug,omitempty"`
+	DebugPort             int                         `yaml:"debugPort,omitempty"`
+	EnableWorkloadApprove bool                        `yaml:"enableWorkloadApprove,omitempty"`
+	Logrotate             LogrotateConfig             `yaml:"logrotate,omitempty"`
 }
 
 func LoadCommonConfig(configFile string) *CommonConfig {
@@ -147,12 +147,11 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.DomainID = lite.DomainID
 	kusciaConfig.CAKeyData = lite.DomainKeyData
 	kusciaConfig.DomainKeyData = lite.DomainKeyData
-	kusciaConfig.ConfLoaders = lite.ConfLoaders
-	kusciaConfig.SecretBackends = lite.SecretBackends
 	if lite.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = lite.KusciaAPI
 	}
 	kusciaConfig.Protocol = lite.Protocol
+	kusciaConfig.ConfManager = lite.ConfManager
 	kusciaConfig.DataMesh = lite.DataMesh
 	kusciaConfig.Agent.AllowPrivileged = lite.Agent.AllowPrivileged
 	kusciaConfig.Agent.Provider.Runtime = lite.Runtime
@@ -189,8 +188,6 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 	kusciaConfig.LogLevel = master.LogLevel
 	kusciaConfig.CAKeyData = master.DomainKeyData
 	kusciaConfig.DomainKeyData = master.DomainKeyData
-	kusciaConfig.ConfLoaders = master.ConfLoaders
-	kusciaConfig.SecretBackends = master.SecretBackends
 	if master.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = master.KusciaAPI
 	}
@@ -233,12 +230,11 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 		}
 	}
 
-	kusciaConfig.ConfLoaders = autonomy.ConfLoaders
-	kusciaConfig.SecretBackends = autonomy.SecretBackends
 	if autonomy.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = autonomy.KusciaAPI
 	}
 	kusciaConfig.Protocol = autonomy.Protocol
+	kusciaConfig.ConfManager = autonomy.ConfManager
 	kusciaConfig.DataMesh = autonomy.DataMesh
 	if autonomy.DomainRoute.ExternalTLS != nil {
 		kusciaConfig.DomainRoute.ExternalTLS = autonomy.DomainRoute.ExternalTLS

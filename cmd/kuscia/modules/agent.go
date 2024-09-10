@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"golang.org/x/sys/unix"
+
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
@@ -57,8 +59,12 @@ func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 	if conf.Provider.Runtime == config.ContainerRuntime {
 		conf.Node.KeepNodeOnExit = true
 	}
+	if conf.Provider.Runtime == config.ProcessRuntime {
+		precheckKernelVersion()
+	}
 	conf.APIVersion = k8sVersion
 	conf.AgentVersion = fmt.Sprintf("%v", meta.AgentVersionString())
+	conf.DomainKey = i.DomainKey
 	conf.DomainCACert = i.CACert
 	conf.DomainCAKey = i.CAKey
 	conf.DomainCACertFile = i.CACertFile
@@ -109,6 +115,25 @@ func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 		conf:    conf,
 		clients: i.Clients,
 	}, nil
+}
+
+func precheckKernelVersion() {
+	var uts unix.Utsname
+	if err := unix.Uname(&uts); err != nil {
+		nlog.Warnf("Get kernel version fail: %v", err)
+		return
+	}
+	var kernel, major uint64
+	release := unix.ByteSliceToString(uts.Release[:])
+	_, err := fmt.Sscanf(release, "%d.%d", &kernel, &major)
+	if err != nil {
+		nlog.Warnf("Failed to parse kernel version %s: %v", release, err)
+		return
+	}
+	if kernel < 4 || kernel == 4 && major < 8 {
+		nlog.Warnf("Kernel version < 4.8, set PROOT_NO_SECCOMP=1")
+		os.Setenv("PROOT_NO_SECCOMP", "1")
+	}
 }
 
 func (agent *agentModule) Run(ctx context.Context) error {

@@ -76,7 +76,7 @@ func TestMain(m *testing.M) {
 	envoyNodeCluster := "kuscia-gateway-default"
 	envoyNodeID := fmt.Sprintf("%s-%s", envoyNodeCluster, instance)
 
-	xds.NewXdsServer(10000, envoyNodeID)
+	xds.NewXdsServer(11000, envoyNodeID)
 	config := &xds.InitConfig{
 		Basedir:      "./conf/",
 		XDSPort:      1054,

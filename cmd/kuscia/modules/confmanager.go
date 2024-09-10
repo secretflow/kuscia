@@ -16,14 +16,12 @@ package modules
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/confmanager/commands"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
-	"github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
@@ -41,37 +39,38 @@ type confManagerModule struct {
 func NewConfManager(d *ModuleRuntimeConfigs) (Module, error) {
 	// overwrite config
 	conf := config.NewDefaultConfManagerConfig()
-	if d.ConfManager.HTTPPort != 0 {
+	if d.ConfManager != nil && d.ConfManager.HTTPPort != 0 {
 		conf.HTTPPort = d.ConfManager.HTTPPort
 	}
-	if d.ConfManager.GRPCPort != 0 {
+	if d.ConfManager != nil && d.ConfManager.GRPCPort != 0 {
 		conf.GRPCPort = d.ConfManager.GRPCPort
 	}
-	if d.ConfManager.ConnectTimeout != 0 {
+	if d.ConfManager != nil && d.ConfManager.ConnectTimeout != 0 {
 		conf.ConnectTimeout = d.ConfManager.ConnectTimeout
 	}
-	if d.ConfManager.ReadTimeout != 0 {
+	if d.ConfManager != nil && d.ConfManager.ReadTimeout != 0 {
 		conf.ReadTimeout = d.ConfManager.ReadTimeout
 	}
-	if d.ConfManager.WriteTimeout != 0 {
+	if d.ConfManager != nil && d.ConfManager.WriteTimeout != 0 {
 		conf.WriteTimeout = d.ConfManager.WriteTimeout
 	}
-	if d.ConfManager.IdleTimeout != 0 {
+	if d.ConfManager != nil && d.ConfManager.IdleTimeout != 0 {
 		conf.IdleTimeout = d.ConfManager.IdleTimeout
 	}
-	if !d.ConfManager.EnableConfAuth {
-		conf.EnableConfAuth = d.ConfManager.EnableConfAuth
-	}
-	if d.ConfManager.IsMaster {
+	if d.ConfManager != nil && d.ConfManager.IsMaster {
 		conf.IsMaster = d.ConfManager.IsMaster
 	}
-	if d.ConfManager.Backend != "" {
-		conf.Backend = d.ConfManager.Backend
+	if d.ConfManager != nil && d.ConfManager.Driver != "" {
+		conf.Driver = d.ConfManager.Driver
+	}
+	if d.ConfManager != nil && len(d.ConfManager.Params) != 0 {
+		conf.Params = d.ConfManager.Params
 	}
 	conf.DomainID = d.DomainID
 	conf.DomainKey = d.DomainKey
 	conf.TLS.RootCA = d.CACert
 	conf.TLS.RootCAKey = d.CAKey
+	conf.KubeClient = d.Clients.KubeClient
 	switch d.RunMode {
 	case common.RunModeLite:
 		conf.DomainCertValue = &d.DomainCertByMasterValue
@@ -79,18 +78,10 @@ func NewConfManager(d *ModuleRuntimeConfigs) (Module, error) {
 		conf.DomainCertValue = &atomic.Value{}
 		conf.DomainCertValue.Store(d.DomainCert)
 	}
-
-	conf.BackendDriver = d.SecretBackendHolder.Get(conf.Backend)
-
-	nlog.Debugf("Conf manager config is %+v", conf)
+	nlog.Infof("Conf manager config is %+v", conf)
 
 	if err := conf.TLS.GenerateServerKeyCerts(serverCertsCommonName, nil, []string{defaultServerCertsSanDNSName}); err != nil {
 		return nil, err
-	}
-
-	// init service holder
-	if err := service.InitServiceHolder(conf); err != nil {
-		return nil, fmt.Errorf("init service holder failed: %v", err.Error())
 	}
 
 	return &confManagerModule{

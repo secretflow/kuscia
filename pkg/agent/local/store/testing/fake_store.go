@@ -15,10 +15,11 @@
 package testing
 
 import (
-	"io"
+	"errors"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/local/store"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
@@ -31,7 +32,7 @@ func NewFakeStore() store.Store {
 	return &fakeStore{}
 }
 
-func (f *fakeStore) LoadImage(imageReader io.Reader) error {
+func (f *fakeStore) LoadImage(tarFile string) error {
 	return nil
 }
 
@@ -39,7 +40,7 @@ func (f *fakeStore) CheckImageExist(image *kii.ImageName) bool {
 	return true
 }
 
-func (f *fakeStore) MountImage(image *kii.ImageName, mountType kii.MountType, workingDir, targetDir string) error {
+func (f *fakeStore) MountImage(image *kii.ImageName, workingDir, targetDir string) error {
 	return nil
 }
 
@@ -47,7 +48,7 @@ func (f *fakeStore) UmountImage(workingDir string) error {
 	return nil
 }
 
-func (f *fakeStore) GetImageManifest(image *kii.ImageName) (*kii.Manifest, error) {
+func (f *fakeStore) GetImageManifest(image *kii.ImageName, auth *runtimeapi.AuthConfig) (*kii.Manifest, error) {
 	now := time.Now()
 	return &kii.Manifest{
 		Created: &now,
@@ -63,4 +64,12 @@ func (f *fakeStore) TagImage(sourceImage, targetImage *kii.ImageName) error {
 
 func (f *fakeStore) RegisterImage(image, manifest string) error {
 	return nil
+}
+
+func (f *fakeStore) PullImage(image string, auth *runtimeapi.AuthConfig) error {
+	return nil
+}
+
+func (f *fakeStore) ListImage() ([]*store.Image, error) {
+	return nil, errors.New("not supported currently")
 }

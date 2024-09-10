@@ -72,7 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with image repository names in the Agent module.
 - Strengthened integration tests for improved stability.
 - Fixed an issue where changes to the Configmap in Runk mode did not take effect for Serving.
-- Fixed an error when creating DomainDataSource with Kusica API.
+- Fixed an error when creating DomainDataSource with Kuscia API.
 - Fixed a potential issue with abnormal startup when the protocol is set to TLS in the Kuscia configuration file.
 
 ## [0.7.0.dev240229] - 2024-02-29
@@ -133,7 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add network error troubleshooting document.
-- Add steps for pre creating data tables in the process of deploying kusica on K8s.
+- Add steps for pre creating data tables in the process of deploying kuscia on K8s.
 
 ### Changed
 

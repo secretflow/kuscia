@@ -146,10 +146,10 @@ function start_kuscia_monitor() {
 }
 if [ ${MODE} == "center" ]; then
   init_monitor_config center ${ROOT}/${MASTER_DOMAIN} center "${CONFIG_DATA}"
-  start_kuscia_monitor center 9090 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${MASTER_DOMAIN}/"
+  start_kuscia_monitor center 9090 3000 docker.io/secretflow/kuscia-monitor "${ROOT}/${MASTER_DOMAIN}/"
 elif [ ${MODE} == "p2p" ]; then
   init_monitor_config p2p ${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${ALICE_DOMAIN} 9089 3000 docker.io/secretflow/kusica-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
+  start_kuscia_monitor ${ALICE_DOMAIN} 9089 3000 docker.io/secretflow/kuscia-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
   init_monitor_config p2p ${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${BOB_DOMAIN} 9090 3001 docker.io/secretflow/kusica-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
+  start_kuscia_monitor ${BOB_DOMAIN} 9090 3001 docker.io/secretflow/kuscia-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
 fi

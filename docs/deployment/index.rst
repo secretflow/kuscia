@@ -10,6 +10,7 @@
     K8s_deployment_kuscia/index
     operation_cn
     networkrequirements
+    diagnose_tool
     logdescription
     kuscia_monitor
     kuscia_config_cn

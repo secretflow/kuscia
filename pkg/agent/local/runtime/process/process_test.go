@@ -26,7 +26,6 @@ import (
 
 	ctr "github.com/secretflow/kuscia/pkg/agent/local/runtime/process/container"
 	"github.com/secretflow/kuscia/pkg/agent/local/runtime/process/sandbox"
-	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
 	storetest "github.com/secretflow/kuscia/pkg/agent/local/store/testing"
 )
 
@@ -59,7 +58,6 @@ func Test_RuntimeSandboxAndContainers(t *testing.T) {
 		imageStore:     imageStore,
 		hostIP:         "127.0.0.1",
 		sandboxRootDir: rootDir,
-		mountType:      kii.Plain,
 	}
 
 	imageStatus, err := runtime.ImageStatus(ctx, &runtimeapi.ImageSpec{Image: "test:01"}, false)

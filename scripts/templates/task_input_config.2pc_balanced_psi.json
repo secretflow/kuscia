@@ -30,7 +30,7 @@
     "version": "0.0.5",
     "attr_paths": ["protocol", "sort_result", "allow_duplicate_keys", "allow_duplicate_keys/yes/join_type", "allow_duplicate_keys/yes/join_type/left_join/left_side", "input/receiver_input/key", "input/sender_input/key"],
     "attrs": [{
-      "s": "PROTOCOL_ECDH"
+      "s": "PROTOCOL_RR22"
     }, {
       "b": true
     }, {
