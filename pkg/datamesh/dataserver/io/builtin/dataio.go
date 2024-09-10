@@ -53,7 +53,7 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 	}
 	schema, _ := utils.GenerateArrowSchema(data)
 	// use csv reader,ignore first row, first row is headline.
-	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true), csv.WithNullReader(true, CSVDefaultNullValue))
+	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true), csv.WithNullReader(true, CSVDefaultNullValue), csv.WithChunk(1024))
 	defer csvReader.Release()
 	defer func() {
 		if r := recover(); r != nil {
