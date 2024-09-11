@@ -1,6 +1,6 @@
 module github.com/secretflow/kuscia
 
-go 1.22.0
+go 1.22
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2

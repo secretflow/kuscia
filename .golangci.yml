@@ -34,7 +34,7 @@ run:
 # output configuration options
 output:
   # colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
-  format: json
+  formats: json
 
   # print lines of code with issue, default is true
   print-issued-lines: true
@@ -55,7 +55,7 @@ linters-settings:
     check-blank: false
   govet:
     # report about shadowed variables
-    check-shadowing: true
+    shadow: true
   golint:
     # minimal confidence for issues, default is 0.8
     min-confidence: 0.8
@@ -138,15 +138,12 @@ linters-settings:
 
 linters:
   enable:
-    - deadcode
+    - unused
     - govet
-    - golint
-    - varcheck
+    - revive
     - errcheck
     - goconst
-    - structcheck
     - dupl
-    - interfacer
     - goimports
   disable-all: true
   fast: false
