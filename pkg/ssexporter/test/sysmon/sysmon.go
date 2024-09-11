@@ -139,6 +139,7 @@ func GetSystemResourceUsage(pid string, initSysRes []float64, sysRes []float64) 
 }
 
 // LogSystemResourceUsage write the system usage into a file
+
 func LogSystemResourceUsage(sysOutput *os.File, sysRes []float64) {
 	for _, metric := range sysRes {
 		_, err := sysOutput.WriteString(fmt.Sprintf("%f", metric) + ";")
