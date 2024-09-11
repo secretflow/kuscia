@@ -46,7 +46,6 @@ type agentModule struct {
 
 func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 	conf := &i.Agent
-	conf := &i.Agent
 	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
 	hostname, err := os.Hostname()

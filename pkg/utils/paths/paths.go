@@ -147,7 +147,6 @@ func EnsureFile(fileName string, autoCreate bool) error {
 	if err != nil {
 		if autoCreate && os.IsNotExist(err) {
 			// create file's parent directory
-
 			if err := os.MkdirAll(filepath.Dir(fileName), defaultDirMode); err != nil {
 				return err
 			}
