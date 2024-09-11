@@ -18,7 +18,7 @@ jobs:
   golangci:
     strategy:
       matrix:
-        go: ['1.19']
+        go: ['1.22']
         # [macos-latest, windows-latest]
         os: [ubuntu-latest]
     name: lint
@@ -37,7 +37,7 @@ jobs:
 
       - name: Install specific version of golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.14.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
           golangci-lint --version
       - name: Run golangci-lint
         run: |
@@ -46,4 +46,4 @@ jobs:
           else
             LAST_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
           fi
-          golangci-lint run --new-from-rev=${LAST_COMMIT_SHA} --out-format=colored-line-number
+          golangci-lint run --new-from-rev=${LAST_COMMIT_SHA} --out-format=colored-line-number --timeout=5m
