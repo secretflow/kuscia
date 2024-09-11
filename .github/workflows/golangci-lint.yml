@@ -46,4 +46,4 @@ jobs:
           else
             LAST_COMMIT_SHA=${{ github.event.pull_request.base.sha }}
           fi
-          golangci-lint run --new-from-rev=${LAST_COMMIT_SHA} --out-format=colored-line-number
+          golangci-lint run --new-from-rev=${LAST_COMMIT_SHA} --out-format=colored-line-number --timeout=5m
