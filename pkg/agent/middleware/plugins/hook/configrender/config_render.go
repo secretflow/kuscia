@@ -248,7 +248,7 @@ func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) err
 		envs[env.Name] = env.Value
 	}
 
-	data, err := cr.makeDataMap(ctx.Pod.Annotations, ctx.Pod.Labels, envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, envs)
 
 	if err != nil {
 		return err
