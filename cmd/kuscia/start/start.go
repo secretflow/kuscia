@@ -64,7 +64,7 @@ func Start(ctx context.Context, configFile string) error {
 
 	if conf.Agent.Provider.Runtime == config.ContainerRuntime && !runtime.Permission.HasPrivileged() {
 		nlog.Errorf("Runc must run with privileged mode")
-		nlog.Errorf("Please run kusica like: docker run --privileged secretflow/kuscia")
+		nlog.Errorf("Please run kuscia like: docker run --privileged secretflow/kuscia")
 		return errors.New("permission is error")
 	}
 
@@ -114,6 +114,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("envoy", "k3s")
 
 	mm.SetDependencies("controllers", "k3s")
+	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")
 	mm.SetDependencies("datamesh", "k3s", "config", "envoy", "domainroute")
 	mm.SetDependencies("domainroute", "k3s")
 	mm.SetDependencies("interconn", "k3s")

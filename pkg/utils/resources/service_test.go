@@ -97,7 +97,7 @@ func TestGenerateServiceName(t *testing.T) {
 			name:     "prefix is greater than 63 characters",
 			prefix:   "abc-012345678-012345678-012345678-012345678-012345678-012",
 			portName: "domain",
-			expected: "svc-abc-012345678-012345678-012345678-0-domain",
+			expected: "svc-abc-012345678-012345678-012345678-0",
 		},
 		{
 			name:     "prefix is digital",
@@ -115,7 +115,7 @@ func TestGenerateServiceName(t *testing.T) {
 			name:     "prefix is digital and svc-prefix-port length greater than 63",
 			prefix:   "123-012345678-012345678-012345678-012345678-012345678",
 			portName: "domain",
-			expected: "svc-123-012345678-012345678-012345678-0-domain",
+			expected: "svc-123-012345678-012345678-012345678-0",
 		},
 	}
 

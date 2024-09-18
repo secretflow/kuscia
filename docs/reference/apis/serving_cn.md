@@ -283,6 +283,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 }
 ```
 
+{#update-serving}
+
 ### 更新 Serving
 
 #### HTTP路径
@@ -546,9 +548,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
   }
 }
 ```
-
-{#update-serving}
-
 
 ## 公共
 

@@ -45,7 +45,7 @@ func (cr *imageSecurity) Type() string {
 }
 
 // Init implements the plugin.Plugin interface.
-func (cr *imageSecurity) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
+func (cr *imageSecurity) Init(ctx context.Context, dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
 	if err := cfg.Config.Decode(&cr.config); err != nil {
 		return err
 	}

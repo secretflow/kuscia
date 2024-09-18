@@ -43,7 +43,7 @@
 完整的详细流程请参考 [K8s部署中心化集群](./K8s_master_lite_cn.md) 和 [K8s部署点对点集群](./K8s_p2p_cn.md)。
 
 其中，使用 RunP 部署的不同点是：
-1. 修改 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/configmap.yaml) （以 autonomy 为例）文件中 Kusica 的 `runtime` 配置为 `runp`，
+1. 修改 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/configmap.yaml) （以 autonomy 为例）文件中 Kuscia 的 `runtime` 配置为 `runp`，
    以及填充模板变量，例如 `{{.DOMAIN_ID}}`、`{{.DOMAIN_KEY_DATA}}` 等。 `runk` 相关的配置不需要关注，包括不需要配置 `kubeconfigFile` 以及不需要创建 `rbac.yaml`。
    ```yaml
    runtime: runp

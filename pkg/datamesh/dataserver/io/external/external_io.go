@@ -28,6 +28,8 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
+var partitionSpecKey = "partition_spec"
+
 type IOServer struct {
 	exDpClient IDataProxyClient
 }
@@ -42,11 +44,18 @@ func NewIOServer(conf *config.DataProxyConfig) *IOServer {
 
 func (d *IOServer) GetFlightInfo(ctx context.Context, reqCtx *utils.DataMeshRequestContext) (flightInfo *flight.FlightInfo, err error) {
 	dd, ds, err := reqCtx.GetDomainDataAndSource(ctx)
+	if err != nil {
+		nlog.Errorf("GetFlightInfo get DomainData and Source failed, error: %s.", err.Error())
+		return nil, err
+	}
 	if reqCtx.Query != nil {
 		req := &datamesh.CommandDataMeshQuery{
 			Query:      reqCtx.Query,
 			Domaindata: dd,
 			Datasource: ds,
+		}
+		if partitionSpec, ok := dd.Attributes[partitionSpecKey]; ok {
+			req.Query.PartitionSpec = partitionSpec
 		}
 		return d.exDpClient.GetFlightInfoDataMeshQuery(ctx, req)
 	}
@@ -55,6 +64,9 @@ func (d *IOServer) GetFlightInfo(ctx context.Context, reqCtx *utils.DataMeshRequ
 			Update:     reqCtx.Update,
 			Domaindata: dd,
 			Datasource: ds,
+		}
+		if partitionSpec, ok := dd.Attributes[partitionSpecKey]; ok {
+			req.Update.PartitionSpec = partitionSpec
 		}
 		return d.exDpClient.GetFlightInfoDataMeshUpdate(ctx, req)
 	}

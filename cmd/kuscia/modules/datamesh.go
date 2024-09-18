@@ -35,7 +35,7 @@ func NewDataMesh(d *ModuleRuntimeConfigs) (Module, error) {
 	conf := config.NewDefaultDataMeshConfig()
 	conf.RootDir = d.RootDir
 	conf.DomainKey = d.DomainKey
-
+	conf.KubeClient = d.Clients.KubeClient
 	// override data proxy config
 	if d.DataMesh != nil {
 		conf.DisableTLS = d.DataMesh.DisableTLS

@@ -20,6 +20,8 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/secretflow/kuscia/pkg/confmanager/driver"
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/bean"
@@ -47,16 +49,22 @@ func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaCli
 	// wait for all caches to sync
 	kusciaInformerFactory.WaitForCacheSync(ctx.Done())
 
+	// init cm config service
+	configService, err := newCMConfigService(ctx, kusciaAPIConfig)
+	if err != nil {
+		return err
+	}
+
 	// inject http server bean
-	httpServer := bean.NewHTTPServerBean(kusciaAPIConfig)
+	httpServer := bean.NewHTTPServerBean(kusciaAPIConfig, configService)
 	serverName := httpServer.ServerName()
-	err := appEngine.UseBeanWithConfig(serverName, httpServer)
+	err = appEngine.UseBeanWithConfig(serverName, httpServer)
 	if err != nil {
 		return fmt.Errorf("inject bean %s failed: %v", serverName, err.Error())
 	}
 
 	// inject grpc server bean
-	grpcServer := bean.NewGrpcServerBean(kusciaAPIConfig)
+	grpcServer := bean.NewGrpcServerBean(kusciaAPIConfig, configService)
 	serverName = grpcServer.ServerName()
 	err = appEngine.UseBeanWithConfig(serverName, grpcServer)
 	if err != nil {
@@ -64,4 +72,17 @@ func Run(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig, kusciaCli
 	}
 
 	return appEngine.Run(ctx)
+}
+
+func newCMConfigService(ctx context.Context, kusciaAPIConfig *config.KusciaAPIConfig) (cmservice.IConfigService, error) {
+	configService, err := cmservice.NewConfigService(ctx, &cmservice.ConfigServiceConfig{
+		DomainID:   kusciaAPIConfig.DomainID,
+		DomainKey:  kusciaAPIConfig.DomainKey,
+		Driver:     driver.CRDDriverType,
+		KubeClient: kusciaAPIConfig.KubeClient,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("init cm config service for kusciaapi failed, %s", err.Error())
+	}
+	return configService, nil
 }

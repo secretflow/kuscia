@@ -38,6 +38,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/common"
@@ -131,6 +132,9 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		"--disable=local-storage",
 		"--disable=metrics-server",
 		"--kube-apiserver-arg=event-ttl=10m",
+	}
+	if !pkgcom.IsRootUser() {
+		args = append(args, "--rootless")
 	}
 	if s.datastoreEndpoint != "" {
 		args = append(args, "--datastore-endpoint="+s.datastoreEndpoint)
@@ -505,57 +509,12 @@ func createCrossNamespace(ctx context.Context, conf *ModuleRuntimeConfigs) error
 
 // readK3sLog read the last N lines of k3s log
 func readK3sLog(k3sLogFilePath string, nLastLine int) {
-	lines, readFileErr := readLastNLinesAsString(k3sLogFilePath, nLastLine)
+	lines, readFileErr := utils.ReadLastNLinesAsString(k3sLogFilePath, nLastLine)
 	if readFileErr != nil {
 		nlog.Errorf("[k3s] read k3s file error: %v", readFileErr)
 	} else {
 		nlog.Errorf("[k3s] Log content: %s [k3s] Log end", lines)
 	}
-}
-
-// readLastNLinesAsString read the last N lines of a file as string
-func readLastNLinesAsString(filePath string, n int) (string, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
-
-	stat, err := file.Stat()
-	if err != nil {
-		return "", err
-	}
-	fileSize := stat.Size()
-
-	buf := make([]byte, 0)
-	newlineChar := byte('\n')
-
-	for offset := int64(1); offset <= fileSize; offset++ {
-		_, err = file.Seek(-offset, io.SeekEnd)
-		if err != nil {
-			return "", err
-		}
-
-		b := make([]byte, 1)
-		_, err = file.Read(b)
-		if err != nil {
-			return "", err
-		}
-
-		if b[0] == newlineChar {
-			if len(buf) > 0 { // Avoid appending empty lines at the end of file
-				n--
-			}
-			if n == 0 {
-				break
-			}
-		}
-		buf = append([]byte{b[0]}, buf...)
-	}
-
-	return string(buf), nil
 }
 
 // buildK3sLogPath build the absolute path of k3s log

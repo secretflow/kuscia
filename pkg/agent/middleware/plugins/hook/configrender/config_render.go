@@ -16,7 +16,9 @@ package configrender
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -32,11 +34,17 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
+	"github.com/secretflow/kuscia/pkg/agent/resource"
 	"github.com/secretflow/kuscia/pkg/agent/utils/format"
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/confmanager/driver"
+	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	uc "github.com/secretflow/kuscia/pkg/utils/common"
+	utilcom "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
 const (
@@ -57,7 +65,9 @@ type configRenderConfig struct {
 }
 
 type configRender struct {
-	config configRenderConfig
+	ctx             context.Context
+	config          configRenderConfig
+	cmConfigService cmservice.IConfigService
 }
 
 // Type implements the plugin.Plugin interface.
@@ -66,16 +76,27 @@ func (cr *configRender) Type() string {
 }
 
 // Init implements the plugin.Plugin interface.
-func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
+func (cr *configRender) Init(ctx context.Context, dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
 	if err := cfg.Config.Decode(&cr.config); err != nil {
 		return err
 	}
 
-	if dependencies != nil {
-		cr.config.kusciaAPIProtocol = dependencies.AgentConfig.KusciaAPIProtocol
-		cr.config.kusciaAPIToken = dependencies.AgentConfig.KusciaAPIToken
-		cr.config.domainKeyData = dependencies.AgentConfig.DomainKeyData
+	cr.ctx = ctx
+	cr.config.kusciaAPIProtocol = dependencies.AgentConfig.KusciaAPIProtocol
+	cr.config.kusciaAPIToken = dependencies.AgentConfig.KusciaAPIToken
+	cr.config.domainKeyData = dependencies.AgentConfig.DomainKeyData
+
+	// init cm service
+	configService, err := cmservice.NewConfigService(ctx, &cmservice.ConfigServiceConfig{
+		DomainID:   dependencies.AgentConfig.Namespace,
+		DomainKey:  dependencies.AgentConfig.DomainKey,
+		Driver:     driver.CRDDriverType,
+		KubeClient: dependencies.KubeClient,
+	})
+	if err != nil {
+		return fmt.Errorf("init cm config service for agent failed, %s", err.Error())
 	}
+	cr.cmConfigService = configService
 
 	hook.Register(common.PluginNameConfigRender, cr)
 	return nil
@@ -182,6 +203,12 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 		return err
 	}
 
+	// render taskInputConfig,allocatePorts,ClusterDefine from configMap
+	if err := fillTemplateValueFromConfigMap(ctx.Pod, ctx.ResourceManager, data); err != nil {
+		nlog.Errorf("fillTemplateValueFromConfigMap pod: %s config failed, error: %s.", ctx.Pod.Name, err.Error())
+		return err
+	}
+
 	dstConfigMap, err := cr.renderConfigMap(srcConfigMap, data)
 	if err != nil {
 		return fmt.Errorf("failed to render config map %q, detail-> %v", srcConfigMap.Name, err)
@@ -212,13 +239,24 @@ func (cr *configRender) renderConfigMap(srcConfigMap *v1.ConfigMap, data map[str
 }
 
 func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) error {
+	// only render config template volume, other volume break
+	if ctx.Mount == nil || ctx.Pod == nil || ctx.Mount.Name != ctx.Pod.Annotations[common.ConfigTemplateVolumesAnnotationKey] {
+		return nil
+	}
 	envs := map[string]string{}
 	for _, env := range ctx.Envs {
 		envs[env.Name] = env.Value
 	}
 
 	data, err := cr.makeDataMap(ctx.Pod.Annotations, ctx.Pod.Labels, envs)
+
 	if err != nil {
+		return err
+	}
+
+	// render taskInputConfig,allocatePorts,ClusterDefine from configMap
+	if err := fillTemplateValueFromConfigMap(ctx.Pod, ctx.ResourceManager, data); err != nil {
+		nlog.Errorf("fillTemplateValueFromConfigMap pod: %s config failed, error: %s.", ctx.Pod.Name, err.Error())
 		return err
 	}
 
@@ -245,6 +283,41 @@ func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) err
 	nlog.Infof("Render config template for container %q in pod %q succeed, templatePath=%v, configPath=%v",
 		ctx.Container.Name, format.Pod(ctx.Pod), hostPath, configPath)
 
+	return nil
+}
+
+func fillTemplateValueFromConfigMap(pod *v1.Pod, resourceManager *resource.KubeResourceManager, templateValues map[string]string) error {
+	cmName, ok := pod.Annotations[common.ConfigTemplateValueAnnotationKey]
+	if !ok {
+		return nil
+	}
+	if resourceManager == nil {
+		return errors.New("fillTemplateValueFromConfigMap failed pod or resourceManager is nil")
+	}
+	cm, err := resourceManager.GetConfigMap(cmName)
+	if err != nil {
+		nlog.Errorf("Render pod: %s config failed, could not get config value from configmap:%s with error: %s.", pod.Name, cmName, err.Error())
+		return err
+	}
+	for k, v := range cm.Data {
+		templateValues[k] = v
+	}
+	// fill compress value to template value
+	if strCompressFields, ok := cm.Annotations[common.ConfigValueCompressFieldsNameAnnotationKey]; ok {
+		CompressFields := utilcom.AnnotationStringToSlice(strCompressFields)
+		for _, filed := range CompressFields {
+			if fieldValue, ok := cm.BinaryData[filed]; ok {
+				// decompress value
+				valString, err := utilcom.DecompressString(fieldValue)
+				if err != nil {
+					nlog.Errorf("Decompress configMap: %s filed: %s failed, error: %s.", cm.Name, filed, err.Error())
+					// ignore error, not return
+					return err
+				}
+				templateValues[filed] = valString
+			}
+		}
+	}
 	return nil
 }
 
@@ -313,15 +386,54 @@ func (cr *configRender) renderConfigFile(templateFile, configFile string, data m
 }
 
 func (cr *configRender) renderConfig(templateContent string, data map[string]string) (string, error) {
-	// replace {{{pattern}}} --> {{kuscia "pattern"}}
-	re := regexp.MustCompile(`\{\{\{.+\}\}\}`)
-	result := re.ReplaceAllStringFunc(templateContent, func(match string) string {
-		submatch := re.FindStringSubmatch(match)
-		if len(submatch) > 0 {
-			return "{{kuscia " + "\"" + submatch[0][3:len(submatch[0])-3] + "\"" + "}}"
+	// parse kuscia configs
+	configKeys := make(map[string]struct{})
+	configReg := regexp.MustCompile(`\{\{?\{\.([^{}]+)\}\}?\}`)
+	configResult := configReg.ReplaceAllStringFunc(templateContent, func(match string) string {
+		subMatch := configReg.FindStringSubmatch(match)
+		if len(subMatch) > 1 {
+			key := strings.Split(subMatch[1], ".")[0]
+			configKeys[key] = struct{}{}
+			// replace {{{pattern}}} --> {{kuscia "pattern"}}
+			if strings.HasPrefix(subMatch[0], "{{{") {
+				reg := regexp.MustCompile(`\[(.*?)\]`)
+				subMatch[1] = reg.ReplaceAllStringFunc(subMatch[1], func(match string) string {
+					result := reg.FindStringSubmatch(match)
+					if len(result) > 1 {
+						// replace [v1.v2] to [v1#v2]
+						return strings.ReplaceAll(match, ".", "#")
+					}
+					return match
+				})
+				return "{{kuscia " + "\"" + subMatch[1] + "\"" + "}}"
+			}
 		}
 		return match
 	})
+	keysFromCM := make(map[string]struct{})
+	for key := range configKeys {
+		if _, ok := data[key]; !ok {
+			keysFromCM[key] = struct{}{}
+		}
+	}
+	if len(keysFromCM) > 0 {
+		// get config data from cm
+		keys := make([]string, 0)
+		for key := range keysFromCM {
+			keys = append(keys, key)
+		}
+		nlog.Infof("Fetch keys %v config from cm", keys)
+		resp := cr.cmConfigService.BatchQueryConfig(cr.ctx, &confmanager.BatchQueryConfigRequest{
+			Keys: keys,
+		})
+		if resp.Status.Code == int32(errorcode.ErrorCode_SUCCESS) {
+			for _, d := range resp.Data {
+				data[d.Key] = d.Value
+			}
+		} else {
+			return "", fmt.Errorf("failed to get config keys %v from cm, %v", configKeys, resp.Status.Message)
+		}
+	}
 
 	// use to replace values
 	kusciaQueryValue := func(query string) string {
@@ -337,7 +449,7 @@ func (cr *configRender) renderConfig(templateContent string, data map[string]str
 		return string(output)
 	}
 
-	tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Funcs(template.FuncMap{"kuscia": kusciaQueryValue}).Parse(string(result))
+	tmpl, err := template.New("config-template").Option(defaultTemplateRenderOption).Funcs(template.FuncMap{"kuscia": kusciaQueryValue}).Parse(configResult)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse config template, detail-> %v", err)
 	}

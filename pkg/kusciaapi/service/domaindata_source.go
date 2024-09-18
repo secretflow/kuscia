@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -29,11 +30,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/resources"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
+	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
@@ -63,14 +66,14 @@ type IDomainDataSourceService interface {
 }
 
 type domainDataSourceService struct {
-	conf                 *config.KusciaAPIConfig
-	configurationService cmservice.IConfigurationService
+	conf          *config.KusciaAPIConfig
+	configService cmservice.IConfigService
 }
 
-func NewDomainDataSourceService(config *config.KusciaAPIConfig, configurationService cmservice.IConfigurationService) IDomainDataSourceService {
+func NewDomainDataSourceService(config *config.KusciaAPIConfig, configService cmservice.IConfigService) IDomainDataSourceService {
 	return &domainDataSourceService{
-		conf:                 config,
-		configurationService: configurationService,
+		conf:          config,
+		configService: configService,
 	}
 }
 
@@ -469,6 +472,20 @@ func (s domainDataSourceService) getDomainDataSource(ctx context.Context, domain
 		AccessDirectly: kusciaDataSource.Spec.AccessDirectly}, nil
 }
 
+func CheckDomainDataSourceExists(kusciaClient kusciaclientset.Interface, domainID, domainDataSourceID string) (kusciaError pberrorcode.ErrorCode, errorMsg string) {
+
+	_, err := kusciaClient.KusciaV1alpha1().DomainDataSources(domainID).Get(context.Background(), domainDataSourceID, metav1.GetOptions{})
+	if err != nil {
+		errorCode := errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrQueryDomainDataSource)
+		if pberrorcode.ErrorCode_KusciaAPIErrDomainDataSourceNotExists == errorCode {
+			return errorCode, fmt.Sprintf("domain data source `%s` is not exists in domain `%s`", domainDataSourceID, domainID)
+		}
+
+		return errorCode, err.Error()
+	}
+	return pberrorcode.ErrorCode_SUCCESS, ""
+}
+
 func validateDataSourceType(t string) error {
 	if t != common.DomainDataSourceTypeOSS &&
 		t != common.DomainDataSourceTypeMysql &&
@@ -515,25 +532,18 @@ func (s domainDataSourceService) validateRetrieveRequest(domainID string) error 
 
 //nolint:dupl
 func (s domainDataSourceService) getDsInfoByKey(ctx context.Context, sourceType string, infoKey string) (*kusciaapi.DataSourceInfo, error) {
-	response := s.configurationService.QueryConfiguration(ctx, &confmanager.QueryConfigurationRequest{
-		Ids: []string{infoKey},
-	}, s.conf.DomainID)
+	if s.configService == nil {
+		return nil, fmt.Errorf("cm config service is empty, skip get datasource info by key")
+	}
+
+	response := s.configService.QueryConfig(ctx, &confmanager.QueryConfigRequest{Key: infoKey})
 	if !utils.IsSuccessCode(response.Status.Code) {
 		nlog.Errorf("Query info key failed, code: %d, message: %s", response.Status.Code, response.Status.Message)
-		return nil, fmt.Errorf("query info key failed")
+		return nil, fmt.Errorf("query info key failed: %v", response.Status.Message)
 	}
-	if response.Configurations == nil || response.Configurations[infoKey] == nil {
-		nlog.Errorf("Query info key success but info key %s not found", infoKey)
-		return nil, fmt.Errorf("query info key not found")
-	}
-	infoKeyResult := response.Configurations[infoKey]
-	if !infoKeyResult.Success {
-		nlog.Errorf("Query info key %s failed: %s", infoKey, infoKeyResult.ErrMsg)
-		return nil, fmt.Errorf("query info key failed")
-	}
-	info, err := decodeDataSourceInfo(sourceType, infoKeyResult.Content)
+	info, err := decodeDataSourceInfo(sourceType, response.Value)
 	if err != nil {
-		nlog.Errorf("Decode datasource info for key %s fail: %v", infoKey, err)
+		nlog.Errorf("Decode datasource info for key %s failed: %v", infoKey, err)
 	}
 	return info, err
 }
@@ -654,6 +664,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 	return
 }
 
+// validateDataSourceInfo validate data source info
 func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) error {
 
 	if info == nil {
@@ -707,6 +718,9 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		if info.Odps.Endpoint == "" {
 			return fmt.Errorf("odps 'endpoint' is empty")
 		}
+		if !isValidURL(info.Odps.Endpoint) {
+			return fmt.Errorf("odps 'endpoint' is invalid, should contain the prefix: http or https")
+		}
 		if info.Odps.Project == "" {
 			return fmt.Errorf("odps 'project' is empty")
 		}
@@ -721,4 +735,19 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 
 	}
 	return nil
+}
+
+// isValidURL checks if the endpoint is a valid URL.
+func isValidURL(endpoint string) bool {
+
+	parse, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+
+	if parse.Host == "" {
+		return false
+	}
+
+	return parse.Scheme == constants.SchemaHTTP || parse.Scheme == constants.SchemaHTTPS
 }

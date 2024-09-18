@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/anypb"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 
@@ -134,41 +135,83 @@ func (s *domainDataGrantService) QueryDomainDataGrant(ctx context.Context, reque
 
 func (s *domainDataGrantService) BatchQueryDomainDataGrant(ctx context.Context, request *kusciaapi.BatchQueryDomainDataGrantRequest) *kusciaapi.BatchQueryDomainDataGrantResponse {
 	data := []*kusciaapi.DomainDataGrant{}
-	for _, req := range request.Data {
+	if len(request.Data) == 0 {
+		// empty query data
+		return &kusciaapi.BatchQueryDomainDataGrantResponse{
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "BatchQueryDomainDataGrant.data can't be null"),
+			Data:   data,
+		}
+	}
+	emptyRequestCount := 0
+	errorResponseCount := 0
+	detail := make([]*anypb.Any, len(request.Data))
+	for i, req := range request.Data {
+		if req.DomainId == "" || req.DomaindatagrantId == "" {
+			emptyRequestCount++
+			data = append(data, &kusciaapi.DomainDataGrant{})
+			tempDetail, err := anypb.New(utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "QueryDomainDataGrantRequestData can't be null"))
+			if err != nil {
+				tempDetail = nil
+			}
+			detail[i] = tempDetail
+			continue
+		}
 		resp := s.QueryDomainDataGrant(ctx, &kusciaapi.QueryDomainDataGrantRequest{
 			DomainId:          req.DomainId,
 			DomaindatagrantId: req.DomaindatagrantId,
 		})
+		if resp.Status.Code != 0 {
+			errorResponseCount++
+		}
 		data = append(data, resp.Data)
+		tempDetail, err := anypb.New(resp.Status)
+		if err != nil {
+			tempDetail = nil
+		}
+		detail[i] = tempDetail
 	}
 
-	return &kusciaapi.BatchQueryDomainDataGrantResponse{
-		Status: utils.BuildSuccessResponseStatus(),
-		Data:   data,
+	var ret *kusciaapi.BatchQueryDomainDataGrantResponse
+
+	if emptyRequestCount != 0 || errorResponseCount != 0 {
+		errMsg := fmt.Sprintf("BatchQuery has error. Empty/Error/Total(%d/%d/%d)", emptyRequestCount, errorResponseCount, len(request.Data))
+		ret = &kusciaapi.BatchQueryDomainDataGrantResponse{
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrQueryDomainDataGrant, errMsg),
+			Data:   data,
+		}
+		// add detail empty & error message to status.detail
+		ret.Status.Details = detail
+	} else {
+		ret = &kusciaapi.BatchQueryDomainDataGrantResponse{
+			Status: utils.BuildSuccessResponseStatus(),
+			Data:   data,
+		}
 	}
+
+	return ret
 }
 
 func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, request *kusciaapi.UpdateDomainDataGrantRequest) *kusciaapi.UpdateDomainDataGrantResponse {
 
 	if request.DomaindataId == "" {
 		return &kusciaapi.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domaindataid cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domaindataid can't be null"),
 		}
 	}
 	dd, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		return &kusciaapi.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domaindata cant be found"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domaindata can't be found"),
 		}
 	}
 	if request.GrantDomain == "" {
 		return &kusciaapi.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "grantdomain cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "grantdomain can't be null"),
 		}
 	}
 	if request.DomaindatagrantId == "" {
 		return &kusciaapi.UpdateDomainDataGrantResponse{
-			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "grantdomainid cant be null"),
+			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "grantdomainid can't be null"),
 		}
 	}
 
@@ -177,6 +220,13 @@ func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, requ
 		nlog.Errorf("Get DomainDataGrant failed, error:%s", err.Error())
 		return &kusciaapi.UpdateDomainDataGrantResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrQueryDomainDataGrant), err.Error()),
+		}
+	}
+
+	// if domaindatagrant is exist, and try to modify domaindata id, show better fail reason
+	if dg.Spec.DomainDataID != request.DomaindataId {
+		return &kusciaapi.UpdateDomainDataGrantResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrRequestValidate), "domaindataid can't be changed."),
 		}
 	}
 
@@ -382,15 +432,15 @@ func (s *domainDataGrantService) signDomainDataGrant(dg *v1alpha1.DomainDataGran
 func validateCreateDomainDataGrantRequest(request *kusciaapi.CreateDomainDataGrantRequest) error {
 
 	if request.GrantDomain == "" {
-		return fmt.Errorf("grantdomain cant be null")
+		return fmt.Errorf("grantdomain can't be null")
 	}
 
 	if request.GrantDomain == request.DomainId {
-		return fmt.Errorf("grantdomain cant be self")
+		return fmt.Errorf("grantdomain can't be self")
 	}
 
 	if request.DomaindataId == "" {
-		return fmt.Errorf("domaindata cant be null")
+		return fmt.Errorf("domaindata can't be null")
 	}
 	// do k8s validate
 	if err := resources.ValidateK8sName(request.DomainId, "domain_id"); err != nil {

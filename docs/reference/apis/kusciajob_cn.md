@@ -38,7 +38,7 @@ protobuf 文件。
 | initiator       | string                                       | 必填 | 发起方节点 ID                                                                                                                   |
 | max_parallelism | int32                                        | 可选 | 并发度，参考 [KusciaJob 概念](../concepts/kusciajob_cn.md)                                                                         |
 | tasks           | [Task](#task)[]                              | 必填 | 任务参数                                                                                                                       |
-|  custom_fields | map<string, string> | 可选 | 自定义参数，会同步给参与方，key不超过38个字符，value不超过63个字符。                                                                                                            |
+| custom_fields   | map<string, string>                          | 可选 | 自定义参数，会同步给参与方，key不超过38个字符，value不超过63个字符。                                                                                                            |
 
 #### 响应（CreateJobResponse）
 
@@ -71,17 +71,15 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       "app_image": "secretflow-image",
       "parties": [
         {
-          "domain_id": "alice",
-          "role": "partner"
+          "domain_id": "alice"
         },
         {
-          "domain_id": "bob",
-          "role": "partner"
+          "domain_id": "bob"
         }
       ],
       "alias": "job-psi",
       "dependencies": [],
-      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_RR22\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
       "priority": 100
     },
     {
@@ -89,12 +87,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       "app_image": "secretflow-image",
       "parties": [
         {
-          "domain_id": "alice",
-          "role": "partner"
+          "domain_id": "alice"
         },
         {
-          "domain_id": "bob",
-          "role": "partner"
+          "domain_id": "bob"
         }
       ],
       "alias": "job-split",
@@ -193,12 +189,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "app_image": "secretflow-image",
         "parties": [
           {
-            "domain_id": "alice",
-            "role": "partner"
+            "domain_id": "alice"
           },
           {
-            "domain_id": "bob",
-            "role": "partner"
+            "domain_id": "bob"
           }
         ],
         "alias": "job-psi",
@@ -206,19 +200,17 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
         "dependencies": [
           ""
         ],
-        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_ECDH\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_RR22\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
         "priority": 100
       },
       {
         "app_image": "secretflow-image",
         "parties": [
           {
-            "domain_id": "alice",
-            "role": "partner"
+            "domain_id": "alice"
           },
           {
-            "domain_id": "bob",
-            "role": "partner"
+            "domain_id": "bob"
           }
         ],
         "alias": "job-split",
@@ -718,6 +710,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | domain_id | string | 必填 | DomainID |
 | role      | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)       |
 | resources | JobResource | 可选 | 参与方资源配置 |
+| bandwidth_limits | [BandwidthLimit](#bandwidth-limit)[] | 可选 | 节点请求其他节点的带宽限制配置 |
 
 {#JobResource}
 
@@ -743,15 +736,27 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### Task
 
-| 字段                | 类型                | 选填 | 描述                                                                                                                                                       |
-|-------------------|-------------------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| app_image         | string            | 必填 | 任务镜像                                                                                                                                                     |
-| parties           | [Party](#party)[] | 必填 | 参与方节点 ID                                                                                                                                                 |
-| alias             | string            | 必填 | 任务别名，同一个 Job 中唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)                    |
-| task_id           | string            | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| dependencies      | string[]          | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系                                                                                                                   |
-| task_input_config | string            | 必填 | 任务配置                                                                                                                                                     |
-| priority          | string            | 可选 | 优先级，值越大优先级越高                                                                                                                                             |
+| 字段                       | 类型                                 | 选填 | 描述                                                                                                                                                        |
+|--------------------------|------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| app_image                | string                             | 必填 | 任务镜像                                                                                                                                                      |
+| parties                  | [Party](#party)[]                  | 必填 | 参与方节点 ID                                                                                                                                                  |
+| alias                    | string                             | 必填 | 任务别名，同一个 Job 中唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)                    |
+| task_id                  | string                             | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| dependencies             | string[]                           | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系                                                                                                                    |
+| task_input_config        | string                             | 必填 | 任务配置                                                                                                                                                      |
+| priority                 | string                             | 可选 | 优先级，值越大优先级越高                                                                                                                                              |
+| schedule_config          | [ScheduleConfig](#schedule-config) | 可选 | 任务调度配置                                                                                                                                                    |
+
+{#schedule-config}
+
+### ScheduleConfig
+
+| 字段                                      | 类型     | 选填   | 描述                                                                                                 |
+|-----------------------------------------|--------|------|----------------------------------------------------------------------------------------------------|
+| task_timeout_seconds                    | int32  | 可选   | 任务超时时间，默认值: 300，当任务在 300 秒内没有被调度成功时，会将任务置为失败状态                                                     |
+| resource_reserved_seconds               | int32  | 可选   | 任务预留资源时间，默认值: 30，当任务参与方在扣减完资源(cpu/memory)后，会占用 30 秒，如果在 30 秒内，存在部分参与方没有成功扣减资源，那么已扣减资源的参与方将会释放扣减的资源 |
+| resource_reallocation_interval_seconds  | int32  | 可选   | 任务重新扣减资源的时间间隔，默认值: 30，当已扣减资源的参与方在释放完扣减的资源后，下次重新扣减资源的时间间隔                                           |
+
 
 {#task-config}
 
@@ -831,3 +836,13 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 | port_name | string | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name` |
 | scope     | string | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
 | endpoint  | string | 应用服务访问地址                                                                                            |
+
+
+{#bandwidth-limit}
+
+### BandwidthLimit
+
+| 字段        | 类型                | 选填 | 描述                                                                                                                                                       |
+|-----------|-------------------|----|---------------------------------------------------------------------|
+| destination_id | string            | 必填 | 目标节点     ID                                                                                                                                                 |
+| limit_kbps     | int64            | 必填 | 带宽限制，单位为 KiB/s                                                                                                                                                 |

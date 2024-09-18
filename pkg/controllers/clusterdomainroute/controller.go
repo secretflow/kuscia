@@ -28,7 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	rbaclisters "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
@@ -65,23 +67,29 @@ type controller struct {
 	gatewayListerSynced            cache.InformerSynced
 	interopLister                  kuscialistersv1alpha1.InteropConfigLister
 	interopListerSynced            cache.InformerSynced
+	roleLister                     rbaclisters.RoleLister
+	roleListerSynced               cache.InformerSynced
 
 	kubeClient            kubernetes.Interface
 	kusciaClient          kusciaclientset.Interface
+	kubeInformerFactory   kubeinformers.SharedInformerFactory
 	kusciaInformerFactory informers.SharedInformerFactory
 
 	clusterDomainRouteWorkqueue workqueue.RateLimitingInterface
 }
 
 func NewController(ctx context.Context, config controllers.ControllerConfig) controllers.IController {
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(config.KubeClient, 0)
 	kusciaInformerFactory := informers.NewSharedInformerFactory(config.KusciaClient, clusterDomainRouteSyncPeriod)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 	clusterDomainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 	domainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
 	interopInformer := kusciaInformerFactory.Kuscia().V1alpha1().InteropConfigs()
+	roleInformer := kubeInformerFactory.Rbac().V1().Roles()
 
 	cc := &controller{
+		kubeInformerFactory:            kubeInformerFactory,
 		kusciaInformerFactory:          kusciaInformerFactory,
 		kubeClient:                     config.KubeClient,
 		kusciaClient:                   config.KusciaClient,
@@ -97,6 +105,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		domainRouteListerSynced:        domainRouteInformer.Informer().HasSynced,
 		interopLister:                  interopInformer.Lister(),
 		interopListerSynced:            interopInformer.Informer().HasSynced,
+		roleLister:                     roleInformer.Lister(),
+		roleListerSynced:               roleInformer.Informer().HasSynced,
 		clusterDomainRouteWorkqueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusterDomainRoutes"),
 	}
 	cc.ctx, cc.cancel = context.WithCancel(ctx)
@@ -326,10 +336,11 @@ func (c *controller) Run(threadiness int) error {
 	defer c.clusterDomainRouteWorkqueue.ShutDown()
 	// Start the informer factories to begin populating the informer caches
 	nlog.Info("Starting ClusterDomainRoute controller")
+	c.kubeInformerFactory.Start(c.ctx.Done())
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 
 	if ok := cache.WaitForCacheSync(c.ctx.Done(), c.domainListerSynced, c.clusterDomainRouteListerSynced,
-		c.domainRouteListerSynced, c.gatewayListerSynced, c.interopListerSynced); !ok {
+		c.domainRouteListerSynced, c.gatewayListerSynced, c.interopListerSynced, c.roleListerSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 

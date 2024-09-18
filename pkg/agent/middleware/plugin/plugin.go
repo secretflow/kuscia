@@ -15,7 +15,10 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
+
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -28,7 +31,7 @@ var (
 // Plugin is a unified abstraction of plugin. External plugins need to implement this interface.
 type Plugin interface {
 	Type() string
-	Init(*Dependencies, *config.PluginCfg) error
+	Init(context.Context, *Dependencies, *config.PluginCfg) error
 }
 
 // Register plugin.
@@ -43,6 +46,7 @@ func Get(name string) Plugin {
 
 type Dependencies struct {
 	AgentConfig *config.AgentConfig
+	KubeClient  kubernetes.Interface
 }
 
 // Init build and load specific plugins through configuration.
@@ -57,14 +61,14 @@ type Dependencies struct {
 //	  - permission: allow
 //	    patterns:
 //	    - docker.io/secretflow
-func Init(dependencies *Dependencies) error {
+func Init(ctx context.Context, dependencies *Dependencies) error {
 	for _, pluginCfg := range dependencies.AgentConfig.Plugins {
 		plugin := Get(pluginCfg.Name)
 		if plugin == nil {
 			return fmt.Errorf("plugin %v is not registered", pluginCfg.Name)
 		}
 
-		if err := plugin.Init(dependencies, &pluginCfg); err != nil {
+		if err := plugin.Init(ctx, dependencies, &pluginCfg); err != nil {
 			return fmt.Errorf("setup plugin %v:%v failed, detail-> %v", plugin.Type(), pluginCfg.Name, err)
 		}
 

@@ -25,7 +25,9 @@ import (
 
 	"github.com/shirou/gopsutil/v3/disk"
 	"golang.org/x/sys/unix"
+	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/embedstrings"
 	"github.com/secretflow/kuscia/pkg/utils/common"
@@ -89,7 +91,7 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	}
 
 	sp := supervisor.NewSupervisor("containerd", nil, -1)
-	s.LogConfig.LogPath = filepath.Join(s.Root, pkgcom.LogPrefix, "containerd.log")
+	s.LogConfig.LogPath = buildContainerdLogPath(s.Root)
 	lj, _ := ljwriter.New(&s.LogConfig)
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
@@ -156,5 +158,26 @@ func checkContainerdReadyZ(ctx context.Context, root, sock string) error {
 		return fmt.Errorf("failed to run command %q, detail-> %v", cmd, err)
 	}
 
+	// validate Service Connection
+	if _, err := remote.NewRemoteRuntimeService(fmt.Sprintf("unix://%s", sock), time.Second*5, nil); err != nil {
+		readContainerdLog(buildContainerdLogPath(root), 10)
+		return err
+	}
 	return nil
+}
+
+// readContainerdLog read the last N lines of containerd log
+func readContainerdLog(logPath string, nLastLine int) {
+
+	lines, readFileErr := utils.ReadLastNLinesAsString(logPath, nLastLine)
+	if readFileErr != nil {
+		nlog.Errorf("[containerd] read containerd file error: %v", readFileErr)
+	} else {
+		nlog.Errorf("[containerd] Log content: %s [containerd] Log end", lines)
+	}
+}
+
+// buildContainerdLogPath build the absolute path of k3s log
+func buildContainerdLogPath(rootDir string) string {
+	return filepath.Join(rootDir, pkgcom.LogPrefix, "containerd.log")
 }

@@ -96,10 +96,8 @@ func (b *GinBean) Init(e framework.ConfBeanRegistry) error {
 
 		b.Logger = nlog.NewNLog(nlog.SetWriter(logger), nlog.SetFormatter(nlog.NewGinLogFormatter()))
 	} else {
-		b.Logger = nlog.NewNLog(nlog.SetWriter(nlog.GetDefaultLogWriter()), nlog.SetFormatter(nlog.NewGinLogFormatter()))
+		b.Logger = nlog.DefaultLogger()
 	}
-	// Register MiddleWare.
-	engine.Use(GinLogger(b.Logger, "gin"))
 	b.Engine = engine
 	return nil
 }

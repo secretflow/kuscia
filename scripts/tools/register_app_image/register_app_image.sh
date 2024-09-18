@@ -89,11 +89,9 @@ KUSCIA_DOMAIN_CONTAINER_NAMES=()
 DEFAULT_DOCKER_REPO="docker.io"
 DEFAULT_DOCKER_REPO_BUCKET="docker.io/library"
 
-IMAGE_TEMP_DIR="/tmp/kuscia-appimage-tmp"
 APP_IMAGE_FILE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 DEFAULT_APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/secretflow-image.yaml"
 APP_IMAGE_FILE=""
-APP_IMAGE_TEMP_FILE="${IMAGE_TEMP_DIR}/appimage_tmp.yaml"
 
 function prepare_app_image() {
   import_appimage $1 $2
@@ -109,16 +107,17 @@ function import_appimage(){
     docker pull "${IMAGE}"
   fi
 
-  image_tar=${IMAGE_TEMP_DIR}/$(echo ${image_name} | sed 's/\//_/g' ).tar
-  docker save "${image_name}:${image_tag}" -o "${image_tar}"
-
   ctr_num=${#KUSCIA_DOMAIN_CONTAINER_NAMES[@]}
 
   idx=0
   while (($idx<$ctr_num)); do
     container_name=${KUSCIA_DOMAIN_CONTAINER_NAMES[$idx]}
     echo "=> => import app image into ${container_name} container"
-    docker exec -i "${container_name}" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "${image_tar}" &> /dev/tty &
+    domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$container_name")
+    image_tar=${domain_image_work_dir}/${image_tag}.tar
+    docker save "${image_name}:${image_tag}" -o "${image_tar}"
+    docker exec -it "${container_name}" kuscia image load -i ${CTR_ROOT}/var/images/${image_tag}.tar
+    rm -rf "${image_tar}"
     idx+=1
   done
 
@@ -152,21 +151,22 @@ function apply_appimage_crd(){
     s!{{IMAGE_TAG}}!${image_tag}!g" \
     < "${APP_IMAGE_FILE}")
 
-  echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
-
   if [[ $DEPLOY_MODE = "p2p" ]]; then
       for container_name in "${KUSCIA_DOMAIN_CONTAINER_NAMES[@]}"; do
-        docker exec -it "${container_name}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
+        domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$container_name")
+        APP_IMAGE_TEMP_FILE="${domain_image_work_dir}/appimage_tmp.yaml"
+        echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
+        docker exec -it "${container_name}" kubectl apply -f "${CTR_ROOT}/var/images/appimage_tmp.yaml" || exit 1
+        rm -rf ${APP_IMAGE_TEMP_FILE}
       done
   else
-      docker exec -it "${KUSCIA_MASTER_CONTAINER_NAME}" kubectl apply -f "${APP_IMAGE_TEMP_FILE}" || exit 1
+      domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "${KUSCIA_MASTER_CONTAINER_NAME}")
+      APP_IMAGE_TEMP_FILE="${domain_image_work_dir}/appimage_tmp.yaml"
+      echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
+      docker exec -it "${KUSCIA_MASTER_CONTAINER_NAME}" kubectl apply -f "${CTR_ROOT}/var/images/appimage_tmp.yaml" || exit 1
+      rm -rf ${APP_IMAGE_TEMP_FILE}
   fi
   echo "=> finish apply kuscia AppImage crd"
-}
-
-function post_action() {
-  echo "=> remove temporary directory ${IMAGE_TEMP_DIR}"
-  rm -rf "${IMAGE_TEMP_DIR}"
 }
 
 function gen_domain_container_names(){
@@ -206,13 +206,8 @@ function register_app_image() {
     image_name="${DEFAULT_DOCKER_REPO_BUCKET}/${image_name}"
   fi
 
-  if [[ ! -d ${IMAGE_TEMP_DIR} ]]; then
-    mkdir ${IMAGE_TEMP_DIR}
-  fi
-
   gen_domain_container_names
   prepare_app_image "${image_name}" "${image_tag}"
-  post_action
   echo "=> finish registering app image: ${IMAGE}"
   echo "=> app_image_name: ${APP_IMAGE_NAME_IN_KUSCIA}"
 }

@@ -3,9 +3,9 @@
 ## 前言
 本教程帮助你在 K8s 集群上使用 [中心化组网模式](../../reference/architecture_cn.md#中心化组网模式) 来部署 Kuscia 集群。
 
-目前 Kuscia 在部署到 K8s 上时，隐私计算任务的运行态支持 RunK 和 RunP 两种模式， RunC 模式目前需要部署 Kuscia 的 Pod 有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)
+目前 Kuscia 在部署到 K8s 上时，隐私计算任务的运行态支持 RunK 和 RunP 两种模式，RunC 模式目前需要部署 Kuscia 的 Pod 有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)
 
-本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod）， RunP 模式的部署请参考 [使用进程运行时部署节点](./deploy_with_runp_cn.md)。
+本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod），RunP 模式的部署请参考 [使用进程运行时部署节点](./deploy_with_runp_cn.md)，非 root 用户部署请参考[这里](./k8s_deploy_kuscia_with_rootless.md)。
 
 ![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)
 
@@ -113,7 +113,7 @@ kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="u
 
 获取 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/configmap.yaml) 文件，创建 Configmap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。
 ```bash
-kubectl create -f comfigmap.yaml
+kubectl create -f configmap.yaml
 ```
 
 ### 步骤四（可选）：创建 RBAC
@@ -155,7 +155,7 @@ kubectl create -f rbac.yaml
 
 获取 [deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/deployment.yaml) 文件，创建 deployment
 ```bash
-kubectl create -f deployement.yaml
+kubectl create -f deployment.yaml
 ```
 
 ### 创建 lite-alice、lite-bob 之间的授权
@@ -187,7 +187,7 @@ bob-alice             bob      alice           kuscia-lite-alice.lite-alice.svc.
 ### 检查 Pod 状态
 pod 处于 running 状态表示部署成功
 ```bash
-kuebctl get po -n kuscia-master
+kubectl get po -n kuscia-master
 kubectl get po -n lite-alice
 ```
 ### 检查数据库连接状态

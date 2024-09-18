@@ -21,6 +21,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
 	"github.com/secretflow/kuscia/pkg/controllers/domaindata"
 	"github.com/secretflow/kuscia/pkg/controllers/domainroute"
+	"github.com/secretflow/kuscia/pkg/controllers/garbagecollection"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciadeployment"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciajob"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
@@ -76,6 +77,10 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 			},
 			{
 				NewControler: portflake.NewController,
+			},
+
+			{
+				NewControler: garbagecollection.NewKusciaJobGCController,
 			},
 		},
 	), nil

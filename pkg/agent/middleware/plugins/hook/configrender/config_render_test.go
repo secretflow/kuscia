@@ -16,6 +16,9 @@ package configrender
 
 import (
 	"bytes"
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,6 +31,7 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
@@ -35,6 +39,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	resourcetest "github.com/secretflow/kuscia/pkg/agent/resource/testing"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
@@ -46,15 +51,33 @@ config:
 	cfg := &config.PluginCfg{}
 	assert.NoError(t, yaml.Unmarshal([]byte(configYaml), cfg))
 
-	agentConfig := config.DefaultAgentConfig()
+	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
+	assert.NoError(t, err)
 
+	encValue, err := tls.EncryptOAEP(&privateKey.PublicKey, []byte(`{"user": "kuscia", "host": "localhost"}`))
+	assert.NoError(t, err)
+
+	configmap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "alice",
+			Name:      "domain-config",
+		},
+		Data: map[string]string{
+			"DB_INFO": encValue,
+		},
+	}
+	kubeClient := kubefake.NewSimpleClientset(&configmap)
+	agentConfig := config.DefaultAgentConfig()
+	agentConfig.Namespace = "alice"
+	agentConfig.DomainKey = privateKey
 	dep := &plugin.Dependencies{
 		AgentConfig: agentConfig,
+		KubeClient:  kubeClient,
 	}
 
 	r := &configRender{}
 	assert.Equal(t, hook.PluginType, r.Type())
-	assert.NoError(t, r.Init(dep, cfg))
+	assert.NoError(t, r.Init(context.Background(), dep, cfg))
 
 	return r
 }
@@ -414,4 +437,88 @@ func TestBuildStructMap_WithOrg(t *testing.T) {
 
 	_, err = template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate2)
 	assert.Error(t, err)
+}
+
+var clusterDefine = `
+{
+	"parties": [{
+		"name": "alice",
+		"role": "",
+		"services": [{
+			"portName": "spu",
+			"endpoints": ["secretflow-task-20240816114341-single-psi-0-spu.alice.svc"]
+		}, {
+			"portName": "fed",
+			"endpoints": ["secretflow-task-20240816114341-single-psi-0-fed.alice.svc"]
+		}, {
+			"portName": "global",
+			"endpoints": ["secretflow-task-20240816114341-single-psi-0-global.alice.svc:23321"]
+		}]
+	}, {
+		"name": "bob",
+		"role": "",
+		"services": [{
+			"portName": "spu",
+			"endpoints": ["secretflow-task-20240816114341-single-psi-0-spu.bob.svc"]
+		}, {
+			"portName": "fed",
+			"endpoints": ["secretflow-task-20240816114341-single-psi-0-fed.bob.svc"]
+		}, {
+			"portName": "global",
+			"endpoints": ["secretflow-task-20240816114341-single-psi-0-global.bob.svc:20002"]
+		}]
+	}],
+	"selfPartyIdx": 1,
+	"selfEndpointIdx": 0
+}
+`
+
+func TestRenderConfig_WithKusciaCM(t *testing.T) {
+	t.Parallel()
+	cr := setupTestConfigRender(t)
+
+	configTemplate := `
+	{
+		"db_info": "{{.DB_INFO}}",
+		"db_info_user": "{{{.DB_INFO.user}}}",
+		"db_info_host": "{{{.DB_INFO.host}}}",
+	   "db_info_user_host": "{{{.DB_INFO.user}}}-{{{.DB_INFO.host}}}",
+	   "db_info_user.host": "{{{.DB_INFO.user}}}.{{{.DB_INFO.host}}}"
+	}`
+
+	data := map[string]string{}
+	got, err := cr.renderConfig(configTemplate, data)
+	assert.NoError(t, err)
+
+	output := map[string]string{}
+	err = json.Unmarshal([]byte(got), &output)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"user": "kuscia", "host": "localhost"}`, output["db_info"])
+	assert.Equal(t, "kuscia", output["db_info_user"])
+	assert.Equal(t, "localhost", output["db_info_host"])
+	assert.Equal(t, "kuscia-localhost", output["db_info_user_host"])
+	assert.Equal(t, "kuscia.localhost", output["db_info_user.host"])
+
+	// doesn't fetch from cm
+	data = map[string]string{
+		"DB_INFO": `{"user": "kuscia", "host":"localhost"}`,
+	}
+	got, err = cr.renderConfig(configTemplate, data)
+	err = json.Unmarshal([]byte(got), &output)
+	assert.NoError(t, err)
+	assert.Equal(t, data["DB_INFO"], output["db_info"])
+	assert.Equal(t, "kuscia", output["db_info_user"])
+	assert.Equal(t, "localhost", output["db_info_host"])
+	assert.Equal(t, "kuscia-localhost", output["db_info_user_host"])
+	assert.Equal(t, "kuscia.localhost", output["db_info_user.host"])
+
+	data = map[string]string{"TASK_CLUSTER_DEFINE": clusterDefine}
+	configTemplate = `
+	{
+        "self_endpoint": "{{{.TASK_CLUSTER_DEFINE.parties[.TASK_CLUSTER_DEFINE.selfPartyIdx].services[0].endpoints[0]}}}"
+	}`
+	got, _ = cr.renderConfig(configTemplate, data)
+	err = json.Unmarshal([]byte(got), &output)
+	assert.NoError(t, err)
+	assert.Equal(t, "secretflow-task-20240816114341-single-psi-0-spu.bob.svc", output["self_endpoint"])
 }

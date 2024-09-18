@@ -17,11 +17,12 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // builtinCommand represents the builtin command
-func builtinCommand(cmdCtx *Context) *cobra.Command {
+func builtinCommand(cmdCtx *utils.Context) *cobra.Command {
 	var manifestFile string
 
 	registerCmd := &cobra.Command{

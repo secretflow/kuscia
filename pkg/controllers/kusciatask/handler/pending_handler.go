@@ -35,6 +35,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	utilcom "github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
@@ -78,6 +79,7 @@ type PartyKitInfo struct {
 	portAccessDomains     map[string]string
 	minReservedPods       int
 	pods                  []*PodKitInfo
+	bandwidthLimit        []kusciaapisv1alpha1.BandwidthLimit
 }
 
 // NewPendingHandler returns a PendingHandler instance.
@@ -360,6 +362,7 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 	kit.servicedPorts = servicedPorts
 	kit.minReservedPods = minReservedPods
 	kit.pods = pods
+	kit.bandwidthLimit = party.BandwidthLimit
 
 	// Todo: Consider how to limit the communication between single-party jobs between multiple parties.
 	if len(kusciaTask.Spec.Parties) > 1 {
@@ -906,6 +909,60 @@ func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 	}
 }
 
+func generateKusciaConfigMap(partyKit *PartyKitInfo, podKit *PodKitInfo) *v1.ConfigMap {
+	labels := map[string]string{
+		common.LabelController: common.ControllerKusciaTask,
+		common.LabelTaskUID:    string(partyKit.kusciaTask.UID),
+	}
+
+	annotations := map[string]string{
+		common.InitiatorAnnotationKey: partyKit.kusciaTask.Spec.Initiator,
+		common.TaskIDAnnotationKey:    partyKit.kusciaTask.Name,
+	}
+
+	var protocolType string
+	if partyKit.kusciaTask.Labels != nil {
+		protocolType = partyKit.kusciaTask.Labels[common.LabelInterConnProtocolType]
+	}
+
+	if protocolType != "" {
+		labels[common.LabelInterConnProtocolType] = protocolType
+	}
+
+	protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}
+	clusterDefine, _ := protoJSONOptions.Marshal(podKit.clusterDef)
+	allocatedPorts, _ := protoJSONOptions.Marshal(podKit.allocatedPorts)
+
+	confMap := make(map[string]string)
+	confMap[common.EnvDomainID] = partyKit.domainID
+	confMap[common.EnvTaskID] = partyKit.kusciaTask.Name
+	confMap[common.EnvTaskClusterDefine] = string(clusterDefine)
+	confMap[common.EnvAllocatedPorts] = string(allocatedPorts)
+	confMapBinaryData := make(map[string][]byte)
+	// compress task input config
+	if compressInputConf, err := utilcom.CompressString(partyKit.kusciaTask.Spec.TaskInputConfig); err != nil {
+		nlog.Warnf("Compress taskInputConfig failed, pod: %s, error: %s.", podKit.podName, err.Error())
+		confMap[common.EnvTaskInputConfig] = partyKit.kusciaTask.Spec.TaskInputConfig
+	} else {
+		// set compress value to the binary data of configMap
+		confMapBinaryData[common.EnvTaskInputConfig] = compressInputConf
+		// set the annotation to indicate which value was compressed
+		annotations[common.ConfigValueCompressFieldsNameAnnotationKey] = utilcom.SliceToAnnotationString([]string{common.EnvTaskInputConfig})
+	}
+
+	confMapName := fmt.Sprintf(common.KusciaGenerateConfigMapFormat, partyKit.kusciaTask.Name) // kuscia-generate-conf
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        confMapName,
+			Namespace:   partyKit.domainID,
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Data:       confMap,
+		BinaryData: confMapBinaryData,
+	}
+}
+
 func (h *PendingHandler) submitConfigMap(cm *v1.ConfigMap) error {
 	_, err := h.configMapLister.ConfigMaps(cm.Namespace).Get(cm.Name)
 	if k8serrors.IsNotFound(err) {
@@ -1044,41 +1101,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			resCtr.Ports = append(resCtr.Ports, resPort)
 		}
 
-		protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}
-		taskClusterDefine, err := protoJSONOptions.Marshal(podKit.clusterDef)
-		if err != nil {
-			return nil, err
-		}
-
-		allocatedPorts, err := protoJSONOptions.Marshal(podKit.allocatedPorts)
-		if err != nil {
-			return nil, err
-		}
-
-		resCtr.Env = append(resCtr.Env, []v1.EnvVar{
-			{
-				Name:  common.EnvDomainID,
-				Value: partyKit.domainID,
-			},
-			{
-				Name:  common.EnvTaskID,
-				Value: partyKit.kusciaTask.Name,
-			},
-			{
-				Name:  common.EnvTaskClusterDefine,
-				Value: string(taskClusterDefine),
-			},
-			{
-				Name:  common.EnvAllocatedPorts,
-				Value: string(allocatedPorts),
-			},
-			{
-				Name:  common.EnvTaskInputConfig,
-				Value: partyKit.kusciaTask.Spec.TaskInputConfig,
-			},
-		}...)
-
-		portNumberEnvs := buildPortNumberEnvs(podKit.allocatedPorts)
+		portNumberEnvs := buildPortNumberEnvs(podKit.allocatedPorts) // todo : remove it , now scql use it ,20240829
 		if len(portNumberEnvs) > 0 {
 			resCtr.Env = append(resCtr.Env, portNumberEnvs...)
 		}
@@ -1098,6 +1121,17 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 	}
 
 	if needConfigTemplateVolume {
+		// set the config(such as allocatePorts , clusterDefine, taskInputConfig) generated by kuscia to configMap
+		// transport config via configMap instead of ENV value
+		confMap := generateKusciaConfigMap(partyKit, podKit)
+		err = h.submitConfigMap(confMap)
+		if err != nil {
+			nlog.Errorf("Submit task configMap failed, taskID: %s, error: %s.", partyKit.kusciaTask.Name, err.Error())
+			return nil, err
+		}
+		// set the configMap which contain template values to the annotation of pod
+		pod.Annotations[common.ConfigTemplateValueAnnotationKey] = confMap.Name
+
 		pod.Annotations[common.ConfigTemplateVolumesAnnotationKey] = configTemplateVolumeName
 		pod.Spec.Volumes = append(pod.Spec.Volumes, v1.Volume{
 			Name: configTemplateVolumeName,
@@ -1200,6 +1234,11 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 		common.ProtocolAnnotationKey:     string(port.Protocol),
 		common.AccessDomainAnnotationKey: partyKit.portAccessDomains[port.Name],
 		common.TaskIDAnnotationKey:       partyKit.kusciaTask.Name,
+	}
+
+	for _, limit := range partyKit.bandwidthLimit {
+		key := fmt.Sprintf("%s%s", common.TaskBandwidthLimitAnnotationPrefix, limit.DestinationID)
+		svc.Annotations[key] = strconv.Itoa(int(limit.LimitKBps))
 	}
 
 	return svc, nil
