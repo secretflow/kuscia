@@ -344,7 +344,7 @@ func (pm *basicManager) GetPodByMirrorPod(mirrorPod *v1.Pod) (*v1.Pod, bool) {
 	return pod, ok
 }
 
-// 根据容器端口名称获取实际的端口号
+
 func GetPortNumberByName(ports []v1.ContainerPort, portName string) (int32, error) {
 	for _, port := range ports {
 		if port.Name == portName {
