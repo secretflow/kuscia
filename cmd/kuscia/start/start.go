@@ -20,11 +20,14 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/agent/config"
+	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/runtime"
@@ -61,7 +64,7 @@ func Start(ctx context.Context, configFile string) error {
 
 	if conf.Agent.Provider.Runtime == config.ContainerRuntime && !runtime.Permission.HasPrivileged() {
 		nlog.Errorf("Runc must run with privileged mode")
-		nlog.Errorf("Please run kuscia like: docker run --privileged secretflow/kuscia")
+		nlog.Errorf("Please run kusica like: docker run --privileged secretflow/kuscia")
 		return errors.New("permission is error")
 	}
 
@@ -72,6 +75,18 @@ func Start(ctx context.Context, configFile string) error {
 
 	master, lite, autonomy := common.RunModeMaster, common.RunModeLite, common.RunModeAutonomy
 
+	k8sConfig, err := rest.InClusterConfig()
+	if err != nil {
+		nlog.Fatalf("Failed to create in-cluster config: %v", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(k8sConfig)
+	if err != nil {
+		nlog.Fatalf("Failed to create Kubernetes clientset: %v", err)
+	}
+
+	mirrorPodClient := pkgpod.NewBasicMirrorClient(clientset, nil)
+	podManager := pkgpod.NewBasicPodManager(mirrorPodClient)
 	mm := NewModuleManager()
 	mm.Regist("coredns", modules.NewCoreDNS, autonomy, lite, master)
 	mm.Regist("k3s", modules.NewK3s, autonomy, master)
@@ -87,7 +102,9 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("domainroute", modules.NewDomainRoute, autonomy, master, lite)
 	mm.Regist("interconn", modules.NewInterConn, autonomy, master)
 	mm.Regist("kusciaapi", modules.NewKusciaAPI, autonomy, lite, master)
-	mm.Regist("metricexporter", modules.NewMetricExporter, autonomy, lite, master)
+	mm.Regist("metricexporter", func(i *modules.ModuleRuntimeConfigs) (modules.Module, error) {
+		return modules.NewMetricExporter(i, podManager)
+	}, autonomy, lite, master)
 	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)
@@ -97,7 +114,6 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("envoy", "k3s")
 
 	mm.SetDependencies("controllers", "k3s")
-	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")
 	mm.SetDependencies("datamesh", "k3s", "config", "envoy", "domainroute")
 	mm.SetDependencies("domainroute", "k3s")
 	mm.SetDependencies("interconn", "k3s")
@@ -118,7 +134,7 @@ func Start(ctx context.Context, configFile string) error {
 		return errors.New("coredns module type is invalid")
 	}, "k3s", "coredns", "envoy", "domainroute")
 
-	err := mm.Start(ctx, mode, conf)
+	err = mm.Start(ctx, mode, conf)
 	nlog.Infof("Kuscia Instance [%s] shut down", commonConfig.DomainID)
 	return err
 }
