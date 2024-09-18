@@ -19,16 +19,46 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 var (
-	ReadyChan = make(chan struct{})
+	ReadyChan  = make(chan struct{})
+	podManager pod.Manager
 )
+
+func ListPodMetricUrls(podManager pod.Manager) (map[string]string, error) {
+	metricUrls := map[string]string{}
+	pods := podManager.GetPods()
+
+	for _, pod := range pods {
+		metricPath := ""
+		metricPort := ""
+
+		if val, ok := pod.Annotations["kuscia.secretflow.metric-path"]; ok {
+			metricPath = val
+		}
+
+		for _, container := range pod.Spec.Containers {
+			for _, port := range container.Ports {
+				if port.Name == pod.Annotations["kuscia.secretflow.metric-port"] {
+					metricPort = strconv.Itoa(int(port.ContainerPort))
+					break
+				}
+			}
+		}
+
+		if metricPath != "" && metricPort != "" {
+			metricUrls[pod.Name] = fmt.Sprintf("http://%s:%s/%s", pod.Status.PodIP, metricPort, metricPath)
+		}
+	}
+	return metricUrls, nil
+}
 
 func getMetrics(fullURL string) ([]byte, error) {
 	request, err := http.NewRequest("GET", fullURL, nil)
@@ -45,6 +75,7 @@ func getMetrics(fullURL string) ([]byte, error) {
 		return nil, err
 	}
 	defer response.Body.Close()
+
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		nlog.Error("Error reading response body:", err)
@@ -53,41 +84,11 @@ func getMetrics(fullURL string) ([]byte, error) {
 	return responseBody, nil
 }
 
-func BuildMetricURL(baseURL string, labels map[string]string) (string, error) {
-	metricPath := "/" + labels["metric-path"]
-	metricPort := labels["metric-port"]
-
-	u, err := url.Parse(baseURL)
-
-	if err != nil {
-		err = fmt.Errorf("Failed to parse base URL %s: URL is invalid or incorrectly formatted: %v", baseURL, err)
-		return "", err
-	}
-
-	if metricPort != "" {
-		u.Host = fmt.Sprintf("%s:%s", u.Hostname(), metricPort)
-	}
-
-	if metricPath == "" {
-		err = fmt.Errorf("Metric path is empty in labels for base URL %s", baseURL)
-		return "", err
-	}
-
-	u.Path = metricPath
-	fullURL := u.String()
-	if fullURL == "" {
-		err = fmt.Errorf("Constructed URL is empty after combining base URL %s with metric path %s", baseURL, metricPath)
-		return "", err
-	}
-
-	return fullURL, nil
-}
-
-func metricHandler(fullURLs []string, w http.ResponseWriter) {
-	metricsChan := make(chan []byte, len(fullURLs))
+func metricHandler(metricURLs map[string]string, w http.ResponseWriter) {
+	metricsChan := make(chan []byte, len(metricURLs))
 	var wg sync.WaitGroup
 
-	for _, fullURL := range fullURLs {
+	for _, fullURL := range metricURLs {
 		wg.Add(1)
 		go func(fullURL string) {
 			defer wg.Done()
@@ -115,25 +116,26 @@ func metricHandler(fullURLs []string, w http.ResponseWriter) {
 	}
 }
 
-func getAppMetricURL(labels map[string]string) (string, error) {
-
-	labelsURL, err := BuildMetricURL("http://localhost", labels)
-	if err != nil {
-		return "", fmt.Errorf("Error building URL from labels: %v", err)
+func combine(map1, map2 map[string]string) map[string]string {
+	for k, v := range map2 {
+		map1[k] = v
 	}
-	return labelsURL, nil
+	return map1
 }
 
 func MetricExporter(ctx context.Context, metricURLs map[string]string, port string) {
 	nlog.Infof("Start to export metrics on port %s...", port)
-	var fullURLs []string
-	for _, baseURL := range metricURLs {
-		fullURLs = append(fullURLs, baseURL)
+
+	podMetrics, err := ListPodMetricUrls(podManager)
+	if err != nil {
+		nlog.Errorf("Error retrieving pod metrics: %v", err)
+		return
 	}
+	metricURLs = combine(metricURLs, podMetrics)
 
 	metricServer := http.NewServeMux()
 	metricServer.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		metricHandler(fullURLs, w)
+		metricHandler(metricURLs, w)
 	})
 
 	go func() {

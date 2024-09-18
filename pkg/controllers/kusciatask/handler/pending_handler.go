@@ -999,8 +999,17 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			ctr.ImagePullPolicy = v1.PullIfNotPresent
 		}
 		if ctr.MetricProbe != nil {
-			labels["metric-path"] = strings.ReplaceAll(ctr.MetricProbe.Path, "/", "")
-			labels["metric-port"] = fmt.Sprintf("%d", ctr.MetricProbe.Port)
+			metricPath := ctr.MetricProbe.Path
+			metricPortName := ctr.MetricProbe.Port
+
+			if metricPath != "" && metricPortName != "" {
+				if portInfo, ok := podKit.ports[metricPortName]; ok {
+					pod.Annotations["kuscia.secretflow.metric-path"] = metricPath
+					pod.Annotations["kuscia.secretflow.metric-port"] = strconv.Itoa(int(portInfo.Port))
+				} else {
+					return nil, fmt.Errorf("metric port name %s not found for pod %s", metricPortName, podKit.podName)
+				}
+			}
 		}
 
 		resCtr := v1.Container{
@@ -1010,6 +1019,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			Args:                     ctr.Args,
 			WorkingDir:               ctr.WorkingDir,
 			Env:                      ctr.Env,
+			Ports:                    []v1.ContainerPort{},
 			EnvFrom:                  ctr.EnvFrom,
 			Resources:                ctr.Resources,
 			LivenessProbe:            ctr.LivenessProbe,

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -33,9 +34,10 @@ type metricExporterModule struct {
 	ssExportPort     string
 	metricExportPort string
 	labels           map[string]string
+	podManager       pod.Manager
 }
 
-func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
+func NewMetricExporter(i *ModuleRuntimeConfigs, podManager pod.Manager) (Module, error) {
 	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.MetricExportPort)
 	exporter := &metricExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
@@ -49,28 +51,30 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		nodeExportPort:   i.NodeExportPort,
 		ssExportPort:     i.SsExportPort,
 		metricExportPort: i.MetricExportPort,
+		podManager:       podManager,
 		metricURLs: map[string]string{
 			"node-exporter": "http://localhost:" + i.NodeExportPort + "/metrics",
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
 			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
 		},
-		labels: map[string]string{
-			"metric-path": "metrics",
-			"metric-port": "9094", // 假设 metric-port 为 9094
-		},
 	}
-
-	labelsURL, err := metricexporter.BuildMetricURL("http://localhost", exporter.labels)
-	if err != nil {
-		nlog.Errorf("Error building URL from labels: %v", err)
-	} else {
-		exporter.metricURLs["app-metrics"] = labelsURL
-	}
-
 	return exporter, nil
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	metricexporter.MetricExporter(ctx, exporter.metricURLs, exporter.metricExportPort)
+	podMetrics, err := metricexporter.ListPodMetricUrls(exporter.podManager)
+	if err != nil {
+		nlog.Errorf("Error retrieving pod metrics: %v", err)
+		return err
+	}
+	metricURLs := combine(exporter.metricURLs, podMetrics)
+	metricexporter.MetricExporter(ctx, metricURLs, exporter.metricExportPort)
 	return nil
+}
+
+func combine(map1, map2 map[string]string) map[string]string {
+	for k, v := range map2 {
+		map1[k] = v
+	}
+	return map1
 }

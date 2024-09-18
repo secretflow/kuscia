@@ -74,7 +74,7 @@ type IngressPort struct {
 
 type MetricProbe struct {
 	Path string `json:"path,omitempty"`
-	Port uint16 `json:"port,omitempty"`
+	Port string `json:"port,omitempty"`
 }
 
 // PodSpec defines the spec info of pod.

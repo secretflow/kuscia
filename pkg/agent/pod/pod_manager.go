@@ -20,9 +20,10 @@ limitations under the License.
 package pod
 
 import (
+	"fmt"
 	"sync"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/kubernetes/pkg/features"
@@ -341,4 +342,14 @@ func (pm *basicManager) GetPodByMirrorPod(mirrorPod *v1.Pod) (*v1.Pod, bool) {
 	defer pm.lock.RUnlock()
 	pod, ok := pm.podByFullName[pkgcontainer.GetPodFullName(mirrorPod)]
 	return pod, ok
+}
+
+// 根据容器端口名称获取实际的端口号
+func GetPortNumberByName(ports []v1.ContainerPort, portName string) (int32, error) {
+	for _, port := range ports {
+		if port.Name == portName {
+			return port.ContainerPort, nil
+		}
+	}
+	return 0, fmt.Errorf("no matching port found for name: %s", portName)
 }
