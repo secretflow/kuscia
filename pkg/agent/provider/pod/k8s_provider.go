@@ -365,10 +365,10 @@ func normalizeSubResourceMeta(meta *metav1.ObjectMeta, ownerPodName string) {
 	}
 
 	meta.Name = name
-	if meta.Labels == nil {
-		meta.Labels = map[string]string{}
+	if meta.Annotations == nil {
+		meta.Annotations = map[string]string{}
 	}
-	meta.Labels[labelOwnerPodName] = ownerPodName
+	meta.Annotations[labelOwnerPodName] = ownerPodName
 }
 
 func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
@@ -643,12 +643,12 @@ func cleanupSubResource[T metav1.Object](ctx context.Context, object T, podGette
 		return nil
 	}
 
-	objLabels := object.GetLabels()
-	if objLabels == nil {
+	annotations := object.GetAnnotations()
+	if annotations == nil {
 		return nil
 	}
 
-	ownerPodName, ok := objLabels[labelOwnerPodName]
+	ownerPodName, ok := annotations[labelOwnerPodName]
 	if !ok {
 		return nil
 	}
