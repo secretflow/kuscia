@@ -304,7 +304,7 @@ curl -X POST http://127.0.0.1:80/intra/member/invite \
 ```bash
 curl -X POST http://127.0.0.1:80/intra/invitation/list \
 --header "host: scql-broker-intra.alice.svc" \
---header "kuscia-source: alice"
+--header "kuscia-source: alice" \
 -d '{}'
 ```
 
