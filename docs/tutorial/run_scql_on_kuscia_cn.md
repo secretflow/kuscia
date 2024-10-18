@@ -283,7 +283,7 @@ curl -X POST http://127.0.0.1:80/intra/project/list \
 --header "host: scql-broker-intra.alice.svc" \
 --header "kuscia-source: alice" \
 -d '{
-  "project_id": [
+  "ids": [
     "demo"
   ]
 }'
