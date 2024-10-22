@@ -911,6 +911,9 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU: k8sresource.MustParse("2"),
 						},
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU: k8sresource.MustParse("2"),
+						},
 					},
 				},
 				appImageName: "mockImage",
@@ -922,6 +925,9 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 							Name: "mock-Container",
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
+									corev1.ResourceCPU: k8sresource.MustParse("2"),
+								},
+								Requests: corev1.ResourceList{
 									corev1.ResourceCPU: k8sresource.MustParse("2"),
 								},
 							},

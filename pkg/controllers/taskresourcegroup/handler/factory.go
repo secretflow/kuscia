@@ -29,6 +29,8 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	ikcommon "github.com/secretflow/kuscia/pkg/interconn/kuscia/common"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
@@ -89,12 +91,14 @@ func updatePodAnnotations(trgUID string, podLister listers.PodLister, kubeClient
 		if podCopy.Annotations == nil {
 			podCopy.Annotations = make(map[string]string)
 		}
-		podCopy.Annotations[common.TaskResourceReservingTimestampAnnotationKey] = metav1.Now().Format(time.RFC3339)
+		ts := metav1.Now().Format(time.RFC3339)
+		podCopy.Annotations[common.TaskResourceReservingTimestampAnnotationKey] = ts
 		oldExtractedPod := utilsres.ExtractPodAnnotations(pods[i])
 		newExtractedPod := utilsres.ExtractPodAnnotations(podCopy)
 		if err = utilsres.PatchPod(context.Background(), kubeClient, oldExtractedPod, newExtractedPod); err != nil {
 			return err
 		}
+		nlog.Infof("Finish patching pod %v annotation %v: %v", ikcommon.GetObjectNamespaceName(podCopy), common.TaskResourceReservingTimestampAnnotationKey, ts)
 	}
 	return nil
 }

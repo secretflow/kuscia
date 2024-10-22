@@ -41,12 +41,12 @@ type MockRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	RespBodySize    int64  `protobuf:"varint,1,opt,name=resp_body_size,json=respBodySize,proto3" json:"resp_body_size,omitempty"`
-	Duration        int64  `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`
-	EnableChunked   bool   `protobuf:"varint,3,opt,name=enable_chunked,json=enableChunked,proto3" json:"enable_chunked,omitempty"`
-	ChunkedSize     int64  `protobuf:"varint,4,opt,name=chunked_size,json=chunkedSize,proto3" json:"chunked_size,omitempty"`
-	ChunkedInterval int64  `protobuf:"varint,5,opt,name=chunked_interval,json=chunkedInterval,proto3" json:"chunked_interval,omitempty"`
-	Data            []byte `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
+	RespBodySize    int64  `protobuf:"varint,1,opt,name=resp_body_size,json=respBodySize,proto3" json:"resp_body_size,omitempty"`        // the size of data which server returns
+	Duration        int64  `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`                                      // the total duration waitted by server before returning data
+	EnableChunked   bool   `protobuf:"varint,3,opt,name=enable_chunked,json=enableChunked,proto3" json:"enable_chunked,omitempty"`       // chunk mode flag. If true, the data are returned in chunk
+	ChunkedSize     int64  `protobuf:"varint,4,opt,name=chunked_size,json=chunkedSize,proto3" json:"chunked_size,omitempty"`             // the size of every chunked data
+	ChunkedInterval int64  `protobuf:"varint,5,opt,name=chunked_interval,json=chunkedInterval,proto3" json:"chunked_interval,omitempty"` // the returning interval between two chunked data
+	Data            []byte `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`                                               // client data
 }
 
 func (x *MockRequest) Reset() {
@@ -278,10 +278,10 @@ type MetricItem struct {
 	unknownFields protoimpl.UnknownFields
 
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	DetectedValue string `protobuf:"bytes,2,opt,name=detected_value,json=detectedValue,proto3" json:"detected_value,omitempty"`
+	DetectedValue string `protobuf:"bytes,2,opt,name=detected_value,json=detectedValue,proto3" json:"detected_value,omitempty"` // the detected value of metric
 	Threshold     string `protobuf:"bytes,3,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	Result        string `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`
-	Information   string `protobuf:"bytes,5,opt,name=information,proto3" json:"information,omitempty"`
+	Result        string `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`           // the result of metric, differs in [PASS], [WARNING], [FAIL]
+	Information   string `protobuf:"bytes,5,opt,name=information,proto3" json:"information,omitempty"` // human-readable information
 }
 
 func (x *MetricItem) Reset() {

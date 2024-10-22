@@ -154,7 +154,7 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 	minReservedMembers := trg.Spec.MinReservedMembers
 	if minReservedMembers > validPartyCount-failedPartyCount {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
-		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the threshold %v that meets the conditions for task success. pending party[%v], running party[%v], successful party[%v], failed party[%v]",
+		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the task success threshold %v. pending party[%v], running party[%v], successful party[%v], failed party[%v]",
 			validPartyCount-failedPartyCount, trg.Spec.MinReservedMembers, strings.Join(pendingParty, ","), strings.Join(runningParty, ","), strings.Join(successfulParty, ","), strings.Join(failedParty, ","))
 		return
 	}
