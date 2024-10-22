@@ -285,6 +285,17 @@ func (nc *NodeController) reuseNode(ctx context.Context) (bool, error) {
 
 // exit is used to clean up the node controller.
 func (nc *NodeController) exit() error {
+	if !nc.nodeCfg.EnableNodeReuse && !nc.nodeCfg.KeepNodeOnExit {
+		nlog.Infof("Unregister this node: %s", nc.nmt.Name)
+
+		if err := retry.OnError(retry.DefaultRetry, retriable, func() error {
+			return nc.nodeStub.Delete(context.Background(), nc.nmt.Name, metav1.DeleteOptions{})
+		}); err != nil {
+			nlog.Warnf("Failed to delete this node: %v", err)
+		}
+		return nil
+	}
+
 	if nc.nodeCfg.EnableNodeReuse {
 		if nc.nmt.Labels == nil {
 			nc.nmt.Labels = make(map[string]string)
@@ -333,16 +344,6 @@ func (nc *NodeController) exit() error {
 		}
 	} else {
 		nlog.Warnf("Failed to get node %q: %v", nc.nmt.Name, err)
-	}
-
-	if !nc.nodeCfg.EnableNodeReuse && !nc.nodeCfg.KeepNodeOnExit {
-		nlog.Info("Unregister this node ...")
-
-		if err := retry.OnError(retry.DefaultRetry, retriable, func() error {
-			return nc.nodeStub.Delete(context.Background(), nc.nmt.Name, metav1.DeleteOptions{})
-		}); err != nil {
-			nlog.Warnf("Failed to delete this node: %v", err)
-		}
 	}
 
 	return nil

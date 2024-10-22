@@ -73,6 +73,13 @@ while getopts 'hc:i:mf:' option; do
   esac
 done
 
+count=$(echo "${IMAGE}" | grep -o "/" | wc -l)
+if [[ ${count} -eq 1 ]]; then
+  IMAGE="docker.io/${IMAGE}"
+elif [[ ${count} -eq 0 ]]; then
+  IMAGE="docker.io/library/${IMAGE}"
+fi
+
 function import_engine_image() {
   if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
      echo -e "${GREEN}Image '${IMAGE}' already exists in container ${KUSCIA_CONTAINER_NAME}${NC}"
@@ -84,7 +91,7 @@ function import_engine_image() {
         echo -e "${GREEN}Start pulling image '${IMAGE}' ...${NC}"
         docker pull ${IMAGE}
      fi
-     local image_random="image_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)"
+     local image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
      echo -e "${GREEN}Start importing image '${IMAGE}' Please be patient...${NC}"
 
      local image_tar=${DOMAIN_IMAGE_WORK_DIR}/${image_random}.tar
@@ -148,6 +155,9 @@ function register_default_app_image() {
 
 function register_app_image() {
   DOMAIN_IMAGE_WORK_DIR=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$KUSCIA_CONTAINER_NAME")
+  if [[ $(uname) = Darwin ]]; then
+     DOMAIN_IMAGE_WORK_DIR=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$KUSCIA_CONTAINER_NAME" | sed 's|/host_mnt||')
+  fi
   if [[ -z "${KUSCIA_CONTAINER_NAME}" ]] || [[ -z "${IMAGE}" ]]; then
      echo -e "${RED}KUSCIA_CONTAINER_NAME and IMAGE must not be empty.${NC}"
      echo -e "${RED}$usage${NC}"

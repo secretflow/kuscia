@@ -63,6 +63,7 @@ type K8sProviderDependence struct {
 	NodeName        string
 	Namespace       string
 	NodeIP          string
+	KubeClient      clientset.Interface
 	BkClient        clientset.Interface
 	PodSyncHandler  framework.SyncHandler
 	ResourceManager *resource.KubeResourceManager
@@ -71,6 +72,7 @@ type K8sProviderDependence struct {
 }
 
 type K8sProvider struct {
+	kubeClient        clientset.Interface
 	bkClient          clientset.Interface
 	namespace         string
 	bkNamespace       string
@@ -100,6 +102,7 @@ type K8sProvider struct {
 
 func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	kp := &K8sProvider{
+		kubeClient:       dep.KubeClient,
 		bkClient:         dep.BkClient,
 		namespace:        dep.Namespace,
 		bkNamespace:      dep.K8sProviderCfg.Namespace,
@@ -179,9 +182,9 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	}
 
 	leaderElector := election.NewElector(
-		kp.bkClient,
-		kp.nodeName,
-		election.WithNamespace(kp.bkNamespace),
+		kp.kubeClient,
+		fmt.Sprintf("%s-agent", kp.namespace),
+		election.WithNamespace(kp.namespace),
 		election.WithOnNewLeader(kp.onNewLeader),
 		election.WithOnStartedLeading(kp.onStartedLeading),
 		election.WithOnStoppedLeading(kp.onStoppedLeading))
@@ -365,10 +368,10 @@ func normalizeSubResourceMeta(meta *metav1.ObjectMeta, ownerPodName string) {
 	}
 
 	meta.Name = name
-	if meta.Labels == nil {
-		meta.Labels = map[string]string{}
+	if meta.Annotations == nil {
+		meta.Annotations = map[string]string{}
 	}
-	meta.Labels[labelOwnerPodName] = ownerPodName
+	meta.Annotations[labelOwnerPodName] = ownerPodName
 }
 
 func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
@@ -643,12 +646,12 @@ func cleanupSubResource[T metav1.Object](ctx context.Context, object T, podGette
 		return nil
 	}
 
-	objLabels := object.GetLabels()
-	if objLabels == nil {
+	annotations := object.GetAnnotations()
+	if annotations == nil {
 		return nil
 	}
 
-	ownerPodName, ok := objLabels[labelOwnerPodName]
+	ownerPodName, ok := annotations[labelOwnerPodName]
 	if !ok {
 		return nil
 	}

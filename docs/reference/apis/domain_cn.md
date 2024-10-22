@@ -26,14 +26,14 @@
 
 #### 请求（CreateDomainRequest）
 
-| 字段          | 类型                                           | 选填 | 描述                                                                                                                                            |
-|-------------|----------------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| header      | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                       |
-| domain_id   | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。 |
-| role        | string                                       | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md) |
-| cert        | string                                       | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md) |
-| auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点的授权模式 |
-| master_domain_id | string                                  | 可选 | Master Domain ID（未来预留字段），中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填；普通中心化模式，点对点模式不需要填写 |
+| 字段                 | 类型                                           | 选填 | 描述                                                                                                                                                                                                                                                            |
+|--------------------|----------------------------------------------|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| header             | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                                                                                                                                       |
+| domain_id          | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。 |
+| role               | string                                       | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md)                                                                                                                                                               |
+| cert               | string                                       | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md)                                                                                                                                            |
+| auth_center        | [AuthCenter](#auth-center)                   | 可选 | 节点的授权模式                                                                                                                                                                                                                                                       |
+| master_domain_id   | string                                  | 可选 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填；普通中心化模式，点对点模式不需要填写                                                                                                                                                                          |
 
 #### 响应（CreateDomainResponse）
 
@@ -102,13 +102,15 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 
 #### 请求（UpdateDomainRequest）
 
-| 字段        | 类型                                           | 选填 | 描述                                                           |
-|-----------|----------------------------------------------|----|--------------------------------------------------------------|
-| header    | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                      |
-| domain_id | string                                       | 必填 | 节点 ID                                                        |
-| role      | string                                       | 可选 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
-| cert      | string                                       | 可选 | 仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
-|master_domain_id             | string                     | 可选 | Master Domain ID（未来预留字段），中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填 ；普通中心化模式，点对点模式不需要填写 |
+| 字段               | 类型                                           | 选填 | 描述                                                                                   |
+|------------------|----------------------------------------------|----|--------------------------------------------------------------------------------------|
+| header           | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                              |
+| domain_id        | string                                       | 必填 | 节点 ID                                                                                |
+| role             | string                                       | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md)                         |
+| cert             | string                                       | 必填 | 仅`点对点`模式需要填写此字段, 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)  |
+| master_domain_id | string                                       | 必填 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填，普通中心化模式，点对点模式不需要填写 |
+| auth_center      | [AuthCenter](#auth-center)                   | 必填 | 节点的授权模式                                                                              |
+
 
 #### 响应（UpdateDomainResponse）
 

@@ -17,6 +17,7 @@ package builtin
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -126,16 +127,18 @@ func TestMySQLUploader_Write_Commit(t *testing.T) {
 	columnDefines += ", `uint32Test` INT UNSIGNED, `uint64Test` BIGINT UNSIGNED"
 	columnDefines += ", `uintTest` BIGINT UNSIGNED, `float32Test` FLOAT, `float64Test` DOUBLE"
 
-	sql := regexp.QuoteMeta("CREATE TABLE IF NOT EXISTS `output` (" + columnDefines + ")")
+	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS `output` ")
+	sql := regexp.QuoteMeta("CREATE TABLE `output` (" + columnDefines + ")")
 
+	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec(sql).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectBegin()
 	prepare := mock.ExpectPrepare("INSERT INTO `output`")
-	prepare.ExpectExec().WithArgs("alice", "1", "true", "127", "32767", "2147483647",
+	prepare.ExpectExec().WithArgs("alice", "1", "1", "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
 		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(1, 1))
-	prepare.ExpectExec().WithArgs("bob", "2", "false", "127", "32767", "2147483647",
+	prepare.ExpectExec().WithArgs("bob", "2", "0", "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
 		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(2, 1))
 	mock.ExpectCommit()
@@ -160,6 +163,61 @@ func TestMySQLUploader_Write_Commit(t *testing.T) {
 			int64(0x80000000), uint8(0xff), uint16(0xffff), uint32(0xffffffff),
 			uint64(0x100000000), uint64(0xffffffff), float32(1.000001),
 			float64(1.00000000000001),
+		},
+	}
+
+	inputs := getTableFlightData(t, rc, colType, dataRows)
+
+	reader, err := flight.NewRecordReader(&mockDoPutServer{
+		ServerStream: &mockGrpcServerStream{},
+		nextDataList: inputs,
+	})
+
+	assert.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	err = uploader.FlightStreamToDataProxyContentMySQL(reader)
+
+	assert.NoError(t, err)
+}
+
+func TestMySQLUplaoder_Write_Delete(t *testing.T) {
+	t.Parallel()
+
+	domaindataSpec := &v1alpha1.DomainDataSpec{
+		RelativeURI: "output",
+		Name:        "alice-table",
+		Type:        "TABLE",
+		DataSource:  "data-" + uuid.New().String(),
+		Author:      "alice",
+		Columns: []v1alpha1.DataColumn{
+			{
+				Name: "name",
+				Type: "str",
+			},
+		},
+	}
+
+	_, _, mock, uploader, rc, err := initMySQLUploader(t, "`output`", domaindataSpec)
+	assert.NotNil(t, uploader)
+	assert.NoError(t, err)
+
+	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS `output` ")
+	deleteSQL := regexp.QuoteMeta("DELETE FROM `output`")
+
+	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnError(fmt.Errorf("DROP permission denied.")).WillReturnResult(sqlmock.NewResult(1, 0))
+	mock.ExpectExec(deleteSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectBegin()
+	prepare := mock.ExpectPrepare("INSERT INTO `output`")
+	prepare.ExpectExec().WithArgs("alice").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	colType := []arrow.DataType{arrow.BinaryTypes.String}
+
+	dataRows := [][]any{
+		{
+			"alice",
 		},
 	}
 

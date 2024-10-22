@@ -50,6 +50,10 @@ spec:
           port: 20005
           protocol: GRPC
           scope: Local
+        - name: inference
+          port: 20006
+          protocol: HTTP
+          scope: Cluster
         workingDir: /root
       restartPolicy: Never
   image:

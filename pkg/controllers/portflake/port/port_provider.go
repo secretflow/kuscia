@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	DefaultMaxNotVerifiedPortAge = 30
+	DefaultMaxNotVerifiedPortAge = 300
 )
 
 type BaseInfo struct {
@@ -64,7 +64,7 @@ func (pp *Provider) addPort(port int) {
 }
 
 func (pp *Provider) Allocate(count int) ([]int32, error) {
-	nlog.Debugf("Allocate port, count=%v, namespace=%v", count, pp.namespace)
+	nlog.Infof("Start allocating port, need port count=%v, namespace=%v", count, pp.namespace)
 	if count <= 0 {
 		return []int32{}, nil
 	}
@@ -117,7 +117,7 @@ func (pp *Provider) Allocate(count int) ([]int32, error) {
 		retPorts = append(retPorts, int32(port))
 	}
 
-	nlog.Debugf("Allocate port succeed, ports=%+v, namespace=%v", retPorts, pp.namespace)
+	nlog.Infof("Finish allocating port, ports=%v, namespace=%v", retPorts, pp.namespace)
 
 	return retPorts, nil
 }
@@ -141,7 +141,7 @@ func (pp *Provider) addPortIndeed(owner string, port int) error {
 }
 
 func (pp *Provider) AddIndeed(owner string, ports []int) {
-	nlog.Infof("Add ports indeed, owner=%v, ports=%+v, namespace=%v", owner, ports, pp.namespace)
+	nlog.Infof("Add ports indeed, owner=%v, ports=%v, namespace=%v", owner, ports, pp.namespace)
 
 	pp.mutex.Lock()
 	defer pp.mutex.Unlock()
@@ -169,7 +169,7 @@ func (pp *Provider) deletePortIndeed(owner string, port int) error {
 }
 
 func (pp *Provider) DeleteIndeed(owner string, ports []int) {
-	nlog.Infof("Delete ports indeed, owner=%v, ports=%+v, namespace=%v", owner, ports, pp.namespace)
+	nlog.Infof("Delete ports indeed, owner=%v, ports=%v, namespace=%v", owner, ports, pp.namespace)
 
 	pp.mutex.Lock()
 	defer pp.mutex.Unlock()
@@ -182,7 +182,7 @@ func (pp *Provider) DeleteIndeed(owner string, ports []int) {
 }
 
 func (pp *Provider) CheckNotVerified() {
-	nlog.Debugf("Verify port, namespace=%v", pp.namespace)
+	nlog.Infof("Verify port, namespace=%v", pp.namespace)
 
 	curTime := time.Now().Unix()
 
