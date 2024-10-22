@@ -280,7 +280,7 @@ func TestLocalFileIOChannel_Write_Success(t *testing.T) {
 	assert.NoError(t, os.Remove(filepath))
 }
 
-func TestLocalfileIOChannel_Endpoint(t *testing.T) {
+func TestLocalFileIOChannel_Endpoint(t *testing.T) {
 	t.Parallel()
 	channel := NewBuiltinLocalFileIOChannel()
 	assert.Equal(t, utils.BuiltinFlightServerEndpointURI, channel.GetEndpointURI())

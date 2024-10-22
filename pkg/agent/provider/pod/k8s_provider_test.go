@@ -40,11 +40,12 @@ import (
 )
 
 func createTestK8sProvider(t *testing.T, cfg *config.K8sProviderCfg, rm *resource.KubeResourceManager) *K8sProvider {
-	bkClient := fake.NewSimpleClientset()
 
 	podProviderDep := &K8sProviderDependence{
 		NodeName:        "test-node",
-		BkClient:        bkClient,
+		Namespace:       "test-namespace",
+		KubeClient:      fake.NewSimpleClientset(),
+		BkClient:        fake.NewSimpleClientset(),
 		PodSyncHandler:  frameworktest.FakeSyncHandler{},
 		ResourceManager: rm,
 		K8sProviderCfg:  cfg,
@@ -67,8 +68,9 @@ func TestK8sProvider_Start(t *testing.T) {
 	startedLeadingCh := make(chan struct{}, 1)
 	stoppedLeadingCh := make(chan struct{}, 1)
 	kp.leaderElector = election.NewElector(
-		kp.bkClient,
-		kp.nodeName,
+		kp.kubeClient,
+		kp.namespace,
+		election.WithNamespace(kp.namespace),
 		election.WithLockType(resourcelock.ConfigMapsLeasesResourceLock),
 		election.WithOnNewLeader(func(s string) {
 			t.Log("new leader", s)

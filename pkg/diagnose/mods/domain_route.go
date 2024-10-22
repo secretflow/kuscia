@@ -73,7 +73,7 @@ func NewDomainRouteMod(reporter *util.Reporter, kusciaAPIConn *grpc.ClientConn, 
 
 func (m *DomainRouteMod) RunManualMode(ctx context.Context, peerEndpoint string) error {
 	// create single-party job
-	m.id = m.generateJobID(true)
+	m.id = m.generateJobID()
 	req := m.buildCreateJobRequest(true, peerEndpoint)
 	if err := m.CreateJob(ctx, req); err != nil {
 		return err
@@ -110,7 +110,7 @@ func (m *DomainRouteMod) Run(ctx context.Context) error {
 		return err
 	}
 	// try creating double-party job
-	m.id = m.generateJobID(false)
+	m.id = m.generateJobID()
 	req := m.buildCreateJobRequest(false, "")
 	if err := m.CreateJob(ctx, req); err != nil {
 		return err
@@ -130,8 +130,13 @@ func (m *DomainRouteMod) Run(ctx context.Context) error {
 		// wait job done
 		PrintToConsole("waiting diagnose job <%s> done, which may take several miniutes...\n", m.id)
 		if err := m.WaitJobDone(ctx, true); err != nil {
-			nlog.Errorf("Fail to wait job done, %v", err)
-			return err
+			nlog.Infof("Fail to wait job done, %v", err)
+			// delete double party job
+			m.DeleteJob()
+			// run manual mode
+			if err := m.RunManualMode(ctx, ""); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -151,12 +156,8 @@ func (m *DomainRouteMod) Run(ctx context.Context) error {
 
 }
 
-func (m *DomainRouteMod) generateJobID(singleParty bool) string {
-	if singleParty {
-		return fmt.Sprintf("diagnose-%v-%v", m.source, util_common.GenerateID(10))
-	}
-	return fmt.Sprintf("diagnose-%v-%v-%v", m.source, m.destination, util_common.GenerateID(10))
-
+func (m *DomainRouteMod) generateJobID() string {
+	return fmt.Sprintf("diagnose-%v", util_common.GenerateID(10))
 }
 
 func (m *DomainRouteMod) buildCreateJobRequest(manual bool, peerEndpoint string) *kusciaapi.CreateJobRequest {
@@ -195,7 +196,7 @@ func (m *DomainRouteMod) buildQueryDomainDataRequest(domain string) *kusciaapi.Q
 	return &kusciaapi.QueryDomainDataRequest{
 		Data: &kusciaapi.QueryDomainDataRequestData{
 			DomainId:     m.source,
-			DomaindataId: fmt.Sprintf("%s-%s", m.id, domain),
+			DomaindataId: common.GenerateDomainDataID(m.id, domain),
 		},
 	}
 }

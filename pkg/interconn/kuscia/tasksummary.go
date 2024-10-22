@@ -17,6 +17,7 @@ package kuscia
 
 import (
 	"context"
+	"fmt"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -194,7 +195,7 @@ func (c *Controller) updateTaskResource(ctx context.Context, taskSummary *v1alph
 
 		for _, status := range statuses {
 			if status.HostTaskResourceName == "" {
-				continue
+				return fmt.Errorf("waiting for taskSummary %v host taskResource is created, current taskResource status is %v", ikcommon.GetObjectNamespaceName(taskSummary), status.Phase)
 			}
 			originalTr, err := c.taskResourceLister.TaskResources(domainID).Get(status.HostTaskResourceName)
 			if err != nil {
@@ -211,6 +212,12 @@ func (c *Controller) updateTaskResource(ctx context.Context, taskSummary *v1alph
 			if tsRvInTaskResource != "" && !utilsres.CompareResourceVersion(taskSummary.ResourceVersion, tsRvInTaskResource) {
 				nlog.Infof("TaskSummary resource version is not greater than the annotation value in taskResource %v, skip updating taskResource",
 					ikcommon.GetObjectNamespaceName(originalTr))
+				return nil
+			}
+
+			if status.Phase == originalTr.Status.Phase {
+				nlog.Infof("TaskSummary %v resource status %v is same with taskResource %v, skip updating taskResource",
+					ikcommon.GetObjectNamespaceName(taskSummary), status.Phase, ikcommon.GetObjectNamespaceName(originalTr))
 				return nil
 			}
 
@@ -234,6 +241,7 @@ func (c *Controller) updateTaskResource(ctx context.Context, taskSummary *v1alph
 					tr.Status.Phase = v1alpha1.TaskResourcePhaseFailed
 					tr.Status.LastTransitionTime = status.LastTransitionTime
 				}
+			default:
 			}
 
 			if updated {

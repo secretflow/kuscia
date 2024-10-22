@@ -17,8 +17,10 @@ package bean
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -485,11 +487,25 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	}
 }
 
-func newCertService(conf *apiconfig.KusciaAPIConfig) cmservice.ICertificateService {
-	return cmservice.NewCertificateService(&cmservice.CertificateServiceConfig{
-		DomainKey:       conf.DomainKey,
-		DomainCertValue: conf.DomainCertValue,
+func newCertService(config *apiconfig.KusciaAPIConfig) cmservice.ICertificateService {
+	var certValue = &atomic.Value{}
+	var privateKey *rsa.PrivateKey
+	switch config.RunMode {
+	case common.RunModeMaster, common.RunModeAutonomy:
+		if config.RootCA == nil || config.RootCAKey == nil {
+			nlog.Fatalf("Init certificate service failed, error: config tls cert is nil.")
+		}
+		certValue.Store(config.RootCA)
+		privateKey = config.RootCAKey
+	case common.RunModeLite:
+		certValue = config.DomainCertValue
+		privateKey = config.DomainKey
+	}
+	certService := cmservice.NewCertificateService(&cmservice.CertificateServiceConfig{
+		DomainCertValue: certValue,
+		DomainKey:       privateKey,
 	})
+	return certService
 }
 
 // protoDecorator is used to wrap handler.

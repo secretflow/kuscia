@@ -181,10 +181,6 @@ func (c *Controller) matchLabels(obj metav1.Object) bool {
 		return false
 	}
 
-	if _, ok := labels[common.LabelResourceVersionUnderHostCluster]; ok {
-		return false
-	}
-
 	annotations := obj.GetAnnotations()
 	if annotations == nil {
 		return false
@@ -270,6 +266,10 @@ func (c *Controller) handleAddedOrDeletedTaskResource(obj interface{}) {
 		}
 	}
 
+	if c.skipTr(tr) {
+		return
+	}
+
 	c.trgQueue.Add(tr.Annotations[common.TaskResourceGroupAnnotationKey])
 }
 
@@ -288,6 +288,10 @@ func (c *Controller) handleUpdatedTaskResource(oldObj, newObj interface{}) {
 	}
 
 	if newTr.ResourceVersion == oldTr.ResourceVersion {
+		return
+	}
+
+	if c.skipTr(newTr) {
 		return
 	}
 
@@ -399,10 +403,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 		phase = kusciaapisv1alpha1.TaskResourceGroupPhasePending
 	}
 
-	if c.skipProcessTrg(trg, phase) {
-		return nil
-	}
-
 	needUpdate, err := c.handlerFactory.GetTaskResourceGroupPhaseHandler(phase).Handle(trg)
 	if err != nil {
 		if c.trgQueue.NumRequeues(key) < maxRetries {
@@ -427,9 +427,9 @@ func failTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) {
 	trg.Status.CompletionTime = &now
 }
 
-func (c *Controller) skipProcessTrg(trg *kusciaapisv1alpha1.TaskResourceGroup, phase kusciaapisv1alpha1.TaskResourceGroupPhase) bool {
-	if phase == kusciaapisv1alpha1.TaskResourceGroupPhaseReserving &&
-		!utilsres.SelfClusterAsInitiator(c.namespaceLister, trg.Spec.Initiator, trg.Annotations) {
+func (c *Controller) skipTr(tr *kusciaapisv1alpha1.TaskResource) bool {
+	if !utilsres.SelfClusterAsInitiator(c.namespaceLister, tr.Spec.Initiator, tr.Annotations) &&
+		tr.Status.Phase != kusciaapisv1alpha1.TaskResourcePhaseReserving {
 		return true
 	}
 	return false

@@ -87,6 +87,18 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) error
 	healthService := apisvc.NewHealthService()
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
+		// todo: remove later, cm api used by tee
+		{
+			Group: "api/v1/cm/certificate",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "generate",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, certificate.NewGenerateKeyCertsHandler(s.certService))},
+				},
+			},
+			GroupMiddleware: []gin.HandlerFunc{interceptor.HTTPTLSCertInfoInterceptor},
+		},
 		{
 			Group: "api/v1/configmanager/certificate",
 			Routes: []*router.Router{

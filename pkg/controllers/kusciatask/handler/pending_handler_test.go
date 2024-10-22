@@ -85,12 +85,9 @@ func TestPendingHandler_Handle(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)
 
-	kusciaTask.Status.Conditions = nil
-	kusciaTask.Spec.Parties[0].AppImageRef = "not-exist-image"
 	_, err = handler.Handle(kusciaTask)
-	assert.Error(t, err)
-	createdCondition, _ := utilsres.GetKusciaTaskCondition(&kusciaTask.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, true)
-	assert.Equal(t, v1.ConditionFalse, createdCondition.Status)
+	assert.NoError(t, err)
+	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)
 
 	podTests := []struct {
 		namespace string
@@ -141,6 +138,13 @@ func TestPendingHandler_Handle(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+
+	kusciaTask.Status.Conditions = nil
+	kusciaTask.Spec.Parties[0].AppImageRef = "not-exist-image"
+	_, err = handler.Handle(kusciaTask)
+	assert.Error(t, err)
+	createdCondition, _ := utilsres.GetKusciaTaskCondition(&kusciaTask.Status, kusciaapisv1alpha1.KusciaTaskCondResourceCreated, true)
+	assert.Equal(t, v1.ConditionFalse, createdCondition.Status)
 }
 
 func Test_mergeDeployTemplate(t *testing.T) {

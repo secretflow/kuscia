@@ -122,6 +122,8 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 				}
 				resource = &corev1.ResourceRequirements{
 					Limits: limitResource,
+					// use limit as requests
+					Requests: limitResource,
 				}
 			}
 			var bandwidthLimits []v1alpha1.BandwidthLimit
@@ -160,6 +162,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			TaskInputConfig: task.TaskInputConfig,
 			Parties:         kusciaParties,
 			Priority:        int(task.Priority),
+			Tolerable:       &task.Tolerable,
 		}
 
 		if task.ScheduleConfig != nil {

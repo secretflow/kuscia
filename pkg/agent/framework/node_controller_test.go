@@ -240,12 +240,15 @@ func runAndStopTestNodeController(t *testing.T, client clientset.Interface, node
 	nc, err := NewNodeController(corev1.NamespaceDefault, testP, nodes, leases, nodeCfg)
 	assert.NoError(t, err)
 
+	stopCh := make(chan struct{})
 	go func() {
+		defer close(stopCh)
 		assert.NoError(t, nc.Run(context.Background()))
 	}()
 
 	nc.NotifyAgentReady()
 	nc.Stop()
+	<-stopCh
 }
 
 func TestUpdateNodeStatus(t *testing.T) {

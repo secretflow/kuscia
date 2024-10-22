@@ -91,11 +91,6 @@ func NewK3s(i *ModuleRuntimeConfigs) (Module, error) {
 	if err != nil {
 		nlog.Fatal(err)
 	}
-	// check DatastoreEndpoint
-	if err := datastore.CheckDatastoreEndpoint(i.Master.DatastoreEndpoint); err != nil {
-		nlog.Errorf("k3s check datastore endpoint failed with: %s", err.Error())
-		return nil, err
-	}
 	return &k3sModule{
 		rootDir:           i.RootDir,
 		kubeconfigFile:    i.KubeconfigFile,
@@ -113,6 +108,13 @@ func NewK3s(i *ModuleRuntimeConfigs) (Module, error) {
 }
 
 func (s *k3sModule) Run(ctx context.Context) error {
+	// check DatastoreEndpoint
+	err := datastore.CheckDatastoreEndpoint(s.datastoreEndpoint)
+	if err != nil {
+		nlog.Errorf("k3s check datastore endpoint failed with: %s", err.Error())
+		return err
+	}
+
 	args := []string{
 		"server",
 		"-v=5",
@@ -164,8 +166,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 		close(s.readyCh)
 		nlog.Infof("close k3s ready chan")
 	}()
-
-	err := sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
+	err = sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.Command(filepath.Join(s.rootDir, "bin/k3s"), args...)
 		cmd.Stderr = n
 		cmd.Stdout = n

@@ -21,6 +21,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,7 +84,7 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 		}
 	}
 	// do k8s validate
-	if err := resources.ValidateK8sName(domainID, "doamin_id"); err != nil {
+	if err := resources.ValidateK8sName(domainID, "domain_id"); err != nil {
 		return &kusciaapi.CreateDomainResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
@@ -238,6 +239,7 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id can not be empty"),
 		}
 	}
+
 	role := request.Role
 	if role != "" && role != string(v1alpha1.Partner) {
 		return &kusciaapi.UpdateDomainResponse{
@@ -268,7 +270,7 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 
 	// do cert validate
 	inputCert := request.Cert
-	if len(request.Cert) > 0 {
+	if len(inputCert) > 0 {
 		var err error
 		if inputCert, err = s.getValidCert(inputCert); err != nil {
 			return &kusciaapi.UpdateDomainResponse{
@@ -284,26 +286,49 @@ func (s domainService) UpdateDomain(ctx context.Context, request *kusciaapi.Upda
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrUpdateDomain), err.Error()),
 		}
 	}
-	// build kuscia domain
-	kusciaDomain := &v1alpha1.Domain{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            domainID,
-			ResourceVersion: latestDomain.ResourceVersion,
-		},
-		Spec: v1alpha1.DomainSpec{
-			Cert:         inputCert,
-			Role:         v1alpha1.DomainRole(role),
-			AuthCenter:   authCenterConverter(request.AuthCenter),
-			MasterDomain: request.MasterDomainId,
-		},
-	}
-	// update kuscia domain
-	_, err = s.kusciaClient.KusciaV1alpha1().Domains().Update(ctx, kusciaDomain, metav1.UpdateOptions{})
-	if err != nil {
-		return &kusciaapi.UpdateDomainResponse{
-			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrUpdateDomain, err.Error()),
+
+	needUpdate := false
+	if role != string(latestDomain.Spec.Role) {
+		needUpdate = true
+		latestDomain.Spec.Role = v1alpha1.DomainRole(role)
+		if role == string(v1alpha1.Partner) {
+			latestDomain.Spec.InterConnProtocols = []v1alpha1.InterConnProtocolType{
+				v1alpha1.InterConnKuscia,
+			}
+		} else {
+			latestDomain.Spec.InterConnProtocols = nil
 		}
 	}
+
+	if len(inputCert) > 0 && inputCert != latestDomain.Spec.Cert {
+		needUpdate = true
+		latestDomain.Spec.Cert = inputCert
+	}
+
+	masterDomain := request.DomainId
+	if request.MasterDomainId != "" {
+		masterDomain = request.MasterDomainId
+	}
+	if masterDomain != latestDomain.Spec.MasterDomain {
+		needUpdate = true
+		latestDomain.Spec.MasterDomain = masterDomain
+	}
+
+	authCenter := authCenterConverter(request.AuthCenter)
+	if !reflect.DeepEqual(authCenter, latestDomain.Spec.AuthCenter) {
+		needUpdate = true
+		latestDomain.Spec.AuthCenter = authCenter
+	}
+
+	if needUpdate {
+		_, err = s.kusciaClient.KusciaV1alpha1().Domains().Update(ctx, latestDomain, metav1.UpdateOptions{})
+		if err != nil {
+			return &kusciaapi.UpdateDomainResponse{
+				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrUpdateDomain, err.Error()),
+			}
+		}
+	}
+
 	return &kusciaapi.UpdateDomainResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 	}

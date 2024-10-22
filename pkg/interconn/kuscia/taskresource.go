@@ -135,26 +135,18 @@ func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskRe
 	case v1alpha1.TaskResourcePhaseReserving:
 		if statusInTaskSummary == nil {
 			updated = true
-			statusInTaskSummary = &v1alpha1.TaskSummaryResourceStatus{}
-			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
-			if taskSummary.Status.ResourceStatus == nil {
-				taskSummary.Status.ResourceStatus = make(map[string][]*v1alpha1.TaskSummaryResourceStatus)
-			}
-			taskSummary.Status.ResourceStatus[taskResource.Namespace] = append(taskSummary.Status.ResourceStatus[taskResource.Namespace], statusInTaskSummary)
+			initTaskSummaryResourceStatus(taskResource, taskSummary)
 			break
 		}
 
-		if !utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.HostTaskResourceVersion) {
+		if skipHandlingTaskResource(taskResource, statusInTaskSummary) {
 			return nil
 		}
 
-		if statusInTaskSummary.Phase == taskResource.Status.Phase &&
-			statusInTaskSummary.HostTaskResourceName == taskResource.Name {
-			return nil
-		}
-
-		if statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserving ||
+		if statusInTaskSummary.Phase == "" ||
+			statusInTaskSummary.Phase == v1alpha1.TaskResourcePhasePending ||
 			statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseFailed {
+			nlog.Infof("Set taskSummary %v status from %q to %q", ikcommon.GetObjectNamespaceName(taskSummary), statusInTaskSummary.Phase, taskResource.Status.Phase)
 			updated = true
 			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
 		}
@@ -162,25 +154,25 @@ func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskRe
 		v1alpha1.TaskResourcePhaseSchedulable:
 		if statusInTaskSummary == nil {
 			updated = true
-			statusInTaskSummary = &v1alpha1.TaskSummaryResourceStatus{}
-			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
-			if taskSummary.Status.ResourceStatus == nil {
-				taskSummary.Status.ResourceStatus = make(map[string][]*v1alpha1.TaskSummaryResourceStatus)
-			}
-			taskSummary.Status.ResourceStatus[taskResource.Namespace] = append(taskSummary.Status.ResourceStatus[taskResource.Namespace], statusInTaskSummary)
+			initTaskSummaryResourceStatus(taskResource, taskSummary)
 			break
 		}
 
-		if taskResource.Status.Phase == statusInTaskSummary.Phase ||
-			!utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.HostTaskResourceVersion) {
+		if skipHandlingTaskResource(taskResource, statusInTaskSummary) {
 			return nil
 		}
 
-		if taskResource.Status.Phase != statusInTaskSummary.Phase {
-			updated = true
-			setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
-		}
+		nlog.Infof("Set taskSummary %v status from %q to %q", ikcommon.GetObjectNamespaceName(taskSummary), statusInTaskSummary.Phase, taskResource.Status.Phase)
+		updated = true
+		setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
 	default:
+	}
+
+	if statusInTaskSummary != nil && statusInTaskSummary.HostTaskResourceName == "" {
+		updated = true
+		statusInTaskSummary.HostTaskResourceName = taskResource.Name
+		statusInTaskSummary.HostTaskResourceVersion = taskResource.ResourceVersion
+		nlog.Infof("Filling host taskResource %v name and version", ikcommon.GetObjectNamespaceName(taskResource))
 	}
 
 	if updated {
@@ -192,6 +184,23 @@ func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskRe
 	}
 
 	return nil
+}
+
+func skipHandlingTaskResource(taskResource *v1alpha1.TaskResource, statusInTaskSummary *v1alpha1.TaskSummaryResourceStatus) bool {
+	if taskResource.Status.Phase == statusInTaskSummary.Phase ||
+		!utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.HostTaskResourceVersion) {
+		return true
+	}
+	return false
+}
+
+func initTaskSummaryResourceStatus(taskResource *v1alpha1.TaskResource, taskSummary *v1alpha1.KusciaTaskSummary) {
+	statusInTaskSummary := &v1alpha1.TaskSummaryResourceStatus{}
+	setTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
+	if taskSummary.Status.ResourceStatus == nil {
+		taskSummary.Status.ResourceStatus = make(map[string][]*v1alpha1.TaskSummaryResourceStatus)
+	}
+	taskSummary.Status.ResourceStatus[taskResource.Namespace] = append(taskSummary.Status.ResourceStatus[taskResource.Namespace], statusInTaskSummary)
 }
 
 func setTaskSummaryResourceStatus(taskResource *v1alpha1.TaskResource, status *v1alpha1.TaskSummaryResourceStatus) {
@@ -284,21 +293,34 @@ func (c *Controller) updateHostTaskSummaryByTaskResource(ctx context.Context, ta
 			break
 		}
 
-		if !utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.MemberTaskResourceVersion) {
+		if statusInTaskSummary.Phase == taskResource.Status.Phase ||
+			!utilsres.CompareResourceVersion(taskResource.ResourceVersion, statusInTaskSummary.MemberTaskResourceVersion) {
 			return nil
 		}
 
-		if statusInTaskSummary.Phase == taskResource.Status.Phase &&
-			statusInTaskSummary.MemberTaskResourceName == taskResource.Name {
-			return nil
+		if statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserving {
+			if taskResource.Status.Phase == v1alpha1.TaskResourcePhaseReserved ||
+				taskResource.Status.Phase == v1alpha1.TaskResourcePhaseFailed {
+				updated = true
+			}
 		}
-
-		if statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserving ||
-			statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserved {
-			updated = true
+		if statusInTaskSummary.Phase == v1alpha1.TaskResourcePhaseReserved {
+			if taskResource.Status.Phase == v1alpha1.TaskResourcePhaseFailed {
+				updated = true
+			}
+		}
+		if updated {
+			nlog.Infof("Set host taskSummary %v status from %q to %q", ikcommon.GetObjectNamespaceName(taskSummary), statusInTaskSummary.Phase, taskResource.Status.Phase)
 			setHostTaskSummaryResourceStatus(taskResource, statusInTaskSummary)
 		}
 	default:
+	}
+
+	if statusInTaskSummary != nil && statusInTaskSummary.MemberTaskResourceName == "" {
+		updated = true
+		statusInTaskSummary.MemberTaskResourceName = taskResource.Name
+		statusInTaskSummary.MemberTaskResourceVersion = taskResource.ResourceVersion
+		nlog.Infof("Filling member taskResource %v name and version", ikcommon.GetObjectNamespaceName(taskResource))
 	}
 
 	if updated {
