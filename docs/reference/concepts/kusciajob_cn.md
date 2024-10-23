@@ -14,17 +14,16 @@
 - **模型训练** 将参与方的训练集作为输入，训练出算法模型。
 - **预测** 将算法模型和测试集作为输入，计算出预测结果。
 
-{#kuscia-job-state}
-## 状态说明
+{#kuscia-state}
+## KusciaJob 状态说明
 
 下图为 KusciaJob 的状态流转图，其中红色字体表示 KusciaAPI 接口操作。
-
 ![KusciaJobState](../../imgs/kuscia_job_state.png)
 
 KusciaJob 在其生命周期中会处于以下几种状态：
 - Initialized: 此时 Job 刚被发起方在发起方侧创建完成，但 Job 信息还未同步至其他参与方。若 Job 已同步至其他所有参与方则 Job 进入 AwaitingApproval 状态。
 - AwaitingApproval: 只有在 P2P 组网模式下且[开启 Job 审批](#enable-approval)的情况下，KusciaJob 才会进入到 AwaitingApproval 状态。AwaitingApproval 状态的 Job 需要参与方调用 KusciaAPI 的[ ApproveJob 接口](../apis/kusciajob_cn.md#approval-job)进行审批。待 Job 的所有参与方审批通过则 Job 进入 Pending 状态。若任一参与方审批拒绝则 Job 进入到 ApprovalReject 状态。
-- Pending: 此时 Job 已被所有参与方审批通过，等待 Job 的发起方发起 Start 命令，待所有参与方接收到 Start 信令后，Job 进入到 Running状态（注：仅 BFIA 互联互通协议时发起方会向各参与方显式的发送 Start 信令，在 Kuscia 内部协议中无需显式发送 Start 信令，Job 会自动从 Pending 状态进入到 Running 状态）。
+- Pending: 此时 Job 已被所有参与方审批通过，等待 Job 的发起方发起 Start 命令，待所有参与方接收到 Start 信令后，Job 进入到 Running状态（注：仅 BFIA 互联互通协议时发起方会向各参与方显式的发送 Start 信令，在 Kusica 内部协议中无需显式发送 Start 信令，Job 会自动从 Pending 状态进入到 Running 状态）。
 - Running: 此时 Job 已进入到调度状态，注：Job 是 Running 状态时，'并不意味' 着 Job 中至少有一个 Task 是 Running 状态，因 Job 刚进入 Running 状态时，Task 并未创建完成。 当 Job 的所有 Task 均执行成功时，Job 进入 Succeeded 状态。 当 Job 中的 [关键 Task ](#task-classification) 执行失败，则 Job 进入到 Failed 状态。
 - Suspended: Running 状态的 Job 被某一参与方执行了[ Suspend 操作](../apis/kusciajob_cn.md#suspend-job)，则会进入此状态，执行 Suspend 操作后，Job 中处于 Running 状态的 Task 会被终止掉，Task进入到Failed状态。 Suspended 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
 - Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。 Succeeded 状态是一种终态，终态则不会再流转到其他状态。
@@ -74,7 +73,7 @@ spec:
     - taskID: job-psi
       alias: job-psi
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -179,7 +178,7 @@ spec:
     - alias: job-psi
       taskID: job-psi
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -222,7 +221,7 @@ spec:
     - alias: job-psi1
       taskID: job-psi1
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -230,7 +229,7 @@ spec:
     - alias: job-psi2
       taskID: job-psi2
       priority: 80
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output2"],"sf_output_uris":["psi-output2.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output2"],"sf_output_uris":["psi-output2.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -260,7 +259,7 @@ spec:
     - alias: job-psi1
       taskID: job-psi1
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -268,7 +267,7 @@ spec:
     - alias: job-psi2
       taskID: job-psi2
       priority: 80
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output1"],"sf_output_uris":["psi-output1.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output1"],"sf_output_uris":["psi-output1.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
@@ -329,23 +328,11 @@ spec:
     - alias: job-psi
       taskID: job-psi
       priority: 100
-      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+      taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_ECDH"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
       appImage: secretflow-image
       parties:
         - domainID: alice
-          resources:
-            limits: {"cpu": 2, "memory": "4Gi"}
-            requests: {"cpu": 1, "memory": "2Gi"}
-          bandwidthLimits:
-          - destinationID: bob
-            limitKBps: 1000
         - domainID: bob
-          resources:
-            limits: {"cpu": 2, "memory": "4Gi"}
-            requests: {"cpu": 1, "memory": "2Gi"}
-          bandwidthLimits:
-          - destinationID: alice
-            limitKBps: 1000
     - alias: job-split
       taskID: job-split
       priority: 100
@@ -388,14 +375,10 @@ KusciaJob `spec`的子字段详细介绍如下：
   - `tasks[].parties`：表示任务参与方的信息。
     - `tasks[].parties[].domainID`：表示任务参与方的节点 ID。
     - `tasks[].parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，Kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
-    - `tasks[].parties[].resources`：表示任务参与方的资源信息，详见 [K8s 资源要求和限制](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)。
-    - `tasks[].parties[].bandwidthLimits`：任务参与方的带宽限制信息。
-      - `tasks[].parties[].bandwidthLimits[].destinationID`：表示限制 `tasks[].parties[].domainID` 发出，目的地为 `destinationID` 的 HTTP 流量 Request/Response 整体带宽。
-      - `tasks[].parties[].bandwidthLimits[].limitKBps`：表示上述带宽限制的取值，单位为 KiB/s。
 
 KusciaJob `status`的子字段详细介绍如下：
 
-- `phase`：表示 KusciaJob 当前所处的阶段，详见[状态说明](#kuscia-job-state)。
+- `phase`：表示 KusciaJob 当前所处的阶段。[状态详见](#kuscia-state)。
 - `taskStatus`：表示 KusciaJob 已经启动的 KusciaTask 状态信息， key 为 KusciaTask 的名称，value 为 KusciaTask 的状态。
 - `startTime`：表示 KusciaJob 第一次被 Kuscia 控制器处理的时间戳。
 - `completionTime`：表示 KusciaJob 运行完成的时间戳。

@@ -16,16 +16,16 @@
 
 登录到安装 alice 的机器上，本文为叙述方便，假定节点 ID 为 alice ，对外可访问的 PORT 是 11080 。
 
-指定 Kuscia 使用的镜像版本，这里使用 0.9.0b0 版本
+指定 Kuscia 使用的镜像版本，这里使用 0.10.0b0 版本
 ```bash
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 指定 Secretflow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
-export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+# 使用的 Secretflow 镜像，这里使用 1.8.0b0 版本镜像
+export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.8.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -38,7 +38,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 
 ```bash
 # --domain 参数传递的是节点 ID
-docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml 2>&1 || cat autonomy_alice.yaml
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml 2>&1 || autonomy_alice.yaml
 ```
 
 建议检查生成的文件，避免配置文件错误导致的部署启动问题。
@@ -54,13 +54,12 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 ```
 
 :::{tip}
-- 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
+- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
+- 如果多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083），防止出现端口冲突。
 - 目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving 以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)
-- 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
+- 如果节点之间的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
 - alice、bob 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
-- 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)。如果多个 Autonomy 节点部署在同一个物理机上，可以用 -p -k -g -q -x 参数指定下端口号（例如：./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081 -g 11082 -q 11083 -x 11084），防止出现端口冲突。
-- 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
-- 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
+- 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
 :::
 
 ### 部署 bob 节点
@@ -75,7 +74,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 
 准备 alice 的公钥，在 alice 节点的机器上，可以看到包含公钥的 crt 文件：
 
-```bash
+```bash 
 # [alice 机器] 将 domain.crt 从容器内部拷贝出来并重命名为 alice.domain.crt
 docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/domain.crt alice.domain.crt
 ```
@@ -175,10 +174,9 @@ docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpat
 
 当命令执行成功得到返回结果时表示授权成功
 
-:::{tip}
-- 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
-- 授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)文档
-:::
+授权失败，请参考[授权错误排查](../reference/troubleshoot/networkauthorizationcheck.md)文档
+
+<span style="color:red;">注意：如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)</span>
 
 ### 准备测试数据
 
@@ -187,9 +185,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpat
 登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
-docker cp /tmp/alice.csv ${USER}-kuscia-autonomy-alice:/home/kuscia/var/storage/data/
-rm -rf /tmp/alice.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > ${USER}-kuscia-autonomy-alice/data/alice.csv
 ```
 
 为 alice 的测试数据创建 domaindata
@@ -214,9 +210,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice curl -X POST 'https://127.0.0.1:80
 登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
-docker cp /tmp/bob.csv ${USER}-kuscia-autonomy-bob:/home/kuscia/var/storage/data/
-rm -rf /tmp/bob.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > ${USER}-kuscia-autonomy-bob/data/bob.csv
 ```
 
 为 bob 的测试数据创建 domaindata
@@ -240,7 +234,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob curl -X POST 'https://127.0.0.1:8082
 
 创建并启动作业（两方 PSI 任务）, 以 alice 节点机器上执行命令为例
 
-```bash
+```bash 
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 ```
 
@@ -250,4 +244,4 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
 ```
 
-任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network_troubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查

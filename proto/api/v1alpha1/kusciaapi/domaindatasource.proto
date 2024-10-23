@@ -152,12 +152,10 @@ message DataSourceInfo {
     // LocalDataSourceInfo is exist only if the type of datasource is localfs
     // OssDataSourceInfo is exist only if the type of datasource is oss
     LocalDataSourceInfo localfs = 1;
-    // aws s3 object storage service
+    // oss not support now
     OssDataSourceInfo oss = 2;
     // Relational database info, such as Mysql/oracle/postgres
     DatabaseDataSourceInfo database = 3;
-    // aliyun odps(MaxCompute)
-    OdpsDataSourceInfo odps = 4;
 }
 
 // datasource info for local path
@@ -197,12 +195,4 @@ message DatabaseDataSourceInfo {
     string password = 3;
     // database name
     string database = 4;
-}
-
-message OdpsDataSourceInfo {
-    // ODPS address such as "https://odps.xxx.cn-xxx.com"
-    string endpoint = 1;
-    string project = 2;
-    string access_key_id = 3;
-    string access_key_secret = 4;
 }

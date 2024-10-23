@@ -37,10 +37,7 @@
         |   |   ├── prometheus.log
         |   |   └── zipkin.log
         |   ├── k3s.log
-        |   ├── kusciaapi.log
-        |   ├── containerd.log
         |   └── kuscia.log
-        |
         ├── stdout
         └── storage
             └── data
@@ -50,18 +47,11 @@
 
 | 路径| 内容   |
 |:---------|:-------|
-| `/home/kuscia/var/logs/kuscia.log` |  记录了 Kuscia 启动状态、节点状态、健康检查、任务调度等相关的日志，当 Kuscia 启动、任务运行失败时，可以通过该日志排查问题  |
 | `/home/kuscia/var/logs/k3s.log` |  记录了 k3s 相关的日志，当检测到 k3s 启动失败时，可以通过该日志排查问题  |
-| `/home/kuscia/var/logs/containerd.log` | 记录了 containerd 相关的日志，containerd 启动失败、镜像更新存储等可以通过该日志查询 |
-| `/home/kuscia/var/logs/kusciaapi.log` | 记录了所有 KusciaAPI 的调用请求与响应日志 |
 | `/home/kuscia/var/logs/envoy/internal.log`   |  记录了节点发出的请求日志（即本节点（+内部应用）访问其他节点的网络请求）,日志格式参考下文  |
 | `/home/kuscia/var/logs/envoy/external.log`  |  记录了节点收到的请求日志（即其他节点访问本节点的网络请求）,日志格式参考下文 |
 | `/home/kuscia/var/logs/envoy/envoy.log`      |  envoy 代理的日志文件,记录了 envoy 网关的运行状态、连接情况、流量信息以及问题排查等相关的内容        |
 | `/home/kuscia/var/stdout/pods/alice_xxxx/xxx/*.log` |  任务的标准输出(stdout)的内容  |
-
-:::{tip}
-K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl logs ${engine_pod_name} -n xxx` 查看任务的标准输出日志
-:::
 
 ### envoy 日志格式
 

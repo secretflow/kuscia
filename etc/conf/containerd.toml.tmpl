@@ -18,7 +18,7 @@ state = "{{.Root}}/containerd/run"
   sandbox_image = "secretflow/pause:3.6"
 
 [plugins."io.containerd.grpc.v1.cri".containerd]
-  snapshotter = "{{.Snapshotter}}"
+  snapshotter = "overlayfs"
   disable_snapshot_annotations = true
 
 [plugins."io.containerd.grpc.v1.cri".cni]

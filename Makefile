@@ -1,36 +1,22 @@
 
-SHELL := /bin/bash
 # Image URL to use all building image targets
 DATETIME = $(shell date +"%Y%m%d%H%M%S")
 KUSCIA_VERSION_TAG = $(shell git describe --tags --always)
-
-ifeq (,$(shell echo ${ARCH}))
 # Get current architecture information
 UNAME_M_OUTPUT := $(shell uname -m)
-# To configure the ARCH variable to either arm64 or amd64 or UNAME_M_OUTPUT
-ARCH = $(if $(filter aarch64 arm64,$(UNAME_M_OUTPUT)),arm64,$(if $(filter amd64 x86_64,$(UNAME_M_OUTPUT)),amd64,$(UNAME_M_OUTPUT)))
-endif
 
-define start_docker_buildx
-  if [[ ! -n $$(docker buildx inspect kuscia) ]]; then\
-	echo "create kuscia builder";\
-	docker buildx create --name kuscia --platform linux/arm64,linux/amd64;\
-  fi;
-  docker buildx use kuscia;
-endef
+# To configure the ARCH variable to either arm64 or amd64 or UNAME_M_OUTPUT
+ARCH := $(if $(filter aarch64 arm64,$(UNAME_M_OUTPUT)),arm64,$(if $(filter amd64 x86_64,$(UNAME_M_OUTPUT)),amd64,$(UNAME_M_OUTPUT)))
+
 
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}
 IMG := secretflow/kuscia:${TAG}
 
-CMD_EXCLUDE_TESTS = "example|webdemo|testing|test|container"
-PKG_EXCLUDE_TESTS = "crd|testing|test"
-
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-PROOT_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
-ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.1b0
-DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.1b0
+ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.0b0
+DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.0b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -105,9 +91,8 @@ check_code: verify_error_code fmt vet ## check code format
 test: ## Run tests.
 	rm -rf ./test-results
 	mkdir -p test-results
-
-	GOEXPERIMENT=nocoverageredesign go test $$(go list ./cmd/... | grep -Ev ${CMD_EXCLUDE_TESTS}) --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
-	GOEXPERIMENT=nocoverageredesign go test $$(go list ./pkg/... | grep -Ev ${PKG_EXCLUDE_TESTS}) --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
+	go test ./cmd/... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
+	go test ./pkg/... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
 
 	cat ./test-results/cmd.output.txt | go-junit-report > ./test-results/TEST-cmd.xml
 	cat ./test-results/pkg.output.txt | go-junit-report > ./test-results/TEST-pkg.xml
@@ -138,15 +123,9 @@ docs: gen_error_code_doc ## Build docs.
 deps-build:
 	bash hack/k3s/build.sh
 	mkdir -p build/linux/${ARCH}/k3s
+
 	cp -rp build/k3s/bin build/linux/${ARCH}/k3s
 
-.PHONY: proot
-proot: export GOOS=linux
-proot: export GOARCH=${ARCH}# export ARCH=amd64 or export ARCH=arm64; if not specified, ARCH will auto-detected
-proot:
-	DOCKER_BUILDKIT=1
-	@$(call start_docker_buildx)
-	docker buildx build -t ${PROOT_IMAGE} -f ./build/dockerfile/proot-build.Dockerfile . --platform linux/${ARCH} --load
 
 .PHONY: deps-image
 deps-image: deps-build
@@ -154,15 +133,13 @@ deps-image: deps-build
 
 .PHONY: image
 image: export GOOS=linux
-image: export GOARCH=${ARCH}# export ARCH=amd64 or export ARCH=arm64; if not specified, ARCH will auto-detected
+image: export GOARCH=${ARCH}
 image: build ## Build docker image with the manager.
-	DOCKER_BUILDKIT=1
-	@$(call start_docker_buildx)
-	docker buildx build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --platform linux/${ARCH} --load
+	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile .
 
 .PHONY: build-monitor
 build-monitor:
-	docker build -t secretflow/kuscia-monitor -f ./build/dockerfile/kuscia-monitor.Dockerfile .
+	docker build -t secretflow/kusica-monitor -f ./build/dockerfile/kuscia-monitor.Dockerfile .
 
 .PHONY: integration_test
 integration_test: image ## Run Integration Test

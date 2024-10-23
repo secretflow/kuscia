@@ -57,7 +57,7 @@ Build
 
 Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kuscia-Envoy 镜像](https://hub.docker.com/r/secretflow/kuscia-envoy/tags)。如果你选择使用默认的 Kuscia-Envoy 镜像，那么你可以跳过这一步。
 
-如果你选择自行构建 Kuscia-Envoy 镜像，请在 [Kuscia-Envoy](https://github.com/secretflow/kuscia-envoy) 项目的根目录下执行 `make image` 命令。 而后你可以用 `docker images | grep kuscia-envoy` 来查看
+如果你选择自行构建 Kuscia-Envoy 镜像，请在 [Kuscia-Envoy](https://github.com/secretflow/kuscia-envoy) 项目的根目录下执行 `make image` 命令。 而后你可以用 `docker images | grep kuscia-envoy` 来查看 
 构建产出的 Kuscia-Envoy 镜像名称。
 
 ### 构建 Kuscia Image
@@ -108,7 +108,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 
 目前支持：\[all，center.base，p2p.base，center.example\]，不填写则默认为 all。
 ```shell
-./test/integration_test.sh all
+./test/integration_test.sh all 
 ```
 
 在集成脚本执行的过程中，会自动安装依赖：[grpcurl](https://github.com/fullstorydev/grpcurl/releases) 和 [jq](https://jqlang.github.io/jq/download/) 在宿主机上。
@@ -133,3 +133,4 @@ Kuscia 也准备了一些常用的函数，你可以在 `scripts/test/suite/core
 3. 为你的测试用例集文件添加可执行权限：`chmod a+x {YOUR_TEST_SUITE_FILE}`。
 4. 在 `scripts/test/integration_test.sh` 文件中注册您的测试用例集。如 `TEST_SUITES["center.example"]="./test/suite/center/example.sh"`。变量 `TEST_SUITES` 的 key 为你的测试用例集的名称。
 5. 运行你的测试用例集，如上例：`./test/integration_test.sh center.example`。
+   

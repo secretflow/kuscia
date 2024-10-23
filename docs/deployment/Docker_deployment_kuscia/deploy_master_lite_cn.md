@@ -17,15 +17,15 @@
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.9.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+# 使用的 Kuscia 镜像，这里使用 0.10.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 指定 Secretflow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
-export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+# 使用的 Secretflow 镜像，这里使用 1.8.0b0 版本镜像
+export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.8.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -54,13 +54,11 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 ```
 
 :::{tip}
-- 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
+- 节点 ID 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)
 - 目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving 以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)
-- 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)。
+- 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
 - master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
 - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
-- 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
-- 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
 :::
 
 建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。
@@ -105,7 +103,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 < server: kuscia-gateway
 <
 * Connection #0 to host 127.0.0.1 left intact
-{"domain":"alice","instance":"xyz","kuscia":"v0.1","reason":"unauthorized."}
+unauthorized
 ```
 
 #### Tips
@@ -155,8 +153,8 @@ abcdefg
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.9.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+# 使用的 Kuscia 镜像，这里使用 0.10.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -182,7 +180,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --m
 ./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081
 ```
 
-> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q -x 参数指定下端口号（例如：./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081 -g 28082 -q 28083 -x 28084），防止出现端口冲突。
+> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081 -g 28082 -q 28083），防止出现端口冲突。
 
 #### 部署 lite 节点 bob
 
@@ -217,8 +215,8 @@ hijklmn
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.9.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+# 使用的 Kuscia 镜像，这里使用 0.10.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.10.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -243,7 +241,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --mas
 # -k 参数传递的是 lite 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
 ./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081
 ```
-> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q -x 参数指定下端口号（例如：./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081 -g 38082 -q 38083 -x 38084），防止出现端口冲突。
+> 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q 参数指定下端口号（例如：./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081 -g 38082 -q 38083），防止出现端口冲突。
 
 ### 配置授权
 
@@ -271,8 +269,7 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr
 当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 alice 和 bob 之间授权建立成功。
 
 :::{tip}
-- 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
-- 授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)
+如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](./networkrequirements.md)
 :::
 
 ### 运行任务
@@ -286,17 +283,13 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr
 登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
-docker cp /tmp/alice.csv ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
-rm -rf /tmp/alice.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > ${USER}-kuscia-lite-alice/data/alice.csv
 ```
 
 登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-bob/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
-docker cp /tmp/bob.csv ${USER}-kuscia-lite-bob:/home/kuscia/var/storage/data/
-rm -rf /tmp/bob.csv
+docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > ${USER}-kuscia-lite-bob/data/bob.csv
 ```
 
 ##### 创建测试数据表
@@ -348,4 +341,4 @@ docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ```
 
-任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network_troubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../reference/troubleshoot/networktroubleshoot.md)排查

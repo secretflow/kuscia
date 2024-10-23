@@ -94,7 +94,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - [常见问题（FAQ）][faq]
 - Kuscia 的 [Issues] 和 [讨论区]
 
-[faq]: ./troubleshoot/index.rst
+[faq]: ./reference/troubleshoot/index.rst
 [Issues]: https://github.com/secretflow/kuscia/issues
 [讨论区]: https://github.com/secretflow/kuscia/discussions
 
@@ -114,54 +114,4 @@ reference/index
 deployment/index
 tutorial/index
 development/index
-troubleshoot/index
-change_log
 ```
-
-## 常见问题
-
-- [Kuscia 与 Ray 的区别][kuscia_vs_ray]
-- [使用 WSL 注意事项][wsl_start_docker]
-- [部署失败][deploy_failed]
-- [授权错误排查][network_authorization_check]
-- [作业运行失败][run_job_failed]
-- [任务运行网络错误排查][network_trouble_shoot]
-- [FATE 部署失败][FATE_deploy_failed]
-- [FATE 作业运行失败][FATE_run_job_failed]
-- [用户自定义 Service 路由][user_defined_service_route]
-- [Lite 节点遗漏证书之后如何重新部署][private_key_loss]
-- [Protocol 通信协议][protocol_describe]
-- [Docker 24.0 环境中 C++17 文件复制权限问题][docker_cpp_copy]
-- [如何通过 Docker 命令对已部署的节点进行 Memory 扩容][docker_memory_limit]
-- [Kuscia K8s 部署模式下 SecretFlow 应用线程限制问题][k8s_ulimit_check]
-- [使用自定义镜像仓库][custom_registry]
-- [如何配置 Kuscia 对请求进行 Path Rewrite][kuscia_gateway_with_path]
-- [应用配置文件渲染][config_render]
-- [Kine 表问题导致 Kuscia 启动失败][kuscia_mysql_kine]
-- [内核参数][kernel_params]
-
-[kuscia_vs_ray]: ./troubleshoot/kuscia_vs_ray.md
-[wsl_start_docker]: ./troubleshoot/wsl_start_docker.md
-[deploy_failed]: ./troubleshoot/deploy_failed.md
-[network_authorization_check]: ./troubleshoot/network_authorization_check.md
-[run_job_failed]: ./troubleshoot/run_job_failed.md
-[network_trouble_shoot]: ./troubleshoot/network_troubleshoot.md
-[FATE_deploy_failed]: ./troubleshoot/FATE_deploy_failed.md
-[FATE_run_job_failed]: ./troubleshoot/FATE_run_job_failed.md
-[user_defined_service_route]: ./troubleshoot/user_defined_service_route.md
-[private_key_loss]: ./troubleshoot/private_key_loss.md
-[protocol_describe]: ./troubleshoot/protocol_describe.md
-[docker_cpp_copy]: ./troubleshoot/docker_cpp_copy.md
-[docker_memory_limit]: ./troubleshoot/docker_memory_limit.md
-[k8s_ulimit_check]: ./troubleshoot/k8s_ulimit_check.md
-[custom_registry]: ./troubleshoot/custom_registry.md
-[kuscia_gateway_with_path]: ./troubleshoot/kuscia_gateway_with_path.md
-[config_render]: ./troubleshoot/config_render.md
-[kuscia_mysql_kine]: ./troubleshoot/kuscia_mysql_kine.md
-[kernel_params]: ./troubleshoot/kernel_params.md
-
-## 版本更新日志
-
-- [版本更新日志][change-log]
-
-[change-log]: ./change_log.rst

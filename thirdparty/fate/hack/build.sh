@@ -30,4 +30,3 @@ pushd $base_dir
 
 build_kuscia
 
-popd

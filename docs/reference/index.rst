@@ -9,3 +9,4 @@
     concepts/index
     apis/index
     apis/datamesh/index
+    troubleshoot/index

@@ -29,7 +29,7 @@
 | 字段          | 类型                                           | 选填 | 描述                                                                                                                                            |
 |-------------|----------------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | header      | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                       |
-| domain_id   | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。 |
+| domain_id   | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | role        | string                                       | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md) |
 | cert        | string                                       | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md) |
 | auth_center | [AuthCenter](#auth-center)                   | 可选 | 节点的授权模式 |

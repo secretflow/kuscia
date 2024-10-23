@@ -61,13 +61,6 @@ datastoreEndpoint: ""
 # It is recommended to enable this feature in the production environment.
 enableWorkloadApprove: false
 
-# DataMesh Config
-dataMesh:
-  dataProxyList:
-    - endpoint: "dataproxy-grpc:8023" # data proxy endpoint
-      dataSourceTypes:                # the type of datasource that data proxy supported
-        - "odps"                      # odps also call as Aliyun MaxCompute
-
 #############################################################################
 ############                 SecretBackend Configs               ############
 #############################################################################

@@ -76,4 +76,3 @@ elif [[ $app_type == "transport" ]]; then
   build_transport
 fi
 
-popd

@@ -21,6 +21,15 @@ spec:
             - start
             - -c
             - etc/conf/kuscia.yaml
+          ports:
+            - containerPort: 6443
+          env:
+            - name: REGISTRY_ENDPOINT
+              value: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow
+            - name: NAMESPACE
+              value: kuscia-system
+            - name: TZ
+              value: Asia/Shanghai
           image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
           imagePullPolicy: Always
           name: master

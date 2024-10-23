@@ -180,7 +180,6 @@ function start_center_mode() {
 function stop_center_mode() {
   docker stop "${MASTER_CONTAINER}" "${LITE_ALICE_CONTAINER}" "${LITE_BOB_CONTAINER}"
   docker rm "${MASTER_CONTAINER}" "${LITE_ALICE_CONTAINER}" "${LITE_BOB_CONTAINER}"
-  docker volume rm "${LITE_ALICE_CONTAINER}-containerd" "${LITE_BOB_CONTAINER}-containerd"
 }
 
 # Start p2p mode
@@ -224,7 +223,6 @@ function start_p2p_mode() {
 function stop_p2p_mode() {
   docker stop "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}"
   docker rm "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}"
-  docker volume rm "${AUTONOMY_ALICE_CONTAINER}-containerd" "${AUTONOMY_BOB_CONTAINER}-containerd"
 }
 
 # Get IpV4 Address

@@ -74,7 +74,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/create' \
   },
   "source": "alice",
   "token_config": {
-    "token_gen_method": "RSA-GEN"
+    "token_gen_method": "RSA-GEN",
+    "rolling_update_period": 0
   }
 }'
 ```
@@ -442,7 +443,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 | 字段                     | 类型     | 选填 | 描述                        |
 |------------------------|--------|----|---------------------------|
-| rolling_update_period  | int64  |选填 | 滚动更新间隔，单位：秒，默认值为 0                                                   |
+| destination_public_key | string | 必填 | 目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert 设置，无需用户填充   |
+| rolling_update_period  | int64  | 必填 | 滚动更新间隔，单位：秒，默认值为 0                                                   |
+| source_public_key      | string | 必填 | 源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert 设置，无需用户填充      |
 | token_gen_method       | string | 必填 | 签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性  |
 
 {#transit}

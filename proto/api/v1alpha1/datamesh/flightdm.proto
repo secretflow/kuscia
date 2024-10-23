@@ -56,13 +56,12 @@ message CommandDomainDataQuery {
   string domaindata_id = 1;
   // column name of DomainData's columns
   repeated string columns = 2;
+
   // transfer content-type(expected content type of flight data from data proxy response)
   // for domaindata with type != table, the content_type can only be RAW, other types will not take effect
   ContentType  content_type = 3;
   // if content_type is CSV, you can set file_write_options
   FileWriteOptions file_write_options = 4;
-  // specific the partition column and value, such as "dmdt=20240520"
-  string partition_spec = 5;
 }
 
 // call GetFlightInfo with CommandDomainDataUpdate, return TicketDomainDataQuery which is an update query
@@ -71,13 +70,14 @@ message CommandDomainDataUpdate {
   string domaindata_id = 1;
   // create an nonexistent domaindata and get a update ticket
   CreateDomainDataRequest domaindata_request = 2;
+
   // transfer content-type(content type of flight data from client request)
   // for domaindata with type != table, the content_type can only be RAW, other types will not take effect
   ContentType  content_type = 3;
+
   // for domaindata stored with file format in datasource , you can specify file_write_options
   FileWriteOptions file_write_options = 4;
+
   // extra options varies by datasource type
   map<string, string> extra_options = 5;
-  // specific the partition column and value, such as "dmdt=20240520"
-  string partition_spec = 6;
 }

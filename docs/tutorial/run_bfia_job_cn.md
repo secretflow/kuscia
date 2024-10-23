@@ -4,7 +4,7 @@
 
 若你使用第三方算法镜像提交互联互通作业，强烈建议你检查镜像安全性，同时参考[安全加固方案](./security_plan_cn.md)。
 
-本教程以秘密分享-逻辑回归（SS-LR）算子为示例，介绍如何通过互联互通银联 BFIA（Beijing FinTech Industry Alliance 北京金融科技产业联盟）协议运行一个包含两方任务的作业。
+本教程以秘密分享-逻辑回归（SS-LR）算子为示例，介绍如何通过互联互通银联 BFIA（Beijing FinTech Industry Alliance 北京金融科技产业联盟）协议运行一个包含两方任务的作业。 
 
 在本教程中，通过两个 Kuscia Autonomy 节点来模拟不同框架底座的节点。在这两个节点之间，通过互联互通银联 BFIA 协议运行一个包含两方任务的作业。
 
@@ -52,7 +52,7 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/user/bfia/ .
 因为秘密分享-逻辑回归（SS-LR）算子依赖一个可信第三方 TTP（Trusted Third Patry）Server，所以本教程使用本地 Docker 容器的方式和运行银联 BFIA 协议的节点容器部署在同一套环境中，
 从而方便快速搭建运行互联互通银联 BFIA 协议作业的体验环境。
 
-1. 部署 TTP Server 服务
+1. 部署 TTP Server 服务 
 
 ```shell
 ./bfia/deploy_ttp_server.sh
@@ -94,7 +94,7 @@ docker cp {your_alice_data} ${USER}-kuscia-autonomy-alice:/home/kuscia/var/stora
 
 接下来你可以像 [查看 Kuscia 示例数据](#kuscia) 一样查看你的数据文件，这里不再赘述。
 
-## 提交一个银联 BFIA 协议的作业
+## 提交一个银联 BFIA 协议的作业 
 
 目前在 Kuscia 中有两种方式提交银联 BFIA 协议的作业
 - 通过配置 KusciaJob 提交作业
@@ -278,7 +278,7 @@ KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_c
 可以通过 [查看 KusciaJob 运行状态](#get-kuscia-job-phase) 查询作业的运行状态。 当作业状态 PHASE 变成 `Succeeded` 时，可以查看算子输出结果。
 
 1. 进入节点 alice 或 bob 容器
-
+ 
 - 若已经在容器中，跳过该步骤
 
 ```shell

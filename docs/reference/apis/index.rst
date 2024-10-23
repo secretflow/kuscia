@@ -12,7 +12,6 @@ Kuscia API
     domaindatasource_cn
     kusciajob_cn
     serving_cn
-    config_cn
     health_cn
     error_code_cn
 

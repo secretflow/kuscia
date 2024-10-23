@@ -74,7 +74,7 @@ while getopts 'hc:i:mf:' option; do
 done
 
 function import_engine_image() {
-  if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
+  if docker exec -it ${KUSCIA_CONTAINER_NAME} crictl inspecti ${IMAGE} >/dev/null 2>&1; then
      echo -e "${GREEN}Image '${IMAGE}' already exists in container ${KUSCIA_CONTAINER_NAME}${NC}"
   else
      if docker image inspect ${IMAGE} >/dev/null 2>&1; then
@@ -84,13 +84,13 @@ function import_engine_image() {
         echo -e "${GREEN}Start pulling image '${IMAGE}' ...${NC}"
         docker pull ${IMAGE}
      fi
-     local image_random="image_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)"
+     local image_tag=$(echo ${IMAGE} | cut -d ':' -f 2)
      echo -e "${GREEN}Start importing image '${IMAGE}' Please be patient...${NC}"
 
-     local image_tar=${DOMAIN_IMAGE_WORK_DIR}/${image_random}.tar
+     local image_tar=/tmp/${image_tag}.tar
      docker save ${IMAGE} -o ${image_tar}
-     docker exec -it ${KUSCIA_CONTAINER_NAME} kuscia image load -i /home/kuscia/var/images/${image_random}.tar
-     if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
+     docker exec -it ${KUSCIA_CONTAINER_NAME} ctr -a=/home/kuscia/containerd/run/containerd.sock -n=k8s.io images import ${image_tar}
+     if docker exec -it ${KUSCIA_CONTAINER_NAME} crictl inspecti ${IMAGE} >/dev/null 2>&1; then
         echo -e "${GREEN}image ${IMAGE} import successfully${NC}"
      else
         echo -e "${RED}error: ${IMAGE} import failed${NC}"
@@ -102,52 +102,39 @@ function import_engine_image() {
 function apply_appimage_crd() {
   local image_repo
   local image_tag
-  image_repo=$(echo "${IMAGE}" | awk -F ":" '{print $1}')
-  image_tag=$(echo "${IMAGE}" | awk -F ":" '{print $2}')
-  if [[ ${image_tag} = "" ]]; then
-    image_tag="latest"
+  if [[ "${IMAGE}" == *":"* ]]; then
+     image_repo=${IMAGE%%:*}
+     image_tag=${IMAGE##*:}
   fi
   if [[ ! -f $APP_IMAGE_FILE ]]; then
     echo -e "${RED}${APP_IMAGE_FILE} does not exist, register fail${NC}"
   else
     image_line=$(awk '/^  image:/{print NR; exit}' $APP_IMAGE_FILE)
-    head -n "$((image_line - 1))" $APP_IMAGE_FILE > ${DOMAIN_IMAGE_WORK_DIR}/engine_appimage.yaml
-    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> ${DOMAIN_IMAGE_WORK_DIR}/engine_appimage.yaml
-    docker exec -it ${KUSCIA_CONTAINER_NAME} kubectl apply -f /home/kuscia/var/images/engine_appimage.yaml
-    rm -rf ${DOMAIN_IMAGE_WORK_DIR}/engine_appimage.yaml
+    head -n "$((image_line - 1))" $APP_IMAGE_FILE > /tmp/engine_appimage.yaml
+    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> /tmp/engine_appimage.yaml
+    docker exec -it ${KUSCIA_CONTAINER_NAME} kubectl apply -f /tmp/engine_appimage.yaml
+    rm -rf /tmp/engine_appimage.yaml
   fi
 }
 
 function register_default_app_image() {
   local image_repo
   local image_tag
-  image_repo=$(echo "${IMAGE}" | awk -F ":" '{print $1}')
-  image_tag=$(echo "${IMAGE}" | awk -F ":" '{print $2}')
-  if [[ ${image_tag} = "" ]]; then
-    image_tag="latest"
+  if [[ "${IMAGE}" == *":"* ]]; then
+     image_repo=${IMAGE%%:*}
+     image_tag=${IMAGE##*:}
   fi
   local app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
-  if [[ ${app_type} != "psi" ]] && [[ ${app_type} != "dataproxy" ]] && [[ ${app_type} != "kuscia" ]]; then
+  if [[ ${app_type} != "psi" ]]; then
      app_type="secretflow"
   fi
-  if [[ ${app_type} == "secretflow" ]] || [[ ${app_type} == "psi" ]]; then
-    app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
+  app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.SF_IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
-  elif [[ ${app_type} == "kuscia" ]]; then
-    app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
-    s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
-    < "${ROOT}/scripts/templates/app_image.diagnose.yaml")
-  else
-    app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
-    s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
-    < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
-  fi
   echo "${app_image_template}" | kubectl apply -f -
 }
 
 function register_app_image() {
-  DOMAIN_IMAGE_WORK_DIR=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$KUSCIA_CONTAINER_NAME")
   if [[ -z "${KUSCIA_CONTAINER_NAME}" ]] || [[ -z "${IMAGE}" ]]; then
      echo -e "${RED}KUSCIA_CONTAINER_NAME and IMAGE must not be empty.${NC}"
      echo -e "${RED}$usage${NC}"

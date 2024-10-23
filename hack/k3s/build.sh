@@ -25,7 +25,7 @@ function build_k3s() {
     KINE_VERSION="github.com/k3s-io/kine@v0.11.3"
     pushd build/k3s
     go mod edit -replace github.com/k3s-io/kine="${KINE_VERSION}"
-    popd
+    pushd
   fi
 
   cp -rf hack/k3s/build-kuscia-k3s-binary.sh build/k3s/scripts
