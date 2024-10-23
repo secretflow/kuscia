@@ -304,18 +304,18 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			Transit:      utils.IsTransit(dr.Spec.Transit),
 		})
 		if err != nil {
-			nlog.Warnf("DomainRoute %s: handshake fail:%v", dr.Name, err)
+			nlog.Errorf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
 		}
 		if resp.Status.Code != 0 {
 			err = fmt.Errorf("DomainRoute %s: handshake fail, return error:%v", dr.Name, resp.Status.Message)
-			nlog.Warn(err)
+			nlog.Error(err)
 			return err
 		}
 		destToken, err := decryptToken(c.prikey, resp.Token.Token, tokenByteSize/2)
 		if err != nil {
 			err = fmt.Errorf("DomainRoute %s: handshake fail, decryptToken  error:%v", dr.Name, resp.Status.Message)
-			nlog.Warn(err)
+			nlog.Error(err)
 			return err
 		}
 		token = append(sourceToken, destToken...)
@@ -621,8 +621,9 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 func (c *DomainRouteController) parseToken(dr *kusciaapisv1alpha1.DomainRoute, routeKey string) ([]*Token, error) {
 	var tokens []*Token
 	var err error
+	var is3rdParty bool
 
-	is3rdParty := utils.IsThirdPartyTransit(dr.Spec.Transit)
+	is3rdParty = utils.IsThirdPartyTransit(dr.Spec.Transit)
 	if (is3rdParty && dr.Spec.BodyEncryption == nil) ||
 		(!is3rdParty && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationMTLS) ||
 		(!is3rdParty && dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationNone) {

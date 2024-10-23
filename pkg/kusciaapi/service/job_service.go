@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -96,7 +96,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	kusciaTasks := make([]v1alpha1.KusciaTaskTemplate, len(tasks))
 	for i, task := range tasks {
 		// build kuscia task parties
-		kusciaParties := make([]v1alpha1.Party, len(task.Parties))
+		kusicaParties := make([]v1alpha1.Party, len(task.Parties))
 		for j, party := range task.Parties {
 			// build resources
 			limitResource := corev1.ResourceList{}
@@ -120,35 +120,16 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 						}
 					}
 				}
+
 				resource = &corev1.ResourceRequirements{
 					Limits: limitResource,
 				}
 			}
-			var bandwidthLimits []v1alpha1.BandwidthLimit
-			if len(party.BandwidthLimits) > 0 {
-				for _, bw := range party.BandwidthLimits {
-					if bw.LimitKbps <= 0 {
-						return &kusciaapi.CreateJobResponse{
-							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "bandwidth limit kbps can not be zero or negative"),
-						}
-					}
-					if bw.DestinationId == "" {
-						return &kusciaapi.CreateJobResponse{
-							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "bandwidth limit destination id can not be empty"),
-						}
-					}
-					bandwidthLimits = append(bandwidthLimits, v1alpha1.BandwidthLimit{
-						DestinationID: bw.DestinationId,
-						LimitKBps:     bw.LimitKbps,
-					})
-				}
-			}
 
-			kusciaParties[j] = v1alpha1.Party{
-				DomainID:       party.DomainId,
-				Role:           party.Role,
-				Resources:      resource,
-				BandwidthLimit: bandwidthLimits,
+			kusicaParties[j] = v1alpha1.Party{
+				DomainID:  party.DomainId,
+				Role:      party.Role,
+				Resources: resource,
 			}
 		}
 		// build kuscia task
@@ -158,14 +139,9 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 			Dependencies:    task.Dependencies,
 			AppImage:        task.AppImage,
 			TaskInputConfig: task.TaskInputConfig,
-			Parties:         kusciaParties,
+			Parties:         kusicaParties,
 			Priority:        int(task.Priority),
 		}
-
-		if task.ScheduleConfig != nil {
-			kusciaTask.ScheduleConfig = buildScheduleConfigForKusciaTask(task.ScheduleConfig)
-		}
-
 		kusciaTasks[i] = kusciaTask
 	}
 
@@ -203,30 +179,6 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 	}
 }
 
-func buildScheduleConfigForKusciaTask(sc *kusciaapi.ScheduleConfig) *v1alpha1.ScheduleConfig {
-	if sc == nil {
-		return nil
-	}
-
-	if sc.TaskTimeoutSeconds <= 0 {
-		sc.TaskTimeoutSeconds = 300
-	}
-
-	if sc.ResourceReservedSeconds <= 0 {
-		sc.ResourceReservedSeconds = 30
-	}
-
-	if sc.ResourceReallocationIntervalSeconds <= 0 {
-		sc.ResourceReallocationIntervalSeconds = 30
-	}
-
-	return &v1alpha1.ScheduleConfig{
-		ResourceReservedSeconds: int(sc.ResourceReservedSeconds),
-		LifecycleSeconds:        int(sc.TaskTimeoutSeconds),
-		RetryIntervalSeconds:    int(sc.ResourceReallocationIntervalSeconds),
-	}
-}
-
 func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRequest) *kusciaapi.QueryJobResponse {
 	// do validate
 	jobID := request.JobId
@@ -259,17 +211,9 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 		taskParties := task.Parties
 		parties := make([]*kusciaapi.Party, len(taskParties))
 		for j, party := range taskParties {
-			var bandwidthLimits []*kusciaapi.BandwidthLimit
-			for _, bw := range party.BandwidthLimit {
-				bandwidthLimits = append(bandwidthLimits, &kusciaapi.BandwidthLimit{
-					DestinationId: bw.DestinationID,
-					LimitKbps:     bw.LimitKBps,
-				})
-			}
 			parties[j] = &kusciaapi.Party{
-				DomainId:        party.DomainID,
-				Role:            party.Role,
-				BandwidthLimits: bandwidthLimits,
+				DomainId: party.DomainID,
+				Role:     party.Role,
 			}
 		}
 
@@ -283,11 +227,6 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 			TaskInputConfig: task.TaskInputConfig,
 			Priority:        int32(task.Priority),
 		}
-
-		if task.ScheduleConfig != nil {
-			taskConfig.ScheduleConfig = buildScheduleConfigForKusciaAPI(task.ScheduleConfig)
-		}
-
 		taskConfigs[i] = taskConfig
 	}
 
@@ -304,30 +243,6 @@ func (h *jobService) QueryJob(ctx context.Context, request *kusciaapi.QueryJobRe
 		},
 	}
 	return jobResponse
-}
-
-func buildScheduleConfigForKusciaAPI(sc *v1alpha1.ScheduleConfig) *kusciaapi.ScheduleConfig {
-	if sc == nil {
-		return nil
-	}
-
-	if sc.LifecycleSeconds <= 0 {
-		sc.LifecycleSeconds = 300
-	}
-
-	if sc.ResourceReservedSeconds <= 0 {
-		sc.ResourceReservedSeconds = 30
-	}
-
-	if sc.RetryIntervalSeconds <= 0 {
-		sc.RetryIntervalSeconds = 30
-	}
-
-	return &kusciaapi.ScheduleConfig{
-		TaskTimeoutSeconds:                  int32(sc.LifecycleSeconds),
-		ResourceReservedSeconds:             int32(sc.ResourceReservedSeconds),
-		ResourceReallocationIntervalSeconds: int32(sc.RetryIntervalSeconds),
-	}
 }
 
 func (h *jobService) DeleteJob(ctx context.Context, request *kusciaapi.DeleteJobRequest) *kusciaapi.DeleteJobResponse {
@@ -368,8 +283,8 @@ func (h *jobService) StopJob(ctx context.Context, request *kusciaapi.StopJobRequ
 		}
 	}
 	// get domain from context
-	_, domainID := GetRoleAndDomainFromCtx(ctx)
-	if len(domainID) == 0 {
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
 		return &kusciaapi.StopJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -424,9 +339,9 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 	}
 
 	// get domain from context
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	var domainIDs []string
-	if len(domainID) == 0 {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	var domainIds []string
+	if len(domainId) == 0 {
 		return &kusciaapi.ApproveJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -451,13 +366,13 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 	if role == consts.AuthRoleMaster {
 		// get self cluster parties
 		if selfParties, ok := job.Annotations[common.InterConnSelfPartyAnnotationKey]; ok {
-			domainIDs = annotationToDomainList(selfParties)
+			domainIds = annotationToDomainList(selfParties)
 		}
 	} else { // role is domain
 		// domain just approval itself party not all self cluster parties
-		domainIDs = append(domainIDs, domainID)
+		domainIds = append(domainIds, domainId)
 	}
-	for _, v := range domainIDs {
+	for _, v := range domainIds {
 		if job.Status.ApproveStatus == nil {
 			job.Status.ApproveStatus = make(map[string]v1alpha1.JobApprovePhase)
 		}
@@ -487,8 +402,8 @@ func (h *jobService) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJ
 		}
 	}
 	// get domain from context
-	_, domainID := GetRoleAndDomainFromCtx(ctx)
-	if len(domainID) == 0 {
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
 		return &kusciaapi.SuspendJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -537,8 +452,8 @@ func (h *jobService) RestartJob(ctx context.Context, request *kusciaapi.RestartJ
 		}
 	}
 	// get domain from context
-	_, domainID := GetRoleAndDomainFromCtx(ctx)
-	if len(domainID) == 0 {
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
 		return &kusciaapi.RestartJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -590,8 +505,8 @@ func (h *jobService) CancelJob(ctx context.Context, request *kusciaapi.CancelJob
 		}
 	}
 	// get domain from context
-	_, domainID := GetRoleAndDomainFromCtx(ctx)
-	if len(domainID) == 0 {
+	_, domainId := GetRoleAndDomainFromCtx(ctx)
+	if len(domainId) == 0 {
 		return &kusciaapi.CancelJobResponse{
 			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "source domain header must be set"),
 		}
@@ -874,14 +789,14 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 }
 
 func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaapi.CreateJobRequest) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if domainID == request.Initiator {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if domainId == request.Initiator {
 		return nil
 	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range request.Tasks {
 			for _, p := range task.Parties {
-				if p.GetDomainId() == domainID {
+				if p.GetDomainId() == domainId {
 					return nil
 				}
 			}
@@ -891,19 +806,19 @@ func (h *jobService) authHandlerJobCreate(ctx context.Context, request *kusciaap
 	return nil
 }
 
-func (h *jobService) authHandlerJobDelete(ctx context.Context, jobID string) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
+func (h *jobService) authHandlerJobDelete(ctx context.Context, jobId string) error {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
 	if role == consts.AuthRoleDomain {
-		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobID, metav1.GetOptions{})
+		kusciaJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, jobId, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		if domainID == kusciaJob.Spec.Initiator {
+		if domainId == kusciaJob.Spec.Initiator {
 			return nil
 		}
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainID {
+				if p.DomainID == domainId {
 					return nil
 				}
 			}
@@ -914,14 +829,14 @@ func (h *jobService) authHandlerJobDelete(ctx context.Context, jobID string) err
 }
 
 func (h *jobService) authHandlerJobRetrieve(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if domainID == kusciaJob.Spec.Initiator {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if domainId == kusciaJob.Spec.Initiator {
 		return nil
 	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainID {
+				if p.DomainID == domainId {
 					return nil
 				}
 			}
@@ -932,14 +847,14 @@ func (h *jobService) authHandlerJobRetrieve(ctx context.Context, kusciaJob *v1al
 }
 
 func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) bool {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if domainID == kusciaJob.Spec.Initiator {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if domainId == kusciaJob.Spec.Initiator {
 		return true
 	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainID {
+				if p.DomainID == domainId {
 					return true
 				}
 			}
@@ -950,14 +865,14 @@ func (h *jobService) authHandlerJobWatch(ctx context.Context, kusciaJob *v1alpha
 }
 
 func (h *jobService) authHandlerJob(ctx context.Context, kusciaJob *v1alpha1.KusciaJob) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if domainID == kusciaJob.Spec.Initiator {
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if domainId == kusciaJob.Spec.Initiator {
 		return nil
 	}
 	if role == consts.AuthRoleDomain {
 		for _, task := range kusciaJob.Spec.Tasks {
 			for _, p := range task.Parties {
-				if p.DomainID == domainID {
+				if p.DomainID == domainId {
 					return nil
 				}
 			}
@@ -1034,38 +949,38 @@ func validateBatchQueryJobStatusRequest(request *kusciaapi.BatchQueryJobStatusRe
 func getJobState(jobPhase v1alpha1.KusciaJobPhase) string {
 	switch jobPhase {
 	case "", v1alpha1.KusciaJobPending:
-		return kusciaapi.JobState_Pending.String()
+		return kusciaapi.State_Pending.String()
 	case v1alpha1.KusciaJobRunning:
-		return kusciaapi.JobState_Running.String()
+		return kusciaapi.State_Running.String()
 	case v1alpha1.KusciaJobFailed:
-		return kusciaapi.JobState_Failed.String()
+		return kusciaapi.State_Failed.String()
 	case v1alpha1.KusciaJobSucceeded:
-		return kusciaapi.JobState_Succeeded.String()
+		return kusciaapi.State_Succeeded.String()
 	case v1alpha1.KusciaJobAwaitingApproval:
-		return kusciaapi.JobState_AwaitingApproval.String()
+		return kusciaapi.State_AwaitingApproval.String()
 	case v1alpha1.KusciaJobApprovalReject:
-		return kusciaapi.JobState_ApprovalReject.String()
+		return kusciaapi.State_ApprovalReject.String()
 	case v1alpha1.KusciaJobCancelled:
-		return kusciaapi.JobState_Cancelled.String()
+		return kusciaapi.State_Cancelled.String()
 	case v1alpha1.KusciaJobSuspended:
-		return kusciaapi.JobState_Suspended.String()
+		return kusciaapi.State_Suspended.String()
 	default:
-		return kusciaapi.JobState_Unknown.String()
+		return kusciaapi.State_Unknown.String()
 	}
 }
 
 func getTaskState(taskPhase v1alpha1.KusciaTaskPhase) string {
 	switch taskPhase {
 	case "", v1alpha1.TaskPending:
-		return kusciaapi.JobState_Pending.String()
+		return kusciaapi.State_Pending.String()
 	case v1alpha1.TaskRunning:
-		return kusciaapi.JobState_Running.String()
+		return kusciaapi.State_Running.String()
 	case v1alpha1.TaskFailed:
-		return kusciaapi.JobState_Failed.String()
+		return kusciaapi.State_Failed.String()
 	case v1alpha1.TaskSucceeded:
-		return kusciaapi.JobState_Succeeded.String()
+		return kusciaapi.State_Succeeded.String()
 	default:
-		return kusciaapi.JobState_Unknown.String()
+		return kusciaapi.State_Unknown.String()
 	}
 }
 

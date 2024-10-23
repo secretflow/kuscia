@@ -35,13 +35,13 @@ func TestGenericNode_ConfigureNode(t *testing.T) {
 			Address:         "1.1.1.1",
 			CapacityManager: capacityManager,
 		},
-		DiskPressurePath: agentConfig.DiskPressurePath,
+		RootDir: agentConfig.RootDir,
 	}
 
 	n := NewGenericNodeProvider(dep)
 	node := n.ConfigureNode(context.Background(), "test-name")
 	assert.Equal(t, "test-name", node.Name)
 	assert.Equal(t, n.runtime, node.Labels[labelRuntime])
-	assert.Equal(t, 6, len(node.Status.Conditions))
+	assert.Equal(t, 5, len(node.Status.Conditions))
 
 }

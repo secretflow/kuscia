@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	extensionfake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -30,6 +31,8 @@ import (
 
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/utils/election"
+	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	"github.com/secretflow/kuscia/pkg/utils/signals"
 )
 
 type testcontroller struct {
@@ -67,7 +70,6 @@ func testNewControllerFunc(ctx context.Context, config ControllerConfig) IContro
 	return t
 }
 
-/*
 func Test_server_run(t *testing.T) {
 	opts := &Options{Workers: 3, HealthCheckPort: 28081, ControllerName: "test"}
 	kubeClient := kubefake.NewSimpleClientset()
@@ -103,7 +105,7 @@ func Test_server_run(t *testing.T) {
 	case <-ticker.C:
 		t.Fatal("Timeout")
 	}
-}*/
+}
 
 func Test_server_restartLeading(t *testing.T) {
 	opts := &Options{Workers: 3, ControllerName: "test"}
@@ -115,7 +117,7 @@ func Test_server_restartLeading(t *testing.T) {
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
 
-	s := &Server{
+	s := &server{
 		eventRecorder:           eventRecorder,
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
@@ -158,7 +160,7 @@ func Test_server_NewLeading(t *testing.T) {
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
 
-	s := &Server{
+	s := &server{
 		eventRecorder:           eventRecorder,
 		kubeClient:              kubeClient,
 		kusciaClient:            kusciaClient,
@@ -179,7 +181,6 @@ func Test_server_NewLeading(t *testing.T) {
 	s.onNewLeader("test")
 }
 
-/*
 func Test_server_runserver(t *testing.T) {
 	opts := &Options{Workers: 3, HealthCheckPort: 38081, ControllerName: "test"}
 	kubeClient := kubefake.NewSimpleClientset()
@@ -201,4 +202,3 @@ func Test_server_runserver(t *testing.T) {
 		[]ControllerConstruction{{testNewControllerFunc, nil}})
 	assert.NoError(t, err)
 }
-*/

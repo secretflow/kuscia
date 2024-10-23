@@ -153,14 +153,15 @@ func (c *DomainRouteTestInfo) runPlainCase(cases []DrTestCase, t *testing.T, add
 			}
 		} else { // intbound
 			find := false
-			tokenAuth, _ := xds.GetTokenAuth()
-			if tokenAuth != nil {
-				for _, sourceTokens := range tokenAuth.SourceTokenList {
-					if sourceTokens.Source == tc.dr.Spec.Source {
-						for _, token := range sourceTokens.Tokens {
-							if token == tc.token {
-								find = true
-							}
+			tokenAuth, err := xds.GetTokenAuth()
+			if err != nil {
+				t.Fatalf("get token auth fail: %v", err)
+			}
+			for _, sourceTokens := range tokenAuth.SourceTokenList {
+				if sourceTokens.Source == tc.dr.Spec.Source {
+					for _, token := range sourceTokens.Tokens {
+						if token == tc.token {
+							find = true
 						}
 					}
 				}
@@ -208,14 +209,15 @@ func (c *DomainRouteTestInfo) runMTLSCase(cases []DrTestCase, t *testing.T, add 
 			}
 		} else { // intbound
 			find := false
-			tokenAuth, _ := xds.GetTokenAuth()
-			if tokenAuth != nil {
-				for _, sourceTokens := range tokenAuth.SourceTokenList {
-					if sourceTokens.Source == tc.dr.Spec.Source {
-						for _, token := range sourceTokens.Tokens {
-							if token == NoopToken {
-								find = true
-							}
+			tokenAuth, err := xds.GetTokenAuth()
+			if err != nil {
+				t.Fatalf("get token auth fail: %v", err)
+			}
+			for _, sourceTokens := range tokenAuth.SourceTokenList {
+				if sourceTokens.Source == tc.dr.Spec.Source {
+					for _, token := range sourceTokens.Tokens {
+						if token == NoopToken {
+							find = true
 						}
 					}
 				}
@@ -660,17 +662,18 @@ func TestAppendHeaders(t *testing.T) {
 	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Delete(context.Background(), dr.Name, metav1.DeleteOptions{})
 	time.Sleep(200 * time.Millisecond)
 
-	decorator, _ = xds.GetHeaderDecorator()
-	if decorator != nil {
-		foundSource = false
-		for _, entry := range decorator.AppendHeaders {
-			if entry.Source == "test" {
-				foundSource = true
-			}
+	decorator, err = xds.GetHeaderDecorator()
+	if err != nil {
+		nlog.Fatal("get header decorator filter fail")
+	}
+	foundSource = false
+	for _, entry := range decorator.AppendHeaders {
+		if entry.Source == "test" {
+			foundSource = true
 		}
-		if foundSource {
-			nlog.Fatalf("deleted sourceHeader(test) fail")
-		}
+	}
+	if foundSource {
+		nlog.Fatalf("deleted sourceHeader(test) fail")
 	}
 
 	stopCh <- struct{}{}
@@ -828,210 +831,4 @@ func TestCheckHealthy(t *testing.T) {
 	dr, err = c.client.KusciaV1alpha1().DomainRoutes(ns).Get(context.Background(), dr.Name, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.False(t, dr.Status.IsDestinationUnreachable)
-}
-
-func TestPollerFilter(t *testing.T) {
-	ns := "bob"
-	c := newDomainRouteTestInfo(ns, 1057)
-	stopCh := make(chan struct{})
-	go c.Run(context.Background(), 1, stopCh)
-	time.Sleep(200 * time.Millisecond)
-
-	dr := &kusciaapisv1alpha1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alice-bob",
-			Namespace: ns,
-		},
-		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:            "alice",
-			Destination:       "bob",
-			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
-			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-				Host: EnvoyServerIP,
-				Ports: []kusciaapisv1alpha1.DomainPort{
-					{
-						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-						Port:     ExternalServerPort,
-					},
-				},
-			},
-			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
-				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
-				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
-			},
-			Transit: &kusciaapisv1alpha1.Transit{
-				TransitMethod: kusciaapisv1alpha1.TransitMethodReverseTunnel,
-			},
-		},
-		Status: kusciaapisv1alpha1.DomainRouteStatus{
-			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
-				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
-					{
-						Token: fakeRevisionToken,
-					},
-				},
-			},
-		},
-	}
-
-	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Create(context.Background(), dr, metav1.CreateOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	f, err := xds.GetHTTPFilterConfig(xds.PollerFilterName, xds.InternalListener)
-	assert.NoError(t, err)
-	assert.NotNil(t, f)
-
-	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Delete(context.Background(), dr.Name, metav1.DeleteOptions{})
-	time.Sleep(200 * time.Millisecond)
-	f, err = xds.GetHTTPFilterConfig(xds.PollerFilterName, xds.InternalListener)
-	assert.Error(t, err)
-}
-
-func TestReceiverFilter(t *testing.T) {
-	ns := "alice"
-	c := newDomainRouteTestInfo(ns, 1057)
-	stopCh := make(chan struct{})
-	go c.Run(context.Background(), 1, stopCh)
-	time.Sleep(200 * time.Millisecond)
-
-	dr := &kusciaapisv1alpha1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alice-bob",
-			Namespace: ns,
-		},
-		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:            ns,
-			Destination:       "bob",
-			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
-			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-				Host: EnvoyServerIP,
-				Ports: []kusciaapisv1alpha1.DomainPort{
-					{
-						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-						Port:     ExternalServerPort,
-					},
-				},
-			},
-			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
-				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
-				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
-			},
-			Transit: &kusciaapisv1alpha1.Transit{
-				TransitMethod: kusciaapisv1alpha1.TransitMethodReverseTunnel,
-			},
-		},
-		Status: kusciaapisv1alpha1.DomainRouteStatus{
-			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
-				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
-					{
-						Token: fakeRevisionToken,
-					},
-				},
-			},
-		},
-	}
-
-	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Create(context.Background(), dr, metav1.CreateOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, dr.Spec.Destination)
-	vh, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
-	assert.NoError(t, err)
-	var dvh *envoyroute.Route
-	for _, v := range vh.GetRoutes() {
-		if v.Name == "default" {
-			dvh = v
-		}
-	}
-
-	assert.NotNil(t, dvh)
-	assert.NotNil(t, dvh.GetRoute())
-	assert.Equal(t, "envoy-cluster", dvh.GetRoute().ClusterSpecifier.(*envoyroute.RouteAction_Cluster).Cluster)
-
-	f, err := xds.GetHTTPFilterConfig(xds.ReceiverFilterName, xds.InternalListener)
-	assert.NoError(t, err)
-	assert.NotNil(t, f)
-	f, err = xds.GetHTTPFilterConfig(xds.ReceiverFilterName, xds.ExternalListener)
-	assert.NoError(t, err)
-	assert.NotNil(t, f)
-
-	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Delete(context.Background(), dr.Name, metav1.DeleteOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	f, err = xds.GetHTTPFilterConfig(xds.ReceiverFilterName, xds.InternalListener)
-	assert.Error(t, err)
-	f, err = xds.GetHTTPFilterConfig(xds.ReceiverFilterName, xds.ExternalListener)
-	assert.Error(t, err)
-	vh, err = xds.QueryVirtualHost(vhName, xds.InternalRoute)
-	assert.Error(t, err)
-}
-
-func TestDeleteRoute(t *testing.T) {
-	ns := "alice"
-	c := newDomainRouteTestInfo(ns, 1057)
-	stopCh := make(chan struct{})
-	go c.Run(context.Background(), 1, stopCh)
-	time.Sleep(200 * time.Millisecond)
-
-	dr := &kusciaapisv1alpha1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alice-bob",
-			Namespace: ns,
-		},
-		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:            ns,
-			Destination:       "bob",
-			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
-			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-				Host: EnvoyServerIP,
-				Ports: []kusciaapisv1alpha1.DomainPort{
-					{
-						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-						Port:     ExternalServerPort,
-					},
-				},
-			},
-			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
-				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
-				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
-			},
-		},
-		Status: kusciaapisv1alpha1.DomainRouteStatus{
-			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
-				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
-					{
-						Token: fakeRevisionToken,
-					},
-				},
-			},
-		},
-	}
-
-	c.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Create(context.Background(), dr, metav1.CreateOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, dr.Spec.Destination)
-	vh, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
-	assert.NoError(t, err)
-	routes := vh.GetRoutes()
-
-	assert.Equal(t, "default", routes[0].Name)
-	err = xds.DeleteRoute("default", vhName, xds.InternalRoute)
-	assert.NoError(t, err)
-
-	vh, err = xds.QueryVirtualHost(vhName, xds.InternalRoute)
-	assert.NoError(t, err)
-	var dvh *envoyroute.Route
-	for _, v := range vh.GetRoutes() {
-		if v.Name == "default" {
-			dvh = v
-		}
-	}
-	assert.Nil(t, dvh)
 }

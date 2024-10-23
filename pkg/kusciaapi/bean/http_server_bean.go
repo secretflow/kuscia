@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package bean
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -27,7 +29,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	apiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
-	handlerconfig "github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domain"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindata"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindatagrant"
@@ -57,10 +58,9 @@ type httpServerBean struct {
 	config          *apiconfig.KusciaAPIConfig
 	externalGinBean *beans.GinBean
 	internalGinBean *beans.GinBean
-	cmConfigService cmservice.IConfigService
 }
 
-func NewHTTPServerBean(config *apiconfig.KusciaAPIConfig, cmConfigService cmservice.IConfigService) *httpServerBean { // nolint: golint
+func NewHTTPServerBean(config *apiconfig.KusciaAPIConfig) *httpServerBean { // nolint: golint
 	return &httpServerBean{
 		config: config,
 		externalGinBean: &beans.GinBean{
@@ -80,7 +80,6 @@ func NewHTTPServerBean(config *apiconfig.KusciaAPIConfig, cmConfigService cmserv
 			Debug:         config.Debug,
 			GinBeanConfig: convertToInternalGinConf(config),
 		},
-		cmConfigService: cmConfigService,
 	}
 }
 
@@ -163,13 +162,12 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	jobService := service.NewJobService(s.config)
 	domainService := service.NewDomainService(s.config)
 	routeService := service.NewDomainRouteService(s.config)
-	domainDataSourceService := service.NewDomainDataSourceService(s.config, s.cmConfigService)
+	domainDataSourceService := service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())
 	domainDataService := service.NewDomainDataService(s.config)
 	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	servingService := service.NewServingService(s.config)
 	healthService := service.NewHealthService()
 	certService := newCertService(s.config)
-	configService := service.NewConfigService(s.config, s.cmConfigService)
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
 		// job group routes
@@ -433,36 +431,6 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 			},
 		},
-		{
-			Group: "api/v1/config",
-			Routes: []*router.Router{
-				{
-					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewCreateConfigHandler(configService))},
-				},
-				{
-					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewQueryConfigHandler(configService))},
-				},
-				{
-					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewUpdateConfigHandler(configService))},
-				},
-				{
-					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewDeleteConfigHandler(configService))},
-				},
-				{
-					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewBatchQueryConfigHandler(configService))},
-				},
-			},
-		},
 		// health group routes
 		{
 			Group: "",
@@ -485,11 +453,28 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	}
 }
 
-func newCertService(conf *apiconfig.KusciaAPIConfig) cmservice.ICertificateService {
-	return cmservice.NewCertificateService(&cmservice.CertificateServiceConfig{
-		DomainKey:       conf.DomainKey,
-		DomainCertValue: conf.DomainCertValue,
+func newCertService(config *apiconfig.KusciaAPIConfig) cmservice.ICertificateService {
+	var certValue = &atomic.Value{}
+	var privateKey *rsa.PrivateKey
+	switch config.RunMode {
+	case common.RunModeMaster, common.RunModeAutonomy:
+		if config.RootCA == nil || config.RootCAKey == nil {
+			nlog.Fatalf("Init certificate service failed, error: config tls cert is nil.")
+		}
+		certValue.Store(config.RootCA)
+		privateKey = config.RootCAKey
+	case common.RunModeLite:
+		certValue = config.DomainCertValue
+		privateKey = config.DomainKey
+	}
+	certService, err := cmservice.NewCertificateService(cmservice.CertConfig{
+		CertValue:  certValue,
+		PrivateKey: privateKey,
 	})
+	if err != nil {
+		nlog.Fatalf("Init certificate service failed, error: %v", err)
+	}
+	return certService
 }
 
 // protoDecorator is used to wrap handler.

@@ -28,6 +28,7 @@ import (
 )
 
 var (
+	defaultRootDir            = "/home/kuscia/"
 	defaultEndpointForMaster  = "https://127.0.0.1:6443"
 	defaultMetricUpdatePeriod = uint(5)
 )
@@ -57,8 +58,10 @@ type KusciaConfig struct {
 
 	Agent                 config.AgentConfig        `yaml:"agent,omitempty"`
 	Master                kusciaconfig.MasterConfig `yaml:"master,omitempty"`
-	ConfManager           *cmconf.ConfManagerConfig `yaml:"confManager,omitempty"`
+	ConfManager           cmconf.ConfManagerConfig  `yaml:"confManager,omitempty"`
 	KusciaAPI             *kaconfig.KusciaAPIConfig `yaml:"kusciaAPI,omitempty"`
+	SecretBackends        []SecretBackendConfig     `yaml:"secretBackends,omitempty"`
+	ConfLoaders           []ConfigLoaderConfig      `yaml:"confLoaders,omitempty"`
 	DataMesh              *dmconfig.DataMeshConfig  `yaml:"dataMesh,omitempty"`
 	DomainRoute           DomainRouteConfig         `yaml:"domainRoute,omitempty"`
 	Protocol              common.Protocol           `yaml:"protocol"`
@@ -68,9 +71,15 @@ type KusciaConfig struct {
 	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
 }
 
-type CMConfig struct {
-	driver string         `yaml:"driver,omitempty"`
-	Params map[string]any `yaml:"params,omitempty"`
+type SecretBackendConfig struct {
+	Name   string         `yaml:"name"`
+	Driver string         `yaml:"driver"`
+	Params map[string]any `yaml:"params"`
+}
+
+type ConfigLoaderConfig struct {
+	Type                string              `yaml:"type"`
+	SecretBackendParams SecretBackendParams `yaml:"secretBackendParams"`
 }
 
 type DomainRouteConfig struct {
@@ -79,7 +88,7 @@ type DomainRouteConfig struct {
 }
 
 func defaultMaster(rootDir string) KusciaConfig {
-	conf := DefaultKusciaConfig(rootDir)
+	conf := defaultKusciaConfig(rootDir)
 	conf.Master = kusciaconfig.MasterConfig{
 		APIServer: &kusciaconfig.APIServerConfig{
 			KubeConfig: filepath.Join(conf.RootDir, "etc/kubeconfig"),
@@ -98,7 +107,7 @@ func defaultMaster(rootDir string) KusciaConfig {
 }
 
 func defaultLite(rootDir string) KusciaConfig {
-	conf := DefaultKusciaConfig(rootDir)
+	conf := defaultKusciaConfig(rootDir)
 	conf.Agent = *config.DefaultAgentConfig()
 	return conf
 }
@@ -110,13 +119,13 @@ func defaultAutonomy(rootDir string) KusciaConfig {
 	return conf
 }
 
-func DefaultKusciaConfig(rootDir string) KusciaConfig {
+func defaultKusciaConfig(rootDir string) KusciaConfig {
 	hostIP, err := network.GetHostIP()
 	if err != nil {
 		nlog.Fatal(err)
 	}
 	if rootDir == "" {
-		rootDir = common.DefaultKusciaHomePath
+		rootDir = defaultRootDir
 	}
 	return KusciaConfig{
 		RootDir:            rootDir,
@@ -136,15 +145,15 @@ func ReadConfig(configFile, runMode string) KusciaConfig {
 	switch runMode {
 	case common.RunModeMaster:
 		masterConfig := LoadMasterConfig(configFile)
-		conf = defaultMaster(common.DefaultKusciaHomePath)
+		conf = defaultMaster(defaultRootDir)
 		masterConfig.OverwriteKusciaConfig(&conf)
 	case common.RunModeLite:
 		liteConfig := LoadLiteConfig(configFile)
-		conf = defaultLite(common.DefaultKusciaHomePath)
+		conf = defaultLite(defaultRootDir)
 		liteConfig.OverwriteKusciaConfig(&conf)
 	case common.RunModeAutonomy:
 		autonomyConfig := LoadAutonomyConfig(configFile)
-		conf = defaultAutonomy(common.DefaultKusciaHomePath)
+		conf = defaultAutonomy(defaultRootDir)
 		autonomyConfig.OverwriteKusciaConfig(&conf)
 	default:
 		nlog.Fatalf("Not supported run mode: %s", runMode)

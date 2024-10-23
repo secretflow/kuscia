@@ -261,7 +261,7 @@ func TestGenerateClusterDefineParty(t *testing.T) {
 				servicedPorts: []string{"domain", "cluster"},
 				dkInfo: &DeploymentKitInfo{
 					deploymentName: "deploy-1",
-					portService:    generatePortServices("deploy-1", "", []string{"domain", "cluster"}),
+					portService:    generatePortServices("deploy-1", []string{"domain", "cluster"}),
 					ports: NamedPorts{
 						"domain": kusciaapisv1alpha1.ContainerPort{
 							Name:     "domain",
@@ -301,7 +301,7 @@ func TestGenerateClusterDefineParty(t *testing.T) {
 				servicedPorts: []string{"domain", "cluster"},
 				dkInfo: &DeploymentKitInfo{
 					deploymentName: "deploy-1",
-					portService:    generatePortServices("deploy-1", "", []string{"domain", "cluster"}),
+					portService:    generatePortServices("deploy-1", []string{"domain", "cluster"}),
 					ports: NamedPorts{
 						"domain": kusciaapisv1alpha1.ContainerPort{
 							Name:     "domain",
@@ -488,11 +488,10 @@ func TestGenerateServicedPorts(t *testing.T) {
 
 func TestGeneratePortServices(t *testing.T) {
 	tests := []struct {
-		name              string
-		deploymentName    string
-		serviceNamePrefix string
-		servicedPorts     []string
-		want              PortService
+		name           string
+		deploymentName string
+		servicedPorts  []string
+		want           PortService
 	}{
 		{
 			name:           "serviced ports is empty",
@@ -505,17 +504,11 @@ func TestGeneratePortServices(t *testing.T) {
 			servicedPorts:  []string{"domain", "cluster"},
 			want:           PortService{"domain": "dm-1-domain", "cluster": "dm-1-cluster"},
 		},
-		{
-			name:              "serviceNamePrefix is not empty",
-			serviceNamePrefix: "dm-2",
-			servicedPorts:     []string{"domain", "cluster"},
-			want:              PortService{"domain": "dm-2-domain", "cluster": "dm-2-cluster"},
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generatePortServices(tt.deploymentName, tt.serviceNamePrefix, tt.servicedPorts)
+			got := generatePortServices(tt.deploymentName, tt.servicedPorts)
 			assert.Equal(t, tt.want, got)
 		})
 	}

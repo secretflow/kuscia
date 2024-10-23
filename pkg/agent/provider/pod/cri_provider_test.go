@@ -16,7 +16,6 @@ package pod
 
 import (
 	"fmt"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,13 +28,12 @@ import (
 )
 
 func createTestCRIProvider(t *testing.T) *CRIProvider {
-	tmpDir := t.TempDir()
 	defaultAgentConfig := config.DefaultStaticAgentConfig()
 	dep := &CRIProviderDependence{
 		Namespace:        "default",
 		NodeIP:           "127.0.0.1",
-		RootDirectory:    tmpDir,
-		StdoutDirectory:  path.Join(tmpDir, "var/stdout"),
+		RootDirectory:    t.TempDir(),
+		StdoutDirectory:  "var/stdout",
 		AllowPrivileged:  false,
 		NodeName:         "test-node",
 		EventRecorder:    nil,

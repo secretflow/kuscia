@@ -143,15 +143,16 @@ func (e *k8sElector) onStoppedLeading() {
 func (e *k8sElector) Run(ctx context.Context) {
 	reSelectLeaderDuration := 3 * time.Second
 	for {
-		e.leaderElector.Run(ctx)
-
-		nlog.Infof("Old leader %v stopped. sleep %v and retry to select new leader...", e.MyIdentity(), reSelectLeaderDuration)
+		childCtx, childCancel := context.WithCancel(ctx)
 		select {
 		case <-ctx.Done():
-			nlog.Info("Context done, so no need to wait")
+			childCancel()
 			return
-		case <-time.After(reSelectLeaderDuration):
-			continue
+		default:
+			e.leaderElector.Run(childCtx)
+			childCancel()
+			nlog.Infof("Old leader %v stopped. sleep %v and retry to select new leader...", e.MyIdentity(), reSelectLeaderDuration)
+			time.Sleep(reSelectLeaderDuration)
 		}
 	}
 }

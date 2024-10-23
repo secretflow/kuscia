@@ -42,14 +42,12 @@ import (
 )
 
 type grpcServerBean struct {
-	config          *config.KusciaAPIConfig
-	cmConfigService cmservice.IConfigService
+	config *config.KusciaAPIConfig
 }
 
-func NewGrpcServerBean(config *config.KusciaAPIConfig, cmConfigService cmservice.IConfigService) *grpcServerBean { // nolint: golint
+func NewGrpcServerBean(config *config.KusciaAPIConfig) *grpcServerBean { // nolint: golint
 	return &grpcServerBean{
-		config:          config,
-		cmConfigService: cmConfigService,
+		config: config,
 	}
 }
 
@@ -67,7 +65,6 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
 		grpc.ChainUnaryInterceptor(interceptor.UnaryRecoverInterceptor(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected)),
 		grpc.StreamInterceptor(interceptor.StreamRecoverInterceptor(pberrorcode.ErrorCode_KusciaAPIErrForUnexpected)),
-		grpc.MaxRecvMsgSize(256 * 1024 * 1024), // 256MB
 	}
 	if s.config.TLS != nil {
 		serverTLSConfig, err := buildServerTLSConfig(s.config.TLS, s.config.Protocol)
@@ -108,11 +105,10 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterDomainRouteServiceServer(server, grpchandler.NewDomainRouteHandler(service.NewDomainRouteService(s.config)))
 	kusciaapi.RegisterHealthServiceServer(server, grpchandler.NewHealthHandler(service.NewHealthService()))
 	kusciaapi.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
-	kusciaapi.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config, s.cmConfigService)))
+	kusciaapi.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config, cmservice.Exporter.ConfigurationService())))
 	kusciaapi.RegisterServingServiceServer(server, grpchandler.NewServingHandler(service.NewServingService(s.config)))
 	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 	kusciaapi.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(newCertService(s.config)))
-	kusciaapi.RegisterConfigServiceServer(server, grpchandler.NewConfigHandler(service.NewConfigService(s.config, s.cmConfigService)))
 	reflection.Register(server)
 	nlog.Infof("grpc server listening on %s", addr)
 

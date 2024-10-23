@@ -17,15 +17,10 @@ package modules
 import (
 	"context"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_RunDataMesh(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	config := mockModuleRuntimeConfig(t)
-	m, err := NewDataMesh(config)
-	assert.NoError(t, err)
-	assert.NoError(t, runModule(runCtx, m))
+	dependency := mockDependency(t)
+	RunDataMesh(runCtx, cancel, dependency, nil)
 }

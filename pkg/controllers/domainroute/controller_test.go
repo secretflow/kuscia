@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -36,7 +37,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
 	dv1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned/scheme"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -66,6 +66,7 @@ func Test_controller_with_token(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
+	goroutineNumBegin := runtime.NumGoroutine()
 	ctx := signals.NewKusciaContextWithStopCh(chStop)
 	ic := NewController(ctx, controllers.ControllerConfig{
 		KubeClient:    kubeClient,
@@ -77,17 +78,123 @@ func Test_controller_with_token(t *testing.T) {
 	go func() {
 		var err error
 		certstr := createCrtString(t)
-		alicegateway := initDomain(ctx, t, kusciaClient, alice, certstr)
-		bobgateway := initDomain(ctx, t, kusciaClient, bob, certstr)
+		aliceDomain := &dv1.Domain{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: alice,
+			},
+			Spec: dv1.DomainSpec{
+				Cert: certstr,
+			},
+		}
+		bobDomain := &dv1.Domain{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: bob,
+			},
+			Spec: dv1.DomainSpec{
+				Cert: certstr,
+			},
+		}
+		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, aliceDomain, metav1.CreateOptions{})
+		assert.NoError(t, err)
+		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, bobDomain, metav1.CreateOptions{})
+		assert.NoError(t, err)
 		time.Sleep(100 * time.Millisecond)
-
-		srcdr := initDomainRoute(alice, bob, certstr, alicegateway)
-		destdr := initDomainRoute(alice, bob, certstr, alicegateway)
-		destdr.ObjectMeta.Namespace = bob
-		destdr.Status.TokenStatus.RevisionToken.Token = "bobtestToken"
-		destdr.Status.TokenStatus.RevisionToken.Revision = 1
-		destdr.Status.TokenStatus.RevisionToken.EffectiveInstances = []string{bobgateway.Name}
-
+		alicegateway := &dv1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "testgw" + alice,
+				Namespace: alice,
+				Labels: map[string]string{
+					"auth": "test",
+				},
+			},
+			Status: dv1.GatewayStatus{
+				HeartbeatTime: metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		}
+		bobgateway := &dv1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "testgw" + bob,
+				Namespace: bob,
+				Labels: map[string]string{
+					"auth": "test",
+				},
+			},
+			Status: dv1.GatewayStatus{
+				HeartbeatTime: metav1.Time{
+					Time: time.Now(),
+				},
+			},
+		}
+		_, err = kusciaClient.KusciaV1alpha1().Gateways(alice).Create(ctx, alicegateway, metav1.CreateOptions{})
+		assert.NoError(t, err)
+		_, err = kusciaClient.KusciaV1alpha1().Gateways(bob).Create(ctx, bobgateway, metav1.CreateOptions{})
+		assert.NoError(t, err)
+		time.Sleep(100 * time.Millisecond)
+		srcdr := &dv1.DomainRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      alice + "-" + bob,
+				Namespace: alice,
+				Labels: map[string]string{
+					common.KusciaSourceKey:      alice,
+					common.KusciaDestinationKey: bob,
+				},
+			},
+			Spec: dv1.DomainRouteSpec{
+				Source:             alice,
+				Destination:        bob,
+				AuthenticationType: dv1.DomainAuthenticationToken,
+				TokenConfig: &dv1.TokenConfig{
+					TokenGenMethod:       dv1.TokenGenMethodRSA,
+					SourcePublicKey:      getPublickeyFromCert(certstr),
+					DestinationPublicKey: getPublickeyFromCert(certstr),
+				},
+			},
+			Status: dv1.DomainRouteStatus{
+				TokenStatus: dv1.DomainRouteTokenStatus{
+					RevisionInitializer: alicegateway.Name,
+					RevisionToken: dv1.DomainRouteToken{
+						Token:              "alicetestToken",
+						EffectiveInstances: []string{alicegateway.Name},
+						Revision:           2,
+						RevisionTime:       metav1.Now(),
+						ExpirationTime:     metav1.NewTime(metav1.Now().Add(time.Second * 300)),
+					},
+				},
+			},
+		}
+		destdr := &dv1.DomainRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      alice + "-" + bob,
+				Namespace: bob,
+				Labels: map[string]string{
+					common.KusciaSourceKey:      alice,
+					common.KusciaDestinationKey: bob,
+				},
+			},
+			Spec: dv1.DomainRouteSpec{
+				Source:             alice,
+				Destination:        bob,
+				AuthenticationType: dv1.DomainAuthenticationToken,
+				TokenConfig: &dv1.TokenConfig{
+					TokenGenMethod:       dv1.TokenGenMethodRSA,
+					SourcePublicKey:      getPublickeyFromCert(certstr),
+					DestinationPublicKey: getPublickeyFromCert(certstr),
+				},
+			},
+			Status: dv1.DomainRouteStatus{
+				TokenStatus: dv1.DomainRouteTokenStatus{
+					RevisionToken: dv1.DomainRouteToken{
+						Token:              "bobtestToken",
+						EffectiveInstances: []string{bobgateway.Name},
+						Revision:           1,
+						RevisionTime:       metav1.Now(),
+						ExpirationTime:     metav1.NewTime(metav1.Now().Add(time.Millisecond * 300)),
+					},
+				},
+			},
+		}
 		srcdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Create(ctx, srcdr, metav1.CreateOptions{})
 		assert.NoError(t, err)
 		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Create(ctx, destdr, metav1.CreateOptions{})
@@ -122,75 +229,8 @@ func Test_controller_with_token(t *testing.T) {
 	}()
 	ic.Run(4)
 	ic.Stop()
-}
-
-func initDomainRoute(alice string, bob string, certstr string, alicegateway *dv1.Gateway) *dv1.DomainRoute {
-	srcdr := &dv1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      alice + "-" + bob,
-			Namespace: alice,
-			Labels: map[string]string{
-				common.KusciaSourceKey:      alice,
-				common.KusciaDestinationKey: bob,
-			},
-		},
-		Spec: dv1.DomainRouteSpec{
-			Source:             alice,
-			Destination:        bob,
-			AuthenticationType: dv1.DomainAuthenticationToken,
-			TokenConfig: &dv1.TokenConfig{
-				TokenGenMethod:       dv1.TokenGenMethodRSA,
-				SourcePublicKey:      getPublickeyFromCert(certstr),
-				DestinationPublicKey: getPublickeyFromCert(certstr),
-			},
-		},
-		Status: dv1.DomainRouteStatus{
-			TokenStatus: dv1.DomainRouteTokenStatus{
-				RevisionInitializer: alicegateway.Name,
-				RevisionToken: dv1.DomainRouteToken{
-					Token:              "alicetestToken",
-					EffectiveInstances: []string{alicegateway.Name},
-					Revision:           2,
-					RevisionTime:       metav1.Now(),
-					ExpirationTime:     metav1.NewTime(metav1.Now().Add(time.Second * 300)),
-				},
-			},
-		},
-	}
-	return srcdr
-}
-
-func initDomain(ctx context.Context, t *testing.T, kusciaClient kusciaclientset.Interface, domainId string, certstr string) *dv1.Gateway {
-	domain := &dv1.Domain{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: domainId,
-		},
-		Spec: dv1.DomainSpec{
-			Cert: certstr,
-		},
-	}
-	_, err := kusciaClient.KusciaV1alpha1().Domains().Create(ctx, domain, metav1.CreateOptions{})
-	assert.NoError(t, err)
-
 	time.Sleep(100 * time.Millisecond)
-	gateway := &dv1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "testgw" + domainId,
-			Namespace: domainId,
-			Labels: map[string]string{
-				"auth": "test",
-			},
-		},
-		Status: dv1.GatewayStatus{
-			HeartbeatTime: metav1.Time{
-				Time: time.Now(),
-			},
-		},
-	}
-
-	_, err = kusciaClient.KusciaV1alpha1().Gateways(domainId).Create(ctx, gateway, metav1.CreateOptions{})
-	assert.NoError(t, err)
-	return gateway
+	assert.Equal(t, goroutineNumBegin, runtime.NumGoroutine())
 }
 
 func Test_controller_add_label(t *testing.T) {
@@ -202,6 +242,7 @@ func Test_controller_add_label(t *testing.T) {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
+	goroutineNumBegin := runtime.NumGoroutine()
 	ctx := signals.NewKusciaContextWithStopCh(chStop)
 	ic := NewController(ctx, controllers.ControllerConfig{
 		KubeClient:    kubeClient,
@@ -257,6 +298,7 @@ func Test_controller_add_label(t *testing.T) {
 	ic.Run(4)
 	ic.Stop()
 	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, goroutineNumBegin, runtime.NumGoroutine())
 	dr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+bob, metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, alice, dr.Labels[common.KusciaSourceKey])

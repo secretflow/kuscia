@@ -19,7 +19,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -29,8 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/retry"
-
-	"github.com/secretflow/kuscia/pkg/common"
 )
 
 // PatchService is used to patch service.
@@ -118,7 +115,6 @@ func UpdateServiceAnnotations(kubeClient kubernetes.Interface, service *corev1.S
 // 1. If the first character is a number, add svc- as a prefix;
 // 2. If the length of the name exceeds 63 characters, it will be truncated to 63 characters.
 // 3. The final name must comply with DNS subdomain naming rules.
-// 4. Services derivate from same task may have same prefix and different portName suffix segment.
 func GenerateServiceName(prefix, portName string) string {
 	prefix = strings.Trim(prefix, "-")
 	portName = strings.Trim(portName, "-")
@@ -128,18 +124,10 @@ func GenerateServiceName(prefix, portName string) string {
 	}
 
 	if len(name) > 63 {
-		hash := sha256.Sum256([]byte(prefix))
+		hash := sha256.Sum256([]byte(name))
 		hashStr := fmt.Sprintf("%x", hash)
 		maxPrefixLen := 63 - 16 - len(portName) - 6
-		name = fmt.Sprintf("svc-%s-%s-%s", prefix[:maxPrefixLen], hashStr[:16], portName)
+		name = fmt.Sprintf("svc-%s-%s-%s", prefix[:maxPrefixLen], portName, hashStr[:16])
 	}
 	return name
-}
-
-func ValidateServiceNamePrefix(val string, fieldName string) error {
-	match, _ := regexp.MatchString(common.ServiceNamePrefixRegex, val)
-	if !match {
-		return fmt.Errorf("field %q is invalid, invalid value: %q: regex used for validation is %q ", fieldName, val, common.ServiceNamePrefixRegex)
-	}
-	return nil
 }

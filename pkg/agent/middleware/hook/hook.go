@@ -58,13 +58,12 @@ func (c *K8sProviderSyncPodContext) Point() Point {
 }
 
 type MakeMountsContext struct {
-	Pod             *v1.Pod
-	Container       *v1.Container
-	HostPath        *string
-	Mount           *v1.VolumeMount
-	Envs            []pkgcontainer.EnvVar
-	PodVolumesDir   string
-	ResourceManager *resource.KubeResourceManager
+	Pod           *v1.Pod
+	Container     *v1.Container
+	HostPath      *string
+	Mount         *v1.VolumeMount
+	Envs          []pkgcontainer.EnvVar
+	PodVolumesDir string
 }
 
 func (c *MakeMountsContext) Point() Point {

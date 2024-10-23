@@ -83,8 +83,6 @@ type PartyInfo struct {
 	MinReservedPods int `json:"minReservedPods,omitempty"`
 	// +optional
 	Template PartyTemplate `json:"template,omitempty"`
-	// +optional
-	BandwidthLimit []BandwidthLimit `json:"bandwidthLimits,omitempty"`
 }
 
 // PartyTemplate defines the specific info for party.

@@ -28,7 +28,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
-	webinterceptor "github.com/secretflow/kuscia/pkg/web/interceptor"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 
 	"google.golang.org/grpc"
@@ -37,18 +36,12 @@ import (
 )
 
 type grpcServerBean struct {
-	config        *config.ConfManagerConfig
-	certService   service.ICertificateService
-	configService service.IConfigService
+	config config.ConfManagerConfig
 }
 
-func NewGrpcServerBean(config *config.ConfManagerConfig,
-	certService service.ICertificateService,
-	configService service.IConfigService) *grpcServerBean { // nolint: golint
+func NewGrpcServerBean(config *config.ConfManagerConfig) *grpcServerBean { // nolint: golint
 	return &grpcServerBean{
-		config:        config,
-		certService:   certService,
-		configService: configService,
+		config: *config,
 	}
 }
 
@@ -62,6 +55,9 @@ func (s *grpcServerBean) Init(e framework.ConfBeanRegistry) error {
 
 // Start grpcServerBean
 func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error {
+	certificateService := service.Exporter.CertificateService()
+	configurationService := service.Exporter.ConfigurationService()
+
 	// init grpc server opts
 	opts := []grpc.ServerOption{
 		grpc.ConnectionTimeout(time.Duration(s.config.ConnectTimeout) * time.Second),
@@ -85,11 +81,10 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 		return err
 	}
 
-	opts = append(opts, grpc.ChainUnaryInterceptor(webinterceptor.GrpcServerLoggingInterceptor(*nlog.DefaultLogger())))
-
 	// register grpc server
 	server := grpc.NewServer(opts...)
-	confmanager.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(s.certService))
+	confmanager.RegisterConfigurationServiceServer(server, grpchandler.NewConfigurationHandler(configurationService))
+	confmanager.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(certificateService))
 	reflection.Register(server)
 	nlog.Infof("Grpc server listening on %s", addr)
 

@@ -137,11 +137,8 @@ func setTaskResourceName(kusciaClient kusciaclientset.Interface, trg *kusciaapis
 		if reflect.DeepEqual(copyTrg.Spec.Parties, trg.Spec.Parties) &&
 			reflect.DeepEqual(copyTrg.Spec.OutOfControlledParties, trg.Spec.OutOfControlledParties) {
 			nlog.Infof("Task resource group %v spec parties info is already updated, skip to update it", copyTrg.Name)
-			return false, nil
+			return true, nil
 		}
-
-		copyTrg.Spec.Parties = trg.Spec.Parties
-		copyTrg.Spec.OutOfControlledParties = trg.Spec.OutOfControlledParties
 	}
 
 	return false, err

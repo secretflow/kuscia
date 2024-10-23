@@ -19,7 +19,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -45,6 +44,8 @@ const (
 
 	defaultCRIRemoteEndpoint = "unix:///home/kuscia/containerd/run/containerd.sock"
 	defaultResolvConfig      = "/etc/resolv.conf"
+
+	defaultRootDir = "/home/kuscia"
 )
 
 const (
@@ -72,11 +73,10 @@ type AgentLogCfg struct {
 }
 
 type CapacityCfg struct {
-	CPU              string `yaml:"cpu"`
-	Memory           string `yaml:"memory"`
-	Pods             string `yaml:"pods"`
-	Storage          string `yaml:"storage"`
-	EphemeralStorage string `yaml:"ephemeralStorage"`
+	CPU     string `yaml:"cpu"`
+	Memory  string `yaml:"memory"`
+	Pods    string `yaml:"pods"`
+	Storage string `yaml:"storage"`
 }
 
 type ReservedResourcesCfg struct {
@@ -229,9 +229,6 @@ type AgentConfig struct {
 	APIVersion   string `yaml:"apiVersion,omitempty"`
 	AgentVersion string `yaml:"agentVersion,omitempty"`
 
-	// Location to check disk pressure
-	DiskPressurePath string `yaml:"diskPressurePath,omitempty"`
-
 	// If k3s is built into the node, it is a head node.
 	Head bool `yaml:"head"`
 
@@ -243,7 +240,6 @@ type AgentConfig struct {
 	// Todo: temporary solution for scql
 	KusciaAPIToken string
 	DomainKeyData  string
-	DomainKey      *rsa.PrivateKey
 
 	// CA configuration.
 	DomainCACertFile string
@@ -267,12 +263,10 @@ type AgentConfig struct {
 
 func DefaultStaticAgentConfig() *AgentConfig {
 	return &AgentConfig{
-		RootDir: common.DefaultKusciaHomePath,
+		RootDir: defaultRootDir,
 
 		LogsPath:   defaultLogsPath,
 		StdoutPath: defaultStdoutPath,
-
-		DiskPressurePath: path.Join(common.DefaultKusciaHomePath, common.DefaultDomainDataSourceLocalFSPath),
 
 		Capacity: CapacityCfg{
 			Pods: defaultPodsCapacity,
@@ -364,6 +358,10 @@ func LoadOverrideConfig(config *AgentConfig, configPath string) (*AgentConfig, e
 	return config, err
 }
 
+func LoadStaticAgentConfig(configPath string) (*AgentConfig, error) {
+	return LoadOverrideConfig(DefaultStaticAgentConfig(), configPath)
+}
+
 // LoadAgentConfig loads the given json configuration files.
 func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 	config, err := LoadOverrideConfig(DefaultAgentConfig(), configPath)
@@ -385,10 +383,6 @@ func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 		return nil, err
 	}
 
-	if config.DiskPressurePath == "" {
-		config.DiskPressurePath = path.Join(config.RootDir, common.DefaultDomainDataSourceLocalFSPath)
-	}
-
 	if config.NodeIP == "" {
 		return nil, errors.New("empty host ip")
 	}
@@ -398,8 +392,4 @@ func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 	}
 
 	return config, nil
-}
-
-func DefaultImageStoreDir() string {
-	return defaultLocalImageRootDir
 }

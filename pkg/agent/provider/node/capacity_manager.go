@@ -43,9 +43,6 @@ type CapacityManager struct {
 	storageTotal     resource.Quantity
 	storageAvailable resource.Quantity
 
-	ephemeralStorageTotal     *resource.Quantity
-	ephemeralStorageAvailable *resource.Quantity
-
 	podTotal     resource.Quantity
 	podAvailable resource.Quantity
 
@@ -145,15 +142,6 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 		pa.storageAvailable = storageQuantity.DeepCopy()
 	}
 
-	if cfg.EphemeralStorage != "" {
-		storageQuantity, err := resource.ParseQuantity(cfg.EphemeralStorage)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse ephemeral storage %q, detail-> %v", cfg.EphemeralStorage, err)
-		}
-		pa.ephemeralStorageTotal = &storageQuantity
-		pa.ephemeralStorageAvailable = &storageQuantity
-	}
-
 	podsCap := cfg.Pods
 	if podsCap == "" {
 		podsCap = defaultPodsCapacity
@@ -229,29 +217,21 @@ func (pa *CapacityManager) buildCgroupResource(runtime string, reservedResCfg *c
 
 // Capacity returns a resource list containing the capacity limits.
 func (pa *CapacityManager) Capacity() v1.ResourceList {
-	rl := v1.ResourceList{
-		v1.ResourceCPU:     pa.cpuTotal,
-		v1.ResourceMemory:  pa.memTotal,
-		v1.ResourceStorage: pa.storageTotal,
-		"pods":             pa.podTotal,
+	return v1.ResourceList{
+		"cpu":     pa.cpuTotal,
+		"memory":  pa.memTotal,
+		"storage": pa.storageTotal,
+		"pods":    pa.podTotal,
 	}
-	if pa.ephemeralStorageTotal != nil {
-		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageTotal
-	}
-	return rl
 }
 
 func (pa *CapacityManager) Allocatable() v1.ResourceList {
-	rl := v1.ResourceList{
-		v1.ResourceCPU:     pa.cpuAvailable,
-		v1.ResourceMemory:  pa.memAvailable,
-		v1.ResourceStorage: pa.storageAvailable,
-		"pods":             pa.podAvailable,
+	return v1.ResourceList{
+		"cpu":     pa.cpuAvailable,
+		"memory":  pa.memAvailable,
+		"storage": pa.storageAvailable,
+		"pods":    pa.podAvailable,
 	}
-	if pa.ephemeralStorageAvailable != nil {
-		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageAvailable
-	}
-	return rl
 }
 
 func (pa *CapacityManager) GetCgroupCPUQuota() *int64 {

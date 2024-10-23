@@ -44,14 +44,14 @@ func NewProotStarter(c *InitConfig) (Starter, error) {
 
 	cmdLine = append(cmdLine, c.CmdLine...)
 
-	if err := paths.EnsureDirectory(filepath.Join(c.Rootfs, c.WorkingDir), true); err != nil {
-		return nil, err
-	}
-
 	s.Cmd = exec.Command(cmdLine[0], cmdLine[1:]...)
 	s.Cmd.Env = c.Env
 	s.Cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
+	}
+
+	if err := paths.EnsureDirectory(filepath.Join(c.Rootfs, c.WorkingDir), true); err != nil {
+		return nil, err
 	}
 
 	s.Cmd.Stdout = c.LogFile

@@ -81,10 +81,6 @@ func DoHTTPWithRetry(in interface{}, out interface{}, hp *HTTPParam, waitTime ti
 	var err error
 	for i := 0; i < maxRetryTimes; i++ {
 		err = DoHTTP(in, out, hp)
-		sin, _ := json.Marshal(in)
-		sou, _ := json.Marshal(out)
-		nlog.Infof("[HTTP] method(%s),uri(%s),path(%s),req(%s),res(%s),err(%v)",
-			hp.Method, hp.KusciaHost, hp.Path, sin, sou, err)
 		if err == nil {
 			return nil
 		}

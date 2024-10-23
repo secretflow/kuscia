@@ -14,7 +14,23 @@
 
 package modules
 
-/*
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	clientsetfake "k8s.io/client-go/kubernetes/fake"
+	restclient "k8s.io/client-go/rest"
+
+	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
+	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
+)
+
 func Test_RunDomainRoute(t *testing.T) {
 	tmpDir := t.TempDir()
 	path, err := os.Getwd()
@@ -22,7 +38,7 @@ func Test_RunDomainRoute(t *testing.T) {
 	workDir := strings.SplitN(path, "cmd", 2)[0]
 	nlog.Infof("work dir is: %s", workDir)
 	assert.NoError(t, err)
-	dependency := mockModuleRuntimeConfig(t)
+	dependency := mockDependency(t)
 	dependency.RootDir = workDir
 	dependency.Master = kusciaconfig.MasterConfig{
 		APIServer: &kusciaconfig.APIServerConfig{
@@ -43,4 +59,3 @@ func Test_RunDomainRoute(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
 	RunDomainRoute(runCtx, cancel, dependency, nil)
 }
-*/

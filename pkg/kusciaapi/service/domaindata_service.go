@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -28,7 +28,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/errorcode"
@@ -112,19 +112,9 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
+
 	// normalization request
 	s.normalizationCreateRequest(request)
-
-	if len(request.DatasourceId) > 0 {
-		kusciaErrorCode, msg := CheckDomainDataSourceExists(s.conf.KusciaClient, request.DomainId, request.DatasourceId)
-
-		if pberrorcode.ErrorCode_SUCCESS != kusciaErrorCode {
-			return &kusciaapi.CreateDomainDataResponse{
-				Status: utils.BuildErrorResponseStatus(kusciaErrorCode, msg),
-			}
-		}
-	}
-
 	// verdor priority using incoming
 	customVendor := request.Vendor
 
@@ -203,16 +193,6 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 	}
 
 	s.normalizationUpdateRequest(request, originalDomainData.Spec)
-	if len(request.DatasourceId) > 0 {
-		kusciaErrorCode, msg := CheckDomainDataSourceExists(s.conf.KusciaClient, request.DomainId, request.DatasourceId)
-
-		if pberrorcode.ErrorCode_SUCCESS != kusciaErrorCode {
-			return &kusciaapi.UpdateDomainDataResponse{
-				Status: utils.BuildErrorResponseStatus(kusciaErrorCode, msg),
-			}
-		}
-	}
-
 	// build modified domainData
 	labels := make(map[string]string)
 	for key, value := range originalDomainData.Labels {
@@ -575,9 +555,9 @@ func (s domainDataService) normalizationUpdateRequest(request *kusciaapi.UpdateD
 }
 
 func (s domainDataService) authHandler(ctx context.Context, request RequestWithDomainID) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if role == consts.AuthRoleDomain && request.GetDomainId() != domainID {
-		return fmt.Errorf("domain's kusciaAPI could only operate its own DomainData, request.DomainID must be %s not %s", domainID, request.GetDomainId())
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain && request.GetDomainId() != domainId {
+		return fmt.Errorf("domain's kusciaAPI could only operate its own DomainData, request.DomainID must be %s not %s", domainId, request.GetDomainId())
 	}
 	return nil
 }

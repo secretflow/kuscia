@@ -16,21 +16,16 @@ package modules
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiserveroptions "k8s.io/apiserver/pkg/server/options"
-	"k8s.io/client-go/tools/leaderelection"
 	componentbaseconfig "k8s.io/component-base/config"
-	"k8s.io/component-base/configz"
 	"k8s.io/component-base/logs"
 	"k8s.io/component-base/metrics"
 	"k8s.io/kubernetes/cmd/kube-scheduler/app"
-	schedulerserverconfig "k8s.io/kubernetes/cmd/kube-scheduler/app/config"
 	"k8s.io/kubernetes/cmd/kube-scheduler/app/options"
-	"k8s.io/kubernetes/pkg/scheduler"
 	kubeschedulerconfig "k8s.io/kubernetes/pkg/scheduler/apis/config"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
@@ -46,7 +41,7 @@ type schedulerModule struct {
 	opts       *options.Options
 }
 
-func NewScheduler(i *ModuleRuntimeConfigs) (Module, error) {
+func NewScheduler(i *Dependencies) Module {
 	o := &options.Options{
 		SecureServing:  apiserveroptions.NewSecureServingOptions().WithLoopback(),
 		Authentication: apiserveroptions.NewDelegatingAuthenticationOptions(),
@@ -84,7 +79,7 @@ func NewScheduler(i *ModuleRuntimeConfigs) (Module, error) {
 		rootDir:    i.RootDir,
 		Kubeconfig: i.KubeconfigFile,
 		opts:       o,
-	}, nil
+	}
 }
 
 func (s *schedulerModule) Run(ctx context.Context) error {
@@ -95,45 +90,19 @@ func (s *schedulerModule) Run(ctx context.Context) error {
 	}
 
 	s.opts.ConfigFile = configPath
-
-	for {
-		cc, sched, err := app.Setup(ctx, s.opts,
-			app.WithPlugin(kusciascheduling.Name, kusciascheduling.New),
-			app.WithPlugin(queuesort.Name, queuesort.New))
-		if err != nil {
-			nlog.Error(err)
-			return err
-		}
-
-		nlog.Infof("Start to run scheduler...")
-		err = s.startScheduler(ctx, cc, sched)
-
-		if err != nil {
-			nlog.Warnf("Schedule run failed with: %s", err.Error())
-
-			// fix me: "finished without leader elect"/"lost lease" is copyed from app.Run function, may changed
-			if err.Error() != "finished without leader elect" && err.Error() != "lost lease" {
-				return err
-			}
-
-			select {
-			case <-ctx.Done():
-				return nil
-			case <-time.After(3 * time.Second):
-			}
-		} else {
-			// can't reach here(because s.startScheduler will never return nil)
-			nlog.Infof("schedule run success")
-			return nil
-		}
+	cc, sched, err := app.Setup(
+		ctx,
+		s.opts,
+		app.WithPlugin(kusciascheduling.Name, kusciascheduling.New),
+		app.WithPlugin(queuesort.Name, queuesort.New))
+	if err != nil {
+		nlog.Error(err)
+		return err
 	}
+	return app.Run(ctx, cc, sched)
 }
 
 func (s *schedulerModule) WaitReady(ctx context.Context) error {
-	select {
-	case <-time.After(time.Second):
-	case <-ctx.Done():
-	}
 	return ctx.Err()
 }
 
@@ -141,64 +110,34 @@ func (s *schedulerModule) Name() string {
 	return "kusciascheduler"
 }
 
-func (s *schedulerModule) startScheduler(ctx context.Context, cc *schedulerserverconfig.CompletedConfig, sched *scheduler.Scheduler) error {
-	// Configz registration.
-	if cz, err := configz.New("componentconfig"); err == nil {
-		cz.Set(cc.ComponentConfig)
-	} else {
-		return fmt.Errorf("unable to register configz: %s", err)
-	}
+func RunSchedulerWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "kusciascheduler",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunScheduler(runCtx, cancel, conf, shutdownEntry)
+}
 
-	// Start events processing pipeline.
-	cc.EventBroadcaster.StartRecordingToSink(ctx.Done())
-	defer cc.EventBroadcaster.Shutdown()
-
-	waitingForLeader := make(chan struct{})
-
-	// Start all informers.
-	cc.InformerFactory.Start(ctx.Done())
-	// DynInformerFactory can be nil in tests.
-	if cc.DynInformerFactory != nil {
-		cc.DynInformerFactory.Start(ctx.Done())
-	}
-
-	// Wait for all caches to sync before scheduling.
-	cc.InformerFactory.WaitForCacheSync(ctx.Done())
-	// DynInformerFactory can be nil in tests.
-	if cc.DynInformerFactory != nil {
-		cc.DynInformerFactory.WaitForCacheSync(ctx.Done())
-	}
-
-	// If leader election is enabled, runCommand via LeaderElector until done and exit.
-	if cc.LeaderElection != nil {
-		cc.LeaderElection.Callbacks = leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(ctx context.Context) {
-				close(waitingForLeader)
-				sched.Run(ctx)
-			},
-			OnStoppedLeading: func() {
-				select {
-				case <-ctx.Done():
-					// We were asked to terminate.
-					nlog.Info("Requested to terminate, exiting")
-				default:
-					// We lost the lock.
-					nlog.Warn("Leaderelection lost")
-				}
-			},
+func RunScheduler(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
+	m := NewScheduler(conf)
+	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
+		if err := m.Run(ctx); err != nil {
+			nlog.Error(err)
+			cancel()
 		}
-		leaderElector, err := leaderelection.NewLeaderElector(*cc.LeaderElection)
-		if err != nil {
-			return fmt.Errorf("couldn't create leader elector: %v", err)
-		}
-
-		leaderElector.Run(ctx)
-
-		return fmt.Errorf("lost lease")
+	}()
+	if err := m.WaitReady(ctx); err != nil {
+		nlog.Fatalf("Scheduler wait ready failed: %v", err)
 	}
-
-	// Leader election is disabled, so runCommand inline until done.
-	close(waitingForLeader)
-	sched.Run(ctx)
-	return fmt.Errorf("finished without leader elect")
+	nlog.Info("scheduler is ready")
+	return m
 }

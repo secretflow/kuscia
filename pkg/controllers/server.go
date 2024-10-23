@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package controllers
 
 import (
@@ -47,8 +47,18 @@ var (
 	leaderHealthzAdaptorTimeout = time.Second * 20
 )
 
-// Server defines detailed info which used to run server.
-type Server struct {
+func RunServer(ctx context.Context, opts *Options, clients *kubeconfig.KubeClients, controllerConstructions []ControllerConstruction) error {
+	s := NewServer(opts, clients, controllerConstructions)
+
+	if err := s.Run(ctx); err != nil {
+		nlog.Errorf("Failed to run server: %v", err)
+		return err
+	}
+	return nil
+}
+
+// server defines detailed info which used to run server.
+type server struct {
 	ctx                     context.Context
 	mutex                   sync.Mutex
 	options                 *Options
@@ -70,8 +80,8 @@ func buildEventRecorder(kubeClient kubernetes.Interface, name string) record.Eve
 }
 
 // NewServer returns a server instance.
-func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstructions []ControllerConstruction) *Server {
-	s := &Server{
+func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstructions []ControllerConstruction) *server {
+	s := &server{
 		options:                 opts,
 		eventRecorder:           buildEventRecorder(clients.KubeClient, opts.ControllerName),
 		kubeClient:              clients.KubeClient,
@@ -95,7 +105,7 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 }
 
 // Run is used to run server.
-func (s *Server) Run(ctx context.Context) error {
+func (s *server) Run(ctx context.Context) error {
 	s.ctx = ctx
 	var crdNames []string
 	crdNamesMap := map[string]bool{}
@@ -122,7 +132,7 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 // onNewLeader is executed when leader is changed.
-func (s *Server) onNewLeader(identity string) {
+func (s *server) onNewLeader(identity string) {
 	nlog.Info("On new leader")
 	if s.leaderElector == nil {
 		return
@@ -137,7 +147,7 @@ func (s *Server) onNewLeader(identity string) {
 }
 
 // onStartedLeading is executed when leader started.
-func (s *Server) onStartedLeading(ctx context.Context) {
+func (s *server) onStartedLeading(ctx context.Context) {
 	nlog.Info("Start leading")
 	if !s.controllersIsEmpty() {
 		nlog.Info("Controllers already is running, skip initialized new controller")
@@ -170,8 +180,8 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 }
 
 // onStoppedLeading is executed when leader stopped.
-func (s *Server) onStoppedLeading() {
-	nlog.Warnf("Server %v Leading stopped, self identity: %v, leader identity: %v", s.options.ControllerName, s.leaderElector.MyIdentity(), s.leaderElector.GetLeader())
+func (s *server) onStoppedLeading() {
+	nlog.Warnf("Server %v Leading stopped, self identity: %v, leader identity: %v", s.Name(), s.leaderElector.MyIdentity(), s.leaderElector.GetLeader())
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	for i := range s.controllers {
@@ -181,14 +191,17 @@ func (s *Server) onStoppedLeading() {
 	s.controllers = nil
 }
 
-func (s *Server) controllersIsEmpty() bool {
+func (s *server) controllersIsEmpty() bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
-	return s.controllers == nil
+	if s.controllers == nil {
+		return true
+	}
+	return false
 }
 
 // runHealthCheckServer runs health check server.
-func (s *Server) runHealthCheckServer() {
+func (s *server) runHealthCheckServer() {
 	var checks []healthz.HealthChecker
 	checks = append(checks, s.electionChecker)
 
@@ -209,10 +222,10 @@ func (s *Server) runHealthCheckServer() {
 	}()
 }
 
-func (s *Server) WaitReady(ctx context.Context) error {
+func (s *server) WaitReady(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (s *Server) Name() string {
+func (s *server) Name() string {
 	return s.options.ControllerName
 }

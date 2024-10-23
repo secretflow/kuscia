@@ -16,6 +16,7 @@ package store
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,8 +25,8 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 
+	"github.com/secretflow/kuscia/pkg/agent/local/store/assist"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
-	"github.com/secretflow/kuscia/pkg/utils/assist"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
@@ -46,7 +47,7 @@ const (
 	dockerManifestLayerSuffix = "/layer.tar"
 )
 
-func (s *dockerStore) RegisterImage(image, manifestFile string) error {
+func (s *store) RegisterImage(image, manifestFile string) error {
 
 	var manifest kii.Manifest
 	if manifestFile != "" {
@@ -83,11 +84,7 @@ func (s *dockerStore) RegisterImage(image, manifestFile string) error {
 	return nil
 }
 
-func (s *dockerStore) LoadImage(tarFile string) error {
-	imageReader, err := os.Open(tarFile)
-	if err != nil {
-		return err
-	}
+func (s *store) LoadImage(imageReader io.Reader) error {
 	// step 1: create temp working dir
 	tempDir, err := s.layout.GetTemporaryDir("img-load-")
 	if err != nil {
@@ -97,7 +94,7 @@ func (s *dockerStore) LoadImage(tarFile string) error {
 
 	nlog.Infof("Parsing external image package ...")
 
-	if err = assist.Untar(tempDir, false, false, imageReader, true); err != nil {
+	if err = assist.Untar(tempDir, false, false, imageReader); err != nil {
 		return err
 	}
 

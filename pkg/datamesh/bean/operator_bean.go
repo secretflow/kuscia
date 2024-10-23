@@ -19,7 +19,7 @@ import (
 
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
-	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
+	"github.com/secretflow/kuscia/pkg/datamesh/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework"
@@ -31,18 +31,16 @@ import (
 // 2 check the status of domain data periodically
 type operatorBean struct {
 	frameworkconfig.FlagEnvConfigLoader
-	config          *config.DataMeshConfig
-	operatorSvc     service.IOperatorService
-	cmConfigService cmservice.IConfigService
+	config      *config.DataMeshConfig
+	operatorSvc service.IOperatorService
 }
 
-func NewOperatorBean(config *config.DataMeshConfig, cmConfigService cmservice.IConfigService) *operatorBean { // nolint: golint
+func NewOperatorBean(config *config.DataMeshConfig) *operatorBean { // nolint: golint
 	return &operatorBean{
 		FlagEnvConfigLoader: frameworkconfig.FlagEnvConfigLoader{
 			EnableTLSFlag: true,
 		},
-		config:          config,
-		cmConfigService: cmConfigService,
+		config: config,
 	}
 }
 
@@ -53,7 +51,7 @@ func (b *operatorBean) Validate(errs *errorcode.Errs) {
 func (b *operatorBean) Init(e framework.ConfBeanRegistry) error {
 	// tls config from config file
 	nlog.Infof("OperatorBean init")
-	b.operatorSvc = service.NewOperatorService(b.config, b.cmConfigService)
+	b.operatorSvc = service.NewOperatorService(b.config, cmservice.Exporter.ConfigurationService())
 	return nil
 }
 

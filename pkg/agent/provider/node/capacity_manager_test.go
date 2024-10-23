@@ -27,11 +27,10 @@ import (
 
 func TestNewGenericNodeProvider(t *testing.T) {
 	nonEmptyCfg := config.CapacityCfg{
-		CPU:              "1",
-		Memory:           "1000000000",
-		Pods:             "100",
-		Storage:          "100G",
-		EphemeralStorage: "200G",
+		CPU:     "1",
+		Memory:  "1000000000",
+		Pods:    "100",
+		Storage: "100G",
 	}
 
 	tests := []struct {
@@ -81,7 +80,6 @@ func TestNewGenericNodeProvider(t *testing.T) {
 				cpuAvailable, _ := strconv.Atoi(cp.cpuAvailable.String())
 				assert.True(t, cfgCPU >= cpuAvailable)
 				assert.Equal(t, tt.cfg.Storage, cp.storageAvailable.String())
-				assert.Equal(t, tt.cfg.EphemeralStorage, cp.ephemeralStorageAvailable.String())
 				assert.Equal(t, tt.cfg.Pods, cp.podAvailable.String())
 			}
 		})

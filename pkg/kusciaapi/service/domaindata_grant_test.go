@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -23,15 +23,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
 func TestDomainDataGrant(t *testing.T) {
-
-	if kusciaAPIDG == nil {
-		TestServiceMain(t)
-	}
 
 	domainRes := CreateDomain(kusciaAPIDG.data.DomainId)
 	t.Logf("CreateDomain res : %+v\n", domainRes)
@@ -71,30 +66,6 @@ func TestDomainDataGrant(t *testing.T) {
 	})
 	assert.Equal(t, batchQueryRes.Status.Code, int32(0))
 
-	// empty, error batch query test
-	noDataRequestRes := kusciaAPIDG.BatchQueryDomainDataGrant(context.Background(), &kusciaapi.BatchQueryDomainDataGrantRequest{
-		Data: []*kusciaapi.QueryDomainDataGrantRequestData{},
-	})
-	t.Log(noDataRequestRes)
-	assert.Equal(t, noDataRequestRes.Status.Code, int32(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate))
-
-	emptyDataAndErrorRequestRes := kusciaAPIDG.BatchQueryDomainDataGrant(context.Background(), &kusciaapi.BatchQueryDomainDataGrantRequest{
-		Data: []*kusciaapi.QueryDomainDataGrantRequestData{
-			{},
-			{},
-			{
-				DomainId:          kusciaAPIDG.data.DomainId,
-				DomaindatagrantId: createRes.Data.DomaindatagrantId,
-			},
-			{
-				DomainId:          kusciaAPIDG.data.DomainId,
-				DomaindatagrantId: createRes.Data.DomaindatagrantId + "-wrong",
-			},
-		},
-	})
-	t.Log(emptyDataAndErrorRequestRes)
-	assert.Equal(t, emptyDataAndErrorRequestRes.Status.Code, int32(pberrorcode.ErrorCode_KusciaAPIErrQueryDomainDataGrant))
-
 	updateRes := kusciaAPIDG.UpdateDomainDataGrant(context.Background(), &kusciaapi.UpdateDomainDataGrantRequest{
 		DomaindatagrantId: createRes.Data.DomaindatagrantId,
 		DomaindataId:      kusciaAPIDG.data.DomaindataId,
@@ -106,27 +77,6 @@ func TestDomainDataGrant(t *testing.T) {
 	})
 	t.Log(updateRes)
 	assert.Equal(t, int32(0), updateRes.Status.Code)
-
-	// create another dd
-	kusciaAPIDG.conf.KusciaClient.KusciaV1alpha1().DomainDatas(kusciaAPIDG.data.Author).Create(context.Background(), &v1alpha1.DomainData{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      kusciaAPIDG.data.DomaindataId + "-another",
-			Namespace: kusciaAPIDG.data.Author,
-		},
-	}, v1.CreateOptions{})
-
-	updateResErr := kusciaAPIDG.UpdateDomainDataGrant(context.Background(), &kusciaapi.UpdateDomainDataGrantRequest{
-		DomaindatagrantId: createRes.Data.DomaindatagrantId,
-		DomaindataId:      kusciaAPIDG.data.DomaindataId + "-another",
-		GrantDomain:       "carol",
-		Limit:             kusciaAPIDG.data.Limit,
-		Description:       kusciaAPIDG.data.Description,
-		Signature:         kusciaAPIDG.data.Signature,
-		DomainId:          kusciaAPIDG.data.DomainId,
-	})
-
-	t.Log(updateResErr)
-	assert.Equal(t, int32(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate), updateResErr.Status.Code)
 
 	listRes := kusciaAPIDG.ListDomainDataGrant(context.Background(), &kusciaapi.ListDomainDataGrantRequest{
 		Data: &kusciaapi.ListDomainDataGrantRequestData{

@@ -24,18 +24,10 @@ import (
 	"sync"
 	"time"
 
-	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
-	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
-	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
-	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
-	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/golang/protobuf/ptypes/duration"
 	gocache "github.com/patrickmn/go-cache"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,11 +37,21 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
+	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	endpoint "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
+	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerDecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
 	kusciapoller "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_poller/v3"
 	kusciareceiver "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_receiver/v3"
 	kusciatokenauth "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	clientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -187,7 +189,7 @@ func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh
 	}
 
 	go c.startHandShakeServer(c.handshakePort)
-	go c.checkConnectionHealthy(stopCh)
+	go c.checkConnectionHealthy(ctx, stopCh)
 	nlog.Info("Starting workers")
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -200,7 +202,7 @@ func (c *DomainRouteController) Run(ctx context.Context, threadiness int, stopCh
 	nlog.Info("Shutting down workers")
 }
 
-func (c *DomainRouteController) checkConnectionHealthy(stopCh <-chan struct{}) {
+func (c *DomainRouteController) checkConnectionHealthy(ctx context.Context, stopCh <-chan struct{}) {
 	t := time.NewTicker(common.GatewayHealthCheckDuration)
 	defer t.Stop()
 	for {
@@ -443,7 +445,7 @@ func (c *DomainRouteController) updatePollerReceiverXds(dr *kusciaapisv1alpha1.D
 			Source:      dr.Spec.Source,
 			Destination: dr.Spec.Destination,
 		}
-		if err := xds.UpdateReceiverRules(&rule, c.gateway.Namespace, true); err != nil {
+		if err := xds.UpdateReceiverRules(&rule, true); err != nil {
 			return err
 		}
 		// update or add external virtual host
@@ -464,7 +466,7 @@ func (c *DomainRouteController) updatePollerReceiverXds(dr *kusciaapisv1alpha1.D
 		}
 	} else if dr.Spec.Destination == c.gateway.Namespace { // external
 		pollHeader := generatePollHeaders(dr)
-		if err := xds.UpdatePollAppendHeaders(pollHeader, true); err != nil {
+		if err := xds.UpdatePoller(pollHeader, true); err != nil {
 			return err
 		}
 	}
@@ -502,7 +504,7 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 		}
 
 		if dr.Spec.BodyEncryption != nil {
-			if err := c.updateEncryptRule(dr, token); err != nil {
+			if err := updateEncryptRule(dr, token); err != nil {
 				return err
 			}
 		}
@@ -532,16 +534,14 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				Tokens: tokenVals,
 			}
 			sourceHeader := generateRequestHeaders(dr)
-			if err := xds.UpdateSourceTokens(sourceToken, true); err != nil {
-				return err
-			}
-			if err := xds.UpdateAppendHeaders(sourceHeader, true); err != nil {
+
+			if err := xds.UpdateTokenAuthAndHeaderDecorator(sourceToken, sourceHeader, true); err != nil {
 				return err
 			}
 		}
 
 		if dr.Spec.BodyEncryption != nil {
-			return c.updateDecryptFilter(dr, tokens)
+			return updateDecryptFilter(dr, tokens)
 		}
 	}
 	return nil
@@ -558,7 +558,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				Source:      dr.Spec.Source,
 				Destination: dr.Spec.Destination,
 			}
-			if err := xds.UpdateReceiverRules(&rule, c.gateway.Namespace, false); err != nil {
+			if err := xds.UpdateReceiverRules(&rule, false); err != nil {
 				return err
 			}
 		}
@@ -568,7 +568,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				Destination: dr.Spec.Destination,
 			}
 			// directly return, why?
-			return xds.UpdateEncryptRules(rule, c.gateway.Namespace, false)
+			return xds.UpdateEncryptRules(rule, false)
 		}
 		if !utils.IsThirdPartyTransit(dr.Spec.Transit) {
 			return xds.DeleteCluster(name)
@@ -579,7 +579,7 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				Source:      dr.Spec.Source,
 				Destination: dr.Spec.Destination,
 			}
-			if err := xds.UpdateDecryptRules(rule, c.gateway.Namespace, false); err != nil {
+			if err := xds.UpdateDecryptRules(rule, false); err != nil {
 				return err
 			}
 		}
@@ -591,17 +591,14 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				Source: dr.Spec.Source,
 			}
 			nlog.Debugf("delete token and sourceHeaders, source is %s", sourceToken.Source)
-			if err := xds.UpdateSourceTokens(sourceToken, false); err != nil {
-				return err
-			}
-			if err := xds.UpdateAppendHeaders(sourceHeader, false); err != nil {
+			if err := xds.UpdateTokenAuthAndHeaderDecorator(sourceToken, sourceHeader, false); err != nil {
 				return err
 			}
 			if utils.IsReverseTunnelTransit(dr.Spec.Transit) {
 				sourceHeader := &kusciapoller.Poller_SourceHeader{
 					Source: dr.Spec.Source,
 				}
-				if err := xds.UpdatePollAppendHeaders(sourceHeader, false); err != nil {
+				if err := xds.UpdatePoller(sourceHeader, false); err != nil {
 					return err
 				}
 			}
@@ -625,9 +622,6 @@ func (c *DomainRouteController) updateTransitVh(dr *kusciaapisv1alpha1.DomainRou
 		return fmt.Errorf("failed to get virtual host (%s) in route(%s)", vhName, xds.InternalRoute)
 	}
 
-	// TODO will directly deep copying vh cause any problem after token rolling ?
-	// if we don't update the token, just rely on the resync process or other processes
-	// to trigger a re-update?
 	vhNew, ok := proto.Clone(vh).(*route.VirtualHost)
 	if !ok {
 		return fmt.Errorf("proto cannot cast to VirtualHost")
@@ -642,7 +636,7 @@ func (c *DomainRouteController) updateTransitVh(dr *kusciaapisv1alpha1.DomainRou
 	return nil
 }
 
-func (c *DomainRouteController) updateEncryptRule(dr *kusciaapisv1alpha1.DomainRoute, token *Token) error {
+func updateEncryptRule(dr *kusciaapisv1alpha1.DomainRoute, token *Token) error {
 	// update encrypt filter config
 	rule := &kusciacrypt.CryptRule{
 		Source:           dr.Spec.Source,
@@ -651,10 +645,10 @@ func (c *DomainRouteController) updateEncryptRule(dr *kusciaapisv1alpha1.DomainR
 		SecretKey:        token.Token,
 		SecretKeyVersion: fmt.Sprint(token.Version),
 	}
-	return xds.UpdateEncryptRules(rule, c.gateway.Namespace, true)
+	return xds.UpdateEncryptRules(rule, true)
 }
 
-func (c *DomainRouteController) updateDecryptFilter(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) error {
+func updateDecryptFilter(dr *kusciaapisv1alpha1.DomainRoute, tokens []*Token) error {
 	n := len(tokens)
 	rule := &kusciacrypt.CryptRule{
 		Source:           dr.Spec.Source,
@@ -668,7 +662,7 @@ func (c *DomainRouteController) updateDecryptFilter(dr *kusciaapisv1alpha1.Domai
 		rule.ReserveKeyVersion = fmt.Sprint(tokens[n-2].Version)
 	}
 
-	return xds.UpdateDecryptRules(rule, c.gateway.Namespace, true)
+	return xds.UpdateDecryptRules(rule, true)
 }
 
 func generateReceiverExternalVh(dr *kusciaapisv1alpha1.DomainRoute) (*route.VirtualHost, error) {
@@ -979,9 +973,11 @@ func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1
 }
 
 func generateRequestHeaders(dr *kusciaapisv1alpha1.DomainRoute) *headerDecorator.HeaderDecorator_SourceHeader {
+	if len(dr.Spec.RequestHeadersToAdd) == 0 {
+		return nil
+	}
 	sourceHeader := &headerDecorator.HeaderDecorator_SourceHeader{
-		Source:  dr.Spec.Source,
-		Headers: []*headerDecorator.HeaderDecorator_HeaderEntry{},
+		Source: dr.Spec.Source,
 	}
 	for k, v := range dr.Spec.RequestHeadersToAdd {
 		entry := &headerDecorator.HeaderDecorator_HeaderEntry{

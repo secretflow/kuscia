@@ -51,7 +51,7 @@ name: "image-security"
 
 	is := &imageSecurity{}
 	assert.Equal(t, hook.PluginType, is.Type())
-	assert.NoError(t, is.Init(context.Background(), dep, cfg))
+	assert.NoError(t, is.Init(dep, cfg))
 
 	return is
 }

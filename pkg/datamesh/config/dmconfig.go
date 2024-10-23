@@ -18,11 +18,9 @@ import (
 	"crypto/rsa"
 
 	"github.com/spf13/pflag"
-	"k8s.io/client-go/kubernetes"
 
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/utils/kusciaconfig"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
@@ -35,7 +33,7 @@ const (
 
 type DataMeshConfig struct {
 	RootDir        string
-	ListenAddr     string // default is empty
+	ListenAddr     string // default is empyt
 	HTTPPort       int32
 	GRPCPort       int32
 	Debug          bool
@@ -48,14 +46,13 @@ type DataMeshConfig struct {
 	DomainKey      *rsa.PrivateKey
 	TLS            config.TLSServerConfig
 	KusciaClient   kusciaclientset.Interface
-	KubeClient     kubernetes.Interface
 	KubeNamespace  string
-	DisableTLS     bool              `yaml:"disableTLS,omitempty"`
-	DataProxyList  []DataProxyConfig `yaml:"dataProxyList,omitempty"`
-	InterceptorLog *nlog.NLog        `yaml:"-"`
+
+	DisableTLS            bool                      `yaml:"disableTLS,omitempty"`
+	ExternalDataProxyList []ExternalDataProxyConfig `yaml:"externalDataProxyList,omitempty"`
 }
 
-type DataProxyConfig struct {
+type ExternalDataProxyConfig struct {
 	Endpoint        string                  `yaml:"endpoint,omitempty"`
 	ClientTLSConfig *kusciaconfig.TLSConfig `yaml:"clientTLSConfig,omitempty"`
 	// DatasourceTypes claims which dataSources proxy by this dataProxy, empty means all types that builtin dataProxy unsupported

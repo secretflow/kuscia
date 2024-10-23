@@ -16,7 +16,6 @@ package controller
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"testing"
 	"time"
@@ -32,9 +31,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/controller"
 
-	bandwidth_limitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	"github.com/secretflow/kuscia/pkg/common"
-	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 )
@@ -407,110 +404,4 @@ func TestInvalidProtocol(t *testing.T) {
 	testCases[0].add = false
 	testCases[1].add = false
 	c.runCase(t, testCases)
-}
-
-func TestBandwidthLimit(t *testing.T) {
-	ns := "alice"
-	dc := newDomainRouteTestInfo(ns, 1054)
-	stopCh := make(chan struct{})
-	go dc.Run(context.Background(), 1, stopCh)
-
-	ec, err := newEndpointController()
-	if err != nil {
-		t.Fatal(err)
-	}
-	go ec.Run(1, make(<-chan struct{}))
-
-	time.Sleep(200 * time.Millisecond)
-
-	dr := &kusciaapisv1alpha1.DomainRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "alice-bob",
-			Namespace: ns,
-		},
-		Spec: kusciaapisv1alpha1.DomainRouteSpec{
-			Source:            ns,
-			Destination:       "bob",
-			InterConnProtocol: kusciaapisv1alpha1.InterConnKuscia,
-			Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-				Host: EnvoyServerIP,
-				Ports: []kusciaapisv1alpha1.DomainPort{
-					{
-						Protocol: kusciaapisv1alpha1.DomainRouteProtocolHTTP,
-						Port:     ExternalServerPort,
-					},
-				},
-			},
-			AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-			TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-				TokenGenMethod:       kusciaapisv1alpha1.TokenGenMethodRSA,
-				SourcePublicKey:      base64.StdEncoding.EncodeToString(pubPemData),
-				DestinationPublicKey: base64.StdEncoding.EncodeToString(pubPemData),
-			},
-		},
-		Status: kusciaapisv1alpha1.DomainRouteStatus{
-			TokenStatus: kusciaapisv1alpha1.DomainRouteTokenStatus{
-				Tokens: []kusciaapisv1alpha1.DomainRouteToken{
-					{
-						Token: fakeRevisionToken,
-					},
-				},
-			},
-		},
-	}
-
-	dc.client.KusciaV1alpha1().DomainRoutes(dr.Namespace).Create(context.Background(), dr, metav1.CreateOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	svc := &v1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "serviceA",
-			Namespace: "alice",
-			Annotations: map[string]string{
-				fmt.Sprintf("%s%s", common.TaskBandwidthLimitAnnotationPrefix, "bob"): "100",
-				common.TaskIDAnnotationKey: "hello-world",
-			},
-		},
-		Spec: v1.ServiceSpec{
-			Type: v1.ServiceTypeExternalName,
-			Ports: []v1.ServicePort{
-				{Name: "http", Port: 80},
-			},
-			ClusterIP: "None",
-			Selector: map[string]string{
-				"app": "foo",
-			},
-		},
-	}
-
-	ec.kubeClient.CoreV1().Services(svc.Namespace).Create(context.Background(), svc, metav1.CreateOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	vhName := fmt.Sprintf("%s-to-%s", dr.Spec.Source, dr.Spec.Destination)
-	vh, err := xds.QueryVirtualHost(vhName, xds.InternalRoute)
-	assert.NoError(t, err)
-	routes := vh.GetRoutes()
-
-	assert.Equal(t, "hello-world-bandwidth-limit", routes[0].Name)
-	limit := bandwidth_limitv3.BandwidthLimit{}
-	err = routes[0].GetTypedPerFilterConfig()["envoy.filters.http.bandwidth_limit"].UnmarshalTo(&limit)
-	assert.NoError(t, err)
-	assert.Equal(t, uint64(100), limit.LimitKbps.Value)
-
-	f, err := xds.GetHTTPFilterConfig(xds.BandwidthLimitName, xds.InternalListener)
-	assert.NoError(t, err)
-	assert.NotNil(t, f)
-
-	ec.kubeClient.CoreV1().Services(svc.Namespace).Delete(context.Background(), svc.Name, metav1.DeleteOptions{})
-	time.Sleep(200 * time.Millisecond)
-
-	vh, err = xds.QueryVirtualHost(vhName, xds.InternalRoute)
-	assert.NoError(t, err)
-	routes = vh.GetRoutes()
-
-	assert.Equal(t, routes[0].Name, "default")
-
-	f, err = xds.GetHTTPFilterConfig(xds.BandwidthLimitName, xds.InternalListener)
-	assert.Error(t, err)
-	assert.Nil(t, f)
 }

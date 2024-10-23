@@ -69,7 +69,6 @@ func makeTestPendingHandler() *PendingHandler {
 		NamespacesLister: nsInformer.Lister(),
 		PodsLister:       kubeInformersFactory.Core().V1().Pods().Lister(),
 		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
-		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
 	}
 
@@ -335,7 +334,6 @@ metadata:
     kuscia.secretflow/task-id: kusciatask-001
     kuscia.secretflow/task-resource: ""
     kuscia.secretflow/task-resource-group: kusciatask-001
-    kuscia.secretflow/config-template-value-cm-name: kusciatask-001-kuscia-gen-conf
   name: kusciatask-001-server-0
   namespace: domain-a
 spec:
@@ -347,6 +345,16 @@ spec:
     env:
     - name: HOME
       value: /root
+    - name: KUSCIA_DOMAIN_ID
+      value: domain-a
+    - name: TASK_ID
+      value: kusciatask-001
+    - name: TASK_CLUSTER_DEFINE
+      value: "{\"parties\":[], \"selfPartyIdx\":0, \"selfEndpointIdx\":0}"
+    - name: ALLOCATED_PORTS
+      value: "{\"ports\":[]}"
+    - name: TASK_INPUT_CONFIG
+      value: task input config
     image: test-image:0.0.1
     name: container-0
     ports:

@@ -15,32 +15,22 @@
 package configrender
 
 import (
-	"bytes"
-	"context"
-	"crypto/rand"
-	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
-	"text/template"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/encoding/protojson"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	resourcetest "github.com/secretflow/kuscia/pkg/agent/resource/testing"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/tls"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
 func setupTestConfigRender(t *testing.T) *configRender {
@@ -51,33 +41,15 @@ config:
 	cfg := &config.PluginCfg{}
 	assert.NoError(t, yaml.Unmarshal([]byte(configYaml), cfg))
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
-	assert.NoError(t, err)
-
-	encValue, err := tls.EncryptOAEP(&privateKey.PublicKey, []byte(`{"user": "kuscia", "host": "localhost"}`))
-	assert.NoError(t, err)
-
-	configmap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "alice",
-			Name:      "domain-config",
-		},
-		Data: map[string]string{
-			"DB_INFO": encValue,
-		},
-	}
-	kubeClient := kubefake.NewSimpleClientset(&configmap)
 	agentConfig := config.DefaultAgentConfig()
-	agentConfig.Namespace = "alice"
-	agentConfig.DomainKey = privateKey
+
 	dep := &plugin.Dependencies{
 		AgentConfig: agentConfig,
-		KubeClient:  kubeClient,
 	}
 
 	r := &configRender{}
 	assert.Equal(t, hook.PluginType, r.Type())
-	assert.NoError(t, r.Init(context.Background(), dep, cfg))
+	assert.NoError(t, r.Init(dep, cfg))
 
 	return r
 }
@@ -208,7 +180,6 @@ func assertFileContent(t *testing.T, file string, content string) {
 }
 
 func TestConfigFormat(t *testing.T) {
-	t.Parallel()
 	cr := setupTestConfigRender(t)
 
 	tests := []struct {
@@ -279,246 +250,4 @@ task_cluster_define: "{{.TASK_CLUSTER_DEFINE}}"
 			assert.Equal(t, "abc", conf["task_id"])
 		})
 	}
-}
-
-func TestMergeDataMaps_WithJsonMap(t *testing.T) {
-	t.Parallel()
-	dst := buildStructMap(map[string]string{
-		"KEY1": "{\"xyz\":1}",
-		"KEY2": "124",
-	})
-
-	assert.Len(t, dst, 2)
-	assert.Contains(t, dst, "KEY1")
-	assert.Contains(t, dst, "KEY2")
-
-	assert.Contains(t, dst["KEY1"], "xyz")
-	assert.Equal(t, dst["KEY1"].(map[string]interface{})["xyz"], float64(1))
-}
-
-func TestBuildStructMap_WithJsonArray(t *testing.T) {
-	t.Parallel()
-	dst := buildStructMap(map[string]string{
-		"KEY1": "[1,2,3]",
-		"KEY2": "[\"1\"]",
-	})
-
-	assert.Len(t, dst, 2)
-	assert.Contains(t, dst, "KEY1")
-	assert.Contains(t, dst, "KEY2")
-
-	assert.Len(t, dst["KEY1"], 3)
-	assert.Len(t, dst["KEY2"], 1)
-	assert.Len(t, dst["KEY2"], 1)
-	assert.Equal(t, dst["KEY1"], []interface{}{float64(1), float64(2), float64(3)})
-	assert.Equal(t, dst["KEY2"], []interface{}{"1"})
-}
-
-func TestBuildStructMap_WithJsonMapArray(t *testing.T) {
-	t.Parallel()
-	dst := buildStructMap(map[string]string{
-		"KEY3": "[{\"xyz\":\"1\"}]",
-		"KEY4": "{\"xyz\":[\"2\"]}",
-	})
-
-	assert.Len(t, dst, 2)
-	assert.Contains(t, dst, "KEY3")
-	assert.Contains(t, dst, "KEY4")
-
-	assert.Len(t, dst["KEY3"], 1)
-	assert.NotNil(t, dst["KEY3"].([]interface{})[0])
-	assert.Contains(t, dst["KEY3"].([]interface{})[0], "xyz")
-	assert.Contains(t, dst["KEY3"].([]interface{})[0].(map[string]interface{})["xyz"], "1")
-
-	assert.Contains(t, dst["KEY4"], "xyz")
-	assert.Equal(t, dst["KEY4"].(map[string]interface{})["xyz"], []interface{}{"2"})
-}
-
-func TestBuildStructMap_WithStruct(t *testing.T) {
-	t.Parallel()
-	cr := setupTestConfigRender(t)
-
-	configTemplate := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}}"
-	}`
-
-	taskInputConfigBytes, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(&appconfig.ClusterDefine{
-		SelfPartyIdx: 1,
-	})
-	assert.NoError(t, err)
-	envs := map[string]string{
-		"TASK_ID":             "abc",
-		"TASK_CLUSTER_DEFINE": string(taskInputConfigBytes),
-	}
-	data, err := cr.makeDataMap(map[string]string{}, envs)
-	assert.NoError(t, err)
-	t.Logf("%+v", data)
-
-	rootDir := t.TempDir()
-
-	templateFile := filepath.Join(rootDir, "template.conf")
-	assert.NoError(t, os.WriteFile(templateFile, []byte(configTemplate), 0644))
-
-	configFile := filepath.Join(rootDir, "file.conf")
-
-	assert.NoError(t, cr.renderConfigFile(templateFile, configFile, data))
-
-	f, err := os.ReadFile(configFile)
-	assert.NoError(t, err)
-
-	var conf interface{}
-	assert.NoError(t, json.Unmarshal(f, &conf))
-
-	t.Logf("Unmarshal config=%+v", conf)
-
-	r := conf.(map[string]interface{})
-	assert.Equal(t, "abc", r["task_id"])
-	assert.Equal(t, "1", r["my_party"])
-}
-
-func TestBuildStructMap_WithOrg(t *testing.T) {
-	configTemplate := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}"
-	}`
-
-	taskInputConfigBytes, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(&appconfig.ClusterDefine{
-		SelfPartyIdx: 1,
-		Parties: []*appconfig.Party{
-			{
-				Name: "xyz",
-			},
-		},
-	})
-	assert.NoError(t, err)
-	nlog.Infof("byte=%s", string(taskInputConfigBytes))
-
-	var value interface{}
-	assert.NoError(t, json.Unmarshal(taskInputConfigBytes, &value))
-
-	data := make(map[string]interface{})
-	data["TASK_CLUSTER_DEFINE"] = value
-	data["TASK_ID"] = "abc"
-
-	tmpl, err := template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate)
-	assert.NoError(t, err)
-
-	var buf bytes.Buffer
-	assert.NoError(t, tmpl.Execute(&buf, data))
-	nlog.Infof(buf.String())
-
-	var test interface{}
-	assert.NoError(t, json.Unmarshal(buf.Bytes(), &test))
-	assert.Equal(t, "1", test.(map[string]interface{})["my_party"])
-
-	configTemplate1 := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}",
-		"p1_name": "{{.TASK_CLUSTER_DEFINE.parties[0].name}}"
-	}`
-
-	_, err = template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate1)
-	assert.Error(t, err)
-
-	configTemplate2 := `
-	{
-		"task_id": "{{.TASK_ID}}",
-		"task_cluster_define": "{{.TASK_CLUSTER_DEFINE}}",
-		"my_party": "{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}",
-		"p1_name": "{{.TASK_CLUSTER_DEFINE.parties[name=test].name}}"
-	}`
-
-	_, err = template.New("test").Option(defaultTemplateRenderOption).Parse(configTemplate2)
-	assert.Error(t, err)
-}
-
-var clusterDefine = `
-{
-	"parties": [{
-		"name": "alice",
-		"role": "",
-		"services": [{
-			"portName": "spu",
-			"endpoints": ["secretflow-task-20240816114341-single-psi-0-spu.alice.svc"]
-		}, {
-			"portName": "fed",
-			"endpoints": ["secretflow-task-20240816114341-single-psi-0-fed.alice.svc"]
-		}, {
-			"portName": "global",
-			"endpoints": ["secretflow-task-20240816114341-single-psi-0-global.alice.svc:23321"]
-		}]
-	}, {
-		"name": "bob",
-		"role": "",
-		"services": [{
-			"portName": "spu",
-			"endpoints": ["secretflow-task-20240816114341-single-psi-0-spu.bob.svc"]
-		}, {
-			"portName": "fed",
-			"endpoints": ["secretflow-task-20240816114341-single-psi-0-fed.bob.svc"]
-		}, {
-			"portName": "global",
-			"endpoints": ["secretflow-task-20240816114341-single-psi-0-global.bob.svc:20002"]
-		}]
-	}],
-	"selfPartyIdx": 1,
-	"selfEndpointIdx": 0
-}
-`
-
-func TestRenderConfig_WithKusciaCM(t *testing.T) {
-	t.Parallel()
-	cr := setupTestConfigRender(t)
-
-	configTemplate := `
-	{
-		"db_info": "{{.DB_INFO}}",
-		"db_info_user": "{{{.DB_INFO.user}}}",
-		"db_info_host": "{{{.DB_INFO.host}}}",
-	   "db_info_user_host": "{{{.DB_INFO.user}}}-{{{.DB_INFO.host}}}",
-	   "db_info_user.host": "{{{.DB_INFO.user}}}.{{{.DB_INFO.host}}}"
-	}`
-
-	data := map[string]string{}
-	got, err := cr.renderConfig(configTemplate, data)
-	assert.NoError(t, err)
-
-	output := map[string]string{}
-	err = json.Unmarshal([]byte(got), &output)
-	assert.NoError(t, err)
-	assert.Equal(t, `{"user": "kuscia", "host": "localhost"}`, output["db_info"])
-	assert.Equal(t, "kuscia", output["db_info_user"])
-	assert.Equal(t, "localhost", output["db_info_host"])
-	assert.Equal(t, "kuscia-localhost", output["db_info_user_host"])
-	assert.Equal(t, "kuscia.localhost", output["db_info_user.host"])
-
-	// doesn't fetch from cm
-	data = map[string]string{
-		"DB_INFO": `{"user": "kuscia", "host":"localhost"}`,
-	}
-	got, err = cr.renderConfig(configTemplate, data)
-	err = json.Unmarshal([]byte(got), &output)
-	assert.NoError(t, err)
-	assert.Equal(t, data["DB_INFO"], output["db_info"])
-	assert.Equal(t, "kuscia", output["db_info_user"])
-	assert.Equal(t, "localhost", output["db_info_host"])
-	assert.Equal(t, "kuscia-localhost", output["db_info_user_host"])
-	assert.Equal(t, "kuscia.localhost", output["db_info_user.host"])
-
-	data = map[string]string{"TASK_CLUSTER_DEFINE": clusterDefine}
-	configTemplate = `
-	{
-        "self_endpoint": "{{{.TASK_CLUSTER_DEFINE.parties[.TASK_CLUSTER_DEFINE.selfPartyIdx].services[0].endpoints[0]}}}"
-	}`
-	got, _ = cr.renderConfig(configTemplate, data)
-	err = json.Unmarshal([]byte(got), &output)
-	assert.NoError(t, err)
-	assert.Equal(t, "secretflow-task-20240816114341-single-psi-0-spu.bob.svc", output["self_endpoint"])
 }

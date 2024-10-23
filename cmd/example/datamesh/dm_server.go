@@ -28,10 +28,8 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/confmanager/driver"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -39,6 +37,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	kusciaapiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
@@ -128,7 +127,6 @@ func newCommand(ctx context.Context, o *opts) *cobra.Command {
 			conf := config.NewDefaultDataMeshConfig()
 			conf.KubeNamespace = mockDomain
 			conf.KusciaClient = kusciafake.NewSimpleClientset()
-			conf.KubeClient = kubefake.NewSimpleClientset()
 			conf.ListenAddr = o.listenAddr
 
 			if err := loadConfigFromCmdEnv(conf, certsConfig, o); err != nil {
@@ -196,16 +194,14 @@ func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig, dm
 	kusciaAPIConfig := &kusciaapiconfig.KusciaAPIConfig{
 		DomainKey:    dmConfig.DomainKey,
 		KusciaClient: dmConfig.KusciaClient,
-		KubeClient:   dmConfig.KubeClient,
 		RunMode:      common.RunModeLite,
 		Initiator:    dmConfig.KubeNamespace,
 		DomainID:     dmConfig.KubeNamespace,
 	}
-
 	client := &MockFlightClient{
 		testDataType:      o.testDataType,
 		outputCSVFilePath: o.outputCSVFilePath,
-		datasourceSvc:     service.NewDomainDataSourceService(kusciaAPIConfig, makeConfigurationService(kusciaAPIConfig)),
+		datasourceSvc:     service.NewDomainDataSourceService(kusciaAPIConfig, makeMemConfigurationService()),
 	}
 
 	// wait a while to wait data proxy ready to serve
@@ -215,22 +211,17 @@ func startClient(cancel context.CancelFunc, o *opts, certConfig *CertsConfig, dm
 	}
 }
 
-func makeConfigurationService(kusciaAPIConfig *kusciaapiconfig.KusciaAPIConfig) cmservice.IConfigService {
-	configurationService, _ := cmservice.NewConfigService(
-		context.Background(),
-		&cmservice.ConfigServiceConfig{
-			DomainID:   kusciaAPIConfig.DomainID,
-			DomainKey:  kusciaAPIConfig.DomainKey,
-			Driver:     driver.CRDDriverType,
-			KubeClient: kusciaAPIConfig.KubeClient,
-		},
+func makeMemConfigurationService() cmservice.IConfigurationService {
+	backend, _ := secretbackend.NewSecretBackendWith("mem", map[string]any{})
+	configurationService, _ := cmservice.NewConfigurationService(
+		backend, false,
 	)
 	return configurationService
 }
 
 func loadConfigFromCmdEnv(conf *config.DataMeshConfig, certsConfig *CertsConfig, o *opts) error {
 	conf.DisableTLS = !o.enableDataMeshTLS
-	conf.DataProxyList = []config.DataProxyConfig{
+	conf.ExternalDataProxyList = []config.ExternalDataProxyConfig{
 		{
 			Endpoint: o.dataProxyEndpoint,
 		},

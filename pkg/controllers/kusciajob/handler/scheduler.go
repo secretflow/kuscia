@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package handler
 
 import (
@@ -1098,11 +1098,10 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 		tpl := h.buildPartyTemplate(p, template.AppImage)
 
 		taskPartyInfos[i] = kusciaapisv1alpha1.PartyInfo{
-			DomainID:       p.DomainID,
-			AppImageRef:    template.AppImage,
-			Role:           p.Role,
-			Template:       tpl,
-			BandwidthLimit: p.BandwidthLimit,
+			DomainID:    p.DomainID,
+			AppImageRef: template.AppImage,
+			Role:        p.Role,
+			Template:    tpl,
 		}
 	}
 	return taskPartyInfos

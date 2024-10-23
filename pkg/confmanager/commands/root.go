@@ -20,10 +20,12 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/confmanager/bean"
 	"github.com/secretflow/kuscia/pkg/confmanager/config"
-	"github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/web/framework"
 	"github.com/secretflow/kuscia/pkg/web/framework/engine"
+
+	// register driver
+	_ "github.com/secretflow/kuscia/pkg/secretbackend/mem"
 )
 
 func Run(ctx context.Context, conf *config.ConfManagerConfig) error {
@@ -33,36 +35,22 @@ func Run(ctx context.Context, conf *config.ConfManagerConfig) error {
 		Usage:   "ConfManager",
 		Version: meta.KusciaVersionString(),
 	})
-	if err := injectBean(ctx, conf, appEngine); err != nil {
+	if err := injectBean(conf, appEngine); err != nil {
 		return err
 	}
 	return appEngine.Run(ctx)
 }
 
-func injectBean(ctx context.Context, conf *config.ConfManagerConfig, appEngine *engine.Engine) error {
-	certService := service.NewCertificateService(&service.CertificateServiceConfig{
-		DomainCertValue: conf.DomainCertValue,
-		DomainKey:       conf.DomainKey,
-	})
-	configService, err := service.NewConfigService(ctx, &service.ConfigServiceConfig{
-		DomainID:   conf.DomainID,
-		DomainKey:  conf.DomainKey,
-		Driver:     conf.Driver,
-		KubeClient: conf.KubeClient,
-	})
-	if err != nil {
-		return err
-	}
-
+func injectBean(conf *config.ConfManagerConfig, appEngine *engine.Engine) error {
 	// inject http server bean
-	httpServer := bean.NewHTTPServerBean(conf, certService, configService)
+	httpServer := bean.NewHTTPServerBean(conf)
 	serverName := httpServer.ServerName()
-	err = appEngine.UseBeanWithConfig(serverName, httpServer)
+	err := appEngine.UseBeanWithConfig(serverName, httpServer)
 	if err != nil {
 		return fmt.Errorf("inject bean %s failed: %v", serverName, err.Error())
 	}
 	// inject grpc server bean
-	grpcServer := bean.NewGrpcServerBean(conf, certService, configService)
+	grpcServer := bean.NewGrpcServerBean(conf)
 	serverName = grpcServer.ServerName()
 	err = appEngine.UseBeanWithConfig(serverName, grpcServer)
 	if err != nil {

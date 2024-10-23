@@ -23,8 +23,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
@@ -44,7 +42,7 @@ type agentModule struct {
 	clients *kubeconfig.KubeClients
 }
 
-func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
+func NewAgent(i *Dependencies) Module {
 	conf := &i.Agent
 	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
@@ -59,12 +57,8 @@ func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 	if conf.Provider.Runtime == config.ContainerRuntime {
 		conf.Node.KeepNodeOnExit = true
 	}
-	if conf.Provider.Runtime == config.ProcessRuntime {
-		precheckKernelVersion()
-	}
 	conf.APIVersion = k8sVersion
 	conf.AgentVersion = fmt.Sprintf("%v", meta.AgentVersionString())
-	conf.DomainKey = i.DomainKey
 	conf.DomainCACert = i.CACert
 	conf.DomainCAKey = i.CAKey
 	conf.DomainCACertFile = i.CACertFile
@@ -114,46 +108,70 @@ func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 	return &agentModule{
 		conf:    conf,
 		clients: i.Clients,
-	}, nil
-}
-
-func precheckKernelVersion() {
-	var uts unix.Utsname
-	if err := unix.Uname(&uts); err != nil {
-		nlog.Warnf("Get kernel version fail: %v", err)
-		return
-	}
-	var kernel, major uint64
-	release := unix.ByteSliceToString(uts.Release[:])
-	_, err := fmt.Sscanf(release, "%d.%d", &kernel, &major)
-	if err != nil {
-		nlog.Warnf("Failed to parse kernel version %s: %v", release, err)
-		return
-	}
-	if kernel < 4 || kernel == 4 && major < 8 {
-		nlog.Warnf("Kernel version < 4.8, set PROOT_NO_SECCOMP=1")
-		os.Setenv("PROOT_NO_SECCOMP", "1")
 	}
 }
 
 func (agent *agentModule) Run(ctx context.Context) error {
-	if agent.conf.Provider.Runtime != config.K8sRuntime {
-		// runc/runp both need run this
-		cmd := exec.CommandContext(ctx, "sh", "-c", embedstrings.CGrouptPreDetectScript)
-		cmd.Stderr = os.Stderr
-		cmd.Stdout = os.Stdout
-		if err := cmd.Run(); err != nil {
+	if agent.conf.Provider.Runtime == config.ProcessRuntime {
+		err := agent.execPreCmds(ctx)
+		if err != nil {
 			nlog.Warn(err)
 		}
 	}
-
 	return commands.RunRootCommand(ctx, agent.conf, agent.clients.KubeClient)
 }
 
+func (agent *agentModule) execPreCmds(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, "sh", "-c", embedstrings.CGrouptPreDetectScript)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	return cmd.Run()
+}
+
 func (agent *agentModule) WaitReady(ctx context.Context) error {
-	return WaitChannelReady(ctx, commands.ReadyChan, 60*time.Second)
+	ticker := time.NewTicker(60 * time.Second)
+	select {
+	case <-commands.ReadyChan:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-ticker.C:
+		return fmt.Errorf("wait agent ready timeout")
+	}
 }
 
 func (agent *agentModule) Name() string {
 	return "agent"
+}
+
+func RunAgentWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(2 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "agent",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunAgent(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunAgent(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
+	m := NewAgent(conf)
+	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
+		if err := m.Run(ctx); err != nil {
+			nlog.Error(err)
+			cancel()
+		}
+	}()
+	if err := m.WaitReady(ctx); err != nil {
+		nlog.Fatalf("Agent wait ready failed: %v", err)
+	}
+	nlog.Info("Agent is ready")
+	return m
 }

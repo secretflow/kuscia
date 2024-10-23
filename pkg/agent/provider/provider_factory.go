@@ -102,7 +102,7 @@ func (f *containerRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) 
 			Address:         f.agentConfig.NodeIP,
 			CapacityManager: cm,
 		},
-		DiskPressurePath: f.agentConfig.DiskPressurePath,
+		RootDir: f.agentConfig.RootDir,
 	}
 
 	nodeProvider := node.NewGenericNodeProvider(nodeDep)

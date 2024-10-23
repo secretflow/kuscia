@@ -20,14 +20,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	storetesting "github.com/secretflow/kuscia/pkg/agent/local/store/testing"
 )
 
 func TestMountCommand(t *testing.T) {
 	rootDir := t.TempDir()
 
-	context := &utils.Context{
+	context := &Context{
 		StorageDir: filepath.Join(rootDir, "storage"),
 		Store:      storetesting.NewFakeStore(),
 	}

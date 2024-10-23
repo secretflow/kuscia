@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -29,7 +29,7 @@ import (
 
 func TestCreateDomainRouteWithAllDomainNotExists(t *testing.T) {
 	res := createDomainRoute()
-
+	t.Logf("CreateDomainRoute res : %+v\n", res)
 	assert.NotNil(t, res)
 	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrDomainNotExists), res.Status.Code)
 }
@@ -37,12 +37,12 @@ func TestCreateDomainRouteWithAllDomainNotExists(t *testing.T) {
 func TestCreateDomainRouteWithSourceDomainNotExists(t *testing.T) {
 
 	domainSourceDestination := CreateDomain(kusciaAPIDR.destination)
-
+	t.Logf("CreateDomainRoute destination res : %+v\n", domainSourceDestination)
 	assert.NotNil(t, domainSourceDestination)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainSourceDestination.Status.Code)
 
 	res := createDomainRoute()
-
+	t.Log(fmt.Sprintf("CreateDomainRoute res : %+v\n", res))
 	assert.NotNil(t, res)
 	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrDomainNotExists), res.Status.Code)
 }
@@ -50,12 +50,12 @@ func TestCreateDomainRouteWithSourceDomainNotExists(t *testing.T) {
 func TestCreateDomainRoute(t *testing.T) {
 
 	domainSourceRes := CreateDomain(kusciaAPIDR.source)
-
+	t.Logf("CreateDomainRoute source res : %+v\n", domainSourceRes)
 	assert.NotNil(t, domainSourceRes)
 	assert.Equal(t, kusciaAPISuccessStatusCode, domainSourceRes.Status.Code)
 
 	res := createDomainRoute()
-
+	t.Log(fmt.Sprintf("CreateDomainRoute res : %+v\n", res))
 	assert.NotNil(t, res)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
 }
@@ -134,7 +134,7 @@ func TestQueryRoute(t *testing.T) {
 		Source:      kusciaAPIDR.source,
 		Destination: kusciaAPIDR.destination,
 	})
-
+	t.Logf("QueryRoute: res : %+v\n", res)
 	assert.NotNil(t, res)
 	assert.NotNil(t, res.Data)
 	assert.Equal(t, res.Data.Source, kusciaAPIDR.source)

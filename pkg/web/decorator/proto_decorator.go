@@ -162,6 +162,7 @@ func getProtoRequest(flow *BizFlow) (api.ProtoRequest, error) {
 		return nil, err
 	}
 
+	bizContext.Logger.Info(REQUEST, fmt.Sprintf("  Path: %s  Content-Type: %s  Body: %s", bizContext.Request.RequestURI, contentType, messageToJSONString(request)))
 	return request, nil
 }
 
@@ -198,7 +199,7 @@ func doBizProcess(flow *BizFlow, request api.ProtoRequest, errs *errorcode.Errs)
 		if e := recover(); e != nil {
 			errs.AppendErr(fmt.Errorf("doBizProcess panic, err: %v", e))
 			flow.BizContext.Logger.Error("doBizProcess panic", fmt.Sprintf("%v", e))
-			flow.BizContext.Logger.Error(string(debug.Stack()))
+
 			debug.PrintStack()
 		}
 	}()
@@ -212,6 +213,7 @@ func renderResponse(ctx *api.BizContext, response api.ProtoResponse, postProcess
 	if postProcessHandler != nil {
 		postProcessHandler(response, ctx)
 	}
+	ctx.Logger.Info(RESPONSE, messageToJSONString(response))
 
 	var render bizrender.Render
 	switch ctx.Context.ContentType() {

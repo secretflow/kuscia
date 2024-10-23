@@ -15,7 +15,6 @@
 package interceptor
 
 import (
-	"strings"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -26,39 +25,11 @@ import (
 
 var sensitiveFields = []string{"password", "access_key_id", "access_key_secret"}
 
-var sensitiveHTTPPathPrefix = map[string]struct{}{
-	"/api/v1/configmanager/config": {},
-	"/api/v1/config":               {},
-}
-
-var sensitiveGRPCPathPrefix = map[string]struct{}{
-	"/kuscia.proto.api.v1alpha1.kusciaapi.ConfigService":   {},
-	"/kuscia.proto.api.v1alpha1.confmanager.ConfigService": {},
-}
-
 const (
 	protocolGRPC = "GRPC"
 	protocolHTTP = "HTTP"
 	maxSizeBytes = 1024
 )
-
-func hasSensitiveHTTPPathPrefix(path string) bool {
-	for key := range sensitiveHTTPPathPrefix {
-		if strings.Contains(path, key) {
-			return true
-		}
-	}
-	return false
-}
-
-func hasSensitiveGRPCPathPrefix(path string) bool {
-	for key := range sensitiveGRPCPathPrefix {
-		if strings.Contains(path, key) {
-			return true
-		}
-	}
-	return false
-}
 
 func tokenCheck(src []string, target string) error {
 	if src == nil || len(src) == 0 {

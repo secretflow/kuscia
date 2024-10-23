@@ -66,8 +66,6 @@ type KusciaDeploymentParty struct {
 	Role string `json:"role,omitempty"`
 	// +optional
 	Template KusciaDeploymentPartyTemplate `json:"template,omitempty"`
-	// +optional
-	ServiceNamePrefix string `json:"serviceNamePrefix,omitempty"`
 }
 
 // KusciaDeploymentPartyTemplate defines the template info for party.

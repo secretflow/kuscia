@@ -16,6 +16,8 @@ package resources
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -33,14 +35,19 @@ func TestCreateRoleBinding(t *testing.T) {
 	}
 	kubeClient := kubefake.NewSimpleClientset(pod)
 
+	curDir, err := os.Getwd()
+	assert.NoError(t, err)
+
+	rootDir := filepath.Dir(filepath.Dir(filepath.Dir(curDir)))
+
 	ownerRef := metav1.NewControllerRef(pod, corev1.SchemeGroupVersion.WithKind("Pod"))
 
-	err := CreateRoleBinding(context.Background(), kubeClient, "alice", ownerRef)
+	err = CreateRoleBinding(context.Background(), kubeClient, rootDir, "alice", ownerRef)
 	assert.NoError(t, err)
 
 	_, err = kubeClient.CoreV1().ServiceAccounts("alice").Get(context.Background(), "alice", metav1.GetOptions{})
 	assert.NoError(t, err)
 
-	err = CreateRoleBinding(context.Background(), kubeClient, "alice", ownerRef)
+	err = CreateRoleBinding(context.Background(), kubeClient, rootDir, "alice", ownerRef)
 	assert.NoError(t, err)
 }

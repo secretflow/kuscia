@@ -20,34 +20,35 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
+	"github.com/stretchr/testify/assert"
 )
 
-func newCertificateService(t *testing.T) ICertificateService {
+func newNewCertificateService(t *testing.T) (ICertificateService, error) {
 	key, certBytes, err := tls.CreateCA("test")
 	assert.NoError(t, err, "create ca failed")
 	cert, err := x509.ParseCertificate(certBytes)
 	assert.NoError(t, err, "parse ca cert failed")
 	dominaCertValue := &atomic.Value{}
 	dominaCertValue.Store(cert)
-	return NewCertificateService(&CertificateServiceConfig{
-		DomainKey:       key,
-		DomainCertValue: dominaCertValue,
+	return NewCertificateService(CertConfig{
+		PrivateKey: key,
+		CertValue:  dominaCertValue,
 	})
 }
 
 func TestNewCertificateService(t *testing.T) {
 	t.Parallel()
-	certService := newCertificateService(t)
+	certService, err := newNewCertificateService(t)
+	assert.Nil(t, err, "new certificate service failed")
 	assert.NotNil(t, certService, "new certificate service return nil")
 }
 
 func Test_certificateService_GenerateKeyCerts_PKCS1(t *testing.T) {
 	t.Parallel()
-	certService := newCertificateService(t)
+	certService, err := newNewCertificateService(t)
+	assert.Nil(t, err, "new certificate service failed")
 	assert.NotNil(t, certService, "new certificate service return nil")
 
 	got := certService.GenerateKeyCerts(context.Background(), &confmanager.GenerateKeyCertsRequest{
@@ -63,7 +64,8 @@ func Test_certificateService_GenerateKeyCerts_PKCS1(t *testing.T) {
 
 func Test_certificateService_GenerateKeyCerts_PKCS8(t *testing.T) {
 	t.Parallel()
-	certService := newCertificateService(t)
+	certService, err := newNewCertificateService(t)
+	assert.Nil(t, err, "new certificate service failed")
 	assert.NotNil(t, certService, "new certificate service return nil")
 
 	got := certService.GenerateKeyCerts(context.Background(), &confmanager.GenerateKeyCertsRequest{
@@ -79,7 +81,8 @@ func Test_certificateService_GenerateKeyCerts_PKCS8(t *testing.T) {
 
 func Test_certificateService_ValidateGenerateKeyCertsRequest_Success(t *testing.T) {
 	t.Parallel()
-	certService := newCertificateService(t)
+	certService, err := newNewCertificateService(t)
+	assert.Nil(t, err, "new certificate service failed")
 	assert.NotNil(t, certService, "new certificate service return nil")
 
 	got := certService.ValidateGenerateKeyCertsRequest(context.Background(), &confmanager.GenerateKeyCertsRequest{
@@ -92,7 +95,8 @@ func Test_certificateService_ValidateGenerateKeyCertsRequest_Success(t *testing.
 
 func Test_certificateService_ValidateGenerateKeyCertsRequest_1Error(t *testing.T) {
 	t.Parallel()
-	certService := newCertificateService(t)
+	certService, err := newNewCertificateService(t)
+	assert.Nil(t, err, "new certificate service failed")
 	assert.NotNil(t, certService, "new certificate service return nil")
 
 	got := certService.ValidateGenerateKeyCertsRequest(context.Background(), &confmanager.GenerateKeyCertsRequest{
@@ -105,7 +109,8 @@ func Test_certificateService_ValidateGenerateKeyCertsRequest_1Error(t *testing.T
 
 func Test_certificateService_ValidateGenerateKeyCertsRequest_3Error(t *testing.T) {
 	t.Parallel()
-	certService := newCertificateService(t)
+	certService, err := newNewCertificateService(t)
+	assert.Nil(t, err, "new certificate service failed")
 	assert.NotNil(t, certService, "new certificate service return nil")
 
 	got := certService.ValidateGenerateKeyCertsRequest(context.Background(), &confmanager.GenerateKeyCertsRequest{

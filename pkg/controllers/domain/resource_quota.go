@@ -90,7 +90,7 @@ func (c *Controller) makeResourceQuota(domain *kusciaapisv1alpha1.Domain) *apico
 			Name:      resourceQuotaName,
 			Namespace: domain.Name,
 			Labels: map[string]string{
-				common.LabelDomainName: domain.Name,
+				common.LabelDomainName: resourceQuotaName,
 			},
 		},
 		Spec: apicorev1.ResourceQuotaSpec{

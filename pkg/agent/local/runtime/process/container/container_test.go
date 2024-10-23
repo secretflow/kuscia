@@ -19,7 +19,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
@@ -64,7 +63,7 @@ func createTestContainer(t *testing.T) *Container {
 func TestContainerStart(t *testing.T) {
 	t.Run("Container normal exited ", func(t *testing.T) {
 		container := createTestContainer(t)
-		assert.NoError(t, container.Create())
+		assert.NoError(t, container.Create(kii.Plain))
 		assert.NoError(t, container.Start())
 
 		time.Sleep(time.Second)
@@ -78,15 +77,11 @@ func TestContainerStart(t *testing.T) {
 		container := createTestContainer(t)
 		container.Config.Command = []string{"sleep"}
 		container.Config.Args = []string{"60"}
-		assert.NoError(t, container.Create())
+		assert.NoError(t, container.Create(kii.Plain))
 		assert.NoError(t, container.Start())
 		time.Sleep(100 * time.Millisecond)
 		assert.NoError(t, container.Stop())
 		assert.NoError(t, wait.PollImmediate(100*time.Millisecond, 1*time.Second, func() (done bool, err error) {
-			// make sure process had exited
-			return syscall.Kill(container.starter.Command().Process.Pid, 0) == syscall.ESRCH, nil
-		}))
-		assert.NoError(t, wait.PollImmediate(100*time.Millisecond, 2*time.Second, func() (done bool, err error) {
 			return container.GetCRIStatus().State == runtime.ContainerState_CONTAINER_EXITED, nil
 		}))
 		assert.NoError(t, container.Release())

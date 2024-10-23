@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -376,8 +376,8 @@ func (s domainService) BatchQueryDomain(ctx context.Context, request *kusciaapi.
 	}
 }
 
-func CheckDomainExists(kusciaClient kusciaclientset.Interface, domainID string) (kusciaError pberrorcode.ErrorCode, errorMsg string) {
-	_, err := kusciaClient.KusciaV1alpha1().Domains().Get(context.Background(), domainID, metav1.GetOptions{})
+func CheckDomainExists(kusciaClient kusciaclientset.Interface, domainId string) (kusciaError pberrorcode.ErrorCode, errorMsg string) {
+	_, err := kusciaClient.KusciaV1alpha1().Domains().Get(context.Background(), domainId, metav1.GetOptions{})
 	if err != nil {
 		return errorcode.GetDomainErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrQueryDomain), err.Error()
 	}
@@ -437,10 +437,10 @@ type RequestWithDomainID interface {
 }
 
 func (s domainService) authHandler(ctx context.Context, request RequestWithDomainID) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
 	if role == constants.AuthRoleDomain {
-		if request.GetDomainId() != domainID {
-			return fmt.Errorf("domain's kusciaAPI could only operate its own Domain, request.DomainID must be %s not %s", domainID, request.GetDomainId())
+		if request.GetDomainId() != domainId {
+			return fmt.Errorf("domain's kusciaAPI could only operate its own Domain, request.DomainID must be %s not %s", domainId, request.GetDomainId())
 		}
 	}
 	return nil
@@ -451,45 +451,47 @@ func (s domainService) getValidCert(inputCert string) (string, error) {
 
 	inputCert = strings.Trim(inputCert, "\n")
 
-	if orgError = tls.VerifyEncodeCert(inputCert); orgError == nil {
+	if err := tls.VerifyEncodeCert(inputCert); err == nil {
 		return inputCert, nil
+	} else {
+		orgError = err
 	}
 
 	// compatible with raw cert
-	inputCert1 := base64.StdEncoding.EncodeToString([]byte(inputCert))
-	if err := tls.VerifyEncodeCert(inputCert1); err == nil {
-		return inputCert1, nil
+	inputCert_1 := base64.StdEncoding.EncodeToString([]byte(inputCert))
+	if err := tls.VerifyEncodeCert(inputCert_1); err == nil {
+		return inputCert_1, nil
 	}
 
 	// input cert remove begin and end
 	if !strings.HasPrefix(inputCert, "-----BEGIN CERTIFICATE-----") {
-		inputCert2 := "-----BEGIN CERTIFICATE-----\n" + inputCert + "\n-----END CERTIFICATE-----"
-		inputCert2 = base64.StdEncoding.EncodeToString([]byte(inputCert2))
-		if err := tls.VerifyEncodeCert(inputCert2); err == nil {
-			return inputCert2, nil
+		inputCert_2 := "-----BEGIN CERTIFICATE-----\n" + inputCert + "\n-----END CERTIFICATE-----"
+		inputCert_2 = base64.StdEncoding.EncodeToString([]byte(inputCert_2))
+		if err := tls.VerifyEncodeCert(inputCert_2); err == nil {
+			return inputCert_2, nil
 		}
 	}
 
 	// input cret removed "\n"
 	if !strings.Contains(inputCert, "\n") {
 		if len(inputCert) >= 1040 {
-			inputCert3 := "-----BEGIN CERTIFICATE-----\n"
+			inputCert_3 := "-----BEGIN CERTIFICATE-----\n"
 			for i := 0; i < 16; i++ {
-				inputCert3 = inputCert3 + inputCert[(i*64):(i+1)*64] + "\n"
+				inputCert_3 = inputCert_3 + inputCert[(i*64):(i+1)*64] + "\n"
 			}
-			inputCert3 = inputCert3 + "-----END CERTIFICATE-----"
+			inputCert_3 = inputCert_3 + "-----END CERTIFICATE-----"
 
-			inputCert3 = base64.StdEncoding.EncodeToString([]byte(inputCert3))
-			if err := tls.VerifyEncodeCert(inputCert3); err == nil {
-				return inputCert3, nil
+			inputCert_3 = base64.StdEncoding.EncodeToString([]byte(inputCert_3))
+			if err := tls.VerifyEncodeCert(inputCert_3); err == nil {
+				return inputCert_3, nil
 			}
 		}
 	}
 
 	// input cert base64 encode 2 times
-	if inputCert4, err := base64.StdEncoding.DecodeString(inputCert); err == nil {
-		if err := tls.VerifyEncodeCert(string(inputCert4)); err == nil {
-			return string(inputCert4), nil
+	if inputCert_4, err := base64.StdEncoding.DecodeString(inputCert); err == nil {
+		if err := tls.VerifyEncodeCert(string(inputCert_4)); err == nil {
+			return string(inputCert_4), nil
 		}
 	}
 

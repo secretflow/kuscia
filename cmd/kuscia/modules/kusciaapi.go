@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,10 +38,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/nlog/zlogwriter"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
-	"github.com/secretflow/kuscia/pkg/utils/readyz"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
-	webconfig "github.com/secretflow/kuscia/pkg/web/framework/config"
 	"github.com/secretflow/kuscia/pkg/web/interceptor"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
@@ -51,21 +48,20 @@ import (
 const (
 	kusciaAPISanDNSName            = "kusciaapi"
 	kusciaAPIInterceptorLoggerPath = "var/logs/kusciaapi.log"
-	dateMeshInterceptorLoggerPath  = "var/logs/datamesh.log"
 )
 
 type kusciaAPIModule struct {
-	moduleRuntimeBase
 	conf         *config.KusciaAPIConfig
 	kusciaClient kusciaclientset.Interface
 	kubeClient   kubernetes.Interface
 }
 
-func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
+func NewKusciaAPI(d *Dependencies) (Module, error) {
 	kusciaAPIConfig := d.KusciaAPI
 	if d.RunMode != common.RunModeMaster {
 		kusciaAPIConfig.Initiator = d.DomainID
 	}
+
 	kusciaAPIConfig.RootCAKey = d.CAKey
 	kusciaAPIConfig.RootCA = d.CACert
 	kusciaAPIConfig.DomainKey = d.DomainKey
@@ -106,7 +102,7 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 			}
 		}
 	}
-	interceptorLogger, err := initInterceptorLogger(d.KusciaConfig, kusciaAPIInterceptorLoggerPath)
+	interceptorLogger, err := initInterceptorLogger(d.KusciaConfig)
 	if err != nil {
 		nlog.Errorf("Init Kuscia API interceptor logger failed: %v", err)
 		return nil, err
@@ -116,24 +112,14 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 	nlog.Debugf("Kuscia api config is %+v", kusciaAPIConfig)
 
 	return &kusciaAPIModule{
-		moduleRuntimeBase: moduleRuntimeBase{
-			name:         "kusciapi",
-			readyTimeout: 60 * time.Second,
-			rdz: readyz.NewFuncReadyZ(func(ctx context.Context) error {
-				if !KusciaAPIReadyZ(kusciaAPIConfig.TLS, kusciaAPIConfig.HTTPPort, kusciaAPIConfig.GRPCPort, kusciaAPIConfig.Protocol, kusciaAPIConfig.Token) {
-					return errors.New("kuscia is not ready now")
-				}
-				return nil
-			}),
-		},
 		conf:         kusciaAPIConfig,
 		kusciaClient: d.Clients.KusciaClient,
 		kubeClient:   d.Clients.KubeClient,
 	}, nil
 }
 
-func initInterceptorLogger(kusciaConf confloader.KusciaConfig, logPath string) (*nlog.NLog, error) {
-	logConfig := initLoggerConfig(kusciaConf, logPath)
+func initInterceptorLogger(kusciaConf confloader.KusciaConfig) (*nlog.NLog, error) {
+	logConfig := initLoggerConfig(kusciaConf, kusciaAPIInterceptorLoggerPath)
 	logWriter, err := zlogwriter.New(logConfig)
 	if err != nil {
 		return nil, err
@@ -141,17 +127,41 @@ func initInterceptorLogger(kusciaConf confloader.KusciaConfig, logPath string) (
 	return nlog.NewNLog(nlog.SetWriter(logWriter), nlog.SetFormatter(nlog.NewGinLogFormatter())), nil
 }
 
-func (m *kusciaAPIModule) Run(ctx context.Context) error {
+func (m kusciaAPIModule) Run(ctx context.Context) error {
 	return commands.Run(ctx, m.conf, m.kusciaClient, m.kubeClient)
 }
 
-func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort int32, protocol common.Protocol, tokenConfig *config.TokenConfig) bool {
+func (m kusciaAPIModule) WaitReady(ctx context.Context) error {
+	timeoutTicker := time.NewTicker(30 * time.Second)
+	defer timeoutTicker.Stop()
+	checkTicker := time.NewTicker(100 * time.Millisecond)
+	defer checkTicker.Stop()
+	for {
+		select {
+		case <-checkTicker.C:
+			if m.readyZ() {
+				return nil
+			}
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timeoutTicker.C:
+			return fmt.Errorf("wait kuscia api ready timeout")
+		}
+	}
+}
+
+func (m kusciaAPIModule) Name() string {
+	return "kusciaAPI"
+}
+
+func (m kusciaAPIModule) readyZ() bool {
 	var clientTLSConfig *tls.Config
 	var err error
 	schema := constants.SchemaHTTP
 	// init client tls config
+	tlsConfig := m.conf.TLS
 	if tlsConfig != nil {
-		if protocol == common.TLS {
+		if m.conf.Protocol == common.TLS {
 			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.ServerCert)
 		} else {
 			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
@@ -166,6 +176,7 @@ func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort in
 	// token auth
 	var token string
 	var tokenAuth bool
+	tokenConfig := m.conf.Token
 	if tokenConfig != nil {
 		token, err = apiutils.ReadToken(*tokenConfig)
 		if err != nil {
@@ -177,7 +188,7 @@ func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort in
 
 	// check http server ready
 	httpClient := utils.BuildHTTPClient(clientTLSConfig)
-	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, httpPort, constants.HealthAPI)
+	httpURL := fmt.Sprintf("%s://%s:%d%s", schema, constants.LocalhostIP, m.conf.HTTPPort, constants.HealthAPI)
 	body, err := json.Marshal(&kusciaapi.HealthRequest{})
 	if err != nil {
 		nlog.Errorf("marshal health request error: %v", err)
@@ -230,7 +241,7 @@ func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort in
 		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(interceptor.GrpcClientTokenInterceptor(token)))
 	}
 
-	grpcAddr := fmt.Sprintf("%s:%d", constants.LocalhostIP, grpcPort)
+	grpcAddr := fmt.Sprintf("%s:%d", constants.LocalhostIP, m.conf.GRPCPort)
 	grpcConn, err := grpc.Dial(grpcAddr, dialOpts...)
 	if err != nil {
 		nlog.Fatalf("did not connect: %v", err)
@@ -244,4 +255,41 @@ func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort in
 		return false
 	}
 	return res.Data.Ready
+}
+
+func RunKusciaAPIWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(1 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "kusciaapi",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunKusciaAPI(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunKusciaAPI(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
+	m, err := NewKusciaAPI(conf)
+	if err != nil {
+		nlog.Error(err)
+		cancel()
+		return m
+	}
+	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
+		if err := m.Run(ctx); err != nil {
+			nlog.Error(err)
+			cancel()
+		}
+	}()
+	if err := m.WaitReady(ctx); err != nil {
+		nlog.Fatalf("KusciaApi wait ready failed: %v", err)
+	}
+	nlog.Info("KusciaApi is ready")
+	return m
 }

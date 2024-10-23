@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package kusciadeployment
 
 import (
@@ -35,7 +35,6 @@ import (
 type KdStatusReason string
 
 const (
-	validateFailed                KdStatusReason = "ValidateFailed"
 	buildPartyKitInfoFailed       KdStatusReason = "BuildPartyKitInfoFailed"
 	fillPartyClusterDefinesFailed KdStatusReason = "FillPartyClusterDefinesFailed"
 	allocatePortsFailed           KdStatusReason = "AllocatePortsFailed"
@@ -114,7 +113,7 @@ func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (ma
 		return nil, false, err
 	}
 
-	if err = c.fillPartyClusterDefines(partyKitInfos); err != nil {
+	if err := c.fillPartyClusterDefines(partyKitInfos); err != nil {
 		kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
 		kd.Status.Reason = string(fillPartyClusterDefinesFailed)
 		kd.Status.Message = fmt.Sprintf("failed to fill party cluster defines, %v", err)
@@ -149,7 +148,7 @@ func (c *Controller) buildPartyKitInfo(kd *kusciav1alpha1.KusciaDeployment, part
 
 	servicedPorts := generateServicedPorts(ports)
 	deployName := generateDeploymentName(kd.Name, party.Role)
-	portService := generatePortServices(deployName, party.ServiceNamePrefix, servicedPorts)
+	portService := generatePortServices(deployName, servicedPorts)
 
 	dkInfo := &DeploymentKitInfo{
 		deploymentName: deployName,
@@ -437,35 +436,14 @@ func generateServicedPorts(ports NamedPorts) []string {
 	return servicedPorts
 }
 
-func generatePortServices(deploymentName, serviceNamePrefix string, servicedPorts []string) PortService {
+func generatePortServices(deploymentName string, servicedPorts []string) PortService {
 	portService := PortService{}
 
 	for _, portName := range servicedPorts {
-		portService[portName] = generateServiceName(deploymentName, serviceNamePrefix, portName)
+		portService[portName] = utilsres.GenerateServiceName(deploymentName, portName)
 	}
 
 	return portService
-}
-
-// Service name generation rules：
-// 1. If serviceNamePrefix is not empty, use the serviceNamePrefix to generate service name
-//   - Rule: serviceName = {serviceNamePrefix}-{portName}
-//   - If serviceName exceeds 63 characters, it will be truncated to 63 characters.
-//
-// 2. If serviceNamePrefix is empty, use deployment name as prefix to generate service name.
-//   - Rule: refer to the rule of utilsres.GenerateServiceName func
-func generateServiceName(deploymentName, serviceNamePrefix, portName string) string {
-	serviceName := ""
-	svcNamePrefix := strings.Trim(serviceNamePrefix, "-")
-	portName = strings.Trim(portName, "-")
-	replacer := strings.NewReplacer("_", "-", ".", "-")
-	portName = replacer.Replace(portName)
-	if serviceNamePrefix != "" {
-		serviceName = svcNamePrefix + "-" + portName
-	} else {
-		serviceName = utilsres.GenerateServiceName(deploymentName, portName)
-	}
-	return serviceName
 }
 
 func generatePortAccessDomains(parties []kusciav1alpha1.KusciaDeploymentParty, networkPolicy *kusciav1alpha1.NetworkPolicy, ports NamedPorts) map[string]string {
@@ -535,8 +513,8 @@ func generateDeploymentName(kdName, role string) string {
 	return fmt.Sprintf("%s-%s", kdName, role)
 }
 
-func (c *Controller) isPartnerDomain(domainID string) (bool, error) {
-	partyDomain, err := c.domainLister.Get(domainID)
+func (c *Controller) isPartnerDomain(domainId string) (bool, error) {
+	partyDomain, err := c.domainLister.Get(domainId)
 	if err != nil {
 		return false, err
 	}

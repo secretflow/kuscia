@@ -16,28 +16,44 @@ package image
 
 import (
 	"context"
+	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/image/cmd"
-	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
+	"github.com/secretflow/kuscia/pkg/agent/local/store"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 func NewImageCommand(ctx context.Context) *cobra.Command {
-	cmdCtx := &utils.Context{}
+	cmdCtx := &cmd.Context{}
 	command := &cobra.Command{
-		Use:              "image",
-		Short:            "Manage images",
-		SilenceUsage:     true,
-		Aliases:          []string{"images"},
-		PersistentPreRun: cmdCtx.InitBeforeRunCommand,
+		Use:          "image",
+		Short:        "Manage images",
+		SilenceUsage: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			var err error
+			cmdCtx.Store, err = store.NewStore(cmdCtx.StorageDir)
+			if err != nil {
+				nlog.Fatal(err)
+			}
+		},
 	}
 
-	command.PersistentFlags().StringVar(&cmdCtx.StorageDir, "store", config.DefaultImageStoreDir(), "kuscia image storage directory")
-	command.PersistentFlags().StringVar(&cmdCtx.RuntimeType, "runtime", "", "kuscia runtime type: runp/runc")
+	command.PersistentFlags().StringVar(&cmdCtx.StorageDir, "store", defaultImageStoreDir(), "kuscia image storage directory")
 
 	cmd.InstallCommands(command, cmdCtx)
 
 	return command
+}
+
+func defaultImageStoreDir() string {
+	// Find home directory.
+	home, err := homedir.Dir()
+	if err != nil {
+		nlog.Fatal(err)
+	}
+
+	return filepath.Join(home, ".kuscia/var/images")
 }

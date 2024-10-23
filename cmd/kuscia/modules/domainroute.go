@@ -38,7 +38,7 @@ type domainRouteModule struct {
 	afterRegisterHook controller.AfterRegisterDomainHook
 }
 
-func NewDomainRoute(i *ModuleRuntimeConfigs) (Module, error) {
+func NewDomainRoute(i *Dependencies) Module {
 	conf := config.DefaultStaticGatewayConfig()
 	conf.RootDir = i.RootDir
 	conf.ConfBasedir = filepath.Join(i.RootDir, common.ConfPrefix, "domainroute")
@@ -104,7 +104,7 @@ func NewDomainRoute(i *ModuleRuntimeConfigs) (Module, error) {
 			}
 			i.DomainCertByMasterValue.Store(domainCert)
 		},
-	}, nil
+	}
 }
 
 func (d *domainRouteModule) Run(ctx context.Context) error {
@@ -112,9 +112,50 @@ func (d *domainRouteModule) Run(ctx context.Context) error {
 }
 
 func (d *domainRouteModule) WaitReady(ctx context.Context) error {
-	return WaitChannelReady(ctx, commands.ReadyChan, 60*time.Second)
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
+	select {
+	case <-commands.ReadyChan:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-ticker.C:
+		return fmt.Errorf("wait domainroute ready timeout")
+	}
 }
 
 func (d *domainRouteModule) Name() string {
 	return "domainroute"
+}
+
+func RunDomainRouteWithDestroy(conf *Dependencies) {
+	runCtx, cancel := context.WithCancel(context.Background())
+	shutdownEntry := NewShutdownHookEntry(2 * time.Second)
+	conf.RegisterDestroyFunc(DestroyFunc{
+		Name:              "domainroute",
+		DestroyCh:         runCtx.Done(),
+		DestroyFn:         cancel,
+		ShutdownHookEntry: shutdownEntry,
+	})
+	RunDomainRoute(runCtx, cancel, conf, shutdownEntry)
+}
+
+func RunDomainRoute(ctx context.Context, cancel context.CancelFunc, conf *Dependencies, shutdownEntry *shutdownHookEntry) Module {
+	m := NewDomainRoute(conf)
+	go func() {
+		defer func() {
+			if shutdownEntry != nil {
+				shutdownEntry.RunShutdown()
+			}
+		}()
+		if err := m.Run(ctx); err != nil {
+			nlog.Error(err)
+			cancel()
+		}
+	}()
+	if err := m.WaitReady(ctx); err != nil {
+		nlog.Fatalf("DomainRoute wait ready failed: %v", err)
+	}
+	nlog.Info("DomainRoute is ready")
+	return m
 }

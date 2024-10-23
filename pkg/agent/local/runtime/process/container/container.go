@@ -37,7 +37,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/pkg/utils/process"
-	runenv "github.com/secretflow/kuscia/pkg/utils/runtime"
 )
 
 const (
@@ -109,14 +108,9 @@ func NewContainer(config *runtime.ContainerConfig, logDirectory, sandboxID strin
 	if err != nil {
 		return nil, err
 	}
-	manifest, err := imageStore.GetImageManifest(imageName, nil)
+	manifest, err := imageStore.GetImageManifest(imageName)
 	if err != nil {
 		return nil, err
-	}
-
-	if manifest == nil {
-		nlog.Warnf("image(%s) is not exists", imageName.Image)
-		return nil, fmt.Errorf("image(%s) is not exists", imageName.Image)
 	}
 
 	containerBundle := sandboxBundle.GetContainerBundle(name)
@@ -150,11 +144,11 @@ func makeContainerName(c *runtime.ContainerMetadata, containerID string) string 
 	}, "_")
 }
 
-func (c *Container) Create() error {
+func (c *Container) Create(mountType kii.MountType) error {
 	c.Lock()
 	defer c.Unlock()
 
-	if err := c.imageStore.MountImage(c.imageName, c.bundle.GetFsWorkingDirPath(), c.bundle.GetOciRootfsPath()); err != nil {
+	if err := c.imageStore.MountImage(c.imageName, mountType, c.bundle.GetFsWorkingDirPath(), c.bundle.GetOciRootfsPath()); err != nil {
 		return err
 	}
 
@@ -198,10 +192,7 @@ func (c *Container) Start() (retErr error) {
 	c.status.Pid = starter.Command().Process.Pid
 
 	c.addCgroup(c.status.Pid)
-
-	if runenv.Permission.HasSetOOMScorePermission() {
-		process.SetOOMScore(c.status.Pid, 0)
-	}
+	process.SetOOMScore(c.status.Pid, 0)
 
 	go c.signalOnExit(starter)
 
@@ -373,7 +364,6 @@ func (c *Container) generateProcessEnv() []string {
 
 func (c *Container) signalOnExit(starter st.Starter) {
 	cmdErr := starter.Wait()
-	nlog.Infof("Container %q got process (%d) exit signal, err=%v", c.ID, starter.Command().Process.Pid, cmdErr)
 
 	c.Lock()
 	defer c.Unlock()
@@ -396,7 +386,7 @@ func (c *Container) signalOnExit(starter st.Starter) {
 		c.status.ExitCode = starter.Command().ProcessState.ExitCode()
 	}
 
-	nlog.Infof("Container %q exited, state=%v", c.ID, starter.Command().ProcessState.String())
+	nlog.Infof("Container %q exited, state=%v, err=%v", c.ID, starter.Command().ProcessState.String(), cmdErr)
 }
 
 func (c *Container) canStart() error {

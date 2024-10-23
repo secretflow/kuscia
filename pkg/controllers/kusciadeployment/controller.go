@@ -33,14 +33,15 @@ import (
 	"k8s.io/client-go/util/workqueue"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/controllers"
-	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+
+	"github.com/secretflow/kuscia/pkg/controllers"
+	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
-	"github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -130,20 +131,16 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    controller.handleAddedDeployment,
+		AddFunc:    controller.handleAddedOrDeletedDeployment,
 		UpdateFunc: controller.handleUpdatedDeployment,
-		DeleteFunc: controller.handleDeletedDeployment,
+		DeleteFunc: controller.handleAddedOrDeletedDeployment,
 	})
 
 	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    controller.handleAddedService,
-		UpdateFunc: controller.handleUpdatedService,
 		DeleteFunc: controller.handleDeletedService,
 	})
 
 	configMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    controller.handleAddedConfigmap,
-		UpdateFunc: controller.handleUpdatedConfigmap,
 		DeleteFunc: controller.handleDeletedConfigmap,
 	})
 	return controller
@@ -165,6 +162,7 @@ func (c *Controller) kusciaDeploymentResourceFilter(obj interface{}) bool {
 			return false
 		}
 	}
+
 	rs, ok := obj.(cache.DeletedFinalStateUnknown)
 	if ok {
 		return filter(rs.Obj)
@@ -188,11 +186,8 @@ func (c *Controller) handleAddedOrDeletedKusciaDeployment(obj interface{}) {
 			return
 		}
 	}
-	key, err := cache.MetaNamespaceKeyFunc(kd)
-	if err != nil {
-		nlog.Warnf("Get KusciaDeployment %v/%v meta key failed, %v", kd.Namespace, kd.Name, err)
-		return
-	}
+	key, _ := cache.MetaNamespaceKeyFunc(kd)
+
 	c.kdQueue.Add(key)
 }
 
@@ -214,41 +209,29 @@ func (c *Controller) handleUpdatedKusciaDeployment(oldObj, newObj interface{}) {
 		return
 	}
 
-	key, err := cache.MetaNamespaceKeyFunc(newKd)
-	if err != nil {
-		nlog.Warnf("Get KusciaDeployment %v/%v meta key failed, %v", newKd.Namespace, newKd.Name, err)
-		return
-	}
+	key, _ := cache.MetaNamespaceKeyFunc(newKd)
 
 	c.kdQueue.Add(key)
 }
 
-func getDeployment(obj interface{}) (*appsv1.Deployment, bool) {
+// handleAddedOrDeletedDeployment handles added or deleted deployment.
+func (c *Controller) handleAddedOrDeletedDeployment(obj interface{}) {
 	deployment, ok := obj.(*appsv1.Deployment)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			nlog.Warnf("Couldn't get object from tombstone %#v", obj)
-			return nil, false
+			return
 		}
 		deployment, ok = tombstone.Obj.(*appsv1.Deployment)
 		if !ok {
 			nlog.Warnf("Tombstone contained object that is not a deployment %#v", obj)
-			return nil, false
+			return
 		}
-	}
-	return deployment, true
-}
-
-// handleAddedDeployment handles added deployment.
-func (c *Controller) handleAddedDeployment(obj interface{}) {
-	deployment, ok := getDeployment(obj)
-	if !ok || deployment == nil {
-		return
 	}
 
 	kdKey, err := c.getKusciaDeploymentOwnerKey(deployment)
-	if err != nil && !k8serrors.IsNotFound(err) {
+	if err != nil {
 		nlog.Warnf("Failed to get deployment %v owner, %v, skip this event", deployment.Name, err)
 		return
 	}
@@ -277,7 +260,7 @@ func (c *Controller) handleUpdatedDeployment(oldObj, newObj interface{}) {
 	}
 
 	kdKey, err := c.getKusciaDeploymentOwnerKey(newDeploy)
-	if err != nil && !k8serrors.IsNotFound(err) {
+	if err != nil {
 		nlog.Warnf("Failed to get deployment %v owner, %v, skip this event", newDeploy.Name, err)
 		return
 	}
@@ -287,83 +270,20 @@ func (c *Controller) handleUpdatedDeployment(oldObj, newObj interface{}) {
 	}
 }
 
-// handleDeletedDeployment handles deleted deployment.
-func (c *Controller) handleDeletedDeployment(obj interface{}) {
-	deployment, ok := getDeployment(obj)
-	if !ok || deployment == nil {
-		return
-	}
-
-	kdKey, err := c.getKusciaDeploymentOwnerKey(deployment)
-	if err != nil {
-		nlog.Warnf("Failed to get deployment %v owner, %v, skip this event", deployment.Name, err)
-		return
-	}
-
-	if kdKey != "" {
-		c.kdQueue.Add(kdKey)
-	}
-}
-
-func getService(obj interface{}) (*v1.Service, bool) {
+// handleDeletedService handles deleted deployment.
+func (c *Controller) handleDeletedService(obj interface{}) {
 	svc, ok := obj.(*v1.Service)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			nlog.Warnf("Couldn't get object from tombstone %#v", obj)
-			return nil, false
+			return
 		}
 		svc, ok = tombstone.Obj.(*v1.Service)
 		if !ok {
 			nlog.Warnf("Tombstone contained object that is not a service %#v", obj)
-			return nil, false
+			return
 		}
-	}
-	return svc, true
-}
-
-// handleAddedService handles added service.
-func (c *Controller) handleAddedService(obj interface{}) {
-	svc, ok := getService(obj)
-	if !ok || svc == nil {
-		return
-	}
-
-	kdKey, err := c.getKusciaDeploymentOwnerKey(svc)
-	if err != nil && k8serrors.IsNotFound(err) {
-		c.kdQueue.Add(kdKey)
-	}
-}
-
-// handleUpdatedService handles updated service.
-func (c *Controller) handleUpdatedService(oldObj, newObj interface{}) {
-	oldSvc, ok := oldObj.(*v1.Service)
-	if !ok {
-		nlog.Warnf("Object %#v is not a service", oldObj)
-		return
-	}
-
-	newSvc, ok := newObj.(*v1.Service)
-	if !ok {
-		nlog.Warnf("Object %#v is not a service", newObj)
-		return
-	}
-
-	if oldSvc.ResourceVersion == newSvc.ResourceVersion {
-		return
-	}
-
-	kdKey, err := c.getKusciaDeploymentOwnerKey(newSvc)
-	if err != nil && k8serrors.IsNotFound(err) {
-		c.kdQueue.Add(kdKey)
-	}
-}
-
-// handleDeletedService handles deleted service.
-func (c *Controller) handleDeletedService(obj interface{}) {
-	svc, ok := getService(obj)
-	if !ok || svc == nil {
-		return
 	}
 
 	kdKey, err := c.getKusciaDeploymentOwnerKey(svc)
@@ -377,61 +297,7 @@ func (c *Controller) handleDeletedService(obj interface{}) {
 	}
 }
 
-func getConfigmap(obj interface{}) (*v1.ConfigMap, bool) {
-	cm, ok := obj.(*v1.ConfigMap)
-	if !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			nlog.Warnf("Couldn't get object from tombstone %#v", obj)
-			return nil, false
-		}
-		cm, ok = tombstone.Obj.(*v1.ConfigMap)
-		if !ok {
-			nlog.Warnf("Tombstone contained object that is not a configmap %#v", obj)
-			return nil, false
-		}
-	}
-	return cm, true
-}
-
-// handleAddedConfigmap handles added configmap.
-func (c *Controller) handleAddedConfigmap(obj interface{}) {
-	cm, ok := getConfigmap(obj)
-	if !ok || cm == nil {
-		return
-	}
-
-	kdKey, err := c.getKusciaDeploymentOwnerKey(cm)
-	if err != nil && k8serrors.IsNotFound(err) {
-		c.kdQueue.Add(kdKey)
-	}
-}
-
-// handleUpdatedConfigmap handles updated configmap.
-func (c *Controller) handleUpdatedConfigmap(oldObj, newObj interface{}) {
-	oldCM, ok := oldObj.(*v1.ConfigMap)
-	if !ok {
-		nlog.Warnf("Object %#v is not a configmap", oldObj)
-		return
-	}
-
-	newCM, ok := newObj.(*v1.ConfigMap)
-	if !ok {
-		nlog.Warnf("Object %#v is not a configmap", newObj)
-		return
-	}
-
-	if oldCM.ResourceVersion == newCM.ResourceVersion {
-		return
-	}
-
-	kdKey, err := c.getKusciaDeploymentOwnerKey(newCM)
-	if err != nil && k8serrors.IsNotFound(err) {
-		c.kdQueue.Add(kdKey)
-	}
-}
-
-// handleDeletedConfigmap handles deleted configmap.
+// handleDeletedService handles deleted deployment.
 func (c *Controller) handleDeletedConfigmap(obj interface{}) {
 	cm, ok := obj.(*v1.ConfigMap)
 	if !ok {
@@ -463,11 +329,11 @@ func (c *Controller) getKusciaDeploymentOwnerKey(obj metav1.Object) (string, err
 		ownerNamespace := obj.GetLabels()[common.LabelKusciaOwnerNamespace]
 		ownerkdName := obj.GetLabels()[common.LabelKusciaDeploymentName]
 		if ownerNamespace != "" && ownerkdName != "" {
-			_, err := c.kdLister.KusciaDeployments(ownerNamespace).Get(ownerkdName)
-			if err != nil && k8serrors.IsNotFound(err) {
-				_, err = c.kusciaClient.KusciaV1alpha1().KusciaDeployments(ownerNamespace).Get(context.Background(), obj.GetName(), metav1.GetOptions{})
+			kdb, err := c.kdLister.KusciaDeployments(ownerNamespace).Get(ownerkdName)
+			if err != nil {
+				return "", err
 			}
-			return ownerNamespace + "/" + ownerkdName, err
+			return ownerNamespace + "/" + kdb.Name, nil
 		}
 	}
 	return "", nil
@@ -525,7 +391,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		nlog.Errorf("KusciaDeployment %s split failed: %s", key, err)
 		return err
 	}
-
 	nlog.Infof("KusciaDeployment found: key=%s, ns=%s, name=%s", key, ns, name)
 	kusciaDeployment, err := c.kdLister.KusciaDeployments(ns).Get(name)
 	if err != nil {
@@ -541,13 +406,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 	}
 
 	kd := kusciaDeployment.DeepCopy()
-	if err = c.validate(kusciaDeployment); err != nil {
-		kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
-		kd.Status.Reason = string(validateFailed)
-		kd.Status.Message = err.Error()
-		return c.handleError(ctx, nil, &kusciaDeployment.Status, kd, err)
-	}
-
 	if err = c.ProcessKusciaDeployment(ctx, kd); err != nil {
 		if c.kdQueue.NumRequeues(key) == maxRetries {
 			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
@@ -558,28 +416,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 		return err
 	}
 
-	return nil
-}
-
-func (c *Controller) validate(kd *kusciav1alpha1.KusciaDeployment) error {
-	if len(kd.Spec.Parties) == 0 {
-		return fmt.Errorf("parties can't be empty for kusciaDeployment %s", kd.Name)
-	}
-
-	found := false
-	for _, party := range kd.Spec.Parties {
-		if party.ServiceNamePrefix != "" {
-			if err := resources.ValidateServiceNamePrefix(party.ServiceNamePrefix, "ServiceNamePrefix"); err != nil {
-				return err
-			}
-		}
-		if kd.Spec.Initiator == party.DomainID {
-			found = true
-		}
-	}
-	if !found {
-		return fmt.Errorf("kusciaDeployment %s initiator %s should be one of the parties", kd.Name, kd.Spec.Initiator)
-	}
 	return nil
 }
 

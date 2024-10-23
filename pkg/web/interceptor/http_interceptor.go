@@ -102,47 +102,40 @@ func HTTPServerLoggingInterceptor(logger nlog.NLog) func(c *gin.Context) {
 				ResponseBody:  emptyBody,
 			}
 
-			if !hasSensitiveHTTPPathPrefix(context.RequestPath) {
-				errors = adjustHTTPRequestAndResponse(logger, context, requestBody, withBodyWriter)
+			var structInterface any
+			// request body
+			if len(requestBody) > 0 {
+				if unmarshalReqErr := json.Unmarshal(requestBody, &structInterface); unmarshalReqErr != nil {
+					errors = append(errors, unmarshalReqErr)
+				} else {
+					requestMap := utils.StructToMap(structInterface, sensitiveFields...)
+					if requestJSON, marshalReqErr := json.Marshal(requestMap); marshalReqErr != nil {
+						errors = append(errors, marshalReqErr)
+					} else {
+						context.RequestBody = requestJSON
+					}
+				}
+			}
+			// response body
+			responseBodyLen := withBodyWriter.body.Len()
+			logger.Debugf("response body len: %d", withBodyWriter.body.Len())
+			if responseBodyLen < maxSizeBytes {
+				if unmarshalRespErr := json.Unmarshal([]byte(withBodyWriter.ResponseBody()), &structInterface); unmarshalRespErr != nil {
+					errors = append(errors, unmarshalRespErr)
+				} else {
+					responseMap := utils.StructToMap(structInterface, sensitiveFields...)
+					if responseJSON, marshalRespErr := json.Marshal(responseMap); marshalRespErr != nil {
+						errors = append(errors, marshalRespErr)
+					} else {
+						context.ResponseBody = responseJSON
+					}
+				}
 			}
 			printfLoggerContext(logger, context)
 		})
 		// run next handler
 		c.Next()
 	}
-}
-
-func adjustHTTPRequestAndResponse(logger nlog.NLog, ctx *loggerContext, reqBody []byte, respBodyWriter *responseWithBodyWriter) (errors []error) {
-	var structInterface any
-	// request body
-	if len(reqBody) > 0 {
-		if unmarshalReqErr := json.Unmarshal(reqBody, &structInterface); unmarshalReqErr != nil {
-			errors = append(errors, unmarshalReqErr)
-		} else {
-			requestMap := utils.StructToMap(structInterface, sensitiveFields...)
-			if requestJSON, marshalReqErr := json.Marshal(requestMap); marshalReqErr != nil {
-				errors = append(errors, marshalReqErr)
-			} else {
-				ctx.RequestBody = requestJSON
-			}
-		}
-	}
-	// response body
-	responseBodyLen := respBodyWriter.body.Len()
-	logger.Debugf("response body len: %d", respBodyWriter.body.Len())
-	if responseBodyLen < maxSizeBytes {
-		if unmarshalRespErr := json.Unmarshal([]byte(respBodyWriter.ResponseBody()), &structInterface); unmarshalRespErr != nil {
-			errors = append(errors, unmarshalRespErr)
-		} else {
-			responseMap := utils.StructToMap(structInterface, sensitiveFields...)
-			if responseJSON, marshalRespErr := json.Marshal(responseMap); marshalRespErr != nil {
-				errors = append(errors, marshalRespErr)
-			} else {
-				ctx.ResponseBody = responseJSON
-			}
-		}
-	}
-	return errors
 }
 
 func HTTPTokenAuthInterceptor(tokenData string) func(c *gin.Context) {

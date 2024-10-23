@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -26,12 +26,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	kubefake "k8s.io/client-go/kubernetes/fake"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -73,7 +72,6 @@ type kusciaAPIDomainDataGrant struct {
 }
 
 var (
-	kubeClient   kubernetes.Interface
 	kusciaClient kusciaclientset.Interface
 	kusciaAPIJS  *kusciaAPIJobService
 	kusciaAPIDS  *kusciaAPIDomainService
@@ -104,8 +102,6 @@ func TestServiceMain(t *testing.T) {
 	caKey, err := tls.ParseRSAPrivateKeyFile(cafile)
 	assert.NoError(t, err)
 	kusciaAPIConfig := config.NewDefaultKusciaAPIConfig("")
-	kubeClient = kubefake.NewSimpleClientset()
-	kusciaAPIConfig.KubeClient = kubeClient
 	kusciaClient = kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
 	kusciaAPIConfig.DomainKey = caKey
 	kusciaInformerFactory := informers.NewSharedInformerFactoryWithOptions(kusciaClient, 0)
@@ -149,12 +145,8 @@ func TestServiceMain(t *testing.T) {
 	parties := []*kusciaapi.ServingParty{
 		{
 			AppImage: "mockImageName",
+			Role:     "client",
 			DomainId: "alice",
-			Replicas: &replicas,
-		},
-		{
-			AppImage: "mockImageName",
-			DomainId: "bob",
 			Replicas: &replicas,
 		},
 	}
@@ -227,13 +219,13 @@ func makeMockAppImage(name string) *v1alpha1.AppImage {
 	}
 }
 
-func MakeMockDomain(domainID string) *v1alpha1.Domain {
+func MakeMockDomain(domainId string) *v1alpha1.Domain {
 
 	return &v1alpha1.Domain{
-		ObjectMeta: metav1.ObjectMeta{Name: domainID},
+		ObjectMeta: metav1.ObjectMeta{Name: domainId},
 		Spec: v1alpha1.DomainSpec{
 			Cert:         "mockcert",
-			Role:         "partner",
+			Role:         v1alpha1.DomainRole("partner"),
 			MasterDomain: "mockmasterdomain",
 		},
 	}
@@ -243,9 +235,9 @@ func MakeDomainService(t *testing.T, conf *config.KusciaAPIConfig) IDomainServic
 	return NewDomainService(conf)
 }
 
-func CreateDomain(domainID string) *kusciaapi.CreateDomainResponse {
+func CreateDomain(domainId string) *kusciaapi.CreateDomainResponse {
 	return kusciaAPIDS.CreateDomain(context.Background(), &kusciaapi.CreateDomainRequest{
-		DomainId: domainID,
+		DomainId: domainId,
 	})
 
 }

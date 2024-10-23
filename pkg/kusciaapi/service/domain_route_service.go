@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:dupl
+//nolint:dulp
 package service
 
 import (
@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers/clusterdomainroute"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
@@ -252,7 +252,6 @@ func (s domainRouteService) QueryDomainRoute(ctx context.Context, request *kusci
 			Port:       int32(port.Port),
 			Protocol:   string(port.Protocol),
 			PathPrefix: port.PathPrefix,
-			IsTLS:      port.IsTLS,
 		}
 	}
 	routeEndpoint := &kusciaapi.RouteEndpoint{
@@ -370,22 +369,13 @@ func (s domainRouteService) BatchQueryDomainRouteStatus(ctx context.Context, req
 
 func buildRouteStatus(cdr *v1alpha1.ClusterDomainRoute) *kusciaapi.RouteStatus {
 	status := constants.RouteFailed
-	reason := ""
 
-	for _, cond := range cdr.Status.Conditions {
-		if cond.Type == v1alpha1.ClusterDomainRouteReady {
-			if cond.Status == corev1.ConditionTrue {
-				status = constants.RouteSucceeded
-			} else {
-				reason = fmt.Sprintf("LastUpdateAt=%s, Message=%s, Reason:%s", cond.LastUpdateTime, cond.Message, cond.Reason)
-			}
-			break
-		}
+	if clusterdomainroute.IsReady(&cdr.Status) {
+		status = constants.RouteSucceeded
 	}
 
 	return &kusciaapi.RouteStatus{
 		Status: status,
-		Reason: reason,
 	}
 }
 
@@ -399,17 +389,17 @@ type RequestWithDstAndSrc interface {
 }
 
 func (s domainRouteService) authHandlerViaDestination(ctx context.Context, request RequestWithDstAndSrc) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if role == consts.AuthRoleDomain && request.GetDestination() != domainID {
-		return fmt.Errorf("domain's kusciaAPI could only operate DomainRoute with destination is itself, request.Destination must be %s not %s", domainID, request.GetDestination())
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain && request.GetDestination() != domainId {
+		return fmt.Errorf("domain's kusciaAPI could only operate DomainRoute with destination is itself, request.Destination must be %s not %s", domainId, request.GetDestination())
 	}
 	return nil
 }
 
 func (s domainRouteService) authHandlerViaDstAndSrc(ctx context.Context, request RequestWithDstAndSrc) error {
-	role, domainID := GetRoleAndDomainFromCtx(ctx)
-	if role == consts.AuthRoleDomain && request.GetDestination() != domainID && request.GetSource() != domainID {
-		return fmt.Errorf("domain's kusciaAPI could only query DomainRoute with itself, domain:%s ,destination:%s,source:%s", domainID, request.GetDestination(), request.GetSource())
+	role, domainId := GetRoleAndDomainFromCtx(ctx)
+	if role == consts.AuthRoleDomain && request.GetDestination() != domainId && request.GetSource() != domainId {
+		return fmt.Errorf("domain's kusciaAPI could only query DomainRoute with itself, domain:%s ,destination:%s,source:%s", domainId, request.GetDestination(), request.GetSource())
 	}
 	return nil
 }

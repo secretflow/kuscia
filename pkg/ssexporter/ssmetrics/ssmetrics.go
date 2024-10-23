@@ -260,7 +260,6 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 		}
 		ssResults, err = AggregateStatistics(localDomainName, ssResults, networkResults, AggregationMetrics, endpointName, MonitorPeriods)
 	}
-
 	return ssResults, nil
 }
 

@@ -180,12 +180,13 @@ func TestMakeResourceQuota(t *testing.T) {
 					},
 				},
 			},
+
 			wantValue: &apicorev1.ResourceQuota{
 				ObjectMeta: apismetav1.ObjectMeta{
 					Name:      resourceQuotaName,
 					Namespace: "test",
 					Labels: map[string]string{
-						common.LabelDomainName: "test",
+						common.LabelDomainName: resourceQuotaName,
 					},
 				},
 				Spec: apicorev1.ResourceQuotaSpec{

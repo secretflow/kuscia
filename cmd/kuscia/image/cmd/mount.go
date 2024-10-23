@@ -17,13 +17,12 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func mountCommand(cmdCtx *utils.Context) *cobra.Command {
+func mountCommand(cmdCtx *Context) *cobra.Command {
 	mountCmd := &cobra.Command{
 		Use:                   "mount MOUNT_ID IMAGE TARGET_PATH",
 		Short:                 "mount a image to path",
@@ -43,8 +42,7 @@ kuscia image mount unique_id app:0.1 target_dir/
 	return mountCmd
 }
 
-func mountImage(cmdCtx *utils.Context, mountID, image, targetPath string) error {
-	nlog.Infof("mountID=%s, image=%s, targetPath=%s", mountID, image, targetPath)
+func mountImage(cmdCtx *Context, mountID, image, targetPath string) error {
 	imageName, err := kii.NewImageName(image)
 	if err != nil {
 		return err
@@ -57,5 +55,5 @@ func mountImage(cmdCtx *utils.Context, mountID, image, targetPath string) error 
 
 	rBundle := bundle.GetContainerBundle(mountID)
 
-	return cmdCtx.Store.MountImage(imageName, rBundle.GetFsWorkingDirPath(), targetPath)
+	return cmdCtx.Store.MountImage(imageName, kii.Plain, rBundle.GetFsWorkingDirPath(), targetPath)
 }

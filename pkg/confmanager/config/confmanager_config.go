@@ -19,40 +19,34 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/secretflow/kuscia/pkg/confmanager/driver"
+	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/secretbackend"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/pkg/web/framework/config"
 )
 
 type ConfManagerConfig struct {
-	HTTPPort       int32          `yaml:"HTTPPort,omitempty"`
-	GRPCPort       int32          `yaml:"GRPCPort,omitempty"`
-	ConnectTimeout int            `yaml:"connectTimeout,omitempty"`
-	ReadTimeout    int            `yaml:"readTimeout,omitempty"`
-	WriteTimeout   int            `yaml:"writeTimeout,omitempty"`
-	IdleTimeout    int            `yaml:"idleTimeout,omitempty"`
-	Driver         string         `yaml:"driver,omitempty"`
-	Params         map[string]any `yaml:"params,omitempty"`
+	HTTPPort       int32  `yaml:"HTTPPort,omitempty"`
+	GRPCPort       int32  `yaml:"GRPCPort,omitempty"`
+	ConnectTimeout int    `yaml:"connectTimeout,omitempty"`
+	ReadTimeout    int    `yaml:"readTimeout,omitempty"`
+	WriteTimeout   int    `yaml:"writeTimeout,omitempty"`
+	IdleTimeout    int    `yaml:"idleTimeout,omitempty"`
+	EnableConfAuth bool   `yaml:"enableConfAuth,omitempty"`
+	Backend        string `yaml:"backend,omitempty"`
 
-	DomainID        string                 `yaml:"-"`
-	DomainKey       *rsa.PrivateKey        `yaml:"-"`
-	TLS             config.TLSServerConfig `yaml:"-"`
-	DomainCertValue *atomic.Value          `yaml:"-"`
-	IsMaster        bool                   `yaml:"-"`
-	KubeClient      kubernetes.Interface   `yaml:"-"`
+	DomainID        string                     `yaml:"-"`
+	DomainKey       *rsa.PrivateKey            `yaml:"-"`
+	BackendDriver   secretbackend.SecretDriver `yaml:"-"`
+	TLS             config.TLSServerConfig     `yaml:"-"`
+	DomainCertValue *atomic.Value              `yaml:"-"`
+	IsMaster        bool                       `yaml:"-"`
 }
 
 type SAN struct {
 	DNSNames []string `yaml:"dnsNames"`
 	IPs      []string `yaml:"ips"`
 }
-
-const (
-	DomainConfigName    = "domain-config"
-	DomainPublicKeyName = "domain-public-key"
-)
 
 func NewDefaultConfManagerConfig() *ConfManagerConfig {
 	return &ConfManagerConfig{
@@ -62,7 +56,7 @@ func NewDefaultConfManagerConfig() *ConfManagerConfig {
 		ReadTimeout:    20,
 		WriteTimeout:   20,
 		IdleTimeout:    300,
-		Driver:         driver.CRDDriverType,
+		Backend:        common.DefaultSecretBackendName,
 		IsMaster:       false,
 	}
 }

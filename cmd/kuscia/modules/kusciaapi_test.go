@@ -18,55 +18,46 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/secretflow/kuscia/pkg/common"
 )
 
 func Test_RunKusciaAPI(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	config := mockModuleRuntimeConfig(t)
-	m, err := NewKusciaAPI(config)
-	assert.NoError(t, err)
-	assert.NoError(t, runModule(runCtx, m))
+	dependency := mockDependency(t)
+	_ = RunKusciaAPI(runCtx, cancel, dependency, nil)
+	cancel()
+	runCtx.Done()
 }
 
 func Test_RunKusciaAPIWithTLS(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	config := mockModuleRuntimeConfig(t)
-	config.KusciaAPI.HTTPPort = 8010
-	config.KusciaAPI.GRPCPort = 8011
-	config.KusciaAPI.HTTPInternalPort = 8012
-	config.Protocol = common.TLS
-	m, err := NewKusciaAPI(config)
-	assert.NoError(t, err)
-	assert.NoError(t, runModule(runCtx, m))
+	dependency := mockDependency(t)
+	dependency.KusciaAPI.HTTPPort = 8010
+	dependency.KusciaAPI.GRPCPort = 8011
+	dependency.KusciaAPI.HTTPInternalPort = 8012
+	dependency.Protocol = common.TLS
+	RunKusciaAPI(runCtx, cancel, dependency, nil)
+	cancel()
 }
 
 func Test_RunKusciaAPIWithMTLS(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	config := mockModuleRuntimeConfig(t)
-	config.KusciaAPI.HTTPPort = 8020
-	config.KusciaAPI.GRPCPort = 8021
-	config.KusciaAPI.HTTPInternalPort = 8022
-	config.Protocol = common.MTLS
-	m, err := NewKusciaAPI(config)
-	assert.NoError(t, err)
-	assert.NoError(t, runModule(runCtx, m))
+	dependency := mockDependency(t)
+	dependency.KusciaAPI.HTTPPort = 8020
+	dependency.KusciaAPI.GRPCPort = 8021
+	dependency.KusciaAPI.HTTPInternalPort = 8022
+	dependency.Protocol = common.MTLS
+	RunKusciaAPI(runCtx, cancel, dependency, nil)
+	cancel()
 }
 
 func Test_RunKusciaAPIWithNOTLS(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	config := mockModuleRuntimeConfig(t)
-	config.KusciaAPI.HTTPPort = 8030
-	config.KusciaAPI.GRPCPort = 8031
-	config.KusciaAPI.HTTPInternalPort = 8032
-	config.Protocol = common.NOTLS
-	m, err := NewKusciaAPI(config)
-	assert.NoError(t, err)
-	assert.NoError(t, runModule(runCtx, m))
+	dependency := mockDependency(t)
+	dependency.KusciaAPI.HTTPPort = 8030
+	dependency.KusciaAPI.GRPCPort = 8031
+	dependency.KusciaAPI.HTTPInternalPort = 8032
+	dependency.Protocol = common.NOTLS
+	RunKusciaAPI(runCtx, cancel, dependency, nil)
+	cancel()
 }

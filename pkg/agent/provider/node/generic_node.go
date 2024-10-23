@@ -17,8 +17,6 @@ package node
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -27,39 +25,30 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/utils/nodeutils"
 	"github.com/secretflow/kuscia/pkg/utils/math"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/runtime"
 )
 
 const (
-	MemoryPressureThreshold        = 0.9                    // 90%
-	DiskPressureThreshold          = 95                     // 95%
-	DiskPressureMinFreeSize uint64 = 3 * 1024 * 1024 * 1024 // 3G
+	MemoryPressureThreshold = 0.9 // 90%
+	DiskPressureThreshold   = 95  // 95%
 
 	DiskOutMinFreeSize  = 100 * 1024 * 1024 // 100MB
 	DiskOutMinFreeInode = 1000              // 1000 inodes
-
-	minRefreshKernelParamInterval = time.Minute * 5
 )
 
 type GenericNodeDependence struct {
 	BaseNodeDependence
-	DiskPressurePath string
+	RootDir string
 }
 
 type GenericNodeProvider struct {
-	diskPressurePath string
-
-	cachedKernelParamOK             bool
-	cachedKernelParamMsg            string
-	cachedKernelParamLastUpdateTime time.Time
+	rootDir string
 
 	*BaseNode
 }
 
 func NewGenericNodeProvider(dep *GenericNodeDependence) *GenericNodeProvider {
 	gnp := &GenericNodeProvider{
-		diskPressurePath:                dep.DiskPressurePath,
-		cachedKernelParamLastUpdateTime: time.Now().Add(-1 * time.Hour),
+		rootDir: dep.RootDir,
 	}
 	gnp.BaseNode = newBaseNode(&dep.BaseNodeDependence)
 
@@ -71,6 +60,7 @@ func (gnp *GenericNodeProvider) Ping(ctx context.Context) error {
 }
 
 func (gnp *GenericNodeProvider) SetStatusUpdateCallback(ctx context.Context, f func(*v1.Node)) {
+	return
 }
 
 func (gnp *GenericNodeProvider) ConfigureNode(ctx context.Context, name string) *v1.Node {
@@ -96,14 +86,11 @@ func (gnp *GenericNodeProvider) refreshDiskCondition(name, path string) (bool, b
 		return false, false, msg, msg
 	}
 
-	// disk free size <= 5GB and free < 5%, inode <= 5%
-	diskPressure := (du.InodesUsedPercent >= DiskPressureThreshold) ||
-		(du.UsedPercent >= DiskPressureThreshold && du.Free <= DiskPressureMinFreeSize)
-
+	diskPressure := du.UsedPercent >= DiskPressureThreshold || du.InodesUsedPercent >= DiskPressureThreshold
 	outOfDisk := du.Free <= DiskOutMinFreeSize || du.InodesFree <= DiskOutMinFreeInode
 	// FSType has bug, so we not use it in message
 	// du.Used+du.Free=du.Total-reservedBlocks
-	pressureMsg := fmt.Sprintf("@%v(%s): space=%v/%v(%.1f%%) inode=%v/%v(%.1f%%)", name, path,
+	pressureMsg := fmt.Sprintf("@%v: space=%v/%v(%.1f%%) inode=%v/%v(%.1f%%)", name,
 		math.ByteCountBinary(int64(du.Used)),
 		math.ByteCountBinary(int64(du.Used+du.Free)), du.UsedPercent,
 		math.ByteCountDecimalRaw(int64(du.InodesUsed)),
@@ -112,27 +99,6 @@ func (gnp *GenericNodeProvider) refreshDiskCondition(name, path string) (bool, b
 		name, math.ByteCountBinary(int64(du.Free)), math.ByteCountDecimalRaw(int64(du.InodesFree)))
 
 	return diskPressure, outOfDisk, pressureMsg, outMsg
-}
-
-func (gnp *GenericNodeProvider) refreshKernelParamsCondition() (bool, string) {
-	if time.Since(gnp.cachedKernelParamLastUpdateTime) > minRefreshKernelParamInterval {
-		isOK := true
-		msg := []string{}
-		for _, param := range runtime.CurrentKernel().List() {
-			isOK = isOK && param.IsMatch
-			if param.IsMatch {
-				msg = append(msg, fmt.Sprintf("%s=%s[OK]", param.Key, param.Value))
-			} else {
-				msg = append(msg, fmt.Sprintf("%s=%s[ERR]", param.Key, param.Value))
-			}
-		}
-
-		gnp.cachedKernelParamOK = isOK
-		gnp.cachedKernelParamMsg = strings.Join(msg, ";")
-		gnp.cachedKernelParamLastUpdateTime = time.Now()
-	}
-
-	return gnp.cachedKernelParamOK, gnp.cachedKernelParamMsg
 }
 
 // refreshNodeConditions refreshes node condition.
@@ -171,7 +137,7 @@ func (gnp *GenericNodeProvider) refreshNodeConditions(ctx context.Context, st *v
 
 	// disk
 	var diskPressureChanged, diskOutChanged bool
-	diskPressure, outOfDisk, pressureMsg, outMsg := gnp.refreshDiskCondition("agent_volume", gnp.diskPressurePath)
+	diskPressure, outOfDisk, pressureMsg, outMsg := gnp.refreshDiskCondition("agent_volume", gnp.rootDir)
 	if diskPressure {
 		st.Conditions, diskPressureChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
 			Type:    v1.NodeDiskPressure,
@@ -206,27 +172,7 @@ func (gnp *GenericNodeProvider) refreshNodeConditions(ctx context.Context, st *v
 			})
 	}
 
-	var kernelParamsChanged bool
-	kernalParamOK, kerunalParamMsg := gnp.refreshKernelParamsCondition()
-	if kernalParamOK {
-		st.Conditions, kernelParamsChanged =
-			nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
-				Type:    "Kernel-Params",
-				Status:  v1.ConditionTrue,
-				Reason:  "Kernel parameters satisfy kuscia recommended requirements",
-				Message: kerunalParamMsg,
-			})
-	} else {
-		st.Conditions, kernelParamsChanged =
-			nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
-				Type:    "Kernel-Params",
-				Status:  v1.ConditionFalse,
-				Reason:  "Kernel parameters not satisfy kuscia recommended requirements",
-				Message: kerunalParamMsg,
-			})
-	}
-
-	return memChanged || diskPressureChanged || diskOutChanged || kernelParamsChanged
+	return memChanged || diskPressureChanged || diskOutChanged
 }
 
 func (gnp *GenericNodeProvider) RefreshNodeStatus(ctx context.Context, nodeStatus *v1.NodeStatus) bool {

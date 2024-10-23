@@ -134,16 +134,6 @@ type Party struct {
 	Role string `json:"role,omitempty"`
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-	// +optional
-	BandwidthLimit []BandwidthLimit `json:"bandwidthLimits,omitempty"`
-}
-
-// The upstream bandwidth limit of the party to given party by KiB/s.
-type BandwidthLimit struct {
-	// +required
-	DestinationID string `json:"destinationID"`
-	// +required
-	LimitKBps uint64 `json:"limitKBps"`
 }
 
 // KusciaJobStatus defines the observed state of kuscia job.
