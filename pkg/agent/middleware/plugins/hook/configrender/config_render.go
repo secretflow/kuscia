@@ -16,6 +16,7 @@ package configrender
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -66,18 +67,18 @@ func (cr *configRender) Type() string {
 }
 
 // Init implements the plugin.Plugin interface.
-func (cr *configRender) Init(dependencies *plugin.Dependencies, cfg *config.PluginCfg) error {
-	if err := cfg.Config.Decode(&cr.config); err != nil {
+func (c *configRender) Init(ctx context.Context, deps *plugin.Dependencies, cfg *config.PluginCfg) error {
+	if err := cfg.Config.Decode(&c.config); err != nil {
 		return err
 	}
 
-	if dependencies != nil {
-		cr.config.kusciaAPIProtocol = dependencies.AgentConfig.KusciaAPIProtocol
-		cr.config.kusciaAPIToken = dependencies.AgentConfig.KusciaAPIToken
-		cr.config.domainKeyData = dependencies.AgentConfig.DomainKeyData
+	if deps != nil {
+		c.config.kusciaAPIProtocol = deps.AgentConfig.KusciaAPIProtocol
+		c.config.kusciaAPIToken = deps.AgentConfig.KusciaAPIToken
+		c.config.domainKeyData = deps.AgentConfig.DomainKeyData
 	}
 
-	hook.Register(common.PluginNameConfigRender, cr)
+	hook.Register(common.PluginNameConfigRender, c)
 	return nil
 }
 

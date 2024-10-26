@@ -159,6 +159,7 @@ func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, r
 	nlog.Infof("Domaindata(%s) write total row: %d.", data.GetDomaindataId(), iCount)
 	if err := reader.Err(); err != nil {
 		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s", data.GetDomaindataId(), err.Error())
+		return err
 	}
 	return nil
 }

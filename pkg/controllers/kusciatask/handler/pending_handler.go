@@ -78,6 +78,7 @@ type PartyKitInfo struct {
 	portAccessDomains     map[string]string
 	minReservedPods       int
 	pods                  []*PodKitInfo
+	bandwidthLimit        []kusciaapisv1alpha1.BandwidthLimit
 }
 
 // NewPendingHandler returns a PendingHandler instance.
@@ -360,6 +361,7 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 	kit.servicedPorts = servicedPorts
 	kit.minReservedPods = minReservedPods
 	kit.pods = pods
+	kit.bandwidthLimit = party.BandwidthLimit
 
 	// Todo: Consider how to limit the communication between single-party jobs between multiple parties.
 	if len(kusciaTask.Spec.Parties) > 1 {
@@ -1004,8 +1006,8 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 
 			if metricPath != "" && metricPortName != "" {
 				if portInfo, ok := podKit.ports[metricPortName]; ok {
-					pod.Annotations["kuscia.secretflow.metric-path"] = metricPath
-					pod.Annotations["kuscia.secretflow.metric-port"] = strconv.Itoa(int(portInfo.Port))
+					pod.Annotations[common.MetricPathAnnotationKey] = metricPath
+					pod.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
 				} else {
 					return nil, fmt.Errorf("metric port name %s not found for pod %s", metricPortName, podKit.podName)
 				}
@@ -1200,6 +1202,11 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 		common.ProtocolAnnotationKey:     string(port.Protocol),
 		common.AccessDomainAnnotationKey: partyKit.portAccessDomains[port.Name],
 		common.TaskIDAnnotationKey:       partyKit.kusciaTask.Name,
+	}
+
+	for _, limit := range partyKit.bandwidthLimit {
+		key := fmt.Sprintf("%s%s", common.TaskBandwidthLimitAnnotationPrefix, limit.DestinationID)
+		svc.Annotations[key] = strconv.Itoa(int(limit.LimitKBps))
 	}
 
 	return svc, nil

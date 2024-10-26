@@ -390,12 +390,12 @@ function init() {
     [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${DOMAIN_WORK_DIR}/logs"
     [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${DOMAIN_WORK_DIR}/k3s"
     pre_check "${DOMAIN_DATA_DIR}"
-    pre_check "${DOMAIN_LOG_DIR}"
+    pre_check "${DOMAIN_LOG_DIR}"   
     log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
     log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
     log "DOMAIN_K3S_DB_DIR=${DOMAIN_K3S_DB_DIR}"
     log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
-    log "DOMAIN_HOST_INTERNAL_PORT=${domain_host_internal_port}"
+    log "DOMAIN_HOST_INTERNAL_PORT=${domain_host_internal_port}"  
     log "KUSCIAAPI_HTTP_PORT=${kusciaapi_http_port}"
     log "KUSCIAAPI_GRPC_PORT=${kusciaapi_grpc_port}"
     log "METRICS_PORT"=${metrics_port}
@@ -525,7 +525,7 @@ function start_kuscia_container() {
   if [[ ${IMPORT_SF_IMAGE} = "none"  ]]; then
     echo -e "${GREEN}skip importing sf image${NC}"
   elif [[ ${IMPORT_SF_IMAGE} = "secretflow"  ]]; then
-    if [[ "$domain_type" != "master" ]]; then
+    if [[ "$domain_type" != "master" ]] && [[ ${runtime} == "runc" ]]; then
       docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
       bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${SECRETFLOW_IMAGE} --import
       rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
@@ -534,18 +534,6 @@ function start_kuscia_container() {
   if [[ "$domain_type" != "lite" ]]; then
     docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
     log "Create secretflow app image done"
-  fi
-
-  if [[ ${IMPORT_DIAGNOSE_IMAGE} = "diagnose"  ]]; then
-    if [[ "$domain_type" != "master" ]] && [[ ${runtime} == "runc" ]]; then
-      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
-      bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${KUSCIA_IMAGE} --import
-      rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
-    fi
-    if [[ "$domain_type" != "lite" ]]; then
-      docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${KUSCIA_IMAGE}" -m
-    fi
-    log "Create diagnose app image done"
   fi
 
   if [[ $dataproxy == true ]]; then
@@ -610,7 +598,7 @@ function start_data_proxy() {
    local counter=0
    local kusciaapi_endpoint="http://localhost:8082/api/v1/serving"
    # import dataproxy image
-   if [[ "$deploy_mode" != "master" ]]; then
+   if [[ "$deploy_mode" != "master" ]] && [[ ${runtime} == "runc" ]]; then
       docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
       bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${DATAPROXY_IMAGE} --import
       rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh

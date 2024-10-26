@@ -28,7 +28,6 @@ PKG_EXCLUDE_TESTS = "crd|testing|test"
 # TEST_SUITE used by integration test
 TEST_SUITE ?= all
 
-PROOT_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
 ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.1b0
 DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.1b0
 
@@ -138,15 +137,9 @@ docs: gen_error_code_doc ## Build docs.
 deps-build:
 	bash hack/k3s/build.sh
 	mkdir -p build/linux/${ARCH}/k3s
+
 	cp -rp build/k3s/bin build/linux/${ARCH}/k3s
 
-.PHONY: proot
-proot: export GOOS=linux
-proot: export GOARCH=${ARCH}# export ARCH=amd64 or export ARCH=arm64; if not specified, ARCH will auto-detected
-proot:
-	DOCKER_BUILDKIT=1
-	@$(call start_docker_buildx)
-	docker buildx build -t ${PROOT_IMAGE} -f ./build/dockerfile/proot-build.Dockerfile . --platform linux/${ARCH} --load
 
 .PHONY: deps-image
 deps-image: deps-build
@@ -162,7 +155,7 @@ image: build ## Build docker image with the manager.
 
 .PHONY: build-monitor
 build-monitor:
-	docker build -t secretflow/kuscia-monitor -f ./build/dockerfile/kuscia-monitor.Dockerfile .
+	docker build -t secretflow/kusica-monitor -f ./build/dockerfile/kuscia-monitor.Dockerfile .
 
 .PHONY: integration_test
 integration_test: image ## Run Integration Test

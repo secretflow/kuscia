@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/agent/pod"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -40,13 +41,13 @@ func ListPodMetricUrls(podManager pod.Manager) (map[string]string, error) {
 		metricPath := ""
 		metricPort := ""
 
-		if val, ok := pod.Annotations["kuscia.secretflow.metric-path"]; ok {
+		if val, ok := pod.Annotations[common.MetricPathAnnotationKey]; ok {
 			metricPath = val
 		}
 
 		for _, container := range pod.Spec.Containers {
 			for _, port := range container.Ports {
-				if port.Name == pod.Annotations["kuscia.secretflow.metric-port"] {
+				if port.Name == pod.Annotations[common.MetricPortAnnotationKey] {
 					metricPort = strconv.Itoa(int(port.ContainerPort))
 					break
 				}
@@ -54,7 +55,11 @@ func ListPodMetricUrls(podManager pod.Manager) (map[string]string, error) {
 		}
 
 		if metricPath != "" && metricPort != "" {
-			metricUrls[pod.Name] = fmt.Sprintf("http://%s:%s/%s", pod.Status.PodIP, metricPort, metricPath)
+			if metricPort == "80" {
+				metricUrls[pod.Name] = fmt.Sprintf("http://%s/%s", pod.Status.PodIP, metricPath)
+			} else {
+				metricUrls[pod.Name] = fmt.Sprintf("http://%s:%s/%s", pod.Status.PodIP, metricPort, metricPath)
+			}
 		}
 	}
 	return metricUrls, nil
@@ -129,7 +134,6 @@ func MetricExporter(ctx context.Context, metricURLs map[string]string, port stri
 	podMetrics, err := ListPodMetricUrls(podManager)
 	if err != nil {
 		nlog.Errorf("Error retrieving pod metrics: %v", err)
-		return
 	}
 	metricURLs = combine(metricURLs, podMetrics)
 

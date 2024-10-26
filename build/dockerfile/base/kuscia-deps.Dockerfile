@@ -11,7 +11,8 @@ RUN yum install -y git glibc-static wget gcc make && \
     yum clean all
 
 RUN mkdir -p /image/home/kuscia/bin && \
-    mkdir -p /image/bin/aux
+    mkdir -p /image/bin/aux && \
+    curl https://proot.gitlab.io/proot/bin/proot -o /image/home/kuscia/bin/proot && chmod gu+x /image/home/kuscia/bin/proot
 
 WORKDIR /tmp
 

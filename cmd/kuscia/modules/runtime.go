@@ -143,7 +143,6 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 	dependencies := &ModuleRuntimeConfigs{
 		KusciaConfig: kusciaConf,
 	}
-
 	// init log
 	logConfig := initLoggerConfig(kusciaConf, kusciaLogPath)
 	if err := InitLogs(logConfig); err != nil {

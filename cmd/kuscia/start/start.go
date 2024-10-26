@@ -75,18 +75,6 @@ func Start(ctx context.Context, configFile string) error {
 
 	master, lite, autonomy := common.RunModeMaster, common.RunModeLite, common.RunModeAutonomy
 
-	k8sConfig, err := rest.InClusterConfig()
-	if err != nil {
-		nlog.Fatalf("Failed to create in-cluster config: %v", err)
-	}
-
-	clientset, err := kubernetes.NewForConfig(k8sConfig)
-	if err != nil {
-		nlog.Fatalf("Failed to create Kubernetes clientset: %v", err)
-	}
-
-	mirrorPodClient := pkgpod.NewBasicMirrorClient(clientset, nil)
-	podManager := pkgpod.NewBasicPodManager(mirrorPodClient)
 	mm := NewModuleManager()
 	mm.Regist("coredns", modules.NewCoreDNS, autonomy, lite, master)
 	mm.Regist("k3s", modules.NewK3s, autonomy, master)
@@ -103,7 +91,23 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("interconn", modules.NewInterConn, autonomy, master)
 	mm.Regist("kusciaapi", modules.NewKusciaAPI, autonomy, lite, master)
 	mm.Regist("metricexporter", func(i *modules.ModuleRuntimeConfigs) (modules.Module, error) {
+		k8sConfig, err := rest.InClusterConfig()
+		if err != nil {
+			nlog.Fatalf("Failed to create in-cluster config: %v", err)
+			return nil, err
+		}
+
+		clientset, err := kubernetes.NewForConfig(k8sConfig)
+		if err != nil {
+			nlog.Fatalf("Failed to create Kubernetes clientset: %v", err)
+			return nil, err
+		}
+
+		mirrorPodClient := pkgpod.NewBasicMirrorClient(clientset, nil)
+		podManager := pkgpod.NewBasicPodManager(mirrorPodClient)
+
 		return modules.NewMetricExporter(i, podManager)
+
 	}, autonomy, lite, master)
 	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)
@@ -114,13 +118,14 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("envoy", "k3s")
 
 	mm.SetDependencies("controllers", "k3s")
+	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")
 	mm.SetDependencies("datamesh", "k3s", "config", "envoy", "domainroute")
 	mm.SetDependencies("domainroute", "k3s")
 	mm.SetDependencies("interconn", "k3s")
 	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")
 	mm.SetDependencies("scheduler", "k3s")
 	mm.SetDependencies("ssexporter", "envoy")
-	mm.SetDependencies("metricexporter", "envoy", "ssexporter", "nodeexporter")
+	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "nodeexporter")
 	mm.SetDependencies("transport", "envoy")
 
 	mm.AddReadyHook(func(ctx context.Context, mdls map[string]modules.Module) error {
@@ -134,7 +139,7 @@ func Start(ctx context.Context, configFile string) error {
 		return errors.New("coredns module type is invalid")
 	}, "k3s", "coredns", "envoy", "domainroute")
 
-	err = mm.Start(ctx, mode, conf)
+	err := mm.Start(ctx, mode, conf)
 	nlog.Infof("Kuscia Instance [%s] shut down", commonConfig.DomainID)
 	return err
 }

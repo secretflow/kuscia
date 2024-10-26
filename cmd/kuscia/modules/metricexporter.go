@@ -22,7 +22,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
@@ -62,13 +61,7 @@ func NewMetricExporter(i *ModuleRuntimeConfigs, podManager pod.Manager) (Module,
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
-	podMetrics, err := metricexporter.ListPodMetricUrls(exporter.podManager)
-	if err != nil {
-		nlog.Errorf("Error retrieving pod metrics: %v", err)
-		return err
-	}
-	metricURLs := combine(exporter.metricURLs, podMetrics)
-	metricexporter.MetricExporter(ctx, metricURLs, exporter.metricExportPort)
+	metricexporter.MetricExporter(ctx, exporter.metricURLs, exporter.metricExportPort)
 	return nil
 }
 

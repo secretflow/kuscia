@@ -25,7 +25,7 @@ RUN yum install -y openssl net-tools which jq logrotate iproute procps-ng libcap
     mkdir -p ${HOME_DIR}/crds && \
     mkdir -p ${HOME_DIR}/var/storage/data && \
     mkdir -p ${HOME_DIR}/var/k3s/server/db && \
-    mkdir -p ${HOME_DIR}/var/images && \
+    mkdir -p ${ROOT_DIR}/var/images && \
     mkdir -p ${HOME_DIR}/pause
 
 # create non-root user kuscia and group
