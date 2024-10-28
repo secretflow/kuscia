@@ -66,8 +66,10 @@ func parseConfig(data []byte) (*netstat.NetworkJobConfig, error) {
 	}
 	jobConfig.SelfDomain = taskConfig.Domains[taskConfig.SelfIdx]
 	jobConfig.SelfEndpoint = taskConfig.Endpoints[taskConfig.SelfIdx]
-	jobConfig.PeerDomain = taskConfig.Domains[1-taskConfig.SelfIdx]
-	jobConfig.PeerEndpoint = taskConfig.Endpoints[1-taskConfig.SelfIdx]
+	if !jobConfig.Manual {
+		jobConfig.PeerDomain = taskConfig.Domains[1-taskConfig.SelfIdx]
+		jobConfig.PeerEndpoint = taskConfig.Endpoints[1-taskConfig.SelfIdx]
+	}
 	jobConfig.ServerPort = taskConfig.ServerPort
 
 	return jobConfig, nil

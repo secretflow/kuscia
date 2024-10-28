@@ -17,7 +17,7 @@ package starter
 import (
 	"os/exec"
 
-	"gopkg.in/natefinch/lumberjack.v2"
+	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -27,7 +27,7 @@ type InitConfig struct {
 	ContainerConfig *runtime.ContainerConfig
 	Rootfs          string
 	WorkingDir      string
-	LogFile         *lumberjack.Logger
+	LogFile         *logutils.ReopenableLogger
 }
 
 type Starter interface {
@@ -35,4 +35,6 @@ type Starter interface {
 	Command() *exec.Cmd
 	Wait() error
 	Release() error
+	ReopenContainerLog() error
+	CloseContainerLog() error
 }

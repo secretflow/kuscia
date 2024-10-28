@@ -178,7 +178,7 @@ func getStableKey(pod *v1.Pod, container *v1.Container) string {
 const logPathDelimiter = "_"
 
 // buildContainerLogsPath builds log path for container relative to pod logs directory.
-func buildContainerLogsPath(containerName string, restartCount int) string {
+func BuildContainerLogsPath(containerName string, restartCount int) string {
 	return filepath.Join(containerName, fmt.Sprintf("%d.log", restartCount))
 }
 

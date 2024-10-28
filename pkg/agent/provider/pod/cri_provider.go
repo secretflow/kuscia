@@ -320,6 +320,8 @@ func (cp *CRIProvider) Start(ctx context.Context) error {
 
 	cp.startGarbageCollection()
 
+	cp.containerLogManager.Start()
+
 	cp.syncLoopIteration()
 
 	close(cp.chStopped)

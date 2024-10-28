@@ -24,6 +24,7 @@ import (
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
 	"github.com/apache/arrow/go/v13/arrow/flight"
+	"github.com/go-sql-driver/mysql"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/pkg/errors"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -37,6 +38,11 @@ type MySQLUploader struct {
 	query     *datamesh.CommandDomainDataQuery
 	nullValue string
 }
+
+// define some mysql error
+const (
+	ER_NO_SUCH_TABLE uint16 = 1146
+)
 
 func NewMySQLUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *MySQLUploader {
 	return &MySQLUploader{
@@ -55,7 +61,10 @@ func (u *MySQLUploader) transformColToStringArr(typ arrow.DataType, col arrow.Ar
 		arr := col.(*array.Boolean)
 		for i := 0; i < arr.Len(); i++ {
 			if arr.IsValid(i) {
-				res[i] = strconv.FormatBool(arr.Value(i))
+				res[i] = "0"
+				if arr.Value(i) {
+					res[i] = "1"
+				}
 			} else {
 				res[i] = u.nullValue
 			}
@@ -197,19 +206,33 @@ func (u *MySQLUploader) ArrowDataTypeToMySQLType(colType arrow.DataType) string 
 }
 
 func (u *MySQLUploader) PrepareOutputTable(tableName string, columnNames []string, fields []arrow.Field) error {
-	// if not exists try to create
+	// if exist, try to drop it
+	_, err := u.db.Exec("DROP TABLE IF EXISTS " + tableName)
+	// maybe permission denied, try delete
+	if err != nil {
+		nlog.Infof("Sql drop with err(%s), try to sql delete", err)
+		_, deleteErr := u.db.Exec("DELETE FROM " + tableName)
+		// if there is no table, we can try to create
+		if sqlErr, ok := deleteErr.(*mysql.MySQLError); ok && sqlErr.Number == uint16(ER_NO_SUCH_TABLE) {
+			nlog.Infof("Table(%s) not exist", tableName)
+		} else {
+			// table exists but can't delete, or other error
+			return deleteErr
+		}
+	}
+	nlog.Infof("Sql clear data success")
 	ctb := sqlbuilder.NewCreateTableBuilder()
-	ctb.CreateTable(tableName).IfNotExists()
+	ctb.CreateTable(tableName)
 	for idx, field := range fields {
 		ctb.Define(columnNames[idx], u.ArrowDataTypeToMySQLType(field.Type))
 	}
 	sql := ctb.String()
 	nlog.Infof("Prepare output table sql(%s)", sql)
-	result, err := u.db.Exec(sql)
+	_, err = u.db.Exec(sql)
 	if err != nil {
 		return err
 	}
-	nlog.Infof("Sql result(%s)", result)
+	nlog.Infof("Table create success")
 	return nil
 }
 

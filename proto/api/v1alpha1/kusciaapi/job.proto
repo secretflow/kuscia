@@ -70,6 +70,8 @@ message Task {
   string task_input_config = 6; // task input config
   int32 priority = 7;
   ScheduleConfig schedule_config = 8; // schedule config
+  // Tolerable default false. If this task failed,job will not be failed. tolerable task can not be other tasks dependencies.
+  bool tolerable = 9;
 }
 
 message ScheduleConfig {

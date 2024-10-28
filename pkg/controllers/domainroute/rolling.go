@@ -116,6 +116,9 @@ func (c *controller) postRollingDestinationDomainRoute(ctx context.Context, dr *
 		dr.Status.TokenStatus.RevisionToken.Token != "" &&
 		(n == 0 || dr.Status.TokenStatus.Tokens[n-1].Revision != dr.Status.TokenStatus.RevisionToken.Revision) {
 		dr = dr.DeepCopy()
+		if n > 1 {
+			dr.Status.TokenStatus.Tokens = dr.Status.TokenStatus.Tokens[n-1:]
+		}
 		dr.Status.TokenStatus.Tokens = append(dr.Status.TokenStatus.Tokens, dr.Status.TokenStatus.RevisionToken)
 		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
 		if err == nil {

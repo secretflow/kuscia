@@ -118,8 +118,8 @@ func addMasterServiceVirtualHost(cluster, pathPrefix, namespace, service string,
 	return xds.AddOrUpdateVirtualHost(externalVh, xds.ExternalRoute)
 }
 
-func AddMasterProxyVirtualHost(cluster, pathPrefix, service, namespace, token string) error {
-	internalVh := generateMasterInternalVirtualHost(cluster, pathPrefix, service, generateMasterProxyDomains(), nil)
+func AddMasterProxyVirtualHost(cluster, pathPrefix, service, namespace, token string, domains []string) error {
+	internalVh := generateMasterInternalVirtualHost(cluster, pathPrefix, service, domains, nil)
 	internalVh.Routes[0].RequestHeadersToAdd = []*core.HeaderValueOption{
 		{
 			Header: &core.HeaderValue{
@@ -195,12 +195,6 @@ func generateMasterServiceDomains(namespace, service string) []string {
 	return []string{
 		fmt.Sprintf("%s.master.svc", service),
 		fmt.Sprintf("%s.%s.svc", service, namespace),
-	}
-}
-
-func generateMasterProxyDomains() []string {
-	return []string{
-		"*.master.svc",
 	}
 }
 

@@ -73,6 +73,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
   "access_directly": true
 }'
 ```
+:::{tip}
+K8S RunK 模式部署 Kuscia 时，此处需要使用 [OSS 数据源](../reference/apis/domaindatasource_cn.md#id5)，并将 /home/kuscia/var/storage/data/scql-alice.csv 示例数据放入 OSS 中。
+:::
+
 3.创建 DomainData
 
 下面 domaindata_id 名称以 scql-alice-table 为例：
@@ -141,6 +145,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
   "access_directly": true
 }'
 ```
+:::{tip}
+K8S RunK 模式部署 Kuscia 时，此处需要使用 [OSS 数据源](../reference/apis/domaindatasource_cn.md#id5)，并将 /home/kuscia/var/storage/data/scql-bob.csv 示例数据放入 OSS 中。
+:::
+
 3.创建 DomainData
 
 下面 domaindata_id 名称以 scql-bob-table 为例：
@@ -195,7 +203,8 @@ docker exec -it ${USER}-kuscia-master bash
 >
 > 1. 如果 `secretflow/scql` 仓库访问网速较慢，可以替换为 `secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/scql`。
 > 2. 请删除 `#--datasource_router=kusciadatamesh` 代码行前面的 # 符号，以启用 Datamesh 本地数据源配置。
-> 3. 在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径
+> 3. 在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径。
+> 4. K8S RunK 模式部署 Kuscia 时，需要使用 Mysql 存储 Broker 元数据。修改 `storage` 字段的 `type` 为 Mysql 和 `conn_str` 对应的数据库连接字符串。
 
 3.创建 SCQL 应用的镜像模版 AppImage
 ```bash
@@ -225,7 +234,8 @@ docker exec -it ${USER}-kuscia-master bash
 >
 > 1. 如果 `secretflow/scql` 仓库访问网速较慢，可以替换为 `secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/scql`。
 > 2. 请删除 `#--datasource_router=kusciadatamesh` 代码行前面的 # 符号，以启用 Datamesh 本地数据源配置。
-> 3. 在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径
+> 3. 在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径。
+> 4. K8S RunK 模式部署 Kuscia 时，需要使用 Mysql 存储 Broker 元数据。修改 `storage` 字段的 `type` 为 Mysql 和 `conn_str` 对应的数据库连接字符串。
 
 3.创建 SCQL 应用的镜像模版 AppImage
 ```bash

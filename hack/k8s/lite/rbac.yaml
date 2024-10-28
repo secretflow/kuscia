@@ -8,6 +8,7 @@ rules:
       - ""
     resources:
       - pods
+      - pods/log # optional if you don't enable pod logging in runk mode
       - configmaps
       - secrets
     verbs:

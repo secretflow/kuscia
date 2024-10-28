@@ -97,3 +97,11 @@ func (s *chrootStarter) Command() *exec.Cmd {
 func (s *chrootStarter) Release() error {
 	return s.mounter.UmountRoot()
 }
+
+func (s *chrootStarter) ReopenContainerLog() error {
+	return s.config.LogFile.ReopenFile()
+}
+
+func (s *chrootStarter) CloseContainerLog() error {
+	return s.config.LogFile.Close()
+}

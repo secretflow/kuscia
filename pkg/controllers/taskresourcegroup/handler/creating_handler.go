@@ -133,6 +133,7 @@ func (h *CreatingHandler) createTaskResources(trg *kusciaapisv1alpha1.TaskResour
 				podCopy.Annotations = map[string]string{}
 			}
 
+			podCopy.Labels[common.LabelTaskResourceGroupUID] = string(trg.UID)
 			podCopy.Labels[kusciaapisv1alpha1.TaskResourceUID] = string(tr.UID)
 			podCopy.Annotations[kusciaapisv1alpha1.TaskResourceKey] = party.TaskResourceName
 			oldExtractedPod := utilsres.ExtractPodAnnotationsAndLabels(pod)
@@ -157,13 +158,14 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 		return nil, fmt.Errorf("build task resource %v/%v pods failed, %v", party.DomainID, trg.Name, err.Error())
 	}
 
-	var jobID, taskID, taskAlias, protocolType, masterDomain string
+	var jobID, taskID, taskAlias, protocolType, masterDomain, asInitiator string
 	if trg.Annotations != nil {
 		jobID = trg.Annotations[common.JobIDAnnotationKey]
 		taskID = trg.Annotations[common.TaskIDAnnotationKey]
 		taskAlias = trg.Annotations[common.TaskAliasAnnotationKey]
 		masterDomain = trg.Annotations[common.KusciaPartyMasterDomainAnnotationKey]
 		protocolType = trg.Labels[common.LabelInterConnProtocolType]
+		asInitiator = trg.Labels[common.SelfClusterAsInitiatorAnnotationKey]
 	}
 
 	phase := kusciaapisv1alpha1.TaskResourcePhaseReserving
@@ -189,6 +191,7 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 			},
 			Annotations: map[string]string{
 				common.InitiatorAnnotationKey:               trg.Spec.Initiator,
+				common.SelfClusterAsInitiatorAnnotationKey:  asInitiator,
 				common.JobIDAnnotationKey:                   jobID,
 				common.TaskIDAnnotationKey:                  taskID,
 				common.TaskAliasAnnotationKey:               taskAlias,

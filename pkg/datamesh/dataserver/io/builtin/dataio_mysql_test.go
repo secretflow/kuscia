@@ -385,8 +385,9 @@ func TestMySQLIOChannel_Write_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
-
-	expectSQL := regexp.QuoteMeta("CREATE TABLE IF NOT EXISTS `output` (`name` TEXT, `id` BIGINT SIGNED)")
+	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS `output`")
+	expectSQL := regexp.QuoteMeta("CREATE TABLE `output` (`name` TEXT, `id` BIGINT SIGNED)")
+	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec(expectSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectBegin()
