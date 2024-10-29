@@ -1104,6 +1104,19 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		if ctr.ImagePullPolicy == "" {
 			ctr.ImagePullPolicy = v1.PullIfNotPresent
 		}
+		if ctr.MetricProbe != nil {
+			metricPath := ctr.MetricProbe.Path
+			metricPortName := ctr.MetricProbe.Port
+
+			if metricPath != "" && metricPortName != "" {
+				if portInfo, ok := podKit.ports[metricPortName]; ok {
+					pod.Annotations[common.MetricPathAnnotationKey] = metricPath
+					pod.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
+				} else {
+					return nil, fmt.Errorf("metric port name %s not found for pod %s", metricPortName, podKit.podName)
+				}
+			}
+		}
 
 		resCtr := v1.Container{
 			Name:                     ctr.Name,
@@ -1112,6 +1125,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			Args:                     ctr.Args,
 			WorkingDir:               ctr.WorkingDir,
 			Env:                      ctr.Env,
+			Ports:                    []v1.ContainerPort{},
 			EnvFrom:                  ctr.EnvFrom,
 			Resources:                ctr.Resources,
 			LivenessProbe:            ctr.LivenessProbe,

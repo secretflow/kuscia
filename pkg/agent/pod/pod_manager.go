@@ -20,6 +20,7 @@ limitations under the License.
 package pod
 
 import (
+	"fmt"
 	"sync"
 
 	v1 "k8s.io/api/core/v1"
@@ -342,3 +343,13 @@ func (pm *basicManager) GetPodByMirrorPod(mirrorPod *v1.Pod) (*v1.Pod, bool) {
 	pod, ok := pm.podByFullName[pkgcontainer.GetPodFullName(mirrorPod)]
 	return pod, ok
 }
+
+func GetPortNumberByName(ports []v1.ContainerPort, portName string) (int32, error) {
+	for _, port := range ports {
+		if port.Name == portName {
+			return port.ContainerPort, nil
+		}
+	}
+	return 0, fmt.Errorf("no matching port found for name: %s", portName)
+}
+

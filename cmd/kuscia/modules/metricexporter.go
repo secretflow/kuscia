@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
 	"github.com/secretflow/kuscia/pkg/utils/readyz"
@@ -31,11 +32,13 @@ type metricExporterModule struct {
 	nodeExportPort   string
 	ssExportPort     string
 	metricExportPort string
+	labels           map[string]string
+	podManager       pod.Manager
 }
 
-func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
+func NewMetricExporter(i *ModuleRuntimeConfigs, podManager pod.Manager) (Module, error) {
 	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.MetricExportPort)
-	return &metricExporterModule{
+	exporter := &metricExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
 			name:         "metricexporter",
 			readyTimeout: 60 * time.Second,
@@ -47,15 +50,24 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		nodeExportPort:   i.NodeExportPort,
 		ssExportPort:     i.SsExportPort,
 		metricExportPort: i.MetricExportPort,
+		podManager:       podManager,
 		metricURLs: map[string]string{
 			"node-exporter": "http://localhost:" + i.NodeExportPort + "/metrics",
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
 			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
 		},
-	}, nil
+	}
+	return exporter, nil
 }
 
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
 	metricexporter.MetricExporter(ctx, exporter.metricURLs, exporter.metricExportPort)
 	return nil
+}
+
+func combine(map1, map2 map[string]string) map[string]string {
+	for k, v := range map2 {
+		map1[k] = v
+	}
+	return map1
 }

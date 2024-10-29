@@ -124,6 +124,8 @@ const (
 	TaskAliasAnnotationKey                = "kuscia.secretflow/task-alias"
 	TaskResourceGroupAnnotationKey        = "kuscia.secretflow/task-resource-group"
 	SelfClusterAsParticipantAnnotationKey = "kuscia.secretflow/self-cluster-as-participant"
+	MetricPathAnnotationKey               = "kuscia.secretflow/metric-path"
+	MetricPortAnnotationKey               = "kuscia.secretflow/metric-port"
 
 	TaskBandwidthLimitAnnotationPrefix = "kuscia.secretflow/bandwidth-limit-"
 
