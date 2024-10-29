@@ -214,7 +214,7 @@ func (c *DomainRouteController) checkConnectionHealthy(stopCh <-chan struct{}) {
 			for _, dr := range drs {
 				if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken && dr.Spec.Source == c.gateway.Namespace &&
 					dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name && dr.Status.TokenStatus.RevisionToken.Token != "" {
-					nlog.Debugf("checkConnectionHealthy of dr(%s)", dr.Name)
+					nlog.Infof("checkConnectionHealthy of dr(%s) revision %d", dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
 					err := c.checkConnectionStatus(dr, c.getDefaultClusterNameByDomainRoute(dr))
 					if err != nil {
 						nlog.Warn(err)
@@ -480,7 +480,11 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 			nlog.Error(err)
 			return err
 		}
-		if err := clusters.AddMasterProxyVirtualHost(cl.Name, c.getMasterProxyPath(), utils.ServiceMasterProxy, c.gateway.Namespace, token.Token); err != nil {
+		domains := []string{
+			"*.master.svc",
+			fmt.Sprintf("*.%s.svc", dr.Spec.Destination),
+		}
+		if err := clusters.AddMasterProxyVirtualHost(cl.Name, c.getMasterProxyPath(), utils.ServiceMasterProxy, c.gateway.Namespace, token.Token, domains); err != nil {
 			nlog.Error(err)
 			return err
 		}
@@ -531,10 +535,13 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				Source: dr.Spec.Source,
 				Tokens: tokenVals,
 			}
-			sourceHeader := generateRequestHeaders(dr)
 			if err := xds.UpdateSourceTokens(sourceToken, true); err != nil {
 				return err
 			}
+		}
+
+		if len(dr.Spec.RequestHeadersToAdd) > 0 {
+			sourceHeader := generateRequestHeaders(dr)
 			if err := xds.UpdateAppendHeaders(sourceHeader, true); err != nil {
 				return err
 			}
@@ -583,18 +590,19 @@ func (c *DomainRouteController) deleteEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 				return err
 			}
 		}
+		if len(dr.Spec.RequestHeadersToAdd) > 0 {
+			sourceHeader := &headerDecorator.HeaderDecorator_SourceHeader{
+				Source: dr.Spec.Source,
+			}
+			if err := xds.UpdateAppendHeaders(sourceHeader, false); err != nil {
+				return err
+			}
+		}
 		if !utils.IsThirdPartyTransit(dr.Spec.Transit) {
 			sourceToken := &kusciatokenauth.TokenAuth_SourceToken{
 				Source: dr.Spec.Source,
 			}
-			sourceHeader := &headerDecorator.HeaderDecorator_SourceHeader{
-				Source: dr.Spec.Source,
-			}
-			nlog.Debugf("delete token and sourceHeaders, source is %s", sourceToken.Source)
 			if err := xds.UpdateSourceTokens(sourceToken, false); err != nil {
-				return err
-			}
-			if err := xds.UpdateAppendHeaders(sourceHeader, false); err != nil {
 				return err
 			}
 			if utils.IsReverseTunnelTransit(dr.Spec.Transit) {
@@ -632,7 +640,6 @@ func (c *DomainRouteController) updateTransitVh(dr *kusciaapisv1alpha1.DomainRou
 	if !ok {
 		return fmt.Errorf("proto cannot cast to VirtualHost")
 	}
-
 	// new vh vs old vh
 	vhNew.Name = fmt.Sprintf("%s-to-%s", dr.Spec.Source, dr.Spec.Destination)
 	vhNew.Domains = []string{fmt.Sprintf("*.%s.svc", dr.Spec.Destination)}

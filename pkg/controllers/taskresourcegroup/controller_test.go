@@ -335,7 +335,9 @@ func TestHandleAddedTaskResource(t *testing.T) {
 				},
 			},
 		},
-	}
+		Status: kusciaapisv1alpha1.TaskResourceStatus{
+			Phase: kusciaapisv1alpha1.TaskResourcePhaseReserving,
+		}}
 
 	tests := []struct {
 		name string
@@ -392,6 +394,9 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 				},
 			},
 		},
+		Status: kusciaapisv1alpha1.TaskResourceStatus{
+			Phase: kusciaapisv1alpha1.TaskResourcePhaseReserving,
+		},
 	}
 
 	tr2 := &kusciaapisv1alpha1.TaskResource{
@@ -410,6 +415,9 @@ func TestHandleUpdatedTaskResource(t *testing.T) {
 					Name: "pod",
 				},
 			},
+		},
+		Status: kusciaapisv1alpha1.TaskResourceStatus{
+			Phase: kusciaapisv1alpha1.TaskResourcePhaseReserving,
 		},
 	}
 

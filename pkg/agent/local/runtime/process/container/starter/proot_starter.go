@@ -22,6 +22,7 @@ import (
 
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
+	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
@@ -30,6 +31,7 @@ import (
 // For more information, please refer to https://github.com/proot-me/proot/blob/master/doc/proot/manual.rst#proot
 type prootStarter struct {
 	*exec.Cmd
+	logger *logutils.ReopenableLogger
 }
 
 func NewProotStarter(c *InitConfig) (Starter, error) {
@@ -53,7 +55,7 @@ func NewProotStarter(c *InitConfig) (Starter, error) {
 	s.Cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
-
+	s.logger = c.LogFile
 	s.Cmd.Stdout = c.LogFile
 	s.Cmd.Stderr = c.LogFile
 
@@ -80,4 +82,12 @@ func (s *prootStarter) Command() *exec.Cmd {
 
 func (s *prootStarter) Release() error {
 	return nil
+}
+
+func (s *prootStarter) ReopenContainerLog() error {
+	return s.logger.ReopenFile()
+}
+
+func (s *prootStarter) CloseContainerLog() error {
+	return s.logger.Close()
 }

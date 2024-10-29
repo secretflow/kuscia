@@ -132,6 +132,10 @@ func (c *hostResourcesController) updateMemberJobByTaskSummary(ctx context.Conte
 				taskSummary.Spec.JobID, metav1.GetOptions{})
 		}
 		if err != nil {
+			if k8serrors.IsNotFound(err) && taskSummary.Status.CompletionTime != nil {
+				nlog.Infof("Member job is empty and host taskSummary %v completionTime is not empty, skip processing it", ikcommon.GetObjectNamespaceName(taskSummary))
+				return true, nil
+			}
 			nlog.Errorf("Failed to Get member job %v, %v", taskSummary.Spec.JobID, err)
 			return false, err
 		}

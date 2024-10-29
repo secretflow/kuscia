@@ -19,8 +19,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/natefinch/lumberjack.v2"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -52,10 +52,8 @@ func createTestInitConfig(t *testing.T) *InitConfig {
 				},
 			},
 		},
-		Rootfs: rootDir,
-		LogFile: &lumberjack.Logger{
-			Filename: filepath.Join(rootDir, "test.log"),
-		},
+		Rootfs:  rootDir,
+		LogFile: logutils.NewReopenableLogger(filepath.Join(rootDir, "test.log")),
 	}
 
 	return c

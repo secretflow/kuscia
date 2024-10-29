@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -63,6 +64,7 @@ type K8sProviderDependence struct {
 	NodeName        string
 	Namespace       string
 	NodeIP          string
+	KubeClient      clientset.Interface
 	BkClient        clientset.Interface
 	PodSyncHandler  framework.SyncHandler
 	ResourceManager *resource.KubeResourceManager
@@ -71,6 +73,7 @@ type K8sProviderDependence struct {
 }
 
 type K8sProvider struct {
+	kubeClient        clientset.Interface
 	bkClient          clientset.Interface
 	namespace         string
 	bkNamespace       string
@@ -96,10 +99,12 @@ type K8sProvider struct {
 
 	leaderElector election.Elector
 	recorder      record.EventRecorder
+	logManager    *K8sLogManager
 }
 
 func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	kp := &K8sProvider{
+		kubeClient:       dep.KubeClient,
 		bkClient:         dep.BkClient,
 		namespace:        dep.Namespace,
 		bkNamespace:      dep.K8sProviderCfg.Namespace,
@@ -179,9 +184,9 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	}
 
 	leaderElector := election.NewElector(
-		kp.bkClient,
-		kp.nodeName,
-		election.WithNamespace(kp.bkNamespace),
+		kp.kubeClient,
+		fmt.Sprintf("%s-agent", kp.namespace),
+		election.WithNamespace(kp.namespace),
 		election.WithOnNewLeader(kp.onNewLeader),
 		election.WithOnStartedLeading(kp.onStartedLeading),
 		election.WithOnStoppedLeading(kp.onStoppedLeading))
@@ -189,6 +194,14 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		return nil, errors.New("failed to new leader elector")
 	}
 	kp.leaderElector = leaderElector
+
+	if dep.K8sProviderCfg.EnableLogging {
+		podsStdoutDirectory := filepath.Join(dep.K8sProviderCfg.LogDirectory, defaultPodsDirName)
+		kp.logManager, err = NewK8sLogManager(kp.nodeName, podsStdoutDirectory, kp.bkClient, kp.bkNamespace, kp.namespace, dep.KubeClient)
+		if err != nil {
+			nlog.Warnf("Failed to new log manager, %v", err)
+		}
+	}
 
 	return kp, nil
 }
@@ -202,6 +215,14 @@ func (kp *K8sProvider) Start(ctx context.Context) error {
 	if !cache.WaitForCacheSync(ctx.Done(), kp.podsSynced, kp.configMapSynced, kp.secretSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
+
+	go func() {
+		if kp.logManager != nil {
+			if err := kp.logManager.Start(ctx); err != nil {
+				nlog.Warnf("Failed to start pod log manager, %v", err)
+			}
+		}
+	}()
 
 	kp.leaderElector.Run(ctx)
 
@@ -365,10 +386,10 @@ func normalizeSubResourceMeta(meta *metav1.ObjectMeta, ownerPodName string) {
 	}
 
 	meta.Name = name
-	if meta.Labels == nil {
-		meta.Labels = map[string]string{}
+	if meta.Annotations == nil {
+		meta.Annotations = map[string]string{}
 	}
-	meta.Labels[labelOwnerPodName] = ownerPodName
+	meta.Annotations[labelOwnerPodName] = ownerPodName
 }
 
 func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
@@ -643,12 +664,12 @@ func cleanupSubResource[T metav1.Object](ctx context.Context, object T, podGette
 		return nil
 	}
 
-	objLabels := object.GetLabels()
-	if objLabels == nil {
+	annotations := object.GetAnnotations()
+	if annotations == nil {
 		return nil
 	}
 
-	ownerPodName, ok := objLabels[labelOwnerPodName]
+	ownerPodName, ok := annotations[labelOwnerPodName]
 	if !ok {
 		return nil
 	}

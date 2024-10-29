@@ -76,9 +76,8 @@ func (c *Client) postProto(ctx context.Context, request proto.Message, response 
 	return nil
 }
 
-func (c *Client) postProtoWithRetry(ctx context.Context, request proto.Message, response proto.Message, path string) error {
+func (c *Client) postProtoWithRetry(ctx context.Context, request proto.Message, response proto.Message, path string, attempt int) error {
 	var err error
-	attempt := 5
 	backoff := time.Second
 	for i := 1; i <= attempt; i++ {
 		err = c.postProto(ctx, request, response, path)
@@ -131,31 +130,31 @@ func (c *Client) getURL(path string) string {
 
 func (c *Client) RegisterEndpoint(ctx context.Context, request *diagnose.RegisterEndpointRequest) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseRegisterEndpointPath))
+	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseRegisterEndpointPath), 5)
 	return
 }
 
 func (c *Client) SubmitReport(ctx context.Context, request *diagnose.SubmitReportRequest) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseSubmitReportPath))
+	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseSubmitReportPath), 5)
 	return
 }
 
 func (c *Client) Done(ctx context.Context) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, nil, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseDonePath))
+	err = c.postProtoWithRetry(ctx, nil, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseDonePath), 5)
 	return
 }
 
 func (c *Client) Healthy(ctx context.Context) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, nil, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseHealthyPath))
+	err = c.postProtoWithRetry(ctx, nil, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseHealthyPath), 5)
 	return
 }
 
 func (c *Client) Mock(ctx context.Context, request *diagnose.MockRequest) (response *diagnose.MockResponse, err error) {
 	response = &diagnose.MockResponse{}
-	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseMockPath))
+	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseMockPath), 1)
 	return
 }
 

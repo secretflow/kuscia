@@ -188,7 +188,7 @@ func (kp *K8sProvider) onNewLeader(identity string) {
 func (kp *K8sProvider) onStartedLeading(ctx context.Context) {
 	nlog.Infof("K8s provider %v start leading", kp.nodeName)
 
-	ticker := time.NewTicker(time.Minute)
+	ticker := time.NewTicker(5 * time.Minute)
 
 	for {
 		select {

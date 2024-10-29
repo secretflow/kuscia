@@ -29,7 +29,7 @@ PKG_EXCLUDE_TESTS = "crd|testing|test"
 TEST_SUITE ?= all
 
 PROOT_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
-ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.1b0
+ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.2b0
 DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.1b0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
