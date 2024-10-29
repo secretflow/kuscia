@@ -408,3 +408,18 @@ func (r *Runtime) ImageStatus(ctx context.Context, image *runtimeapi.ImageSpec, 
 func (r *Runtime) PullImage(ctx context.Context, image *runtimeapi.ImageSpec, auth *runtimeapi.AuthConfig, podSandboxConfig *runtimeapi.PodSandboxConfig) (string, error) {
 	return image.Image, r.imageStore.PullImage(image.Image, auth)
 }
+
+func (r *Runtime) ReopenContainerLog(ctx context.Context, containerID string) error {
+	nlog.Infof("Reopen container %q's log", containerID)
+
+	container, err := r.containerStore.Get(containerID)
+	if err != nil {
+		return fmt.Errorf("failed to find container %q, detail-> %v", containerID, err)
+	}
+
+	if err := container.ReopenContainerLog(); err != nil {
+		return fmt.Errorf("failed to start container %q, detail-> %v", containerID, err)
+	}
+
+	return nil
+}

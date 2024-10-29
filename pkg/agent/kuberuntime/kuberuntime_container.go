@@ -66,7 +66,7 @@ var (
 	ErrCreateContainer = errors.New("CreateContainerError")
 )
 
-func calcRestartCountByLogDir(path string) (int, error) {
+func CalcRestartCountByLogDir(path string) (int, error) {
 	// if the path doesn't exist then it's not an error
 	if _, err := os.Stat(path); err != nil {
 		return 0, nil
@@ -226,7 +226,7 @@ func (m *kubeGenericRuntimeManager) generateContainerConfig(container *v1.Contai
 	if err != nil {
 		return nil, cleanupAction, fmt.Errorf("create container log directory for container [%s] failed, detail-> %v", container.Name, err)
 	}
-	containerLogsPath := buildContainerLogsPath(container.Name, restartCount)
+	containerLogsPath := BuildContainerLogsPath(container.Name, restartCount)
 	restartCountUint32 := uint32(restartCount)
 	config := &runtimeapi.ContainerConfig{
 		Metadata: &runtimeapi.ContainerMetadata{
@@ -298,7 +298,7 @@ func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandb
 		// the latest restartCount by checking the log name -
 		// {restartCount}.log - and adding 1 to it.
 		logDir := BuildContainerLogsDirectory(m.podStdoutRootDirectory, pod.Namespace, pod.Name, pod.UID, container.Name)
-		restartCount, err = calcRestartCountByLogDir(logDir)
+		restartCount, err = CalcRestartCountByLogDir(logDir)
 		if err != nil {
 			nlog.Warnf("Log directory %q exists but could not calculate restartCount: %v", logDir, err)
 		}

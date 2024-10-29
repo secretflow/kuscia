@@ -174,6 +174,8 @@ type K8sProviderCfg struct {
 	LabelsToAdd      map[string]string     `yaml:"labelsToAdd,omitempty"`
 	AnnotationsToAdd map[string]string     `yaml:"annotationsToAdd,omitempty"`
 	RuntimeClassName string                `yaml:"runtimeClassName,omitempty"`
+	EnableLogging    bool                  `yaml:"enableLogging,omitempty"`
+	LogDirectory     string                `yaml:"logDirectory,omitempty"`
 }
 
 type ProviderCfg struct {

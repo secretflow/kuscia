@@ -257,7 +257,7 @@ func TestRestartCountByLogDir(t *testing.T) {
 			err = os.WriteFile(filepath.Join(tempDirPath, filename), []byte("a log line"), 0600)
 			assert.NoError(t, err, "could not write log file")
 		}
-		count, _ := calcRestartCountByLogDir(tempDirPath)
+		count, _ := CalcRestartCountByLogDir(tempDirPath)
 		assert.Equal(t, count, tc.restartCount, "count %v should equal restartCount %v", count, tc.restartCount)
 	}
 }
@@ -267,7 +267,7 @@ func makeExpectedConfig(m *kubeGenericRuntimeManager, pod *v1.Pod, containerInde
 	podIP := ""
 	restartCount := 0
 	opts, _, _ := m.runtimeHelper.GenerateRunContainerOptions(pod, container, podIP, []string{podIP})
-	containerLogsPath := buildContainerLogsPath(container.Name, restartCount)
+	containerLogsPath := BuildContainerLogsPath(container.Name, restartCount)
 	restartCountUint32 := uint32(restartCount)
 	envs := make([]*runtimeapi.KeyValue, len(opts.Envs))
 

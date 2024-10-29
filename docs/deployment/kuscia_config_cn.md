@@ -47,6 +47,8 @@ runk:
   dnsServers:
   # 机构 K8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
   kubeconfigFile:
+  # 是否开启 kuscia pod 日志记录，默认为 false （不开启），当开启时需要在rbac.yaml (示例：https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rbac.yaml) 里开通pods/log权限
+  enableLogging:
 
 # 节点可用于调度应用的容量，runc/runp 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
 capacity:

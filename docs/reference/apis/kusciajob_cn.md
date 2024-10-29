@@ -746,6 +746,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | task_input_config        | string                             | 必填 | 任务配置                                                                                                                                                      |
 | priority                 | string                             | 可选 | 优先级，值越大优先级越高                                                                                                                                              |
 | schedule_config          | [ScheduleConfig](#schedule-config) | 可选 | 任务调度配置                                                                                                                                                    |
+| tolerable                | bool                               | 可选 | 标识 Task 是否可容忍失败（默认为 false），若 tolerable=true 即使此 task 失败也不会导致 Job 失败。若 tolerable=false 则此 task 失败会判定整个 Job 失败。                     |
 
 {#schedule-config}
 

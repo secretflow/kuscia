@@ -14,6 +14,8 @@
 
 package common
 
+import "fmt"
+
 const (
 	DiagnoseNetworkGroup         = "diagnose/v1/network"
 	DiagnoseMockPath             = "mock"
@@ -32,3 +34,7 @@ const (
 const (
 	CRDDomainRoute = "cdr"
 )
+
+func GenerateDomainDataID(jobID, party string) string {
+	return fmt.Sprintf("%v-%v", jobID, party)
+}

@@ -68,8 +68,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
 			options.LabelSelector = common.LabelController
-		},
-		),
+		}),
 	)
 	podInformer := kubeInformerFactory.Core().V1().Pods()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
@@ -194,12 +193,12 @@ func (c *PortController) handlePodEvent(pod *corev1.Pod, event ResourceEvent) {
 }
 
 func (c *PortController) controlLoop() {
-	scanPortProvidersTimer := time.NewTimer(c.scanPortProvidersInterval)
-	defer scanPortProvidersTimer.Stop()
+	scanPortProvidersTicker := time.NewTicker(c.scanPortProvidersInterval)
+	defer scanPortProvidersTicker.Stop()
 
 	for {
 		select {
-		case <-scanPortProvidersTimer.C:
+		case <-scanPortProvidersTicker.C:
 			c.scanPortProviders()
 		case <-c.ctx.Done():
 			return // exit

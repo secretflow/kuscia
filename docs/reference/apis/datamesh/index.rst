@@ -7,3 +7,4 @@ Kuscia DataMesh API
     summary_cn
     domaindata_cn
     domaindatasource_cn
+    datacrud_cn

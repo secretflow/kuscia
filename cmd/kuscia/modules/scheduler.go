@@ -93,6 +93,11 @@ func (s *schedulerModule) Run(ctx context.Context) error {
 	if err := common.RenderConfig(configPathTmpl, configPath, s); err != nil {
 		return err
 	}
+	// Configz registration.
+	cz, err := configz.New("componentconfig")
+	if err != nil {
+		return fmt.Errorf("unable to register configz: %s", err)
+	}
 
 	s.opts.ConfigFile = configPath
 
@@ -105,6 +110,7 @@ func (s *schedulerModule) Run(ctx context.Context) error {
 			return err
 		}
 
+		cz.Set(cc)
 		nlog.Infof("Start to run scheduler...")
 		err = s.startScheduler(ctx, cc, sched)
 
@@ -142,13 +148,6 @@ func (s *schedulerModule) Name() string {
 }
 
 func (s *schedulerModule) startScheduler(ctx context.Context, cc *schedulerserverconfig.CompletedConfig, sched *scheduler.Scheduler) error {
-	// Configz registration.
-	if cz, err := configz.New("componentconfig"); err == nil {
-		cz.Set(cc.ComponentConfig)
-	} else {
-		return fmt.Errorf("unable to register configz: %s", err)
-	}
-
 	// Start events processing pipeline.
 	cc.EventBroadcaster.StartRecordingToSink(ctx.Done())
 	defer cc.EventBroadcaster.Shutdown()

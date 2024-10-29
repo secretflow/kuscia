@@ -77,7 +77,7 @@ function pre_check() {
 }
 
 function init_k3s_data() {
-  local random=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+  local random=$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)
   local kuscia_tmp_container="kuscia_tmp_${random}"
   OLD_DOMAIN_K3S_DB_DIR="${HOME}/kuscia/${domain_ctr}/k3s"
   if [ -d "${DOMAIN_K3S_DB_DIR}" ]; then
@@ -274,8 +274,8 @@ function generate_hostname() {
     local prefix=$1
     local local_hostname
     local_hostname=$(hostname)
-    local_hostname=$(echo "${local_hostname}" | tr '[:upper:]_.' '[:lower:]--' | sed 's/[^a-z0-9]$//g' )
-    echo "${prefix}-${local_hostname}" | cut -c 1-63
+    local_hostname=$(echo "${prefix}-${local_hostname}" | cut -c 1-63 | tr '[:upper:]_.' '[:lower:]--' | sed 's/^[^a-z0-9]//; s/[^a-z0-9]$//g' )
+    echo "${local_hostname}"
 }
 
 function copy_between_containers() {
