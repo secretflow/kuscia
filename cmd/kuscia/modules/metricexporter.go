@@ -20,8 +20,10 @@ import (
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/agent/pod"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/metricexporter"
 	"github.com/secretflow/kuscia/pkg/metricexporter/envoyexporter"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
@@ -32,11 +34,23 @@ type metricExporterModule struct {
 	nodeExportPort   string
 	ssExportPort     string
 	metricExportPort string
-	labels           map[string]string
 	podManager       pod.Manager
 }
 
-func NewMetricExporter(i *ModuleRuntimeConfigs, podManager pod.Manager) (Module, error) {
+func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
+
+	var podManager pod.Manager
+	if i.RunMode != common.RunModeMaster {
+		if i.Clients != nil && i.Clients.KubeClient != nil {
+			mirrorPodClient := pod.NewBasicMirrorClient(i.Clients.KubeClient, nil)
+			podManager = pod.NewBasicPodManager(mirrorPodClient)
+		} else {
+			nlog.Warn("KubeClient is not available; skipping podManager creation")
+		}
+	} else {
+		nlog.Info("Running in master mode, skipping podManager creation")
+	}
+
 	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.MetricExportPort)
 	exporter := &metricExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
@@ -63,11 +77,4 @@ func NewMetricExporter(i *ModuleRuntimeConfigs, podManager pod.Manager) (Module,
 func (exporter *metricExporterModule) Run(ctx context.Context) error {
 	metricexporter.MetricExporter(ctx, exporter.metricURLs, exporter.metricExportPort)
 	return nil
-}
-
-func combine(map1, map2 map[string]string) map[string]string {
-	for k, v := range map2 {
-		map1[k] = v
-	}
-	return map1
 }

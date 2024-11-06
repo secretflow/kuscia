@@ -198,7 +198,7 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 		}
 	}
 
-	data, err := cr.makeDataMap(ctx.Pod.Annotations, pod.Labels, envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, envs)
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) err
 	for _, env := range ctx.Envs {
 		envs[env.Name] = env.Value
 	}
-	data, err := cr.makeDataMap(ctx.Pod.Annotations, ctx.Pod.Labels, envs)
+	data, err := cr.makeDataMap(ctx.Pod.Annotations, envs)
 	if err != nil {
 		return err
 	}
@@ -465,12 +465,11 @@ func (cr *configRender) renderConfig(templateContent string, data map[string]str
 	return buf.String(), nil
 }
 
-func (cr *configRender) makeDataMap(annotations, labels, envs map[string]string) (map[string]string, error) {
+func (cr *configRender) makeDataMap(annotations, envs map[string]string) (map[string]string, error) {
 	mergedData := map[string]string{}
 	var err error
 
 	mergeDataMap(mergedData, envs)
-	mergeDataMap(mergedData, labels)
 
 	data := cr.makeDataMapFromLocal()
 	mergeDataMap(mergedData, data)

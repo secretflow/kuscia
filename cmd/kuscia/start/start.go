@@ -20,14 +20,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	"github.com/secretflow/kuscia/pkg/agent/config"
-	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/runtime"
@@ -90,25 +87,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("domainroute", modules.NewDomainRoute, autonomy, master, lite)
 	mm.Regist("interconn", modules.NewInterConn, autonomy, master)
 	mm.Regist("kusciaapi", modules.NewKusciaAPI, autonomy, lite, master)
-	mm.Regist("metricexporter", func(i *modules.ModuleRuntimeConfigs) (modules.Module, error) {
-		k8sConfig, err := rest.InClusterConfig()
-		if err != nil {
-			nlog.Fatalf("Failed to create in-cluster config: %v", err)
-			return nil, err
-		}
-
-		clientset, err := kubernetes.NewForConfig(k8sConfig)
-		if err != nil {
-			nlog.Fatalf("Failed to create Kubernetes clientset: %v", err)
-			return nil, err
-		}
-
-		mirrorPodClient := pkgpod.NewBasicMirrorClient(clientset, nil)
-		podManager := pkgpod.NewBasicPodManager(mirrorPodClient)
-
-		return modules.NewMetricExporter(i, podManager)
-
-	}, autonomy, lite, master)
+	mm.Regist("metricexporter", modules.NewMetricExporter, autonomy, lite, master)
 	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)

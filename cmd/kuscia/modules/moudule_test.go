@@ -20,7 +20,6 @@ import (
 	"context"
 	"testing"
 
-	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -39,8 +38,7 @@ func Test_MetricExporter(t *testing.T) {
 	runCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	config := mockModuleRuntimeConfig(t)
-	podManager := pkgpod.NewBasicPodManager(nil)
-	m, err := NewMetricExporter(config, podManager)
+	m, err := NewMetricExporter(config)
 	assert.NoError(t, err)
 	assert.NoError(t, runModule(runCtx, m))
 }
