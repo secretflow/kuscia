@@ -1,4 +1,3 @@
-
 SHELL := /bin/bash
 # Image URL to use all building image targets
 DATETIME = $(shell date +"%Y%m%d%H%M%S")
