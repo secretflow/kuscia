@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/register"
+	"github.com/secretflow/kuscia/pkg/utils/prome_regist"
 )
 
 var counters = make(map[string]prometheus.Counter)
@@ -41,16 +41,16 @@ func produceMetric(reg *prometheus.Registry,
 	help := name + " aggregated by " + labels["aggregation_function"] + " from ss"
 	nameSpace := "ss"
 	if metricType == "Counter" {
-		counters[metricID] = register.ProduceCounter(nameSpace, name, help, labels)
+		counters[metricID] = prome_regist.ProduceCounter(nameSpace, name, help, labels)
 		reg.MustRegister(counters[metricID])
 	} else if metricType == "Gauge" {
-		gauges[metricID] = register.ProduceGauge(nameSpace, name, help, labels)
+		gauges[metricID] = prome_regist.ProduceGauge(nameSpace, name, help, labels)
 		reg.MustRegister(gauges[metricID])
 	} else if metricType == "Histogram" {
-		histograms[metricID] = register.ProduceHistogram(nameSpace, name, help, labels)
+		histograms[metricID] = prome_regist.ProduceHistogram(nameSpace, name, help, labels)
 		reg.MustRegister(histograms[metricID])
 	} else if metricType == "Summary" {
-		summaries[metricID] = register.ProduceSummary(nameSpace, name, help, labels)
+		summaries[metricID] = prome_regist.ProduceSummary(nameSpace, name, help, labels)
 		reg.MustRegister(summaries[metricID])
 	}
 	return reg
@@ -67,7 +67,7 @@ func ProduceRegister() *prometheus.Registry {
 func UpdateMetrics(reg *prometheus.Registry,
 	clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
-		metricID := register.Formalize(metric)
+		metricID := prome_regist.Formalize(metric)
 		splitedMetric := strings.Split(metric, ";")
 		var metricTypeID string
 		metricTypeID = splitedMetric[len(splitedMetric)-2]
