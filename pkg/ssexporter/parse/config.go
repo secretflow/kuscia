@@ -29,8 +29,9 @@ const (
 	MetricRto              = "rto"
 	MetricByteSent         = "bytes_sent"
 	MetricBytesReceived    = "bytes_received"
-	SsLocalAddr            = "localAddr"
-	SsPeerAddr             = "peerAddr"
+
+	SsLocalAddr = "localAddr"
+	SsPeerAddr  = "peerAddr"
 
 	AggSum   = "sum"
 	AggAvg   = "avg"

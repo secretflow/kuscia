@@ -33,8 +33,9 @@ const (
 	MetricMemory         = "memory_usage"
 	MetricDisk           = "disk_io"
 	MetricInodes         = "inodes"
-	KtLocalAddr          = "localAddr"
-	KtPeerAddr           = "peerAddr"
+
+	KtLocalAddr = "localAddr"
+	KtPeerAddr  = "peerAddr"
 
 	AggSum   = "sum"
 	AggAvg   = "avg"
