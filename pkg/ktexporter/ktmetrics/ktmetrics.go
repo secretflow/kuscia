@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 	"os"
 
 	"github.com/secretflow/kuscia/pkg/ktexporter/parse"
+	"github.com/secretflow/kuscia/pkg/metricexporter/dealmetrics"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -335,13 +335,13 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if metric != parse.KtLocalAddr && metric != parse.KtPeerAddr {
 				var err error
 				if aggFunc == parse.AggSum {
-					clusterResults[metricID], err = Sum(networkResults, metric)
+					clusterResults[metricID], err = dealmetrics.Sum(networkResults, metric)
 				} else if aggFunc == parse.AggAvg {
-					clusterResults[metricID], err = Avg(networkResults, metric)
+					clusterResults[metricID], err = dealmetrics.Avg(networkResults, metric)
 				} else if aggFunc == parse.AggMax {
-					clusterResults[metricID], err = Max(networkResults, metric)
+					clusterResults[metricID], err = dealmetrics.Max(networkResults, metric)
 				} else if aggFunc == parse.AggMin {
-					clusterResults[metricID], err = Min(networkResults, metric)
+					clusterResults[metricID], err = dealmetrics.Min(networkResults, metric)
 				}
 				if err != nil {
 					nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
@@ -351,70 +351,6 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 		}
 	}
 	return clusterResults, nil
-}
-
-// Sum an aggregation function to sum up two network metrics
-func Sum(metrics []map[string]string, key string) (float64, error) {
-	sum := 0.0
-	for _, metric := range metrics {
-		val, err := strconv.ParseFloat(metric[key], 64)
-		if err != nil {
-			nlog.Warnf("fail to parse float: %s, key: %s, value: %f", metric[key], key, val)
-			return sum, err
-		}
-		sum += val
-	}
-	return sum, nil
-}
-
-// Avg an aggregation function to calculate the average of two network metrics
-func Avg(metrics []map[string]string, key string) (float64, error) {
-	sum, err := Sum(metrics, key)
-	if err != nil {
-		nlog.Warnf("Fail to get the sum of kt metrics, err: %v", err)
-		return sum, err
-	}
-	return sum / float64(len(metrics)), nil
-}
-
-// Max an aggregation function to calculate the maximum of two network metrics
-func Max(metrics []map[string]string, key string) (float64, error) {
-	max := math.MaxFloat64 * (-1)
-	for _, metric := range metrics {
-		val, err := strconv.ParseFloat(metric[key], 64)
-		if err != nil {
-			nlog.Warn("fail to parse float")
-			return max, err
-		}
-		if val > max {
-			max = val
-		}
-	}
-	return max, nil
-}
-
-// Min an aggregation function to calculate the minimum of two network metrics
-func Min(metrics []map[string]string, key string) (float64, error) {
-	min := math.MaxFloat64
-	for _, metric := range metrics {
-		val, err := strconv.ParseFloat(metric[key], 64)
-		if err != nil {
-			nlog.Warn("fail to parse float")
-			return min, err
-		}
-		if val < min {
-			min = val
-		}
-	}
-	return min, nil
-}
-
-// Rate an aggregation function to calculate the rate of a network metric between to metrics
-func Rate(metric1 float64, metric2 float64) float64 {
-	if metric2 == 0.0 {
-		return 0
-	}
-	return metric1 / metric2
 }
 
 // Alert an alert function that reports whether a metric value exceeds a given threshold
@@ -454,18 +390,6 @@ func GetKtMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 	}
 	// Return the aggregated ktResults
 	return ktResults, nil
-}
-
-func GetMetricChange(lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
-	for metric, value := range currentMetricValues {
-		currentMetricValues[metric] = currentMetricValues[metric] - lastMetricValues[metric]
-		if currentMetricValues[metric] < 0 {
-			currentMetricValues[metric] = 0
-		}
-		lastMetricValues[metric] = value
-
-	}
-	return lastMetricValues, currentMetricValues
 }
 
 func findCIDByPrefix(prefix string) (string, error) {
