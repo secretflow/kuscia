@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/metricexporter/domain"
 	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -240,11 +241,11 @@ func GetSsMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 		nlog.Warnf("Fail to get the hostname, err: %v", err)
 		return ssResults, err
 	}
-	sourceIP := parse.GetIPFromDomain(hostName)
+	sourceIP := domain.GetIPFromDomain(hostName)
 	destinationIP := make(map[string][]string)
 	for _, endpointAddresses := range clusterAddresses {
 		for _, endpointAddress := range endpointAddresses {
-			destinationIP[endpointAddress] = parse.GetIPFromDomain(strings.Split(endpointAddress, ":")[0])
+			destinationIP[endpointAddress] = domain.GetIPFromDomain(strings.Split(endpointAddress, ":")[0])
 		}
 	}
 	// group metrics by the domain name

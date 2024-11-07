@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/metricexporter/domain"
 	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
 	"github.com/secretflow/kuscia/pkg/ssexporter/promexporter"
 	"github.com/secretflow/kuscia/pkg/ssexporter/ssmetrics"
@@ -36,7 +37,7 @@ var (
 func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string, exportPeriod uint, port string) error {
 	// read the config
 	_, AggregationMetrics := parse.LoadMetricConfig()
-	clusterAddresses, _ := parse.GetClusterAddress(domainID)
+	clusterAddresses, _ := domain.GetClusterAddress(domainID)
 	localDomainName := domainID
 	var MetricTypes = promexporter.NewMetricTypes()
 
@@ -52,7 +53,7 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 	go func(runMode pkgcom.RunModeType, reg *prometheus.Registry, MetricTypes map[string]string, exportPeriods uint, lastClusterMetricValues map[string]float64) {
 		for range ticker.C {
 			// get clusterName and clusterAddress
-			clusterAddresses, _ = parse.GetClusterAddress(domainID)
+			clusterAddresses, _ = domain.GetClusterAddress(domainID)
 			// get cluster metrics
 			currentClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
 			if err != nil {
