@@ -458,7 +458,6 @@ func GetKtMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 
 func GetMetricChange(lastMetricValues map[string]float64, currentMetricValues map[string]float64) (map[string]float64, map[string]float64) {
 	for metric, value := range currentMetricValues {
-		nlog.Info("3333366666")
 		currentMetricValues[metric] = currentMetricValues[metric] - lastMetricValues[metric]
 		if currentMetricValues[metric] < 0 {
 			currentMetricValues[metric] = 0
