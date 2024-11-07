@@ -111,9 +111,7 @@ func ProduceRegister() *prometheus.Registry {
 
 func UpdateMetrics(reg *prometheus.Registry,
 	clusterResults map[string]float64, MetricTypes map[string]string) {
-	nlog.Info("333335555")
 	for metric, val := range clusterResults {
-		nlog.Info("333334444")
 		metricID := formalize(metric)
 		splitedMetric := strings.Split(metric, ";")
 		var metricTypeID string
