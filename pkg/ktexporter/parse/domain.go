@@ -16,7 +16,6 @@
 package parse
 
 import (
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -58,11 +57,7 @@ func GetClusterAddress(domainID string) (map[string][]string, error) {
 		nlog.Error("Fail to get the results of config_dump", err)
 		return endpointAddresses, err
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-		}
-	}(resp.Body)
+	defer resp.Body.Close()
 	// parse the results of config_dump
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -70,7 +65,9 @@ func GetClusterAddress(domainID string) (map[string][]string, error) {
 		return endpointAddresses, err
 	}
 	res := make(map[string]interface{})
-	err = jsoniter.Unmarshal(body, &res)
+	if err := jsoniter.Unmarshal(body, &res); err != nil {
+		return endpointAddresses, err
+	}
 	configs := jsoniter.Get(body, "configs")
 
 	for i := 0; ; i++ {
