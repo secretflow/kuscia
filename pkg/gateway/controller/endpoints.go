@@ -496,7 +496,7 @@ func (ec *EndpointsController) generateVirtualHost(namespace string, name string
 		accessDomainRegex := fmt.Sprintf("(%s)", domains)
 		virtualHost.Routes[0].Match.Headers = []*route.HeaderMatcher{
 			{
-				Name: "Kuscia-Source",
+				Name: "Kuscia-Origin-Source",
 				HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
 					StringMatch: &matcher.StringMatcher{
 						MatchPattern: &matcher.StringMatcher_SafeRegex{

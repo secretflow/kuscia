@@ -141,6 +141,7 @@ func RunAppCommand(ctx context.Context, configFile string) error {
 	// otherwise the node resgisters its own endpoint to peer in manual mode.
 	// this is based on the fact in manual mode that there must be one node which doesn't know its peer's endpoint due to network issue
 	if config.PeerEndpoint == "" {
+		nlog.Infof("Wait for peer to register endpoint")
 		config.PeerEndpoint = diagnoseServer.WaitClient(ctx)
 		if config.PeerEndpoint == "" {
 			return fmt.Errorf("wait client received context done")
@@ -148,8 +149,10 @@ func RunAppCommand(ctx context.Context, configFile string) error {
 	} else {
 		needRegister = config.Manual
 	}
+	nlog.Infof("Init Client")
 	cli := client.NewDiagnoseClient(config.PeerEndpoint)
 	if needRegister {
+		nlog.Infof("Register Endpoint %s to peer", config.PeerEndpoint)
 		registerEndpointReq := new(diagnose.RegisterEndpointRequest)
 		registerEndpointReq.Endpoint = config.SelfEndpoint
 		if _, err := cli.RegisterEndpoint(ctx, registerEndpointReq); err != nil {

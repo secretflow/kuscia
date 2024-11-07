@@ -24,7 +24,6 @@ import (
 	"syscall"
 	"time"
 
-	"gopkg.in/natefinch/lumberjack.v2"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	st "github.com/secretflow/kuscia/pkg/agent/local/runtime/process/container/starter"
@@ -32,6 +31,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/local/store"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
+	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	"github.com/secretflow/kuscia/pkg/utils/cgroup"
 	"github.com/secretflow/kuscia/pkg/utils/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -222,13 +222,7 @@ func (c *Container) buildStarter() (st.Starter, error) {
 		return nil, err
 	}
 
-	logFile := &lumberjack.Logger{
-		Filename:   c.LogPath,
-		MaxSize:    defaultMaxLogFileSizeMB,
-		MaxBackups: defaultMaxLogFiles,
-		MaxAge:     defaultMaxLogAgeInDays,
-		LocalTime:  true,
-	}
+	logFile := logutils.NewReopenableLogger(c.LogPath)
 
 	workingDir := c.Config.WorkingDir
 	if stdMode && workingDir == "" {
@@ -396,6 +390,12 @@ func (c *Container) signalOnExit(starter st.Starter) {
 		c.status.ExitCode = starter.Command().ProcessState.ExitCode()
 	}
 
+	// close container log
+	err := starter.CloseContainerLog()
+	if err != nil {
+		nlog.Warnf("Close container %q log error %s", c.ID, err)
+	}
+
 	nlog.Infof("Container %q exited, state=%v", c.ID, starter.Command().ProcessState.String())
 }
 
@@ -488,6 +488,12 @@ func (c *Container) GetStatus() Status {
 	defer c.RUnlock()
 
 	return c.status
+}
+
+func (c *Container) ReopenContainerLog() error {
+	c.RLock()
+	defer c.RUnlock()
+	return c.starter.ReopenContainerLog()
 }
 
 // toCRIContainerStatus converts internal container object to CRI container status.

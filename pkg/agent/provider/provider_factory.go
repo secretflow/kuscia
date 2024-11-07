@@ -39,7 +39,7 @@ type Factory interface {
 	BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (kri.PodProvider, error)
 }
 
-func NewFactory(agentConfig *config.AgentConfig) (Factory, error) {
+func NewFactory(agentConfig *config.AgentConfig, kubeClient kubernetes.Interface) (Factory, error) {
 	switch agentConfig.Provider.Runtime {
 	case config.ProcessRuntime:
 		fallthrough
@@ -71,7 +71,7 @@ func NewFactory(agentConfig *config.AgentConfig) (Factory, error) {
 			}
 		}
 
-		return &k8sRuntimeFactory{agentConfig: agentConfig, bkClient: bkClient}, nil
+		return &k8sRuntimeFactory{agentConfig: agentConfig, kubeClient: kubeClient, bkClient: bkClient}, nil
 	default:
 		return nil, fmt.Errorf("unknown runtime: %s", agentConfig.Provider.Runtime)
 	}
@@ -200,6 +200,7 @@ func (f *containerRuntimeFactory) BuildPodProvider(nodeName string, eventRecorde
 
 type k8sRuntimeFactory struct {
 	agentConfig *config.AgentConfig
+	kubeClient  kubernetes.Interface
 	bkClient    kubernetes.Interface
 }
 
@@ -238,6 +239,7 @@ func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder reco
 		NodeName:        nodeName,
 		Namespace:       f.agentConfig.Namespace,
 		NodeIP:          f.agentConfig.NodeIP,
+		KubeClient:      f.kubeClient,
 		BkClient:        f.bkClient,
 		PodSyncHandler:  podsController,
 		ResourceManager: resourceManager,

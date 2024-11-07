@@ -22,6 +22,8 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 ### 创建数据源
 
+如果创建的数据源是为了DataMesh（DataProxy）使用，需要确保数据源的配置满足一定的权限要求。详情请见[DataMesh数据读写-注意事项](./datamesh/datacrud_cn.md#注意事项)
+
 #### HTTP 路径
 
 /api/v1/domaindatasource/create
@@ -103,7 +105,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
 #         "virtualhost": true (阿里云 OSS 需要配置此项)
-#         "storage_type": "minio" (Minio 需要配置此项)
+          "storage_type": "oss" (oss/minio)
       }
   },
   "access_directly": true

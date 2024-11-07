@@ -101,8 +101,8 @@ func NewTaskGroup(server *server.HTTPServerBean, cli *client.Client, config *Net
 	if err != nil {
 		nlog.Fatalf("init datamesh conn failed, %v", err)
 	}
-	tg.SelfDomainDataID = fmt.Sprintf("%s-%s", config.JobID, config.SelfDomain)
-	tg.PeerDomainDataID = fmt.Sprintf("%s-%s", config.JobID, config.PeerDomain)
+	tg.SelfDomainDataID = dcommon.GenerateDomainDataID(config.JobID, config.SelfDomain)
+	tg.PeerDomainDataID = dcommon.GenerateDomainDataID(config.JobID, config.PeerDomain)
 	tg.JobConfig = config
 
 	tg.tasks = append(tg.tasks, NewConnectionTask(tg.diagnoseClient))

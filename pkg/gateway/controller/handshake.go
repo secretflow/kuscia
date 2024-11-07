@@ -152,23 +152,25 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 	switch out.State {
 	case TokenReady:
 		if !dr.Status.TokenStatus.RevisionToken.IsReady {
+			revision := dr.Status.TokenStatus.RevisionToken.Revision
 			dr = dr.DeepCopy()
 			dr.Status.TokenStatus.RevisionToken.IsReady = true
 			dr.Status.IsDestinationUnreachable = false
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			if err == nil {
-				nlog.Infof("Domainroute %s found destination token(revsion %d) ready", dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
+				nlog.Infof("Domainroute %s found destination token(revsion %d) ready", dr.Name, revision)
 			}
 			return err
 		}
 		return nil
 	case TokenNotFound:
 		if dr.Status.TokenStatus.RevisionToken.Token != "" || dr.Status.TokenStatus.Tokens != nil || dr.Status.TokenStatus.RevisionToken.IsReady {
+			revision := dr.Status.TokenStatus.RevisionToken.Revision
 			dr = dr.DeepCopy()
 			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			if err == nil {
-				nlog.Infof("Domainroute %s found destination token(revsion %d) not exist", dr.Name, dr.Status.TokenStatus.RevisionToken.Revision)
+				nlog.Infof("Domainroute %s found destination token(revsion %d) not exist", dr.Name, revision)
 			}
 			return err
 		}
@@ -389,7 +391,10 @@ func (c *DomainRouteController) handShakeHandle(w http.ResponseWriter, r *http.R
 			State:     TokenNotReady,
 		}
 
-		domainID := r.Header.Get("Kuscia-Source")
+		domainID := r.Header.Get("Kuscia-Origin-Source")
+		if domainID == "" {
+			domainID = r.Header.Get("Kuscia-Source")
+		}
 		tokenRevision := r.Header.Get(kusciaTokenRevision)
 		resp.State = c.checkTokenStatus(domainID, tokenRevision)
 
@@ -771,7 +776,7 @@ func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKe
 		nlog.Error(err)
 		return nil, err
 	}
-	if err := clusters.AddMasterProxyVirtualHost(c.Name, pathPrefix, utils.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token)); err != nil {
+	if err := clusters.AddMasterProxyVirtualHost(c.Name, pathPrefix, utils.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token), []string{"*.master.svc"}); err != nil {
 		nlog.Error(err)
 		return nil, err
 	}

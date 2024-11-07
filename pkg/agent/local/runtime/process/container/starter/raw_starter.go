@@ -74,3 +74,11 @@ func (s *rawStarter) Command() *exec.Cmd {
 func (s *rawStarter) Release() error {
 	return s.mounter.UmountRoot()
 }
+
+func (s *rawStarter) ReopenContainerLog() error {
+	return s.config.LogFile.ReopenFile()
+}
+
+func (s *rawStarter) CloseContainerLog() error {
+	return s.config.LogFile.Close()
+}

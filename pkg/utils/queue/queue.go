@@ -18,6 +18,7 @@ import (
 	"context"
 	"time"
 
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
@@ -76,6 +77,7 @@ func EnqueueObjectWithKeyNamespace(obj interface{}, queue workqueue.Interface) {
 
 // HandleQueueItem is used to handle queue item with retrying when error happened.
 func HandleQueueItem(ctx context.Context, queueID string, q workqueue.RateLimitingInterface, handler queueHandler, maxRetries int) bool {
+	defer utilruntime.HandleCrash()
 	obj, shutdown := q.Get()
 	if shutdown {
 		return false

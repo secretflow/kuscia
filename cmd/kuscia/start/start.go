@@ -108,6 +108,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("ktexporter", "envoy")
 	mm.SetDependencies("metricexporter", "envoy", "ssexporter", "ktexporter", "nodeexporter")
 	mm.SetDependencies("transport", "envoy")
+	mm.SetDependencies("k3s", "coredns")
 
 	mm.AddReadyHook(func(ctx context.Context, mdls map[string]modules.Module) error {
 		nlog.Info("Start... coredns controllers")

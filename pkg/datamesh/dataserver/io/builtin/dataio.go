@@ -16,10 +16,9 @@ package builtin
 
 import (
 	"context"
+	csvEncoding "encoding/csv"
 	"fmt"
 	"io"
-
-	csvEncoding "encoding/csv"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -55,7 +54,7 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 	}
 	schema, _ := utils.GenerateArrowSchema(data)
 	// use csv reader,ignore first row, first row is headline.
-	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true), csv.WithNullReader(true, CSVDefaultNullValue))
+	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true), csv.WithNullReader(true, CSVDefaultNullValue), csv.WithChunk(1024))
 	defer csvReader.Release()
 	defer func() {
 		if r := recover(); r != nil {
@@ -124,6 +123,11 @@ func DataProxyContentToFlightStreamBinary(data *datamesh.DomainData, r io.Reader
 
 // DataFlow(Table): Client --> DataProxy --> RemoteStorage(FileSystem/OSS/...)
 func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, reader *flight.Reader) error {
+
+	if reader == nil {
+		return status.Errorf(codes.Internal, "flight reader is not allowed to be nil")
+	}
+
 	//generate arrow schema
 	schema, err := utils.GenerateArrowSchema(data)
 	if err != nil {
@@ -165,6 +169,10 @@ func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, r
 
 // DataFlow(Binary): Client --> DataProxy --> RemoteStorage(FileSystem/OSS/...)
 func FlightStreamToDataProxyContentBinary(data *datamesh.DomainData, w io.Writer, reader *flight.Reader) error {
+	if reader == nil {
+		return status.Errorf(codes.Internal, "flight reader is not allowed to be nil")
+	}
+
 	for reader.Next() {
 		cnt := reader.Record()
 		cnt.Retain()

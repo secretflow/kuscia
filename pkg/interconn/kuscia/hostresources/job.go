@@ -130,6 +130,12 @@ func (c *hostResourcesController) createJob(ctx context.Context, hostJob *kuscia
 		return nil
 	}
 
+	hostKjs, err := c.hostJobSummaryLister.KusciaJobSummaries(hostJob.Namespace).Get(hostJob.Name)
+	if err == nil && hostKjs.Status.CompletionTime != nil {
+		nlog.Infof("Host jobSummary %v already exists and the completionTime is not empty, skip creating member job", hostJob.Name)
+		return nil
+	}
+
 	initiator := ikcommon.GetObjectAnnotation(hostJob, common.InitiatorAnnotationKey)
 	initiatorMasterDomainID, err := utilsres.GetMasterDomain(c.memberDomainLister, initiator)
 	if err != nil {

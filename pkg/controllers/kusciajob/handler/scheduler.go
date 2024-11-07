@@ -471,9 +471,22 @@ func (h *JobScheduler) stopTasks(now metav1.Time, kusciaJob *kusciaapisv1alpha1.
 		}
 
 		kt, err := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			nlog.Errorf("Get kuscia task %v failed, so skip stopping this task", taskID)
-			return err
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				// double check task not exits, task maybe deleted by manual
+				kt, err = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), taskID, metav1.GetOptions{})
+				if err != nil {
+					if k8serrors.IsNotFound(err) {
+						nlog.Errorf("Kuscia task %v not found, skip stopping", taskID)
+						continue
+					}
+					nlog.Errorf("Get kuscia task %v failed, so skip stopping this task", taskID)
+					return err
+				}
+			} else {
+				nlog.Errorf("Get kuscia task %v failed, so skip stopping this task", taskID)
+				return err
+			}
 		}
 
 		copyKt := kt.DeepCopy()
@@ -1125,6 +1138,7 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 	var everyCPU, everyMemory k8sresource.Quantity
 	var ptr *k8sresource.Quantity
 	var limitResource = corev1.ResourceList{}
+	var requestResource = corev1.ResourceList{}
 
 	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
 		ptrValue := p.Resources.Limits[corev1.ResourceCPU]
@@ -1141,10 +1155,26 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 		limitResource[corev1.ResourceMemory] = everyMemory
 	}
 
+	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Requests[corev1.ResourceCPU]) {
+		ptrValue := p.Resources.Requests[corev1.ResourceCPU]
+		ptr = &ptrValue
+		stringEveryCPU, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		reqEveryCPU := k8sresource.MustParse(stringEveryCPU)
+		requestResource[corev1.ResourceCPU] = reqEveryCPU
+	}
+	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Requests[corev1.ResourceMemory]) {
+		ptrValue := p.Resources.Requests[corev1.ResourceMemory]
+		ptr = &ptrValue
+		stringEveryMemory, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		reqEveryMemory := k8sresource.MustParse(stringEveryMemory)
+		requestResource[corev1.ResourceMemory] = reqEveryMemory
+	}
+
 	containers := deployTemplate.Spec.Containers
 	for ctrIdx := range containers {
 		containers[ctrIdx].Resources = corev1.ResourceRequirements{
-			Limits: limitResource,
+			Limits:   limitResource,
+			Requests: requestResource,
 		}
 	}
 
