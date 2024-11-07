@@ -22,46 +22,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/register"
 )
-
-func produceCounter(namespace string, name string, help string, labels map[string]string) prometheus.Counter {
-	return prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Namespace:   namespace,
-			Name:        name,
-			Help:        help,
-			ConstLabels: labels,
-		})
-}
-
-func produceGauge(namespace string, name string, help string, labels map[string]string) prometheus.Gauge {
-	return prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Namespace:   namespace,
-			Name:        name,
-			Help:        help,
-			ConstLabels: labels,
-		})
-}
-
-func produceHistogram(namespace string, name string, help string, labels map[string]string) prometheus.Histogram {
-	return prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Namespace:   namespace,
-			Name:        name,
-			Help:        help,
-			ConstLabels: labels,
-		})
-}
-func produceSummary(namespace string, name string, help string, labels map[string]string) prometheus.Summary {
-	return prometheus.NewSummary(
-		prometheus.SummaryOpts{
-			Namespace:   namespace,
-			Name:        name,
-			Help:        help,
-			ConstLabels: labels,
-		})
-}
 
 var counters = make(map[string]prometheus.Counter)
 var gauges = make(map[string]prometheus.Gauge)
@@ -79,25 +41,19 @@ func produceMetric(reg *prometheus.Registry,
 	help := name + " aggregated by " + labels["aggregation_function"] + " from ss"
 	nameSpace := "ss"
 	if metricType == "Counter" {
-		counters[metricID] = produceCounter(nameSpace, name, help, labels)
+		counters[metricID] = register.ProduceCounter(nameSpace, name, help, labels)
 		reg.MustRegister(counters[metricID])
 	} else if metricType == "Gauge" {
-		gauges[metricID] = produceGauge(nameSpace, name, help, labels)
+		gauges[metricID] = register.ProduceGauge(nameSpace, name, help, labels)
 		reg.MustRegister(gauges[metricID])
 	} else if metricType == "Histogram" {
-		histograms[metricID] = produceHistogram(nameSpace, name, help, labels)
+		histograms[metricID] = register.ProduceHistogram(nameSpace, name, help, labels)
 		reg.MustRegister(histograms[metricID])
 	} else if metricType == "Summary" {
-		summaries[metricID] = produceSummary(nameSpace, name, help, labels)
+		summaries[metricID] = register.ProduceSummary(nameSpace, name, help, labels)
 		reg.MustRegister(summaries[metricID])
 	}
 	return reg
-}
-func formalize(metric string) string {
-	metric = strings.Replace(metric, "-", "_", -1)
-	metric = strings.Replace(metric, ".", "__", -1)
-	metric = strings.ToLower(metric)
-	return metric
 }
 func ProduceRegister() *prometheus.Registry {
 	reg := prometheus.NewRegistry()
@@ -111,7 +67,7 @@ func ProduceRegister() *prometheus.Registry {
 func UpdateMetrics(reg *prometheus.Registry,
 	clusterResults map[string]float64, MetricTypes map[string]string) {
 	for metric, val := range clusterResults {
-		metricID := formalize(metric)
+		metricID := register.Formalize(metric)
 		splitedMetric := strings.Split(metric, ";")
 		var metricTypeID string
 		metricTypeID = splitedMetric[len(splitedMetric)-2]
