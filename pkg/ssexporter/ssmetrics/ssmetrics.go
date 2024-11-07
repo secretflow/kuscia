@@ -24,6 +24,7 @@ import (
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
+	"github.com/secretflow/kuscia/pkg/utils/calculate"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -205,13 +206,13 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 					clusterResults[metricID] = Rate(retranSum-threshold, connectSum)
 				}
 			} else if aggFunc == parse.AggSum {
-				clusterResults[metricID], err = Sum(networkResults, metric)
+				clusterResults[metricID], err = calculate.Sum(networkResults, metric)
 			} else if aggFunc == parse.AggAvg {
-				clusterResults[metricID], err = Avg(networkResults, metric)
+				clusterResults[metricID], err = calculate.Avg(networkResults, metric)
 			} else if aggFunc == parse.AggMax {
-				clusterResults[metricID], err = Max(networkResults, metric)
+				clusterResults[metricID], err = calculate.Max(networkResults, metric)
 			} else if aggFunc == parse.AggMin {
-				clusterResults[metricID], err = Min(networkResults, metric)
+				clusterResults[metricID], err = calculate.Min(networkResults, metric)
 			}
 			if err != nil {
 				nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
