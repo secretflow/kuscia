@@ -257,42 +257,6 @@ func getPhysicalMemoryUsage(cid string) (uint64, error) {
 	return physicalMemory, nil
 }
 
-// GetIOStats retrieves I/O statistics (read_bytes, write_bytes) for a given PID
-func GetTotalIOStats(pid string) (uint64, uint64, error) {
-	// Read /proc/[pid]/io
-	ioFile := filepath.Join("/proc", pid, "io")
-	ioData, err := ioutil.ReadFile(ioFile)
-	if err != nil {
-		nlog.Warn("failed to read /proc/[pid]/io", err)
-		return 0, 0, err
-	}
-
-	var readBytes, writeBytes uint64
-
-	// Parse the file contents to find read_bytes and write_bytes
-	lines := strings.Split(string(ioData), "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "read_bytes:") {
-			parts := strings.Fields(line)
-			readBytes, err = strconv.ParseUint(parts[1], 10, 64)
-			if err != nil {
-				nlog.Warn("failed to parse read_bytes", err)
-				return 0, 0, err
-			}
-		}
-		if strings.HasPrefix(line, "write_bytes:") {
-			parts := strings.Fields(line)
-			writeBytes, err = strconv.ParseUint(parts[1], 10, 64)
-			if err != nil {
-				nlog.Warn("failed to parse write_bytes", err)
-				return 0, 0, err
-			}
-		}
-	}
-
-	return readBytes, writeBytes, nil
-}
-
 func GetContainerNetIOFromProc(defaultIface, pid string) (recvBytes, xmitBytes uint64, err error) {
 	netDevPath := fmt.Sprintf("/proc/%s/net/dev", pid)
 	data, err := ioutil.ReadFile(netDevPath)
@@ -382,9 +346,6 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 				if err != nil {
 					nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
 					return clusterResults, err
-				}
-				if metric == parse.MetricByteSent || metric == parse.MetricBytesReceived {
-					clusterResults[metricID] = Rate(clusterResults[metricID], float64(MonitorPeriods))
 				}
 			}
 		}
@@ -597,7 +558,7 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 			nlog.Warn("Fail to get the stats of containers")
 			continue
 		}
-		ktMetrics[parse.MetricCPUPer] = containerStats[containerID].CPUPercentage
+		ktMetrics[parse.MetricCPUPercentage] = containerStats[containerID].CPUPercentage
 		ktMetrics[parse.MetricDisk] = containerStats[containerID].Disk
 		ktMetrics[parse.MetricInodes] = containerStats[containerID].Inodes
 		ktMetrics[parse.MetricMemory] = containerStats[containerID].Memory
@@ -607,23 +568,15 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 			nlog.Warn("Fail to get the total CPU usage stats")
 			continue
 		}
-		ktMetrics[parse.MetricCPUUs] = fmt.Sprintf("%d", cpuUsage)
+		ktMetrics[parse.MetricCPUUsage] = fmt.Sprintf("%d", cpuUsage)
 
 		virtualMemory, physicalMemory, err := GetMaxMemoryUsageStats(containerPID, containerID)
 		if err != nil {
 			nlog.Warn("Fail to get the total memory stats")
 			continue
 		}
-		ktMetrics[parse.MetricVtMemory] = fmt.Sprintf("%d", virtualMemory)
-		ktMetrics[parse.MetricPsMemory] = fmt.Sprintf("%d", physicalMemory)
-
-		readBytes, writeBytes, err := GetTotalIOStats(containerPID)
-		if err != nil {
-			nlog.Warn("Fail to get the total IO stats")
-			continue
-		}
-		ktMetrics[parse.MetricReadBytes] = fmt.Sprintf("%d", readBytes)
-		ktMetrics[parse.MetricWriteBytes] = fmt.Sprintf("%d", writeBytes)
+		ktMetrics[parse.MetricVirtualMemory] = fmt.Sprintf("%d", virtualMemory)
+		ktMetrics[parse.MetricPhysicalMemory] = fmt.Sprintf("%d", physicalMemory)
 
 		tcpStatisticList = append(tcpStatisticList, ktMetrics)
 	}

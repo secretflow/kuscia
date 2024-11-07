@@ -22,23 +22,19 @@ type MonitorConfig struct {
 }
 
 const (
-	MetricRecvBytes     = "recvbytes"
-	MetricXmitBytes     = "xmitbytes"
-	MetricRecvBw        = "recvbw"
-	MetricXmitBw        = "xmitbw"
-	MetricCPUPer        = "cpu_percentage"
-	MetricCPUUs         = "cpu_usage"
-	MetricVtMemory      = "virtual_memory"
-	MetricPsMemory      = "physical_memory"
-	MetricMemory        = "memory"
-	MetricDisk          = "disk"
-	MetricInodes        = "inodes"
-	MetricByteSent      = "bytes_sent"
-	MetricBytesReceived = "bytes_received"
-	KtLocalAddr         = "localAddr"
-	KtPeerAddr          = "peerAddr"
-	MetricReadBytes     = "readbytes"
-	MetricWriteBytes    = "writebytes"
+	MetricRecvBytes      = "recvbytes"
+	MetricXmitBytes      = "xmitbytes"
+	MetricRecvBw         = "recvbw"
+	MetricXmitBw         = "xmitbw"
+	MetricCPUPercentage  = "cpu_percentage"
+	MetricCPUUsage       = "total_cpu_time_ns"
+	MetricVirtualMemory  = "virtual_memory"
+	MetricPhysicalMemory = "physical_memory"
+	MetricMemory         = "memory_usage"
+	MetricDisk           = "disk_io"
+	MetricInodes         = "inodes"
+	KtLocalAddr          = "localAddr"
+	KtPeerAddr           = "peerAddr"
 
 	AggSum   = "sum"
 	AggAvg   = "avg"
@@ -56,17 +52,15 @@ func LoadMetricConfig() ([]string, map[string]string) {
 		MetricXmitBytes,
 		MetricRecvBw,
 		MetricXmitBw,
-		MetricCPUPer,
-		MetricCPUUs,
+		MetricCPUPercentage,
+		MetricCPUUsage,
 		MetricMemory,
 		MetricDisk,
 		MetricInodes,
-		MetricVtMemory,
-		MetricPsMemory,
-		MetricReadBytes,
-		MetricWriteBytes)
+		MetricVirtualMemory,
+		MetricPhysicalMemory)
 	aggMetrics := make(map[string]string)
-	config.AggMetrics = append(config.AggMetrics, AggSum, AggSum, AggSum, AggSum, AggAvg, AggAvg, AggAvg, AggSum, AggSum, AggSum, AggSum, AggSum, AggSum)
+	config.AggMetrics = append(config.AggMetrics, AggSum, AggSum, AggSum, AggSum, AggAvg, AggAvg, AggAvg, AggSum, AggSum, AggSum, AggSum)
 	for i, metric := range config.KtMetrics {
 		aggMetrics[metric] = config.AggMetrics[i]
 	}

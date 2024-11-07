@@ -31,11 +31,9 @@ func NewMetricTypes_kt() map[string]string {
 	MetricTypes["cpu_percentage"] = metricGauge
 	MetricTypes["virtual_memory"] = metricGauge
 	MetricTypes["physical_memory"] = metricGauge
-	MetricTypes["readbytes"] = metricGauge
-	MetricTypes["writebytes"] = metricGauge
-	MetricTypes["cpu_usage"] = metricGauge
-	MetricTypes["memory"] = metricGauge
-	MetricTypes["disk"] = metricGauge
+	MetricTypes["total_cpu_time_ns"] = metricGauge
+	MetricTypes["memory_usage"] = metricGauge
+	MetricTypes["disk_io"] = metricGauge
 	MetricTypes["inodes"] = metricGauge
 	return MetricTypes
 }
