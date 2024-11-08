@@ -1,19 +1,4 @@
-// Copyright 2023 Ant Group Co., Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package parse configures files and domain files
-package parse
+package domain
 
 import (
 	"io/ioutil"
@@ -54,7 +39,7 @@ func GetClusterAddress(domainID string) (map[string][]string, error) {
 	// get the results of config_dump
 	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
 	if err != nil {
-		nlog.Warnf("Fail to get the results of config_dump %s", err.Error())
+		nlog.Warn("Fail to get the results of config_dump", err)
 		return endpointAddresses, err
 	}
 	defer resp.Body.Close()

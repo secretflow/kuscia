@@ -17,21 +17,25 @@ package parse
 
 // Config define the structure of the configuration file
 type MonitorConfig struct {
-	SsMetrics  []string
+	KtMetrics  []string
 	AggMetrics []string
 }
 
 const (
-	MetricRTT              = "rtt"
-	MetricRetrans          = "retrans"
-	MetricTotalConnections = "total_connections"
-	MetricRetranRate       = "retran_rate"
-	MetricRto              = "rto"
-	MetricByteSent         = "bytes_sent"
-	MetricBytesReceived    = "bytes_received"
+	MetricRecvBytes      = "recvbytes"
+	MetricXmitBytes      = "xmitbytes"
+	MetricRecvBw         = "recvbw"
+	MetricXmitBw         = "xmitbw"
+	MetricCPUPercentage  = "cpu_percentage"
+	MetricCPUUsage       = "total_cpu_time_ns"
+	MetricVirtualMemory  = "virtual_memory"
+	MetricPhysicalMemory = "physical_memory"
+	MetricMemory         = "memory_usage"
+	MetricDisk           = "disk_io"
+	MetricInodes         = "inodes"
 
-	SsLocalAddr = "localAddr"
-	SsPeerAddr  = "peerAddr"
+	KtLocalAddr = "localAddr"
+	KtPeerAddr  = "peerAddr"
 
 	AggSum   = "sum"
 	AggAvg   = "avg"
@@ -44,15 +48,22 @@ const (
 // ReadConfig read the configuration and return each entry
 func LoadMetricConfig() ([]string, map[string]string) {
 	var config MonitorConfig
-	config.SsMetrics = append(config.SsMetrics,
-		MetricRTT,
-		MetricRetrans,
-		MetricTotalConnections,
-		MetricRetranRate)
+	config.KtMetrics = append(config.KtMetrics,
+		MetricRecvBytes,
+		MetricXmitBytes,
+		MetricRecvBw,
+		MetricXmitBw,
+		MetricCPUPercentage,
+		MetricCPUUsage,
+		MetricMemory,
+		MetricDisk,
+		MetricInodes,
+		MetricVirtualMemory,
+		MetricPhysicalMemory)
 	aggMetrics := make(map[string]string)
-	config.AggMetrics = append(config.AggMetrics, AggAvg, AggSum, AggSum, AggRate)
-	for i, metric := range config.SsMetrics {
+	config.AggMetrics = append(config.AggMetrics, AggSum, AggSum, AggSum, AggSum, AggAvg, AggAvg, AggAvg, AggSum, AggSum, AggSum, AggSum)
+	for i, metric := range config.KtMetrics {
 		aggMetrics[metric] = config.AggMetrics[i]
 	}
-	return config.SsMetrics, aggMetrics
+	return config.KtMetrics, aggMetrics
 }

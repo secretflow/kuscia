@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ssexporter
+package ktexporter
 
 import (
 	"context"
@@ -22,11 +22,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/secretflow/kuscia/pkg/ktexporter/ktmetrics"
+	"github.com/secretflow/kuscia/pkg/ktexporter/ktpromexporter"
+	"github.com/secretflow/kuscia/pkg/ktexporter/parse"
+
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/metricexporter/domain"
-	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
-	"github.com/secretflow/kuscia/pkg/ssexporter/promexporter"
-	"github.com/secretflow/kuscia/pkg/ssexporter/ssmetrics"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -34,17 +35,17 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string, exportPeriod uint, port string) error {
+func KtExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string, exportPeriod uint, port string) error {
 	// read the config
 	_, AggregationMetrics := parse.LoadMetricConfig()
 	clusterAddresses, _ := domain.GetClusterAddress(domainID)
 	localDomainName := domainID
-	var MetricTypes = promexporter.NewMetricTypes()
+	var MetricTypes = ktpromexporter.NewMetricTypes_kt()
 
-	reg := promexporter.ProduceRegister()
-	lastClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriod)
+	reg := ktpromexporter.ProduceRegister()
+	lastClusterMetricValues, err := ktmetrics.GetKtMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriod)
 	if err != nil {
-		nlog.Warnf("Fail to get ss metric results, err: %v", err)
+		nlog.Warnf("Fail to get kt metric results, err: %v", err)
 		return err
 	}
 	// export the cluster metrics
@@ -55,25 +56,25 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 			// get clusterName and clusterAddress
 			clusterAddresses, _ = domain.GetClusterAddress(domainID)
 			// get cluster metrics
-			currentClusterMetricValues, err := ssmetrics.GetSsMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
+			currentClusterMetricValues, err := ktmetrics.GetKtMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriods)
 			if err != nil {
-				nlog.Warnf("Fail to get ss metric results, err: %v", err)
+				nlog.Warnf("Fail to get kt metric results, err: %v", err)
 			}
+
 			// calculate the change values of cluster metrics
-			lastClusterMetricValues, currentClusterMetricValues = ssmetrics.GetMetricChange(lastClusterMetricValues, currentClusterMetricValues)
-			// update cluster metrics in prometheus
-			promexporter.UpdateMetrics(reg, currentClusterMetricValues, MetricTypes)
+
+			ktpromexporter.UpdateMetrics(reg, currentClusterMetricValues, MetricTypes)
 		}
 	}(runMode, reg, MetricTypes, exportPeriod, lastClusterMetricValues)
 	// export to the prometheus
-	ssServer := http.NewServeMux()
-	ssServer.Handle("/ssmetrics", promhttp.HandlerFor(
+	ktServer := http.NewServeMux()
+	ktServer.Handle("/ktmetrics", promhttp.HandlerFor(
 		reg,
 		promhttp.HandlerOpts{
 			EnableOpenMetrics: true,
 		}))
 	go func() {
-		if err := http.ListenAndServe("0.0.0.0:"+port, ssServer); err != nil {
+		if err := http.ListenAndServe("0.0.0.0:"+port, ktServer); err != nil {
 			nlog.Error("Fail to start the metric exporterserver", err)
 		}
 	}()

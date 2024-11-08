@@ -51,6 +51,7 @@ type ModuleRuntimeConfigs struct {
 	TransportPort           int
 	InterConnSchedulerPort  int
 	SsExportPort            string
+	KtExportPort            string
 	NodeExportPort          string
 	MetricExportPort        string
 	KusciaKubeConfig        string
@@ -190,6 +191,7 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 	}
 
 	// init exporter ports
+	dependencies.KtExportPort = "9093"
 	dependencies.SsExportPort = "9092"
 	dependencies.NodeExportPort = "9100"
 	dependencies.MetricExportPort = "9091"
