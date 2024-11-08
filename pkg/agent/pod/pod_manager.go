@@ -344,12 +344,3 @@ func (pm *basicManager) GetPodByMirrorPod(mirrorPod *v1.Pod) (*v1.Pod, bool) {
 	return pod, ok
 }
 
-func GetPortNumberByName(ports []v1.ContainerPort, portName string) (int32, error) {
-	for _, port := range ports {
-		if port.Name == portName {
-			return port.ContainerPort, nil
-		}
-	}
-	return 0, fmt.Errorf("no matching port found for name: %s", portName)
-}
-
