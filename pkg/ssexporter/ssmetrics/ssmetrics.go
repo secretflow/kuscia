@@ -16,13 +16,12 @@
 package ssmetrics
 
 import (
-	"math"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/metricexporter/agg_func"
 	"github.com/secretflow/kuscia/pkg/metricexporter/domain"
 	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -117,70 +116,6 @@ func Filter(ssMetrics []map[string]string, srcIP string, dstIP string, srcPort s
 	return results
 }
 
-// Sum an aggregation function to sum up two network metrics
-func Sum(metrics []map[string]string, key string) (float64, error) {
-	sum := 0.0
-	for _, metric := range metrics {
-		val, err := strconv.ParseFloat(metric[key], 64)
-		if err != nil {
-			nlog.Warnf("fail to parse float: %s, key: %s, value: %f", metric[key], key, val)
-			return sum, err
-		}
-		sum += val
-	}
-	return sum, nil
-}
-
-// Avg an aggregation function to calculate the average of two network metrics
-func Avg(metrics []map[string]string, key string) (float64, error) {
-	sum, err := Sum(metrics, key)
-	if err != nil {
-		nlog.Warnf("Fail to get the sum of ss metrics, err: %v", err)
-		return sum, err
-	}
-	return sum / float64(len(metrics)), nil
-}
-
-// Max an aggregation function to calculate the maximum of two network metrics
-func Max(metrics []map[string]string, key string) (float64, error) {
-	max := math.MaxFloat64 * (-1)
-	for _, metric := range metrics {
-		val, err := strconv.ParseFloat(metric[key], 64)
-		if err != nil {
-			nlog.Warn("fail to parse float")
-			return max, err
-		}
-		if val > max {
-			max = val
-		}
-	}
-	return max, nil
-}
-
-// Min an aggregation function to calculate the minimum of two network metrics
-func Min(metrics []map[string]string, key string) (float64, error) {
-	min := math.MaxFloat64
-	for _, metric := range metrics {
-		val, err := strconv.ParseFloat(metric[key], 64)
-		if err != nil {
-			nlog.Warn("fail to parse float")
-			return min, err
-		}
-		if val < min {
-			min = val
-		}
-	}
-	return min, nil
-}
-
-// Rate an aggregation function to calculate the rate of a network metric between to metrics
-func Rate(metric1 float64, metric2 float64) float64 {
-	if metric2 == 0.0 {
-		return 0
-	}
-	return metric1 / metric2
-}
-
 // Alert an alert function that reports whether a metric value exceeds a given threshold
 func Alert(metric float64, threshold float64) bool {
 	return metric > threshold
@@ -198,28 +133,28 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if aggFunc == parse.AggRate {
 				if metric == parse.MetricRetranRate {
 					threshold := 0.0
-					retranSum, err := Sum(networkResults, parse.MetricRetrans)
-					connectSum, err := Sum(networkResults, parse.MetricTotalConnections)
+					retranSum, err := agg_func.Sum(networkResults, parse.MetricRetrans)
+					connectSum, err := agg_func.Sum(networkResults, parse.MetricTotalConnections)
 					if err != nil {
 						return clusterResults, err
 					}
-					clusterResults[metricID] = Rate(retranSum-threshold, connectSum)
+					clusterResults[metricID] = agg_func.Rate(retranSum-threshold, connectSum)
 				}
 			} else if aggFunc == parse.AggSum {
-				clusterResults[metricID], err = Sum(networkResults, metric)
+				clusterResults[metricID], err = agg_func.Sum(networkResults, metric)
 			} else if aggFunc == parse.AggAvg {
-				clusterResults[metricID], err = Avg(networkResults, metric)
+				clusterResults[metricID], err = agg_func.Avg(networkResults, metric)
 			} else if aggFunc == parse.AggMax {
-				clusterResults[metricID], err = Max(networkResults, metric)
+				clusterResults[metricID], err = agg_func.Max(networkResults, metric)
 			} else if aggFunc == parse.AggMin {
-				clusterResults[metricID], err = Min(networkResults, metric)
+				clusterResults[metricID], err = agg_func.Min(networkResults, metric)
 			}
 			if err != nil {
 				nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
 				return clusterResults, err
 			}
 			if metric == parse.MetricByteSent || metric == parse.MetricBytesReceived {
-				clusterResults[metricID] = Rate(clusterResults[metricID], float64(MonitorPeriods))
+				clusterResults[metricID] = agg_func.Rate(clusterResults[metricID], float64(MonitorPeriods))
 			}
 		}
 	}

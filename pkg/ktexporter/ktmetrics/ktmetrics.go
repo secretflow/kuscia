@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/secretflow/kuscia/pkg/ktexporter/parse"
-	"github.com/secretflow/kuscia/pkg/metricexporter/dealmetrics"
+	"github.com/secretflow/kuscia/pkg/metricexporter/agg_func"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -87,14 +87,14 @@ func GetTaskIDToContainerID() (map[string]string, error) {
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("failed to execute crictl ps.", err)
+		nlog.Error("failed to execute crictl ps.", err)
 		return nil, err
 	}
 
 	lines := strings.Split(out.String(), "\n")
 
 	if len(lines) < 2 {
-		fmt.Println("unexpected output format from crictl ps", err)
+		nlog.Warn("unexpected output format from crictl ps", err)
 		return nil, err
 	}
 
@@ -105,7 +105,7 @@ func GetTaskIDToContainerID() (map[string]string, error) {
 		}
 		fields := strings.Fields(line)
 		if len(fields) < 8 {
-			fmt.Printf("unexpected output format for line: %s", line)
+			nlog.Warn("unexpected output format for line: %s", line)
 			return nil, err
 		}
 		state := fields[5] // 通常，crictl ps 的第四个字段为状态(State)
@@ -137,16 +137,14 @@ func GetContainerStats() (map[string]ContainerStats, error) {
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("failed to execute crictl stats", err)
-		//nlog.Warn("failed to execute crictl stats", err)
+		nlog.Warn("failed to execute crictl stats", err)
 		return nil, err
 	}
 
 	// Parse the output
 	lines := strings.Split(out.String(), "\n")
 	if len(lines) < 2 {
-		fmt.Println("unexpected output format from crictl stats")
-		//nlog.Warn("unexpected output format from crictl stats")
+		nlog.Warn("unexpected output format from crictl stats")
 		return nil, err
 	}
 
@@ -163,8 +161,7 @@ func GetContainerStats() (map[string]ContainerStats, error) {
 		// Split the line by whitespace
 		fields := strings.Fields(line)
 		if len(fields) < 5 {
-			fmt.Printf("unexpected output format for line: %s", line)
-			//nlog.Warn("unexpected output format for line: %s", line)
+			nlog.Warn("unexpected output format for line: %s", line)
 			return nil, err
 		}
 
@@ -261,14 +258,13 @@ func GetContainerNetIOFromProc(defaultIface, pid string) (recvBytes, xmitBytes u
 	netDevPath := fmt.Sprintf("/proc/%s/net/dev", pid)
 	data, err := ioutil.ReadFile(netDevPath)
 	if err != nil {
-		//nlog.Warn("Fail to read the path", netDevPath)
+		nlog.Warn("Fail to read the path", netDevPath)
 		return recvBytes, xmitBytes, err
 	}
 
 	lines := strings.Split(string(data), "\n")
 	if len(lines) < 3 {
-		//nlog.Error("unexpected format in ", netDevPath)
-		fmt.Println("unexpected format in ", netDevPath)
+		nlog.Error("unexpected format in ", netDevPath)
 		return recvBytes, xmitBytes, err
 	}
 	recvByteStr := ""
@@ -297,14 +293,12 @@ func GetContainerNetIOFromProc(defaultIface, pid string) (recvBytes, xmitBytes u
 	}
 	recvBytes, err = strconv.ParseUint(recvByteStr, 10, 64)
 	if err != nil {
-		//nlog.Error("Error converting string to uint64:", err)
-		fmt.Println("Error converting string to uint64:", err)
+		nlog.Error("Error converting string to uint64:", err)
 		return recvBytes, xmitBytes, err
 	}
 	xmitBytes, err = strconv.ParseUint(xmitByteStr, 10, 64)
 	if err != nil {
-		//nlog.Error("Error converting string to uint64:", err)
-		fmt.Println("Error converting string to uint64:", err)
+		nlog.Error("Error converting string to uint64:", err)
 		return recvBytes, xmitBytes, err
 	}
 
@@ -335,13 +329,13 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if metric != parse.KtLocalAddr && metric != parse.KtPeerAddr {
 				var err error
 				if aggFunc == parse.AggSum {
-					clusterResults[metricID], err = dealmetrics.Sum(networkResults, metric)
+					clusterResults[metricID], err = agg_func.Sum(networkResults, metric)
 				} else if aggFunc == parse.AggAvg {
-					clusterResults[metricID], err = dealmetrics.Avg(networkResults, metric)
+					clusterResults[metricID], err = agg_func.Avg(networkResults, metric)
 				} else if aggFunc == parse.AggMax {
-					clusterResults[metricID], err = dealmetrics.Max(networkResults, metric)
+					clusterResults[metricID], err = agg_func.Max(networkResults, metric)
 				} else if aggFunc == parse.AggMin {
-					clusterResults[metricID], err = dealmetrics.Min(networkResults, metric)
+					clusterResults[metricID], err = agg_func.Min(networkResults, metric)
 				}
 				if err != nil {
 					nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)

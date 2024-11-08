@@ -1,4 +1,4 @@
-package dealmetrics
+package agg_func
 
 import (
 	"math"
