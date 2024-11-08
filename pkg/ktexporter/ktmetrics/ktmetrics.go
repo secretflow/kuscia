@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/secretflow/kuscia/pkg/ktexporter/container_netio"
-	"github.com/secretflow/kuscia/pkg/ktexporter/container_stats"
-	"github.com/secretflow/kuscia/pkg/ktexporter/fetch_metrics"
+	"github.com/secretflow/kuscia/pkg/ktexporter/fetchmetrics"
 	"github.com/secretflow/kuscia/pkg/ktexporter/parse"
 	"github.com/secretflow/kuscia/pkg/metricexporter/agg_func"
 
@@ -20,6 +18,19 @@ type NetStats struct {
 	XmitBytes uint64  // Bytes
 	RecvBW    float64 // bps
 	XmitBW    float64 // bps
+}
+
+type KusicaTaskStats struct {
+	CtrStats ContainerStats
+	NetIO    NetStats
+}
+
+// ContainerStats holds the stats information for a container
+type ContainerStats struct {
+	CPUPercentage string
+	Memory        string
+	Disk          string
+	Inodes        string
 }
 
 // AggregateStatistics aggregate statistics using an aggregation function
@@ -97,13 +108,13 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 	var preRecvBytes, preXmitBytes uint64
 	var tcpStatisticList []map[string]string
 	timeWindow := 1.0
-	taskToPID, err := fetch_metrics.GetKusciaTaskPID()
+	taskToPID, err := fetchmetrics.GetKusciaTaskPID()
 	if err != nil {
 		nlog.Error("Fail to get container PIDs", err)
 		return nil, err
 	}
 
-	taskIDToContainerID, err := fetch_metrics.GetTaskIDToContainerID()
+	taskIDToContainerID, err := fetchmetrics.GetTaskIDToContainerID()
 	if err != nil {
 		nlog.Error("Fail to get container ID", err)
 		return nil, err
@@ -116,13 +127,13 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 			continue
 		}
 
-		recvBytes, xmitBytes, err := container_netio.GetContainerNetIOFromProc("eth0", containerPID)
+		recvBytes, xmitBytes, err := fetchmetrics.GetContainerNetIOFromProc("eth0", containerPID)
 		if err != nil {
 			nlog.Warnf("Fail to get container network IO from proc")
 			continue
 		}
 
-		recvBW, xmitBW, err := container_netio.GetContainerBandwidth(recvBytes, preRecvBytes, xmitBytes, preXmitBytes, timeWindow)
+		recvBW, xmitBW, err := fetchmetrics.GetContainerBandwidth(recvBytes, preRecvBytes, xmitBytes, preXmitBytes, timeWindow)
 		if err != nil {
 			nlog.Warnf("Fail to get the network bandwidth of containers")
 			continue
@@ -135,7 +146,7 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 		ktMetrics[parse.MetricRecvBw] = fmt.Sprintf("%.2f", recvBW)
 		ktMetrics[parse.MetricXmitBw] = fmt.Sprintf("%.2f", xmitBW)
 		ktMetrics["taskid"] = kusciaTaskID
-		containerStats, err := container_stats.GetContainerStats()
+		containerStats, err := fetchmetrics.GetContainerStats()
 		if err != nil {
 			nlog.Warn("Fail to get the stats of containers")
 			continue
@@ -145,14 +156,14 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 		ktMetrics[parse.MetricInodes] = containerStats[containerID].Inodes
 		ktMetrics[parse.MetricMemory] = containerStats[containerID].Memory
 
-		cpuUsage, err := fetch_metrics.GetTotalCPUUsageStats(containerID)
+		cpuUsage, err := fetchmetrics.GetTotalCPUUsageStats(containerID)
 		if err != nil {
 			nlog.Warn("Fail to get the total CPU usage stats")
 			continue
 		}
 		ktMetrics[parse.MetricCPUUsage] = fmt.Sprintf("%d", cpuUsage)
 
-		virtualMemory, physicalMemory, err := fetch_metrics.GetMaxMemoryUsageStats(containerPID, containerID)
+		virtualMemory, physicalMemory, err := fetchmetrics.GetMaxMemoryUsageStats(containerPID, containerID)
 		if err != nil {
 			nlog.Warn("Fail to get the total memory stats")
 			continue
