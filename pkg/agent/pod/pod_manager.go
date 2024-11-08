@@ -20,7 +20,6 @@ limitations under the License.
 package pod
 
 import (
-	"fmt"
 	"sync"
 
 	v1 "k8s.io/api/core/v1"
