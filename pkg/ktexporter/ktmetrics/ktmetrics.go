@@ -104,7 +104,7 @@ func GetTaskIDToContainerID() (map[string]string, error) {
 		}
 		fields := strings.Fields(line)
 		if len(fields) < 8 {
-			nlog.Warn("unexpected output format for line: %s", line)
+			nlog.Warnf("unexpected output format for line: %s", line)
 			return nil, err
 		}
 		state := fields[5] // 通常，crictl ps 的第四个字段为状态(State)
@@ -160,7 +160,7 @@ func GetContainerStats() (map[string]ContainerStats, error) {
 		// Split the line by whitespace
 		fields := strings.Fields(line)
 		if len(fields) < 5 {
-			nlog.Warn("unexpected output format for line: %s", line)
+			nlog.Warnf("unexpected output format for line: %s", line)
 			return nil, err
 		}
 
@@ -454,13 +454,13 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 
 		recvBytes, xmitBytes, err := GetContainerNetIOFromProc("eth0", containerPID)
 		if err != nil {
-			nlog.Warn("Fail to get container network IO from proc")
+			nlog.Warnf("Fail to get container network IO from proc")
 			continue
 		}
 
 		recvBW, xmitBW, err := GetContainerBandwidth(recvBytes, preRecvBytes, xmitBytes, preXmitBytes, timeWindow)
 		if err != nil {
-			nlog.Warn("Fail to get the network bandwidth of containers")
+			nlog.Warnf("Fail to get the network bandwidth of containers")
 			continue
 		}
 		preRecvBytes = recvBytes

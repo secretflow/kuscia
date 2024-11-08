@@ -39,7 +39,7 @@ func GetClusterAddress(domainID string) (map[string][]string, error) {
 	// get the results of config_dump
 	resp, err := http.Get("http://localhost:10000/config_dump?resource=dynamic_active_clusters")
 	if err != nil {
-		nlog.Warnf("Fail to get the results of config_dump", err)
+		nlog.Warn("Fail to get the results of config_dump", err)
 		return endpointAddresses, err
 	}
 	defer resp.Body.Close()
