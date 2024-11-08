@@ -3,7 +3,6 @@ package ktmetrics
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -40,7 +39,7 @@ type KusicaTaskStats struct {
 func GetKusciaTaskPID() (map[string]string, error) {
 	const containerdDir = "/home/kuscia/containerd/run/io.containerd.runtime.v2.task/k8s.io/"
 	taskIDToPID := make(map[string]string)
-	containerFiles, err := ioutil.ReadDir(containerdDir)
+	containerFiles, err := os.ReadDir(containerdDir)
 	if err != nil {
 		nlog.Info("Error reading directory:", err)
 		return taskIDToPID, err
@@ -52,7 +51,7 @@ func GetKusciaTaskPID() (map[string]string, error) {
 		containerDir := filepath.Join(containerdDir, containerFile.Name())
 		// Read init.pid
 		pidFile := filepath.Join(containerDir, "init.pid")
-		pidData, err := ioutil.ReadFile(pidFile)
+		pidData, err := os.ReadFile(pidFile)
 		if err != nil {
 			nlog.Info("Error reading pid containerFile:", err)
 			return taskIDToPID, err
@@ -60,7 +59,7 @@ func GetKusciaTaskPID() (map[string]string, error) {
 
 		// Read config.json
 		configFile := filepath.Join(containerDir, "config.json")
-		configData, err := ioutil.ReadFile(configFile)
+		configData, err := os.ReadFile(configFile)
 		if err != nil {
 			nlog.Info("Error reading config containerFile:", err)
 			return taskIDToPID, err
@@ -208,7 +207,7 @@ func GetMaxMemoryUsageStats(pid string, cidPrefix string) (uint64, uint64, error
 func getVirtualMemoryUsage(pid string) (uint64, error) {
 	// Read /proc/[pid]/status
 	statusFile := filepath.Join("/proc", pid, "status")
-	statusData, err := ioutil.ReadFile(statusFile)
+	statusData, err := os.ReadFile(statusFile)
 	if err != nil {
 		nlog.Warn("failed to read /proc/[pid]/status", err)
 		return 0, err
@@ -238,7 +237,7 @@ func getVirtualMemoryUsage(pid string) (uint64, error) {
 func getPhysicalMemoryUsage(cid string) (uint64, error) {
 	// Read /sys/fs/cgroup/memory/k8s.io/[cid]/memory.max_usage_in_bytes
 	memMaxUsageFile := filepath.Join("/sys/fs/cgroup/memory/k8s.io", cid, "memory.max_usage_in_bytes")
-	memMaxUsageData, err := ioutil.ReadFile(memMaxUsageFile)
+	memMaxUsageData, err := os.ReadFile(memMaxUsageFile)
 	if err != nil {
 		nlog.Warn("failed to read memory.max_usage_in_bytes", err)
 		return 0, err
@@ -256,7 +255,7 @@ func getPhysicalMemoryUsage(cid string) (uint64, error) {
 
 func GetContainerNetIOFromProc(defaultIface, pid string) (recvBytes, xmitBytes uint64, err error) {
 	netDevPath := fmt.Sprintf("/proc/%s/net/dev", pid)
-	data, err := ioutil.ReadFile(netDevPath)
+	data, err := os.ReadFile(netDevPath)
 	if err != nil {
 		nlog.Warn("Fail to read the path", netDevPath)
 		return recvBytes, xmitBytes, err
@@ -388,7 +387,7 @@ func GetKtMetricResults(runMode pkgcom.RunModeType, localDomainName string, clus
 
 func findCIDByPrefix(prefix string) (string, error) {
 	cgroupDir := "/sys/fs/cgroup/cpu/k8s.io/"
-	files, err := ioutil.ReadDir(cgroupDir)
+	files, err := os.ReadDir(cgroupDir)
 	if err != nil {
 		return "", err
 	}
@@ -414,7 +413,7 @@ func GetTotalCPUUsageStats(cidPrefix string) (uint64, error) {
 
 	// Read /sys/fs/cgroup/cpu/k8s.io/[cid]/cpuacct.usage
 	cgroupUsageFile := filepath.Join("/sys/fs/cgroup/cpu/k8s.io", cid, "cpuacct.usage")
-	cgroupUsageData, err := ioutil.ReadFile(cgroupUsageFile)
+	cgroupUsageData, err := os.ReadFile(cgroupUsageFile)
 	if err != nil {
 		nlog.Warn("failed to read cpuacct.usage", err)
 		return 0, err
