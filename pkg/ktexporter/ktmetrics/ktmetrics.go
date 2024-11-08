@@ -436,11 +436,13 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 	taskToPID, err := GetKusciaTaskPID()
 	if err != nil {
 		nlog.Error("Fail to get container PIDs", err)
+		return nil, err
 	}
 
 	taskIDToContainerID, err := GetTaskIDToContainerID()
 	if err != nil {
 		nlog.Error("Fail to get container ID", err)
+		return nil, err
 	}
 
 	for kusciaTaskID, containerPID := range taskToPID {
