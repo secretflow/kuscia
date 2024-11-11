@@ -342,3 +342,4 @@ func (pm *basicManager) GetPodByMirrorPod(mirrorPod *v1.Pod) (*v1.Pod, bool) {
 	pod, ok := pm.podByFullName[pkgcontainer.GetPodFullName(mirrorPod)]
 	return pod, ok
 }
+
