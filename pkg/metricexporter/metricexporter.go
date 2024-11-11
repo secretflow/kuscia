@@ -137,8 +137,9 @@ func MetricExporter(ctx context.Context, metricURLs map[string]string, port stri
 		podMetrics, err := ListPodMetricUrls(podManager)
 		if err != nil {
 			nlog.Errorf("Error retrieving pod metrics: %v", err)
+		}else{
+			metricURLs = combine(metricURLs, podMetrics)
 		}
-		metricURLs = combine(metricURLs, podMetrics)
 	}else{
 		nlog.Warn("podManager is nil, skipping ListPodMetricUrls call")
 	}
