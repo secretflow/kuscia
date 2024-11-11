@@ -34,6 +34,10 @@ var (
 )
 
 func ListPodMetricUrls(podManager pod.Manager) (map[string]string, error) {
+	if podManager == nil {
+        return nil, fmt.Errorf("podManager is not initialized")
+    }
+	
 	metricUrls := map[string]string{}
 	pods := podManager.GetPods()
 
@@ -129,11 +133,15 @@ func combine(map1, map2 map[string]string) map[string]string {
 func MetricExporter(ctx context.Context, metricURLs map[string]string, port string) {
 	nlog.Infof("Start to export metrics on port %s...", port)
 
-	podMetrics, err := ListPodMetricUrls(podManager)
-	if err != nil {
-		nlog.Errorf("Error retrieving pod metrics: %v", err)
+	if podManager != nil{
+		podMetrics, err := ListPodMetricUrls(podManager)
+		if err != nil {
+			nlog.Errorf("Error retrieving pod metrics: %v", err)
+		}
+		metricURLs = combine(metricURLs, podMetrics)
+	}else{
+		nlog.Warn("podManager is nil, skipping ListPodMetricUrls call")
 	}
-	metricURLs = combine(metricURLs, podMetrics)
 
 	metricServer := http.NewServeMux()
 	metricServer.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
