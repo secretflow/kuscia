@@ -105,7 +105,8 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")
 	mm.SetDependencies("scheduler", "k3s")
 	mm.SetDependencies("ssexporter", "envoy")
-	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "nodeexporter")
+	mm.SetDependencies("ktexporter", "envoy")
+	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "ktexporter", "nodeexporter")
 	mm.SetDependencies("transport", "envoy")
 	mm.SetDependencies("k3s", "coredns")
 
