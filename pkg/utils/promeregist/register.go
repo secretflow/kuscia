@@ -1,4 +1,4 @@
-package prome_regist
+package promeregist
 
 import (
 	"strings"

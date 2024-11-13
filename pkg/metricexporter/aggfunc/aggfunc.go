@@ -1,4 +1,4 @@
-package agg_func
+package aggfunc
 
 import (
 	"math"

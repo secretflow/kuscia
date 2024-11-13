@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/metricexporter/agg_func"
+	"github.com/secretflow/kuscia/pkg/metricexporter/aggfunc"
 	"github.com/secretflow/kuscia/pkg/metricexporter/domain"
 	"github.com/secretflow/kuscia/pkg/ssexporter/parse"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -133,28 +133,28 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if aggFunc == parse.AggRate {
 				if metric == parse.MetricRetranRate {
 					threshold := 0.0
-					retranSum, err := agg_func.Sum(networkResults, parse.MetricRetrans)
-					connectSum, err := agg_func.Sum(networkResults, parse.MetricTotalConnections)
+					retranSum, err := aggfunc.Sum(networkResults, parse.MetricRetrans)
+					connectSum, err := aggfunc.Sum(networkResults, parse.MetricTotalConnections)
 					if err != nil {
 						return clusterResults, err
 					}
-					clusterResults[metricID] = agg_func.Rate(retranSum-threshold, connectSum)
+					clusterResults[metricID] = aggfunc.Rate(retranSum-threshold, connectSum)
 				}
 			} else if aggFunc == parse.AggSum {
-				clusterResults[metricID], err = agg_func.Sum(networkResults, metric)
+				clusterResults[metricID], err = aggfunc.Sum(networkResults, metric)
 			} else if aggFunc == parse.AggAvg {
-				clusterResults[metricID], err = agg_func.Avg(networkResults, metric)
+				clusterResults[metricID], err = aggfunc.Avg(networkResults, metric)
 			} else if aggFunc == parse.AggMax {
-				clusterResults[metricID], err = agg_func.Max(networkResults, metric)
+				clusterResults[metricID], err = aggfunc.Max(networkResults, metric)
 			} else if aggFunc == parse.AggMin {
-				clusterResults[metricID], err = agg_func.Min(networkResults, metric)
+				clusterResults[metricID], err = aggfunc.Min(networkResults, metric)
 			}
 			if err != nil {
 				nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
 				return clusterResults, err
 			}
 			if metric == parse.MetricByteSent || metric == parse.MetricBytesReceived {
-				clusterResults[metricID] = agg_func.Rate(clusterResults[metricID], float64(MonitorPeriods))
+				clusterResults[metricID] = aggfunc.Rate(clusterResults[metricID], float64(MonitorPeriods))
 			}
 		}
 	}

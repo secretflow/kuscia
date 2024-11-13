@@ -40,7 +40,7 @@ func KtExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 	_, AggregationMetrics := parse.LoadMetricConfig()
 	clusterAddresses, _ := domain.GetClusterAddress(domainID)
 	localDomainName := domainID
-	var MetricTypes = ktpromexporter.NewMetricTypes_kt()
+	var MetricTypes = ktpromexporter.NewMetricTypeskt()
 
 	reg := ktpromexporter.ProduceRegister()
 	lastClusterMetricValues, err := ktmetrics.GetKtMetricResults(runMode, localDomainName, clusterAddresses, AggregationMetrics, exportPeriod)
@@ -51,7 +51,7 @@ func KtExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 	// export the cluster metrics
 	ticker := time.NewTicker(time.Duration(exportPeriod) * time.Second)
 	defer ticker.Stop()
-	go func(runMode pkgcom.RunModeType, reg *prometheus.Registry, MetricTypes map[string]string, exportPeriods uint, lastClusterMetricValues map[string]float64) {
+	go func(runMode pkgcom.RunModeType, reg *prometheus.Registry, MetricTypes map[string]string, exportPeriods uint, _ map[string]float64) {
 		for range ticker.C {
 			// get clusterName and clusterAddress
 			clusterAddresses, _ = domain.GetClusterAddress(domainID)

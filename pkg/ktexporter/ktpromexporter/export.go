@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/prome_regist"
+	prome_regist "github.com/secretflow/kuscia/pkg/utils/promeregist"
 )
 
 var counters = make(map[string]prometheus.Counter)

@@ -6,7 +6,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/ktexporter/fetchmetrics"
 	"github.com/secretflow/kuscia/pkg/ktexporter/parse"
-	"github.com/secretflow/kuscia/pkg/metricexporter/agg_func"
+	"github.com/secretflow/kuscia/pkg/metricexporter/aggfunc"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 
@@ -34,7 +34,7 @@ type ContainerStats struct {
 }
 
 // AggregateStatistics aggregate statistics using an aggregation function
-func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, MonitorPeriods uint) (map[string]float64, error) {
+func AggregateStatistics(localDomainName string, clusterResults map[string]float64, networkResults []map[string]string, aggregationMetrics map[string]string, dstDomain string, _ uint) (map[string]float64, error) {
 	if len(networkResults) == 0 {
 		return clusterResults, nil
 	}
@@ -47,13 +47,13 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if metric != parse.KtLocalAddr && metric != parse.KtPeerAddr {
 				var err error
 				if aggFunc == parse.AggSum {
-					clusterResults[metricID], err = agg_func.Sum(networkResults, metric)
+					clusterResults[metricID], err = aggfunc.Sum(networkResults, metric)
 				} else if aggFunc == parse.AggAvg {
-					clusterResults[metricID], err = agg_func.Avg(networkResults, metric)
+					clusterResults[metricID], err = aggfunc.Avg(networkResults, metric)
 				} else if aggFunc == parse.AggMax {
-					clusterResults[metricID], err = agg_func.Max(networkResults, metric)
+					clusterResults[metricID], err = aggfunc.Max(networkResults, metric)
 				} else if aggFunc == parse.AggMin {
-					clusterResults[metricID], err = agg_func.Min(networkResults, metric)
+					clusterResults[metricID], err = aggfunc.Min(networkResults, metric)
 				}
 				if err != nil {
 					nlog.Warnf("Fail to get clusterResults from aggregation functions, err: %v", err)
@@ -71,7 +71,7 @@ func Alert(metric float64, threshold float64) bool {
 }
 
 // GetKtMetricResults Get the results of kt statistics after filtering
-func GetKtMetricResults(runMode pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, AggregationMetrics map[string]string, MonitorPeriods uint) (map[string]float64, error) {
+func GetKtMetricResults(_ pkgcom.RunModeType, localDomainName string, clusterAddresses map[string][]string, AggregationMetrics map[string]string, MonitorPeriods uint) (map[string]float64, error) {
 	// Initialize the result map
 	ktResults := make(map[string]float64)
 

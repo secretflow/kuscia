@@ -20,9 +20,9 @@ const (
 	metricGauge   = "Gauge"
 )
 
-// NewMetricTypes_kt parse the metric types from a yaml file
+// NewMetricTypeskt parse the metric types from a yaml file
 
-func NewMetricTypes_kt() map[string]string {
+func NewMetricTypeskt() map[string]string {
 	MetricTypes := make(map[string]string)
 	MetricTypes["recvbw"] = metricGauge
 	MetricTypes["xmitbw"] = metricGauge
