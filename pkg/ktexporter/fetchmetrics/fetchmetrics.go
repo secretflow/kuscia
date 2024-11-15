@@ -3,12 +3,11 @@ package fetchmetrics
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"os"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -23,7 +22,7 @@ func GetKusciaTaskPID() (map[string]string, error) {
 	taskIDToPID := make(map[string]string)
 	containerFiles, err := os.ReadDir(containerdDir)
 	if err != nil {
-		nlog.Info("Error reading directory:", err)
+		nlog.Error("Error reading directory:", err)
 		return taskIDToPID, err
 	}
 	for _, containerFile := range containerFiles {
@@ -89,7 +88,7 @@ func GetTaskIDToContainerID() (map[string]string, error) {
 			nlog.Warnf("unexpected output format for line: %s", line)
 			return nil, err
 		}
-		state := fields[5] // 通常，crictl ps 的第四个字段为状态(State)
+		state := fields[5]
 		if state != "Running" {
 			nlog.Infof("state is %s", state)
 			continue
