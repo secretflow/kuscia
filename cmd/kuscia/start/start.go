@@ -90,10 +90,8 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("metricexporter", modules.NewMetricExporter, autonomy, lite, master)
 	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)
-	mm.Regist("ktexporter", modules.NewKtExporter, autonomy, lite, master)
 	if err := mm.Regist("ktexporter", modules.NewKtExporter, autonomy, lite, master); err != nil {
-		// 处理错误
-		nlog.Fatal(err) // 例如记录错误并终止程序，或者进行其他适当的错误处理
+		nlog.Fatal(err)
 	}
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)
 	mm.Regist("transport", modules.NewTransport, autonomy, lite)
@@ -109,14 +107,10 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")
 	mm.SetDependencies("scheduler", "k3s")
 	mm.SetDependencies("ssexporter", "envoy")
-	mm.SetDependencies("ktexporter", "envoy")
 	if err := mm.SetDependencies("ktexporter", "envoy"); err != nil {
-		// 处理错误
 		nlog.Fatal(err)
 	}
-	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "ktexporter", "nodeexporter")
 	if err := mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "ktexporter", "nodeexporter"); err != nil {
-		// 处理错误
 		nlog.Fatal(err)
 	}
 	mm.SetDependencies("transport", "envoy")

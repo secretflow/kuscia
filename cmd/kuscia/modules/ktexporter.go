@@ -39,7 +39,7 @@ func NewKtExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		moduleRuntimeBase: moduleRuntimeBase{
 			name:         "ktexporter",
 			readyTimeout: 60 * time.Second,
-			rdz: readyz.NewHTTPReadyZ(readyURI, 404, func(_ []byte) error {
+			rdz: readyz.NewHTTPReadyZ(readyURI, 200, func(_ []byte) error {
 				return nil
 			}),
 		},
