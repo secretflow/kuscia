@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package metric the function to export metrics to Prometheus
-package promexporter
+package ktpromexporter
 
 import (
 	"strings"
@@ -34,12 +34,13 @@ func produceMetric(reg *prometheus.Registry,
 	metricID string, metricType string) *prometheus.Registry {
 	splitedMetric := strings.Split(metricID, ";")
 	labels := make(map[string]string)
-	labels["type"] = "ss"
-	labels["remote_domain"] = splitedMetric[len(splitedMetric)-3]
-	name := splitedMetric[len(splitedMetric)-2]
-	labels["aggregation_function"] = splitedMetric[len(splitedMetric)-1]
-	help := name + " aggregated by " + labels["aggregation_function"] + " from ss"
-	nameSpace := "ss"
+	labels["type"] = "kt"
+	labels["remote_domain"] = splitedMetric[len(splitedMetric)-4]
+	name := splitedMetric[len(splitedMetric)-3]
+	labels["aggregation_function"] = splitedMetric[len(splitedMetric)-2]
+	labels["taskid"] = splitedMetric[len(splitedMetric)-1]
+	help := name + " aggregated by " + labels["aggregation_function"] + " from kt"
+	nameSpace := "kt"
 	if metricType == "Counter" {
 		counters[metricID] = prome_regist.ProduceCounter(nameSpace, name, help, labels)
 		reg.MustRegister(counters[metricID])
@@ -55,6 +56,7 @@ func produceMetric(reg *prometheus.Registry,
 	}
 	return reg
 }
+
 func ProduceRegister() *prometheus.Registry {
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(
@@ -70,7 +72,7 @@ func UpdateMetrics(reg *prometheus.Registry,
 		metricID := prome_regist.Formalize(metric)
 		splitedMetric := strings.Split(metric, ";")
 		var metricTypeID string
-		metricTypeID = splitedMetric[len(splitedMetric)-2]
+		metricTypeID = splitedMetric[len(splitedMetric)-3]
 		metricType, ok := MetricTypes[metricTypeID]
 		if !ok {
 			nlog.Error("Fail to get metric types", ok)

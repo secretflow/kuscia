@@ -69,6 +69,7 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 			"node-exporter": "http://localhost:" + i.NodeExportPort + "/metrics",
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
 			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
+			"kt":            "http://localhost:" + i.KtExportPort + "/ktmetrics",
 		},
 	}
 	return exporter, nil
