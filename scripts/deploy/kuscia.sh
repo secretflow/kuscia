@@ -273,8 +273,8 @@ function generate_hostname() {
     local prefix=$1
     local local_hostname
     local_hostname=$(hostname)
-    local_hostname=$(echo "${local_hostname}" | tr '[:upper:]_.' '[:lower:]--' | sed 's/[^a-z0-9]$//g' )
-    echo "${prefix}-${local_hostname}" | cut -c 1-63
+    local_hostname=$(echo "${prefix}-${local_hostname}" | cut -c 1-63 | tr '[:upper:]_.' '[:lower:]--' | sed 's/^[^a-z0-9]//; s/[^a-z0-9]$//g' )
+    echo "${local_hostname}"
 }
 
 function copy_between_containers() {
