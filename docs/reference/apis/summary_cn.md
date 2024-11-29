@@ -141,7 +141,7 @@ GRPC 主机上端口：master 或者 autonomy 可以通过 `docker inspect --for
 3. 发送请求。
 
 你也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，你需要替换 {} 中的内容：
-> 如果 GRPC 的主机端口是 8082 ，则可以执行下面的命令，端口号不是 8082 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
+> 如果 HTTPS 的主机端口是 8082 ，则可以执行下面的命令，端口号不是 8082 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
 ```shell
 curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
      --key /home/kuscia/var/certs/kusciaapi-server.key \
