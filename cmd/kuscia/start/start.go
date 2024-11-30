@@ -90,9 +90,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("metricexporter", modules.NewMetricExporter, autonomy, lite, master)
 	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)
-	if err := mm.Regist("ktexporter", modules.NewKtExporter, autonomy, lite, master); err != nil {
-		nlog.Fatal(err)
-	}
+	mm.Regist("ktexporter", modules.NewKtExporter, autonomy, lite, master)
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)
 	mm.Regist("transport", modules.NewTransport, autonomy, lite)
 
@@ -107,12 +105,8 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")
 	mm.SetDependencies("scheduler", "k3s")
 	mm.SetDependencies("ssexporter", "envoy")
-	if err := mm.SetDependencies("ktexporter", "envoy"); err != nil {
-		nlog.Fatal(err)
-	}
-	if err := mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "ktexporter", "nodeexporter"); err != nil {
-		nlog.Fatal(err)
-	}
+	mm.SetDependencies("ktexporter", "envoy")
+	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "ktexporter", "nodeexporter")
 	mm.SetDependencies("transport", "envoy")
 	mm.SetDependencies("k3s", "coredns")
 

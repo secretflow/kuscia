@@ -291,7 +291,12 @@ curl -X POST http://127.0.0.1:80/intra/project/create \
 ```bash
 curl -X POST http://127.0.0.1:80/intra/project/list \
 --header "host: scql-broker-intra.alice.svc" \
---header "kuscia-source: alice"
+--header "kuscia-source: alice" \
+-d '{
+  "ids": [
+    "demo"
+  ]
+}'
 ```
 
 4.邀请 bob 加入到 "demo" 项目中
@@ -309,7 +314,8 @@ curl -X POST http://127.0.0.1:80/intra/member/invite \
 ```bash
 curl -X POST http://127.0.0.1:80/intra/invitation/list \
 --header "host: scql-broker-intra.alice.svc" \
---header "kuscia-source: alice"
+--header "kuscia-source: alice" \
+-d '{}'
 ```
 
 #### Bob 接受邀请

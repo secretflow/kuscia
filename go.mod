@@ -271,7 +271,6 @@ require (
 )
 
 replace (
-	github.com/secretflow/kuscia/pkg/utils/calculate => ./pkg/utils/calculate
 	github.com/agiledragon/gomonkey => github.com/agiledragon/gomonkey/v2 v2.2.0
 	k8s.io/api => k8s.io/api v0.26.11
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.26.11
