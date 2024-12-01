@@ -95,7 +95,7 @@ type ContainerStats struct {
 }
 
 // GetContainerStats fetches the container stats using crictl stats command
-func GetContainerStats() (map[string]ContainerStats, error) {
+func GetContainerStats(podLister listers.PodLister) (map[string]ContainerStats, error) {
 	// Execute the crictl stats command
 	cmd := exec.Command("crictl", "stats")
 	var out bytes.Buffer

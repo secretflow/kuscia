@@ -150,7 +150,11 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 		ktMetrics[parse.MetricRecvBw] = fmt.Sprintf("%.2f", recvBW)
 		ktMetrics[parse.MetricXmitBw] = fmt.Sprintf("%.2f", xmitBW)
 		ktMetrics["taskid"] = kusciaTaskID
-		containerStats, err := fetchmetrics.GetContainerStats()
+
+		podLister := informers.NewSharedInformerFactoryWithOptions(kubernetes.NewForConfigOrDie(nil), 0).Core().V1().Pods().Lister()
+
+		containerStats, err := fetchmetrics.GetContainerStats(podLister)
+
 		if err != nil {
 			nlog.Warn("Fail to get the stats of containers")
 			continue
