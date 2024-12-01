@@ -10,7 +10,11 @@ import (
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers/core/v1"
 )
 
 type ContainerConfig struct {
@@ -60,44 +64,25 @@ func GetKusciaTaskPID() (map[string]string, error) {
 	return taskIDToPID, nil
 }
 
-// GetContainerMappings fetches the container info using crictl ps command
-func GetTaskIDToContainerID() (map[string]string, error) {
-	cmd := exec.Command("crictl", "ps")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
+func GetTaskIDToContainerID(podLister listers.PodLister) (map[string]string, error) {
+	var pods []*corev1.Pod
+	pods, err := podLister.List(labels.Everything()) // 这里不做任何标签筛选
 	if err != nil {
-		nlog.Error("failed to execute crictl ps.", err)
 		return nil, err
 	}
-
-	lines := strings.Split(out.String(), "\n")
-
-	if len(lines) < 2 {
-		nlog.Warn("unexpected output format from crictl ps", err)
-		return nil, err
-	}
-
 	taskIDToContainerID := make(map[string]string)
-	for _, line := range lines[1:] {
-		if line == "" {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) < 8 {
-			nlog.Warnf("unexpected output format for line: %s", line)
-			return nil, err
-		}
-		state := fields[5]
-		if state != "Running" {
-			nlog.Infof("state is %s", state)
-			continue
-		}
-		containerID := fields[0]
-		kusciaTaskID := fields[len(fields)-1]
-		taskIDToContainerID[kusciaTaskID] = containerID
-	}
 
+	for _, pod := range pods {
+		annotations := pod.Annotations
+		if annotations == nil || annotations[common.TaskIDAnnotationKey] == "" {
+			continue
+		}
+		taskID := annotations[common.TaskIDAnnotationKey]
+		for _, container := range pod.Status.ContainerStatuses {
+			containerID := container.ContainerID
+			taskIDToContainerID[taskID] = containerID
+		}
+	}
 	return taskIDToContainerID, nil
 }
 

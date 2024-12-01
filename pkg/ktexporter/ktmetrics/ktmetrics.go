@@ -7,6 +7,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/ktexporter/fetchmetrics"
 	"github.com/secretflow/kuscia/pkg/ktexporter/parse"
 	"github.com/secretflow/kuscia/pkg/metricexporter/aggfunc"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 
@@ -114,7 +116,9 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 		return nil, err
 	}
 
-	taskIDToContainerID, err := fetchmetrics.GetTaskIDToContainerID()
+	podLister := informers.NewSharedInformerFactoryWithOptions(kubernetes.NewForConfigOrDie(nil), 0).Core().V1().Pods().Lister()
+
+	taskIDToContainerID, err := fetchmetrics.GetTaskIDToContainerID(podLister)
 	if err != nil {
 		nlog.Error("Fail to get container ID", err)
 		return nil, err
