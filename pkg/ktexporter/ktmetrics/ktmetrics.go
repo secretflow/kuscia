@@ -110,13 +110,15 @@ func GetStatisticFromKt() ([]map[string]string, error) {
 	var preRecvBytes, preXmitBytes uint64
 	var tcpStatisticList []map[string]string
 	timeWindow := 1.0
-	taskToPID, err := fetchmetrics.GetKusciaTaskPID()
+
+	podLister := informers.NewSharedInformerFactoryWithOptions(kubernetes.NewForConfigOrDie(nil), 0).Core().V1().Pods().Lister()
+
+	taskToPID, err := fetchmetrics.GetKusciaTaskPID(podLister)
+
 	if err != nil {
 		nlog.Error("Fail to get container PIDs", err)
 		return nil, err
 	}
-
-	podLister := informers.NewSharedInformerFactoryWithOptions(kubernetes.NewForConfigOrDie(nil), 0).Core().V1().Pods().Lister()
 
 	taskIDToContainerID, err := fetchmetrics.GetTaskIDToContainerID(podLister)
 	if err != nil {

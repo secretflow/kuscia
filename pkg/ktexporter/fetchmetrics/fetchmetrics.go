@@ -13,8 +13,8 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/typeurl"
+	"github.com/docker/docker/client"
 	"github.com/gogo/protobuf/types"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	corev1 "k8s.io/api/core/v1"
@@ -26,47 +26,44 @@ type ContainerConfig struct {
 	Hostname string `json:"hostname"`
 }
 
-func GetKusciaTaskPID() (map[string]string, error) {
-	const containerdDir = "/home/kuscia/containerd/run/io.containerd.runtime.v2.task/k8s.io/"
+func GetKusciaTaskPID(podLister listers.PodLister) (map[string]string, error) {
 	taskIDToPID := make(map[string]string)
-	containerFiles, err := os.ReadDir(containerdDir)
+	var pods []*corev1.Pod
+	pods, err := podLister.List(labels.Everything()) // 这里不做任何标签筛选
 	if err != nil {
-		nlog.Error("Error reading directory:", err)
-		return taskIDToPID, err
+		return nil, err
 	}
-	for _, containerFile := range containerFiles {
-		if !containerFile.IsDir() {
+
+	for _, pod := range pods {
+		annotations := pod.Annotations
+		if annotations == nil || annotations[common.TaskIDAnnotationKey] == "" {
 			continue
 		}
-		containerDir := filepath.Join(containerdDir, containerFile.Name())
-		// Read init.pid
-		pidFile := filepath.Join(containerDir, "init.pid")
-		pidData, err := os.ReadFile(pidFile)
-		if err != nil {
-			nlog.Info("Error reading pid containerFile:", err)
-			return taskIDToPID, err
-		}
-
-		// Read config.json
-		configFile := filepath.Join(containerDir, "config.json")
-		configData, err := os.ReadFile(configFile)
-		if err != nil {
-			nlog.Info("Error reading config containerFile:", err)
-			return taskIDToPID, err
-		}
-
-		var config ContainerConfig
-		err = jsoniter.Unmarshal(configData, &config)
-		if err != nil {
-			nlog.Info("Error parsing config containerFile:", err)
-			return taskIDToPID, err
-		}
-		if config.Hostname != "" {
-			taskIDToPID[config.Hostname] = string(pidData)
+		taskID := annotations[common.TaskIDAnnotationKey]
+		for _, container := range pod.Status.ContainerStatuses {
+			containerID := container.ContainerID
+			taskIDToPID[taskID] = containerID
 		}
 	}
 
 	return taskIDToPID, nil
+}
+
+func getContainerPID(containerID string) (int, error) {
+	// 创建一个 Docker 客户端
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		return 0, err
+	}
+
+	// 获取容器的详细信息
+	containerInfo, err := cli.ContainerInspect(context.Background(), containerID)
+	if err != nil {
+		return 0, err
+	}
+
+	// 返回容器的 PID
+	return containerInfo.State.Pid, nil
 }
 
 func GetTaskIDToContainerID(podLister listers.PodLister) (map[string]string, error) {
@@ -85,7 +82,12 @@ func GetTaskIDToContainerID(podLister listers.PodLister) (map[string]string, err
 		taskID := annotations[common.TaskIDAnnotationKey]
 		for _, container := range pod.Status.ContainerStatuses {
 			containerID := container.ContainerID
-			taskIDToContainerID[taskID] = containerID
+			PID, err := getContainerPID(containerID)
+			if err != nil {
+				nlog.Fatal(err)
+			}
+			containerPID := strconv.Itoa(PID)
+			taskIDToContainerID[taskID] = containerPID
 		}
 	}
 	return taskIDToContainerID, nil
