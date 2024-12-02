@@ -1,14 +1,19 @@
 package fetchmetrics
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	v1 "github.com/containerd/cgroups/stats/v1"
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/cio"
+	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/typeurl"
+	"github.com/gogo/protobuf/types"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -96,50 +101,65 @@ type ContainerStats struct {
 
 // GetContainerStats fetches the container stats using crictl stats command
 func GetContainerStats(podLister listers.PodLister) (map[string]ContainerStats, error) {
-	// Execute the crictl stats command
-	cmd := exec.Command("crictl", "stats")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
+
+	var pods []*corev1.Pod
+	pods, err := podLister.List(labels.Everything()) // 这里不做任何标签筛选
 	if err != nil {
-		nlog.Warn("failed to execute crictl stats", err)
 		return nil, err
 	}
-
-	// Parse the output
-	lines := strings.Split(out.String(), "\n")
-	if len(lines) < 2 {
-		nlog.Warn("unexpected output format from crictl stats")
-		return nil, err
-	}
-
-	// Create a map to hold the stats for each container
 	statsMap := make(map[string]ContainerStats)
 
-	// Skip the header line and iterate over the output lines
-	for _, line := range lines[1:] {
-		// Skip empty lines
-		if line == "" {
-			continue
-		}
+	for _, pod := range pods {
 
-		// Split the line by whitespace
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			nlog.Warnf("unexpected output format for line: %s", line)
-			return nil, err
-		}
+		for _, container := range pod.Status.ContainerStatuses {
+			containerID := container.ContainerID
 
-		// Extract the stats information
-		containerID := fields[0]
-		stats := ContainerStats{
-			CPUPercentage: fields[1],
-			Memory:        fields[2],
-			Disk:          fields[3],
-			Inodes:        fields[4],
+			client, err := containerd.New("/run/containerd/containerd.sock")
+			if err != nil {
+				nlog.Fatal(err)
+			}
+			defer client.Close()
+
+			ctx := namespaces.WithNamespace(context.Background(), "default")
+
+			container, err := client.LoadContainer(ctx, containerID)
+			if err != nil {
+				nlog.Fatalf("failed to load container: %v", err)
+			}
+
+			task, err := container.Task(ctx, cio.Load)
+			if err != nil {
+				nlog.Fatalf("failed to load task for container: %v", err)
+			}
+
+			metrics, err := task.Metrics(ctx)
+			if err != nil {
+				nlog.Fatalf("failed to get metrics: %v", err)
+			}
+
+			newAny := &types.Any{
+				TypeUrl: metrics.Data.GetTypeUrl(),
+				Value:   metrics.Data.GetValue(),
+			}
+
+			data, err := typeurl.UnmarshalAny(newAny)
+			if err != nil {
+				nlog.Fatalf("failed to unmarshal metrics data: %v", err)
+			}
+
+			ans := data.(*v1.Metrics)
+			usageStr1 := strconv.FormatUint(ans.CPU.Usage.Total, 10)
+			usageStr2 := strconv.FormatUint(ans.Memory.Usage.Usage, 10)
+
+			stats := ContainerStats{
+				CPUPercentage: usageStr1,
+				Memory:        usageStr2,
+				Disk:          "",
+				Inodes:        "",
+			}
+
+			statsMap[containerID] = stats
 		}
-		// Add the stats to the map
-		statsMap[containerID] = stats
 	}
 
 	return statsMap, nil
