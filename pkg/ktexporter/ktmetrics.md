@@ -1,0 +1,1 @@
+现在将kusciatask的相关指标在localhost:9093/ktmetrics暴露输出，同时集成到localhost:9091/metrics中，具体类型见ktpromexporter/type.go
