@@ -33,6 +33,7 @@ type metricExporterModule struct {
 	metricURLs       map[string]string
 	nodeExportPort   string
 	ssExportPort     string
+	ktExportPort     string
 	metricExportPort string
 	podManager       pod.Manager
 }
@@ -63,12 +64,14 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		rootDir:          i.RootDir,
 		nodeExportPort:   i.NodeExportPort,
 		ssExportPort:     i.SsExportPort,
+		ktExportPort:     i.KtExportPort,
 		metricExportPort: i.MetricExportPort,
 		podManager:       podManager,
 		metricURLs: map[string]string{
 			"node-exporter": "http://localhost:" + i.NodeExportPort + "/metrics",
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
 			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
+			"kt":            "http://localhost:" + i.KtExportPort + "/ktmetrics",
 		},
 	}
 	return exporter, nil
