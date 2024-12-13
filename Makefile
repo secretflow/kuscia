@@ -1,4 +1,3 @@
-
 SHELL := /bin/bash
 # Image URL to use all building image targets
 DATETIME = $(shell date +"%Y%m%d%H%M%S")
@@ -169,3 +168,57 @@ integration_test: image ## Run Integration Test
 	mkdir -p run/test
 	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
 	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh ${TEST_SUITE}
+
+# OPENSOURCE-CLEANUP REMOVE BEGIN
+
+.PHONY: alios-base-image
+alios-base-image:
+	docker build -t alios7u2-py-base:${DATETIME} --platform linux/amd64 -f ./build/dockerfile/base/kuscia-alios-base.Dockerfile .
+
+.PHONY: alios-image
+alios-image: export GOOS=linux
+alios-image: export GOARCH=amd64
+alios-image: build
+	docker build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-alios.Dockerfile .
+# OPENSOURCE-CLEANUP REMOVE END
+
+# https://github.com/DavidAnson/markdownlint
+# rules: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+.PHONY: lint.file.markdown
+lint.file.markdown:
+	# if need to fix md style, can use the --fix parameter
+	markdownlint --config ".github/markdown_lint_config.yaml" --fix "**/*.md"
+
+# https://github.com/adrienverge/yamllint
+# rules: https://yamllint.readthedocs.io/en/stable/rules.html
+.PHONY: lint.file.yaml
+lint.file.yaml:
+	yamllint -c .github/.yamllint .
+
+.PHONY: install.tools.yaml
+install.tools.yaml:
+	pip3 install --upgrade pip && pip3 --version
+	pip3 install -r ./scripts/yamllint/requirements.txt
+
+.PHONY: install.tools.markdown
+install.tools.markdown:
+	node --version && npm --version
+	# if install failed or too slow, add --registry=https://registry.npmmirror.com params.
+	npm install -g markdownlint-cli@0.25.0 --registry=https://registry.npmmirror.com
+
+##@ Lint
+.PHONY: lint
+lint: ## Run linter, include install tools and run.
+lint: lint-tools lint.file.markdown lint.file.yaml
+
+.PHONY: lint-tools
+lint-tools: ## Install yaml&markdown linter tools.
+lint-tools: install.tools.markdown install.tools.yaml
+
+.PHONY: lint-md
+lint-md: ## Run markdown file linter.
+lint-md: lint.file.markdown
+
+.PHONY: lint-yaml
+lint-yaml: ## Run yaml file linter
+lint-yaml: lint.file.yaml
