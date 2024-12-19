@@ -37,7 +37,7 @@ func (c *Controller) registerInteropConfigs() {
 	interopConfigs, _ := c.interopConfigLister.List(labels.Everything())
 	for _, ic := range interopConfigs {
 		if err := c.registerInteropConfig(ic); err != nil {
-			nlog.Warnf("Register interop config %v failed during startup， %v", ic.Name, err.Error())
+			nlog.Warnf("Register interop config %v failed during startup，%v", ic.Name, err.Error())
 		}
 	}
 }

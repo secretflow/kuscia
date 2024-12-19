@@ -24,11 +24,11 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
@@ -58,7 +58,7 @@ type MasterKusciaConfig struct {
 	AdvancedConfig    `yaml:",inline"`
 }
 
-type AutomonyKusciaConfig struct {
+type AutonomyKusciaConfig struct {
 	CommonConfig      `yaml:",inline"`
 	Runtime           string                      `yaml:"runtime"`
 	Runk              RunkConfig                  `yaml:"runk"`
@@ -75,6 +75,8 @@ type RunkConfig struct {
 	KubeconfigFile string   `yaml:"kubeconfigFile"`
 	EnableLogging  bool     `yaml:"enableLogging"`
 	LogDirectory   string   `yaml:"logDirectory"`
+	LogMaxFiles    int      `yaml:"logMaxFiles"`
+	LogMaxSize     string   `yaml:"logMaxSize"`
 }
 
 func (runk RunkConfig) overwriteK8sProviderCfg(k8sCfg config.K8sProviderCfg) config.K8sProviderCfg {
@@ -83,6 +85,8 @@ func (runk RunkConfig) overwriteK8sProviderCfg(k8sCfg config.K8sProviderCfg) con
 	k8sCfg.DNS.Servers = runk.DNSServers
 	k8sCfg.EnableLogging = runk.EnableLogging
 	k8sCfg.LogDirectory = runk.LogDirectory
+	k8sCfg.LogMaxFiles = runk.LogMaxFiles
+	k8sCfg.LogMaxSize = runk.LogMaxSize
 	return k8sCfg
 }
 
@@ -142,8 +146,8 @@ func LoadMasterConfig(configFile string) *MasterKusciaConfig {
 	return conf
 }
 
-func LoadAutonomyConfig(configFile string) *AutomonyKusciaConfig {
-	conf := &AutomonyKusciaConfig{}
+func LoadAutonomyConfig(configFile string) *AutonomyKusciaConfig {
+	conf := &AutonomyKusciaConfig{}
 	loadConfig(configFile, conf)
 	return conf
 }
@@ -162,10 +166,26 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.Agent.AllowPrivileged = lite.Agent.AllowPrivileged
 	kusciaConfig.Agent.Provider.Runtime = lite.Runtime
 	kusciaConfig.Agent.Provider.K8s = lite.Runk.overwriteK8sProviderCfg(lite.Agent.Provider.K8s)
-	kusciaConfig.Agent.Capacity = lite.Capacity
-	if kusciaConfig.Agent.Provider.K8s.LogDirectory == "" {
-		kusciaConfig.Agent.Provider.K8s.LogDirectory = filepath.Join(kusciaConfig.RootDir, common.StdoutPrefix)
+	// overwrite runk log rotate config
+	if kusciaConfig.Agent.Provider.K8s.LogMaxFiles <= 1 {
+		if lite.AdvancedConfig.Logrotate.MaxFiles > 1 {
+			kusciaConfig.Agent.Provider.K8s.LogMaxFiles = lite.AdvancedConfig.Logrotate.MaxFiles
+		} else {
+			kusciaConfig.Agent.Provider.K8s.LogMaxFiles = kusciaConfig.Logrotate.MaxFiles
+		}
 	}
+	if _, parseErr := parseMaxSize(kusciaConfig.Agent.Provider.K8s.LogMaxSize); parseErr != nil {
+		if lite.AdvancedConfig.Logrotate.MaxFileSizeMB > 0 {
+			kusciaConfig.Agent.Provider.K8s.LogMaxSize = fmt.Sprintf("%dMi", lite.AdvancedConfig.Logrotate.MaxFileSizeMB)
+		} else {
+			kusciaConfig.Agent.Provider.K8s.LogMaxSize = fmt.Sprintf("%dMi", kusciaConfig.Logrotate.MaxFileSizeMB)
+		}
+	}
+	kusciaConfig.Agent.Capacity = lite.Capacity
+	if kusciaConfig.Agent.Provider.Runtime == config.K8sRuntime && kusciaConfig.Agent.Provider.K8s.LogDirectory != "" {
+		kusciaConfig.Agent.StdoutPath = kusciaConfig.Agent.Provider.K8s.LogDirectory
+	}
+
 	if lite.ReservedResources.CPU != "" {
 		kusciaConfig.Agent.ReservedResources.CPU = lite.ReservedResources.CPU
 	}
@@ -189,7 +209,7 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.Image = lite.Image
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &lite.AdvancedConfig.Logrotate)
-	overwriteKusciaConfigAgentLogrotate(&kusciaConfig.Agent.Provider.CRI, &lite.Agent.Provider.CRI, &lite.AdvancedConfig.Logrotate)
+	overwriteKusciaConfigAgentLogrotate(&kusciaConfig.Agent.Provider.CRI, &lite.Agent.Provider.CRI, &kusciaConfig.Logrotate)
 }
 
 func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
@@ -213,7 +233,7 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &master.AdvancedConfig.Logrotate)
 }
 
-func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
+func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
 	kusciaConfig.LogLevel = autonomy.LogLevel
 	kusciaConfig.DomainID = autonomy.DomainID
 	kusciaConfig.CAKeyData = autonomy.DomainKeyData
@@ -221,9 +241,27 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Agent.AllowPrivileged = autonomy.Agent.AllowPrivileged
 	kusciaConfig.Agent.Provider.Runtime = autonomy.Runtime
 	kusciaConfig.Agent.Provider.K8s = autonomy.Runk.overwriteK8sProviderCfg(autonomy.Agent.Provider.K8s)
+	// overwrite runk log rotate config
+	// maxFile must > 1, maxFileSizeMB must can be parsed
+	if kusciaConfig.Agent.Provider.K8s.LogMaxFiles <= 1 {
+		if autonomy.AdvancedConfig.Logrotate.MaxFiles > 1 {
+			kusciaConfig.Agent.Provider.K8s.LogMaxFiles = autonomy.AdvancedConfig.Logrotate.MaxFiles
+		} else {
+			// runk log rotate config has NO DEFAULT INIT value, use kusciaConfig's logrotate config as final backup value
+			kusciaConfig.Agent.Provider.K8s.LogMaxFiles = kusciaConfig.Logrotate.MaxFiles
+		}
+	}
+	// if logMaxSize is invalid, consider to use inherited value
+	if _, parseErr := parseMaxSize(kusciaConfig.Agent.Provider.K8s.LogMaxSize); parseErr != nil {
+		if autonomy.AdvancedConfig.Logrotate.MaxFileSizeMB > 0 {
+			kusciaConfig.Agent.Provider.K8s.LogMaxSize = fmt.Sprintf("%dMi", autonomy.AdvancedConfig.Logrotate.MaxFileSizeMB)
+		} else {
+			kusciaConfig.Agent.Provider.K8s.LogMaxSize = fmt.Sprintf("%dMi", kusciaConfig.Logrotate.MaxFileSizeMB)
+		}
+	}
 	kusciaConfig.Agent.Capacity = autonomy.Capacity
-	if kusciaConfig.Agent.Provider.K8s.LogDirectory == "" {
-		kusciaConfig.Agent.Provider.K8s.LogDirectory = filepath.Join(kusciaConfig.RootDir, common.StdoutPrefix)
+	if kusciaConfig.Agent.Provider.Runtime == config.K8sRuntime && kusciaConfig.Agent.Provider.K8s.LogDirectory != "" {
+		kusciaConfig.Agent.StdoutPath = kusciaConfig.Agent.Provider.K8s.LogDirectory
 	}
 	if autonomy.ReservedResources.CPU != "" {
 		kusciaConfig.Agent.ReservedResources.CPU = autonomy.ReservedResources.CPU
@@ -257,22 +295,30 @@ func (autonomy *AutomonyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Image = autonomy.Image
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &autonomy.AdvancedConfig.Logrotate)
-	overwriteKusciaConfigAgentLogrotate(&kusciaConfig.Agent.Provider.CRI, &autonomy.Agent.Provider.CRI, &autonomy.AdvancedConfig.Logrotate)
+	overwriteKusciaConfigAgentLogrotate(&kusciaConfig.Agent.Provider.CRI, &autonomy.Agent.Provider.CRI, &kusciaConfig.Logrotate)
 }
 
+// try to overwrite app's (secretflow) default logrotate config with kuscia yaml logrotate config or agent cri logrotate config
 func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrotate *config.CRIProviderCfg, overwriteLogrotate *LogrotateConfig) {
-	if overwriteAgentLogrotate != nil && overwriteAgentLogrotate.ContainerLogMaxFiles > 0 {
+	// kusciaAgentConfig has a default initial value, so we only need to try overwrite, priority use cri logrotate config
+	// maxFile must > 1, maxFileSizeMB must can be parsed
+	if overwriteAgentLogrotate != nil && overwriteAgentLogrotate.ContainerLogMaxFiles > 1 {
 		kusciaAgentConfig.ContainerLogMaxFiles = overwriteAgentLogrotate.ContainerLogMaxFiles
-	} else if overwriteLogrotate != nil && overwriteLogrotate.MaxFileSizeMB > 0 {
+	} else if overwriteLogrotate != nil && overwriteLogrotate.MaxFiles > 1 {
 		kusciaAgentConfig.ContainerLogMaxFiles = overwriteLogrotate.MaxFiles
 	}
-	if overwriteAgentLogrotate != nil && overwriteAgentLogrotate.ContainerLogMaxSize != "" {
-		kusciaAgentConfig.ContainerLogMaxSize = overwriteAgentLogrotate.ContainerLogMaxSize
-	} else if overwriteLogrotate != nil && overwriteLogrotate.MaxFiles > 0 {
+	if overwriteAgentLogrotate != nil {
+		if _, parseErr := parseMaxSize(overwriteAgentLogrotate.ContainerLogMaxSize); parseErr == nil {
+			kusciaAgentConfig.ContainerLogMaxSize = overwriteAgentLogrotate.ContainerLogMaxSize
+			return
+		}
+	}
+	if overwriteLogrotate != nil && overwriteLogrotate.MaxFileSizeMB > 0 {
 		kusciaAgentConfig.ContainerLogMaxSize = fmt.Sprintf("%dMi", overwriteLogrotate.MaxFileSizeMB)
 	}
 }
 
+// try to overwrite kuscia logrotate default config with kuscia yaml logrotate config
 func overwriteKusciaConfigLogrotate(kusciaConfig, overwriteLogrotate *LogrotateConfig) {
 	if overwriteLogrotate != nil {
 		if overwriteLogrotate.MaxFileSizeMB > 0 {
@@ -338,4 +384,17 @@ func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
 		nlog.Fatalf("Encode certificate request error: %v", err.Error())
 	}
 	return reader.String()
+}
+
+// copied from kubelet/log/container_log_manager
+func parseMaxSize(size string) (int64, error) {
+	quantity, err := resource.ParseQuantity(size)
+	if err != nil {
+		return 0, err
+	}
+	maxSize, ok := quantity.AsInt64()
+	if !ok {
+		return 0, fmt.Errorf("invalid max log size")
+	}
+	return maxSize, nil
 }

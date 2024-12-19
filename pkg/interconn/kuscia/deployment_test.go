@@ -307,18 +307,18 @@ func TestUpdateDeploymentSummaryPartyStatus(t *testing.T) {
 	kd := makeMockDeployment("cross-domain", "kd-1")
 	kd.Status.Phase = v1alpha1.KusciaDeploymentPhaseFailed
 	kds := makeMockDeploymentSummary("alice", "kd-1")
-	got := updateDeploymentSummaryPartyStatus(kd, kds)
+	got := updateDeploymentSummaryPartyStatus(kd, kds, false)
 	assert.Equal(t, true, got)
 
 	// kd PartyDeploymentStatuses is empty, should return false
 	kd = makeMockDeployment("cross-domain", "kd-1")
-	got = updateDeploymentSummaryPartyStatus(kd, nil)
+	got = updateDeploymentSummaryPartyStatus(kd, nil, false)
 	assert.Equal(t, false, got)
 
 	// self cluster party domain ids is empty, should return false
 	kd = makeMockDeployment("cross-domain", "kd-1")
 	kd.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{}
-	got = updateDeploymentSummaryPartyStatus(kd, nil)
+	got = updateDeploymentSummaryPartyStatus(kd, nil, false)
 	assert.Equal(t, false, got)
 
 	// status is updated, should return true
@@ -336,6 +336,6 @@ func TestUpdateDeploymentSummaryPartyStatus(t *testing.T) {
 		},
 	}
 	kds = makeMockDeploymentSummary("alice", "kd-1")
-	got = updateDeploymentSummaryPartyStatus(kd, kds)
+	got = updateDeploymentSummaryPartyStatus(kd, kds, false)
 	assert.Equal(t, true, got)
 }

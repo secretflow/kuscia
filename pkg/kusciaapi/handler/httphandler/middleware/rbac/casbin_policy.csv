@@ -30,3 +30,6 @@ p, domain, /api/v1/serving/update, POST
 p, domain, /api/v1/serving/delete, POST
 p, domain, /api/v1/serving/query, POST
 p, domain, /api/v1/serving/status/batchQuery, POST
+
+p, domain, /api/v1/log/task/query, POST
+p, domain, /api/v1/log/node/query, POST

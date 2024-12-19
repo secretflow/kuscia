@@ -34,3 +34,8 @@ message CommandDataMeshUpdate {
   DomainData domaindata = 2 ;
   DomainDataSource datasource = 3;
 }
+
+message CommandDataMeshSqlQuery {
+  CommandDataSourceSqlQuery query = 1;
+  DomainDataSource datasource = 2;
+}

@@ -113,6 +113,9 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))
 	kusciaapi.RegisterCertificateServiceServer(server, grpchandler.NewCertificateHandler(newCertService(s.config)))
 	kusciaapi.RegisterConfigServiceServer(server, grpchandler.NewConfigHandler(service.NewConfigService(s.config, s.cmConfigService)))
+	kusciaapi.RegisterAppImageServiceServer(server, grpchandler.NewAppImageHandler(service.NewAppImageService(s.config)))
+	kusciaapi.RegisterLogServiceServer(server, grpchandler.NewLogHandler(service.NewLogService(s.config)))
+
 	reflection.Register(server)
 	nlog.Infof("grpc server listening on %s", addr)
 

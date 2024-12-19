@@ -82,6 +82,13 @@ func AddMasterClusters(ctx context.Context, namespace string, config *config.Mas
 			return err
 		}
 	}
+
+	if config.Reporter != nil {
+		if err := addMasterCluster(utils.ServiceReporter, namespace, config.Reporter, nil); err != nil {
+			return err
+		}
+	}
+
 	addMasterHandshakeRoute(xds.InternalRoute)
 	addMasterHandshakeRoute(xds.ExternalRoute)
 	return nil

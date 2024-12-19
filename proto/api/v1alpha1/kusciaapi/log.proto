@@ -1,0 +1,54 @@
+// Copyright 2024 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service LogService {
+  rpc QueryLog(QueryLogRequest) returns (stream QueryLogResponse);
+  rpc QueryPodNode(QueryPodNodeRequest) returns (QueryPodNodeResponse);
+}
+
+message QueryLogRequest {
+  RequestHeader header = 1;
+  string task_id = 2;
+  int32 replica_idx = 3;
+  string container = 4;
+  bool follow = 5;
+  bool local = 6;
+}
+
+message QueryLogResponse {
+  Status status = 1;
+  string log = 2;
+}
+
+message QueryPodNodeRequest {
+  RequestHeader header = 1;
+  string task_id = 2;
+  string domain = 3;
+  int32 replica_idx = 4;
+}
+
+message QueryPodNodeResponse {
+  Status status = 1;
+  string node_name = 2;
+  string node_ip = 3;
+}

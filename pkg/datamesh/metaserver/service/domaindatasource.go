@@ -218,7 +218,7 @@ func parseDataSourceURI(sourceType string, info *datamesh.DataSourceInfo) (uri s
 			return
 		}
 		uri = info.Localfs.Path
-	case common.DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL:
 		if isInvalid(info.Database == nil) {
 			return
 		}
@@ -280,7 +280,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*datamesh.Da
 	case common.DomainDataSourceTypeOSS:
 		dsInfo.Oss = &datamesh.OssDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Oss)
-	case common.DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL:
 		dsInfo.Database = &datamesh.DatabaseDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Database)
 	case common.DomainDataSourceTypeLocalFS:

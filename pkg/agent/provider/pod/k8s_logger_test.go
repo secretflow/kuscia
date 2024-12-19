@@ -135,7 +135,7 @@ func TestK8sLogManager(t *testing.T) {
 			}
 
 			kubeClient := fake.NewSimpleClientset()
-			k8sLogManager, err := NewK8sLogManager(nodeName, rootDir, bkClient, bkNamespace, namespace, kubeClient)
+			k8sLogManager, err := NewK8sLogManager(nodeName, rootDir, bkClient, bkNamespace, namespace, kubeClient, "10Mi", 3)
 			if err != nil {
 				t.Errorf("error in creating k8sLogManager, %v", err)
 			}

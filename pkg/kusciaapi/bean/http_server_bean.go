@@ -29,6 +29,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/confmanager/handler/httphandler/certificate"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	apiconfig "github.com/secretflow/kuscia/pkg/kusciaapi/config"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/appimage"
 	handlerconfig "github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domain"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domaindata"
@@ -37,6 +38,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/domainroute"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/health"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/job"
+	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/log"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/middleware"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/handler/httphandler/serving"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
@@ -169,9 +171,11 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	domainDataService := service.NewDomainDataService(s.config)
 	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	servingService := service.NewServingService(s.config)
+	appImageService := service.NewAppImageService(s.config)
 	healthService := service.NewHealthService()
 	certService := newCertService(s.config)
 	configService := service.NewConfigService(s.config, s.cmConfigService)
+	logService := service.NewLogService(s.config)
 	// define router groups
 	groupsRouters := []*router.GroupRouters{
 		// job group routes
@@ -462,6 +466,51 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "batchQuery",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewBatchQueryConfigHandler(configService))},
+				},
+			},
+		},
+		{
+			Group: "api/v1/appimage",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "create",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewCreateAppImageHandler(appImageService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "update",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewUpdateAppImageHandler(appImageService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "delete",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewDeleteAppImageHandler(appImageService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewQueryAppImageHandler(appImageService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "batchQuery",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewBatchQueryAppImageHandler(appImageService))},
+				},
+			},
+		},
+		{
+			Group: "api/v1/log",
+			Routes: []*router.Router{
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "task/query",
+					Handlers:     []gin.HandlerFunc{log.NewQueryHandler(logService).Handle},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "node/query",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, log.NewQueryPodNodeHandler(logService))},
 				},
 			},
 		},

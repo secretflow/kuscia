@@ -88,6 +88,9 @@ func defaultMaster(rootDir string) KusciaConfig {
 		KusciaAPI: &kusciaconfig.ServiceConfig{
 			Endpoint: "http://127.0.0.1:8092",
 		},
+		Reporter: &kusciaconfig.ServiceConfig{
+			Endpoint: "http://127.0.0.1:8050",
+		},
 	}
 	conf.DomainRoute = DomainRouteConfig{
 		ExternalTLS: &kusciaconfig.TLSConfig{
@@ -99,13 +102,13 @@ func defaultMaster(rootDir string) KusciaConfig {
 
 func defaultLite(rootDir string) KusciaConfig {
 	conf := DefaultKusciaConfig(rootDir)
-	conf.Agent = *config.DefaultAgentConfig()
+	conf.Agent = *config.DefaultAgentConfig(rootDir)
 	return conf
 }
 
 func defaultAutonomy(rootDir string) KusciaConfig {
 	conf := defaultMaster(rootDir)
-	conf.Agent = *config.DefaultAgentConfig()
+	conf.Agent = *config.DefaultAgentConfig(rootDir)
 
 	return conf
 }
@@ -127,7 +130,7 @@ func DefaultKusciaConfig(rootDir string) KusciaConfig {
 		EnvoyIP:            hostIP,
 		KusciaAPI:          kaconfig.NewDefaultKusciaAPIConfig(rootDir),
 		MetricUpdatePeriod: defaultMetricUpdatePeriod,
-		Logrotate:          LogrotateConfig{3, 128},
+		Logrotate:          LogrotateConfig{config.DefaultLogRotateMaxFiles, config.DefaultLogRotateMaxSize},
 	}
 }
 

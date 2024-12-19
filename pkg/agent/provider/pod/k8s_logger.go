@@ -18,11 +18,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"sync"
 	"time"
 
+	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/kuberuntime"
+	"github.com/secretflow/kuscia/pkg/agent/local/runtime/empty"
+	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	v1 "k8s.io/api/core/v1"
@@ -30,8 +32,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubeinformers "k8s.io/client-go/informers"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/kubernetes/pkg/kubelet/logs"
 
 	"k8s.io/client-go/tools/cache"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type K8sLogManager struct {
@@ -43,6 +47,9 @@ type K8sLogManager struct {
 	namespace           string
 	kubeInformerFactory kubeinformers.SharedInformerFactory
 	podSynced           cache.InformerSynced
+
+	empty.Runtime
+	runkPodLogManager logs.ContainerLogManager
 }
 
 func NewK8sLogManager(
@@ -51,7 +58,9 @@ func NewK8sLogManager(
 	bkClient clientset.Interface,
 	bkNamespace string,
 	namespace string,
-	kubeClient clientset.Interface) (*K8sLogManager, error) {
+	kubeClient clientset.Interface,
+	logMaxSize string,
+	logMaxFiles int) (*K8sLogManager, error) {
 
 	kl := &K8sLogManager{
 		nodeName:        nodeName,
@@ -84,7 +93,56 @@ func NewK8sLogManager(
 		return nil, err
 	}
 
+	//
+	kl.runkPodLogManager, err = logs.NewContainerLogManager(
+		kl,
+		pkgcontainer.RealOS{},
+		logMaxSize,
+		logMaxFiles,
+	)
+	if err != nil {
+		nlog.Errorf("Create runk pod log manager failed, err: %v", err)
+		return nil, err
+	}
+
 	return kl, nil
+}
+
+// list all containers that need to request log
+func (kl *K8sLogManager) ListContainers(ctx context.Context, filter *runtimeapi.ContainerFilter) ([]*runtimeapi.Container, error) {
+	// get containers from workers
+	ret := make([]*runtimeapi.Container, 16)
+	kl.workers.Range(func(key, value any) bool {
+		ret = append(ret, value.(*K8sLogWorker).ListContainers(ctx)...)
+		return true
+	})
+	return ret, nil
+}
+
+// return the container status that need to request log
+func (kl *K8sLogManager) ContainerStatus(ctx context.Context, containerID string, verbose bool) (*runtimeapi.ContainerStatusResponse, error) {
+	// return status with logpath will be enough
+	ret := &runtimeapi.ContainerStatusResponse{
+		Status: &runtimeapi.ContainerStatus{
+			LogPath: containerID,
+		},
+	}
+	return ret, nil
+}
+
+// call worker's logger to reopen log
+func (kl *K8sLogManager) ReopenContainerLog(ctx context.Context, ContainerID string) (err error) {
+	err = nil
+	kl.workers.Range(func(key, value any) bool {
+		if worker, ok := value.(*K8sLogWorker); ok {
+			if worker.LoggerExists(ContainerID) {
+				err = worker.ReopenContainerLog(ContainerID)
+				return false
+			}
+		}
+		return true
+	})
+	return err
 }
 
 func (kl *K8sLogManager) Start(ctx context.Context) error {
@@ -94,6 +152,7 @@ func (kl *K8sLogManager) Start(ctx context.Context) error {
 	if !cache.WaitForCacheSync(ctx.Done(), kl.podSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
+	kl.runkPodLogManager.Start()
 	<-ctx.Done()
 	return nil
 }
@@ -179,6 +238,8 @@ type K8sLogWorker struct {
 	containers    []string
 	stream        bool
 	cancel        context.CancelFunc
+
+	loggerMap sync.Map
 }
 
 func NewK8sLogWorker(rootDirectory string, pod *v1.Pod, bkClient clientset.Interface, bkNamespace string, stream bool) *K8sLogWorker {
@@ -195,7 +256,44 @@ func NewK8sLogWorker(rootDirectory string, pod *v1.Pod, bkClient clientset.Inter
 		bkNamespace:   bkNamespace,
 		containers:    containers,
 		stream:        stream,
+		loggerMap:     sync.Map{},
 	}
+}
+
+func (kw *K8sLogWorker) ListContainers(ctx context.Context) []*runtimeapi.Container {
+	// get backend pod
+	pod, err := kw.bkClient.CoreV1().Pods(kw.bkNamespace).Get(ctx, kw.podName, metav1.GetOptions{})
+	if err != nil {
+		return nil
+	}
+	ret := make([]*runtimeapi.Container, len(pod.Status.ContainerStatuses))
+
+	for _, status := range pod.Status.ContainerStatuses {
+		restartCount := kw.calcRestart(pod, kw.rootDirectory, kw.namespace, status.Name)
+		containerLogPath := kuberuntime.BuildContainerLogsPath(kuberuntime.BuildContainerLogsDirectory(kw.rootDirectory, kw.namespace, kw.podName, kw.podUID, status.Name), restartCount)
+		// use logPath as Id
+		c := &runtimeapi.Container{
+			Id: containerLogPath,
+		}
+		if status.State.Running != nil {
+			c.State = runtimeapi.ContainerState_CONTAINER_RUNNING
+		}
+		ret = append(ret, c)
+	}
+	return ret
+}
+
+func (kw *K8sLogWorker) LoggerExists(logpath string) bool {
+	_, ok := kw.loggerMap.Load(logpath)
+	return ok
+}
+
+func (kw *K8sLogWorker) ReopenContainerLog(logpath string) error {
+	v, ok := kw.loggerMap.Load(logpath)
+	if !ok {
+		return nil
+	}
+	return v.(*logutils.ReopenableLogger).ReopenFile()
 }
 
 func (kw *K8sLogWorker) Start(ctx context.Context) {
@@ -286,13 +384,11 @@ func (kw *K8sLogWorker) LogContainer(ctx context.Context, pod *v1.Pod, container
 	}
 	defer podLogs.Close()
 
-	// write to file
-	file, err := os.OpenFile(containerLogPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		nlog.Errorf("Error opening file %s: %v", containerLogPath, err)
-		return
-	}
+	// use reopanable logger to write to file
+	file := logutils.NewReopenableLogger(containerLogPath)
+	kw.loggerMap.Store(containerLogPath, file)
 	defer file.Close()
+	defer kw.loggerMap.Delete(containerLogPath)
 
 	_, err = io.Copy(file, podLogs)
 	if err != nil {
@@ -344,12 +440,12 @@ func (kw *K8sLogWorker) LogContainerStream(ctx context.Context, containerName st
 	restartCount := kw.calcRestart(pod, kw.rootDirectory, kw.namespace, containerName)
 	containerLogPath := kuberuntime.BuildContainerLogsPath(kuberuntime.BuildContainerLogsDirectory(kw.rootDirectory, kw.namespace, kw.podName, kw.podUID, containerName), restartCount)
 	nlog.Infof("Open logging file %s for %v/%v", containerLogPath, kw.podName, containerName)
-	file, err := os.OpenFile(containerLogPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		nlog.Errorf("Error opening file %s: %v", containerLogPath, err)
-		return err
-	}
+	// use reopanable logger to write to file
+	file := logutils.NewReopenableLogger(containerLogPath)
+	kw.loggerMap.Store(containerLogPath, file)
+
 	defer file.Close()
+	defer kw.loggerMap.Delete(containerLogPath)
 
 	// write log
 	buf := make([]byte, 1<<12) // 100KB

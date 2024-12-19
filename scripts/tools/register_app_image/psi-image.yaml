@@ -18,11 +18,11 @@ spec:
         containers:
           - args:
               - -c
-              - /root/main --kuscia /etc/kuscia/task-config.conf
+              - /root/main --kuscia ./kuscia/task-config.conf
             command:
               - sh
             configVolumeMounts:
-              - mountPath: /etc/kuscia/task-config.conf
+              - mountPath: ./kuscia/task-config.conf
                 subPath: task-config.conf
             name: secretflow
             ports:

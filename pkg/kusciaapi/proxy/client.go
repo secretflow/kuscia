@@ -58,12 +58,20 @@ const (
 	ApproveJobPath    = "/api/v1/job/approve"
 	BatchQueryJobPath = "/api/v1/job/status/batchQuery"
 	WatchJobPath      = "/api/v1/job/watch"
+	// Log
+	QueryPodNodePath = "/api/v1/log/node/query"
+
 	// Kuscia Serving
 	CreateServingPath     = "/api/v1/serving/create"
 	UpdateServingPath     = "/api/v1/serving/update"
 	DeleteServingPath     = "/api/v1/serving/delete"
 	QueryServingPath      = "/api/v1/serving/query"
 	BatchQueryServingPath = "/api/v1/serving/status/batchQuery"
+	// AppImage
+	CreateAppImagePath = "/api/v1/appimage/create"
+	UpdateAppImagePath = "/api/v1/appimage/update"
+	DeleteAppImagePath = "/api/v1/appimage/delete"
+	QueryAppImagePath  = "/api/v1/appimage/query"
 	// KusciaAPIHostName kuscia API service name
 	KusciaAPIHostName = "kusciaapi.master.svc"
 )
@@ -125,7 +133,13 @@ type KusciaAPIClient interface {
 
 	BatchQueryServing(ctx context.Context, request *kusciaapi.BatchQueryServingStatusRequest) (response *kusciaapi.BatchQueryServingStatusResponse, err error)
 
+	UpdateAppImage(ctx context.Context, request *kusciaapi.UpdateAppImageRequest) (response *kusciaapi.UpdateAppImageResponse, err error)
+
+	QueryAppImage(ctx context.Context, request *kusciaapi.QueryAppImageRequest) (response *kusciaapi.QueryAppImageResponse, err error)
+
 	ApproveJob(ctx context.Context, request *kusciaapi.ApproveJobRequest) (response *kusciaapi.ApproveJobResponse, err error)
+
+	QueryPodNode(ctx context.Context, request *kusciaapi.QueryPodNodeRequest) (response *kusciaapi.QueryPodNodeResponse, err error)
 }
 
 func NewKusciaAPIClient(endpoint string) KusciaAPIClient {
@@ -357,6 +371,24 @@ func (c *KusciaAPIHttpClient) QueryServing(ctx context.Context, request *kusciaa
 func (c *KusciaAPIHttpClient) BatchQueryServing(ctx context.Context, request *kusciaapi.BatchQueryServingStatusRequest) (response *kusciaapi.BatchQueryServingStatusResponse, err error) {
 	response = &kusciaapi.BatchQueryServingStatusResponse{}
 	err = c.Send(ctx, request, response, BatchQueryServingPath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) UpdateAppImage(ctx context.Context, request *kusciaapi.UpdateAppImageRequest) (response *kusciaapi.UpdateAppImageResponse, err error) {
+	response = &kusciaapi.UpdateAppImageResponse{}
+	err = c.Send(ctx, request, response, UpdateAppImagePath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) QueryAppImage(ctx context.Context, request *kusciaapi.QueryAppImageRequest) (response *kusciaapi.QueryAppImageResponse, err error) {
+	response = &kusciaapi.QueryAppImageResponse{}
+	err = c.Send(ctx, request, response, QueryAppImagePath)
+	return
+}
+
+func (c *KusciaAPIHttpClient) QueryPodNode(ctx context.Context, request *kusciaapi.QueryPodNodeRequest) (response *kusciaapi.QueryPodNodeResponse, err error) {
+	response = &kusciaapi.QueryPodNodeResponse{}
+	err = c.Send(ctx, request, response, QueryPodNodePath)
 	return
 }
 

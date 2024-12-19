@@ -21,9 +21,9 @@ spec:
               - sh
             args:
               - -c
-              - /home/kuscia/bin/kuscia diagnose app -c /etc/kuscia/task-config.conf
+              - ./kuscia diagnose app -c ./kuscia/task-config.conf
             configVolumeMounts:
-              - mountPath: /etc/kuscia/task-config.conf
+              - mountPath: ./kuscia/task-config.conf
                 subPath: task-config.conf
             name: diagnose
             ports:
@@ -31,7 +31,7 @@ spec:
                 port: 20005
                 protocol: HTTP
                 scope: Cluster
-            workingDir: /root
+            workingDir: /app
         restartPolicy: Never
   image:
     name: {{.IMAGE_NAME}}

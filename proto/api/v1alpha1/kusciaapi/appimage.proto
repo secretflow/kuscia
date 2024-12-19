@@ -1,0 +1,358 @@
+// Copyright 2024 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package kuscia.proto.api.v1alpha1.kusciaapi;
+
+import "kuscia/proto/api/v1alpha1/common.proto";
+
+option go_package = "github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi";
+option java_package = "org.secretflow.v1alpha1.kusciaapi";
+
+service AppImageService {
+  rpc CreateAppImage(CreateAppImageRequest) returns (CreateAppImageResponse);
+
+  rpc QueryAppImage(QueryAppImageRequest) returns (QueryAppImageResponse);
+
+  rpc UpdateAppImage(UpdateAppImageRequest) returns (UpdateAppImageResponse);
+
+  rpc DeleteAppImage(DeleteAppImageRequest) returns (DeleteAppImageResponse);
+
+  rpc BatchQueryAppImage(BatchQueryAppImageRequest) returns (BatchQueryAppImageResponse);
+}
+
+
+message CreateAppImageRequest {
+    RequestHeader header = 1;
+    string name = 2;
+    AppImageInfo image = 3;
+    map<string, string> config_templates = 4;
+    repeated DeployTemplate deploy_templates = 5;
+}
+
+message AppImageInfo {
+    string name = 1;
+    string tag = 2;
+    string id = 3;
+    string sign = 4;
+}
+
+message DeployTemplate {
+    string name = 1;
+    string role = 2;
+    int32 replicas = 3;
+    // NetworkPolicy network_policy = 4;
+    string restart_policy = 4;
+    repeated Container containers = 5;
+}
+
+message NetworkPolicy {
+    repeated Ingress ingresses = 1;
+}
+
+message Ingress {
+    IngressFrom from = 1;
+    repeated IngressPort ports = 2;
+}
+
+message IngressFrom {
+    repeated string roles = 1;
+}
+
+message IngressPort {
+    string port = 1;
+}
+
+message Container {
+    string name = 1;
+    repeated string command = 2;
+    repeated string args = 3;
+    string working_dir = 4;
+    repeated ConfigVolumeMount config_volume_mounts = 5;
+    repeated ContainerPort ports = 6;
+    repeated EnvFromSource env_from = 7;
+    repeated EnvVar env = 8;
+    ResourceRequirements resources = 9;
+    Probe liveness_probe = 10;
+    Probe readiness_probe = 11;
+    Probe startup_probe = 12;
+    string image_pull_policy = 13;
+}
+
+message ConfigVolumeMount {
+    string mount_path = 1;
+    string sub_path = 2;
+}
+
+message ContainerPort {
+    string name = 1;
+    string protocol = 2;
+    string scope = 3;
+}
+
+message ResourceRequirements {
+    ResourceSpec limits = 1;
+    ResourceSpec requests = 2;
+}
+
+message ResourceSpec {
+    string cpu = 1;
+    string memory = 2;
+}
+
+message CreateAppImageResponse {
+  Status status = 1;
+}
+
+message DeleteAppImageRequest {
+  RequestHeader header = 1;
+  string name = 2;
+}
+
+message DeleteAppImageResponse {
+  Status status = 1;
+}
+
+message QueryAppImageRequest {
+  RequestHeader header = 1;
+  string name = 2;
+}
+
+message BatchQueryAppImageRequest {
+  RequestHeader header = 1;
+  repeated string names = 2;
+}
+
+message QueryAppImageResponse {
+  Status status = 1;
+  QueryAppImageResponseData data = 2;
+}
+
+message BatchQueryAppImageResponse {
+  Status status = 1;
+  repeated QueryAppImageResponseData data = 2;
+}
+
+message QueryAppImageResponseData {
+    string name = 1;
+    AppImageInfo image = 2;
+    map<string, string> config_templates = 3;
+    repeated DeployTemplate deploy_templates = 4;
+}
+
+message UpdateAppImageRequest {
+    RequestHeader header = 1;
+    string name = 2;
+    AppImageInfo image = 3;
+    map<string, string> config_templates = 4;
+    repeated DeployTemplate deploy_templates = 5;
+}
+
+message UpdateAppImageResponse {
+  Status status = 1;
+}
+
+// modified from k8s
+// EnvFromSource represents the source of a set of ConfigMaps
+message EnvFromSource {
+  // An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
+  // +optional
+  string prefix = 1;
+
+  // The ConfigMap to select from
+  // +optional
+  ConfigMapEnvSource config_map_ref = 2;
+
+  // The Secret to select from
+  // +optional
+  SecretEnvSource secret_ref = 3;
+}
+
+message ConfigMapEnvSource {
+  // The ConfigMap to select from.
+  // optional LocalObjectReference localObjectReference = 1;
+  string name = 1;
+
+  // Specify whether the ConfigMap must be defined
+  // +optional
+  // optional bool optional = 2;
+}
+
+message SecretEnvSource {
+  // The Secret to select from.
+  // optional LocalObjectReference localObjectReference = 1;
+  string name = 1;
+
+  // Specify whether the Secret must be defined
+  // +optional
+  // optional bool optional = 2;
+}
+
+message EnvVar {
+  // Name of the environment variable. Must be a C_IDENTIFIER.
+  string name = 1;
+
+  // Variable references $(VAR_NAME) are expanded
+  // using the previously defined environment variables in the container and
+  // any service environment variables. If a variable cannot be resolved,
+  // the reference in the input string will be unchanged. Double $$ are reduced
+  // to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+  // "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+  // Escaped references will never be expanded, regardless of whether the variable
+  // exists or not.
+  // Defaults to "".
+  // +optional
+  string value = 2;
+
+  // Source for the environment variable's value. Cannot be used if value is not empty.
+  // +optional
+  // optional EnvVarSource valueFrom = 3;
+}
+
+// Probe describes a health check to be performed against a container to determine whether it is
+// alive or ready to receive traffic.
+message Probe {
+  // The action taken to determine the health of a container
+  // optional ProbeHandler handler = 1;
+   ExecAction exec = 1;
+
+  // HTTPGet specifies the http request to perform.
+  // +optional
+   HTTPGetAction http_get = 2;
+
+  // TCPSocket specifies an action involving a TCP port.
+  // +optional
+   TCPSocketAction tcp_socket = 3;
+
+  // GRPC specifies an action involving a GRPC port.
+  // This is a beta field and requires enabling GRPCContainerProbe feature gate.
+  // +featureGate=GRPCContainerProbe
+  // +optional
+   GRPCAction grpc = 4;
+
+
+  // Number of seconds after the container has started before liveness probes are initiated.
+  // More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+  // +optional
+  int32 initial_delay_seconds = 5;
+
+  // Number of seconds after which the probe times out.
+  // Defaults to 1 second. Minimum value is 1.
+  // More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+  // +optional
+  int32 timeout_seconds = 6;
+
+  // How often (in seconds) to perform the probe.
+  // Default to 10 seconds. Minimum value is 1.
+  // +optional
+  int32 period_seconds = 7;
+
+  // Minimum consecutive successes for the probe to be considered successful after having failed.
+  // Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
+  // +optional
+  int32 success_threshold = 8;
+
+  // Minimum consecutive failures for the probe to be considered failed after having succeeded.
+  // Defaults to 3. Minimum value is 1.
+  // +optional
+  int32 failure_threshold = 9;
+
+  // Optional duration in seconds the pod needs to terminate gracefully upon probe failure.
+  // The grace period is the duration in seconds after the processes running in the pod are sent
+  // a termination signal and the time when the processes are forcibly halted with a kill signal.
+  // Set this value longer than the expected cleanup time for your process.
+  // If this value is nil, the pod's terminationGracePeriodSeconds will be used. Otherwise, this
+  // value overrides the value provided by the pod spec.
+  // Value must be non-negative integer. The value zero indicates stop immediately via
+  // the kill signal (no opportunity to shut down).
+  // This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate.
+  // Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.
+  // +optional
+  int64 termination_grace_period_seconds = 10;
+}
+
+// ExecAction describes a "run in container" action.
+message ExecAction {
+  // Command is the command line to execute inside the container, the working directory for the
+  // command  is root ('/') in the container's filesystem. The command is simply exec'd, it is
+  // not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use
+  // a shell, you need to explicitly call out to that shell.
+  // Exit status of 0 is treated as live/healthy and non-zero is unhealthy.
+  // +optional
+  repeated string command = 1;
+}
+
+// HTTPGetAction describes an action based on HTTP Get requests.
+message HTTPGetAction {
+  // Path to access on the HTTP server.
+  // +optional
+  string path = 1;
+
+  // Name or number of the port to access on the container.
+  // Number must be in the range 1 to 65535.
+  // Name must be an IANA_SVC_NAME.
+  // optional k8s.io.apimachinery.pkg.util.intstr.IntOrString port = 2;
+  string port = 2;
+
+  // Host name to connect to, defaults to the pod IP. You probably want to set
+  // "Host" in httpHeaders instead.
+  // +optional
+  string host = 3;
+
+  // Scheme to use for connecting to the host.
+  // Defaults to HTTP.
+  // +optional
+  string scheme = 4;
+
+  // Custom headers to set in the request. HTTP allows repeated headers.
+  // +optional
+  repeated HTTPHeader http_headers = 5;
+}
+
+// HTTPHeader describes a custom header to be used in HTTP probes
+message HTTPHeader {
+  // The header field name.
+  // This will be canonicalized upon output, so case-variant names will be understood as the same header.
+  string name = 1;
+
+  // The header field value
+  string value = 2;
+}
+
+// TCPSocketAction describes an action based on opening a socket
+message TCPSocketAction {
+  // Number or name of the port to access on the container.
+  // Number must be in the range 1 to 65535.
+  // Name must be an IANA_SVC_NAME.
+  // optional k8s.io.apimachinery.pkg.util.intstr.IntOrString port = 1;
+  string port = 1;
+
+  // Optional: Host name to connect to, defaults to the pod IP.
+  // +optional
+  string host = 2;
+}
+
+message GRPCAction {
+  // Port number of the gRPC service. Number must be in the range 1 to 65535.
+  int32 port = 1;
+
+  // Service is the name of the service to place in the gRPC HealthCheckRequest
+  // (see https://github.com/grpc/grpc/blob/master/doc/health-checking.md).
+  //
+  // If this is not specified, the default behavior is defined by gRPC.
+  // +optional
+  // +default=""
+  string service = 2;
+}

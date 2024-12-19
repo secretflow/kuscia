@@ -92,6 +92,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)
 	mm.Regist("transport", modules.NewTransport, autonomy, lite)
+	mm.Regist("reporter", modules.NewReporter, autonomy, master)
 
 	mm.SetDependencies("agent", "envoy", "k3s", "kusciaapi")
 	mm.SetDependencies("envoy", "k3s")
@@ -107,6 +108,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "nodeexporter")
 	mm.SetDependencies("transport", "envoy")
 	mm.SetDependencies("k3s", "coredns")
+	mm.SetDependencies("reporter", "k3s", "kusciaapi")
 
 	mm.AddReadyHook(func(ctx context.Context, mdls map[string]modules.Module) error {
 		nlog.Info("Start... coredns controllers")

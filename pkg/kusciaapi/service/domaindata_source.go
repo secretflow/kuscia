@@ -490,7 +490,8 @@ func validateDataSourceType(t string) error {
 	if t != common.DomainDataSourceTypeOSS &&
 		t != common.DomainDataSourceTypeMysql &&
 		t != common.DomainDataSourceTypeLocalFS &&
-		t != common.DomainDataSourceTypeODPS {
+		t != common.DomainDataSourceTypeODPS &&
+		t != common.DomainDataSourceTypePostgreSQL {
 		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps]", t)
 	}
 	return nil
@@ -593,7 +594,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.D
 	case common.DomainDataSourceTypeOSS:
 		dsInfo.Oss = &kusciaapi.OssDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Oss)
-	case common.DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL:
 		dsInfo.Database = &kusciaapi.DatabaseDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Database)
 	case common.DomainDataSourceTypeLocalFS:
@@ -646,7 +647,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 		// truncate slash
 		info.Localfs.Path = strings.TrimRight(info.Localfs.Path, string(filepath.Separator))
 		uri = info.Localfs.Path
-	case common.DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL:
 		if isInvalid(info.Database == nil) {
 			return
 		}
@@ -710,6 +711,22 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		}
 		if info.Database.Password == "" {
 			return fmt.Errorf("mysql 'password' is empty")
+		}
+	case common.DomainDataSourceTypePostgreSQL:
+		if info.Database == nil {
+			return fmt.Errorf("postgres info is nil")
+		}
+		if info.Database.Endpoint == "" {
+			return fmt.Errorf("postgres 'endpoint' is empty")
+		}
+		if info.Database.Database == "" {
+			return fmt.Errorf("postgres 'database' is empty")
+		}
+		if info.Database.User == "" {
+			return fmt.Errorf("postgres 'user' is empty")
+		}
+		if info.Database.Password == "" {
+			return fmt.Errorf("postgres 'password' is empty")
 		}
 	case common.DomainDataSourceTypeODPS:
 		if info.Odps == nil {

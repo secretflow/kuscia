@@ -86,7 +86,7 @@ enableWorkloadApprove: false
 - `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 `default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。生产环境使用时建议将 domainID 设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite
 - `domainKeyData`: 节点私钥配置, 用于节点间的通信认证（通过 2 方的证书来生成通讯的身份令牌），节点应用的证书签发（为了加强通讯安全性，Kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。）。可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
-- `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取Token](../deployment/deploy_master_lite_cn.md#lite-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](../troubleshoot/private_key_loss.md)
+- `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取Token](../deployment/deploy_master_lite_cn.md#lite-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](../troubleshoot/deployment/private_key_loss.md)
 - `masterEndpoint`: 节点连接 Master 的地址，比如 https://172.18.0.2:1080
 - `runtime`: 节点运行时 runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)
 - `runk`: 当 runtime 为 runk 时配置
@@ -99,7 +99,7 @@ enableWorkloadApprove: false
   - `pods`: pods 数，如 500
   - `storage`: 磁盘持久化存储容量，即使 Pod 被删除，数据依然保存。如 100Gi
   - `ephemeralStorage`: 磁盘临时存储，非持久化的存储资源。与 Pod 生命周期绑定的存储，当 Pod 被删除时，这部分存储上的数据也会被清除。如 100Gi
-- `image`: 节点镜像配置, 目前仅支持配置1个镜像仓库（更多请参考：[自定义镜像仓库](../troubleshoot/custom_registry.md)）
+- `image`: 节点镜像配置, 目前仅支持配置1个镜像仓库（更多请参考：[自定义镜像仓库](../tutorial/custom_registry.md)）
   - `pullPolicy`: [暂不支持] 镜像策略，使用本地镜像仓库还是远程镜像仓库；可选值有remote/local，不区分大小写，默认为local；当为remote时，如果发现本地镜像不存在，会根据registry账密自动拉取远程的镜像；如果为local时，镜像需要手动导入kuscia内，如果镜像没有导入kuscia，任务会启动失败。local模式因为不拉取远程镜像，安全性会更高，但会有易用性的损失，用户可结合业务场景自行选择。
   - `defaultRegistry`: 默认镜像仓库(对应registries中其中一个registry的name字段)
   - `registries`: 镜像仓库配置。
@@ -186,7 +186,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --m
 - 容器内路径：/home/kuscia/etc/conf/kuscia.yaml
 
 宿主机路径下修改 kuscia.yaml 配置后，重启容器 `docker restart ${container_name}` 生效。
-> Tips：如果要修改 Protocol 字段，请确保对该字段有充足的理解，否则会导致 KusciaAPI 调用失败或者和其他节点的通讯异常。详情参考[Protocol 通信协议](../reference/troubleshoot/protocol_describe.md)。
+> Tips：如果要修改 Protocol 字段，请确保对该字段有充足的理解，否则会导致 KusciaAPI 调用失败或者和其他节点的通讯异常。详情参考[Protocol 通信协议](../troubleshoot/concept/protocol_describe.md)。
 
 ## 指定配置文件
 如果使用 [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh) 脚本部署的 Kuscia，可以指定配置文件，示例：

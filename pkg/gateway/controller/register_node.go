@@ -16,7 +16,6 @@ package controller
 
 import (
 	"context"
-	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -49,13 +48,7 @@ func getRegisterRequestHashSha256(regReq *handshake.RegisterRequest) [32]byte {
 	return sha256.Sum256([]byte(fmt.Sprintf("%s_%s_%d", regReq.DomainId, regReq.Csr, regReq.RequestTime)))
 }
 
-// getRegisterRequestHashMd5  deprecated: md5 hash would deprecate soon
-func getRegisterRequestHashMd5(regReq *handshake.RegisterRequest) [16]byte {
-	return md5.Sum([]byte(fmt.Sprintf("%s_%s_%d", regReq.DomainId, regReq.Csr, regReq.RequestTime)))
-}
-
 type RegisterJwtClaims struct {
-	ReqHash       [16]byte `json:"req"` // deprecate soon
 	ReqHashSha256 [32]byte `json:"req_hash"`
 	jwt.RegisteredClaims
 }
@@ -94,7 +87,6 @@ func generateJwtToken(namespace, csrData string, prikey *rsa.PrivateKey) (req *h
 	}
 
 	rjc := &RegisterJwtClaims{
-		ReqHash:       getRegisterRequestHashMd5(req),
 		ReqHashSha256: getRegisterRequestHashSha256(req),
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
@@ -287,10 +279,6 @@ func verifyJwtToken(jwtTokenStr string, pubKey interface{}, req *handshake.Regis
 	}
 	// check sha256 hash
 	if reflect.DeepEqual(getRegisterRequestHashSha256(req), rjc.ReqHashSha256) {
-		return nil
-	}
-	// check md5 hash
-	if reflect.DeepEqual(getRegisterRequestHashMd5(req), rjc.ReqHash) {
 		return nil
 	}
 	return fmt.Errorf("verify jwt failed, detail: the request content doesn't match the hash")

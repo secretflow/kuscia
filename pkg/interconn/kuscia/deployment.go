@@ -318,7 +318,7 @@ func (c *Controller) createDeploymentSummary(ctx context.Context,
 		},
 	}
 
-	updateDeploymentSummaryPartyStatus(deployment, deploymentSummary)
+	updateDeploymentSummaryPartyStatus(deployment, deploymentSummary, true)
 	_, err := c.kusciaClient.KusciaV1alpha1().KusciaDeploymentSummaries(masterDomainID).Create(ctx, deploymentSummary, metav1.CreateOptions{})
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return err
@@ -327,7 +327,7 @@ func (c *Controller) createDeploymentSummary(ctx context.Context,
 }
 
 func (c *Controller) updateDeploymentSummary(ctx context.Context, deployment *v1alpha1.KusciaDeployment, deploymentSummary *v1alpha1.KusciaDeploymentSummary) error {
-	if updateDeploymentSummaryPartyStatus(deployment, deploymentSummary) {
+	if updateDeploymentSummaryPartyStatus(deployment, deploymentSummary, true) {
 		deploymentSummary.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err := c.kusciaClient.KusciaV1alpha1().KusciaDeploymentSummaries(deploymentSummary.Namespace).Update(ctx, deploymentSummary, metav1.UpdateOptions{}); err != nil {
 			return err
@@ -380,17 +380,16 @@ func (c *Controller) processDeploymentAsPartner(ctx context.Context, deployment 
 	}
 
 	kds := hDeploymentSummary.DeepCopy()
-	if updateDeploymentSummaryPartyStatus(deployment, kds) {
+	if updateDeploymentSummaryPartyStatus(deployment, kds, false) {
 		kds.Status.LastReconcileTime = ikcommon.GetCurrentTime()
 		if _, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaDeploymentSummaries(kds.Namespace).Update(ctx, kds, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
-func updateDeploymentSummaryPartyStatus(deployment *v1alpha1.KusciaDeployment, deploymentSummary *v1alpha1.KusciaDeploymentSummary) bool {
+func updateDeploymentSummaryPartyStatus(deployment *v1alpha1.KusciaDeployment, deploymentSummary *v1alpha1.KusciaDeploymentSummary, isHost bool) bool {
 	updated := false
 	if deployment.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed &&
 		deployment.Status.Phase != deploymentSummary.Status.Phase {
@@ -404,27 +403,43 @@ func updateDeploymentSummaryPartyStatus(deployment *v1alpha1.KusciaDeployment, d
 		return updated
 	}
 
-	domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(deployment)
-	if domainIDs == nil {
-		nlog.Errorf("Failed to get self cluster party domain ids from kuscia deployment %v, skip processing it", ikcommon.GetObjectNamespaceName(deployment))
-		return updated
-	}
-
-	for _, domainID := range domainIDs {
-		if statusInDeployment, ok := deployment.Status.PartyDeploymentStatuses[domainID]; ok {
-			if deploymentSummary.Status.PartyDeploymentStatuses == nil {
-				updated = true
-				deploymentSummary.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{}
-				deploymentSummary.Status.PartyDeploymentStatuses[domainID] = deployment.Status.PartyDeploymentStatuses[domainID]
+	if isHost {
+		for domainID, pds := range deployment.Status.PartyDeploymentStatuses {
+			if domainID == deploymentSummary.Namespace {
 				continue
 			}
 
-			if !reflect.DeepEqual(statusInDeployment, deploymentSummary.Status.PartyDeploymentStatuses[domainID]) {
+			if deploymentSummary.Status.PartyDeploymentStatuses == nil {
+				deploymentSummary.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{}
+			}
+
+			if !reflect.DeepEqual(deploymentSummary.Status.PartyDeploymentStatuses[domainID], pds) {
 				updated = true
-				deploymentSummary.Status.PartyDeploymentStatuses[domainID] = deployment.Status.PartyDeploymentStatuses[domainID]
+				deploymentSummary.Status.PartyDeploymentStatuses[domainID] = pds
+			}
+		}
+	} else {
+		domainIDs := ikcommon.GetSelfClusterPartyDomainIDs(deployment)
+		if domainIDs == nil {
+			nlog.Errorf("Failed to get self cluster party domain ids from kuscia deployment %v, skip processing it", ikcommon.GetObjectNamespaceName(deployment))
+			return updated
+		}
+
+		for _, domainID := range domainIDs {
+			if statusInDeployment, ok := deployment.Status.PartyDeploymentStatuses[domainID]; ok {
+				if deploymentSummary.Status.PartyDeploymentStatuses == nil {
+					updated = true
+					deploymentSummary.Status.PartyDeploymentStatuses = map[string]map[string]*v1alpha1.KusciaDeploymentPartyStatus{}
+					deploymentSummary.Status.PartyDeploymentStatuses[domainID] = deployment.Status.PartyDeploymentStatuses[domainID]
+					continue
+				}
+
+				if !reflect.DeepEqual(statusInDeployment, deploymentSummary.Status.PartyDeploymentStatuses[domainID]) {
+					updated = true
+					deploymentSummary.Status.PartyDeploymentStatuses[domainID] = deployment.Status.PartyDeploymentStatuses[domainID]
+				}
 			}
 		}
 	}
-
 	return updated
 }

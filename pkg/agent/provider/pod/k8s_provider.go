@@ -17,6 +17,7 @@ package pod
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -64,6 +65,7 @@ type K8sProviderDependence struct {
 	NodeName        string
 	Namespace       string
 	NodeIP          string
+	StdoutDirectory string
 	KubeClient      clientset.Interface
 	BkClient        clientset.Interface
 	PodSyncHandler  framework.SyncHandler
@@ -95,6 +97,7 @@ type K8sProvider struct {
 
 	labelsToAdd      map[string]string
 	annotationsToAdd map[string]string
+	affinitiesToAdd  *v1.Affinity
 	runtimeClassName string
 
 	leaderElector election.Elector
@@ -114,6 +117,7 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		resourceManager:  dep.ResourceManager,
 		labelsToAdd:      dep.K8sProviderCfg.LabelsToAdd,
 		annotationsToAdd: dep.K8sProviderCfg.AnnotationsToAdd,
+		affinitiesToAdd:  &v1.Affinity{},
 		runtimeClassName: dep.K8sProviderCfg.RuntimeClassName,
 		recorder:         dep.Recorder,
 	}
@@ -148,13 +152,23 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		kp.resolveConfigData = string(data)
 	}
 
+	// preprocess affinity data, we need to use json to unmarshal to affinity
+	jsonData, err := json.MarshalIndent(dep.K8sProviderCfg.AffinitiesToAdd, "", "  ")
+	if err != nil {
+		nlog.Errorf("transfer type err, %v", err)
+		return nil, fmt.Errorf("failed to transfer AffinitiesToAdd to json format for furthur unmarshal, detail-> %v", err)
+	}
+	if err = json.Unmarshal(jsonData, kp.affinitiesToAdd); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal json to Affinities, detail-> %v", err)
+	}
+
 	backendPlugin := kubebackend.GetBackendPlugin(dep.K8sProviderCfg.Backend.Name)
 	if backendPlugin == nil {
 		return nil, fmt.Errorf("backend plugin %q not found", dep.K8sProviderCfg.Backend.Name)
 	}
 	kp.backendPlugin = backendPlugin
 
-	if err := kp.backendPlugin.Init(&dep.K8sProviderCfg.Backend.Config); err != nil {
+	if err = kp.backendPlugin.Init(&dep.K8sProviderCfg.Backend.Config); err != nil {
 		return nil, fmt.Errorf("failed to init k8s backend %q, detail-> %v", dep.K8sProviderCfg.Backend.Name, err)
 	}
 
@@ -171,7 +185,7 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	kp.secretLister = kp.kubeInformerFactory.Core().V1().Secrets().Lister().Secrets(dep.K8sProviderCfg.Namespace)
 	kp.secretSynced = kp.kubeInformerFactory.Core().V1().Secrets().Informer().HasSynced
 
-	_, err := podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(_, newObj interface{}) {
 			kp.handleBackendPodChanged(newObj)
 		},
@@ -196,8 +210,16 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	kp.leaderElector = leaderElector
 
 	if dep.K8sProviderCfg.EnableLogging {
-		podsStdoutDirectory := filepath.Join(dep.K8sProviderCfg.LogDirectory, defaultPodsDirName)
-		kp.logManager, err = NewK8sLogManager(kp.nodeName, podsStdoutDirectory, kp.bkClient, kp.bkNamespace, kp.namespace, dep.KubeClient)
+		podsStdoutDirectory := filepath.Join(dep.StdoutDirectory, defaultPodsDirName)
+		kp.logManager, err = NewK8sLogManager(kp.nodeName,
+			podsStdoutDirectory,
+			kp.bkClient,
+			kp.bkNamespace,
+			kp.namespace,
+			dep.KubeClient,
+			dep.K8sProviderCfg.LogMaxSize,
+			dep.K8sProviderCfg.LogMaxFiles,
+		)
 		if err != nil {
 			nlog.Warnf("Failed to new log manager, %v", err)
 		}
@@ -343,7 +365,10 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 	for k, v := range kp.annotationsToAdd {
 		newPod.Annotations[k] = v
 	}
+	// add affinities
+	newPod.Spec.Affinity = kp.affinitiesToAdd
 
+	// allow backend plugin to customize setting
 	kp.backendPlugin.PreSyncPod(newPod)
 
 	_, err := kp.applyPod(ctx, newPod)

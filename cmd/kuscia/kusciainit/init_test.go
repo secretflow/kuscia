@@ -103,7 +103,7 @@ func TestKusciaInitCommand_ConfigConvert_Autonomy(t *testing.T) {
 		Protocol:      "NOTLS",
 	}
 
-	dst := confloader.AutomonyKusciaConfig{
+	dst := confloader.AutonomyKusciaConfig{
 		CommonConfig: confloader.CommonConfig{
 			Mode:          "Autonomy",
 			DomainID:      "alice",

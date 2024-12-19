@@ -100,3 +100,13 @@ func GetDomainDataSourceErrorCode(err error, defaultErrorCode errorcode.ErrorCod
 	}
 	return defaultErrorCode
 }
+
+func GetAppImageErrorCode(err error, defaultErrorCode errorcode.ErrorCode) errorcode.ErrorCode {
+	if errors.IsNotFound(err) {
+		return errorcode.ErrorCode_KusciaAPIErrAppImageNotExists
+	}
+	if errors.IsAlreadyExists(err) {
+		return errorcode.ErrorCode_KusciaAPIErrAppImageExists
+	}
+	return defaultErrorCode
+}

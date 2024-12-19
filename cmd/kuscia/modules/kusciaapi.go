@@ -76,6 +76,8 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 	kusciaAPIConfig.DomainCertValue = &d.DomainCertByMasterValue
 	kusciaAPIConfig.DomainID = d.DomainID
 	kusciaAPIConfig.Protocol = d.Protocol
+	kusciaAPIConfig.StdoutPath = d.Agent.StdoutPath
+	kusciaAPIConfig.NodeName = d.Agent.Node.NodeName
 
 	protocol := kusciaAPIConfig.Protocol
 	if protocol == "" {
