@@ -151,3 +151,49 @@ func TestGetFlightInfo(t *testing.T) {
 	err = ioServer.DoPut(nil)
 	assert.NotNil(t, err)
 }
+
+func TestGetFlightInfoWithSql(t *testing.T) {
+	server := flight.NewServerWithMiddleware(nil)
+	server.Init("localhost:0")
+	srv := &MockFlightServer{}
+	server.RegisterFlightService(srv)
+
+	go server.Serve()
+	defer server.Shutdown()
+
+	conf := config.DataProxyConfig{
+		Endpoint:        server.Addr().String(),
+		ClientTLSConfig: nil,
+		DataSourceTypes: []string{"oss"},
+		Mode:            "",
+	}
+	ioServer := NewIOServer(&conf)
+	assert.NotNil(t, ioServer)
+
+	confi := initContextTestEnv(t)
+	domainDataService := service.NewDomainDataService(confi)
+	datasourceService := service.NewDomainDataSourceService(confi, nil)
+
+	assert.NotNil(t, domainDataService)
+	assert.NotNil(t, datasourceService)
+	registLocalFileDomainDataSource(t, confi, common.DefaultDataSourceID)
+
+	var msg protoreflect.ProtoMessage
+
+	msg = &datamesh.CommandDataSourceSqlQuery{
+		Sql:          "",
+		DatasourceId: common.DefaultDataSourceID,
+	}
+
+	reqCtx, err := utils.NewDataMeshRequestContext(domainDataService, datasourceService, msg)
+	assert.Nil(t, err)
+
+	fl, err := ioServer.GetFlightInfo(context.Background(), reqCtx)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, fl)
+	err = ioServer.DoGet(nil, nil)
+	assert.NotNil(t, err)
+	err = ioServer.DoPut(nil)
+	assert.NotNil(t, err)
+}

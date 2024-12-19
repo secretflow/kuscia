@@ -16,9 +16,9 @@
 
 登录到安装 alice 的机器上，本文为叙述方便，假定节点 ID 为 alice ，对外可访问的 PORT 是 11080 。
 
-指定 Kuscia 使用的镜像版本，这里使用 0.9.0b0 版本
+指定 Kuscia 使用的镜像版本，这里使用 0.13.0b0 版本
 ```bash
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
 ```
 
 指定 Secretflow 版本：
@@ -177,7 +177,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob kubectl get cdr bob-alice -o=jsonpat
 
 :::{tip}
 - 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
-- 授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)文档
+- 授权失败，请参考[授权错误排查](../../troubleshoot/network/network_authorization_check.md)文档
 :::
 
 ### 准备测试数据
@@ -250,4 +250,4 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
 ```
 
-任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network_troubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network/network_troubleshoot.md)排查

@@ -103,8 +103,8 @@ ID                            HOSTNAME        STATUS    AVAILABILITY   MANAGER S
 > 部署参考：[多机部署点对点集群](./deploy_p2p_cn.md)
 
 ```shell
-# 指定 Kuscia 使用的镜像版本，这里使用 0.12.0b0 版本
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.12.0b0
+# 指定 Kuscia 使用的镜像版本，这里使用 0.13.0b0 版本
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
 ```
 
 ```shell

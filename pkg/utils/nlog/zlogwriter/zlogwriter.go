@@ -109,6 +109,7 @@ func newZapLogger(config *nlog.LogConfig, encoderConfig *zapcore.EncoderConfig, 
 			MaxSize:    config.MaxFileSizeMB, // megabytes
 			MaxBackups: config.MaxFiles,
 			Compress:   config.Compress,
+			LocalTime:  true,
 		}))
 	}
 

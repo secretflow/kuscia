@@ -1,4 +1,4 @@
-# 使用自定义镜像仓库
+# 如何在 Kuscia 中使用自定义镜像仓库
 
 
 Kuscia支持自动拉取远程的应用镜像（比如：secretflow等），这样可以不用手动导入镜像到容器中。可以在[Kuscia配置文件](../deployment/kuscia_config_cn.md)中配置私有（or公开）镜像仓库地址。

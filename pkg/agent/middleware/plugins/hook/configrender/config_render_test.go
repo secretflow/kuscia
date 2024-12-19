@@ -38,6 +38,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/middleware/hook"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	resourcetest "github.com/secretflow/kuscia/pkg/agent/resource/testing"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
@@ -67,7 +68,7 @@ config:
 		},
 	}
 	kubeClient := kubefake.NewSimpleClientset(&configmap)
-	agentConfig := config.DefaultAgentConfig()
+	agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath)
 	agentConfig.Namespace = "alice"
 	agentConfig.DomainKey = privateKey
 	dep := &plugin.Dependencies{

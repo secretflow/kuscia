@@ -77,15 +77,25 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
 ## 更多指南
 
-- [如何运行一个 SecretFlow Serving][how-to-bfia]
-- [如何运行一个互联互通银联 BFIA 协议作业][how-to-bfia]
+- [如何使用 Kuscia API 运行一个 SecretFlow 作业][how-to-sf-job]
+- [如何使用 Kuscia API 运行一个 SecretFlow Serving][how-to-serving]
 - [如何运行一个 FATE 作业][how-to-fate]
-- [安全加固方案][how-to-security-plan]
+- [如何在 Kuscia 上运行 SCQL 联合分析任务][how-to-run-scql]
+- [如何在 Kuscia 中使用自定义镜像仓库][how-to-use-custom-image]
+- [如何在 Kuscia 中给自定义应用渲染配置文件][how-to-render-config]
+- [如何在 Kuscia 中升级引擎镜像][how-to-upgrade-engine-image]
+- [如何配置 Kuscia 对请求进行 Path Rewrite][how-to-path-rewrite]
+- [如何给 Kuscia 自定义 Service 路由][how-to-custom-service-route]
 
+[how-to-sf-job]: ./tutorial/run_sf_job_with_api_cn.md
 [how-to-serving]: ./tutorial/run_sf_serving_with_api_cn.md
-[how-to-bfia]: ./tutorial/run_bfia_job_cn.md
 [how-to-fate]: ./tutorial/run_fate_cn.md
-[how-to-security-plan]: ./tutorial/security_plan_cn.md
+[how-to-run-scql]: ./tutorial/run_scql_on_kuscia_cn.md
+[how-to-use-custom-image]: ./tutorial/custom_registry.md
+[how-to-render-config]: ./tutorial/config_render.md
+[how-to-upgrade-engine-image]: ./tutorial/upgrade_engine.md
+[how-to-path-rewrite]: ./tutorial/kuscia_gateway_with_path.md
+[how-to-custom-service-route]: ./tutorial/user_defined_service_route.md
 
 ## 获得帮助
 
@@ -120,45 +130,17 @@ change_log
 
 ## 常见问题
 
-- [Kuscia 与 Ray 的区别][kuscia_vs_ray]
-- [使用 WSL 注意事项][wsl_start_docker]
-- [部署失败][deploy_failed]
-- [授权错误排查][network_authorization_check]
-- [作业运行失败][run_job_failed]
-- [任务运行网络错误排查][network_trouble_shoot]
-- [FATE 部署失败][FATE_deploy_failed]
-- [FATE 作业运行失败][FATE_run_job_failed]
-- [用户自定义 Service 路由][user_defined_service_route]
-- [Lite 节点遗漏证书之后如何重新部署][private_key_loss]
-- [Protocol 通信协议][protocol_describe]
-- [Docker 24.0 环境中 C++17 文件复制权限问题][docker_cpp_copy]
-- [如何通过 Docker 命令对已部署的节点进行 Memory 扩容][docker_memory_limit]
-- [Kuscia K8s 部署模式下 SecretFlow 应用线程限制问题][k8s_ulimit_check]
-- [使用自定义镜像仓库][custom_registry]
-- [如何配置 Kuscia 对请求进行 Path Rewrite][kuscia_gateway_with_path]
-- [应用配置文件渲染][config_render]
-- [Kine 表问题导致 Kuscia 启动失败][kuscia_mysql_kine]
-- [内核参数][kernel_params]
+- [概念答疑][concept_clarity]
+- [启动部署][deploy_failed]
+- [网络连接][network_failed]
+- [任务运行][run_job_failed]
+- [参数调优][parameter_tuning]
 
-[kuscia_vs_ray]: ./troubleshoot/kuscia_vs_ray.md
-[wsl_start_docker]: ./troubleshoot/wsl_start_docker.md
-[deploy_failed]: ./troubleshoot/deploy_failed.md
-[network_authorization_check]: ./troubleshoot/network_authorization_check.md
-[run_job_failed]: ./troubleshoot/run_job_failed.md
-[network_trouble_shoot]: ./troubleshoot/network_troubleshoot.md
-[FATE_deploy_failed]: ./troubleshoot/FATE_deploy_failed.md
-[FATE_run_job_failed]: ./troubleshoot/FATE_run_job_failed.md
-[user_defined_service_route]: ./troubleshoot/user_defined_service_route.md
-[private_key_loss]: ./troubleshoot/private_key_loss.md
-[protocol_describe]: ./troubleshoot/protocol_describe.md
-[docker_cpp_copy]: ./troubleshoot/docker_cpp_copy.md
-[docker_memory_limit]: ./troubleshoot/docker_memory_limit.md
-[k8s_ulimit_check]: ./troubleshoot/k8s_ulimit_check.md
-[custom_registry]: ./troubleshoot/custom_registry.md
-[kuscia_gateway_with_path]: ./troubleshoot/kuscia_gateway_with_path.md
-[config_render]: ./troubleshoot/config_render.md
-[kuscia_mysql_kine]: ./troubleshoot/kuscia_mysql_kine.md
-[kernel_params]: ./troubleshoot/kernel_params.md
+[concept_clarity]: ./troubleshoot/concept/index.rst
+[deploy_failed]: ./troubleshoot/deployment/index.rst
+[network_failed]: ./troubleshoot/network/index.rst
+[run_job_failed]: ./troubleshoot/runtask/index.rst
+[parameter_tuning]: ./troubleshoot/index.rst
 
 ## 版本更新日志
 

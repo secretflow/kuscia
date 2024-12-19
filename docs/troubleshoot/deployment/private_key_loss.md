@@ -7,7 +7,7 @@
 ## 重新部署节点
 
 ### 步骤一
-在 master 节点上删除 lite 之前的节点证书，证书字段设置为空。详情参考[这里](../reference/apis/domain_cn.md#update-domain)
+在 master 节点上删除 lite 之前的节点证书，证书字段设置为空。详情参考[这里](../../reference/apis/domain_cn.md#update-domain)
 示例如下：
 ```bash
 curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
@@ -22,4 +22,4 @@ curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
 ```
 
 ### 步骤二
-向 master 重新申请 Token 并部署节点。详情参考[这里](../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md#lite-alice)
+向 master 重新申请 Token 并部署节点。详情参考[这里](../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md#lite-alice)

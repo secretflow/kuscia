@@ -43,7 +43,7 @@ func Test_Start_Autonomy(t *testing.T) {
 	autonomy := common.RunModeAutonomy
 	domainKeyData, err := tls.GenerateKeyData()
 	assert.NoError(t, err)
-	kusciaConfig := &confloader.AutomonyKusciaConfig{
+	kusciaConfig := &confloader.AutonomyKusciaConfig{
 		CommonConfig: confloader.CommonConfig{
 			Mode:          autonomy,
 			DomainID:      "alice",

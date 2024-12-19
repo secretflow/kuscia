@@ -95,6 +95,7 @@ func New(config *nlog.LogConfig) (*Writer, error) {
 			MaxSize:    config.MaxFileSizeMB, // megabytes
 			MaxBackups: config.MaxFiles,
 			Compress:   config.Compress,
+			LocalTime:  true,
 		},
 		logLevel: levelMap[config.LogLevel],
 	}, nil

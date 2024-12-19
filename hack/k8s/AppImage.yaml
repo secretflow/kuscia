@@ -22,7 +22,7 @@ spec:
         command:
         - sh
         configVolumeMounts:
-        - mountPath: /root/kuscia/task-config.conf
+        - mountPath: ./kuscia/task-config.conf
           subPath: task-config.conf
         name: secretflow
         ports:
@@ -47,7 +47,7 @@ spec:
         - name: inference
           protocol: HTTP
           scope: Cluster
-        workingDir: /root
+        workingDir: /app
       restartPolicy: Never
   image:
     id: abc

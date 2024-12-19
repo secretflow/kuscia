@@ -203,6 +203,7 @@ const (
 	DomainDataSourceTypeOSS            = "oss"
 	DomainDataSourceTypeMysql          = "mysql"
 	DomainDataSourceTypeODPS           = "odps"
+	DomainDataSourceTypePostgreSQL     = "postgresql"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )
 

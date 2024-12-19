@@ -81,3 +81,9 @@ message CommandDomainDataUpdate {
   // specific the partition column and value, such as "dmdt=20240520"
   string partition_spec = 6;
 }
+
+message CommandDataSourceSqlQuery {
+  string datasource_id = 1;
+  // only support select sql
+  string sql = 2;
+}

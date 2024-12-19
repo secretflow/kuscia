@@ -414,15 +414,16 @@ func parseAndValidateProtocol(protocol string, service string) (string, error) {
 
 func (ec *EndpointsController) AddEnvoyCluster(namespace string, name string, protocol string, hosts map[string][]uint32,
 	accessDomains string, clientCert *xds.TLSCert) error {
-	internalVh, err := ec.generateVirtualHost(namespace, name, accessDomains)
+	internalVh, err := ec.generateVirtualHost(namespace, name, accessDomains, false)
 	if err != nil {
 		return err
 	}
 
-	externalVh, ok := proto.Clone(internalVh).(*route.VirtualHost)
-	if !ok {
-		return fmt.Errorf("internalVh proto cannot cast to VirtualHost")
+	externalVh, err := ec.generateVirtualHost(namespace, name, accessDomains, true)
+	if err != nil {
+		return err
 	}
+
 	decorateInternalVirtualHost(internalVh, name)
 	decorateExternalVirtualHost(externalVh, name)
 
@@ -455,7 +456,7 @@ func (ec *EndpointsController) generateDomains(namespace, name string) []string 
 	return domains
 }
 
-func (ec *EndpointsController) generateVirtualHost(namespace string, name string, accessDomains string) (*route.VirtualHost, error) {
+func (ec *EndpointsController) generateVirtualHost(namespace string, name string, accessDomains string, isExternal bool) (*route.VirtualHost, error) {
 	virtualHost := &route.VirtualHost{
 		Domains: ec.generateDomains(namespace, name),
 		Routes: []*route.Route{
@@ -494,9 +495,13 @@ func (ec *EndpointsController) generateVirtualHost(namespace string, name string
 	if len(accessDomains) > 0 {
 		domains := strings.Replace(accessDomains, ",", "|", -1)
 		accessDomainRegex := fmt.Sprintf("(%s)", domains)
+		headerKey := "Kuscia-Source"
+		if isExternal {
+			headerKey = "Kuscia-Origin-Source"
+		}
 		virtualHost.Routes[0].Match.Headers = []*route.HeaderMatcher{
 			{
-				Name: "Kuscia-Origin-Source",
+				Name: headerKey,
 				HeaderMatchSpecifier: &route.HeaderMatcher_StringMatch{
 					StringMatch: &matcher.StringMatcher{
 						MatchPattern: &matcher.StringMatcher_SafeRegex{

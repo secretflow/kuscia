@@ -51,6 +51,8 @@ type KusciaAPIConfig struct {
 	ConfDir          string                    `yaml:"-"`
 	DomainID         string                    `yaml:"-"`
 	InterceptorLog   *nlog.NLog                `yaml:"-"`
+	StdoutPath       string                    `yaml:"-"`
+	NodeName         string                    `yaml:"-"`
 }
 
 type TokenConfig struct {

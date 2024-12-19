@@ -37,9 +37,9 @@ spec:
           - command:
               - sh
               - -c
-              - "python -m secretflow.kuscia.entry /etc/kuscia/task-config.conf"
+              - "python -m secretflow.kuscia.entry ./kuscia/task-config.conf"
             configVolumeMounts:
-              - mountPath: /etc/kuscia/task-config.conf
+              - mountPath: ./kuscia/task-config.conf
                 subPath: task-config.conf
             name: secretflow
             ports:
@@ -128,9 +128,9 @@ spec:
           - command:
               - sh
               - -c
-              - "python -m secretflow.kuscia.entry /etc/kuscia/task-config.conf"
+              - "python -m secretflow.kuscia.entry ./kuscia/task-config.conf"
             configVolumeMounts:
-              - mountPath: /etc/kuscia/task-config.conf
+              - mountPath: ./kuscia/task-config.conf
                 subPath: task-config.conf
             name: secretflow
             ports:
@@ -223,9 +223,9 @@ spec:
               - sh
             args:
               - -c
-              - ./app --role=server --task_config_path=/etc/kuscia/task-config.conf
+              - ./app --role=server --task_config_path=./kuscia/task-config.conf
             configVolumeMounts:
-              - mountPath: /etc/kuscia/task-config.conf
+              - mountPath: ./kuscia/task-config.conf
                 subPath: task-config.conf
             name: app
             ports:
@@ -333,7 +333,7 @@ AppImage `metadata` 的子字段详细介绍如下：
 
 AppImage `spec` 的子字段详细介绍如下：
 
-- `configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为`task-config.conf`。 更多的信息请 [参考这里](../../troubleshoot/config_render.md)
+- `configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为`task-config.conf`。 更多的信息请 [参考这里](../../tutorial/config_render.md)
 - `deployTemplates`：表示应用部署模版配置信息。Kuscia 控制器会根据该名称和角色，选择合适的 AppImage。若在 AppImage 没有查询到符合的部署模版，则将使用第一个部署模版。
   - `deployTemplates[].name`：表示应用部署模版名称。
   - `deployTemplates[].role`：表示应用作为该角色时，使用的部署模版配置。这里的角色可以由应用自定义，示例：Host/Guest；如果应用不需要区分角色部署，这里可以填空。

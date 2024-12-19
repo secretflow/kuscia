@@ -367,14 +367,15 @@ func (c *Controller) Run(workers int) error {
 		c.domainDataSynced, c.domainDataGrantSynced) {
 		return fmt.Errorf("failed to wait for cache sync for %v", c.Name())
 	}
-	c.registerInteropConfigs()
+
 	for {
+		c.registerInteropConfigs()
+		time.Sleep(2 * time.Second)
 		if c.hostResourceManager.HasSynced() {
 			nlog.Info("Host resource manager finish syncing resources")
 			break
 		}
 		nlog.Info("Waiting for host resource manager to sync resources...")
-		time.Sleep(2 * time.Second)
 	}
 
 	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())

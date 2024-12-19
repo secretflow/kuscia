@@ -123,7 +123,7 @@ NAME        SOURCE   DESTINATION   HOST                                         
 alice-bob   alice    bob           kuscia-autonomy-bob.autonomy-bob.svc.cluster.local   Token            True
 bob-alice   bob      alice                                                              Token            True
 ```
-授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)文档
+授权失败，请参考[授权错误排查](../../troubleshoot/network/network_authorization_check.md)文档
 
 ## 确认部署成功
 ### 检查 Pod 状态

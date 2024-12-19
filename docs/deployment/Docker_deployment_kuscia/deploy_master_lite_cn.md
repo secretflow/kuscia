@@ -17,8 +17,8 @@
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.9.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+# 使用的 Kuscia 镜像，这里使用 0.13.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
 ```
 
 指定 Secretflow 版本：
@@ -155,8 +155,8 @@ abcdefg
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.9.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+# 使用的 Kuscia 镜像，这里使用 0.13.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -217,8 +217,8 @@ hijklmn
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.9.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.9.0b0
+# 使用的 Kuscia 镜像，这里使用 0.13.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -272,7 +272,7 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr
 
 :::{tip}
 - 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
-- 授权失败，请参考[授权错误排查](../../troubleshoot/network_authorization_check.md)
+- 授权失败，请参考[授权错误排查](../../troubleshoot/network/network_authorization_check.md)
 :::
 
 ### 运行任务
@@ -348,4 +348,4 @@ docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ```
 
-任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network_troubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network/network_troubleshoot.md)排查

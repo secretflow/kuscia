@@ -689,33 +689,42 @@ func (h *jobService) WatchJob(ctx context.Context, request *kusciaapi.WatchJobRe
 	if request.TimeoutSeconds > 0 {
 		timeoutSeconds = request.TimeoutSeconds
 	}
-
-	w, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Watch(ctx, metav1.ListOptions{
+	// watch job status
+	wJob, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Watch(ctx, metav1.ListOptions{
 		TimeoutSeconds: &timeoutSeconds,
 	})
 	if err != nil {
 		return err
 	}
-	expectedType := reflect.TypeOf(&v1alpha1.KusciaJob{})
+	expectedTypeJob := reflect.TypeOf(&v1alpha1.KusciaJob{})
+	// watch task progress
+	wTask, err := h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Watch(ctx, metav1.ListOptions{
+		TimeoutSeconds: &timeoutSeconds,
+	})
+	if err != nil {
+		return err
+	}
+	expectedTypeTask := reflect.TypeOf(&v1alpha1.KusciaTask{})
 
 	// Stopping the watcher should be idempotent and if we return from this function there's no way
 	// we're coming back in with the same watch interface.
-	defer w.Stop()
+	defer wJob.Stop()
+	defer wTask.Stop()
 
 loop:
 	for {
 		select {
 		case <-ctx.Done():
 			return errors.New("stop requested")
-		case event, ok := <-w.ResultChan():
+		case event, ok := <-wJob.ResultChan():
 			if !ok {
 				break loop
 			}
 			if event.Type == watch.Error {
 				return apierrors.FromObject(event.Object)
 			}
-			if expectedType != nil {
-				if e, a := expectedType, reflect.TypeOf(event.Object); e != a {
+			if expectedTypeJob != nil {
+				if e, a := expectedTypeJob, reflect.TypeOf(event.Object); e != a {
 					utilruntime.HandleError(fmt.Errorf("expected type %v, but watch event object had type %v", e, a))
 					continue
 				}
@@ -725,7 +734,7 @@ loop:
 			if !h.authHandlerJobWatch(ctx, job) {
 				// No permission to watch
 				role, domain := GetRoleAndDomainFromCtx(ctx)
-				nlog.Debugf("Watch domain: %s role: %s, Job ID: %s", domain, role, job.Name)
+				nlog.Debugf("No permission to watch, domain: %s role: %s, Job ID: %s", domain, role, job.Name)
 				continue
 			}
 			if err != nil {
@@ -751,6 +760,54 @@ loop:
 				// A `Bookmark` means watch has synced here, just update the resourceVersion
 			default:
 				utilruntime.HandleError(fmt.Errorf("unable to understand watch event %#v", event))
+			}
+		case event, ok := <-wTask.ResultChan():
+			if !ok {
+				break loop
+			}
+			if event.Type == watch.Error {
+				return apierrors.FromObject(event.Object)
+			}
+			switch event.Type {
+			case watch.Modified: // only watch modified event
+				if expectedTypeTask != nil {
+					if e, a := expectedTypeTask, reflect.TypeOf(event.Object); e != a {
+						utilruntime.HandleError(fmt.Errorf("expected type %v, but watch event object had type %v", e, a))
+						continue
+					}
+				}
+				task, _ := event.Object.(*v1alpha1.KusciaTask)
+				// only update running task progress
+				if task.Status.Phase == v1alpha1.TaskRunning && task.Status.Progress > 0 && task.Status.Progress < 1 {
+					// get job via task owner ref
+					ownerRef := metav1.GetControllerOf(task)
+					if ownerRef == nil { // ignore task
+						nlog.Infof("Task: %s does not have an owner.", task.Name)
+						continue
+					}
+					job, err := h.kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Get(ctx, ownerRef.Name, metav1.GetOptions{})
+					if err != nil {
+						nlog.Infof("Failed to get job: %s via task: %s owner ref.", ownerRef.Name, task.Name)
+						continue
+					}
+					if !h.authHandlerJobWatch(ctx, job) {
+						// No permission to watch
+						role, domain := GetRoleAndDomainFromCtx(ctx)
+						nlog.Debugf("No permission to watch, domain: %s role: %s, Job ID: %s", domain, role, job.Name)
+						continue
+					}
+					// build job status and return response
+					jobStatus, err := h.buildJobStatus(ctx, job)
+					if err != nil {
+						return err
+					}
+					eventCh <- &kusciaapi.WatchJobEventResponse{
+						Type:   kusciaapi.EventType_MODIFIED,
+						Object: jobStatus,
+					}
+				}
+			default:
+				// do noting
 			}
 		}
 	}
@@ -826,6 +883,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 				ts.CreateTime = utils.TimeRfc3339String(&task.CreationTimestamp)
 				ts.StartTime = utils.TimeRfc3339String(taskStatus.StartTime)
 				ts.EndTime = utils.TimeRfc3339String(taskStatus.CompletionTime)
+				ts.Progress = taskStatus.Progress
 				partyTaskStatus := make(map[string]v1alpha1.KusciaTaskPhase)
 				for _, ps := range taskStatus.PartyTaskStatus {
 					partyTaskStatus[ps.DomainID] = ps.Phase

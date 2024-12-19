@@ -434,6 +434,62 @@ func (x *CommandDomainDataUpdate) GetPartitionSpec() string {
 	return ""
 }
 
+type CommandDataSourceSqlQuery struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DatasourceId string `protobuf:"bytes,1,opt,name=datasource_id,json=datasourceId,proto3" json:"datasource_id,omitempty"`
+	// only support select sql
+	Sql string `protobuf:"bytes,2,opt,name=sql,proto3" json:"sql,omitempty"`
+}
+
+func (x *CommandDataSourceSqlQuery) Reset() {
+	*x = CommandDataSourceSqlQuery{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CommandDataSourceSqlQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommandDataSourceSqlQuery) ProtoMessage() {}
+
+func (x *CommandDataSourceSqlQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommandDataSourceSqlQuery.ProtoReflect.Descriptor instead.
+func (*CommandDataSourceSqlQuery) Descriptor() ([]byte, []int) {
+	return file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CommandDataSourceSqlQuery) GetDatasourceId() string {
+	if x != nil {
+		return x.DatasourceId
+	}
+	return ""
+}
+
+func (x *CommandDataSourceSqlQuery) GetSql() string {
+	if x != nil {
+		return x.Sql
+	}
+	return ""
+}
+
 var File_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto protoreflect.FileDescriptor
 
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDesc = []byte{
@@ -516,16 +572,22 @@ var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDesc = []byte{
 	0x78, 0x74, 0x72, 0x61, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79,
 	0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b,
 	0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x2a, 0x2a, 0x0a, 0x0b,
-	0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x09, 0x0a, 0x05, 0x54,
-	0x61, 0x62, 0x6c, 0x65, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x52, 0x41, 0x57, 0x10, 0x01, 0x12,
-	0x07, 0x0a, 0x03, 0x43, 0x53, 0x56, 0x10, 0x02, 0x42, 0x5c, 0x0a, 0x20, 0x6f, 0x72, 0x67, 0x2e,
-	0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x5a, 0x38, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66,
-	0x6c, 0x6f, 0x77, 0x2f, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x64, 0x61,
-	0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x52, 0x0a, 0x19,
+	0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x53, 0x71, 0x6c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x23, 0x0a, 0x0d, 0x64, 0x61, 0x74,
+	0x61, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0c, 0x64, 0x61, 0x74, 0x61, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x12, 0x10,
+	0x0a, 0x03, 0x73, 0x71, 0x6c, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x73, 0x71, 0x6c,
+	0x2a, 0x2a, 0x0a, 0x0b, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12,
+	0x09, 0x0a, 0x05, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x52, 0x41,
+	0x57, 0x10, 0x01, 0x12, 0x07, 0x0a, 0x03, 0x43, 0x53, 0x56, 0x10, 0x02, 0x42, 0x5c, 0x0a, 0x20,
+	0x6f, 0x72, 0x67, 0x2e, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2e, 0x76,
+	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68,
+	0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x65, 0x63,
+	0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2f, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x31, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -541,7 +603,7 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDescGZIP() []byte
 }
 
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_goTypes = []interface{}{
 	(ContentType)(0),                   // 0: kuscia.proto.api.v1alpha1.datamesh.ContentType
 	(*CSVWriteOptions)(nil),            // 1: kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptions
@@ -549,17 +611,18 @@ var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_goTypes = []interface
 	(*CommandGetDomainDataSchema)(nil), // 3: kuscia.proto.api.v1alpha1.datamesh.CommandGetDomainDataSchema
 	(*CommandDomainDataQuery)(nil),     // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
 	(*CommandDomainDataUpdate)(nil),    // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
-	nil,                                // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
-	(*CreateDomainDataRequest)(nil),    // 7: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
+	(*CommandDataSourceSqlQuery)(nil),  // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDataSourceSqlQuery
+	nil,                                // 7: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
+	(*CreateDomainDataRequest)(nil),    // 8: kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
 }
 var file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_depIdxs = []int32{
 	1, // 0: kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions.csv_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.CSVWriteOptions
 	0, // 1: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery.content_type:type_name -> kuscia.proto.api.v1alpha1.datamesh.ContentType
 	2, // 2: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery.file_write_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions
-	7, // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.domaindata_request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
+	8, // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.domaindata_request:type_name -> kuscia.proto.api.v1alpha1.datamesh.CreateDomainDataRequest
 	0, // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.content_type:type_name -> kuscia.proto.api.v1alpha1.datamesh.ContentType
 	2, // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.file_write_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.FileWriteOptions
-	6, // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.extra_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
+	7, // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.extra_options:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate.ExtraOptionsEntry
 	7, // [7:7] is the sub-list for method output_type
 	7, // [7:7] is the sub-list for method input_type
 	7, // [7:7] is the sub-list for extension type_name
@@ -634,6 +697,18 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_init() {
 				return nil
 			}
 		}
+		file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CommandDataSourceSqlQuery); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_msgTypes[1].OneofWrappers = []interface{}{
 		(*FileWriteOptions_CsvOptions)(nil),
@@ -644,7 +719,7 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_kuscia_proto_api_v1alpha1_datamesh_flightdm_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

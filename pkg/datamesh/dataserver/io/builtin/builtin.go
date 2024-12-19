@@ -22,7 +22,7 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/google/uuid"
-	cache "github.com/patrickmn/go-cache"
+	gocache "github.com/patrickmn/go-cache"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -34,12 +34,12 @@ import (
 
 type IOServer struct {
 	ioChannels map[string]DataMeshDataIOInterface
-	cmds       *cache.Cache
+	cmds       *gocache.Cache
 }
 
 func NewIOServer() *IOServer {
 	return &IOServer{
-		cmds: cache.New(time.Minute*10, time.Minute),
+		cmds: gocache.New(time.Duration(10)*time.Minute, time.Minute),
 		ioChannels: map[string]DataMeshDataIOInterface{
 			common.DomainDataSourceTypeLocalFS: NewBuiltinLocalFileIOChannel(),
 			common.DomainDataSourceTypeOSS:     NewBuiltinOssIOChannel(),
@@ -109,7 +109,11 @@ func (d *IOServer) DoGet(tkt *flight.Ticket, fs flight.FlightService_DoGetServer
 		}
 	}
 	if ios, ok := d.ioChannels[reqCtx.DataSourceType]; ok {
-		return ios.Read(fs.Context(), reqCtx, w)
+		if ioReadErr := ios.Read(fs.Context(), reqCtx, w); ioReadErr != nil {
+			nlog.Errorf("Read domaindata failed with %s", ioReadErr.Error())
+			return status.Error(codes.Internal, fmt.Sprintf("Read domaindata failed with %s", ioReadErr.Error()))
+		}
+		return nil
 	}
 	nlog.Errorf("The datasource type (%s) not found in io channels ", reqCtx.DataSourceType)
 	return status.Errorf(codes.Internal, "The datasource type (%s) not found in io channels ", reqCtx.DataSourceType)
@@ -144,7 +148,12 @@ func (d *IOServer) DoPut(stream flight.FlightService_DoPutServer) (err error) {
 	}
 	reqCtx := reqContext.(*utils.DataMeshRequestContext)
 	if ios, ok := d.ioChannels[reqCtx.DataSourceType]; ok {
-		return ios.Write(stream.Context(), reqCtx, reader)
+
+		if ioWriteErr := ios.Write(stream.Context(), reqCtx, reader); ioWriteErr != nil {
+			nlog.Errorf("Write domaindata failed with %s", ioWriteErr.Error())
+			return status.Error(codes.Internal, fmt.Sprintf("Write domaindata failed with %s", ioWriteErr.Error()))
+		}
+		return nil
 	}
 	nlog.Errorf("The datasource type (%s) not found in io channels ", reqCtx.DataSourceType)
 	return status.Errorf(codes.Internal, "The datasource type (%s) not found in io channels ", reqCtx.DataSourceType)

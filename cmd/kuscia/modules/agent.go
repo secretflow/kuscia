@@ -27,7 +27,6 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/commands"
 	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/embedstrings"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/utils"
 	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
@@ -48,14 +47,6 @@ func NewAgent(i *ModuleRuntimeConfigs) (Module, error) {
 	conf := &i.Agent
 	conf.RootDir = i.RootDir
 	conf.Namespace = i.DomainID
-	hostname, err := os.Hostname()
-	if err != nil {
-		nlog.Fatalf("Get hostname fail: %v", err)
-	}
-	conf.StdoutPath = filepath.Join(i.RootDir, common.StdoutPrefix)
-	if conf.Node.NodeName == "" {
-		conf.Node.NodeName = hostname
-	}
 	if conf.Provider.Runtime == config.ContainerRuntime {
 		conf.Node.KeepNodeOnExit = true
 	}

@@ -70,6 +70,15 @@ func (d *IOServer) GetFlightInfo(ctx context.Context, reqCtx *utils.DataMeshRequ
 		}
 		return d.exDpClient.GetFlightInfoDataMeshUpdate(ctx, req)
 	}
+
+	if reqCtx.SqlQuery != nil {
+		req := &datamesh.CommandDataMeshSqlQuery{
+			Query:      reqCtx.SqlQuery,
+			Datasource: ds,
+		}
+		return d.exDpClient.GetFlightInfoDataMeshSqlQuery(ctx, req)
+	}
+
 	return nil, status.Errorf(codes.InvalidArgument, "Request is not query or update.")
 }
 
