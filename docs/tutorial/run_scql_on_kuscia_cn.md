@@ -11,7 +11,7 @@
 
 ## 获取 KusciaAPI 证书和 Token
 
-在下面[准备数据](./run_scql_on_kuscia_cn.md#alice-准备测试数据)步骤中需要使用到 KusciaAPI，如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 Token。协议参考[这里](../troubleshoot/protocol_describe.md)。
+在下面[准备数据](./run_scql_on_kuscia_cn.md#alice-准备测试数据)步骤中需要使用到 KusciaAPI，如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 Token。协议参考[这里](../troubleshoot/concept/protocol_describe.md)。
 
 ### 点对点组网模式
 
@@ -291,12 +291,7 @@ curl -X POST http://127.0.0.1:80/intra/project/create \
 ```bash
 curl -X POST http://127.0.0.1:80/intra/project/list \
 --header "host: scql-broker-intra.alice.svc" \
---header "kuscia-source: alice" \
--d '{
-  "ids": [
-    "demo"
-  ]
-}'
+--header "kuscia-source: alice"
 ```
 
 4.邀请 bob 加入到 "demo" 项目中
@@ -314,8 +309,7 @@ curl -X POST http://127.0.0.1:80/intra/member/invite \
 ```bash
 curl -X POST http://127.0.0.1:80/intra/invitation/list \
 --header "host: scql-broker-intra.alice.svc" \
---header "kuscia-source: alice" \
--d '{}'
+--header "kuscia-source: alice"
 ```
 
 #### Bob 接受邀请

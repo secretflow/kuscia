@@ -196,12 +196,11 @@ kubectl delete kj job-best-effort-linear -n cross-domain
 - 进一步阅读 [Kuscia 架构细节][architecture]，了解 Kuscia 的设计思路和概念。
 - 了解 [Kuscia API][kuscia-api]。Kuscia API 是 Kuscia 的一个更上层封装，支持更方便地将 Kuscia 集成到其他系统中。
 - 了解 [多机器部署][deploy-p2p] 的更多信息。
-- 尝试运行其它算法或是引擎的作业，比如 [互联互通银联 BFIA 协议作业][tutorial-bfia] 或是 [FATE 作业][tutorial-fate]。
+- 尝试运行其它算法或是引擎的作业，比如 [FATE 作业][tutorial-fate]。
 
 [architecture]: ../reference/architecture_cn.md
 [kuscia-api]: ../reference/apis/summary_cn.md
 [deploy-p2p]: ../deployment/deploy_p2p_cn.md
-[tutorial-bfia]: ../tutorial/run_bfia_job_cn.md
 [tutorial-fate]: ../tutorial/run_fate_cn.md
 
 :::{tip}

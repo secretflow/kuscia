@@ -7,10 +7,10 @@
 若机器不满足[官网推荐配置](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/getting_started/quickstart_cn#id2)，可能会造成部分服务无法正常工作，从而导致作业运行失败。
 
 ### 检查网络授权
-大部分任务失败问题都是网络问题，检查网络授权可以登录到容器（中心化模式在 master 容器、点对点模式在 automony 容器）并执行`kubectl get cdr`命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` 命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](network_authorization_check.md)。
+大部分任务失败问题都是网络问题，检查网络授权可以登录到容器（中心化模式在 master 容器、点对点模式在 automony 容器）并执行`kubectl get cdr`命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` 命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](../network/network_authorization_check.md)。
 
 ### 检查内核参数
-如果宿主机的内核参数配置过低，在运行一些比较大的任务或者并发多任务时，也容易出现任务失败的情况，可以参考 [内核参数](kernel_params.md) 检查内核参数是否符合 Kuscia 的推荐配置。
+如果宿主机的内核参数配置过低，在运行一些比较大的任务或者并发多任务时，也容易出现任务失败的情况，可以参考 [内核参数](../parameter_tuning/kernel_params.md) 检查内核参数是否符合 Kuscia 的推荐配置。
 
 
 ### 查看作业失败原因
@@ -105,4 +105,4 @@ docker exec -it ${USER}-kuscia-autonomy-bob bash
 # 查看 bob 节点上任务 pod 日志
 cat /home/kuscia/var/stdout/pods/podName_xxxx/xxxx/x.log
 ```
-任务运行遇到网络错误时，可以参考[这里](network_troubleshoot.md)排查
+任务运行遇到网络错误时，可以参考[这里](../network/network_troubleshoot.md)排查

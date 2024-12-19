@@ -41,38 +41,9 @@ var (
 	utBob               = "bob"
 )
 
-type RegisterJwtClaimsMd5 struct {
-	ReqHash [16]byte `json:"req"` // deprecate soon
-	jwt.RegisteredClaims
-}
-
 type RegisterJwtClaimsSha256 struct {
 	ReqHashSha256 [32]byte `json:"req_hash"`
 	jwt.RegisteredClaims
-}
-
-func generateJwtTokenMd5(namespace, csrData string, prikey *rsa.PrivateKey) (req *handshake.RegisterRequest, token string, err error) {
-	req = &handshake.RegisterRequest{
-		DomainId:    namespace,
-		Csr:         base64.StdEncoding.EncodeToString([]byte(csrData)),
-		RequestTime: int64(time.Now().Nanosecond()),
-	}
-
-	rjc := &RegisterJwtClaimsMd5{
-		ReqHash: getRegisterRequestHashMd5(req),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    namespace,
-			Subject:   namespace,
-		},
-	}
-	tokenData := jwt.NewWithClaims(jwt.SigningMethodRS256, rjc)
-	token, err = tokenData.SignedString(prikey)
-	if err != nil {
-		nlog.Errorf("Signed token failed, error: %s.", err.Error())
-	}
-	return
 }
 
 func generateJwtTokenSha256(namespace, csrData string, prikey *rsa.PrivateKey) (req *handshake.RegisterRequest, token string, err error) {
@@ -148,70 +119,19 @@ func TestVerifyCSRcn(t *testing.T) {
 
 func TestCompatibility(t *testing.T) {
 	t.Parallel()
-	// token md5 vs claim (ma5\sha256)
 	csr, key := generateTestKey(t, utAlice)
-	req, token, err := generateJwtTokenMd5(utAlice, csr, key)
-	assert.NoError(t, err, "generateJwtToken failed")
-	err = verifyRegisterRequest(req, token)
-	assert.NoError(t, err, "verifyRegisterRequest failed")
 
-	// token (md5/sha256) vs claim (ma5)
-	req, token, err = generateJwtToken(utAlice, csr, key)
-	assert.NoError(t, err, "generateJwtToken failed")
-	err = verifyRegisterRequestMd5(req, token)
+	req, token, err := generateJwtToken(utAlice, csr, key)
 	assert.NoError(t, err, "generateJwtToken failed")
 
-	// token (md5/sha256) vs claim (sha256)
 	err = verifyRegisterRequestSha256(req, token)
 	assert.NoError(t, err, "generateJwtToken failed")
 
-	// token sha256 vs claim (ma5\sha256)
 	req, token, err = generateJwtTokenSha256(utAlice, csr, key)
 	assert.NoError(t, err, "generateJwtToken failed")
 	err = verifyRegisterRequest(req, token)
 	assert.NoError(t, err, "generateJwtToken failed")
 
-}
-
-func verifyRegisterRequestMd5(req *handshake.RegisterRequest, token string) error {
-	// Csr in request must be base64 encoded string
-	// Raw data must be pem format
-	certRequest, err := parseCertRequest(req.Csr)
-	if err != nil {
-		return fmt.Errorf("parse cert request failed, detail: %s", err.Error())
-	}
-	// verify the CN of CSR must be equal with domainID
-	if err = verifyCSR(certRequest, req.DomainId); err != nil {
-		return fmt.Errorf("verify csr failed, detail: %s", err.Error())
-	}
-	// Use jwt verify first.
-	// JWT token must be signed by domain's private key.
-	// This handler will verify it by public key in csr.
-	if err = verifyJwtTokenMd5(token, certRequest.PublicKey, req); err != nil {
-		return fmt.Errorf(`verify jwt failed, detail: %s`, err.Error())
-	}
-	return nil
-}
-
-func verifyJwtTokenMd5(jwtTokenStr string, pubKey interface{}, req *handshake.RegisterRequest) error {
-	rjc := &RegisterJwtClaimsMd5{}
-	jwtToken, err := jwt.ParseWithClaims(jwtTokenStr, rjc, func(token *jwt.Token) (interface{}, error) {
-		return pubKey, nil
-	})
-	if err != nil {
-		return err
-	}
-	if !jwtToken.Valid {
-		return fmt.Errorf("%s", "jwt token decrpted fail")
-	}
-	if time.Since(rjc.ExpiresAt.Time) > 0 {
-		return fmt.Errorf("%s", "verify jwt failed, detail: token expired")
-	}
-	// check md5 hash
-	if reflect.DeepEqual(getRegisterRequestHashMd5(req), rjc.ReqHash) {
-		return nil
-	}
-	return fmt.Errorf("verify request failed, detail: the request content doesn't match the hash")
 }
 
 func verifyRegisterRequestSha256(req *handshake.RegisterRequest, token string) error {

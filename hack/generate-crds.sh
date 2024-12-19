@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # Copyright 2023 Ant Group Co., Ltd.
 #
@@ -30,7 +30,7 @@ function pre_install {
   # install controller-gen tool if not exist
   if [ "$(which controller-gen)" == "" ]; then
     echo "Start to install controller-gen tool"
-    GO111MODULE=on go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2
+    GO111MODULE=on go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@v0.15.0
   fi
 }
 

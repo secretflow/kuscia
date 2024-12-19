@@ -252,6 +252,7 @@ message TaskStatus {
   string end_time = 6;
   repeated PartyStatus parties = 7;
   string alias = 8;
+  float progress = 9;
 }
 
 message PartyStatus {

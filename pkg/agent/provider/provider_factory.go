@@ -239,6 +239,7 @@ func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder reco
 		NodeName:        nodeName,
 		Namespace:       f.agentConfig.Namespace,
 		NodeIP:          f.agentConfig.NodeIP,
+		StdoutDirectory: f.agentConfig.StdoutPath,
 		KubeClient:      f.kubeClient,
 		BkClient:        f.bkClient,
 		PodSyncHandler:  podsController,

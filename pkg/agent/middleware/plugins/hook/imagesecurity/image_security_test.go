@@ -43,7 +43,7 @@ name: "image-security"
 	cfg := &config.PluginCfg{}
 	assert.NoError(t, yaml.Unmarshal([]byte(configYaml), cfg))
 
-	agentConfig := config.DefaultAgentConfig()
+	agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath)
 
 	dep := &plugin.Dependencies{
 		AgentConfig: agentConfig,

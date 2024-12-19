@@ -140,7 +140,7 @@ func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskRe
 		}
 
 		if skipHandlingTaskResource(taskResource, statusInTaskSummary) {
-			return nil
+			break
 		}
 
 		if statusInTaskSummary.Phase == "" ||
@@ -159,7 +159,7 @@ func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskRe
 		}
 
 		if skipHandlingTaskResource(taskResource, statusInTaskSummary) {
-			return nil
+			break
 		}
 
 		nlog.Infof("Set taskSummary %v status from %q to %q", ikcommon.GetObjectNamespaceName(taskSummary), statusInTaskSummary.Phase, taskResource.Status.Phase)
@@ -172,6 +172,7 @@ func (c *Controller) updateTaskSummaryByTaskResource(ctx context.Context, taskRe
 		updated = true
 		statusInTaskSummary.HostTaskResourceName = taskResource.Name
 		statusInTaskSummary.HostTaskResourceVersion = taskResource.ResourceVersion
+		statusInTaskSummary.LastTransitionTime = taskResource.Status.LastTransitionTime
 		nlog.Infof("Filling host taskResource %v name and version", ikcommon.GetObjectNamespaceName(taskResource))
 	}
 

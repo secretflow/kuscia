@@ -160,6 +160,61 @@ func (x *CommandDataMeshUpdate) GetDatasource() *DomainDataSource {
 	return nil
 }
 
+type CommandDataMeshSqlQuery struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Query      *CommandDataSourceSqlQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Datasource *DomainDataSource          `protobuf:"bytes,2,opt,name=datasource,proto3" json:"datasource,omitempty"`
+}
+
+func (x *CommandDataMeshSqlQuery) Reset() {
+	*x = CommandDataMeshSqlQuery{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CommandDataMeshSqlQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CommandDataMeshSqlQuery) ProtoMessage() {}
+
+func (x *CommandDataMeshSqlQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CommandDataMeshSqlQuery.ProtoReflect.Descriptor instead.
+func (*CommandDataMeshSqlQuery) Descriptor() ([]byte, []int) {
+	return file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CommandDataMeshSqlQuery) GetQuery() *CommandDataSourceSqlQuery {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
+func (x *CommandDataMeshSqlQuery) GetDatasource() *DomainDataSource {
+	if x != nil {
+		return x.Datasource
+	}
+	return nil
+}
+
 var File_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto protoreflect.FileDescriptor
 
 var file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_rawDesc = []byte{
@@ -213,13 +268,25 @@ var file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_rawDesc = []byte{
 	0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61,
 	0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74,
 	0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x0a, 0x64, 0x61, 0x74, 0x61, 0x73, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x42, 0x5c, 0x0a, 0x20, 0x6f, 0x72, 0x67, 0x2e, 0x73, 0x65, 0x63, 0x72, 0x65,
-	0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64,
-	0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2f, 0x6b,
-	0x75, 0x73, 0x63, 0x69, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73,
-	0x68, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x63, 0x65, 0x22, 0xc4, 0x01, 0x0a, 0x17, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x44,
+	0x61, 0x74, 0x61, 0x4d, 0x65, 0x73, 0x68, 0x53, 0x71, 0x6c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12,
+	0x53, 0x0a, 0x05, 0x71, 0x75, 0x65, 0x72, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x3d,
+	0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d,
+	0x65, 0x73, 0x68, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x44, 0x61, 0x74, 0x61, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x71, 0x6c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x52, 0x05, 0x71,
+	0x75, 0x65, 0x72, 0x79, 0x12, 0x54, 0x0a, 0x0a, 0x64, 0x61, 0x74, 0x61, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x6b, 0x75, 0x73, 0x63, 0x69,
+	0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x31, 0x61, 0x6c,
+	0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x2e, 0x44, 0x6f,
+	0x6d, 0x61, 0x69, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x0a,
+	0x64, 0x61, 0x74, 0x61, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x42, 0x5c, 0x0a, 0x20, 0x6f, 0x72,
+	0x67, 0x2e, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2e, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x5a, 0x38,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x66, 0x6c, 0x6f, 0x77, 0x2f, 0x6b, 0x75, 0x73, 0x63, 0x69, 0x61, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2f,
+	0x64, 0x61, 0x74, 0x61, 0x6d, 0x65, 0x73, 0x68, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -234,27 +301,31 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_rawDescGZIP() []b
 	return file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_rawDescData
 }
 
-var file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_goTypes = []interface{}{
-	(*CommandDataMeshQuery)(nil),    // 0: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery
-	(*CommandDataMeshUpdate)(nil),   // 1: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate
-	(*CommandDomainDataQuery)(nil),  // 2: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
-	(*DomainData)(nil),              // 3: kuscia.proto.api.v1alpha1.datamesh.DomainData
-	(*DomainDataSource)(nil),        // 4: kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
-	(*CommandDomainDataUpdate)(nil), // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
+	(*CommandDataMeshQuery)(nil),      // 0: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery
+	(*CommandDataMeshUpdate)(nil),     // 1: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate
+	(*CommandDataMeshSqlQuery)(nil),   // 2: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshSqlQuery
+	(*CommandDomainDataQuery)(nil),    // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
+	(*DomainData)(nil),                // 4: kuscia.proto.api.v1alpha1.datamesh.DomainData
+	(*DomainDataSource)(nil),          // 5: kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
+	(*CommandDomainDataUpdate)(nil),   // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
+	(*CommandDataSourceSqlQuery)(nil), // 7: kuscia.proto.api.v1alpha1.datamesh.CommandDataSourceSqlQuery
 }
 var file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_depIdxs = []int32{
-	2, // 0: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery.query:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
-	3, // 1: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery.domaindata:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainData
-	4, // 2: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery.datasource:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
-	5, // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate.update:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
-	3, // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate.domaindata:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainData
-	4, // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate.datasource:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	3, // 0: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery.query:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataQuery
+	4, // 1: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery.domaindata:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainData
+	5, // 2: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshQuery.datasource:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
+	6, // 3: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate.update:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDomainDataUpdate
+	4, // 4: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate.domaindata:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainData
+	5, // 5: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshUpdate.datasource:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
+	7, // 6: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshSqlQuery.query:type_name -> kuscia.proto.api.v1alpha1.datamesh.CommandDataSourceSqlQuery
+	5, // 7: kuscia.proto.api.v1alpha1.datamesh.CommandDataMeshSqlQuery.datasource:type_name -> kuscia.proto.api.v1alpha1.datamesh.DomainDataSource
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_init() }
@@ -290,6 +361,18 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_init() {
 				return nil
 			}
 		}
+		file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CommandDataMeshSqlQuery); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -297,7 +380,7 @@ func file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_kuscia_proto_api_v1alpha1_datamesh_flightinner_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

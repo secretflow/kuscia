@@ -35,6 +35,7 @@ type MasterConfig struct {
 	APIServer         *APIServerConfig `yaml:"apiserver,omitempty"`
 	KusciaStorage     *ServiceConfig   `yaml:"kusciaStorage,omitempty"`
 	KusciaAPI         *ServiceConfig   `yaml:"kusciaAPI,omitempty"`
+	Reporter          *ServiceConfig   `yaml:"reporter,omitempty"`
 	APIWhitelist      []string         `yaml:"apiWhitelist,omitempty"`
 }
 

@@ -29,6 +29,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/network"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/secretflow/kuscia/pkg/utils/resources"
 )
 
 const (
@@ -45,6 +46,10 @@ const (
 
 	defaultCRIRemoteEndpoint = "unix:///home/kuscia/containerd/run/containerd.sock"
 	defaultResolvConfig      = "/etc/resolv.conf"
+
+	DefaultLogRotateMaxFiles   = 5
+	DefaultLogRotateMaxSize    = 512
+	DefaultLogRotateMaxSizeStr = "512Mi"
 )
 
 const (
@@ -168,14 +173,17 @@ type K8sProviderBackendCfg struct {
 
 type K8sProviderCfg struct {
 	KubeConnCfg      `yaml:",inline"`
-	Namespace        string                `yaml:"namespace"`
-	DNS              DNSCfg                `yaml:"dns,omitempty"`
-	Backend          K8sProviderBackendCfg `yaml:"backend,omitempty"`
-	LabelsToAdd      map[string]string     `yaml:"labelsToAdd,omitempty"`
-	AnnotationsToAdd map[string]string     `yaml:"annotationsToAdd,omitempty"`
-	RuntimeClassName string                `yaml:"runtimeClassName,omitempty"`
-	EnableLogging    bool                  `yaml:"enableLogging,omitempty"`
-	LogDirectory     string                `yaml:"logDirectory,omitempty"`
+	Namespace        string                 `yaml:"namespace"`
+	DNS              DNSCfg                 `yaml:"dns,omitempty"`
+	Backend          K8sProviderBackendCfg  `yaml:"backend,omitempty"`
+	LabelsToAdd      map[string]string      `yaml:"labelsToAdd,omitempty"`
+	AnnotationsToAdd map[string]string      `yaml:"annotationsToAdd,omitempty"`
+	AffinitiesToAdd  map[string]interface{} `yaml:"affinitiesToAdd,omitempty"`
+	RuntimeClassName string                 `yaml:"runtimeClassName,omitempty"`
+	EnableLogging    bool                   `yaml:"enableLogging,omitempty"`
+	LogDirectory     string                 `yaml:"logDirectory,omitempty"`
+	LogMaxSize       string                 `yaml:"logMaxSize,omitempty"`
+	LogMaxFiles      int                    `yaml:"logMaxFiles,omitempty"`
 }
 
 type ProviderCfg struct {
@@ -287,8 +295,8 @@ func DefaultStaticAgentConfig() *AgentConfig {
 		Log: AgentLogCfg{
 			LogLevel:      "INFO",
 			Filename:      "",
-			MaxFileSizeMB: 512,
-			MaxFiles:      5,
+			MaxFileSizeMB: DefaultLogRotateMaxSize,
+			MaxFiles:      DefaultLogRotateMaxFiles,
 		},
 		Source: SourceCfg{
 			Apiserver: ApiserverSourceCfg{
@@ -312,8 +320,8 @@ func DefaultStaticAgentConfig() *AgentConfig {
 				RemoteRuntimeEndpoint: defaultCRIRemoteEndpoint,
 				RemoteImageEndpoint:   defaultCRIRemoteEndpoint,
 				RuntimeRequestTimeout: 2 * time.Minute,
-				ContainerLogMaxSize:   "10Mi",
-				ContainerLogMaxFiles:  5,
+				ContainerLogMaxSize:   DefaultLogRotateMaxSizeStr,
+				ContainerLogMaxFiles:  DefaultLogRotateMaxFiles,
 				ClusterDomain:         "",
 				ClusterDNS:            []string{},
 				ResolverConfig:        defaultResolvConfig,
@@ -340,7 +348,7 @@ func DefaultStaticAgentConfig() *AgentConfig {
 	}
 }
 
-func DefaultAgentConfig() *AgentConfig {
+func DefaultAgentConfig(rootDir string) *AgentConfig {
 	// default agent config.
 	config := DefaultStaticAgentConfig()
 
@@ -349,7 +357,17 @@ func DefaultAgentConfig() *AgentConfig {
 	} else {
 		nlog.Fatalf("Get host ip fail, err=%v . You should set host ip manually in config file.", err)
 	}
-
+	hostname, err := os.Hostname()
+	if err != nil {
+		nlog.Fatalf("Get hostname fail: %v", err)
+	}
+	config.StdoutPath = filepath.Join(rootDir, common.StdoutPrefix)
+	if config.Node.NodeName == "" {
+		config.Node.NodeName = hostname
+	}
+	if err := resources.ValidateK8sName(config.Node.NodeName, "node_id"); err != nil {
+		nlog.Fatalf(err.Error())
+	}
 	return config
 }
 
@@ -368,7 +386,7 @@ func LoadOverrideConfig(config *AgentConfig, configPath string) (*AgentConfig, e
 
 // LoadAgentConfig loads the given json configuration files.
 func LoadAgentConfig(configPath string) (*AgentConfig, error) {
-	config, err := LoadOverrideConfig(DefaultAgentConfig(), configPath)
+	config, err := LoadOverrideConfig(DefaultAgentConfig(common.DefaultKusciaHomePath), configPath)
 	if err != nil {
 		return nil, err
 	}

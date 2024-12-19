@@ -129,6 +129,9 @@ func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 	resp, err := client.Do(req)
 	if err != nil {

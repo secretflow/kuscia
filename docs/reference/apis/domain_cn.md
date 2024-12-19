@@ -423,7 +423,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | 字段                   | 类型     | 描述                                           |
 |----------------------|--------|----------------------------------------------|
 | name                 | string | 节点名称                                         |
-| status               | string | 节点状态                                         |
+| status               | string | 节点状态 Ready, NotReady                         |
 | version              | string | 节点 Agent 版本                                  |
 | last_heartbeat_time  | string | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |

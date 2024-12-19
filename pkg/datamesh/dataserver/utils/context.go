@@ -31,6 +31,7 @@ type DataMeshRequestContext struct {
 	DataSourceType string
 	Query          *datamesh.CommandDomainDataQuery
 	Update         *datamesh.CommandDomainDataUpdate
+	SqlQuery       *datamesh.CommandDataSourceSqlQuery
 
 	domainDataService       service.IDomainDataService
 	domainDataSourceService service.IDomainDataSourceService
@@ -47,8 +48,11 @@ func NewDataMeshRequestContext(dd service.IDomainDataService, ds service.IDomain
 		info.Query = msg
 	case *datamesh.CommandDomainDataUpdate:
 		info.Update = msg
+	case *datamesh.CommandDataSourceSqlQuery:
+		info.SqlQuery = msg
+
 	default:
-		return nil, status.Error(codes.InvalidArgument, "FlightDescriptor.Cmd of GetFlightInfo Request is invalid, need CommandDomainDataQuery/CommandDomainDataUpdate")
+		return nil, status.Error(codes.InvalidArgument, "FlightDescriptor.Cmd of GetFlightInfo Request is invalid, need CommandDomainDataQuery/CommandDomainDataUpdate/CommandDataSourceSqlQuery")
 	}
 	// init datasource type
 	if len(dsType) != 0 {
@@ -82,20 +86,27 @@ func (rc *DataMeshRequestContext) GetDomainData(ctx context.Context) (*datamesh.
 }
 
 func (rc *DataMeshRequestContext) GetDomainDataAndSource(ctx context.Context) (*datamesh.DomainData, *datamesh.DomainDataSource, error) {
+
 	var data *datamesh.DomainData
 	var err error
-	if data, err = rc.GetDomainData(ctx); err != nil {
-		return nil, nil, err
-	}
-
-	datasourceReq := &datamesh.QueryDomainDataSourceRequest{
-		DatasourceId: data.DatasourceId,
+	var datasourceReq *datamesh.QueryDomainDataSourceRequest
+	if rc.SqlQuery == nil {
+		if data, err = rc.GetDomainData(ctx); err != nil {
+			return nil, nil, err
+		}
+		datasourceReq = &datamesh.QueryDomainDataSourceRequest{
+			DatasourceId: data.DatasourceId,
+		}
+	} else {
+		datasourceReq = &datamesh.QueryDomainDataSourceRequest{
+			DatasourceId: rc.SqlQuery.DatasourceId,
+		}
 	}
 
 	datasourceResp := rc.domainDataSourceService.QueryDomainDataSource(ctx, datasourceReq)
 	if datasourceResp == nil || datasourceResp.GetStatus() == nil || datasourceResp.GetStatus().GetCode() != 0 {
 		var appStatus *v1alpha1.Status
-		if datasourceResp.GetStatus() != nil {
+		if datasourceResp != nil && datasourceResp.GetStatus() != nil {
 			appStatus = datasourceResp.GetStatus()
 		}
 		return data, nil, common.BuildGrpcErrorf(appStatus, codes.FailedPrecondition, "Query data source by id(%s) fail", datasourceReq.DatasourceId)
@@ -121,6 +132,8 @@ func (rc *DataMeshRequestContext) GetTransferContentType() datamesh.ContentType 
 		return rc.Query.ContentType
 	} else if rc.Update != nil {
 		return rc.Update.ContentType
+	} else if rc.SqlQuery != nil {
+		return datamesh.ContentType_Table
 	}
 
 	return datamesh.ContentType_RAW

@@ -1,11 +1,11 @@
 # Kuscia 与 Ray 的区别
 近期收到一些社区用户反馈的困惑，比如：SecretFlow 依赖 Ray 调度框架，Kuscia 也是调度框架，那么 Ray 与 Kuscia 的关系是什么？似乎 Ray 和 Kuscia 都可以调度 SecretFlow ？我该如何选择他们呢？
 ## 写在前面
-Kuscia 和 Ray 通常被误认为只能二选一，其实 Kuscia 与 Ray 所在的分层不同，彼此不同但相互补充。如下图所示，Ray 位于引擎层作为 SecretFlow 底层的函数级调度框架。Kuscia 位于框架层致力于解决隐私计算生产落地过程中的共性问题[详见 Kuscia 概述文档](../reference/overview.md)。
-![Kuscia_Layer](../imgs/kuscia_layer.png)
+Kuscia 和 Ray 通常被误认为只能二选一，其实 Kuscia 与 Ray 所在的分层不同，彼此不同但相互补充。如下图所示，Ray 位于引擎层作为 SecretFlow 底层的函数级调度框架。Kuscia 位于框架层致力于解决隐私计算生产落地过程中的共性问题[详见 Kuscia 概述文档](../../reference/overview.md)。
+![Kuscia_Layer](../../imgs/kuscia_layer.png)
 ### SecretFlow 使用 Ray 做了什么
 [Ray](https://github.com/ray-project/ray) 是一个统一的框架可以无缝地将 Python 和 AI 应用程序从笔记本电脑规模化（Scaling）到集群。Ray 使分布式应用的开发工作变的更加便捷，SecretFlow 作为隐私计算应用也属于分布式应用的范畴，SecretFlow 选择使用 Ray 框架来提高隐私计算应用的开发效率，让开发者能够以上帝视角开发隐私计算算法。与开发传统应用不同，隐私计算一般涉及2方或n方，常规的隐私计算应用的开发方式是分别以不同参与方的视角编写各自的逻辑，然后在实际运行时再根据当前运行程序的角色决定跑哪一段逻辑。那么能否像开发传统应用一样开发隐私计算应用呢（如下图所示），SecretFlow 选择了 Ray 来实现这一诉求，让用户能够以上帝视角开发隐私计算应用。
-![secretflow_developer_view](../imgs/sf_dev_view.png)
+![secretflow_developer_view](../../imgs/sf_dev_view.png)
 下面给出以各自视角和以上帝视角编程的伪代码示例，让大家可以直观感受到两者编程的差异：
 <table style="border-collapse: collapse; width: 100%;">
   <tr>
@@ -65,7 +65,7 @@ SecretFlow 通过借助 Ray 的函数级调度能力，让算法开发者保持�
 1. SecretFlow 算法的开发者（或者二开用户）能够专注于算法引擎的核心功能与性能提升，而不必分心于基础设施、跨域网络配置、任务调度等复杂问题。
 2. SecretFlow 算法的集成者不需要关注 Ray 或者 SecretFlow 的底层细节，Kuscia 会自动帮助屏蔽隐私计算底层细节，让隐语能够轻量部署和简单易用。
 
-当然 Kuscia 的能力远不止如此，更多信息请参考 [Kuscia 概述文档](../reference/overview.md)。
+当然 Kuscia 的能力远不止如此，更多信息请参考 [Kuscia 概述文档](../../reference/overview.md)。
 
 ## 总结一下
 通过上面的介绍，我们来总结一下 Kuscia 与 Ray 的区别：

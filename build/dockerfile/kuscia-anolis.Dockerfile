@@ -15,7 +15,7 @@ ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG HOME_DIR="/home/kuscia"
 ENV HOME=${HOME_DIR}
-RUN yum install -y openssl net-tools which jq logrotate iproute procps-ng libcap && \
+RUN yum install -y openssl net-tools which jq logrotate iproute procps-ng libcap gzip && \
     yum clean all && \
     mkdir -p ${HOME_DIR}/bin && \
     mkdir -p /bin/aux && \

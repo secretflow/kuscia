@@ -69,6 +69,28 @@ func TestCreateDomainDataSource(t *testing.T) {
 	assert.Equal(t, dataSourceID, res.Data.DatasourceId)
 }
 
+func TestCreateDomainDataSource_postgres(t *testing.T) {
+	dataSourceID := "ds-1"
+	conf := makeDomainDataSourceServiceConfig(t)
+	dsService := makeDomainDataSourceService(t, conf)
+	res := dsService.CreateDomainDataSource(context.Background(), &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomainID,
+		DatasourceId: dataSourceID,
+		Type:         common.DomainDataSourceTypePostgreSQL,
+		Info: &kusciaapi.DataSourceInfo{
+			Database: &kusciaapi.DatabaseDataSourceInfo{
+				Endpoint: "127.0.0.1:5432",
+				User:     "root",
+				Password: "passwd",
+				Database: "db-name",
+			},
+		},
+	})
+
+	assert.Equal(t, dataSourceID, res.Data.DatasourceId)
+}
+
 func TestCreateDomainDataSource_InfoKeyNotExists(t *testing.T) {
 	dataSourceID := "ds-1"
 	makeInfoKey := "test"

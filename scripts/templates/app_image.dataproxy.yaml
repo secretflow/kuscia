@@ -19,7 +19,7 @@ spec:
               - -c
               - java ${JAVA_OPTS} -Dsun.net.http.allowRestrictedHeaders=true -jar --add-opens=java.base/java.nio=ALL-UNNAMED -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE} ./dataproxy.jar
             configVolumeMounts:
-              - mountPath: /etc/kuscia/serving-config.conf
+              - mountPath: ./kuscia/serving-config.conf
                 subPath: serving-config.conf
             name: dataproxy
             ports:

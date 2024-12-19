@@ -12,7 +12,9 @@ Kuscia API
     domaindatasource_cn
     kusciajob_cn
     serving_cn
+    appimage_cn
     config_cn
+    log_cn
     health_cn
     error_code_cn
 

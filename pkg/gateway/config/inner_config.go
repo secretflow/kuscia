@@ -65,6 +65,14 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 		}
 	}
 
+	var reporterCluster *ClusterConfig
+	if masterConfig.Reporter != nil {
+		reporterCluster, err = LoadClusterConfig(masterConfig.Reporter.TLSConfig, masterConfig.Reporter.Endpoint)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &MasterConfig{
 		Master: true,
 		APIServer: &ClusterConfig{
@@ -77,6 +85,7 @@ func LoadMasterConfig(masterConfig *kusciaconfig.MasterConfig, kubeConfig *restc
 		KusciaStorage: storageCluster,
 		KusciaAPI:     kusciaAPICluster,
 		APIWhitelist:  masterConfig.APIWhitelist,
+		Reporter:      reporterCluster,
 	}, nil
 }
 

@@ -39,5 +39,6 @@ type MasterConfig struct {
 	APIServer     *ClusterConfig
 	KusciaStorage *ClusterConfig
 	KusciaAPI     *ClusterConfig
+	Reporter      *ClusterConfig
 	APIWhitelist  []string
 }

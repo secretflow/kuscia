@@ -113,6 +113,11 @@ type KusciaTaskStatus struct {
 	// +optional
 	Phase KusciaTaskPhase `json:"phase,omitempty"`
 
+	// The progress of a KusciaTask is the percentage of a task's progress
+	// when it is in phase of TaskRunning.
+	// +optional
+	Progress float32 `json:"progress,omitempty"`
+
 	// PartyTaskStatus defines task status for all party.
 	// +optional
 	PartyTaskStatus []PartyTaskStatus `json:"partyTaskStatus,omitempty"`

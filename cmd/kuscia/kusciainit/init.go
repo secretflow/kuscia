@@ -127,8 +127,8 @@ func (config *InitConfig) convert2MasterKusciaConfig() confloader.MasterKusciaCo
 	return kusciaConfig
 }
 
-func (config *InitConfig) convert2AutonomyKusciaConfig() confloader.AutomonyKusciaConfig {
-	kusciaConfig := confloader.AutomonyKusciaConfig{
+func (config *InitConfig) convert2AutonomyKusciaConfig() confloader.AutonomyKusciaConfig {
+	kusciaConfig := confloader.AutonomyKusciaConfig{
 		CommonConfig:      config.convert2CommonConfig(),
 		Runtime:           config.Runtime,
 		DatastoreEndpoint: config.DatastoreEndpoint,

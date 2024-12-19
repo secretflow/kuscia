@@ -22,7 +22,7 @@ Kuscia 部署完成后，可以通过以下几个方面来验证部署是否成�
 - 验证 Kuscia 是否可以正常训练任务
 
 ### 故障排查
-部署过程中遇到问题可以先参考[常见问题](../troubleshoot/deploy_failed.md)进行排查
+部署过程中遇到问题可以先参考[常见问题](../troubleshoot/deployment/deploy_failed.md)进行排查
 
 ### 更多帮助
 如需进一步帮助，请在 Kuscia [Issue](https://github.com/secretflow/kuscia/issues) 上提交问题。

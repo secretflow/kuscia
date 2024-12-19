@@ -29,6 +29,7 @@ enum ErrorCode {
   KusciaAPIErrAuthFailed          = 11102;
   KusciaAPIErrRequestMasterFailed = 11103;
   KusciaAPIErrLiteAPINotSupport   = 11104;
+  KusciaAPIErrMasterAPINotSupport   = 11105;
 
   KusciaAPIErrCreateJob                      = 11201;
   KusciaAPIErrQueryJob                       = 11202;
@@ -95,6 +96,17 @@ enum ErrorCode {
   KusciaAPIErrDeleteConfig        = 11903;
   KusciaAPIErrBatchQueryConfig     = 11904;
 
+  KusciaAPIErrCreateAppImage        = 13100;
+  KusciaAPIErrQueryAppImage          = 13101;
+  KusciaAPIErrUpdateAppImage         = 13102;
+  KusciaAPIErrDeleteAppImage        = 13103;
+  KusciaAPIErrBatchQueryAppImage        = 13104;
+  KusciaAPIErrAppImageNotExists        = 13105;
+  KusciaAPIErrAppImageExists        = 13106;
+
+  KusciaAPIErrQueryLog = 13200;
+  KusciaAPIErrQueryPodNode = 13201;
+
   // data mesh
   DataMeshErrRequestInvalidate = 12100;
   DataMeshErrForUnexpected     = 12101;
@@ -134,4 +146,8 @@ enum ErrorCode {
   ConfManagerErrDeleteConfig = 2105;
   ConfManagerErrBatchQueryConfig = 2106;
   ConfManagerErrGenerateKeyCerts = 2200;
+
+  // reporter
+  ReporterErrRequestInvalidate = 3000;
+  ReporterErrForUnexptected = 3001;
 }

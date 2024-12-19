@@ -455,6 +455,13 @@ function start_container() {
     -v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images \
     ${mount_flag} ${dns_flag} ${user_flag} \
     "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
+
+  if [ -n "$(docker run --rm $KUSCIA_IMAGE bash -c 'ls -A /home/kuscia/var/images')" ]; then
+     builtin_images=$(docker run --rm "$KUSCIA_IMAGE" bash -c 'kuscia image ls --runtime runp | sed "1d" | awk "{print \$1\":\"\$2}"')
+     for image in $builtin_images; do
+       docker exec -it ${domain_ctr} bash -c "kuscia image --store /home/kuscia/var/images --runtime runp builtin '${image}'"
+     done
+  fi
 }
 
 function start_kuscia_container() {

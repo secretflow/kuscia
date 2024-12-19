@@ -27,5 +27,5 @@ mklink /J "C:\Program Files\Docker" "D:\Docker"
 安装成功后，单击"关闭"完成安装过程;
 3. 建议修改镜像保存路径
 
-Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE 作业](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/tutorial/run_fate_cn)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
-![docker_settings.png](../imgs/docker_settings.png)
+Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE 作业](../../tutorial/run_fate_cn.md)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
+![docker_settings.png](../../imgs/docker_settings.png)

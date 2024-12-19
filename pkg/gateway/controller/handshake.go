@@ -309,6 +309,11 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			nlog.Warnf("DomainRoute %s: handshake fail:%v", dr.Name, err)
 			return err
 		}
+		if resp.Status == nil {
+			err = fmt.Errorf("DomainRoute %s: handshake fail, status is null, some unexcepted cases occurs", dr.Name)
+			nlog.Warn(err)
+			return err
+		}
 		if resp.Status.Code != 0 {
 			err = fmt.Errorf("DomainRoute %s: handshake fail, return error:%v", dr.Name, resp.Status.Message)
 			nlog.Warn(err)

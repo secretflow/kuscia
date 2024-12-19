@@ -43,6 +43,7 @@ const (
 type IDataProxyClient interface {
 	GetFlightInfoDataMeshQuery(context.Context, *datamesh.CommandDataMeshQuery) (*flight.FlightInfo, error)
 	GetFlightInfoDataMeshUpdate(context.Context, *datamesh.CommandDataMeshUpdate) (*flight.FlightInfo, error)
+	GetFlightInfoDataMeshSqlQuery(context.Context, *datamesh.CommandDataMeshSqlQuery) (*flight.FlightInfo, error)
 }
 
 type DataProxyConfig struct {
@@ -140,6 +141,30 @@ func (dp *DataProxyClient) GetFlightInfoDataMeshUpdate(ctx context.Context,
 	flightInfo, err := dp.flightClient.GetFlightInfo(dpCtx, dpDesc)
 	if err != nil {
 		nlog.Errorf("Get flightInfo from dataproxy failed, domaindata: %+v, error: %s", query.Domaindata, err.Error())
+		return nil, err
+	}
+	nlog.Infof("Get flightInfo from dataproxy finish, flightInfo: %+v", flightInfo)
+	if err = dp.complementFlightInfo(flightInfo); err != nil {
+		return nil, common.BuildGrpcErrorf(nil, codes.Internal, "Complement flightInfo failed, error: %s.", err.Error())
+	}
+	return flightInfo, nil
+}
+
+func (dp *DataProxyClient) GetFlightInfoDataMeshSqlQuery(ctx context.Context, query *datamesh.CommandDataMeshSqlQuery) (*flight.FlightInfo, error) {
+
+	dpDesc, err := utils.DescForCommand(query)
+	if err != nil {
+		nlog.Errorf("Generate Descriptor to dataproxy fail, %v", err)
+		return nil, common.BuildGrpcErrorf(nil, codes.Internal, "Generate Descriptor to dataproxy fail, error: %s.", err.Error())
+	}
+
+	dpCtx, cancel := context.WithTimeout(ctx, dpRequestTimeout)
+	defer cancel()
+
+	nlog.Infof("Get flightInfo from dataproxy begin, datasource: %+v", query.Datasource)
+	flightInfo, err := dp.flightClient.GetFlightInfo(dpCtx, dpDesc)
+	if err != nil {
+		nlog.Errorf("Get flightInfo from dataproxy failed, datasource: %+v, error: %s", query.Datasource, err.Error())
 		return nil, err
 	}
 	nlog.Infof("Get flightInfo from dataproxy finish, flightInfo: %+v", flightInfo)
