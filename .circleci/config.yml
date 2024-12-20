@@ -126,7 +126,7 @@ jobs:
           name: Build image and publish
           command: |
             set -ex
-            mv /tmp/build/*/linux ./build/
+            mv /tmp/build/linux ./build/
 
             docker build -t secretflow/kuscia:test -f ./build/dockerfile/kuscia-anolis.Dockerfile .
             export KUSCIA_IMAGE=secretflow/kuscia:test && export USER=test
