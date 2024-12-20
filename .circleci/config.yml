@@ -145,9 +145,9 @@ workflows:
               executor: [ "linux_x64_executor", "linux_aarch64_executor" ]
           filters:
             branches:
-              only: /.*/
+              only: /^release.*/
             tags:
-              only: /.*/
+              only: /^v.*/
       - image_publish:
           requires:
             - linux_build_kuscia
