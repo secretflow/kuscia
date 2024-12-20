@@ -120,18 +120,11 @@ jobs:
     shell: /bin/bash --login -eo pipefail
     steps:
       - checkout
-      - attach_workspace:
-          at: /tmp/build
       - run:
-          name: Build image and publish
+          name: Build image and integration test
           command: |
             set -ex
-            mv /tmp/build/linux ./build/
-
-            docker build -t secretflow/kuscia:test -f ./build/dockerfile/kuscia-anolis.Dockerfile .
-            export KUSCIA_IMAGE=secretflow/kuscia:test && export USER=test
-            mkdir -p test
-            docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh && ./test/integration_test.sh all
+            make integration_test
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
@@ -164,8 +157,6 @@ workflows:
             tags:
               only: /^v.*/
       - integration_test:
-          requires:
-            - linux_build_kuscia
           filters:
             branches:
               only: /.*/
