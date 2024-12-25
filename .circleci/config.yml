@@ -125,6 +125,18 @@ jobs:
           command: |
             set -ex
             make integration_test
+  integration_test_arm:
+    machine:
+      image: ubuntu-2404:2024.11.1
+    resource_class: arm.medium
+    shell: /bin/bash --login -eo pipefail
+    steps:
+      - checkout
+      - run:
+          name: Build image and integration test
+          command: |
+            set -ex
+            make integration_test
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
@@ -157,6 +169,12 @@ workflows:
             tags:
               only: /^v.*/
       - integration_test:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
+      - integration_test_arm:
           filters:
             branches:
               only: /.*/
