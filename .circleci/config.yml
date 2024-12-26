@@ -125,9 +125,8 @@ jobs:
           command: |
             set -ex
             # make integration_test
-            export LANG=en_US.UTF-8
             export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
-            docker pull ${KUSCIA_IMAGE} && docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
+            docker pull ${KUSCIA_IMAGE} && docker run -i --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 
   integration_test_arm:
     machine:
