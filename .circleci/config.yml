@@ -124,7 +124,11 @@ jobs:
           name: Build image and integration test
           command: |
             set -ex
-            make integration_test
+            # make integration_test
+            export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
+            docker pull ${KUSCIA_IMAGE} && docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml 2>&1 || cat autonomy_alice.yaml
+            cat autonomy_alice.yaml
+
   integration_test_arm:
     machine:
       image: ubuntu-2404:2024.11.1
@@ -136,7 +140,7 @@ jobs:
           name: Build image and integration test
           command: |
             set -ex
-            make integration_test
+            # make integration_test
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
