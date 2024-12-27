@@ -35,6 +35,15 @@ executors:
       - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.6
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
+  linux_amd_integration_test:
+     machine:
+       image: ubuntu-2404:2024.11.1
+     shell: /bin/bash --login -eo pipefail
+  linux_arm_integration_test:
+     machine:
+       image: ubuntu-2204:2024.11.1
+     resource_class: arm.medium
+     shell: /bin/bash --login -eo pipefail
 
 commands:
   test:
@@ -115,22 +124,7 @@ jobs:
             #docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
   integration_test:
-    machine:
-      image: ubuntu-2404:2024.11.1
-    shell: /bin/bash --login -eo pipefail
-    steps:
-      - checkout
-      - run:
-          name: Build image and integration test
-          command: |
-            set -ex
-            make integration_test
-
-  integration_test_arm:
-    machine:
-      image: ubuntu-2404:2024.11.1
-    resource_class: arm.medium
-    shell: /bin/bash --login -eo pipefail
+    executor: [ "linux_amd_integration_test", "linux_arm_integration_test" ]
     steps:
       - checkout
       - run:
@@ -170,12 +164,6 @@ workflows:
             tags:
               only: /^v.*/
       - integration_test:
-          filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
-      - integration_test_arm:
           filters:
             branches:
               only: /.*/
