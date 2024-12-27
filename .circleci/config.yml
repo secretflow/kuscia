@@ -125,9 +125,9 @@ jobs:
             docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
   integration_test:
     parameters:
-      e:
+      executor:
         type: executor
-    executor: << parameters.e >>
+    executor: << parameters.executor >>
     steps:
       - checkout
       - run:
@@ -167,7 +167,9 @@ workflows:
             tags:
               only: /^v.*/
       - integration_test:
-          e: [ "linux_amd_integration_test", "linux_arm_integration_test" ]
+          matrix:
+            parameters:
+              executor: [ "linux_amd_integration_test", "linux_arm_integration_test" ]
           filters:
             branches:
               only: /.*/
