@@ -35,6 +35,15 @@ executors:
       - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.6
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
+  linux_amd_integration_test:
+     machine:
+       image: ubuntu-2404:2024.11.1
+     shell: /bin/bash --login -eo pipefail
+  linux_arm_integration_test:
+     machine:
+       image: ubuntu-2204:2024.11.1
+     resource_class: arm.medium
+     shell: /bin/bash --login -eo pipefail
 
 commands:
   test:
@@ -114,7 +123,18 @@ jobs:
 
             #docker buildx build -t ${ALIYUN_IMAGE}:latest --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
             docker buildx build -t ${ALIYUN_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/kuscia-anolis.Dockerfile . --push
-
+  integration_test:
+    parameters:
+      executor:
+        type: executor
+    executor: << parameters.executor >>
+    steps:
+      - checkout
+      - run:
+          name: Build image and integration test
+          command: |
+            set -ex
+            make integration_test
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/configuration-reference/#workflows
@@ -146,6 +166,16 @@ workflows:
               only: /^release.*/
             tags:
               only: /^v.*/
+      - integration_test:
+          matrix:
+            parameters:
+              executor: [ "linux_amd_integration_test", "linux_arm_integration_test" ]
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
+            
   build-kuscia-deps-workflow:
     when:
       equal: [ "publish_kuscia_deps", << pipeline.parameters.GHA_Meta >> ]

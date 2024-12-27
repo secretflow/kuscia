@@ -348,9 +348,9 @@ function init_kuscia_conf_file() {
   local master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
+    docker run --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   else
-    docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
+    docker run --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   fi
   [[ ${dataproxy} == "true" ]] && dataproxy_config ${kuscia_conf_file}
   wrap_kuscia_config_file ${kuscia_conf_file} "${interconn_protocol}"
