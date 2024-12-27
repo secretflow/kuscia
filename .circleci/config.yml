@@ -35,11 +35,11 @@ executors:
       - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-ci:0.6
     resource_class: arm.2xlarge
     shell: /bin/bash --login -eo pipefail
-  linux_amd_integration_test:
+  linux_amd:
      machine:
        image: ubuntu-2404:2024.11.1
      shell: /bin/bash --login -eo pipefail
-  linux_arm_integration_test:
+  linux_arm:
      machine:
        image: ubuntu-2204:2024.11.1
      resource_class: arm.medium
@@ -169,7 +169,7 @@ workflows:
       - integration_test:
           matrix:
             parameters:
-              executor: [ "linux_amd_integration_test", "linux_arm_integration_test" ]
+              executor: [ "linux_amd", "linux_arm" ]
           filters:
             branches:
               only: /.*/
