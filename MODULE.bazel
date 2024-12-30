@@ -1,4 +1,4 @@
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2024 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,19 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_proto_grpc_cpp//:defs.bzl", "cpp_proto_library")
 
-package(default_visibility = ["//visibility:public"])
-
-proto_library(
-    name = "common_proto",
-    srcs = ["common.proto"],
-    import_prefix = "kuscia",
-    deps = ["@com_google_protobuf//:any_proto"],
+module(
+    name = "kuscia",
+    version = "0.5.0",
+    compatibility_level = 1,
 )
 
-cpp_proto_library(
-    name = "common_cpp_proto",
-    protos = [":common_proto"],
+bazel_dep(name = "protobuf", version = "27.3", repo_name = "com_google_protobuf")
+bazel_dep(name = "toolchains_protoc", version = "0.3.6")
+protoc = use_extension("@toolchains_protoc//protoc:extensions.bzl", "protoc")
+protoc.toolchain(
+    version = "v27.3",
 )
+bazel_dep(name = "rules_proto", version = "6.0.2")
+bazel_dep(name = "rules_cc", version = "0.0.12")
+bazel_dep(name = "rules_proto_grpc_cpp", version = "5.0.1")
