@@ -27,13 +27,8 @@ import (
 func TestMountCommand(t *testing.T) {
 	rootDir := t.TempDir()
 
-	context := &utils.Context{
-		StorageDir: filepath.Join(rootDir, "storage"),
-		Store:      storetesting.NewFakeStore(),
-	}
-
-	cmd := mountCommand(context)
 	args := []string{"123", "app:0.1", filepath.Join(rootDir, "rootfs")}
-	cmd.SetArgs(args)
-	assert.NoError(t, cmd.Execute())
+
+	err := utils.MountImage(storetesting.NewFakeStore(), filepath.Join(rootDir, "storage"), args[0], args[1], args[2])
+	assert.NoError(t, err)
 }

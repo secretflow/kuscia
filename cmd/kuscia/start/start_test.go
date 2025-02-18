@@ -54,20 +54,22 @@ func Test_Start_Autonomy(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
-	assert.NoError(t, os.RemoveAll("/home/kuscia"))
 	dir := t.TempDir()
+	common.DefaultKusciaHomePath = func() string {
+		return dir
+	}
 
 	filename := filepath.Join(dir, "kuscia.yaml")
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 	defer os.Remove(filename)
 
 	workDir := GetWorkDir()
-	assert.NoError(t, paths.CopyDirectory(filepath.Join(workDir, "etc"), "/home/kuscia/etc"))
-	assert.NoError(t, paths.CopyDirectory(filepath.Join(workDir, "crds"), "/home/kuscia/crds"))
+	assert.NoError(t, paths.CopyDirectory(filepath.Join(workDir, "etc"), common.DefaultKusciaHomePath()+"/etc"))
+	assert.NoError(t, paths.CopyDirectory(filepath.Join(workDir, "crds"), common.DefaultKusciaHomePath()+"/crds"))
 
 	runCtx, cancle := context.WithCancel(context.Background())
 	defer cancle()
-	kusciaConf := confloader.ReadConfig(filename, autonomy)
+	kusciaConf, _ := confloader.ReadConfig(filename)
 	conf := modules.NewModuleRuntimeConfigs(runCtx, kusciaConf)
 	conf.Clients = &kubeconfig.KubeClients{
 		KubeClient:   clientsetfake.NewSimpleClientset(),
@@ -75,7 +77,7 @@ func Test_Start_Autonomy(t *testing.T) {
 	}
 	defer conf.Close()
 	mm := NewModuleManager()
-	assert.NoError(t, mm.Regist("coredns", modules.NewCoreDNS, autonomy))
+	assert.True(t, mm.Regist("coredns", modules.NewCoreDNS, autonomy))
 
 	errCh := make(chan error)
 

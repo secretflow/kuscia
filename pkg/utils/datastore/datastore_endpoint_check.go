@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 

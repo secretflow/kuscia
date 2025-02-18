@@ -68,7 +68,7 @@ config:
 		},
 	}
 	kubeClient := kubefake.NewSimpleClientset(&configmap)
-	agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath)
+	agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath())
 	agentConfig.Namespace = "alice"
 	agentConfig.DomainKey = privateKey
 	dep := &plugin.Dependencies{

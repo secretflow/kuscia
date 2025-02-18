@@ -1,7 +1,7 @@
 # DomainDataSource
 
 DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource](../concepts/domaindatasource_cn.md)。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto) 找到对应的 protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -74,9 +74,8 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindatasource/query \
         "prefix": "kuscia/",
         "access_key_id": "ak-xxxx",
         "access_key_secret": "sk-xxxx",
-        "virtualhost": false,
-        "version": "",
-        "storage_type": ""
+        "virtualhost": true,
+        "version": ""
       },
       "database": null
     },

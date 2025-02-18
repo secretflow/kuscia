@@ -71,8 +71,6 @@ const (
 	// maxContainerBackOff is the max backoff period, exported for the e2e test
 	maxContainerBackOff = 300 * time.Second
 
-	etcHostsPath = "/etc/hosts"
-
 	plegChannelCapacity = 1000
 	plegRelistPeriod    = time.Second * 1
 
@@ -85,8 +83,6 @@ const (
 	defaultVolumesDirName    = "volumes"
 	defaultContainersDirName = "containers"
 	defaultStorageDirName    = "storage"
-
-	defaultContainerStoragePath = "/var/kuscia/storage"
 )
 
 // ProviderConfig is the config passed to initialize a registered provider.
@@ -214,9 +210,9 @@ func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 		if !filepath.IsAbs(processRuntimeDep.SandboxRootDir) {
 			processRuntimeDep.SandboxRootDir = path.Join(dep.RootDirectory, processRuntimeDep.SandboxRootDir)
 		}
-		processRuntime, err := process.NewRuntime(processRuntimeDep)
-		if err != nil {
-			return nil, err
+		processRuntime, newErr := process.NewRuntime(processRuntimeDep)
+		if newErr != nil {
+			return nil, newErr
 		}
 		remoteRuntimeService = processRuntime
 		remoteImageService = processRuntime
@@ -302,7 +298,7 @@ func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 		return nil, err
 	}
 
-	if err := paths.EnsurePath(cp.getPodsDir(), true); err != nil {
+	if err = paths.EnsurePath(cp.getPodsDir(), true); err != nil {
 		return nil, err
 	}
 	if err = paths.EnsurePath(podsStdoutDirectory, true); err != nil {

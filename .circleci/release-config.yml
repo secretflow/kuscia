@@ -49,7 +49,7 @@ jobs:
             cd ..
             mv project kuscia
             cd kuscia
-            
+
             cd python
             set +x
             python3 -m pip install -r requirements.txt

@@ -120,7 +120,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 
-	kdInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = kdInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.kusciaDeploymentResourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedOrDeletedKusciaDeployment,
@@ -129,19 +129,19 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		},
 	})
 
-	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleAddedDeployment,
 		UpdateFunc: controller.handleUpdatedDeployment,
 		DeleteFunc: controller.handleDeletedDeployment,
 	})
 
-	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleAddedService,
 		UpdateFunc: controller.handleUpdatedService,
 		DeleteFunc: controller.handleDeletedService,
 	})
 
-	configMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = configMapInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleAddedConfigmap,
 		UpdateFunc: controller.handleUpdatedConfigmap,
 		DeleteFunc: controller.handleDeletedConfigmap,

@@ -40,7 +40,12 @@ func startEndpointsController(ctx context.Context, kubeClient kubernetes.Interfa
 	defer runtime.HandleCrash()
 	c := NewEndpointsController(ctx, kubeClient, n, n.Namespace)
 	nlog.Infof("Starting endpoint controller, namespace: %s", n.Namespace)
-	go c.Run(concurrentSyncs)
+	go func() {
+		err := c.Run(concurrentSyncs)
+		if err != nil {
+			nlog.Warnf("%s", err.Error())
+		}
+	}()
 	<-ctx.Done()
 	nlog.Infof("Shutting down endpoint controller, namespace: %s", n.Namespace)
 	c.Stop()
@@ -50,7 +55,12 @@ func startPodController(ctx context.Context, kubeClient kubernetes.Interface, n 
 	defer runtime.HandleCrash()
 	c := NewPodController(ctx, kubeClient, n, namespace)
 	nlog.Infof("Starting pod controller, namespace: %s", namespace)
-	go c.Run(concurrentSyncs)
+	go func() {
+		err := c.Run(concurrentSyncs)
+		if err != nil {
+			nlog.Warnf("%s", err.Error())
+		}
+	}()
 	<-ctx.Done()
 	nlog.Infof("Shutting down pod controller, namespace: %s", namespace)
 	c.Stop()

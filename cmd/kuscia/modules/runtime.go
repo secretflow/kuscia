@@ -50,9 +50,9 @@ type ModuleRuntimeConfigs struct {
 	TransportConfigFile     string
 	TransportPort           int
 	InterConnSchedulerPort  int
-	SsExportPort            string
-	NodeExportPort          string
-	MetricExportPort        string
+	SsExportPort            int
+	NodeExportPort          int
+	MetricExportPort        int
 	KusciaKubeConfig        string
 	EnableContainerd        bool
 	Image                   *confloader.ImageConfig
@@ -139,7 +139,7 @@ func initLoggerConfig(kusciaConf confloader.KusciaConfig, logPath string) *nlog.
 	}
 }
 
-func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaConfig) *ModuleRuntimeConfigs {
+func NewModuleRuntimeConfigs(_ context.Context, kusciaConf confloader.KusciaConfig) *ModuleRuntimeConfigs {
 	dependencies := &ModuleRuntimeConfigs{
 		KusciaConfig: kusciaConf,
 	}
@@ -160,16 +160,19 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 		nlog.Fatal(err)
 	}
 
+	nlog.Debugf("Current run mode is %s", dependencies.RunMode)
 	// for master and autonomy, get k3s backend config.
 	if dependencies.RunMode == common.RunModeMaster || dependencies.RunMode == common.RunModeAutonomy {
 		dependencies.ApiserverEndpoint = dependencies.Master.APIServer.Endpoint
 		dependencies.KubeconfigFile = dependencies.Master.APIServer.KubeConfig
 		dependencies.KusciaKubeConfig = filepath.Join(dependencies.RootDir, "etc/kuscia.kubeconfig")
 		dependencies.InterConnSchedulerPort = defaultInterConnSchedulerPort
+		nlog.Debugf("Current run mode is master or autonomy, dependencies.ApiserverEndpoint: %s, dependencies.KubeconfigFile: %s",
+			dependencies.ApiserverEndpoint, dependencies.KubeconfigFile)
 	}
 	// for autonomy and lite
 	if dependencies.RunMode == common.RunModeAutonomy || dependencies.RunMode == common.RunModeLite {
-		dependencies.ContainerdSock = filepath.Join(dependencies.RootDir, "containerd/run/containerd.sock")
+		dependencies.ContainerdSock = common.ContainerdSocket()
 		dependencies.TransportConfigFile = filepath.Join(dependencies.RootDir, "etc/conf/transport/transport.yaml")
 		dependencies.TransportPort, err = GetTransportPort(dependencies.TransportConfigFile)
 		if err != nil {
@@ -179,7 +182,10 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 		if dependencies.Agent.Provider.Runtime == config.ContainerRuntime {
 			dependencies.EnableContainerd = true
 		}
+		nlog.Debugf("Current run mode is autonomy or lite, dependencies.ContainerdSock: %s, dependencies.TransportConfigFile: %s",
+			dependencies.ContainerdSock, dependencies.TransportConfigFile)
 	}
+
 	if dependencies.RunMode == common.RunModeLite {
 		dependencies.ApiserverEndpoint = defaultEndpointForLite
 	}
@@ -190,9 +196,9 @@ func NewModuleRuntimeConfigs(ctx context.Context, kusciaConf confloader.KusciaCo
 	}
 
 	// init exporter ports
-	dependencies.SsExportPort = "9092"
-	dependencies.NodeExportPort = "9100"
-	dependencies.MetricExportPort = "9091"
+	dependencies.SsExportPort = 9092
+	dependencies.NodeExportPort = 9100
+	dependencies.MetricExportPort = 9091
 
 	if strings.ToLower(dependencies.RunMode) == common.RunModeLite {
 		clients, err := kubeconfig.CreateClientSetsFromKubeconfig(dependencies.KubeconfigFile, dependencies.ApiserverEndpoint)
@@ -211,4 +217,15 @@ func GetTransportPort(configPath string) (int, error) {
 		return 0, err
 	}
 	return transConfig.HTTPConfig.Port, nil
+}
+
+// UpdateCommonConfigs update common configs.
+// Currently, only reloading of log levels is supported.
+func UpdateCommonConfigs(_ context.Context, kusciaConf confloader.KusciaConfig) {
+
+	nlog.Infof("Update common configs, log level: %s", kusciaConf.LogLevel)
+	if err := nlog.ChangeLogLevel(kusciaConf.LogLevel); err != nil {
+
+		nlog.Infof("Change log level to %s, failed with err: %s", kusciaConf.LogLevel, err.Error())
+	}
 }

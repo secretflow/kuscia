@@ -19,12 +19,13 @@ import (
 
 	bandwidth_limitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	kusciacrypt "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_crypt/v3"
 	headerdecorator "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_header_decorator/v3"
 	kusciapoller "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_poller/v3"
 	kusciareceiver "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_receiver/v3"
 	kusciatoken "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
-	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -374,21 +375,21 @@ func (f HTTPFilters) Swap(i, j int) {
 }
 
 func sortInternalFilters(f []*hcm.HttpFilter) []*hcm.HttpFilter {
-	HTTPFilters := HTTPFilters{
+	internalHTTPFilters := HTTPFilters{
 		dic: internalFilterPriority,
 	}
 
-	HTTPFilters.filters = append(HTTPFilters.filters, f...)
-	sort.Sort(HTTPFilters)
-	return HTTPFilters.filters
+	internalHTTPFilters.filters = append(internalHTTPFilters.filters, f...)
+	sort.Sort(internalHTTPFilters)
+	return internalHTTPFilters.filters
 }
 
 func sortExternalFilters(f []*hcm.HttpFilter) []*hcm.HttpFilter {
-	HTTPFilters := HTTPFilters{
+	externalHTTPFilters := HTTPFilters{
 		dic: externalFilterPriority,
 	}
 
-	HTTPFilters.filters = append(HTTPFilters.filters, f...)
-	sort.Sort(HTTPFilters)
-	return HTTPFilters.filters
+	externalHTTPFilters.filters = append(externalHTTPFilters.filters, f...)
+	sort.Sort(externalHTTPFilters)
+	return externalHTTPFilters.filters
 }

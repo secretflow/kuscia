@@ -245,8 +245,8 @@ func (s *FateJobAdapter) HandleTaskConfig(config string) error {
 									"data": {"data"},
 								},
 							}
-							jobID, err := s.queryDependantFateJob(readerOpName)
-
+							jobID, jobErr := s.queryDependantFateJob(readerOpName)
+							err = jobErr
 							if err != nil || jobID == "" {
 								return errors.New("handle dependant job fail")
 							}

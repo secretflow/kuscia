@@ -3,9 +3,10 @@
 在 Kuscia 中，常驻服务是通过 KusciaDeployment 进行管理的。例如，可以通过 KusciaDeployment 管理联合预测服务。
 如果要运行常驻服务，那么仅需创建一个 KusciaDeployment。KusciaDeployment Controller 将会根据 KusciaDeployment 的描述信息，在参与方节点下创建与常驻服务有关的 K3s 内置资源，例如 Service, Deployment 等。
 
-基于 KusciaDeployment，你可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。
+基于 KusciaDeployment，您可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。
 
 {#kuscia-deployment-state}
+
 ## 状态说明
 
 下图为 KusciaDeployment(KD) 的状态流转图。
@@ -13,6 +14,7 @@
 ![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)
 
 KusciaDeployment 在其生命周期中会处于以下几种状态：
+
 - Progressing: 此时 KusciaDeployment 正在被处理，至少有一方不可用。
 - PartialAvailable: 此时所有参与方可用，但是至少有一方非全部应用实例可用。
 - Available: 此时所有参与方可用，且各参与方下的全部应用实例可用。
@@ -22,10 +24,10 @@ KusciaDeployment 在其生命周期中会处于以下几种状态：
 
 以下是一些 KusciaDeployment 的典型用例：
 
-- 创建 KusciaDeployment，你将体验如何创建一个 KusciaDeployment，管理参与方下的常驻服务。
-- 查看 KusciaDeployment，你将熟悉如何查看已创建的 KusciaDeployment 的运行状态。
-- 清理 KusciaDeployment，你将熟悉如何删除已创建的 KusciaDeployment。
-- 参考 KusciaDeployment 对象定义，你将获取详细的 KusciaDeployment 描述信息。
+- 创建 KusciaDeployment，您将体验如何创建一个 KusciaDeployment，管理参与方下的常驻服务。
+- 查看 KusciaDeployment，您将熟悉如何查看已创建的 KusciaDeployment 的运行状态。
+- 清理 KusciaDeployment，您将熟悉如何删除已创建的 KusciaDeployment。
+- 参考 KusciaDeployment 对象定义，您将获取详细的 KusciaDeployment 描述信息。
 
 ## 创建 KusciaDeployment
 
@@ -328,7 +330,7 @@ KusciaDeployment `spec` 的子字段详细介绍如下：
 KusciaDeployment `status` 的子字段详细介绍如下：
 
 - `phase`：表示 KusciaDeployment 当前所处的阶段。[状态流转详情](#kuscia-deployment-state)。当前包括以下几种 PHASE：
-  - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。KusciaDeployment Controller 会根据 KusciaDeployment 的描述信息，在各参与方节点下创建相关的资源，例如：Deployment、Configmap、Service 等。
+  - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。KusciaDeployment Controller 会根据 KusciaDeployment 的描述信息，在各参与方节点下创建相关的资源，例如：Deployment、ConfigMap、Service 等。
   - `PartialAvailable`：表示所有参与方可用，但是在某些参与方节点下，应用可用副本数小于期望副本数。
   - `Available`：表示所有参与方可用，且各个参与方下应用可用副本数等于期望副本数。
   - `Failed`：表示 KusciaDeployment Controller 处理 KusciaDeployment 资源失败，详细失败描述可以从`message`和`reason`中获取。

@@ -27,17 +27,26 @@ SF_IMAGE_REGISTRY=""
 NETWORK_NAME="kuscia-exchange"
 CLUSTER_NETWORK_NAME="kuscia-exchange-cluster"
 IMPORT_SF_IMAGE=secretflow
-IMPORT_DIAGNOSE_IMAGE=diagnose
 
-function log() {
+function log_info() {
   local log_content=$1
   echo -e "${GREEN}${log_content}${NC}"
+}
+
+function log_warn() {
+  local log_content=$1
+  echo -e "${YELLOW}${log_content}${NC}"
+}
+
+function log_error() {
+  local log_content=$1
+  echo -e "${RED}${log_content}${NC}"
 }
 
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
   KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
 fi
-log "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
+log_info "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
 
 if ! docker image inspect ${KUSCIA_IMAGE} &>/dev/null; then
   docker pull ${KUSCIA_IMAGE}
@@ -46,12 +55,12 @@ fi
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
   SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
 fi
-log "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
+log_info "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
 if [[ "$DATAPROXY_IMAGE" == "" ]]; then
   DATAPROXY_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/dataproxy:0.1.0b1
 fi
-log "DATAPROXY_IMAGE=${DATAPROXY_IMAGE}"
+log_info "DATAPROXY_IMAGE=${DATAPROXY_IMAGE}"
 
 function arch_check() {
   local arch
@@ -70,7 +79,7 @@ function arch_check() {
 }
 
 function pre_check() {
-  if ! mkdir -p "$1" 2>/dev/null; then
+  if ! mkdir -m 777 -p "$1" 2>/dev/null; then
     echo -e "${RED}User does not have access to create the directory: $1${NC}"
     exit 1
   fi
@@ -187,7 +196,7 @@ function need_start_docker_container() {
   fi
 
   if $force_start; then
-    log "Remove container '${ctr}' ..."
+    log_info "Remove container '${ctr}' ..."
     docker rm -f $ctr >/dev/null 2>&1
     # need start your container
     return 0
@@ -297,7 +306,7 @@ function probe_datamesh() {
     echo -e "${RED}You cloud run command that 'docker logs $domain_ctr' to check the log${NC}" >&2
     exit 1
   fi
-  log "Probe datamesh successfully"
+  log_info "Probe datamesh successfully"
 }
 
 function get_runtime() {
@@ -308,7 +317,15 @@ function get_runtime() {
 }
 
 function generate_mount_flag() {
-  local mount_flag="-v ${DOMAIN_DATA_DIR}:${CTR_ROOT}/var/storage/data -v ${DOMAIN_LOG_DIR}:${CTR_ROOT}/var/stdout ${k3s_volume}"
+  local deploy_mode=$1
+  if [ "$deploy_mode" != "master" ] && [ "$mode" = "start" ]; then
+    local log_volume="-v ${DOMAIN_LOG_DIR}:${CTR_ROOT}/var/stdout"
+    local image_volume="-v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images"
+    local data_volume="-v ${DOMAIN_DATA_DIR}:${CTR_ROOT}/var/storage/data"
+  elif [ "$deploy_mode" != "master" ]; then
+    local image_volume="-v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images"
+  fi
+  local mount_flag="${data_volume} ${log_volume} ${image_volume} ${k3s_volume}"
   echo "$mount_flag"
 }
 
@@ -317,10 +334,10 @@ function create_cluster_domain_route() {
   local master_ctr=${ctr_prefix}-master
   local src_domain=$1
   local dest_domain=$2
-  log "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
+  log_info "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
 
   docker exec -it ${master_ctr} scripts/deploy/create_cluster_domain_route.sh ${src_domain} ${dest_domain} http://${ctr_prefix}-lite-${dest_domain}:1080
-  log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${ctr_prefix}'-lite-'${dest_domain}':1080"
+  log_info "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${ctr_prefix}'-lite-'${dest_domain}':1080"
 }
 
 function build_interconn() {
@@ -330,12 +347,12 @@ function build_interconn() {
   local host_domain=$4
   local interconn_protocol=$5
 
-  log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
+  log_info "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers ${member_ctr}:${CTR_CERT_ROOT}/domain.crt ${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt
   docker exec -it ${host_ctr} scripts/deploy/add_domain.sh $member_domain p2p ${interconn_protocol} ${master_domain}
 
   docker exec -it ${member_ctr} scripts/deploy/join_to_host.sh $member_domain $host_domain https://${host_ctr}:1080 -p ${interconn_protocol}
-  log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
+  log_info "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
 }
 
 function init_kuscia_conf_file() {
@@ -377,28 +394,30 @@ function init() {
   if [[ ${ROOTLESS} == "true" ]]; then
       DOMAIN_WORK_DIR="${ROOT}/${domain_ctr}-rootless"
   fi
-  DOMAIN_IMAGE_WORK_DIR="${DOMAIN_WORK_DIR}/images"
-  pre_check "${DOMAIN_WORK_DIR}"
-  pre_check "${DOMAIN_IMAGE_WORK_DIR}"
 
-  log "ROOT=${ROOT}"
-  log "DOMAIN_ID=${domain_id}"
-  log "DOMAIN_WORK_DIR=${DOMAIN_WORK_DIR}"
+  pre_check "${DOMAIN_WORK_DIR}"
+  [[ ${deploy_mode} != master ]] && DOMAIN_IMAGE_WORK_DIR="${DOMAIN_WORK_DIR}/images"
+  [[ ${deploy_mode} != master ]] && pre_check "${DOMAIN_IMAGE_WORK_DIR}"
+
+  log_info "ROOT=${ROOT}"
+  log_info "DOMAIN_ID=${domain_id}"
+  log_info "DOMAIN_WORK_DIR=${DOMAIN_WORK_DIR}"
 
   if [[ $mode == "start" ]]; then
     [[ ${DOMAIN_DATA_DIR} == "" ]] && DOMAIN_DATA_DIR="${DOMAIN_WORK_DIR}/data"
     [[ ${DOMAIN_LOG_DIR} == "" ]] && DOMAIN_LOG_DIR="${DOMAIN_WORK_DIR}/logs"
     [[ ${DOMAIN_K3S_DB_DIR} == "" ]] && DOMAIN_K3S_DB_DIR="${DOMAIN_WORK_DIR}/k3s"
-    pre_check "${DOMAIN_DATA_DIR}"
-    pre_check "${DOMAIN_LOG_DIR}"
-    log "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
-    log "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
-    log "DOMAIN_K3S_DB_DIR=${DOMAIN_K3S_DB_DIR}"
-    log "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
-    log "DOMAIN_HOST_INTERNAL_PORT=${domain_host_internal_port}"
-    log "KUSCIAAPI_HTTP_PORT=${kusciaapi_http_port}"
-    log "KUSCIAAPI_GRPC_PORT=${kusciaapi_grpc_port}"
-    log "METRICS_PORT"=${metrics_port}
+    [[ ${deploy_mode} != master ]] && pre_check "${DOMAIN_DATA_DIR}"
+    [[ ${deploy_mode} != master ]] && pre_check "${DOMAIN_LOG_DIR}"
+    [[ ${deploy_mode} != master ]] && log_info "DOMAIN_LOG_DIR=${DOMAIN_LOG_DIR}"
+    [[ ${deploy_mode} != master ]] && log_info "DOMAIN_DATA_DIR=${DOMAIN_DATA_DIR}"
+    [[ ${deploy_mode} != master ]] && log_info "DOMAIN_IMAGE_WORK_DIR=${DOMAIN_IMAGE_WORK_DIR}"
+    [[ ${deploy_mode} != lite ]] && log_info "DOMAIN_K3S_DB_DIR=${DOMAIN_K3S_DB_DIR}"
+    log_info "DOMAIN_HOST_PORT=${DOMAIN_HOST_PORT}"
+    log_info "DOMAIN_HOST_INTERNAL_PORT=${domain_host_internal_port}"
+    log_info "KUSCIAAPI_HTTP_PORT=${kusciaapi_http_port}"
+    log_info "KUSCIAAPI_GRPC_PORT=${kusciaapi_grpc_port}"
+    log_info "METRICS_PORT"=${metrics_port}
   fi
 }
 
@@ -435,12 +454,12 @@ function start_container() {
       capability_opts="--cap-add=SYS_PTRACE"
   fi
 
-  log "domain_hostname=${domain_hostname}"
+  log_info "domain_hostname=${domain_hostname}"
 
   if [[ ${mode} == "start" ]] && [[ "${CLUSTERED}" == true ]]; then
     local_network_name=${CLUSTER_NETWORK_NAME}
   fi
-  log "network=${local_network_name}"
+  log_info "network=${local_network_name}"
   enable_rootless ${domain_type} ${runtime}
   [[ ${ROOTLESS} == "true" ]] && {
     DOMAIN_DNS_CONFIG=${DOMAIN_WORK_DIR}/.resolv.conf
@@ -452,11 +471,10 @@ function start_container() {
   docker run -dit${privileged_flag} ${user_flag} --name="${domain_ctr}" --hostname="${domain_hostname}" --restart=always --network=${local_network_name} ${memory_limit} \
     ${export_port} ${mountcontainerd} ${capability_opts} \
     -v ${kuscia_conf_file}:${CTR_ROOT}/etc/conf/kuscia.yaml \
-    -v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images \
     ${mount_flag} ${dns_flag} ${user_flag} \
     "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
-  if [ -n "$(docker run --rm $KUSCIA_IMAGE bash -c 'ls -A /home/kuscia/var/images')" ]; then
+  if [[ -n "$(docker run --rm $KUSCIA_IMAGE bash -c 'ls -A /home/kuscia/var/images')" ]] && [[ ${runtime} == "runp" ]]; then
      builtin_images=$(docker run --rm "$KUSCIA_IMAGE" bash -c 'kuscia image ls --runtime runp | sed "1d" | awk "{print \$1\":\"\$2}"')
      for image in $builtin_images; do
        docker exec -it ${domain_ctr} bash -c "kuscia image --store /home/kuscia/var/images --runtime runp builtin '${image}'"
@@ -510,20 +528,20 @@ function start_kuscia_container() {
   build_kuscia_network
 
   if [[ ${init_kuscia_conf_file} = "true" ]]; then
-    init ${domain_ctr} ${runtime} ${deploy_type}
+    init "${domain_ctr}" "${runtime}" "${domain_type}"
     local kuscia_conf_file="${DOMAIN_WORK_DIR}/kuscia.yaml"
     init_kuscia_conf_file "${domain_type}" "${domain_id}" "${domain_ctr}" "${kuscia_conf_file}" "${master_endpoint}"
   fi
 
   if need_start_docker_container "$domain_ctr"; then
-    log "Starting container $domain_ctr ..."
+    log_info "Starting container $domain_ctr ..."
     if [[ "${mode}" == "start" ]]; then
       if [[ "${deploy_mode}" != "lite" && -z "${store_endpoint}" ]]; then
         init_k3s_data
         k3s_volume="-v ${DOMAIN_K3S_DB_DIR}:${CTR_ROOT}/var/k3s/server/db"
-        local mount_flag=$(generate_mount_flag)
       fi
     fi
+    local mount_flag=$(generate_mount_flag $domain_type)
     start_container "${domain_ctr}" "${domain_id}" "${kuscia_conf_file}" "${mount_flag}" "${memory_limit}" "${domain_host_port}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}" "${domain_hostname}"
     [[ "$domain_type" != "lite" ]] && probe_gateway_crd "${domain_ctr}" "${domain_id}" "${domain_hostname}" 60
     [[ "$domain_type" != "master" ]] && probe_datamesh "${domain_ctr}"
@@ -540,31 +558,31 @@ function start_kuscia_container() {
   fi
   if [[ "$domain_type" != "lite" ]]; then
     docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
-    log "Create secretflow app image done"
-  fi
-
-  if [[ ${IMPORT_DIAGNOSE_IMAGE} = "diagnose"  ]]; then
-    if [[ "$domain_type" != "master" ]] && [[ ${runtime} == "runc" ]]; then
-      docker run --rm $KUSCIA_IMAGE cat ${CTR_ROOT}/scripts/deploy/register_app_image.sh > ${DOMAIN_WORK_DIR}/register_app_image.sh && chmod u+x ${DOMAIN_WORK_DIR}/register_app_image.sh
-      bash ${DOMAIN_WORK_DIR}/register_app_image.sh -c ${domain_ctr} -i ${KUSCIA_IMAGE} --import
-      rm -rf ${DOMAIN_WORK_DIR}/register_app_image.sh
-    fi
-    if [[ "$domain_type" != "lite" ]]; then
-      docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${KUSCIA_IMAGE}" -m
-    fi
-    log "Create diagnose app image done"
+    log_info "Create secretflow app image done"
   fi
 
   if [[ $dataproxy == true ]]; then
     start_data_proxy $domain_type $domain_id $domain_ctr $runtime
   fi
-  log "$domain_type domain '${domain_id}' deployed successfully"
+  log_info "$domain_type domain '${domain_id}' deployed successfully"
 }
 
 function get_config_value() {
   local config_file=$1
   local key=$2
   grep "$key:" "$config_file" | awk '{ print $2 }' | sed 's/"//g' | tr -d '\r\n'
+}
+
+# pre check runtime when cluster network mode
+function pre_check_center_runtime() {
+
+  local runtime=$1
+
+  if [ "${runtime}" == "runc" ]; then
+    echo -e "${RED} ${runtime} runtime configuration is not supported in kuscia cluster network mode. ${NC}"
+    exit 1
+  fi
+
 }
 
 function start_kuscia() {
@@ -581,6 +599,10 @@ function start_kuscia() {
   local kusciaapi_grpc_port=${KUSCIAAPI_GRPC_PORT:-13083}
   local metrics_port=${METRICS_PORT:-13084}
 
+  if [[ ${mode} == "start" ]] && [[ "${CLUSTERED}" == true ]]; then
+    pre_check_center_runtime ${runtime}
+  fi
+
   wrap_kuscia_config_file ${kuscia_conf_file} ${interconn_protocol}
   local ctr_prefix=${USER}-kuscia
   local master_ctr=${ctr_prefix}-master
@@ -590,8 +612,8 @@ function start_kuscia() {
   fi
   [[ ${dataproxy} == "true" ]] && dataproxy_config ${kuscia_conf_file}
   [[ ${DOMAIN_HOST_PORT} == "" ]] && { printf "empty domain host port\n" >&2; exit 1; }
-  init ${domain_ctr} ${runtime} ${deploy_mode}
-  local mount_flag=$(generate_mount_flag)
+  init "${domain_ctr}" "${runtime}" "${deploy_mode}"
+  local mount_flag=$(generate_mount_flag $deploy_mode)
   start_kuscia_container "${deploy_mode}" "${domain_id}" "$runtime" "$master_endpoint" "${domain_ctr}" "false" "${mount_flag}" "${DOMAIN_HOST_PORT}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}"
 }
 
@@ -626,13 +648,13 @@ function start_data_proxy() {
    # register dataproxy appimage
    if [[ "$deploy_mode" != "lite" ]]; then
       docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${DATAPROXY_IMAGE}" -m
-      log "Create dataproxy appimage done"
+      log_info "Create dataproxy appimage done"
    fi
 
    # deployment dataproxy
    if [[ "$deploy_mode" != "master" ]]; then
       if [[ ${protocol} != "notls" ]]; then
-          docker cp ${domain_ctr}:/home/kuscia/var/certs/token .
+          docker cp ${domain_ctr}:/home/kuscia/var/certs/token .   
           declare -a header
           header+=("--header" "Token: $(cat token)")
           header+=("--cert" "${CTR_CERT_ROOT}/kusciaapi-server.crt")
@@ -656,7 +678,7 @@ function start_data_proxy() {
       if [[ "$counter" -eq "$max_test_counter" ]]; then
         echo -e "${RED}Dataproxy deployment failed.${NC}"
       else
-        log "Dataproxy started successfully"
+        log_info "Dataproxy started successfully"
       fi
    fi
 }
@@ -677,7 +699,7 @@ function start_center_cluster() {
   create_cluster_domain_route ${bob_domain} ${alice_domain}
   docker exec -it ${alice_ctr} scripts/deploy/init_example_data.sh ${alice_domain}
   docker exec -it ${bob_ctr} scripts/deploy/init_example_data.sh ${bob_domain}
-  log "Kuscia ${mode} cluster started successfully"
+  log_info "Kuscia ${mode} cluster started successfully"
 }
 
 function start_p2p_cluster() {
@@ -695,7 +717,7 @@ function start_p2p_cluster() {
   build_interconn ${alice_ctr} ${bob_ctr} ${bob_domain} ${alice_domain} ${p2p_protocol}
   docker exec -it ${alice_ctr} scripts/deploy/init_example_data.sh ${alice_domain}
   docker exec -it ${bob_ctr} scripts/deploy/init_example_data.sh ${bob_domain}
-  log "Kuscia ${mode} cluster started successfully"
+  log_info "Kuscia ${mode} cluster started successfully"
 }
 
 function start_cxc_cluster() {
@@ -743,7 +765,7 @@ function start_cxc_cluster() {
   fi
   docker exec -it ${alice_ctr} scripts/deploy/init_example_data.sh ${alice_domain}
   docker exec -it ${bob_ctr} scripts/deploy/init_example_data.sh ${bob_domain}
-  log "Kuscia ${mode} cluster started successfully"
+  log_info "Kuscia ${mode} cluster started successfully"
 }
 
 function start_cxp_cluster() {
@@ -783,7 +805,34 @@ function start_cxp_cluster() {
 
   docker exec -it ${alice_ctr} scripts/deploy/init_example_data.sh ${alice_domain}
   docker exec -it ${bob_ctr} scripts/deploy/init_example_data.sh ${bob_domain}
-  log "Kuscia ${mode} cluster started successfully"
+  log_info "Kuscia ${mode} cluster started successfully"
+}
+
+function upgrade_kuscia() {
+  local domain_ctr=$1
+  local kuscia_conf_file=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/etc/conf/kuscia.yaml"}}{{.Source}}{{end}}{{end}}' "$domain_ctr" | sed 's|/host_mnt||')
+  local kuscia_volumes=$(docker inspect -f '{{ range .Mounts }}-v {{ .Source }}:{{ .Destination }}{{ "\n" }}{{ end }}' "$domain_ctr" | sed 's|/host_mnt||')
+  local kuscia_ports=$(docker port "$domain_ctr" | awk '{split($1, a, "/"); split($3, b, ":"); if (b[2] != "") printf "-p %s:%s ", b[2], a[1]}')
+  local network_name=$(docker inspect -f '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}' "$domain_ctr")
+  local domain_hostname=$(generate_hostname "${domain_ctr}") || { echo -e "${RED}Failed to generate hostname${NC}"; exit 1; }
+  local domain_type=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')
+  local runtime=$(get_config_value "$kuscia_conf_file" "runtime")
+  local domain_id=$(get_config_value "$kuscia_conf_file" "domainID")  
+  local user=$(docker exec -i "$domain_ctr" bash -c "whoami")
+  local memory=$(docker inspect --format='{{.HostConfig.Memory}}' "$domain_ctr")
+
+  [[ "$memory" -ne 0 ]] && memory_limit="-m ${memory}"
+  [[ ${domain_type} != "master" && ${runtime} == "runc" ]] && privileged_flag=" --privileged"
+  [[ ${runtime} == "runp" && $(uname) == "Linux" ]] && capability_opts="--cap-add=SYS_PTRACE"
+  [[ "$user" != "root" ]] && user_flag="--user $(id -u):kuscia"
+
+  docker rm -f $domain_ctr
+
+  docker run -dit${privileged_flag} ${user_flag} --name="${domain_ctr}" --hostname="${domain_hostname}" --restart=always --network=$network_name ${memory_limit} \
+  ${kuscia_ports} ${capability_opts} ${kuscia_volumes} ${user_flag} "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
+  [[ "$domain_type" != "lite" ]] && probe_gateway_crd "${domain_ctr}" "${domain_id}" "${domain_hostname}" 60
+  [[ "$domain_type" != "master" ]] && probe_datamesh "${domain_ctr}"
+  log_info "$domain_type domain '${domain_ctr}' upgrade successfully"
 }
 
 function build_kuscia_network() {
@@ -818,7 +867,7 @@ function pre_check_cluster_network() {
     exit 1
   fi
 
-  log "Network '${CLUSTER_NETWORK_NAME}' is overlay and swarm scope type."
+  log_info "Network '${CLUSTER_NETWORK_NAME}' is overlay and swarm scope type."
   if [ $rm_container = true ] ;then
     docker rm -f "${container_id}" || true
   fi
@@ -839,6 +888,7 @@ DEPLOY_MODE:
     cxc                      center and center mode
     cxp                      center and p2p mode
     start                    Multi-machine mode
+    upgrade                  upgrade kuscia version. only applicable to Multi-machine mode
 
 Common Options:
     -h,--help         Show this help text.
@@ -863,7 +913,7 @@ Common Options:
 
 mode=
 case "$1" in
-center | p2p | cxc | cxp | start)
+center | p2p | cxc | cxp | start | upgrade)
   mode=$1
   shift
   ;;
@@ -986,6 +1036,9 @@ cxp)
   ;;
 start)
   start_kuscia
+  ;;
+upgrade)
+  upgrade_kuscia $1
   ;;
 *)
   printf "unsupported network mode: %s\n" "$mode" >&2

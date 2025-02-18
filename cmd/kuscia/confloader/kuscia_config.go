@@ -26,6 +26,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -94,6 +95,7 @@ type ImageConfig struct {
 	PullPolicy      string          `yaml:"pullPolicy"`
 	DefaultRegistry string          `yaml:"defaultRegistry"`
 	Registries      []ImageRegistry `yaml:"registries"`
+	HTTPProxy       string          `yaml:"httpProxy"`
 }
 
 type ImageRegistry struct {
@@ -114,6 +116,7 @@ type CommonConfig struct {
 type LogrotateConfig struct {
 	MaxFiles      int `yaml:"maxFiles"`
 	MaxFileSizeMB int `yaml:"maxFileSizeMB"`
+	MaxAgeDays    int `yaml:"maxAgeDays"`
 }
 
 type AdvancedConfig struct {
@@ -128,28 +131,32 @@ type AdvancedConfig struct {
 	Logrotate             LogrotateConfig             `yaml:"logrotate,omitempty"`
 }
 
-func LoadCommonConfig(configFile string) *CommonConfig {
+func LoadCommonConfig(configFile string) (*CommonConfig, error) {
+
 	conf := &CommonConfig{}
-	loadConfig(configFile, conf)
-	return conf
+	err := loadConfig(configFile, conf)
+	return conf, err
 }
 
-func LoadLiteConfig(configFile string) *LiteKusciaConfig {
+func LoadLiteConfig(configFile string) (*LiteKusciaConfig, error) {
+
 	conf := &LiteKusciaConfig{}
-	loadConfig(configFile, conf)
-	return conf
+	err := loadConfig(configFile, conf)
+	return conf, err
 }
 
-func LoadMasterConfig(configFile string) *MasterKusciaConfig {
+func LoadMasterConfig(configFile string) (*MasterKusciaConfig, error) {
+
 	conf := &MasterKusciaConfig{}
-	loadConfig(configFile, conf)
-	return conf
+	err := loadConfig(configFile, conf)
+	return conf, err
 }
 
-func LoadAutonomyConfig(configFile string) *AutonomyKusciaConfig {
+func LoadAutonomyConfig(configFile string) (*AutonomyKusciaConfig, error) {
+
 	conf := &AutonomyKusciaConfig{}
-	loadConfig(configFile, conf)
-	return conf
+	err := loadConfig(configFile, conf)
+	return conf, err
 }
 
 func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
@@ -207,8 +214,10 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.Debug = lite.Debug
 	kusciaConfig.DebugPort = lite.DebugPort
 	kusciaConfig.Image = lite.Image
+	kusciaConfig.Image.HTTPProxy = lite.Image.HTTPProxy
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &lite.AdvancedConfig.Logrotate)
+	kusciaConfig.Agent.StdoutGCDuration = time.Duration(kusciaConfig.Logrotate.MaxAgeDays) * 24 * time.Hour
 	overwriteKusciaConfigAgentLogrotate(&kusciaConfig.Agent.Provider.CRI, &lite.Agent.Provider.CRI, &kusciaConfig.Logrotate)
 }
 
@@ -293,8 +302,10 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.DebugPort = autonomy.DebugPort
 	kusciaConfig.EnableWorkloadApprove = autonomy.AdvancedConfig.EnableWorkloadApprove
 	kusciaConfig.Image = autonomy.Image
+	kusciaConfig.Image.HTTPProxy = autonomy.Image.HTTPProxy
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &autonomy.AdvancedConfig.Logrotate)
+	kusciaConfig.Agent.StdoutGCDuration = time.Duration(kusciaConfig.Logrotate.MaxAgeDays) * 24 * time.Hour
 	overwriteKusciaConfigAgentLogrotate(&kusciaConfig.Agent.Provider.CRI, &autonomy.Agent.Provider.CRI, &kusciaConfig.Logrotate)
 }
 
@@ -327,17 +338,21 @@ func overwriteKusciaConfigLogrotate(kusciaConfig, overwriteLogrotate *LogrotateC
 		if overwriteLogrotate.MaxFiles > 0 {
 			kusciaConfig.MaxFiles = overwriteLogrotate.MaxFiles
 		}
+		if overwriteLogrotate.MaxAgeDays > 0 {
+			kusciaConfig.MaxAgeDays = overwriteLogrotate.MaxAgeDays
+		}
 	}
 }
 
-func loadConfig(configFile string, conf interface{}) {
+func loadConfig(configFile string, conf interface{}) error {
 	content, err := os.ReadFile(configFile)
 	if err != nil {
-		nlog.Fatal(err)
+		return err
 	}
 	if err = yaml.Unmarshal(content, conf); err != nil {
-		nlog.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
@@ -354,9 +369,9 @@ func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
 	extensionIDs := strings.Split(common.DomainCsrExtensionID, ".")
 	var asn1Id asn1.ObjectIdentifier
 	for _, str := range extensionIDs {
-		id, err := strconv.Atoi(str)
-		if err != nil {
-			nlog.Fatalf("Parse extension ID error: %v", err.Error())
+		id, convErr := strconv.Atoi(str)
+		if convErr != nil {
+			nlog.Fatalf("Parse extension ID error: %v", convErr.Error())
 		}
 		asn1Id = append(asn1Id, id)
 	}

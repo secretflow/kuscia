@@ -39,7 +39,7 @@ spec:
               - -c
               - "python -m secretflow.kuscia.entry ./kuscia/task-config.conf"
             configVolumeMounts:
-              - mountPath: ./kuscia/task-config.conf
+              - mountPath: /work/kuscia/task-config.conf
                 subPath: task-config.conf
             name: secretflow
             ports:
@@ -86,21 +86,21 @@ spec:
 
 1. 运行以下命令创建 AppImage。
 
-```shell
-kubectl apply -f secretflow-image.yaml
-```
+    ```shell
+    kubectl apply -f secretflow-image.yaml
+    ```
 
 2. 检查 AppImage 是否创建成功。
 
-```shell
-kubectl get appimage secretflow-image
-```
+    ```shell
+    kubectl get appimage secretflow-image
+    ```
 
 3. 查询创建的 AppImage 详细信息。
 
-```shell
-kubectl get appimage secretflow-image -o yaml
-```
+    ```shell
+    kubectl get appimage secretflow-image -o yaml
+    ```
 
 ## 更新 AppImage
 
@@ -130,7 +130,7 @@ spec:
               - -c
               - "python -m secretflow.kuscia.entry ./kuscia/task-config.conf"
             configVolumeMounts:
-              - mountPath: ./kuscia/task-config.conf
+              - mountPath: /work/kuscia/task-config.conf
                 subPath: task-config.conf
             name: secretflow
             ports:
@@ -156,18 +156,18 @@ spec:
 
 1. 运行以下命令更新 AppImage。
 
-```shell
-kubectl apply -f secretflow-image.yaml
-```
+    ```shell
+    kubectl apply -f secretflow-image.yaml
+    ```
 
 2. 检查 AppImage 是否更新成功。
 
-```shell
-kubectl get appimage secretflow-image -o  yaml | grep '\- name: global' -A 3
-        - name: global
-          protocol: GRPC
-          scope: Domain
-```
+    ```shell
+    kubectl get appimage secretflow-image -o  yaml | grep '\- name: global' -A 3
+            - name: global
+              protocol: GRPC
+              scope: Domain
+    ```
 
 ## 清理 AppImage
 
@@ -175,16 +175,16 @@ kubectl get appimage secretflow-image -o  yaml | grep '\- name: global' -A 3
 
 1. 运行以下命令清理 AppImage。
 
-```shell
-kubectl delete appimage secretflow-image
-```
+    ```shell
+    kubectl delete appimage secretflow-image
+    ```
 
 2. 检查 AppImage 是否已被清理成功。
 
-```shell
-kubectl get appimage secretflow-image
-Error from server (NotFound): appimages.kuscia.secretflow "secretflow-image" not found
-```
+    ```shell
+    kubectl get appimage secretflow-image
+    Error from server (NotFound): appimages.kuscia.secretflow "secretflow-image" not found
+    ```
 
 {#appimage-ref}
 
@@ -225,7 +225,7 @@ spec:
               - -c
               - ./app --role=server --task_config_path=./kuscia/task-config.conf
             configVolumeMounts:
-              - mountPath: ./kuscia/task-config.conf
+              - mountPath: /work/kuscia/task-config.conf
                 subPath: task-config.conf
             name: app
             ports:
@@ -276,9 +276,9 @@ spec:
               - sh
             args:
               - -c
-              - ./app --role=client --task_config_path=/etc/kuscia/task-config.conf
+              - ./app --role=client --task_config_path=./kuscia/task-config.conf
             configVolumeMounts:
-              - mountPath: /etc/kuscia/task-config.conf
+              - mountPath: /work/kuscia/task-config.conf
                 subPath: task-config.conf
             name: app
             ports:
@@ -344,7 +344,7 @@ AppImage `spec` 的子字段详细介绍如下：
     - `deployTemplates[].spec.containers`：表示应用容器配置信息。该字段复用了 [K8s Pod containers](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/workload-resources/pod-v1/#Container) 部分字段以及扩展了一些自定义字段。主要包含以下子字段：
       - `deployTemplates[].spec.containers[].command`：表示应用的启动命令。
       - `deployTemplates[].spec.containers[].args`：表示应用的启动参数。
-      - `deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将`.spec.configTemplates`中定义的配置文件`task-config.conf`挂载到容器中的位置为`/etc/kuscia/task-config.conf`。
+      - `deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将`.spec.configTemplates`中定义的配置文件`task-config.conf`挂载到容器中的位置为`/work/kuscia/task-config.conf`。
         - `deployTemplates[].spec.containers[].configVolumeMounts[].mountPath`：表示文件挂载到容器中的路径。
         - `deployTemplates[].spec.containers[].configVolumeMounts[].subPath`：表示文件挂载到容器中的子路径。
       - `deployTemplates[].spec.containers[].name`：表示应用容器的名称。

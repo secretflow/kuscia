@@ -201,29 +201,6 @@ func parsePodUIDFromLogsDirectory(name string) types.UID {
 	return types.UID(parts[len(parts)-1])
 }
 
-// toKubeRuntimeStatus converts the runtimeapi.RuntimeStatus to pkgcontainer.RuntimeStatus.
-func toKubeRuntimeStatus(status *runtimeapi.RuntimeStatus) *pkgcontainer.RuntimeStatus {
-	var conditions []pkgcontainer.RuntimeCondition
-	for _, c := range status.GetConditions() {
-		conditions = append(conditions, pkgcontainer.RuntimeCondition{
-			Type:    pkgcontainer.RuntimeConditionType(c.Type),
-			Status:  c.Status,
-			Reason:  c.Reason,
-			Message: c.Message,
-		})
-	}
-	return &pkgcontainer.RuntimeStatus{Conditions: conditions}
-}
-
-func annotationProfile(profile, profileRootPath string) string {
-	if strings.HasPrefix(profile, v1.SeccompLocalhostProfileNamePrefix) {
-		name := strings.TrimPrefix(profile, v1.SeccompLocalhostProfileNamePrefix)
-		fname := filepath.Join(profileRootPath, filepath.FromSlash(name))
-		return v1.SeccompLocalhostProfileNamePrefix + fname
-	}
-	return profile
-}
-
 func ipcNamespaceForPod(pod *v1.Pod) runtimeapi.NamespaceMode {
 	if pod != nil && pod.Spec.HostIPC {
 		return runtimeapi.NamespaceMode_NODE

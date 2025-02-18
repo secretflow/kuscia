@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin/binding"
+
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/common"
 	dcommon "github.com/secretflow/kuscia/pkg/diagnose/common"
@@ -33,12 +34,14 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/interceptor"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/paths"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
 )
 
 type Client struct {
@@ -53,7 +56,7 @@ func NewDiagnoseClient(hostName string) *Client {
 	}
 }
 
-func (c *Client) postProto(ctx context.Context, request proto.Message, response proto.Message, path string) error {
+func (c *Client) invokeProto(ctx context.Context, request proto.Message, response proto.Message, method, path string) error {
 	var byteReq []byte
 	if request != nil {
 		var err error
@@ -63,7 +66,7 @@ func (c *Client) postProto(ctx context.Context, request proto.Message, response 
 			return err
 		}
 	}
-	byteBody, err := c.postProtoRequest(ctx, path, byteReq)
+	byteBody, err := c.invokeProtoRequest(ctx, method, path, byteReq)
 	if err != nil {
 		nlog.Errorf("Send request %+v failed: %s", request, err.Error())
 		return err
@@ -76,11 +79,11 @@ func (c *Client) postProto(ctx context.Context, request proto.Message, response 
 	return nil
 }
 
-func (c *Client) postProtoWithRetry(ctx context.Context, request proto.Message, response proto.Message, path string, attempt int) error {
+func (c *Client) invokeProtoWithRetry(ctx context.Context, request proto.Message, response proto.Message, method, path string, attempt int) error {
 	var err error
 	backoff := time.Second
 	for i := 1; i <= attempt; i++ {
-		err = c.postProto(ctx, request, response, path)
+		err = c.invokeProto(ctx, request, response, method, path)
 		if err == nil {
 			return nil
 		}
@@ -91,15 +94,21 @@ func (c *Client) postProtoWithRetry(ctx context.Context, request proto.Message, 
 	return err
 }
 
-func (c *Client) postProtoRequest(ctx context.Context, path string, request []byte) ([]byte, error) {
+func (c *Client) invokeProtoRequest(ctx context.Context, method, path string, request []byte) ([]byte, error) {
 	// construct http request
-	req, err := http.NewRequest(http.MethodPost, c.getURL(path), bytes.NewReader(request))
+	var reader io.Reader
+	if request != nil {
+		reader = bytes.NewReader(request)
+	}
+	req, err := http.NewRequest(method, c.getURL(path), reader)
 	if err != nil {
 		return nil, err
 	}
 	// set header
 	req.Host = c.HostName
-	req.Header.Set("Content-Type", binding.MIMEPROTOBUF)
+	if reader != nil {
+		req.Header.Set("Content-Type", binding.MIMEPROTOBUF)
+	}
 
 	// send request
 	resp, err := c.client.Do(req)
@@ -128,33 +137,27 @@ func (c *Client) getURL(path string) string {
 	return fmt.Sprintf("%s%s", address, path)
 }
 
-func (c *Client) RegisterEndpoint(ctx context.Context, request *diagnose.RegisterEndpointRequest) (response *diagnose.StatusResponse, err error) {
-	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseRegisterEndpointPath), 5)
-	return
-}
-
 func (c *Client) SubmitReport(ctx context.Context, request *diagnose.SubmitReportRequest) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseSubmitReportPath), 5)
+	err = c.invokeProtoWithRetry(ctx, request, response, http.MethodPost, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseSubmitReportPath), 5)
 	return
 }
 
 func (c *Client) Done(ctx context.Context) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, nil, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseDonePath), 5)
+	err = c.invokeProtoWithRetry(ctx, nil, response, http.MethodGet, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseDonePath), 5)
 	return
 }
 
 func (c *Client) Healthy(ctx context.Context) (response *diagnose.StatusResponse, err error) {
 	response = &diagnose.StatusResponse{}
-	err = c.postProtoWithRetry(ctx, nil, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseHealthyPath), 5)
+	err = c.invokeProtoWithRetry(ctx, nil, response, http.MethodGet, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseHealthyPath), 5)
 	return
 }
 
 func (c *Client) Mock(ctx context.Context, request *diagnose.MockRequest) (response *diagnose.MockResponse, err error) {
 	response = &diagnose.MockResponse{}
-	err = c.postProtoWithRetry(ctx, request, response, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseMockPath), 1)
+	err = c.invokeProtoWithRetry(ctx, request, response, http.MethodPost, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseMockPath), 1)
 	return
 }
 
@@ -177,12 +180,8 @@ func (c *Client) MockChunk(req proto.Message, url string) (*http.Response, error
 	return resp, nil
 }
 
-const (
-	DatameshServerHost = "datamesh:8071"
-)
-
 func NewKusciaAPIConn() (*grpc.ClientConn, error) {
-	kusciaConfig := confloader.DefaultKusciaConfig(common.DefaultKusciaHomePath)
+	kusciaConfig := confloader.DefaultKusciaConfig(common.DefaultKusciaHomePath())
 	tokenFile := kusciaConfig.KusciaAPI.Token.TokenFile
 	tlsConfig := &config.TLSConfig{
 		CAPath:         kusciaConfig.CACertFile,
@@ -193,35 +192,27 @@ func NewKusciaAPIConn() (*grpc.ClientConn, error) {
 	return NewGrpcConn(grpcAddr, tlsConfig, tokenFile)
 }
 
-func NewDatameshConn() (*grpc.ClientConn, error) {
-	tlsConfig := &config.TLSConfig{
-		ServerCertPath: os.Getenv(common.EnvClientCertFile),
-		ServerKeyPath:  os.Getenv(common.EnvClientKeyFile),
-		CAPath:         os.Getenv(common.EnvTrustedCAFile),
-	}
-	return NewGrpcConn(DatameshServerHost, tlsConfig, "")
-}
-
 func NewGrpcConn(address string, tlsconfig *config.TLSConfig, tokenFile string) (*grpc.ClientConn, error) {
 	dialOpts := make([]grpc.DialOption, 0)
-	if tokenFile != "" {
+	// use token if token file exists
+	if tokenFile != "" && paths.CheckFileExist(tokenFile) {
 		token, err := os.ReadFile(tokenFile)
 		if err != nil {
 			return nil, err
 		}
 		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(interceptor.GrpcClientTokenInterceptor(string(token))))
 	}
-
-	clientTLSConfig, err := tlsutils.BuildClientTLSConfigViaPath(tlsconfig.CAPath, tlsconfig.ServerCertPath, tlsconfig.ServerKeyPath)
-	if err != nil {
-		nlog.Errorf("local tls config error: %v", err)
-		return nil, err
-	}
-	if clientTLSConfig != nil {
+	// use tls if ca file exists
+	if err := paths.CheckAllFileExist(tlsconfig.CAPath, tlsconfig.ServerCertPath, tlsconfig.ServerKeyPath); err != nil {
+		dialOpts = append(dialOpts, grpc.WithInsecure())
+	} else {
+		clientTLSConfig, err := tlsutils.BuildClientTLSConfigViaPath(tlsconfig.CAPath, tlsconfig.ServerCertPath, tlsconfig.ServerKeyPath)
+		if err != nil {
+			nlog.Errorf("local tls config error: %v", err)
+			return nil, err
+		}
 		creds := credentials.NewTLS(clientTLSConfig)
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(creds))
-	} else {
-		dialOpts = append(dialOpts, grpc.WithInsecure())
 	}
 
 	grpcConn, err := grpc.Dial(address, dialOpts...)

@@ -52,7 +52,7 @@ def new_datamesh_client():
             address = "grpc+tls://" + address,
         else:
             address = "grpc://" + address
-
+    
     if _dm_flight_client_config.client_cert != None:
         dm_flight_client = flight.connect(address,)
     else:

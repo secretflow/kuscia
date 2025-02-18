@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"golang.org/x/net/context"
 )
 
 // BufferTask checks if there's any proxy buffer between two nodes.
@@ -50,7 +51,6 @@ func NewBufferTask(client *client.Client) Task {
 
 func (t *BufferTask) Run(ctx context.Context) {
 	nlog.Infof("Run %v task", t.Name())
-	defer nlog.Infof("Task %v done, output: %+v", t.Name(), t.output)
 	// mock request, server returns 512B data every 50ms for 10s, which returns 100KB in total
 	req := &diagnose.MockRequest{
 		EnableChunked:   true,
@@ -85,11 +85,9 @@ func (t *BufferTask) RecordBuffer(resp *http.Response) (bool, int) {
 	for {
 		cnt, err := resp.Body.Read(buffer)
 		if err != nil {
-			nlog.Infof("Read End: %v\n", err)
 			break
 		}
 		if cnt != 0 {
-			nlog.Debugf("Receive %v bytes data", cnt)
 			if cnt > DefaultBufferSize {
 				buffering = true
 				bufferSize = cnt

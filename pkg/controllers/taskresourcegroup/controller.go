@@ -128,13 +128,13 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		TrLister:        controller.trLister,
 	})
 
-	trgInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = trgInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleAddedTaskResourceGroup,
 		UpdateFunc: controller.handleUpdatedTaskResourceGroup,
 		DeleteFunc: controller.handleDeletedTaskResourceGroup,
 	})
 
-	trInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = trInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedOrDeletedTaskResource,
@@ -143,7 +143,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		},
 	})
 
-	podInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = podInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc: controller.handleAddedPod,
@@ -503,8 +503,7 @@ func (c *Controller) updateTaskResourceGroupStatus(ctx context.Context, oldTrg, 
 
 	var err error
 	newStatus := newTrg.Status.DeepCopy()
-	trg := newTrg
-	for i, trg := 0, trg; ; i++ {
+	for i, trg := 0, newTrg; ; i++ {
 		nlog.Infof("Start updating task resource group %q status phase %q to %q", newTrg.Name, oldTrg.Status.Phase, newTrg.Status.Phase)
 		trg.Status = *newStatus
 		_, err = c.kusciaClient.KusciaV1alpha1().TaskResourceGroups().UpdateStatus(ctx, trg, metav1.UpdateOptions{})

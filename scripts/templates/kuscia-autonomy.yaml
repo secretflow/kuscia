@@ -19,20 +19,20 @@ runk:
   namespace: ""
   # K8s 集群的 pod dns 配置， 用于解析节点的应用域名
   dnsServers:
-#    - kuscia-dns-lb-server
+  # - kuscia-dns-lb-server
   #  K8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
   kubeconfigFile:
 
 # 节点的可调度容量，runc 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
 capacity:
-  cpu: #4
-  memory: #8Gi
-  pods: #500
-  storage: #100Gi
+  cpu: # 4
+  memory: # 8Gi
+  pods: # 500
+  storage: # 100Gi
 
 # agent 镜像配置
 image:
-  pullPolicy: #使用镜像仓库|使用本地
+  pullPolicy: # 使用镜像仓库|使用本地
   defaultRegistry: ""
   registries:
     - name: ""

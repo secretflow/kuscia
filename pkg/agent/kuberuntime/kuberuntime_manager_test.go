@@ -34,14 +34,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/util/flowcontrol"
-	featuregatetesting "k8s.io/component-base/featuregate/testing"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	apitest "k8s.io/cri-api/pkg/apis/testing"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	"k8s.io/kubernetes/pkg/credentialprovider"
-	"k8s.io/kubernetes/pkg/features"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	containertest "github.com/secretflow/kuscia/pkg/agent/container/testing"
@@ -484,9 +481,6 @@ func TestGetPods(t *testing.T) {
 }
 
 func TestKillPod(t *testing.T) {
-	// Tests that KillPod also kills Ephemeral Containers
-	defer featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.EphemeralContainers, true)()
-
 	fakeRuntime, _, m, err := createTestRuntimeManager()
 	assert.NoError(t, err)
 

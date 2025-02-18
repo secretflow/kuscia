@@ -17,13 +17,13 @@ spec:
       spec:
         containers:
           - name: fate-adapter
-            workingDir: /home/kuscia
+            workingDir: /work
             command:
               - sh
               - -c
-              - fate job -c /home/kuscia/etc/kuscia/task-config.conf -a {{.CLUSTER_IP}}
+              - fate job -c ./etc/kuscia/task-config.conf -a {{.CLUSTER_IP}}
             configVolumeMounts:
-              - mountPath: /home/kuscia/etc/kuscia/task-config.conf
+              - mountPath: /work/etc/kuscia/task-config.conf
                 subPath: task-config.conf
         restartPolicy: Never
   image:

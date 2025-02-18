@@ -96,9 +96,9 @@ func (c *Controller) computeExceptGeneratedAnnotations(kd *kusciav1alpha1.Kuscia
 		annotations[common.InitiatorAnnotationKey] = kd.Spec.Initiator
 		annotations[common.SelfClusterAsInitiatorAnnotationKey] = "true"
 		for _, p := range kd.Spec.Parties {
-			partyDomain, err := c.domainLister.Get(p.DomainID)
-			if err != nil {
-				return nil, err
+			partyDomain, getErr := c.domainLister.Get(p.DomainID)
+			if getErr != nil {
+				return nil, getErr
 			}
 			if partyDomain.Spec.Role == kusciav1alpha1.Partner {
 				interConnProtocol := kusciav1alpha1.InterConnKuscia
@@ -884,12 +884,4 @@ func (c *Controller) isInitiatorController(kd *kusciav1alpha1.KusciaDeployment) 
 		return true, nil
 	}
 	return false, nil
-}
-
-func (c *Controller) isPartnerController(kd *kusciav1alpha1.KusciaDeployment) (bool, error) {
-	isInitiatorController, err := c.isInitiatorController(kd)
-	if err != nil {
-		return false, err
-	}
-	return !isInitiatorController, nil
 }

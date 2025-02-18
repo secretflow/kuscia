@@ -30,4 +30,5 @@ type Store interface {
 	RegisterImage(image, manifest string) error
 	PullImage(image string, auth *runtimeapi.AuthConfig) error
 	ListImage() ([]*Image, error)
+	RemoveImage(imageNameOrIDs []string) error
 }

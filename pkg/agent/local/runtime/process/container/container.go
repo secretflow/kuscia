@@ -51,10 +51,6 @@ const (
 	// errorExitReason is the exit reason when container exits with code non-zero.
 	errorExitReason = "Error"
 
-	defaultMaxLogFileSizeMB = 512
-	defaultMaxLogAgeInDays  = 15
-	defaultMaxLogFiles      = 10
-
 	resolvConfPath = "/etc/resolv.conf"
 )
 
@@ -200,7 +196,7 @@ func (c *Container) Start() (retErr error) {
 	c.addCgroup(c.status.Pid)
 
 	if runenv.Permission.HasSetOOMScorePermission() {
-		process.SetOOMScore(c.status.Pid, 0)
+		_ = process.SetOOMScore(c.status.Pid, 0)
 	}
 
 	go c.signalOnExit(starter)

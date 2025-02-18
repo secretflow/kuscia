@@ -88,3 +88,8 @@ func Write(p []byte) (int, error) {
 func Sync() error {
 	return defaultLogger.logWriter.Sync()
 }
+
+func ChangeLogLevel(level string) error {
+
+	return defaultLogger.logWriter.ChangeLogLevel(level)
+}

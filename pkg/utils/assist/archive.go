@@ -79,8 +79,8 @@ func tarFile(base, file string, fi os.FileInfo, tw *tar.Writer) error {
 	}
 	header.Name = rel
 
-	if err := tw.WriteHeader(header); err != nil {
-		return err
+	if writeErr := tw.WriteHeader(header); writeErr != nil {
+		return writeErr
 	}
 
 	if !fi.Mode().IsRegular() {
@@ -181,7 +181,9 @@ func ExtractTarFile(dst string, tarFile string, adjustLink bool, skipUnNormalFil
 		isGzip = true
 	}
 
-	file.Seek(0, io.SeekStart)
+	if _, err = file.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
 	return Untar(dst, isGzip, adjustLink, file, skipUnNormalFile)
 }
 

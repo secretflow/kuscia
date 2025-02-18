@@ -15,6 +15,7 @@
 package confloader
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
@@ -69,8 +70,8 @@ type KusciaConfig struct {
 }
 
 type CMConfig struct {
-	driver string         `yaml:"driver,omitempty"`
 	Params map[string]any `yaml:"params,omitempty"`
+	Driver string         `yaml:"driver,omitempty"`
 }
 
 type DomainRouteConfig struct {
@@ -119,7 +120,7 @@ func DefaultKusciaConfig(rootDir string) KusciaConfig {
 		nlog.Fatal(err)
 	}
 	if rootDir == "" {
-		rootDir = common.DefaultKusciaHomePath
+		rootDir = common.DefaultKusciaHomePath()
 	}
 	return KusciaConfig{
 		RootDir:            rootDir,
@@ -130,31 +131,56 @@ func DefaultKusciaConfig(rootDir string) KusciaConfig {
 		EnvoyIP:            hostIP,
 		KusciaAPI:          kaconfig.NewDefaultKusciaAPIConfig(rootDir),
 		MetricUpdatePeriod: defaultMetricUpdatePeriod,
-		Logrotate:          LogrotateConfig{config.DefaultLogRotateMaxFiles, config.DefaultLogRotateMaxSize},
+		Logrotate: LogrotateConfig{
+			MaxFiles:      config.DefaultLogRotateMaxFiles,
+			MaxFileSizeMB: config.DefaultLogRotateMaxSize,
+			MaxAgeDays:    config.DefaultLogRotateMaxAgeDays,
+		},
 	}
 }
 
-func ReadConfig(configFile, runMode string) KusciaConfig {
+func ReadConfig(configFile string) (KusciaConfig, error) {
+
 	var conf KusciaConfig
-	switch runMode {
+
+	commonConfig, err := LoadCommonConfig(configFile)
+	if err != nil {
+		return conf, err
+	}
+	currentRunMode := commonConfig.Mode
+
+	switch currentRunMode {
 	case common.RunModeMaster:
-		masterConfig := LoadMasterConfig(configFile)
-		conf = defaultMaster(common.DefaultKusciaHomePath)
+		masterConfig, err := LoadMasterConfig(configFile)
+		if err != nil {
+			return conf, err
+		}
+		conf = defaultMaster(common.DefaultKusciaHomePath())
 		masterConfig.OverwriteKusciaConfig(&conf)
 	case common.RunModeLite:
-		liteConfig := LoadLiteConfig(configFile)
-		conf = defaultLite(common.DefaultKusciaHomePath)
+		liteConfig, err := LoadLiteConfig(configFile)
+		if err != nil {
+			return conf, err
+		}
+		conf = defaultLite(common.DefaultKusciaHomePath())
 		liteConfig.OverwriteKusciaConfig(&conf)
 	case common.RunModeAutonomy:
-		autonomyConfig := LoadAutonomyConfig(configFile)
-		conf = defaultAutonomy(common.DefaultKusciaHomePath)
+		autonomyConfig, err := LoadAutonomyConfig(configFile)
+		if err != nil {
+			return conf, err
+		}
+		conf = defaultAutonomy(common.DefaultKusciaHomePath())
 		autonomyConfig.OverwriteKusciaConfig(&conf)
 	default:
-		nlog.Fatalf("Not supported run mode: %s", runMode)
+		return conf, fmt.Errorf("not support run mode: %s", currentRunMode)
 	}
-	conf.RunMode = runMode
 	if conf.DomainID == "" {
-		nlog.Fatalf("Kuscia config domain should not be empty")
+		return conf, fmt.Errorf("kuscia config domain should not be empty")
 	}
-	return conf
+
+	// Setting current run mode.
+	// The configuration is strongly bound to the runtime#NewModuleRuntimeConfigs.
+	conf.RunMode = currentRunMode
+
+	return conf, nil
 }

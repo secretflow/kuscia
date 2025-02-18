@@ -66,7 +66,7 @@ plugins:
   - name: mock_plugin_a
     config: ====
 `
-		agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath)
+		agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath())
 		assert.NoError(t, yaml.Unmarshal([]byte(configYaml), &agentConfig))
 		dep := &Dependencies{AgentConfig: agentConfig}
 
@@ -81,7 +81,7 @@ plugins:
   - name: mock_plugin_0
     config: ====
 `
-		agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath)
+		agentConfig := config.DefaultAgentConfig(common.DefaultKusciaHomePath())
 		assert.NoError(t, yaml.Unmarshal([]byte(configYaml), &agentConfig))
 		dep := &Dependencies{AgentConfig: agentConfig}
 

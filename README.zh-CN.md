@@ -13,7 +13,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - 统一的 API 接口：您可以使用 HTTP/GRPC API 接口集成隐私计算能力。
 - 互联互通：你可以与行业内多种隐私计算系统进行互联互通。
 
-更多 Kuscia 的能力介绍，请参考[ Kuscia 概述](./docs/reference/overview.md)。
+更多 Kuscia 的能力介绍，请参考[Kuscia 概述](./docs/reference/overview.md)。
 
 ![Kuscia](./docs/imgs/kuscia_architecture.png)
 

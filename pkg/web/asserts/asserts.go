@@ -28,7 +28,7 @@ func IsNil(obj interface{}, errorMsg string) (err error) {
 	}()
 	val := reflect.ValueOf(obj)
 	if !val.IsNil() {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }
@@ -41,56 +41,56 @@ func NotNil(obj interface{}, errorMsg string) (err error) {
 	}()
 	val := reflect.ValueOf(obj)
 	if val.IsNil() {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }
 
 func IsTrue(v bool, errorMsg string) error {
 	if !v {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }
 
 func True(v bool, errorMsg string) error {
 	if !v {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil // v is true  -> ok
 }
 
 func False(v bool, errorMsg string) error {
 	if v { // v is true ->  return error
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil // v is false  -> ok
 }
 
 func IsEmpty(inputStr, errorMsg string) error {
 	if len(inputStr) != 0 {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }
 
 func NotEmpty(inputStr string, errorMsg string) error {
 	if len(inputStr) == 0 {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }
 
 func Equals(leftStr, rightStr, errorMsg string) error {
 	if strings.Compare(leftStr, rightStr) != 0 {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }
 
 func NotEquals(leftStr, rightStr, errorMsg string) error {
 	if strings.Compare(leftStr, rightStr) == 0 {
-		return fmt.Errorf(errorMsg)
+		return fmt.Errorf("%s", errorMsg)
 	}
 	return nil
 }

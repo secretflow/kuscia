@@ -43,7 +43,7 @@ docker exec -it ${USER}-kuscia-lite-bob bash
 cat /home/kuscia/var/logs/kuscia.log | grep -i error
 ```
 
-####  点对点组网模式
+#### 点对点组网模式
 
 查看 Alice 节点日志
 

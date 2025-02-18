@@ -27,12 +27,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/fake"
-	statustest "k8s.io/kubernetes/pkg/kubelet/status/testing"
 	"k8s.io/kubernetes/pkg/probe"
 
 	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	"github.com/secretflow/kuscia/pkg/agent/prober/results"
 	"github.com/secretflow/kuscia/pkg/agent/status"
+	statustest "github.com/secretflow/kuscia/pkg/agent/status/testing"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 

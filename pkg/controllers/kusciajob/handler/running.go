@@ -53,13 +53,13 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 	now := metav1.Now().Rfc3339Copy()
 	defer updateJobTime(now, job)
 	// handle stage command, check if the stage command matches the phase of job
-	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return hasReconciled, err
+	if hasReconciled, handleErr := h.handleStageCommand(now, job); handleErr != nil || hasReconciled {
+		return hasReconciled, handleErr
 	}
 	// set task id
 	if utilsres.SelfClusterAsInitiator(h.namespaceLister, job.Spec.Initiator, job.Annotations) {
-		if hasSet, err := h.setJobTaskID(job); hasSet {
-			return false, err
+		if hasSet, setErr := h.setJobTaskID(job); hasSet {
+			return false, setErr
 		}
 	}
 	// selector all tasks of job
@@ -98,14 +98,14 @@ func (h *RunningHandler) handleRunning(job *kusciaapisv1alpha1.KusciaJob) (needU
 			_, err = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Create(context.Background(), t, metav1.CreateOptions{})
 			if err != nil {
 				if k8serrors.IsAlreadyExists(err) {
-					existTask, err := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(t.Name)
-					if err != nil {
-						if k8serrors.IsNotFound(err) {
-							existTask, err = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), t.Name, metav1.GetOptions{})
+					existTask, getErr := h.kusciaTaskLister.KusciaTasks(common.KusciaCrossDomain).Get(t.Name)
+					if getErr != nil {
+						if k8serrors.IsNotFound(getErr) {
+							existTask, getErr = h.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(context.Background(), t.Name, metav1.GetOptions{})
 						}
-						if err != nil {
-							nlog.Errorf("Get exist task %v failed: %v", t.Name, err)
-							setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, string(kusciaapisv1alpha1.CreateTaskFailed), err.Error())
+						if getErr != nil {
+							nlog.Errorf("Get exist task %v failed: %v", t.Name, getErr)
+							setKusciaJobStatus(now, &job.Status, kusciaapisv1alpha1.KusciaJobFailed, string(kusciaapisv1alpha1.CreateTaskFailed), getErr.Error())
 							return true, nil
 						}
 					}

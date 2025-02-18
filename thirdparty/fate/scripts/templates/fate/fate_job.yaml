@@ -12,38 +12,38 @@ spec:
       alias: {{.JOB_NAME}}-data-reader
       priority: 100
       taskInputConfig: '{{.READER_CONFIG}}'
-      appImage: '{{.APP_IMAGE}}'
+      appImage: {{.APP_IMAGE}}
       parties:
         - domainID: {{.Initiator}}
     - taskID: {{.JOB_NAME}}-data-transform
       alias: {{.JOB_NAME}}-data-transform
-      dependencies: [ "{{.JOB_NAME}}-data-reader" ]
+      dependencies: [ {{.JOB_NAME}}-data-reader ]
       priority: 100
       taskInputConfig: '{{.TRANSFORM_CONFIG}}'
-      appImage: '{{.APP_IMAGE}}'
+      appImage: {{.APP_IMAGE}}
       parties:
         - domainID: {{.Initiator}}
     - taskID: {{.JOB_NAME}}-intersection
       alias: {{.JOB_NAME}}-intersection
-      dependencies: [ "{{.JOB_NAME}}-data-transform" ]
+      dependencies: [ {{.JOB_NAME}}-data-transform ]
       priority: 100
       taskInputConfig: '{{.INTERSECTION_CONFIG}}'
-      appImage: '{{.APP_IMAGE}}'
+      appImage: {{.APP_IMAGE}}
       parties:
         - domainID: {{.Initiator}}
     - taskID: {{.JOB_NAME}}-hetero-lr
       alias: {{.JOB_NAME}}-hetero-lr
-      dependencies: [ "{{.JOB_NAME}}-intersection" ]
+      dependencies: [ {{.JOB_NAME}}-intersection ]
       priority: 100
       taskInputConfig: '{{.LR_CONFIG}}'
-      appImage: '{{.APP_IMAGE}}'
+      appImage: {{.APP_IMAGE}}
       parties:
         - domainID: {{.Initiator}}
     - taskID: {{.JOB_NAME}}-evaluation
       alias: {{.JOB_NAME}}-evaluation
-      dependencies: [ "{{.JOB_NAME}}-hetero-lr" ]
+      dependencies: [ {{.JOB_NAME}}-hetero-lr ]
       priority: 100
       taskInputConfig: '{{.EVALUATION_CONFIG}}'
-      appImage: '{{.APP_IMAGE}}'
+      appImage: {{.APP_IMAGE}}
       parties:
         - domainID: {{.Initiator}}

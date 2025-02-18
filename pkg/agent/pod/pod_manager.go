@@ -24,8 +24,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/kubelet/metrics"
 	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
 
@@ -157,10 +155,6 @@ func (pm *basicManager) UpdatePod(pod *v1.Pod) {
 // updateMetrics updates the metrics surfaced by the pod manager.
 // oldPod or newPod may be nil to signify creation or deletion.
 func updateMetrics(oldPod, newPod *v1.Pod) {
-	if !utilfeature.DefaultFeatureGate.Enabled(features.EphemeralContainers) {
-		return
-	}
-
 	var numEC int
 	if oldPod != nil {
 		numEC -= len(oldPod.Spec.EphemeralContainers)

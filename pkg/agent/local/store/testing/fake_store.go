@@ -73,3 +73,7 @@ func (f *fakeStore) PullImage(image string, auth *runtimeapi.AuthConfig) error {
 func (f *fakeStore) ListImage() ([]*store.Image, error) {
 	return nil, errors.New("not supported currently")
 }
+
+func (f *fakeStore) RemoveImage(imageNameOrIDs []string) error {
+	return errors.New("not supported currently")
+}

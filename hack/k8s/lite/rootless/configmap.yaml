@@ -57,7 +57,7 @@ data:
 
     # agent 镜像配置, 使用私有仓库存储镜像时配置(默认无需配置)
     image:
-      pullPolicy: #使用镜像仓库|使用本地
+      pullPolicy: # 使用镜像仓库|使用本地
       defaultRegistry: ""
       registries:
         - name: ""

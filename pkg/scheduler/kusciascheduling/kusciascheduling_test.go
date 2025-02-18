@@ -168,7 +168,7 @@ func TestPermit(t *testing.T) {
 		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
 		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-	f, err := st.NewFramework(registeredPlugins, "", ctx.Done(),
+	f, err := st.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
@@ -248,7 +248,7 @@ func TestPostBind(t *testing.T) {
 		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
 
-	f, err := st.NewFramework(registeredPlugins, "", ctx.Done(),
+	f, err := st.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
@@ -326,7 +326,7 @@ func TestPostFilter(t *testing.T) {
 		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
 		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-	f, err := st.NewFramework(registeredPlugins, "", ctx.Done(),
+	f, err := st.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
@@ -430,7 +430,7 @@ func TestPreFilter(t *testing.T) {
 		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
 		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-	f, err := st.NewFramework(registeredPlugins, "", ctx.Done(),
+	f, err := st.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
@@ -514,7 +514,7 @@ func TestUnreserve(t *testing.T) {
 		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
 
-	f, err := st.NewFramework(registeredPlugins, "", ctx.Done(),
+	f, err := st.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),

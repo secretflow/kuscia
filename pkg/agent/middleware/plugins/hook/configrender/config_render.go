@@ -204,7 +204,7 @@ func (cr *configRender) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext
 	}
 
 	// render taskInputConfig,allocatePorts,ClusterDefine from configMap
-	if err := fillTemplateValueFromConfigMap(ctx.Pod, ctx.ResourceManager, data); err != nil {
+	if err = fillTemplateValueFromConfigMap(ctx.Pod, ctx.ResourceManager, data); err != nil {
 		nlog.Errorf("fillTemplateValueFromConfigMap pod: %s config failed, error: %s.", ctx.Pod.Name, err.Error())
 		return err
 	}
@@ -253,7 +253,7 @@ func (cr *configRender) handleMakeMountsContext(ctx *hook.MakeMountsContext) err
 	}
 
 	// render taskInputConfig,allocatePorts,ClusterDefine from configMap
-	if err := fillTemplateValueFromConfigMap(ctx.Pod, ctx.ResourceManager, data); err != nil {
+	if err = fillTemplateValueFromConfigMap(ctx.Pod, ctx.ResourceManager, data); err != nil {
 		nlog.Errorf("fillTemplateValueFromConfigMap pod: %s config failed, error: %s.", ctx.Pod.Name, err.Error())
 		return err
 	}
@@ -325,7 +325,7 @@ func (cr *configRender) renderConfigDirectory(templateDir, configDir string, dat
 		return err
 	}
 
-	if err := paths.EnsureDirectoryPerm(configDir, true, info.Mode()); err != nil {
+	if err = paths.EnsureDirectoryPerm(configDir, true, info.Mode()); err != nil {
 		return fmt.Errorf("failed to ensure directory %q exists, detail-> %v", configDir, err)
 	}
 

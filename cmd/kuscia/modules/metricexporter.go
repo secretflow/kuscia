@@ -31,9 +31,9 @@ type metricExporterModule struct {
 	moduleRuntimeBase
 	rootDir          string
 	metricURLs       map[string]string
-	nodeExportPort   string
-	ssExportPort     string
-	metricExportPort string
+	nodeExportPort   int
+	ssExportPort     int
+	metricExportPort int
 	podManager       pod.Manager
 }
 
@@ -51,7 +51,7 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		nlog.Info("Running in master mode, skipping podManager creation")
 	}
 
-	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.MetricExportPort)
+	readyURI := fmt.Sprintf("http://127.0.0.1:%d", i.MetricExportPort)
 	exporter := &metricExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
 			name:         "metricexporter",
@@ -66,9 +66,9 @@ func NewMetricExporter(i *ModuleRuntimeConfigs) (Module, error) {
 		metricExportPort: i.MetricExportPort,
 		podManager:       podManager,
 		metricURLs: map[string]string{
-			"node-exporter": "http://localhost:" + i.NodeExportPort + "/metrics",
+			"node-exporter": fmt.Sprintf("http://localhost:%d/metrics", i.NodeExportPort),
 			"envoy":         envoyexporter.GetEnvoyMetricURL(),
-			"ss":            "http://localhost:" + i.SsExportPort + "/ssmetrics",
+			"ss":            fmt.Sprintf("http://localhost:%d/ssmetrics", i.SsExportPort),
 		},
 	}
 	return exporter, nil

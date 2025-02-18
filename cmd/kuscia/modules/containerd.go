@@ -44,6 +44,7 @@ type containerdModule struct {
 	Root        string
 	Snapshotter string
 	LogConfig   nlog.LogConfig
+	HTTPProxy   string
 }
 
 func NewContainerd(i *ModuleRuntimeConfigs) (Module, error) {
@@ -59,6 +60,7 @@ func NewContainerd(i *ModuleRuntimeConfigs) (Module, error) {
 		Socket:      i.ContainerdSock,
 		Snapshotter: autoDetectSnapshotter(i.RootDir),
 		LogConfig:   *i.LogConfig,
+		HTTPProxy:   i.Image.HTTPProxy,
 	}, nil
 }
 
@@ -96,6 +98,9 @@ func (s *containerdModule) Run(ctx context.Context) error {
 	n := nlog.NewNLog(nlog.SetWriter(lj))
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.Command(filepath.Join(s.Root, "bin/containerd"), args...)
+		if s.HTTPProxy != "" {
+			cmd.Env = append(os.Environ(), fmt.Sprintf("HTTPS_PROXY=%s", s.HTTPProxy))
+		}
 		cmd.Stderr = n
 		cmd.Stdout = n
 		return &ModuleCMD{

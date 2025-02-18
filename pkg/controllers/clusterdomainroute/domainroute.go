@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -209,19 +208,4 @@ func setCondition(status *kusciaapisv1alpha1.ClusterDomainRouteStatus, condition
 
 	status.Conditions = append(status.Conditions, *condition)
 	return true
-}
-
-func (c *controller) checkAliveInstance(ns string) error {
-	gateways, err := c.gatewayLister.Gateways(ns).List(labels.Everything())
-	if err != nil {
-		return err
-	}
-
-	for _, g := range gateways {
-		if time.Since(g.Status.HeartbeatTime.Time) < common.GatewayLiveTimeout || g.Status.HeartbeatTime.Time.IsZero() {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("there is no live gateway instance of %s", ns)
 }

@@ -2,8 +2,8 @@
 
 在 Kuscia 中，任务是用 KusciaTask 描述的。如果要运行一个任务，那么需要创建一个 KusciaTask。KusciaTask Controller 将会根据 KusciaTask 的描述信息，在参与方节点下创建任务相关的资源。
 
-
 {#kuscia-task-state}
+
 ## 状态说明
 
 下图为 KusciaTask(KT) 的状态流转图。
@@ -11,11 +11,11 @@
 ![KusciaTaskState](../../imgs/kuscia_task_state.png)
 
 KusciaTask 在其生命周期中会处于以下几种状态：
+
 - Pending: 此时 KusciaTask 正在被处理。
 - Running: 此时 KusciaTask 正处于运行状态。当至少有一方的应用 Pod 为 Running 时，会进入此状态。
 - Succeeded: 此时 KusciaTask 运行成功。
 - Failed: 此时 KusciaTask 运行失败。当预处理任务出错或任务运行过程中出错时，会进入该状态。
-
 
 ## 用例
 
@@ -89,9 +89,9 @@ spec:
                 - sh
               args:
                 - -c
-                - ./app --role=client --task_config_path=/etc/kuscia/task-config.conf
+                - ./app --role=client --task_config_path=./kuscia/task-config.conf
               configVolumeMounts:
-                - mountPath: /etc/kuscia/task-config.conf
+                - mountPath: /work/kuscia/task-config.conf
                   subPath: task-config.conf
               name: app
               ports:
@@ -247,7 +247,7 @@ KusciaTask `spec` 的子字段详细介绍如下：
 KusciaTask `status` 的子字段详细介绍如下：
 
 - `phase`：表示 KusciaTask 当前所处的阶段。[状态流转详情](#kuscia-task-state)。当前包括以下几种 PHASE：
-  - `Pending`：表示 KusciaTask 被创建，然后 KusciaTask Controller 会根据 KusciaTask 的描述信息，创建跟 KusciaTask 相关的任务资源，例如：Configmap、Service、Pod 等。
+  - `Pending`：表示 KusciaTask 被创建，然后 KusciaTask Controller 会根据 KusciaTask 的描述信息，创建跟 KusciaTask 相关的任务资源，例如：ConfigMap、Service、Pod 等。
   - `Running`：表示 KusciaTask 正处于运行状态。
   - `Succeeded`：表示 KusciaTask 运行成功。
   - `Failed`：表示 KusciaTask 运行失败。

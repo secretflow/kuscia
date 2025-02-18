@@ -106,14 +106,14 @@ func updateDestUnreachableStatus(ctx context.Context, kusciaClient kusciaclients
 			hasConflict = true
 		}
 
-		newDr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Get(ctx, dr.Name,
+		newDr, getErr := kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).Get(ctx, dr.Name,
 			metav1.GetOptions{})
-		if k8serrors.IsNotFound(err) {
+		if k8serrors.IsNotFound(getErr) {
 			nlog.Warnf("Dr(%s) is not exist", dr.Name)
-			return err
+			return getErr
 		}
-		if err != nil {
-			nlog.Warnf("Get Dr(%s) fail: %v", dr.Name, err)
+		if getErr != nil {
+			nlog.Warnf("Get Dr(%s) fail: %v", dr.Name, getErr)
 			continue
 		}
 

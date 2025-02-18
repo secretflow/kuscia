@@ -126,7 +126,7 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 	filename := filepath.Join(dir, "kuscia.yaml")
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 
-	autonomyConfig := LoadAutonomyConfig(filename)
+	autonomyConfig, _ := LoadAutonomyConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
 	conf := KusciaConfig{
 		RunMode: common.RunModeAutonomy,
@@ -240,7 +240,7 @@ func TestLiteOverwriteKusciaConfig(t *testing.T) {
 	filename := filepath.Join(dir, "kuscia.yaml")
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 
-	liteConfig := LoadLiteConfig(filename)
+	liteConfig, _ := LoadLiteConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
 	conf := KusciaConfig{
 		RunMode: mode,
@@ -304,7 +304,7 @@ func TestMasterOverwriteKusciaConfig(t *testing.T) {
 	filename := filepath.Join(dir, "kuscia.yaml")
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 
-	liteConfig := LoadMasterConfig(filename)
+	liteConfig, _ := LoadMasterConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
 	conf := KusciaConfig{
 		RunMode: mode,

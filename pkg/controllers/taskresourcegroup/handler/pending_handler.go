@@ -116,8 +116,7 @@ func setTaskResourceName(kusciaClient kusciaclientset.Interface, trg *kusciaapis
 		return false, nil
 	}
 
-	copyTrg := trg.DeepCopy()
-	for i, copyTrg := 0, copyTrg; ; i++ {
+	for i, copyTrg := 0, trg.DeepCopy(); ; i++ {
 		nlog.Infof("Start updating task resource group %q spec parties info", copyTrg.Name)
 		_, err = kusciaClient.KusciaV1alpha1().TaskResourceGroups().Update(context.Background(), copyTrg, metav1.UpdateOptions{})
 		if err == nil {

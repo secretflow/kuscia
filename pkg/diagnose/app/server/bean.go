@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -34,7 +35,7 @@ import (
 )
 
 type HTTPServerBean struct {
-	config        *DiagnoseAPIConfig
+	Config        *DiagnoseAPIConfig
 	serverGinBean *beans.GinBean
 	Service       *DiagnoseService
 }
@@ -47,16 +48,20 @@ type DiagnoseAPIConfig struct {
 	IdleTimeout  int
 }
 
-func NewHTTPServerBean(port int) *HTTPServerBean { // nolint: golint
+const (
+	DIAGNOSE_SERVER_PORT = 8095
+)
+
+func NewHTTPServerBean() *HTTPServerBean { // nolint: golint
 	config := new(DiagnoseAPIConfig)
-	config.HTTPPort = int32(port)
+	config.HTTPPort = DIAGNOSE_SERVER_PORT
 	return &HTTPServerBean{
-		config: config,
+		Config: config,
 		serverGinBean: &beans.GinBean{
 			ConfigLoader: &frameworkconfig.FlagEnvConfigLoader{
 				Source: frameworkconfig.SourceEnv,
 			},
-			Port:          port,
+			Port:          DIAGNOSE_SERVER_PORT,
 			Debug:         config.Debug,
 			GinBeanConfig: convertToGinConf(config),
 		},
@@ -80,7 +85,7 @@ func convertToGinConf(conf *DiagnoseAPIConfig) beans.GinBeanConfig {
 }
 
 func (s *HTTPServerBean) Init(e framework.ConfBeanRegistry) error {
-	if s.config.Debug {
+	if s.Config.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -120,23 +125,13 @@ func (s *HTTPServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: common.DiagnoseRegisterEndpointPath,
-					Handlers:     []gin.HandlerFunc{s.Service.RegisterEndpoint},
-				},
-				{
-					HTTPMethod:   http.MethodPost,
 					RelativePath: common.DiagnoseSubmitReportPath,
 					Handlers:     []gin.HandlerFunc{s.Service.SubmitReport},
 				},
 				{
-					HTTPMethod:   http.MethodPost,
+					HTTPMethod:   http.MethodGet,
 					RelativePath: common.DiagnoseHealthyPath,
-					Handlers:     []gin.HandlerFunc{s.Service.Heahlty},
-				},
-				{
-					HTTPMethod:   http.MethodPost,
-					RelativePath: common.DiagnoseDonePath,
-					Handlers:     []gin.HandlerFunc{s.Service.Done},
+					Handlers:     []gin.HandlerFunc{s.Service.Healthy},
 				},
 			},
 		},
@@ -186,21 +181,6 @@ func (s *HTTPServerBean) WaitClose(ctx context.Context) {
 			return
 		case <-ctx.Done():
 			return
-		}
-	}
-}
-
-func (s *HTTPServerBean) WaitClient(ctx context.Context) string {
-	ticker := time.NewTicker(5 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			if s.Service.CanStartClient {
-				nlog.Infof("Received startClient signal")
-				return s.Service.PeerEndpoint
-			}
-		case <-ctx.Done():
-			return ""
 		}
 	}
 }

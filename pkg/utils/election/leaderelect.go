@@ -104,7 +104,6 @@ type k8sElector struct {
 	leaderID      atomic.String
 	isLeader      atomic.Bool
 	leaderElector *leaderelection.LeaderElector
-	chStopped     chan struct{}
 }
 
 func (e *k8sElector) IsLeader() bool {

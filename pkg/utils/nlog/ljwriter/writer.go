@@ -80,7 +80,13 @@ type Writer struct {
 	logger   *lumberjack.Logger
 }
 
-// New creates a new writer with config.
+func (w *Writer) ChangeLogLevel(newLevel string) error {
+
+	nlog.Debugf("[lumberjack] change log level to %s", newLevel)
+	return nil
+}
+
+// New creates a new lumberjack writer with config.
 func New(config *nlog.LogConfig) (*Writer, error) {
 	if config.LogLevel == "" {
 		config.LogLevel = "info"
@@ -90,74 +96,68 @@ func New(config *nlog.LogConfig) (*Writer, error) {
 	}
 
 	return &Writer{
-		logger: &lumberjack.Logger{
-			Filename:   config.LogPath,
-			MaxSize:    config.MaxFileSizeMB, // megabytes
-			MaxBackups: config.MaxFiles,
-			Compress:   config.Compress,
-			LocalTime:  true,
-		},
+		logger:   nlog.BasicLumberjackLogger(config),
 		logLevel: levelMap[config.LogLevel],
 	}, nil
 }
 
 func (w *Writer) Infof(format string, args ...interface{}) {
 	if w.logLevel <= InfoLevel {
-		w.logger.Write([]byte(fmt.Sprintf(format, args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprintf(format, args...)))
 	}
 }
 
 func (w *Writer) Info(args ...interface{}) {
 	if w.logLevel <= InfoLevel {
-		w.logger.Write([]byte(fmt.Sprint(args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprint(args...)))
 	}
 }
 
 func (w *Writer) Debugf(format string, args ...interface{}) {
 	if w.logLevel <= DebugLevel {
-		w.logger.Write([]byte(fmt.Sprintf(format, args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprintf(format, args...)))
 	}
 }
 
 func (w *Writer) Debug(args ...interface{}) {
 	if w.logLevel <= DebugLevel {
-		w.logger.Write([]byte(fmt.Sprint(args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprint(args...)))
 	}
 }
 
 func (w *Writer) Warnf(format string, args ...interface{}) {
 	if w.logLevel <= WarnLevel {
-		w.logger.Write([]byte(fmt.Sprintf(format, args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprintf(format, args...)))
 	}
 }
 func (w *Writer) Warn(args ...interface{}) {
 	if w.logLevel <= WarnLevel {
-		w.logger.Write([]byte(fmt.Sprint(args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprint(args...)))
 	}
 }
 
 func (w *Writer) Errorf(format string, args ...interface{}) {
 	if w.logLevel <= ErrorLevel {
-		w.logger.Write([]byte(fmt.Sprintf(format, args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprintf(format, args...)))
 	}
 }
 
 func (w *Writer) Error(args ...interface{}) {
 	if w.logLevel <= ErrorLevel {
-		w.logger.Write([]byte(fmt.Sprint(args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprint(args...)))
 	}
 }
 
 func (w *Writer) Fatalf(format string, args ...interface{}) {
 	if w.logLevel <= FatalLevel {
-		w.logger.Write([]byte(fmt.Sprintf(format, args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprintf(format, args...)))
 	}
 	os.Exit(1)
 }
 
 func (w *Writer) Fatal(args ...interface{}) {
 	if w.logLevel <= FatalLevel {
-		w.logger.Write([]byte(fmt.Sprint(args...)))
+		_, _ = w.logger.Write([]byte(fmt.Sprint(args...)))
 	}
 	os.Exit(1)
 }

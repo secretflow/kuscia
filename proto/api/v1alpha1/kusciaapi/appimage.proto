@@ -133,7 +133,7 @@ message QueryAppImageRequest {
 message BatchQueryAppImageRequest {
   RequestHeader header = 1;
   repeated string names = 2;
-}
+} 
 
 message QueryAppImageResponse {
   Status status = 1;

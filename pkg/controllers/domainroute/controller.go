@@ -77,7 +77,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	}
 
 	c.ctx, c.cancel = context.WithCancel(ctx)
-	gatewayInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = gatewayInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(newOne interface{}) {
 				newGateway, ok := newOne.(*kusciaapisv1alpha1.Gateway)
@@ -92,7 +92,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	)
 
 	// Set up an event handler for when DomainRoute resources change
-	domainRouteInformer.Informer().AddEventHandler(
+	_, _ = domainRouteInformer.Informer().AddEventHandler(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(newone interface{}) {
 				newDr, ok := newone.(*kusciaapisv1alpha1.DomainRoute)
@@ -183,7 +183,7 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 		return nil
 	}
 
-	if err := DoValidate(&dr.Spec); err != nil {
+	if err = DoValidate(&dr.Spec); err != nil {
 		nlog.Error(err.Error())
 		return nil
 	}
@@ -200,8 +200,8 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 			if c.needRollingToNext(ctx, dr) {
 				return c.preRollingSourceDomainRoute(ctx, dr)
 			}
-			if hasUpdate, err := c.ensureInitializer(ctx, dr); err != nil || hasUpdate {
-				return err
+			if hasUpdate, ensureErr := c.ensureInitializer(ctx, dr); ensureErr != nil || hasUpdate {
+				return ensureErr
 			}
 
 			if dr.Status.TokenStatus.RevisionToken.IsReady {
@@ -224,7 +224,7 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 					return err
 				}
 			}
-			c.postRollingDestinationDomainRoute(ctx, dr)
+			_ = c.postRollingDestinationDomainRoute(ctx, dr)
 		}
 	}
 	return nil

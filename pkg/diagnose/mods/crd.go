@@ -20,16 +20,17 @@ import (
 	"fmt"
 	"net/http"
 
+	"google.golang.org/grpc"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	util "github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	"google.golang.org/grpc"
 )
 
 type CRDItem struct {
-	name        string
 	source      string
 	destination string
 	typ         string
@@ -50,7 +51,7 @@ func NewCRDMod(crdItem []*CRDItem, reporter *util.Reporter, kusciaAPIConn *grpc.
 }
 
 func (m *CRDMod) Run(ctx context.Context) error {
-	PrintToConsole("diagnose crd config\n")
+	nlog.Infof("diagnose crd config")
 	m.table.SetTitle("CRD CONFIG CHECK:")
 	m.table.AddHeader([]string{"NAME", "TYPE", "RESULT", "INFORMATION"})
 	var ret error
@@ -117,7 +118,7 @@ func (m *CRDMod) OnFailure(item *CRDItem, message string) error {
 		common.Fail,
 		message,
 	})
-	return fmt.Errorf(message)
+	return fmt.Errorf("%s", message)
 }
 
 func (m *CRDMod) CheckConnection(domainroute *kusciaapi.QueryDomainRouteResponseData, item *CRDItem) error {

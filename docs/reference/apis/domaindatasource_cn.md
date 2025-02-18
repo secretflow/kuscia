@@ -1,8 +1,7 @@
 # DomainDataSource
 
 DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource](../concepts/domaindatasource_cn.md)。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto) 找到对应的 protobuf 文件。
-
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -15,14 +14,13 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 | [BatchQueryDomainDataSource](#batch-query-domain-data-source) | BatchQueryDomainDataSourceRequest | BatchQueryDomainDataSourceResponse | 批量查询数据源        |
 | [ListDomainDataSource](#list-domain-data-source)              | ListDomainDataSourceRequest       | ListDomainDataSourceResponse       | 列出Domain下全部数据源 |
 
-
 ## 接口详情
 
 {#create-domain-data-source}
 
 ### 创建数据源
 
-如果创建的数据源是为了DataMesh（DataProxy）使用，需要确保数据源的配置满足一定的权限要求。详情请见[DataMesh数据读写-注意事项](./datamesh/datacrud_cn.md#注意事项)
+如果创建的数据源是为了DataMesh（DataProxy）使用，需要确保数据源的配置满足一定的权限要求。详情请见 [DataMesh数据读写-注意事项](./datamesh/datacrud_cn.md#注意事项)
 
 #### HTTP 路径
 
@@ -105,7 +103,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
 #         "virtualhost": true (阿里云 OSS 需要配置此项)
-          "storage_type": "oss" (oss/minio)
       }
   },
   "access_directly": true
@@ -389,7 +386,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/query' \
 }
 ```
 
-
 {#batch-query-domain-data-source}
 
 ### 批量查询数据源
@@ -482,9 +478,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/batchQuery' \
           "prefix": "kuscia/",
           "access_key_id": "ak-xxxx",
           "access_key_secret": "sk-xxxx",
-          "virtualhost": false,
-          "version": "",
-          "storage_type": ""
+          "virtualhost": true,
+          "version": ""
         },
         "database": null
       },
@@ -592,9 +587,8 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
           "prefix": "kuscia/",
           "access_key_id": "ak-xxxx",
           "access_key_secret": "sk-xxxx",
-          "virtualhost": false,
-          "version": "",
-          "storage_type": ""
+          "virtualhost": true,
+          "version": ""
         },
         "database": null
       },
@@ -669,15 +663,13 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 
 | 字段                | 类型     | 选填 | 描述                                                                               |
 |-------------------|--------|----|----------------------------------------------------------------------------------|
-| endpoint          | string | 必填 | 对象存储系统的链接地址，如: https://oss.xxx.cn-xxx.com 或 http://127.0.0.1:9000                |
+| endpoint          | string | 必填 | 对象存储系统的链接地址，如: <https://oss.xxx.cn-xxx.com> 或 <http://127.0.0.1:9000>                |
 | bucket            | string | 必填 | 对象存储系统桶 bucket 名称                                                                |
 | prefix            | string | 选填 | 存储系统的路径前缀，可不填，当需要通过路径前缀prefix隔离区分不同数据文件时填写，如：data/traindata/ 或 data/predictdata/ |
 | access_key_id     | string | 必填 | 访问 OSS 所需的 AK                                                                    |
 | access_key_secret | string | 必填 | 访问 OSS 所需的 SK                                                                    |
-| virtualhost       | bool   | 选填 | 阿里云 OSS 时使用，同阿里云 OSS 中的 virtualhost 定义                                           |
+| virtualhost       | bool   | 选填 | 若为阿里云 OSS 需要设置 virtualhost=true，[详见文档](https://help.aliyun.com/zh/oss/developer-reference/overview-24?scm=20140722.S_help%40%40%E6%96%87%E6%A1%A3%40%40375247.S_RQW%40ag0%2BBB2%40ag0%2BBB1%40ag0%2Bos0.ID_375247-RL_virtualhost-LOC_doc%7EUND%7Eab-OR_ser-V_4-P0_1&spm=a2c4g.11186623.0.i3) 。                                           |
 | version           | string | 选填 | AWS S3 协议版本号，可不填                                                                 |
-| storage_type      | string | 选填 | 存储系统类型，如 OSS， Minio；支持标准 AWS S3 的对象存储系统可不填                                       |
-
 
 {#database-data-source-info}
 
@@ -696,7 +688,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 
 | 字段                | 类型     | 选填 | 描述                                 |
 |-------------------|--------|----|------------------------------------|
-| endpoint          | string | 必填 | 服务地址，如: http://service.xxx.com/api |
+| endpoint          | string | 必填 | 服务地址，如: <http://service.xxx.com/api> |
 | access_key_id     | string | 必填 | 访问 ODPS 所需的 AK                     |
 | access_key_secret | string | 必填 | 访问 ODPS 所需的 SK                     |
 | project           | string | 必填 | 访问 ODPS 的项目                        |

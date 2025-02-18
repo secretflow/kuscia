@@ -1,0 +1,177 @@
+# Copyright 2025 Ant Group Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-year: '2025'
+    copyright-owner: Ant Group Co., Ltd.
+    software-name: Kuscia
+
+    # only fix use.
+    content: |
+      Copyright 2025 Ant Group Co., Ltd.
+
+      Licensed under the Apache License, Version 2.0 (the "License");
+      you may not use this file except in compliance with the License.
+      You may obtain a copy of the License at
+
+          https://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      See the License for the specific language governing permissions and
+      limitations under the License.
+
+    pattern: |
+      Licensed under the Apache License, Version 2.0 \(the "License"\);
+      you may not use this file except in compliance with the License.
+      You may obtain a copy of the License at
+
+          http[s]?://www\.apache\.org/licenses/LICENSE-2\.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      See the License for the specific language governing permissions and
+      limitations under the License.
+
+  paths:
+    - '**'
+
+  paths-ignore:
+    - '.VERSION'
+    - '.bazelversion'
+
+    - 'licenses'
+    - 'OWNERS'
+    - 'WORKSPACE'
+    - 'LICENSE'
+    - 'NOTICE'
+    - 'go.mod'
+    - 'go.sum'
+
+    - '**/*.md'
+    - '**/*.json'
+    - '**/*.csv'
+    - '**/*.txt'
+    - '**/*.rst'
+    - '**/*.yaml'
+    - '**/*.yml'
+    - '**/*.tmpl'
+    - '**/*.toml'
+    - '**/*.excalidraw'
+    - '**/*.conf'
+    - '**/*.Dockerfile'
+
+    - 'etc/conf/corefile'
+    - 'etc/cni/net.d/10-containerd-net.conflist'
+
+    - 'hack/k3s/Makefile.rebuild_k3s'
+    - 'hack/proot/patch/path.patch'
+
+    - 'scripts/python/mockapp/Dockerfile'
+    - 'scripts/test/vendor/shunit2'
+    - 'scripts/linter/codespell/.codespell.ignorewords'
+    - 'scripts/linter/codespell/.codespell.skip'
+
+    - 'thirdparty/fate/build/dockerfile/etc/sudoers.d/app'
+
+    - 'pkg/agent/container/testing/mock_runtime_cache.go'
+    - 'pkg/agent/framework/net/ip.go'
+    - 'pkg/agent/framework/net/parse.go'
+    - 'pkg/controllers/kusciajob/handler/initialized.go'
+    - 'pkg/coredns/handler.go'
+    - 'pkg/coredns/xfr.go'
+    - 'pkg/diagnose/app/server/bean_test.go'
+    - 'pkg/gateway/utils/http_test.go'
+    - 'pkg/transport/proto/mesh/mesh.x_grpc.pb.go'
+    - 'pkg/transport/proto/mesh/mesh.y_grpc.pb.go'
+    - 'pkg/utils/datastore/datastore_endpoint_check.go'
+    - 'proto/api/v1alpha1/kusciaapi/domaindatagrant.pb.go'
+    - 'proto/api/v1alpha1/kusciaapi/domaindatagrant.proto'
+    - 'proto/api/v1alpha1/kusciaapi/domaindatagrant_grpc.pb.go'
+
+    - 'python/MANIFEST.in'
+    - 'python/generate_py_protobufs.py'
+    - 'python/kuscia/proto/api/v1/interconn/common_pb2.py'
+    - 'python/kuscia/proto/api/v1/interconn/common_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1/interconn/job_pb2.py'
+    - 'python/kuscia/proto/api/v1/interconn/job_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1/interconn/task_pb2.py'
+    - 'python/kuscia/proto/api/v1/interconn/task_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/domain_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/domain_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/domain_route_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/domain_route_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/health_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/health_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/job_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/apilite/job_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/appconfig/app_config_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/appconfig/app_config_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/common_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/common_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/confmanager/certificate_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/confmanager/certificate_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/confmanager/configuration_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/confmanager/configuration_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/domaindata_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/domaindata_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/domaindatagrant_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/domaindatagrant_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/domaindatasource_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/domaindatasource_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/flightdm_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/flightdm_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/flightinner_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/datamesh/flightinner_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/errorcode/error_code_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/errorcode/error_code_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/handshake/handshake_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/handshake/handshake_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/certificate_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/certificate_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domain_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domain_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domain_route_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domain_route_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domaindata_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domaindata_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domaindatagrant_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domaindatagrant_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domaindatasource_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/domaindatasource_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/health_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/health_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/job_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/job_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/serving_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciaapi/serving_pb2_grpc.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciatask/kuscia_task_pb2.py'
+    - 'python/kuscia/proto/api/v1alpha1/kusciatask/kuscia_task_pb2_grpc.py'
+
+
+  comment: never
+
+  language:
+    Go:
+      extensions:
+        - ".go"
+      comment_style_id: DoubleSlash
+
+dependency:
+  files:
+    - go.mod

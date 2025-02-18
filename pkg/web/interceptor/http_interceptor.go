@@ -150,7 +150,7 @@ func HTTPTokenAuthInterceptor(tokenData string) func(c *gin.Context) {
 		token := c.GetHeader(constants.TokenHeader)
 		err := tokenCheck([]string{token}, tokenData)
 		if err != nil {
-			c.AbortWithError(http.StatusUnauthorized, err)
+			_ = c.AbortWithError(http.StatusUnauthorized, err)
 			return
 		}
 		c.Next()
@@ -170,7 +170,7 @@ func HTTPSourceAuthInterceptor() func(c *gin.Context) {
 		source := c.GetHeader(constants.SourceDomainHeader)
 		if source == "" {
 			err := status.Errorf(codes.Unauthenticated, "source domain header not found")
-			c.AbortWithError(http.StatusUnauthorized, err)
+			_ = c.AbortWithError(http.StatusUnauthorized, err)
 			return
 		}
 		c.Set(constants.AuthRole, constants.AuthRoleDomain)

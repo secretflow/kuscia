@@ -16,16 +16,19 @@ package diagnose
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/secretflow/kuscia/cmd/kuscia/modules"
+	"github.com/spf13/cobra"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/netstat"
-	"github.com/secretflow/kuscia/pkg/diagnose/app/server"
 	"github.com/secretflow/kuscia/pkg/diagnose/mods"
+	util "github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"github.com/spf13/cobra"
+)
+
+const (
+	SubCMDClusterDomainRoute = "cdr"
+	SubCMDNetwork            = "network"
 )
 
 func NewDiagnoseCommand(ctx context.Context) *cobra.Command {
@@ -36,20 +39,20 @@ func NewDiagnoseCommand(ctx context.Context) *cobra.Command {
 	}
 	cmd.AddCommand(NewCDRCommand(ctx))
 	cmd.AddCommand(NewNeworkCommand(ctx))
-	cmd.AddCommand(NewAppCommand(ctx))
 	return cmd
 }
 
 func NewCDRCommand(ctx context.Context) *cobra.Command {
 	param := new(mods.DiagnoseConfig)
+	param.NetworkParam = new(netstat.NetworkParam)
 	cmd := &cobra.Command{
-		Use:          modules.SubCMDClusterDomainRoute,
+		Use:          SubCMDClusterDomainRoute,
 		Short:        "Diagnose the effectiveness of domain route",
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			param.Source, param.Destination = args[0], args[1]
-			param.Command = modules.SubCMDClusterDomainRoute
+			param.Command = SubCMDClusterDomainRoute
 			return RunToolCommand(ctx, param)
 		},
 	}
@@ -64,21 +67,21 @@ func NewCDRCommand(ctx context.Context) *cobra.Command {
 	cmd.Flags().IntVar(&param.ProxyTimeoutThres, "proxy-timeout-threshold", netstat.DefaultProxyTimeoutThreshold, "Proxy timeout threshold, unit ms")
 	cmd.Flags().IntVar(&param.SizeThres, "request-size-threshold", netstat.DefaultRequestBodySizeThreshold, "Request size threshold, unit MB")
 
-	cmd.Flags().BoolVarP(&param.Manual, "manual", "m", false, "Initialize server/client manually")
-	cmd.Flags().StringVarP(&param.PeerEndpoint, "endpoint", "e", "", "Peer Endpoint, only effective in manual mode")
 	return cmd
 }
 
 func NewNeworkCommand(ctx context.Context) *cobra.Command {
 	param := new(mods.DiagnoseConfig)
+	param.NetworkParam = new(netstat.NetworkParam)
+
 	cmd := &cobra.Command{
-		Use:          modules.SubCMDNetwork,
+		Use:          SubCMDNetwork,
 		Short:        "Diagnose the status of network between domains",
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			param.Source, param.Destination = args[0], args[1]
-			param.Command = modules.SubCMDNetwork
+			param.Command = SubCMDNetwork
 			return RunToolCommand(ctx, param)
 		},
 	}
@@ -94,89 +97,30 @@ func NewNeworkCommand(ctx context.Context) *cobra.Command {
 	cmd.Flags().IntVar(&param.SizeThres, "request-size-threshold", netstat.DefaultRequestBodySizeThreshold, "Request size threshold, unit MB")
 
 	cmd.Flags().BoolVarP(&param.Bidirection, "bidirection", "b", true, "Execute bidirection test")
-	cmd.Flags().BoolVarP(&param.Manual, "manual", "m", false, "Initialize server/client manually")
-	cmd.Flags().StringVarP(&param.PeerEndpoint, "endpoint", "e", "", "Peer Endpoint, only effective in manual mode")
 	return cmd
 }
 
 func RunToolCommand(ctx context.Context, config *mods.DiagnoseConfig) error {
-	fmt.Printf("Diagnose Config:\n%v\n", config)
-	m := modules.NewDiagnose(config)
-	m.Run(ctx)
-	return nil
-}
-
-func NewAppCommand(ctx context.Context) *cobra.Command {
-	configFile := ""
-	cmd := &cobra.Command{
-		Use:          modules.SubCMDAPP,
-		Short:        "Mock appliction for network diagnose",
-		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunAppCommand(ctx, configFile)
-		},
-	}
-	cmd.Flags().StringVarP(&configFile, "conf", "c", "/etc/kuscia/task-config.conf", "config path")
-
-	return cmd
-}
-
-func RunAppCommand(ctx context.Context, configFile string) error {
-	nlog.Infof("Run net stat, configFile: %v", configFile)
-	// parse config file
-	config, err := ParseConfig(configFile)
+	nlog.Infof("Diagnose Config:\n%v", config)
+	// mod init
+	reporter := util.NewReporter(config.ReportFile)
+	defer func() {
+		reporter.Render()
+		reporter.Close()
+	}()
+	kusciaAPIConn, err := client.NewKusciaAPIConn()
 	if err != nil {
-		return err
+		nlog.Fatalf("init kuscia api conn failed, %v", err)
 	}
-	nlog.Infof("Net stat config: %+v", config)
-
-	// init server
-	nlog.Infof("Init server")
-	diagnoseServer := server.NewHTTPServerBean(config.ServerPort)
-	go diagnoseServer.Run(ctx)
-
-	// init client
-	var needRegister bool
-	// if the node doesn't know its peer's endpoint, wait for peer to register the endpint.
-	// otherwise the node resgisters its own endpoint to peer in manual mode.
-	// this is based on the fact in manual mode that there must be one node which doesn't know its peer's endpoint due to network issue
-	if config.PeerEndpoint == "" {
-		nlog.Infof("Wait for peer to register endpoint")
-		config.PeerEndpoint = diagnoseServer.WaitClient(ctx)
-		if config.PeerEndpoint == "" {
-			return fmt.Errorf("wait client received context done")
-		}
-	} else {
-		needRegister = config.Manual
+	var mod mods.Mod
+	switch config.Command {
+	case SubCMDNetwork:
+		mod = mods.NewNetworkMod(reporter, kusciaAPIConn, config)
+	case SubCMDClusterDomainRoute:
+		mod = mods.NewDomainRouteMod(reporter, kusciaAPIConn, config)
+	default:
+		nlog.Errorf("invalid support subcmd")
+		return nil
 	}
-	nlog.Infof("Init Client")
-	cli := client.NewDiagnoseClient(config.PeerEndpoint)
-	if needRegister {
-		nlog.Infof("Register Endpoint %s to peer", config.PeerEndpoint)
-		registerEndpointReq := new(diagnose.RegisterEndpointRequest)
-		registerEndpointReq.Endpoint = config.SelfEndpoint
-		if _, err := cli.RegisterEndpoint(ctx, registerEndpointReq); err != nil {
-			nlog.Errorf("Register endpoint failed, %v", err)
-			return err
-		}
-	}
-
-	// net test
-	nlog.Infof("Run netstat test")
-	taskGroup := netstat.NewTaskGroup(diagnoseServer, cli, config)
-	if err := taskGroup.Start(ctx); err != nil {
-		nlog.Errorf("Taskgroup failed, %v", err)
-		return err
-	}
-
-	// send done signal to peer
-	nlog.Infof("Send done signal to peer")
-	if _, err := cli.Done(ctx); err != nil {
-		nlog.Warnf("Send done signal failed, the server of other party may not close, error: %v", err)
-	}
-
-	// close server
-	nlog.Infof("Close apps")
-	diagnoseServer.WaitClose(ctx)
-	return nil
+	return mod.Run(ctx)
 }

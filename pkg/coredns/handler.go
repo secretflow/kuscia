@@ -74,7 +74,7 @@ func (e *KusciaCoreDNS) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *d
 	m.Answer = append(m.Answer, records...)
 	m.Extra = append(m.Extra, extra...)
 
-	w.WriteMsg(m)
+	_ = w.WriteMsg(m)
 	return dns.RcodeSuccess, nil
 }
 

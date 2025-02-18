@@ -35,7 +35,7 @@ import (
 const (
 	defaultLogsPath            = "var/logs"
 	defaultStdoutPath          = "var/stdout"
-	defaultLocalImageRootDir   = "var/images"
+	defaultLocalImagePath      = "var/images"
 	defaultLocalSandboxRootDir = "sandbox"
 
 	defaultK8sClientMaxQPS = 250
@@ -50,6 +50,7 @@ const (
 	DefaultLogRotateMaxFiles   = 5
 	DefaultLogRotateMaxSize    = 512
 	DefaultLogRotateMaxSizeStr = "512Mi"
+	DefaultLogRotateMaxAgeDays = 30
 )
 
 const (
@@ -246,8 +247,9 @@ type AgentConfig struct {
 	Head bool `yaml:"head"`
 
 	// path configuration.
-	LogsPath   string `yaml:"logsPath,omitempty"`
-	StdoutPath string `yaml:"stdoutPath,omitempty"`
+	LogsPath         string `yaml:"logsPath,omitempty"`
+	StdoutPath       string `yaml:"stdoutPath,omitempty"`
+	StdoutGCDuration time.Duration
 
 	KusciaAPIProtocol common.Protocol
 	// Todo: temporary solution for scql
@@ -277,12 +279,12 @@ type AgentConfig struct {
 
 func DefaultStaticAgentConfig() *AgentConfig {
 	return &AgentConfig{
-		RootDir: common.DefaultKusciaHomePath,
+		RootDir: common.DefaultKusciaHomePath(),
 
 		LogsPath:   defaultLogsPath,
 		StdoutPath: defaultStdoutPath,
 
-		DiskPressurePath: path.Join(common.DefaultKusciaHomePath, common.DefaultDomainDataSourceLocalFSPath),
+		DiskPressurePath: path.Join(common.DefaultKusciaHomePath(), common.DefaultDomainDataSourceLocalFSPath),
 
 		Capacity: CapacityCfg{
 			Pods: defaultPodsCapacity,
@@ -317,8 +319,8 @@ func DefaultStaticAgentConfig() *AgentConfig {
 		Provider: ProviderCfg{
 			Runtime: ContainerRuntime,
 			CRI: CRIProviderCfg{
-				RemoteRuntimeEndpoint: defaultCRIRemoteEndpoint,
-				RemoteImageEndpoint:   defaultCRIRemoteEndpoint,
+				RemoteRuntimeEndpoint: common.DefaultCRIRemoteEndpoint(),
+				RemoteImageEndpoint:   common.DefaultCRIRemoteEndpoint(),
 				RuntimeRequestTimeout: 2 * time.Minute,
 				ContainerLogMaxSize:   DefaultLogRotateMaxSizeStr,
 				ContainerLogMaxFiles:  DefaultLogRotateMaxFiles,
@@ -327,7 +329,7 @@ func DefaultStaticAgentConfig() *AgentConfig {
 				ResolverConfig:        defaultResolvConfig,
 				LocalRuntime: LocalRuntimeCfg{
 					SandboxRootDir: defaultLocalSandboxRootDir,
-					ImageRootDir:   defaultLocalImageRootDir,
+					ImageRootDir:   path.Join(common.DefaultKusciaHomePath(), defaultLocalImagePath),
 				},
 			},
 		},
@@ -366,7 +368,7 @@ func DefaultAgentConfig(rootDir string) *AgentConfig {
 		config.Node.NodeName = hostname
 	}
 	if err := resources.ValidateK8sName(config.Node.NodeName, "node_id"); err != nil {
-		nlog.Fatalf(err.Error())
+		nlog.Fatalf("%s", err.Error())
 	}
 	return config
 }
@@ -386,7 +388,7 @@ func LoadOverrideConfig(config *AgentConfig, configPath string) (*AgentConfig, e
 
 // LoadAgentConfig loads the given json configuration files.
 func LoadAgentConfig(configPath string) (*AgentConfig, error) {
-	config, err := LoadOverrideConfig(DefaultAgentConfig(common.DefaultKusciaHomePath), configPath)
+	config, err := LoadOverrideConfig(DefaultAgentConfig(common.DefaultKusciaHomePath()), configPath)
 	if err != nil {
 		return nil, err
 	}
@@ -421,5 +423,5 @@ func LoadAgentConfig(configPath string) (*AgentConfig, error) {
 }
 
 func DefaultImageStoreDir() string {
-	return defaultLocalImageRootDir
+	return path.Join(common.DefaultKusciaHomePath(), defaultLocalImagePath)
 }

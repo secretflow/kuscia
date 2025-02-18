@@ -129,7 +129,7 @@ func (c *Controller) processJobStatusSyncNextWorkItem(ctx context.Context) bool 
 		return true
 	}
 
-	c.inflightRequestCache.Add(cacheKey, "", jobStatusSyncInterval)
+	_ = c.inflightRequestCache.Add(cacheKey, "", jobStatusSyncInterval)
 
 	kj := rawKj.DeepCopy()
 	now := metav1.Now().Rfc3339Copy()
@@ -259,7 +259,7 @@ func (c *Controller) createJob(ctx context.Context, kj *kusciaapisv1alpha1.Kusci
 	}
 
 	cacheKeyName := getCacheKeyName(reqTypeCreateJob, resourceTypeKusciaJob, kj.Name)
-	c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
+	_ = c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
 
 	var wg sync.WaitGroup
 	var errs errorcode.Errs
@@ -310,7 +310,7 @@ func (c *Controller) stopJob(ctx context.Context, kj *kusciaapisv1alpha1.KusciaJ
 
 	nlog.Infof("Stop job %v", kj.Name)
 	cacheKeyName := getCacheKeyName(reqTypeStopJob, resourceTypeKusciaJob, kj.Name)
-	c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
+	_ = c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
 
 	var wg sync.WaitGroup
 	var errs errorcode.Errs
@@ -353,7 +353,7 @@ func (c *Controller) stopPartyTasks(ctx context.Context, kj *kusciaapisv1alpha1.
 	}
 
 	cacheKeyName := getCacheKeyName(reqTypeStopTask, resourceTypeKusciaJob, kj.Name)
-	c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
+	_ = c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
 
 	taskDomainStopMap := make(map[string]map[string]string)
 	for taskID, phase := range kj.Status.TaskStatus {
@@ -405,7 +405,7 @@ func (c *Controller) stopPartyTasks(ctx context.Context, kj *kusciaapisv1alpha1.
 			}
 
 			if needUpdate {
-				c.updatePartyTaskStatus(copyTask)
+				_ = c.updatePartyTaskStatus(copyTask)
 			}
 		}
 	}(cacheKeyName)
@@ -433,7 +433,7 @@ func (c *Controller) startJob(ctx context.Context, kj *kusciaapisv1alpha1.Kuscia
 
 	nlog.Infof("Start job %v", kj.Name)
 	cacheKeyName := getCacheKeyName(reqTypeStartJob, resourceTypeKusciaJob, kj.Name)
-	c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
+	_ = c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
 
 	var wg sync.WaitGroup
 	var errs errorcode.Errs
@@ -495,24 +495,24 @@ func (c *Controller) getReqDomainIDFromKusciaJob(kj *kusciaapisv1alpha1.KusciaJo
 }
 
 // updateJobStatus updates job status.
-func (c *Controller) updateJobStatus(curJob *kusciaapisv1alpha1.KusciaJob, taskStatusUpdated, condUpdated bool) (err error) {
+func (c *Controller) updateJobStatus(kj *kusciaapisv1alpha1.KusciaJob, taskStatusUpdated, condUpdated bool) (err error) {
 	var originalTaskStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase
 	if taskStatusUpdated {
 		originalTaskStatus = make(map[string]kusciaapisv1alpha1.KusciaTaskPhase)
-		for k, v := range curJob.Status.TaskStatus {
+		for k, v := range kj.Status.TaskStatus {
 			originalTaskStatus[k] = v
 		}
 	}
 
 	var originalConds []kusciaapisv1alpha1.KusciaJobCondition
 	if condUpdated {
-		for idx := range curJob.Status.Conditions {
-			originalConds = append(originalConds, *curJob.Status.Conditions[idx].DeepCopy())
+		for idx := range kj.Status.Conditions {
+			originalConds = append(originalConds, *kj.Status.Conditions[idx].DeepCopy())
 		}
 	}
 
-	jobName := curJob.Name
-	for i, curJob := 0, curJob; ; i++ {
+	jobName := kj.Name
+	for i, curJob := 0, kj; ; i++ {
 		nlog.Infof("Start updating kuscia job %q status", jobName)
 		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(curJob.Namespace).UpdateStatus(context.Background(), curJob, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia job %q status", jobName)

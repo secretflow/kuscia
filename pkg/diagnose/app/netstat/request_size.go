@@ -17,12 +17,13 @@ package netstat
 import (
 	"fmt"
 
+	"golang.org/x/net/context"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/math"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -54,8 +55,7 @@ func NewReqSizeTask(client *client.Client, threshold int) Task {
 }
 
 func (t *ReqSizeTask) Run(ctx context.Context) {
-	nlog.Infof("Run %v task, threshold: %v", t.Name(), t.threshold)
-	defer nlog.Infof("Task %v done, output: %+v", t.Name(), t.output)
+	nlog.Infof("Run %v task, threshold: %v", t.Name(), t.output.Threshold)
 	testcases := make([]int, 0)
 	for i := MinRequestBodySize; i < t.threshold; i = i * 2 {
 		testcases = append(testcases, i)

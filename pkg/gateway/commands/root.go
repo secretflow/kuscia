@@ -27,6 +27,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/diagnose/app/server"
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/controller"
@@ -68,7 +69,8 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 
 	if isMaster {
 		// add master config
-		masterConfig, err := config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
+		var err error
+		masterConfig, err = config.LoadMasterConfig(gwConfig.MasterConfig, clients.Kubeconfig)
 		if err != nil {
 			return fmt.Errorf("failed to load masterConfig, detail-> %v", err)
 		}
@@ -136,6 +138,13 @@ func Run(ctx context.Context, gwConfig *config.GatewayConfig, clients *kubeconfi
 	}
 	go ec.Run(concurrentSyncs, ctx.Done())
 
+	// add diagnose cluster
+	err = ec.AddEnvoyCluster(gwConfig.DomainID, "diagnose", xds.ProtocolHTTP, map[string][]uint32{"127.0.0.1": {server.DIAGNOSE_SERVER_PORT}}, "", nil)
+	if err != nil {
+		nlog.Errorf("failed to add diagnose cluster, detail-> %v", err)
+		return fmt.Errorf("failed to add diagnose cluster, detail-> %v", err)
+	}
+
 	// start DomainRoute controller
 	drInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainRoutes()
 	drConfig := &controller.DomainRouteConfig{
@@ -195,7 +204,7 @@ func ConnectToMaster(ctx context.Context, gwConfig *config.GatewayConfig, client
 		return nil, fmt.Errorf("register self domain [%s] cert to master failed, detail -> %v", domainID, err)
 	}
 	// handshake to master
-	revisionToken, err := handshakeToMasterWithRetry(domainID, pathPrefix, prikey)
+	revisionToken, err := handshakeToMasterWithRetry(domainID, pathPrefix, prikey, gwConfig.MasterConfig.MasterPubkey)
 	if err != nil {
 		return nil, fmt.Errorf("handshake to master failed, detail -> %v", err)
 	}
@@ -223,10 +232,11 @@ func checkMasterProxyReady(ctx context.Context, domainID string, kubeClient kube
 	return err
 }
 
-func handshakeToMasterWithRetry(domainID, pathPrefix string, prikey *rsa.PrivateKey) (*controller.RevisionToken, error) {
+func handshakeToMasterWithRetry(domainID, pathPrefix string, prikey *rsa.PrivateKey, masterPubKey *rsa.PublicKey) (*controller.RevisionToken, error) {
 	var err error
 	for i := 1; i <= defaultHandshakeRetryCount; i++ {
-		revisionToken, err := controller.HandshakeToMaster(domainID, pathPrefix, prikey)
+		revisionToken, handshakeErr := controller.HandshakeToMaster(domainID, pathPrefix, prikey, masterPubKey)
+		err = handshakeErr
 		if err == nil {
 			return revisionToken, nil
 		}

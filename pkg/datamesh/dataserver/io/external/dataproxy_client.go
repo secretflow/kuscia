@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/datamesh/config"
@@ -105,14 +106,20 @@ func NewDataProxyClient(conf *config.DataProxyConfig) (*DataProxyClient, error) 
 	}, nil
 }
 
-func (dp *DataProxyClient) GetFlightInfoDataMeshQuery(ctx context.Context,
-	query *datamesh.CommandDataMeshQuery) (*flight.FlightInfo, error) {
+func generateDescriptor(query protoreflect.ProtoMessage) (*flight.FlightDescriptor, error) {
 	dpDesc, err := utils.DescForCommand(query)
 	if err != nil {
 		nlog.Errorf("Generate Descriptor to dataproxy fail, %v", err)
 		return nil, common.BuildGrpcErrorf(nil, codes.Internal, "Generate Descriptor to dataproxy fail")
 	}
+	return dpDesc, nil
+}
 
+func (dp *DataProxyClient) GetFlightInfoDataMeshQuery(ctx context.Context, query *datamesh.CommandDataMeshQuery) (*flight.FlightInfo, error) {
+	dpDesc, err := generateDescriptor(query)
+	if err != nil {
+		return nil, err
+	}
 	dpCtx, cancel := context.WithTimeout(ctx, dpRequestTimeout)
 	defer cancel()
 	nlog.Infof("Get flightInfo from dataproxy begin, query domaindata: %+v", query.Domaindata)
@@ -128,12 +135,10 @@ func (dp *DataProxyClient) GetFlightInfoDataMeshQuery(ctx context.Context,
 	return flightInfo, nil
 }
 
-func (dp *DataProxyClient) GetFlightInfoDataMeshUpdate(ctx context.Context,
-	query *datamesh.CommandDataMeshUpdate) (*flight.FlightInfo, error) {
-	dpDesc, err := utils.DescForCommand(query)
+func (dp *DataProxyClient) GetFlightInfoDataMeshUpdate(ctx context.Context, query *datamesh.CommandDataMeshUpdate) (*flight.FlightInfo, error) {
+	dpDesc, err := generateDescriptor(query)
 	if err != nil {
-		nlog.Errorf("Generate Descriptor to dataproxy fail, %v", err)
-		return nil, common.BuildGrpcErrorf(nil, codes.Internal, "Generate Descriptor to dataproxy fail, error: %s.", err.Error())
+		return nil, err
 	}
 	dpCtx, cancel := context.WithTimeout(ctx, dpRequestTimeout)
 	defer cancel()
@@ -151,13 +156,10 @@ func (dp *DataProxyClient) GetFlightInfoDataMeshUpdate(ctx context.Context,
 }
 
 func (dp *DataProxyClient) GetFlightInfoDataMeshSqlQuery(ctx context.Context, query *datamesh.CommandDataMeshSqlQuery) (*flight.FlightInfo, error) {
-
-	dpDesc, err := utils.DescForCommand(query)
+	dpDesc, err := generateDescriptor(query)
 	if err != nil {
-		nlog.Errorf("Generate Descriptor to dataproxy fail, %v", err)
-		return nil, common.BuildGrpcErrorf(nil, codes.Internal, "Generate Descriptor to dataproxy fail, error: %s.", err.Error())
+		return nil, err
 	}
-
 	dpCtx, cancel := context.WithTimeout(ctx, dpRequestTimeout)
 	defer cancel()
 

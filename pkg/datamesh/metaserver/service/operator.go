@@ -78,7 +78,7 @@ func (o *operatorService) registerDefaultDatasource() bool {
 		common.DefaultDataSourceID, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			if err := o.datasourceSvc.CreateDefaultDomainDataSource(context.Background()); err != nil {
+			if err = o.datasourceSvc.CreateDefaultDomainDataSource(context.Background()); err != nil {
 				nlog.Errorf("Create default datasource %s failed, error: %v.", common.DefaultDataSourceID, err)
 				return false
 			}
@@ -94,7 +94,7 @@ func (o *operatorService) registerDefaultDatasource() bool {
 		Background(), common.DefaultDataProxyDataSourceID, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			if err := o.datasourceSvc.CreateDefaultDataProxyDomainDataSource(context.Background()); err != nil {
+			if err = o.datasourceSvc.CreateDefaultDataProxyDomainDataSource(context.Background()); err != nil {
 				nlog.Errorf("Create default datasource %s failed, error: %v.", common.DefaultDataProxyDataSourceID, err)
 				return false
 			}

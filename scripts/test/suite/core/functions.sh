@@ -353,3 +353,36 @@ function get_cdr_token_rolling_period() {
   local cdr_name=$2
   docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.spec.tokenConfig.rollingUpdatePeriod}'
 }
+
+# @return get images
+# Args:
+#   images_tag: image tag
+#   container_name: container name
+#   runtime: runtime runc or runp
+function get_images() {
+  local images_tag=$1
+  local container_name=$2
+  local runtime=$3
+  if [ -n "${runtime}" ]; then
+    docker exec -i "${container_name}" bash -c "kuscia image --runtime=${runtime} ls 2>&1 | awk '{print \$1\":\"\$2}' | grep ${images_tag}"
+  else
+    docker exec -i "${container_name}" bash -c "kuscia image ls 2>&1 | awk '{print \$1\":\"\$2}' | grep ${images_tag}"
+  fi
+}
+
+
+# @return get image ID
+# Args:
+#   images_tag: image tag
+#   container_name: container name
+#   runtime: runtime runc or runp
+function get_image_ID() {
+    local images_tag=$1
+    local container_name=$2
+    local runtime=$3
+    if [ -n "${runtime}" ]; then
+      docker exec -i "${container_name}" bash -c "kuscia image --runtime=${runtime} ls 2>&1 | grep ${images_tag} | awk '{print \$3}'"
+    else
+      docker exec -i "${container_name}" bash -c "kuscia image ls 2>&1 | grep ${images_tag} | awk '{print \$3}'"
+    fi
+}

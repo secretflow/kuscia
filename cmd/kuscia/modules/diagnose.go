@@ -16,51 +16,37 @@ package modules
 
 import (
 	"context"
+	"fmt"
+	"time"
 
-	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
-	"github.com/secretflow/kuscia/pkg/diagnose/mods"
-	util "github.com/secretflow/kuscia/pkg/diagnose/utils"
+	"github.com/secretflow/kuscia/pkg/diagnose/app/server"
+	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-)
-
-const (
-	SubCMDCustomResourceDestination = "crd"
-	SubCMDClusterDomainRoute        = "cdr"
-	SubCMDNetwork                   = "network"
-	SubCMDAPP                       = "app"
+	"github.com/secretflow/kuscia/pkg/utils/readyz"
 )
 
 type diagnoseModule struct {
-	Reporter *util.Reporter
-	Mod      mods.Mod
+	moduleRuntimeBase
+	diagnoseServer *server.HTTPServerBean
 }
 
-func NewDiagnose(config *mods.DiagnoseConfig) Module {
-	m := new(diagnoseModule)
-	m.Reporter = util.NewReporter(config.ReportFile)
-	kusciaAPIConn, err := client.NewKusciaAPIConn()
-	if err != nil {
-		nlog.Fatalf("init kuscia api conn failed, %v", err)
-	}
-	switch config.Command {
-	case SubCMDNetwork:
-		m.Mod = mods.NewNetworkMod(m.Reporter, kusciaAPIConn, config)
-	case SubCMDClusterDomainRoute:
-		m.Mod = mods.NewDomainRouteMod(m.Reporter, kusciaAPIConn, config)
-	default:
-		nlog.Errorf("invalid support subcmd")
-		return nil
-	}
-	return m
+func NewDiagnose(d *ModuleRuntimeConfigs) (Module, error) {
+	diagnoseServer := server.NewHTTPServerBean()
+
+	return &diagnoseModule{
+		moduleRuntimeBase: moduleRuntimeBase{
+			rdz:          readyz.NewHTTPReadyZ(fmt.Sprintf("http://127.0.0.1:%d/%s/%s", diagnoseServer.Config.HTTPPort, common.DiagnoseNetworkGroup, common.DiagnoseHealthyPath), 200, nil),
+			readyTimeout: 60 * time.Second,
+			name:         "diagnose",
+		},
+		diagnoseServer: diagnoseServer,
+	}, nil
 }
 
 func (d *diagnoseModule) Run(ctx context.Context) error {
-	defer func() {
-		d.Reporter.Render()
-		d.Reporter.Close()
-	}()
-	if err := d.Mod.Run(ctx); err != nil {
-		return err
+	err := d.diagnoseServer.Run(ctx)
+	if err != nil {
+		nlog.Warnf("failed to run diagnose server %s", err.Error())
 	}
 	return nil
 }

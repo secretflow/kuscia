@@ -22,7 +22,7 @@ import (
 )
 
 // builtinCommand represents the builtin command
-func builtinCommand(cmdCtx *utils.Context) *cobra.Command {
+func builtinCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	var manifestFile string
 
 	registerCmd := &cobra.Command{
@@ -35,8 +35,8 @@ kuscia image builtin secretflow:latest
 `,
 		Args: cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := cmdCtx.Store.RegisterImage(args[0], manifestFile); err != nil {
-				nlog.Fatal(err)
+			if err := cmdCtx.ImageService.BuiltinImage(manifestFile); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}

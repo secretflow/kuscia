@@ -5,7 +5,8 @@ ClusterDomainRoute 用于在中心化网络中配置 Lite 节点之间的路由�
 
 ## 用例
 
-以下是一些 DomainRoute 和 ClusterDomainRoute 的典型用例
+以下是一些 DomainRoute 和 ClusterDomainRoute 的典型用例：
+
 * 中心化集群配置 Lite 访问 Master 的授权
 * 中心化集群配置 Lite 节点之间的路由规则
 * 点对点集群配置 Autonomy 节点之间的路由规则
@@ -30,7 +31,9 @@ spec:
   requestHeadersToAdd:
     Authorization: Bearer 781292.db7bc3a58fc5f07e
 ```
+
 在示例中
+
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是 Master 的 Namespace。
 * `.spec.authenticationType`：表示节点到目标节点的身份认证方式，目前仅支持 Token 、MTLS 和 None（表示不校验）。
@@ -39,12 +42,13 @@ spec:
 * `.spec.requestHeadersToAdd`：表示目标节点侧的 Envoy 在转发源节点的请求时添加的 headers，示例中 key 为
   Authorization 的 header 是 Master 为 alice 分配访问 k3s 的令牌。
 
-你可以通过 kubectl 命令来创建、修改、查看、删除 DomainRoute。
+您可以通过 kubectl 命令来创建、修改、查看、删除 DomainRoute。
 
 ## 中心化集群配置 Lite 节点之间的路由规则
 
 在中心化集群中，Lite 节点之间进行数据通信，以 alice 访问 bob 为例，需要创建一条 ClusterDomainRoute。
 下面是 alice-bob-ClusterDomainRoute.yaml 的配置：
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: ClusterDomainRoute
@@ -65,7 +69,9 @@ spec:
     sourceClientCert: MIICqjCCAZICFEiujM
     tlsCA: MIIEpAIBAAKCAQEAxK
 ```
+
 在示例中：
+
 * `.metadata.name`：表示路由规则的名称。
 * `.spec.authenticationType`：表示节点到 Master 的身份认证方式，支持 Token、MTLS、None（不认证）。
 * `.spec.source`：表示源节点的 Namespace。
@@ -82,17 +88,19 @@ spec:
   * `tlsCA`：表示校验服务端（目标节点）证书的 CA，value 值是经过 BASE64 编码过的。不配置则表示不校验服务端证书。
 
 通过 kubectl 命令来创建 ClusterDomainRoute：
+
 ```shell
 kubectl apply -f alice-bob-ClusterDomainRoute.yaml
 ```
 
-你还可以通过 kubectl 命令来修改、删除 ClusterDomainRoute。
+您还可以通过 kubectl 命令来修改、删除 ClusterDomainRoute。
 
 ## 点对点集群配置 Autonomy 节点之间的路由规则
 
 对于点对点集群的两个 Autonomy 节点，alice 访问 bob，需要分别在 alice 和 bob 的 Namespace 下各创建一条 DomainRoute。
 
 第一步，在目标节点 bob 的 Namespace 下创建 alice 访问 bob 的 DomainRoute：
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: DomainRoute
@@ -114,17 +122,21 @@ spec:
     Authorization: Bearer 781293.db7bc3a58fc5f07f
   source: alice
 ```
+
 在示例中：
+
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是目标节点的 Namespace。
 * `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 Token、MTLS 和 None（表示不校验）。
-* `.spec.source`：表示源节点的 Namespace，这里即 alice 的 Namespace。
-* `.spec.destination`：表示目标节点的 Namespace，这里即 bob 的 Namespace。
-* `.spec.requestHeadersToAdd`：表示 bob 侧的 Envoy 转发源节点请求时添加的 headers，示例中 key 为 Authorization 的 header 是 bob 为
-  alice 分配访问 K3s 的令牌，
+* `.spec.source`：表示源节点的 Namespace，这里即 Alice 的 Namespace。
+* `.spec.destination`：表示目标节点的 Namespace，这里即 Bob 的 Namespace。
+* `.spec.requestHeadersToAdd`：表示 bob 侧的 Envoy 转发源节点请求时添加的 headers，示例中 key 为 Authorization 的 header 是 Bob 为
+  Alice 分配访问 K3s 的令牌，
+
 这个 header 仅在目标节点为调度方时有必要配置。
 
-第二步，在源节点 alice 的 Namespace 下创建创建 alice 访问 bob 的 DomainRoute：
+第二步，在源节点 Alice 的 Namespace 下创建创建 Alice 访问 Bob 的 DomainRoute：
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: DomainRoute
@@ -147,7 +159,9 @@ spec:
     sourceClientPrivateKey: MIIEpAIBAAKCAQEAxK
     tlsCA: MIIEpAIBAAKCAQEAxK
 ```
+
 在示例中：
+
 * `.metadata.name`：表示路由规则的名称。
 * `.metadata.namespace`：表示路由规则所在的命名空间，这里是源节点的 Namespace。
 * `.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 Token、MTLS 和 None（表示不校验）。
@@ -159,7 +173,7 @@ spec:
   * `sourceClientPrivateKey`：表示源节点的私钥，value 值是经 BASE64 编码过的。
   * `tlsCA`：表示校验服务端（目标节点）证书的 CA，value 值是经过 BASE64 编码过的。不配置则表示不校验服务端证书。
 
-你可以通过 kubectl 命令来创建、修改、查看、删除 DomainRoute。
+您可以通过 kubectl 命令来创建、修改、查看、删除 DomainRoute。
 
 ## 参考
 
@@ -271,7 +285,6 @@ DomainRoute `status` 的子字段详细介绍如下：
     * `tokens[].isReady`：表示 Token 是否生效。
     * `tokens[].expirationTime`：表示 Token 何时过期。
 
-
 ### ClusterDomainRoute-template
 
 * Lite 节点之间通信需要用户配置 ClusterDomainRoute。
@@ -357,7 +370,7 @@ ClusterDomainRoute `spec` 的子字段详细介绍如下：
     * `port`：表示端口号。
     * `protocol`：表示端口协议，支持`HTTP`或`GRPC`。
     * `isTLS`：表示是否开启`HTTPS`或`GRPCS`。
-    * `pathPrefix`: 配置非空时，网关会重写请求的 path。例如，pathPrefix 为 /foo，请求 path 为 /bar，发送给对端的请求 path 会被改写为 /foo/bar。
+    * `pathPrefix`: 配置非空时，kuscia 会重写请求的 path。例如，pathPrefix 为 /foo，请求 path 为 /bar，发送给对端的请求 path 会被改写为 /foo/bar，对端入口网关需要配置 pathPrefix 卸载规则。配置示例请参考[这里](../../tutorial/kuscia_gateway_with_path.md)。
 * `mTLSConfig`：表示 MTLS 配置，authenticationType 为`MTLS`时，源节点需配置 mTLSConfig。该配置项在目标节点不生效。
   * `sourceClientCert`：表示 BASE64 编码格式的源节点的客户端证书。
   * `sourceClientPrivateKey`：表示 BASE64 编码格式的源节点的客户端私钥。
@@ -408,14 +421,14 @@ ClusterDomainRoute `status` 的子字段详细介绍如下：
 
 节点转发，对应的转发类型`transitMethod`为——`THIRD-DOMAIN`，代表请求流量会经第三方节点转发。
 
-#### 什么时候需要节点转发？
+#### 什么时候需要节点转发
 
 节点转发用于解决网络节点无法直连的问题。以生产中常见的中心化部署为例，我们注意到，出于对安全性的高度重视，机构往往选择将 Master 节点和 Lite 节点部署于不同的网络环境。此外，这些 Lite 节点常常仅具备有限的网络访问权限。这一做法虽然强化了安全防护，却同时给不同机构之间的无缝联接和数据交互带来了挑战。
 ![image.png](../../imgs/transit-cxc-cxp.png)
 如上图「中心化-中心化」网络中，Alice 与 Bob 无法直接互联，「中心化—P2P」网络中，Alice 与 Bob 无法直接互联。Kuscia 引入了转发能力，通过复用 Lite 与 Master 之间的通道，使得 Lite 节点可以访问对端机构，实现组网。
 > 转发能力是 Kuscia 的通用能力，并不局限于上述情形。
 
-#### 怎样配置节点转发？
+#### 怎样配置节点转发
 
 这里为了简单起见，使用路由配置和 CDR 来代指 ClusterDomainRoute，使用$\longrightarrow$代表路由配置指向：
 $Alice\longrightarrow Bob$代表「Alice 到 Bob 的 路由配置」，
@@ -549,13 +562,13 @@ spec:
 
 反向隧道，对应的转发类型为——`REVERSE-TUNNEL`，代表请求流量会经反向隧道转发。
 
-#### 什么时候需要反向隧道？
+#### 什么时候需要反向隧道
 
 反向隧道用于解决一类特殊的场景。出于安全性考虑，参与隐私计算的一方机构，能够对外访问公网发起请求，但是不愿意对外直接暴露和监听端口。
 如下图，机构 B 侧的算法容器 Bob 可以对机构 A 侧的算法容器 Alice 发起连接，反过来则不行。
 ![image.png](../../imgs/transit-reverse-block.png)
 
-#### 反向隧道是怎么实现的？
+#### 反向隧道是怎么实现的
 
 为了让这种场景下，隐私计算任务可以正常开展，Kuscia 拓展了网关的能力，实现了一种反向隧道，来承接机构 A 对机构 B 发起的请求。
 ![image.png](../../imgs/transit-reverse-tunnel.png)
@@ -565,9 +578,10 @@ Alice 向 Bob 发起请求的环节如下：
 2. 请求发送，对应上图中的 ①——Alice 向 Bob 发起的「request」到达 Alice 侧网关后，网关会将「request」包装成特殊格式的 「chunked response」，通过`反向隧道`发送给 Bob 侧网关，同时记录请求信息，对应 Ⓐ。请求到达 Bob 侧网关后，网关会将「chunked response」重新包装成「request」，发送给 Bob，对应 Ⓑ。
 3. 响应返回，对应上图中的 ②——Bob 完成请求处理后，返回「response」，到达 Bob 侧网关后，网关会将「response」包装成「request」，发送给 Alice，对应 Ⓒ。请求到达 Alice 侧网关后，网关会从「request」取出数据，包装成「response」，找到记录的请求信息，返回给 Alice，对应 Ⓓ。
 
-#### 怎样配置反向隧道？
+#### 怎样配置反向隧道
 
 要配置一条如上图所示的反向隧道路由规则，可以如下所示，设置`Transit`的`transitMethod`字段。**请注意，反向隧道可能会对系统性能产生一定影响。**
+
 ```bash
 apiVersion: kuscia.secretflow/v1alpha1
 kind: ClusterDomainRoute

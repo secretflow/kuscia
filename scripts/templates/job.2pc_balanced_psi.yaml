@@ -12,13 +12,13 @@ spec:
       alias: single-psi
       priority: 100
       taskInputConfig: '{{.TASK_INPUT_CONFIG}}'
-      appImage: '{{.APP_IMAGE}}'
+      appImage: {{.APP_IMAGE}}
       parties:
         - domainID: alice
           bandwidthLimits:
-          - destinationID: bob
-            limitKBps: 100
+            - destinationID: bob
+              limitKBps: 100
         - domainID: bob
           bandwidthLimits:
-          - destinationID: alice
-            limitKBps: 100
+            - destinationID: alice
+              limitKBps: 100

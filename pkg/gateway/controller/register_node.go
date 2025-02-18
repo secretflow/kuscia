@@ -41,6 +41,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/gateway/clusters"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/handshake"
 )
 
@@ -166,9 +167,9 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 
 	// If the tokens match and the cert in the domain does not match the cert in the request, the domain is updated
 	if !isCertMatch(domain.Spec.Cert, domainCrt) {
-		index, err := deployTokenMatched(certRequest, domain.Status.DeployTokenStatuses)
-		if err != nil {
-			httpErrWrapped(w, fmt.Errorf("source domain [%s] deploy token mismatch, detail -> %s", req.DomainId, err.Error()), http.StatusInternalServerError)
+		index, matchErr := deployTokenMatched(certRequest, domain.Status.DeployTokenStatuses)
+		if matchErr != nil {
+			httpErrWrapped(w, fmt.Errorf("source domain [%s] deploy token mismatch, detail -> %s", req.DomainId, matchErr.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -176,11 +177,11 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 		domainDeepCopy.Spec.Cert = domainCrtStr
 		domainDeepCopy.Status.DeployTokenStatuses[index].State = common.DeployTokenUsedState
 		// update domain status
-		if _, err = c.kusciaClient.KusciaV1alpha1().Domains().UpdateStatus(context.Background(), domainDeepCopy, metav1.UpdateOptions{}); err != nil {
-			if k8serrors.IsNotFound(err) {
+		if _, updateErr := c.kusciaClient.KusciaV1alpha1().Domains().UpdateStatus(context.Background(), domainDeepCopy, metav1.UpdateOptions{}); updateErr != nil {
+			if k8serrors.IsNotFound(updateErr) {
 				httpErrWrapped(w, fmt.Errorf("source domain [%s] not found, may be deleted", req.DomainId), http.StatusInternalServerError)
 			} else {
-				httpErrWrapped(w, fmt.Errorf("get source domain [%s] error, detail -> %s", req.DomainId, err.Error()), http.StatusInternalServerError)
+				httpErrWrapped(w, fmt.Errorf("get source domain [%s] error, detail -> %s", req.DomainId, updateErr.Error()), http.StatusInternalServerError)
 			}
 			return
 		}
@@ -188,20 +189,26 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 		oldData, _ := json.Marshal(kusciaapisv1alpha1.Domain{Spec: domain.Spec})
 		newData, _ := json.Marshal(kusciaapisv1alpha1.Domain{Spec: domainDeepCopy.Spec})
 		patchBytes, _ := strategicpatch.CreateTwoWayMergePatch(oldData, newData, &kusciaapisv1alpha1.Domain{})
-		if _, err = c.kusciaClient.KusciaV1alpha1().Domains().Patch(context.Background(), domainDeepCopy.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
-			if k8serrors.IsNotFound(err) {
+		if _, patchErr := c.kusciaClient.KusciaV1alpha1().Domains().Patch(context.Background(), domainDeepCopy.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}); patchErr != nil {
+			if k8serrors.IsNotFound(patchErr) {
 				httpErrWrapped(w, fmt.Errorf("source domain [%s] not found, may be deleted", req.DomainId), http.StatusInternalServerError)
 			} else {
-				httpErrWrapped(w, fmt.Errorf("get source domain [%s] error, detail -> %s", req.DomainId, err.Error()), http.StatusInternalServerError)
+				httpErrWrapped(w, fmt.Errorf("get source domain [%s] error, detail -> %s", req.DomainId, patchErr.Error()), http.StatusInternalServerError)
 			}
 			return
 		}
 		nlog.Infof("Domain %s register success, set domain cert", domain.Name)
 	}
+	var pubKeyStr string
+	// for compability, if domain explicitly set TokenConfig as UID, we won't return master pub key
+	if domain.Spec.AuthCenter == nil || domain.Spec.AuthCenter.TokenGenMethod != kusciaapisv1alpha1.TokenGenUIDRSA {
+		pubKeyStr = base64.StdEncoding.EncodeToString(tls.EncodePKCS1PublicKey(c.prikey))
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(&handshake.RegisterResponse{
-		Cert: domainCrtStr,
+		Cert:         domainCrtStr,
+		MasterPubkey: pubKeyStr,
 	})
 	if err != nil {
 		nlog.Errorf("encode register response for(%s) fail, detail-> %v", req.DomainId, err)

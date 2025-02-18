@@ -207,7 +207,7 @@ func flags(name string, config framework.Config, fs *pflag.FlagSet) {
 			nfsValue.MethodByName(funcName).Call([]reflect.Value{valueField.Addr(), reflect.ValueOf(flagName), valueField, reflect.ValueOf(usage)})
 			// set required tag
 			if required {
-				cobra.MarkFlagRequired(fs, flagName)
+				_ = cobra.MarkFlagRequired(fs, flagName)
 			}
 		}
 	}

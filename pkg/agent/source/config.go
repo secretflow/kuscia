@@ -258,12 +258,6 @@ func (s *podStorage) markSourceSet(source string) {
 	s.sourcesSeen.Insert(source)
 }
 
-func (s *podStorage) seenSources(sources ...string) bool {
-	s.sourcesSeenLock.RLock()
-	defer s.sourcesSeenLock.RUnlock()
-	return s.sourcesSeen.HasAll(sources...)
-}
-
 func filterInvalidPods(pods []*v1.Pod, source string, recorder record.EventRecorder) (filtered []*v1.Pod) {
 	names := sets.String{}
 	for i, pod := range pods {

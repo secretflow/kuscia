@@ -320,7 +320,7 @@ func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandb
 		m.recordContainerEvent(pod, container, containerID, v1.EventTypeWarning, events.FailedToCreateContainer, "Error: %v", s.Message())
 		return s.Message(), ErrCreateContainer
 	}
-	m.recordContainerEvent(pod, container, containerID, v1.EventTypeNormal, events.CreatedContainer, fmt.Sprintf("Created container %s", container.Name))
+	m.recordContainerEvent(pod, container, containerID, v1.EventTypeNormal, events.CreatedContainer, "Created container %s", container.Name)
 
 	// Step 3: start the container.
 	err = m.runtimeService.StartContainer(ctx, containerID)
@@ -329,7 +329,7 @@ func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandb
 		m.recordContainerEvent(pod, container, containerID, v1.EventTypeWarning, events.FailedToStartContainer, "Error: %v", s.Message())
 		return s.Message(), pkgcontainer.ErrRunContainer
 	}
-	m.recordContainerEvent(pod, container, containerID, v1.EventTypeNormal, events.StartedContainer, fmt.Sprintf("Started container %s", container.Name))
+	m.recordContainerEvent(pod, container, containerID, v1.EventTypeNormal, events.StartedContainer, "Started container %s", container.Name)
 
 	return "", nil
 }
@@ -420,7 +420,7 @@ func (m *kubeGenericRuntimeManager) killContainer(ctx context.Context, pod *v1.P
 	if len(message) == 0 {
 		message = fmt.Sprintf("Stopping container %s", containerSpec.Name)
 	}
-	m.recordContainerEvent(pod, containerSpec, containerID.ID, v1.EventTypeNormal, events.KillingContainer, message)
+	m.recordContainerEvent(pod, containerSpec, containerID.ID, v1.EventTypeNormal, events.KillingContainer, "%s", message)
 
 	// always give containers a minimal shutdown window to avoid unnecessary SIGKILLs
 	if gracePeriod < minimumGracePeriodInSeconds {
@@ -622,34 +622,6 @@ func (m *kubeGenericRuntimeManager) getContainers(ctx context.Context, allContai
 	}
 
 	return containers, nil
-}
-
-// removeContainerLog removes the container log.
-func (m *kubeGenericRuntimeManager) removeContainerLog(ctx context.Context, containerID string) error {
-	// Use log manager to remove rotated logs.
-	err := m.logManager.Clean(ctx, containerID)
-	if err != nil {
-		return err
-	}
-
-	resp, err := m.runtimeService.ContainerStatus(ctx, containerID, false)
-	if err != nil {
-		return fmt.Errorf("failed to get container status %q: %v", containerID, err)
-	}
-	status := resp.GetStatus()
-	if status == nil {
-		return remote.ErrContainerStatusNil
-	}
-	// Remove the legacy container log symlink.
-	// TODO(random-liu): Remove this after cluster logging supports CRI container log path.
-	labeledInfo := getContainerInfoFromLabels(status.Labels)
-	legacySymlink := legacyLogSymlink(containerID, labeledInfo.ContainerName, labeledInfo.PodName,
-		labeledInfo.PodNamespace)
-	if err := m.osInterface.Remove(legacySymlink); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove container %q log legacy symbolic link %q: %v",
-			containerID, legacySymlink, err)
-	}
-	return nil
 }
 
 // removeContainer removes the container and the container logs.

@@ -41,7 +41,7 @@ spec:
   master: ${MASTER_DOMAIN_ID}
   authCenter:
     authenticationType: Token
-    tokenGenMethod: UID-RSA-GEN
+    tokenGenMethod: RSA-GEN
 " | kubectl apply -f - > /dev/null
 
 function wait_csr_token() {

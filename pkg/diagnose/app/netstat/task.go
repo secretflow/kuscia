@@ -16,16 +16,10 @@ package netstat
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
-	"github.com/secretflow/kuscia/pkg/diagnose/app/server"
 	dcommon "github.com/secretflow/kuscia/pkg/diagnose/common"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"google.golang.org/grpc"
 )
 
 type Task interface {
@@ -57,13 +51,9 @@ func MetricItemsToOutputs(elements []*diagnose.MetricItem) []*TaskOutput {
 }
 
 type TaskGroup struct {
-	tasks            []Task
-	diagnoseClient   *client.Client
-	diagnoseServer   *server.HTTPServerBean
-	DatameshConn     *grpc.ClientConn
-	SelfDomainDataID string
-	PeerDomainDataID string
-	JobConfig        *NetworkJobConfig
+	tasks          []Task
+	diagnoseClient *client.Client
+	JobConfig      *NetworkJobConfig
 }
 
 type NetworkJobConfig struct {
@@ -91,19 +81,9 @@ type NetworkParam struct {
 	Bidirection       bool `json:"bi_direction"`
 }
 
-func NewTaskGroup(server *server.HTTPServerBean, cli *client.Client, config *NetworkJobConfig) *TaskGroup {
+func NewTaskGroup(cli *client.Client, config *NetworkParam) *TaskGroup {
 	tg := new(TaskGroup)
-	tg.diagnoseServer = server
 	tg.diagnoseClient = cli
-
-	var err error
-	tg.DatameshConn, err = client.NewDatameshConn()
-	if err != nil {
-		nlog.Fatalf("init datamesh conn failed, %v", err)
-	}
-	tg.SelfDomainDataID = dcommon.GenerateDomainDataID(config.JobID, config.SelfDomain)
-	tg.PeerDomainDataID = dcommon.GenerateDomainDataID(config.JobID, config.PeerDomain)
-	tg.JobConfig = config
 
 	tg.tasks = append(tg.tasks, NewConnectionTask(tg.diagnoseClient))
 
@@ -125,7 +105,7 @@ func NewTaskGroup(server *server.HTTPServerBean, cli *client.Client, config *Net
 	return tg
 }
 
-func (tg *TaskGroup) Start(ctx context.Context) error {
+func (tg *TaskGroup) Start(ctx context.Context) ([]*TaskOutput, error) {
 	// validate connection task first
 	results := make([]*TaskOutput, 0)
 	for i, task := range tg.tasks {
@@ -135,68 +115,5 @@ func (tg *TaskGroup) Start(ctx context.Context) error {
 			break
 		}
 	}
-
-	// save self report in local domaindata
-	nlog.Infof("Save self report")
-	if err := tg.SaveReport(ctx, tg.SelfDomainDataID, results); err != nil {
-		return err
-	}
-
-	// send report to peer and wait report from peer in bidirection mode
-	if tg.JobConfig.Bidirection {
-		nlog.Infof("Send report to peer")
-		tg.SendReportToPeer(ctx, results)
-		nlog.Infof("Wait report from peer")
-		tg.RecvReportFromPeer(ctx)
-	}
-	return nil
-}
-
-func (tg *TaskGroup) RecvReportFromPeer(ctx context.Context) {
-	report := tg.diagnoseServer.WaitReport(ctx)
-	if report == nil {
-		nlog.Warnf("Fail to receive report from peer")
-	} else {
-		if err := tg.SaveReport(ctx, tg.PeerDomainDataID, MetricItemsToOutputs(report)); err != nil {
-			nlog.Warnf("Fail to save peer report")
-		}
-	}
-}
-
-func (tg *TaskGroup) SendReportToPeer(ctx context.Context, outputs []*TaskOutput) {
-	items := OutputsToMetricItems(outputs)
-	submitReportReq := new(diagnose.SubmitReportRequest)
-	submitReportReq.Items = items
-	if _, err := tg.diagnoseClient.SubmitReport(ctx, submitReportReq); err != nil {
-		nlog.Warnf("Fail tot submit report, %v", err)
-	}
-}
-
-func (tg *TaskGroup) SaveReport(ctx context.Context, ID string, items []*TaskOutput) error {
-	req := tg.buildCreateDomainDataRequest(ID, items)
-	resp, err := datamesh.NewDomainDataServiceClient(tg.DatameshConn).CreateDomainData(ctx, req)
-	// resp, err := tg.DatameshClient.CreateDomainData(ctx, tg.buildCreateDomainDataRequest(ID, items))
-	if err != nil {
-		nlog.Errorf("Create domaindata failed, %v", err)
-		return err
-	} else if resp.Status != nil && resp.Status.Code != 0 {
-		nlog.Errorf("Create domaindata failed, code: %v, message:%v", resp.Status.Code, resp.Status.Message)
-		return fmt.Errorf("create domaindata failed, code:%v, message:%v", resp.Status.Code, resp.Status.Message)
-	}
-	return nil
-}
-
-func (tg *TaskGroup) buildCreateDomainDataRequest(ID string, items []*TaskOutput) *datamesh.CreateDomainDataRequest {
-	results := make(map[string]string)
-	for _, item := range items {
-		outJSON, _ := json.Marshal(item)
-		results[item.Name] = string(outJSON)
-	}
-	return &datamesh.CreateDomainDataRequest{
-		DomaindataId: ID,
-		Name:         ID,
-		Type:         "unknown",
-		RelativeUri:  "N/A",
-		Attributes:   results,
-	}
+	return results, nil
 }

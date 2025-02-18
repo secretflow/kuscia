@@ -20,21 +20,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gopkg.in/natefinch/lumberjack.v2"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // Writer is the zap.SugaredLogger implementation of nlog.LogWriter interface.
 type Writer struct {
 	*zap.SugaredLogger
 	atomicLevel zap.AtomicLevel
-}
-
-type WriterWrapper struct {
-	writeFunc func(args ...interface{})
 }
 
 // InstallFlags defines log flags with flag.FlagSet.
@@ -104,13 +100,7 @@ func New(config *nlog.LogConfig) (nlog.LogWriter, error) {
 func newZapLogger(config *nlog.LogConfig, encoderConfig *zapcore.EncoderConfig, atomicLevel zap.AtomicLevel) (*zap.SugaredLogger, error) {
 	syncer := zapcore.AddSync(os.Stdout)
 	if config.LogPath != "" {
-		syncer = zapcore.NewMultiWriteSyncer(syncer, zapcore.AddSync(&lumberjack.Logger{
-			Filename:   config.LogPath,
-			MaxSize:    config.MaxFileSizeMB, // megabytes
-			MaxBackups: config.MaxFiles,
-			Compress:   config.Compress,
-			LocalTime:  true,
-		}))
+		syncer = zapcore.NewMultiWriteSyncer(syncer, zapcore.AddSync(nlog.BasicLumberjackLogger(config)))
 	}
 
 	if err := changeLogLevel(atomicLevel, config.LogLevel); err != nil {
@@ -135,6 +125,8 @@ func changeLogLevel(atomicLevel zap.AtomicLevel, newLevel string) error {
 // ChangeLogLevel changes the log level on the fly.
 // choose from DEBUG, INFO, WARN, ERROR, FATAL.
 func (w *Writer) ChangeLogLevel(newLevel string) error {
+
+	nlog.Debugf("[Zap] change log level to %s", newLevel)
 	return changeLogLevel(w.atomicLevel, newLevel)
 }
 

@@ -119,7 +119,7 @@ func metricHandler(metricURLs map[string]string, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 	for metrics := range metricsChan {
 		if metrics != nil {
-			w.Write(metrics)
+			_, _ = w.Write(metrics)
 		}
 	}
 }
@@ -131,8 +131,8 @@ func combine(map1, map2 map[string]string) map[string]string {
 	return map1
 }
 
-func MetricExporter(ctx context.Context, metricURLs map[string]string, port string) {
-	nlog.Infof("Start to export metrics on port %s...", port)
+func MetricExporter(ctx context.Context, metricURLs map[string]string, port int) {
+	nlog.Infof("Start to export metrics on port %d...", port)
 
 	if podManager != nil {
 		podMetrics, err := ListPodMetricUrls(podManager)
@@ -151,9 +151,9 @@ func MetricExporter(ctx context.Context, metricURLs map[string]string, port stri
 	})
 
 	go func() {
-		nlog.Infof("Starting metric server on port %s", port)
+		nlog.Infof("Starting metric server on port %d", port)
 
-		if err := http.ListenAndServe("0.0.0.0:"+port, metricServer); err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), metricServer); err != nil {
 			nlog.Error("Fail to start the metric exporterserver", err)
 		}
 	}()

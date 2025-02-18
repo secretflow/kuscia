@@ -129,9 +129,8 @@ func (s *Server) onNewLeader(identity string) {
 	}
 
 	if identity == s.leaderElector.MyIdentity() {
-		if s.controllersIsEmpty() {
-			s.onStartedLeading(s.ctx)
-		}
+		nlog.Infof("Current node has been elected as the leader: %s", identity)
+		return
 	}
 	nlog.Infof("New leader has been elected: %s", identity)
 }
@@ -160,9 +159,9 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 		nlog.Infof("Run controller %v", controller.Name())
 		go func(controller IController) {
 			if err := controller.Run(s.options.Workers); err != nil {
-				nlog.Fatalf("Error running controller %v, %v", controller.Name(), err)
+				nlog.Errorf("Error running controller %v, %v", controller.Name(), err)
 			} else {
-				nlog.Infof("Controller %v exit", controller.Name())
+				nlog.Warnf("Controller %v exit", controller.Name())
 			}
 		}(controller)
 		s.controllers = append(s.controllers, controller)

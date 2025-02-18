@@ -27,6 +27,8 @@ mkdir -p "${TEST_SUITE_CENTER_TEST_RUN_DIR}"
 
 . ./test/suite/core/functions.sh
 
+. ./test/suite/center/kuscia_images.sh
+
 function oneTimeSetUp() {
   start_center_mode "${TEST_SUITE_RUN_KUSCIA_DIR}"
 }
@@ -133,6 +135,11 @@ function test_centralized_token_rolling_party_offline() {
 
   # run task
   test_centralized_example_kuscia_job
+}
+
+function test_kuscia_images() {
+    test_runc_kuscia_images
+    test_runp_kuscia_images
 }
 
 . ./test/vendor/shunit2

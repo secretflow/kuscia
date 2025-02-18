@@ -1,15 +1,21 @@
 ## 在机构的某一方（如 root-kuscia-lite-alice）获取指标数据
+
 假设容器 IP 地址 container_ip = 172.18.0.3
+
 ```
-$ curl $(container_ip):9091/metrics
+curl $(container_ip):9091/metrics
 ```
+
 2. 加入prometheus获取指标数据
 prometheus.yml 放在 /home/$USER/prometheus 路径下：
+
 ```
 sudo docker run -d --name prometheus -p 9090:9090 -v /home/$USER/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus:latest --config.file=/etc/prometheus/prometheus.yml
 
 ```
+
 prometheus.yml 的配置内容示例，将配置文件中的机构容器的ip地址（172.18.0.3）和端口号填入（端口号默认为9091）
+
 ```
 global:
 
@@ -30,15 +36,21 @@ scrape_configs:
     metrics_path: /metrics
     scheme: http
 ```
+
 将prometheus加入容器网络：
+
 ```
 sudo docker ps
 ```
+
 找到 Prometheus 容器的ID $(prom_id)
+
 ```
 sudo docker network ls
 ```
+
 找到 Kuscia 容器网络的id $(net_id)
+
 ```
 NETWORK ID     NAME              DRIVER    SCOPE
 
@@ -56,9 +68,7 @@ sudo docker network connect $(net_id) $(prom_id)
 
 在浏览器中打开页面 prometheus localhost:9090
 
-
 ## 配置grafana可视化
-
 
 加入grafana的容器
 
@@ -76,7 +86,6 @@ sudo docker network connect $(net_id) $(graf_id)
 ```
 
 浏览器打开Granafa的页面 localhost:3000, 账号密码均为admin（登陆后可修改密码）。进入后，添加数据源（Home页面的 Add your first data source），选择Prometheus的数据源，设置Connection中的地址为Prometheus容器的IP地址（如：172.18.0.6）和端口号（默认8080）（可通过 sudo docker network inspect $(net_id)查看），添加后可配置指标数据。
-
 
 |编号| 指标                                        | 类型 | 含义                                                         |
 |----------------------|---------------------- | --------------------- | ------------------------------------------------------------ |

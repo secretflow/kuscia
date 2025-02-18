@@ -28,7 +28,7 @@ import (
 )
 
 func (c *controller) Monitorcdrstatus(ctx context.Context) {
-	c.UpdateStatus(ctx)
+	_ = c.UpdateStatus(ctx)
 }
 
 func (c *controller) UpdateStatus(ctx context.Context) error {

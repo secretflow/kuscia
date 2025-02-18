@@ -17,7 +17,6 @@ package start
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -32,12 +31,12 @@ const moduleDefaultExitTimeout = time.Second * 3
 type ModuleReadyHook func(ctx context.Context, modules map[string]modules.Module) error
 type ModuleManager interface {
 	// regist a new module
-	Regist(name string, creator NewModuleFunc, modes ...common.RunModeType) error
+	Regist(name string, creator NewModuleFunc, modes ...common.RunModeType) bool
 	// set module dependency modules
-	SetDependencies(name string, dependencies ...string) error
+	SetDependencies(name string, dependencies ...string) bool
 
 	// when [modules] are all ready, hook will called
-	AddReadyHook(hook ModuleReadyHook, modules ...string) error
+	AddReadyHook(hook ModuleReadyHook, modules ...string) bool
 
 	// start to run all modules
 	Start(ctx context.Context, mode common.RunModeType, conf *modules.ModuleRuntimeConfigs) error
@@ -88,13 +87,15 @@ func NewModuleManager() ModuleManager {
 	}
 }
 
-func (kmm *kusciaModuleManager) Regist(name string, creator NewModuleFunc, modes ...common.RunModeType) error {
+func (kmm *kusciaModuleManager) Regist(name string, creator NewModuleFunc, modes ...common.RunModeType) bool {
 	if creator == nil {
-		return fmt.Errorf("module %s creator is nil", name)
+		nlog.Errorf("module %s creator is nil", name)
+		return false
 	}
 
 	if _, ok := kmm.modules[name]; ok {
-		return fmt.Errorf("module(%s) had exists", name)
+		nlog.Errorf("module(%s) had exists", name)
+		return false
 	}
 
 	mset := map[common.RunModeType]bool{}
@@ -108,30 +109,33 @@ func (kmm *kusciaModuleManager) Regist(name string, creator NewModuleFunc, modes
 		modes:    mset,
 		instance: nil,
 	}
-	return nil
+	return true
 }
 
-func (kmm *kusciaModuleManager) SetDependencies(name string, dependencies ...string) error {
+func (kmm *kusciaModuleManager) SetDependencies(name string, dependencies ...string) bool {
 	if module, ok := kmm.modules[name]; ok {
 		for _, d := range dependencies {
 			if _, ok = kmm.modules[d]; !ok {
-				return fmt.Errorf("invalidate module %s", d)
+				nlog.Errorf("invalidate module %s", d)
+				return false
 			}
 		}
 		module.dependencies = append(module.dependencies, dependencies...)
-		return nil
+		return true
 	}
-
-	return fmt.Errorf("invalidate module %s", name)
+	nlog.Errorf("invalidate module %s", name)
+	return false
 }
 
-func (kmm *kusciaModuleManager) AddReadyHook(hook ModuleReadyHook, modules ...string) error {
+func (kmm *kusciaModuleManager) AddReadyHook(hook ModuleReadyHook, modules ...string) bool {
 	if hook == nil {
-		return errors.New("input hook function is nil")
+		nlog.Errorf("input hook function is nil")
+		return false
 	}
 	for _, m := range modules {
 		if _, ok := kmm.modules[m]; !ok {
-			return fmt.Errorf("invalidate module name %s", m)
+			nlog.Errorf("invalidate module name %s", m)
+			return false
 		}
 	}
 
@@ -141,7 +145,7 @@ func (kmm *kusciaModuleManager) AddReadyHook(hook ModuleReadyHook, modules ...st
 		isCalled: false,
 	})
 
-	return nil
+	return true
 }
 
 func (kmm *kusciaModuleManager) Start(ctx context.Context, mode common.RunModeType, conf *modules.ModuleRuntimeConfigs) error {

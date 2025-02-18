@@ -57,4 +57,5 @@ message RegisterRequest{
 message RegisterResponse {
     Status status = 1;
     string cert = 3;
+    string master_pubkey = 4;
 }

@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/conflistener"
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
@@ -30,8 +31,14 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/runtime"
 )
 
+type startConfig struct {
+	configFile        string
+	logLevelHotReload bool
+}
+
 func NewStartCommand(ctx context.Context) *cobra.Command {
-	configFile := ""
+
+	startConfigs := startConfig{}
 
 	cmd := &cobra.Command{
 		Use:          "start",
@@ -39,23 +46,39 @@ func NewStartCommand(ctx context.Context) *cobra.Command {
 		Long:         `Start Kuscia with multi-mode from config file, Lite, Master or Autonomy`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return Start(ctx, configFile)
+
+			if startConfigs.logLevelHotReload {
+				// Kuscia config file listener
+				conflistener.LogLevelHotReloadListener(ctx, startConfigs.configFile)
+				nlog.Infof("Kuscia hot reload is enabled, config file path: %s", startConfigs.configFile)
+			}
+
+			return Start(ctx, startConfigs.configFile)
 		},
 	}
-	cmd.Flags().StringVarP(&configFile, "config", "c", "etc/config/kuscia.yaml", "load config from file")
+	cmd.Flags().StringVarP(&startConfigs.configFile, "config", "c", "etc/config/kuscia.yaml", "load config from file.")
+
+	// Must be enabled with -l=false or --loglevel-hot-reload=true. See: https://github.com/spf13/cobra/issues/1657
+	cmd.Flags().BoolVarP(&startConfigs.logLevelHotReload, "loglevel-hot-reload", "l", true, "enable kuscia configuration update, eg '-d=false'")
 
 	return cmd
 }
 
 func Start(ctx context.Context, configFile string) error {
-	commonConfig := confloader.LoadCommonConfig(configFile)
-	mode := strings.ToLower(commonConfig.Mode)
+
+	commonConfig, err := confloader.LoadCommonConfig(configFile)
+	if err != nil {
+		nlog.Fatalf("Load kuscia common config failed. %v", err)
+	}
 
 	if commonConfig.DomainID == common.UnSupportedDomainID {
 		nlog.Fatalf("Domain id can't be 'master', please check input config file(%s)", configFile)
 	}
 
-	kusciaConf := confloader.ReadConfig(configFile, mode)
+	kusciaConf, err := confloader.ReadConfig(configFile)
+	if err != nil {
+		nlog.Fatalf("Load kuscia config failed. %v", err.Error())
+	}
 	conf := modules.NewModuleRuntimeConfigs(ctx, kusciaConf)
 	defer conf.Close()
 
@@ -93,10 +116,10 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)
 	mm.Regist("transport", modules.NewTransport, autonomy, lite)
 	mm.Regist("reporter", modules.NewReporter, autonomy, master)
+	mm.Regist("diagnose", modules.NewDiagnose, autonomy, lite, master)
 
 	mm.SetDependencies("agent", "envoy", "k3s", "kusciaapi")
 	mm.SetDependencies("envoy", "k3s")
-
 	mm.SetDependencies("controllers", "k3s")
 	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")
 	mm.SetDependencies("datamesh", "k3s", "config", "envoy", "domainroute")
@@ -121,7 +144,8 @@ func Start(ctx context.Context, configFile string) error {
 		return errors.New("coredns module type is invalid")
 	}, "k3s", "coredns", "envoy", "domainroute")
 
-	err := mm.Start(ctx, mode, conf)
+	err = mm.Start(ctx, strings.ToLower(commonConfig.Mode), conf)
+
 	nlog.Infof("Kuscia Instance [%s] shut down", commonConfig.DomainID)
 	return err
 }

@@ -15,6 +15,7 @@
 package kusciaconfig
 
 import (
+	"crypto/rsa"
 	"fmt"
 )
 
@@ -37,6 +38,7 @@ type MasterConfig struct {
 	KusciaAPI         *ServiceConfig   `yaml:"kusciaAPI,omitempty"`
 	Reporter          *ServiceConfig   `yaml:"reporter,omitempty"`
 	APIWhitelist      []string         `yaml:"apiWhitelist,omitempty"`
+	MasterPubkey      *rsa.PublicKey   `yaml:"masterPubkey,omitempty"` // for rsa token gen in first handshake to master
 }
 
 func (m *MasterConfig) IsMaster() bool {

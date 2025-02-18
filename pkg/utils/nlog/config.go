@@ -14,6 +14,8 @@
 
 package nlog
 
+import "gopkg.in/natefinch/lumberjack.v2"
+
 type LogConfig struct {
 	LogLevel string
 	LogPath  string
@@ -27,4 +29,14 @@ type LogConfig struct {
 	MaxFiles int
 
 	Compress bool
+}
+
+func BasicLumberjackLogger(config *LogConfig) *lumberjack.Logger {
+	return &lumberjack.Logger{
+		Filename:   config.LogPath,
+		MaxSize:    config.MaxFileSizeMB, // megabytes
+		MaxBackups: config.MaxFiles,
+		Compress:   config.Compress,
+		LocalTime:  true,
+	}
 }

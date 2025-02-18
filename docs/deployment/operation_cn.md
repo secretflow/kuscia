@@ -39,7 +39,7 @@ fa0d01f36bc5   secretflow/kuscia-anolis:latest   "tini -- test/script…"  4 day
 docker exec -it {container_name} bash
 ```
 
-- {container_name} 是你要进入的容器的 NAME。
+- {container_name} 是您要进入的容器的 NAME。
 
 **示例**
 
@@ -75,13 +75,13 @@ docker exec -it ${USER}-kuscia-master bash
 
 #### 查看 Kuscia 安装的 CRD
 
-Kuscia 基于通过 [Kubernetes](https://kubernetes.io/zh-cn/) 提供的 CRD 拓展能力来实现隐私计算的调度能力。如果你对 K3s 比较熟悉，你可以通过查看 CRD 来了解
+Kuscia 基于通过 [Kubernetes](https://kubernetes.io/zh-cn/) 提供的 CRD 拓展能力来实现隐私计算的调度能力。如果您对 K3s 比较熟悉，您可以通过查看 CRD 来了解
 Kuscia
 提供的能力。
 
 ##### 查看 Kuscia 安装的 CRD 列表
 
-通过下面的命令，你可以查看 Kuscia 安装的 CRD：
+通过下面的命令，您可以查看 Kuscia 安装的 CRD：
 
 ```shell
 kubectl api-resources | grep kuscia.secretflow
@@ -95,7 +95,7 @@ kubectl get crd | grep kuscia.secretflow
 
 ##### 查看 Kuscia 安装的某个 CRD 的详细信息
 
-如果你想要了解某个 CRD 的详细信息，则可以通过下面的命令查看更详细的说明。
+如果您想要了解某个 CRD 的详细信息，则可以通过下面的命令查看更详细的说明。
 我们以 KusciaJob 为例：
 
 ```shell
@@ -110,7 +110,7 @@ kubectl get crd kusciajobs.kuscia.secretflow -o yaml
 
 ##### 更多 Kubectl 使用
 
-如果你想了解 kubectl 命令的使用，你可以查阅 [Kubernetes 官方文档](https://kubernetes.io/zh-cn/docs/reference/kubectl/) 。
+如果您想了解 kubectl 命令的使用，您可以查阅 [Kubernetes 官方文档](https://kubernetes.io/zh-cn/docs/reference/kubectl/) 。
 
 ### Domain
 
@@ -136,7 +136,7 @@ kubectl get domain {domian_name} -o yaml
 kubectl get domain alice -o yaml
 ```
 
-你会看到类似信息：
+您会看到类似信息：
 
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
@@ -175,7 +175,7 @@ kubectl get dr -n {domain_name}
 kubectl get dr -n alice
 ```
 
-你会看到类似如下信息：
+您会看到类似如下信息：
 
 ```shell
 NAME         SOURCE   DESTINATION   HOST         AUTHENTICATION
@@ -254,11 +254,11 @@ docker exec -it ${USER}-kuscia-lite-alice bash
 crictl ps -a
 ```
 
-你可以查看到启动的任务容器和它的运行状态。
+您可以查看到启动的任务容器和它的运行状态。
 
 #### 进入 Lite 节点上的任务容器
 
-如果你需要调试任务，那么你可能需要在某些场景下进入任务容器内部，这时候你可以执行下面的命令：
+如果您需要调试任务，那么您可能需要在某些场景下进入任务容器内部，这时候您可以执行下面的命令：
 
 ```shell
 crictl exec -it {container_id} bash
@@ -266,14 +266,14 @@ crictl exec -it {container_id} bash
 
 - {container_id-name}为要进入任务容器的 ID。
 
-### 隐私计算任务使用你自己的数据文件
+### 隐私计算任务使用您自己的数据文件
 
-我们可以通过`docker cp`将数据文件复制到节点容器，但是任务执行在由节点容器创建的任务容器内，这时候任务容器并不和节点容器共用一套文件系统，怎么在隐私计算任务中使用你自己的文件呢？
-实际上，节点容器的`/home/kuscia/var/storage`会被挂载到任务容器的同名目录下，所以，你只需要将你自己的数据文件放到节点容器的这个目录下，就能在任务中使用了。
+我们可以通过`docker cp`将数据文件复制到节点容器，但是任务执行在由节点容器创建的任务容器内，这时候任务容器并不和节点容器共用一套文件系统，怎么在隐私计算任务中使用您自己的文件呢？
+实际上，节点容器的`/home/kuscia/var/storage`会被挂载到任务容器的同名目录下，所以，您只需要将您自己的数据文件放到节点容器的这个目录下，就能在任务中使用了。
 
 ### 如何调试一个任务
 
-通过将 AppImage 的 command 调整为`sleep`命令可以帮助你调试一个任务：
+通过将 AppImage 的 command 调整为`sleep`命令可以帮助您调试一个任务：
 
 1. 修改 AppImage 或新建一个同样 Spec 的 AppImage， 修改 command 为`sh -c sleep 360000`， 保存原来的 command。
 2. 使用这个 AppImage，创建 KusciaJob。

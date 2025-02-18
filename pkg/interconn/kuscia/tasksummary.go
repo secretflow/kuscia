@@ -91,8 +91,8 @@ func (c *Controller) syncTaskSummaryHandler(ctx context.Context, key string) err
 	}
 
 	taskSummary := originalTs.DeepCopy()
-	if shouldReturn, err := c.updateTask(ctx, taskSummary, partyDomainIDs); shouldReturn || err != nil {
-		return err
+	if shouldReturn, updateErr := c.updateTask(ctx, taskSummary, partyDomainIDs); shouldReturn || updateErr != nil {
+		return updateErr
 	}
 
 	if err = c.updateTaskResource(ctx, taskSummary, partyDomainIDs); err != nil {

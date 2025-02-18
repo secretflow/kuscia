@@ -30,21 +30,10 @@ var s *server.HTTPServerBean
 var cli *Client
 
 func TestMain(m *testing.M) {
-	s = server.NewHTTPServerBean(20005)
+	s = server.NewHTTPServerBean()
 	go s.Run(context.Background())
-	cli = NewDiagnoseClient("localhost:20005")
+	cli = NewDiagnoseClient("localhost:8095")
 	m.Run()
-}
-
-func TestRegisterEndpoint(t *testing.T) {
-	testcase := "peerEndpoint"
-	resp, err := cli.RegisterEndpoint(context.Background(), &diagnose.RegisterEndpointRequest{
-		Endpoint: testcase,
-	})
-	assert.Nil(t, err)
-	assert.EqualValues(t, 200, resp.Status.Code)
-	assert.Equal(t, testcase, s.Service.PeerEndpoint)
-	assert.Equal(t, true, s.Service.CanStartClient)
 }
 
 func TestSubmitReport(t *testing.T) {
@@ -62,15 +51,7 @@ func TestSubmitReport(t *testing.T) {
 	})
 	assert.Nil(t, err)
 	assert.EqualValues(t, 200, resp.Status.Code)
-	assert.EqualValues(t, testcase[0].Name, s.Service.Report[0].Name)
 	assert.Equal(t, true, s.Service.RecReportDone)
-}
-
-func TestDone(t *testing.T) {
-	resp, err := cli.Done(context.Background())
-	assert.Nil(t, err)
-	assert.EqualValues(t, 200, resp.Status.Code)
-	assert.Equal(t, true, s.Service.PeerDone)
 }
 
 func TestHealthy(t *testing.T) {

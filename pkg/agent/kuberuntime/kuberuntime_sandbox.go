@@ -127,7 +127,8 @@ func (m *kubeGenericRuntimeManager) convertOverheadToLinuxResources(pod *v1.Pod)
 }
 
 func (m *kubeGenericRuntimeManager) calculateSandboxResources(pod *v1.Pod) *runtimeapi.LinuxContainerResources {
-	req, lim := resourcehelper.PodRequestsAndLimitsWithoutOverhead(pod)
+	lim := resourcehelper.PodLimits(pod, resourcehelper.PodResourcesOptions{ExcludeOverhead: true})
+	req := resourcehelper.PodRequests(pod, resourcehelper.PodResourcesOptions{ExcludeOverhead: true})
 	return m.calculateLinuxResources(req.Cpu(), lim.Cpu(), lim.Memory())
 }
 
@@ -166,13 +167,13 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 
 	if !pkgcontainer.IsHostNetworkPod(pod) {
 		// TODO: Add domain support in new runtime interface
-		podHostname, podDomain, err := m.runtimeHelper.GeneratePodHostNameAndDomain(pod)
-		if err != nil {
-			return nil, err
+		podHostname, podDomain, genErr := m.runtimeHelper.GeneratePodHostNameAndDomain(pod)
+		if genErr != nil {
+			return nil, genErr
 		}
-		podHostname, err = util.GetNodenameForKernel(podHostname, podDomain, pod.Spec.SetHostnameAsFQDN)
-		if err != nil {
-			return nil, err
+		podHostname, genErr = util.GetNodenameForKernel(podHostname, podDomain, pod.Spec.SetHostnameAsFQDN)
+		if genErr != nil {
+			return nil, genErr
 		}
 		podSandboxConfig.Hostname = podHostname
 	}

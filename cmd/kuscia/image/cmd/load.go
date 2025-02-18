@@ -23,12 +23,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // loadCommand represents the load command
-func loadCommand(cmdCtx *utils.Context) *cobra.Command {
+func loadCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	var input string
 
 	loadCmd := &cobra.Command{
@@ -67,14 +66,8 @@ kuscia image load --input app.tar
 				defer os.Remove(tmpFile)
 			}
 
-			if cmdCtx.RuntimeType == config.ProcessRuntime {
-				if err := cmdCtx.Store.LoadImage(input); err != nil {
-					nlog.Fatal(err.Error())
-				}
-			} else {
-				if err := utils.RunContainerdCmd(cmd.Context(), "ctr", "-a=/home/kuscia/containerd/run/containerd.sock", "-n=k8s.io", "images", "import", "--no-unpack", input); err != nil {
-					nlog.Fatal(err.Error())
-				}
+			if err := cmdCtx.ImageService.LoadImage(input); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}

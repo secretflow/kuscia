@@ -51,6 +51,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 ## 注册镜像
 
 ### 点对点模式
+
 - Autonomy 节点需要同时导入引擎镜像和注册 Appimage，下面以 root-kuscia-autonomy-alice 节点为例，其他 autonomy 节点也需要进行导入
 
 ```shell
@@ -58,6 +59,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 ```
 
 ### 中心化模式
+
 - Master 节点注册 Appimage 即可，下面以 root-kuscia-master 为例
 
 ```shell

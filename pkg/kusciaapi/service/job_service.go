@@ -441,9 +441,9 @@ func (h *jobService) ApproveJob(ctx context.Context, request *kusciaapi.ApproveJ
 		}
 	}
 	// auth handler
-	if err := h.authHandlerJob(ctx, job); err != nil {
+	if authErr := h.authHandlerJob(ctx, job); authErr != nil {
 		return &kusciaapi.ApproveJobResponse{
-			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, authErr.Error()),
 		}
 	}
 	nlog.Infof("approve job %s result %v reason %s", jobID, request.Result, request.Reason)
@@ -503,9 +503,9 @@ func (h *jobService) SuspendJob(ctx context.Context, request *kusciaapi.SuspendJ
 		}
 	}
 	// auth handler
-	if err := h.authHandlerJob(ctx, job); err != nil {
+	if authErr := h.authHandlerJob(ctx, job); authErr != nil {
 		return &kusciaapi.SuspendJobResponse{
-			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, authErr.Error()),
 		}
 	}
 	if job.Status.Phase != v1alpha1.KusciaJobRunning {
@@ -553,9 +553,9 @@ func (h *jobService) RestartJob(ctx context.Context, request *kusciaapi.RestartJ
 		}
 	}
 	// auth handler
-	if err := h.authHandlerJob(ctx, job); err != nil {
+	if authErr := h.authHandlerJob(ctx, job); authErr != nil {
 		return &kusciaapi.RestartJobResponse{
-			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, authErr.Error()),
 		}
 	}
 	if job.Status.Phase != v1alpha1.KusciaJobFailed && job.Status.Phase != v1alpha1.KusciaJobSuspended {
@@ -606,9 +606,9 @@ func (h *jobService) CancelJob(ctx context.Context, request *kusciaapi.CancelJob
 		}
 	}
 	// auth handler
-	if err := h.authHandlerJob(ctx, job); err != nil {
+	if authErr := h.authHandlerJob(ctx, job); authErr != nil {
 		return &kusciaapi.CancelJobResponse{
-			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
+			Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, authErr.Error()),
 		}
 	}
 	nlog.Infof("Cancel job: %s, reason: %s", jobID, request.Reason)

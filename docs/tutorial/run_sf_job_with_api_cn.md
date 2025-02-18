@@ -10,7 +10,7 @@
 
 ## 确认证书和 Token
 
-Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HTTPS 配置。
+Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HTTPS 配置。
 
 ### 中心化组网模式
 
@@ -27,7 +27,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 
 证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)
 
-这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
+这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -36,43 +36,43 @@ Kuscia API 使用双向 HTTPS，所以需要配置你的客户端库的双向 HT
 | ca.crt               | CA 证书文件                                             |
 | token                | 认证 Token ，在 headers 中添加 Token: { token 文件内容} |
 
-同时，还要保证节点间的授权证书配置正确，alice 节点和 bob 节点要完成授权的建立，否则双方无法共同参与计算任务。
+同时，还要保证节点间的授权证书配置正确，Alice 节点和 Bob 节点要完成授权的建立，否则双方无法共同参与计算任务。
 
 ## 准备数据
 
-你可以使用 Kuscia 中自带的数据文件，或者使用你自己的数据文件。
+您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。
 
-在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，你可以在容器中查看这个数据文件。
+在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
 
 {#kuscia}
 
 ### 查看 Kuscia 示例数据
 
-这里以 alice 节点为例，首先进入节点容器：
+这里以 Alice 节点为例，首先进入节点容器：
 
 ```shell
 docker exec -it ${USER}-kuscia-lite-alice bash
 ```
 
-在 alice 节点容器中查看节点示例数据：
+在 Alice 节点容器中查看节点示例数据：
 
 ```shell
 cat /home/kuscia/var/storage/data/alice.csv
 ```
 
-bob 节点同理。
+Bob 节点同理。
 
 {#prepare-your-own-data}
 
-### 准备你自己的数据
+### 准备您自己的数据
 
-你也可以使用你自己的数据文件，首先你要将你的数据文件复制到节点容器中，还是以 alice 节点为例：
+您也可以使用您自己的数据文件，首先您要将您的数据文件复制到节点容器中，还是以 Alice 节点为例：
 
 ```shell
 docker cp {your_alice_data} ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
 ```
 
-接下来你可以像[查看 Kuscia 示例数据](#kuscia)一样查看你的数据文件，这里不再赘述。
+接下来您可以像[查看 Kuscia 示例数据](#kuscia)一样查看您的数据文件，这里不再赘述。
 
 {#configure-kuscia-job}
 
@@ -84,20 +84,20 @@ docker cp {your_alice_data} ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/d
 docker exec -it ${USER}-kuscia-master bash
 ```
 
-如果是点对点组网模式，则需要进入任务发起方节点容器，以 alice 节点为例：
+如果是点对点组网模式，则需要进入任务发起方节点容器，以 Alice 节点为例：
 
 ```shell
 docker exec -it ${USER}-kuscia-autonomy-alice
 ```
 
-注意，你只能向已和 alice 节点建立了授权的节点发布计算任务。
+注意，您只能向已和 Alice 节点建立了授权的节点发布计算任务。
 
 ### 使用 Kuscia 示例数据配置 KusciaJob
 
 此处以[KusciaJob 示例](../reference/apis/kusciajob_cn.md#请求示例)作为任务示例展示，该任务流完成 2 个任务：
 
-1. job-psi 读取 alice 和 bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。
-2. job-split 读取 alice 和 bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-dataset.csv`、`test-dataset.csv`。
+1. job-psi 读取 Alice 和 Bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。
+2. job-split 读取 Alice 和 Bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-dataset.csv`、`test-dataset.csv`。
 
 这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`job_id`指定。
 
@@ -105,7 +105,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 具体字段数据格式和含义请参考[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) ，本文不再赘述。
 
-如果你成功了，你将得到如下返回：
+如果您成功了，您将得到如下返回：
 
 ```json
 { "status": { "code": 0, "message": "success", "details": [] }, "data": { "job_id": "job-best-effort-linear" } }
@@ -115,9 +115,9 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 如果遇到 HTTP 错误（即 HTTP Code 不为 200），请参考 [HTTP Error Code 处理](#http-error-code)。
 
-### 使用你自己的数据配置 KusciaJob
+### 使用您自己的数据配置 KusciaJob
 
-如果你要使用你自己的数据，可以将两个算子中的 `taskInputConfig.sf_input_ids` 的数据文件 `id` 修改为你在 [准备你自己的数据](#prepare-your-own-data) 中的 `domaindata_id` 即可。
+如果您要使用您自己的数据，可以将两个算子中的 `taskInputConfig.sf_input_ids` 的数据文件 `id` 修改为您在 [准备您自己的数据](#prepare-your-own-data) 中的 `domaindata_id` 即可。
 
 ### 更多相关
 
@@ -130,7 +130,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 ### 查看运行中的 KusciaJob 的详细状态
 
-job-best-effort-linear 是你在[配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
+job-best-effort-linear 是您在[配置 Job](#configure-kuscia-job) 中指定的 KusciaJob 的名称。
 
 我们请求[批量查询 Job 状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)接口来批量查询 KusciaJob
 的状态。
@@ -149,7 +149,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 }'
 ```
 
-如果任务成功了，你可以得到如下返回：
+如果任务成功了，您可以得到如下返回：
 
 ```json
 {
@@ -292,7 +292,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 
 ## 删除 KusciaJob
 
-当你想清理这个 KusciaJob 时，我们请求[删除 Job](../reference/apis/kusciajob_cn.md#删除-job) 接口来删除这个
+当您想清理这个 KusciaJob 时，我们请求[删除 Job](../reference/apis/kusciajob_cn.md#删除-job) 接口来删除这个
 KusciaJob.
 
 ```shell
@@ -307,7 +307,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 }'
 ```
 
-如果任务成功了，你可以得到如下返回：
+如果任务成功了，您可以得到如下返回：
 
 ```json
 { "status": { "code": 0, "message": "success", "details": [] }, "data": { "job_id": "job-best-effort-linear" } }

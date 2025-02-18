@@ -14,7 +14,7 @@
 
 module(
     name = "kuscia",
-    version = "0.13.0b1",
+    version = "0.14.0b0",
     compatibility_level = 1,
 )
 

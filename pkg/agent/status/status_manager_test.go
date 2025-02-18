@@ -39,13 +39,12 @@ import (
 	core "k8s.io/client-go/testing"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	api "k8s.io/kubernetes/pkg/apis/core"
-	statustest "k8s.io/kubernetes/pkg/kubelet/status/testing"
 	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
 
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
-
 	pkgpod "github.com/secretflow/kuscia/pkg/agent/pod"
 	podtest "github.com/secretflow/kuscia/pkg/agent/pod/testing"
+	statustest "github.com/secretflow/kuscia/pkg/agent/status/testing"
 )
 
 // Generate new instance of test pod with the same initial value.

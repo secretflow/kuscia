@@ -1,7 +1,7 @@
 # DomainData
 
 DomainData 表示被 Kuscia 管理的数据。请参考 [DomainData](../concepts/domaindata_cn.md)。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindata.proto) 找到对应的 protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindata.proto) 找到对应的 protobuf 文件。
 
 Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API 请参考 [Data Mesh](./datamesh/domaindata_cn.md)。
 
@@ -328,7 +328,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/query' \
 }
 ```
 
-
 {#batch-query-domain-data}
 
 ### 批量查询数据对象
@@ -525,7 +524,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
 
 {#list-domain-data-request-data}
 
-##### ListDomainDataRequestData
+#### ListDomainDataRequestData
 
 | 字段                | 类型     | 选填 | 描述    |
 |-------------------|--------|----|-------|

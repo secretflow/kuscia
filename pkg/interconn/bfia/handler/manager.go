@@ -80,7 +80,7 @@ func NewResourcesManager(ctx context.Context, kusciaClient kusciaclientset.Inter
 	ktSynced := ktInformer.Informer().HasSynced
 	appImageSynced := appImageInformer.Informer().HasSynced
 
-	kjInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = kjInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    m.handleAddedOrDeletedKusciaJob,
@@ -88,7 +88,7 @@ func NewResourcesManager(ctx context.Context, kusciaClient kusciaclientset.Inter
 		},
 	})
 
-	ktInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = ktInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    m.handleAddedOrDeletedKusciaTask,

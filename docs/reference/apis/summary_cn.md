@@ -7,7 +7,7 @@
 Kuscia 提供了两套 API 接口，分别是 K8s API 和 Kuscia API。
 
 K8s API 是基于 K8s 接口，以 CRD 的形式提供，请参考 [概念](../concepts/index) 。
-你可以通过 kubectl 或 类似于 [client-go](https://github.com/kubernetes/client-go) 这样的 Go 客户端 进行接入。
+您可以通过 kubectl 或 类似于 [client-go](https://github.com/kubernetes/client-go) 这样的 Go 客户端 进行接入。
 其他语言的接入方式，可以参考[这里](https://kubernetes.io/docs/reference/using-api/client-libraries/)。
 
 Kuscia API 是在 K8s API 上的一层封装，提供了更加上层的逻辑，您可以通过 GRPC 或者 HTTP 进行接入。
@@ -21,18 +21,19 @@ K8s API 接入。
 
 Kuscia API 提供 HTTP 和 GRPC 两种访问方法。
 
-当你使用 GRPC 时，你可以通过 protoc 生成出对应编程语言的客户端桩代码，你可以在
+当您使用 GRPC 时，您可以通过 protoc 生成出对应编程语言的客户端桩代码，您可以在
 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)
 找到 Kuscia API 的 protobuf 文件。
 
 当您使用 HTTP 时，您可以访问对应的 HTTP 端口，Kuscia API 的接口通过 POST+JSON 或 POST+PROTOBUF 的形式提供 ，并且满足
-protobuf 的 [JSON Mapping](https://protobuf.dev/programming-guides/proto3/#json) 。当请求的 `Content-Type`
+protobuf
+的 [JSON Mapping](https://protobuf.dev/programming-guides/proto3/#json) 。当请求的 `Content-Type`
 为 `application/x-protobuf` 时，使用 PROTOBUF 编码，否则使用 JSON 编码。
 
 ### 请求和响应约定
 
-请求总是携带会一个 header 字段，类型为 [RequestHeader](#requestheader) ，
-如 [CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， 该字段可以携带你自定义的一些数据。
+请求总是会携带一个 header 字段，类型为 [RequestHeader](#requestheader) ，
+如 [CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， 该字段可以携带您自定义的一些数据。
 
 响应总是携带一个 status 字段，类型为 [Status](#status) ，
 如 [CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ， 该字段描述了响应的状态信息。
@@ -63,9 +64,9 @@ Status 携带请求响应的状态信息。
 
 ## 如何使用 Kuscia API
 
-### 获取 Kuscia API server 证书和私钥
+### 获取 Kuscia API Server 证书和私钥
 
-Kuscia master 部署完成之后，会默认生成一个 kuscia API server 证书，你可以通过以下命令获取（以中心化组网模式为例）：
+Kuscia master 部署完成之后，会默认生成一个 kuscia API Server 证书，您可以通过以下命令获取（以中心化组网模式为例）：
 
 ```shell
 docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/kusciaapi-server.key .
@@ -76,7 +77,7 @@ docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/token .
 
 ### GRPC
 
-为了使用 GRPC 连接上 Kuscia API，你需要：
+为了使用 GRPC 连接上 Kuscia API，您需要：
 
 1. 从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) 下载 Kuscia 的 protobuf 文件，使用
    protoc
@@ -116,8 +117,10 @@ def query_domain():
         print(ret)
 ```
 
-你也可以使用 GRPC 的客户端工具连接上 Kuscia API，如 [grpcurl](https://github.com/fullstorydev/grpcurl/releases)，你需要替换 {} 中的内容：
+您也可以使用 GRPC 的客户端工具连接上 Kuscia API，如 [grpcurl](https://github.com/fullstorydev/grpcurl/releases)，您需要替换 {} 中的内容：
+
 > 如果 GRPC 的主机端口是 8083 ，则可以执行下面的命令，端口号不是 8083 ，可以先用 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 命令检查下端口
+
 ```shell
 grpcurl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
         --key /home/kuscia/var/certs/kusciaapi-server.key \
@@ -131,6 +134,8 @@ GRPC 容器内端口默认在：master 或者 autonomy 节点的 8083。
 GRPC 主机上端口：master 或者 autonomy 可以通过 `docker inspect --format="{{json .NetworkSettings.Ports}}" ${容器名}` 获得 8083 端口的主机映射。
 
 ### HTTP
+
+为了使用 HTTP 连接上 Kuscia API，您需要：
 
 1. 使用编程语言的 HTTP 客户端库连接上 Kuscia API，注意：Kuscia API 使用 双向 HTTP，所以您需要配置您的客户端库的双向 HTTP
    配置。

@@ -76,36 +76,36 @@ upload host data
 
 - 若以中心化组网模式部署，请登陆到 Master 容器中
 
-```shell
-docker exec -it ${USER}-kuscia-master bash
-```
+    ```shell
+    docker exec -it ${USER}-kuscia-master bash
+    ```
 
 - 若以点对点组网模式部署，请登陆到 Bob 容器中
 
-```shell
-docker exec -it ${USER}-kuscia-autonomy-bob bash
-```
+    ```shell
+    docker exec -it ${USER}-kuscia-autonomy-bob bash
+    ```
 
 检查 fate-deploy-bob Pod 运行情况
 
 - 确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running
 
-```shell
-# 查看 bob 节点下的 pod 列表
-kubectl get pod -n bob
+    ```shell
+    # 查看 bob 节点下的 pod 列表
+    kubectl get pod -n bob
 
-## 正常输出示例:
-NAME                               READY   STATUS    RESTARTS   AGE
-fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
-...
+    ## 正常输出示例:
+    NAME                               READY   STATUS    RESTARTS   AGE
+    fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
+    ...
 
-# 若 fate-deploy-bob Pod 状态非 Running，通过以下命令查看 Pod 详细信息，具体原因可以查看 status 字段下的相关内容
-kubectl get pod fate-deploy-bob-6798765d84-84rm7 -o yaml -n bob
+    # 若 fate-deploy-bob Pod 状态非 Running，通过以下命令查看 Pod 详细信息，具体原因可以查看 status 字段下的相关内容
+    kubectl get pod fate-deploy-bob-6798765d84-84rm7 -o yaml -n bob
 
-# 若 fate-deploy-bob Pod 状态为 Pending 且由于机器内存不足无法完成调度，则可以尝试使用下面命令减小 Pod 的请求内存大小
-# 不推荐：调整后，虽然 Pod 可以 Running, 但是也可能会由于机器内存不足而导致任务失败
-kubectl patch deploy fate-deploy-bob -n bob --patch '{"spec": {"template": {"spec": {"containers": [{"name": "fate-deploy-bob","resources": {"requests": {"memory": "1G"}}}]}}}}'
-```
+    # 若 fate-deploy-bob Pod 状态为 Pending 且由于机器内存不足无法完成调度，则可以尝试使用下面命令减小 Pod 的请求内存大小
+    # 不推荐：调整后，虽然 Pod 可以 Running, 但是也可能会由于机器内存不足而导致任务失败
+    kubectl patch deploy fate-deploy-bob -n bob --patch '{"spec": {"template": {"spec": {"containers": [{"name": "fate-deploy-bob","resources": {"requests": {"memory": "1G"}}}]}}}}'
+    ```
 
 ### 查看作业失败原因
 

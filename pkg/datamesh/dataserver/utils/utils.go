@@ -15,7 +15,6 @@
 package utils
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -109,6 +108,14 @@ func GenerateArrowColumnType(domainData *datamesh.DomainData) (map[string]arrow.
 	return colTypes, nil
 }
 
+func GenerateArrowColumnNames(domainData *datamesh.DomainData) []string {
+	colNames := make([]string, len(domainData.Columns))
+	for i, column := range domainData.Columns {
+		colNames[i] = column.Name
+	}
+	return colNames
+}
+
 func GenerateBinaryDataArrowSchema() *arrow.Schema {
 	return arrow.NewSchema([]arrow.Field{
 		{
@@ -125,7 +132,7 @@ func PackActionResult(msg proto.Message) (*flight.Result, error) {
 	ret := &flight.Result{}
 	if ret.Body, err = proto.Marshal(msg); err != nil {
 		nlog.Warnf("Unable to marshal msg to flight.Result.Body: %v", err)
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Unable to marshal final response: %v", err))
+		return nil, status.Errorf(codes.Internal, "Unable to marshal final response: %v", err)
 	}
 	return ret, nil
 }

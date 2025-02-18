@@ -40,11 +40,18 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	units "github.com/docker/go-units"
+	"github.com/docker/go-units"
+
 	"github.com/secretflow/kuscia/pkg/agent/local/mounter"
 	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+)
+
+const (
+	defaultRegistry   = "docker.io"
+	defaultRepository = "library"
 )
 
 type ociStore struct {
@@ -304,13 +311,15 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		return fmt.Errorf("load image failed with: %s", err.Error())
 	}
 
+	tag = CheckTagCompliance(tag)
 	nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
-	flat, err := s.flattenImage(img)
+	flat, cacheFile, err := s.flattenImage(img)
 	if err != nil {
 		nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
 		return err
 	}
-
+	//remove cache file
+	defer os.Remove(cacheFile)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -339,7 +348,7 @@ func (s *ociStore) findTagNameInFile(tarFile string) (string, error) {
 		}
 		if hdr.Name == "manifest.json" {
 			manifest := tarball.Manifest{}
-			json.NewDecoder(tf).Decode(&manifest)
+			_ = json.NewDecoder(tf).Decode(&manifest)
 			if len(manifest) == 0 {
 				return "", errors.New("manifest.json format error")
 			}
@@ -398,7 +407,8 @@ func (s *ociStore) RegisterImage(tag, manifestFile string) error {
 	return nil
 }
 
-func (s *ociStore) findImageFromLocal(imageName string) (v1.Image, error) {
+func (s *ociStore) findImageFromLocal(imageNameOrID string) (v1.Image, error) {
+	var err error
 	ii, err := s.imagePath.ImageIndex()
 	if err != nil {
 		return nil, err
@@ -409,10 +419,17 @@ func (s *ociStore) findImageFromLocal(imageName string) (v1.Image, error) {
 		return nil, err
 	}
 
+	var imgRes v1.Image
 	for _, img := range imf.Manifests {
-		if name, ok := s.getImageName(img); ok && (name == imageName) {
-			nlog.Infof("Found the image(%s) in local store, digest is %s", imageName, img.Digest.String())
-			return s.imagePath.Image(img.Digest)
+		if name, ok := s.getImageName(img); ok && (name == imageNameOrID) {
+			nlog.Debugf("Found the image(%s) in local store, digest is %s", imageNameOrID, img.Digest.String())
+			imgRes, err = s.imagePath.Image(img.Digest)
+			return imgRes, err
+		}
+		if strings.HasPrefix(img.Digest.String(), fmt.Sprintf("%s%s", common.ImageIDPrefix, imageNameOrID)) {
+			nlog.Debugf("Found the image(%s) in local store, digest is %s", imageNameOrID, img.Digest.String())
+			imgRes, err = s.imagePath.Image(img.Digest)
+			return imgRes, err
 		}
 	}
 	return nil, nil
@@ -462,4 +479,19 @@ func (s *ociStore) kusciaImageAnnotation(tag string, _ string) layout.Option {
 	return layout.WithAnnotations(map[string]string{
 		oci.AnnotationRefName: tag,
 	})
+}
+
+// CheckTagCompliance EnsureImageNameFormat ensures that the given image name is in the format <registry>/<repository>:<tag>.
+// It adds default values for registry and repository if they are missing.
+func CheckTagCompliance(targetImage string) string {
+	parts := strings.Split(targetImage, "/")
+	image := targetImage
+
+	if len(parts) == 1 {
+		image = fmt.Sprintf("%s/%s/%s", defaultRegistry, defaultRepository, image)
+	} else if len(parts) > 1 && !strings.Contains(parts[0], ".") {
+		image = fmt.Sprintf("%s/%s", defaultRegistry, image)
+	}
+
+	return image
 }

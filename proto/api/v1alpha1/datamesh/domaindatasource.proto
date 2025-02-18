@@ -96,7 +96,7 @@ message OssDataSourceInfo {
   bool   virtualhost = 6;
   // optional enum[s3v2,s3v4]
   string version = 7;
-  // optional enum[oss,minio] , default oss
+  // [deprecated] storage_type is deprecated, optional enum[oss,minio] , default oss
   string storage_type = 8;
 }
 

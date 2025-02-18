@@ -19,7 +19,7 @@ spec:
     domain:
       domainID: {{.TRANSIT_DOMAIN}}
   bodyEncryption:
-   algorithm: AES
+    algorithm: AES
   authenticationType: Token
   tokenConfig:
     tokenGenMethod: RSA-GEN

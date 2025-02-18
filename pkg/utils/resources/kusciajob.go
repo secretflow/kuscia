@@ -82,12 +82,12 @@ func UpdateKusciaJobStage(kusciaClient kusciaclientset.Interface,
 
 // UpdateKusciaJob updates kuscia job.
 func UpdateKusciaJob(kusciaClient kusciaclientset.Interface,
-	kj *kusciaapisv1alpha1.KusciaJob,
+	kusciaJob *kusciaapisv1alpha1.KusciaJob,
 	hasUpdated func(kusciaJob *kusciaapisv1alpha1.KusciaJob) bool,
 	update func(kusciaJob *kusciaapisv1alpha1.KusciaJob),
 	retries int) (err error) {
-	kjName := kj.Name
-	for i, kj := 0, kj; ; i++ {
+	kjName := kusciaJob.Name
+	for i, kj := 0, kusciaJob; ; i++ {
 		nlog.Infof("update kuscia job %v", kjName)
 		_, err = kusciaClient.KusciaV1alpha1().KusciaJobs(common.KusciaCrossDomain).Update(context.Background(), kj, metav1.UpdateOptions{})
 		if err == nil {

@@ -59,13 +59,14 @@ DomainDataSource `spec` 的子字段详细介绍如下：
 注意：清理 DomainDataSource 并不会清除真实的数据源，只是从 Kuscia 中删除 DomainDataSource CRD 对象。
 
 1. 运行以下命令清理 DomainDataSource。
-```shell
-kubectl delete domaindatasource demo-localfs-datasource -n alice
-```
 
-1. 检查 alice 下的 DomainDataSource 是否已被清理。
+    ```shell
+    kubectl delete domaindatasource demo-localfs-datasource -n alice
+    ```
 
-```shell
-kubectl get domaindatasource demo-localfs-datasource -n alice
-Error from server (NotFound): domaindatasources.kuscia.secretflow "demo-localfs-datasource" not found
-```
+2. 检查 Alice 下的 DomainDataSource 是否已被清理。
+
+    ```shell
+    kubectl get domaindatasource demo-localfs-datasource -n alice
+    Error from server (NotFound): domaindatasources.kuscia.secretflow "demo-localfs-datasource" not found
+    ```

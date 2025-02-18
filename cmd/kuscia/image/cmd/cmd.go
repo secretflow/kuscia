@@ -20,11 +20,12 @@ import (
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 )
 
-func InstallCommands(rootCmd *cobra.Command, cmdCtx *utils.Context) {
+func InstallCommands(rootCmd *cobra.Command, cmdCtx *utils.ImageContext) {
 	rootCmd.AddCommand(loadCommand(cmdCtx))
 	rootCmd.AddCommand(builtinCommand(cmdCtx))
 	rootCmd.AddCommand(pullCommand(cmdCtx))
 	rootCmd.AddCommand(listCommand(cmdCtx))
 	rootCmd.AddCommand(tagCommand(cmdCtx))
 	rootCmd.AddCommand(mountCommand(cmdCtx))
+	rootCmd.AddCommand(rmCommand(cmdCtx))
 }

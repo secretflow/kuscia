@@ -20,18 +20,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"google.golang.org/protobuf/proto"
 )
 
 type DiagnoseService struct {
-	PeerDone       bool
-	CanStartClient bool
-	RecReportDone  bool
-	PeerEndpoint   string
-	Report         []*diagnose.MetricItem
+	PeerDone      bool
+	RecReportDone bool
+	Report        []*diagnose.MetricItem
 }
 
 func NewService() *DiagnoseService {
@@ -40,7 +39,7 @@ func NewService() *DiagnoseService {
 
 func (s *DiagnoseService) Mock(c *gin.Context) {
 	req := new(diagnose.MockRequest)
-	parseProto(c, req) // no need to check error for self use
+	_ = parseProto(c, req) // no need to check error for self use
 	w := c.Writer
 	header := w.Header()
 	if req.EnableChunked { // chunked mode
@@ -94,44 +93,21 @@ func (s *DiagnoseService) healthy() *diagnose.StatusResponse {
 	return &diagnose.StatusResponse{Status: &v1alpha1.Status{Code: 200}}
 }
 
-func (s *DiagnoseService) done() *diagnose.StatusResponse {
-	s.PeerDone = true
-	return &diagnose.StatusResponse{Status: &v1alpha1.Status{Code: 200}}
-}
-
-func (s *DiagnoseService) registerEndpoint(req *diagnose.RegisterEndpointRequest) *diagnose.StatusResponse {
-	s.PeerEndpoint = req.Endpoint
-	s.CanStartClient = true
-	return &diagnose.StatusResponse{Status: &v1alpha1.Status{Code: 200}}
-}
-
 func (s *DiagnoseService) submitReport(req *diagnose.SubmitReportRequest) *diagnose.StatusResponse {
 	s.Report = req.Items
 	s.RecReportDone = true
 	return &diagnose.StatusResponse{Status: &v1alpha1.Status{Code: 200}}
 }
 
-func (s *DiagnoseService) Heahlty(ctx *gin.Context) {
+func (s *DiagnoseService) Healthy(ctx *gin.Context) {
 	nlog.Infof("Enter Heahlty")
 	render(ctx, s.healthy())
-}
-
-func (s *DiagnoseService) Done(ctx *gin.Context) {
-	nlog.Infof("Enter Done")
-	render(ctx, s.done())
-}
-
-func (s *DiagnoseService) RegisterEndpoint(ctx *gin.Context) {
-	nlog.Infof("Enter RegisterEndpoint")
-	req := new(diagnose.RegisterEndpointRequest)
-	parseProto(ctx, req)
-	render(ctx, s.registerEndpoint(req))
 }
 
 func (s *DiagnoseService) SubmitReport(ctx *gin.Context) {
 	nlog.Infof("Enter SubmitReport")
 	req := new(diagnose.SubmitReportRequest)
-	parseProto(ctx, req)
+	_ = parseProto(ctx, req)
 	render(ctx, s.submitReport(req))
 }
 
@@ -150,6 +126,6 @@ func parseProto(c *gin.Context, req proto.Message) error {
 
 func render(ctx *gin.Context, resp proto.Message) {
 	buf, _ := proto.Marshal(resp)
-	ctx.Writer.Write(buf)
+	_, _ = ctx.Writer.Write(buf)
 	ctx.Writer.(http.Flusher).Flush()
 }

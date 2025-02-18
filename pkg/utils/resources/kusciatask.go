@@ -72,15 +72,15 @@ func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt
 }
 
 // UpdateKusciaTaskStatusWithRetry updates kuscia task status with retry.
-func UpdateKusciaTaskStatusWithRetry(kusciaClient kusciaclientset.Interface, rawKt, curKt *kusciaapisv1alpha1.KusciaTask, retryCount int) (err error) {
-	if reflect.DeepEqual(rawKt.Status, curKt.Status) {
-		nlog.Debugf("Kuscia task %v status does not change, skip to update it", curKt.Name)
+func UpdateKusciaTaskStatusWithRetry(kusciaClient kusciaclientset.Interface, rawKt, currentKt *kusciaapisv1alpha1.KusciaTask, retryCount int) (err error) {
+	if reflect.DeepEqual(rawKt.Status, currentKt.Status) {
+		nlog.Debugf("Kuscia task %v status does not change, skip to update it", currentKt.Name)
 		return nil
 	}
 
 	var lastErr error
-	newStatus := curKt.Status.DeepCopy()
-	for i, curKt := 0, curKt; ; i++ {
+	newStatus := currentKt.Status.DeepCopy()
+	for i, curKt := 0, currentKt; ; i++ {
 		nlog.Infof("Start updating kuscia task %q status", rawKt.Name)
 		if _, err = kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKt, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia task %q status", rawKt.Name)

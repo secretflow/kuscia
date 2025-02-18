@@ -79,16 +79,16 @@ func (m *sysMounter) UmountRoot() error {
 	}
 
 	for _, mo := range mounts {
-		mounted, err := mountinfo.Mounted(mo.Mountpoint)
-		if err != nil {
-			return fmt.Errorf("failed to check mounted, detail-> %v", err)
+		mounted, mountErr := mountinfo.Mounted(mo.Mountpoint)
+		if mountErr != nil {
+			return fmt.Errorf("failed to check mounted, detail-> %v", mountErr)
 		}
 		if !mounted {
 			continue
 		}
 
-		if err := sysmount.Unmount(mo.Mountpoint); err != nil {
-			nlog.Errorf("Failed to umount %q: %v", mo.Mountpoint, err)
+		if unmountErr := sysmount.Unmount(mo.Mountpoint); unmountErr != nil {
+			nlog.Errorf("Failed to umount %q: %v", mo.Mountpoint, unmountErr)
 			continue
 		}
 

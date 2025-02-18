@@ -110,7 +110,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		clusterDomainRouteWorkqueue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "ClusterDomainRoutes"),
 	}
 	cc.ctx, cc.cancel = context.WithCancel(ctx)
-	clusterDomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = clusterDomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(newOne interface{}) {
 				newCdr, ok := newOne.(*kusciaapisv1alpha1.ClusterDomainRoute)
@@ -139,7 +139,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		},
 		clusterDomainRouteSyncPeriod,
 	)
-	domainInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = domainInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				newOne, ok := obj.(*kusciaapisv1alpha1.Domain)
@@ -169,7 +169,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		},
 		0,
 	)
-	domainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = domainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				newOne, ok := obj.(*kusciaapisv1alpha1.DomainRoute)
@@ -267,19 +267,19 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 	// TODO Update ClusterDomainRoute at the end.
 
 	// Update label must be first.
-	if hasUpdate, err := c.updateLabel(ctx, cdr, appendLabels, nil); err != nil || hasUpdate {
-		return err
+	if hasUpdate, updateErr := c.updateLabel(ctx, cdr, appendLabels, nil); updateErr != nil || hasUpdate {
+		return updateErr
 	}
 
-	if hasUpdate, err := c.syncDomainPubKey(ctx, cdr); err != nil || hasUpdate {
-		return err
+	if hasUpdate, syncErr := c.syncDomainPubKey(ctx, cdr); syncErr != nil || hasUpdate {
+		return syncErr
 	}
 
-	if hasUpdate, err := c.syncServiceToken(ctx, cdr); err != nil || hasUpdate {
-		return err
+	if hasUpdate, syncErr := c.syncServiceToken(ctx, cdr); syncErr != nil || hasUpdate {
+		return syncErr
 	}
 
-	if err := domainroute.DoValidate(&cdr.Spec.DomainRouteSpec); err != nil {
+	if err = domainroute.DoValidate(&cdr.Spec.DomainRouteSpec); err != nil {
 		nlog.Errorf("clusterdomainroute %s doValidate error:%v", cdr.Name, err)
 		return err
 	}
@@ -288,8 +288,8 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 	drName := fmt.Sprintf("%s-%s", cdr.Spec.Source, cdr.Spec.Destination)
 	if sourceRole != kusciaapisv1alpha1.Partner {
 		// Create domainroute in source namespace
-		if hasUpdate, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Source, drName); err != nil || hasUpdate {
-			return err
+		if hasUpdate, checkErr := c.checkDomainRoute(ctx, cdr, cdr.Spec.Source, drName); checkErr != nil || hasUpdate {
+			return checkErr
 		}
 		if srcdr, err = c.domainRouteLister.DomainRoutes(cdr.Spec.Source).Get(drName); err != nil {
 			return err
@@ -298,16 +298,16 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 
 	if destRole != kusciaapisv1alpha1.Partner {
 		// Create domainroute in destination namespace
-		if hasUpdate, err := c.checkDomainRoute(ctx, cdr, cdr.Spec.Destination, drName); err != nil || hasUpdate {
-			return err
+		if hasUpdate, checkErr := c.checkDomainRoute(ctx, cdr, cdr.Spec.Destination, drName); checkErr != nil || hasUpdate {
+			return checkErr
 		}
 		if destdr, err = c.domainRouteLister.DomainRoutes(cdr.Spec.Destination).Get(drName); err != nil {
 			return err
 		}
 	}
 
-	if hasUpdate, err := c.syncStatusFromDomainroute(cdr, srcdr, destdr); err != nil || hasUpdate {
-		return err
+	if hasUpdate, syncErr := c.syncStatusFromDomainroute(cdr, srcdr, destdr); syncErr != nil || hasUpdate {
+		return syncErr
 	}
 
 	return c.checkInteropConfig(ctx, cdr, sourceRole, destRole)

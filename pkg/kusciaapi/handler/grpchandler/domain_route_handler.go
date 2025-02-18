@@ -48,5 +48,6 @@ func (h domainRouteHandler) BatchQueryDomainRouteStatus(ctx context.Context, req
 	return h.domainRouteService.BatchQueryDomainRouteStatus(ctx, request), nil
 }
 
+// nolint:unused
 func (h domainRouteHandler) mustEmbedUnimplementedRouteServiceServer() {
 }

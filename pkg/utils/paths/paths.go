@@ -147,15 +147,15 @@ func EnsureFile(fileName string, autoCreate bool) error {
 	if err != nil {
 		if autoCreate && os.IsNotExist(err) {
 			// create file's parent directory
-			if err := os.MkdirAll(filepath.Dir(fileName), defaultDirMode); err != nil {
-				return err
+			if mkdirErr := os.MkdirAll(filepath.Dir(fileName), defaultDirMode); mkdirErr != nil {
+				return mkdirErr
 			}
 
-			f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultFileMode)
-			if err == nil {
+			f, openErr := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, defaultFileMode)
+			if openErr == nil {
 				_ = f.Close()
 			}
-			return err
+			return openErr
 		}
 		return err
 	}
@@ -347,8 +347,8 @@ func Unlink(path string) error {
 
 func RemoveIfExist(path string) error {
 	if _, err := os.Lstat(path); err == nil {
-		if err := os.RemoveAll(path); err != nil {
-			return fmt.Errorf("failed to remove file %q, err-> %+v", path, err)
+		if removeErr := os.RemoveAll(path); removeErr != nil {
+			return fmt.Errorf("failed to remove file %q, err-> %+v", path, removeErr)
 		}
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("failed to check file %q, err-> %v", path, err)

@@ -77,7 +77,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	kubeClient := config.KubeClient
 	kusciaClient := config.KusciaClient
 
-	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 1*time.Minute)
+	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 10*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 	domaindataGrantInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDataGrants()
 	domaindataInformer := kusciaInformerFactory.Kuscia().V1alpha1().DomainDatas()
@@ -104,7 +104,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 
-	domaindataGrantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = domaindataGrantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			queue.EnqueueObjectWithKey(obj, controller.domainDataGrantWorkqueue)
 		},
@@ -119,7 +119,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 			controller.domainDataGrantDeleteWorkqueue.Add(dd.Spec.Author + "/" + dd.Name)
 		},
 	})
-	domaindataInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = domaindataInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			queue.EnqueueObjectWithKey(newObj, controller.domainDataWorkqueue)
 		},
@@ -184,15 +184,15 @@ func (c *Controller) Run(workers int) error {
 	defer runtime.HandleCrash()
 	defer c.domainDataGrantWorkqueue.ShutDown()
 
-	nlog.Info("Starting domain controller")
+	nlog.Info("Starting domaindata controller")
 	c.kusciaInformerFactory.Start(c.ctx.Done())
 
-	nlog.Info("Waiting for informer cache to sync")
+	nlog.Infof("Waiting for informer cache to sync for %s", c.Name())
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.cacheSyncs...) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	nlog.Info("Starting workers")
+	nlog.Infof("Starting workers for %s", c.Name())
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runDomainDataGrantWorker, time.Second, c.ctx.Done())
 		go wait.Until(c.runDomainDataWorker, time.Second, c.ctx.Done())
@@ -410,8 +410,8 @@ func (c *Controller) ensureDomainData(dg *v1alpha1.DomainDataGrant) error {
 	}
 	_, err = c.kusciaClient.KusciaV1alpha1().DomainDatas(destDomain).Get(c.ctx, dg.Spec.DomainDataID, metav1.GetOptions{})
 	if k8serrors.IsNotFound(err) {
-		dd, err := c.kusciaClient.KusciaV1alpha1().DomainDatas(dg.Namespace).Get(c.ctx, dg.Spec.DomainDataID, metav1.GetOptions{})
-		if err != nil {
+		dd, getErr := c.kusciaClient.KusciaV1alpha1().DomainDatas(dg.Namespace).Get(c.ctx, dg.Spec.DomainDataID, metav1.GetOptions{})
+		if getErr != nil {
 			return fmt.Errorf("can't found domaindata %v/%v", dg.Namespace, dg.Spec.DomainDataID)
 		}
 
@@ -424,9 +424,9 @@ func (c *Controller) ensureDomainData(dg *v1alpha1.DomainDataGrant) error {
 			ddCopy.Annotations[common.InterConnKusciaPartyAnnotationKey] = dg.Spec.GrantDomain
 		}
 		ddCopy.Spec.Vendor = common.DomainDataVendorGrant
-		_, err = c.kusciaClient.KusciaV1alpha1().DomainDatas(destDomain).Create(c.ctx, ddCopy, metav1.CreateOptions{})
+		_, createErr := c.kusciaClient.KusciaV1alpha1().DomainDatas(destDomain).Create(c.ctx, ddCopy, metav1.CreateOptions{})
 		nlog.Infof("Create DomainData %s/%s, because grant %s to %s", dg.Spec.GrantDomain, dg.Spec.DomainDataID, dg.Spec.Author, dg.Spec.GrantDomain)
-		return err
+		return createErr
 	}
 	return err
 }
@@ -486,16 +486,16 @@ func (c *Controller) verify(dg *v1alpha1.DomainDataGrant) error {
 	if dg.Spec.Signature != "" {
 		dm, err := c.domainLister.Get(dg.Spec.Author)
 		if err != nil {
-			c.updateStatus(dg, v1alpha1.GrantUnavailable, getDomainCertErrorStr)
+			_ = c.updateStatus(dg, v1alpha1.GrantUnavailable, getDomainCertErrorStr)
 			return fmt.Errorf("get domain %s cert error,err:%s", dg.Spec.Author, err.Error())
 		}
 		if dm.Spec.Cert == "" {
-			c.updateStatus(dg, v1alpha1.GrantUnavailable, getDomainCertErrorStr)
+			_ = c.updateStatus(dg, v1alpha1.GrantUnavailable, getDomainCertErrorStr)
 			return fmt.Errorf("get domain %s cert error, because cert is empty", dg.Spec.Author)
 		}
 		pubKey, err := getPublickeyFromCert(dm.Spec.Cert)
 		if err != nil {
-			c.updateStatus(dg, v1alpha1.GrantUnavailable, getDomainCertErrorStr)
+			_ = c.updateStatus(dg, v1alpha1.GrantUnavailable, getDomainCertErrorStr)
 			return fmt.Errorf("get domain %s cert error,err:%s", dg.Spec.Author, err.Error())
 		}
 		dgcopy := dg.DeepCopy()

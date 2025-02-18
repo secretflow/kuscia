@@ -138,7 +138,7 @@ func (ec *EndpointsController) Run(workers int, stopCh <-chan struct{}) {
 }
 
 func (ec *EndpointsController) addServiceEventHandler(serviceInformer corev1informers.ServiceInformer) {
-	serviceInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = serviceInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.FilteringResourceEventHandler{
 			FilterFunc: func(obj interface{}) bool {
 				svc, ok := obj.(*v1.Service)
@@ -160,7 +160,7 @@ func (ec *EndpointsController) addServiceEventHandler(serviceInformer corev1info
 }
 
 func (ec *EndpointsController) addEndpointsEventHandler(endpointInformer corev1informers.EndpointsInformer) {
-	endpointInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = endpointInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: ec.updateEndpoints,
 			UpdateFunc: func(_, newObj interface{}) {

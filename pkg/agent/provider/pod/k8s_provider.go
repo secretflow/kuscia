@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -54,6 +56,11 @@ import (
 
 const (
 	labelOwnerPodName = "kuscia.secretflow/owner-pod-name"
+)
+
+const (
+	// backend k8s admission denied the request
+	DeniedRequest = "denied the request"
 )
 
 var (
@@ -103,6 +110,8 @@ type K8sProvider struct {
 	leaderElector election.Elector
 	recorder      record.EventRecorder
 	logManager    *K8sLogManager
+	// the pods that failed to apply to backend k8s
+	podsApplyFailed sync.Map
 }
 
 func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
@@ -120,6 +129,7 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		affinitiesToAdd:  &v1.Affinity{},
 		runtimeClassName: dep.K8sProviderCfg.RuntimeClassName,
 		recorder:         dep.Recorder,
+		podsApplyFailed:  sync.Map{}, // pod.Name -> v1.podStatus
 	}
 
 	if kp.podDNSPolicy == "" {
@@ -261,13 +271,15 @@ func (kp *K8sProvider) Stop() {
 func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgcontainer.PodStatus, reasonCache *kri.ReasonCache) (retErr error) {
 	nlog.Infof("Sync pod %v", format.Pod(pod))
 
+	newPod := pod.DeepCopy()
+
 	defer func() {
 		if retErr != nil {
 			kp.recorder.Eventf(pod, v1.EventTypeWarning, events.FailedCreatePodSandBox, "Failed to sync pod to k8s: %v", retErr)
+			kp.syncErrAction(retErr, newPod, pod.UID)
 		}
 	}()
 
-	newPod := pod.DeepCopy()
 	newPod.ObjectMeta = *kp.normalizeMeta(pod.UID, &pod.ObjectMeta)
 
 	if _, err := kp.podLister.Get(pod.Name); err == nil {
@@ -379,6 +391,40 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 	return nil
 }
 
+func (kp *K8sProvider) syncErrAction(retErr error, newPod *v1.Pod, kusciaPodUID types.UID) {
+	// for now, only apply failed error(admission failed) need to be handled
+	if strings.Contains(retErr.Error(), DeniedRequest) {
+		newPod.Status = v1.PodStatus{
+			Phase:   v1.PodFailed,
+			Reason:  "Pod was denied by provider",
+			Message: fmt.Sprintf("Failed to apply pod. Request was denied. Checking host k8s validating admission webhook rules might be helpful, err detail: %v", retErr),
+		}
+		if len(newPod.Status.ContainerStatuses) == 0 {
+			// we create container from newPod.Container
+			newPod.Status.ContainerStatuses = make([]v1.ContainerStatus, len(newPod.Spec.Containers))
+			for i := range newPod.Status.ContainerStatuses {
+				newPod.Status.ContainerStatuses[i].Name = newPod.Spec.Containers[i].Name
+				newPod.Status.ContainerStatuses[i].Image = newPod.Spec.Containers[i].Image
+			}
+		}
+		for i := range newPod.Status.ContainerStatuses {
+			if newPod.Status.ContainerStatuses[i].State.Terminated != nil {
+				continue
+			}
+			newPod.Status.ContainerStatuses[i].State = v1.ContainerState{
+				Terminated: &v1.ContainerStateTerminated{
+					ExitCode: 125,
+					Reason:   "Error",
+					Message:  "Pod was not created, so container was not created",
+				},
+			}
+		}
+		kp.podsApplyFailed.Store(newPod.Name, newPod)
+		// sync backend pod status to pod worker
+		kp.podSyncHandler.HandlePodSyncByUID(kusciaPodUID)
+	}
+}
+
 func (kp *K8sProvider) normalizeMeta(sourcePodUID types.UID, meta *metav1.ObjectMeta) *metav1.ObjectMeta {
 	newMeta := &metav1.ObjectMeta{
 		Labels:      map[string]string{},
@@ -471,6 +517,7 @@ func (kp *K8sProvider) applyPod(ctx context.Context, pod *v1.Pod) (*v1.Pod, erro
 }
 
 func (kp *K8sProvider) KillPod(ctx context.Context, pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
+	kp.podsApplyFailed.Delete(pod.Name)
 	if err := kp.deleteBackendPod(ctx, kp.bkNamespace, pod.Name, gracePeriodOverride); err != nil {
 		return fmt.Errorf("failed to kill pod %q, detail-> %v", format.Pod(pod), err)
 	}
@@ -502,8 +549,17 @@ func (kp *K8sProvider) CleanupPods(ctx context.Context, pods []*v1.Pod, runningP
 	return nil
 }
 
+func (kp *K8sProvider) getBackendPod(pod *v1.Pod) (*v1.Pod, error) {
+	// found pod apply failed, we can only get pod info from podsApplyFailed
+	if podFailed, ok := kp.podsApplyFailed.Load(pod.Name); ok {
+		return podFailed.(*v1.Pod), nil
+	}
+	// pod apply successfully, we can get pod from podLister
+	return kp.podLister.Get(pod.Name)
+}
+
 func (kp *K8sProvider) RefreshPodStatus(pod *v1.Pod, podStatus *v1.PodStatus) {
-	bkPod, err := kp.podLister.Get(pod.Name)
+	bkPod, err := kp.getBackendPod(pod)
 	if k8serrors.IsNotFound(err) {
 		nlog.Warnf("Pod %v not found, skip updating status", format.Pod(pod))
 		return
@@ -511,6 +567,15 @@ func (kp *K8sProvider) RefreshPodStatus(pod *v1.Pod, podStatus *v1.PodStatus) {
 	if err != nil {
 		nlog.Errorf("Failed to get pod %v: %v", format.Pod(pod), err)
 		return
+	}
+
+	// For updating pod reason and message. GetPodStatus mainly return container status.
+	// RefreshPodStatus is called when generate apiPodStatus, and will be saved into podManager.
+	if podStatus.Reason == "" {
+		podStatus.Reason = bkPod.Status.Reason
+	}
+	if podStatus.Message == "" {
+		podStatus.Message = bkPod.Status.Message
 	}
 
 	podStatus.ContainerStatuses = make([]v1.ContainerStatus, len(bkPod.Status.ContainerStatuses))
@@ -547,7 +612,7 @@ func (kp *K8sProvider) GetPodStatus(ctx context.Context, pod *v1.Pod) (*pkgconta
 		podStatus.ID = types.UID(pod.Labels[common.LabelPodUID])
 	}
 
-	bkPod, err := kp.podLister.Get(pod.Name)
+	bkPod, err := kp.getBackendPod(pod)
 	if k8serrors.IsNotFound(err) {
 		return podStatus, nil
 	}

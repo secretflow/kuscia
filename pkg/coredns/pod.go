@@ -51,7 +51,7 @@ func NewPodController(ctx context.Context, kubeClient kubernetes.Interface, inst
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
 	sharedInformers.Start(ctx.Done())
-	podInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = podInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.FilteringResourceEventHandler{
 			FilterFunc: func(obj interface{}) bool {
 				pod, ok := obj.(*v1.Pod)

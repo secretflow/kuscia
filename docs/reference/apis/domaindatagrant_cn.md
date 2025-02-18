@@ -3,7 +3,6 @@
 DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [DomainDataGrant](../concepts/domaindatagrant_cn.md)。
 你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatagrant.proto) 找到对应的 protobuf 文件。
 
-
 ## 接口总览
 
 | 方法名                                              | 请求类型                        | 响应类型                         | 描述       |
@@ -287,7 +286,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/query' \
   "data": null
 }
 ```
-
 
 {#batch-query-domain-data-grant}
 

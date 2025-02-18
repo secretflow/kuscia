@@ -130,10 +130,10 @@ func (h *JobScheduler) handleStageCmdRestart(now metav1.Time, job *kusciaapisv1a
 		job.Status.Message = fmt.Sprintf("This job is restarted by %s", cmdTrigger)
 		job.Status.Reason = fmt.Sprintf("Party: %s execute the cmd: %s.", cmdTrigger, cmd)
 		// delete the failed task
-		if err := h.deleteNotSuccessTasks(job); err != nil {
+		if deleteErr := h.deleteNotSuccessTasks(job); deleteErr != nil {
 			// delete the failed task failed
 			partyStage = kusciaapisv1alpha1.JobRestartStageFailed
-			job.Status.Message = fmt.Sprintf("Restart this job and delete the 'failed' phase task failed, error: %s.", err.Error())
+			job.Status.Message = fmt.Sprintf("Restart this job and delete the 'failed' phase task failed, error: %s.", deleteErr.Error())
 		}
 		// set own party stage status to 'restartSuccess' or 'restartFailed'
 		ownP, _, _ := h.getAllParties(job)
@@ -402,21 +402,6 @@ func (h *JobScheduler) somePartyStartFailed(job *kusciaapisv1alpha1.KusciaJob) (
 	return false, "", nil
 }
 
-func (h *JobScheduler) isAllPartyRestartSuccess(job *kusciaapisv1alpha1.KusciaJob) (bool, error) {
-	for _, party := range h.getParties(job) {
-		domain, err := h.domainLister.Get(party.DomainID)
-		if err != nil {
-			nlog.Errorf("Check party 'restartSuccess' status failed, error: %s.", err.Error())
-			return false, err
-		}
-		if stageStatus, ok := job.Status.StageStatus[domain.Name]; ok && stageStatus == kusciaapisv1alpha1.JobRestartStageSucceeded {
-			continue
-		}
-		return false, nil
-	}
-	return true, nil
-}
-
 func (h *JobScheduler) isAllPartyRestartComplete(job *kusciaapisv1alpha1.KusciaJob) bool {
 	for _, party := range h.getParties(job) {
 		stageStatus, ok := job.Status.StageStatus[party.DomainID]
@@ -495,9 +480,9 @@ func (h *JobScheduler) stopTasks(now metav1.Time, kusciaJob *kusciaapisv1alpha1.
 			if utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
 				continue
 			}
-			isPartner, err := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
-			if err != nil {
-				return err
+			isPartner, checkErr := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
+			if checkErr != nil {
+				return checkErr
 			}
 			if isPartner {
 				continue
@@ -698,7 +683,7 @@ func (h *JobScheduler) setJobStage(jobID string, trigger, stage string) (err err
 	job.Labels[common.LabelJobStageTrigger] = trigger
 	jobVersion := "1"
 	if v, ok := job.Labels[common.LabelJobStageVersion]; ok {
-		if iV, err := strconv.Atoi(v); err == nil {
+		if iV, convErr := strconv.Atoi(v); convErr == nil {
 			jobVersion = strconv.Itoa(iV + 1)
 		}
 	}

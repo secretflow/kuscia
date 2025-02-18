@@ -21,21 +21,21 @@ import (
 	"sync"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	kubeinformers "k8s.io/client-go/informers"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"k8s.io/kubernetes/pkg/kubelet/logs"
+
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/kuberuntime"
 	"github.com/secretflow/kuscia/pkg/agent/local/runtime/empty"
 	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	kubeinformers "k8s.io/client-go/informers"
-	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/pkg/kubelet/logs"
-
-	"k8s.io/client-go/tools/cache"
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type K8sLogManager struct {
@@ -143,6 +143,10 @@ func (kl *K8sLogManager) ReopenContainerLog(ctx context.Context, ContainerID str
 		return true
 	})
 	return err
+}
+
+func (kl *K8sLogManager) RuntimeConfig(ctx context.Context) (*runtimeapi.RuntimeConfigResponse, error) {
+	return &runtimeapi.RuntimeConfigResponse{}, nil
 }
 
 func (kl *K8sLogManager) Start(ctx context.Context) error {

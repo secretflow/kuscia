@@ -2,14 +2,14 @@
   su root root
   daily
   dateext
-  dateyesterday
+  dateformat -%Y%m%d-%H
   compress
   delaycompress
   rotate {{.MaxFiles}}
   missingok
   nocreate
   sharedscripts
-  size {{.MaxFileSizeMB}}
+  size {{.MaxFileSizeMB}}M
   postrotate
     curl -X POST  127.0.0.1:10000/reopen_logs
   endscript

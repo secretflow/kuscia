@@ -30,11 +30,11 @@ type ssExporterModule struct {
 	domainID           string
 	rootDir            string
 	metricUpdatePeriod uint
-	ssExportPort       string
+	ssExportPort       int
 }
 
 func NewSsExporter(i *ModuleRuntimeConfigs) (Module, error) {
-	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.SsExportPort)
+	readyURI := fmt.Sprintf("http://127.0.0.1:%d", i.SsExportPort)
 	return &ssExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
 			name:         "ssexporter",

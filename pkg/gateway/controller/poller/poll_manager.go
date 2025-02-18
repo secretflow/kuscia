@@ -223,17 +223,6 @@ func isGatewayAlive(gateway *kusciaapisv1alpha1.Gateway) bool {
 	return time.Since(gateway.Status.HeartbeatTime.Time) <= 2*defaultGatewayTickTime
 }
 
-func (pm *PollManager) memberExist(gatewayName string) bool {
-	members := pm.consist.Members()
-	for _, member := range members {
-		if member == gatewayName {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (pm *PollManager) addServiceEventHandler(serviceInformer corev1informers.ServiceInformer) error {
 	_, err := serviceInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.FilteringResourceEventHandler{

@@ -15,9 +15,10 @@
 package mods
 
 import (
-	util "github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+
+	util "github.com/secretflow/kuscia/pkg/diagnose/utils"
 )
 
 type NetworkMod struct {

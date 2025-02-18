@@ -53,12 +53,12 @@ func PermissionMiddleWare(ctx *gin.Context) {
 	role, _ := ctx.Get(constants.AuthRole)
 	isPass, err := casbinEnforcer.Enforce(role, ctx.Request.URL.Path, ctx.Request.Method)
 	if err != nil {
-		ctx.AbortWithError(http.StatusUnauthorized, err)
+		_ = ctx.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 	if !isPass {
 		err = fmt.Errorf("check role failed,role :%s,path:%s", role, ctx.Request.URL.Path)
-		ctx.AbortWithError(http.StatusUnauthorized, err)
+		_ = ctx.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 	ctx.Next()

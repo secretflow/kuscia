@@ -38,8 +38,8 @@ func NewFailedHandler(deps *Dependencies) *FailedHandler {
 func (h *FailedHandler) HandlePhase(job *kusciaapisv1alpha1.KusciaJob) (needUpdate bool, err error) {
 	now := metav1.Now().Rfc3339Copy()
 	// handle stage command, check if the stage command matches the phase of job
-	if hasReconciled, err := h.handleStageCommand(now, job); err != nil || hasReconciled {
-		return hasReconciled, err
+	if hasReconciled, handleErr := h.handleStageCommand(now, job); handleErr != nil || hasReconciled {
+		return hasReconciled, handleErr
 	}
 
 	if job.Status.CompletionTime != nil {
