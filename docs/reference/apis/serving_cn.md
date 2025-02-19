@@ -13,7 +13,6 @@
 | [DeleteServing](#delete-serving)                       | DeleteServingRequest           | DeleteServingResponse           | 删除 Serving       |
 | [BatchQueryServingStatus](#batch-query-serving-status) | BatchQueryServingStatusRequest | BatchQueryServingStatusResponse | 批量查询 Serving 状态  |
 
-
 ## 接口详情
 
 {#create-serving}
@@ -288,6 +287,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 ### 更新 Serving
 
 #### HTTP路径
+
 /api/v1/serving/update
 
 #### 请求（UpdateServingRequest）
@@ -298,7 +298,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 | serving_id           | string                                          | 必填 | ServingID                                                 |
 | serving_input_config | string                                          | 可选 | 应用配置                                                      |
 | parties              | [ServingParty](#serving-party)[]                | 可选 | 参与方信息                                                     |
-
 
 #### 响应（UpdateServingResponse）
 
@@ -367,6 +366,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
 ### 删除 Serving
 
 #### HTTP路径
+
 /api/v1/serving/delete
 
 #### 请求（DeleteServingRequest）
@@ -381,7 +381,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
 | 字段     | 类型                             | 描述   |
 |--------|--------------------------------|------|
 | status | [Status](summary_cn.md#status) | 状态信息 |
-
 
 #### 请求示例
 
@@ -574,11 +573,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | create_time       | string                                          | 创建时间                    |
 | party_statuses    | [PartyServingStatus](#party-serving-status)[]   | 参与方状态                   |
 
-
 {#party-serving-status}
 
 ### PartyServingStatus
-
 
 | 字段                   | 类型                                                | 描述                                                                          |
 |----------------------|---------------------------------------------------|-----------------------------------------------------------------------------|
@@ -592,7 +589,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | create_time          | string                                            | 创建时间，时间格式为 RFC3339。示例: "2024-01-17T10:18:02Z"                               |
 | endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 应用对外暴露的访问地址信息                                                               |
 
-
 {#serving-party-endpoint}
 
 ### ServingPartyEndpoint
@@ -602,7 +598,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | port_name   | string | 应用服务端口名称，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.name`   |
 | scope       | string | 应用服务使用范围, 详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.scope` |
 | endpoint    | string | 应用服务暴露的访问地址                                                                                               |
-
 
 {#serving-party}
 
@@ -619,7 +614,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | service_name_prefix | string                             | 可选 | 自定义应用服务名称前缀。长度不超过 48 个字符，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 <br/> - 若配置，则应用服务名称拼接规则为 `{service_name_prefix}-{port_name}`，port_name 对应 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.name` </br> - 若不配置，Kuscia 随机生成应用服务名称 |
 
 {#update-strategy}
+
 ### UpdateStrategy
+
 | 字段              | 类型     | 选填 | 描述                                                                                                                                                              |
 |-----------------|--------|----|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | type            | string | 必填 | 应用升级策略类型：支持"Recreate"和"RollingUpdate"两种类型<br/> "Recreate"：表示重建，在创建新的应用之前，所有现有应用都会被删除<br/> "RollingUpdate"：表示滚动升级，当应用升级时，结合"max_surge"和"max_unavailable"控制滚动升级过程 |

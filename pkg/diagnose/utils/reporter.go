@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/olekukonko/tablewriter"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -122,11 +123,11 @@ func (r *Table) AddRow(elements []string) {
 }
 
 func (r *Table) RenderTable() {
-	r.WriteLine(r.title)
+	_ = r.WriteLine(r.title)
 	if r.table != nil {
 		r.table.Render()
 	}
-	r.WriteLine("")
+	_ = r.WriteLine("")
 }
 
 func (r *Reporter) Close() error {
@@ -135,7 +136,7 @@ func (r *Reporter) Close() error {
 }
 
 func (r *Reporter) Render() {
-	r.WriteLine("REPORT:")
+	_ = r.WriteLine("REPORT:")
 	for _, t := range r.tables {
 		t.RenderTable()
 	}

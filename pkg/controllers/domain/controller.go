@@ -144,7 +144,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 // addNamespaceEventHandler is used to add event handler for namespace informer.
 func (c *Controller) addNamespaceEventHandler(nsInformer informerscorev1.NamespaceInformer) {
-	nsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = nsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			switch t := obj.(type) {
 			case *apicorev1.Namespace:
@@ -185,7 +185,7 @@ func (c *Controller) addNamespaceEventHandler(nsInformer informerscorev1.Namespa
 
 // addDomainEventHandler is used to add event handler for domain informer.
 func (c *Controller) addDomainEventHandler(domainInformer kusciaextv1alpha1.DomainInformer) {
-	domainInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = domainInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: c.enqueueDomain,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			newDomain, ok := newObj.(*kusciaapisv1alpha1.Domain)
@@ -210,7 +210,7 @@ func (c *Controller) addDomainEventHandler(domainInformer kusciaextv1alpha1.Doma
 
 // addResourceQuotaEventHandler is used to add event handler for resource quota informer.
 func (c *Controller) addResourceQuotaEventHandler(rqInformer informerscorev1.ResourceQuotaInformer) {
-	rqInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = rqInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			switch t := obj.(type) {
 			case *apicorev1.ResourceQuota:
@@ -250,7 +250,7 @@ func (c *Controller) addResourceQuotaEventHandler(rqInformer informerscorev1.Res
 
 // addConfigMapHandler is used to add event handler for configmap informer.
 func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInformer) {
-	cmInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = cmInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			switch t := obj.(type) {
 			case *apicorev1.ConfigMap:

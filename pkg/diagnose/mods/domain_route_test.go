@@ -16,15 +16,13 @@ package mods
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"reflect"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/netstat"
 	"github.com/secretflow/kuscia/pkg/diagnose/utils"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1"
-	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,105 +34,22 @@ func TestDomainRouteMod(t *testing.T) {
 	conf := &DiagnoseConfig{
 		Source:       "alice",
 		Destination:  "bob",
-		PeerEndpoint: "",
-		Manual:       false,
-		NetworkParam: *netParam,
+		NetworkParam: netParam,
 	}
 
 	reporter := utils.NewReporter("")
 	mod := NewDomainRouteMod(reporter, nil, conf)
 	drMod := mod.(*DomainRouteMod)
 
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "QueryDomainData", func(_ *DomainRouteMod, ctx context.Context, req *kusciaapi.QueryDomainDataRequest) (*kusciaapi.QueryDomainDataResponse, error) {
-		resp := &kusciaapi.QueryDomainDataResponse{
-			Status: &v1alpha1.Status{
-				Code: 0,
-			},
-			Data: &kusciaapi.DomainData{
-				Attributes: map[string]string{
-					"BANDWIDTH": `{"name":"BANDWIDTH","detected_value":"7413.75Mbits/sec","threshold":"10Mbits/sec","result":"[PASS]"}`,
-				},
-			},
-		}
-		return resp, nil
+	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
+		return nil
 	})
 	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
-		return nil
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.taskGroup), "Start", func(_ *netstat.TaskGroup, ctx context.Context) ([]*netstat.TaskOutput, error) {
+		return nil, nil
 	})
 	defer patch2.Reset()
-
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "CreateJob", func(_ *DomainRouteMod, ctx context.Context, req *kusciaapi.CreateJobRequest) error {
-		return nil
-	})
-	defer patch3.Reset()
-
-	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "WaitJobStart", func(_ *DomainRouteMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch4.Reset()
-
-	patch5 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "WaitJobDone", func(_ *DomainRouteMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch5.Reset()
-
-	err := mod.Run(context.Background())
-	assert.Nil(t, err)
-}
-
-func TestDomainRouteManualMod(t *testing.T) {
-	netParam := &netstat.NetworkParam{
-		Bidirection: true,
-	}
-
-	conf := &DiagnoseConfig{
-		Source:       "alice",
-		Destination:  "bob",
-		PeerEndpoint: "",
-		Manual:       true,
-		NetworkParam: *netParam,
-	}
-
-	reporter := utils.NewReporter("")
-	mod := NewDomainRouteMod(reporter, nil, conf)
-	drMod := mod.(*DomainRouteMod)
-
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "QueryDomainData", func(_ *DomainRouteMod, ctx context.Context, req *kusciaapi.QueryDomainDataRequest) (*kusciaapi.QueryDomainDataResponse, error) {
-		resp := &kusciaapi.QueryDomainDataResponse{
-			Status: &v1alpha1.Status{
-				Code: 0,
-			},
-			Data: &kusciaapi.DomainData{
-				Attributes: map[string]string{
-					"BANDWIDTH": `{"name":"BANDWIDTH","detected_value":"7413.75Mbits/sec","threshold":"10Mbits/sec","result":"[PASS]"}`,
-				},
-			},
-		}
-		return resp, nil
-	})
-	defer patch1.Reset()
-
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch2.Reset()
-
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "CreateJob", func(_ *DomainRouteMod, ctx context.Context, req *kusciaapi.CreateJobRequest) error {
-		return nil
-	})
-	defer patch3.Reset()
-
-	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "WaitJobStart", func(_ *DomainRouteMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch4.Reset()
-
-	patch5 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "WaitJobDone", func(_ *DomainRouteMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch5.Reset()
 
 	err := mod.Run(context.Background())
 	assert.Nil(t, err)
@@ -148,49 +63,22 @@ func TestDomainRouteModFail(t *testing.T) {
 	conf := &DiagnoseConfig{
 		Source:       "alice",
 		Destination:  "bob",
-		PeerEndpoint: "",
-		Manual:       false,
-		NetworkParam: *netParam,
+		NetworkParam: netParam,
 	}
 
 	reporter := utils.NewReporter("")
 	mod := NewDomainRouteMod(reporter, nil, conf)
 	drMod := mod.(*DomainRouteMod)
 
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "QueryDomainData", func(_ *DomainRouteMod, ctx context.Context, req *kusciaapi.QueryDomainDataRequest) (*kusciaapi.QueryDomainDataResponse, error) {
-		resp := &kusciaapi.QueryDomainDataResponse{
-			Status: &v1alpha1.Status{
-				Code: 0,
-			},
-			Data: &kusciaapi.DomainData{
-				Attributes: map[string]string{
-					"BANDWIDTH": `{"name":"BANDWIDTH","detected_value":"7413.75Mbits/sec","threshold":"10Mbits/sec","result":"[PASS]"}`,
-				},
-			},
-		}
-		return resp, nil
+	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
+		return nil
 	})
 	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
-		return nil
+	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.taskGroup), "Start", func(_ *netstat.TaskGroup, ctx context.Context) ([]*netstat.TaskOutput, error) {
+		return nil, errors.New("")
 	})
 	defer patch2.Reset()
-
-	patch3 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "CreateJob", func(_ *DomainRouteMod, ctx context.Context, req *kusciaapi.CreateJobRequest) error {
-		return fmt.Errorf("create job failed")
-	})
-	defer patch3.Reset()
-
-	patch4 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "WaitJobStart", func(_ *DomainRouteMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch4.Reset()
-
-	patch5 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "WaitJobDone", func(_ *DomainRouteMod, ctx context.Context) error {
-		return nil
-	})
-	defer patch5.Reset()
 
 	err := mod.Run(context.Background())
 	assert.NotNil(t, err)

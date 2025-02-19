@@ -37,32 +37,31 @@ spec:
 - `.spec.cert`：表示 BASE64 编码格式的隐私计算节点证书，该证书是配置文件中的 `domainKeyData` 私钥产生的，可以通过[这里](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/generate_cert.sh)的命令生成。在中心化模式场景不需要填充该字段。
 - `.spec.resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为`100`。
 
-
 1. 运行以下命令创建 Domain。
 
-```shell
-kubectl apply -f alice-domain.yaml
-```
+    ```shell
+    kubectl apply -f alice-domain.yaml
+    ```
 
 2. 检查 Domain 是否创建成功。
 
-```shell
-kubectl get domain alice
-NAME    AGE
-alice   3s
-```
+    ```shell
+    kubectl get domain alice
+    NAME    AGE
+    alice   3s
+    ```
 
 3. 检查 Domain 相关的 Namespace, ResourceQuota 资源是否创建成功。
 
-```shell
-kubectl get namespace alice
-NAME     STATUS   AGE
-alice    Active   18s
+    ```shell
+    kubectl get namespace alice
+    NAME     STATUS   AGE
+    alice    Active   18s
 
-kubectl get resourcequota -n alice
-NAME                  AGE   REQUEST      LIMIT
-resource-limitation   18s   pods: 0/100
-```
+    kubectl get resourcequota -n alice
+    NAME                  AGE   REQUEST      LIMIT
+    resource-limitation   18s   pods: 0/100
+    ```
 
 ## 更新 Domain
 
@@ -86,17 +85,17 @@ spec:
 
 1. 运行以下命令更新 Domain。
 
-```shell
-kubectl apply -f alice-domain.yaml
-```
+    ```shell
+    kubectl apply -f alice-domain.yaml
+    ```
 
 2. 检查 Domain 相关的 ResourceQuota 资源是否更新成功。
 
-```shell
-kubectl get resourcequota -n alice
-NAME                  AGE   REQUEST      LIMIT
-resource-limitation   4m    pods: 0/200
-```
+    ```shell
+    kubectl get resourcequota -n alice
+    NAME                  AGE   REQUEST      LIMIT
+    resource-limitation   4m    pods: 0/200
+    ```
 
 ## 清理 Domain
 
@@ -104,36 +103,36 @@ resource-limitation   4m    pods: 0/200
 
 1. 运行以下命令清理 Domain。
 
-```shell
-kubectl delete domain alice
-```
+    ```shell
+    kubectl delete domain alice
+    ```
 
 2. 检查 Domain 是否已被清理。
 
-```shell
-kubectl get domain alice
-Error from server (NotFound): domains.kuscia.secretflow "alice" not found
-```
+    ```shell
+    kubectl get domain alice
+    Error from server (NotFound): domains.kuscia.secretflow "alice" not found
+    ```
 
 3. 检查 Domain 相关的 Namespace, ResourceQuota 资源是否还存在。
 
-```shell
-kubectl get namespace alice
-NAME    STATUS   AGE
-alice   Active   20m
+    ```shell
+    kubectl get namespace alice
+    NAME    STATUS   AGE
+    alice   Active   20m
 
-kubectl get resourcequota -n alice
-NAME                  AGE    REQUEST      LIMIT
-resource-limitation   20m    pods: 0/200
-```
+    kubectl get resourcequota -n alice
+    NAME                  AGE    REQUEST      LIMIT
+    resource-limitation   20m    pods: 0/200
+    ```
 
 4. 检查 Domain 相关的 Namespace 是否已添加标记被清理的标签。
 
-```shell
-kubectl get namespace alice -L kuscia.secretflow/deleted
-NAME    STATUS   AGE   DELETED
-alice   Active   20m   true
-```
+    ```shell
+    kubectl get namespace alice -L kuscia.secretflow/deleted
+    NAME    STATUS   AGE   DELETED
+    alice   Active   20m   true
+    ```
 
 ## 参考
 
@@ -166,7 +165,7 @@ Domain `metadata` 的子字段详细介绍如下：
 
 Domain `spec` 的子字段详细介绍如下：
 
-- `role`：表示隐私计算节点 Domain 的角色，默认为`""`。支持两种取值：`partner `和 `""` 。
+- `role`：表示隐私计算节点 Domain 的角色，默认为`""`。支持两种取值：`partner`和 `""` 。
   - `partner`：表示外部节点，用在点对点组网模式下的协作方节点。 点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该 Domain 时，需要将 `role` 的值设置为 `partner` 。
   - `""`：表示内部节点。
 - `cert`：表示 BASE64 编码格式的隐私计算节点证书，该证书是配置文件中的 `domainKeyData` 私钥产生的，可以通过[这里](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/generate_cert.sh)的命令生成。在中心化模式场景不需要填充该字段。

@@ -183,7 +183,7 @@ func (w *worker) stop() {
 // doProbe probes the container once and records the result.
 // Returns whether the worker should continue.
 func (w *worker) doProbe(ctx context.Context) (keepGoing bool) {
-	defer func() { recover() }() // Actually eat panics (HandleCrash takes care of logging)
+	defer func() { _ = recover() }() // Actually eat panics (HandleCrash takes care of logging)
 	defer runtime.HandleCrash(func(_ interface{}) { keepGoing = true })
 
 	status, ok := w.probeManager.statusManager.GetPodStatus(w.pod.UID)

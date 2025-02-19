@@ -26,7 +26,6 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/pkg/errors"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/decorator/binder"
@@ -163,18 +162,6 @@ func getProtoRequest(flow *BizFlow) (api.ProtoRequest, error) {
 	}
 
 	return request, nil
-}
-
-func messageToJSONString(m proto.Message) string {
-	if m != nil && m.ProtoReflect() != nil {
-		bytes, err := protojson.Marshal(m)
-		if err != nil {
-			return fmt.Sprintf("%s (protojson marshal err: %s)", m, err)
-		}
-		return string(bytes)
-	}
-
-	return fmt.Sprintf("%v", m)
 }
 
 func doValidate(flow *BizFlow, request api.ProtoRequest, errs *errorcode.Errs) {

@@ -2,7 +2,7 @@
 
 在 Kuscia 中将隐私计算的节点称为 Domain，一个 Domain 中可以包含多个 K3s
 的工作节点（Node）。详情请参考 [Domain](../concepts/domain_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto) 找到对应的 protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -32,8 +32,8 @@
 | domain_id          | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。 |
 | role               | string                                       | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md)                                                                                                                                                               |
 | cert               | string                                       | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md)                                                                                                                                            |
-| auth_center        | [AuthCenter](#auth-center)                   | 可选 | 节点的授权模式                                                                                                                                                                                                                                                       |
 | master_domain_id   | string                                  | 可选 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填；普通中心化模式，点对点模式不需要填写                                                                                                                                                                          |
+| auth_center        | [AuthCenter](#auth-center)                   | 已废弃 | 节点的授权模式（已废弃，不需填写）                                                                                                                                                                                                                                                       |
 
 #### 响应（CreateDomainResponse）
 
@@ -59,11 +59,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
  -d '{
   "domain_id": "bob",
   "role": "partner",
-  "cert": "bob-domain.crt",
-  "auth_center": {
-    "authentication_type": "Token",
-    "token_gen_method": "UID-RSA-GEN"
-  }
+  "cert": "base64 of bob domain.crt"
 }'
 ```
 
@@ -79,18 +75,17 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 }
 ```
 
-请求响应异常结果：假设`authentication_type`传入值为不受支持的枚举值
+请求响应异常结果：假设`cert`传入值为无效的base64字符串
 
 ```json
 {
   "status": {
-    "code": 11300,
-    "message": "Domain.kuscia.secretflow \"bob\" is invalid: spec.authCenter.authenticationType: Unsupported value: \"token\": supported values: \"Token\", \"MTLS\", \"None\"",
+    "code": 11100,
+    "message": "cert must be encoded with base64",
     "details": []
   }
 }
 ```
-
 
 {#update-domain}
 
@@ -109,8 +104,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 | role             | string                                       | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md)                         |
 | cert             | string                                       | 必填 | 仅`点对点`模式需要填写此字段, 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)  |
 | master_domain_id | string                                       | 必填 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填，普通中心化模式，点对点模式不需要填写 |
-| auth_center      | [AuthCenter](#auth-center)                   | 必填 | 节点的授权模式                                                                              |
-
+| auth_center      | [AuthCenter](#auth-center)                   | 已废弃 | 节点的授权模式（已废弃，不需填写）                                                                              |
 
 #### 响应（UpdateDomainResponse）
 
@@ -136,11 +130,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/update' \
  -d '{
   "domain_id": "bob",
   "role": "partner",
-  "cert": "base64 of bob domain.crt",
-  "auth_center": {
-    "authentication_type": "Token",
-    "token_gen_method": "RSA-GEN"
-  }
+  "cert": "base64 of bob domain.crt"
 }'
 ```
 
@@ -256,10 +246,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
 | data.role                  | string                                      |  角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
 | data.cert                  | string                                      | 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)      |
 | data.annotations           | map[string]string                           | 节点的额外信息，比如是否是内置节点等 |
-| data.auth_center           | [AuthCenter](#auth-center)                  |  节点到中心的授权模式            |
 | data.node_statuses         | [NodeStatus](#node-status)[]                |  物理节点状态                                                       |
 | data.deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 部署令牌状态                                                       |
 | master_domain_id             | string                                      |  Master Domain ID（未来预留字段） |
+| data.auth_center           | [AuthCenter](#auth-center)                  |  节点到中心的授权模式（已废弃）            |
 
 #### 请求示例
 
@@ -300,11 +290,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
         "last_transition_time": "2006-01-02T15:04:05Z"
       }
     ],
-    "annotations": {},
-    "auth_center": {
-      "authentication_type": "Token",
-      "token_gen_method": "UID-RSA-GEN"
-    }
+    "annotations": {}
   }
 }
 ```
@@ -344,7 +330,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
 | status       | [Status](summary_cn.md#status) | 状态信息 |
 | data         | BatchQueryDomainResponseData   |     |
 | data.domains | [Domain](#domain-entity)[]     |  节点列表 |
-
 
 #### 请求示例
 
@@ -401,7 +386,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 }
 ```
 
-
 ## 公共
 
 {#domain-entity}
@@ -428,15 +412,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | last_heartbeat_time  | string | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 
-{#auth-center}
-
-### AuthCenter
-
-| 字段                  | 类型     | 选填 | 描述                                 |
-|---------------------|--------|----|------------------------------------|
-| authentication_type | string | 必填 | 目前仅支持 Token              |
-| token_gen_method    | string | 必填 | Token 生成类型，中心化模式请填 `UID-RSA-GEN`，点对点模式请填写 `RSA-GEN` |
-
 {#deploy-token-status}
 
 ### DeployTokenStatus
@@ -446,3 +421,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | token                | string | 部署令牌                                         |
 | state                | string | 部署令牌状态 used, unsed                           |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
+
+{#auth-center}
+
+### AuthCenter[已废弃]
+
+该字段目前已废弃，用户无需再关心。所有的Kuscia节点之间的握手（master-lite，master-master），都将默认使用Token，并以`RSA-GEN`方式，安全性更高。
+
+对于已运行的Kuscia容器，我们也建议用户升级Kuscia后，重新配置节点间连接，以使用最新的握手逻辑，提高安全性。

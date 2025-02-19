@@ -51,7 +51,7 @@ func newApiserverSource(cfg *InitConfig, updates chan<- kubetypes.PodUpdate) *so
 		updates:            updates,
 	}
 
-	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			pod, ok := obj.(*corev1.Pod)
 			if ok {

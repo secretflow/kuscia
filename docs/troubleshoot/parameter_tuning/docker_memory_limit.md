@@ -5,6 +5,7 @@
 在使用脚本部署 Kuscia 时，可以使用 `-m` 或者 `--memory-limit` 参数给节点容器设置适当的内存限制。
 
 例如:
+
 - `-m 4GiB` 或 `--memory-limit=4GiB` 表示限制最大内存 4GiB。
 - `-m -1` 或 `--memory-limit=-1` 表示没有限制。
 - 不设置时默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。

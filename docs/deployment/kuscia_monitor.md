@@ -1,6 +1,9 @@
 # Kuscia 监控
+
 Kuscia 暴露了一些指标数据，可作为数据源供外部观测工具采集（如 Prometheus）。目前已通过 [node_exporter](https://github.com/prometheus/node_exporter) 暴露机器指标、通过 [Envoy](https://www.envoyproxy.io/docs/envoy/v1.29.0/configuration/upstream/cluster_manager/cluster_stats#general) 和 [ss](https://man7.org/linux/man-pages/man8/ss.8.html) 暴露网络指标。后续预计集成包括引擎、Kuscia-API、跨机构的指标数据。
+
 ## 1 监控能力
+
 | 指标 |来源模块 | 集成 | 介绍 |
 | -- | ---------------------- | --------------------- | ------------------------------------------------------------ |
 | 机器指标 | node_exporter | 已集成 | Kuscia 所在容器的 CPU/MEM/DISK/LOAD 等核心指标 |
@@ -10,35 +13,48 @@ Kuscia 暴露了一些指标数据，可作为数据源供外部观测工具采�
 |     跨机构指标 |    kuscia    |      未集成     |      在允许的情况下采集其他机构指标       |
 
 ## 2 配置监控
+
 ### 2.1 Kuscia 暴露的指标采集端口
+
 - 指标端口位于 9091 端口的 /metrics, container_ip 请赋值为机构容器的 IP 地址
-```
-$ curl $(container_ip):9091/metrics
-```
+
+    ```shell
+    curl $(container_ip):9091/metrics
+    ```
 
 ### 2.2 Prometheus/Grafana 监控 Kuscia
-可通过配置Prometheus/Grafana 监控 Kuscia。以中心化模式为例，获取机构某一方（如 root-kuscia-lite-alice）的指标数据，假设容器 IP 地址 container_ip = 172.18.0.3，可获取到容器暴露的指标。创建 prometheus.yml [示例文件](https://github.com/secretflow/kuscia/blob/main/scripts/templates/prometheus.yml)，将配置文件中的机构容器的ip地址（172.18.0.3）和端口号填入（端口号默认为9091）。
-启动 Promethus、Grafana 后，在 Grafana 创建指标数据源，可导入 [Grafana 模板文件](https://github.com/secretflow/kuscia/blob/main/scripts/templates/grafana-dashboard-machine.json)，注意将数据源{{Kuscia-datasource}}替换为创建数据源 ID（可通过可视化界面查看，也可通过 curl -s http://admin:admin@localhost:3000/api/datasources 查询）。
+
+可通过配置 Prometheus/Grafana 监控 Kuscia。以中心化模式为例，获取机构某一方（如 root-kuscia-lite-alice）的指标数据，假设容器 IP 地址 container_ip = 172.18.0.3，可获取到容器暴露的指标。创建 prometheus.yml [示例文件](https://github.com/secretflow/kuscia/blob/main/scripts/templates/prometheus.yml)，将配置文件中的机构容器的ip地址（172.18.0.3）和端口号填入（端口号默认为9091）。
+启动 Prometheus、Grafana 后，在 Grafana 创建指标数据源，可导入 [Grafana 模板文件](https://github.com/secretflow/kuscia/blob/main/scripts/templates/grafana-dashboard-machine.json)，注意将数据源{{Kuscia-datasource}}替换为创建数据源 ID（可通过可视化界面查看，也可通过 `curl -s http://admin:admin@localhost:3000/api/datasources` 查询）。
 
 ### 2.4 部署 Kuscia-monitor 快速体验监控
+
 Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 \${USER}-kuscia-monitor-center 下，点对点模式各参与方的指标分别导入到容器 \${USER}-kuscia-monitor-\${DOMAIN_ID}下。
 在通过 kuscia/scripts/deploy/start_standalone.sh 部署完毕 kuscia 后，利用 kuscia/scripts/deploy/start_monitor.sh 脚本部署 Kuscia-monitor
 在 kuscia 目录下，
+
 ```
-$ make build-monitor
+make build-monitor
 ```
+
 - 中心化模式
-```
-$ ./start_monitor.sh center
-```
+
+    ```
+    ./start_monitor.sh center
+    ```
+
 - p2p模式
-```
-$ ./start_monitor.sh p2p
-```
+
+    ```
+    ./start_monitor.sh p2p
+    ```
+
 浏览器打开 Granafa 的页面 localhost:3000, 账号密码均为 admin（登陆后可修改密码）。进入后，选择 Dashboard 界面的 machine-center 看板进入监控界面。
 
 ## 3 Kuscia 监控指标项
+
 Kuscia 暴露的监控指标项
+
 | 模块 |指标 | 类型 | 含义 |
 | -- | ---------------------- | --------------------- | ------------------------------------------------------------ |
 | CPU | node_cpu_seconds_total | Counter | CPU 总使用时间(可计算cpu使用率)|

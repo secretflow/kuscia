@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -55,8 +56,7 @@ func NewLatencyTask(client *client.Client, threshold int) Task {
 }
 
 func (t *LatencyTask) Run(ctx context.Context) {
-	nlog.Infof("Run %v task, threshold: %v", t.Name(), t.threshold)
-	defer nlog.Infof("Task %v done, output: %+v", t.Name(), t.output)
+	nlog.Infof("Run %v task, threshold: %v", t.Name(), t.output.Threshold)
 	req := &diagnose.MockRequest{
 		Duration: LatencyDuration,
 	}

@@ -15,7 +15,10 @@
 //nolint:dupl
 package common
 
-import "time"
+import (
+	"path"
+	"time"
+)
 
 // labels
 const (
@@ -255,6 +258,22 @@ const (
 	ServiceNamePrefixRegex = `^[a-z]([-a-z0-9]{0,46}[a-z0-9])?$`
 )
 
+var DefaultKusciaHomePath = defaultKusciaHomePathFn
+
+func defaultKusciaHomePathFn() string {
+	return defaultKusciaHomePath
+}
+
+func ContainerdSocket() string {
+	return path.Join(DefaultKusciaHomePath(), "/containerd/run/containerd.sock")
+}
+
+func DefaultCRIRemoteEndpoint() string {
+	return "unix://" + ContainerdSocket()
+}
+
 const (
-	DefaultKusciaHomePath = "/home/kuscia"
+	defaultKusciaHomePath              = "/home/kuscia"
+	KusciaDefaultNamespaceOfContainerd = "k8s.io"
+	ImageIDPrefix                      = "sha256:"
 )

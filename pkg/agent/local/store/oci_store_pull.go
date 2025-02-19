@@ -151,9 +151,9 @@ func (s *ociStore) doPullImage(image string, auth *runtimeapi.AuthConfig) error 
 		nlog.Infof("[OCI] Image(%s) is multi-platform image", image)
 		// multi-platform image
 		// find the matched image
-		idx, err := rmt.ImageIndex()
-		if err != nil {
-			return fmt.Errorf("query image index failed with %s", err.Error())
+		idx, indexErr := rmt.ImageIndex()
+		if indexErr != nil {
+			return fmt.Errorf("query image index failed with %s", indexErr.Error())
 		}
 		if img, err = s.findMatchImage(idx); err != nil {
 			return err
@@ -166,12 +166,13 @@ func (s *ociStore) doPullImage(image string, auth *runtimeapi.AuthConfig) error 
 
 	// combine all layers to one layer. for mount quickly
 	nlog.Infof("[OCI] Start to flatten image(%s) ...", image)
-	flat, err := s.flattenImage(img)
+	flat, cacheFile, err := s.flattenImage(img)
 	if err != nil {
 		nlog.Warnf("Flatten image(%s) failed with error: %s", image, err.Error())
 		return err
 	}
-
+	//remove cache file
+	defer os.Remove(cacheFile)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -185,15 +186,15 @@ func (s *ociStore) doPullImage(image string, auth *runtimeapi.AuthConfig) error 
 	return nil
 }
 
-func (s *ociStore) flattenImage(old v1.Image) (v1.Image, error) {
+func (s *ociStore) flattenImage(old v1.Image) (v1.Image, string, error) {
 	m, err := old.Manifest()
 	if err != nil {
-		return nil, fmt.Errorf("reading manifest: %w", err)
+		return nil, "", fmt.Errorf("reading manifest: %w", err)
 	}
 
 	cf, err := old.ConfigFile()
 	if err != nil {
-		return nil, fmt.Errorf("getting config: %w", err)
+		return nil, "", fmt.Errorf("getting config: %w", err)
 	}
 	cf = cf.DeepCopy()
 
@@ -203,16 +204,16 @@ func (s *ociStore) flattenImage(old v1.Image) (v1.Image, error) {
 
 	img, err := mutate.ConfigFile(empty.Image, cf)
 	if err != nil {
-		return nil, fmt.Errorf("mutating config: %w", err)
+		return nil, "", fmt.Errorf("mutating config: %w", err)
 	}
 
-	layer, err := s.combineLayers(old)
+	layer, cacheFile, err := s.combineLayers(old)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	img, err = mutate.AppendLayers(img, layer)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Retain any annotations from the original image.
@@ -220,23 +221,23 @@ func (s *ociStore) flattenImage(old v1.Image) (v1.Image, error) {
 		img = mutate.Annotations(img, m.Annotations).(v1.Image)
 	}
 
-	return img, nil
+	return img, cacheFile, nil
 }
 
-func (s *ociStore) combineLayers(old v1.Image) (v1.Layer, error) {
+func (s *ociStore) combineLayers(old v1.Image) (v1.Layer, string, error) {
 	cacheFile := path.Join(s.cachePath, uuid.NewString())
 	file, err := os.OpenFile(cacheFile, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	defer file.Close()
 
-	if _, err := io.Copy(file, mutate.Extract(old)); err != nil {
-		return nil, err
+	if _, err = io.Copy(file, mutate.Extract(old)); err != nil {
+		return nil, "", err
 	}
-
-	return tarball.LayerFromFile(cacheFile, tarball.WithCompressionLevel(gzip.BestSpeed))
+	layer, err := tarball.LayerFromFile(cacheFile, tarball.WithCompressionLevel(gzip.BestSpeed))
+	return layer, cacheFile, err
 }
 
 func (s *ociStore) getRemoteOpts(ctx context.Context, auth *runtimeapi.AuthConfig) []remote.Option {

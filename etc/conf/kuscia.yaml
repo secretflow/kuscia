@@ -34,15 +34,18 @@ runk:
 
 # The capacity of the domain that can be used to schedule app pods.
 capacity:
-  cpu: #4
-  memory: #8Gi
-  pods: #500
-  storage: #100Gi
+  cpu: # 4
+  memory: # 8Gi
+  pods: # 500
+  storage: # 100Gi
 
 # Agent image configs
 image:
   pullPolicy: ""
   defaultRegistry: ""
+  # container pull image proxy
+  # Example: http://127.0.0.1:8080
+  httpProxy: ""
   registries:
     - name: ""
       endpoint: ""
@@ -87,26 +90,26 @@ dataMesh:
 #     This allows you to retain your modifications even when Kuscia is restarted.
 #     However, if you need to use the rfile type backend in a multi-replica environment, you should consider alternative backends.
 #
-#secretBackends:
-#  - name: default
-#    driver: mem
-#    params:
-#      preset:
-#        # you can add any kv you needed.
-#        someKey: someValue
-#  - name: rfile1
-#    driver: rfile
-#    params:
-#      # the file path to store/load secret. required, no default.
-#      path: /home/kuscia/var/tmp/rfile1
-#      cipher:
-#        type: aes
-#        aes:
-#          # key to encrypt/decrypt.
-#          key: thisismyaeskey
+# secretBackends:
+#   - name: default
+#     driver: mem
+#     params:
+#       preset:
+#         # you can add any kv you needed.
+#         someKey: someValue
+#   - name: rfile1
+#     driver: rfile
+#     params:
+#       # the file path to store/load secret. required, no default.
+#       path: /home/kuscia/var/tmp/rfile1
+#       cipher:
+#         type: aes
+#         aes:
+#           # key to encrypt/decrypt.
+#           key: thisismyaeskey
 
 # ConfManager will use the secret information hosting backend named "confManager.backend" as specified.
 # If not specified, ConfManager will use the backend named "default".
 #
-#confManager:
-#  backend: default
+# confManager:
+#   backend: default

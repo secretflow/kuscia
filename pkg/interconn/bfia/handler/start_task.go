@@ -120,7 +120,7 @@ func (h *startTaskHandler) Handle(ctx *api.BizContext, request api.ProtoRequest)
 		return resp
 	}
 
-	h.InsertTask(req.JobId, req.TaskId)
+	_ = h.InsertTask(req.JobId, req.TaskId)
 	return resp
 }
 

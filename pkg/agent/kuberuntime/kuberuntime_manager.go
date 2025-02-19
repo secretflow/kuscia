@@ -83,8 +83,7 @@ type podStateProvider interface {
 // or an ephemeral container. Ephemeral containers contain all the fields of regular/init
 // containers, plus some additional fields. In both cases startSpec.container will be set.
 type startSpec struct {
-	container          *v1.Container
-	ephemeralContainer *v1.EphemeralContainer
+	container *v1.Container
 }
 
 func containerStartSpec(c *v1.Container) *startSpec {
@@ -832,16 +831,16 @@ func (m *kubeGenericRuntimeManager) GetPodStatus(ctx context.Context, uid kubety
 	var sandboxStatuses []*runtimeapi.PodSandboxStatus
 	var podIPs []string
 	for idx, podSandboxID := range podSandboxIDs {
-		resp, err := m.runtimeService.PodSandboxStatus(ctx, podSandboxID, false)
+		resp, statusErr := m.runtimeService.PodSandboxStatus(ctx, podSandboxID, false)
 		// Between List (getSandboxIDByPodUID) and check (PodSandboxStatus) another thread might remove a container, and that is normal.
 		// The previous call (getSandboxIDByPodUID) never fails due to a pod sandbox not existing.
 		// Therefore, this method should not either, but instead act as if the previous call failed,
 		// which means the error should be ignored.
-		if crierror.IsNotFound(err) {
+		if crierror.IsNotFound(statusErr) {
 			continue
 		}
-		if err != nil {
-			return nil, fmt.Errorf("failed to get sandbox %q status for pod %q, detail-> %v", podSandboxID, format.Pod(pod), err)
+		if statusErr != nil {
+			return nil, fmt.Errorf("failed to get sandbox %q status for pod %q, detail-> %v", podSandboxID, format.Pod(pod), statusErr)
 		}
 		if resp.GetStatus() == nil {
 			return nil, errors.New("pod sandbox status is nil")
@@ -894,9 +893,9 @@ func (m *kubeGenericRuntimeManager) GetPods(ctx context.Context, all bool) ([]*p
 			}
 		}
 		p := pods[podUID]
-		converted, err := m.sandboxTopkgcontainer(s)
-		if err != nil {
-			nlog.Warnf("Convert sandbox %q of pod %q failed: %v", s.Id, podUID, err)
+		converted, convertErr := m.sandboxTopkgcontainer(s)
+		if convertErr != nil {
+			nlog.Warnf("Convert sandbox %q of pod %q failed: %v", s.Id, podUID, convertErr)
 			continue
 		}
 		p.Sandboxes = append(p.Sandboxes, converted)

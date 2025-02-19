@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	// defaultWaitTime is 60s if ResourceReservedSeconds is not specified.
+	// defaultWaitTime is 30s if ResourceReservedSeconds is not specified.
 	defaultWaitTime = 30 * time.Second
 
 	retryInterval      = 200 * time.Millisecond
@@ -247,9 +247,9 @@ func (trMgr *TaskResourceManager) Unreserve(ctx context.Context, tr *kusciaapisv
 		}
 
 		reason := fmt.Sprintf("schedule task resource %v/%v related pod %v/%v failed", tr.Namespace, tr.Name, pod.Namespace, pod.Name)
-		if err := trMgr.patchTaskResource(kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, reason, tr); err != nil {
-			if k8serrors.IsNotFound(err) {
-				return false, err
+		if patchErr := trMgr.patchTaskResource(kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondFailed, reason, tr); patchErr != nil {
+			if k8serrors.IsNotFound(patchErr) {
+				return false, patchErr
 			}
 			return false, nil
 		}
@@ -339,7 +339,7 @@ func (trMgr *TaskResourceManager) patchTaskResourceWithPollImmediate(tr *kusciaa
 		}
 
 		reason := "The min set of pods has already reserved resource"
-		if err := trMgr.patchTaskResource(kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, reason, tr); err != nil {
+		if patchErr := trMgr.patchTaskResource(kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, reason, tr); patchErr != nil {
 			return false, nil
 		}
 		return true, nil

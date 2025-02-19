@@ -90,7 +90,7 @@ func (cr *imageSecurity) ExecHook(ctx hook.Context) (*hook.Result, error) {
 	}
 
 	imageID, ok := criCtx.Pod.Annotations[common.ImageIDAnnotationKey]
-	if !ok || imageID == "" || !strings.HasPrefix(imageID, "sha256:") {
+	if !ok || imageID == "" || !strings.HasPrefix(imageID, common.ImageIDPrefix) {
 		return result, nil
 	}
 
@@ -102,7 +102,7 @@ func (cr *imageSecurity) ExecHook(ctx hook.Context) (*hook.Result, error) {
 		expectedImageID := imageStatus.Image.Id
 
 		// adapt process runtime
-		if !strings.HasPrefix(imageStatus.Image.Id, "sha256:") && len(imageStatus.Image.RepoTags) > 0 {
+		if !strings.HasPrefix(imageStatus.Image.Id, common.ImageIDPrefix) && len(imageStatus.Image.RepoTags) > 0 {
 			expectedImageID = imageStatus.Image.RepoTags[0]
 		}
 

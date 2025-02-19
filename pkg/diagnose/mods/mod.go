@@ -21,22 +21,18 @@ import (
 	"github.com/secretflow/kuscia/pkg/diagnose/app/netstat"
 )
 
-var PrintToConsole = fmt.Printf
-
 type Mod interface {
 	Run(ctx context.Context) error
 }
 
 type DiagnoseConfig struct {
-	Command      string
-	Name         string
-	Source       string
-	Destination  string
-	PeerEndpoint string
-	CRDType      string
-	ReportFile   string
-	Manual       bool
-	netstat.NetworkParam
+	Command     string
+	Name        string
+	Source      string
+	Destination string
+	CRDType     string
+	ReportFile  string
+	*netstat.NetworkParam
 }
 
 func (c *DiagnoseConfig) String() string {
@@ -45,11 +41,10 @@ func (c *DiagnoseConfig) String() string {
 --Destination: %s
 --CRD: %s
 --ReportFile: %s
---Manual: %v
 --TestSpeed: %v, Threshold: %v
 --TestRTT: %v, Threshold: %v
 --TestProxyTimeout: %v, Threshold: %v
 --TestProxyBuffer: %v
 --TestRequestBodySize: %v, Threshold: %v
---BidrectionMode: %v`, c.Command, c.Source, c.Destination, c.CRDType, c.ReportFile, c.Manual, c.Speed, c.SpeedThres, c.RTT, c.RTTTres, c.ProxyTimeout, c.ProxyTimeoutThres, c.ProxyBuffer, c.Size, c.SizeThres, c.Bidirection)
+--BidrectionMode: %v`, c.Command, c.Source, c.Destination, c.CRDType, c.ReportFile, c.Speed, c.SpeedThres, c.RTT, c.RTTTres, c.ProxyTimeout, c.ProxyTimeoutThres, c.ProxyBuffer, c.Size, c.SizeThres, c.Bidirection)
 }

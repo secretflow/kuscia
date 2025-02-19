@@ -125,7 +125,7 @@ func (b *GinBean) Start(ctx context.Context, e framework.ConfBeanRegistry) error
 		var err error
 		s.TLSConfig, err = tls.BuildServerTLSConfig(b.TLSServerConfig.CACert, b.TLSServerConfig.ServerCert, b.TLSServerConfig.ServerKey)
 		if err != nil {
-			nlog.Errorf(err.Error())
+			nlog.Errorf("%s", err.Error())
 			return err
 		}
 		nlog.Infof("https server started on %s", addr)
@@ -157,17 +157,6 @@ var (
 	defaultIdleTimeout    = 300     // seconds
 	defaultMaxHeaderBytes = 1 << 20 // 1MB
 )
-
-func defaultGinConfig() GinBeanConfig {
-	return GinBeanConfig{
-		Logger:          nil,
-		ReadTimeout:     &defaultReadTimeout,
-		WriteTimeout:    &defaultWriteTimeout,
-		IdleTimeout:     &defaultIdleTimeout,
-		MaxHeaderBytes:  &defaultMaxHeaderBytes,
-		TLSServerConfig: nil,
-	}
-}
 
 func normalizeConfig(conf *GinBeanConfig) {
 	if conf.ReadTimeout == nil {

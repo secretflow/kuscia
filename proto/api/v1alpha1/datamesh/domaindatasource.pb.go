@@ -397,7 +397,7 @@ type OssDataSourceInfo struct {
 	Virtualhost bool `protobuf:"varint,6,opt,name=virtualhost,proto3" json:"virtualhost,omitempty"`
 	// optional enum[s3v2,s3v4]
 	Version string `protobuf:"bytes,7,opt,name=version,proto3" json:"version,omitempty"`
-	// optional enum[oss,minio] , default oss
+	// [deprecated] storage_type is deprecated, optional enum[oss,minio] , default oss
 	StorageType string `protobuf:"bytes,8,opt,name=storage_type,json=storageType,proto3" json:"storage_type,omitempty"`
 }
 

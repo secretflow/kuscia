@@ -49,6 +49,7 @@ const (
 )
 
 const (
+	// Deprecated
 	handShakeTypeUID = "UID"
 	handShakeTypeRSA = "RSA"
 )
@@ -139,12 +140,12 @@ func (c *DomainRouteController) checkConnectionStatus(dr *kusciaapisv1alpha1.Dom
 		Headers:      headers}
 	err := utils.DoHTTP(nil, out, hp)
 	if err != nil {
-		c.markDestUnreachable(context.Background(), dr)
+		_ = c.markDestUnreachable(context.Background(), dr)
 		return err
 	}
 
 	c.refreshHeartbeatTime(dr)
-	c.markDestReachable(context.Background(), dr)
+	_ = c.markDestReachable(context.Background(), dr)
 	return c.handleGetResponse(out, dr)
 }
 
@@ -187,7 +188,7 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 			dr.Status.IsDestinationAuthorized = false
 			dr.Status.IsDestinationUnreachable = false
 			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
-			c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
+			_, _ = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			return fmt.Errorf("%s cant contact destination because destination authentication is false", dr.Name)
 		}
 		return nil
@@ -217,7 +218,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		return nil
 	}
 
-	handshankeReq := &handshake.HandShakeRequest{
+	handshakeReq := &handshake.HandShakeRequest{
 		DomainId:    dr.Spec.Source,
 		RequestTime: time.Now().UnixNano(),
 	}
@@ -229,12 +230,12 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 	var token []byte
 	resp := &handshake.HandShakeResponse{}
 	if dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA {
-		handshankeReq.Type = handShakeTypeUID
+		handshakeReq.Type = handShakeTypeUID
 		handshakePath := utils.GetHandshakePathOfEndpoint(dr.Spec.Endpoint)
 		if dr.Spec.Destination == c.getMasterNamespace() {
 			handshakePath = utils.GetHandshakePathOfPrefix(c.getMasterProxyPath())
 		}
-		err := doHTTPWithDefaultRetry(handshankeReq, resp, &utils.HTTPParam{
+		err := doHTTPWithDefaultRetry(handshakeReq, resp, &utils.HTTPParam{
 			Method:       http.MethodPost,
 			Path:         handshakePath,
 			KusciaSource: dr.Spec.Source,
@@ -258,7 +259,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			return err
 		}
 	} else if dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA {
-		handshankeReq.Type = handShakeTypeRSA
+		handshakeReq.Type = handShakeTypeRSA
 
 		msgHashSum, err := calcPublicKeyHash(c.gateway.Status.PublicKey)
 		if err != nil {
@@ -287,7 +288,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 			return err
 		}
 
-		handshankeReq.TokenConfig = &handshake.TokenConfig{
+		handshakeReq.TokenConfig = &handshake.TokenConfig{
 			Token:    sourceTokenEnc,
 			Revision: dr.Status.TokenStatus.RevisionToken.Revision,
 			Pubhash:  base64.StdEncoding.EncodeToString(msgHashSum),
@@ -297,7 +298,7 @@ func (c *DomainRouteController) sourceInitiateHandShake(dr *kusciaapisv1alpha1.D
 		if dr.Spec.Destination == c.getMasterNamespace() {
 			handshakePath = utils.GetHandshakePathOfPrefix(c.getMasterProxyPath())
 		}
-		err = doHTTPWithDefaultRetry(handshankeReq, resp, &utils.HTTPParam{
+		err = doHTTPWithDefaultRetry(handshakeReq, resp, &utils.HTTPParam{
 			Method:       http.MethodPost,
 			Path:         handshakePath,
 			KusciaSource: dr.Spec.Source,
@@ -504,9 +505,17 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 		}
 		return buildFailedHandshakeReply(500, fmt.Errorf("domainRoute [%s] get error in dest domain [%s]: %s", drName, destDomain, err.Error()))
 	}
+	if req.Type != handShakeTypeRSA && req.Type != handShakeTypeUID {
+		return buildFailedHandshakeReply(500, fmt.Errorf("invalid handshake type [%s]", req.Type))
+	}
 	if !(req.Type == handShakeTypeUID && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) &&
 		!(req.Type == handShakeTypeRSA && dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA) {
-		return buildFailedHandshakeReply(500, fmt.Errorf("handshake type [%s] mismatch in domainroute [%s]", req.Type, dr.Spec.TokenConfig.TokenGenMethod))
+		// From Kuscia 0.14, for Lite we support both UID and RSA. And default is RSA.
+		// This should be only for compatibility when a master (>=0.14) connects with a Lite (<0.14) by using default add_domain_lite script.
+		// In other cases, the handshake type should still be the same as the domainroute.
+		nlog.Warnf("handshake type [%s] mismatch in domainroute [%s], ignored and use req.Type[%s].",
+			req.Type, dr.Spec.TokenConfig.TokenGenMethod, req.Type)
+		nlog.Warnf("check domainroute setting or use same version kuscia(>=0.14) for both master and lite.")
 	}
 	srcPub, err := base64.StdEncoding.DecodeString(dr.Spec.TokenConfig.SourcePublicKey)
 	if err != nil {
@@ -550,16 +559,16 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 
 		token = respToken
 	} else if req.Type == handShakeTypeRSA {
-		msgHashSum, err := calcPublicKeyHash(dr.Spec.TokenConfig.SourcePublicKey)
-		if err != nil {
-			return buildFailedHandshakeReply(500, fmt.Errorf("caculate source domain [%s] publickey hash error: %s", srcDomain, err.Error()))
+		msgHashSum, calErr := calcPublicKeyHash(dr.Spec.TokenConfig.SourcePublicKey)
+		if calErr != nil {
+			return buildFailedHandshakeReply(500, fmt.Errorf("caculate source domain [%s] publickey hash error: %s", srcDomain, calErr.Error()))
 		}
 		if req.TokenConfig.Pubhash != base64.StdEncoding.EncodeToString(msgHashSum) {
 			return buildFailedHandshakeReply(500, fmt.Errorf("source domain [%s] publickey hash mismatch in domainroute [%s]", srcDomain, dr.Name))
 		}
-		sourceToken, err := decryptToken(c.prikey, req.TokenConfig.Token, tokenByteSize/2)
-		if err != nil {
-			nlog.Errorf("dest domain [%s] publickey in source domain [%s] may be not correct, error: %s", destDomain, srcDomain, err.Error())
+		sourceToken, decryptErr := decryptToken(c.prikey, req.TokenConfig.Token, tokenByteSize/2)
+		if decryptErr != nil {
+			nlog.Errorf("dest domain [%s] publickey in source domain [%s] may be not correct, error: %s", destDomain, srcDomain, decryptErr.Error())
 			return buildFailedHandshakeReply(500, fmt.Errorf("dest domain [%s] publickey in source domain [%s] may be not correct", destDomain, srcDomain))
 		}
 
@@ -730,32 +739,24 @@ func exists(slice []string, val string) bool {
 	return false
 }
 
-func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKey) (*RevisionToken, error) {
-	handshankeReq := &handshake.HandShakeRequest{
-		DomainId:    domainID,
-		RequestTime: time.Now().UnixNano(),
-	}
+func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKey, masterPubKey *rsa.PublicKey) (*RevisionToken, error) {
+	handshakeReq, sourceToken, err := prepareHandshakeReq(domainID, pathPrefix, prikey, masterPubKey)
 
-	//1. In UID mode, the token is directly generated by the peer end and encrypted by the local public key
-	//2. In RSA mode, the local end and the peer end generate their own tokens and concatenate them.
-	//   The local token is encrypted with the peer's public key and then sent.
-	//   The peer token is encrypted with the local public key and returned.
-	handshankeReq.Type = handShakeTypeUID
 	resp := &handshake.HandShakeResponse{}
 
 	handshakePath := utils.GetHandshakePathOfPrefix(pathPrefix)
 	maxRetryTimes := 50
 	for i := 0; i < maxRetryTimes; i++ {
 		resp = &handshake.HandShakeResponse{}
-		err := utils.DoHTTP(handshankeReq, resp, &utils.HTTPParam{
+		httpErr := utils.DoHTTP(handshakeReq, resp, &utils.HTTPParam{
 			Method:       http.MethodPost,
 			Path:         handshakePath,
 			KusciaSource: domainID,
 			ClusterName:  clusters.GetMasterClusterName(),
 			KusciaHost:   fmt.Sprintf("%s.master.svc", utils.ServiceHandshake),
 		})
-		if err != nil {
-			nlog.Warn(err)
+		if httpErr != nil {
+			nlog.Warn(httpErr)
 		} else {
 			if resp.Status.Code == 0 {
 				break
@@ -767,36 +768,97 @@ func HandshakeToMaster(domainID string, pathPrefix string, prikey *rsa.PrivateKe
 	}
 
 	if resp.Status.Code != 0 {
-		err := fmt.Errorf("handshake to master fail, return error:%v", resp.Status.Message)
-		nlog.Error(err)
-		return nil, err
+		respErr := fmt.Errorf("handshake to master fail, return error:%v", resp.Status.Message)
+		nlog.Error(respErr)
+		return nil, respErr
 	}
-	token, err := decryptToken(prikey, resp.Token.Token, tokenByteSize)
+	var token []byte
+	var decryptErr error
+	if handshakeReq.Type == handShakeTypeRSA {
+		token, decryptErr = decryptToken(prikey, resp.Token.Token, tokenByteSize/2)
+	} else {
+		token, decryptErr = decryptToken(prikey, resp.Token.Token, tokenByteSize)
+	}
+	if decryptErr != nil {
+		nlog.Errorf("decrypt auth token from master error: %s", decryptErr.Error())
+		return nil, decryptErr
+	}
+	token = append(sourceToken, token...)
+
+	err = addMasterClusters(domainID, pathPrefix, token)
 	if err != nil {
-		nlog.Errorf("decrypt auth token from master error: %s", err.Error())
 		return nil, err
 	}
-	c, err := xds.QueryCluster(clusters.GetMasterClusterName())
-	if err != nil {
-		nlog.Error(err)
-		return nil, err
-	}
-	if err := clusters.AddMasterProxyVirtualHost(c.Name, pathPrefix, utils.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token), []string{"*.master.svc"}); err != nil {
-		nlog.Error(err)
-		return nil, err
-	}
-	if err = xds.SetKeepAliveForDstCluster(c, true); err != nil {
-		nlog.Error(err)
-		return nil, err
-	}
-	if err = xds.AddOrUpdateCluster(c); err != nil {
-		nlog.Error(err)
-		return nil, err
-	}
+
 	return &RevisionToken{
 		RawToken:       token,
 		PublicKey:      &prikey.PublicKey,
 		ExpirationTime: resp.Token.ExpirationTime,
 		Revision:       resp.Token.Revision,
 	}, nil
+}
+
+func prepareHandshakeReq(domainID string, pathPrefix string, prikey *rsa.PrivateKey, masterPubKey *rsa.PublicKey) (*handshake.HandShakeRequest, []byte, error) {
+	handshakeReq := &handshake.HandShakeRequest{
+		DomainId:    domainID,
+		RequestTime: time.Now().UnixNano(),
+	}
+
+	//1. In UID mode[deprecated], the token is directly generated by the peer end and encrypted by the local public key
+	//2. In RSA mode, the local end and the peer end generate their own tokens and concatenate them.
+	//   The local token is encrypted with the peer's public key and then sent.
+	//   The peer token is encrypted with the local public key and returned.
+	var sourceToken []byte
+	nlog.Debugf("prepare to handshake to master, domainID: %s, pathPrefix: %s, masterPubKey: %v", domainID, pathPrefix, masterPubKey)
+	if masterPubKey != nil {
+		pubKey := base64.StdEncoding.EncodeToString(tlsutils.EncodePKCS1PublicKey(prikey))
+		msgHashSum, err := calcPublicKeyHash(pubKey)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		sourceToken = make([]byte, tokenByteSize/2)
+		_, err = rand.Read(sourceToken)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		sourceTokenEnc, err := encryptToken(masterPubKey, sourceToken)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		handshakeReq.TokenConfig = &handshake.TokenConfig{
+			Token:    sourceTokenEnc,
+			Revision: 0,
+			Pubhash:  base64.StdEncoding.EncodeToString(msgHashSum),
+		}
+
+		handshakeReq.Type = handShakeTypeRSA
+	} else {
+		// for compatibility
+		handshakeReq.Type = handShakeTypeUID
+	}
+	return handshakeReq, sourceToken, nil
+}
+
+func addMasterClusters(domainID string, pathPrefix string, token []byte) error {
+	c, err := xds.QueryCluster(clusters.GetMasterClusterName())
+	if err != nil {
+		nlog.Error(err)
+		return err
+	}
+	if err = clusters.AddMasterProxyVirtualHost(c.Name, pathPrefix, utils.ServiceMasterProxy, domainID, base64.StdEncoding.EncodeToString(token), []string{"*.master.svc"}); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	if err = xds.SetKeepAliveForDstCluster(c, true); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	if err = xds.AddOrUpdateCluster(c); err != nil {
+		nlog.Error(err)
+		return err
+	}
+	return nil
 }

@@ -108,13 +108,13 @@ func DoHTTP(in interface{}, out interface{}, hp *HTTPParam) error {
 			return fmt.Errorf("invalid request, detail -> %s", err.Error())
 		}
 	} else {
-		inbody, err := json.Marshal(in)
-		if err != nil {
-			return fmt.Errorf("invalid request, detail -> %s", err.Error())
+		inbody, marshalErr := json.Marshal(in)
+		if marshalErr != nil {
+			return fmt.Errorf("invalid request, detail -> %s", marshalErr.Error())
 		}
-		req, err = http.NewRequest(hp.Method, handshakeHost+hp.Path, bytes.NewBuffer(inbody))
-		if err != nil {
-			return fmt.Errorf("invalid request, detail -> %s", err.Error())
+		req, marshalErr = http.NewRequest(hp.Method, handshakeHost+hp.Path, bytes.NewBuffer(inbody))
+		if marshalErr != nil {
+			return fmt.Errorf("invalid request, detail -> %s", marshalErr.Error())
 		}
 	}
 	if !hp.Transit {

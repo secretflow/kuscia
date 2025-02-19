@@ -164,13 +164,13 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
-	interopConfigInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = interopConfigInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    controller.handleAddedorDeletedInteropConfig,
 		UpdateFunc: controller.handleUpdatedInteropConfig,
 		DeleteFunc: controller.handleAddedorDeletedInteropConfig,
 	})
 
-	deploymentInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = deploymentInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedDeployment,
@@ -179,7 +179,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	deploymentSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = deploymentSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedDeploymentSummary,
@@ -187,7 +187,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	jobInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = jobInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedJob,
@@ -196,7 +196,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	jobSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = jobSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedJobSummary,
@@ -204,7 +204,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	taskInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = taskInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedTask,
@@ -213,7 +213,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	taskSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = taskSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedTaskSummary,
@@ -221,7 +221,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	taskResourceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = taskResourceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedTaskResource,

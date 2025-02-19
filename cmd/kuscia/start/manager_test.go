@@ -32,14 +32,14 @@ func TestModuleManager_Regist(t *testing.T) {
 	m := NewModuleManager()
 	assert.NotNil(t, m)
 
-	assert.Error(t, m.Regist("m1", nil, common.RunModeAutonomy))
+	assert.False(t, m.Regist("m1", nil, common.RunModeAutonomy))
 
 	creator := func(*modules.ModuleRuntimeConfigs) (modules.Module, error) {
 		return &mockModule{}, nil
 	}
 
-	assert.NoError(t, m.Regist("m1", creator, common.RunModeAutonomy))
-	assert.Error(t, m.Regist("m1", creator, common.RunModeAutonomy))
+	assert.True(t, m.Regist("m1", creator, common.RunModeAutonomy))
+	assert.False(t, m.Regist("m1", creator, common.RunModeAutonomy))
 }
 
 func TestModuleManager_SetDependencies(t *testing.T) {
@@ -51,13 +51,13 @@ func TestModuleManager_SetDependencies(t *testing.T) {
 		return &mockModule{}, nil
 	}
 
-	assert.NoError(t, m.Regist("m1", creator, common.RunModeAutonomy))
+	assert.True(t, m.Regist("m1", creator, common.RunModeAutonomy))
 
-	assert.Error(t, m.SetDependencies("m2", "m1"))
-	assert.Error(t, m.SetDependencies("m1", "m2"))
+	assert.False(t, m.SetDependencies("m2", "m1"))
+	assert.False(t, m.SetDependencies("m1", "m2"))
 
-	assert.NoError(t, m.Regist("m2", creator, common.RunModeAutonomy))
-	assert.NoError(t, m.SetDependencies("m1", "m2"))
+	assert.True(t, m.Regist("m2", creator, common.RunModeAutonomy))
+	assert.True(t, m.SetDependencies("m1", "m2"))
 
 	kmm, ok := m.(*kusciaModuleManager)
 	assert.True(t, ok)
@@ -75,19 +75,19 @@ func TestModuleManager_AddReadyHook(t *testing.T) {
 	m := NewModuleManager()
 	assert.NotNil(t, m)
 
-	assert.Error(t, m.AddReadyHook(nil, "no-exists"))
+	assert.False(t, m.AddReadyHook(nil, "no-exists"))
 
 	hook := func(ctx context.Context, modules map[string]modules.Module) error {
 		return nil
 	}
-	assert.Error(t, m.AddReadyHook(hook, "no-exists"))
+	assert.False(t, m.AddReadyHook(hook, "no-exists"))
 
 	creator := func(*modules.ModuleRuntimeConfigs) (modules.Module, error) {
 		return &mockModule{}, nil
 	}
 
-	assert.NoError(t, m.Regist("m1", creator, common.RunModeAutonomy))
-	assert.NoError(t, m.AddReadyHook(hook, "m1"))
+	assert.True(t, m.Regist("m1", creator, common.RunModeAutonomy))
+	assert.True(t, m.AddReadyHook(hook, "m1"))
 }
 
 func getModule(t *testing.T, m ModuleManager, name string) *mockModule {
@@ -116,7 +116,7 @@ func TestModuleManager_Start_normal(t *testing.T) {
 		}
 	}
 
-	assert.NoError(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -151,11 +151,11 @@ func TestModuleManager_Start_withdep(t *testing.T) {
 		}
 	}
 
-	assert.NoError(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
-	assert.NoError(t, m.Regist("m2", creator("m2"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m2", creator("m2"), common.RunModeAutonomy))
 
 	// start order: m2 --> m1
-	assert.NoError(t, m.SetDependencies("m1", "m2"))
+	assert.True(t, m.SetDependencies("m1", "m2"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -213,11 +213,11 @@ func TestModuleManager_Start_readyFailed(t *testing.T) {
 		}
 	}
 
-	assert.NoError(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
-	assert.NoError(t, m.Regist("m2", creator("m2"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m2", creator("m2"), common.RunModeAutonomy))
 
 	// start order: m2 --> m1
-	assert.NoError(t, m.SetDependencies("m1", "m2"))
+	assert.True(t, m.SetDependencies("m1", "m2"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -260,11 +260,11 @@ func TestModuleManager_Start_runFailed(t *testing.T) {
 		}
 	}
 
-	assert.NoError(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
-	assert.NoError(t, m.Regist("m2", creator("m2"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m1", creator("m1"), common.RunModeAutonomy))
+	assert.True(t, m.Regist("m2", creator("m2"), common.RunModeAutonomy))
 
 	// start order: m2 --> m1
-	assert.NoError(t, m.SetDependencies("m1", "m2"))
+	assert.True(t, m.SetDependencies("m1", "m2"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

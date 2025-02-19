@@ -170,11 +170,11 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *datame
 
 	// check DataSource
 	if request.DatasourceId != originalDomainData.Spec.DataSource {
-		datasource, err := s.checkDataSource(ctx, request.DatasourceId, request.Columns)
-		if err != nil {
-			nlog.Errorf("Query DataSource %s of DomainData %s fail: %v", request.DatasourceId, request.DomaindataId, err)
+		datasource, checkErr := s.checkDataSource(ctx, request.DatasourceId, request.Columns)
+		if checkErr != nil {
+			nlog.Errorf("Query DataSource %s of DomainData %s fail: %v", request.DatasourceId, request.DomaindataId, checkErr)
 			return &datamesh.UpdateDomainDataResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrGetDomainDataSourceFromKubeFailed, err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_DataMeshErrGetDomainDataSourceFromKubeFailed, checkErr.Error()),
 			}
 		}
 		if !isFSDataSource(datasource.Spec.Type) {

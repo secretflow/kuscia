@@ -184,7 +184,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		domainDataGrantQueue:        workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), domainDataGrantQueueName),
 	}
 
-	hDeploymentInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hDeploymentInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedDeployment,
@@ -193,7 +193,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		},
 	})
 
-	hDeploymentSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hDeploymentSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedorDeletedDeploymentSummary,
@@ -202,7 +202,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		},
 	})
 
-	hJobInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hJobInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedJob,
@@ -211,7 +211,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		},
 	})
 
-	hJobSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hJobSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedorDeletedJobSummary,
@@ -220,7 +220,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		},
 	})
 
-	hTaskSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hTaskSummaryInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedorDeletedTaskSummary,
@@ -229,7 +229,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		},
 	})
 
-	hDomainDataGrantInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hDomainDataGrantInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedDomainDataGrant,
@@ -238,7 +238,7 @@ func newHostResourcesController(opts *hostResourcesControllerOptions) (*hostReso
 		},
 	})
 
-	hDomainDataInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = hDomainDataInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: hrc.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    hrc.handleAddedDomainData,
@@ -401,14 +401,4 @@ var GetHostClient = func(token, masterURL string) (*kubeconfig.KubeClients, erro
 // getAPIServerURLForHostCluster returns api server url for host cluster.
 func getAPIServerURLForHostCluster(host string) string {
 	return fmt.Sprintf("http://apiserver.%s.svc", host)
-}
-
-// getNamespaceAndNameFromKey is used to get namespace and name from key.
-func getNamespaceAndNameFromKey(key, member string) (string, string, error) {
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		return namespace, name, fmt.Errorf("failed to split meta namespace key %v failed, %v", key, err)
-	}
-
-	return namespace, name, nil
 }

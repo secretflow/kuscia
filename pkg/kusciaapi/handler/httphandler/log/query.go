@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/secretflow/kuscia/pkg/kusciaapi/service"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
@@ -39,7 +40,7 @@ func (h QueryHandler) Handle(ginCtx *gin.Context) {
 	req := &kusciaapi.QueryLogRequest{}
 	if err := ginCtx.ShouldBind(req); err != nil {
 		nlog.Errorf("Query log handler parse request failed, error: %s", err.Error())
-		ginCtx.AbortWithError(http.StatusBadRequest, err)
+		_ = ginCtx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	nlog.Infof("Query log request: %+v", req)

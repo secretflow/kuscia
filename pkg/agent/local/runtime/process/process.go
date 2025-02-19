@@ -423,3 +423,7 @@ func (r *Runtime) ReopenContainerLog(ctx context.Context, containerID string) er
 
 	return nil
 }
+
+func (r *Runtime) RuntimeConfig(ctx context.Context) (*runtimeapi.RuntimeConfigResponse, error) {
+	return &runtimeapi.RuntimeConfigResponse{}, nil
+}

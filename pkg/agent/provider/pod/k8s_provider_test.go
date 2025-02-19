@@ -71,7 +71,7 @@ func TestK8sProvider_Start(t *testing.T) {
 		kp.kubeClient,
 		kp.namespace,
 		election.WithNamespace(kp.namespace),
-		election.WithLockType(resourcelock.ConfigMapsLeasesResourceLock),
+		election.WithLockType(resourcelock.LeasesResourceLock),
 		election.WithOnNewLeader(func(s string) {
 			t.Log("new leader", s)
 			newLeaderCh <- struct{}{}

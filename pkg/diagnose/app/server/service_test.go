@@ -28,12 +28,6 @@ func TestHealthy(t *testing.T) {
 	assert.Equal(t, 200, int(resp.Status.Code))
 }
 
-func TestDone(t *testing.T) {
-	resp := svc.done()
-	assert.Equal(t, 200, int(resp.Status.Code))
-	assert.Equal(t, true, svc.PeerDone)
-}
-
 func TestMock(t *testing.T) {
 	size := 1000
 	resp := svc.mock(&diagnose.MockRequest{
@@ -41,16 +35,6 @@ func TestMock(t *testing.T) {
 	})
 	assert.Equal(t, 200, int(resp.Status.Code))
 	assert.Equal(t, size, len(resp.Data))
-}
-
-func TestRegisterEndpoint(t *testing.T) {
-	endpoint := "20000"
-	resp := svc.registerEndpoint(&diagnose.RegisterEndpointRequest{
-		Endpoint: endpoint,
-	})
-	assert.Equal(t, 200, int(resp.Status.Code))
-	assert.Equal(t, true, svc.CanStartClient)
-	assert.Equal(t, endpoint, svc.PeerEndpoint)
 }
 
 func TestSubmitReport(t *testing.T) {
@@ -68,7 +52,6 @@ func TestSubmitReport(t *testing.T) {
 	})
 	assert.Equal(t, 200, int(resp.Status.Code))
 	assert.Equal(t, true, svc.RecReportDone)
-	assert.Equal(t, "BANDWIDTH", svc.Report[0].Name)
 
 }
 

@@ -13,7 +13,6 @@
 | [DeleteConfig](#delete-config)            | DeleteConfigRequest       | DeleteConfigResponse       | 删除配置   |
 | [BatchQueryConfig](#batch-query-config)   | BatchQueryConfigRequest   | BatchQueryConfigResponse   | 批量查询配置 |
 
-
 ## 接口详情
 
 {#create-config}
@@ -138,6 +137,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/query' \
 ### 更新配置
 
 #### HTTP路径
+
 /api/v1/config/update
 
 #### 请求（UpdateConfigRequest）
@@ -195,6 +195,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/update' \
 ### 删除配置
 
 #### HTTP路径
+
 /api/v1/config/delete
 
 #### 请求（DeleteConfigRequest）
@@ -209,7 +210,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/update' \
 | 字段     | 类型                             | 描述   |
 |--------|--------------------------------|------|
 | status | [Status](summary_cn.md#status) | 状态信息 |
-
 
 #### 请求示例
 

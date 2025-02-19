@@ -48,7 +48,7 @@ func ParallelSearchArray(ctx context.Context, testcases []int, matcher IsMatch) 
 			result = testcase
 		}
 	}
-	return result, fmt.Errorf(errMsg)
+	return result, fmt.Errorf("%s", errMsg)
 }
 
 func Decimal(value float64) float64 {

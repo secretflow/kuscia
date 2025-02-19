@@ -1,4 +1,4 @@
-# Kuscia诊断工具
+# Kuscia 诊断工具
 
 ## 功能
 
@@ -12,7 +12,6 @@
 - 网关缓冲配置
 - 网关超时配置
 
-
 ## 使用场景
 
 - 可用于部署完成后，在实际执行算法作业前的前置网络环境检查；
@@ -21,11 +20,11 @@
 
 ## 前置条件
 
-用户已经在双方节点均完成Kuscia的部署，包括启动kuscia、创建Domain、双方互换证书、双方配置授权。
+用户已经在双方节点均完成 Kuscia 的部署，包括启动 kuscia、创建 Domain、双方互换证书、双方配置授权。
 
 ## 使用示例
 
-假设双方节点为alice和bob，在某一方（alice或bob）计算节点容器内执行：
+假设双方节点为alice和bob，需要检测到bob的网络通信，可以在 alice 的计算节点容器内执行：
 
 ~~~
 kuscia diagnose network alice bob
@@ -40,7 +39,6 @@ Diagnose Config:
 --Destination: bob
 --CRD:
 --ReportFile:
---Manual: false
 --TestSpeed: true, Threshold: 10
 --TestRTT: true, Threshold: 50
 --TestProxyTimeout: false, Threshold: 600
@@ -49,40 +47,31 @@ Diagnose Config:
 --BidrectionMode: true
 diagnose <alice-bob> network statitsics
 diagnose crd config
-waiting diagnose job <diagnose-alice-bob-fef293f8a68fe11b4a49> syncronize to peer...
-waiting diagnose job <diagnose-alice-bob-fef293f8a68fe11b4a49> done, which may take several miniutes...
-query job result...
-query peer job result...
+Run CONNECTION task
+Run BANDWIDTH task, threshold: 10Mbits/sec
+Run RTT task, threshold: 50ms
+Run REQUEST_BODY_SIZE task, threshold: 1MB
+Run PROXY_BUFFER task
 REPORT:
 CRD CONFIG CHECK:
-+-----------+------+--------+-------------------------------------------------+
-|   NAME    | TYPE | RESULT |                   INFORMATION                   |
-+-----------+------+--------+-------------------------------------------------+
-| alice-bob | cdr  | [PASS] |                                                 |
-| bob-alice | cdr  | [PASS] |                                                 |
-+-----------+------+--------+-------------------------------------------------+
++-----------+------+--------+-------------+
+|   NAME    | TYPE | RESULT | INFORMATION |
++-----------+------+--------+-------------+
+| alice-bob | cdr  | [PASS] |             |
+| bob-alice | cdr  | [PASS] |             |
++-----------+------+--------+-------------+
 
 NETWORK STATSTICS(alice-bob):
 +-------------------+---------------------+-------------+--------+-------------+
 |       NAME        |   DETECTED VALUE    |  THRESHOLD  | RESULT | INFORMATION |
 +-------------------+---------------------+-------------+--------+-------------+
-| BANDWIDTH         | 7125.85938Mbits/sec | 10Mbits/sec | [PASS] |             |
 | CONNECTION        | N/A                 |             | [PASS] |             |
+| BANDWIDTH         | 22102.8125Mbits/sec | 10Mbits/sec | [PASS] |             |
+| RTT               | 0.61ms              | 50ms        | [PASS] |             |
+| REQUEST_BODY_SIZE | >1.0MB              | 1MB         | [PASS] |             |
 | PROXY_BUFFER      | N/A                 |             | [PASS] |             |
-| REQUEST_BODY_SIZE | >1MB                | 1MB         | [PASS] |             |
-| RTT               | 1.58ms              | 50ms        | [PASS] |             |
 +-------------------+---------------------+-------------+--------+-------------+
 
-NETWORK STATSTICS(bob-alice):
-+-------------------+---------------------+-------------+--------+-------------+
-|       NAME        |   DETECTED VALUE    |  THRESHOLD  | RESULT | INFORMATION |
-+-------------------+---------------------+-------------+--------+-------------+
-| BANDWIDTH         | 6797.81129Mbits/sec | 10Mbits/sec | [PASS] |             |
-| CONNECTION        | N/A                 |             | [PASS] |             |
-| PROXY_BUFFER      | N/A                 |             | [PASS] |             |
-| REQUEST_BODY_SIZE | >1MB                | 1MB         | [PASS] |             |
-| RTT               | 0.88ms              | 50ms        | [PASS] |             |
-+-------------------+---------------------+-------------+--------+-------------+
 ~~~
 
 如果双方节点的网络状态存在异常，一个可能的报告如下：
@@ -115,44 +104,20 @@ NETWORK STATSTICS(alice-bob):
 +-------------------+---------------------+-------------+-----------+--------------------------------+
 ~~~
 
-
-
 ## 报告字段说明
-- CRD Config Check: 检查配置的ClusterDomainRoute是否有效，若为FAIL，则说明CDR配置有误或节点本身网络不通。
-- NETWORK STATSTICS(alice-bob)：alice到bob的请求链路网络指标，包含：
-    - BANDWIDTH：网络带宽指标，默认阈值为10Mbits/sec，可通过配置--speed_thres \<theshold\> 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec时，结果为WARNING；
-    - CONNECTION：联通性，检测Kuscia Job的服务网络联通；
-    - PROXY_BUFFER：网关缓冲，结果为FAIL时表示网关存在缓冲，需要联系机构网关关闭网关缓冲；
-    - REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为1MB，可通过配置--size_thres \<threshold\>调整，当包体限制检测值（DETECTED VALUE）小于1MB时，结果为WARNING；
-    - RTT：传输延迟，默认阈值为50ms，可通过配置--rtt_thres \<threshold\>调整，当传输延迟检测值（DETECTED VALUE）大于50ms时，结果为WARNING。
-- NETWORK STATSTICS(bob-alice): bob到alice的请求链路网络指标。
 
-## 手动模式（Manual Mode）
-
-当运行kuscia diagnose network时，如果提示您以下内容：
-
-~~~
-waiting diagnose job <diagnose-alice-bob-ac8d8504f6b3a738d0a9> syncronize to peer...
-fail to sync job to peer, err: wait job start diagnose-alice-bob-ac8d8504f6b3a738d0a9 reach timeout, fallback to manual mode
-diagnose job can't syncronize from alice to bob, there might be some issues in your network. please enter the following command in bob's node to continue the diagnose procedure:
-
-	kuscia diagnose network -m -e diagnose-alice-94c506fd57761f25eddf-0-test-server.alice.svc bob alice
-
-waiting diagnose job <diagnose-alice-94c506fd57761f25eddf> done, which may take several miniutes...
-~~~
-
-则说明双方节点的网络存在一些未知异常（e.g. 存在网关缓冲），导致诊断工具无法将网络诊断任务同步到对方节点，此时当前命令会在alice侧一直等待检测任务同步，需要您根据终端提示，在对方节点容器内手动执行终端提供的命令，使得诊断工具能继续其网络诊断流程。
-
-在bob侧节点容器内执行以下命令（以终端显示的命令为准），并继续在alice节点侧等待诊断命令的诊断结果：
-~~~
-kuscia diagnose network -m -e diagnose-alice-94c506fd57761f25eddf-0-test-server.alice.svc bob alice
-~~~
-
-
+- CRD Config Check: 检查配置的 ClusterDomainRoute 是否有效，若为 FAIL，则说明 CDR 配置有误或节点本身网络不通。
+- NETWORK STATSTICS(alice-bob)：Alice 到 Bob 的请求链路网络指标，包含：
+  - BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \<theshold\>` 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；
+  - CONNECTION：联通性，检测 Kuscia Job 的服务网络联通；
+  - PROXY_BUFFER：网关缓冲，结果为FAIL时表示网关存在缓冲，需要联系机构网关关闭网关缓冲；
+  - REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_thres \<threshold\>` 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；
+  - RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_thres \<threshold\>`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。
+- NETWORK STATSTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。
 
 ## 其他说明
 
-kuscia diagnose network参数说明：
+kuscia diagnose network 参数说明：
 
 ~~~
 bash-5.2# kuscia diagnose network -h
@@ -164,9 +129,7 @@ Usage:
 Flags:
   -b, --bidirection                   Execute bidirection test (default true)
       --buffer                        Enable proxy buffer test (default true)
-  -e, --endpoint string               Peer Endpoint, only effective in manual mode
   -h, --help                          help for network
-  -m, --manual                        Initialize server/client manually
       --proxy-timeout                 Enable proxy timeout test
       --proxy-timeout-threshold int   Proxy timeout threshold, unit ms (default 600)
       --request-size-threshold int    Request size threshold, unit MB (default 1)

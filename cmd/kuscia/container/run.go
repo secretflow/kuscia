@@ -15,27 +15,17 @@
 package container
 
 import (
-	"path/filepath"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/agent/local/mounter"
-	"github.com/secretflow/kuscia/pkg/agent/local/runtime/process/container"
-	"github.com/secretflow/kuscia/pkg/agent/local/store"
-	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
 // runCommand represents the pull command
-func runCommand(cmdCtx *utils.Context) *cobra.Command {
+func runCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	cname := uuid.NewString()
-	runCommand := &cobra.Command{
+	runCmd := &cobra.Command{
 		Use:                   "run [OPTIONS] IMAGE [COMMAND] [ARG...]",
 		Short:                 "Create and run a new container from an image",
 		Args:                  cobra.MinimumNArgs(1),
@@ -46,82 +36,13 @@ kuscia container run secretflow/secretflow:latest bash
 
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx := cmd.Context()
-			if cmdCtx.RuntimeType == config.ContainerRuntime {
-				cmd := []string{"-a=/home/kuscia/containerd/run/containerd.sock", "run"}
-				cmd = append(cmd, args...)
-				if err := utils.RunContainerdCmd(ctx, "ctr", cmd...); err != nil {
-					nlog.Fatal(err)
-				}
-			} else {
-				if cname == "" {
-					cname = uuid.NewString()
-				}
-				runpStartContainer(cname, args)
+			if err := cmdCtx.ImageService.ImageRun(cname); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}
 
-	runCommand.Flags().StringVarP(&cname, "name", "", "test", "container name")
+	runCmd.Flags().StringVarP(&cname, "name", "", "test", "container name")
 
-	return runCommand
-}
-
-func runpStartContainer(cname string, args []string) {
-	sandboxBundle, imageStore, logDirectory := initContainerEnv(".")
-
-	c := &runtime.ContainerConfig{
-		Metadata: &runtime.ContainerMetadata{
-			Name: cname,
-		},
-		Image: &runtime.ImageSpec{
-			Image: args[0],
-		},
-		LogPath: "0.log",
-	}
-	if len(args) > 1 {
-		c.Command = args[1:]
-	}
-
-	container, err := container.NewContainer(c, logDirectory, cname, sandboxBundle, imageStore)
-	if err != nil {
-		nlog.Fatalf("Create container failed: %s", err.Error())
-	}
-
-	if err := container.Create(); err != nil {
-		nlog.Fatalf("Container init failed: %s", err.Error())
-	}
-
-	if err := container.Start(); err != nil {
-		nlog.Fatalf("Container start failed: %s", err.Error())
-	}
-
-	for {
-		if status := container.GetStatus(); status.State() != runtime.ContainerState_CONTAINER_RUNNING {
-			break
-		}
-		time.Sleep(time.Second)
-		print(".")
-	}
-}
-
-func initContainerEnv(rootDir string) (*layout.Bundle, store.Store, string) {
-	imageStoreDir := filepath.Join(rootDir, config.DefaultImageStoreDir())
-	sandboxDir := filepath.Join(rootDir, "sandbox")
-	logDirectory := filepath.Join(rootDir, "logs")
-
-	imageStore, err := store.NewOCIStore(imageStoreDir, mounter.Plain)
-	if err != nil {
-		nlog.Fatalf("Create image store(%s) failed: %s", imageStoreDir, err.Error())
-	}
-	sandboxBundle, err := layout.NewBundle(sandboxDir)
-	if err != nil {
-		nlog.Fatalf("Create image sandbox bounle(%s) failed: %s", sandboxDir, err.Error())
-	}
-
-	if err := paths.EnsureDirectory(logDirectory, true); err != nil {
-		nlog.Fatalf("Create logs dir(%s) failed: %s", logDirectory, err.Error())
-	}
-
-	return sandboxBundle, imageStore, logDirectory
+	return runCmd
 }

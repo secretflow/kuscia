@@ -79,7 +79,7 @@ func main() {
 			return nil
 		},
 	}
-	// shecduler will register version flag when kuscia process init. clear it.
+	// scheduler will register version flag when kuscia process init. clear it.
 	pflag.CommandLine = nil
 	ctx := signals.NewKusciaContextWithStopCh(signals.SetupSignalHandler())
 	rootCmd.AddCommand(image.NewImageCommand(ctx))

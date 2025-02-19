@@ -16,6 +16,7 @@ package modules
 
 import (
 	"context"
+	"crypto/rsa"
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
@@ -103,6 +104,14 @@ func NewDomainRoute(i *ModuleRuntimeConfigs) (Module, error) {
 				nlog.Warnf("decode domain cert failed")
 			}
 			i.DomainCertByMasterValue.Store(domainCert)
+			// save master pubkey for rsa token gen method
+			nlog.Debugf("get peer master pubkey response: %s", response.MasterPubkey)
+			pubkey, err := getPubkeyForToken(response.MasterPubkey, i.RunMode)
+			if err != nil {
+				nlog.Warnf("get peer response pubkey failed, err: %v, handshake can only use UID-RSA token", err)
+				return
+			}
+			i.Master.MasterPubkey = pubkey
 		},
 	}, nil
 }
@@ -117,4 +126,26 @@ func (d *domainRouteModule) WaitReady(ctx context.Context) error {
 
 func (d *domainRouteModule) Name() string {
 	return "domainroute"
+}
+
+func getPubkeyForToken(pubkey string, runmode common.RunModeType) (*rsa.PublicKey, error) {
+	if pubkey == "" && runmode == common.RunModeLite {
+		// for lite, but pubkey is empty, we can only use UID
+		err := fmt.Errorf("query peer master pubkey failed, pubkey is empty")
+		return nil, err
+	}
+	if runmode == common.RunModeLite {
+		// for lite, try to decode master pubkey
+		masterDer, decodeErr := base64.StdEncoding.DecodeString(pubkey)
+		if decodeErr != nil {
+			return nil, decodeErr
+		}
+		pubKey, parseErr := tlsutils.ParseRSAPublicKey(masterDer)
+		if parseErr != nil {
+			return nil, parseErr
+		}
+		return pubKey, nil
+	}
+	// otherwise, not need to acquire master pubkey
+	return nil, nil
 }

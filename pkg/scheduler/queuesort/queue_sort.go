@@ -83,8 +83,8 @@ func (ks *KusciaSort) Less(podInfo1, podInfo2 *framework.QueuedPodInfo) bool {
 		return prio1 > prio2
 	}
 
-	creationTime1 := ks.getCreationTimestamp(podInfo1.Pod, podInfo1.InitialAttemptTimestamp)
-	creationTime2 := ks.getCreationTimestamp(podInfo2.Pod, podInfo2.InitialAttemptTimestamp)
+	creationTime1 := ks.getCreationTimestamp(podInfo1.Pod, *podInfo1.InitialAttemptTimestamp)
+	creationTime2 := ks.getCreationTimestamp(podInfo2.Pod, *podInfo2.InitialAttemptTimestamp)
 	if creationTime1.Equal(creationTime2) {
 		return getNamespacedName(podInfo1.Pod) < getNamespacedName(podInfo2.Pod)
 	}

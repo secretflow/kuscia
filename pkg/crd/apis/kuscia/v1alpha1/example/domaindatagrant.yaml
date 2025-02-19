@@ -7,7 +7,7 @@ spec:
   domainData: DomainData-xxxx
   signature: xxxxxxxxxxxxxxxxxxxxxx
   grantDomain: bob-xxxxxxxxxx
-  grantLevel :
+  grantLevel:
     - metadata
     - file
     - normal

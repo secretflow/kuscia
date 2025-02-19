@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Types of changes
 
-`Added ` for new features.
+`Added` for new features.
 `Changed` for changes in existing functionality.
 `Deprecated` for soon-to-be removed features.
 `Removed` for now removed features.
@@ -91,9 +91,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changed
 
 - Change the mounting directory for logs and data of Kuscia deploying with Docker
-    - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-data -> {{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/data.
-    - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-logs -> {{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/logs.
-    - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-certs was deleted.
+  - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-data -> {{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/data.
+  - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-logs -> {{ROOT}}/{{DOMAIN_CONTAINER_NAME}}/logs.
+  - {{ROOT}}/kuscia-{{DEPLOY_MODE}}-{{DOMAIN_ID}}-certs was deleted.
 
 ### Fixed
 

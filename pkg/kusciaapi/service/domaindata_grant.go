@@ -17,12 +17,7 @@ package service
 
 import (
 	"context"
-	"crypto"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -78,10 +73,10 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 		}
 	}
 	if request.DomaindatagrantId != "" {
-		_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.DomainId).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
-		if err == nil {
+		_, queryErr := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(request.DomainId).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
+		if queryErr == nil {
 			return &kusciaapi.CreateDomainDataGrantResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataGrant), fmt.Sprintf("CreateDomainDataGrant failed, because domaindatagrant %s is exist", request.DomaindatagrantId)),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(queryErr, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataGrant), fmt.Sprintf("CreateDomainDataGrant failed, because domaindatagrant %s is exist", request.DomaindatagrantId)),
 			}
 		}
 	}
@@ -410,23 +405,6 @@ func (s *domainDataGrantService) convertSpec2Data(v *v1alpha1.DomainDataGrant, g
 			Output:      r.Output,
 		})
 	}
-}
-
-func (s *domainDataGrantService) signDomainDataGrant(dg *v1alpha1.DomainDataGrantSpec) error {
-	dg.Signature = ""
-	bs, err := json.Marshal(dg)
-	if err != nil {
-		return err
-	}
-	h := sha256.New()
-	h.Write(bs)
-	digest := h.Sum(nil)
-	sign, err := rsa.SignPKCS1v15(rand.Reader, s.priKey, crypto.SHA256, digest)
-	if err != nil {
-		return err
-	}
-	dg.Signature = base64.StdEncoding.EncodeToString(sign)
-	return nil
 }
 
 func validateCreateDomainDataGrantRequest(request *kusciaapi.CreateDomainDataGrantRequest) error {

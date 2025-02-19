@@ -27,7 +27,7 @@ message MockRequest {
     int64 duration = 2; // the total duration waitted by server before returning data
     bool enable_chunked = 3; // chunk mode flag. If true, the data are returned in chunk
     int64 chunked_size = 4; // the size of every chunked data
-    int64 chunked_interval = 5; // the returning interval between two chunked data
+    int64 chunked_interval = 5; // the returning interval between two chunked data 
     bytes data = 6; // client data
 }
 
@@ -38,14 +38,14 @@ message MockResponse {
 
 message StatusResponse {
     Status status = 1;
-}
+} 
 
 message RegisterEndpointRequest {
     string endpoint = 1;
 }
 
 message MetricItem {
-    string name = 1;
+    string name = 1; 
     string detected_value = 2; // the detected value of metric
     string threshold = 3;
     string result = 4; // the result of metric, differs in [PASS], [WARNING], [FAIL]

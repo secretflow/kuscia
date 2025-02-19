@@ -2,11 +2,11 @@
 
 ## 前言
 
-本教程帮助你在多台机器上使用 [中心化组网模式](../../reference/architecture_cn.md#中心化组网模式) 来部署 Kuscia 集群。
+本教程帮助您在多台机器上使用 [中心化组网模式](../../reference/architecture_cn.md#中心化组网模式) 来部署 Kuscia 集群。
 
 ## 前置准备
 
-在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)
+在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)。
 
 ## 部署流程（基于TOKEN认证）
 
@@ -17,11 +17,11 @@
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.13.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
+# 使用的 Kuscia 镜像，这里使用 0.14.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
-指定 Secretflow 版本：
+指定 SecretFlow 版本：
 
 ```bash
 # 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
@@ -34,7 +34,7 @@ export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretfl
 docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
-生成 master 节点的配置文件，kuscia init 参数请参考[kuscia 配置文件](../kuscia_config_cn.md#id3)：
+生成 master 节点的配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#id3)：
 
 ```bash
 # --domain 参数传递的是 master 节点 ID，DomainID 需全局唯一并且符合 RFC 1123 标签名规范，详情参考: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names，生产环境建议使用公司名称-部门名称-节点名称，如: mycompany-secretflow-master
@@ -54,16 +54,17 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 ```
 
 :::{tip}
+
 - 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
 - 目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving 以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)
 - 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)。
-- master 节点默认使用 sqlite 作为存储，如果生产部署，需要配置链接到 mysql 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
+- master 节点默认使用 SQLite 作为存储，如果生产部署，需要配置链接到 MySQL 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
 - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
 - 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
 - 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
 :::
 
-建议使用 curl -kvvv https://ip:port; 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。
+建议使用 `curl -kvvv https://ip:port` 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized。
 示例如下：
 
 ```bash
@@ -120,11 +121,11 @@ alias km="docker exec -it ${USER}-kuscia-master"
 
 ### 部署 lite 节点
 
-你可以选择在任一台机器上部署 lite 节点（下文以 alice、bob 为例）。
+您可以选择在任一台机器上部署 lite 节点（下文以 alice、bob 为例）。
 
-#### 部署 lite 节点 alice
+#### 部署 lite 节点 Alice
 
-在部署 alice 节点之前，我们需要在 master 上注册 alice 节点并获取部署时需要用到的 Token 。
+在部署 Alice 节点之前，我们需要在 master 上注册 Alice 节点并获取部署时需要用到的 Token 。
 
 执行以下命令，完成节点注册并从返回中得到 Token （下文将以 abcdefg 为例）。
 
@@ -150,13 +151,13 @@ docker exec -it ${USER}-kuscia-master kubectl get domain alice -o=jsonpath='{.st
 abcdefg
 ```
 
-接下来，登录到安装 alice 的机器上，假设对外暴露的 IP 是 2.2.2.2。
+接下来，登录到安装 Alice 的机器上，假设对外暴露的 IP 是 2.2.2.2。
 
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.13.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
+# 使用的 Kuscia 镜像，这里使用 0.14.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -165,7 +166,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
-生成 alice 节点的配置文件：
+生成 Alice 节点的配置文件：
 
 ```bash
 # --domain 参数传递的是节点 ID
@@ -174,7 +175,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "abcdefg" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
 ```
 
-启动 alice，默认会在当前目录下创建 ${USER}-kuscia-lite-alice/data 目录用来存放 alice 的数据：
+启动 Alice，默认会在当前目录下创建 ${USER}-kuscia-lite-alice/data 目录用来存放 alice 的数据：
 
 ```bash
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
@@ -186,7 +187,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --m
 
 #### 部署 lite 节点 bob
 
-在部署 bob 节点之前，我们需要在 master 注册 bob 节点，并获取到部署时需要用到的 Token 。
+在部署 Bob 节点之前，我们需要在 master 注册 bob 节点，并获取到部署时需要用到的 Token 。
 
 执行以下命令，完成节点注册并从返回中得到 Token （下文将以 hijklmn 为例）。
 
@@ -212,13 +213,13 @@ docker exec -it ${USER}-kuscia-master kubectl get domain bob -o=jsonpath='{.stat
 hijklmn
 ```
 
-接下来，登录到安装 bob 的机器上，假设对暴露的 IP 是 3.3.3.3。
+接下来，登录到安装 Bob 的机器上，假设对暴露的 IP 是 3.3.3.3。
 
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.13.0b0 版本镜像
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
+# 使用的 Kuscia 镜像，这里使用 0.14.0b0 版本镜像
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -227,7 +228,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
-生成 bob 节点的配置文件：
+生成 Bob 节点的配置文件：
 
 ```bash
 # --domain 参数传递的是节点 ID
@@ -236,18 +237,19 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "hijklmn" > lite_bob.yaml 2>&1 || cat lite_bob.yaml
 ```
 
-启动 bob，默认会在当前目录下创建 ${USER}-kuscia-lite-bob/data 目录用来存放 bob 的数据：
+启动 Bob，默认会在当前目录下创建 ${USER}-kuscia-lite-bob/data 目录用来存放 bob 的数据：
 
 ```bash
 # -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
 # -k 参数传递的是 lite 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
 ./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081
 ```
+
 > 如果 master 与多个 lite 节点部署在同一个物理机上，可以用 -p -k -g -q -x 参数指定下端口号（例如：./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081 -g 38082 -q 38083 -x 38084），防止出现端口冲突。
 
 ### 配置授权
 
-如果要发起由两个 lite 节点参与的任务，你需要给这两个节点之间建立授权。
+如果要发起由两个 lite 节点参与的任务，您需要给这两个节点之间建立授权。
 
 #### 创建 alice 和 bob 之间的授权
 
@@ -268,22 +270,23 @@ docker exec -it ${USER}-kuscia-master sh scripts/deploy/create_cluster_domain_ro
 docker exec -it ${USER}-kuscia-master kubectl get cdr
 ```
 
-当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 alice 和 bob 之间授权建立成功。
+当 `type` 为 Ready 的 condition 的 `status` 值为 "True" 则说明 Alice 和 Bob 之间授权建立成功。
 
 :::{tip}
+
 - 如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)
 - 授权失败，请参考[授权错误排查](../../troubleshoot/network/network_authorization_check.md)
 :::
 
 ### 运行任务
 
-接下来，我们运行一个测试任务以验证部署是否成功。
+接下来，运行一个测试任务以验证部署是否成功。
 
 #### 准备数据
 
 ##### 获取测试数据集
 
-登录到安装 alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-alice/data 下
+登录到安装 Alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-alice/data 下
 
 ```bash
 docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
@@ -301,7 +304,7 @@ rm -rf /tmp/bob.csv
 
 ##### 创建测试数据表
 
-登录到安装 master 的机器上，为 alice 和 bob 的测试数据创建 domaindata
+登录到安装 master 的机器上，为 Alice 和 Bob 的测试数据创建 domaindata
 
 ```bash
 docker exec -it ${USER}-kuscia-master scripts/deploy/create_domaindata_alice_table.sh alice
@@ -310,7 +313,7 @@ docker exec -it ${USER}-kuscia-master scripts/deploy/create_domaindata_bob_table
 
 ##### 创建测试数据表授权
 
-登录到安装 master 的机器上，为 alice 的测试数据创建 domaindatagrant
+登录到安装 master 的机器上，为 Alice 的测试数据创建 domaindatagrant
 
 ```bash
 docker exec -it ${USER}-kuscia-master curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(docker exec -it ${USER}-kuscia-master cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
@@ -321,7 +324,7 @@ docker exec -it ${USER}-kuscia-master curl -X POST 'https://127.0.0.1:8082/api/v
 }' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
 ```
 
-同理，登录到安装 master 的机器上，为 bob 的测试数据创建 domaindatagrant
+同理，登录到安装 master 的机器上，为 Bob 的测试数据创建 domaindatagrant
 
 ```bash
 docker exec -it ${USER}-kuscia-master curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/create' --header "Token: $(docker exec -it ${USER}-kuscia-master cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{

@@ -442,6 +442,11 @@ func validateCreateDomainRouteRequest(request *kusciaapi.CreateDomainRouteReques
 		if request.Endpoint == nil || len(request.Endpoint.Ports) == 0 {
 			return fmt.Errorf("endpoint can not be empty when transit is not set")
 		}
+		for _, port := range request.Endpoint.Ports {
+			if port.Port > 65535 || port.Port <= 0 {
+				return fmt.Errorf("endpoint port should be positive and less than or equal to 65535 ")
+			}
+		}
 	} else {
 		if request.Transit.TransitMethod == "" {
 			return fmt.Errorf("tranist method is required when transit is not empty")

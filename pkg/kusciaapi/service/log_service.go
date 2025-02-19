@@ -28,22 +28,22 @@ import (
 	"time"
 
 	"github.com/nxadm/tail"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/proxy"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-
 	apiutils "github.com/secretflow/kuscia/pkg/kusciaapi/utils"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	tlsutils "github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/pkg/web/constants"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 type ILogService interface {
@@ -162,7 +162,7 @@ func (s logService) QueryTaskLog(ctx context.Context, request *kusciaapi.QueryLo
 
 	// validate request param
 	nlog.Infof("Validate query log request param")
-	if err := s.validateQueryRequest(ctx, request, task); err != nil {
+	if err = s.validateQueryRequest(ctx, request, task); err != nil {
 		eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error())}
 		return
 	}

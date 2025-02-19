@@ -120,9 +120,9 @@ func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error
 	task := rawKt.DeepCopy()
 
 	for i := range task.Spec.Parties {
-		if err := c.injectPartyTaskEnv(&task.Spec.Parties[i], task); err != nil {
+		if injectErr := c.injectPartyTaskEnv(&task.Spec.Parties[i], task); injectErr != nil {
 			return fmt.Errorf("failed to inject task %v env for party %v:%v, %v",
-				task.Name, task.Spec.Parties[i].DomainID, task.Spec.Parties[i].Role, err)
+				task.Name, task.Spec.Parties[i].DomainID, task.Spec.Parties[i].Role, injectErr)
 		}
 	}
 
@@ -189,8 +189,8 @@ func (c *Controller) injectPartyTaskEnv(party *kusciaapisv1alpha1.PartyInfo, tas
 		return err
 	}
 
-	if err := appendPartyTaskParams(party, partyRoleIndex, taskInputConfig.TaskParams, taskParams); err != nil {
-		return err
+	if appendErr := appendPartyTaskParams(party, partyRoleIndex, taskInputConfig.TaskParams, taskParams); appendErr != nil {
+		return appendErr
 	}
 
 	for k, v := range taskParams {
@@ -603,7 +603,7 @@ func (c *Controller) processTaskStatusSyncNextWorkItem(ctx context.Context) bool
 		return true
 	}
 
-	c.inflightRequestCache.Add(cacheKey, "", taskStatusSyncInterval)
+	_ = c.inflightRequestCache.Add(cacheKey, "", taskStatusSyncInterval)
 
 	kt := rawKt.DeepCopy()
 	now := metav1.Now().Rfc3339Copy()
@@ -657,7 +657,7 @@ func (c *Controller) processTaskStatusSyncNextWorkItem(ctx context.Context) bool
 			}
 
 			utilsres.MergeKusciaTaskPartyTaskStatus(kt, pts)
-			utilsres.UpdateKusciaTaskStatusWithRetry(c.kusciaClient, rawKt, kt, statusUpdateRetries)
+			_ = utilsres.UpdateKusciaTaskStatusWithRetry(c.kusciaClient, rawKt, kt, statusUpdateRetries)
 		}()
 	}
 

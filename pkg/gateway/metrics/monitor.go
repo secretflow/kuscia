@@ -166,12 +166,12 @@ func (c *ClusterMetricsCollector) getMetrics() (map[string]int, error) {
 	if err != nil {
 		return nil, err
 	}
-	var metrics metrics
-	if err := json.Unmarshal(data, &metrics); err != nil {
+	var metricsData metrics
+	if err := json.Unmarshal(data, &metricsData); err != nil {
 		return nil, err
 	}
 	result := make(map[string]int)
-	for _, metric := range metrics.Stats {
+	for _, metric := range metricsData.Stats {
 		result[metric.Name] = metric.Value
 	}
 	return result, nil

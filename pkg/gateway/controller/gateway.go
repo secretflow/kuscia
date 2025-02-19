@@ -194,7 +194,7 @@ func (c *GatewayController) syncHandler() error {
 		nlog.Infof("Envoy cluster changed, old: %+v new: %+v", gwAddrs, ga)
 
 		gwAddrs = ga
-		xds.AddOrUpdateCluster(c.createEnvoyCluster(utils.EnvoyClusterName, gwAddrs, 80))
+		_ = xds.AddOrUpdateCluster(c.createEnvoyCluster(utils.EnvoyClusterName, gwAddrs, 80))
 	}
 	return nil
 }

@@ -15,10 +15,11 @@
 package netstat
 
 import (
+	"golang.org/x/net/context"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	"golang.org/x/net/context"
 )
 
 type ConnectionTask struct {
@@ -37,7 +38,6 @@ func NewConnectionTask(client *client.Client) Task {
 
 func (t *ConnectionTask) Run(ctx context.Context) {
 	nlog.Infof("Run %v task", t.Name())
-	defer nlog.Infof("Task %v done, output: %+v", t.Name(), t.output)
 	t.output.DetectedValue = "N/A"
 	// healthy check
 	if _, err := t.client.Healthy(ctx); err != nil {

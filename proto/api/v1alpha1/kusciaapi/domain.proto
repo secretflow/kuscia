@@ -38,7 +38,7 @@ message CreateDomainRequest {
   string domain_id = 2;
   string role = 3;
   string cert = 4;
-  AuthCenter auth_center = 5;
+  AuthCenter auth_center = 5 [deprecated = true];
   string master_domain_id = 6;
 }
 
@@ -72,7 +72,7 @@ message QueryDomainResponseData {
   repeated NodeStatus node_statuses = 4;
   repeated DeployTokenStatus deploy_token_statuses = 5;
   map<string, string> annotations = 6;
-  AuthCenter auth_center = 7;
+  AuthCenter auth_center = 7 [deprecated = true];
   string master_domain_id = 8;
 }
 
@@ -89,7 +89,7 @@ message UpdateDomainRequest {
   string domain_id = 2;
   string role = 3;
   string cert = 4;
-  AuthCenter auth_center = 5;
+  AuthCenter auth_center = 5 [deprecated = true];
   string master_domain_id = 6;
 }
 

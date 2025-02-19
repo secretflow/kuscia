@@ -31,11 +31,11 @@ type nodeExporterModule struct {
 	moduleRuntimeBase
 	runMode        pkgcom.RunModeType
 	rootDir        string
-	nodeExportPort string
+	nodeExportPort int
 }
 
 func NewNodeExporter(i *ModuleRuntimeConfigs) (Module, error) {
-	readyURI := fmt.Sprintf("http://127.0.0.1:%s", i.NodeExportPort)
+	readyURI := fmt.Sprintf("http://127.0.0.1:%d", i.NodeExportPort)
 	return &nodeExporterModule{
 		moduleRuntimeBase: moduleRuntimeBase{
 			name:         "nodeexporter",
@@ -52,7 +52,7 @@ func NewNodeExporter(i *ModuleRuntimeConfigs) (Module, error) {
 
 func (exporter *nodeExporterModule) Run(ctx context.Context) error {
 	var args []string
-	args = append(args, "--web.listen-address", ":"+exporter.nodeExportPort)
+	args = append(args, "--web.listen-address", fmt.Sprintf(":%d", exporter.nodeExportPort))
 	disabledCollectors := getDisabledCollectors()
 	args = append(args, disabledCollectors...)
 	sp := supervisor.NewSupervisor("node_exporter", nil, -1)

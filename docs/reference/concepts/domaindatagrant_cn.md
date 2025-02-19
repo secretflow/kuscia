@@ -45,26 +45,26 @@ spec:
 - `.spec.domainDataID`：表示 DomainDataGrant 所属的 DomainData。
 - `.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为`bob`。
 
-
-
-
 1. 参照 [DomainData](./domaindata_cn.md) 中的方法，先创建 `alice-table` 这个 DomainData 资源。
 
 2. 在 master 容器即 `${USER}-kuscia-master` 容器中，运行以下命令创建 DomainDataGrant。
-```shell
-kubectl apply -f alice-bob.yaml
-```
 
-1. 在 master 容器即 `${USER}-kuscia-master` 容器中，检查 DomainDataGrant 是否创建成功。
-```shell
-kubectl get domaindatagrant alice-bob -n alice
-```
+    ```shell
+    kubectl apply -f alice-bob.yaml
+    ```
 
-2. 在 master 容器即 `${USER}-kuscia-master` 容器中，检查 bob 是否被成功授权。
-```shell
-kubectl get domaindatagrant alice-bob -n bob
-kubectl get domaindata alice-table -n bob
-```
+3. 在 master 容器即 `${USER}-kuscia-master` 容器中，检查 DomainDataGrant 是否创建成功。
+
+    ```shell
+    kubectl get domaindatagrant alice-bob -n alice
+    ```
+
+4. 在 master 容器即 `${USER}-kuscia-master` 容器中，检查 bob 是否被成功授权。
+
+    ```shell
+    kubectl get domaindatagrant alice-bob -n bob
+    kubectl get domaindata alice-table -n bob
+    ```
 
 ## 更新 DomainDataGrant
 
@@ -88,24 +88,23 @@ spec:
 
 在该示例中，将`.spec.description.name`的值调整为`test2`。
 
-
 1. 运行以下命令更新 DomainDataGrant。
 
-```shell
-kubectl apply -f alice-bob.yaml
-```
+    ```shell
+    kubectl apply -f alice-bob.yaml
+    ```
 
 2. 检查 DomainDataGrant 是否更新成功。
 
-```shell
-kubectl get domaindatagrant alice-bob -n alice
-```
+    ```shell
+    kubectl get domaindatagrant alice-bob -n alice
+    ```
 
 3. 检查 bob 下的 DomainDataGrant 是否更新成功。
-```shell
-kubectl get domaindatagrant alice-bob -n bob
-```
 
+    ```shell
+    kubectl get domaindatagrant alice-bob -n bob
+    ```
 
 ## 清理 DomainData
 
@@ -113,38 +112,40 @@ kubectl get domaindatagrant alice-bob -n bob
 注意：清理 DomainDataGrant 并不会清除真实的数据内容，只是从 Kuscia 中删除 DomainDataGrant 的相关资源。
 
 1. 运行以下命令清理 DomainDataGrant。
-```shell
-kubectl delete domaindatagrant alice-bob -n alice
-```
 
-1. 检查 alice 下的 DomainDataGrant 是否已被清理。
+    ```shell
+    kubectl delete domaindatagrant alice-bob -n alice
+    ```
 
-```shell
-kubectl get domaindatagrant alice-bob -n alice
-Error from server (NotFound): domaindatagrants.kuscia.secretflow "alice-bob" not found
-```
+2. 检查 Alice 下的 DomainDataGrant 是否已被清理。
 
-2. 检查 alice 下的 DomainData 是否还存在。
+    ```shell
+    kubectl get domaindatagrant alice-bob -n alice
+    Error from server (NotFound): domaindatagrants.kuscia.secretflow "alice-bob" not found
+    ```
 
-```shell
-kubectl get domaindata alice-table -n alice
-```
+3. 检查 Alice 下的 DomainData 是否还存在。
 
-3. 检查 bob 下的 DomainDataGrant 是否已被清理。
+    ```shell
+    kubectl get domaindata alice-table -n alice
+    ```
 
-```shell
-kubectl get domaindatagrant alice-bob -n bob
-Error from server (NotFound): domaindatagrants.kuscia.secretflow "alice-bob" not found
-```
+4. , 检查 Bob 下的 DomainDataGrant 是否已被清理。
 
-4. 检查 bob 下的 DomainDataG 是否已被清理。
+    ```shell
+    kubectl get domaindatagrant alice-bob -n bob
+    Error from server (NotFound): domaindatagrants.kuscia.secretflow "alice-bob" not found
+    ```
 
-```shell
-kubectl get domaindata alice-table -n bob
-Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not found
-```
+5. 检查 Bob 下的 DomainDataG 是否已被清理。
+
+    ```shell
+    kubectl get domaindata alice-table -n bob
+    Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not found
+    ```
 
 {#data-mesh}
+
 ## 在 Domain 侧管理 DomainDataGrant
 
 如 上文所述，DomainDataGrant 属于节点内资源，每一个 DomainDataGrant 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
@@ -154,15 +155,15 @@ Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分为 8082 和 8083 
 端口，详情请参考 [Kuscia API](../apis/domaindatagrant_cn.md)。
 
 1. 进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainDataGrant。
-```shell
-docker exec -it root-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/query' --header "Token: $(cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
- "data": {
-  "domain_id": "alice",
-  "domaindatagrant_id": "${domaindatagrant_id}"
-  }
-}' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
-```
 
+    ```shell
+    docker exec -it root-kuscia-lite-alice curl -X POST 'https://127.0.0.1:8082/api/v1/domaindatagrant/query' --header "Token: $(cat /home/kuscia/var/certs/token)" --header 'Content-Type: application/json' -d '{
+     "data": {
+      "domain_id": "alice",
+      "domaindatagrant_id": "${domaindatagrant_id}"
+      }
+    }' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
+    ```
 
 {#refer}
 

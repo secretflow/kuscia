@@ -18,7 +18,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -60,11 +59,4 @@ func SetDefaultOpts(c *Opts) {
 		nlog.Fatalf("Cannot get hostname: %v", err)
 		os.Exit(-1)
 	}
-}
-
-func installFlags(flags *pflag.FlagSet, c *Opts) {
-	flags.StringVarP(&c.Namespace, "namespace", "n", c.Namespace, "kubernetes namespace")
-	flags.StringVar(&c.NodeName, "name", c.NodeName, "kubernetes node name")
-	flags.StringVarP(&c.AgentConfigFile, "agent-config", "c", c.AgentConfigFile, "Additional agent config file")
-	flags.BoolVar(&c.KeepNodeOnExit, "keep-node", true, "keep node info in k8s master after agent exit")
 }

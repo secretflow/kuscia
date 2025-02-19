@@ -22,6 +22,8 @@ import (
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"k8s.io/kubernetes/pkg/util/parsers"
+
+	"github.com/secretflow/kuscia/pkg/common"
 )
 
 type ImageType string
@@ -94,9 +96,9 @@ type Manifest struct {
 }
 
 func FormatImageID(id string) string {
-	if strings.HasPrefix(id, "sha256:") {
+	if strings.HasPrefix(id, common.ImageIDPrefix) {
 		return id
 	}
 
-	return fmt.Sprintf("sha256:%s", id)
+	return fmt.Sprintf("%s%s", common.ImageIDPrefix, id)
 }

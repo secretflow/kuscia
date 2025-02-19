@@ -27,6 +27,8 @@ mkdir -p "${TEST_SUITE_P2P_TEST_RUN_DIR}"
 
 . ./test/suite/core/functions.sh
 
+. ./test/suite/p2p/kuscia_images.sh
+
 function oneTimeSetUp() {
   start_p2p_mode "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"
 }
@@ -168,7 +170,7 @@ function test_p2p_token_rolling_auth_removal() {
   assertEquals "true" "$ready"
 
   # save dr
-  docker exec "$bob_ctr" kubectl get cdr $cdr_name -o json | jq 'del(.status)' > tmp.json
+  docker exec "$bob_ctr" kubectl get cdr $cdr_name -o json | "${TEST_BIN_DIR}"/jq 'del(.status)' > tmp.json
   # dr removal
   docker exec "$bob_ctr" kubectl delete cdr $cdr_name
 
@@ -234,6 +236,11 @@ function test_p2p_token_rolling_cert_misconfig() {
 
   # run task
   test_p2p_kuscia_job
+}
+
+function test_kuscia_images() {
+    test_runc_kuscia_images
+    test_runp_kuscia_images
 }
 
 . ./test/vendor/shunit2

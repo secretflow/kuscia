@@ -18,12 +18,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
-	"github.com/secretflow/kuscia/pkg/agent/local/store/layout"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-func mountCommand(cmdCtx *utils.Context) *cobra.Command {
+func mountCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	mountCmd := &cobra.Command{
 		Use:                   "mount MOUNT_ID IMAGE TARGET_PATH",
 		Short:                 "mount a image to path",
@@ -34,28 +32,11 @@ kuscia image mount unique_id app:0.1 target_dir/
 `,
 		Args: cobra.ExactArgs(3),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := mountImage(cmdCtx, args[0], args[1], args[2]); err != nil {
-				nlog.Fatal(err)
+			if err := cmdCtx.ImageService.MountImage(); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}
 
 	return mountCmd
-}
-
-func mountImage(cmdCtx *utils.Context, mountID, image, targetPath string) error {
-	nlog.Infof("mountID=%s, image=%s, targetPath=%s", mountID, image, targetPath)
-	imageName, err := kii.NewImageName(image)
-	if err != nil {
-		return err
-	}
-
-	bundle, err := layout.NewBundle(cmdCtx.StorageDir)
-	if err != nil {
-		return err
-	}
-
-	rBundle := bundle.GetContainerBundle(mountID)
-
-	return cmdCtx.Store.MountImage(imageName, rBundle.GetFsWorkingDirPath(), targetPath)
 }

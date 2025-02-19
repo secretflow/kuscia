@@ -102,8 +102,8 @@ func RunJob(ctx context.Context, cancel context.CancelFunc, conf *FateJobConfig)
 		nlog.Fatal(err)
 	}
 	go func() {
-		if err := m.Run(ctx); err != nil {
-			nlog.Fatal(err)
+		if runErr := m.Run(ctx); runErr != nil {
+			nlog.Fatal(runErr)
 			cancel()
 		}
 	}()

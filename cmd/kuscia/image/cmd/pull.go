@@ -15,18 +15,14 @@
 package cmd
 
 import (
-	"strings"
-
 	"github.com/spf13/cobra"
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // pullCommand represents the pull command
-func pullCommand(cmdCtx *utils.Context) *cobra.Command {
+func pullCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	var creds string
 
 	pullCmd := &cobra.Command{
@@ -43,26 +39,8 @@ kuscia image pull --creds "name:pass" secretflow/secretflow:latest
 
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			if cmdCtx.RuntimeType == config.ProcessRuntime {
-				var auth *runtimeapi.AuthConfig
-				if creds != "" {
-					up := strings.SplitN(creds, ":", 2)
-					if len(up) != 2 {
-						nlog.Fatal("credentials must be username:password format")
-					}
-					auth = &runtimeapi.AuthConfig{
-						Username: up[0],
-						Password: up[1],
-					}
-				}
-
-				if err := cmdCtx.Store.PullImage(args[0], auth); err != nil {
-					nlog.Fatalf("pull image(%s) failed with error: %s", args[0], err.Error())
-				}
-			} else {
-				if err := utils.RunContainerdCmd(cmd.Context(), "crictl", "--runtime-endpoint", "/home/kuscia/containerd/run/containerd.sock", "pull", "--creds", creds, args[0]); err != nil {
-					nlog.Fatal(err.Error())
-				}
+			if err := cmdCtx.ImageService.PullImage(creds); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}

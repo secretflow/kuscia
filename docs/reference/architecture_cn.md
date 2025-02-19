@@ -8,7 +8,7 @@ Kuscia 集群由控制平面（俗称调度面、Master）和节点组成。控�
 
 ![Kuscia Architecture](../imgs/kuscia_architecture.png)
 
-Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联互通，并支持与第三方产商的节点互联互通，从而构建更大的隐私计算网络。
+Kuscia 支持 Lite 节点与 Autonomy 节点、以及两个中心化网络互联互通，并支持与第三方厂商的节点互联互通，从而构建更大的隐私计算网络。
 
 ![Deployment Mode](../imgs/linkaged_network.png)
 
@@ -69,11 +69,7 @@ Agent 当前支持 RunC、 RunP 和 RunK 三种运行时：
 - RunP：即进程运行时，直接在 Agent 容器内以进程形式拉起任务 Pod。
 - RunK：即 K8s 运行时，对接 K8s 集群，将任务 Pod 转发提交至 K8s 集群中执行。
 
-
-
 ![Runtime](../imgs/runtime.png)
-
-
 
 三种运行时有各自的适用场景，你可以在不同的场景中根据运行时的特性来选择最合适的运行时：
 
@@ -87,8 +83,6 @@ Agent 当前支持 RunC、 RunP 和 RunK 三种运行时：
 | 部署权限         | Kuscia 容器特权启动            | 无要求                       | 申请机构 K8s 动态创建资源权限（例如 Pod、ConfigMap 等） |
 | 任务安全风险扩散 | 任务运行在不同容器中，不易扩散 | 任务运行在同一容器中，易扩散 | 任务运行在不同容器（Pod）中，不易扩散                   |
 | 资源利用率       | 较低                           | 较低                         | 较高（任务需要的资源可以在机构 K8s 侧动态扩缩）         |
-
-
 
 #### NetworkMesh
 

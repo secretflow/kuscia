@@ -70,7 +70,7 @@ func NewEndpointsController(ctx context.Context, kubeClient kubernetes.Interface
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
 	sharedInformers.Start(ctx.Done())
-	serviceInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = serviceInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    c.addObj,
 			UpdateFunc: c.updateObj,
@@ -79,7 +79,7 @@ func NewEndpointsController(ctx context.Context, kubeClient kubernetes.Interface
 		defaultSyncPeriod,
 	)
 
-	endpointsInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = endpointsInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc:    c.addObj,
 			UpdateFunc: c.updateObj,

@@ -31,6 +31,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/agent/framework"
+	gc "github.com/secretflow/kuscia/pkg/agent/garbagecollection"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	"github.com/secretflow/kuscia/pkg/agent/provider"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
@@ -122,8 +123,8 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	}
 
 	go func() {
-		if err := nodeController.Run(ctx); err != nil {
-			nlog.Fatalf("Failed to run node controller: %v", err)
+		if runErr := nodeController.Run(ctx); runErr != nil {
+			nlog.Fatalf("Failed to run node controller: %v", runErr)
 		}
 	}()
 	<-nodeController.Ready()
@@ -198,12 +199,23 @@ func RunRootCommand(ctx context.Context, agentConfig *config.AgentConfig, kubeCl
 	}()
 	<-podsController.Ready()
 
+	// init gc
+	logFileGCConfig := gc.DefaultLogFileGCConfig()
+	logFileGCConfig.Namespace = agentConfig.Namespace
+	logFileGCConfig.KubeClient = kubeClient
+	logFileGCConfig.LogFilePath = fmt.Sprintf("%s%s", agentConfig.StdoutPath, "/pods")
+	logFileGCConfig.GCDuration = agentConfig.StdoutGCDuration
+	// add stdout log dir
+	logFileGCService := gc.NewLogFileGCService(ctx, logFileGCConfig)
+	logFileGCService.Start()
+
 	nlog.Info("Agent started")
 	nodeController.NotifyAgentReady()
 	close(ReadyChan)
 	<-ctx.Done()
 	<-podsController.Stop()
 	nodeController.Stop()
+	logFileGCService.Stop()
 	nlog.Info("Shutting down k8s-clients ...")
 	close(chStopKubeClient)
 

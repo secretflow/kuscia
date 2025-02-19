@@ -1,17 +1,19 @@
 # Kuscia 入门教程 —— 快速开始
 
-你将会在单台机器上准备 Kuscia 需要的环境、快速部署一个示例 Kuscia 集群，然后尝试运行一个 [SecretFlow] 作业。
+您将会在单台机器上准备 Kuscia 需要的环境、快速部署一个示例 Kuscia 集群，然后尝试运行一个 [SecretFlow] 作业。
 
 [SecretFlow]: https://www.secretflow.org.cn/docs/secretflow
 
-## 部署模式：说明
+## 部署模式说明
+
+当前为体验模式，生产模式请参考[这里](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)部署。
 
 在部署时有两种组网模式可供选择：
 
 - [中心化组网模式](../reference/architecture_cn.md#中心化组网模式)：启动一个控制平面（master）容器和两个 Lite 节点（alice 和 bob）容器
 - [点对点组网模式](../reference/architecture_cn.md#点对点组网模式)：启动两个 Autonomy 节点（alice 和 bob）容器
 
-你可以选择其中任意一种或两种模式进行部署体验，在单台机器上可以同时部署两种模式。
+您可以选择其中任意一种或两种模式进行部署体验，在单台机器上可以同时部署两种模式。
 
 ## 环境
 
@@ -27,7 +29,7 @@ CPU 架构：x86
 
 ### 环境准备
 
-在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)
+在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)。
 
 Kuscia 的部署需要依赖 Docker 环境，Docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 Docker 的示例：
 
@@ -35,19 +37,16 @@ Kuscia 的部署需要依赖 Docker 环境，Docker 的安装请参考[官方文
 # 安装 docker。
 yum install -y yum-utils
 yum-config-manager \
-	--add-repo \
-	https://download.docker.com/linux/centos/docker-ce.repo
+ --add-repo \
+ https://download.docker.com/linux/centos/docker-ce.repo
 yum install -y docker-ce docker-ce-cli containerd.io
 
 # 启动 docker。
 systemctl start docker
 ```
 
-### 关于 macOS
-
-macOS 默认给单个 docker container 分配了 2G 内存，请参考[官方文档](https://docs.docker.com/desktop/settings/mac/)将内存上限提高为 6G（Kuscia 2G + SecretFlow 4G）。
-
 ## 部署体验
+
 > 本文旨在帮助您快速体验 Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
 
 ### 前置操作
@@ -156,7 +155,7 @@ id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previ
 
 ### 停止体验集群
 
-如果你需要停止并卸载体验集群，可以直接运行[卸载脚本](#uninstall)。
+如果您需要停止并卸载体验集群，可以直接运行[卸载脚本](#uninstall)。
 
 获取 Kuscia 停止脚本，脚本会下载到当前目录：
 
@@ -198,6 +197,6 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 
 ## 接下来
 
-请继续阅读 [了解 KusciaJob][part-2] 章节，来了解示例作业背后的细节。
+请继续阅读 [KusciaJob][part-2] 章节，来了解示例作业背后的细节。
 
 [part-2]: ./run_secretflow_cn.md

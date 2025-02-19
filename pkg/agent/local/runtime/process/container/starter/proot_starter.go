@@ -17,12 +17,14 @@ package starter
 import (
 	"fmt"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"syscall"
 
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
@@ -38,7 +40,7 @@ func NewProotStarter(c *InitConfig) (Starter, error) {
 	s := &prootStarter{}
 
 	mountArgs := buildContainerMountArgs(c.ContainerConfig.Mounts)
-	cmdLine := []string{"/home/kuscia/bin/proot", "-S", c.Rootfs, "-w", c.WorkingDir, "--kill-on-exit"}
+	cmdLine := []string{path.Join(common.DefaultKusciaHomePath(), "/bin/proot"), "-S", c.Rootfs, "-w", c.WorkingDir, "--kill-on-exit"}
 
 	// The -S option will overwrite the home directory in the image.
 	cmdLine = append(cmdLine, fmt.Sprintf("-b %s:/root", filepath.Join(c.Rootfs, "root")))

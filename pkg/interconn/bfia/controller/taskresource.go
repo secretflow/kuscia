@@ -149,14 +149,14 @@ func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alp
 		return nil
 	}
 
-	c.inflightRequestCache.Add(cacheKey, "", inflightRequestCacheExpiration)
+	_ = c.inflightRequestCache.Add(cacheKey, "", inflightRequestCacheExpiration)
 
 	go func() {
 		defer c.inflightRequestCache.Delete(cacheKey)
 		rawKt, err := c.ktLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
 		if err != nil {
 			message := fmt.Sprintf("get kuscia task %v failed, %v", taskID, err)
-			c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionFalse, message)
+			_ = c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionFalse, message)
 			return
 		}
 
@@ -170,7 +170,7 @@ func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alp
 
 		trs, _ = c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
 		c.setPartyTaskStatuses(kt, tr.Namespace, "", kusciaapisv1alpha1.TaskPending)
-		c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "Start interconn task succeeded")
+		_ = c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "Start interconn task succeeded")
 	}()
 
 	return nil
@@ -189,7 +189,7 @@ func (c *Controller) setPartyTaskStatuses(task *kusciaapisv1alpha1.KusciaTask, d
 	}
 
 	if hasSet {
-		c.updatePartyTaskStatus(task)
+		_ = c.updatePartyTaskStatus(task)
 	}
 }
 

@@ -17,8 +17,9 @@ package starter
 import (
 	"os/exec"
 
-	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	"github.com/secretflow/kuscia/pkg/agent/utils/logutils"
 )
 
 type InitConfig struct {

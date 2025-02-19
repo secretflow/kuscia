@@ -47,7 +47,7 @@ func (h WatchJobHandler) Handle(ginCtx *gin.Context) {
 	req := &kusciaapi.WatchJobRequest{}
 	if err := ginCtx.ShouldBind(req); err != nil {
 		nlog.Errorf("Watch job handler parse request failed, error: %s", err.Error())
-		ginCtx.AbortWithError(http.StatusBadRequest, err)
+		_ = ginCtx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	// call watch job function of job service

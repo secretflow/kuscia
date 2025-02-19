@@ -124,7 +124,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	// kuscia job event handler
-	kusciaJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = kusciaJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueKusciaJob,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			controller.enqueueKusciaJob(newObj)
@@ -133,7 +133,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	// kuscia task event handler
-	kusciaTaskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = kusciaTaskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleTaskObject,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			controller.handleTaskObject(newObj)

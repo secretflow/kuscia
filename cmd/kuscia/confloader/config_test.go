@@ -19,11 +19,14 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/web/asserts"
 )
 
-const overwriteRootDir = "/home/test-kuscia"
-const overwriteMasterConfig = "rootDir: " + overwriteRootDir
+const (
+	overwriteRootDir      = "/home/test-kuscia"
+	overwriteMasterConfig = "rootDir: " + overwriteRootDir
+)
 
 func Test_defaultMasterOverwrite(t *testing.T) {
 	tests := []struct {
@@ -39,7 +42,7 @@ func Test_defaultMasterOverwrite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := defaultMaster("/home/kuscia")
+			got := defaultMaster(common.DefaultKusciaHomePath())
 			err := yaml.Unmarshal([]byte(tt.content), &got)
 			_ = asserts.IsNil(err, "unmarshal yaml should success")
 			if got.RootDir != tt.wantRootDir {

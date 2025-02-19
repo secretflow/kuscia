@@ -34,6 +34,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/supervisor"
 )
 
+const (
+	// CheckTimeInterval is Envoy log files size check interval.
+	CheckTimeInterval = "1h"
+)
+
 type envoyModule struct {
 	moduleRuntimeBase
 	rootDir               string
@@ -98,7 +103,10 @@ func (s *envoyModule) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// start logrotate task
 	go s.logRotate(ctx, configFilePath)
+	go s.logRotateWithFileSize(ctx, configFilePath)
 
 	return sp.Run(ctx, func(ctx context.Context) supervisor.Cmd {
 		cmd := exec.Command(filepath.Join(s.rootDir, "bin/envoy"), args...)
@@ -140,12 +148,92 @@ func (s *envoyModule) logRotate(ctx context.Context, filePath string) {
 		case <-time.After(d):
 		}
 
-		cmd := exec.Command("logrotate", filePath)
-		if err := cmd.Run(); err != nil {
-			nlog.Errorf("Logrotate run error: %v", err)
-		}
+		rotate(filePath)
 
 	}
+}
+
+func rotate(configFilePath string) {
+
+	cmd := exec.Command("logrotate", configFilePath)
+	if err := cmd.Run(); err != nil {
+		nlog.Errorf("Logrotate run error: %v", err)
+	}
+}
+
+func (s *envoyModule) logRotateWithFileSize(ctx context.Context, configFilePath string) {
+
+	// output envoy logrotate config.
+	// If the logrotate related configuration items are not configured,
+	// the default configuration is automatically loaded in the read kuscia.yaml.
+	// confloader/config.go#DefaultKusciaConfig
+	nlog.Debugf("envoy logrotate config: %v", s.logrotate)
+
+	duration, err := time.ParseDuration(CheckTimeInterval)
+	if err != nil {
+		nlog.Errorf("Error while parsing time interval: %v", err)
+		return
+	}
+
+	// Create a timer to check the log file size every hour
+	// default time interval is 1 hour.
+	ticker, err := createTicker(duration)
+	if err != nil {
+		nlog.Error(err)
+		return
+	}
+	defer ticker.Stop()
+
+	checkLogFiles := func() {
+		logFiles, err := filepath.Glob(filepath.Join(s.rootDir, common.LogPrefix, "envoy", "*.log"))
+		if err != nil {
+			nlog.Errorf("Error while globbing log files: %v", err)
+			return
+		}
+
+		for _, logFile := range logFiles {
+			fileSize := getFileSize(logFile)
+			if fileSize >= s.logrotate.MaxFileSizeMB {
+
+				nlog.Infof("Log file %s exceeds max size of %dMB, triggering logrotate, check time interval: %s", logFile, s.logrotate.MaxFileSizeMB, CheckTimeInterval)
+				rotate(configFilePath)
+			}
+		}
+	}
+
+	for {
+
+		// Wait for timer to fire or context to close
+		select {
+		case <-ctx.Done():
+			nlog.Warnf("Context done, exit logRotate")
+			return
+		case <-ticker.C:
+			checkLogFiles()
+		}
+	}
+}
+
+// getFileSize get file size, return xxx MB
+func getFileSize(filePath string) int {
+
+	file, err := os.Stat(filePath)
+	if err != nil {
+		nlog.Errorf("Error while getting file size: %v", err)
+		return 0
+	}
+
+	return int(file.Size() / (1024 * 1024))
+}
+
+// createTicker Create a timer and check whether the time interval is reasonable
+func createTicker(interval time.Duration) (*time.Ticker, error) {
+
+	if interval <= 0 {
+		return nil, fmt.Errorf("invalid interval: %v. Interval must be greater than 0", interval)
+	}
+
+	return time.NewTicker(interval), nil
 }
 
 func (s *envoyModule) readCommandArgs() (*EnvoyCommandLineConfig, error) {

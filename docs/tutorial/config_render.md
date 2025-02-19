@@ -3,16 +3,18 @@
 一般应用都是由可执行文件（or代码）和配置文件组成，配置文件可以用来定义应用执行时的参数，Kuscia 在任务/服务的每次运行前都会动态渲染出来真实的配置文件，并且 `挂载` 到应用执行时的文件系统空间。
 
 如果应用需要在 Kuscia 上运行，需要适配 Kuscia 的配置文件渲染模式来解决应用运行时的端口冲突，参与方地址，数据访问地址等问题，详细如下：
+
 - 端口： Kuscia 要求应用能够支持指定监听端口，主要是解决 RunP 场景下，端口冲突的问题
 - 任务输入： 用户通过 KusciaAPI/KusciaJob/KusciaTask/KusciaDeployment 指定的任务参数，比如： `taskInputConfig`
 - 集群信息： 其他参与方的地址等信息
 - 内部环境： 比如 DataMesh 地址 等信息
 - 其他动态配置: 应用依赖的某个配置在不同机构，可能对应的值不一样，需要从 Kuscia 配置系统 中提取对应的值
 
-注： Kuscia也继续兼容支持应用从环境变量中读取相关信息，但推荐使用配置文件模式，因为配置文件模式渲染能力更强大，并且可以将应用和Kuscia通过配置文件解耦
+注： Kuscia也继续兼容支持应用从环境变量中读取相关信息，但推荐使用配置文件模式，因为配置文件模式渲染能力更强大，并且可以将应用和Kuscia通过配置文件解耦。
 
 ## 配置示例
-Kuscia 支持自定义隐私计算应用配置文件渲染， 比如一个下面一个简单的例子，我们想要在 Kuscia 中运行一个 Nginx 服务
+
+Kuscia 支持自定义隐私计算应用配置文件渲染。比如一个下面一个简单的例子：想要在 Kuscia 中运行一个 Nginx 服务：
 
 需要首先定义对应的 AppImage 模版，之后再通过 KusciaDeployment(/KusciaJob) 把 Nginx 运行起来。
 
@@ -56,19 +58,24 @@ spec:
 
 
 ```
+
 注：
+
 - `configTemplates`: 应用自己的配置文件模版， Kuscia运行应用前，会根据模版渲染出真实的配置文件； 详细参考： [AppImage](../reference/concepts/appimage_cn.md)
 - `deployTemplates[].spec.containers[].configVolumeMounts[]`: 供应用读取的配置文件挂载地址（配置文件内容，对应到`configTemplates`）；详细参考： [AppImage](../reference/concepts/appimage_cn.md)
 
 ## 配置文件渲染
 
 ### 变量介绍
+
 配置文件的内容会在应用实际执行前，由 `Agent` 模块完成渲染； `Agent` 支持将以下内容渲染到配置文件模版中
+
 - 内置变量： 由 Kuscia 产生的运行时变量
 - 任务变量： 任务输入变量，如：任务配置中的 `taskInputConfig`
 - 配置变量： 来自于 Kuscia 配置系统的配置参数，请参考[使用 Kuscia 配置系统管理应用配置](#kuscia-cm)
 
 内置变量和任务变量支持的配置参数如下：
+
 | 类型 | 变量 | 使用示例 | 介绍 | 内容示例 |
 | - | - | - | - | - |
 | 内置 | TASK_ID | `{{.TASK_ID}}` | 表示任务的 ID，当应用启动为 KusciaJob 时有效 | secretflow-task-20230406162606 |
@@ -80,8 +87,8 @@ spec:
 | 任务 | INPUT_CONFIG | `{{.INPUT_CONFIG}}` | 服务的运行参数，对应到 KusciaAPI/KusciaDeployment 中的 inputConfig 参数；Kuscia不会关注实际内容是什么，只当做字符串透传 |  |
 | 任务 | CLUSTER_DEFINE | `{{.CLUSTER_DEFINE}}` | Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方(当为 KusciaDeployment 时生效) |  |
 
-
 ### 渲染规则
+
 Kuscia 基于 Golang 的 `text/template` 库来实现模版的渲染，所以默认该库支持的配置渲染方法， Kuscia 都支持； 最常见的方式为：`{{.VariableName}}`, 更多请参考 [text/template](https://pkg.go.dev/text/template)
 
 Kuscia 在 `text/template` 语法之外，为了方便配置文件更加简单，支持了嵌套结构的访问模式，引入 Kuscia 高级模版语法，对应的语法是：
@@ -94,6 +101,7 @@ Kuscia 在 `text/template` 语法之外，为了方便配置文件更加简单�
 | `{{{.VariableName.Field1[<key>=<value>].SubField2}}}`        | 筛选符合指定条件的数组元素（如果有多个满足条件，只选择第一个）                              | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[name=alice].role}}}` 来查找 `TASK_CLUSTER_DEFINE.parties`所有元素中，满足 `name` 值为 `alice`的元素 |
 
 {#kuscia-cm}
+
 ### 使用 Kuscia 配置系统管理应用配置
 
 在 Kuscia 中，可以使用 Kuscia 的配置系统管理应用的配置。具体配置管理操作，可参考 [KusciaAPI 的配置管理接口](../reference/apis/config_cn.md)。
@@ -109,6 +117,7 @@ Kuscia 在节点侧拉起应用容器时，会解析应用配置文件，并从�
 | `{{{.VariableName.Field1[<idx>]}}}`                | 从 Kuscia 配置管理系统中获取 `key=VariableName` 的配置，并通过数组索引，获取配置中具体的值 | `{{{.OSS_INFO.endpoints[0]}}}`       |
 
 示例：在 Kuscia 配置系统中注册的 OSS_INFO 配置为:
+
 ```json
 {
   "key": "OSS_INFO",
@@ -118,6 +127,7 @@ Kuscia 在节点侧拉起应用容器时，会解析应用配置文件，并从�
 
 :::{tip}
 模版参数根据包含的大括号个数，分为两大类，即 Golang 原生的模版语法 `{{X}}` 和 Kuscia 的高级模版语法 `{{{X.X1}}}`。
+
 - 如果只是简单的字符串替换，请使用 Golang 原生语法 `{{X}}`
 - 如果涉及从 Json 配置中获取某个具体字段，请使用 Kuscia 高级语法 `{{{X.X1}}}`
 - Kuscia 高级语法功能比较限定，请严格按照上述示例来填写，其他行为未知（也不保证非定义行为的兼容性）

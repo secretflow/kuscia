@@ -2,7 +2,7 @@
 
 DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 侧的管理 DomainData
 的能力。请参考 [DomainData](../../concepts/domaindata_cn.md)。
-你可以从 [这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/datamesh/domaindata.proto) 找到对应的 protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/datamesh/domaindata.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -19,6 +19,7 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 ### 创建数据对象
 
 #### HTTP路径
+
 /api/v1/datamesh/domaindata/create
 
 {#create-domain-data-request}
@@ -49,7 +50,9 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 | data.domaindata_id | string                         | 必填 | 数据对象ID |
 
 #### 请求示例
+
 发起请求：
+
 ```bash
 # 在容器内执行示例
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
@@ -79,6 +82,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
  ]
 }'
 ```
+
 请求响应成功结果：
 
 ```json
@@ -99,6 +103,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
 ### 更新数据对象
 
 #### HTTP路径
+
 /api/v1/datamesh/domaindata/update
 
 #### 请求（UpdateDomainDataRequest）
@@ -123,7 +128,9 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
 | status | [Status](summary_cn.md#status) | 必填 | 状态信息 |
 
 #### 请求示例
+
 发起请求：
+
 ```bash
 # 在容器内执行示例
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
@@ -153,6 +160,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
   ]
 }'
 ```
+
 请求响应成功结果：
 
 ```json
@@ -165,9 +173,12 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
 }
 ```
 
+{#query-domain-data}
+
 ### 查询数据对象
 
 #### HTTP路径
+
 /api/v1/datamesh/domaindata/query
 
 #### 请求（QueryDomainDataRequest）
@@ -185,7 +196,9 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
 | data   | [DomainData](#domain-data-entity) |    |      |
 
 #### 请求示例
+
 发起请求：
+
 ```bash
 # 在容器内执行示例
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
@@ -198,6 +211,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
   "domaindata_id": "alice-001"
 }'
 ```
+
 请求响应成功结果：
 
 ```json
@@ -240,7 +254,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 
 {#list-domain-data-request-data}
 
-##### ListDomainDataRequestData
+### ListDomainDataRequestData
 
 | 字段                | 类型     | 选填 | 描述   |
 |-------------------|--------|----|------|
@@ -265,7 +279,6 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 | columns       | [DataColumn](#data-column)[] | 必填 | 列信息                                                                                                                                |
 | vendor        | string                       | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData概念](../../concepts/domaindata_cn.md) |
 
-
 {#partition}
 
 ### Partition
@@ -274,7 +287,6 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 |--------|------------------------------|----|-----|
 | type   | string                       | 必填 | 类型  |
 | fields | [DataColumn](#data-column)[] | 必填 | 列信息 |
-
 
 {#data-column}
 

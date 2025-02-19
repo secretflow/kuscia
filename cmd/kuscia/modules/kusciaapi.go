@@ -8,7 +8,7 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.ame
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -210,7 +210,7 @@ func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort in
 		nlog.Errorf("read response body error: %v", err)
 		return false
 	}
-	if err := json.Unmarshal(respBytes, healthResp); err != nil {
+	if err = json.Unmarshal(respBytes, healthResp); err != nil {
 		nlog.Errorf("Unmarshal health response error: %v", err)
 		return false
 	}

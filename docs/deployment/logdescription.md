@@ -5,6 +5,7 @@
 日志在应用部署、业务运行和故障排除的过程中起到了非常的重要，本文将详细的描述日志对应的路径。
 
 ## Kuscia 目录结构
+
 <pre>
 /home/kuscia
     ├── bin
@@ -63,12 +64,14 @@
 K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl logs ${engine_pod_name} -n xxx` 查看任务的标准输出日志
 :::
 
-### envoy 日志格式
+### Envoy 日志格式
 
 `internal.log` 日志格式如下：
+
 ```bash
 %DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - [%START_TIME(%d/%b/%Y:%H:%M:%S %z)%] %REQ(Kuscia-Source)% %REQ(Kuscia-Host?:authority)% \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %REQ(x-b3-traceid)% %REQ(x-b3-spanid)% %RESPONSE_CODE% %RESPONSE_FLAGS% %REQ(content-length)% %DURATION% %REQUEST_DURATION% %RESPONSE_DURATION% %RESPONSE_TX_DURATION% %DYNAMIC_METADATA(envoy.kuscia:request_body)% %DYNAMIC_METADATA(envoy.kuscia:response_body)%
 ```
+
 ```bash
 # 示例如下：
 1.2.3.4 - [23/Oct/2023:01:58:02 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" 743d0da7e6814c2e 743d0da7e6814c2e 200 - 1791 0 0 0 0 - -
@@ -76,7 +79,9 @@ K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl
 1.2.3.4 - [23/Oct/2023:01:58:03 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" fdd0c66dfb0fbe45 fdd0c66dfb0fbe45 200 - 56 0 0 0 0 - -
 1.2.3.4 - [23/Oct/2023:01:58:03 +0000] alice fgew-cwqearkz-node-4-0-fed.bob.svc "POST /org.interconnection.link.ReceiverService/Push HTTP/1.1" dc52437872f6e051 dc52437872f6e051 200 - 171 0 0 0 0 - -
 ```
+
  internal.log 格式说明如下：
+
 | 属性               | 值                                                 |
 | ------------------ | -------------------------------------------------- |
 | `对端节点的 IP`      | 1.2.3.4                                          |
@@ -97,9 +102,8 @@ K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl
 | `RESPONSE_DURATION`  | -，从请求开始到响应开始的时间                        |
 | `RESPONSE_TX_DURATION` |-，发送上游回包的时间                               |
 
-
-
 `external.log` 日志格式如下：
+
 ```bash
 %DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT% - [%START_TIME(%d/%b/%Y:%H:%M:%S %z)%] %REQ(Kuscia-Source)% %REQ(Kuscia-Host?:authority)% \"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL%\" %REQ(x-b3-traceid)% %REQ(x-b3-spanid)% %RESPONSE_CODE% %RESPONSE_FLAGS% %REQ(content-length)% %DURATION% %DYNAMIC_METADATA(envoy.kuscia:request_body)% %DYNAMIC_METADATA(envoy.kuscia:response_body)%
 ```
@@ -112,6 +116,7 @@ K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl
 ```
 
  external.log 格式说明如下：
+
 | 属性               | 值                                                 |
 | ------------------ | -------------------------------------------------- |
 | `对端节点的 IP`      | 1.2.3.4                                          |
@@ -126,5 +131,5 @@ K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl
 | `RESPONSE_FLAGS`     | -，表示有关响应或连接的其他详细信息，详情可以参考[envoy官方文档](https://www.envoyproxy.io/docs/envoy/v1.25.0/configuration/observability/access_log/usage#command-operators)                     |
 | `CONTENT-LENGTH`     | 1791，表示 body 的长度                              |
 | `DURATION`           | 0，表示请求总耗时                                |
-| `REQ_META`          |  0，表示请求body的meta信息                      |
-| `RES_META`           | 0，表示请求body的meta信息                     |
+| `REQ_META`          |  0，表示请求 body 的 meta 信息                      |
+| `RES_META`           | 0，表示请求 body 的 meta 信息                     |

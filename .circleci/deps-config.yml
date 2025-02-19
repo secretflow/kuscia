@@ -74,8 +74,6 @@ jobs:
 
             docker buildx build -t ${DEPS_IMAGE}:${CIRCLETAG} --platform linux/arm64,linux/amd64 -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --push
 
-
-
 workflows:
   build_deps_workflow:
     jobs:

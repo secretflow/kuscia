@@ -133,17 +133,17 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 	}
 
 	if request.InfoKey != nil && *request.InfoKey != "" {
-		datasourceInfo, err := s.getDsInfoByKey(ctx, request.Type, *request.InfoKey)
-		if err != nil {
+		datasourceInfo, getErr := s.getDsInfoByKey(ctx, request.Type, *request.InfoKey)
+		if getErr != nil {
 			return &kusciaapi.CreateDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(getErr, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource),
 					fmt.Sprintf("domain data source info key %s not exist", *request.InfoKey)),
 			}
 		}
-		uri, err := parseAndNormalizeDataSource(request.Type, datasourceInfo)
-		if err != nil {
+		uri, parseErr := parseAndNormalizeDataSource(request.Type, datasourceInfo)
+		if parseErr != nil {
 			return &kusciaapi.CreateDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(parseErr, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource),
 					fmt.Sprintf("domain data source info key %s can not convert to datasource info", *request.InfoKey)),
 			}
 		}
@@ -157,11 +157,11 @@ func (s domainDataSourceService) CreateDomainDataSource(ctx context.Context, req
 			}
 		}
 
-		uri, encInfo, err := s.encryptInfo(request.Type, request.Info)
-		if err != nil {
-			nlog.Errorf(errCreateDomainDataSource, err.Error())
+		uri, encInfo, encryptErr := s.encryptInfo(request.Type, request.Info)
+		if encryptErr != nil {
+			nlog.Errorf(errCreateDomainDataSource, encryptErr.Error())
 			return &kusciaapi.CreateDomainDataSourceResponse{
-				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource), err.Error()),
+				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(encryptErr, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataSource), encryptErr.Error()),
 			}
 		}
 		dataSource.Spec.URI = uri

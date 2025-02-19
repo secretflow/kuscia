@@ -106,7 +106,7 @@ func TestFlatImage(t *testing.T) {
 	root := t.TempDir()
 	store, err := NewOCIStore(root, mounter.Plain)
 	assert.NoError(t, err)
-	nimg, err := store.(*ociStore).flattenImage(img)
+	nimg, _, err := store.(*ociStore).flattenImage(img)
 	assert.NoError(t, err)
 	assert.NotNil(t, nimg)
 

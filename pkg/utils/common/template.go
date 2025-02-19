@@ -42,8 +42,8 @@ func RenderConfig(configPathTmpl, configPath string, s interface{}) error {
 		return err
 	}
 	var configContent bytes.Buffer
-	if err := configTmpl.Execute(&configContent, s); err != nil {
-		return err
+	if execErr := configTmpl.Execute(&configContent, s); execErr != nil {
+		return execErr
 	}
 
 	f, err := os.Create(configPath)
@@ -65,8 +65,8 @@ func RenderRuntimeObject(configPathTmpl string, object runtime.Object, input int
 	}
 
 	var buffer bytes.Buffer
-	if err := template.Execute(&buffer, input); err != nil {
-		return err
+	if execErr := template.Execute(&buffer, input); execErr != nil {
+		return execErr
 	}
 
 	if _, _, err = Decode(buffer.Bytes(), nil, object); err != nil {

@@ -200,27 +200,6 @@ func (s *servingService) checkIfExist(ctx context.Context, domainID string, requ
 	return nil
 }
 
-func (s *servingService) checkDeploymentIfExist(ctx context.Context, domainID, servingID string) error {
-	_, err := s.kusciaClient.KusciaV1alpha1().KusciaDeployments(domainID).Get(ctx, servingID, metav1.GetOptions{})
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-	if err == nil {
-		return fmt.Errorf("kuscia deployment %s/%s already exists, please ensure that the name is not duplicated", domainID, servingID)
-	}
-
-	if domainID != common.KusciaCrossDomain {
-		_, err = s.kubeClient.AppsV1().Deployments(domainID).Get(ctx, servingID, metav1.GetOptions{})
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
-		}
-		if err == nil {
-			return fmt.Errorf("k8s deployment %s/%s already exists, please ensure that the name is not duplicated", domainID, servingID)
-		}
-	}
-	return nil
-}
-
 func (s *servingService) buildKusciaDeployment(ctx context.Context, request *kusciaapi.CreateServingRequest) (*v1alpha1.KusciaDeployment, error) {
 	kdParties := make([]v1alpha1.KusciaDeploymentParty, len(request.Parties))
 	for i, party := range request.Parties {

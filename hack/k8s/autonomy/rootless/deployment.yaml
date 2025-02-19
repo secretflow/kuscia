@@ -25,7 +25,7 @@ spec:
             - start
             - -c
             - etc/conf/kuscia.yaml
-          image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
+          image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
           imagePullPolicy: Always
           name: alice
           terminationMessagePath: /dev/termination-log

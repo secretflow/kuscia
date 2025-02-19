@@ -1,5 +1,5 @@
 global:
- scrape_interval:     5s # default export interval is 5s
+  scrape_interval: 5s # default export interval is 5s
   external_labels:
     monitor: 'Kuscia-monitor'
 scrape_configs:

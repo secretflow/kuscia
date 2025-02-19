@@ -47,8 +47,6 @@ import (
 )
 
 const (
-	statusUpdateRetries = 3
-
 	maxBackoffLimit = 3
 	controllerName  = "kuscia-task-controller"
 
@@ -150,7 +148,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	// kuscia task event handler
-	kusciaTaskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = kusciaTaskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueKusciaTask,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			controller.enqueueKusciaTask(newObj)
@@ -159,7 +157,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	// task resource group event handler
-	trgInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = trgInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleTaskResourceGroupObject,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			controller.handleTaskResourceGroupObject(newObj)
@@ -168,7 +166,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	// pod event handler
-	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handlePodObject,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			newPod, ok := newObj.(*v1.Pod)
@@ -193,7 +191,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	})
 
 	// service event handler
-	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleServiceObject,
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			newService, ok := newObj.(*v1.Service)

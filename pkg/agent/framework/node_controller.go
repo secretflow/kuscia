@@ -336,7 +336,7 @@ func (nc *NodeController) exit() error {
 	nodeFromMaster, err := nc.nodeStub.Get(context.Background(), nc.nmt.Name, emptyGetOptions)
 	if err == nil {
 		nodeFromMaster.Spec.Unschedulable = true
-		if err := retry.OnError(retry.DefaultRetry, retriable, func() error {
+		if err = retry.OnError(retry.DefaultRetry, retriable, func() error {
 			_, err = nc.nodeStub.Update(context.Background(), nodeFromMaster, metav1.UpdateOptions{})
 			return err
 		}); err != nil {
@@ -405,16 +405,16 @@ func (nc *NodeController) ensureNodeOnStartup(ctx context.Context) error {
 		nodeFromMaster.Spec.Taints = nc.nmt.Spec.Taints
 		nodeFromMaster.Spec.Unschedulable = nc.nmt.Spec.Unschedulable
 		finalStatus := nc.nmt.Status.DeepCopy()
-		newNodeSpec, err := nc.nodeStub.Update(ctx, nodeFromMaster, metav1.UpdateOptions{})
-		if err != nil {
-			nlog.Warnf("Failed to update node: %s", err.Error())
-			return err
+		newNodeSpec, updateErr := nc.nodeStub.Update(ctx, nodeFromMaster, metav1.UpdateOptions{})
+		if updateErr != nil {
+			nlog.Warnf("Failed to update node: %s", updateErr.Error())
+			return updateErr
 		}
 
 		// step 2. update node status
 		nc.nmt = newNodeSpec
 		nc.nmt.Status = *finalStatus
-		if err := nc.updateStatus(ctx); err != nil {
+		if err = nc.updateStatus(ctx); err != nil {
 			nlog.Errorf("Error handling node status update: %v", err)
 		}
 
@@ -423,9 +423,9 @@ func (nc *NodeController) ensureNodeOnStartup(ctx context.Context) error {
 
 	// nodeStub.Get() fail
 	if k8serrors.IsNotFound(err) {
-		newNode, err := nc.nodeStub.Create(ctx, nc.nmt, metav1.CreateOptions{})
-		if err != nil {
-			return fmt.Errorf("error registering node with kubernetes, detail-> %v", err)
+		newNode, createErr := nc.nodeStub.Create(ctx, nc.nmt, metav1.CreateOptions{})
+		if createErr != nil {
+			return fmt.Errorf("error registering node with kubernetes, detail-> %v", createErr)
 		}
 		nc.nmt = newNode
 		return nil
@@ -535,7 +535,7 @@ func (nc *NodeController) updateLease(ctx context.Context) error {
 func (nc *NodeController) updateStatus(ctx context.Context) error {
 	newNode, err := updateNodeStatus(ctx, nc.nodeStub, nc.nmt)
 	if err != nil {
-		if err := nc.handleNodeStatusUpdateError(ctx, err); err != nil {
+		if err = nc.handleNodeStatusUpdateError(ctx, err); err != nil {
 			return err
 		}
 
@@ -557,9 +557,9 @@ func (nc *NodeController) ensureLease(ctx context.Context) error {
 			nlog.Warn("Node lease not supported")
 			return err
 		case k8serrors.IsAlreadyExists(err):
-			if err := nc.leaseStub.Delete(ctx, nc.lease.Name, metav1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-				nlog.Warnf("Could not delete old node lease, lease=%v, err=%v", nc.lease.Name, err.Error())
-				return fmt.Errorf("old lease exists but could not delete it, detail-> %v", err)
+			if deleteErr := nc.leaseStub.Delete(ctx, nc.lease.Name, metav1.DeleteOptions{}); deleteErr != nil && !k8serrors.IsNotFound(deleteErr) {
+				nlog.Warnf("Could not delete old node lease, lease=%v, err=%v", nc.lease.Name, deleteErr.Error())
+				return fmt.Errorf("old lease exists but could not delete it, detail-> %v", deleteErr)
 			}
 			return nc.ensureLease(ctx) // retry
 		}

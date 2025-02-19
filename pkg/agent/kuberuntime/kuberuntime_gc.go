@@ -358,11 +358,11 @@ func (cgc *containerGC) evictPodLogsDirectories(ctx context.Context, podStdoutRo
 	for _, logSymlink := range logSymlinks {
 		if _, err := osInterface.Stat(logSymlink); os.IsNotExist(err) {
 			if containerID, err := getContainerIDFromLegacyLogSymlink(logSymlink); err == nil {
-				resp, err := cgc.manager.runtimeService.ContainerStatus(ctx, containerID, false)
-				if err != nil {
+				resp, statusErr := cgc.manager.runtimeService.ContainerStatus(ctx, containerID, false)
+				if statusErr != nil {
 					// TODO: we should handle container not found (i.e. container was deleted) case differently
 					// once https://github.com/kubernetes/kubernetes/issues/63336 is resolved
-					nlog.Warnf("Error getting ContainerStatus for containerID %q: %v", containerID, err)
+					nlog.Warnf("Error getting ContainerStatus for containerID %q: %v", containerID, statusErr)
 				} else {
 					status := resp.GetStatus()
 					if status == nil {

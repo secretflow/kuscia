@@ -16,6 +16,7 @@ package ssexporter
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -33,7 +34,7 @@ var (
 	ReadyChan = make(chan struct{})
 )
 
-func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string, exportPeriod uint, port string) error {
+func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string, exportPeriod uint, port int) error {
 	// read the config
 	_, AggregationMetrics := parse.LoadMetricConfig()
 	clusterAddresses, _ := parse.GetClusterAddress(domainID)
@@ -72,7 +73,7 @@ func SsExporter(ctx context.Context, runMode pkgcom.RunModeType, domainID string
 			EnableOpenMetrics: true,
 		}))
 	go func() {
-		if err := http.ListenAndServe("0.0.0.0:"+port, ssServer); err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), ssServer); err != nil {
 			nlog.Error("Fail to start the metric exporterserver", err)
 		}
 	}()

@@ -18,13 +18,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
-	"github.com/secretflow/kuscia/pkg/agent/local/store/kii"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // tagCommand represents the tag command
-func tagCommand(cmdCtx *utils.Context) *cobra.Command {
+func tagCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	tagCmd := &cobra.Command{
 		Use:                   "tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]",
 		Short:                 "Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE",
@@ -36,23 +34,8 @@ kuscia image tag secretflow/secretflow:v1 registry.mycompany.com/secretflow/secr
 
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			if cmdCtx.RuntimeType == config.ProcessRuntime {
-				org, err := kii.NewImageName(args[0])
-				if err != nil {
-					nlog.Fatalf("SOURCE_IMAGE(%s) is invalidate", args[0])
-				}
-				new, err := kii.NewImageName(args[1])
-				if err != nil {
-					nlog.Fatalf("TARGET_IMAGE(%s) is invalidate", args[0])
-				}
-				if err := cmdCtx.Store.TagImage(org, new); err != nil {
-					nlog.Fatalf("Tag image error: %s", err.Error())
-				}
-
-			} else {
-				if err := utils.RunContainerdCmd(cmd.Context(), "ctr", "-a=/home/kuscia/containerd/run/containerd.sock", "image", "tag", args[0], args[1]); err != nil {
-					nlog.Fatal(err.Error())
-				}
+			if err := cmdCtx.ImageService.TagImage(); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}

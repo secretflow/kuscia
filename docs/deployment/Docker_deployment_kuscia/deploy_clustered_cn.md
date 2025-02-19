@@ -2,21 +2,20 @@
 
 ## 前言
 
-本教程帮助你使用 Docker 组网模式来完成部署 Kuscia 集群。
+本教程帮助您使用 Docker 组网模式来完成部署 Kuscia 集群。
 
 <span style="color: red;">注：</span>目前只支持 Kuscia 以 `runp` 模式以此方式组网。
 
 ## 前置准备
 
-在部署 Kuscia
-之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)
+在部署 Kuscia 之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)。
 
 ## 结构图示
 
-> work 127.0.0.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(示例 IP 以实际为准)
+> work 127.0.0.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(示例 IP 以实际为准)  
 > manager 127.0.0.2 &nbsp;&nbsp;(示例 IP 以实际为准)
 
-![image.png](../../imgs/deploy_clustered_structure.png)
+![image.png](../../imgs/deploy_clustered_structure.png)  
 注：实际生产环境中 Alice 应该对外暴露一个统一的 LB 地址，由 LB 将请求代理至 Alice1 或 Alice2 节点实例。
 
 ## 部署流程
@@ -27,9 +26,9 @@
 
 **相关描述**
 
-[Docs 阿里云 ](https://developer.aliyun.com/article/1532136?spm=5176.26934562.main.1.73d24271TEV7gG)
+[Docs 阿里云](https://developer.aliyun.com/article/1532136?spm=5176.26934562.main.1.73d24271TEV7gG)
 
-[Docs Docker ](https://docs.docker.com/reference/cli/docker/swarm/)
+[Docs Docker](https://docs.docker.com/reference/cli/docker/swarm/)
 
 #### 初始化 swarm
 
@@ -40,7 +39,7 @@ docker swarm init --advertise-addr 127.0.0.2
 ```
 
 执行完上述命令可得到以下描述信息，以及 Token，需要记录该 Token 字符串，在 worker 节点宿主机执行可加入该 docker swarm
-集群。
+集群。  
 Token 遗忘丢失也可以通过`docker swarm join-token manager`命令进行查询
 
 ```shell
@@ -56,11 +55,11 @@ To add a manager to this swarm, run 'docker swarm join-token manager' and follow
 
 #### 初始化 Docker Network Create
 
-[[Docs Docker] Docker Network Create](https://docs.docker.com/reference/cli/docker/network/create/)
+[[Docs Docker] Docker Network Create](https://docs.docker.com/reference/cli/docker/network/create/)  
 在 docker manager 节点主机上执行：
 
 ```shell
-# -d, --driver:	Driver to manage the Network, default is bridge. Need to use overlay here
+# -d, --driver: Driver to manage the Network, default is bridge. Need to use overlay here
 # --attachable: Enable manual container attachment
 docker network create -d overlay --subnet 16.0.0.0/8 --attachable kuscia-exchange-cluster
 ```
@@ -103,8 +102,8 @@ ID                            HOSTNAME        STATUS    AVAILABILITY   MANAGER S
 > 部署参考：[多机部署点对点集群](./deploy_p2p_cn.md)
 
 ```shell
-# 指定 Kuscia 使用的镜像版本，这里使用 0.13.0b0 版本
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0
+# 指定 Kuscia 使用的镜像版本，这里使用 0.14.0b0 版本
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
 ```shell
@@ -152,7 +151,7 @@ docker network rm kuscia-exchange-cluster
 
 ### LB 示例（Nginx）
 
-> 以 Nginx 为例
+> 以 Nginx 为例  
 > 拉起 Nginx 服务通过 8080 端口代理多副本中 alice 的宿主机地址与端口。
 
 ```shell
@@ -177,7 +176,7 @@ docker pull nginx:latest
 
 - nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。
 
-#### 启动并挂载配置
+### 启动并挂载配置
 
 使用 Docker 拉起 Nginx 服务，并把修改的配置文件挂载至容器内
 

@@ -48,13 +48,20 @@ type DataMeshDataIOInterface interface {
 func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w utils.RecordWriter) error {
 	//generate arrow schema
 	colTypes, err := utils.GenerateArrowColumnType(data)
+	colNames := utils.GenerateArrowColumnNames(data)
 	if err != nil {
 		nlog.Errorf("Domaindata(%s) generate arrow schema error: %s", data.GetDomaindataId(), err.Error())
 		return status.Errorf(codes.Internal, "generate arrow schema failed with %s", err.Error())
 	}
 	schema, _ := utils.GenerateArrowSchema(data)
 	// use csv reader,ignore first row, first row is headline.
-	csvReader := csv.NewInferringReader(r, csv.WithColumnTypes(colTypes), csv.WithHeader(true), csv.WithNullReader(true, CSVDefaultNullValue), csv.WithChunk(1024))
+	csvReader := csv.NewInferringReader(r,
+		csv.WithColumnTypes(colTypes),
+		csv.WithHeader(true),
+		csv.WithNullReader(true, CSVDefaultNullValue),
+		csv.WithChunk(1024),
+		csv.WithIncludeColumns(colNames),
+	)
 	defer csvReader.Release()
 	defer func() {
 		if r := recover(); r != nil {

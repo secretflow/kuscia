@@ -3,6 +3,7 @@
 ## 背景
 
 隐私计算合作机构之间的网络较为复杂，经常存在多层次的网关，网关根据 Path 将请求路由到真正的业务节点。为了给这种组网提供支持，Kuscia 能够对业务请求进行 Path Rewrite，将对应的路由前缀添加到请求 Path。
+
 ![image.png](../imgs/gateway_path.png)
 
 :::{tip}
@@ -10,19 +11,78 @@
 :::
 
 ## 多机部署配置 Path Rewrite
+
 - Kuscia 中心化部署参考[这里](../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md)
 - Kuscia 点对点部署参考[这里](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
 
-节点之间通信配置示例：
+下面以 Alice 机构访问 Bob、Carol 机构的通信配置作为示例，其中 nginx 服务器地址为 1.1.1.1，Bob 机构地址为 2.2.2.2，Carol 机构地址为 3.3.3.3。
+
 ```bash
-# lite 访问 master 地址，此处 1.1.1.1 为网关地址
-http://1.1.1.1/master
+# alice 访问 bob 地址
+http://1.1.1.1/foo
+
+# alice 访问 carol 地址
+http://1.1.1.1/bar
+```
+
+nginx 配置示例如下：
+
+```bash
+http {
+    # Default is HTTP/1, keepalive is only enabled in HTTP/1.1
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $http_host;
+    proxy_pass_request_headers on;
+
+    access_log /var/log/access.log;
+    # To allow special characters in headers
+    ignore_invalid_headers off;
+
+    # Maximum number of requests through one keep-alive connection
+    keepalive_requests 1000;
+    keepalive_timeout 20m;
+
+    client_max_body_size 2m;
+
+    # To disable buffering
+    proxy_buffering off;
+    proxy_request_buffering off;
+
+    upstream bob {
+        server 2.2.2.2:11080 weight=1 max_fails=5 fail_timeout=60s;
+        keepalive 32;
+        keepalive_timeout 600s;
+        keepalive_requests 1000;
+    }
+
+    upstream carol {
+        server 3.3.3.3:21080 weight=1 max_fails=5 fail_timeout=60s;
+        keepalive 32;
+        keepalive_timeout 600s;
+        keepalive_requests 1000;
+    }
+
+    # The reverse proxy needs to remove the prefix path before forwarding
+    server {
+        location /foo/ {
+            proxy_read_timeout 10m;
+            proxy_pass https://bob/;
+        }
+        location /bar/ {
+            proxy_read_timeout 10m;
+            proxy_pass https://carol/;
+        }
+    }
+}
 ```
 
 ## 使用 KusciaAPI 配置 Path Rewrite
-使用 KusciaAPI 要配置一条 Path Rewrite 路由规则，需要设置`endpoint`的`prefix`字段。
 
-下面以 alice 访问 bob 的场景为例，当 bob 机构网关地址带 Path 时如何调用 KusciaAPI 设置`endpoint`的`prefix`字段。
+使用 KusciaAPI 要配置一条 Path Rewrite 路由规则，需要设置 `endpoint` 的 `prefix` 字段。
+
+下面以机构 Alice 访问机构 Bob 的场景为例，当机构 Bob 网关地址带 Path 时如何调用 KusciaAPI 设置 `endpoint` 的 `prefix` 字段。
+
 ```bash
 # 在容器内执行示例
 # --cert 是请求服务端进行双向认证使用的证书
@@ -42,7 +102,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/create'
         "port": 80,
         "protocol": "HTTP",
         "isTLS": true, # 如果网关为域名并且支持 https, 可以设置 true, 否则为 false
-        "path_prefix": "/bob"
+        "path_prefix": "/foo"
       }
     ]
   },

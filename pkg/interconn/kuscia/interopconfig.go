@@ -101,7 +101,7 @@ func (c *Controller) registerInteropConfig(ic *kusciaapisv1alpha1.InteropConfig)
 		c.setInteropConfigInfo(ic.Name, icInfo)
 
 		for _, m := range icInfo.members {
-			c.hostResourceManager.Register(ic.Spec.Host, m)
+			_ = c.hostResourceManager.Register(ic.Spec.Host, m)
 		}
 		nlog.Infof("Interop config %v host %v added members list: %v", ic.Name, ic.Spec.Host, ic.Spec.Members)
 		return nil
@@ -141,7 +141,12 @@ func (c *Controller) registerInteropConfig(ic *kusciaapisv1alpha1.InteropConfig)
 	}
 
 	for _, m := range addedMembers {
-		go c.hostResourceManager.Register(ic.Spec.Host, m)
+		go func() {
+			err := c.hostResourceManager.Register(ic.Spec.Host, m)
+			if err != nil {
+				nlog.Warnf("%s", err.Error())
+			}
+		}()
 	}
 
 	icInfo.host = ic.Spec.Host

@@ -104,3 +104,7 @@ func (s *dockerStore) PullImage(image string, auth *runtimeapi.AuthConfig) error
 func (s *dockerStore) ListImage() ([]*Image, error) {
 	return nil, errors.New("not supported currently")
 }
+
+func (s *dockerStore) RemoveImage(imageNameOrIDs []string) error {
+	return errors.New("not supported currently")
+}

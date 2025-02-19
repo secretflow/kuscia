@@ -15,18 +15,14 @@
 package cmd
 
 import (
-	"os"
-
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 // listCommand represents the list command
-func listCommand(cmdCtx *utils.Context) *cobra.Command {
+func listCommand(cmdCtx *utils.ImageContext) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use:                   "ls [OPTIONS]",
 		Short:                 "List local images",
@@ -39,39 +35,8 @@ kuscia image list
 
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			if cmdCtx.RuntimeType == config.ProcessRuntime {
-				images, err := cmdCtx.Store.ListImage()
-				if err != nil {
-					nlog.Fatalf("error: %s", err.Error())
-				}
-
-				table := tablewriter.NewWriter(os.Stdout)
-				table.SetHeader([]string{"REPOSITORY", "TAG", "IMAGE ID", "SIZE"})
-				table.SetAutoWrapText(false)
-				table.SetAutoFormatHeaders(true)
-				table.SetBorder(false)
-				table.SetHeaderLine(false)
-				table.SetCenterSeparator("")
-				table.SetColumnSeparator("")
-				table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-				table.SetAlignment(tablewriter.ALIGN_LEFT)
-				table.SetTablePadding("\t")
-				table.SetNoWhiteSpace(true)
-
-				for _, img := range images {
-					table.Append([]string{
-						img.Repository,
-						img.Tag,
-						img.ImageID,
-						img.Size,
-					})
-				}
-
-				table.Render()
-			} else {
-				if err := utils.RunContainerdCmd(cmd.Context(), "crictl", "--runtime-endpoint=unix:///home/kuscia/containerd/run/containerd.sock", "images", "ls"); err != nil {
-					nlog.Fatal(err.Error())
-				}
+			if err := cmdCtx.ImageService.ListImage(); err != nil {
+				nlog.Fatal(err.Error())
 			}
 		},
 	}

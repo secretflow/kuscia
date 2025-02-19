@@ -450,16 +450,14 @@ func applyKusciaResources(conf *ModuleRuntimeConfigs) error {
 	return nil
 }
 
-func applyFile(conf *ModuleRuntimeConfigs, file string) error {
+func applyFile(conf *ModuleRuntimeConfigs, file string) {
 	cmd := exec.Command(filepath.Join(conf.RootDir, "bin/kubectl"), "--kubeconfig", conf.KubeconfigFile, "apply", "-f", file)
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
 		nlog.Fatalf("apply %s err:%s", file, err.Error())
-		return err
 	}
 	nlog.Infof("apply %s", file)
-	return nil
 }
 
 func createDefaultDomain(ctx context.Context, conf *ModuleRuntimeConfigs) error {
@@ -478,15 +476,15 @@ func createDefaultDomain(ctx context.Context, conf *ModuleRuntimeConfigs) error 
 			Cert: certStr,
 		}}, metav1.CreateOptions{})
 	if k8serrors.IsAlreadyExists(err) {
-		dm, err := conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Get(ctx, conf.DomainID, metav1.GetOptions{})
-		if err != nil {
-			return err
+		dm, getErr := conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Get(ctx, conf.DomainID, metav1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
 		if dm.Spec.Cert != certStr {
 			nlog.Warnf("domain %s cert is not match, will update", conf.DomainID)
 			dm.Spec.Cert = certStr
-			_, err = conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Update(ctx, dm, metav1.UpdateOptions{})
-			return err
+			_, updateErr := conf.Clients.KusciaClient.KusciaV1alpha1().Domains().Update(ctx, dm, metav1.UpdateOptions{})
+			return updateErr
 		}
 		return nil
 	}

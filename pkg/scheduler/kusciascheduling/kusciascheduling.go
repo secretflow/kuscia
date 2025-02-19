@@ -116,11 +116,11 @@ func parseArgs(obj runtime.Object) (*kusciaapisv1alpha1.SchedulerPluginArgs, err
 	return &trgArgs, nil
 }
 
-func (cs *KusciaScheduling) EventsToRegister() []framework.ClusterEvent {
+func (cs *KusciaScheduling) EventsToRegister() []framework.ClusterEventWithHint {
 	// To register a custom event, follow the naming convention at:
 	// https://git.k8s.io/kubernetes/pkg/scheduler/eventhandlers.go#L403-L410
-	return []framework.ClusterEvent{
-		{Resource: framework.Pod, ActionType: framework.Add},
+	return []framework.ClusterEventWithHint{
+		{Event: framework.ClusterEvent{Resource: framework.Pod, ActionType: framework.Add}},
 	}
 }
 

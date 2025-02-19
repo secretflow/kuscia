@@ -24,18 +24,22 @@ import (
 )
 
 func NewContainerCommand(ctx context.Context) *cobra.Command {
-	cmdCtx := &utils.Context{}
+	runtimeType := ""
+	storageDir := ""
+	imageCtx := &utils.ImageContext{}
 	command := &cobra.Command{
-		Use:              "container",
-		Short:            "Manage containers",
-		SilenceUsage:     true,
-		PersistentPreRun: cmdCtx.InitBeforeRunCommand,
+		Use:          "container",
+		Short:        "Manage containers",
+		SilenceUsage: true,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			imageCtx.ImageService = utils.NewImageService(runtimeType, storageDir, args, c)
+		},
 	}
 
-	command.PersistentFlags().StringVar(&cmdCtx.StorageDir, "store", config.DefaultImageStoreDir(), "kuscia image storage directory")
-	command.PersistentFlags().StringVar(&cmdCtx.RuntimeType, "runtime", "", "kuscia runtime type: runp/runc")
+	command.PersistentFlags().StringVar(&storageDir, "store", config.DefaultImageStoreDir(), "kuscia image storage directory")
+	command.PersistentFlags().StringVar(&runtimeType, "runtime", "", "kuscia runtime type: runp/runc")
 
-	command.AddCommand(runCommand(cmdCtx))
+	command.AddCommand(runCommand(imageCtx))
 
 	return command
 }

@@ -424,9 +424,9 @@ func buildTaskInputConfigAndPartiesFrom(cpt *interconn.Component, config *interc
 		}
 
 		if len(commonTaskParams) > 0 {
-			s, err := structpb.NewStruct(commonTaskParams)
-			if err != nil {
-				return "", nil, err
+			s, newErr := structpb.NewStruct(commonTaskParams)
+			if newErr != nil {
+				return "", nil, newErr
 			}
 			taskInputConfig.TaskParams.Common = s
 		}

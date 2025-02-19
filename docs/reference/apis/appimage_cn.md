@@ -1,7 +1,7 @@
 # AppImage
 
 在 Kuscia 中，你可以使用 AppImage 存储注册应用镜像模版信息。详情请参考 [AppImage](../concepts/appimage_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/appimage.proto) 找到对应的 protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/appimage.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -42,6 +42,7 @@
 #### 请求示例
 
 发起请求：
+
 ```sh
 # 在容器内执行示例
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
@@ -52,105 +53,105 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/create' \
  --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
  --cacert ${CTR_CERTS_ROOT}/ca.crt \
  -d '{
-		"name": "appimage-template",
-		"config_templates": {
-			"task-config.conf": "{\n  \"task_id\": \"{{.TASK_ID}}\",\n  \"task_input_config\": \"{{.TASK_INPUT_CONFIG}}\",\n  \"task_input_cluster_def\": \"{{.TASK_CLUSTER_DEFINE}}\",\n  \"allocated_ports\": \"{{.ALLOCATED_PORTS}}\"\n}\n"
-		},
-		"deploy_templates": [
-			{
-				"name": "app",
-				"replicas": 1,
-				"role": "server",
-				"containers": [
-					{
-						"args": [
-							"-c",
-							"./app --role=server --task_config_path=/etc/kuscia/task-config.conf"
-						],
-						"command": [
-							"sh"
-						],
-						"config_volume_mounts": [
-							{
-								"mount_path": "/etc/kuscia/task-config.conf",
-								"sub_path": "task-config.conf"
-							}
-						],
-						"env": [
-							{
-								"name": "APP_NAME",
-								"value": "app"
-							}
-						],
-						"env_from": [
-							{
-								"prefix": "xxx",
-								"config_map_ref": {
-									"name": "config-template"
-								},
-								"secret_map_ref": {
-									"name": "secret-template"
-								}
-							}
-						],
-						"image_pull_policy": "IfNotPresent",
-						"liveness_probe": {
-							"failure_threshold": 1,
-							"http_get": {
-								"path": "/healthz",
-								"port": "global"
-							},
-							"period_seconds": 20
-						},
-						"name": "app",
-						"ports": [
-							{
-								"name": "global",
-								"protocol": "HTTP",
-								"scope": "Cluster"
-							}
-						],
-						"readiness_probe": {
-							"exec": {
-								"command": [
-									"cat",
-									"/tmp/healthy"
-								]
-							},
-							"initial_delay_seconds": 5,
-							"period_seconds": 5
-						},
-						"resources": {
-							"limits": {
-								"cpu": "100m",
-								"memory": "100Mi"
-							},
-							"requests": {
-								"cpu": "100m",
-								"memory": "100Mi"
-							}
-						},
-						"startup_probe": {
-							"failure_threshold": 30,
-							"http_get": {
-								"path": "/healthz",
-								"port": "global"
-							},
-							"period_seconds": 10
-						},
-						"working_dir": "/work"
-					}
-				],
-				"restart_policy": "Never"
-			}
-		],
-		"image": {
-			"id": "adlipoidu8yuahd6",
-			"name": "app-image",
-			"sign": "nkdy7pad09iuadjd",
-			"tag": "v1.0.0"
-		}
-	}
+  "name": "appimage-template",
+  "config_templates": {
+   "task-config.conf": "{\n  \"task_id\": \"{{.TASK_ID}}\",\n  \"task_input_config\": \"{{.TASK_INPUT_CONFIG}}\",\n  \"task_input_cluster_def\": \"{{.TASK_CLUSTER_DEFINE}}\",\n  \"allocated_ports\": \"{{.ALLOCATED_PORTS}}\"\n}\n"
+  },
+  "deploy_templates": [
+   {
+    "name": "app",
+    "replicas": 1,
+    "role": "server",
+    "containers": [
+     {
+      "args": [
+       "-c",
+       "./app --role=server --task_config_path=./kuscia/task-config.conf"
+      ],
+      "command": [
+       "sh"
+      ],
+      "config_volume_mounts": [
+       {
+        "mount_path": "/work/kuscia/task-config.conf",
+        "sub_path": "task-config.conf"
+       }
+      ],
+      "env": [
+       {
+        "name": "APP_NAME",
+        "value": "app"
+       }
+      ],
+      "env_from": [
+       {
+        "prefix": "xxx",
+        "config_map_ref": {
+         "name": "config-template"
+        },
+        "secret_map_ref": {
+         "name": "secret-template"
+        }
+       }
+      ],
+      "image_pull_policy": "IfNotPresent",
+      "liveness_probe": {
+       "failure_threshold": 1,
+       "http_get": {
+        "path": "/healthz",
+        "port": "global"
+       },
+       "period_seconds": 20
+      },
+      "name": "app",
+      "ports": [
+       {
+        "name": "global",
+        "protocol": "HTTP",
+        "scope": "Cluster"
+       }
+      ],
+      "readiness_probe": {
+       "exec": {
+        "command": [
+         "cat",
+         "/tmp/healthy"
+        ]
+       },
+       "initial_delay_seconds": 5,
+       "period_seconds": 5
+      },
+      "resources": {
+       "limits": {
+        "cpu": "100m",
+        "memory": "100Mi"
+       },
+       "requests": {
+        "cpu": "100m",
+        "memory": "100Mi"
+       }
+      },
+      "startup_probe": {
+       "failure_threshold": 30,
+       "http_get": {
+        "path": "/healthz",
+        "port": "global"
+       },
+       "period_seconds": 10
+      },
+      "working_dir": "/work"
+     }
+    ],
+    "restart_policy": "Never"
+   }
+  ],
+  "image": {
+   "id": "adlipoidu8yuahd6",
+   "name": "app-image",
+   "sign": "nkdy7pad09iuadjd",
+   "tag": "v1.0.0"
+  }
+ }
 '
 ```
 
@@ -206,50 +207,50 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/update' \
  --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
  --cacert ${CTR_CERTS_ROOT}/ca.crt \
  -d '{
-		"name": "appimage-template",
-		"config_templates": {},
-		"deploy_templates": [
-			{
-				"name": "app",
-				"replicas": 1,
-				"role": "server",
-				"containers": [
-					{
-						"args": [
-							"-c",
-							"./app --role=server --task_config_path=/etc/kuscia/task-config.conf"
-						],
-						"command": [
-							"sh"
-						],
-						"config_volume_mounts": [
-							{
-								"mount_path": "/etc/kuscia/task-config.conf",
-								"sub_path": "task-config.conf"
-							}
-						],
-						"image_pull_policy": "IfNotPresent",
-						"name": "app",
-						"ports": [
-							{
-								"name": "global",
-								"protocol": "HTTP",
-								"scope": "Cluster"
-							}
-						],
-						"working_dir": "/work"
-					}
-				],
-				"restart_policy": "Never"
-			}
-		],
-		"image": {
-			"id": "adlipoidu8yuahd6",
-			"name": "app-image",
-			"sign": "nkdy7pad09iuadjd",
-			"tag": "v1.0.0"
-		}
-	}
+  "name": "appimage-template",
+  "config_templates": {},
+  "deploy_templates": [
+   {
+    "name": "app",
+    "replicas": 1,
+    "role": "server",
+    "containers": [
+     {
+      "args": [
+       "-c",
+       "./app --role=server --task_config_path=./kuscia/task-config.conf"
+      ],
+      "command": [
+       "sh"
+      ],
+      "config_volume_mounts": [
+       {
+        "mount_path": "/work/kuscia/task-config.conf",
+        "sub_path": "task-config.conf"
+       }
+      ],
+      "image_pull_policy": "IfNotPresent",
+      "name": "app",
+      "ports": [
+       {
+        "name": "global",
+        "protocol": "HTTP",
+        "scope": "Cluster"
+       }
+      ],
+      "working_dir": "/work"
+     }
+    ],
+    "restart_policy": "Never"
+   }
+  ],
+  "image": {
+   "id": "adlipoidu8yuahd6",
+   "name": "app-image",
+   "sign": "nkdy7pad09iuadjd",
+   "tag": "v1.0.0"
+  }
+ }
 '
 ```
 
@@ -264,8 +265,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/update' \
   }
 }
 ```
-
-
 
 {#delete-appimage}
 
@@ -385,7 +384,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/query' \
 }
 ```
 
-
 {#batch-query-appimage}
 
 ### 批量查询节点状态
@@ -411,7 +409,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/query' \
 | data[].image                 | [AppImageInfo](#AppImageInfo)               | 基础镜像信息                                                       |
 | data[].config_templates      | [ConfigTemplate](#ConfigTemplate)           | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md)                                                                         |
 | data[].deploy_templates      | [DeployTemplate](#DeployTemplate)[]       | 应用部署模版配置信息                                                 |
-
 
 #### 请求示例
 
@@ -444,22 +441,21 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/batchQuery' \
   },
   "data": [
       {
-		"name": "appimage-template",
-		"image": {
-			"name": "xxxxxx",
-			"tag": "xxxx",
-			"id": "",
-			"sign": ""
-		},
-		"config_templates": {
-			"task-config.conf": ""
-		},
-		"deploy_templates": [],
+  "name": "appimage-template",
+  "image": {
+   "name": "xxxxxx",
+   "tag": "xxxx",
+   "id": "",
+   "sign": ""
+  },
+  "config_templates": {
+   "task-config.conf": ""
+  },
+  "deploy_templates": [],
       }
     ]
 }
 ```
-
 
 ## 公共
 
@@ -485,7 +481,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/batchQuery' \
 | replicas                  | int32                                      |   应用运行的副本数，默认为1    |
 | restart_policy         | string                | 应用的重启策略, 支持Always，Never，OnFailure。Always：当容器终止退出后，总是重启容器；OnFailure：当容器终止异常退出（退出码非0）时，才重启容器；Never：当容器终止退出时，从不重启容器。                                                     |
 | containers         | [Container](#Container)[]               | 应用容器配置信息                                                     |
-
 
 ### Container
 

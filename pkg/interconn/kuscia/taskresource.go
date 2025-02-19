@@ -361,11 +361,3 @@ func getTaskSummaryResourceStatus(domainID, role string, taskSummary *v1alpha1.K
 
 	return nil
 }
-
-func buildTaskResourceStatus(taskResource *v1alpha1.TaskResource) *v1alpha1.TaskResourceStatus {
-	return &v1alpha1.TaskResourceStatus{
-		Phase:              taskResource.Status.Phase,
-		LastTransitionTime: taskResource.Status.LastTransitionTime,
-		StartTime:          taskResource.Status.StartTime,
-	}
-}

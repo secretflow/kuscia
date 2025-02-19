@@ -152,7 +152,7 @@ func (s *CorednsModule) Run(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		instance.Stop()
+		_ = instance.Stop()
 		return nil
 	case <-lock.NewWaitGroupChannel(wg):
 		return errors.New("core dns run failed")
@@ -168,7 +168,7 @@ func (s *CorednsModule) Name() string {
 }
 
 func (s *CorednsModule) StartControllers(ctx context.Context, kubeclient kubernetes.Interface) {
-	s.coreDNSInstance.StartControllers(ctx, kubeclient)
+	_ = s.coreDNSInstance.StartControllers(ctx, kubeclient)
 }
 
 func prepareResolvConf(rootDir string) error {

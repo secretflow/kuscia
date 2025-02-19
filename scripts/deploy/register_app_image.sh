@@ -80,7 +80,7 @@ elif [[ ${count} -eq 0 ]]; then
   IMAGE="docker.io/library/${IMAGE}"
 fi
 
-function import_engine_image() {
+function import_engine_image() {   
   if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
      echo -e "${GREEN}Image '${IMAGE}' already exists in container ${KUSCIA_CONTAINER_NAME}${NC}"
   else
@@ -93,7 +93,7 @@ function import_engine_image() {
      fi
      local image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
      echo -e "${GREEN}Start importing image '${IMAGE}' Please be patient...${NC}"
-
+    
      local image_tar=${DOMAIN_IMAGE_WORK_DIR}/${image_random}.tar
      docker save ${IMAGE} -o ${image_tar}
      docker exec -it ${KUSCIA_CONTAINER_NAME} kuscia image load -i /home/kuscia/var/images/${image_random}.tar
@@ -141,11 +141,7 @@ function register_default_app_image() {
     app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.SF_IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
-  elif [[ ${app_type} == "kuscia" ]]; then
-    app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
-    s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
-    < "${ROOT}/scripts/templates/app_image.diagnose.yaml")
-  else
+  else 
     app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")

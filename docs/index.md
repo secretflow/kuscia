@@ -5,13 +5,13 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - 轻量化部署：您可以用最低 1C2G 的资源完成 100W 级数据隐私求交(PSI)。
 - 跨域网络安全通信：您可以实现多隐私计算任务并发执行时的端口复用（仅需一个公网端口）与安全通信。
 - 统一的 API 接口：您可以使用 [HTTP/GRPC API 接口](./reference/apis/summary_cn.md)集成隐私计算能力。
-- 互联互通：你可以与行业内多种隐私计算系统进行互联互通。
+- 互联互通：您可以与行业内多种隐私计算系统进行互联互通。
 
-更多 Kuscia 的能力介绍，请参考[ Kuscia 概述](./reference/overview.md)。
+更多 Kuscia 的能力介绍，请参考[Kuscia 概述](./reference/overview.md)。
 
 ## 入门
 
-从零到一运行你的第一个 SecretFlow 作业！
+从零到一运行您的第一个 SecretFlow 作业！
 
 1. [安装 Kuscia 并运行示例任务][quickstart]
 2. [提交 KusciaJob][run-secretflow]
@@ -43,7 +43,6 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 [api-overview]: ./reference/apis/summary_cn.md
 [api-tutorial]: ./tutorial/run_sf_job_with_api_cn.md
-[api-tutorial]: ./tutorial/run_sf_serving_with_api_cn.md
 [api-request-and-response]: ./reference/apis/summary_cn.md#请求和响应约定
 [api-domain]: ./reference/apis/domain_cn.md
 [api-domainroute]: ./reference/apis/domainroute_cn.md
@@ -75,10 +74,12 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [deploy-logdescription]: ./deployment/logdescription.md
 [deploy-kuscia_monitor_cn]: ./deployment/kuscia_monitor.md
 [deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
+
 ## 更多指南
 
 - [如何使用 Kuscia API 运行一个 SecretFlow 作业][how-to-sf-job]
 - [如何使用 Kuscia API 运行一个 SecretFlow Serving][how-to-serving]
+- [如何使用 Kuscia API 部署 DataProxy][how-to-deploy-dp]
 - [如何运行一个 FATE 作业][how-to-fate]
 - [如何在 Kuscia 上运行 SCQL 联合分析任务][how-to-run-scql]
 - [如何在 Kuscia 中使用自定义镜像仓库][how-to-use-custom-image]
@@ -89,6 +90,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 [how-to-sf-job]: ./tutorial/run_sf_job_with_api_cn.md
 [how-to-serving]: ./tutorial/run_sf_serving_with_api_cn.md
+[how-to-deploy-dp]: ./tutorial/run_dp_on_kuscia_cn.md
 [how-to-fate]: ./tutorial/run_fate_cn.md
 [how-to-run-scql]: ./tutorial/run_scql_on_kuscia_cn.md
 [how-to-use-custom-image]: ./tutorial/custom_registry.md

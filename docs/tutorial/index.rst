@@ -6,6 +6,7 @@
 
     run_sf_job_with_api_cn
     run_sf_serving_with_api_cn
+    run_dp_on_kuscia_cn
     run_fate_cn
     run_scql_on_kuscia_cn
     upgrade_engine.md

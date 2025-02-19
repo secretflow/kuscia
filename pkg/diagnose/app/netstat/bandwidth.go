@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -55,8 +56,7 @@ func NewBandWidthTask(client *client.Client, threshold int) Task {
 }
 
 func (t *BandWidthTask) Run(ctx context.Context) {
-	nlog.Infof("Run %v task, threshold: %v", t.Name(), t.threshold)
-	defer nlog.Infof("Task %v done, output: %+v", t.Name(), t.output)
+	nlog.Infof("Run %v task, threshold: %v", t.Name(), t.output.Threshold)
 	// mock request, server return 100kb chunked data continuously for 10s
 	req := &diagnose.MockRequest{
 		ChunkedSize:   ChunkedSize,
@@ -90,7 +90,6 @@ func (t *BandWidthTask) RecordData(resp *http.Response) int {
 	for {
 		recvSize, err := resp.Body.Read(buffer)
 		if err != nil {
-			nlog.Infof("Read End: %v\n", err)
 			break
 		}
 		size += recvSize

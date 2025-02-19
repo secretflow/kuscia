@@ -1,8 +1,7 @@
 # KusciaJob
 
 在 Kuscia 中，你可以使用 KusciaJob 来表示一个任务流程。请参考 [KusciaJob](../concepts/kusciajob_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/job.proto) 找到对应的
-protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/job.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -477,10 +476,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | 类型     | [EventType](#event-type) | 事件类型   |
 | object | [JobStatus](#job-status) | Job 状态 |
 
-
 {#approval-job}
 
 ### 审批 Job
+
 只有在 P2P 组网模式下且[开启 Job 审批](../concepts/kusciajob_cn.md#enable-approval)的情况下才需要调用此接口进行 job 审批。
 
 #### HTTP 路径
@@ -503,7 +502,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | status      | [Status](summary_cn.md#status) | 状态信息  |
 | data        | ApprovalJobResponseData        |       |
 | data.job_id | string                         | JobID |
-
 
 {#suspend-job}
 
@@ -561,7 +559,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
   }
 }
 ```
-
 
 {#restart-job}
 
@@ -716,9 +713,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### JobResource
 
-| 字段	 | 类型	  | 选填 | 描述 |
+| 字段  | 类型   | 选填 | 描述 |
 |--------|------------|------|------|
-| cpu	 | string | 可选 | 参与方可用 CPU 资源上限 |
+| cpu  | string | 可选 | 参与方可用 CPU 资源上限 |
 | memory | string | 可选 | 参与方可用内存资源上限  |
 
 {#party-status}
@@ -757,7 +754,6 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | task_timeout_seconds                    | int32  | 可选   | 任务超时时间，默认值: 300，当任务在 300 秒内没有被调度成功时，会将任务置为失败状态                                                     |
 | resource_reserved_seconds               | int32  | 可选   | 任务预留资源时间，默认值: 30，当任务参与方在扣减完资源(cpu/memory)后，会占用 30 秒，如果在 30 秒内，存在部分参与方没有成功扣减资源，那么已扣减资源的参与方将会释放扣减的资源 |
 | resource_reallocation_interval_seconds  | int32  | 可选   | 任务重新扣减资源的时间间隔，默认值: 30，当已扣减资源的参与方在释放完扣减的资源后，下次重新扣减资源的时间间隔                                           |
-
 
 {#task-config}
 
@@ -813,6 +809,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 {#state}
 
 ### State
+
 KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state)。
 
 | Name               | Number | 描述    |
@@ -837,7 +834,6 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 | port_name | string | 应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.name` |
 | scope     | string | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
 | endpoint  | string | 应用服务访问地址                                                                                            |
-
 
 {#bandwidth-limit}
 

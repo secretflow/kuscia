@@ -123,6 +123,9 @@ func (s domainService) CreateDomain(ctx context.Context, request *kusciaapi.Crea
 		}
 	}
 
+	// Set authCenter parameters in centralized networking mode
+	request.AuthCenter = setDefaultTokenGenMethod(s.conf.RunMode, request)
+
 	// build kuscia domain
 	kusciaDomain := &v1alpha1.Domain{
 		ObjectMeta: metav1.ObjectMeta{
@@ -525,4 +528,18 @@ func (s domainService) getValidCert(inputCert string) (string, error) {
 	}
 
 	return "", orgError
+}
+
+// setDefaultTokenGenMethod
+func setDefaultTokenGenMethod(mode string, request *kusciaapi.CreateDomainRequest) *kusciaapi.AuthCenter {
+	authCenter := request.AuthCenter
+	if request.AuthCenter == nil {
+		authCenter = &kusciaapi.AuthCenter{
+			AuthenticationType: string(v1alpha1.DomainAuthenticationToken),
+			TokenGenMethod:     v1alpha1.TokenGenMethodRSA,
+		}
+	}
+
+	nlog.Infof("Current mode is %v, auth center token gen method is %v, domain role is %v", mode, authCenter, request.Role)
+	return authCenter
 }

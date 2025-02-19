@@ -197,10 +197,13 @@ func AggregateStatistics(localDomainName string, clusterResults map[string]float
 			if aggFunc == parse.AggRate {
 				if metric == parse.MetricRetranRate {
 					threshold := 0.0
-					retranSum, err := Sum(networkResults, parse.MetricRetrans)
-					connectSum, err := Sum(networkResults, parse.MetricTotalConnections)
-					if err != nil {
-						return clusterResults, err
+					retranSum, sumErr := Sum(networkResults, parse.MetricRetrans)
+					if sumErr != nil {
+						return clusterResults, sumErr
+					}
+					connectSum, sumErr := Sum(networkResults, parse.MetricTotalConnections)
+					if sumErr != nil {
+						return clusterResults, sumErr
 					}
 					clusterResults[metricID] = Rate(retranSum-threshold, connectSum)
 				}

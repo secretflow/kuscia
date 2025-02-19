@@ -148,7 +148,7 @@ func NewDomainRouteController(
 		drHeartbeat:             make(map[string]time.Time, 0),
 	}
 
-	DomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
+	_, _ = DomainRouteInformer.Informer().AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: c.addDomainRoute,
 			UpdateFunc: func(_, newObj interface{}) {
@@ -280,7 +280,7 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 			if dr.Status.TokenStatus.RevisionToken.Token == "" {
 				_, ok := c.handshakeCache.Get(dr.Name)
 				if !ok {
-					c.handshakeCache.Add(dr.Name, dr.Name, 2*time.Minute)
+					_ = c.handshakeCache.Add(dr.Name, dr.Name, 2*time.Minute)
 					defer c.handshakeCache.Delete(dr.Name)
 					if err := func() error {
 						if !is3rdParty {
@@ -443,24 +443,24 @@ func (c *DomainRouteController) updatePollerReceiverXds(dr *kusciaapisv1alpha1.D
 			Source:      dr.Spec.Source,
 			Destination: dr.Spec.Destination,
 		}
-		if err := xds.UpdateReceiverRules(&rule, c.gateway.Namespace, true); err != nil {
-			return err
+		if updateErr := xds.UpdateReceiverRules(&rule, c.gateway.Namespace, true); updateErr != nil {
+			return updateErr
 		}
 		// update or add external virtual host
-		if vh, err := generateReceiverExternalVh(dr); err == nil {
+		if vh, externalErr := generateReceiverExternalVh(dr); externalErr == nil {
 			if err := xds.AddOrUpdateVirtualHost(vh, xds.ExternalRoute); err != nil {
 				return err
 			}
 		} else {
-			return err
+			return externalErr
 		}
 		// update or add internal virtual host
-		if vh, err := generateReceiverInternalVh(dr); err == nil {
+		if vh, internalErr := generateReceiverInternalVh(dr); internalErr == nil {
 			if err := xds.AddOrUpdateVirtualHost(vh, xds.InternalRoute); err != nil {
 				return err
 			}
 		} else {
-			return err
+			return internalErr
 		}
 	} else if dr.Spec.Destination == c.gateway.Namespace { // external
 		pollHeader := generatePollHeaders(dr)
@@ -484,7 +484,7 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 			"*.master.svc",
 			fmt.Sprintf("*.%s.svc", dr.Spec.Destination),
 		}
-		if err := clusters.AddMasterProxyVirtualHost(cl.Name, c.getMasterProxyPath(), utils.ServiceMasterProxy, c.gateway.Namespace, token.Token, domains); err != nil {
+		if err = clusters.AddMasterProxyVirtualHost(cl.Name, c.getMasterProxyPath(), utils.ServiceMasterProxy, c.gateway.Namespace, token.Token, domains); err != nil {
 			nlog.Error(err)
 			return err
 		}

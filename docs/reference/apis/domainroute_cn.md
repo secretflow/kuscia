@@ -2,8 +2,7 @@
 
 DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路由规则、Lite 节点之间的路由规则，以及点对点（P2P）网络中
 Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domainroute_cn.md) 。
-你可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain_route.proto) 找到对应的
-protobuf 文件。
+您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain_route.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
 
@@ -399,7 +398,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 | 字段         | 类型    | 选填 | 描述                    |
 |-------------|--------|------|------------------------|
-| port        | int32  | 必填 | 端口号                   |
+| port        | int32  | 必填 | 端口号，有效值1-65535                   |
 | protocol    | string | 必填 | 端口协议：\[HTTP, GRPC]   |
 | isTLS       | bool   | 可选 | 是否开启 TLS，默认为 false |
 | path_prefix | string | 可选 | 如果非空，网关会对发送的请求进行 path rewrite，在请求的path 前加上 path_prefix 的值      |

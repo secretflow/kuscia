@@ -76,7 +76,7 @@ func (s *domainDataGrantService) CreateDomainDataGrant(ctx context.Context, requ
 		}
 	}
 	if request.DomaindatagrantId != "" {
-		_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(s.conf.KubeNamespace).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
+		_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDataGrants(s.conf.KubeNamespace).Get(ctx, request.DomaindatagrantId, metav1.GetOptions{})
 		if err == nil {
 			return &datamesh.CreateDomainDataGrantResponse{
 				Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataGrantErrorCode(err, pberrorcode.ErrorCode_DataMeshErrCreateDomainDataGrant), fmt.Sprintf("CreateDomainDataGrant failed, because domaindatagrant %s is exist", request.DomaindatagrantId)),
@@ -177,7 +177,7 @@ func (s *domainDataGrantService) UpdateDomainDataGrant(ctx context.Context, requ
 		}
 	}
 
-	s.convertData2Spec(&datamesh.DomainDataGrantData{
+	_ = s.convertData2Spec(&datamesh.DomainDataGrantData{
 		DomaindatagrantId: request.DomaindatagrantId,
 		Author:            s.conf.KubeNamespace,
 		DomaindataId:      request.DomaindataId,

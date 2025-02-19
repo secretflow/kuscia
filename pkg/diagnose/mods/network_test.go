@@ -33,9 +33,7 @@ func TestNetworkMod(t *testing.T) {
 	conf := &DiagnoseConfig{
 		Source:       "alice",
 		Destination:  "bob",
-		PeerEndpoint: "",
-		Manual:       false,
-		NetworkParam: *netParam,
+		NetworkParam: netParam,
 	}
 
 	reporter := utils.NewReporter("")

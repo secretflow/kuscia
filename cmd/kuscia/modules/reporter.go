@@ -36,10 +36,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/web/utils"
 )
 
-const (
-	reporterSanDNSName = "reporter"
-)
-
 type reporterModule struct {
 	moduleRuntimeBase
 	conf *config.ReporterConfig

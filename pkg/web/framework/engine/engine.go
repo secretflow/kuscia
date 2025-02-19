@@ -71,9 +71,9 @@ func Default(conf *framework.AppConfig) *Engine {
 
 	// set default gin server
 	g := &beans.GinBean{ConfigLoader: &config.FlagEnvConfigLoader{Source: config.SourceFlag}}
-	engine.UseBeanWithConfig(framework.GinServerName, g)
+	_ = engine.UseBeanWithConfig(framework.GinServerName, g)
 	m := &beans.MetricsBean{ConfigLoader: &config.FlagEnvConfigLoader{Source: config.SourceFlag}}
-	engine.UseBeanWithConfig(framework.MetricsName, m)
+	_ = engine.UseBeanWithConfig(framework.MetricsName, m)
 	return engine
 }
 
@@ -111,7 +111,7 @@ func (e *Engine) GetCommand(ctx context.Context) *cobra.Command {
 	for _, f := range namedFlagSets.FlagSets {
 		fs.AddFlagSet(f)
 	}
-	cmd.MarkFlagFilename("config", "yaml", "yml", "json")
+	_ = cmd.MarkFlagFilename("config", "yaml", "yml", "json")
 	return cmd
 }
 

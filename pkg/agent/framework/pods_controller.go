@@ -547,23 +547,23 @@ func (pc *PodsController) syncPod(ctx context.Context, updateType kubetypes.Sync
 				// The mirror pod is semantically different from the static pod. Remove
 				// it. The mirror pod will get recreated later.
 				podFullName := pkgcontainer.GetPodFullName(pod)
-				var err error
-				deleted, err = pc.podManager.DeleteMirrorPod(podFullName, &mirrorPod.ObjectMeta.UID)
+				var deleteErr error
+				deleted, deleteErr = pc.podManager.DeleteMirrorPod(podFullName, &mirrorPod.ObjectMeta.UID)
 				if deleted {
 					nlog.Infof("Deleted mirror pod %q because it is outdated", format.Pod(mirrorPod))
-				} else if err != nil {
-					nlog.Errorf("Failed deleting mirror pod %q: %v", format.Pod(mirrorPod), err)
+				} else if deleteErr != nil {
+					nlog.Errorf("Failed deleting mirror pod %q: %v", format.Pod(mirrorPod), deleteErr)
 				}
 			}
 		}
 		if mirrorPod == nil || deleted {
-			node, err := pc.nodeGetter.GetNode()
-			if err != nil || node.DeletionTimestamp != nil {
+			node, getErr := pc.nodeGetter.GetNode()
+			if getErr != nil || node.DeletionTimestamp != nil {
 				nlog.Debugf("No need to create a mirror pod, since node has been removed from the cluster")
 			} else {
 				nlog.Debugf("Creating a mirror pod for static pod %q", format.Pod(pod))
-				if err := pc.podManager.CreateMirrorPod(pod); err != nil {
-					nlog.Errorf("Failed creating a mirror pod for %q: %v", format.Pod(pod), err)
+				if createErr := pc.podManager.CreateMirrorPod(pod); createErr != nil {
+					nlog.Errorf("Failed creating a mirror pod for %q: %v", format.Pod(pod), createErr)
 				}
 			}
 		}
@@ -639,12 +639,6 @@ func (pc *PodsController) syncTerminatingPod(ctx context.Context, pod *corev1.Po
 		return fmt.Errorf("unable to read pod %q status prior to final pod termination, detail-> %v", format.Pod(pod), err)
 	}
 	var runningContainers []string
-	type container struct {
-		Name       string
-		State      string
-		ExitCode   int
-		FinishedAt string
-	}
 	for _, s := range podStatus.ContainerStatuses {
 		if s.State == pkgcontainer.ContainerStateRunning {
 			runningContainers = append(runningContainers, s.ID.String())

@@ -231,7 +231,7 @@ func refreshServiceStatuses(kubeClient kubernetes.Interface,
 		if v, ok := srv.Annotations[common.ReadyTimeAnnotationKey]; ok {
 			st.ReadyTime = func() *metav1.Time {
 				readyTime := &metav1.Time{}
-				readyTime.UnmarshalQueryParameter(v)
+				_ = readyTime.UnmarshalQueryParameter(v)
 				return readyTime
 			}()
 		}

@@ -84,7 +84,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	}
 	c.ctx, c.cancel = context.WithCancel(ctx)
 
-	c.podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = c.podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			pod := obj.(*corev1.Pod)
 			c.handlePodEvent(pod, ResourceEventAdd)
@@ -113,7 +113,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		},
 	})
 
-	c.deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, _ = c.deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			deployment := obj.(*appsv1.Deployment)
 			c.handleDeploymentEvent(deployment, ResourceEventAdd)

@@ -149,7 +149,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
-	kjInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = kjInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedOrDeletedKusciaJob,
@@ -158,7 +158,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	trInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = trInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedOrDeletedTaskResource,
@@ -167,7 +167,7 @@ func NewController(ctx context.Context, kubeClient kubernetes.Interface, kusciaC
 		},
 	})
 
-	ktInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = ktInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.resourceFilter,
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    controller.handleAddedOrDeletedKusciaTask,
@@ -295,13 +295,14 @@ func (c *Controller) Name() string {
 }
 
 // updatePartyTaskStatus updates party task  status of kuscia task.
-func (c *Controller) updatePartyTaskStatus(task *kusciaapisv1alpha1.KusciaTask) (err error) {
-	partyTaskStatus := make([]kusciaapisv1alpha1.PartyTaskStatus, len(task.Status.PartyTaskStatus))
-	copy(partyTaskStatus, task.Status.PartyTaskStatus)
-	taskName := task.Name
-	for i, task := 0, task; ; i++ {
+func (c *Controller) updatePartyTaskStatus(kt *kusciaapisv1alpha1.KusciaTask) (err error) {
+	partyTaskStatus := make([]kusciaapisv1alpha1.PartyTaskStatus, len(kt.Status.PartyTaskStatus))
+	copy(partyTaskStatus, kt.Status.PartyTaskStatus)
+	taskName := kt.Name
+	for i, task := 0, kt; ; i++ {
 		nlog.Infof("Start updating kuscia task %q party status %+v", taskName, task.Status.PartyTaskStatus)
-		if ret, err := c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).UpdateStatus(context.Background(), task, metav1.UpdateOptions{}); err == nil {
+		var ret *kusciaapisv1alpha1.KusciaTask
+		if ret, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).UpdateStatus(context.Background(), task, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia task %q party status %+v", taskName, ret.Status.PartyTaskStatus)
 			return nil
 		}
