@@ -34,10 +34,23 @@
 
 ## 验证
 
+- 点对点模式
+
 启动 DataProxy 后，执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。
 
 ```bash
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get po -A
+
+NAMESPACE   NAME                              READY   STATUS    RESTARTS   AGE
+alice       dataproxy-alice-699dc7455-sxvpj   1/1     Running   0          26s
+```
+
+- 中心化模式
+
+在 master 节点上成功注册 AppImage ，并在 lite 节点上成功导入镜像后，在 master 节点执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。
+
+```bash
+docker exec -it ${USER}-kuscia-master kubectl get po -A
 
 NAMESPACE   NAME                              READY   STATUS    RESTARTS   AGE
 alice       dataproxy-alice-699dc7455-sxvpj   1/1     Running   0          26s
