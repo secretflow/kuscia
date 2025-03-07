@@ -36,8 +36,8 @@ During the deployment process of Kuscia, there will probably be the following th
 
 Among them:
 
-- `Layer 4`: Generally refers to protocols such as TCP; proxy methods include Alibaba Cloud `Layer 4` SLB mapping, LVS, F5, etc.
-- `Layer 7`: Generally refers to protocols such as HTTP/HTTPS/GRPC/GRPCS; proxy methods include the institutional Layer 7 firewall, Alibaba Cloud `Layer 7` SLB mapping, Nginx, Ingress, etc.
+- Layer` 4`: Generally refers to protocols such as TCP; proxy methods include Alibaba Cloud Layer` 4` SLB mapping, LVS, F5, etc.
+- Layer `7`: Generally refers to protocols such as HTTP/HTTPS/GRPC/GRPCS; proxy methods include the institutional Layer 7 firewall, Alibaba Cloud Layer` 7` SLB mapping, Nginx, Ingress, etc.
 
 How should the authorized address be filled in:
 
