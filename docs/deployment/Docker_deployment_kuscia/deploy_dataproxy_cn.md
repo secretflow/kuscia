@@ -47,7 +47,7 @@ alice       dataproxy-alice-699dc7455-sxvpj   1/1     Running   0          26s
 
 - 中心化模式
 
-各节点成功启动 Kuscia ，其中 master 节点上成功注册 DataProxy的 AppImage ，并在 lite 节点上成功导入 DataProxy 的镜像后，在 master 节点执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。
+各节点成功启动 Kuscia ，其中 master 节点上成功注册 DataProxy 的 AppImage ，并在 lite 节点上成功导入 DataProxy 的镜像后，在 master 节点执行如下命令看到 pod 为 Running 代表 DataProxy 部署成功。
 
 ```bash
 docker exec -it ${USER}-kuscia-master kubectl get po -A
