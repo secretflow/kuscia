@@ -1,0 +1,63 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:1
+msgid "Kine 表问题导致 Kuscia 启动失败"
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:3
+msgid "Kine 表不存在"
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:5
+msgid "Kuscia 启动失败可能是 Kine 表在数据库中不存在导致的，可以使用如下方法解决："
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:7
+msgid ""
+"部署 Kuscia 前先手动创建好 Kine "
+"表，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。"
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:8
+msgid ""
+"提供的数据库账号有建表权限（账号具有 `DDL+DML` 权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 kuscia "
+"会启动失败。"
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:10
+msgid "Kine 多节点混用导致启动失败"
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:12
+msgid "Kuscia 启动失败可能是多个节点使用同一张表导致的，报错示例如下："
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:19
+msgid "可以使用如下方法解决："
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:21
+msgid "确保一个节点（Domain） 使用一张 Kine 表。"
+msgstr ""
+
+#: ../../troubleshoot/deployment/kuscia_mysql_kine.md:22
+msgid "复用 Kine 表需保证 DomainID 与之前的节点保持一致。"
+msgstr ""
+

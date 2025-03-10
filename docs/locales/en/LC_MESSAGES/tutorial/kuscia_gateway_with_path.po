@@ -1,0 +1,85 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../tutorial/kuscia_gateway_with_path.md:1
+msgid "如何配置 Kuscia 对请求进行 Path Rewrite"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:3
+msgid "背景"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:5
+msgid ""
+"隐私计算合作机构之间的网络较为复杂，经常存在多层次的网关，网关根据 Path 将请求路由到真正的业务节点。为了给这种组网提供支持，Kuscia "
+"能够对业务请求进行 Path Rewrite，将对应的路由前缀添加到请求 Path。"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:7
+msgid "![image.png](../imgs/gateway_path.png)"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:7
+msgid "image.png"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:10
+msgid "网关要求：机构网关处需要进行 Path 前缀卸载。"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:13
+msgid "多机部署配置 Path Rewrite"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:15
+msgid ""
+"Kuscia "
+"中心化部署参考[这里](../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md)"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:16
+msgid ""
+"Kuscia "
+"点对点部署参考[这里](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:18
+msgid ""
+"下面以 Alice 机构访问 Bob、Carol 机构的通信配置作为示例，其中 nginx 服务器地址为 1.1.1.1，Bob 机构地址为 "
+"2.2.2.2，Carol 机构地址为 3.3.3.3。"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:28
+msgid "nginx 配置示例如下："
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:80
+msgid "使用 KusciaAPI 配置 Path Rewrite"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:82
+msgid "使用 KusciaAPI 要配置一条 Path Rewrite 路由规则，需要设置 `endpoint` 的 `prefix` 字段。"
+msgstr ""
+
+#: ../../tutorial/kuscia_gateway_with_path.md:84
+msgid ""
+"下面以机构 Alice 访问机构 Bob 的场景为例，当机构 Bob 网关地址带 Path 时如何调用 KusciaAPI 设置 "
+"`endpoint` 的 `prefix` 字段。"
+msgstr ""
+
