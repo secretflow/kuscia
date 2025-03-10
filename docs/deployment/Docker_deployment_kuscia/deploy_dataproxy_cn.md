@@ -36,7 +36,7 @@
 
 - 点对点模式
 
-在成功启动 Kuscia 后，执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。
+在成功启动 Kuscia 后，执行如下命令看到 pod 为 Running 代表 DataProxy 部署成功。
 
 ```bash
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get po -A
