@@ -1,0 +1,108 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../troubleshoot/runtask/run_job_failed.md:1
+msgid "作业运行失败"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:3
+msgid "排查步骤"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:5
+msgid "检查机器配置"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:7
+msgid ""
+"若机器不满足[官网推荐配置](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
+"Hans/getting_started/quickstart_cn#id2)，可能会造成部分服务无法正常工作，从而导致作业运行失败。"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:9
+msgid "检查网络授权"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:11
+msgid ""
+"大部分任务失败问题都是网络问题，检查网络授权可以登录到容器（中心化模式在 master 容器、点对点模式在 automony "
+"容器）并执行`kubectl get cdr`命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST"
+" 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` "
+"命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](../network/network_authorization_check.md)。"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:13
+msgid "检查内核参数"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:15
+msgid ""
+"如果宿主机的内核参数配置过低，在运行一些比较大的任务或者并发多任务时，也容易出现任务失败的情况，可以参考 "
+"[内核参数](../parameter_tuning/kernel_params.md) 检查内核参数是否符合 Kuscia 的推荐配置。"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:17
+msgid "查看作业失败原因"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:19
+msgid "登陆查看作业的容器"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:21
+msgid "若以中心化组网模式部署，请登陆到 Master 容器中"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:27
+msgid "若以点对点组网模式部署，请登陆到下发作业的容器中，下面以 Alice 容器为例"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:33
+msgid "查看作业信息："
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:39
+msgid "查看作业下任务的详细信息"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:41
+#: ../../troubleshoot/runtask/run_job_failed.md:53
+msgid "具体失败原因可以查看 status 字段下的相关内容"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:51
+msgid "查看任务 Pod 的详细信息"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:75
+msgid "查看任务 Pod 详细日志"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:77
+msgid "若以中心化组网模式部署，登陆到 Alice 和 Bob 容器命令如下"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:93
+msgid "若以点对点组网模式部署，登陆到 Alice 和 Bob 容器命令如下"
+msgstr ""
+
+#: ../../troubleshoot/runtask/run_job_failed.md:109
+msgid "任务运行遇到网络错误时，可以参考[这里](../network/network_troubleshoot.md)排查。"
+msgstr ""
+

@@ -39,6 +39,7 @@ DOCS_OUTPUT_DIR      = _build
 SPHINX_BUILD   	     ?= sphinx-build
 SPHINX_AUTOBUILD	 ?= sphinx-autobuild
 SPHINX_OPTS    		 ?= -b html
+LANGUAGE             ?= zh_CN
 
 
 .PHONY: sphinx-build
@@ -54,8 +55,9 @@ sphinx-build:
 	@$(SPHINX_BUILD) --version
 
 	@$(call log, "docs build starting ....")
+	@$(call log, "Generating documentation in $(LANGUAGE)...")
 	# sphinx-build -b html . _build/html
-	$(SPHINX_BUILD) $(SPHINX_OPTS) $(DOCS_ROOT_DIR)/$(DOCS_SOURCE_DIR) $(DOCS_ROOT_DIR)/$(DOCS_OUTPUT_DIR)
+	$(SPHINX_BUILD) $(SPHINX_OPTS) -D language=$(LANGUAGE) $(DOCS_ROOT_DIR)/$(DOCS_SOURCE_DIR) $(DOCS_ROOT_DIR)/$(DOCS_OUTPUT_DIR)
 	make link-check
 	@$(call log, "docs build success!")
 

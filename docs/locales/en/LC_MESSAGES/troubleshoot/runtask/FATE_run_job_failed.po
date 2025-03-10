@@ -1,0 +1,77 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:1
+msgid "FATE 作业运行失败"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:3
+msgid "排查步骤"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:5
+msgid "检查机器配置"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:7
+msgid ""
+"若机器不满足[官网推荐配置](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
+"Hans/getting_started/quickstart_cn#id2)，可能会造成部分服务无法正常工作，从而导致作业运行失败。"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:9
+msgid "检查 fate-alice 容器是否运行正常"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:11
+msgid "查看 fate-alice 容器日志，检查是否运行正常"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:73
+msgid "查看 fate-deploy-bob Pod 是否运行正常"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:75
+msgid "登陆查看作业的容器"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:77
+msgid "若以中心化组网模式部署，请登陆到 Master 容器中"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:83
+msgid "若以点对点组网模式部署，请登陆到 Bob 容器中"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:89
+msgid "检查 fate-deploy-bob Pod 运行情况"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:91
+msgid "确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:110
+msgid "查看作业失败原因"
+msgstr ""
+
+#: ../../troubleshoot/runtask/FATE_run_job_failed.md:112
+msgid "请参考[作业运行失败](../troubleshoot/run_job_failed.md)"
+msgstr ""
+

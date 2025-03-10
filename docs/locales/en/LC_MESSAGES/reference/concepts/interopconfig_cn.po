@@ -1,0 +1,165 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/concepts/interopconfig_cn.md:1
+msgid "InteropConfig"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:3
+msgid ""
+"点对点组网模式下，任务参与方通过 InteropController 将任务调度方集群中的任务参与方 Namespace "
+"下任务相关的资源同步到到本集群中，从而协同完成联合计算。 您可以通过 InteropConfig 配置任务调度方和参与方。具体用例请参考下文。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:6
+msgid "用例"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:8
+msgid "以下是一些 InteropConfig 的典型用例："
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:10
+msgid "创建 InteropConfig，您将体验如何使用 InteropConfig 从任务调度方同步任务相关资源。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:11
+msgid "更新 InteropConfig，您将熟悉如何更新现有的 InteropConfig，从而变更从任务调度方同步任务相关资源。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:12
+msgid "清理 InteropConfig，您将熟悉如何清理不需要的 InteropConfig。从而停止从任务调度方同步任务相关资源。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:13
+msgid "参考 InteropConfig 对象定义，您将获取详细的 InteropConfig 描述信息。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:15
+msgid "创建 InteropConfig"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:17
+msgid "下面以 `alice-2-bob.yaml` 的内容为例，介绍创建 InteropConfig。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:30
+msgid ""
+"在该示例中，表示将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` "
+"Namespace 下。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:32
+msgid "`.metadata.name`：表示 InteropConfig 的名称，当前示例为`alice-2-bob`。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:33
+msgid "`.spec.host`：表示任务调度方的节点标识。当前示例为`bob`。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:34
+msgid "`.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:36
+msgid "在参与方集群中运行以下命令创建 InteropConfig。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:42
+msgid "检查 InteropConfig 是否创建成功。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:48
+msgid "查看创建的 InteropConfig `alice-2-bob` 详细信息。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:69
+msgid "更新 InteropConfig"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:71
+msgid "下面以 `alice-2-bob.yaml` 的内容为例，介绍更新 InteropConfig。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:85
+msgid "在该示例中:"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:87
+msgid ""
+"**在`.spec.members`中新增一个节点标识为`alice-mock`的参与方。相应地，任务参与方通过 "
+"InteropController 将任务调度方`bob`集群中`alice-mock` Namespace "
+"下任务相关的资源同步到任务参与方集群中的`alice-mock` Namespace 下。**"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:89
+msgid "在参与方集群中运行以下命令更新 InteropConfig。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:95
+msgid "查看更新的 InteropConfig `alice-2-bob` 详细信息。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:104
+msgid "清理 InteropConfig"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:106
+msgid "下面以 InteropConfig `alice-2-bob` 为例，介绍清理 InteropConfig。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:108
+msgid "在参与方集群中运行以下命令清理 InteropConfig。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:114
+msgid "检查 InteropConfig 是否已被清理。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:121
+msgid "参考"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:123
+msgid "下面以 `interop-template` 模版为例，介绍 InteropConfig 所包含的完整字段。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:136
+msgid "InteropConfig `metadata` 的子字段详细介绍如下："
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:138
+msgid "`name`：表示 InteropConfig 的名称。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:140
+msgid "InteropConfig `spec` 的子字段详细介绍如下："
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:142
+msgid "`host`：表示任务调度方的节点标识。"
+msgstr ""
+
+#: ../../reference/concepts/interopconfig_cn.md:143
+msgid ""
+"`members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`，相应地，任务参与方通过 "
+"InteropController 将任务调度方`bob`集群中`alice` Namespace "
+"下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。"
+msgstr ""
+

@@ -1,0 +1,183 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:1
+msgid "DomainDataSource"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:3
+msgid ""
+"DomainDataSource 表示 Kuscia 管理的数据源。请参考 "
+"[DomainDataSource](../concepts/domaindatasource_cn.md)。 您可以从 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto)"
+" 找到对应的 protobuf 文件。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:6
+msgid "接口总览"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "方法名"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "请求类型"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "响应类型"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "[QueryDomainDataSource](#query-domain-data-source)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "QueryDomainDataSourceRequest"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "QueryDomainDataSourceResponse"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "查询数据"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:12
+msgid "接口详情"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:16
+msgid "查询数据源"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:18
+msgid "HTTP 路径"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:20
+msgid "/api/v1/domaindatasource/query"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:22
+msgid "请求（QueryDomainGrantRequest）"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "header"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "[RequestHeader](summary_cn.md#requestheader)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "自定义请求内容"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "domain_id"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "string"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "必填"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "节点 ID"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "datasource_id"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "数据源 ID"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:30
+msgid "响应（QueryDomainGrantResponse）"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "status"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "[Status](summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "状态信息"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "data"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "[DomainDataSource](#domain-data-source-entity)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md
+msgid "数据源信息"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:37
+msgid "请求示例"
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:39
+msgid "发起请求："
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:55
+msgid "请求响应成功结果："
+msgstr ""
+
+#: ../../reference/apis/datamesh/domaindatasource_cn.md:88
+msgid "请求响应异常结果：假设传入`datasource_id`不存在"
+msgstr ""
+

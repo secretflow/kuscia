@@ -1,0 +1,104 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:1
+msgid "非 root 用户部署节点"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:3
+msgid "前言"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:5
+msgid "本教程将指导您在权限受限制的环境中，以非 root 用户来部署 Kuscia 集群。"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:7
+msgid "部署"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:9
+msgid "在 K8s 模式中，非 root 用户部署需要对 root 用户部署的 Deployment 和 ConfigMap 部署模板进行一些修改。"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:11
+msgid "我们已经为您准备好了修改后的模板文件，您只需参考[k8s 部署文档](./K8s_p2p_cn.md)进行部署即可，本文不做过多赘述。"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:13
+msgid ""
+"autonomy：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rootless/deployment.yaml)"
+" 和 "
+"[configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rootless/configmap.yaml)"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:14
+msgid ""
+"master：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/rootless/deployment.yaml)"
+" 和 "
+"[configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/rootless/configmap.yaml)"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:15
+msgid ""
+"lite：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/rootless/deployment.yaml)"
+" 和 "
+"[configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/rootless/configmap.yaml)"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:19
+msgid "目前支持 [RunP](deploy_with_runp_cn.md) 或者 RunK 模式以非 root 用户来部署 Kuscia。"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:20
+msgid "更多部署要求请参考[这里](../deploy_check.md)。"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:23
+msgid "变更内容"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:25
+msgid "下面展示非 root 用户部署时，Deployment 和 ConfigMap 模版中需要修改的地方。"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:27
+msgid "Deployment 模版"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:29
+msgid "在 spec 字段增加如下配置："
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:39
+msgid "ConfigMap 文件挂载到容器内："
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:48
+msgid "在 containers 字段增加如下配置："
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:60
+msgid "ConfigMap 模版"
+msgstr ""
+
+#: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:62
+msgid "在 ConfigMap 模版中，只需要增加 resolv.conf 文件内容即可："
+msgstr ""
+

@@ -1,0 +1,162 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/health_cn.md:1
+msgid "Health"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:3
+msgid ""
+"Health 提供了服务的健康检查，你可以借助这些 API 了解服务的健康状态。 你可以从 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto)"
+" 找到对应的 protobuf 文件。"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:6
+msgid "接口总览"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "方法名"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "请求类型"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "响应类型"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "[healthZ](#healthZ)"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "HealthRequest"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "HealthResponse"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "服务是否健康"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:12
+msgid "接口详情"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:16
+msgid "健康检查"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:18
+msgid "HTTP路径"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:20
+msgid "/healthZ"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:22
+msgid "请求（HealthRequest）"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "header"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "[RequestHeader](summary_cn.md#requestheader)"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "自定义请求内容"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:28
+msgid "响应（HealthResponse）"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "status"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "[Status](summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "状态信息"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "data"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "HealthResponseData"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "data.ready"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "bool"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md
+msgid "是否就绪"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:36
+msgid "请求示例"
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:38
+msgid "发起请求："
+msgstr ""
+
+#: ../../reference/apis/health_cn.md:52
+msgid "请求响应成功结果："
+msgstr ""
+

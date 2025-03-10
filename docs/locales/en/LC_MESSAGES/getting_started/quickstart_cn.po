@@ -1,0 +1,194 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../getting_started/quickstart_cn.md:1
+msgid "Kuscia 入门教程 —— 快速开始"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:3
+msgid "您将会在单台机器上准备 Kuscia 需要的环境、快速部署一个示例 Kuscia 集群，然后尝试运行一个 [SecretFlow] 作业。"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:7
+msgid "部署模式说明"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:9
+msgid "当前为体验模式，生产模式请参考[这里](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)部署。"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:11
+msgid "在部署时有两种组网模式可供选择："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:13
+msgid ""
+"[中心化组网模式](../reference/architecture_cn.md#中心化组网模式)：启动一个控制平面（master）容器和两个 "
+"Lite 节点（alice 和 bob）容器"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:14
+msgid ""
+"[点对点组网模式](../reference/architecture_cn.md#点对点组网模式)：启动两个 Autonomy 节点（alice"
+" 和 bob）容器"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:16
+msgid "您可以选择其中任意一种或两种模式进行部署体验，在单台机器上可以同时部署两种模式。"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:18
+msgid "环境"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:20
+msgid "机器"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:22
+msgid "操作系统：macOS, CentOS7, CentOS8, Ubuntu 16.04 及以上版本, Windows(Ubuntu on WSL2)"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:24
+msgid "资源：8 core / 16G memory / 200G hard disk"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:26
+msgid "CPU 架构：x86"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:28
+msgid "单机体验版需要部署多个节点和平台，且要预留资源运行各类隐私计算任务，所以这里的资源需求要比节点最低资源大一些"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:30
+msgid "环境准备"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:32
+msgid ""
+"在部署 Kuscia "
+"之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)。"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:34
+msgid ""
+"Kuscia 的部署需要依赖 Docker 环境，Docker "
+"的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 "
+"Docker 的示例："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:48
+msgid "部署体验"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:50
+msgid ""
+"本文旨在帮助您快速体验 "
+"Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:52
+msgid "前置操作"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:54
+msgid ""
+"配置 Kuscia 镜像，以下示例选择使用 latest 版本镜像（更多镜像版本请参考 [Kuscia "
+"tags](https://hub.docker.com/r/secretflow/kuscia/tags)）："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:64
+msgid "获取 Kuscia 安装脚本，安装脚本会下载到当前目录："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:70
+msgid "中心化组网模式"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:85
+msgid "点对点组网模式"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:98
+msgid "中心化 x 中心化组网模式"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:111
+msgid "中心化 x 点对点组网模式"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:124
+msgid "作业状态"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:126
+msgid "如果作业执行成功，则 `kubectl get kj -n cross-domain` 命令会显示类似下方的输出，Succeeded 表示成功状态："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:133
+msgid "同时，在 alice 和 bob 节点容器中能看到 PSI 结果输出文件："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:143
+msgid "结果输出（仅前 4 行）："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:152
+msgid "停止/卸载体验集群"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:156
+msgid "停止体验集群"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:158
+msgid "如果您需要停止并卸载体验集群，可以直接运行[卸载脚本](#uninstall)。"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:160
+msgid "获取 Kuscia 停止脚本，脚本会下载到当前目录："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:166
+msgid "使用方法："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:183
+msgid "卸载体验集群"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:185
+msgid "获取 Kuscia 卸载脚本，脚本会下载到当前目录："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:191
+msgid ""
+"与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 "
+"network（若无其他容器使用）等。例如："
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:198
+msgid "接下来"
+msgstr ""
+
+#: ../../getting_started/quickstart_cn.md:200
+msgid "请继续阅读 [KusciaJob][part-2] 章节，来了解示例作业背后的细节。"
+msgstr ""
+

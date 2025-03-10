@@ -1,0 +1,49 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/api_whitelist_config_cn.md:1
+msgid "设置 K3S API 白名单"
+msgstr ""
+
+#: ../../reference/api_whitelist_config_cn.md:3
+msgid "说明"
+msgstr ""
+
+#: ../../reference/api_whitelist_config_cn.md:5
+msgid "K3S API 白名单会过滤由 Envoy 转发的 K3S API 请求，不在白名单中的请求会返回 404，在白名单请求可以正常返回。"
+msgstr ""
+
+#: ../../reference/api_whitelist_config_cn.md:7
+msgid "如果配置列表为空，则默认放行所有请求。"
+msgstr ""
+
+#: ../../reference/api_whitelist_config_cn.md:9
+msgid "配置方法"
+msgstr ""
+
+#: ../../reference/api_whitelist_config_cn.md:11
+msgid ""
+"配置文件位于 `/home/kuscia/etc/kuscia.yaml`，配置项位于 master.apiWhitelist "
+"节点下，由多个正则表达式组成，多个正则表达式之间是`或`的关系。"
+msgstr ""
+
+#: ../../reference/api_whitelist_config_cn.md:13
+msgid "下面两个个配置的效果是一样的："
+msgstr ""
+

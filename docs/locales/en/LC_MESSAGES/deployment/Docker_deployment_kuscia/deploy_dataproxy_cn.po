@@ -1,0 +1,71 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:1
+msgid "DataProxy 部署"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:3
+msgid "前言"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:5
+msgid "本教程帮助您在 Kuscia 节点上部署 DataProxy。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:7
+msgid "步骤"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:9
+msgid "您可以参考[这里](./deploy_p2p_cn.md)了解如何使用 Docker 部署 Kuscia，本文不做过多赘述。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:11
+msgid "部署 Kuscia 时，在启动命令后面加上 `--data-proxy` 即可。示例如下："
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:13
+msgid "点对点模式"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:15
+msgid "使用 `--data-proxy` 参数在 autonomy 节点上导入镜像和注册 AppImage"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:21
+msgid "中心化模式"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:23
+msgid "使用 `--data-proxy` 参数在 master 节点上注册 AppImage"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:29
+msgid "使用 `--data-proxy` 参数在 lite 节点上导入镜像"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:35
+msgid "验证"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_dataproxy_cn.md:37
+msgid "启动 DataProxy 后，执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。"
+msgstr ""
+

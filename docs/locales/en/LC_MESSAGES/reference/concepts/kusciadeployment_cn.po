@@ -1,0 +1,429 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/concepts/kusciadeployment_cn.md:1
+msgid "KusciaDeployment"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:3
+msgid ""
+"在 Kuscia 中，常驻服务是通过 KusciaDeployment 进行管理的。例如，可以通过 KusciaDeployment "
+"管理联合预测服务。 如果要运行常驻服务，那么仅需创建一个 KusciaDeployment。KusciaDeployment Controller"
+" 将会根据 KusciaDeployment 的描述信息，在参与方节点下创建与常驻服务有关的 K3s 内置资源，例如 Service, "
+"Deployment 等。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:6
+msgid ""
+"基于 "
+"KusciaDeployment，您可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:10
+msgid "状态说明"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:12
+msgid "下图为 KusciaDeployment(KD) 的状态流转图。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:14
+msgid "![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:14
+msgid "KusciaDeploymentState"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:16
+msgid "KusciaDeployment 在其生命周期中会处于以下几种状态："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:18
+msgid "Progressing: 此时 KusciaDeployment 正在被处理，至少有一方不可用。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:19
+msgid "PartialAvailable: 此时所有参与方可用，但是至少有一方非全部应用实例可用。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:20
+msgid "Available: 此时所有参与方可用，且各参与方下的全部应用实例可用。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:21
+msgid ""
+"Failed: 处理 KusciaDeployment 资源失败。在该状态下，若解决了失败的根因，可通过更新 "
+"KusciaDeployment，恢复 KusciaDeployment 的状态。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:23
+msgid "用例"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:25
+msgid "以下是一些 KusciaDeployment 的典型用例："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:27
+msgid "创建 KusciaDeployment，您将体验如何创建一个 KusciaDeployment，管理参与方下的常驻服务。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:28
+msgid "查看 KusciaDeployment，您将熟悉如何查看已创建的 KusciaDeployment 的运行状态。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:29
+msgid "清理 KusciaDeployment，您将熟悉如何删除已创建的 KusciaDeployment。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:30
+msgid "参考 KusciaDeployment 对象定义，您将获取详细的 KusciaDeployment 描述信息。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:32
+msgid "创建 KusciaDeployment"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:34
+msgid "下面以名称为`secretflow-serving.yaml`的内容为例，介绍创建 KusciaDeployment。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:54
+msgid "在该示例中:"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:56
+msgid ""
+"`.metadata.labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-"
+"type: serving`表示管理的应用为预测类型。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:57
+msgid "`.metadata.name`：表示 KusciaDeployment 的名称，当前示例为`secretflow-serving`。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:58
+msgid "`.spec.initiator`：表示发起方的节点标识，当前示例为`alice`。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:59
+msgid "`.spec.inputConfig`：表示输入参数配置。当前，该字段中的内容是临时的，预计下一期会有调整，后续也会补充该字段中的内容详细解释。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:60
+msgid "`.spec.parties`：表示所有参与方的信息。当前示例中，该字段包含以下子字段："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:61
+msgid ""
+"`.spec.parties[0].appImageRef`：表示节点标识为`alice`的参与方所依赖的应用镜像 AppImage 名称为"
+"`secretflow-serving-image`，详细定义请参考 [Serving "
+"Appimage](https://www.secretflow.org.cn/zh-"
+"CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:62
+msgid "`.spec.parties[0].domainID`：表示参与方节点标识为`alice`。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:63
+msgid ""
+"`.spec.parties[1].appImageRef`：表示节点标识为`bob`的参与方所依赖的应用镜像 AppImage 名称为"
+"`secretflow-serving-image`，详细定义请参考 [Serving "
+"Appimage](https://www.secretflow.org.cn/zh-"
+"CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:64
+msgid "`.spec.parties[1].domainID`：表示参与方节点标识为`bob`。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:66
+msgid "运行以下命令创建 KusciaDeployment。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:72
+msgid "查看 KusciaDeployment"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:74
+msgid "下面以名称为`secretflow-serving`的 KusciaDeployment 为例，介绍如何查看相关资源。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:76
+msgid "运行以下命令查看 KusciaDeployment。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:84
+msgid "上述命令输出内容，各列字段的含义如下："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:86
+msgid "`NAME`：表示 KusciaDeployment 的名称。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:87
+msgid "`TOTALPARTIES`：表示所有参与方个数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:88
+msgid "`AVAILABLEPARTIES`：表示可用参与方个数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:89
+msgid "`PHASE`：表示 KusciaDeployment 当前所处的阶段。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:90
+msgid "`AGE`：表示 KusciaDeployment 从创建到现在经历的时间。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:92
+msgid "运行以下命令查看 KusciaDeployment 详细的状态信息。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:162
+msgid "运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Service 资源。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:164
+#: ../../reference/concepts/kusciadeployment_cn.md:176
+#: ../../reference/concepts/kusciadeployment_cn.md:186
+#: ../../reference/concepts/kusciadeployment_cn.md:196
+msgid "下面以 alice 节点为例："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:174
+msgid "运行以下命令查看 KusciaDeployment 相关的 K3s 内置 ConfigMap 资源。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:184
+msgid "运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Deployment 资源。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:194
+msgid "运行以下命令查看 KusciaDeployment 相关的 K3s 内置 Pod 资源。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:204
+msgid "清理 KusciaDeployment"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:206
+msgid "下面以名称为`secretflow-serving`的 KusciaDeployment 为例，介绍如何清理 KusciaDeployment。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:208
+msgid "运行以下命令清理 KusciaDeployment。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:214
+msgid "检查 KusciaDeployment 是否已被清理。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:221
+msgid "参考"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:223
+msgid "KusciaDeployment 详细介绍"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:225
+msgid ""
+"下面以名称为`secretflow-serving`的 KusciaDeployment 模版为例，介绍 KusciaDeployment "
+"所包含的完整字段。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:312
+msgid "KusciaDeployment `metadata` 的子字段详细介绍如下："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:314
+msgid ""
+"`labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-type: "
+"serving`表示管理的应用为预测类型。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:315
+msgid "`name`：表示 KusciaDeployment 的名称。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:317
+msgid "KusciaDeployment `spec` 的子字段详细介绍如下："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:319
+msgid "`initiator`：表示发起方的节点标识。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:320
+msgid "`inputConfig`：表示应用输入参数配置。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:321
+msgid "`parties`：表示所有参与方的信息。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:322
+msgid ""
+"`parties[].appImageRef`：表示参与方所依赖的应用镜像名称。有关 AppImage 的详细介绍，请参考 "
+"[AppImage](./appimage_cn.md)。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:323
+msgid "`parties[].domainID`：表示参与方的节点标识。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:324
+msgid "`parties[].role`：表示参与方的角色。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:325
+msgid "`parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从`parties[].appImageRef`获取的对应模版信息。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:326
+msgid "`template.replicas`：表示应用的期望副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:327
+msgid ""
+"`template.strategy`：表示应用的更新策略。当前支持`Recreate`和`RollingUpdate`两种策略，详细解释请参考 "
+"[Strategy](https://kubernetes.io/zh-"
+"cn/docs/concepts/workloads/controllers/deployment/#strategy)"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:328
+msgid ""
+"`template.spec`：表示应用容器配置信息。所支持的子字段请参考 AppImage 描述中的 "
+"[deployTemplates[].spec](./appimage_cn.md/#appimage-ref)"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:330
+msgid "KusciaDeployment `status` 的子字段详细介绍如下："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:332
+msgid ""
+"`phase`：表示 KusciaDeployment 当前所处的阶段。[状态流转详情](#kuscia-deployment-"
+"state)。当前包括以下几种 PHASE："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:333
+msgid ""
+"`Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。KusciaDeployment "
+"Controller 会根据 KusciaDeployment "
+"的描述信息，在各参与方节点下创建相关的资源，例如：Deployment、ConfigMap、Service 等。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:334
+msgid "`PartialAvailable`：表示所有参与方可用，但是在某些参与方节点下，应用可用副本数小于期望副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:335
+msgid "`Available`：表示所有参与方可用，且各个参与方下应用可用副本数等于期望副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:336
+msgid ""
+"`Failed`：表示 KusciaDeployment Controller 处理 KusciaDeployment "
+"资源失败，详细失败描述可以从`message`和`reason`中获取。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:337
+msgid "`totalParties`：表示所有参与方的个数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:338
+msgid "`availableParties`：表示可用参与方的个数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:339
+msgid "`lastReconcileTime`：表示 KusciaDeployment 最近一次更新的时间戳。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:340
+msgid "`message`：表示 KusciaDeployment 处于该阶段的详细描述信息，用于对`reason`的补充。一般用于记录详细失败信息。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:341
+msgid "`reason`：表示为什么 KusciaDeployment 处于该阶段。一般用于记录失败原因。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:342
+msgid ""
+"`partyDeploymentStatuses`：表示参与方的详细状态。其结构使用`map[string]map[string]Object`方式表示。其中，第一个"
+" map 的字符串类型 key 表示节点标识，第二个 map 的字符串类型 key 表示节点下 Deployment 资源的名称， 最后 "
+"Object 类型的 value 表示状态信息。下面以参与方 `alice` 为例，介绍各字段的含义："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:344
+msgid ""
+"`alice.secretflow-serving`：表示参与方的节点名称为`alice`，Deployment 资源名称为"
+"`secretflow-serving`。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:345
+msgid ""
+"`alice.secretflow-serving.conditions`：表示名称为`secretflow-serving`的 "
+"Deployment 资源的详细状况信息。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:346
+msgid ""
+"`alice.secretflow-serving.creationTimestamp`：表示名称为`secretflow-serving`的 "
+"Deployment 资源的创建时间。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:347
+msgid ""
+"`alice.secretflow-serving.phase`：表示名称为`secretflow-serving`的 Deployment "
+"资源的状态。当前包括以下几种 PHASE："
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:348
+msgid "`Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:349
+msgid "`PartialAvailable`：表示该参与方下的应用部分可用，即应用可用副本数小于期望副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:350
+msgid "`Available`：表示该参与方下的应用全部可用，即应用可用副本数等于期望副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:351
+msgid "`alice.secretflow-serving.replicas`：表示应用期望副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:352
+msgid "`alice.secretflow-serving.availableReplicas`：表示应用可用副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:353
+msgid "`alice.secretflow-serving.unavailableReplicas`：表示应用不可用副本数。"
+msgstr ""
+
+#: ../../reference/concepts/kusciadeployment_cn.md:354
+msgid "`alice.secretflow-serving.updatedReplicas`：表示应用已更新的副本数。"
+msgstr ""
+

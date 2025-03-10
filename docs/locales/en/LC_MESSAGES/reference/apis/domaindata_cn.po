@@ -1,0 +1,554 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/domaindata_cn.md:1
+#: ../../reference/apis/domaindata_cn.md:545
+msgid "DomainData"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:3
+msgid ""
+"DomainData 表示被 Kuscia 管理的数据。请参考 "
+"[DomainData](../concepts/domaindata_cn.md)。 您可以从 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindata.proto)"
+" 找到对应的 protobuf 文件。"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:6
+msgid ""
+"Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API 请参考 [Data "
+"Mesh](./datamesh/domaindata_cn.md)。"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:8
+msgid "接口总览"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "方法名"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "请求类型"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "响应类型"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[CreateDomainData](#create-domain-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "CreateDomainDataRequest"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "CreateDomainDataResponse"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+#: ../../reference/apis/domaindata_cn.md:23
+msgid "创建数据对象"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[UpdateDomainData](#update-domain-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "UpdateDomainDataRequest"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "UpdateDomainDataResponse"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+#: ../../reference/apis/domaindata_cn.md:108
+msgid "更新数据对象"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[DeleteDomainData](#delete-domain-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "DeleteDomainDataRequest"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "DeleteDomainDataResponse"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+#: ../../reference/apis/domaindata_cn.md:184
+msgid "删除数据对象"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[QueryDomainData](#query-domain-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "QueryDomainDataRequest"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "QueryDomainDataResponse"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+#: ../../reference/apis/domaindata_cn.md:237
+msgid "查询数据对象"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[BatchQueryDomainData](#batch-query-domain-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "BatchQueryDomainDataRequest"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "BatchQueryDomainDataResponse"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+#: ../../reference/apis/domaindata_cn.md:333
+msgid "批量查询数据对象"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[ListDomainData](#list-domain-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "ListDomainDataRequest"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "ListDomainDataResponse"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+#: ../../reference/apis/domaindata_cn.md:426
+msgid "列出数据对象"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:19
+msgid "接口详情"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:25
+#: ../../reference/apis/domaindata_cn.md:110
+#: ../../reference/apis/domaindata_cn.md:186
+#: ../../reference/apis/domaindata_cn.md:239
+#: ../../reference/apis/domaindata_cn.md:335
+#: ../../reference/apis/domaindata_cn.md:428
+msgid "HTTP 路径"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:27
+msgid "/api/v1/domaindata/create"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:31
+msgid "请求（CreateDomainDataRequest）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "header"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[RequestHeader](summary_cn.md#requestheader)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "自定义请求内容"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "domaindata_id"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "string"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid ""
+"数据对象 ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
+"cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "name"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "必填"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "名称"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "type"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "类型，如\\[table,model,rule,report]，大小写敏感"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "relative_uri"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "相对数据源所在位置的路径，参考 [DomainData 概念](../concepts/domaindata_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "domain_id"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "节点 ID"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "datasource_id"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../concepts/domaindata_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "attributes"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "map<string,string>"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid ""
+"自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData "
+"概念](../concepts/domaindata_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "partition"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[Partition](#partition)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "暂不支持"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "columns"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[DataColumn](#data-column) array"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "列信息"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:48
+msgid "响应（CreateDomainDataResponse）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "status"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[Status](summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "状态信息"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "data"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "CreateDomainDataResponseData"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "data.domaindata_id"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "数据对象 ID"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:56
+#: ../../reference/apis/domaindata_cn.md:135
+#: ../../reference/apis/domaindata_cn.md:204
+#: ../../reference/apis/domaindata_cn.md:257
+#: ../../reference/apis/domaindata_cn.md:353
+#: ../../reference/apis/domaindata_cn.md:446
+msgid "请求示例"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:58
+#: ../../reference/apis/domaindata_cn.md:137
+#: ../../reference/apis/domaindata_cn.md:206
+#: ../../reference/apis/domaindata_cn.md:259
+#: ../../reference/apis/domaindata_cn.md:355
+#: ../../reference/apis/domaindata_cn.md:448
+msgid "发起请求："
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:91
+#: ../../reference/apis/domaindata_cn.md:170
+#: ../../reference/apis/domaindata_cn.md:223
+#: ../../reference/apis/domaindata_cn.md:278
+#: ../../reference/apis/domaindata_cn.md:380
+#: ../../reference/apis/domaindata_cn.md:468
+msgid "请求响应成功结果："
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:112
+msgid "/api/v1/domaindata/update"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:114
+msgid "请求（UpdateDomainDataRequest）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "类型，\\[table,model,rule,report,unknown]，大小写敏感"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[DataColumn](#data-column)[]"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:129
+msgid "响应（UpdateDomainDataResponse）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:188
+msgid "/api/v1/domaindata/delete"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:190
+msgid "请求（DeleteDomainDataRequest）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:198
+msgid "响应（DeleteDomainDataResponse）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:241
+msgid "/api/v1/domaindata/query"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:243
+msgid "请求（QueryDomainRequest）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[QueryDomainDataRequestData](#query-domain-data-request-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "查询内容"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:250
+msgid "响应（QueryDomainResponse）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[DomainData](#domain-data-entity)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:318
+msgid "请求响应异常结果："
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:337
+msgid "/api/v1/domaindata/batchQuery"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:339
+msgid "请求（BatchQueryDomainDataRequest）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[QueryDomainDataRequestData](#query-domain-data-request-data)[]"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:346
+msgid "响应（BatchQueryDomainDataResponse）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[DomainDataList](#domain-data-list)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:430
+msgid "/api/v1/domaindata/list"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:432
+msgid "请求（ListDomainDataRequest）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[ListDomainDataRequestData](#list-domain-data-request-data)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "查询请求"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:439
+msgid "响应（ListDomainDataResponse）"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:514
+msgid "公共"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:518
+msgid "QueryDomainDataRequestData"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:527
+msgid "ListDomainDataRequestData"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "domaindata_type"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "domaindata_vendor"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "来源"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:537
+msgid "DomainDataList"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "domaindata_list"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "[DomainData](#domain-data-entity)[]"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "数据对象列表"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "数据源 ID，参考 [DomainData 概念](../concepts/domaindata_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "vendor"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid ""
+"来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-"
+"request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "author"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:563
+msgid "Partition"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "fields"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md:572
+msgid "DataColumn"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "列名称"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "类型，当前版本由应用算法组件定义和消费，参考 [DomainData 概念](../concepts/domaindata_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "comment"
+msgstr ""
+
+#: ../../reference/apis/domaindata_cn.md
+msgid "列注释"
+msgstr ""
+

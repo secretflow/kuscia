@@ -1,0 +1,928 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/appimage_cn.md:1
+msgid "AppImage"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:3
+msgid ""
+"在 Kuscia 中，你可以使用 AppImage 存储注册应用镜像模版信息。详情请参考 "
+"[AppImage](../concepts/appimage_cn.md) 。 您可以从 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/appimage.proto)"
+" 找到对应的 protobuf 文件。"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:6
+msgid "接口总览"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "方法名"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "请求类型"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "响应类型"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[CreateAppImage](#create-appimage)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "CreateAppImageRequest"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "CreateAppImageResponse"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:20
+msgid "创建应用镜像模版"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[UpdateAppImage](#update-appimage)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "UpdateAppImageRequest"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "UpdateAppImageResponse"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:172
+msgid "更新应用镜像模版"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[DeleteAppImage](#delete-appimage)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "DeleteAppImageRequest"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "DeleteAppImageResponse"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:271
+msgid "删除应用镜像模版"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[QueryAppImage](#query-appimage)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "QueryAppImageRequest"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "QueryAppImageResponse"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:322
+msgid "查询应用镜像模版"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[BatchQueryAppImage](#batch-query-appimage)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "BatchQueryAppImageRequest"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "BatchQueryAppImageResponse"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "批量查询应用镜像模版"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:16
+msgid "接口详情"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:22
+#: ../../reference/apis/appimage_cn.md:174
+#: ../../reference/apis/appimage_cn.md:273
+#: ../../reference/apis/appimage_cn.md:324
+#: ../../reference/apis/appimage_cn.md:391
+msgid "HTTP 路径"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:24
+msgid "/api/v1/appimage/create"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:26
+msgid "请求（CreateAppImageRequest）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "header"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[RequestHeader](summary_cn.md#requestheader)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "自定义请求内容"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "name"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "string"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "必填"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid ""
+"应用镜像名称，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
+"cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "image"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[AppImageInfo](#AppImageInfo)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "基础镜像信息 ID"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "config_templates"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "map<string, string>"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "deploy_templates"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[DeployTemplate](#DeployTemplate)[]"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用部署模版配置信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:36
+msgid "响应（CreateAppImageResponse）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "status"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[Status](summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "状态信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:42
+#: ../../reference/apis/appimage_cn.md:196
+#: ../../reference/apis/appimage_cn.md:290
+#: ../../reference/apis/appimage_cn.md:346
+#: ../../reference/apis/appimage_cn.md:413
+msgid "请求示例"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:44
+#: ../../reference/apis/appimage_cn.md:198
+#: ../../reference/apis/appimage_cn.md:292
+#: ../../reference/apis/appimage_cn.md:415
+msgid "发起请求："
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:158
+#: ../../reference/apis/appimage_cn.md:257
+#: ../../reference/apis/appimage_cn.md:308
+#: ../../reference/apis/appimage_cn.md:362
+#: ../../reference/apis/appimage_cn.md:433
+msgid "请求响应成功结果："
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:176
+msgid "/api/v1/appimage/update"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:178
+msgid "请求（UpdateAppImageRequest）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:180
+msgid "注：请求使用增量更新策略，即只更新提供的字段，不影响未提供的字段。"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[ConfigTemplate](#ConfigTemplate)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:190
+msgid "响应（UpdateAppImageResponse）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:275
+msgid "/api/v1/appimage/delete"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:277
+msgid "请求（DeleteAppImageRequest）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用镜像名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:284
+msgid "响应（DeleteAppImageResponse）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:326
+msgid "/api/v1/appimage/query"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:328
+msgid "请求（QueryAppImageRequest）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用镜像模版名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:335
+msgid "响应（QueryAppImageResponse）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "QueryAppImageResponseData"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data.name"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data.image"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "基础镜像信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data.config_templates"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data.deploy_templates"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:389
+msgid "批量查询节点状态"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:393
+msgid "/api/v1/appimage/batch_query"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:395
+msgid "请求（BatchQueryAppImageRequest）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "names"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "string[]"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "待查询的appimage名"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:402
+msgid "响应（ BatchQueryAppImageResponse）"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "QueryAppImageResponseData[]"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data[].name"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data[].image"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data[].config_templates"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "data[].deploy_templates"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:460
+msgid "公共"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:464
+msgid "AppImageInfo"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用镜像的名称信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "tag"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用镜像的 Tag 信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "id"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用镜像的 ID 信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "sign"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用镜像的签名信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:475
+msgid "DeployTemplate"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用部署模版名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "role"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用作为该角色时，使用的部署模版配置"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "replicas"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "int32"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用运行的副本数，默认为1"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "restart_policy"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid ""
+"应用的重启策略, "
+"支持Always，Never，OnFailure。Always：当容器终止退出后，总是重启容器；OnFailure：当容器终止异常退出（退出码非0）时，才重启容器；Never：当容器终止退出时，从不重启容器。"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "containers"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[Container](#Container)[]"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器配置信息"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:485
+msgid "Container"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "command"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用的启动命令"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "args"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用的启动参数"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "working_dir"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的工作目录"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "config_volume_mounts"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[ConfigVolumeMount](#ConfigVolumeMount)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用启动的挂载配置"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "ports"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[ContainerPort](#ContainerPort)[]"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的启动端口色"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "env_from"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[EnvFromSource](#EnvFromSource)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用envFrom为应用容器设置环境变量"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "env"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[EnvVar](#EnvVar)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用env为应用容器设置环境变量"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "resources"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[ResourceRequirements](#ResourceRequirements)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器申请的资源配置"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "liveness_probe"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[Probe](#Probe)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的存活探针配置"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "readiness_probe"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的就绪探针配置"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "startup_probe"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的启动探针配置"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "image_pull_policy"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的镜像拉取策略"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:505
+msgid "ConfigVolumeMount"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "mount_path"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "文件挂载到容器中的路径"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "sub_path"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "文件挂载到容器中的子路径"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:514
+msgid "ContainerPort"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的端口名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "protocol"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用容器的端口使用的协议类型。支持两种类型：HTTP、GRPC"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "scope"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "应用端口使用范围。支持三种模式：Cluster、Domain、Local"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:524
+msgid "EnvFromSource"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "prefix"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "添加在config_map的key上的前缀"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "config_map_ref"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "object"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用config_map里的变量"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "config_map_ref.name"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "config_map的名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "secret_ref"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用secret里的变量"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "secret_ref.name"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "secret的名称"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:536
+msgid "EnvVar"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "变量名"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "value"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "变量值"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:545
+msgid "Probe"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "exec"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[ExecAction](#ExecAction)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用命令作为探针handler"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "http_get"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[HTTPGetAction](#HTTPGetAction)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用HTTP请求作为探针handler"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "tcp_socket"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[TCPSocketAction](#TCPSocketAction)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用TCP请求作为探针handler"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "grpc"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "[GRPCAction](#GRPCAction)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "使用GRPC请求作为探针handler"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "initial_delay_seconds"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid ""
+"[探针初始化时间](https://kubernetes.io/docs/concepts/workloads/pods/pod-"
+"lifecycle#container-probes)"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "timeout_seconds"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "探针超时时间"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "period_seconds"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "探针周期"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "success_threshold"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "探针成功阈值"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "failure_threshold"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "探针失败阈值"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "termination_grace_period_seconds"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "int64"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "优雅中止时长"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:562
+msgid "ExecAction"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "命令"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:570
+msgid "HTTPGetAction"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "path"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP路径"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "port"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP端口"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "host"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP域名"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "scheme"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP协议"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "http_headers"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "object[]"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP头"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "http_headers[].name"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP头的键"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "http_headers[].value"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "HTTP头的值"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:584
+msgid "TCPSocketAction"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "TCP端口"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "TCP域名"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md:593
+msgid "GRPCAction"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "GRPC端口"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "service"
+msgstr ""
+
+#: ../../reference/apis/appimage_cn.md
+msgid "GRPC服务名"
+msgstr ""
+

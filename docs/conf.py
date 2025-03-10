@@ -61,6 +61,10 @@ extensions = [
     'sphinx_design',
 ]
 
+language = 'zh_CN'
+locale_dirs = ['./locales/']  # path is example but recommended.
+gettext_compact = False  # optional.
+
 nbsphinx_requirejs_path = ''
 
 # Make sure the target is unique

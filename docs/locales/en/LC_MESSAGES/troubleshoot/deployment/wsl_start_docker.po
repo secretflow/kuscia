@@ -1,0 +1,95 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:1
+msgid "使用 WSL 注意事项"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:3
+msgid "WSL 启动 Docker"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:5
+msgid "**WSL 中想要使用 Docker，建议安装 docker desktop**，具体安装步骤如下："
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:7
+msgid "**修改默认安装路径**"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:9
+msgid ""
+"Docker Desktop 默认安装在 \"C:\\Program "
+"Files\\Docker\"，该路径是一个只读路径，如果不修改，将无法进行写操作（比如创建或修改文件/文件夹），在部署时可能报错："
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:15
+msgid ""
+"需要在非只读目录（如 D 盘）下创建 Docker Desktop 默认安装路（如 D：\\Docker），然后以管理员身份运行 "
+"cmd，通过以下命令创建链接:"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:21
+msgid "这样创建链接之后，按正常步骤安装 docker 就会安装在 D 盘里了。"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:23
+msgid ""
+"安装（参考 Docker 官方安装文档 [Install Docker Desktop on "
+"Windows](https://docs.docker.com/desktop/install/windows-install/)）"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:25
+msgid ""
+"从 Docker 官网下载 [Docker Desktop for "
+"Windows](https://www.docker.com/products/docker-desktop/);"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:26
+msgid "双击下载的 'Docker Desktop Installer.exe';"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:27
+msgid "使用官方建议的 WSL2 选项安装（勾选：\"Use the WSL 2 based engine\"）;"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:28
+msgid "按照安装向导上的说明授权安装程序，并继续安装;"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:29
+msgid "安装成功后，单击\"关闭\"完成安装过程;"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:31
+msgid "建议修改镜像保存路径"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:33
+msgid ""
+"Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE "
+"作业](../../tutorial/run_fate_cn.md)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 "
+"Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。 "
+"![docker_settings.png](../../imgs/docker_settings.png)"
+msgstr ""
+
+#: ../../troubleshoot/deployment/wsl_start_docker.md:33
+msgid "docker_settings.png"
+msgstr ""
+
