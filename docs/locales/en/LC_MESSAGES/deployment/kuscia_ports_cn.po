@@ -19,128 +19,128 @@ msgstr ""
 
 #: ../../deployment/kuscia_ports_cn.md:1
 msgid "Kuscia 端口介绍"
-msgstr ""
+msgstr "Introduction to Kuscia Ports"
 
 #: ../../deployment/kuscia_ports_cn.md:3
 msgid "在实际场景中，为了确保 Kuscia 运行在一个安全的网络环境中，用户需要根据本地网络防火墙，管理 Kuscia 对外暴露给合作机构的端口。"
-msgstr ""
+msgstr "In practical scenarios, to ensure Kuscia operates in a secure network environment, users need to manage the ports exposed by Kuscia to partner organizations based on the local network firewall."
 
 #: ../../deployment/kuscia_ports_cn.md:5
 msgid ""
 "如果采用 Docker 方式部署，那么在部署的过程中，为了能够跨域和域内访问 Kuscia 节点，需要将 Kuscia "
 "节点的部分内部端口通过端口映射的方式暴露在宿主机上。"
-msgstr ""
+msgstr "If deploying via Docker, to enable cross-domain and intra-domain access to Kuscia nodes, certain internal ports of the Kuscia nodes must be exposed on the host machine through port mapping during deployment."
 
 #: ../../deployment/kuscia_ports_cn.md:7
 msgid "下面是需要用户感知的端口信息，按是否需要暴露给合作方，分为两类："
-msgstr ""
+msgstr "The following port information requires user awareness, categorized into two types based on whether they need to be exposed to partners:"
 
 #: ../../deployment/kuscia_ports_cn.md:9
 msgid "是。该类端口需要通过公网或专线能够让合作方访问。"
-msgstr ""
+msgstr "Yes. These ports must be accessible to partners via the public internet or dedicated lines."
 
 #: ../../deployment/kuscia_ports_cn.md:10
 msgid "否。该类端口仅需局域网内使用，无需暴露给合作方。"
-msgstr ""
+msgstr "No. These ports are only used within the local network and do not need to be exposed to partners."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "协议"
-msgstr ""
+msgstr "Protocol"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "端口号"
-msgstr ""
+msgstr "Port Number"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "说明"
-msgstr ""
+msgstr "Description"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "是否需要暴露给合作方"
-msgstr ""
+msgstr "Expose to Partners?"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "部署脚本对应参数"
-msgstr ""
+msgstr "Deployment Script Parameter"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "HTTP/HTTPS"
-msgstr ""
+msgstr "HTTP/HTTPS"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "1080"
-msgstr ""
+msgstr "1080"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "节点之间的认证鉴权端口。在创建节点之间路由时需要指定，可参考[创建节点路由](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)"
-msgstr ""
+msgstr "Authentication and authorization port between nodes. Must be specified when creating inter-node routes. Refer to [Create Node Route](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "是"
-msgstr ""
+msgstr "Yes"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-p"
-msgstr ""
+msgstr "-p"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "HTTP"
-msgstr ""
+msgstr "HTTP"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "80"
-msgstr ""
+msgstr "80"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid ""
 "访问节点中应用的端口。例如：可通过此端口访问 Serving 服务进行预测打分，可参考[使用 SecretFlow Serving "
 "进行预测](../tutorial/run_sf_serving_with_api_cn.md#使用-secretflow-"
 "serving-进行预测)"
-msgstr ""
+msgstr "Port for accessing applications on the node. For example, this port can be used to access Serving services for prediction scoring. Refer to [Using SecretFlow Serving for Prediction](../tutorial/run_sf_serving_with_api_cn.md#使用-secretflow-serving-进行预测)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "否"
-msgstr ""
+msgstr "No"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-q"
-msgstr ""
+msgstr "-q"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "8082"
-msgstr ""
+msgstr "8082"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid ""
 "节点 KusciaAPI 的访问端口，可参考[如何使用 "
 "KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)"
-msgstr ""
+msgstr "Access port for the node's KusciaAPI. Refer to [How to Use KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-k"
-msgstr ""
+msgstr "-k"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "GRPC/GRPCS"
-msgstr ""
+msgstr "GRPC/GRPCS"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "8083"
-msgstr ""
+msgstr "8083"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-g"
-msgstr ""
+msgstr "-g"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "9091"
-msgstr ""
+msgstr "9091"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "节点 Metrics 指标采集端口，可参考 [Kuscia 监控](./kuscia_monitor)"
-msgstr ""
+msgstr "Port for collecting node metrics. Refer to [Kuscia Monitoring](./kuscia_monitor)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-x"
-msgstr ""
+msgstr "-x"
 
