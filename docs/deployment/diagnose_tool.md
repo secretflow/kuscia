@@ -1,36 +1,36 @@
-# Kuscia 诊断工具
+# Kuscia Diagnostic Tool
 
-## 功能
+## Function
 
-检测双方节点的网络是否符合通信条件，以及网络当前的一些问题根因。
+To check whether the network between two nodes meets communication requirements and diagnose any existing network issues.
 
-检测涵盖项：
+Detection items include:
 
-- 带宽
-- 传输延迟
-- 网关最大请求包体大小配置
-- 网关缓冲配置
-- 网关超时配置
+- Bandwidth
+- Transmission delay
+- Gateway maximum request body size configuration
+- Gateway buffer configuration
+- Gateway timeout configuration
 
-## 使用场景
+## Use Cases
 
-- 可用于部署完成后，在实际执行算法作业前的前置网络环境检查；
+- For pre-deployment network environment checks before executing algorithm tasks;
 
-- 可用于执行算法作业失败时，首先对双方网络环境进行诊断，定位（如果有）或排除网络环境的因素。
+- For diagnosing network issues when algorithm tasks fail, to identify or rule out network-related factors.
 
-## 前置条件
+## Prerequisites
 
-用户已经在双方节点均完成 Kuscia 的部署，包括启动 kuscia、创建 Domain、双方互换证书、双方配置授权。
+Users must have completed the deployment of Kuscia on both nodes, including starting Kuscia, creating a Domain, exchanging certificates between the two parties, and configuring authorization for each other.
 
-## 使用示例
+## Usage Example
 
-假设双方节点为alice和bob，需要检测到bob的网络通信，可以在 alice 的计算节点容器内执行：
+Assume the two nodes are alice and bob. To test the network communication from alice to bob, you can execute the following command in alice's compute node container:
 
 ~~~
 kuscia diagnose network alice bob
 ~~~
 
-即会开始执行网络状态诊断流程，正常执行的结果如下：
+The normal execution result is as follows:
 
 ~~~
 Diagnose Config:
@@ -74,7 +74,7 @@ NETWORK STATSTICS(alice-bob):
 
 ~~~
 
-如果双方节点的网络状态存在异常，一个可能的报告如下：
+If there are network issues between the two nodes, a possible report might look like this:
 
 ~~~
 REPORT:
@@ -104,20 +104,20 @@ NETWORK STATSTICS(alice-bob):
 +-------------------+---------------------+-------------+-----------+--------------------------------+
 ~~~
 
-## 报告字段说明
+## Report Field Explanation
 
-- CRD Config Check: 检查配置的 ClusterDomainRoute 是否有效，若为 FAIL，则说明 CDR 配置有误或节点本身网络不通。
-- NETWORK STATSTICS(alice-bob)：Alice 到 Bob 的请求链路网络指标，包含：
-  - BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \<theshold\>` 调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；
-  - CONNECTION：联通性，检测 Kuscia Job 的服务网络联通；
-  - PROXY_BUFFER：网关缓冲，结果为FAIL时表示网关存在缓冲，需要联系机构网关关闭网关缓冲；
-  - REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_thres \<threshold\>` 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；
-  - RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_thres \<threshold\>`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。
-- NETWORK STATSTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。
+- CRD Config Check: Checks whether the configured ClusterDomainRoute is valid. If the result is FAIL, it indicates that the CDR configuration is incorrect or the node's network is not accessible.
+- NETWORK STATSTICS(alice-bob): Network metrics for the request link from Alice to Bob, including:
+  - BANDWIDTH: Network bandwidth metric. The default threshold is 10Mbits/sec. You can adjust it using the `--speed_thres \<theshold\>` option. If the detected value is less than 10Mbits/sec, the result will be WARNING;
+  - CONNECTION: Network connectivity of Kuscia Job services;
+  - PROXY_BUFFER: Gateway buffer. A FAIL result indicates that the gateway buffer exists and needs to be disabled by contacting the gateway administrator;
+  - REQUEST_BODY_SIZE: Gateway request body size limit. The default threshold is 1MB. You can adjust it using the `--size_thres \<threshold\>` option. If the detected value is less than 1MB, the result will be WARNING;
+  - RTT: Transmission delay. The default threshold is 50ms. You can adjust it using the `--rtt_thres \<threshold\>` option. If the detected value exceeds 50ms, the result will be WARNING.
+- NETWORK STATSTICS(bob-alice): Network metrics for the request link from Bob to Alice.
 
-## 其他说明
+## Additional Notes
 
-kuscia diagnose network 参数说明：
+Explanation of the Kuscia diagnose network parameters:
 
 ~~~
 bash-5.2# kuscia diagnose network -h
