@@ -1,0 +1,73 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:1
+msgid "如何通过 Docker 命令对已部署的节点进行 Memory 扩容"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:3
+msgid "背景"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:5
+msgid "在使用脚本部署 Kuscia 时，可以使用 `-m` 或者 `--memory-limit` 参数给节点容器设置适当的内存限制。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:7
+msgid "例如:"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:9
+msgid "`-m 4GiB` 或 `--memory-limit=4GiB` 表示限制最大内存 4GiB。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:10
+msgid "`-m -1` 或 `--memory-limit=-1` 表示没有限制。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:11
+msgid "不设置时默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:13
+msgid "如果您的节点已经部署好，但内存限制不符合需求，您可以通过 Docker 命令对已部署的节点进行 Memory 扩容。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:15
+msgid "步骤"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:17
+msgid "运行以下命令来查看当前节点的内存限制："
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:23
+msgid "根据需要调整内存限制。例如，如果您需要增加内存限制到 20GiB，您可以运行以下命令："
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:29
+msgid ""
+"<span style=\"color: red;\">注：</span> 使用 `docker update` 扩展内存时，如果 Kuscia "
+"以 `runtime: runc` 方式部署时，需要重启 Kuscia 后，内存调整的限制才能对任务调度实际生效。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:32
+msgid "参考重启命令："
+msgstr ""
+

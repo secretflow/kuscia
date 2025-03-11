@@ -1,0 +1,59 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:1
+msgid "Kuscia K8s 部署模式下 SecretFlow 应用线程限制问题"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:3
+msgid "问题描述"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:5
+msgid ""
+"在 Kuscia K8s 部署模式下，SecretFlow 应用运行过程中出现创建线程失败问题：`pthread_create failed: "
+"Resource temporarily unavailable`。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:7
+msgid "原因分析"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:9
+msgid ""
+"K8s 集群 Kubelet 组件的 `podPidsLimit` 参数被限制为某个特定值，而 SecretFlow 默认启动线程数为：物理机 "
+"CPU * 32 + Ray 的线程数 ，如果 SecretFlow 运行启动的线程数超过了 Kubelet 限制的线程数时则会出现以上报错。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:11
+msgid "解决方案"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:13
+msgid ""
+"1、找到 kubelet.service 的配置文件 /var/lib/kubelet/config.yaml（此处以官网推荐路径为例），修改 "
+"`podPidsLimit` 参数，例如 `podPidsLimit: -1`。详情参考 [K8s "
+"官方文档](https://kubernetes.io/docs/reference/config-api/kubelet-"
+"config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)。"
+msgstr ""
+
+#: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:15
+msgid "2、修改后重启 Kubelet 服务"
+msgstr ""
+

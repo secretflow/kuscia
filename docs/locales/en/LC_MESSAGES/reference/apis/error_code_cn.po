@@ -1,0 +1,903 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/error_code_cn.md:1
+msgid "Error Code"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md:3
+msgid "在 Kuscia API 请求返回结果中，关于错误码的映射说明"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "错误码"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "解决方案"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11100"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "请求入参校验错误"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "请求入参校验不通过，可根据具体错误描述信息检查请求入参对应字段"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11101"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "未知异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "系统未捕获异常，需通过日志排查具体错误原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11102"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "权限校验异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "权限校验异常，请确认请求接口具备相应权限"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11103"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "请求 Master 失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "请求 Master 失败，请确认 Master 节点的连接状态"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11104"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "Lite 节点不支持的 API"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "Lite 节点不支持的 API，请确认请求节点地址"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11105"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "Master 节点不支持的 API"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "Master 节点不支持的 API，请确认请求节点地址"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11201"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11202"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11203"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询任务状态失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询任务状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11204"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11205"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "停止任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "停止任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11206"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "审批任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "审批任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11207"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "暂停任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "暂停任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11208"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "重跑任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "重跑任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11209"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "取消任务失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "取消任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11210"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "暂停Job失败，无法暂停非Running状态Job"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "仅Running状态Job可执行暂停"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11211"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "重跑Job失败，无法重跑非Failed或Suspended状态Job"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "仅Failed或Suspended状态Job可执行重跑"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11300"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建节点失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11301"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11302"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点状态失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11303"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新节点失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11304"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除节点失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11305"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点不存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点不存在异常，确认节点是否存在"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11306"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点已存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点已存在异常，是否需要使用更新接口"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11400"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建节点路由失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建节点路由失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11401"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点路由失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点路由失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11402"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点路由状态失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询节点路由状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11403"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除节点路由失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除节点路由失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11404"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点路由不存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点路由不存在异常，请确认路由已创建"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11405"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点路由已存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点路由已存在异常，如果需要变更，需要删除后再创建"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11500"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建节点数据失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建节点数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11501"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除节点数据失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除节点数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11502"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "获取节点数据失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "获取节点数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11503"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "获取节点数据列表失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "获取节点数据列表失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11504"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新合并数据失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新合并数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11505"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新补充数据失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新补充数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11506"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点数据不存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点数据不存在异常，请确认请求入参的节点数据 ID"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11507"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点数据已存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "节点数据已存在异常，请确认请求入参的节点数据 ID"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11600"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建 Serving 失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11601"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询 Serving 失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11602"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询 Serving 状态失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询 Serving 状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11603"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新 Serving 失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11604"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除 Serving 失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11700"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建数据授权失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11701"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新数据授权失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11702"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询数据授权失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11703"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除数据授权失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11704"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据授权已存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据授权已存在异常，请确认请求入参授权 ID"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11705"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据授权不存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据授权不存在异常，请确认请求入参授权 ID"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11800"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建数据源失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11801"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新数据源失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11802"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询数据源失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11803"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "批量查询数据源失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "批量查询数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11804"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除数据源失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11805"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据源已存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据源已存在异常，请确认数据源 ID"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11806"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据源不存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据源不存在异常，请确认数据源 ID"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11807"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据源信息转码异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "数据源信息转码异常，参考接口异常返回或日志中确认具体错误原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11808"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "列出数据源失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "列出数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11900"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建配置失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11901"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询配置失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11902"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新配置失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "更新配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11903"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除配置失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "11904"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "批量查询配置失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "批量查询配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13100"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建应用镜像失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "创建应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13101"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询应用镜像失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13102"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询应用镜像状态失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询应用镜像状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13103"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除应用镜像失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "删除应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13104"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "批量查询应用镜像失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "批量查询应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13105"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "应用镜像不存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "应用镜像不存在异常，确认应用镜像是否存在"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13106"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "应用镜像已存在异常"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "应用镜像已存在异常，确认应用镜像是否存在"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13200"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询日志失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询日志失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "13201"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询实例节点失败"
+msgstr ""
+
+#: ../../reference/apis/error_code_cn.md
+msgid "查询实例节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+msgstr ""
+

@@ -1,0 +1,45 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:1
+msgid "升级 Kuscia 版本"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:3
+msgid "步骤"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:5
+msgid "您可以参考 [Kuscia 部署](./deploy_p2p_cn.md)中了解如何获取 Kuscia 脚本，本文不做过多赘述。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:7
+msgid "指定 Kuscia 使用的镜像版本，这里使用 0.14.0b0 版本。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:13
+msgid "升级 kuscia 版本只需要加上 upgrade 参数和容器名即可。示例如下："
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:20
+msgid ""
+"注意：[体验模式](../../getting_started/quickstart_cn.md)因未挂载 Volume "
+"到宿主机磁盘，无法使用以上方法升级 Kuscia 。"
+msgstr ""
+

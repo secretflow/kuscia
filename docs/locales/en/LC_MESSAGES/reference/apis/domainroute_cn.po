@@ -1,0 +1,711 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/domainroute_cn.md:1
+msgid "DomainRoute"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:3
+msgid ""
+"DomainRoute 用于在中心化网络中配置 Lite 节点与 Master 之间的路由规则、Lite "
+"节点之间的路由规则，以及点对点（P2P）网络中 Autonomy 节点之间的路由规则。请参考 "
+"[DomainRoute](../concepts/domainroute_cn.md) 。 您可以从 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain_route.proto)"
+" 找到对应的 protobuf 文件。"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:7
+msgid "接口总览"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "方法名"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "请求类型"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "响应类型"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[CreateDomainRoute](#create-domain-route)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "CreateDomainRouteRequest"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "CreateDomainRouteResponse"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+#: ../../reference/apis/domainroute_cn.md:20
+msgid "创建节点路由"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[DeleteDomainRoute](#delete-domain-route)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "DeleteDomainRouteRequest"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "DeleteDomainRouteResponse"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+#: ../../reference/apis/domainroute_cn.md:109
+msgid "删除节点路由"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[QueryDomainRoute](#query-domain-route)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "QueryDomainRouteRequest"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "QueryDomainRouteResponse"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+#: ../../reference/apis/domainroute_cn.md:174
+msgid "查询节点路由"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[BatchQueryDomainRouteStatus](#batch-query-domain-route-status)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "BatchQueryDomainRouteStatusRequest"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "BatchQueryDomainRouteStatusResponse"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+#: ../../reference/apis/domainroute_cn.md:278
+msgid "批量查询节点路由状态"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:16
+msgid "接口详情"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:22
+#: ../../reference/apis/domainroute_cn.md:111
+#: ../../reference/apis/domainroute_cn.md:176
+#: ../../reference/apis/domainroute_cn.md:280
+msgid "HTTP 路径"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:24
+msgid "/api/v1/route/create"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:26
+msgid "请求（CreateDomainRouteRequest）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "header"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[RequestHeader](summary_cn.md#requestheader)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "请求头"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "authentication_type"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "string"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "必填"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid ""
+"认证类型：\\[Token，MTLS，None]，参考 [DomainRoute "
+"概念](../concepts/domainroute_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "destination"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标节点ID"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "endpoint"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[RouteEndpoint](#route-endpoint)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid ""
+"目标节点的地址（请填写域名，端口和协议不需要填写）；如果是[路由转发模式](../concepts/domainroute_cn.md"
+"#domain-route-advance)则不需要填该字段"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "source"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "源节点ID"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "token_config"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[TokenConfig](#token-config)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "Token 相关配置；authenticationType 为`Token`，需要配置该字段。"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "mtls_config"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[MtlsConfig](#mtls-config)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "MTLS 相关配置，authenticationType 为`MTLS`时，需要配置该字段。"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "transit"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[Transit](#transit)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "路由转发配置"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "body_encryption"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[BodyEncryption](#bodyencryption)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "加密配置；当路由为转发模式时需要配置该字段"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:40
+msgid "响应（CreateDomainRouteResponse）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "status"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[Status](summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "状态信息"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "CreateDomainRouteResponseData"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.name"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "名称"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:48
+#: ../../reference/apis/domainroute_cn.md:129
+#: ../../reference/apis/domainroute_cn.md:205
+#: ../../reference/apis/domainroute_cn.md:299
+msgid "请求示例"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:50
+#: ../../reference/apis/domainroute_cn.md:131
+#: ../../reference/apis/domainroute_cn.md:207
+#: ../../reference/apis/domainroute_cn.md:301
+msgid "发起请求："
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:81
+#: ../../reference/apis/domainroute_cn.md:148
+#: ../../reference/apis/domainroute_cn.md:224
+#: ../../reference/apis/domainroute_cn.md:326
+msgid "请求响应成功结果："
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:94
+msgid "请求响应异常结果："
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:113
+msgid "/api/v1/route/delete"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:115
+msgid "请求（DeleteDomainRequest）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "自定义请求内容"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标节点"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "源节点"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:123
+msgid "响应（DeleteDomainResponse）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:160
+msgid "请求响应异常结果：假设删除路由为 `delete-alice` -> `delete-bob` 且不存在"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:178
+msgid "/api/v1/route/query"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:180
+msgid "请求（QueryDomainRouteRequest）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标地址"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "源地址"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:188
+msgid "响应（QueryDomainRouteResponse）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[Status](./summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "QueryDomainRouteResponseData"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "节点名称"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.authentication_type"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.destination"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.endpoint"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标节点的地址，参考 [DomainRoute 概念](../concepts/domainroute_cn.md)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.source"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.token_config"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "Token 配置"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.mtls_config"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[MTLSConfig](#mtls-config)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "MTLS 配置"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.transit"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.body_encryption"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "加密配置"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.status"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[RouteStatus](#route-status)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "状态"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:263
+msgid "请求响应异常结果：假设请求路由为 `query-alice` -> `query-bob` 且不存在"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:282
+msgid "/api/v1/route/status/batchQuery"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:284
+msgid "请求（BatchQueryDomainRouteStatusRequest）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "route_keys"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[DomainRouteKey](#domain-route-key)"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "路由列表"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:291
+msgid "响应（BatchQueryDomainRouteStatusResponse）"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "BatchQueryDomainRouteStatusResponseData"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "data.routes"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[DomainRouteStatus](#domain-route-status)[]"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "授权路由列表"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:360
+msgid "请求响应异常结果：假设查询中包含不存在的路由 `status-alice` -> `status-bob`"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:373
+msgid "公共"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:377
+msgid "DomainRouteKey"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "源节点 ID"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标节点 ID"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:386
+msgid "DomainRouteStatus"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "name"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:397
+msgid "EndpointPort"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "port"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "int32"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "端口号，有效值1-65535"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "protocol"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "端口协议：\\[HTTP, GRPC]"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "isTLS"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "bool"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "是否开启 TLS，默认为 false"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "path_prefix"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "如果非空，网关会对发送的请求进行 path rewrite，在请求的path 前加上 path_prefix 的值"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:408
+msgid "RouteEndpoint"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "host"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标主机"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "ports"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[EndpointPort](#endpoint-port)[]"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "目标端口"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:417
+msgid "RouteStatus"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "是否成功：\\[Succeeded,Failed]"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "reason"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "原因"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:426
+msgid "MTLSConfig"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:428
+#: ../../reference/apis/domainroute_cn.md:440
+#: ../../reference/apis/domainroute_cn.md:451
+#: ../../reference/apis/domainroute_cn.md:468
+msgid "详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "tls_ca"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "TLS 的 CA，BASE64 编码格式"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "source_client_private_key"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "来源客户端的私钥，BASE64 编码格式"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "source_client_cert"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "来源客户端的证书，BASE64 编码格式"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:438
+msgid "TokenConfig"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "rolling_update_period"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "int64"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "滚动更新间隔，单位：秒，默认值为 0"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "token_gen_method"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid ""
+"签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token "
+"有效性"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:449
+msgid "Transit"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "transit_method"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid ""
+"路由转发类型：\\[THIRD-DOMAIN，REVERSE-TUNNEL]。THIRD-DOMAIN 表示经由第三方节点转发，REVERSE-"
+"TUNNEL 表示经由反向隧道转发"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "domain"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "[Transit_Domain](#transit_domain)[]"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "transit_method 为 THIRD-DOMAIN 时需要填写，否则不需要填写"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:460
+msgid "Transit_Domain"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "domain_id"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "第三方节点 ID"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md:466
+msgid "BodyEncryption"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "algorithm"
+msgstr ""
+
+#: ../../reference/apis/domainroute_cn.md
+msgid "加密方法，当前只支持 AES"
+msgstr ""
+
