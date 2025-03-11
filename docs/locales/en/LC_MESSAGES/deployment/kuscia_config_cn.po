@@ -19,32 +19,32 @@ msgstr ""
 
 #: ../../deployment/kuscia_config_cn.md:1
 msgid "Kuscia 配置文件"
-msgstr ""
+msgstr "Kuscia Configuration File"
 
 #: ../../deployment/kuscia_config_cn.md:3
 msgid ""
 "Kuscia 配置文件默认位置为 Kuscia 容器的 /home/kuscia/etc/conf/kuscia.yaml, "
 "不同的部署模式所需的配置内容不同。 Kuscia 的配置文件由公共配置和每个模式的特殊配置组成，具体细节可以参考下文。 Kuscia "
 "的自动部署脚本会产生一份默认的配置文件，如果需要调整，可以将调整后的配置文件挂载到容器相应位置。"
-msgstr ""
+msgstr "The default configuration file for Kuscia is located at /home/kuscia/etc/conf/kuscia.yaml within the container. Different deployment modes require distinct configuration contents. The configuration file consists of common settings and mode-specific configurations, with detailed specifications provided below. The automatic deployment script generates a default configuration file, which can be customized by mounting the modified file to the corresponding container path."
 
 #: ../../deployment/kuscia_config_cn.md:6
 msgid "Kuscia 配置"
-msgstr ""
+msgstr "Kuscia Configuration"
 
 #: ../../deployment/kuscia_config_cn.md:8
 msgid "配置项示例"
-msgstr ""
+msgstr "Configuration Item Examples"
 
 #: ../../deployment/kuscia_config_cn.md:96
 msgid "配置项详解"
-msgstr ""
+msgstr "Configuration Specification"
 
 #: ../../deployment/kuscia_config_cn.md:98
 msgid ""
 "`mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, "
 "不同部署模式详情请参考[这里](../reference/architecture_cn)"
-msgstr ""
+msgstr "`mode`: Deployment mode of the current Kuscia node, supporting Lite, Master, and Autonomy (case-insensitive). Refer to [architecture documentation](../reference/architecture_cn) for deployment mode details."
 
 #: ../../deployment/kuscia_config_cn.md:99
 msgid ""
@@ -54,7 +54,7 @@ msgid ""
 "`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 "
 "`cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。生产环境使用时建议将 domainID "
 "设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite"
-msgstr ""
+msgstr "`domainID`: [Domain ID](../reference/concepts/domain_cn) of the current Kuscia instance must comply with RFC 1123 label naming conventions. Predefined reserved IDs include `default`, `kube-system`, `kube-public`, `kube-node-lease`, `master`, and `cross-domain`. For production environments, use globally unique identifiers following the pattern: organization-department-node (e.g., domainID: mycompany-secretflow-trainlite)."
 
 #: ../../deployment/kuscia_config_cn.md:100
 msgid ""
@@ -64,11 +64,11 @@ msgid ""
 "-it --rm secretflow-registry.cn-"
 "hangzhou.cr.aliyuncs.com/secretflow/kuscia "
 "scripts/deploy/generate_rsa_key.sh` 生成"
-msgstr ""
+msgstr "`domainKeyData`: Domain private key configuration for inter-node authentication and application certificate issuance. Generates MTLS certificates for task engines to secure all internal/external communications. Generate using command: `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh`"
 
 #: ../../deployment/kuscia_config_cn.md:101
 msgid "`logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO"
-msgstr ""
+msgstr "`logLevel`: Logging level options: INFO, DEBUG, WARN (default: INFO)"
 
 #: ../../deployment/kuscia_config_cn.md:102
 msgid ""
@@ -77,397 +77,396 @@ msgid ""
 "Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master "
 "上删除相应节点的公钥并重新获取 Token "
 "部署。详情请参考[私钥丢失如何重新部署](../troubleshoot/deployment/private_key_loss.md)"
-msgstr ""
+msgstr "`liteDeployToken`: One-time authentication token issued by Master for initial node connection [Token acquisition](../deployment/deploy_master_lite_cn.md#lite-alice). The token expires immediately after successful deployment. Maintain token consistency in multi-machine deployments. If domain keys are lost, delete the corresponding public key on Master and redeploy with new token. Refer to [private key recovery](../troubleshoot/deployment/private_key_loss.md)."
 
 #: ../../deployment/kuscia_config_cn.md:103
 msgid "`masterEndpoint`: 节点连接 Master 的地址，比如 <https://172.18.0.2:1080>"
-msgstr ""
+msgstr "`masterEndpoint`: Master node connection address (e.g., <https://172.18.0.2:1080>)"
 
 #: ../../deployment/kuscia_config_cn.md:104
 msgid ""
 "`runtime`: 节点运行时 "
 "runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)"
-msgstr ""
+msgstr "`runtime`: Node runtime options: runc, runk, runp. Detailed explanations available in [architecture documentation](../reference/architecture_cn.md#agent)."
 
 #: ../../deployment/kuscia_config_cn.md:105
 msgid "`runk`: 当 runtime 为 runk 时配置"
-msgstr ""
+msgstr "`runk`: Configuration required when runtime is set to runk"
 
 #: ../../deployment/kuscia_config_cn.md:106
 msgid "`namespace`: 任务调度到指定的机构 K8s Namespace 下"
-msgstr ""
+msgstr "`namespace`: Specifies target Kubernetes namespace for task scheduling"
 
 #: ../../deployment/kuscia_config_cn.md:107
 msgid "`dnsServers`: 机构 K8s 集群的 Pod DNS 配置， 用于解析节点的应用域名"
-msgstr ""
+msgstr "`dnsServers`: Pod DNS configuration for institutional Kubernetes clusters to resolve application domains"
 
 #: ../../deployment/kuscia_config_cn.md:108
 msgid ""
 "`kubeconfigFile`: 机构 K8s 集群的 Kubeconfig，不填默认 serviceaccount；当前请不填，默认使用 "
 "serviceaccount"
-msgstr ""
+msgstr "`kubeconfigFile`: Kubeconfig for institutional Kubernetes clusters. Leave empty to default to serviceaccount (current recommendation)."
 
 #: ../../deployment/kuscia_config_cn.md:109
 msgid "`capacity`: 节点可用于调度应用的容量，runc/runp 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置"
-msgstr ""
+msgstr "`capacity`: Node resource capacity for application scheduling. Automatically detected in runc/runp modes. Manual configuration required for runk."
 
 #: ../../deployment/kuscia_config_cn.md:110
 msgid "`cpu`: cpu 核数， 如 4"
-msgstr ""
+msgstr "`cpu`: CPU cores allocation (e.g., 4)"
 
 #: ../../deployment/kuscia_config_cn.md:111
 msgid "`memory`: 内存大小，如 8Gi"
-msgstr ""
+msgstr "`memory`: Memory allocation (e.g., 8Gi)"
 
 #: ../../deployment/kuscia_config_cn.md:112
 msgid "`pods`: pods 数，如 500"
-msgstr ""
+msgstr "`pods`: Maximum pod count (e.g., 500)"
 
 #: ../../deployment/kuscia_config_cn.md:113
 msgid "`storage`: 磁盘持久化存储容量，即使 Pod 被删除，数据依然保存。如 100Gi"
-msgstr ""
+msgstr "`storage`: Persistent storage capacity (retained after pod deletion), e.g., 100Gi"
 
 #: ../../deployment/kuscia_config_cn.md:114
 msgid ""
 "`ephemeralStorage`: 磁盘临时存储，非持久化的存储资源。与 Pod 生命周期绑定的存储，当 Pod "
 "被删除时，这部分存储上的数据也会被清除。如 100Gi"
-msgstr ""
+msgstr "`ephemeralStorage`: Temporary storage bound to pod lifecycle (data cleared upon pod deletion), e.g., 100Gi"
 
 #: ../../deployment/kuscia_config_cn.md:115
 msgid ""
 "`image`: 节点镜像配置, "
 "目前仅支持配置1个镜像仓库（更多请参考：[自定义镜像仓库](../tutorial/custom_registry.md)）"
-msgstr ""
+msgstr "`image`: Container image configuration (currently supports single registry configuration). Refer to [custom registries](../tutorial/custom_registry.md) for advanced usage."
 
 #: ../../deployment/kuscia_config_cn.md:116
 msgid ""
 "`pullPolicy`: [暂不支持] "
 "镜像策略，使用本地镜像仓库还是远程镜像仓库；可选值有remote/local，不区分大小写，默认为local；当为remote时，如果发现本地镜像不存在，会根据registry账密自动拉取远程的镜像；如果为local时，镜像需要手动导入kuscia内，如果镜像没有导入kuscia，任务会启动失败。local模式因为不拉取远程镜像，安全性会更高，但会有易用性的损失，用户可结合业务场景自行选择。"
-msgstr ""
+msgstr "`pullPolicy`: [Not supported] Image pull policy options: remote/local (case-insensitive, default: local). Remote mode automatically pulls images from registry when missing locally. Local mode requires manual image import. Local mode offers enhanced security but reduced usability."
 
 #: ../../deployment/kuscia_config_cn.md:117
 msgid "`defaultRegistry`: 默认镜像仓库(对应registries中其中一个registry的name字段)"
-msgstr ""
+msgstr "`defaultRegistry`: Default image registry (corresponds to name field in registries)"
 
 #: ../../deployment/kuscia_config_cn.md:118
 msgid "`httpProxy`: 拉取镜像的代理地址，示例：http://127.0.0.1:8080。不填则不使用代理"
-msgstr ""
+msgstr "`httpProxy`: HTTP proxy for image pulling (e.g., http://127.0.0.1:8080). Leave empty for direct connection."
 
 #: ../../deployment/kuscia_config_cn.md:119
 msgid "`registries`: 镜像仓库配置。"
-msgstr ""
+msgstr "`registries`: Image registry configurations."
 
 #: ../../deployment/kuscia_config_cn.md:120
 msgid "`name`: 镜像仓库名"
-msgstr ""
+msgstr "`name`: Registry name"
 
 #: ../../deployment/kuscia_config_cn.md:121
 msgid "`endpoint`: 镜像仓库地址"
-msgstr ""
+msgstr "`endpoint`: Registry endpoint address"
 
 #: ../../deployment/kuscia_config_cn.md:122
 msgid "`username`: 镜像仓库用户名（公开仓库可不填）"
-msgstr ""
+msgstr "`username`: Registry username (optional for public registries)"
 
 #: ../../deployment/kuscia_config_cn.md:123
 msgid "`password`: 镜像仓库密码（公开仓库可不填）"
-msgstr ""
+msgstr "`password`: Registry password (optional for public registries)"
 
 #: ../../deployment/kuscia_config_cn.md:124
 msgid ""
 "`datastoreEndpoint`: 数据库连接串，不填默认使用 "
 "SQLite。示例：`mysql://username:password@tcp(hostname:3306)/database-name`使用 "
 "MySQL 数据库存储需要符合以下规范："
-msgstr ""
+msgstr "`datastoreEndpoint`: Database connection string (default: SQLite). Example for MySQL: `mysql://username:password@tcp(hostname:3306)/database-name`. MySQL requirements:"
 
 #: ../../deployment/kuscia_config_cn.md:125
 msgid "提前创建好 Database。"
-msgstr ""
+msgstr "Pre-create target database."
 
 #: ../../deployment/kuscia_config_cn.md:126
 msgid ""
 "创建 kine "
 "表，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。"
-msgstr ""
+msgstr "Create kine tables using schema from [kine.sql](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)."
 
 #: ../../deployment/kuscia_config_cn.md:127
 msgid "手动建表：如果机构建表是被管控的，或者提供的数据库账号没有建表权限，可以提前手动建立好数据表，kuscia 识别到数据表存在后，会自动跳过建表。"
-msgstr ""
+msgstr "Manual table creation: Pre-create tables manually if DDL permissions are restricted. Kuscia skips table creation when tables exist."
 
 #: ../../deployment/kuscia_config_cn.md:128
 msgid ""
 "自动建表：如果提供的数据库账号有建表权限（账号具有`DDL+DML`权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 "
 "kuscia 会启动失败。"
-msgstr ""
+msgstr "Automatic creation: With DDL+DML permissions, Kuscia attempts automatic table creation. Startup fails if table creation fails."
 
 #: ../../deployment/kuscia_config_cn.md:129
 msgid "数据库账户对表中字段至少具有 select、insert、update、delete 操作权限。"
-msgstr ""
+msgstr "Database account must have SELECT/INSERT/UPDATE/DELETE permissions."
 
 #: ../../deployment/kuscia_config_cn.md:130
 msgid "`protocol`: KusciaAPI 以及节点对外网关使用的通信协议，有三种通信协议可供选择：NOTLS/TLS/MTLS（不区分大小写）。"
-msgstr ""
+msgstr "`protocol`: Communication protocol for KusciaAPI and gateways. Options: NOTLS/TLS/MTLS (case-insensitive)."
 
 #: ../../deployment/kuscia_config_cn.md:131
 msgid ""
 "`NOTLS`: 此模式下，通信并未采用 TLS 协议进行加密，即数据通过未加密的 HTTP "
 "传输。在高度信任且严格管控的内部网络环境，或是已具备外部安全网关防护措施的情况下，可以使用该模式，但在一般情况下，由于存在安全隐患，不推荐使用。"
-msgstr ""
+msgstr "`NOTLS`: Unencrypted HTTP communication. Recommended only for highly trusted internal networks with external security gateways. Generally discouraged due to security risks."
 
 #: ../../deployment/kuscia_config_cn.md:132
 msgid "`TLS`: 通过 TLS 协议进行加密，即使用 HTTPS 进行安全传输，不需要手动配置证书。"
-msgstr ""
+msgstr "`TLS`: HTTPS communication with automatic certificate management."
 
 #: ../../deployment/kuscia_config_cn.md:133
 msgid "`MTLS`: 使用 HTTPS 进行通信，支持双向 TLS 验证，需要手动交换证书以建立安全连接。"
-msgstr ""
+msgstr "`MTLS`: Mutual TLS authentication requiring manual certificate exchange."
 
 #: ../../deployment/kuscia_config_cn.md:134
 msgid ""
 "`enableWorkloadApprove`: 是否开启工作负载审批，默认为 false，即关闭审批。取值范围:[true, "
 "false]。注：仅P2P组网时此配置才生效，中心化组网时执行 KusciaJob 无需审批。"
-msgstr ""
+msgstr "`enableWorkloadApprove`: Enable workload approval mechanism (default: false). Valid values: [true, false]. Only effective in P2P networks."
 
 #: ../../deployment/kuscia_config_cn.md:135
 msgid ""
 "`logrotate`: "
 "日志轮转设置。为了避免kuscia、应用等运行产生的日志占用过多的磁盘，而引入了日志轮转功能。您可以根据自己的需要，调整默认配置。在日志轮转时将会根据本地时间进行重命名，超过2个文件之后，会进行日志文件压缩。该配置项不是必需项，在没有配置的情况下，仍然以同样的默认值进行轮转工作。注意，应用日志（如secretflow）和非应用日志（如kuscia）轮转逻辑略有区别。"
-msgstr ""
+msgstr "`logrotate`: Log rotation configuration to prevent excessive disk usage. Customizable parameters include file retention and compression. Default rotation occurs even without explicit configuration. Application logs (e.g., Secretflow) and system logs have different rotation policies."
 
 #: ../../deployment/kuscia_config_cn.md:136
 msgid ""
 "`maxFiles`: "
 "对于一种日志文件，最多保留的文件数量。该值建议大于1。对非应用日志，该值为0时，视为无数量限制。对应用日志，该值小于等于1时，仍会以默认值5进行工作。"
-msgstr ""
+msgstr "`maxFiles`: Maximum retained log files per log type. Recommended >1. Non-application logs: 0 = unlimited. Application logs: ≤1 defaults to 5."
 
 #: ../../deployment/kuscia_config_cn.md:137
 msgid "`maxFileSizeMB`: 单个日志文件的轮转阈值，当一次轮转检查发生时，如果文件大小大于该值，将会进行轮转。该值应大于0。"
-msgstr ""
+msgstr "`maxFileSizeMB`: Rotation threshold in MB (must be >0). Triggers rotation when file exceeds size."
 
 #: ../../deployment/kuscia_config_cn.md:138
 msgid ""
 "`maxAgeDays`: "
 "日志文件的最大保留天数。对非应用日志，直接删除超保留期限的日志文件。对应用日志，如果日志文件均超过该天数，且对应Pod处于结束状态。该Pod对应日志文件及其目录将会被删除。该值应大于0。"
-msgstr ""
+msgstr "`maxAgeDays`: Maximum retention days (must be >0). Non-application logs: direct deletion. Application logs: deletion of pod-related logs and directories occurs when all files exceed retention period and pod is terminated."
 
 #: ../../deployment/kuscia_config_cn.md:142
 msgid "配置示例"
-msgstr ""
+msgstr "Configuration Examples"
 
 #: ../../deployment/kuscia_config_cn.md:144
 msgid ""
 "[Lite "
 "节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates"
 "/kuscia-lite.yaml)"
-msgstr ""
+msgstr "[Lite Node Example](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-lite.yaml)"
 
 #: ../../deployment/kuscia_config_cn.md:145
 msgid ""
 "[Master "
 "节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates"
 "/kuscia-master.yaml)"
-msgstr ""
+msgstr "[Master Node Example](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-master.yaml)"
 
 #: ../../deployment/kuscia_config_cn.md:146
 msgid ""
 "[Autonomy "
 "节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates"
 "/kuscia-autonomy.yaml)"
-msgstr ""
+msgstr "[Autonomy Node Example](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-autonomy.yaml)"
 
 #: ../../deployment/kuscia_config_cn.md:148
 msgid "快速生成配置文件"
-msgstr ""
+msgstr "Rapid Configuration Generation"
 
 #: ../../deployment/kuscia_config_cn.md:150
 msgid "Kuscia 为您提供了快速生成 kuscia.yaml 文件的小工具，参数及示例如下："
-msgstr ""
+msgstr "Kuscia provides a utility tool for rapid kuscia.yaml generation with following parameters:"
 
 #: ../../deployment/kuscia_config_cn.md:152
 msgid "`-e, --datastore-endpoint <string>`"
-msgstr ""
+msgstr "`-e, --datastore-endpoint <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:153
 msgid "描述：指定用于连接数据存储的数据库数据源名称（DSN）连接字符串。"
-msgstr ""
+msgstr "Description: Database connection string (DSN format)."
 
 #: ../../deployment/kuscia_config_cn.md:154
 msgid ""
 "使用示例：`--datastore-endpoint \"mysql://username:password@tcp(hostname:3306"
 ")/database-name\"`"
-msgstr ""
+msgstr "Example: `--datastore-endpoint \"mysql://username:password@tcp(hostname:3306)/database-name\"`"
 
 #: ../../deployment/kuscia_config_cn.md:156
 msgid "`-d, --domain <string>`"
-msgstr ""
+msgstr "`-d, --domain <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:157
 msgid ""
 "描述：设定必须遵守 DNS 子域命名规则的 Domain ID，详情请参考[这里](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/names/#dns-subdomain-"
 "names)。"
-msgstr ""
+msgstr "Description: Domain ID compliant with DNS subdomain naming rules. Refer to [Kubernetes naming conventions](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names)."
 
 #: ../../deployment/kuscia_config_cn.md:158
 msgid "使用示例：`--domain \"alice\"`"
-msgstr ""
+msgstr "Example: `--domain \"alice\"`"
 
 #: ../../deployment/kuscia_config_cn.md:160
 msgid "`-f, --domain-key-file <string>`"
-msgstr ""
+msgstr "`-f, --domain-key-file <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:161
 msgid "描述：指定域的 RSA 私钥文件的路径。如果未提供，将生成新的域 RSA 密钥。"
-msgstr ""
+msgstr "Description: Path to existing RSA private key file. Generates new key if unspecified."
 
 #: ../../deployment/kuscia_config_cn.md:162
 msgid "使用示例：`--domain-key-file \"/path/to/domain/key.pem\"`"
-msgstr ""
+msgstr "Example: `--domain-key-file \"/path/to/domain/key.pem\"`"
 
 #: ../../deployment/kuscia_config_cn.md:164
 msgid "`--enable-workload-approve`"
-msgstr ""
+msgstr "`--enable-workload-approve`"
 
 #: ../../deployment/kuscia_config_cn.md:165
 msgid ""
 "描述：设置后可自动批准工作负载的配置，只在 Master 以及 Autonomy 模式下才会生成该配置属性，默认为 "
 "false，使用该参数即表示该值为 true。"
-msgstr ""
+msgstr "Description: Enables automatic workload approval (default: false). Only applicable in Master/Autonomy modes. Using this flag sets value to true."
 
 #: ../../deployment/kuscia_config_cn.md:166
 msgid "使用示例：`--enable-workload-approve`"
-msgstr ""
+msgstr "Example: `--enable-workload-approve`"
 
 #: ../../deployment/kuscia_config_cn.md:168
 msgid "`-t, --lite-deploy-token <string>`"
-msgstr ""
+msgstr "`-t, --lite-deploy-token <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:169
 msgid "描述：用于验证连接到主服务器时由 Lite 客户端使用的部署令牌。"
-msgstr ""
+msgstr "Description: Deployment token authentication for Lite clients connecting to Master."
 
 #: ../../deployment/kuscia_config_cn.md:170
 msgid "使用示例：`--lite-deploy-token \"abcdefg\"`"
-msgstr ""
+msgstr "Example: `--lite-deploy-token \"abcdefg\"`"
 
 #: ../../deployment/kuscia_config_cn.md:172
 msgid "`-l, --log-level <string>`"
-msgstr ""
+msgstr "`-l, --log-level <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:173
 msgid "描述：设置日志记录级别。可接受的值有 INFO、DEBUG 和 WARN，默认为 INFO。"
-msgstr ""
+msgstr "Description: Logging level options: INFO, DEBUG, WARN (default: INFO)."
 
 #: ../../deployment/kuscia_config_cn.md:174
 msgid "使用示例：`--log-level \"DEBUG\"`"
-msgstr ""
+msgstr "Example: `--log-level \"DEBUG\"`"
 
 #: ../../deployment/kuscia_config_cn.md:176
 msgid "`-m, --master-endpoint <string>`"
-msgstr ""
+msgstr "`-m, --master-endpoint <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:177
 msgid "描述：指定 Lite 客户端应连接的主服务器端点。"
-msgstr ""
+msgstr "Description: Master endpoint address for Lite client connections."
 
 #: ../../deployment/kuscia_config_cn.md:178
 msgid "使用示例：`--master-endpoint \"https://1.1.1.1:18080\"`"
-msgstr ""
+msgstr "Example: `--master-endpoint \"https://1.1.1.1:18080\"`"
 
 #: ../../deployment/kuscia_config_cn.md:180
 msgid "`--mode <string>`"
-msgstr ""
+msgstr "`--mode <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:181
 msgid "描述：设置域的部署模式。有效选项为 Master、Lite 和 Autonomy（不区分大小写）。"
-msgstr ""
+msgstr "Description: Deployment mode options: Master, Lite, Autonomy (case-insensitive)."
 
 #: ../../deployment/kuscia_config_cn.md:182
 msgid "使用示例：`--mode \"Lite\"`"
-msgstr ""
+msgstr "Example: `--mode \"Lite\"`"
 
 #: ../../deployment/kuscia_config_cn.md:184
 msgid "`-p, --protocol <string>`"
-msgstr ""
+msgstr "`-p, --protocol <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:185
 msgid "描述：指定用于 KusciaAPI 和网关的协议。选项包括 NOTLS、TLS 和 MTLS，不指定时默认为 MTLS。"
-msgstr ""
+msgstr "Description: Communication protocol for KusciaAPI/gateways. Options: NOTLS, TLS, MTLS (default: MTLS)."
 
 #: ../../deployment/kuscia_config_cn.md:186
 msgid "使用示例：`--protocol \"TLS\"`"
-msgstr ""
+msgstr "Example: `--protocol \"TLS\"`"
 
 #: ../../deployment/kuscia_config_cn.md:188
 msgid "`-r, --runtime <string>`"
-msgstr ""
+msgstr "`-r, --runtime <string>`"
 
 #: ../../deployment/kuscia_config_cn.md:189
 msgid "描述：定义要使用的域运行时。有效选项为 runc、runk 和 runp，默认为 runc。"
-msgstr ""
+msgstr "Description: Node runtime selection. Valid options: runc, runk, runp (default: runc)."
 
 #: ../../deployment/kuscia_config_cn.md:190
 msgid "使用示例：`--runtime \"runc\"`"
-msgstr ""
+msgstr "Example: `--runtime \"runc\"`"
 
 #: ../../deployment/kuscia_config_cn.md:192
 msgid "Kuscia init 使用示例如下："
-msgstr ""
+msgstr "Kuscia init usage example:"
 
 #: ../../deployment/kuscia_config_cn.md:202
 msgid "修改默认配置文件"
-msgstr ""
+msgstr "Modifying Default Configuration"
 
 #: ../../deployment/kuscia_config_cn.md:204
 msgid ""
 "如果使用 "
 "[kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh)"
 " 脚本部署的 Kuscia，kuscia.yaml 文件路径默认是在以下位置（其他部署模式可以借鉴）。"
-msgstr ""
+msgstr "For deployments using [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh), kuscia.yaml locations are:"
 
 #: ../../deployment/kuscia_config_cn.md:206
 msgid "宿主机路径："
-msgstr ""
+msgstr "Host paths:"
 
 #: ../../deployment/kuscia_config_cn.md:207
 msgid "master：{PWD}/{USER}-kuscia-master/kuscia.yaml"
-msgstr ""
+msgstr "master：{PWD}/{USER}-kuscia-master/kuscia.yaml"
 
 #: ../../deployment/kuscia_config_cn.md:208
 msgid "lite：{PWD}/{USER}-kuscia-lite-domainID/kuscia.yaml"
-msgstr ""
+msgstr "lite：{PWD}/{USER}-kuscia-lite-domainID/kuscia.yaml"
 
 #: ../../deployment/kuscia_config_cn.md:209
 msgid "autonomy：{PWD}/{USER}-kuscia-autonomy-domainID/kuscia.yaml"
-msgstr ""
+msgstr "autonomy：{PWD}/{USER}-kuscia-autonomy-domainID/kuscia.yaml"
 
 #: ../../deployment/kuscia_config_cn.md:210
 msgid "容器内路径：/home/kuscia/etc/conf/kuscia.yaml"
-msgstr ""
+msgstr "Container path: /home/kuscia/etc/conf/kuscia.yaml"
 
 #: ../../deployment/kuscia_config_cn.md:212
 msgid "宿主机路径下修改 kuscia.yaml 配置后，重启容器 `docker restart ${container_name}` 生效。"
-msgstr ""
+msgstr "After modifying kuscia.yaml on host, apply changes via `docker restart ${container_name}`."
 
 #: ../../deployment/kuscia_config_cn.md:213
 msgid ""
 "Tips：如果要修改 Protocol 字段，请确保对该字段有充足的理解，否则会导致 KusciaAPI "
 "调用失败或者和其他节点的通讯异常。详情参考[Protocol "
 "通信协议](../troubleshoot/concept/protocol_describe.md)。"
-msgstr ""
+msgstr "Note: Protocol modifications require thorough understanding to prevent API/communication failures. Refer to [Protocol Documentation](../troubleshoot/concept/protocol_describe.md)."
 
 #: ../../deployment/kuscia_config_cn.md:215
 msgid "指定配置文件"
-msgstr ""
+msgstr "Specifying Configuration File"
 
 #: ../../deployment/kuscia_config_cn.md:217
 msgid ""
 "如果使用 "
 "[kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh)"
 " 脚本部署的 Kuscia，可以指定配置文件，示例："
-msgstr ""
+msgstr "Custom configuration file specification example for [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh):"
 
 #: ../../deployment/kuscia_config_cn.md:224
 msgid "其中，kuscia-autonomy.yaml 可参考 [配置示例](#configuration-example)"
-msgstr ""
-
+msgstr "Refer to [configuration examples](#configuration-example) for kuscia-autonomy.yaml."
