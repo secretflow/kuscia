@@ -1,0 +1,57 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:1
+msgid "非 root 用户部署节点"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:3
+msgid "前言"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:5
+msgid "本教程将帮助您在权限受限制的环境中，以非 root 用户来部署 Kuscia 集群。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:7
+msgid "部署"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:9
+msgid "您可以参考[这里](./deploy_p2p_cn.md)了解如何使用 Docker 部署 Kuscia，本文不做过多赘述。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:11
+msgid "启动 Kuscia 时，非 root 用户只需在启动命令后面加上 `--rootless` 即可。示例如下："
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:19
+msgid "目前仅支持 RunP 模式以非 root 用户来部署 Kuscia。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:20
+msgid ""
+"如果主机用户是 root，Kuscia 还是以 root 用户启动，`--rootless` 不生效。如果主机用户不是 root，Kuscia "
+"以主机用户启动。"
+msgstr ""
+
+#: ../../deployment/Docker_deployment_kuscia/docker_deploy_kuscia_with_rootless.md:21
+msgid "更多部署要求请参考[这里](../deploy_check.md)。"
+msgstr ""
+

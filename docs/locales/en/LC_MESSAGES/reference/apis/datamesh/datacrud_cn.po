@@ -1,0 +1,138 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:1
+msgid "DataMesh 数据读写"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:3
+msgid ""
+"Kuscia DataMesh 提供了基于 gRRC 的数据读写操作，实现了 Arrow Flight "
+"提供的标准的数据服务接口，您可以通过初始化一个 Flight Client 来发起数据的请求。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:5
+msgid "如何通过Arrow Flight访问DataMesh"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:7
+msgid ""
+"FlightServiceClient 是 Apache Arrow Flight 框架中客户端的主要接口，它提供了一系列的方法来与 Flight"
+" 服务交互，例如获取数据集信息、上传和下载数据等。在本例中，使用 Go 语言展示如何使用 "
+"`flight.FlightServiceClient`。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:9
+msgid ""
+"要使用 FlightServiceClient，您需要先建立一个与 Flight 服务端的 gRPC 连接，然后通过这个连接创建一个 "
+"FlightServiceClient 实例。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:11
+msgid "查询数据"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:13
+msgid "![Alt text](../../../imgs/flight_do_get.png)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:13
+#: ../../reference/apis/datamesh/datacrud_cn.md:17
+msgid "Alt text"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:15
+msgid "上传数据"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:17
+msgid "![Alt text](../../../imgs/flight_do_put.png)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:19
+msgid "DataMesh 支持的数据服务"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:21
+msgid "DataMesh 当前仅支持以下查询能力:"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:53
+msgid "注意事项"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:55
+msgid ""
+"在使用 DataMesh（DataProxy）向支持的各种类型的数据源进行输出时，如果目标文件/表不存在，会<span "
+"style=\"color: red;\">自动创建</span>。如果输出目标已经存在，均会尝试进行<span style=\"color: "
+"red;\">文件覆盖</span> ，具体来说"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:56
+msgid "localfs：打开输出文件时进行清空。如果目标目录不存在，会自动逐层创建。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:57
+msgid "OSS：直接上传文件。需配置 OSS 为允许自动创建目录、允许文件覆盖。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:58
+msgid "MySQL："
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:59
+msgid "尝试 `DROP IF EXISTS` ，并重新创建表。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:60
+msgid "如果 `DROP` 失败，继续尝试 `DELETE` 全表。仍失败则返回报错，退出存储。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:62
+msgid ""
+"因此建议为 MySQL 配置 `CREATE / INSERT / SELECT / DROP` 权限。如果不能提供 `DROP` "
+"权限，至少需具备 `DELETE` 权限。但注意此时清表速度将会下降。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:64
+msgid "ODPS: 经过 DataProxy 服务代理实现"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:65
+msgid "读取数据时，需确保提供的 AK/SK 具备表的读取权限（没有 `Download` 权限只能查询低于 1W 行的数据）。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:66
+msgid "写入数据时，需确保提供的 AK/SK 具备表的覆盖写权限；如果需要 DataProxy 自行建表，需确保具备创建表的权限。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:67
+msgid ""
+"写入数据时，若表不存在，将创建表（表结构按照 DomainData "
+"的信息来创建）；若任务配置输出信息中包含分区信息，将创建分区表，并创建分区（分区字段类型断言为字符串类型）。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:68
+msgid "写入数据时，若表已存在，任务输出的分区不存在时，将按照任务配置中输出的分区信息创建分区，需保证分区信息正确并可正常创建，若创建失败，将导致失败报错。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/datacrud_cn.md:69
+msgid "写入数据时将采用覆盖写（普通表将覆盖整个表，分区表将覆盖分区）。"
+msgstr ""
+

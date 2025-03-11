@@ -1,0 +1,269 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:1
+msgid "Docker 集群部署-组网模式"
+msgstr "Docker Cluster Deployment - Networking Mode"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:3
+msgid "前言"
+msgstr "Preface"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:5
+msgid "本教程帮助您使用 Docker 组网模式来完成部署 Kuscia 集群。"
+msgstr "This tutorial helps you deploy a Kuscia cluster using Docker networking mode."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:7
+msgid "<span style=\"color: red;\">注：</span>目前只支持 Kuscia 以 `runp` 模式以此方式组网。"
+msgstr "<span style=\"color: red;\">Note:</span> Currently only supports Kuscia networking in `runp` mode."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:9
+msgid "前置准备"
+msgstr "Prerequisites"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:11
+msgid ""
+"在部署 Kuscia "
+"之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)。"
+msgstr ""
+"Before deploying Kuscia, ensure all prerequisites are met, including required software, resources, OS versions, and network configurations. Refer to [Deployment Requirements](../deploy_check.md) for details."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:13
+msgid "结构图示"
+msgstr "Architecture Diagram"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:15
+msgid ""
+"work 127.0.0.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(示例 IP "
+"以实际为准)   manager 127.0.0.2 &nbsp;&nbsp;(示例 IP 以实际为准)"
+msgstr ""
+"work 127.0.0.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Example IP - use actual value)   manager 127.0.0.2 &nbsp;&nbsp;(Example IP - use actual value)"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:18
+msgid ""
+"![image.png](../../imgs/deploy_clustered_structure.png)   注：实际生产环境中 Alice"
+" 应该对外暴露一个统一的 LB 地址，由 LB 将请求代理至 Alice1 或 Alice2 节点实例。"
+msgstr ""
+"![image.png](../../imgs/deploy_clustered_structure.png)   Note: In production, Alice should expose a unified LB address to proxy requests to Alice1/Alice2 instances."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:18
+msgid "image.png"
+msgstr "image.png"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:21
+msgid "部署流程"
+msgstr "Deployment Process"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:23
+msgid "完成 Docker Swarm 组网"
+msgstr "Complete Docker Swarm Networking"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:25
+msgid "Docker Swarm 是 Docker 官方提供的容器编排工具，用于管理和编排多个 Docker 容器，构建和管理容器集群。"
+msgstr "Docker Swarm is Docker's official container orchestration tool for managing and orchestrating multiple Docker containers and clusters."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:27
+msgid "**相关描述**"
+msgstr "**Related Documentation**"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:29
+msgid ""
+"[Docs "
+"阿里云](https://developer.aliyun.com/article/1532136?spm=5176.26934562.main.1.73d24271TEV7gG)"
+msgstr ""
+"[Alibaba Cloud Docs](https://developer.aliyun.com/article/1532136?spm=5176.26934562.main.1.73d24271TEV7gG)"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:31
+msgid "[Docs Docker](https://docs.docker.com/reference/cli/docker/swarm/)"
+msgstr "[Docker Docs](https://docs.docker.com/reference/cli/docker/swarm/)"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:33
+msgid "初始化 swarm"
+msgstr "Initialize Swarm"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:41
+msgid ""
+"执行完上述命令可得到以下描述信息，以及 Token，需要记录该 Token 字符串，在 worker 节点宿主机执行可加入该 docker "
+"swarm 集群。   Token 遗忘丢失也可以通过`docker swarm join-token manager`命令进行查询"
+msgstr ""
+"After executing the command, record the generated Token string for worker nodes to join the Swarm cluster. If lost, retrieve via `docker swarm join-token manager`."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:56
+msgid "初始化 Docker Network Create"
+msgstr "Initialize Docker Network Creation"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:58
+msgid ""
+"[[Docs Docker] Docker Network "
+"Create](https://docs.docker.com/reference/cli/docker/network/create/)   在"
+" docker manager 节点主机上执行："
+msgstr ""
+"[[Docker Docs] Network Create](https://docs.docker.com/reference/cli/docker/network/create/) Execute on Docker manager node:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:67
+msgid ""
+"`--subnet`按需（最多多少个容器使用该网段）进行设置，可不设置。 `kuscia-exchange-cluster`network "
+"名字，需要在脚本部署时使用，**必须是这个名字**。"
+msgstr ""
+"`--subnet` Set based on container capacity needs (optional). Network name `kuscia-exchange-cluster` **must remain unchanged** for deployment scripts."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:70
+msgid "Worker 节点加入 Swarm"
+msgstr "Worker Nodes Join Swarm"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:72
+msgid "在 worker 节点的宿主机执行 docker swarm init 得到的 join 命令"
+msgstr "Execute the `docker swarm join` command obtained from `docker swarm init` on worker nodes"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:78
+msgid "执行完 join 命令可得到以下执行结果。"
+msgstr "Execution result after joining Swarm:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:85
+msgid ""
+"也可以在 manager 节点执行 `docker node ls` 查询已加入集群的节点状态，并且通过 `STATUS` "
+"字段来判断节点连接是否正常。"
+msgstr ""
+"On manager node, execute `docker node ls` to check node status. Verify connectivity via the `STATUS` field."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:94
+msgid "注：在实际生产中，设置多个管理节点（manager nodes）对于高可用性和容错是非常关键的。详情请参考："
+msgstr "Note: Multiple manager nodes are critical for HA/fault tolerance in production. Refer to:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:96
+msgid ""
+"[Promote or demote a node](https://docs.docker.com/engine/swarm/manage-"
+"nodes/#promote-or-demote-a-node)"
+msgstr ""
+"[Promote/Demote Nodes](https://docs.docker.com/engine/swarm/manage-nodes/#promote-or-demote-a-node)"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:97
+msgid ""
+"[Administer and maintain a swarm of Docker "
+"Engines](https://docs.docker.com/engine/swarm/admin_guide/ )"
+msgstr ""
+"[Swarm Administration Guide](https://docs.docker.com/engine/swarm/admin_guide/)"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:99
+msgid "Kuscia 部署实例"
+msgstr "Kuscia Deployment Example"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:101
+msgid ""
+"这里使用 kuscia.sh 实现 P2P 模式中`alice`节点的双机双副本部署。 "
+"部署参考：[多机部署点对点集群](./deploy_p2p_cn.md)"
+msgstr ""
+"Deploy dual-node Alice in P2P mode using kuscia.sh. Refer to [Multi-node P2P Deployment](./deploy_p2p_cn.md)."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:113
+msgid "修改配置文件创建使用的 DB"
+msgstr "Modify Configuration File for Database Setup"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:115
+msgid "验证使用的示例，仅供参考："
+msgstr "Validation example for reference:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:123
+msgid "初始化 Kuscia 配置文件"
+msgstr "Initialize Kuscia Configuration File"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:125
+msgid "Kuscia init 参数请参考[配置文件](../kuscia_config_cn.md#快速生成配置文件)，命令示例如下："
+msgstr "Refer to [Configuration Guide](../kuscia_config_cn.md#快速生成配置文件) for Kuscia init parameters. Example:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:131
+msgid "部署 Kuscia"
+msgstr "Deploy Kuscia"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:133
+msgid "部署端口请参考[这里](../kuscia_ports_cn.md)，命令示例如下："
+msgstr "Refer to [Port Documentation](../kuscia_ports_cn.md) for port configurations. Example command:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:139
+msgid ""
+"如果部署时报错 `kuscia-exchange-cluster 已经存在且不是预期的类型` 等类似错误，需要将 network "
+"手动删除后重新部署："
+msgstr ""
+"If error occurs (`kuscia-exchange-cluster exists with unexpected type`), manually delete the network and redeploy:"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:146
+msgid ""
+"后续部署其它实例需要将 autonomy_alice.yaml 拷贝过去而不是重新生成<br> "
+"后续步骤可参考官网进行配置：[多机部署点对点集群](./deploy_p2p_cn.md)"
+msgstr ""
+"For additional instances, copy autonomy_alice.yaml instead of regenerating.<br> Follow [Multi-node P2P Deployment](./deploy_p2p_cn.md) for subsequent steps."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:149
+msgid "按照顺序完成：配置证书 > 配置路由授权 > 拉起示例任务<br> 注：使用 LB 代理时，路由授权地址使用代理服务地址建立。"
+msgstr ""
+"Complete in order: Certificate Configuration > Route Authorization > Start Example Task<br> Note: Use LB proxy address for route authorization when using load balancer."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:152
+msgid "LB 示例（Nginx）"
+msgstr "LB Example (Nginx)"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:154
+msgid "以 Nginx 为例   拉起 Nginx 服务通过 8080 端口代理多副本中 alice 的宿主机地址与端口。"
+msgstr ""
+"Example using Nginx: Start Nginx service to proxy Alice's host addresses/ports via port 8080 for multi-replica deployment."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:162
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:170
+msgid "修改配置文件"
+msgstr "Modify Configuration File"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:164
+msgid "从 NGINX 镜像中拷贝配置文件至宿主机当前命令目录"
+msgstr "Copy NGINX configuration file from image to host's current directory"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:172
+msgid ""
+"参考官网中 Nginx 配置示例修改配置文件中 http 代理块，如果 Kuscia 需要使用 https 访问，在修改的配置中 `server`"
+" 块中使用 https，并注释原有 http 和打开 https 注释部分"
+msgstr ""
+"Modify HTTP proxy block in Nginx config based on official examples. For HTTPS access, configure `server` block with HTTPS and adjust comments accordingly."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:175
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:177
+msgid "nginx 代理参数配置示例"
+msgstr "Nginx Proxy Configuration Example"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:177
+msgid "nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。"
+msgstr "Nginx proxy configuration example. Details reference [here](../networkrequirements.md#nginx)."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:179
+msgid "启动并挂载配置"
+msgstr "Start and Mount Configuration"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:181
+msgid "使用 Docker 拉起 Nginx 服务，并把修改的配置文件挂载至容器内"
+msgstr "Start Nginx service via Docker and mount modified configuration files into container"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:187
+msgid "验证代理服务"
+msgstr "Verify Proxy Service"
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:189
+msgid "多次请求代理服务，返回的 `kuscia-error-message` 信息是随机的。"
+msgstr "Multiple proxy requests will return randomized `kuscia-error-message` information."
+
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:195
+msgid "完整配置文件参考"
+msgstr "Complete Configuration Reference"
