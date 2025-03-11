@@ -1,0 +1,183 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/log_cn.md:1
+msgid "Log"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:3
+msgid "接口详情"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:5
+msgid "查询日志"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:7
+msgid "说明"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:9
+msgid "查询某个 Kuscia 任务的运行日志"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:11
+msgid "仅支持 Lite 和 Autonomy节点，不支持 Master 节点"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:12
+msgid "仅支持查询任务本方节点的日志，即任务如果有 Alice，Bob 多方参与，调用 Alice 节点的接口只会查询 Alice 节点的运行日志"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:13
+msgid "调用查询日志接口时，对于重启了多次的 pod 容器，会查询最新一次重启的 pod 容器的日志文件并返回"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:15
+msgid "HTTP 路径"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:17
+msgid "/api/v1/log/task/query"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:19
+msgid "请求（QueryLogRequest）"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "header"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "[RequestHeader](summary_cn.md#requestheader)"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "自定义请求内容"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "task_id"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "string"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "必填"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "TaskID"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "replica_idx"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "int"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "Task对应的Pod副本索引(从0开始)；默认不填时，单副本时直接展示，多副本时选择第一个副本展示"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "container"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "容器名，默认不填时，Task对应的Pod只有一个容器时展示，存在多个容器时报错"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "follow"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "bool"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "是否跟踪pod日志，默认为false（不跟踪）"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:29
+msgid "响应（QueryLogResponse）"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:31
+msgid "流式返回响应结果，每次返回的结果如下："
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "status"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "[Status](summary_cn.md#status)"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "状态信息"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "log"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md
+msgid "正确时返回日志内容（每次返回多行），错误时返回错误信息。"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:38
+msgid "请求示例"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:40
+msgid "发起请求"
+msgstr ""
+
+#: ../../reference/apis/log_cn.md:59
+msgid "请求响应成功结果："
+msgstr ""
+
