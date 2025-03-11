@@ -1,0 +1,141 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../tutorial/custom_registry.md:1
+msgid "如何在 Kuscia 中使用自定义镜像仓库"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:3
+msgid ""
+"Kuscia支持自动拉取远程的应用镜像（比如：SecretFlow 等），这样可以不用手动导入镜像到容器中。可以在 [Kuscia "
+"配置文件](../deployment/kuscia_config_cn.md)中配置私有（or 公开）镜像仓库地址。"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:5
+msgid "如何配置使用自定义镜像仓库"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:7
+msgid ""
+"配置文件中的 `image` 字段用来配置自定义仓库。相关含义参考 [Kuscia "
+"配置文件说明](../deployment/kuscia_config_cn.md)"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:9
+msgid "私有镜像仓库"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:11
+msgid "如果有一个私有镜像仓库（示例：`private.registry.com`），对应的配置如下："
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:23
+msgid "公开镜像仓库"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:25
+msgid "如果使用公开的镜像仓库（示例：`secretflow-registry.cn-hangzhou.cr.aliyuncs.com`），对应的配置如下："
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:35
+msgid "关于镜像仓库和AppImage的搭配使用"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:37
+msgid "配置文件中有`image`字段，`AppImage` 中也存在image相关的配置，他们的搭配关系示例如下："
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "配置文件"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "AppImage配置"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "实际镜像地址"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "备注"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "无配置"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "secretflow/app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "docker.io/secretflow/app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "private.registry.com/secretflow/app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "private.registry.com"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "private.registry.com/app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "private.registry.com/secretflow"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "推荐配置"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "test/app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "public.aliyun.com/secretflow/app:v1"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md
+msgid "强烈不推荐配置，未来可能会禁止这种配置"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:50
+msgid ""
+"注：Kuscia推荐在 `AppImage` "
+"中只配置镜像名（不带镜像仓库地址），否则切换仓库的时候，需要批量修改`AppImage`，所以不建议如此配置。"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:52
+msgid "镜像拉取失败"
+msgstr ""
+
+#: ../../tutorial/custom_registry.md:54
+msgid "当发现镜像拉取失败时，请确认 配置文件中仓库地址，以及账密相关配置是否正确， 以及参考上文，确保 AppImage 的镜像地址配置正确."
+msgstr ""
+

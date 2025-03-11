@@ -1,0 +1,183 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:1
+msgid "如何使用 Kuscia API 部署 DataProxy"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:3
+msgid ""
+"本教程将以 [Kuscia API Serving](../reference/apis/serving_cn) 作为参考，介绍如何使用 "
+"Kuscia API 部署 DataProxy。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:5
+msgid "准备节点"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:7
+msgid "Docker 部署节点请参考[这里](../deployment/Docker_deployment_kuscia/index.rst)。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:8
+msgid "K8s 部署节点请参考[这里](../deployment/K8s_deployment_kuscia/index.rst)。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:10
+msgid "本示例在**点对点组网模式**下完成。在中心化组网模式下，证书的配置会有所不同。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:14
+msgid "获取 KusciaAPI 证书和 Token"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:16
+msgid ""
+"如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 "
+"Token。协议参考[这里](../troubleshoot/concept/protocol_describe.md)。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:18
+msgid "点对点组网模式"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:20
+msgid "证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:22
+msgid ""
+"这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice "
+"节点的`/home/kuscia/var/certs/`目录下："
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "文件名"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "文件功能"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "kusciaapi-server.key"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "服务端私钥文件"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "kusciaapi-server.crt"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "服务端证书文件"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "ca.crt"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "CA 证书文件"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "token"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md
+msgid "认证 Token ，在 headers 中添加 Token: { token 文件内容}"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:31
+msgid "中心化组网模式"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:33
+msgid "证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下："
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:42
+msgid "K8s 模式部署 DataProxy"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:44
+msgid "下面以 K8s RunK 模式为例。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:46
+#: ../../tutorial/run_dp_on_kuscia_cn.md:158
+msgid "修改 cm 配置文件，并重启节点"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:64
+#: ../../tutorial/run_dp_on_kuscia_cn.md:176
+msgid "登录节点"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:70
+#: ../../tutorial/run_dp_on_kuscia_cn.md:182
+msgid "注册 AppImage"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:76
+#: ../../tutorial/run_dp_on_kuscia_cn.md:188
+msgid "使用 Kuscia API 部署 DataProx"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:78
+#: ../../tutorial/run_dp_on_kuscia_cn.md:190
+msgid "下面以 MTLS 协议为例，其他协议请参考[这里](../troubleshoot/concept/protocol_describe.md)。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:80
+#: ../../tutorial/run_dp_on_kuscia_cn.md:192
+msgid "部署 DataProxy"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:102
+#: ../../tutorial/run_dp_on_kuscia_cn.md:214
+msgid "查询 DataProxy"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:118
+#: ../../tutorial/run_dp_on_kuscia_cn.md:230
+msgid "删除 DataProxy"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:134
+#: ../../tutorial/run_dp_on_kuscia_cn.md:246
+msgid "验证部署完成"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:136
+#: ../../tutorial/run_dp_on_kuscia_cn.md:248
+msgid "执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:154
+msgid "Docker 模式部署 DataProxy"
+msgstr ""
+
+#: ../../tutorial/run_dp_on_kuscia_cn.md:156
+msgid "下面以 Docker RunC 模式为例。"
+msgstr ""
+

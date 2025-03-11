@@ -1,0 +1,111 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/kuscia_deployment_instructions.md:1
+msgid "Kuscia 部署指引"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:3
+msgid "目前 Kuscia 支持 Docker 和 K8s 两种部署方式，请根据部署环境选择相应的部署方式。"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:5
+msgid "前置准备"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:7
+msgid "Kuscia 对部署环境有一定要求，请参考[部署要求](./deploy_check.md)提前准备好环境"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:9
+msgid "Docker 多机部署 Kuscia"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:11
+msgid "Docker 多机部署 Kuscia 分为点对点模式和中心化模式，请根据需要选择相应的部署方式。"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:13
+msgid "点对点模式：部署参考[多机部署点对点集群](./Docker_deployment_kuscia/deploy_p2p_cn.md)"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:14
+msgid "中心化模式：部署参考[多机部署中心化集群](./Docker_deployment_kuscia/deploy_master_lite_cn.md)"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:16
+msgid "K8s 集群部署 Kuscia"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:18
+msgid "在 K8s 集群部署中，我们将介绍点对点集群、中心化集群以及如何使用 RunP 运行时模式来训练任务。"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:20
+msgid "点对点模式：部署参考[部署点对点集群](./K8s_deployment_kuscia/K8s_p2p_cn.md)"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:21
+msgid "中心化模式：部署参考[部署中心化集群](./K8s_deployment_kuscia/K8s_master_lite_cn.md)"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:22
+msgid ""
+"使用 RunP 运行时模式来训练任务：部署参考[使用 RunP "
+"模式部署节点](./K8s_deployment_kuscia/deploy_with_runp_cn.md)"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:24
+msgid "验证部署"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:26
+msgid "Kuscia 部署完成后，可以通过以下几个方面来验证部署是否成功："
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:28
+msgid "查看 Kuscia 容器或者 Pod 是否正常运行"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:29
+msgid "查看 Kuscia 节点之间网络是否正常通行"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:30
+msgid "验证 Kuscia 是否可以正常训练任务"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:32
+msgid "故障排查"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:34
+msgid "部署过程中遇到问题可以先参考[常见问题](../troubleshoot/deployment/deploy_failed.md)进行排查"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:36
+msgid "更多帮助"
+msgstr ""
+
+#: ../../deployment/kuscia_deployment_instructions.md:38
+msgid ""
+"如需进一步帮助，请在 Kuscia [Issue](https://github.com/secretflow/kuscia/issues) "
+"上提交问题。"
+msgstr ""
+

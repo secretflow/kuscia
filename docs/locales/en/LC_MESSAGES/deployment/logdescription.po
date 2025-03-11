@@ -1,0 +1,279 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/logdescription.md:1
+msgid "日志说明"
+msgstr ""
+
+#: ../../deployment/logdescription.md:3
+msgid "前言"
+msgstr ""
+
+#: ../../deployment/logdescription.md:5
+msgid "日志在应用部署、业务运行和故障排除的过程中起到了非常的重要，本文将详细的描述日志对应的路径。"
+msgstr ""
+
+#: ../../deployment/logdescription.md:7
+msgid "Kuscia 目录结构"
+msgstr ""
+
+#: ../../deployment/logdescription.md:50
+msgid "日志文件说明"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "路径"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "内容"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/kuscia.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "记录了 Kuscia 启动状态、节点状态、健康检查、任务调度等相关的日志，当 Kuscia 启动、任务运行失败时，可以通过该日志排查问题"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/k3s.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "记录了 k3s 相关的日志，当检测到 k3s 启动失败时，可以通过该日志排查问题"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/containerd.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "记录了 containerd 相关的日志，containerd 启动失败、镜像更新存储等可以通过该日志查询"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/kusciaapi.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "记录了所有 KusciaAPI 的调用请求与响应日志"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/envoy/internal.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "记录了节点发出的请求日志（即本节点（+内部应用）访问其他节点的网络请求）,日志格式参考下文"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/envoy/external.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "记录了节点收到的请求日志（即其他节点访问本节点的网络请求）,日志格式参考下文"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/logs/envoy/envoy.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "envoy 代理的日志文件,记录了 envoy 网关的运行状态、连接情况、流量信息以及问题排查等相关的内容"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "`/home/kuscia/var/stdout/pods/alice_xxxx/xxx/*.log`"
+msgstr ""
+
+#: ../../deployment/logdescription.md
+msgid "任务的标准输出(stdout)的内容"
+msgstr ""
+
+#: ../../deployment/logdescription.md:64
+msgid ""
+"K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl logs "
+"${engine_pod_name} -n xxx` 查看任务的标准输出日志"
+msgstr ""
+
+#: ../../deployment/logdescription.md:67
+msgid "Envoy 日志格式"
+msgstr ""
+
+#: ../../deployment/logdescription.md:69
+msgid "`internal.log` 日志格式如下："
+msgstr ""
+
+#: ../../deployment/logdescription.md:83
+msgid "internal.log 格式说明如下："
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "属性"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "值"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`对端节点的 IP`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "1.2.3.4"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`收到请求时间`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "23/Oct/2023:01:58:02 +0000"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`发送节点`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "alice"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`请求的域名`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "fgew-cwqearkz-node-4-0-fed.bob.svc"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`URL`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "/org.interconnection.link.ReceiverService/Push"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`HTTP 方法/版本`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "HTTP/1.1"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`TRANCEID`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "743d0da7e6814c2e"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`SPANID`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`HTTP 返回码`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "200"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`RESPONSE_FLAGS`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid ""
+"-，表示有关响应或连接的其他详细信息，详情可以参考[envoy官方文档](https://www.envoyproxy.io/docs/envoy/v1.25.0/configuration/observability/access_log/usage"
+"#command-operators)"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`CONTENT-LENGTH`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "1791，表示 body 的长度"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`DURATION`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "0，表示请求总耗时"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`REQ_META`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "0，表示请求body的meta信息"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`RES_META`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`REQUEST_DURATION`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "0，接收下游请求报文的时间"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`RESPONSE_DURATION`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "-，从请求开始到响应开始的时间"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "`RESPONSE_TX_DURATION`"
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "-，发送上游回包的时间"
+msgstr ""
+
+#: ../../deployment/logdescription.md:105
+msgid "`external.log` 日志格式如下："
+msgstr ""
+
+#: ../../deployment/logdescription.md:118
+msgid "external.log 格式说明如下："
+msgstr ""
+
+#: ../../deployment/logdescription.md:63
+msgid "0，表示请求 body 的 meta 信息"
+msgstr ""
+
