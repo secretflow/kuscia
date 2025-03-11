@@ -107,7 +107,7 @@ msgstr "NETWORK STATSTICS(alice-bob): Network metrics for the request link from 
 msgid ""
 "BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \\<theshold\\>` "
 "调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；"
-msgstr "BANDWIDTH: Network bandwidth metric. The default threshold is 10Mbits/sec. You can adjust it using the --speed_thres <theshold> option. If the detected value is less than 10Mbits/sec, the result will be WARNING;"
+msgstr "BANDWIDTH: Network bandwidth metric. The default threshold is 10Mbits/sec. You can adjust it using the `--speed_thres <theshold>` option. If the detected value is less than 10Mbits/sec, the result will be WARNING;"
 
 #: ../../deployment/diagnose_tool.md:112
 msgid "CONNECTION：联通性，检测 Kuscia Job 的服务网络联通；"
@@ -121,13 +121,13 @@ msgstr "PROXY_BUFFER: Gateway buffer. A FAIL result indicates that the gateway b
 msgid ""
 "REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_thres \\<threshold\\>`"
 " 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；"
-msgstr "REQUEST_BODY_SIZE: Gateway request body size limit. The default threshold is 1MB. You can adjust it using the --size_thres <threshold> option. If the detected value is less than 1MB, the result will be WARNING;"
+msgstr "REQUEST_BODY_SIZE: Gateway request body size limit. The default threshold is 1MB. You can adjust it using the `--size_thres <threshold>` option. If the detected value is less than 1MB, the result will be WARNING;"
 
 #: ../../deployment/diagnose_tool.md:115
 msgid ""
 "RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_thres "
 "\\<threshold\\>`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。"
-msgstr "RTT: Transmission delay. The default threshold is 50ms. You can adjust it using the --rtt_thres <threshold> option. If the detected value exceeds 50ms, the result will be WARNING."
+msgstr "RTT: Transmission delay. The default threshold is 50ms. You can adjust it using the `--rtt_thres <threshold>` option. If the detected value exceeds 50ms, the result will be WARNING."
 
 #: ../../deployment/diagnose_tool.md:116
 msgid "NETWORK STATSTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。"
