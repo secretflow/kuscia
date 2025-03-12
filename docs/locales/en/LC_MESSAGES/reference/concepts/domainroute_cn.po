@@ -28,7 +28,7 @@ msgid ""
 "用于在中心化网络中配置 Lite 节点之间的路由规则，DomainRouteController 会根据 ClusterDomainRoute "
 "在各方 Lite 节点的 Namespace 中创建 DomainRoute。具体用例请参考下文。"
 msgstr ""
-"DomainRoute is used to configure routing rules between Lite nodes and Master in centralized networks, routing rules between Lite nodes, and routing rules between Autonomy nodes in peer-to-peer (P2P) networks. ClusterDomainRoute is used to configure routing rules between Lite nodes in centralized networks, where the DomainRouteController creates DomainRoutes in the Namespaces of all participating Lite nodes based on ClusterDomainRoute. Specific use cases are detailed below."
+"DomainRoute is used to configure routing rules between Lite nodes and Master in centralized networks, routing rules between Lite nodes, and routing rules between Autonomy nodes in peer-to-peer (P2P) networks. ClusterDomainRoute is used to configure routing rules between Lite nodes in centralized networks, where the DomainRouteController creates DomainRoutes in the Namespaces of all participating Lite nodes based on ClusterDomainRoute. Detailed use cases are provided in the following sections."
 
 #: ../../reference/concepts/domainroute_cn.md:6
 msgid "用例"
