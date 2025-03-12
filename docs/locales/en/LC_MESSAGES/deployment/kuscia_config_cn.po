@@ -26,7 +26,7 @@ msgid ""
 "Kuscia 配置文件默认位置为 Kuscia 容器的 /home/kuscia/etc/conf/kuscia.yaml, "
 "不同的部署模式所需的配置内容不同。 Kuscia 的配置文件由公共配置和每个模式的特殊配置组成，具体细节可以参考下文。 Kuscia "
 "的自动部署脚本会产生一份默认的配置文件，如果需要调整，可以将调整后的配置文件挂载到容器相应位置。"
-msgstr "The default configuration file for Kuscia is located at /home/kuscia/etc/conf/kuscia.yaml within the container. Different deployment modes require distinct configuration contents. The configuration file consists of common settings and mode-specific configurations, with detailed specifications provided below. The automatic deployment script generates a default configuration file, which can be customized by mounting the modified file to the corresponding container path."
+msgstr "The default configuration file for Kuscia is located at `/home/kuscia/etc/conf/kuscia.yaml` within the container. Different deployment modes require distinct configuration contents. The configuration file consists of common settings and mode-specific configurations, with detailed specifications provided below. The automatic deployment script generates a default configuration file, which can be customized by mounting the modified file to the corresponding container path."
 
 #: ../../deployment/kuscia_config_cn.md:6
 msgid "Kuscia 配置"
@@ -54,7 +54,7 @@ msgid ""
 "`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 "
 "`cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。生产环境使用时建议将 domainID "
 "设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite"
-msgstr "`domainID`: [Domain ID](../reference/concepts/domain_cn) of the current Kuscia instance must comply with RFC 1123 label naming conventions. Predefined reserved IDs include `default`, `kube-system`, `kube-public`, `kube-node-lease`, `master`, and `cross-domain`. For production environments, use globally unique identifiers following the pattern: organization-department-node (e.g., domainID: mycompany-secretflow-trainlite)."
+msgstr "`domainID`: [Domain ID](../reference/concepts/domain_cn), The unique identifier for the Kuscia instance, compliant with RFC 1123 label naming conventions. Predefined reserved IDs include `default`, `kube-system`, `kube-public`, `kube-node-lease`, `master`, and `cross-domain`. For production environments, use globally unique identifiers following the pattern: organization-department-node (e.g., domainID: mycompany-secretflow-trainlite)."
 
 #: ../../deployment/kuscia_config_cn.md:100
 msgid ""
@@ -64,7 +64,7 @@ msgid ""
 "-it --rm secretflow-registry.cn-"
 "hangzhou.cr.aliyuncs.com/secretflow/kuscia "
 "scripts/deploy/generate_rsa_key.sh` 生成"
-msgstr "`domainKeyData`: Domain private key configuration for inter-node authentication and application certificate issuance. Generates MTLS certificates for task engines to secure all internal/external communications. Generate using command: `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh`"
+msgstr "`domainKeyData`: Domain private key configuration for inter-node authentication and application certificate issuance. This key generates MTLS certificates for task engines, securing all internal and external communications. Generate using command: `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh`"
 
 #: ../../deployment/kuscia_config_cn.md:101
 msgid "`logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO"
@@ -87,7 +87,7 @@ msgstr "`masterEndpoint`: Master node connection address (e.g., <https://172.18.
 msgid ""
 "`runtime`: 节点运行时 "
 "runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)"
-msgstr "`runtime`: Node runtime options: runc, runk, runp. Detailed explanations available in [architecture documentation](../reference/architecture_cn.md#agent)."
+msgstr "`runtime`: Specifies the node runtime: `runc` (default), `runk`, or `runp`. See [architecture documentation](../reference/architecture_cn.md#agent) for detailed explanations."
 
 #: ../../deployment/kuscia_config_cn.md:105
 msgid "`runk`: 当 runtime 为 runk 时配置"
@@ -143,7 +143,7 @@ msgstr "`image`: Container image configuration (currently supports single regist
 msgid ""
 "`pullPolicy`: [暂不支持] "
 "镜像策略，使用本地镜像仓库还是远程镜像仓库；可选值有remote/local，不区分大小写，默认为local；当为remote时，如果发现本地镜像不存在，会根据registry账密自动拉取远程的镜像；如果为local时，镜像需要手动导入kuscia内，如果镜像没有导入kuscia，任务会启动失败。local模式因为不拉取远程镜像，安全性会更高，但会有易用性的损失，用户可结合业务场景自行选择。"
-msgstr "`pullPolicy`: [Not supported] Image pull policy options: remote/local (case-insensitive, default: local). Remote mode automatically pulls images from registry when missing locally. Local mode requires manual image import. Local mode offers enhanced security but reduced usability."
+msgstr "`pullPolicy`: [Not supported] Image pull policy: `remote` (pull from registry if not local) or `local` (require manual import). `remote` automatically pulls images, while `local` enhances security but requires pre-importing images."
 
 #: ../../deployment/kuscia_config_cn.md:117
 msgid "`defaultRegistry`: 默认镜像仓库(对应registries中其中一个registry的name字段)"
