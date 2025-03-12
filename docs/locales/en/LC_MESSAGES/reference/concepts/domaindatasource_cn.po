@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../reference/concepts/domaindatasource_cn.md:1
 msgid "DomainDataSource"
-msgstr ""
+msgstr "DomainDataSource"
 
 #: ../../reference/concepts/domaindatasource_cn.md:3
 msgid ""
@@ -30,79 +30,83 @@ msgid ""
 "等信息（敏感信息会加密保存在DomainDataSource 的encryptedInfo字段中）。一个描述本地文件路径数据源的 "
 "DomainDataSource 对象会包含：本地文件数据源的绝对路径（如下示例中的uri字段）；"
 msgstr ""
+"Kuscia utilizes DomainDataSource to manage data source information, which refers to storage locations that can be local file paths, object storage services (OSS) compatible with AWS S3 protocol, MySQL databases, etc. The DomainDataSource object describes the metadata of data sources. For instance, an OSS-related DomainDataSource object contains endpoints, bucket, access key (AK), and secret key (SK) required for OSS access (sensitive information is encrypted in the encryptedInfo field). A local filesystem data source DomainDataSource object includes the absolute path specified in the uri field."
 
 #: ../../reference/concepts/domaindatasource_cn.md:6
 msgid "以下是一个描述本地文件路径（localfs）数据源的 DomainDataSource CRD 的示例："
-msgstr ""
+msgstr "The following is an example of a DomainDataSource CRD describing a local filesystem (localfs) data source:"
 
 #: ../../reference/concepts/domaindatasource_cn.md:26
 msgid "DomainDataSource `metadata` 的子字段详细介绍如下："
-msgstr ""
+msgstr "The subfields of DomainDataSource `metadata` are detailed below:"
 
 #: ../../reference/concepts/domaindatasource_cn.md:28
 msgid ""
 "`labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/labels/)。"
 msgstr ""
+"`labels`: Used in K3s to facilitate efficient querying and watch operations. Reference: [Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:29
 msgid "`name`：表示数据源的标识，用于唯一标识数据源。"
-msgstr ""
+msgstr "`name`: Unique identifier for the data source."
 
 #: ../../reference/concepts/domaindatasource_cn.md:30
 msgid "`namespace`：表示 DomainDataSource 所属的命名空间，即所属的节点，当前示例为`alice`。"
-msgstr ""
+msgstr "`namespace`: Specifies the node namespace to which the DomainDataSource belongs, currently `alice` in this example."
 
 #: ../../reference/concepts/domaindatasource_cn.md:32
 msgid "DomainDataSource `spec` 的子字段详细介绍如下："
-msgstr ""
+msgstr "The subfields of DomainDataSource `spec` are detailed below:"
 
 #: ../../reference/concepts/domaindatasource_cn.md:34
 msgid ""
 "`accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy "
 "访问数据源（DataProxy暂未支持），当前默认直连数据源，不经过DataProxy。"
 msgstr ""
+"`accessDirectly`: Determines whether privacy computing applications (e.g., SecretFlow) should access the data source directly or via DataProxy (currently unsupported). The default is direct access."
 
 #: ../../reference/concepts/domaindatasource_cn.md:35
 msgid "`encryptedInfo`：加密存储访问数据源所需的信息，如数据源为 MySQL 时，此字段会加密保存 MySQL 的链接串。"
-msgstr ""
+msgstr "`encryptedInfo`: Stores encrypted connection details (e.g., MySQL connection strings) for data source access."
 
 #: ../../reference/concepts/domaindatasource_cn.md:36
 msgid "`name`：数据源的名称，可重复，注意区别于 metadata 中的 name 字段。"
-msgstr ""
+msgstr "`name`: Replicable display name for the data source, distinct from the metadata name field."
 
 #: ../../reference/concepts/domaindatasource_cn.md:37
 msgid "`type`：表示数据源的类型，类型包括：localfs, oss, mysql 。"
-msgstr ""
+msgstr "`type`: Specifies the data source type (localfs, oss, mysql)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:38
 msgid ""
 "`uri`：表示数据源的概括信息，如 localfs 此处为绝对路径（如 /home/kuscia/var/storage/data），如 OSS"
 " 此处为 bucket 与 prefix 拼接的路径（alice_bucket/kuscia/data/）。"
 msgstr ""
+"`uri`: General data source descriptor. For localfs, this is an absolute path (e.g., /home/kuscia/var/storage/data). For OSS, this combines bucket and prefix (e.g., alice_bucket/kuscia/data/)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:40
 msgid "用例"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../reference/concepts/domaindatasource_cn.md:42
 msgid "以下是一些 DomainDataSource 的典型用例："
-msgstr ""
+msgstr "The following are typical use cases for DomainDataSource:"
 
 #: ../../reference/concepts/domaindatasource_cn.md:44
 #: ../../reference/concepts/domaindatasource_cn.md:48
 msgid "创建 DomainDataSource"
-msgstr ""
+msgstr "Creating DomainDataSource"
 
 #: ../../reference/concepts/domaindatasource_cn.md:45
 #: ../../reference/concepts/domaindatasource_cn.md:52
 msgid "更新 DomainDataSource"
-msgstr ""
+msgstr "Updating DomainDataSource"
 
 #: ../../reference/concepts/domaindatasource_cn.md:46
 #: ../../reference/concepts/domaindatasource_cn.md:56
 msgid "清理 DomainDataSource"
-msgstr ""
+msgstr "Cleaning Up DomainDataSource"
 
 #: ../../reference/concepts/domaindatasource_cn.md:50
 msgid ""
@@ -110,6 +114,7 @@ msgid ""
 "Kuscia API 进行创建，[参考 kuscia API 文档](../apis/domaindatasource_cn.md#create-"
 "domain-data-source)。"
 msgstr ""
+"Since DomainDataSource contains encryptedInfo requiring domain node public key encryption, use the Kuscia API for creation. Reference: [Kuscia API Documentation](../apis/domaindatasource_en.md#create-domain-data-source)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:54
 msgid ""
@@ -117,6 +122,7 @@ msgid ""
 "Kuscia API 进行更新，[参考 kuscia API 文档](../apis/domaindatasource_cn.md#update-"
 "domain-data-source)。"
 msgstr ""
+"Updates require re-encryption of encryptedInfo with the domain node's public key. Use the Kuscia API for updates. Reference: [Kuscia API Documentation](../apis/domaindatasource_en.md#update-domain-data-source)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:58
 msgid ""
@@ -124,12 +130,12 @@ msgid ""
 "为例： 注意：清理 DomainDataSource 并不会清除真实的数据源，只是从 Kuscia 中删除 DomainDataSource "
 "CRD 对象。"
 msgstr ""
+"To delete a DomainDataSource identified as `demo-localfs-datasource` in the alice domain: Note: This operation only removes the CRD object from Kuscia, not the actual data source."
 
 #: ../../reference/concepts/domaindatasource_cn.md:61
 msgid "运行以下命令清理 DomainDataSource。"
-msgstr ""
+msgstr "Execute the following command to clean up DomainDataSource."
 
 #: ../../reference/concepts/domaindatasource_cn.md:67
 msgid "检查 Alice 下的 DomainDataSource 是否已被清理。"
-msgstr ""
-
+msgstr "Verify the cleanup of DomainDataSource under alice."
