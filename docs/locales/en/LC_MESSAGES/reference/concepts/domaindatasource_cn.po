@@ -29,8 +29,7 @@ msgid ""
 "如一个描述OSS数据源的 DomainDataSource 对象会包含：访问 OSS 所需的 Endpoints、Bucket、AK、SK "
 "等信息（敏感信息会加密保存在DomainDataSource 的encryptedInfo字段中）。一个描述本地文件路径数据源的 "
 "DomainDataSource 对象会包含：本地文件数据源的绝对路径（如下示例中的uri字段）；"
-msgstr ""
-"Kuscia utilizes DomainDataSource to manage data source information, which refers to storage locations that can be local file paths, object storage services (OSS) compatible with AWS S3 protocol, MySQL databases, etc. The DomainDataSource object describes the metadata of data sources. For instance, an OSS-related DomainDataSource object contains endpoints, bucket, access key (AK), and secret key (SK) required for OSS access (sensitive information is encrypted in the encryptedInfo field). A local filesystem data source DomainDataSource object includes the absolute path specified in the uri field."
+msgstr "Kuscia utilizes DomainDataSource to manage data source information, which refers to storage locations that can be local file paths, object storage services (OSS) compatible with AWS S3 protocol, MySQL databases, etc. The DomainDataSource object describes the metadata of data sources. For instance, an OSS-related DomainDataSource object contains endpoints, bucket, access key (AK), and secret key (SK) required for OSS access (sensitive information is encrypted in the encryptedInfo field). A local file system DomainDataSource object includes the absolute path specified in the uri field."
 
 #: ../../reference/concepts/domaindatasource_cn.md:6
 msgid "以下是一个描述本地文件路径（localfs）数据源的 DomainDataSource CRD 的示例："
