@@ -49,7 +49,7 @@ msgstr "Protocol"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "端口号"
-msgstr "Port Number"
+msgstr "Port"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "说明"
@@ -57,7 +57,7 @@ msgstr "Description"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "是否需要暴露给合作方"
-msgstr "Expose to Partners?"
+msgstr "Whether need to be exposed to partner"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "部署脚本对应参数"
