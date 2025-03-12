@@ -43,7 +43,7 @@ msgid ""
 "信息，用于在计算任务中协助应用算法组件读取数据。 当前版本 Kuscia 暂未支持检查真实的数据内容是否满足 DomainData 中提交的 "
 "meta 信息定义，后续 Kuscia 会增加对提交的 meta 信息的验证。"
 msgstr ""
-"It should be noted that all operations (creation, update, deletion) on DomainData only affect metadata records rather than actual data content. The current version does not validate whether physical data conforms to submitted metadata definitions, though future releases will implement metadata verification mechanisms."
+"It should be noted that operations on DomainData (creation, update, deletion) only affect metadata records, not the actual data. The current version does not validate whether physical data conforms to submitted metadata definitions, but future releases will implement metadata verification."
 
 #: ../../reference/concepts/domaindata_cn.md:11
 msgid "如上所述，您可以通过创建一个 DomainData 将您自己的数据加入 Kuscia 的管理，也可以通过任务生成一个新的 DomainData 。"
