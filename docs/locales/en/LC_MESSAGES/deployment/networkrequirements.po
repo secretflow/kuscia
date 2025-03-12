@@ -45,19 +45,19 @@ msgstr "NAT and firewalls may be configured with an IP whitelist. If the whiteli
 
 #: ../../deployment/networkrequirements.md:11
 msgid "如果 NAT、防火墙回复 Reset：从发送端看，HTTP 请求 503，TCP 链接被 Reset。"
-msgstr "If the NAT and firewall send back a \"Reset\" response: From the perspective of the sender, the HTTP request will result in a 503 status code, and the TCP connection will be reset.  "
+msgstr "If the NAT and firewall send back a Reset response : From the perspective of the sender, the HTTP request will result in a 503 status code, and the TCP connection will be reset.  "
 
 #: ../../deployment/networkrequirements.md:12
 msgid "如果 NAT、防火墙直接丢弃：从发送端看，请求会触发重传。"
 msgstr "If the NAT and firewall directly discard the packets: From the sender's perspective, the request will trigger a retransmission. "
 
 #: ../../deployment/networkrequirements.md:13
-msgid "防火墙可能配置安全策略：导致命中策略的请求被拒绝，导致请求503或502等。"
+msgid "防火墙可能配置安全策略：导致命中策略的请求被拒绝，导致请求 503 或 502 等。"
 msgstr "The firewall may be configured with security policies, which can cause requests that match the policies to be rejected, resulting in status codes such as 503 or 502 for the requests. "
 
 #: ../../deployment/networkrequirements.md:14
 msgid "网关拦截：网关拦截返回 405，导致请求 503、502 或 405 等。"
-msgstr "Gateway interception: When the gateway intercepts the request, it returns a 405 status code, which may lead to status codes such as 503, 502 or 405 for the request.  "
+msgstr "Gateway interception: Gateway interception returns 405, resulting in requests for 503, 502, or 405, etc. "
 
 #: ../../deployment/networkrequirements.md:16
 msgid "参数要求"
@@ -85,7 +85,7 @@ msgstr "HTTP layer: Please confirm the timeout of the institutional proxy (e.g.,
 
 #: ../../deployment/networkrequirements.md:24
 msgid "网关支持发送 Body <= 2MB 的内容"
-msgstr "The gateway should support sending content with a Body size of ≤ 2MB."
+msgstr "The gateway supports sending content with body <= 2MB"
 
 #: ../../deployment/networkrequirements.md:25
 msgid "不针对 Request/Response 进行缓冲，以免造成性能低下；如果是 Nginx 网关可以参考下文的配置"
@@ -97,7 +97,7 @@ msgstr "A large amount of random number transmission in privacy computing may tr
 
 #: ../../deployment/networkrequirements.md:27
 msgid "确认对外暴露的 IP 和端口，以及对端机构的出口 IP 是否已经配置了白名单"
-msgstr "Confirm the externally exposed IP and port, and whether the whitelist has been configured for the egress IP of the counterpart institution."
+msgstr "Confirm the externally exposed IP and ports, and whether the whitelist has been configured for the egress IP of the counterpart institution."
 
 #: ../../deployment/networkrequirements.md:29
 msgid "网络联通说明"
