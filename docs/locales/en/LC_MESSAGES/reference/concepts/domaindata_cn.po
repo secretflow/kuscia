@@ -26,7 +26,7 @@ msgid ""
 "在 Kuscia 中，DomainData 表示被 Kuscia 所管理的数据对象，包括 表、模型、规则和报告等。DomainData "
 "属于节点内资源，每一个 DomainData 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。"
 msgstr ""
-"In Kuscia, DomainData refers to data objects managed by the platform, including tables, models, rules, and reports. As node-local resources, each DomainData instance is associated with a specific Domain and is exclusively accessible within its designated Domain."
+"In Kuscia, DomainData represents data objects managed by the platform, including tables, models, rules, and reports. As node-local resources, each DomainData instance is associated with a specific Domain and is exclusively accessible within that Domain."
 
 #: ../../reference/concepts/domaindata_cn.md:5
 msgid ""
