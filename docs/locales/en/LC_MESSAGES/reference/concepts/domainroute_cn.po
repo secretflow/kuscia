@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../reference/concepts/domainroute_cn.md:1
 msgid "DomainRoute"
-msgstr ""
+msgstr "DomainRoute"
 
 #: ../../reference/concepts/domainroute_cn.md:3
 msgid ""
@@ -28,170 +28,177 @@ msgid ""
 "用于在中心化网络中配置 Lite 节点之间的路由规则，DomainRouteController 会根据 ClusterDomainRoute "
 "在各方 Lite 节点的 Namespace 中创建 DomainRoute。具体用例请参考下文。"
 msgstr ""
+"DomainRoute is used to configure routing rules between Lite nodes and Master in centralized networks, routing rules between Lite nodes, and routing rules between Autonomy nodes in peer-to-peer (P2P) networks. ClusterDomainRoute is used to configure routing rules between Lite nodes in centralized networks, where the DomainRouteController creates DomainRoutes in the Namespaces of all participating Lite nodes based on ClusterDomainRoute. Specific use cases are detailed below."
 
 #: ../../reference/concepts/domainroute_cn.md:6
 msgid "用例"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../reference/concepts/domainroute_cn.md:8
 msgid "以下是一些 DomainRoute 和 ClusterDomainRoute 的典型用例："
-msgstr ""
+msgstr "The following are typical use cases for DomainRoute and ClusterDomainRoute:"
 
 #: ../../reference/concepts/domainroute_cn.md:10
 #: ../../reference/concepts/domainroute_cn.md:14
 msgid "中心化集群配置 Lite 访问 Master 的授权"
-msgstr ""
+msgstr "Configuring authorization for Lite to access Master in centralized clusters"
 
 #: ../../reference/concepts/domainroute_cn.md:11
 #: ../../reference/concepts/domainroute_cn.md:47
 msgid "中心化集群配置 Lite 节点之间的路由规则"
-msgstr ""
+msgstr "Configuring routing rules between Lite nodes in centralized clusters"
 
 #: ../../reference/concepts/domainroute_cn.md:12
 #: ../../reference/concepts/domainroute_cn.md:98
 msgid "点对点集群配置 Autonomy 节点之间的路由规则"
-msgstr ""
+msgstr "Configuring routing rules between Autonomy nodes in peer-to-peer clusters"
 
 #: ../../reference/concepts/domainroute_cn.md:16
 msgid "在中心化集群中配置 Lite 访问 Master 的授权，需要在 Master 的 Namespace 下创建一条 DomainRoute。"
-msgstr ""
+msgstr "To configure authorization for Lite to access Master in a centralized cluster, a DomainRoute must be created under the Master's Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:18
 msgid ""
 "在 Kuscia 中不同节点的服务域名是通过 Namespace 来区分的。Kuscia 支持多个中心化网络互联，为了区分不同的中心化网络中 "
 "Master 侧的服务（ApiServer 等）， 故而给 Master 也分配了 Namespace。"
 msgstr ""
+"In Kuscia, service domains for different nodes are distinguished by Namespaces. To support interconnection between multiple centralized networks and differentiate Master-side services (e.g., ApiServer) across distinct centralized networks, Master is also assigned a Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:35
 msgid "在示例中"
-msgstr ""
+msgstr "In the example:"
 
 #: ../../reference/concepts/domainroute_cn.md:37
 #: ../../reference/concepts/domainroute_cn.md:75
 #: ../../reference/concepts/domainroute_cn.md:128
 #: ../../reference/concepts/domainroute_cn.md:165
 msgid "`.metadata.name`：表示路由规则的名称。"
-msgstr ""
+msgstr "`.metadata.name`: Specifies the name of the routing rule."
 
 #: ../../reference/concepts/domainroute_cn.md:38
 msgid "`.metadata.namespace`：表示路由规则所在的命名空间，这里是 Master 的 Namespace。"
-msgstr ""
+msgstr "`.metadata.namespace`: Indicates the Namespace where the routing rule resides, which is the Master's Namespace in this case."
 
 #: ../../reference/concepts/domainroute_cn.md:39
 msgid ""
 "`.spec.authenticationType`：表示节点到目标节点的身份认证方式，目前仅支持 Token 、MTLS 和 "
 "None（表示不校验）。"
 msgstr ""
+"`.spec.authenticationType`: Specifies the authentication method between nodes, currently supporting Token, mTLS, and None (no verification)."
 
 #: ../../reference/concepts/domainroute_cn.md:40
 msgid "`.spec.source`：表示源节点的 Namespace，这里即 Lite 节点的 Namespace。"
-msgstr ""
+msgstr "`.spec.source`: Indicates the source node's Namespace, which is the Lite node's Namespace here."
 
 #: ../../reference/concepts/domainroute_cn.md:41
 msgid "`.spec.destination`：表示目标节点的 Namespace，这里即 Master 的命名空间。"
-msgstr ""
+msgstr "`.spec.destination`: Specifies the destination node's Namespace, which is the Master's Namespace here."
 
 #: ../../reference/concepts/domainroute_cn.md:42
 msgid ""
 "`.spec.requestHeadersToAdd`：表示目标节点侧的 Envoy 在转发源节点的请求时添加的 headers，示例中 key "
 "为 Authorization 的 header 是 Master 为 alice 分配访问 k3s 的令牌。"
 msgstr ""
+"`.spec.requestHeadersToAdd`: Specifies headers added by the destination node's Envoy when forwarding requests. In the example, the Authorization header contains the token assigned by Master to alice for accessing k3s."
 
 #: ../../reference/concepts/domainroute_cn.md:45
 #: ../../reference/concepts/domainroute_cn.md:176
 msgid "您可以通过 kubectl 命令来创建、修改、查看、删除 DomainRoute。"
-msgstr ""
+msgstr "DomainRoutes can be created, modified, viewed, and deleted using kubectl commands."
 
 #: ../../reference/concepts/domainroute_cn.md:49
 msgid ""
 "在中心化集群中，Lite 节点之间进行数据通信，以 alice 访问 bob 为例，需要创建一条 ClusterDomainRoute。 下面是 "
 "alice-bob-ClusterDomainRoute.yaml 的配置："
 msgstr ""
+"In centralized clusters, to enable data communication between Lite nodes (e.g., alice accessing bob), a ClusterDomainRoute must be created. Below is the configuration for alice-bob-ClusterDomainRoute.yaml:"
 
 #: ../../reference/concepts/domainroute_cn.md:73
 #: ../../reference/concepts/domainroute_cn.md:126
 #: ../../reference/concepts/domainroute_cn.md:163
 msgid "在示例中："
-msgstr ""
+msgstr "In the example:"
 
 #: ../../reference/concepts/domainroute_cn.md:76
 msgid "`.spec.authenticationType`：表示节点到 Master 的身份认证方式，支持 Token、MTLS、None（不认证）。"
-msgstr ""
+msgstr "`.spec.authenticationType`: Specifies authentication method to Master, supporting Token, mTLS, and None."
 
 #: ../../reference/concepts/domainroute_cn.md:77
 msgid "`.spec.source`：表示源节点的 Namespace。"
-msgstr ""
+msgstr "`.spec.source`: Indicates the source node's Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:78
 msgid "`.spec.destination`：表示目标节点的 Namespace。"
-msgstr ""
+msgstr "`.spec.destination`: Specifies the destination node's Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:79
 msgid "`.spec.endpoint`：表示目标节点的地址，具体字段包括："
-msgstr ""
+msgstr "`.spec.endpoint`: Specifies the destination node's address with the following fields:"
 
 #: ../../reference/concepts/domainroute_cn.md:80
 msgid "`host`：表示目标节点域名或 IP。"
-msgstr ""
+msgstr "`host`: Domain name or IP of the destination node."
 
 #: ../../reference/concepts/domainroute_cn.md:81
 msgid ""
 "`ports`：表示目标节点的端口，以及该端口的协议，协议类型为 HTTP或 "
 "GRPC协议，节点网关可在不同端口上分别支持http协议和GRPC协议。当前仅支持一个端口。"
 msgstr ""
+"`ports`: Specifies port and protocol (HTTP/GRPC) for the destination node. Gateways can support different protocols on separate ports, though currently only one port is supported."
 
 #: ../../reference/concepts/domainroute_cn.md:82
 msgid "`name`: 表示端口名称。"
-msgstr ""
+msgstr "`name`: Port name."
 
 #: ../../reference/concepts/domainroute_cn.md:83
 msgid "`port`: 表示目标端口号。"
-msgstr ""
+msgstr "`port`: Target port number."
 
 #: ../../reference/concepts/domainroute_cn.md:84
 msgid "`protocol`: 表示端口协议，支持 HTTP 和 GRPC。"
-msgstr ""
+msgstr "`protocol`: Port protocol, supporting HTTP and GRPC."
 
 #: ../../reference/concepts/domainroute_cn.md:85
 msgid "`isTLS`：表示是否开启 HTTPS 或 GRPCS。"
-msgstr ""
+msgstr "`isTLS`: Enables HTTPS or GRPCS."
 
 #: ../../reference/concepts/domainroute_cn.md:86
 #: ../../reference/concepts/domainroute_cn.md:171
 msgid "`.spec.mTLSConfig`：表示源节点作为客户端访问目标节点的 MTLS 配置，具体字段如下："
-msgstr ""
+msgstr "`.spec.mTLSConfig`: Configures mTLS for source node as client, containing:"
 
 #: ../../reference/concepts/domainroute_cn.md:87
 #: ../../reference/concepts/domainroute_cn.md:172
 msgid "`sourceClientCert`：表示源节点的客户端证书，value 值是经 BASE64 编码过的。"
-msgstr ""
+msgstr "`sourceClientCert`: BASE64-encoded client certificate of the source node."
 
 #: ../../reference/concepts/domainroute_cn.md:88
 #: ../../reference/concepts/domainroute_cn.md:174
 msgid "`tlsCA`：表示校验服务端（目标节点）证书的 CA，value 值是经过 BASE64 编码过的。不配置则表示不校验服务端证书。"
-msgstr ""
+msgstr "`tlsCA`: BASE64-encoded CA for validating server certificates. Omit to disable server certificate verification."
 
 #: ../../reference/concepts/domainroute_cn.md:90
 msgid "通过 kubectl 命令来创建 ClusterDomainRoute："
-msgstr ""
+msgstr "Create ClusterDomainRoute using kubectl:"
 
 #: ../../reference/concepts/domainroute_cn.md:96
 msgid "您还可以通过 kubectl 命令来修改、删除 ClusterDomainRoute。"
-msgstr ""
+msgstr "ClusterDomainRoutes can also be modified or deleted using kubectl commands."
 
 #: ../../reference/concepts/domainroute_cn.md:100
 msgid ""
 "对于点对点集群的两个 Autonomy 节点，alice 访问 bob，需要分别在 alice 和 bob 的 Namespace 下各创建一条 "
 "DomainRoute。"
 msgstr ""
+"For peer-to-peer clusters with Autonomy nodes (alice accessing bob), create DomainRoutes in both alice's and bob's Namespaces."
 
 #: ../../reference/concepts/domainroute_cn.md:102
 msgid "第一步，在目标节点 bob 的 Namespace 下创建 alice 访问 bob 的 DomainRoute："
-msgstr ""
+msgstr "Step 1: Create DomainRoute in bob's Namespace for alice's access:"
 
 #: ../../reference/concepts/domainroute_cn.md:129
 msgid "`.metadata.namespace`：表示路由规则所在的命名空间，这里是目标节点的 Namespace。"
-msgstr ""
+msgstr "`.metadata.namespace`: The Namespace where the routing rule resides (destination node's Namespace here)."
 
 #: ../../reference/concepts/domainroute_cn.md:130
 #: ../../reference/concepts/domainroute_cn.md:167
@@ -199,88 +206,92 @@ msgid ""
 "`.spec.authenticationType`：表示源节点到目标节点的身份认证方式，目前仅支持 Token、MTLS 和 "
 "None（表示不校验）。"
 msgstr ""
+"`.spec.authenticationType`: Authentication method between nodes, currently supporting Token, mTLS, and None."
 
 #: ../../reference/concepts/domainroute_cn.md:131
 msgid "`.spec.source`：表示源节点的 Namespace，这里即 Alice 的 Namespace。"
-msgstr ""
+msgstr "`.spec.source`: Source node's Namespace (Alice's Namespace here)."
 
 #: ../../reference/concepts/domainroute_cn.md:132
 msgid "`.spec.destination`：表示目标节点的 Namespace，这里即 Bob 的 Namespace。"
-msgstr ""
+msgstr "`.spec.destination`: Destination node's Namespace (Bob's Namespace here)."
 
 #: ../../reference/concepts/domainroute_cn.md:133
 msgid ""
 "`.spec.requestHeadersToAdd`：表示 bob 侧的 Envoy 转发源节点请求时添加的 headers，示例中 key 为"
 " Authorization 的 header 是 Bob 为 Alice 分配访问 K3s 的令牌，"
 msgstr ""
+"`.spec.requestHeadersToAdd`: Headers added by Bob's Envoy when forwarding requests. The Authorization header contains Bob-assigned token for Alice's access to K3s."
 
 #: ../../reference/concepts/domainroute_cn.md:136
 msgid "这个 header 仅在目标节点为调度方时有必要配置。"
-msgstr ""
+msgstr "This header is only required when the destination node acts as scheduler."
 
 #: ../../reference/concepts/domainroute_cn.md:138
 msgid "第二步，在源节点 Alice 的 Namespace 下创建创建 Alice 访问 Bob 的 DomainRoute："
-msgstr ""
+msgstr "Step 2: Create DomainRoute in Alice's Namespace for accessing Bob:"
 
 #: ../../reference/concepts/domainroute_cn.md:166
 msgid "`.metadata.namespace`：表示路由规则所在的命名空间，这里是源节点的 Namespace。"
-msgstr ""
+msgstr "`.metadata.namespace`: The Namespace where the routing rule resides (source node's Namespace here)."
 
 #: ../../reference/concepts/domainroute_cn.md:168
 msgid "`.spec.source`：表示源节点的 Namespace，这里即 alice 的 Namespace。"
-msgstr ""
+msgstr "`.spec.source`: Source node's Namespace (alice's Namespace here)."
 
 #: ../../reference/concepts/domainroute_cn.md:169
 msgid "`.spec.destination`：表示目标节点的 Namespace，这里即 bob 的 Namespace。"
-msgstr ""
+msgstr "`.spec.destination`: Destination node's Namespace (bob's Namespace here)."
 
 #: ../../reference/concepts/domainroute_cn.md:170
 msgid "`.spec.endpoint`：表示目标节点表示目标节点的地址。"
-msgstr ""
+msgstr "`.spec.endpoint`: Specifies the destination node's address."
 
 #: ../../reference/concepts/domainroute_cn.md:173
 msgid "`sourceClientPrivateKey`：表示源节点的私钥，value 值是经 BASE64 编码过的。"
-msgstr ""
+msgstr "`sourceClientPrivateKey`: BASE64-encoded private key of the source node."
 
 #: ../../reference/concepts/domainroute_cn.md:178
 msgid "参考"
-msgstr ""
+msgstr "Reference"
 
 #: ../../reference/concepts/domainroute_cn.md:180
 msgid "下面以 DomainRoute 和 ClusterDomainRoute 的模版配置为例，详细介绍两个 CRD 的字段。"
-msgstr ""
+msgstr "The following template configurations for DomainRoute and ClusterDomainRoute detail the fields of both CRDs."
 
 #: ../../reference/concepts/domainroute_cn.md:182
 msgid "DomainRoute-template"
-msgstr ""
+msgstr "DomainRoute Template"
 
 #: ../../reference/concepts/domainroute_cn.md:184
 msgid "Lite 节点访问 Master、Autonomy 节点之间通信的 DomainRoute 需要用户配置。"
-msgstr ""
+msgstr "DomainRoutes for Lite-to-Master communication and Autonomy node intercommunication require manual configuration."
 
 #: ../../reference/concepts/domainroute_cn.md:185
 msgid ""
 "Lite 节点之间通信的 DomainRoute 是由 DomainRouteController 根据 ClusterDomainRoute "
 "在各方 Lite 节点的 Namespace 中创建的。"
 msgstr ""
+"DomainRoutes between Lite nodes are automatically created by DomainRouteController based on ClusterDomainRoute in each Lite node's Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:236
 msgid "DomainRoute `metadata` 的子字段详细介绍如下："
-msgstr ""
+msgstr "DomainRoute `metadata` subfields:"
 
 #: ../../reference/concepts/domainroute_cn.md:238
 msgid "`name`：表示 DomainRoute 的名称。"
-msgstr ""
+msgstr "`name`: DomainRoute name."
 
 #: ../../reference/concepts/domainroute_cn.md:239
 msgid ""
 "`namespace`: 表示 DomainRoute 所属的命名空间，节点之间的通信需要在双方 Namespace 下分别设置 "
 "DomainRoute。"
 msgstr ""
+"`namespace`: Namespace where DomainRoute resides. Bidirectional communication requires DomainRoutes in both Namespaces."
 
 #: ../../reference/concepts/domainroute_cn.md:241
 msgid "DomainRoute `spec` 的子字段详细介绍如下："
-msgstr ""
+msgstr "DomainRoute `spec` subfields:"
 
 #: ../../reference/concepts/domainroute_cn.md:243
 #: ../../reference/concepts/domainroute_cn.md:363
@@ -288,57 +299,59 @@ msgid ""
 "`authenticationType`：表示鉴权类型，支持`Token`、`MTLS`、`None`，其中 `Token` "
 "类型仅支持在中心化组网模式下使用。"
 msgstr ""
+"`authenticationType`: Authentication type (Token/mTLS/None). Token is only supported in centralized networks."
 
 #: ../../reference/concepts/domainroute_cn.md:244
 #: ../../reference/concepts/domainroute_cn.md:364
 msgid "`source`：表示源节点的 Namespace。"
-msgstr ""
+msgstr "`source`: Source node's Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:245
 #: ../../reference/concepts/domainroute_cn.md:365
 msgid "`destination`：表示目标节点的 Namespace。"
-msgstr ""
+msgstr "`destination`: Destination node's Namespace."
 
 #: ../../reference/concepts/domainroute_cn.md:246
 msgid ""
 "`interConnProtocol`：表示节点之间的互联互通协议，目前支持 `kuscia` 或 `bfia` 协议，默认为 `kuscia` "
 "协议 。"
 msgstr ""
+"`interConnProtocol`: Inter-node communication protocol (kuscia/bfia), defaulting to kuscia."
 
 #: ../../reference/concepts/domainroute_cn.md:247
 #: ../../reference/concepts/domainroute_cn.md:366
 msgid "`endpoint`：表示目标节点的访问地址。"
-msgstr ""
+msgstr "`endpoint`: Destination node's access address."
 
 #: ../../reference/concepts/domainroute_cn.md:248
 #: ../../reference/concepts/domainroute_cn.md:367
 msgid "`host`：表示目标节点的访问域名或 IP。"
-msgstr ""
+msgstr "`host`: Destination node's domain or IP."
 
 #: ../../reference/concepts/domainroute_cn.md:249
 #: ../../reference/concepts/domainroute_cn.md:368
 msgid "`ports`：表示目标节点的访问端口。"
-msgstr ""
+msgstr "`ports`: Destination node's access ports."
 
 #: ../../reference/concepts/domainroute_cn.md:250
 #: ../../reference/concepts/domainroute_cn.md:369
 msgid "`name`：表示端口名称。"
-msgstr ""
+msgstr "`name`: Port name."
 
 #: ../../reference/concepts/domainroute_cn.md:251
 #: ../../reference/concepts/domainroute_cn.md:370
 msgid "`port`：表示端口号。"
-msgstr ""
+msgstr "`port`: Indicates the port number."
 
 #: ../../reference/concepts/domainroute_cn.md:252
 #: ../../reference/concepts/domainroute_cn.md:371
 msgid "`protocol`：表示端口协议，支持`HTTP`或`GRPC`。"
-msgstr ""
+msgstr "`protocol`: Specifies the port protocol, supporting `HTTP` or `GRPC`."
 
 #: ../../reference/concepts/domainroute_cn.md:253
 #: ../../reference/concepts/domainroute_cn.md:372
 msgid "`isTLS`：表示是否开启`HTTPS`或`GRPCS`。"
-msgstr ""
+msgstr "`isTLS`: Indicates whether to enable `HTTPS` or `GRPCS`."
 
 #: ../../reference/concepts/domainroute_cn.md:254
 #: ../../reference/concepts/domainroute_cn.md:374
@@ -346,21 +359,26 @@ msgid ""
 "`mTLSConfig`：表示 MTLS 配置，authenticationType 为`MTLS`时，源节点需配置 "
 "mTLSConfig。该配置项在目标节点不生效。"
 msgstr ""
+"`mTLSConfig`: Specifies MTLS configuration. When authenticationType is `MTLS`, "
+"the source node must configure mTLSConfig. This configuration does not take "
+"effect on the destination node."
 
 #: ../../reference/concepts/domainroute_cn.md:255
 #: ../../reference/concepts/domainroute_cn.md:375
 msgid "`sourceClientCert`：表示 BASE64 编码格式的源节点的客户端证书。"
-msgstr ""
+msgstr "`sourceClientCert`: Represents the BASE64-encoded client certificate of the source node."
 
 #: ../../reference/concepts/domainroute_cn.md:256
 #: ../../reference/concepts/domainroute_cn.md:376
 msgid "`sourceClientPrivateKey`：表示 BASE64 编码格式的源节点的客户端私钥。"
-msgstr ""
+msgstr "`sourceClientPrivateKey`: Represents the BASE64-encoded client private key of the source node."
 
 #: ../../reference/concepts/domainroute_cn.md:257
 #: ../../reference/concepts/domainroute_cn.md:377
 msgid "`tlsCA`：表示 BASE64 编码格式的目标节点的服务端 CA，为空则表示不校验服务端证书。"
 msgstr ""
+"`tlsCA`: Specifies the BASE64-encoded server CA of the destination node. If "
+"empty, server certificate verification will be disabled."
 
 #: ../../reference/concepts/domainroute_cn.md:258
 #: ../../reference/concepts/domainroute_cn.md:378
@@ -368,11 +386,14 @@ msgid ""
 "`tokenConfig`：表示 Token 配置，authenticationType 为`Token`或 bodyEncryption "
 "非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。"
 msgstr ""
+"`tokenConfig`: Specifies Token configuration. The source node must configure "
+"TokenConfig when authenticationType is `Token` or bodyEncryption is not empty. "
+"This configuration does not take effect on the destination node."
 
 #: ../../reference/concepts/domainroute_cn.md:259
 #: ../../reference/concepts/domainroute_cn.md:379
 msgid "`rollingUpdatePeriod`：表示 Token 轮转周期，默认值为 0。"
-msgstr ""
+msgstr "`rollingUpdatePeriod`: Specifies the token rotation period, defaulting to 0."
 
 #: ../../reference/concepts/domainroute_cn.md:260
 #: ../../reference/concepts/domainroute_cn.md:380
@@ -380,6 +401,9 @@ msgid ""
 "`destinationPublicKey`：表示目标节点的公钥，该字段由 DomainRouteController 根据目标节点的 Cert "
 "设置，无需用户填充。"
 msgstr ""
+"`destinationPublicKey`: Represents the public key of the destination node. This "
+"field is automatically set by DomainRouteController based on the destination "
+"node's Cert and requires no user input."
 
 #: ../../reference/concepts/domainroute_cn.md:261
 #: ../../reference/concepts/domainroute_cn.md:381
@@ -387,6 +411,9 @@ msgid ""
 "`sourcePublicKey`：表示源节点的公钥，该字段由 DomainRouteController 根据源节点的 Cert "
 "设置，无需用户填充。"
 msgstr ""
+"`sourcePublicKey`: Represents the public key of the source node. This field is "
+"automatically set by DomainRouteController based on the source node's Cert and "
+"requires no user input."
 
 #: ../../reference/concepts/domainroute_cn.md:262
 #: ../../reference/concepts/domainroute_cn.md:382
@@ -394,125 +421,143 @@ msgid ""
 "`tokenGenMethod`：表示 Token 生成算法，使用`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 "
 "Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性。"
 msgstr ""
+"`tokenGenMethod`: Specifies the token generation algorithm. Using `RSA-GEN`, "
+"both parties generate half each to form a 32-byte communication token. The "
+"token is encrypted with the counterpart's public key, and both parties verify "
+"token validity using their own private keys."
 
 #: ../../reference/concepts/domainroute_cn.md:263
 msgid ""
 "`transit`：表示配置中转路由，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke "
 "必须为直连）。若该配置不为空，endpoint 配置项将不生效。"
 msgstr ""
+"`transit`: Configures transit routing. For example, the alice-bob communication "
+"path becomes alice-joke-bob (alice-joke must be direct connection). When this "
+"configuration is non-empty, the endpoint configuration becomes invalid."
 
 #: ../../reference/concepts/domainroute_cn.md:264
 #: ../../reference/concepts/domainroute_cn.md:385
 msgid "`domain`：表示中转节点的信息。"
-msgstr ""
+msgstr "`domain`: Specifies transit node information."
 
 #: ../../reference/concepts/domainroute_cn.md:265
 #: ../../reference/concepts/domainroute_cn.md:386
 msgid "`domainID`：表示中转节点的 ID。"
-msgstr ""
+msgstr "`domainID`: Specifies the ID of the transit node."
 
 #: ../../reference/concepts/domainroute_cn.md:266
 #: ../../reference/concepts/domainroute_cn.md:387
 msgid "`bodyEncryption`：表示 Body 加密配置项，通常在配置转发路由时开启 bodyEncryption。"
 msgstr ""
+"`bodyEncryption`: Specifies body encryption configuration, typically enabled "
+"when configuring transit routing."
 
 #: ../../reference/concepts/domainroute_cn.md:267
 #: ../../reference/concepts/domainroute_cn.md:388
 msgid "`algorithm`：表示加密算法，当前仅支持 AES 加密算法。"
-msgstr ""
+msgstr "`algorithm`: Specifies encryption algorithm, currently supporting AES only."
 
 #: ../../reference/concepts/domainroute_cn.md:268
 #: ../../reference/concepts/domainroute_cn.md:389
 msgid "`requestHeadersToAdd`：表示 Envoy 在向集群内转发来自源节点的请求时，添加的 headers，该配置仅在目标节点生效。"
 msgstr ""
+"`requestHeadersToAdd`: Specifies headers added by Envoy when forwarding requests "
+"from the source node within the cluster. This configuration only takes effect "
+"on the destination node."
 
 #: ../../reference/concepts/domainroute_cn.md:270
 msgid "DomainRoute `status` 的子字段详细介绍如下："
-msgstr ""
+msgstr "The subfields of DomainRoute `status` are detailed below:"
 
 #: ../../reference/concepts/domainroute_cn.md:272
 msgid "`isDestinationUnreachable`：表示 到目标节点是否是不可达的。"
-msgstr ""
+msgstr "`isDestinationUnreachable`: Indicates whether the destination node is unreachable."
 
 #: ../../reference/concepts/domainroute_cn.md:273
 msgid "`isDestinationAuthorized`：表示 和目标节点是否已经握手成功。"
-msgstr ""
+msgstr "`isDestinationAuthorized`: Indicates whether handshake with the destination node has succeeded."
 
 #: ../../reference/concepts/domainroute_cn.md:274
 #: ../../reference/concepts/domainroute_cn.md:400
 msgid "`tokenStatus`：表示 Token 认证方式下，源节点和目标节点协商的 Token 的信息。"
 msgstr ""
+"`tokenStatus`: Contains token information negotiated between source and "
+"destination nodes under token authentication."
 
 #: ../../reference/concepts/domainroute_cn.md:275
 msgid "`revisionInitializer`：表示源节点中发起 Token 协商的实例。"
-msgstr ""
+msgstr "`revisionInitializer`: Indicates the instance initiating token negotiation in the source node."
 
 #: ../../reference/concepts/domainroute_cn.md:276
 msgid "`revisionToken`：表示最新版本的 Token。"
-msgstr ""
+msgstr "`revisionToken`: Represents the latest version of the token."
 
 #: ../../reference/concepts/domainroute_cn.md:277
 msgid "`revision`：表示 Token 的版本。"
-msgstr ""
+msgstr "`revision`: Specifies the version of the token."
 
 #: ../../reference/concepts/domainroute_cn.md:278
 #: ../../reference/concepts/domainroute_cn.md:402
 msgid "`revisionTime`：表示 Token 时间戳。"
-msgstr ""
+msgstr "`revisionTime`: Indicates the timestamp of the token."
 
 #: ../../reference/concepts/domainroute_cn.md:279
 msgid "`token`：表示 BASE64 编码格式的经过节点私钥加密的 Token。"
-msgstr ""
+msgstr "`token`: Represents BASE64-encoded token encrypted with the node's private key."
 
 #: ../../reference/concepts/domainroute_cn.md:280
 msgid ""
 "`tokens`：表示 Token 数组，若 TokenConfig.rollingUpdatePeriod 不为 "
 "0，则数组中最多包含最新两个版本的 Token。"
 msgstr ""
+"`tokens`: Contains an array of tokens. When TokenConfig.rollingUpdatePeriod is "
+"non-zero, the array contains up to two latest token versions."
 
 #: ../../reference/concepts/domainroute_cn.md:281
 msgid "`tokens[].effectiveInstances`：表示 `metadata.namespace` 标识的节点下，路由规则生效的实例。"
 msgstr ""
+"`tokens[].effectiveInstances`: Indicates instances where routing rules take "
+"effect under the node identified by `metadata.namespace`."
 
 #: ../../reference/concepts/domainroute_cn.md:282
 msgid "`tokens[].revision`：表示 Token 的版本。"
-msgstr ""
+msgstr "`tokens[].revision`: Specifies the token version."
 
 #: ../../reference/concepts/domainroute_cn.md:283
 msgid "`tokens[].revisionTime`：表示 Token 时间戳。"
-msgstr ""
+msgstr "`tokens[].revisionTime`: Indicates the token timestamp."
 
 #: ../../reference/concepts/domainroute_cn.md:284
 msgid "`tokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。"
-msgstr ""
+msgstr "`tokens[].token`: Represents BASE64-encoded token encrypted with the node's public key."
 
 #: ../../reference/concepts/domainroute_cn.md:285
 msgid "`tokens[].isReady`：表示 Token 是否生效。"
-msgstr ""
+msgstr "`tokens[].isReady`: Indicates whether the token is active."
 
 #: ../../reference/concepts/domainroute_cn.md:286
 msgid "`tokens[].expirationTime`：表示 Token 何时过期。"
-msgstr ""
+msgstr "`tokens[].expirationTime`: Specifies token expiration time."
 
 #: ../../reference/concepts/domainroute_cn.md:288
 msgid "ClusterDomainRoute-template"
-msgstr ""
+msgstr "ClusterDomainRoute-template"
 
 #: ../../reference/concepts/domainroute_cn.md:290
 msgid "Lite 节点之间通信需要用户配置 ClusterDomainRoute。"
-msgstr ""
+msgstr "Communication between Lite nodes requires user-configured ClusterDomainRoute."
 
 #: ../../reference/concepts/domainroute_cn.md:357
 msgid "ClusterDomainRoute `metadata` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Subfields of ClusterDomainRoute `metadata` are detailed below:"
 
 #: ../../reference/concepts/domainroute_cn.md:359
 msgid "`name`：表示 ClusterDomainRoute 的名称。"
-msgstr ""
+msgstr "`name`: Specifies the name of the ClusterDomainRoute."
 
 #: ../../reference/concepts/domainroute_cn.md:361
 msgid "ClusterDomainRoute `spec` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Subfields of ClusterDomainRoute `spec` are detailed below:"
 
 #: ../../reference/concepts/domainroute_cn.md:373
 msgid ""
@@ -520,94 +565,119 @@ msgid ""
 "/bar，发送给对端的请求 path 会被改写为 /foo/bar，对端入口网关需要配置 pathPrefix "
 "卸载规则。配置示例请参考[这里](../../tutorial/kuscia_gateway_with_path.md)。"
 msgstr ""
+"`pathPrefix`: When configured non-empty, kuscia rewrites the request path. For "
+"example, with pathPrefix as /foo and request path as /bar, the request path "
+"sent to the peer will be rewritten to /foo/bar. The peer's ingress gateway "
+"must configure pathPrefix stripping rules. See configuration examples "
+"[here](../../tutorial/kuscia_gateway_with_path.md)."
 
 #: ../../reference/concepts/domainroute_cn.md:383
 msgid ""
 "`transit`：表示配置路由转发，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke "
 "必须为直连）。若该配置不为空，endpoint 配置项将不生效。具体参考`DomainRoute 进阶`。"
 msgstr ""
+"`transit`: Configures route forwarding. For example, the alice-bob "
+"communication path becomes alice-joke-bob (alice-joke must be direct "
+"connection). When non-empty, the endpoint configuration becomes invalid. Refer "
+"to `Advanced DomainRoute` for details."
 
 #: ../../reference/concepts/domainroute_cn.md:384
 msgid ""
 "`transitMethod`: 表示中转方式，目前支持`THIRD-DOMAIN`和`REVERSE-"
 "TUNNEL`两种方式，前者表示经第三方节点转发，后者表示反向隧道。"
 msgstr ""
+"`transitMethod`: Specifies transit method, currently supporting `THIRD-DOMAIN` "
+"(third-party node forwarding) and `REVERSE-TUNNEL` (reverse tunnel)."
 
 #: ../../reference/concepts/domainroute_cn.md:391
 msgid "ClusterDomainRoute `status` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Subfields of ClusterDomainRoute `status` are detailed below:"
 
 #: ../../reference/concepts/domainroute_cn.md:393
 msgid "`conditions`：表示 ClusterDomainRoute 处于该阶段时所包含的一些状况。"
-msgstr ""
+msgstr "`conditions`: Represents conditions present during specific phases of ClusterDomainRoute."
 
 #: ../../reference/concepts/domainroute_cn.md:394
 msgid "`conditions[].type`: 表示状况的名称。"
-msgstr ""
+msgstr "`conditions[].type`: Specifies the condition name."
 
 #: ../../reference/concepts/domainroute_cn.md:395
 msgid "`conditions[].status`: 表示该状况是否适用，可能的取值有`True`、`False`或`Unknown`。"
 msgstr ""
+"`conditions[].status`: Indicates condition applicability with possible values: "
+"`True`, `False`, or `Unknown`."
 
 #: ../../reference/concepts/domainroute_cn.md:396
 msgid "`conditions[].reason`: 表示该状况的原因。"
-msgstr ""
+msgstr "`conditions[].reason`: Specifies the reason for the condition."
 
 #: ../../reference/concepts/domainroute_cn.md:397
 msgid "`conditions[].message`: 表示该状况的详细信息。"
-msgstr ""
+msgstr "`conditions[].message`: Provides detailed information about the condition."
 
 #: ../../reference/concepts/domainroute_cn.md:398
 msgid "`conditions[].lastUpdateTime`: 表示状况更新的时间。"
-msgstr ""
+msgstr "`conditions[].lastUpdateTime`: Indicates the last update time of the condition."
 
 #: ../../reference/concepts/domainroute_cn.md:399
 msgid "`conditions[].lastTransitionTime`: 表示转换为该状态的时间戳。"
 msgstr ""
+"`conditions[].lastTransitionTime`: Specifies the timestamp when transitioning "
+"to this status."
 
 #: ../../reference/concepts/domainroute_cn.md:401
 msgid "`revision`：表示 Token 的最新版本。"
-msgstr ""
+msgstr "`revision`: Represents the latest version of the token."
 
 #: ../../reference/concepts/domainroute_cn.md:403
 msgid ""
 "`sourceTokens`：表示源节点的 Token 数组，若 TokenConfig.rollingUpdatePeriod 不为 "
 "0，则数组中最多包含最新两个版本的 Token。"
 msgstr ""
+"`sourceTokens`: Contains an array of source node tokens. When "
+"TokenConfig.rollingUpdatePeriod is non-zero, the array contains up to two "
+"latest token versions."
 
 #: ../../reference/concepts/domainroute_cn.md:404
 msgid "`sourceTokens[].revision`：表示 Token 的版本。"
-msgstr ""
+msgstr "`sourceTokens[].revision`: Specifies the token version."
 
 #: ../../reference/concepts/domainroute_cn.md:405
 msgid "`sourceTokens[].revisionTime`：表示 Token 时间戳。"
-msgstr ""
+msgstr "`sourceTokens[].revisionTime`: Indicates the token timestamp."
 
 #: ../../reference/concepts/domainroute_cn.md:406
 msgid "`sourceTokens[].token`：表示 BASE64 编码格式的经过节点私钥加密的 Token。"
 msgstr ""
+"`sourceTokens[].token`: Represents BASE64-encoded token encrypted with the "
+"node's private key."
 
 #: ../../reference/concepts/domainroute_cn.md:407
 msgid ""
 "`destinationTokens`：表示目标节点的 Token 数组，若 TokenConfig.rollingUpdatePeriod 不为"
 " 0，则数组中最多包含最新两个版本的 Token。"
 msgstr ""
+"`destinationTokens`: Contains an array of destination node tokens. When "
+"TokenConfig.rollingUpdatePeriod is non-zero, the array contains up to two "
+"latest token versions."
 
 #: ../../reference/concepts/domainroute_cn.md:408
 msgid "`destinationTokens[].revision`：表示 Token 的版本。"
-msgstr ""
+msgstr "`destinationTokens[].revision`: Specifies the token version."
 
 #: ../../reference/concepts/domainroute_cn.md:409
 msgid "`destinationTokens[].revisionTime`：表示 Token 时间戳。"
-msgstr ""
+msgstr "`destinationTokens[].revisionTime`: Indicates the token timestamp."
 
 #: ../../reference/concepts/domainroute_cn.md:410
 msgid "`destinationTokens[].token`：表示 BASE64 编码格式的经过节点公钥加密的 Token。"
 msgstr ""
+"`destinationTokens[].token`: Represents BASE64-encoded token encrypted with the "
+"node's public key."
 
 #: ../../reference/concepts/domainroute_cn.md:414
 msgid "DomainRoute 进阶"
-msgstr ""
+msgstr "Advanced DomainRoute"
 
 #: ../../reference/concepts/domainroute_cn.md:416
 msgid ""
@@ -616,18 +686,26 @@ msgid ""
 "提供了灵活组网的核心基础，允许用户根据不同需求定制网络通信路径。Kuscia 支持了两种不同的路由转发能力， "
 "分别是「`节点转发`」和「`反向隧道`」，两者的配置有所不同，用于解决不同场景下组网面临的问题。"
 msgstr ""
+"This section describes advanced forwarding capabilities of DomainRoute. In "
+"Kuscia architecture, routing forwarding is implemented through the `Transit` "
+"field in ClusterDomainRoute (CDR) configuration. This provides the foundation "
+"for flexible networking, enabling customized communication paths. Kuscia "
+"supports two forwarding methods: `Node Forwarding` and `Reverse Tunnel`, each "
+"addressing different networking scenarios with distinct configurations."
 
 #: ../../reference/concepts/domainroute_cn.md:420
 msgid "节点转发"
-msgstr ""
+msgstr "Node Forwarding"
 
 #: ../../reference/concepts/domainroute_cn.md:422
 msgid "节点转发，对应的转发类型`transitMethod`为——`THIRD-DOMAIN`，代表请求流量会经第三方节点转发。"
 msgstr ""
+"Node Forwarding corresponds to `transitMethod: THIRD-DOMAIN`, indicating "
+"requests are forwarded through third-party nodes."
 
 #: ../../reference/concepts/domainroute_cn.md:424
 msgid "什么时候需要节点转发"
-msgstr ""
+msgstr "When to Use Node Forwarding"
 
 #: ../../reference/concepts/domainroute_cn.md:426
 msgid ""
@@ -638,22 +716,23 @@ msgid ""
 "无法直接互联，「中心化—P2P」网络中，Alice 与 Bob 无法直接互联。Kuscia 引入了转发能力，通过复用 Lite 与 Master "
 "之间的通道，使得 Lite 节点可以访问对端机构，实现组网。"
 msgstr ""
-
-#: ../../reference/concepts/domainroute_cn.md:426
-#: ../../reference/concepts/domainroute_cn.md:439
-#: ../../reference/concepts/domainroute_cn.md:471
-#: ../../reference/concepts/domainroute_cn.md:567
-#: ../../reference/concepts/domainroute_cn.md:573
-msgid "image.png"
-msgstr ""
+"Node Forwarding addresses scenarios where network nodes cannot establish "
+"direct connections. In centralized deployments, organizations often deploy "
+"Master and Lite nodes in separate network environments for enhanced security, "
+"with Lite nodes having limited network access. While improving security, this "
+"creates challenges for cross-organization connectivity. "
+"![image.png](../../imgs/transit-cxc-cxp.png) As shown in, Alice and Bob cannot directly "
+"connect in both centralized-centralized and centralized-P2P networks. Kuscia "
+"enables Lite nodes to access peer organizations by reusing Lite-Master "
+"channels."
 
 #: ../../reference/concepts/domainroute_cn.md:429
 msgid "转发能力是 Kuscia 的通用能力，并不局限于上述情形。"
-msgstr ""
+msgstr "Forwarding is a generic capability in Kuscia, applicable beyond these scenarios."
 
 #: ../../reference/concepts/domainroute_cn.md:431
 msgid "怎样配置节点转发"
-msgstr ""
+msgstr "Configuring Node Forwarding"
 
 #: ../../reference/concepts/domainroute_cn.md:433
 msgid ""
@@ -661,10 +740,14 @@ msgid ""
 " $Alice\\longrightarrow Bob$代表「Alice 到 Bob 的 路由配置」， $Alice\\stackrel"
 "{Mater-Alice}\\longrightarrow Bob$代表「Alice 到 Bob 经Master-Alice 转发的 路由配置」。"
 msgstr ""
+"For simplicity, using CDR to denote ClusterDomainRoute and $\\longrightarrow$ "
+"for routing: $Alice\\longrightarrow Bob$ represents direct routing, while "
+"$Alice\\stackrel{Mater-Alice}\\longrightarrow Bob$ indicates forwarding via "
+"Master-Alice."
 
 #: ../../reference/concepts/domainroute_cn.md:437
 msgid "一跳转发"
-msgstr ""
+msgstr "Single-hop Forwarding"
 
 #: ../../reference/concepts/domainroute_cn.md:439
 msgid ""
@@ -677,14 +760,21 @@ msgid ""
 "[调用KusciaAPI创建](../apis/domainroute_cn.md))。 ![image.png](../../imgs"
 "/transit-3rd-single.png)"
 msgstr ""
+"To enable Alice to access Carol after establishing $Alice\\longrightarrow Bob$ "
+"and $Bob\\longrightarrow Carol$, create transit rule "
+"$Alice\\stackrel{Bob}\\longrightarrow Carol$. **Note: For cross-cluster rules "
+"(where different control planes represent different Kuscia clusters), the CDR "
+"must be created in both clusters.** For example, if Alice and Carol belong to "
+"different clusters, create CDRs in both clusters via `kubectl` or [Kuscia "
+"API](../apis/domainroute_cn.md). ![image.png](../../imgs/transit-3rd-single.png)"
 
 #: ../../reference/concepts/domainroute_cn.md:442
 msgid "$Alice\\stackrel{Bob}\\longrightarrow Carol$配置"
-msgstr ""
+msgstr "$Alice\\stackrel{Bob}\\longrightarrow Carol$ Configuration"
 
 #: ../../reference/concepts/domainroute_cn.md:469
 msgid "多跳转发"
-msgstr ""
+msgstr "Multi-hop Forwarding"
 
 #: ../../reference/concepts/domainroute_cn.md:471
 msgid ""
@@ -694,42 +784,56 @@ msgid ""
 "Joke$和 $Alice\\stackrel{Bob}\\longrightarrow Joke$。 "
 "![image.png](../../imgs/transit-3rd-multi.png)"
 msgstr ""
+"Kuscia enables multi-hop forwarding through consecutive single-hop rules. To "
+"enable Alice to access Joke with existing $Alice\\longrightarrow Bob$, "
+"$Bob\\longrightarrow Carol$, and $Carol\\longrightarrow Joke$ rules, create "
+"transit rules $Bob\\stackrel{Carol}\\longrightarrow Joke$ and "
+"$Alice\\stackrel{Bob}\\longrightarrow Joke$. "
+"![image.png](../../imgs/transit-3rd-multi.png)"
 
 #: ../../reference/concepts/domainroute_cn.md:475
 msgid "$Bob\\stackrel{Carol}\\longrightarrow Joke$配置"
-msgstr ""
+msgstr "$Bob\\stackrel{Carol}\\longrightarrow Joke$ Configuration"
 
 #: ../../reference/concepts/domainroute_cn.md:502
 msgid "$Alice\\stackrel{Bob}\\longrightarrow Joke$ 配置"
-msgstr ""
+msgstr "$Alice\\stackrel{Bob}\\longrightarrow Joke$ Configuration"
 
 #: ../../reference/concepts/domainroute_cn.md:529
 msgid "转发安全"
-msgstr ""
+msgstr "Forwarding Security"
 
 #: ../../reference/concepts/domainroute_cn.md:531
 msgid ""
 "请求在传输过程中将经由第三方节点，这引发了中间人攻击的潜在风险。若您对于这些中间节点持有疑虑，您可以考虑启用安全加强措施。在这种模式下，通信双方通过"
 " Kuscia 网关实现数据的加密与解密，使用的是基于AES GCM算法的加密机制。**请注意，这种安全增强可能会对系统性能产生一定影响。**"
 msgstr ""
+"Transit via third-party nodes introduces MITM risks. For enhanced security, "
+"enable AES-GCM encryption between Kuscia gateways. **Note: This may impact "
+"system performance.**"
 
 #: ../../reference/concepts/domainroute_cn.md:532
 msgid ""
 "authenticationType 必须配置为 Token，才可以启用 AES 加密。转发的端对端加密密钥基于 Token "
 "生成，配置`rollingUpdatePeriod` 后，Token 会进行滚动更新，转发的密钥随之更新版本。"
 msgstr ""
+"Set authenticationType to `Token` to enable AES encryption. End-to-end "
+"encryption keys are token-based. Token rotation via rollingUpdatePeriod "
+"triggers key version updates."
 
 #: ../../reference/concepts/domainroute_cn.md:561
 msgid "反向隧道"
-msgstr ""
+msgstr "Reverse Tunnel"
 
 #: ../../reference/concepts/domainroute_cn.md:563
 msgid "反向隧道，对应的转发类型为——`REVERSE-TUNNEL`，代表请求流量会经反向隧道转发。"
 msgstr ""
+"Reverse Tunnel corresponds to `transitMethod: REVERSE-TUNNEL`, indicating "
+"requests are forwarded via reverse tunnel."
 
 #: ../../reference/concepts/domainroute_cn.md:565
 msgid "什么时候需要反向隧道"
-msgstr ""
+msgstr "When to Use Reverse Tunnel"
 
 #: ../../reference/concepts/domainroute_cn.md:567
 msgid ""
@@ -737,10 +841,14 @@ msgid ""
 " B 侧的算法容器 Bob 可以对机构 A 侧的算法容器 Alice 发起连接，反过来则不行。 ![image.png](../../imgs"
 "/transit-reverse-block.png)"
 msgstr ""
+"Reverse Tunnel addresses scenarios where one party can initiate public network "
+"requests but refuses to expose ports. As shown in "
+"![image.png](../../imgs/transit-reverse-block.png), Bob in Organization B can "
+"connect to Alice in Organization A, but not vice versa."
 
 #: ../../reference/concepts/domainroute_cn.md:571
 msgid "反向隧道是怎么实现的"
-msgstr ""
+msgstr "Reverse Tunnel Implementation"
 
 #: ../../reference/concepts/domainroute_cn.md:573
 msgid ""
@@ -748,6 +856,9 @@ msgid ""
 "![image.png](../../imgs/transit-reverse-tunnel.png) Alice 向 Bob "
 "发起请求的环节如下："
 msgstr ""
+"Kuscia implements reverse tunnel capability to handle Organization A's "
+"requests to B: ![image.png](../../imgs/transit-reverse-tunnel.png) The process "
+"includes:"
 
 #: ../../reference/concepts/domainroute_cn.md:577
 msgid ""
@@ -756,6 +867,10 @@ msgid ""
 "Alice 网关后，网关会记录这条请求的信息，回复`200状态码`和`Transfer-Encoding: "
 "Chunked`头，维持这条连接。这条连接之后会充当`反向隧道`。"
 msgstr ""
+"Tunnel Establishment (⓪): Register a `REVERSE-TUNNEL` CDR from Alice to Bob. "
+"Bob's gateway initiates a special HTTP request to Alice, which maintains the "
+"connection with `200 OK` and `Transfer-Encoding: Chunked` headers, forming the "
+"reverse tunnel."
 
 #: ../../reference/concepts/domainroute_cn.md:578
 msgid ""
@@ -763,7 +878,10 @@ msgid ""
 "侧网关后，网关会将「request」包装成特殊格式的 「chunked response」，通过`反向隧道`发送给 Bob "
 "侧网关，同时记录请求信息，对应 Ⓐ。请求到达 Bob 侧网关后，网关会将「chunked response」重新包装成「request」，发送给 "
 "Bob，对应 Ⓑ。"
-msgstr ""
+msgstr "The request sending process (marked as ① in the diagram) begins when Alice's `request` reaches her side gateway. "
+"The gateway then repackages this `request` into a specially formatted `chunked response` and transmits it to Bob's side gateway through a reverse tunnel, "
+"simultaneously recording the request information (marked as Ⓐ). Upon reaching Bob's side gateway, "
+"the `chunked response` is reconstructed into a `request` format and forwarded to Bob (marked as Ⓑ)."
 
 #: ../../reference/concepts/domainroute_cn.md:579
 msgid ""
@@ -771,12 +889,13 @@ msgid ""
 "侧网关后，网关会将「response」包装成「request」，发送给 Alice，对应 Ⓒ。请求到达 Alice "
 "侧网关后，网关会从「request」取出数据，包装成「response」，找到记录的请求信息，返回给 Alice，对应 Ⓓ。"
 msgstr ""
+"The response return process (marked as ② in the diagram) occurs after Bob completes request processing. The gateway on Bob's side encapsulates the returned 「response」 into a new 「request」 format and forwards it to Alice's gateway via the reverse tunnel (corresponding to Ⓒ). When this restructured request arrives at Alice's gateway, the gateway extracts the payload data, reconstructs it into a standard 「response」 format based on previously recorded request metadata, and ultimately delivers it back to Alice (corresponding to Ⓓ). This bidirectional encapsulation mechanism ensures secure cross-domain communication through standardized protocol conversion."
 
 #: ../../reference/concepts/domainroute_cn.md:581
 msgid "怎样配置反向隧道"
-msgstr ""
+msgstr "Configuring Reverse Tunnel"
 
 #: ../../reference/concepts/domainroute_cn.md:583
 msgid "要配置一条如上图所示的反向隧道路由规则，可以如下所示，设置`Transit`的`transitMethod`字段。**请注意，反向隧道可能会对系统性能产生一定影响。**"
 msgstr ""
-
+"To configure reverse tunnel routing as shown, set `transitMethod` of `Transit` . **Note: This may impact system performance.**"
