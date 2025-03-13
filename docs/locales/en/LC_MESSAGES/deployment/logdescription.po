@@ -263,7 +263,7 @@ msgstr "`RESPONSE_TX_DURATION`"
 
 #: ../../deployment/logdescription.md:63
 msgid "-，发送上游回包的时间"
-msgstr "-, Time to send the upstream response"
+msgstr "-, Total duration in milliseconds of the request from the first byte read from the upstream host to the last byte sent downstream."
 
 #: ../../deployment/logdescription.md:105
 msgid "`external.log` 日志格式如下："
