@@ -73,7 +73,7 @@ msgstr "1080"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "节点之间的认证鉴权端口。在创建节点之间路由时需要指定，可参考[创建节点路由](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)"
-msgstr "Authentication and authorization port between nodes. Must be specified when creating inter-node routes. Refer to [Create DomianRoute](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)."
+msgstr "Authentication and authorization port between nodes. Must be specified when creating inter-node routes. Refer to [Create DomianRoute](../reference/apis/domainroute_cn.md#createdomainrouterequest)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "是"
@@ -96,7 +96,7 @@ msgid ""
 "访问节点中应用的端口。例如：可通过此端口访问 Serving 服务进行预测打分，可参考[使用 SecretFlow Serving "
 "进行预测](../tutorial/run_sf_serving_with_api_cn.md#使用-secretflow-"
 "serving-进行预测)"
-msgstr "Port for accessing applications on the node. For example, this port can be used to access Serving services for prediction scoring. Refer to [Using SecretFlow Serving for Prediction](../tutorial/run_sf_serving_with_api_cn.md#使用-secretflow-serving-进行预测)."
+msgstr "Port for accessing applications on the node. For example, this port can be used to access Serving services for prediction scoring. Refer to [Using SecretFlow Serving for Prediction](../tutorial/run_sf_serving_with_api_cn.md#-secretflow-serving-)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "否"
@@ -114,7 +114,7 @@ msgstr "8082"
 msgid ""
 "节点 KusciaAPI 的访问端口，可参考[如何使用 "
 "KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)"
-msgstr "Access port for the node's KusciaAPI. Refer to [How to Use KusciaAPI](../reference/apis/summary_cn.md#如何使用-kuscia-api)."
+msgstr "Access port for the node's KusciaAPI. Refer to [How to Use KusciaAPI](../reference/apis/summary_cn.md#-kuscia-api)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-k"
