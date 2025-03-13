@@ -73,7 +73,7 @@ msgstr "1080"
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "节点之间的认证鉴权端口。在创建节点之间路由时需要指定，可参考[创建节点路由](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)"
-msgstr "Authentication and authorization port between nodes. Must be specified when creating inter-node routes. Refer to [Create Node Route](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)."
+msgstr "Authentication and authorization port between nodes. Must be specified when creating inter-node routes. Refer to [Create DomianRoute](../reference/apis/domainroute_cn.md#请求createdomainrouterequest)."
 
 #: ../../deployment/kuscia_ports_cn.md
 msgid "是"
