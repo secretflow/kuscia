@@ -59,7 +59,7 @@ msgstr "`/home/kuscia/var/logs/k3s.log`"
 
 #: ../../deployment/logdescription.md
 msgid "记录了 k3s 相关的日志，当检测到 k3s 启动失败时，可以通过该日志排查问题"
-msgstr "Records logs related to k3s. When k3s startup fails, this log can be used to troubleshoot issues."
+msgstr "Records logs related to K3s. When K3s startup fails, this log can be used to troubleshoot issues."
 
 #: ../../deployment/logdescription.md
 msgid "`/home/kuscia/var/logs/containerd.log`"
