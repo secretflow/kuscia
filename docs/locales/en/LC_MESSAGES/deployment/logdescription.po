@@ -197,7 +197,7 @@ msgstr "`SPANID`"
 
 #: ../../deployment/logdescription.md:63
 msgid "`HTTP 返回码`"
-msgstr "`HTTP response code`"
+msgstr "`HTTP Status Code`"
 
 #: ../../deployment/logdescription.md:63
 msgid "200"
