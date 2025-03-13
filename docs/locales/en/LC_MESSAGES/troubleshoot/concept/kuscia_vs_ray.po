@@ -59,7 +59,13 @@ msgid ""
 " 选择了 Ray 来实现这一诉求，让用户能够以上帝视角开发隐私计算应用。 "
 "![secretflow_developer_view](../../imgs/sf_dev_view.png)"
 msgstr ""
-"[Ray](https://github.com/ray-project/ray) is a unified framework that seamlessly scales Python and AI applications from laptop to cluster. Ray makes the development of distributed applications more convenient. As a privacy computing application, SecretFlow also falls within the category of distributed applications. SecretFlow chooses to use the Ray framework to improve the development efficiency of privacy computing applications, allowing developers to develop privacy computing algorithms from a god's-eye view. Unlike developing traditional applications, privacy computing typically involves 2 or n parties. The conventional approach to developing privacy computing applications is to write separate logic from the perspective of different participants, and then decide which logic to run based on the role of the current running program during actual execution. So, is it possible to develop privacy computing applications like traditional applications (as shown in the figure below)? SecretFlow chose Ray to achieve this goal, allowing users to develop privacy computing applications from a god's-eye view. "
+"[Ray](https://github.com/ray-project/ray) is a unified framework that seamlessly scales Python and AI applications from laptop to cluster. Ray makes developing distributed applications more convenient. 
+
+SecretFlow, as a privacy computing application, also falls within the category of distributed applications. SecretFlow uses the Ray framework to improve development efficiency for privacy computing applications. This allows developers to create privacy computing algorithms from a god's-eye view.
+
+Unlike traditional applications, privacy computing typically involves 2 or n parties. The conventional development approach requires writing separate logic from each participant's perspective. Then at runtime, the program decides which logic to execute based on its current role.
+
+So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
 "![secretflow_developer_view](../../imgs/sf_dev_view.png)"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:12
@@ -80,7 +86,9 @@ msgid ""
 "的函数级调度能力，让算法开发者保持他们开发单体应用时的开发习惯，降低开发成本提高开发效率。但仍然有一些问题不是通过 Ray 解决的，比如在 "
 "POC/生产环境中部署与使用 SecretFlow 时, 仍然会面临着以下问题："
 msgstr ""
-"SecretFlow leverages Ray's function-level scheduling capabilities to allow algorithm developers to maintain their development habits from single application development, reducing development costs and improving efficiency. However, there are still some issues that are not solved through Ray, such as when deploying and using SecretFlow in POC/production environments, the following problems still exist:"
+"SecretFlow leverages Ray's function-level scheduling capabilities. This allows algorithm developers to maintain their development habits from single application development. It reduces development costs and improves efficiency.
+
+However, there are still some issues that Ray doesn't solve. When deploying and using SecretFlow in POC/production environments, the following problems still exist:"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:65
 msgid "Rayfed 和 SPU 各有一个端口，机构只能开一个端口，如何做到端口合并。"
