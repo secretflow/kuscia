@@ -1,34 +1,34 @@
-# 使用 WSL 注意事项
+# Notes on Using WSL
 
-## WSL 启动 Docker
+## Starting Docker in WSL
 
-**WSL 中想要使用 Docker，建议安装 docker desktop**，具体安装步骤如下：
+**When using Docker in WSL, it is recommended to install Docker Desktop**. The specific installation steps are as follows:
 
-1. **修改默认安装路径**
+1. **Modify the default installation path**
 
-   Docker Desktop 默认安装在 "C:\Program Files\Docker"，该路径是一个只读路径，如果不修改，将无法进行写操作（比如创建或修改文件/文件夹），在部署时可能报错：
+   Docker Desktop is installed by default in "C:\Program Files\Docker", which is a read-only path. If not modified, you will not be able to perform write operations (such as creating or modifying files/folders), and may encounter errors during deployment:
   
    ```shell
    Error response from daemon: mkdir /var/lib/docker/temp/docker-export-709988460:read-only file system
    ```
 
-   需要在非只读目录（如 D 盘）下创建 Docker Desktop 默认安装路（如 D：\Docker），然后以管理员身份运行 cmd，通过以下命令创建链接:
+   You need to create a Docker Desktop installation path in a non-read-only directory (such as D drive) (e.g., D:\Docker), then run cmd as administrator and create a link with the following command:
 
    ```shell
    mklink /J "C:\Program Files\Docker" "D:\Docker"
    ```
 
-这样创建链接之后，按正常步骤安装 docker 就会安装在 D 盘里了。
+After creating this link, installing Docker normally will install it on the D drive.
 
-2. 安装（参考 Docker 官方安装文档 [Install Docker Desktop on Windows](https://docs.docker.com/desktop/install/windows-install/)）
+2. Installation (refer to the official Docker installation documentation [Install Docker Desktop on Windows](https://docs.docker.com/desktop/install/windows-install/))
 
-   1. 从 Docker 官网下载 [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/);
-   2. 双击下载的 'Docker Desktop Installer.exe';
-   3. 使用官方建议的 WSL2 选项安装（勾选："Use the WSL 2 based engine"）;
-   4. 按照安装向导上的说明授权安装程序，并继续安装;
-   5. 安装成功后，单击"关闭"完成安装过程;
+   1. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) from the Docker official website;
+   2. Double-click the downloaded 'Docker Desktop Installer.exe';
+   3. Install using the officially recommended WSL2 option (check: "Use the WSL 2 based engine");
+   4. Follow the instructions on the installation wizard to authorize the installer and continue with the installation;
+   5. After successful installation, click "Close" to complete the installation process;
 
-3. 建议修改镜像保存路径
+3. Recommended to modify the image storage path
 
-   Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE 作业](../../tutorial/run_fate_cn.md)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
+   Docker images are stored on the C drive by default. If you need to [deploy and run FATE jobs](../../tutorial/run_fate_cn.md), this may cause insufficient space on the C drive. Therefore, it is recommended to change to another disk with sufficient space. Specifically, open Docker Desktop, go to Settings->Resources->Browse, and modify the image storage path.
    ![docker_settings.png](../../imgs/docker_settings.png)
