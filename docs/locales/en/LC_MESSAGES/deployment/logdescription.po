@@ -177,11 +177,11 @@ msgstr "/org.interconnection.link.ReceiverService/Push"
 
 #: ../../deployment/logdescription.md:63
 msgid "`HTTP 方法/版本`"
-msgstr ""
+msgstr "`HTTP method/version`"
 
 #: ../../deployment/logdescription.md:63
 msgid "HTTP/1.1"
-msgstr "`HTTP method/version`"
+msgstr "HTTP/1.1"
 
 #: ../../deployment/logdescription.md:63
 msgid "`TRANCEID`"
