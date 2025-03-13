@@ -35,7 +35,7 @@ msgstr "Kuscia Directory Structure"
 
 #: ../../deployment/logdescription.md:50
 msgid "日志文件说明"
-msgstr "Log File Description"
+msgstr "Log File Overview"
 
 #: ../../deployment/logdescription.md
 msgid "路径"
