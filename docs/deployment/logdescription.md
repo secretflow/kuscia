@@ -96,8 +96,8 @@ K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl
 | `RESPONSE_FLAGS`     | -，表示有关响应或连接的其他详细信息，详情可以参考[envoy官方文档](https://www.envoyproxy.io/docs/envoy/v1.25.0/configuration/observability/access_log/usage#command-operators)                     |
 | `CONTENT-LENGTH`     | 1791，表示 body 的长度                              |
 | `DURATION`           | 0，表示请求总耗时                                |
-| `REQ_META`          |  0，表示请求body的meta信息                      |
-| `RES_META`           | 0，表示请求body的meta信息                     |
+| `REQ_META`           | 0，表示请求 body 的 meta 信息                     |
+| `RES_META`           | 0，表示响应 body 的 meta 信息                     |
 | `REQUEST_DURATION`   | 0，接收下游请求报文的时间                           |
 | `RESPONSE_DURATION`  | -，从请求开始到响应开始的时间                        |
 | `RESPONSE_TX_DURATION` |-，发送上游回包的时间                               |
@@ -131,5 +131,5 @@ K8s RunK 部署模式需要在 Kuscia Pod 所在的 K8s 集群里执行 `kubectl
 | `RESPONSE_FLAGS`     | -，表示有关响应或连接的其他详细信息，详情可以参考[envoy官方文档](https://www.envoyproxy.io/docs/envoy/v1.25.0/configuration/observability/access_log/usage#command-operators)                     |
 | `CONTENT-LENGTH`     | 1791，表示 body 的长度                              |
 | `DURATION`           | 0，表示请求总耗时                                |
-| `REQ_META`          |  0，表示请求 body 的 meta 信息                      |
-| `RES_META`           | 0，表示请求 body 的 meta 信息                     |
+| `REQ_META`           | 0，表示请求 body 的 meta 信息                     |
+| `RES_META`           | 0，表示响应 body 的 meta 信息                     |
