@@ -19,125 +19,125 @@ msgstr ""
 
 #: ../../deployment/diagnose_tool.md:1
 msgid "Kuscia 诊断工具"
-msgstr ""
+msgstr "Kuscia Diagnostic Tool"
 
 #: ../../deployment/diagnose_tool.md:3
 msgid "功能"
-msgstr ""
+msgstr "Function"
 
 #: ../../deployment/diagnose_tool.md:5
 msgid "检测双方节点的网络是否符合通信条件，以及网络当前的一些问题根因。"
-msgstr ""
+msgstr "To check whether the network between two nodes meets communication requirements and diagnose any existing network issues."
 
 #: ../../deployment/diagnose_tool.md:7
 msgid "检测涵盖项："
-msgstr ""
+msgstr "Detection items include:"
 
 #: ../../deployment/diagnose_tool.md:9
 msgid "带宽"
-msgstr ""
+msgstr "Bandwidth"
 
 #: ../../deployment/diagnose_tool.md:10
 msgid "传输延迟"
-msgstr ""
+msgstr "Transmission latency"
 
 #: ../../deployment/diagnose_tool.md:11
 msgid "网关最大请求包体大小配置"
-msgstr ""
+msgstr "Gateway maximum request body size configuration"
 
 #: ../../deployment/diagnose_tool.md:12
 msgid "网关缓冲配置"
-msgstr ""
+msgstr "Gateway buffer configuration"
 
 #: ../../deployment/diagnose_tool.md:13
 msgid "网关超时配置"
-msgstr ""
+msgstr "Gateway timeout configuration"
 
 #: ../../deployment/diagnose_tool.md:15
 msgid "使用场景"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../deployment/diagnose_tool.md:17
 msgid "可用于部署完成后，在实际执行算法作业前的前置网络环境检查；"
-msgstr ""
+msgstr "For pre-deployment network environment checks before executing algorithm tasks;"
 
 #: ../../deployment/diagnose_tool.md:19
 msgid "可用于执行算法作业失败时，首先对双方网络环境进行诊断，定位（如果有）或排除网络环境的因素。"
-msgstr ""
+msgstr "For diagnosing network issues when algorithm tasks fail, to identify or rule out network-related factors."
 
 #: ../../deployment/diagnose_tool.md:21
 msgid "前置条件"
-msgstr ""
+msgstr "Prerequisites"
 
 #: ../../deployment/diagnose_tool.md:23
 msgid "用户已经在双方节点均完成 Kuscia 的部署，包括启动 kuscia、创建 Domain、双方互换证书、双方配置授权。"
-msgstr ""
+msgstr "Users must have completed the deployment of Kuscia on both nodes, including starting Kuscia, created a Domain, exchanged certificates between the two parties, and configured authorization for each other."
 
 #: ../../deployment/diagnose_tool.md:25
 msgid "使用示例"
-msgstr ""
+msgstr "Usage Example"
 
 #: ../../deployment/diagnose_tool.md:27
 msgid "假设双方节点为alice和bob，需要检测到bob的网络通信，可以在 alice 的计算节点容器内执行："
-msgstr ""
+msgstr "Assume the two nodes are alice and bob. To test the network communication from alice to bob, you can execute the following command in alice's compute node container:"
 
 #: ../../deployment/diagnose_tool.md:33
 msgid "即会开始执行网络状态诊断流程，正常执行的结果如下："
-msgstr ""
+msgstr "This will start the network status diagnostic process. The normal execution result is as follows:"
 
 #: ../../deployment/diagnose_tool.md:77
 msgid "如果双方节点的网络状态存在异常，一个可能的报告如下："
-msgstr ""
+msgstr "If there are network issues between the two nodes, a possible report might look like this:"
 
 #: ../../deployment/diagnose_tool.md:107
 msgid "报告字段说明"
-msgstr ""
+msgstr "Report Field Explanation"
 
 #: ../../deployment/diagnose_tool.md:109
 msgid ""
 "CRD Config Check: 检查配置的 ClusterDomainRoute 是否有效，若为 FAIL，则说明 CDR "
 "配置有误或节点本身网络不通。"
-msgstr ""
+msgstr "CRD Config Check: Checks whether the configured ClusterDomainRoute is valid. If the result is FAIL, it indicates that the CDR configuration is incorrect or the node's network is not accessible."
 
 #: ../../deployment/diagnose_tool.md:110
 msgid "NETWORK STATSTICS(alice-bob)：Alice 到 Bob 的请求链路网络指标，包含："
-msgstr ""
+msgstr "NETWORK STATSTICS(alice-bob): Network metrics for the request link from Alice to Bob, including:"
 
 #: ../../deployment/diagnose_tool.md:111
 msgid ""
 "BANDWIDTH：网络带宽指标，默认阈值为 10Mbits/sec，可通过配置 `--speed_thres \\<theshold\\>` "
 "调整，当带宽检测值（DETECTED VALUE）小于10Mbits/sec 时，结果为 WARNING；"
-msgstr ""
+msgstr "BANDWIDTH: Network bandwidth metric. The default threshold is 10Mbits/sec. You can adjust it using the `--speed_thres <theshold>` option. If the detected value is less than 10Mbits/sec, the result will be WARNING;"
 
 #: ../../deployment/diagnose_tool.md:112
 msgid "CONNECTION：联通性，检测 Kuscia Job 的服务网络联通；"
-msgstr ""
+msgstr "CONNECTION: Network connectivity of Kuscia Job services;"
 
 #: ../../deployment/diagnose_tool.md:113
 msgid "PROXY_BUFFER：网关缓冲，结果为FAIL时表示网关存在缓冲，需要联系机构网关关闭网关缓冲；"
-msgstr ""
+msgstr "PROXY_BUFFER: Gateway buffer. A FAIL result indicates that the gateway buffer exists and needs to be disabled by contacting the gateway administrator;"
 
 #: ../../deployment/diagnose_tool.md:114
 msgid ""
 "REQUEST_BODY_SIZE：网关请求包体限制，默认阈值为 1MB，可通过配置 `--size_thres \\<threshold\\>`"
 " 调整，当包体限制检测值（DETECTED VALUE）小于 1MB 时，结果为 WARNING；"
-msgstr ""
+msgstr "REQUEST_BODY_SIZE: Gateway request body size limit. The default threshold is 1MB. You can adjust it using the `--size_thres <threshold>` option. If the detected value is less than 1MB, the result will be WARNING;"
 
 #: ../../deployment/diagnose_tool.md:115
 msgid ""
 "RTT：传输延迟，默认阈值为 50ms，可通过配置 `--rtt_thres "
 "\\<threshold\\>`调整，当传输延迟检测值（DETECTED VALUE）大于 50ms 时，结果为 WARNING。"
-msgstr ""
+msgstr "RTT: Transmission latency. The default threshold is 50ms. You can adjust it using the `--rtt_thres <threshold>` option. If the detected value exceeds 50ms, the result will be WARNING."
 
 #: ../../deployment/diagnose_tool.md:116
 msgid "NETWORK STATSTICS(bob-alice): Bob 到 Alice 的请求链路网络指标。"
-msgstr ""
+msgstr "NETWORK STATSTICS(bob-alice): Network metrics for the request link from Bob to Alice."
 
 #: ../../deployment/diagnose_tool.md:118
 msgid "其他说明"
-msgstr ""
+msgstr "Other Notes"
 
 #: ../../deployment/diagnose_tool.md:120
 msgid "kuscia diagnose network 参数说明："
-msgstr ""
+msgstr "Explanation of the Kuscia diagnose network parameters:"
 
