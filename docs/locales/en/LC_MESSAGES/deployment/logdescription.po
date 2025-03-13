@@ -235,7 +235,7 @@ msgstr "`REQ_META`"
 
 #: ../../deployment/logdescription.md:63
 msgid "0，表示请求body的meta信息"
-msgstr "0, indicating the meta information of the request body."
+msgstr "0, indicating the meta information of the body."
 
 #: ../../deployment/logdescription.md:63
 msgid "`RES_META`"
