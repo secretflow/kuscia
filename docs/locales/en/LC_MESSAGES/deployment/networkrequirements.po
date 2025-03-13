@@ -170,7 +170,7 @@ msgstr "network"
 
 #: ../../deployment/networkrequirements.md:52
 msgid "nginx 代理参数配置示例"
-msgstr "Examples of Nginx Proxy Parameter Configuration"
+msgstr "Examples of Nginx Proxy Parameters Configuration"
 
 #: ../../deployment/networkrequirements.md:54
 msgid ""
