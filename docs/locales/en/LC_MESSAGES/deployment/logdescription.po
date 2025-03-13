@@ -275,5 +275,5 @@ msgstr "The format description of `external.log` is as follows:"
 
 #: ../../deployment/logdescription.md:63
 msgid "0，表示请求 body 的 meta 信息"
-msgstr "0, indicating the meta information of the request body."
+msgstr "0, indicating the meta information of the body."
 
