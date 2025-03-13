@@ -23,7 +23,7 @@ msgstr "Log Description"
 
 #: ../../deployment/logdescription.md:3
 msgid "前言"
-msgstr "Preface"
+msgstr "Introduction"
 
 #: ../../deployment/logdescription.md:5
 msgid "日志在应用部署、业务运行和故障排除的过程中起到了非常的重要，本文将详细的描述日志对应的路径。"
