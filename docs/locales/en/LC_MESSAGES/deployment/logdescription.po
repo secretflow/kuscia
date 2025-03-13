@@ -247,7 +247,7 @@ msgstr "`REQUEST_DURATION`"
 
 #: ../../deployment/logdescription.md:63
 msgid "0，接收下游请求报文的时间"
-msgstr "0, the time to receive the downstream request message."
+msgstr "0, Total duration in milliseconds of the request from the start time to the last byte of the request received from the downstream."
 
 #: ../../deployment/logdescription.md:63
 msgid "`RESPONSE_DURATION`"
@@ -255,7 +255,7 @@ msgstr "`RESPONSE_DURATION`"
 
 #: ../../deployment/logdescription.md:63
 msgid "-，从请求开始到响应开始的时间"
-msgstr "-, Time from request start to response start"
+msgstr "-, Total duration in milliseconds of the request from the start time to the first byte read from the upstream host."
 
 #: ../../deployment/logdescription.md:63
 msgid "`RESPONSE_TX_DURATION`"
