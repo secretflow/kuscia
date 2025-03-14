@@ -27,10 +27,10 @@ msgid ""
 "K3s 的 Namespace 机制来管理节点权限，一个 Domain 对应 K3s 中的一个 Namespace。你可以使用 Domain "
 "来管理和维护隐私计算节点。具体用例请参考下文。"
 msgstr ""
-"In Kuscia, privacy-preserving computation nodes are referred to as Domains. A Domain can "
+"In Kuscia, privacy-preserving computation node are referred to as Domain. A Domain can "
 "contain multiple K3s worker nodes (Nodes). Kuscia leverages K3s' Namespace "
 "mechanism for node permission management, where each Domain corresponds to "
-"a Namespace in K3s. Domains are used to manage and maintain privacy "
+"a Namespace in K3s. Domain are used to manage and maintain privacy "
 "computing nodes. Specific use cases are detailed below."
 
 #: ../../reference/concepts/domain_cn.md:6
@@ -44,7 +44,7 @@ msgstr "The following are typical use cases for Domain"
 #: ../../reference/concepts/domain_cn.md:10
 msgid "创建 Domain，你将体验如何使用 Domain 创建隐私计算节点相关的 Namespace, ResourceQuota 资源。"
 msgstr ""
-"Create Domain: You will learn how to use Domains to create Namespace and "
+"Create Domain: You will learn how to use Domain to create Namespace and "
 "ResourceQuota resources associated with privacy-preserving computation nodes."
 
 #: ../../reference/concepts/domain_cn.md:11
@@ -68,7 +68,7 @@ msgstr ""
 msgid "参考 Domain 对象定义，你将获取详细的 Domain 描述信息。"
 msgstr ""
 "Reference Domain object definition: You will obtain comprehensive "
-"descriptive information about Domains."
+"descriptive information about Domain."
 
 #: ../../reference/concepts/domain_cn.md:15
 msgid "创建 Domain"
@@ -234,7 +234,7 @@ msgid ""
 "Domain，在创建该 Domain 时，需要将 `role` 的值设置为 `partner` 。"
 msgstr ""
 "`partner`: Indicates an external node acting as a collaborator in P2P "
-"networks. When creating collaborator Domains in the task scheduler's "
+"networks. When creating collaborator Domain in the task scheduler's "
 "cluster under this mode, set `role` to `partner`."
 
 #: ../../reference/concepts/domain_cn.md:171
