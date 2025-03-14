@@ -433,7 +433,7 @@ msgstr "For deployments using [kuscia.sh](https://github.com/secretflow/kuscia/b
 
 #: ../../deployment/kuscia_config_cn.md:206
 msgid "宿主机路径："
-msgstr "Host paths:"
+msgstr "Host Paths:"
 
 #: ../../deployment/kuscia_config_cn.md:207
 msgid "master：{PWD}/{USER}-kuscia-master/kuscia.yaml"
