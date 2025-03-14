@@ -377,8 +377,7 @@ msgstr "`sourceClientPrivateKey`: Represents the BASE64-encoded client private k
 #: ../../reference/concepts/domainroute_cn.md:377
 msgid "`tlsCA`：表示 BASE64 编码格式的目标节点的服务端 CA，为空则表示不校验服务端证书。"
 msgstr ""
-"`tlsCA`: Specifies the BASE64-encoded server CA of the destination node. If "
-"empty, server certificate verification will be disabled."
+"`tlsCA`: The server's CA certificate (BASE64 encoded) for the target node. Leave empty to bypass TLS verification."
 
 #: ../../reference/concepts/domainroute_cn.md:258
 #: ../../reference/concepts/domainroute_cn.md:378
@@ -386,9 +385,7 @@ msgid ""
 "`tokenConfig`：表示 Token 配置，authenticationType 为`Token`或 bodyEncryption "
 "非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。"
 msgstr ""
-"`tokenConfig`: Specifies Token configuration. The source node must configure "
-"TokenConfig when authenticationType is `Token` or bodyEncryption is not empty. "
-"This configuration does not take effect on the destination node."
+"`tokenConfig`: The tokenConfig defines the Token configuration. Mandatory on source nodes under: (1) Token authenticationType, (2) non-empty bodyEncryption. Configuration does not affect target nodes."
 
 #: ../../reference/concepts/domainroute_cn.md:259
 #: ../../reference/concepts/domainroute_cn.md:379
@@ -832,7 +829,7 @@ msgstr ""
 
 #: ../../reference/concepts/domainroute_cn.md:565
 msgid "什么时候需要反向隧道"
-msgstr "When to Use Reverse Tunnel"
+msgstr "When to Use a Reverse Tunnel in Network Configuration"
 
 #: ../../reference/concepts/domainroute_cn.md:567
 msgid ""
