@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../reference/concepts/index.rst:2
 msgid "Kuscia 概念"
-msgstr ""
+msgstr "Kuscia Concepts"
 
