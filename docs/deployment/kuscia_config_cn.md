@@ -8,59 +8,59 @@ Kuscia 的配置文件由公共配置和每个模式的特殊配置组成，具�
 ### 配置项示例
 
 ```yaml
-#############################################################################
-############                       公共配置                       ############
-#############################################################################
-# 部署模式
+######################################################################################
+############                     Public Configuration                     ############
+######################################################################################
+# Deployment mode
 mode: lite
-# 节点ID
-# 生产环境使用时建议将domainID设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如：
+# Node ID
+# When using in a production environment, it is recommended to set domainID to be globally unique. It is recommended to use: company name-department name-node name, such as:
 # domainID: mycompany-secretflow-trainlite
 domainID: alice
-# 节点私钥配置, 用于节点间的通信认证, 节点应用的证书签发
-# 执行命令 "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" 生成私钥
+# Node private key configuration, used for communication authentication between nodes and certificate issuance for node applications.
+# Run the command "docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh" to generate the private key.
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
-# KusciaAPI 以及节点对外网关使用的通信协议, NOTLS/TLS/MTLS
+# Communication protocol used by KusciaAPI and the node's external gateway, NOTLS/TLS/MTLS
 protocol: NOTLS
-# 日志级别 INFO、DEBUG、WARN
+# Log level INFO, DEBUG, WARN
 logLevel: INFO
-# 指标采集周期，单位: 秒
+# Metric collection period, unit: seconds
 metricUpdatePeriod: 5
-# 通用日志轮转配置，包括kuscia日志，应用日志（如secretflow、dataproxy等）
+# General log rotation configuration, including kuscia logs, application logs (such as secretflow, dataproxy, etc.)
 logrotate:
-  # 单个模块（如：kuscia、envoy 为不同模块）输出的日志，最多保留的文件数量，默认为 5
+  # The maximum number of files to keep for logs output by a single module (e.g., kuscia, envoy are different modules), default is 5
   maxFiles: 5
-  # 单个文件轮转阈值，默认为512，单位: MB
- maxFileSizeMB: 512
-  # 应用输出的日志文件，每个文件的最长保留时间，默认为30，单位: 天
- maxAgeDays: 30
-#############################################################################
-############                       Lite 配置                      ############
-#############################################################################
-# 当节点首次部署链接 Master 时，Master 通过该 Token 来验证节点的身份（Token 由 Master 颁发)，因为安全原因，该 Token 在节点部署成功后，立即失效
-# 多机部署时，请保持该 Token 不变即可
-# 如果节点私钥丢失，请在 Master 删除节点公钥，并重新申请 Token 部署
+  # Single file rotation threshold, default is 512, unit: MB
+  maxFileSizeMB: 512
+  # The maximum retention time for each application output log file, default is 30, unit: days
+  maxAgeDays: 30
+########################################################################################
+############                       Lite Configuration                       ############
+########################################################################################
+# When the node first deploys and connects to the Master, the Master uses this Token to verify the node's identity (Token issued by the Master). For security reasons, this Token is invalidated immediately after the node is successfully deployed.
+# When deploying on multiple machines, keep this Token unchanged.
+# If the node's private key is lost, delete the node's public key on the Master and reapply for a Token for deployment.
 liteDeployToken: LS0tLS1CRUdJTi
-# 节点连接 master 的地址
+# Address of the node connecting to the master
 masterEndpoint: https://172.18.0.2:1080
 
-#############################################################################
-############               Lite、Autonomy 配置                    ############
-#############################################################################
+####################################################################################
+############                Lite, Autonomy Configuration                ############
+####################################################################################
 # runc or runk or runp
 runtime: runc
-# 当 runtime 为 runk 时配置
+# Configuration when runtime is runk
 runk:
-  # 任务调度到指定的机构 K8s namespace 下
+  # Task scheduling to the specified organization's K8s namespace
   namespace: ""
-  # 机构 K8s 集群的 pod dns 配置，用于解析节点的应用域名，runk 拉起 pod 所使用的 dns 地址，应配置为 kuscia service 的 clusterIP
+  # pod dns configuration of the organization's K8s cluster, used to resolve the application domain name of the node. The dns address used by runk to pull up the pod should be configured as the clusterIP of the kuscia service.
   dnsServers:
-  # 机构 K8s 集群的 kubeconfig, 不填默认 serviceaccount; 当前请不填，默认使用 serviceaccount
+  # kubeconfig of the organization's K8s cluster, default is serviceaccount if not filled; currently, do not fill, use serviceaccount by default
   kubeconfigFile:
-  # 是否开启 kuscia pod 日志记录，默认为 false （不开启），当开启时需要在rbac.yaml (示例：https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rbac.yaml) 里开通pods/log权限
+  # Whether to enable kuscia pod log recording, default is false (disabled). When enabled, pods/log permissions need to be enabled in rbac.yaml (example: https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rbac.yaml)
   enableLogging:
 
-# 节点可用于调度应用的容量，runc/runp 不填会自动获取当前容器的系统资源, runk 模式下需要手动配置
+# The capacity that the node can use for scheduling applications. runc/runp automatically obtains the current container's system resources if not filled, manual configuration is required in runk mode
 capacity:
   cpu: #4
   memory: #8Gi
@@ -68,11 +68,11 @@ capacity:
   storage: #100Gi
   ephemeralStorage: #100Gi
 
-# agent 镜像配置
+# agent image configuration
 image:
-  pullPolicy: #是否允许拉取远程镜像(remote)|仅使用本地已导入镜像(local)
+  pullPolicy: #Whether to allow pulling remote images (remote) | only use locally imported images (local)
   defaultRegistry: ""
-  # 拉取镜像的代理地址，如：http://127.0.0.1:8080|不填则不使用代理
+  # Proxy address for pulling images, such as: http://127.0.0.1:8080 | do not use proxy if not filled
   httpProxy: ""
   registries:
     - name: ""
@@ -80,14 +80,14 @@ image:
       username: ""
       password: ""
 
-#############################################################################
-############               Autonomy、Master 配置                  ############
-#############################################################################
-# 数据库连接串，不填默认使用 SQLite
-# 示例：mysql://username:password@tcp(hostname:3306)/database-name
+##################################################################################
+############              Autonomy, Master Configuration              ############
+##################################################################################
+# Database connection string, default is SQLite if not filled
+# Example: mysql://username:password@tcp(hostname:3306)/database-name
 datastoreEndpoint: ""
-# 工作负载审批配置，注：仅P2P组网时此配置才生效，中心化组网时执行 KusciaJob 无需审批。
-# 默认情况下，工作负载审批配置为关闭状态。若开启审批配置，则当本方作为参与方时，所有的 Job 需要调用 KusciaAPI 进行作业审批。生产环境建议开启审批
+# Workload approval configuration, note: this configuration only takes effect in P2P networking. KusciaJob execution does not require approval in centralized networking.
+# By default, workload approval configuration is disabled. If approval configuration is enabled, all Jobs need to call KusciaAPI for job approval when the local party is a participant. Production environment is recommended to enable approval.
 enableWorkloadApprove: false
 ```
 
@@ -192,10 +192,10 @@ Kuscia 为您提供了快速生成 kuscia.yaml 文件的小工具，参数及示
 Kuscia init 使用示例如下：
 
 ```bash
-# 指定 Kuscia 使用的镜像版本，这里使用 latest 版本
+# Specifies the Kuscia image version to use, here using the latest version
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 
-# 命令执行后建议提前检查下生成的文件，避免配置文件错误导致的部署启动问题
+# It is recommended to check the generated file in advance after the command is executed to avoid deployment startup problems caused by configuration file errors
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "abcdefg" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
 ```
 
@@ -217,7 +217,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --m
 如果使用 [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh) 脚本部署的 Kuscia，可以指定配置文件，示例：
 
 ```bash
-# -c 参数传递的是指定的 Kuscia 配置文件路径。
+# -c The parameter passes the path of the specified Kuscia configuration file.
 ./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081
 ```
 
