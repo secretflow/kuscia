@@ -1,7 +1,7 @@
 # DomainDataSource
 
-Kuscia 通过 DomainDataSource 来管理数据源信息，数据源是指存储数据的地方，其可以是本地文件路径、对象存储服务OSS（或支持标准AWS S3协议的对象存储服务）、MySQL等。DomainDataSource 对象用于描述数据源的元数据（MetaData），
-如一个描述OSS数据源的 DomainDataSource 对象会包含：访问 OSS 所需的 Endpoints、Bucket、AK、SK 等信息（敏感信息会加密保存在DomainDataSource 的encryptedInfo字段中）。一个描述本地文件路径数据源的 DomainDataSource 对象会包含：本地文件数据源的绝对路径（如下示例中的uri字段）；
+Kuscia 通过 DomainDataSource 来管理数据源信息，数据源是指存储数据的地方，其可以是本地文件路径、对象存储服务 OSS（或支持标准 AWS S3 协议的对象存储服务）、MySQL 等。DomainDataSource 对象用于描述数据源的元数据（MetaData），
+如一个描述 OSS 数据源的 DomainDataSource 对象会包含：访问 OSS 所需的 Endpoints、Bucket、AK、SK 等信息（敏感信息会加密保存在 DomainDataSource 的 encryptedInfo 字段中）。一个描述本地文件路径数据源的 DomainDataSource 对象会包含：本地文件数据源的绝对路径（如下示例中的 uri 字段）；
 
 以下是一个描述本地文件路径（localfs）数据源的 DomainDataSource CRD 的示例：
 
@@ -31,7 +31,7 @@ DomainDataSource `metadata` 的子字段详细介绍如下：
 
 DomainDataSource `spec` 的子字段详细介绍如下：
 
-- `accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy 访问数据源（DataProxy暂未支持），当前默认直连数据源，不经过DataProxy。
+- `accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy 访问数据源（DataProxy 暂未支持），当前默认直连数据源，不经过 DataProxy。
 - `encryptedInfo`：加密存储访问数据源所需的信息，如数据源为 MySQL 时，此字段会加密保存 MySQL 的链接串。
 - `name`：数据源的名称，可重复，注意区别于 metadata 中的 name 字段。
 - `type`：表示数据源的类型，类型包括：localfs, oss, mysql 。
