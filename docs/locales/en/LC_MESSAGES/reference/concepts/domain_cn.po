@@ -39,18 +39,18 @@ msgstr "Use Cases"
 
 #: ../../reference/concepts/domain_cn.md:8
 msgid "以下是一些 Domain 的典型用例："
-msgstr "The following are typical use cases for Domains:"
+msgstr "The following are typical use cases for Domain"
 
 #: ../../reference/concepts/domain_cn.md:10
 msgid "创建 Domain，你将体验如何使用 Domain 创建隐私计算节点相关的 Namespace, ResourceQuota 资源。"
 msgstr ""
-"Creating a Domain: You will learn how to use Domains to create Namespace and "
+"Create Domain: You will learn how to use Domains to create Namespace and "
 "ResourceQuota resources associated with privacy-preserving computation nodes."
 
 #: ../../reference/concepts/domain_cn.md:11
 msgid "更新 Domain，你将熟悉如何更新现有的 Domain，从而变更隐私计算节点相关的 Namespace, ResourceQuota 资源。"
 msgstr ""
-"Updating a Domain: You will become familiar with modifying existing Domains "
+"Update Domain: You will become familiar with modifying existing Domain "
 "to update Namespace and ResourceQuota resources related to privacy-preserving computation "
 "nodes."
 
@@ -59,8 +59,8 @@ msgid ""
 "清理 Domain，你将熟悉如何清理不需要的 Domain。在 Kuscia 中，清理 Domain 并不会真正的删除 Domain 相关的 "
 "Namespace, ResourceQuota 资源，而是会在节点相关的 Namespace 资源上添加标记 Domain 被删除相关标签。"
 msgstr ""
-"Cleaning up a Domain: You will learn how to remove unnecessary Domains. In "
-"Kuscia, cleaning up a Domain does not permanently delete associated "
+"Clean up Domain: You will learn how to remove unnecessary Domain. In "
+"Kuscia, clean up Domain does not permanently delete associated "
 "Namespace and ResourceQuota resources. Instead, it adds deletion-related "
 "labels to the corresponding Namespace resources."
 
@@ -72,13 +72,13 @@ msgstr ""
 
 #: ../../reference/concepts/domain_cn.md:15
 msgid "创建 Domain"
-msgstr "Creating a Domain"
+msgstr "Create Domain"
 
 #: ../../reference/concepts/domain_cn.md:17
 msgid "下面以 `alice-domain.yaml` 的内容为例，介绍创建 Domain。"
 msgstr ""
 "The following example using `alice-domain.yaml` demonstrates Domain "
-"creation:"
+"creation."
 
 #: ../../reference/concepts/domain_cn.md:31
 #: ../../reference/concepts/domain_cn.md:82
@@ -106,14 +106,14 @@ msgid ""
 "`partner`：表示外部节点，用在点对点组网模式下的协作方节点。点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该"
 " Domain 时，需要将 `role` 的值设置为 `partner` 。"
 msgstr ""
-"`partner`: Represents an external node used as a collaborator in peer-to-"
-"peer networking mode. When creating a collaborator Domain in the task "
+"`partner`: Represents an external node used as a collaborator in P2P "
+"networking mode. When creating a collaborator Domain in the task "
 "scheduler's cluster under this mode, set `role` to `partner`."
 
 #: ../../reference/concepts/domain_cn.md:36
 #: ../../reference/concepts/domain_cn.md:170
 msgid "`\"\"`：表示内部节点。"
-msgstr "`\"\"`: Denotes an internal node."
+msgstr "`\"\"`: Specifies an internal node."
 
 #: ../../reference/concepts/domain_cn.md:37
 msgid ""
@@ -124,7 +124,7 @@ msgstr ""
 "computing node, generated using the `domainKeyData` private key from the "
 "configuration file. This can be created using commands from [this script]"
 "(https://github.com/secretflow/kuscia/blob/main/scripts/deploy/generate_cert.sh). "
-"This field is not required in centralized mode scenarios."
+"This field is not required in Center mode scenarios."
 
 #: ../../reference/concepts/domain_cn.md:38
 msgid ""
@@ -137,24 +137,24 @@ msgstr ""
 
 #: ../../reference/concepts/domain_cn.md:40
 msgid "运行以下命令创建 Domain。"
-msgstr "Execute the following command to create the Domain:"
+msgstr "Execute the following command to create the Domain."
 
 #: ../../reference/concepts/domain_cn.md:46
 msgid "检查 Domain 是否创建成功。"
-msgstr "Verify Domain creation status."
+msgstr "Check whether the domain name is created successfully."
 
 #: ../../reference/concepts/domain_cn.md:54
 msgid "检查 Domain 相关的 Namespace, ResourceQuota 资源是否创建成功。"
-msgstr "Confirm creation of Namespace and ResourceQuota resources:"
+msgstr "Check whether the Namespace and ResourceQuota resources related to the Domain are created successfully."
 
 #: ../../reference/concepts/domain_cn.md:66
 msgid "更新 Domain"
-msgstr "Updating a Domain"
+msgstr "Update Domain"
 
 #: ../../reference/concepts/domain_cn.md:68
 msgid "下面以 `alice-domain.yaml` 的内容为例，介绍更新 Domain。"
 msgstr ""
-"The following demonstrates Domain updates using `alice-domain.yaml`:"
+"The following uses the content of `alice-domain.yaml` as an example to introduce how to update the Domain."
 
 #: ../../reference/concepts/domain_cn.md:84
 msgid "将 `.spec.resourceQuota.podMaxCount` 的值调整为`200`。"
@@ -162,27 +162,27 @@ msgstr "Adjust `.spec.resourceQuota.podMaxCount` to `200`."
 
 #: ../../reference/concepts/domain_cn.md:86
 msgid "运行以下命令更新 Domain。"
-msgstr "Execute the update command."
+msgstr "Run the following command to update the Domain."
 
 #: ../../reference/concepts/domain_cn.md:92
 msgid "检查 Domain 相关的 ResourceQuota 资源是否更新成功。"
-msgstr "Verify ResourceQuota resource updates."
+msgstr "Check whether the ResourceQuota resources related to the Domain are updated successfully."
 
 #: ../../reference/concepts/domain_cn.md:100
 msgid "清理 Domain"
-msgstr "Cleaning up a Domain"
+msgstr "Clean up Domain"
 
 #: ../../reference/concepts/domain_cn.md:102
 msgid "下面以 Domain `alice` 为例，介绍清理 Domain。"
-msgstr "The following demonstrates cleanup of Domain `alice`."
+msgstr "The following uses the Domain `alice` as an example to introduce how to clean up the Domain."
 
 #: ../../reference/concepts/domain_cn.md:104
 msgid "运行以下命令清理 Domain。"
-msgstr "Execute cleanup command."
+msgstr "Run the following command to clean up the Domain."
 
 #: ../../reference/concepts/domain_cn.md:110
 msgid "检查 Domain 是否已被清理。"
-msgstr "Confirm Domain removal."
+msgstr "Check if the Domain has been cleaned up."
 
 #: ../../reference/concepts/domain_cn.md:117
 msgid "检查 Domain 相关的 Namespace, ResourceQuota 资源是否还存在。"
@@ -191,7 +191,7 @@ msgstr "Check remaining Namespace and ResourceQuota resources."
 #: ../../reference/concepts/domain_cn.md:129
 msgid "检查 Domain 相关的 Namespace 是否已添加标记被清理的标签。"
 msgstr ""
-"Verify if deletion-related labels have been added to the Namespace."
+"Check whether the namespace associated with the domain has been marked as cleaned up."
 
 #: ../../reference/concepts/domain_cn.md:137
 msgid "参考"
@@ -233,8 +233,8 @@ msgid ""
 "`partner`：表示外部节点，用在点对点组网模式下的协作方节点。 点对点组网模式下，需要在任务调度方的集群中创建协作方的 "
 "Domain，在创建该 Domain 时，需要将 `role` 的值设置为 `partner` 。"
 msgstr ""
-"`partner`: Indicates an external node acting as a collaborator in peer-to-"
-"peer networks. When creating collaborator Domains in the task scheduler's "
+"`partner`: Indicates an external node acting as a collaborator in P2P "
+"networks. When creating collaborator Domains in the task scheduler's "
 "cluster under this mode, set `role` to `partner`."
 
 #: ../../reference/concepts/domain_cn.md:171
@@ -245,7 +245,7 @@ msgstr ""
 "`cert`: BASE64-encoded certificate generated using the `domainKeyData` "
 "private key from configuration files. Generate using commands from [this "
 "script](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/generate_cert.sh). "
-"Not required in centralized mode."
+"Not required in Center mode."
 
 #: ../../reference/concepts/domain_cn.md:172
 msgid ""
@@ -253,14 +253,14 @@ msgid ""
 " `bfia` 。当前该字段只支持配置一种协议，若配置多个协议，则会选择第一个协议作为互联互通作业的协议类型。未来会支持多种协议。"
 msgstr ""
 "`interConnProtocols`: Specifies interoperability protocols supported by "
-"external nodes, defaulting to `\"\"`. Valid values: `kuscia` and `bfia`. "
+"external privacy-preserving computation nodes, defaulting to `\"\"`. Valid values: `kuscia` and `bfia`. "
 "Currently supports single protocol configuration, with future plans for "
 "multi-protocol support."
 
 #: ../../reference/concepts/domain_cn.md:173
 msgid "`kuscia`：表示该外部节点参与隐私计算任务时，会使用互联互通蚂蚁 `kuscia` 协议运行隐私计算任务。"
 msgstr ""
-"`kuscia`: Indicates the external node uses Ant Group's `kuscia` protocol "
+"`kuscia`: Indicates the external privacy-preserving computation nodes uses Ant Group's `kuscia` protocol "
 "for privacy-preserving computation tasks."
 
 #: ../../reference/concepts/domain_cn.md:174
@@ -287,39 +287,35 @@ msgstr "Domain `status` subfields are detailed below:"
 #: ../../reference/concepts/domain_cn.md:179
 msgid "`nodeStatuses`：表示隐私计算节点 Domain 下所有 Kuscia Agent 的状态信息。"
 msgstr ""
-"`nodeStatuses`: Displays status information for all Kuscia Agents under the "
-"Domain."
+"`nodeStatuses`: Displays status information for all Kuscia Agents under the Domain."
 
 #: ../../reference/concepts/domain_cn.md:180
 msgid "`nodeStatuses[].lastHeartbeatTime`：表示 Kuscia Agent 最近一次上报心跳的时间。"
 msgstr ""
-"`nodeStatuses[].lastHeartbeatTime`: Timestamp of the agent's last heartbeat "
-"report."
+"`nodeStatuses[].lastHeartbeatTime`: Indicates the time when Kuscia Agent last reported a heartbeat."
 
 #: ../../reference/concepts/domain_cn.md:181
 msgid "`nodeStatuses[].lastTransitionTime`：表示 Kuscia Agent 最近一次发生更新的时间。"
 msgstr ""
-"`nodeStatuses[].lastTransitionTime`: Timestamp of the agent's last status "
-"transition."
+"`nodeStatuses[].lastTransitionTime`: Indicates the time when Kuscia Agent was last updated."
 
 #: ../../reference/concepts/domain_cn.md:182
 msgid "`nodeStatuses[].name`：表示 Kuscia Agent 的名称。"
-msgstr "`nodeStatuses[].name`: Name of the Kuscia Agent."
+msgstr "`nodeStatuses[].name`: Indicates the name of the Kuscia Agent."
 
 #: ../../reference/concepts/domain_cn.md:183
 msgid "`nodeStatuses[].status`：表示 Kuscia Agent 的状态。支持两种取值 `Ready` 、`NotReady` 。"
 msgstr ""
-"`nodeStatuses[].status`: Agent status with possible values `Ready` or "
-"`NotReady`."
+"`nodeStatuses[].status`: Indicates the status of Kuscia Agent. Supports two values: `Ready` and `NotReady`."
 
 #: ../../reference/concepts/domain_cn.md:184
 msgid "`Ready`：表示 Kuscia Agent 状态正常。"
-msgstr "`Ready`: Indicates normal agent operation."
+msgstr "`Ready`: Indicates that the Kuscia Agent status is normal."
 
 #: ../../reference/concepts/domain_cn.md:185
 msgid "`NotReady`：表示 Kuscia Agent 状态异常。"
-msgstr "`NotReady`: Indicates agent malfunction."
+msgstr "`NotReady`: Indicates that the Kuscia Agent status is abnormal."
 
 #: ../../reference/concepts/domain_cn.md:186
 msgid "`nodeStatuses[].version`：表示 Kuscia Agent 的版本。"
-msgstr "`nodeStatuses[].version`: Agent software version."
+msgstr "`nodeStatuses[].version`: Indicates the version of Kuscia Agent."
