@@ -27,7 +27,7 @@ msgid ""
 " DomainData 、授权使用限制和授权信息签名等。DomainDataGrant 属于节点内资源，每一个 DomainDataGrant "
 "都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。"
 msgstr ""
-"In Kuscia, DomainDataGrant represents managed data object authorization, including grantor node ID, grantee node ID, authorized DomainData, usage restrictions, and authorization signature. As node-scoped resources, each DomainDataGrant belongs to a specific Domain and is exclusively accessible within its owning Domain."
+"In Kuscia, DomainDataGrant represents managed data object authorization, including grantor DomainID, grantee DomainID, authorized DomainData, usage restrictions, and authorization signature. As node-scoped resources, each DomainDataGrant belongs to a specific Domain and is exclusively accessible within its owning Domain."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:5
 msgid ""
@@ -35,14 +35,14 @@ msgid ""
 "从授权方节点下复制到被授权节点下，同时也会把授权的 DomainData 也复制过去。同理，如果授权方删除了本条授权，Controller "
 "也会从被授权方下删除本条授权的拷贝。"
 msgstr ""
-"The DomainData Controller replicates DomainDataGrant and associated DomainData from the grantor node to the grantee node upon creation. Correspondingly, if the grantor revokes authorization, the Controller removes the copied resources from the grantee node."
+"After DomainDataGrant is created, DomainData Controller will copy DomainDataGrant from the authorizer node to the authorized node, and will also copy the authorized DomainData. Similarly, if the authorizer deletes this authorization, the Controller will also delete the copy of this authorization from the authorized node."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:7
 msgid ""
 "被授权方可以通过授权方的证书来校验 DomainDataGrant 里的签名来验证授权信息是否合法。由于将 DomainDataGrant "
 "的信息进行签名的操作比较繁琐，建议调用 datamesh 的相关接口进行操作。签名字段可用为空。"
 msgstr ""
-"Grantees can validate authorization legitimacy by verifying signatures in DomainDataGrant using the grantor's certificate. For operational efficiency, it's recommended to utilize datamesh interfaces for signature handling rather than manual processes. The signature field may remain empty."
+"The authorized party can verify the validity of the authorization information by verifying the signature in DomainDataGrant through the certificate of the authorizer. Since the operation of signing the information of DomainDataGrant is cumbersome, it is recommended to call the relevant interface of datamesh to operate. The signature field can be left empty."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:9
 msgid "用例"
@@ -54,32 +54,32 @@ msgstr "Typical usage scenarios for DomainDataGrant include:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:13
 msgid "创建 DomainDataGrant，你将体验如何使用通过创建一个 DomainDataGrant 将你自己的数据加入 Kuscia 的管理。"
-msgstr "Creating DomainDataGrant: Learn how to integrate custom data into Kuscia's management system through authorization creation."
+msgstr "Create DomainDataGrant: Learn how to integrate custom data into Kuscia's management system through DomainDataGrant."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:14
 msgid "更新 DomainDataGrant，你将熟悉如何更新现有的 DomainDataGrant，从而变更 DomainDataGrant 的信息。"
-msgstr "Updating DomainDataGrant: Understand the process for modifying existing authorization configurations."
+msgstr "Update DomainDataGrant: Understand the process for modifying existing DomainDataGrant."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:15
 msgid ""
 "清理 DomainDataGrant，你将熟悉如何清理不需要的 DomainDataGrant。删除 DomainDataGrant "
 "并不会删除真实的数据，只是 Kuscia 不再管理这些授权信息。"
 msgstr ""
-"Cleaning DomainDataGrant: Master the procedure for removing obsolete authorizations. Note that deletion only revokes management privileges without affecting actual data resources."
+"Clean up DomainDataGrant: Cleaning up DomainDataGrant, you will be familiar with how to clean up unnecessary DomainDataGrant. Deleting DomainDataGrant does not delete the actual data, but Kuscia no longer manages the grant information."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:16
 msgid ""
 "在 Domain 侧管理 DomainDataGrant，你将熟悉如何通过 Data Mesh API 来在 Domain 侧管理 "
 "DomainDataGrant。"
-msgstr "Domain-side Management: Explore DomainDataGrant administration through Data Mesh API within designated Domains."
+msgstr "Managing DomainDataGrant on the Domain Side You will become familiar with how to manage DomainDataGrant on the Domain side through the Data Mesh API."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:17
 msgid "参考 DomainDataGrant 对象定义，你将获取详细的 DomainDataGrant 描述信息。"
-msgstr "Object Definition Reference: Access comprehensive documentation of DomainDataGrant specifications."
+msgstr "Refer to the DomainDataGrant object definition to get the detailed description of DomainDataGrant."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:19
 msgid "创建 DomainData"
-msgstr "Creating DomainData"
+msgstr "Create DomainData"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:21
 msgid "下面以 `alice-bob.yaml` 的内容为例，介绍创建 DomainDataGrant。"
@@ -87,7 +87,7 @@ msgstr "The following example demonstrates DomainDataGrant creation using the `a
 
 #: ../../reference/concepts/domaindatagrant_cn.md:39
 msgid "在该示例中:"
-msgstr "in this example:"
+msgstr "In this example:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:41
 msgid ""
@@ -103,11 +103,11 @@ msgstr "`.metadata.name`: Specifies the DomainDataGrant identifier, `alice-bob` 
 
 #: ../../reference/concepts/domaindatagrant_cn.md:43
 msgid "`.metadata.namespace`: 表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为`alice`。"
-msgstr "`.metadata.namespace`: Indicates the owning namespace/node, `alice` in this instance."
+msgstr "`.metadata.namespace`: Indicates the namespace to which the DomainDataGrant belongs, that is, the node to which it belongs. In the current example, it is `alice`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:44
 msgid "`.spec.author`：表示授权方节点 ID 。当前示例授权方节点为`alice`。"
-msgstr "`.spec.author`: Indicates the grantor node ID (`alice` here)."
+msgstr "`.spec.author`: Indicates the grantor DomianID (`alice` here)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:45
 msgid "`.spec.domainDataID`：表示 DomainDataGrant 所属的 DomainData。"
@@ -115,13 +115,13 @@ msgstr "`.spec.domainDataID`: Associates with the corresponding DomainData resou
 
 #: ../../reference/concepts/domaindatagrant_cn.md:46
 msgid "`.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为`bob`。"
-msgstr "`.spec.grantDomain`: Identifies the grantee node ID (`bob` in this example)."
+msgstr "`.spec.grantDomain`: Identifies the grantee DomianID (`bob` in this example)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:48
 msgid ""
 "参照 [DomainData](./domaindata_cn.md) 中的方法，先创建 `alice-table` 这个 DomainData "
 "资源。"
-msgstr "First create the `alice-table` DomainData resource as described in [DomainData](./domaindata_en.md)."
+msgstr "First create the `alice-table` DomainData resource as described in [DomainData](./domaindata_cn.md)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:50
 msgid "在 master 容器即 `${USER}-kuscia-master` 容器中，运行以下命令创建 DomainDataGrant。"
@@ -133,11 +133,11 @@ msgstr "Verify successful creation within the master container:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:62
 msgid "在 master 容器即 `${USER}-kuscia-master` 容器中，检查 bob 是否被成功授权。"
-msgstr "Confirm authorization status for node bob:"
+msgstr "In the master container, `${USER}-kuscia-master`, check whether bob is successfully authorized"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:69
 msgid "更新 DomainDataGrant"
-msgstr "Updating DomainDataGrant"
+msgstr "Update DomainDataGrant"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:71
 msgid "下面以 `alice-bob.yaml` 的内容为例，介绍更新 DomainDataGrant。"
@@ -161,7 +161,7 @@ msgstr "Verify synchronization to node bob:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:109
 msgid "清理 DomainData"
-msgstr "Cleaning DomainData"
+msgstr "Clean up DomainData"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:111
 msgid ""
@@ -172,27 +172,27 @@ msgstr ""
 
 #: ../../reference/concepts/domaindatagrant_cn.md:114
 msgid "运行以下命令清理 DomainDataGrant。"
-msgstr "Initiate cleanup with:"
+msgstr "Run the following command to clean up the DomainDataGrant."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:120
 msgid "检查 Alice 下的 DomainDataGrant 是否已被清理。"
-msgstr "Confirm removal from node alice:"
+msgstr "Check if the DomainDataGrant under Alice has been cleaned up."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:127
 msgid "检查 Alice 下的 DomainData 是否还存在。"
-msgstr "Verify DomainData retention status:"
+msgstr "Check if DomainData under Alice still exists."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:133
 msgid ", 检查 Bob 下的 DomainDataGrant 是否已被清理。"
-msgstr "Check node bob for residual grants:"
+msgstr ", check if the DomainDataGrant under Bob has been cleaned up."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:140
 msgid "检查 Bob 下的 DomainDataG 是否已被清理。"
-msgstr "Ensure complete removal from grantee node:"
+msgstr "Check if DomainDataG under Bob has been cleaned up."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:149
 msgid "在 Domain 侧管理 DomainDataGrant"
-msgstr "Domain-Side Management"
+msgstr "Managing DomainDataGrant on the Domain Side"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:151
 msgid ""
@@ -207,11 +207,11 @@ msgid ""
 "Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分为 8082 和 8083 。 端口，详情请参考 [Kuscia "
 "API](../apis/domaindatagrant_cn.md)。"
 msgstr ""
-"Accessible via HTTP (port 8082) and GRPC (port 8083), the Kuscia API facilitates comprehensive management. Refer to [Kuscia API](../apis/domaindatagrant_en.md) for specifications."
+"Accessible via HTTP (port 8082) and GRPC (port 8083), the Kuscia API facilitates comprehensive management. Refer to [Kuscia API](../apis/domaindatagrant_cn.md) for specifications."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:157
 msgid "进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainDataGrant。"
-msgstr "Query DomainDataGrants within alice container (`${USER}-kuscia-lite-alice`):"
+msgstr "Query DomainDataGrant within alice container `${USER}-kuscia-lite-alice`:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:170
 msgid "参考"
@@ -234,11 +234,11 @@ msgstr ""
 
 #: ../../reference/concepts/domaindatagrant_cn.md:194
 msgid "`name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为`alice-bob`。"
-msgstr "`name`: Resource identifier (`alice-bob` in this case)."
+msgstr "`name`: Indicates the name of the privacy-preserving computation node DomainDataGrant. The current example is `alice-bob`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:195
 msgid "`namespace`：表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为`alice`。"
-msgstr "`namespace`: Owning node namespace (`alice` here)."
+msgstr "`namespace`: Indicates the namespace to which the DomainDataGrant belongs, that is, the node to which it belongs. In the current example, it is `alice`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:197
 msgid "DomainDataGrant `spec` 的子字段详细介绍如下："
@@ -246,26 +246,26 @@ msgstr "Specification subfields detailed:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:199
 msgid "`author`：表示授权方节点 ID，用来标识这条授权是由哪个节点发起的。"
-msgstr "`author`: Grantor node ID initiating the authorization."
+msgstr "`author`: Indicates the DomainID of the authorizer, which is used to identify which node initiated this authorization."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:200
 msgid ""
 "`domainDataID`：表示这条授权是基于哪个 DomainData 生成的，DomainData Controller 不仅会将 "
 "DomainDataGrannt 拷贝给被授权节点，还会将 DomainData 也拷贝过去，因此需要保证 DomainData 是已经存在的。"
 msgstr ""
-"`domainDataID`: References the source DomainData resource. The Controller replicates both authorization and data resources, requiring pre-existing DomainData."
+"`domainDataID`: Indicates which DomainData this authorization is based on. The DomainData Controller will not only copy the DomainDataGrannt to the authorized node, but also copy the DomainData. Therefore, it is necessary to ensure that the DomainData already exists."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:201
 msgid "`grantDomain`：表示被授权方节点 ID，请保证该 Domain 已经存在。"
-msgstr "`grantDomain`: Indicates pre-existing grantee node ID. Please ensure that this Domain already exists."
+msgstr "`grantDomain`: Indicates pre-existing grantee DomainID. Please ensure that this Domain already exists."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:202
 msgid ""
 "`signature`：表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author "
 "的公钥进行验证授权信息的真假。该字段为预留字段，暂未开启，填入空字符串即可。"
 msgstr ""
-"`signature`: Cryptographic signature using grantor's private key (reserved field, currently inactive)."
+"`signature`: The signature of the authorization information is signed with the node private key of the author. grantDomain can use the public key of the author to verify the authenticity of the authorization information. This field is reserved and has not been enabled yet. Just fill in an empty string."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:203
 msgid "`description`：表示用户自定义的描述信息。"
-msgstr "`description`: Customizable descriptive metadata."
+msgstr "`description`: Indicates user-defined description information."
