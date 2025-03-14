@@ -13,7 +13,7 @@ Kuscia 的配置文件由公共配置和每个模式的特殊配置组成，具�
 ######################################################################################
 # Deployment mode
 mode: lite
-# Node ID
+# DomianID
 # When using in a production environment, it is recommended to set domainID to be globally unique. It is recommended to use: "company name"-"department name"-"node name", such as:
 # domainID: mycompany-secretflow-trainlite
 domainID: alice
