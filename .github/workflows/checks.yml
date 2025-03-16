@@ -1,0 +1,81 @@
+# Copyright 2023 Ant Group Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Checks
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+    branches:
+      - main
+      - release/*
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  detect-changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      docs: ${{ steps.changes.outputs.docs }}
+      other: ${{ steps.changes.outputs.other }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+            other:
+              - '**/*'
+              - '!**/*.go'
+  make-docs:
+    name: make docs
+    runs-on: [ubuntu-latest]
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.docs == 'true' }}
+    container:
+      image: secretflow/kuscia-ci:20250314
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: make docs
+        run: |
+          pip install -r docs/requirements.txt
+          make docs
+  common-checks:
+    name: common checks
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.other == 'true' }}
+    container:
+      image: secretflow/kuscia-ci:20250314
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: Check shell, yaml, markdown, codespell
+        run: |
+          make shell-check
+          make yaml-check
+          make markdown-check
+          make codespell-check
