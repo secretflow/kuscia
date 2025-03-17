@@ -19,13 +19,14 @@ msgstr ""
 
 #: ../../reference/concepts/domaindata_cn.md:1
 msgid "DomainData"
-msgstr ""
+msgstr "DomainData"
 
 #: ../../reference/concepts/domaindata_cn.md:3
 msgid ""
 "在 Kuscia 中，DomainData 表示被 Kuscia 所管理的数据对象，包括 表、模型、规则和报告等。DomainData "
 "属于节点内资源，每一个 DomainData 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。"
 msgstr ""
+"In Kuscia, DomainData represents data objects managed by the platform, including tables, models, rules, and reports. As node-local resources, each DomainData instance is associated with a specific Domain and is exclusively accessible within that Domain."
 
 #: ../../reference/concepts/domaindata_cn.md:5
 msgid ""
@@ -34,6 +35,7 @@ msgid ""
 "该任务结束后，会在参与方生成新的隐私求交结果表，即生成`type`为`table`的 DomainData，参与方可以通过这个 "
 "DomainData 获取到文件地址或者将这个 DomainData 用于下次计算任务。"
 msgstr ""
+"A typical use case involves Private Set Intersection (PSI) participants creating the tables they will use for the calculation under their own Domains, that is, the DomainData with the type of `table`. After initiating a [KusciaJob](kusciajob_cn.md) for PSI computation, the task generates new table typed DomainData containing intersection results. Participants can retrieve file paths through these DomainData objects or reuse them in subsequent computational tasks."
 
 #: ../../reference/concepts/domaindata_cn.md:8
 msgid ""
@@ -41,52 +43,53 @@ msgid ""
 "信息，用于在计算任务中协助应用算法组件读取数据。 当前版本 Kuscia 暂未支持检查真实的数据内容是否满足 DomainData 中提交的 "
 "meta 信息定义，后续 Kuscia 会增加对提交的 meta 信息的验证。"
 msgstr ""
+"It should be noted that operations on DomainData (creation, update, deletion) only affect metadata records, not the actual data. The current version does not validate whether physical data conforms to submitted metadata definitions, but future releases will implement metadata verification."
 
 #: ../../reference/concepts/domaindata_cn.md:11
 msgid "如上所述，您可以通过创建一个 DomainData 将您自己的数据加入 Kuscia 的管理，也可以通过任务生成一个新的 DomainData 。"
-msgstr ""
+msgstr "As outlined, users can integrate data into Kuscia's management by creating DomainData objects, or generate new DomainData through computational tasks."
 
 #: ../../reference/concepts/domaindata_cn.md:13
 msgid "用例"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../reference/concepts/domaindata_cn.md:15
 msgid "以下是一些 DomainData 的典型用例："
-msgstr ""
+msgstr "Typical DomainData application scenarios include:"
 
 #: ../../reference/concepts/domaindata_cn.md:17
 msgid "创建 DomainData，您将体验如何使用通过创建一个 DomainData 将您自己的数据加入 Kuscia 的管理。"
-msgstr ""
+msgstr "**Create DomainData**, you will experience how to add your own data to Kuscia management by creating a DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:18
 msgid "更新 DomainData，您将熟悉如何更新现有的 DomainData，从而变更 DomainData 的信息。"
-msgstr ""
+msgstr "**Update DomainDat** , you will become familiar with how to update existing DomainData, thereby changing the information of the DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:19
 msgid ""
 "清理 DomainData，您将熟悉如何清理不需要的 DomainData。删除 DomainData 并不会删除真实的数据，只是 Kuscia "
 "不再管理这些数据。"
-msgstr ""
+msgstr "**Clean up DomainData**, you will become familiar with how to clean up unnecessary DomainData. Deleting DomainData does not delete the actual data, but Kuscia no longer manages the data."
 
 #: ../../reference/concepts/domaindata_cn.md:20
 msgid "在 Domain 侧管理 DomainData，您将熟悉如何通过 Data Mesh API 来在 Domain 侧管理 DomainData。"
-msgstr ""
+msgstr "**Manage DomainData** on the Domain Side, You will become familiar with how to manage DomainData on the Domain side through the Data Mesh API."
 
 #: ../../reference/concepts/domaindata_cn.md:21
 msgid "参考 DomainData 对象定义，您将获取详细的 DomainData 描述信息。"
-msgstr ""
+msgstr "**Refer to DomainData Object Definition** to get the detailed description of DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:23
 msgid "创建 DomainData"
-msgstr ""
+msgstr "Create DomainData"
 
 #: ../../reference/concepts/domaindata_cn.md:25
 msgid "下面以 `alice-table.yaml` 的内容为例，介绍创建 DomainData。"
-msgstr ""
+msgstr "The following example demonstrates DomainData creation using `alice-table.yaml`:"
 
 #: ../../reference/concepts/domaindata_cn.md:57
 msgid "在该示例中:"
-msgstr ""
+msgstr "In this example:"
 
 #: ../../reference/concepts/domaindata_cn.md:59
 msgid ""
@@ -94,119 +97,128 @@ msgid ""
 "中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/labels/)。"
 msgstr ""
+"`.metadata.labels`: Supports efficient querying and monitoring operations through Kubernetes label mechanisms. See: [Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)."
 
 #: ../../reference/concepts/domaindata_cn.md:60
 msgid "`.metadata.name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。"
-msgstr ""
+msgstr "`.metadata.name`: Specifies the DomainData identifier, `alice-table` in this case."
 
 #: ../../reference/concepts/domaindata_cn.md:61
 msgid "`.metadata.namespace`: 表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。"
-msgstr ""
+msgstr "`.metadata.namespace`: Denotes the associated node namespace, `alice` in this instance."
 
 #: ../../reference/concepts/domaindata_cn.md:62
 msgid ""
 "`.spec.attributes`：表示 DomainData "
 "的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，详细请查看 [参考](#refer)。"
 msgstr ""
+"`.spec.attributes`: Stores custom key-value pairs for extended metadata, typically used by applications or algorithms. Refer to [Reference](#refer) for details."
 
 #: ../../reference/concepts/domaindata_cn.md:63
 msgid ""
 "`.spec.columns`：表示对于表类型的 DomainData 的列信息。仅当`type`为`table`时，该字段才存在，详细请查看 "
 "[参考](#refer)。"
 msgstr ""
+"`.spec.columns`: Defines column schema for table-type DomainData. Only present when `type` equals `table`. See [Reference](#refer)."
 
 #: ../../reference/concepts/domaindata_cn.md:64
 msgid ""
 "`.spec.dataSource`：表示 DomainData 所属的数据源。数据源是数据所存放的位置，存在多种类型的数据源，详细请查看 "
 "[参考](#refer)。"
 msgstr ""
+"`.spec.dataSource`: Indicates the data storage location. Supports multiple source types. See [Reference](#refer)."
 
 #: ../../reference/concepts/domaindata_cn.md:65
 msgid "`.spec.name`：表示一个人类可读的名称，仅用作展示，可重复。"
-msgstr ""
+msgstr "`.spec.name`: Human-readable display name (non-unique)."
 
 #: ../../reference/concepts/domaindata_cn.md:66
 msgid ""
 "`.spec.relativeURI`：表示相对于数据源根路径的位置，当前示例的绝对路径为`/home/kuscia/var/storage/data/alice.csv`，详细请查看"
 " [参考](#refer)。"
 msgstr ""
+"`.spec.relativeURI`: Specifies path relative to data source root. Absolute path in this example: `/home/kuscia/var/storage/data/alice.csv`. See [Reference](#refer)."
 
 #: ../../reference/concepts/domaindata_cn.md:67
 msgid ""
 "`.spec.type`：表示 DomainData 的类型，如 "
 "`table`、`model`、`rule`、`report`，分别表示数据表，模型，规则，报告。"
 msgstr ""
+"`.spec.type`: Object type classification: `table`, `model`, `rule`, or `report`."
 
 #: ../../reference/concepts/domaindata_cn.md:68
 msgid "`.spec.vendor`：表示 DomainData 的来源，仅用作标识，详细请查看 [参考](#refer)。"
-msgstr ""
+msgstr "`.spec.vendor`: Origin identifier (e.g., manual creation or algorithm-generated). See [Reference](#refer)."
 
 #: ../../reference/concepts/domaindata_cn.md:69
 #: ../../reference/concepts/domaindata_cn.md:236
 msgid "`.spec.author`：表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的。"
-msgstr ""
+msgstr "`.spec.author`: Node ID of the DomainData creator."
 
 #: ../../reference/concepts/domaindata_cn.md:71
 msgid ""
 "准备您的 CSV 数据文件，将您的数据文件重命名为 `alice.csv`，并拷贝到alice节点容器即`${USER}-kuscia-lite-"
 "alice`容器的`/home/kuscia/var/storage/data`目录下，运行以下命令可完成："
 msgstr ""
+"Prepare CSV data files by renaming to `alice.csv` and copying to `${USER}-kuscia-lite-alice` container's `/home/kuscia/var/storage/data` directory using:"
 
 #: ../../reference/concepts/domaindata_cn.md:78
 msgid ""
 "进入 master 容器即 `${USER}-kuscia-master` 容器，创建示例中的`alice-table.yaml`并根据您的 "
 "CSV文件 的列字段信息，调整上述示例中的`.spec.columns`字段。"
 msgstr ""
+"In the `${USER}-kuscia-master` container, create `alice-table.yaml` and modify `.spec.columns` according to CSV column schema."
 
 #: ../../reference/concepts/domaindata_cn.md:80
 msgid "在 master 容器即 `${USER}-kuscia-master` 容器中，运行以下命令创建 DomainData。"
-msgstr ""
+msgstr "In the master container, i.e., the `${USER}-kuscia-master container`, run the following command to create DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:86
 msgid "在 master 容器即 `${USER}-kuscia-master` 容器中，检查 DomainData 是否创建成功。"
-msgstr ""
+msgstr "Verify DomainData creation in the master container, i.e., the `${USER}-kuscia-master container`."
 
 #: ../../reference/concepts/domaindata_cn.md:92
 msgid "更新 DomainData"
-msgstr ""
+msgstr "Update DomainData"
 
 #: ../../reference/concepts/domaindata_cn.md:94
 msgid "下面以 `alice-table.yaml` 的内容为例，介绍更新 DomainData。"
-msgstr ""
+msgstr "The following demonstrates DomainData update using modified `alice-table.yaml`:"
 
 #: ../../reference/concepts/domaindata_cn.md:126
 msgid "在该示例中，将`.spec.name`的值调整为`alice-test.csv`。"
-msgstr ""
+msgstr "This example modifies `.spec.name` to `alice-test.csv`."
 
 #: ../../reference/concepts/domaindata_cn.md:128
 msgid "运行以下命令更新 DomainData。"
-msgstr ""
+msgstr "Apply updates with."
 
 #: ../../reference/concepts/domaindata_cn.md:134
 msgid "检查 DomainData 是否更新成功。"
-msgstr ""
+msgstr "Confirm update success using."
 
 #: ../../reference/concepts/domaindata_cn.md:140
 msgid "清理 DomainData"
-msgstr ""
+msgstr "Clean up DomainData"
 
 #: ../../reference/concepts/domaindata_cn.md:142
 msgid ""
 "下面以 DomainData `alice-table.yaml` 为例，介绍清理 DomainData。 注意：清理 DomainData "
 "并不会清除真实的数据内容，只是从 Kuscia 中删除 DomainData 中所记录的 meta 信息。"
 msgstr ""
+"This section demonstrates DomainData deletion using `alice-table.yaml`. Note: Deletion only removes metadata records, not physical data."
 
 #: ../../reference/concepts/domaindata_cn.md:145
 msgid "运行以下命令清理 DomainData。"
-msgstr ""
+msgstr "Execute deletion command."
 
 #: ../../reference/concepts/domaindata_cn.md:151
 msgid "检查 DomainData 是否已被清理。"
-msgstr ""
+msgstr "Verify deletion status."
 
 #: ../../reference/concepts/domaindata_cn.md:160
 msgid "在 Domain 侧管理 DomainData"
-msgstr ""
+msgstr "Manage DomainData on the Domain Side"
 
 #: ../../reference/concepts/domaindata_cn.md:162
 msgid ""
@@ -214,46 +226,49 @@ msgid ""
 "访问。 您可以在 Domain 侧管理属于该 Domain 的 DomainData。Kuscia 在 Domain 侧提供了的 Kuscia "
 "API 来管理 DomainData。"
 msgstr ""
+"As mentioned above, DomainData is a resource within a node. Each DomainData has its own Domain and can only be accessed by the Domain to which it belongs. You can manage the DomainData belonging to the Domain on the Domain side. Kuscia provides the Kuscia API on the Domain side to manage DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:165
 msgid ""
 "Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分别为 8082 和 8083 。 端口，详情请参考 [Kuscia "
 "API](../apis/domaindata_cn.md)。"
 msgstr ""
+"Kuscia API supports HTTP (8082) and GRPC (8083) protocols. See [Kuscia API](../apis/domaindata_cn.md) documentation."
 
 #: ../../reference/concepts/domaindata_cn.md:168
 msgid "进入 alice 容器 `${USER}-kuscia-lite-alice` 容器中，查询 DomainData。"
-msgstr ""
+msgstr "Enter the alice container `${USER}-kuscia-lite-alice` container and query DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:181
 msgid "参考"
-msgstr ""
+msgstr "Reference"
 
 #: ../../reference/concepts/domaindata_cn.md:183
 msgid "下面以 `alice-table` 模版为例，介绍 DomainData 所包含的完整字段。"
-msgstr ""
+msgstr "The following uses the `alice-table` template as an example to introduce the complete fields contained in DomainData."
 
 #: ../../reference/concepts/domaindata_cn.md:215
 msgid "DomainData `metadata` 的子字段详细介绍如下："
-msgstr ""
+msgstr "DomainData `metadata` subfields description:"
 
 #: ../../reference/concepts/domaindata_cn.md:217
 msgid ""
 "`labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/labels/)。"
 msgstr ""
+"`labels`: Enables efficient querying via Kubernetes label system. Reference: [Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)."
 
 #: ../../reference/concepts/domaindata_cn.md:218
 msgid "`name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。"
-msgstr ""
+msgstr "`name`: Unique identifier (`alice-table` in example)."
 
 #: ../../reference/concepts/domaindata_cn.md:219
 msgid "`namespace`：表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。"
-msgstr ""
+msgstr "`namespace`: Indicates the namespace to which DomainData belongs, that is, the node to which it belongs. The current example is `alice`."
 
 #: ../../reference/concepts/domaindata_cn.md:221
 msgid "DomainData `spec` 的子字段详细介绍如下："
-msgstr ""
+msgstr "DomainData `spec` subfields description:"
 
 #: ../../reference/concepts/domaindata_cn.md:223
 msgid ""
@@ -261,24 +276,26 @@ msgid ""
 "的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，Kuscia不感知，仅存储。您可以使用这个字段存储一些您自身业务属性的信息。"
 " 比如您可以存储数据文件的md5值，或者存储行数，应用算法也可用于存储模型的类型等。"
 msgstr ""
+"`attributes`: Custom key-value pairs for storing business-specific metadata (e.g., MD5 hashes, row counts, model types). Kuscia stores but does not process these values."
 
 #: ../../reference/concepts/domaindata_cn.md:225
 msgid "`columns`：表示对于表类型的 DomainData 的列信息。仅当`type`为`table`时，该字段才存在。"
-msgstr ""
+msgstr "`columns`: Represents the column information of DomainData for table type. This field exists only when `type` is `table`."
 
 #: ../../reference/concepts/domaindata_cn.md:226
 msgid "`name`：列字段名称。"
-msgstr ""
+msgstr "`name`: Column field name."
 
 #: ../../reference/concepts/domaindata_cn.md:227
 msgid ""
 "`type`：列字段的数据类型，默认支持的数据类型参考[data.proto](https://github.com/secretflow/spec/blob/main/secretflow/spec/v1/data.proto#L112)。该字段当前版本并非可枚举的，列字段的类型由应用算法组件进行定义和消费，Kuscia"
 " 仅作存储。"
 msgstr ""
+"`type`: Data type definition referencing [data.proto](https://github.com/secretflow/spec/blob/main/secretflow/spec/v1/data.proto#L112). Application algorithms define and consume these types."
 
 #: ../../reference/concepts/domaindata_cn.md:228
 msgid "`comment`：列字段的注释，仅用作展示。"
-msgstr ""
+msgstr "`comment`: Comments for the column field, for display only."
 
 #: ../../reference/concepts/domaindata_cn.md:229
 msgid ""
@@ -288,10 +305,11 @@ msgid ""
 "source`，即当前示例中所使用的数据源。该`default-data-"
 "source`数据源的根目录为节点内的`/home/kuscia/var/storage/data`目录。"
 msgstr ""
+"`dataSource`: Storage location specification. Current version supports `localfs` type with built-in `default-data-source` instance rooted at `/home/kuscia/var/storage/data`."
 
 #: ../../reference/concepts/domaindata_cn.md:231
 msgid "`name`：表示一个人类可读的名称，仅用作展示，可重复。"
-msgstr ""
+msgstr "`name`: Human-readable display name (non-unique)."
 
 #: ../../reference/concepts/domaindata_cn.md:232
 msgid ""
@@ -299,16 +317,18 @@ msgid ""
 " 在该示例中是对于`default-data-"
 "source`数据源根目录的相对位置，即`/home/kuscia/var/storage/data/alice.csv`。"
 msgstr ""
+"`relativeURI`: Path relative to data source root. For `localfs` type: `/home/kuscia/var/storage/data/alice.csv` in this example."
 
 #: ../../reference/concepts/domaindata_cn.md:234
 msgid ""
 "`type`：表示 DomainData 的类型，目前支持 "
 "`table`、`model`、`rule`、`report`、`unknown`五种类型，分别表示数据表，模型，规则，报告和未知类型。"
 msgstr ""
+"`type`: Object type classification: `table`, `model`, `rule`, `report`, or `unknown`."
 
 #: ../../reference/concepts/domaindata_cn.md:235
 msgid ""
 "`vendor`：表示 DomainData 的来源，仅用作标识，对于您手动创建的 "
 "DomainData，可以将其设置为`manual`，对于应用算法组件生成的表，由算法组件本身填充，secretflow算法组件会填充`secretflow`。"
 msgstr ""
-
+"`vendor`: Origin identifier (`manual` for user-created, `secretflow` for algorithm-generated)."
