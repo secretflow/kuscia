@@ -12,39 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Checks
+name: Check Docs
 on:
   push:
     branches:
       - main
       - release/*
-    paths-ignore:
+    paths:
       - 'docs/**'
-      - '**.go'
   pull_request:
     branches:
       - main
       - release/*
-    paths-ignore:
+    paths:
       - 'docs/**'
-      - '**.go'
 
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
-  common-checks:
-    name: common checks
-    runs-on: ubuntu-latest
+  check-docs:
+    name: check docs
+    runs-on: [ubuntu-latest]
     container:
       image: secretflow/kuscia-ci:20250314
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: '0'
-      - name: Check shell, yaml, codespell
+      - name: make docs
         run: |
-          make shell-check
-          make yaml-check
-          make codespell-check
+          pip install -r docs/requirements.txt
+          make markdown-check
+          make docs
