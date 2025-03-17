@@ -43,8 +43,8 @@ func TestAnyStringProto_MarshalJSON(t *testing.T) {
 		},
 		{
 			name:     "unicode characters",
-			input:    AnyStringProto{Content: "你好，Kuscia!"},
-			expected: "你好，Kuscia!",
+			input:    AnyStringProto{Content: "\\u4f60\\u597d\\uff0cKuscia!"},
+			expected: "\\u4f60\\u597d\\uff0cKuscia!",
 		},
 		{
 			name:     "null byte",
