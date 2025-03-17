@@ -1,0 +1,217 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../reference/apis/datamesh/summary_cn.md:1
+msgid "概览"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:3
+msgid "Data Mesh API 使用场景"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:5
+msgid ""
+"Data Mesh API 专为隐私计算应用（如 SecretFlow、TrustedFlow）设计，为其提供获取 DomainData 与 "
+"DomainDataSource 信息的能力。隐私计算平台（如 SecretPad）可以使用 [Kuscia "
+"API](../summary_cn.md)接口实现更广泛的功能。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:7
+msgid "Data Mesh API 约定"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:9
+msgid "Data Mesh API 提供 HTTP 和 GRPC 两种访问方法。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:11
+msgid ""
+"当您使用 GRPC 时，您可以通过 protoc 生成出对应编程语言的客户端桩代码，您可以在 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)"
+" 找到 Kuscia API 的 protobuf 文件。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:15
+msgid ""
+"当您使用 HTTP 时，您可以访问对应的 HTTP 端点，Kuscia API 的接口通过 POST+JSON 或 POST+PROTOBUF "
+"的形式提供 ，并且满足 protobuf 的 [JSON Mapping](https://protobuf.dev/programming-"
+"guides/proto3/#json) 。当请求的 `Content-Type` 为 `application/x-protobuf` 时，使用"
+" PROTOBUF 编码，否则使用 JSON 编码。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:18
+msgid "请求和响应约定"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:20
+msgid ""
+"请求总是携带会一个 header 字段，类型为 [RequestHeader](#request-header) ， 如 "
+"[CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， "
+"该字段可以携带您自定义的一些数据。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:22
+msgid ""
+"响应总是携带一个 status 字段，类型为 [Status](#status) ， 如 "
+"[CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ，"
+" 该字段描述了响应的状态信息。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:26
+msgid "RequestHeader"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:28
+msgid "RequestHeader 可以携带自定义的信息。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "字段"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "类型"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "选填"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "描述"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "custom_headers"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "map<string, string>"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "可选"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "自定义的键值对"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:36
+msgid "Status"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:38
+msgid "Status 携带请求响应的状态信息。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:40
+msgid ""
+"参考: [GRPC 的 Status "
+"定义](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "code"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "int32"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "必填"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "错误码"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "message"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "string"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "错误信息"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "details"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid ""
+"[google.protobuf.Any](https://protobuf.dev/programming-"
+"guides/proto3/#json)[]"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md
+msgid "错误详细描述"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:50
+msgid "如何使用 Data Mesh API"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:52
+msgid ""
+"Data Mesh API 用于在 Domain 侧管理 DomainData，提供了 HTTP 和 GRPC 两种访问方法，在请求形式上和 "
+"Kuscia API 均相同。 和 Kuscia API 不同的是，Data Mesh API 位于 Domain 侧而不是 master 上。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:55
+msgid "GRPC"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:57
+msgid "为了使用 GRPC 连接上 Kuscia API，您需要："
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:59
+msgid ""
+"从 "
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/datamesh)"
+" 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。 关于如何生成客户端桩代码，请参看 "
+"[Protobuf官方教程](https://protobuf.dev/getting-started/)。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:61
+msgid "使用 GRPC 客户端发起请求。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:63
+msgid "GRPC 端口默认在：Domain 的 8071。"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:65
+msgid "HTTP"
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:67
+msgid "您也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，您需要替换 {} 中的内容："
+msgstr ""
+
+#: ../../reference/apis/datamesh/summary_cn.md:75
+msgid "HTTP 端口默认在：Domain 的 8070。"
+msgstr ""
+

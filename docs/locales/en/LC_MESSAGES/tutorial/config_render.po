@@ -1,0 +1,439 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../tutorial/config_render.md:1
+msgid "如何在 Kuscia 中给自定义应用渲染配置文件"
+msgstr ""
+
+#: ../../tutorial/config_render.md:3
+msgid ""
+"一般应用都是由可执行文件（or代码）和配置文件组成，配置文件可以用来定义应用执行时的参数，Kuscia "
+"在任务/服务的每次运行前都会动态渲染出来真实的配置文件，并且 `挂载` 到应用执行时的文件系统空间。"
+msgstr ""
+
+#: ../../tutorial/config_render.md:5
+msgid ""
+"如果应用需要在 Kuscia 上运行，需要适配 Kuscia "
+"的配置文件渲染模式来解决应用运行时的端口冲突，参与方地址，数据访问地址等问题，详细如下："
+msgstr ""
+
+#: ../../tutorial/config_render.md:7
+msgid "端口： Kuscia 要求应用能够支持指定监听端口，主要是解决 RunP 场景下，端口冲突的问题"
+msgstr ""
+
+#: ../../tutorial/config_render.md:8
+msgid ""
+"任务输入： 用户通过 KusciaAPI/KusciaJob/KusciaTask/KusciaDeployment 指定的任务参数，比如： "
+"`taskInputConfig`"
+msgstr ""
+
+#: ../../tutorial/config_render.md:9
+msgid "集群信息： 其他参与方的地址等信息"
+msgstr ""
+
+#: ../../tutorial/config_render.md:10
+msgid "内部环境： 比如 DataMesh 地址 等信息"
+msgstr ""
+
+#: ../../tutorial/config_render.md:11
+msgid "其他动态配置: 应用依赖的某个配置在不同机构，可能对应的值不一样，需要从 Kuscia 配置系统 中提取对应的值"
+msgstr ""
+
+#: ../../tutorial/config_render.md:13
+msgid ""
+"注： "
+"Kuscia也继续兼容支持应用从环境变量中读取相关信息，但推荐使用配置文件模式，因为配置文件模式渲染能力更强大，并且可以将应用和Kuscia通过配置文件解耦。"
+msgstr ""
+
+#: ../../tutorial/config_render.md:15
+msgid "配置示例"
+msgstr ""
+
+#: ../../tutorial/config_render.md:17
+msgid "Kuscia 支持自定义隐私计算应用配置文件渲染。比如一个下面一个简单的例子：想要在 Kuscia 中运行一个 Nginx 服务："
+msgstr ""
+
+#: ../../tutorial/config_render.md:19
+msgid "需要首先定义对应的 AppImage 模版，之后再通过 KusciaDeployment(/KusciaJob) 把 Nginx 运行起来。"
+msgstr ""
+
+#: ../../tutorial/config_render.md:21
+msgid "因为 Kuscia 需要运行之上的服务支持设置动态端口，所以需要在配置文件中指定 Kuscia 分配的端口，下面是 Nginx 的配置示例："
+msgstr ""
+
+#: ../../tutorial/config_render.md:62
+msgid "注："
+msgstr ""
+
+#: ../../tutorial/config_render.md:64
+msgid ""
+"`configTemplates`: 应用自己的配置文件模版， Kuscia运行应用前，会根据模版渲染出真实的配置文件； 详细参考： "
+"[AppImage](../reference/concepts/appimage_cn.md)"
+msgstr ""
+
+#: ../../tutorial/config_render.md:65
+msgid ""
+"`deployTemplates[].spec.containers[].configVolumeMounts[]`: "
+"供应用读取的配置文件挂载地址（配置文件内容，对应到`configTemplates`）；详细参考： "
+"[AppImage](../reference/concepts/appimage_cn.md)"
+msgstr ""
+
+#: ../../tutorial/config_render.md:67
+msgid "配置文件渲染"
+msgstr ""
+
+#: ../../tutorial/config_render.md:69
+msgid "变量介绍"
+msgstr ""
+
+#: ../../tutorial/config_render.md:71
+msgid "配置文件的内容会在应用实际执行前，由 `Agent` 模块完成渲染； `Agent` 支持将以下内容渲染到配置文件模版中"
+msgstr ""
+
+#: ../../tutorial/config_render.md:73
+msgid "内置变量： 由 Kuscia 产生的运行时变量"
+msgstr ""
+
+#: ../../tutorial/config_render.md:74
+msgid "任务变量： 任务输入变量，如：任务配置中的 `taskInputConfig`"
+msgstr ""
+
+#: ../../tutorial/config_render.md:75
+msgid "配置变量： 来自于 Kuscia 配置系统的配置参数，请参考[使用 Kuscia 配置系统管理应用配置](#kuscia-cm)"
+msgstr ""
+
+#: ../../tutorial/config_render.md:77
+msgid "内置变量和任务变量支持的配置参数如下："
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "类型"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "变量"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "使用示例"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "介绍"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "内容示例"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "内置"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "TASK_ID"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.TASK_ID}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "表示任务的 ID，当应用启动为 KusciaJob 时有效"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "secretflow-task-20230406162606"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "SERVING_ID"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.SERVING_ID}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "表示服务的 ID，当应用启动为 KusciaDeployment 时有效"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "serving-20230406162606"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "ALLOCATED_PORTS"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.ALLOCATED_PORTS}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "Kuscia为应用动态分配的端口，应用需要根据分配的端口来启动应用，内容结构请[参考这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/appconfig/app_config.proto#L67)"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{\"ports\":[{\"name\":\"test\",\"port\":26409,\"scope\":\"Cluster\",\"protocol\":\"HTTP\"}]}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "TASK_CLUSTER_DEFINE"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.TASK_CLUSTER_DEFINE}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方， "
+"内容结构请[参考这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/appconfig/app_config.proto#L41)"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"`{\"parties\":[{\"name\":\"alice\",\"role\":\"\",\"services\":[{\"portName\":\"test\",\"endpoints"
+"\":[\"alice-"
+"test-0-test.alice.svc\"]}]}],\"selfPartyIdx\":0,\"selfEndpointIdx\":0}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "KUSCIA_DOMAIN_ID"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.KUSCIA_DOMAIN_ID}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "节点ID"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "对应配置文件中的 `domainId`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "任务"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "TASK_INPUT_CONFIG"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.TASK_INPUT_CONFIG}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"任务的运行参数，对应到 KusciaAPI/KusciaJob/KusciaTask 中的 taskInputConfig 参数； "
+"Kuscia不会关注实际内容是什么，只当做字符串透传"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "INPUT_CONFIG"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.INPUT_CONFIG}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"服务的运行参数，对应到 KusciaAPI/KusciaDeployment 中的 inputConfig "
+"参数；Kuscia不会关注实际内容是什么，只当做字符串透传"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "CLUSTER_DEFINE"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.CLUSTER_DEFINE}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方(当为 KusciaDeployment 时生效)"
+msgstr ""
+
+#: ../../tutorial/config_render.md:90
+msgid "渲染规则"
+msgstr ""
+
+#: ../../tutorial/config_render.md:92
+msgid ""
+"Kuscia 基于 Golang 的 `text/template` 库来实现模版的渲染，所以默认该库支持的配置渲染方法， Kuscia 都支持；"
+" 最常见的方式为：`{{.VariableName}}`, 更多请参考 "
+"[text/template](https://pkg.go.dev/text/template)"
+msgstr ""
+
+#: ../../tutorial/config_render.md:94
+msgid ""
+"Kuscia 在 `text/template` 语法之外，为了方便配置文件更加简单，支持了嵌套结构的访问模式，引入 Kuscia "
+"高级模版语法，对应的语法是："
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "语法示例"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "示例"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.VariableName.Field1}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "解决嵌套结构的访问，嵌套层次暂无限制（比如：`{{{.VariableName.Field1.SubField2}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 "
+"`{{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.VariableName.Field1[<idx>].SubField2}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "选择指定数组索引的元素"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 "
+"`{{{.TASK_CLUSTER_DEFINE.parties[0].name}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.VariableName.Field1[.VariableName.Field2].SubField2}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "选择指定数组索引的元素（索引来自于 VariableName 中的某个字段）"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 "
+"`{{{.TASK_CLUSTER_DEFINE.parties[.TASK_CLUSTER_DEFINE.selfPartyIdx].services[0].endpoints[0]}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.VariableName.Field1[<key>=<value>].SubField2}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "筛选符合指定条件的数组元素（如果有多个满足条件，只选择第一个）"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid ""
+"参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 "
+"`{{{.TASK_CLUSTER_DEFINE.parties[name=alice].role}}}` 来查找 "
+"`TASK_CLUSTER_DEFINE.parties`所有元素中，满足 `name` 值为 `alice`的元素"
+msgstr ""
+
+#: ../../tutorial/config_render.md:105
+msgid "使用 Kuscia 配置系统管理应用配置"
+msgstr ""
+
+#: ../../tutorial/config_render.md:107
+msgid ""
+"在 Kuscia 中，可以使用 Kuscia 的配置系统管理应用的配置。具体配置管理操作，可参考 [KusciaAPI "
+"的配置管理接口](../reference/apis/config_cn.md)。"
+msgstr ""
+
+#: ../../tutorial/config_render.md:109
+msgid "Kuscia 在节点侧拉起应用容器时，会解析应用配置文件，并从配置管理系统获取用户的配置，然后将获取到的实际值，填充在应用的配置文件中。"
+msgstr ""
+
+#: ../../tutorial/config_render.md:111
+msgid "使用 Kuscia 配置系统中注册的配置，兼容 Golang 原生语法和 Kuscia 高级语法，对应语法示例如下："
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.VariableName}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "从 Kuscia 配置管理系统中获取 `key=VariableName` 的配置，然后用真实的值替换模版内容"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{.OSS_INFO}}` 表示用字符串格式化的 Json 配置"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "从 Kuscia 配置管理系统中获取 `key=VariableName` 的配置，并通过指定的键，获取配置中具体的值"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.OSS_INFO.access_key}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.VariableName.Field1[<idx>]}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "从 Kuscia 配置管理系统中获取 `key=VariableName` 的配置，并通过数组索引，获取配置中具体的值"
+msgstr ""
+
+#: ../../tutorial/config_render.md
+msgid "`{{{.OSS_INFO.endpoints[0]}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md:119
+msgid "示例：在 Kuscia 配置系统中注册的 OSS_INFO 配置为:"
+msgstr ""
+
+#: ../../tutorial/config_render.md:129
+msgid ""
+"模版参数根据包含的大括号个数，分为两大类，即 Golang 原生的模版语法 `{{X}}` 和 Kuscia 的高级模版语法 "
+"`{{{X.X1}}}`。"
+msgstr ""
+
+#: ../../tutorial/config_render.md:131
+msgid "如果只是简单的字符串替换，请使用 Golang 原生语法 `{{X}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md:132
+msgid "如果涉及从 Json 配置中获取某个具体字段，请使用 Kuscia 高级语法 `{{{X.X1}}}`"
+msgstr ""
+
+#: ../../tutorial/config_render.md:133
+msgid "Kuscia 高级语法功能比较限定，请严格按照上述示例来填写，其他行为未知（也不保证非定义行为的兼容性）"
+msgstr ""
+
+#: ../../tutorial/config_render.md:134
+msgid "在过滤筛选语法中 `<key>`, `<value>`请确保没有 `=\"[]` 等字符串，否则行为会未知"
+msgstr ""
+
+#: ../../tutorial/config_render.md:135
+msgid "如果输出的类型非原子类型（比如：结构体/Map/Array等），默认会使用Json来进行序列化，所以请确保输出内容符合目标配置文件格式"
+msgstr ""
+
