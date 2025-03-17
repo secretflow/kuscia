@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// mockHandler 实现 api.ProtoHandler
+// mockHandler implements api.ProtoHandler for testing purposes.
 type mockHandler struct{}
 
 func (m *mockHandler) GetType() (reqType, respType reflect.Type) {
@@ -32,7 +32,7 @@ func (m *mockHandler) Handle(ctx *api.BizContext, req api.ProtoRequest) api.Prot
 	return &api.AnyStringProto{Content: "Success"}
 }
 
-// setupTestRouter 通过函数选项模式初始化 gin.Engine
+// setupTestRouter initializes a gin.Engine with the ProtoDecorator using the provided options.
 func setupTestRouter(options *ProtoDecoratorOptions) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -52,6 +52,7 @@ func TestProtoDecorator(t *testing.T) {
 		{"Invalid Request", `{"Content":"invalid"}`, http.StatusOK, `{"status":{"code":400,"message":"Invalid request"}}`},
 	}
 
+	// Initialize the router with custom options for the ProtoDecorator.
 	r := setupTestRouter(&ProtoDecoratorOptions{
 		ValidateFailedHandler: func(flow *BizFlow, errs *errorcode.Errs) api.ProtoResponse {
 			resp := map[string]map[string]interface{}{
@@ -68,7 +69,7 @@ func TestProtoDecorator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel() // 并行执行测试
+			t.Parallel() // Run tests in parallel.
 
 			req, _ := http.NewRequest(http.MethodPost, "/test", bytes.NewBufferString(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
@@ -76,7 +77,7 @@ func TestProtoDecorator(t *testing.T) {
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.expectedStatusCode, w.Code)
-			assert.JSONEq(t, tt.expectedResponse, w.Body.String()) // 断言 JSON 内容
+			assert.JSONEq(t, tt.expectedResponse, w.Body.String()) // Assert JSON content.
 		})
 	}
 }
