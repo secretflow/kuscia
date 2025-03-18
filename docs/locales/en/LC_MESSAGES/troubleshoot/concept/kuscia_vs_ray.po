@@ -26,7 +26,7 @@ msgid ""
 "近期收到一些社区用户反馈的困惑，比如：SecretFlow 依赖 Ray 调度框架，Kuscia 也是调度框架，那么 Ray 与 Kuscia "
 "的关系是什么？似乎 Ray 和 Kuscia 都可以调度 SecretFlow ？我该如何选择他们呢？"
 msgstr ""
-"Recently, we've received feedback from community users expressing confusion, such as: SecretFlow depends on the Ray scheduling framework, and Kuscia is also a scheduling framework, so what is the relationship between Ray and Kuscia? It seems that both Ray and Kuscia can schedule SecretFlow? How should I choose between them?"
+"Recently, community users have expressed confusion regarding the relationship between Ray and Kuscia, especially since SecretFlow relies on Ray for scheduling. They are unsure whether Ray and Kuscia can both schedule SecretFlow and how to choose between them."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:5
 msgid "写在前面"
@@ -39,8 +39,7 @@ msgid ""
 " 概述文档](../../reference/overview.md)。 "
 "![Kuscia_Layer](../../imgs/kuscia_layer.png)"
 msgstr ""
-"Kuscia and Ray are often mistakenly thought to be mutually exclusive. In fact, Kuscia and Ray operate at different layers, being different yet complementary to each other. As shown in the figure below, Ray is positioned at the engine layer. It serves as a function-level scheduling framework for SecretFlow. Meanwhile, Kuscia is positioned at the framework layer. It is dedicated to solving common problems in the production deployment of privacy computing. [See Kuscia Overview Document for details](../../reference/overview.md)."
-"![Kuscia_Layer](../../imgs/kuscia_layer.png)"
+"Kuscia and Ray are often mistakenly thought to be mutually exclusive. However, they operate at different layers and complement each other. Ray is positioned at the engine layer, serving as a function-level scheduling framework for SecretFlow. Kuscia, on the other hand, is at the framework layer, addressing common problems in the production deployment of privacy computing. [See Kuscia Overview Document for details](../../reference/overview.md)."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:7
 msgid "Kuscia_Layer"
@@ -59,11 +58,11 @@ msgid ""
 " 选择了 Ray 来实现这一诉求，让用户能够以上帝视角开发隐私计算应用。 "
 "![secretflow_developer_view](../../imgs/sf_dev_view.png)"
 msgstr ""
-"[Ray](https://github.com/ray-project/ray) is a unified framework that seamlessly scales Python and AI applications from laptop to cluster. Ray makes developing distributed applications more convenient. 
+"[Ray](https://github.com/ray-project/ray) is a unified framework that scales Python and AI applications from a laptop to a cluster, simplifying the development of distributed applications." 
 
 SecretFlow, as a privacy computing application, also falls within the category of distributed applications. SecretFlow uses the Ray framework to improve development efficiency for privacy computing applications. This allows developers to create privacy computing algorithms from a god's-eye view.
 
-Unlike traditional applications, privacy computing typically involves 2 or n parties. The conventional development approach requires writing separate logic from each participant's perspective. Then at runtime, the program decides which logic to execute based on its current role.
+Unlike traditional applications, privacy computing typically involves 2 or more parties. The conventional approach requires each participant to write separate logic based on their perspective. At runtime, the program then executes the logic corresponding to its role.
 
 So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
 "![secretflow_developer_view](../../imgs/sf_dev_view.png)"
@@ -86,9 +85,9 @@ msgid ""
 "的函数级调度能力，让算法开发者保持他们开发单体应用时的开发习惯，降低开发成本提高开发效率。但仍然有一些问题不是通过 Ray 解决的，比如在 "
 "POC/生产环境中部署与使用 SecretFlow 时, 仍然会面临着以下问题："
 msgstr ""
-"SecretFlow leverages Ray's function-level scheduling capabilities. This allows algorithm developers to maintain their development habits from single application development. It reduces development costs and improves efficiency.
+"SecretFlow leverages Ray's function-level scheduling, allowing algorithm developers to maintain their familiar development workflow from single-party applications, reducing development costs and improving efficiency."
 
-However, there are still some issues that Ray doesn't solve. When deploying and using SecretFlow in POC/production environments, the following problems still exist:"
+"However, there are still some issues that Ray doesn't solve. When deploying and using SecretFlow in POC/production environments, the following problems still exist:"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:65
 msgid "Rayfed 和 SPU 各有一个端口，机构只能开一个端口，如何做到端口合并。"
