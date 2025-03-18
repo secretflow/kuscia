@@ -19,165 +19,165 @@ msgstr ""
 
 #: ../../reference/apis/log_cn.md:1
 msgid "Log"
-msgstr ""
+msgstr "Log"
 
 #: ../../reference/apis/log_cn.md:3
 msgid "接口详情"
-msgstr ""
+msgstr "Interface Details"
 
 #: ../../reference/apis/log_cn.md:5
 msgid "查询日志"
-msgstr ""
+msgstr "Query Logs"
 
 #: ../../reference/apis/log_cn.md:7
 msgid "说明"
-msgstr ""
+msgstr "Instruction"
 
 #: ../../reference/apis/log_cn.md:9
 msgid "查询某个 Kuscia 任务的运行日志"
-msgstr ""
+msgstr "Query the runtime logs for a specific Kuscia task"
 
 #: ../../reference/apis/log_cn.md:11
 msgid "仅支持 Lite 和 Autonomy节点，不支持 Master 节点"
-msgstr ""
+msgstr "Query the runtime logs for a specific Kuscia task"
 
 #: ../../reference/apis/log_cn.md:12
 msgid "仅支持查询任务本方节点的日志，即任务如果有 Alice，Bob 多方参与，调用 Alice 节点的接口只会查询 Alice 节点的运行日志"
-msgstr ""
+msgstr "The query supports logs from the local node of the task only. That is to say in a task involving multiple parties like Alice and Bob, invoking the interface on Alice’s node will query only the runtime logs of Alice’s node "
 
 #: ../../reference/apis/log_cn.md:13
 msgid "调用查询日志接口时，对于重启了多次的 pod 容器，会查询最新一次重启的 pod 容器的日志文件并返回"
-msgstr ""
+msgstr "When the query log interface is invoked, for pods that have been restarted multiple times, the log file of the most recent restart will be queried and returned "
 
 #: ../../reference/apis/log_cn.md:15
 msgid "HTTP 路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/log_cn.md:17
 msgid "/api/v1/log/task/query"
-msgstr ""
+msgstr "/api/v1/log/task/query"
 
 #: ../../reference/apis/log_cn.md:19
 msgid "请求（QueryLogRequest）"
-msgstr ""
+msgstr "Request (QueryLogRequest)"
 
 #: ../../reference/apis/log_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/log_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/log_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/log_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/log_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/log_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/log_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Selectable"
 
 #: ../../reference/apis/log_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/log_cn.md
 msgid "task_id"
-msgstr ""
+msgstr "task_id"
 
 #: ../../reference/apis/log_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/log_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/log_cn.md
 msgid "TaskID"
-msgstr ""
+msgstr "TaskID"
 
 #: ../../reference/apis/log_cn.md
 msgid "replica_idx"
-msgstr ""
+msgstr "replica_idx"
 
 #: ../../reference/apis/log_cn.md
 msgid "int"
-msgstr ""
+msgstr "int"
 
 #: ../../reference/apis/log_cn.md
 msgid "Task对应的Pod副本索引(从0开始)；默认不填时，单副本时直接展示，多副本时选择第一个副本展示"
-msgstr ""
+msgstr "Pod replica index corresponding to the task (starting from 0); if not specified, the single replica is displayed directly, and the first replica is selected for display when there are multiple replicas "
 
 #: ../../reference/apis/log_cn.md
 msgid "container"
-msgstr ""
+msgstr "container"
 
 #: ../../reference/apis/log_cn.md
 msgid "容器名，默认不填时，Task对应的Pod只有一个容器时展示，存在多个容器时报错"
-msgstr ""
+msgstr "Container Name: By default, if left blank, the name of the container within the Pod associated with the Task is displayed when the Pod contains only one container. An error is returned if multiple containers are present within the Pod "
 
 #: ../../reference/apis/log_cn.md
 msgid "follow"
-msgstr ""
+msgstr "follow"
 
 #: ../../reference/apis/log_cn.md
 msgid "bool"
-msgstr ""
+msgstr "bool"
 
 #: ../../reference/apis/log_cn.md
 msgid "是否跟踪pod日志，默认为false（不跟踪）"
-msgstr ""
+msgstr "Whether to trace the pod logs, default is false (no tracing) "
 
 #: ../../reference/apis/log_cn.md:29
 msgid "响应（QueryLogResponse）"
-msgstr ""
+msgstr "Response（QueryLogResponse）"
 
 #: ../../reference/apis/log_cn.md:31
 msgid "流式返回响应结果，每次返回的结果如下："
-msgstr ""
+msgstr "Stream the response results, with each returned result as follows: "
 
 #: ../../reference/apis/log_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/log_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/log_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/log_cn.md
 msgid "log"
-msgstr ""
+msgstr "log"
 
 #: ../../reference/apis/log_cn.md
 msgid "正确时返回日志内容（每次返回多行），错误时返回错误信息。"
-msgstr ""
+msgstr "In the event of a successful operation, the log contents are returned (each containing multiple lines); in case of an error, an error message is returned instead. "
 
 #: ../../reference/apis/log_cn.md:38
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/log_cn.md:40
 msgid "发起请求"
-msgstr ""
+msgstr "Initiate Request"
 
 #: ../../reference/apis/log_cn.md:59
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Request Response: "
 
