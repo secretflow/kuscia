@@ -67,7 +67,6 @@ func TestHTTPTokenAuthInterceptor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 每个测试用例创建新的引擎实例
 			engine := gin.New()
 			engine.Use(HTTPTokenAuthInterceptor(validToken))
 			engine.GET("/auth-test", func(c *gin.Context) {
@@ -87,9 +86,8 @@ func TestHTTPTokenAuthInterceptor(t *testing.T) {
 }
 
 func TestHTTPSourceAuthInterceptor(t *testing.T) {
-	engine := gin.New()
-
 	t.Run("valid source header", func(t *testing.T) {
+		engine := gin.New()
 		engine.Use(HTTPSourceAuthInterceptor())
 		engine.GET("/source-test", func(c *gin.Context) {
 			source := c.GetString(constants.SourceDomainKey)
@@ -106,6 +104,7 @@ func TestHTTPSourceAuthInterceptor(t *testing.T) {
 	})
 
 	t.Run("missing source header", func(t *testing.T) {
+		engine := gin.New()
 		engine.Use(HTTPSourceAuthInterceptor())
 		engine.GET("/source-test", func(c *gin.Context) {
 			c.String(200, "OK")
