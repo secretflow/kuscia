@@ -60,11 +60,11 @@ msgid ""
 msgstr ""
 "[Ray](https://github.com/ray-project/ray) is a unified framework that scales Python and AI applications from a laptop to a cluster, simplifying the development of distributed applications." 
 
-SecretFlow, as a privacy computing application, also falls within the category of distributed applications. SecretFlow uses the Ray framework to improve development efficiency for privacy computing applications. This allows developers to create privacy computing algorithms from a god's-eye view.
+"SecretFlow, as a privacy computing application, also falls within the category of distributed applications. SecretFlow uses the Ray framework to improve development efficiency for privacy computing applications. This allows developers to create privacy computing algorithms from a god's-eye view."
 
-Unlike traditional applications, privacy computing typically involves 2 or more parties. The conventional approach requires each participant to write separate logic based on their perspective. At runtime, the program then executes the logic corresponding to its role.
+"Unlike traditional applications, privacy computing typically involves 2 or more parties. The conventional approach requires each participant to write separate logic based on their perspective. At runtime, the program then executes the logic corresponding to its role."
 
-So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
+"So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
 "![secretflow_developer_view](../../imgs/sf_dev_view.png)"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:12
