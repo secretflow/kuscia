@@ -19,19 +19,19 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:1
 msgid "MySQL（数据库） optimizer_switch 参数优化"
-msgstr ""
+msgstr "MySQL（Database） optimizer_switch parameter optimization"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:3
 msgid "问题描述"
-msgstr ""
+msgstr "problem description"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:5
 msgid "Kuscia 的 SQL 语句可能会存在触发 MySQL 的 Bug，导致 MySQL 直接崩溃。"
-msgstr ""
+msgstr "Kuscia’s SQL statements might invoke bugs within MySQL, resulting in a direct crash of MySQL."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:7
 msgid "解决方案"
-msgstr ""
+msgstr "solution"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:9
 msgid ""
@@ -39,14 +39,17 @@ msgid ""
 "false。针对不同数据库实例该配置的默认值不同，建议使用前检查该配置是否关闭。永久性修改，需要编辑 MySQL 配置文件（通常是 my.cnf "
 "或 my.ini），然后重启 MySQL 服务。"
 msgstr ""
+"Modify the optimization item derived_merge of the database’s optimizer_switch to false. "
+"The default value of this configuration varies for different database instances, it is recommended to check whether this configuration "
+"is turned off before use. For a permanent change, you need to edit the MySQL configuration file (usually my.cnf or my.ini), and then restart the MySQL service."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:15
 msgid "Kuscia 部署时，建议使用单独的数据库实例，避免与其他业务数据库实例共享优化配置。"
-msgstr ""
+msgstr "When deploying Kuscia, it is recommended to use a separate database instance to avoid sharing optimization configurations with other business database instances."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:17
 msgid "原因分析"
-msgstr ""
+msgstr "root cause analysis"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:19
 msgid ""
@@ -54,69 +57,76 @@ msgid ""
 "操作的选择列表中的子查询通过别名引用解析，但在合并查询块时，会错误地删除这些尚在使用中的子查询。这个问题的根本原因在于 MySQL "
 "在删除未使用的合并派生列时没有正确识别出这些列仍在 ORDER BY 子句中被使用。"
 msgstr ""
+"The primary cause of this bug is that MySQL, when processing the ORDER BY clause, resolves subqueries in the select list used for the ORDER BY operation through alias references. "
+"However, during the merging of query blocks, it erroneously deletes these subqueries that are still in use. The root cause of this issue lies in MySQL’s failure to correctly identify "
+"that these columns are still being used in the ORDER BY clause when removing unused merged derived columns."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:21
 msgid "MySQL Bug 报告如下："
-msgstr ""
+msgstr "The MySQL Bug report is as follows:"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:33
 msgid "触发 MySQL Bug 的 SQL 示例如下："
-msgstr ""
+msgstr "The SQL example that triggers the MySQL Bug is as follows:"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:69
 msgid "参数介绍"
-msgstr ""
+msgstr "parameter introduction"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:71
 msgid ""
 "在 MySQL 中，optimizer_switch "
 "是一个系统变量，用于控制查询优化器的行为。通过调整这个参数，您可以开启或关闭某些特定的优化策略，以适应不同的查询场景和性能需求。optimizer_switch"
 " 的值是一个由多个标志组成的字符串，每个标志都对应着一种优化策略，常见的优化项如下："
-msgstr ""
+msgstr "In MySQL, optimizer_switch is a system variable that controls the behavior of the query optimizer. "
+"By adjusting this parameter, you can enable or disable some specific optimization strategies to adapt to different query scenarios and performance requirements. "
+"The value of optimizer_switch is a string composed of multiple flags, each corresponding to an optimization strategy. Common optimization options include:"
+
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:73
 msgid "`index_merge`: 控制是否启用索引合并优化。"
-msgstr ""
+msgstr "`index_merge`: Controls whether to enable index merge optimization."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:74
 msgid "`index_merge_union`: 在 index_merge 下进一步指定是否允许使用 UNION 操作来合并索引扫描结果。"
-msgstr ""
+msgstr "`index_merge_union`: Under index_merge, further specify whether to allow the use of UNION operations to merge index scan results."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:75
 msgid "`index_merge_sort_union`: 允许在执行 UNION 时先排序再合并索引扫描的结果。"
-msgstr ""
+msgstr "`index_merge_sort_union`: Allow sorting before merging the results of index scans when executing UNION."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:76
 msgid "`index_merge_intersection`: 启用基于交集的索引合并。"
-msgstr ""
+msgstr "`index_merge_intersection`: Enable intersection-based index merge."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:77
 msgid "`engine_condition_pushdown`: 是否将条件推送到存储引擎层处理，这通常可以提高查询效率。"
-msgstr ""
+msgstr "`engine_condition_pushdown`: Whether to push conditions down to the storage engine layer for processing, which typically improves query efficiency."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:78
 msgid "`derived_merge`: 对于派生表（子查询）尝试将其与外部查询合并。"
-msgstr ""
+msgstr "`derived_merge`: Attempt to merge derived tables (subqueries) with the outer query."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:79
 msgid "`firstmatch`: 当有多个等价的索引可用时，只选择第一个找到的而不是评估所有可能的索引来决定最佳者。"
-msgstr ""
+msgstr "`firstmatch`: When multiple equivalent indexes are available, only choose the first one found rather than evaluating all possible indexes to determine the best one."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:80
 msgid "`loosescan`: 放宽对于某些类型查询的扫描规则，可能会牺牲准确性但提升速度。"
-msgstr ""
+msgstr "`loosescan`: Loosen the scan constraints for specific query types, potentially compromising precision for improved query execution speed."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:81
 msgid "`materialization`: 使用临时表来存储中间结果，特别是在复杂的连接中。"
-msgstr ""
+msgstr "`materialization`: Use temporary tables to store intermediate results, especially in complex join operations."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:82
 msgid "`in_to_exists`: 将 IN 子句转换为 EXISTS 子句，有时能提供更好的性能。"
-msgstr ""
+msgstr "`in_to_exists`: Converting IN clause to EXISTS clause can sometimes optimize performance."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:83
 msgid ""
 "`semijoin`, `loose_scan`, `duplicate_weedout`: "
 "这些都是关于半连接的不同实现方式，用于优化包含子查询的查询语句。"
 msgstr ""
-
+"`semijoin`, `loose_scan`, `duplicate_weedout`: "
+"These various implementations of semi-joins are utilized to optimize the performance of query statements that encompass subqueries."
