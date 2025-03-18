@@ -46,7 +46,6 @@ func TestHTTPServerLoggingInterceptor(t *testing.T) {
 }
 
 func TestHTTPTokenAuthInterceptor(t *testing.T) {
-	engine := gin.New()
 	validToken := "test-token-123"
 
 	tests := []struct {
@@ -68,6 +67,8 @@ func TestHTTPTokenAuthInterceptor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// 每个测试用例创建新的引擎实例
+			engine := gin.New()
 			engine.Use(HTTPTokenAuthInterceptor(validToken))
 			engine.GET("/auth-test", func(c *gin.Context) {
 				c.String(200, "OK")
