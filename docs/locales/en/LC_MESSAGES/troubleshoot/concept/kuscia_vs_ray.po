@@ -19,17 +19,18 @@ msgstr ""
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:1
 msgid "Kuscia 与 Ray 的区别"
-msgstr ""
+msgstr "Differences Between Kuscia and Ray"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:3
 msgid ""
 "近期收到一些社区用户反馈的困惑，比如：SecretFlow 依赖 Ray 调度框架，Kuscia 也是调度框架，那么 Ray 与 Kuscia "
 "的关系是什么？似乎 Ray 和 Kuscia 都可以调度 SecretFlow ？我该如何选择他们呢？"
 msgstr ""
+"Recently, community users have expressed confusion regarding the relationship between Ray and Kuscia, especially since SecretFlow relies on Ray for scheduling. They are unsure whether Ray and Kuscia can both schedule SecretFlow and how to choose between them."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:5
 msgid "写在前面"
-msgstr ""
+msgstr "Preface"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:7
 msgid ""
@@ -38,14 +39,15 @@ msgid ""
 " 概述文档](../../reference/overview.md)。 "
 "![Kuscia_Layer](../../imgs/kuscia_layer.png)"
 msgstr ""
+"Kuscia and Ray are often mistakenly thought to be mutually exclusive. However, they operate at different layers and complement each other. Ray is positioned at the engine layer, serving as a function-level scheduling framework for SecretFlow. Kuscia, on the other hand, is at the framework layer, addressing common problems in the production deployment of privacy computing. [See Kuscia Overview Document for details](../../reference/overview.md)."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:7
 msgid "Kuscia_Layer"
-msgstr ""
+msgstr "Kuscia_Layer"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:10
 msgid "SecretFlow 使用 Ray 做了什么"
-msgstr ""
+msgstr "What SecretFlow Uses Ray For"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:12
 msgid ""
@@ -56,18 +58,26 @@ msgid ""
 " 选择了 Ray 来实现这一诉求，让用户能够以上帝视角开发隐私计算应用。 "
 "![secretflow_developer_view](../../imgs/sf_dev_view.png)"
 msgstr ""
+"[Ray](https://github.com/ray-project/ray) is a unified framework that scales Python and AI applications from a laptop to a cluster, simplifying the development of distributed applications." 
+
+"SecretFlow, as a privacy computing application, also falls within the category of distributed applications. SecretFlow uses the Ray framework to improve development efficiency for privacy computing applications. This allows developers to create privacy computing algorithms from a god's-eye view."
+
+"Unlike traditional applications, privacy computing typically involves 2 or more parties. The conventional approach requires each participant to write separate logic based on their perspective. At runtime, the program then executes the logic corresponding to its role."
+
+"So, can we develop privacy computing applications like traditional ones? As shown in the figure below, SecretFlow chose Ray to achieve this goal. This allows users to develop privacy computing applications from a god's-eye view."
+"![secretflow_developer_view](../../imgs/sf_dev_view.png)"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:12
 msgid "secretflow_developer_view"
-msgstr ""
+msgstr "secretflow_developer_view"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:15
 msgid "下面给出以各自视角和以上帝视角编程的伪代码示例，让大家可以直观感受到两者编程的差异："
-msgstr ""
+msgstr "Below are pseudocode examples of programming from individual perspectives and from a god's-eye view, allowing everyone to intuitively feel the difference between the two programming approaches:"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:61
 msgid "Kuscia 做了什么"
-msgstr ""
+msgstr "What Kuscia Does"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:63
 msgid ""
@@ -75,26 +85,29 @@ msgid ""
 "的函数级调度能力，让算法开发者保持他们开发单体应用时的开发习惯，降低开发成本提高开发效率。但仍然有一些问题不是通过 Ray 解决的，比如在 "
 "POC/生产环境中部署与使用 SecretFlow 时, 仍然会面临着以下问题："
 msgstr ""
+"SecretFlow leverages Ray's function-level scheduling, allowing algorithm developers to maintain their familiar development workflow from single-party applications, reducing development costs and improving efficiency."
+
+"However, there are still some issues that Ray doesn't solve. When deploying and using SecretFlow in POC/production environments, the following problems still exist:"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:65
 msgid "Rayfed 和 SPU 各有一个端口，机构只能开一个端口，如何做到端口合并。"
-msgstr ""
+msgstr "Rayfed and SPU each have a port, but institutions can only open one port, so how to achieve port consolidation."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:66
 msgid "SecretFlow 仅支持读取本地 CSV 文件，当数据存储在 OSS、MySQL、ODPS 中时，需要人工操作导出数据至本地 CSV 文件。"
-msgstr ""
+msgstr "SecretFlow only supports reading local CSV files. When data is stored in OSS, MySQL, ODPS, manual operations are required to export data to local CSV files."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:67
 msgid "当将 Secretflow 集成到系统时，有没有 HTTP/GRPC API，而不需要自己来写 Python 代码集成。"
-msgstr ""
+msgstr "When integrating Secretflow into a system, is there an HTTP/GRPC API available, so that writing Python code for integration is not necessary."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:68
 msgid "当和多个机构合作时，会不会存在某个机构伪装成另外一个机构给我发请求，并且会不会访问一个我没有授权的文件？"
-msgstr ""
+msgstr "When collaborating with multiple institutions, is there a risk of one institution impersonating another to send requests to me, and could they access a file that I haven't authorized?"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:69
 msgid "当和多个机构合作，每个任务应该使用多少资源，以及如何限制？"
-msgstr ""
+msgstr "When collaborating with multiple institutions, how many resources should each task use, and how to set limits?"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:71
 msgid ""
@@ -102,46 +115,50 @@ msgid ""
 "集成的时候，Kuscia 会自动在每一个参与方拉起 Ray 集群，然后通过 Rayfed 来组织起一个隐私计算任务执行环境；任务结束后，会自动清理"
 " Rayfed/Ray 集群资源。这样对于："
 msgstr ""
+"These are precisely the common problems in privacy computing deployment that Kuscia aims to solve. When Kuscia integrates with SecretFlow, Kuscia automatically starts a Ray cluster at each participant, and then organizes a privacy computing task execution environment through Rayfed; after the task is completed, it automatically cleans up Rayfed/Ray cluster resources. This way:"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:73
 msgid "SecretFlow 算法的开发者（或者二开用户）能够专注于算法引擎的核心功能与性能提升，而不必分心于基础设施、跨域网络配置、任务调度等复杂问题。"
-msgstr ""
+msgstr "SecretFlow algorithm developers (or secondary development users) can focus on the core functionality and performance improvement of the algorithm engine, without being distracted by infrastructure, cross-domain network configuration, task scheduling, and other complex issues."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:74
 msgid ""
 "SecretFlow 算法的集成者不需要关注 Ray 或者 SecretFlow 的底层细节，Kuscia "
 "会自动帮助屏蔽隐私计算底层细节，让隐语能够轻量部署和简单易用。"
 msgstr ""
+"SecretFlow algorithm integrators don't need to be concerned with the underlying details of Ray or SecretFlow. Kuscia will automatically help shield the underlying details of privacy computing, making SecretFlow lightweight to deploy and simple to use."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:76
 msgid "当然 Kuscia 的能力远不止如此，更多信息请参考 [Kuscia 概述文档](../../reference/overview.md)。"
-msgstr ""
+msgstr "Of course, Kuscia's capabilities extend far beyond this. For more information, please refer to the [Kuscia Overview Document](../../reference/overview.md)."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:78
 msgid "总结一下"
-msgstr ""
+msgstr "Summary"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:80
 msgid "通过上面的介绍，Kuscia 与 Ray 的区别如下："
-msgstr ""
+msgstr "Through the above introduction, the differences between Kuscia and Ray are as follows:"
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:82
 msgid ""
 "Kuscia 与 Ray 所在架构分层的层级不同。Kuscia 位于框架层，Ray 位于引擎层，当使用 Kuscia 时，用户并不需要感知 "
 "Ray，把 SecretFlow 当做黑盒即可。"
 msgstr ""
+"Kuscia and Ray are at different levels in the architectural layering. Kuscia is at the framework layer, while Ray is at the engine layer. When using Kuscia, users do not need to be aware of Ray and can treat SecretFlow as a black box."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:83
 msgid "Kuscia 是任务（容器 or 进程）级别的调度，Ray 是函数级别的调度（在 SecretFlow 引擎中）。"
-msgstr ""
+msgstr "Kuscia schedules at the task (container or process) level, while Ray schedules at the function level (within the SecretFlow engine)."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:84
 msgid ""
 "Ray 在 SecretFlow 中解决的是隐私计算应用开发效率与成本的问题。Kuscia "
 "聚焦于解决的是跨域网络、跨域任务调度、安全性等隐私计算生产落地的问题。"
 msgstr ""
+"Ray solves the issues of development efficiency and cost for privacy computing applications in SecretFlow. Kuscia focuses on solving problems in production deployment of privacy computing, such as cross-domain networking, cross-domain task scheduling, and security."
 
 #: ../../troubleshoot/concept/kuscia_vs_ray.md:85
 msgid "Ray 解决的是 SecretFlow 引擎中函数级调度的问题，Kuscia 解决的是所有隐私计算引擎在落地生产过程中都可能遇到的共性问题。"
-msgstr ""
+msgstr "Ray solves the problem of function-level scheduling within the SecretFlow engine, while Kuscia solves common problems that all privacy computing engines may encounter during production deployment."
 
