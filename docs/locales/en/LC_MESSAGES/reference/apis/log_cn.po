@@ -23,7 +23,7 @@ msgstr "Log"
 
 #: ../../reference/apis/log_cn.md:3
 msgid "接口详情"
-msgstr "Interface Details"
+msgstr "API Details"
 
 #: ../../reference/apis/log_cn.md:5
 msgid "查询日志"
@@ -39,11 +39,11 @@ msgstr "Query the runtime logs for a specific Kuscia task"
 
 #: ../../reference/apis/log_cn.md:11
 msgid "仅支持 Lite 和 Autonomy节点，不支持 Master 节点"
-msgstr "Only Support Lite and Autonomy nodes, Master nodes are not supported."
+msgstr "Only supports Lite and Autonomy nodes, not Master nodes."
 
 #: ../../reference/apis/log_cn.md:12
 msgid "仅支持查询任务本方节点的日志，即任务如果有 Alice，Bob 多方参与，调用 Alice 节点的接口只会查询 Alice 节点的运行日志"
-msgstr "The query supports logs from the local node of the task only. That is to say in a task involving multiple parties like Alice and Bob, invoking the interface on Alice’s node will query only the runtime logs of Alice’s node "
+msgstr "Only supports logs from the local node of the query task. That is to say in a task involving multiple parties like Alice and Bob, invoking the interface on Alice’s node will query only the runtime logs of Alice’s node "
 
 #: ../../reference/apis/log_cn.md:13
 msgid "调用查询日志接口时，对于重启了多次的 pod 容器，会查询最新一次重启的 pod 容器的日志文件并返回"
@@ -87,7 +87,7 @@ msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/log_cn.md
 msgid "可选"
-msgstr "Selectable"
+msgstr "Required (Y/N)"
 
 #: ../../reference/apis/log_cn.md
 msgid "自定义请求内容"
