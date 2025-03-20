@@ -39,7 +39,7 @@ msgstr "Query the runtime logs for a specific Kuscia task"
 
 #: ../../reference/apis/log_cn.md:11
 msgid "仅支持 Lite 和 Autonomy节点，不支持 Master 节点"
-msgstr "Query the runtime logs for a specific Kuscia task"
+msgstr "Only Support Lite and Autonomy nodes, Master nodes are not supported."
 
 #: ../../reference/apis/log_cn.md:12
 msgid "仅支持查询任务本方节点的日志，即任务如果有 Alice，Bob 多方参与，调用 Alice 节点的接口只会查询 Alice 节点的运行日志"
@@ -139,7 +139,7 @@ msgstr "bool"
 
 #: ../../reference/apis/log_cn.md
 msgid "是否跟踪pod日志，默认为false（不跟踪）"
-msgstr "Whether to trace the pod logs, default is false (no tracing) "
+msgstr "Whether to track logs of pod, default value is false (not tracking). "
 
 #: ../../reference/apis/log_cn.md:29
 msgid "响应（QueryLogResponse）"
@@ -167,7 +167,7 @@ msgstr "log"
 
 #: ../../reference/apis/log_cn.md
 msgid "正确时返回日志内容（每次返回多行），错误时返回错误信息。"
-msgstr "In the event of a successful operation, the log contents are returned (each containing multiple lines); in case of an error, an error message is returned instead. "
+msgstr "Return the log contents when correct (returning multiple lines each time); return the error information when incorrect. "
 
 #: ../../reference/apis/log_cn.md:38
 msgid "请求示例"
