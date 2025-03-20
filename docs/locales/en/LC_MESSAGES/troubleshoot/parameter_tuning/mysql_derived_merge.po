@@ -27,7 +27,7 @@ msgstr "problem description"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:5
 msgid "Kuscia 的 SQL 语句可能会存在触发 MySQL 的 Bug，导致 MySQL 直接崩溃。"
-msgstr "Kuscia’s SQL statements might invoke bugs within MySQL, resulting in a direct crash of MySQL."
+msgstr "Kuscia SQL statements may trigger a MySQL bug, causing MySQL to crash directly."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:7
 msgid "解决方案"
@@ -39,13 +39,14 @@ msgid ""
 "false。针对不同数据库实例该配置的默认值不同，建议使用前检查该配置是否关闭。永久性修改，需要编辑 MySQL 配置文件（通常是 my.cnf "
 "或 my.ini），然后重启 MySQL 服务。"
 msgstr ""
-"Modify the optimization item derived_merge of the database’s optimizer_switch to false. "
-"The default value of this configuration varies for different database instances, it is recommended to check whether this configuration "
-"is turned off before use. For a permanent change, you need to edit the MySQL configuration file (usually my.cnf or my.ini), and then restart the MySQL service."
+"Modify the `derived_merge` optimization item in the database's `optimizer_switch` to `false`. "
+"The default value of this configuration varies for different database instances, it is recommended to check whether " 
+"this configuration is disabled before use. For a permanent change, edit the MySQL configuration file (usually `my.cnf` or `my.ini`), "
+"and then restart the MySQL service. "
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:15
 msgid "Kuscia 部署时，建议使用单独的数据库实例，避免与其他业务数据库实例共享优化配置。"
-msgstr "When deploying Kuscia, it is recommended to use a separate database instance to avoid sharing optimization configurations with other business database instances."
+msgstr "When deploying Kuscia, it is recommended to use a dedicated database instance to avoid sharing optimization configurations with other business database instances. "
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:17
 msgid "原因分析"
@@ -57,9 +58,10 @@ msgid ""
 "操作的选择列表中的子查询通过别名引用解析，但在合并查询块时，会错误地删除这些尚在使用中的子查询。这个问题的根本原因在于 MySQL "
 "在删除未使用的合并派生列时没有正确识别出这些列仍在 ORDER BY 子句中被使用。"
 msgstr ""
-"The primary cause of this bug is that MySQL, when processing the ORDER BY clause, resolves subqueries in the select list used for the ORDER BY operation through alias references. "
-"However, during the merging of query blocks, it erroneously deletes these subqueries that are still in use. The root cause of this issue lies in MySQL’s failure to correctly identify "
-"that these columns are still being used in the ORDER BY clause when removing unused merged derived columns."
+"The primary cause of this bug is that when MySQL processes the `ORDER BY` clause, it resolves subqueries "
+"in the select list used for the `ORDER BY` operation through alias references. However, during the merging of query blocks, "
+"it erroneously deletes these subqueries that are still in use. The root cause of this issue is MySQL's failure to correctly identify "
+"that these columns are still being used in the `ORDER BY` clause when removing unused merged derived columns. "
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:21
 msgid "MySQL Bug 报告如下："
@@ -78,9 +80,11 @@ msgid ""
 "在 MySQL 中，optimizer_switch "
 "是一个系统变量，用于控制查询优化器的行为。通过调整这个参数，您可以开启或关闭某些特定的优化策略，以适应不同的查询场景和性能需求。optimizer_switch"
 " 的值是一个由多个标志组成的字符串，每个标志都对应着一种优化策略，常见的优化项如下："
-msgstr "In MySQL, optimizer_switch is a system variable that controls the behavior of the query optimizer. "
-"By adjusting this parameter, you can enable or disable some specific optimization strategies to adapt to different query scenarios and performance requirements. "
-"The value of optimizer_switch is a string composed of multiple flags, each corresponding to an optimization strategy. Common optimization options include:"
+msgstr ""
+"In MySQL, `optimizer_switch` is a system variable that controls the behavior of the query optimizer. "
+"By adjusting this parameter, you can enable or disable specific optimization strategies to adapt to different query scenarios "
+"and performance requirements. The value of `optimizer_switch` is a string composed of multiple flags, each corresponding to an optimization strategy. "
+"Common optimization options include: "
 
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:73
@@ -129,4 +133,4 @@ msgid ""
 "这些都是关于半连接的不同实现方式，用于优化包含子查询的查询语句。"
 msgstr ""
 "`semijoin`, `loose_scan`, `duplicate_weedout`: "
-"These various implementations of semi-joins are utilized to optimize the performance of query statements that encompass subqueries."
+"These various implementations of semi-joins are utilized to optimize the performance of query statements that include subqueries. "
