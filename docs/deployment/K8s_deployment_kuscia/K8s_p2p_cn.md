@@ -542,7 +542,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 登录到 Alice 节点的 Pod 中
 
 ```bash
-kubectl exec -it ${alice_pod_name} bash -n autonomy-alice
+kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
 ```
 
 为 Alice 节点创建 OSS 数据源
@@ -557,7 +557,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
 -d '{
    "domain_id": "alice",
-   "datasource_id":"default-data-source",
+   "datasource_id":"demo-data-source",
    "type":"oss",
    "name": "DemoDataSource",
    "info": {
@@ -589,7 +589,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
   "type": "table",
   "relative_uri": "alice.csv",
   "domain_id": "alice",
-  "datasource_id": "default-data-source",
+  "datasource_id": "demo-data-source",
   "attributes": {
     "description": "alice demo data"
   },
@@ -747,7 +747,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 登录到 Bob 节点的 Pod 中
 
 ```bash
-kubectl exec -it ${bob_pod_name} bash -n autonomy-bob
+kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash
 ```
 
 为 Bob 节点创建 OSS 数据源
@@ -762,7 +762,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
 -d '{
    "domain_id": "bob",
-   "datasource_id":"default-data-source",
+   "datasource_id":"demo-data-source",
    "type":"oss",
    "name": "DemoDataSource",
    "info": {
@@ -794,7 +794,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
   "type": "table",
   "relative_uri": "bob.csv",
   "domain_id": "bob",
-  "datasource_id": "default-data-source",
+  "datasource_id": "demo-data-source",
   "attributes": {
     "description": "bob demo data"
   },
