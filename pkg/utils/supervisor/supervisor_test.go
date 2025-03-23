@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/jonas.jasas/condchan"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -214,7 +213,7 @@ func TestSupervisorRun_CancelContext(t *testing.T) {
 	sp.minRunningTimeMS = 100
 	ctx, cancel := context.WithCancel(context.Background())
 
-	pv := condchan.New(&sync.Mutex{})
+	pv := sync.NewCond(&sync.Mutex{})
 
 	count := 0
 	go func() {

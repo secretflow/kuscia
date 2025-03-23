@@ -15,10 +15,11 @@
 package msq
 
 import (
+	"context"
 	"sync"
 	"time"
 
-	"gitlab.com/jonas.jasas/condchan"
+	"github.com/Jille/contextcond"
 
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -32,8 +33,8 @@ type SessionQueue struct {
 	released bool
 
 	mtx      sync.Mutex
-	notFull  *condchan.CondChan
-	notEmpty *condchan.CondChan
+	notFull  *contextcond.Cond
+	notEmpty *contextcond.Cond
 
 	topics map[string]*Topic
 }
@@ -48,8 +49,8 @@ func NewSessionQueue(config *Config) *SessionQueue {
 		topics:             make(map[string]*Topic),
 	}
 
-	sq.notEmpty = condchan.New(&sq.mtx)
-	sq.notFull = condchan.New(&sq.mtx)
+	sq.notEmpty = contextcond.NewCond(&sq.mtx)
+	sq.notFull = contextcond.NewCond(&sq.mtx)
 	return sq
 }
 
@@ -135,7 +136,7 @@ func (s *SessionQueue) getTopic(topic string) *Topic {
 	return topicQueue
 }
 
-func (s *SessionQueue) waitUntil(check func() bool, cond *condchan.CondChan, timeout time.Duration) (bool, *transerr.TransError) {
+func (s *SessionQueue) waitUntil(check func() bool, cond *contextcond.Cond, timeout time.Duration) (bool, *transerr.TransError) {
 	if s.released {
 		return false, transerr.NewTransError(transerr.SessionReleased)
 	}
@@ -144,18 +145,16 @@ func (s *SessionQueue) waitUntil(check func() bool, cond *condchan.CondChan, tim
 		return true, nil
 	}
 
-	timeoutChan := time.After(timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 	waitTimeout := false
 	available := false
 	for {
-		cond.Select(func(c <-chan struct{}) {
-			select {
-			case <-c:
-			case <-timeoutChan:
-				waitTimeout = true
-			}
-		})
-		if s.released || waitTimeout {
+		if cond.WaitContext(ctx) != nil {
+			waitTimeout = true
+			break
+		}
+		if s.released {
 			break
 		}
 

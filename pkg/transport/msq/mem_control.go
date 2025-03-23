@@ -15,10 +15,11 @@
 package msq
 
 import (
+	"context"
 	"sync"
 	"time"
 
-	"gitlab.com/jonas.jasas/condchan"
+	"github.com/Jille/contextcond"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -29,7 +30,7 @@ type MemControl struct {
 
 	sync.Mutex
 
-	notFull *condchan.CondChan
+	notFull *contextcond.Cond
 }
 
 func NewMemControl(config *Config) *MemControl {
@@ -38,7 +39,7 @@ func NewMemControl(config *Config) *MemControl {
 		totalByteSize:      0,
 		Mutex:              sync.Mutex{},
 	}
-	mc.notFull = condchan.New(&mc.Mutex)
+	mc.notFull = contextcond.NewCond(&mc.Mutex)
 	return mc
 }
 
@@ -54,18 +55,10 @@ func (mc *MemControl) Prefetch(byteSize uint64, timeout time.Duration) (bool, ti
 		}
 
 		start := time.Now()
-		timeCh := time.After(timeout)
-		waitTimeout := false
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
 		for {
-			mc.notFull.Select(func(i <-chan struct{}) {
-				select {
-				case <-i:
-				case <-timeCh:
-					waitTimeout = true
-				}
-			})
-
-			if waitTimeout {
+			if mc.notFull.WaitContext(ctx) != nil {
 				break
 			}
 

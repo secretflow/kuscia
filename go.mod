@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/Jille/contextcond v1.0.0
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
 	github.com/agiledragon/gomonkey/v2 v2.11.0
 	github.com/apache/arrow/go/v13 v13.0.0
@@ -49,7 +50,6 @@ require (
 	github.com/stathat/consistent v1.0.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/match v1.1.1
-	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/net v0.33.0
