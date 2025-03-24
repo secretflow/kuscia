@@ -160,36 +160,11 @@ kubectl get po -n autonomy-alice
 
 ### 准备本地测试数据
 
-#### Alice 节点准备本地测试数据
-
-登录到 Alice 节点的 Pod 中
+kuscia默认提供了本地测试数据源`default-data-source`，可登录到节点的 Pod 中查看，本地数据地址为`/home/kuscia/var/storage/data`
 
 ```bash
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
-```
-
-为 Alice 节点创建本地数据源
-
-创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
-
-```bash
-# 在容器内执行示例
-export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
- --header 'Content-Type: application/json' \
- --cacert ${CTR_CERTS_ROOT}/ca.crt \
- -d '{
-  "domain_id": "alice",
-  "datasource_id":"default-data-source",
-  "type":"localfs",
-  "name": "DemoDataSource",
-  "info": {
-      "localfs": {
-          "path": "/home/kuscia/var/storage/data"
-      }
-  },
-  "access_directly": true
-}'
+kubectl -n alice get domaindatasource  -oyaml default-data-source
 ```
 
 为 Alice 的测试数据创建 DomainData
@@ -359,33 +334,11 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 #### Bob 节点准备本地测试数据
 
-登录到 Bob 节点的 Pod 中
+登录到 Bob 节点的 Pod 中，查看bob默认数据源`default-data-source`
 
 ```bash
 kubectl exec -it ${bob_pod_name} bash -n autonomy-bob
-```
-
-为 Bob 节点创建本地数据源
-
-创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
-
-```bash
-export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
- --header 'Content-Type: application/json' \
- --cacert ${CTR_CERTS_ROOT}/ca.crt \
- -d '{
-  "domain_id": "bob",
-  "datasource_id":"default-data-source",
-  "type":"localfs",
-  "name": "DemoDataSource",
-  "info": {
-      "localfs": {
-          "path": "/home/kuscia/var/storage/data"
-      }
-  },
-  "access_directly": true
-}'
+kubectl -n bob get domaindatasource  -oyaml default-data-source
 ```
 
 为 Bob 的测试数据创建 DomainData
