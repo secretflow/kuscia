@@ -543,6 +543,8 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 ```bash
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
+# 先删除默认数据源
+kubectl -n alice delete domaindatasource default-data-source
 ```
 
 为 Alice 节点创建 OSS 数据源
@@ -557,7 +559,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
 -d '{
    "domain_id": "alice",
-   "datasource_id":"demo-data-source",
+   "datasource_id":"default-data-source",
    "type":"oss",
    "name": "DemoDataSource",
    "info": {
@@ -589,7 +591,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
   "type": "table",
   "relative_uri": "alice.csv",
   "domain_id": "alice",
-  "datasource_id": "demo-data-source",
+  "datasource_id": "default-data-source",
   "attributes": {
     "description": "alice demo data"
   },
@@ -748,6 +750,8 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 ```bash
 kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash
+# 先删除默认数据源
+kubectl -n bob delete domaindatasource default-data-source
 ```
 
 为 Bob 节点创建 OSS 数据源
@@ -762,7 +766,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
 -d '{
    "domain_id": "bob",
-   "datasource_id":"demo-data-source",
+   "datasource_id":"default-data-source",
    "type":"oss",
    "name": "DemoDataSource",
    "info": {
@@ -794,7 +798,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
   "type": "table",
   "relative_uri": "bob.csv",
   "domain_id": "bob",
-  "datasource_id": "demo-data-source",
+  "datasource_id": "default-data-source",
   "attributes": {
     "description": "bob demo data"
   },
@@ -932,7 +936,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 登录到 Alice pod
 
   ```bash
-  kubectl exec -it ${alice_pod_name} bash -n autonomy-alice
+  kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash
   ```
 
   `pod 内部`获取 [AppImage.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/AppImage.yaml) 文件并创建 AppImage
@@ -946,7 +950,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
     登录到 Bob 节点的 Pod 内
 
     ```bash
-    kubectl exec -it ${bob_pod_name} bash -n autonomy-bob
+    kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash
     ```
 
     `pod 内部`获取 [AppImage.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/AppImage.yaml) 文件并创建 AppImage
@@ -960,7 +964,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 登录到 Alice 节点 的 Pod 内
 
 ```bash
-kubectl exec -it ${alice_pod_name} bash -n autonomy-alice
+kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash
 ```
 
 `pod 内部`创建并启动作业（两方 PSI 任务）
