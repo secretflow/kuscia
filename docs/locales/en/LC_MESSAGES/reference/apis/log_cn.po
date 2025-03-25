@@ -87,7 +87,7 @@ msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/log_cn.md
 msgid "可选"
-msgstr "Required (Y/N)"
+msgstr "Optional"
 
 #: ../../reference/apis/log_cn.md
 msgid "自定义请求内容"
