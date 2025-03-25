@@ -41,7 +41,7 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 pushd ${ROOT} || exit
 
-SELF_DOMAIN_ID=$(grep -E "^domainID:" "/home/kuscia/etc/conf/kuscia.yaml" | awk '{ print $2 }' | sed 's/"//g' | tr -d '\r\n')
+SELF_DOMAIN_ID=$(grep "domainID:" "/home/kuscia/etc/conf/kuscia.yaml" | awk '{ print $2 }' | sed 's/"//g' | tr -d '\r\n')
 
 INITIATOR=alice
 if [[ $SELF_DOMAIN_ID == bob ]]; then
