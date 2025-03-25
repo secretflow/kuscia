@@ -20,5 +20,3 @@
 2. 如果主机用户是 root，Kuscia 还是以 root 用户启动，`--rootless` 不生效。如果主机用户不是 root，Kuscia 以主机用户启动。
 3. 更多部署要求请参考[这里](../deploy_check.md)。
 :::
-
-4.
