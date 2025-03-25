@@ -164,7 +164,7 @@ kuscia默认提供了本地测试数据源`default-data-source`，可登录到�
 
 ```bash
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
-kubectl -n alice get domaindatasource  -oyaml default-data-source
+kubectl -n alice get domaindatasource -oyaml default-data-source
 ```
 
 为 Alice 的测试数据创建 DomainData
