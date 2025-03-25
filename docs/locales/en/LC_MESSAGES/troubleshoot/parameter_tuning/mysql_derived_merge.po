@@ -23,7 +23,7 @@ msgstr "MySQL（Database） optimizer_switch parameter optimization"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:3
 msgid "问题描述"
-msgstr "problem description"
+msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:5
 msgid "Kuscia 的 SQL 语句可能会存在触发 MySQL 的 Bug，导致 MySQL 直接崩溃。"
@@ -31,7 +31,7 @@ msgstr "Kuscia SQL statements may trigger a MySQL bug, causing MySQL to crash di
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:7
 msgid "解决方案"
-msgstr "solution"
+msgstr "Solution"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:9
 msgid ""
@@ -50,7 +50,7 @@ msgstr "When deploying Kuscia, it is recommended to use a dedicated database ins
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:17
 msgid "原因分析"
-msgstr "root cause analysis"
+msgstr "Root Cause Analysis"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:19
 msgid ""
@@ -73,7 +73,7 @@ msgstr "The SQL example that triggers the MySQL Bug is as follows:"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:69
 msgid "参数介绍"
-msgstr "parameter introduction"
+msgstr "Parameter Introduction"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:71
 msgid ""
