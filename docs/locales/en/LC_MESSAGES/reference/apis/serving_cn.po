@@ -19,34 +19,31 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md:1
 msgid "Serving"
-msgstr ""
+msgstr "Serving"
 
 #: ../../reference/apis/serving_cn.md:3
-msgid ""
-"在 Kuscia 中，你可以使用 Serving 接口管理通用的常驻服务，例如：Secretflow Serving 等。 从 "
-"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto)"
-" 可以找到对应的 protobuf 文件。"
-msgstr ""
+msgid "在 Kuscia 中，你可以使用 Serving 接口管理通用的常驻服务，例如：Secretflow Serving 等。 从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto) 可以找到对应的 protobuf 文件。"
+msgstr "In Kuscia, you can use the Serving interface to manage general resident services, such as Secretflow Serving, etc. You can find the corresponding protobuf file [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto)."
 
 #: ../../reference/apis/serving_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/serving_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/serving_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/serving_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/serving_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[CreateServing](#create-serving)"
@@ -62,7 +59,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:20
 msgid "创建 Serving"
-msgstr ""
+msgstr "Create Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[QueryServing](#query-serving)"
@@ -78,7 +75,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:111
 msgid "查询 Serving"
-msgstr ""
+msgstr "Query Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[UpdateServing](#update-serving)"
@@ -94,7 +91,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:287
 msgid "更新 Serving"
-msgstr ""
+msgstr "Update Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[DeleteServing](#delete-serving)"
@@ -110,7 +107,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:366
 msgid "删除 Serving"
-msgstr ""
+msgstr "Delete Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[BatchQueryServingStatus](#batch-query-serving-status)"
@@ -126,18 +123,18 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:417
 msgid "批量查询 Serving 状态"
-msgstr ""
+msgstr "Batch Query Serving Status"
 
 #: ../../reference/apis/serving_cn.md:16
 msgid "接口详情"
-msgstr ""
+msgstr "Interface Details"
 
 #: ../../reference/apis/serving_cn.md:22 ../../reference/apis/serving_cn.md:113
 #: ../../reference/apis/serving_cn.md:289
 #: ../../reference/apis/serving_cn.md:368
 #: ../../reference/apis/serving_cn.md:419
 msgid "HTTP路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/serving_cn.md:24
 msgid "/api/v1/serving/create"
@@ -149,15 +146,15 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/serving_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/serving_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/serving_cn.md
 msgid "header"
@@ -173,7 +170,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/serving_cn.md
 msgid "serving_id"
@@ -185,44 +182,23 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/serving_cn.md
-msgid ""
-"ServingID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
-"cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
-msgstr ""
+msgid "ServingID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
+msgstr "ServingID, compliant with [RFC 1123 label name requirements](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
 
 #: ../../reference/apis/serving_cn.md
-msgid "serving_input_config"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid ""
-"应用配置。[Secretflow Serving 预测应用配置参考](https://www.secretflow.org.cn/zh-"
-"CN/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-"
-"description)"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid "initiator"
-msgstr ""
+msgid "应用配置。[Secretflow Serving 预测应用配置参考](https://www.secretflow.org.cn/zh-CN/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-description)"
+msgstr "Application configuration. [Secretflow Serving prediction application configuration reference](https://www.secretflow.org.cn/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-description)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "发起方节点 DomainID"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid "parties"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid "[ServingParty](#serving-party)[]"
-msgstr ""
+msgstr "Initiator Node DomainID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "参与方信息"
-msgstr ""
+msgstr "Party Information"
 
 #: ../../reference/apis/serving_cn.md:36
 msgid "响应（CreateServingResponse）"
@@ -238,7 +214,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/serving_cn.md:42 ../../reference/apis/serving_cn.md:135
 #: ../../reference/apis/serving_cn.md:308
@@ -252,7 +228,7 @@ msgstr ""
 #: ../../reference/apis/serving_cn.md:387
 #: ../../reference/apis/serving_cn.md:440
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate Request:"
 
 #: ../../reference/apis/serving_cn.md:97 ../../reference/apis/serving_cn.md:153
 #: ../../reference/apis/serving_cn.md:352
@@ -291,7 +267,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "预测配置"
-msgstr ""
+msgstr "Prediction Configuration"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.initiator"
@@ -299,7 +275,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "发起方节点 ID"
-msgstr ""
+msgstr "Initiator Node ID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.parties"
@@ -323,7 +299,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用配置"
-msgstr ""
+msgstr "Application Configuration"
 
 #: ../../reference/apis/serving_cn.md:302
 msgid "响应（UpdateServingResponse）"
@@ -399,15 +375,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "状态信息，参考 [State](#state)"
-msgstr ""
+msgstr "Status information, refer to [State](#state)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "reason"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid "处于该状态的原因，一般用于描述失败的状态"
-msgstr ""
+msgstr "Reason for this status, generally used to describe failure states"
 
 #: ../../reference/apis/serving_cn.md
 msgid "message"
@@ -415,7 +387,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "处于该状态的详细信息，一般用于描述失败的状态"
-msgstr ""
+msgstr "Detailed information about this status, generally used to describe failure states"
 
 #: ../../reference/apis/serving_cn.md
 msgid "total_parties"
@@ -427,23 +399,23 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "参与方总数"
-msgstr ""
+msgstr "Total Number of Parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "available_parties"
-msgstr ""
+msgstr "Number of Available Parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "可用参与方数量"
-msgstr ""
+msgstr "Number of Available Parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "create_time"
-msgstr ""
+msgstr "Creation Time"
 
 #: ../../reference/apis/serving_cn.md
 msgid "创建时间"
-msgstr ""
+msgstr "Creation Time"
 
 #: ../../reference/apis/serving_cn.md
 msgid "party_statuses"
@@ -455,7 +427,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "参与方状态"
-msgstr ""
+msgstr "Party Status"
 
 #: ../../reference/apis/serving_cn.md:578
 msgid "PartyServingStatus"
@@ -467,21 +439,15 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "节点 DomainID"
-msgstr ""
+msgstr "Node DomainID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "role"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid ""
-"角色，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 "
-"`deployTemplates.role`"
-msgstr ""
+msgstr "Role, for detailed explanation please refer to `deployTemplates.role` in [AppImage](../concepts/appimage_cn.md)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "状态，参考 [State](#state)"
-msgstr ""
+msgstr "Status, refer to [State](#state)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "replicas"
@@ -489,7 +455,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用副本总数"
-msgstr ""
+msgstr "Total Number of Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "available_replicas"
@@ -497,7 +463,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用可用副本数"
-msgstr ""
+msgstr "Number of Available Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "unavailable_replicas"
@@ -505,7 +471,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用不可用副本数"
-msgstr ""
+msgstr "Number of Unavailable Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "updatedReplicas"
@@ -513,11 +479,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "最新版本的应用副本数"
-msgstr ""
+msgstr "Number of Latest Version Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "创建时间，时间格式为 RFC3339。示例: \"2024-01-17T10:18:02Z\""
-msgstr ""
+msgstr "Creation time, in RFC3339 format. Example: \"2024-01-17T10:18:02Z\""
 
 #: ../../reference/apis/serving_cn.md
 msgid "endpoints"
@@ -529,7 +495,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用对外暴露的访问地址信息"
-msgstr ""
+msgstr "Access Address Information Exposed by the Application"
 
 #: ../../reference/apis/serving_cn.md:594
 msgid "ServingPartyEndpoint"
@@ -537,31 +503,15 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "port_name"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid ""
-"应用服务端口名称，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 "
-"`deployTemplates.spec.containers.ports.name`"
-msgstr ""
+msgstr "Application service port name, for detailed explanation please refer to `deployTemplates.spec.containers.ports.name` in [AppImage](../concepts/appimage_cn.md)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "scope"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid ""
-"应用服务使用范围, 详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 "
-"`deployTemplates.spec.containers.ports.scope`"
-msgstr ""
+msgstr "Application service scope, for detailed explanation please refer to `deployTemplates.spec.containers.ports.scope` in [AppImage](../concepts/appimage_cn.md)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "endpoint"
-msgstr ""
-
-#: ../../reference/apis/serving_cn.md
-msgid "应用服务暴露的访问地址"
-msgstr ""
+msgstr "Access address exposed by the application service"
 
 #: ../../reference/apis/serving_cn.md:604
 msgid "ServingParty"
@@ -569,7 +519,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "节点 ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "app_image"
@@ -584,7 +534,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用总副本数，即启动的应用实例个数。默认为 1"
-msgstr ""
+msgstr "Total number of application replicas, i.e., the number of application instances started. Default is 1"
 
 #: ../../reference/apis/serving_cn.md
 msgid "update_strategy"
@@ -596,7 +546,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用升级策略"
-msgstr ""
+msgstr "Application Update Strategy"
 
 #: ../../reference/apis/serving_cn.md
 msgid "resources"
@@ -608,7 +558,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用运行资源。若不设时，那么不会限制应用运行过程中使用的资源大小"
-msgstr ""
+msgstr "Application runtime resources. If not set, there will be no limit on the resource size used during application runtime"
 
 #: ../../reference/apis/serving_cn.md
 msgid "service_name_prefix"
@@ -619,14 +569,14 @@ msgid ""
 "自定义应用服务名称前缀。长度不超过 48 个字符，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 "
 "<br/> - 若配置，则应用服务名称拼接规则为 `{service_name_prefix}-{port_name}`，port_name 对应"
-" [AppImage](../concepts/appimage_cn.md) 中的 "
+" [AppImage](../concepts/appimage_cn.md) "
 "`deployTemplates.spec.containers.ports.name` </br> - 若不配置，Kuscia "
 "随机生成应用服务名称"
 msgstr ""
 
 #: ../../reference/apis/serving_cn.md:618
 msgid "UpdateStrategy"
-msgstr ""
+msgstr "UpdateStrategy"
 
 #: ../../reference/apis/serving_cn.md
 msgid "type"
@@ -657,7 +607,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md:628
 msgid "Resource"
-msgstr ""
+msgstr "Resource"
 
 #: ../../reference/apis/serving_cn.md
 msgid "container_name"
@@ -716,7 +666,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "Unknown"
-msgstr ""
+msgstr "Unknown"
 
 #: ../../reference/apis/serving_cn.md
 msgid "0"
@@ -724,11 +674,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "未知"
-msgstr ""
+msgstr "Unknown"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Pending"
-msgstr ""
+msgstr "Pending"
 
 #: ../../reference/apis/serving_cn.md
 msgid "1"
@@ -740,7 +690,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "Progressing"
-msgstr ""
+msgstr "Progressing"
 
 #: ../../reference/apis/serving_cn.md
 msgid "2"
@@ -748,11 +698,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布中，至少有一方不可用"
-msgstr ""
+msgstr "Publishing, at least one party is unavailable"
 
 #: ../../reference/apis/serving_cn.md
 msgid "PartialAvailable"
-msgstr ""
+msgstr "PartialAvailable"
 
 #: ../../reference/apis/serving_cn.md
 msgid "3"
@@ -760,11 +710,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布完成，至少有一方的多应用实例不是全部可用"
-msgstr ""
+msgstr "Publishing completed, at least one party's multiple application instances are not all available"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Available"
-msgstr ""
+msgstr "Available"
 
 #: ../../reference/apis/serving_cn.md
 msgid "4"
@@ -772,11 +722,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布完成，所有方的所有应用实例全部可用"
-msgstr ""
+msgstr "Publishing completed, all application instances of all parties are available"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Failed"
-msgstr ""
+msgstr "Failed"
 
 #: ../../reference/apis/serving_cn.md
 msgid "5"
@@ -784,5 +734,5 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布失败"
-msgstr ""
+msgstr "Publishing failed"
 
