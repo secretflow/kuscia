@@ -125,7 +125,7 @@ msgstr "`materialization`: Use temporary tables to store intermediate results, e
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:82
 msgid "`in_to_exists`: 将 IN 子句转换为 EXISTS 子句，有时能提供更好的性能。"
-msgstr "`in_to_exists`: Converting IN clause to EXISTS clause can sometimes optimize performance."
+msgstr "`in_to_exists`: Converting `IN` clause to `EXISTS` clause can sometimes optimize performance."
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:83
 msgid ""
