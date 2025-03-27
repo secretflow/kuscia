@@ -61,7 +61,7 @@ msgstr "When privacy computing nodes are deployed in other institutions, their s
 msgid ""
 "以上这些问题只是隐私计算落地问题中的冰山一角。Kuscia 是一个跨域的隐私计算任务编排框架，致力于解决隐私计算落地过程中的共性问题，如： "
 "轻量化部署、跨域网络互通、多引擎集成、API接口简化、互联互通等问题。"
-msgstr "These issues are just the tip of the iceberg in privacy-preserving computation deployment. Kuscia is a cross-domain privacy-preserving computation task orchestration framework dedicated to solving common issues in privacy-preserving computation deployment, such as lightweight deployment, cross-domain network interconnection, multi-engine integration, API interface simplification, and interconnectivity."
+msgstr "These issues are just the tip of the iceberg in privacy-preserving computation deployment. Kuscia is a Cross-Domain privacy-preserving computation task orchestration framework dedicated to solving common issues in privacy-preserving computation deployment, such as lightweight deployment, Cross-Domain network interconnection, multi-engine integration, API interface simplification, and interconnectivity."
 
 #: ../../reference/overview.md:15
 msgid "您可以使用 Kuscia 做什么"
@@ -82,23 +82,23 @@ msgstr "When conducting a PoC (Proof of Concept), you may encounter various chal
 msgid ""
 "轻量级部署：不同机构基础设施多样，Kuscia 支持无论是在 Linux、Mac 或 Windows（WSL）系统上，您可以使用 1C2G "
 "的资源进行一键化部署并进行 100w 级数据的 PSI 求交，并支持多种部署环境如物理机、虚拟机或 Kubernetes。"
-msgstr "Lightweight Deployment: With diverse institutional infrastructure, Kuscia supports one-click deployment on Linux, Mac, or Windows (WSL) systems using just 1C2G resources to perform PSI intersection on million-level data, and supports various deployment environments such as physical machines, virtual machines, or Kubernetes."
+msgstr "**Lightweight Deployment:** With diverse institutional infrastructure, Kuscia supports one-click deployment on Linux, Mac, or Windows (WSL) systems using just 1C2G resources to perform PSI intersection on million-level data, and supports various deployment environments such as physical machines, virtual machines, or Kubernetes."
 
 #: ../../reference/overview.md:22
 msgid ""
 "灵活的网络适配：为解决跨机构合作公网端口开通受限制问题，Kuscia 可做到多任务并发运行时复用一个公网端口，并采用更加通用的 HTTP "
 "协议进行数据转发以避免一些机构网关不支持4层网络转发问题。"
-msgstr "Flexible Network Adaptation: To address the limited public network port access in cross-institutional cooperation, Kuscia can reuse a single public network port for concurrent multi-task execution and uses the more universal HTTP protocol for data forwarding to avoid issues with institutional gateways that don't support layer 4 network forwarding."
+msgstr "**Flexible Network Adaptation:** To address the limited public network port access in cross-institutional cooperation, Kuscia can reuse a single public network port for concurrent multi-task execution and uses the more universal HTTP protocol for data forwarding to avoid issues with institutional gateways that don't support layer 4 network forwarding."
 
 #: ../../reference/overview.md:23
 msgid ""
 "多引擎集成：Kuscia 集成了多种隐私计算引擎，如隐语 PSI、SecretFlow、TrustedFlow（TEE）和 SecretFlow "
 "Serving，让您可以快速使用上述引擎能力。通过部署 Kuscia，您可以只选择需要的引擎，且可以动态升级支持其他引擎而无需再次部署。"
-msgstr "Multi-Engine Integration: Kuscia integrates various privacy computing engines such as SecretFlow PSI, SecretFlow, TrustedFlow (TEE), and SecretFlow Serving, allowing you to quickly utilize these engine capabilities. By deploying Kuscia, you can select only the engines you need and dynamically upgrade to support other engines without redeployment."
+msgstr "**Multi-Engine Integration:** Kuscia integrates various privacy computing engines such as SecretFlow PSI, SecretFlow, TrustedFlow (TEE), and SecretFlow Serving, allowing you to quickly utilize these engine capabilities. By deploying Kuscia, you can select only the engines you need and dynamically upgrade to support other engines without redeployment."
 
 #: ../../reference/overview.md:24
 msgid "简化 API 调用：通过统一的 API 调用，您可以轻松启动任意算法任务，最简化的情况下仅需调用一个 API 就可完成任务执行。"
-msgstr "Simplified API Calls: Through unified API calls, you can easily initiate any algorithm task. In the simplest case, only one API call is needed to complete task execution."
+msgstr "**Simplified API Calls:** Through unified API calls, you can easily initiate any algorithm task. In the simplest case, only one API call is needed to complete task execution."
 
 #: ../../reference/overview.md:26
 msgid ""
@@ -127,35 +127,35 @@ msgid ""
 "运行时）等技术，支持从小规模任务平滑过渡到大规模任务处理。这为应对将来可能出现的大量数据流通需求提供了准备。Kuscia "
 "致力于成为用户在隐私计算领域长期的伙伴，陪伴用户一起成长和适应未来的技术变革和市场需求。"
 msgstr ""
-"One-stop Iterative Evolution: Privacy computing technology is still in a stage of rapid development, and engine updates and iterations will be relatively frequent. With its well-layered design, Kuscia allows adding new engines and upgrading existing ones without rebuilding existing infrastructure, thereby simplifying the update process and reducing maintenance costs. At the same time, to cope with the continuously expanding data circulation market, Kuscia uses technologies such as RunC (container runtime) and RunK (Kubernetes runtime) to support a smooth transition from small-scale tasks to large-scale task processing. This prepares for potential massive data circulation demands in the future. Kuscia is committed to being a long-term partner for users in the field of privacy computing, growing and adapting with users to future technological changes and market demands."
+"**One-stop Iterative Evolution:** Privacy computing technology is still in a stage of rapid development, and engine updates and iterations will be relatively frequent. With its well-layered design, Kuscia allows adding new engines and upgrading existing ones without rebuilding existing infrastructure, thereby simplifying the update process and reducing maintenance costs. At the same time, to cope with the continuously expanding data circulation market, Kuscia uses technologies such as RunC (container runtime) and RunK (Kubernetes runtime) to support a smooth transition from small-scale tasks to large-scale task processing. This prepares for potential massive data circulation demands in the future. Kuscia is committed to being a long-term partner for users in the field of privacy computing, growing and adapting with users to future technological changes and market demands."
 
 #: ../../reference/overview.md:33
 msgid ""
 "任务流与引擎协同：在实际的业务需求中，机器学习建模通常需要运行一组隐私计算任务（即任务流 Pipeline），Kuscia 支持 "
 "DAG（Directed Acyclic Graph）模式的任务流，并提供多引擎间的任务串联能力，增强了任务管理的灵活性。"
 msgstr ""
-"Task Flow and Engine Coordination: In actual business requirements, machine learning modeling usually requires running a set of privacy computing tasks (i.e., task flow Pipeline). Kuscia supports DAG (Directed Acyclic Graph) mode task flows and provides task chaining capabilities between multiple engines, enhancing the flexibility of task management."
+"**Task Flow and Engine Coordination:** In actual business requirements, machine learning modeling usually requires running a set of privacy computing tasks (i.e., task flow Pipeline). Kuscia supports DAG (Directed Acyclic Graph) mode task flows and provides task chaining capabilities between multiple engines, enhancing the flexibility of task management."
 
 #: ../../reference/overview.md:34
 msgid ""
 "丰富的数据源支持：不同机构的数据可能存储在不同的数据源中，Kuscia 已支持与 Local path、OSS、MySQL "
 "等多种数据源的无缝对接，并允许用户自定义扩展新的数据源，一次扩展即可让多个引擎受益。"
 msgstr ""
-"Rich Data Source Support: Data from different institutions may be stored in different data sources. Kuscia already supports seamless integration with various data sources such as Local path, OSS, MySQL, etc., and allows users to customize and extend new data sources. A single extension can benefit multiple engines."
+"**Rich Data Source Support:** Data from different institutions may be stored in different data sources. Kuscia already supports seamless integration with various data sources such as Local path, OSS, MySQL, etc., and allows users to customize and extend new data sources. A single extension can benefit multiple engines."
 
 #: ../../reference/overview.md:35
 msgid ""
 "运维监控扩展能力：在实际生产中用户会比较关注整个系统的运行状况，Kuscia 基于 K3s 开发实现，内置了 K3s 已有的 Kubectl "
 "观测工具。同时用户也可以基于云原生已有的监控与日志采集能力，来扩展 Kuscia 的监控与日志能力。"
 msgstr ""
-"Operation and Maintenance Monitoring Extension Capabilities: In actual production, users pay more attention to the operating status of the entire system. Kuscia is developed based on K3s and comes with built-in K3s Kubectl observation tools. At the same time, users can extend Kuscia's monitoring and logging capabilities based on existing cloud-native monitoring and log collection capabilities."
+"**Operation and Maintenance Monitoring Extension Capabilities:** In actual production, users pay more attention to the operating status of the entire system. Kuscia is developed based on K3s and comes with built-in K3s Kubectl observation tools. At the same time, users can extend Kuscia's monitoring and logging capabilities based on existing cloud-native monitoring and log collection capabilities."
 
 #: ../../reference/overview.md:36
 msgid ""
 "任务运行的安全性：使用隐私计算技术的机构对数据安全和隐私保护是非常关注的。Kuscia 通过数据授权与任务审核机制防止未经授权的任务执行。此外 "
 "Kuscia 支持 Nsjail 和 Kata 等安全运行时环境，为动态逻辑算子的执行提供额外的安全保障。"
 msgstr ""
-"Task Execution Security: Institutions using privacy computing technology are very concerned about data security and privacy protection. Kuscia prevents unauthorized task execution through data authorization and task review mechanisms. In addition, Kuscia supports secure runtime environments such as Nsjail and Kata, providing additional security guarantees for the execution of dynamic logic operators."
+"**Task Execution Security:** Institutions using privacy computing technology are very concerned about data security and privacy protection. Kuscia prevents unauthorized task execution through data authorization and task review mechanisms. In addition, Kuscia supports secure runtime environments such as Nsjail and Kata, providing additional security guarantees for the execution of dynamic logic operators."
 
 #: ../../reference/overview.md:38
 msgid "以上是 Kuscia 已支持的功能，其他如多引擎版本兼容管理、系统监控、日志采集、审计合规等生产所需能力亦在持续建设中，敬请期待。"
@@ -171,25 +171,25 @@ msgid ""
 "框架之后，您自研的隐私计算引擎可以迅速地从开发过渡到业务生产环节。避免了跨域网络配置、数据存取位置和运行时资源管理相关的常见难题。这样，您可以专注于引擎的核心功能和性能优化，而不是底层的基础设施问题。Kuscia"
 " 为引擎提供了如下便利："
 msgstr ""
-"After integrating the Kuscia framework, your self-developed privacy computing engine can quickly transition from development to business production. It avoids common problems related to cross-domain network configuration, data access location, and runtime resource management. This way, you can focus on the core functions and performance optimization of the engine rather than underlying infrastructure issues. Kuscia provides the following conveniences for engines:"
+"After integrating the Kuscia framework, your self-developed privacy computing engine can quickly transition from development to business production. It avoids common problems related to Cross-Domain network configuration, data access location, and runtime resource management. This way, you can focus on the core functions and performance optimization of the engine rather than underlying infrastructure issues. Kuscia provides the following conveniences for engines:"
 
 #: ../../reference/overview.md:44
 msgid ""
 "无缝跨域通信：引擎启动时，Kuscia "
 "会自动提供各方的通讯地址，消除了手动配置网关、验证链路安全或确认对方身份的繁琐过程。引擎可以直接使用这些地址安全地与其他方通信。"
 msgstr ""
-"Seamless Cross-Domain Communication: When the engine starts, Kuscia automatically provides communication addresses for all parties, eliminating the tedious process of manually configuring gateways, verifying link security, or confirming the identity of the other party. The engine can directly use these addresses to securely communicate with other parties."
+"**Seamless Cross-Domain Communication:** When the engine starts, Kuscia automatically provides communication addresses for all parties, eliminating the tedious process of manually configuring gateways, verifying link security, or confirming the identity of the other party. The engine can directly use these addresses to securely communicate with other parties."
 
 #: ../../reference/overview.md:45
 msgid ""
 "简化数据存取：无需担心数据存储的具体位置—无论是本地磁盘、对象存储服务（OSS）还是数据库（如 MySQL）。Kuscia "
 "为您提供一个统一的接口，通过它您可以直接读写所需数据。"
 msgstr ""
-"Simplified Data Access: No need to worry about the specific location of data storage—whether it's local disks, object storage services (OSS), or databases (such as MySQL). Kuscia provides you with a unified interface through which you can directly read and write the required data."
+"**Simplified Data Access:** No need to worry about the specific location of data storage—whether it's local disks, object storage services (OSS), or databases (such as MySQL). Kuscia provides you with a unified interface through which you can directly read and write the required data."
 
 #: ../../reference/overview.md:46
 msgid "自动资源管理：Kuscia 负责资源的分配和隔离，确保您的引擎运行在最合适的机器上，以免资源不足或遭遇资源争抢的问题。而无需您亲自进行资源管理。"
-msgstr "Automatic Resource Management: Kuscia is responsible for resource allocation and isolation, ensuring that your engine runs on the most suitable machine to avoid resource shortages or contention issues, without you having to manage resources personally."
+msgstr "**Automatic Resource Management:** Kuscia is responsible for resource allocation and isolation, ensuring that your engine runs on the most suitable machine to avoid resource shortages or contention issues, without you having to manage resources personally."
 
 #: ../../reference/overview.md:48
 msgid "Kuscia是什么"
@@ -243,22 +243,22 @@ msgid ""
 " 在工业化落地隐私计算场景下，大部分隐私计算平台可以简化为三层去理解，分别是产品层、框架层、引擎层。对应到隐语的开源体系分别是： "
 "SecretPad、Kuscia 、SecretFlow/TrustedFlow/SCQL 。"
 msgstr ""
-"The Kuscia orchestrated task period, i.e., the current open-source Kuscia. After the experience accumulation of the Coordinator era, the dependence on trusted third parties was removed, and the overall architecture and code were redesigned. It focuses on solving common problems that may be encountered in the industrial production and implementation of privacy computing technology (such as cross-domain network interconnection, task orchestration, heterogeneous data sources, multi-engine integration, interconnectivity, etc.). In the industrial implementation of privacy computing scenarios, most privacy computing platforms can be simplified into three layers for understanding: the product layer, the framework layer, and the engine layer. Corresponding to the open-source system of SecretFlow, they are: SecretPad, Kuscia, and SecretFlow/TrustedFlow/SCQL."
+"The Kuscia orchestrated task period, i.e., the current open-source Kuscia. After the experience accumulation of the Coordinator era, the dependence on trusted third parties was removed, and the overall architecture and code were redesigned. It focuses on solving common problems that may be encountered in the industrial production and implementation of privacy computing technology (such as Cross-Domain network interconnection, task orchestration, heterogeneous data sources, multi-engine integration, interconnectivity, etc.). In the industrial implementation of privacy computing scenarios, most privacy computing platforms can be simplified into three layers for understanding: the product layer, the framework layer, and the engine layer. Corresponding to the open-source system of SecretFlow, they are: SecretPad, Kuscia, and SecretFlow/TrustedFlow/SCQL."
 
 #: ../../reference/overview.md:67
 msgid ""
 "产品层：一般为图形化界面应用，是直接面向终端用户的产品，用户可通过可视化界面的操作完成隐私求交、隐私保护机器学习、隐私保护数据分析等任务。无需感知底层系统的实现细节。隐语开源的"
 " SecretPad 即位于平台层。平台层可通过 Kuscia 层提供的 KusciaAPI 执行隐私计算任务。"
 msgstr ""
-"Product Layer: Generally a graphical interface application, it is a product directly facing end users. Users can complete tasks such as private set intersection, privacy-preserving machine learning, and privacy-preserving data analysis through operations on the visual interface without needing to perceive the implementation details of the underlying system. The open-source SecretPad of SecretFlow is located at the platform layer. The platform layer can execute privacy computing tasks through the KusciaAPI provided by the Kuscia layer."
+"**Product Layer:** Generally a graphical interface application, it is a product directly facing end users. Users can complete tasks such as private set intersection, privacy-preserving machine learning, and privacy-preserving data analysis through operations on the visual interface without needing to perceive the implementation details of the underlying system. The open-source SecretPad of SecretFlow is located at the platform layer. The platform layer can execute privacy computing tasks through the KusciaAPI provided by the Kuscia layer."
 
 #: ../../reference/overview.md:68
 msgid "框架层：Kuscia聚焦于解决隐私计算技术工业化生产落地可能遇到的共性问题（如跨域的网络互通、任务编排、异构数据源、多引擎集成、互联互通等问题）。"
-msgstr "Framework Layer: Kuscia focuses on solving common problems that may be encountered in the industrial production and implementation of privacy computing technology (such as cross-domain network interconnection, task orchestration, heterogeneous data sources, multi-engine integration, interconnectivity, etc.)."
+msgstr "**Framework Layer:** Kuscia focuses on solving common problems that may be encountered in the industrial production and implementation of privacy computing technology (such as Cross-Domain network interconnection, task orchestration, heterogeneous data sources, multi-engine integration, interconnectivity, etc.)."
 
 #: ../../reference/overview.md:69
 msgid "引擎层：完成核心的隐私计算任务，如 PSI 求交，PIR，隐私保护的特征处理、LR XGB 模型训练、模型预测等。"
-msgstr "Engine Layer: Completes core privacy computing tasks, such as PSI intersection, PIR, privacy-preserving feature processing, LR XGB model training, model prediction, etc."
+msgstr "**Engine Layer:** Completes core privacy computing tasks, such as PSI intersection, PIR, privacy-preserving feature processing, LR XGB model training, model prediction, etc."
 
 #: ../../reference/overview.md:71
 msgid "Kuscia Layer"
@@ -269,7 +269,7 @@ msgid ""
 "通过这样的分层设计，让每一层聚焦于自己本层的核心职责。平台层专注于终端用户体验及实际的业务场景适配。Kuscia "
 "层专注于解决隐私计算技术生产落地遇到的问题，引擎开发者专注于隐私计算任务核心逻辑的开发，无需考虑复杂的跨域网络环境及不同机构可能存在的异构数据源等问题。"
 msgstr ""
-"Through such a layered design, each layer focuses on its own core responsibilities. The platform layer focuses on end-user experience and actual business scenario adaptation. The Kuscia layer focuses on solving problems encountered in the production and implementation of privacy computing technology. Engine developers focus on the development of the core logic of privacy computing tasks without needing to consider complex cross-domain network environments and heterogeneous data sources that may exist in different institutions."
+"Through such a layered design, each layer focuses on its own core responsibilities. The platform layer focuses on end-user experience and actual business scenario adaptation. The Kuscia layer focuses on solving problems encountered in the production and implementation of privacy computing technology. Engine developers focus on the development of the core logic of privacy computing tasks without needing to consider complex Cross-Domain network environments and heterogeneous data sources that may exist in different institutions."
 
 #: ../../reference/overview.md:77
 msgid "为什么需要 Kuscia"
@@ -289,22 +289,22 @@ msgstr "To lower the threshold for user installation, deployment, and use, Kusci
 
 #: ../../reference/overview.md:85
 msgid "资源占用低：允许最低 1C2G 的机器（avx512指令集）部署 Kuscia 完成 100w 级数据的 PSI 求交。"
-msgstr "Low resource usage: Allows deployment of Kuscia on machines with as low as 1C2G (avx512 instruction set) to complete PSI intersection of 1 million-level data."
+msgstr "**Low resource usage:** Allows deployment of Kuscia on machines with as low as 1C2G (avx512 instruction set) to complete PSI intersection of 1 million-level data."
 
 #: ../../reference/overview.md:86
 msgid "一键式部署：为方便用户体验和减少用户部署成本，Kuscia 提供了一键式部署脚本可快速完成安装部署。"
-msgstr "One-click Deployment: To enhance user experience and reduce deployment costs, Kuscia provides one-click deployment scripts for quick installation and setup."
+msgstr "**One-click Deployment:** To enhance user experience and reduce deployment costs, Kuscia provides one-click deployment scripts for quick installation and setup."
 
 #: ../../reference/overview.md:87
 msgid ""
 "部署方式多样：考虑到机构的运维基础设施不同，Kuscia 目前支持服务器与K8s两种部署方式，且可在 "
 "Linux/MacOS/Windows(WSL) 上快速部署体验 Kuscia 功能。"
 msgstr ""
-"Diverse Deployment Options: Considering different institutional operation infrastructures, Kuscia currently supports both server and K8s deployment methods, and can be quickly deployed on Linux/MacOS/Windows(WSL) to experience Kuscia's features."
+"**Diverse Deployment Options:** Considering different institutional operation infrastructures, Kuscia currently supports both server and K8s deployment methods, and can be quickly deployed on Linux/MacOS/Windows(WSL) to experience Kuscia's features."
 
 #: ../../reference/overview.md:89
 msgid "跨域网络安全通信"
-msgstr "Cross-domain Secure Network Communication"
+msgstr "Cross-Domain Secure Network Communication"
 
 #: ../../reference/overview.md:91
 msgid "隐私计算任务一般需要2方或2方以上参与完成，那么多方之间如何安全且便捷的通信？"
@@ -315,7 +315,7 @@ msgid ""
 "安全通信：通信安全是数据安全的基础，Kuscia 通过证书认证各参与方的身份，并在各参与方之间建立一个安全的网络通信链路（支持 MTLS 和 "
 "HTTPS ）。"
 msgstr ""
-"Secure Communication: Communication security is the foundation of data security. Kuscia authenticates each party's identity through certificates and establishes secure network communication channels between participants (supporting MTLS and HTTPS)."
+"**Secure Communication:** Communication security is the foundation of data security. Kuscia authenticates each party's identity through certificates and establishes secure network communication channels between participants (supporting MTLS and HTTPS)."
 
 #: ../../reference/overview.md:94
 msgid "端口复用：Kuscia可做到多任务并发运行时复用一个公网端口（一些条件下甚至可以不暴露公网端口）。"
@@ -326,58 +326,58 @@ msgid ""
 "高适配性：根据以往实际的部署经验，几乎所有机构的网关都支持 HTTP 转发，但并不是所有机构网关都支持4层网络转发，所以 Kuscia 选择使用 "
 "HTTP 协议转发的方式进行网络打通。"
 msgstr ""
-"High Compatibility: Based on past deployment experience, nearly all institutional gateways support HTTP forwarding, but not all support layer 4 network forwarding. Therefore, Kuscia uses HTTP protocol forwarding for network connectivity."
+"**High Compatibility:** Based on past deployment experience, nearly all institutional gateways support HTTP forwarding, but not all support layer 4 network forwarding. Therefore, Kuscia uses HTTP protocol forwarding for network connectivity."
 
 #: ../../reference/overview.md:96
 msgid "代理转发：在机构之间无法直连通信的场景下，部署了Kuscia的双方可通过第三方kuscia节点（代理）完成流量转发，进而实现机构之间无法直连场景下的通信。"
-msgstr "Proxy Forwarding: When direct communication between institutions is impossible, parties with Kuscia deployed can use third-party Kuscia nodes (proxies) for traffic forwarding, enabling communication in scenarios where direct connection isn't feasible."
+msgstr "**Proxy Forwarding:** When direct communication between institutions is impossible, parties with Kuscia deployed can use third-party Kuscia nodes (proxies) for traffic forwarding, enabling communication in scenarios where direct connection isn't feasible."
 
 #: ../../reference/overview.md:98
 msgid "跨域任务调度"
-msgstr "Cross-domain Task Scheduling"
+msgstr "Cross-Domain Task Scheduling"
 
 #: ../../reference/overview.md:100
 msgid "在实际的业务需求中，隐私保护的传统机器学习建模通常需要运行一组隐私计算任务（即任务流 Pipeline），同时希望跨域的任务能够并发执行且互不影响。"
-msgstr "In practical business scenarios, privacy-preserving traditional machine learning modeling typically requires running a series of privacy computing tasks (i.e., task flow Pipeline), while ensuring cross-domain tasks can execute concurrently without interference."
+msgstr "In practical business scenarios, privacy-preserving traditional machine learning modeling typically requires running a series of privacy computing tasks (i.e., task flow Pipeline), while ensuring Cross-Domain tasks can execute concurrently without interference."
 
 #: ../../reference/overview.md:102
 msgid ""
 "任务调度：Kuscia 支持任务流调度，即用户只需要将任务流 Pipeline 提交给 Kuscia，Kuscia "
 "就会自动的根据任务间的依赖关系、优先级、资源配额等信息完成任务的跨域调度与执行。"
 msgstr ""
-"Task Scheduling: Kuscia supports task flow scheduling - users simply submit the task flow Pipeline to Kuscia, which then automatically handles cross-domain scheduling and execution based on task dependencies, priorities, resource quotas, etc."
+"**Task Scheduling:** Kuscia supports task flow scheduling - users simply submit the task flow Pipeline to Kuscia, which then automatically handles Cross-Domain scheduling and execution based on task dependencies, priorities, resource quotas, etc."
 
 #: ../../reference/overview.md:103
 msgid ""
 "丰富的运行时支持：Kuscia 支持轻量级的 RunP（Run Process）运行时和容器化的 RunC（Run "
 "Containerd）/RunK（Run Kubernetes）运行时，分别解决部署效率、任务资源隔离、大规模任务等多种场景需求。"
 msgstr ""
-"Rich Runtime Support: Kuscia supports lightweight RunP (Run Process) runtime and containerized RunC (Run Containerd)/RunK (Run Kubernetes) runtimes, addressing various scenario needs including deployment efficiency, task resource isolation, and large-scale tasks."
+"**Rich Runtime Support:** Kuscia supports lightweight RunP (Run Process) runtime and containerized RunC (Run Containerd)/RunK (Run Kubernetes) runtimes, addressing various scenario needs including deployment efficiency, task resource isolation, and large-scale tasks."
 
 #: ../../reference/overview.md:104
 msgid ""
 "任务安全运行：任务审核机制防止未经授权的任务执行。此外 Kuscia 支持 Nsjail 和 Kata "
 "等安全运行时环境，为动态逻辑的执行提供额外的安全保障。"
 msgstr ""
-"Secure Task Execution: Task review mechanisms prevent unauthorized task execution. Additionally, Kuscia supports secure runtime environments like Nsjail and Kata, providing extra security for dynamic logic execution."
+"**Secure Task Execution:** Task review mechanisms prevent unauthorized task execution. Additionally, Kuscia supports secure runtime environments like Nsjail and Kata, providing extra security for dynamic logic execution."
 
 #: ../../reference/overview.md:105
 msgid ""
 "多引擎支持：实际场景中不存在一个引擎即可满足所有业务需求，一定是不同引擎有其各自擅长解决的问题。Kuscia 目前已支持 "
 "SecretFlow、TrustedFlow、Easy PSI，同时也支持用户自定义扩展引擎。"
 msgstr ""
-"Multi-engine Support: No single engine can meet all business needs in real scenarios - different engines excel at solving different problems. Kuscia currently supports SecretFlow, TrustedFlow, Easy PSI, and also allows user-defined engine extensions."
+"**Multi-engine Support:** No single engine can meet all business needs in real scenarios - different engines excel at solving different problems. Kuscia currently supports SecretFlow, TrustedFlow, Easy PSI, and also allows user-defined engine extensions."
 
 #: ../../reference/overview.md:106
 msgid ""
 "在线服务：Kuscia 除支持跨域离线任务（如模型训练和大数据分析）外，也支持跨域在线服务（如实时联合预测打分服务），对于在线服务，Kuscia "
 "支持常规的负载均衡、缩扩容、滚动升级等能力。"
 msgstr ""
-"Online Services: Beyond cross-domain offline tasks (like model training and big data analysis), Kuscia also supports cross-domain online services (like real-time joint prediction scoring services), with capabilities including load balancing, scaling, and rolling upgrades."
+"**Online Services:** Beyond Cross-Domain offline tasks (like model training and big data analysis), Kuscia also supports Cross-Domain online services (like real-time joint prediction scoring services), with capabilities including load balancing, scaling, and rolling upgrades."
 
 #: ../../reference/overview.md:107
 msgid "资源管理：Kuscia 可以完成域内的资源管理及跨域的资源协同，保证任务被调度到资源充足的节点上运行。"
-msgstr "Resource Management: Kuscia handles both intra-domain resource management and cross-domain resource coordination, ensuring tasks are scheduled to nodes with sufficient resources."
+msgstr "**Resource Management:** Kuscia handles both intra-domain resource management and Cross-Domain resource coordination, ensuring tasks are scheduled to nodes with sufficient resources."
 
 #: ../../reference/overview.md:109
 msgid "异构数据源"
@@ -395,15 +395,15 @@ msgid ""
 "多数据源支持：目前 Kuscia 支持本地磁盘、OSS 类型数据源。通过对不同类型数据源的支持，让引擎开发者只需要对接 Kuscia 的 "
 "DataMesh 即可以读取和写入数据，无需关心数据存储在哪里。"
 msgstr ""
-"Multi-data Source Support: Kuscia currently supports local disks and OSS-type data sources. By supporting different data source types, engine developers only need to interface with Kuscia's DataMesh to read/write data, without worrying about storage locations."
+"**Multi-data Source Support:** Kuscia currently supports local disks and OSS-type data sources. By supporting different data source types, engine developers only need to interface with Kuscia's DataMesh to read/write data, without worrying about storage locations."
 
 #: ../../reference/overview.md:114
 msgid "扩展数据源：Kuscia 也支持用户自定义数据源插件，用户可通过新增数据源插件的方式扩展 Kuscia 支持其他类型数据源。"
-msgstr "Extensible Data Sources: Kuscia also supports user-defined data source plugins, allowing users to extend support to other data source types by adding new plugins."
+msgstr "**Extensible Data Sources:** Kuscia also supports user-defined data source plugins, allowing users to extend support to other data source types by adding new plugins."
 
 #: ../../reference/overview.md:116
 msgid "数据安全使用【进行中】"
-msgstr "Secure Data Usage [In Progress]"
+msgstr "Secure Usage of Data [In Progress]"
 
 #: ../../reference/overview.md:118
 msgid "使用隐私计算技术的机构用户都是对数据安全和隐私保护非常关注的。如何保证合作方合理的使用数据？"
@@ -414,14 +414,14 @@ msgid ""
 "数据授权：Kuscia "
 "提供了完善的数据授权机制，数据方可将自己的指定数据授权给数据使用方，授权包括：使用方可以使用哪些数据及数据的哪些列、使用的次数、使用范围等。"
 msgstr ""
-"Data Authorization: Kuscia provides comprehensive data authorization mechanisms. Data providers can authorize specific data to users, specifying which data/columns can be used, usage frequency, scope, etc."
+"**Data Authorization:** Kuscia provides comprehensive data authorization mechanisms. Data providers can authorize specific data to users, specifying which data/columns can be used, usage frequency, scope, etc."
 
 #: ../../reference/overview.md:121
 msgid ""
 "数据鉴权：Kuscia "
 "在执行任务时，会校验任务发起方是否有此数据的授权，保障合作方按照用户预期内的方式去使用数据，即合作方无法使用其未被授权的数据，以及无法使用非预期内的方式使用数据。"
 msgstr ""
-"Data Authentication: When executing tasks, Kuscia verifies whether the task initiator has authorization for the data, ensuring partners use data only as intended - preventing unauthorized data usage or unexpected usage patterns."
+"**Data Authentication:** When executing tasks, Kuscia verifies whether the task initiator has authorization for the data, ensuring partners use data only as intended - preventing unauthorized data usage or unexpected usage patterns."
 
 #: ../../reference/overview.md:123
 msgid "互联互通"
@@ -433,7 +433,7 @@ msgstr "Different privacy computing vendors in data circulation networks create 
 
 #: ../../reference/overview.md:127
 msgid "Kuscia InterOp 协议：部署了 Kuscia 的机构之间可直接通过 Kuscia-InterOp 协议进行互通。"
-msgstr "Kuscia InterOp Protocol: Institutions with Kuscia deployed can directly interconnect through the Kuscia-InterOp protocol."
+msgstr "**Kuscia InterOp Protocol:** Institutions with Kuscia deployed can directly interconnect through the Kuscia-InterOp protocol."
 
 #: ../../reference/overview.md:129
 msgid "统一 API 接口"
@@ -460,11 +460,11 @@ msgstr "With privacy computing engine iterations creating multiple versions acro
 
 #: ../../reference/overview.md:139
 msgid "版本兼容：Kuscia 通过在拉起任务时判定不同机构间的兼容版本，确保每个机构都可以根据自己的需求独立升级，而不会影响到其他机构。"
-msgstr "Version Compatibility: Kuscia determines compatible versions between institutions when initiating tasks, allowing independent upgrades without affecting others."
+msgstr "**Version Compatibility:** Kuscia determines compatible versions between institutions when initiating tasks, allowing independent upgrades without affecting others."
 
 #: ../../reference/overview.md:140
 msgid "平滑升级：Kuscia 可支持机构引擎升级时不影响已有任务的运行，且在升级完成后，新任务执行时自动使用新版本。"
-msgstr "Smooth Upgrades: Kuscia supports engine upgrades without disrupting running tasks, automatically using new versions for new tasks post-upgrade."
+msgstr "**Smooth Upgrades:** Kuscia supports engine upgrades without disrupting running tasks, automatically using new versions for new tasks post-upgrade."
 
 #: ../../reference/overview.md:142
 msgid "监控日志【敬请期待】"
@@ -479,14 +479,14 @@ msgid ""
 "日志采集与查询：Kuscia 可采集域内的隐私计算引擎运行日志、网络通信的 Trace "
 "信息并提供任务维度的查询检索，跨域的日志查询需审核通过后查看。"
 msgstr ""
-"Log Collection & Query: Kuscia collects privacy computing engine logs, network communication traces within domains, and provides task-level querying. Cross-domain log queries require approval."
+"**Log Collection & Query:** Kuscia collects privacy computing engine logs, network communication traces within domains, and provides task-level querying. Cross-Domain log queries require approval."
 
 #: ../../reference/overview.md:147
 msgid ""
 "任务状态监控：Kuscia "
 "可监控系统内部资源使用情况、并发运行的任务数量、任务运行状态等指标监控，帮助您了解资源使用情况，识别运行异常任务故障，并对系统进行优化，以提高效率和响应时间。"
 msgstr ""
-"Task Status Monitoring: Kuscia monitors system resource usage, concurrent task counts, task statuses, etc., helping understand resource utilization, identify anomalies, and optimize system efficiency and response times."
+"**Task Status Monitoring:** Kuscia monitors system resource usage, concurrent task counts, task statuses, etc., helping understand resource utilization, identify anomalies, and optimize system efficiency and response times."
 
 #: ../../reference/overview.md:149
 msgid "存证审计【敬请期待】"
@@ -501,11 +501,11 @@ msgid ""
 "不可篡改的日志：日志存储后会在隐私计算的双方分别记录日志文件的 Hash "
 "值或采用区块链技术，保证文件内容不可篡改或篡改后可被发现，进而保障了审计日志的完整性。"
 msgstr ""
-"Immutable Logs: After storage, both privacy computing parties record log file hashes or use blockchain technology to prevent undetected tampering, ensuring audit log integrity."
+"**Immutable Logs:** After storage, both privacy computing parties record log file hashes or use blockchain technology to prevent undetected tampering, ensuring audit log integrity."
 
 #: ../../reference/overview.md:154
 msgid "详尽的操作追踪：所有用户操作、系统事件和数据访问活动都会被记录下来，确保每一项活动都可以被追溯和审查。"
-msgstr "Comprehensive Operation Tracking: All user actions, system events, and data access activities are recorded, ensuring full traceability and reviewability."
+msgstr "**Comprehensive Operation Tracking:** All user actions, system events, and data access activities are recorded, ensuring full traceability and reviewability."
 
 #: ../../reference/overview.md:156
 msgid "总结"
@@ -517,5 +517,5 @@ msgid ""
 "不是大而全的系统，一些默认解决方案都是可选、可插拔的。 Kuscia "
 "为构建隐私计算平台提供了基础，但同时希望在重要的地方保留用户的选择权，提供更高的灵活性与扩展性。"
 msgstr ""
-"Kuscia is a cross-domain lightweight privacy computing task orchestration framework, addressing common implementation challenges and serving as an operational foundation for privacy computing engines. Rather than being monolithic, Kuscia's default solutions are optional and pluggable. While providing a base for building privacy computing platforms, it preserves user choice in key areas for greater flexibility and extensibility."
+"Kuscia is a Cross-Domain lightweight privacy computing task orchestration framework, addressing common implementation challenges and serving as an operational foundation for privacy computing engines. Rather than being monolithic, Kuscia's default solutions are optional and pluggable. While providing a base for building privacy computing platforms, it preserves user choice in key areas for greater flexibility and extensibility."
 
