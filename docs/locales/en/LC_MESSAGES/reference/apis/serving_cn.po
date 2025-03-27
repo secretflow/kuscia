@@ -47,15 +47,15 @@ msgstr "Description"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[CreateServing](#create-serving)"
-msgstr ""
+msgstr "[CreateServing](#create-serving)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "CreateServingRequest"
-msgstr ""
+msgstr "CreateServingRequest"
 
 #: ../../reference/apis/serving_cn.md
 msgid "CreateServingResponse"
-msgstr ""
+msgstr "CreateServingResponse"
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:20
 msgid "创建 Serving"
@@ -63,15 +63,15 @@ msgstr "Create Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[QueryServing](#query-serving)"
-msgstr ""
+msgstr "[QueryServing](#query-serving)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "QueryServingRequest"
-msgstr ""
+msgstr "QueryServingRequest"
 
 #: ../../reference/apis/serving_cn.md
 msgid "QueryServingResponse"
-msgstr ""
+msgstr "QueryServingResponse"
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:111
 msgid "查询 Serving"
@@ -83,11 +83,11 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "UpdateServingRequest"
-msgstr ""
+msgstr "[UpdateServing](#update-serving)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "UpdateServingResponse"
-msgstr ""
+msgstr "UpdateServingResponse"
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:287
 msgid "更新 Serving"
@@ -95,15 +95,15 @@ msgstr "Update Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[DeleteServing](#delete-serving)"
-msgstr ""
+msgstr "[DeleteServing](#delete-serving)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "DeleteServingRequest"
-msgstr ""
+msgstr "DeleteServingRequest"
 
 #: ../../reference/apis/serving_cn.md
 msgid "DeleteServingResponse"
-msgstr ""
+msgstr "DeleteServingResponse"
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:366
 msgid "删除 Serving"
@@ -111,15 +111,15 @@ msgstr "Delete Serving"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[BatchQueryServingStatus](#batch-query-serving-status)"
-msgstr ""
+msgstr "[BatchQueryServingStatus](#batch-query-serving-status)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "BatchQueryServingStatusRequest"
-msgstr ""
+msgstr "BatchQueryServingStatusRequest"
 
 #: ../../reference/apis/serving_cn.md
 msgid "BatchQueryServingStatusResponse"
-msgstr ""
+msgstr "BatchQueryServingStatusResponse"
 
 #: ../../reference/apis/serving_cn.md ../../reference/apis/serving_cn.md:417
 msgid "批量查询 Serving 状态"
@@ -138,11 +138,11 @@ msgstr "HTTP Path"
 
 #: ../../reference/apis/serving_cn.md:24
 msgid "/api/v1/serving/create"
-msgstr ""
+msgstr "/api/v1/serving/create"
 
 #: ../../reference/apis/serving_cn.md:26
 msgid "请求（CreateServingRequest）"
-msgstr ""
+msgstr "Request (CreateServingRequest)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "字段"
@@ -158,15 +158,15 @@ msgstr "Optional"
 
 #: ../../reference/apis/serving_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/serving_cn.md
 msgid "自定义请求内容"
@@ -174,11 +174,11 @@ msgstr "Custom Request Content"
 
 #: ../../reference/apis/serving_cn.md
 msgid "serving_id"
-msgstr ""
+msgstr "serving_id"
 
 #: ../../reference/apis/serving_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/serving_cn.md
 msgid "必填"
@@ -202,15 +202,15 @@ msgstr "Party Information"
 
 #: ../../reference/apis/serving_cn.md:36
 msgid "响应（CreateServingResponse）"
-msgstr ""
+msgstr "Response (CreateServingResponse)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "状态信息"
@@ -221,7 +221,7 @@ msgstr "Status Information"
 #: ../../reference/apis/serving_cn.md:385
 #: ../../reference/apis/serving_cn.md:438
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/serving_cn.md:44 ../../reference/apis/serving_cn.md:137
 #: ../../reference/apis/serving_cn.md:310
@@ -235,35 +235,35 @@ msgstr "Initiate Request:"
 #: ../../reference/apis/serving_cn.md:403
 #: ../../reference/apis/serving_cn.md:458
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Response Result:"
 
 #: ../../reference/apis/serving_cn.md:115
 msgid "/api/v1/serving/query"
-msgstr ""
+msgstr "/api/v1/serving/query"
 
 #: ../../reference/apis/serving_cn.md:117
 msgid "请求（QueryServingRequest）"
-msgstr ""
+msgstr "Request (QueryServingRequest)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "ServingID"
-msgstr ""
+msgstr "ServingID"
 
 #: ../../reference/apis/serving_cn.md:124
 msgid "响应（QueryServingResponse）"
-msgstr ""
+msgstr "Response（QueryServingResponse）"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/serving_cn.md
 msgid "QueryServingResponseData"
-msgstr ""
+msgstr "QueryServingResponseData"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.serving_input_config"
-msgstr ""
+msgstr "data.serving_input_config"
 
 #: ../../reference/apis/serving_cn.md
 msgid "预测配置"
@@ -271,7 +271,7 @@ msgstr "Prediction Configuration"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.initiator"
-msgstr ""
+msgstr "data.initiator"
 
 #: ../../reference/apis/serving_cn.md
 msgid "发起方节点 ID"
@@ -279,23 +279,23 @@ msgstr "Initiator Node ID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.parties"
-msgstr ""
+msgstr "data.parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.status"
-msgstr ""
+msgstr "data.status"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[ServingStatusDetail](#serving-status-detail)"
-msgstr ""
+msgstr "[ServingStatusDetail](#serving-status-detail)"
 
 #: ../../reference/apis/serving_cn.md:291
 msgid "/api/v1/serving/update"
-msgstr ""
+msgstr "/api/v1/serving/update"
 
 #: ../../reference/apis/serving_cn.md:293
 msgid "请求（UpdateServingRequest）"
-msgstr ""
+msgstr "Request (UpdateServingRequest)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用配置"
@@ -303,75 +303,75 @@ msgstr "Application Configuration"
 
 #: ../../reference/apis/serving_cn.md:302
 msgid "响应（UpdateServingResponse）"
-msgstr ""
+msgstr "Response（UpdateServingResponse）""
 
 #: ../../reference/apis/serving_cn.md:370
 msgid "/api/v1/serving/delete"
-msgstr ""
+msgstr "/api/v1/serving/delete"
 
 #: ../../reference/apis/serving_cn.md:372
 msgid "请求（DeleteServingRequest）"
-msgstr ""
+msgstr "Request（DeleteServingRequest）"
 
 #: ../../reference/apis/serving_cn.md:379
 msgid "响应（DeleteServingResponse）"
-msgstr ""
+msgstr "Response（DeleteServingResponse）"
 
 #: ../../reference/apis/serving_cn.md:421
 msgid "/api/v1/serving/status/batchQuery"
-msgstr ""
+msgstr "/api/v1/serving/status/batchQuery"
 
 #: ../../reference/apis/serving_cn.md:423
 msgid "请求（BatchQueryServingStatusRequest）"
-msgstr ""
+msgstr "Request（BatchQueryServingStatusRequest）"
 
 #: ../../reference/apis/serving_cn.md
 msgid "serving_ids"
-msgstr ""
+msgstr "serving_ids"
 
 #: ../../reference/apis/serving_cn.md
 msgid "string[]"
-msgstr ""
+msgstr "string[]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "ServingID列表"
-msgstr ""
+msgstr "ServingID List"
 
 #: ../../reference/apis/serving_cn.md:430
 msgid "响应（BatchQueryServingStatusResponse）"
-msgstr ""
+msgstr "Response（BatchQueryServingStatusResponse）"
 
 #: ../../reference/apis/serving_cn.md
 msgid "BatchQueryServingStatusResponseData"
-msgstr ""
+msgstr "BatchQueryServingStatusResponseData"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.servings"
-msgstr ""
+msgstr "data.servings"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[ServingStatus](#serving-status)[]"
-msgstr ""
+msgstr "[ServingStatus](#serving-status)[]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Serving 状态列表"
-msgstr ""
+msgstr "Serving List"
 
 #: ../../reference/apis/serving_cn.md:551
 msgid "公共"
-msgstr ""
+msgstr "Public"
 
 #: ../../reference/apis/serving_cn.md:555
 msgid "ServingStatus"
-msgstr ""
+msgstr "ServingStatus"
 
 #: ../../reference/apis/serving_cn.md:564
 msgid "ServingStatusDetail"
-msgstr ""
+msgstr "ServingStatusDetail"
 
 #: ../../reference/apis/serving_cn.md
 msgid "state"
-msgstr ""
+msgstr "state"
 
 #: ../../reference/apis/serving_cn.md
 msgid "状态信息，参考 [State](#state)"
@@ -379,11 +379,11 @@ msgstr "Status information, refer to [State](#state)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "reason"
-msgstr "Reason for this status, generally used to describe failure states"
+msgstr "reason"
 
 #: ../../reference/apis/serving_cn.md
 msgid "message"
-msgstr ""
+msgstr "message"
 
 #: ../../reference/apis/serving_cn.md
 msgid "处于该状态的详细信息，一般用于描述失败的状态"
@@ -391,11 +391,11 @@ msgstr "Detailed information about this status, generally used to describe failu
 
 #: ../../reference/apis/serving_cn.md
 msgid "total_parties"
-msgstr ""
+msgstr "total_parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "int32"
-msgstr ""
+msgstr "int32"
 
 #: ../../reference/apis/serving_cn.md
 msgid "参与方总数"
@@ -403,7 +403,7 @@ msgstr "Total Number of Parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "available_parties"
-msgstr "Number of Available Parties"
+msgstr "available_parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "可用参与方数量"
@@ -411,19 +411,19 @@ msgstr "Number of Available Parties"
 
 #: ../../reference/apis/serving_cn.md
 msgid "create_time"
-msgstr "Creation Time"
+msgstr "create_time"
 
 #: ../../reference/apis/serving_cn.md
 msgid "创建时间"
-msgstr "Creation Time"
+msgstr "Create Time"
 
 #: ../../reference/apis/serving_cn.md
 msgid "party_statuses"
-msgstr ""
+msgstr "party_statuses"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[PartyServingStatus](#party-serving-status)[]"
-msgstr ""
+msgstr "[PartyServingStatus](#party-serving-status)[]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "参与方状态"
@@ -431,11 +431,11 @@ msgstr "Party Status"
 
 #: ../../reference/apis/serving_cn.md:578
 msgid "PartyServingStatus"
-msgstr ""
+msgstr "PartyServingStatus"
 
 #: ../../reference/apis/serving_cn.md
 msgid "domain_id"
-msgstr ""
+msgstr "domain_id"
 
 #: ../../reference/apis/serving_cn.md
 msgid "节点 DomainID"
@@ -443,7 +443,7 @@ msgstr "Node DomainID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "role"
-msgstr "Role, for detailed explanation please refer to `deployTemplates.role` in [AppImage](../concepts/appimage_cn.md)"
+msgstr "role"
 
 #: ../../reference/apis/serving_cn.md
 msgid "状态，参考 [State](#state)"
@@ -451,7 +451,7 @@ msgstr "Status, refer to [State](#state)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "replicas"
-msgstr ""
+msgstr "replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用副本总数"
@@ -459,7 +459,7 @@ msgstr "Total Number of Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "available_replicas"
-msgstr ""
+msgstr "available_replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用可用副本数"
@@ -467,7 +467,7 @@ msgstr "Number of Available Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "unavailable_replicas"
-msgstr ""
+msgstr "unavailable_replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用不可用副本数"
@@ -475,7 +475,7 @@ msgstr "Number of Unavailable Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "updatedReplicas"
-msgstr ""
+msgstr "updatedReplicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "最新版本的应用副本数"
@@ -483,15 +483,15 @@ msgstr "Number of Latest Version Application Replicas"
 
 #: ../../reference/apis/serving_cn.md
 msgid "创建时间，时间格式为 RFC3339。示例: \"2024-01-17T10:18:02Z\""
-msgstr "Creation time, in RFC3339 format. Example: \"2024-01-17T10:18:02Z\""
+msgstr "Create time, in RFC3339 format. Example: \"2024-01-17T10:18:02Z\""
 
 #: ../../reference/apis/serving_cn.md
 msgid "endpoints"
-msgstr ""
+msgstr "endpoints"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[ServingPartyEndpoint](#serving-party-endpoint)[]"
-msgstr ""
+msgstr "[ServingPartyEndpoint](#serving-party-endpoint)[]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用对外暴露的访问地址信息"
@@ -499,23 +499,23 @@ msgstr "Access Address Information Exposed by the Application"
 
 #: ../../reference/apis/serving_cn.md:594
 msgid "ServingPartyEndpoint"
-msgstr ""
+msgstr "ServingPartyEndpoint"
 
 #: ../../reference/apis/serving_cn.md
 msgid "port_name"
-msgstr "Application service port name, for detailed explanation please refer to `deployTemplates.spec.containers.ports.name` in [AppImage](../concepts/appimage_cn.md)"
+msgstr "port_name"
 
 #: ../../reference/apis/serving_cn.md
 msgid "scope"
-msgstr "Application service scope, for detailed explanation please refer to `deployTemplates.spec.containers.ports.scope` in [AppImage](../concepts/appimage_cn.md)"
+msgstr "scope"
 
 #: ../../reference/apis/serving_cn.md
 msgid "endpoint"
-msgstr "Access address exposed by the application service"
+msgstr "endpoint"
 
 #: ../../reference/apis/serving_cn.md:604
 msgid "ServingParty"
-msgstr ""
+msgstr "ServingParty"
 
 #: ../../reference/apis/serving_cn.md
 msgid "节点 ID"
@@ -523,7 +523,7 @@ msgstr "Node ID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "app_image"
-msgstr ""
+msgstr "app_image"
 
 #: ../../reference/apis/serving_cn.md
 msgid ""
@@ -531,6 +531,9 @@ msgid ""
 "资源名称。<br/>在调用更新接口时，如果更新该字段，当前仅会使用新的 "
 "[AppImage](../concepts/appimage_cn.md) 资源中的应用镜像 Name 和 Tag 信息，更新预测应用"
 msgstr ""
+"Application image, corresponding to [AppImage](../concepts/appimage_cn.md) "
+"resource name.<br/>When calling the update interface, if this field is updated, only the new "
+"[AppImage](../concepts/appimage_cn.md) resource's application image Name and Tag information will be used to update the prediction application"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用总副本数，即启动的应用实例个数。默认为 1"
@@ -538,11 +541,11 @@ msgstr "Total number of application replicas, i.e., the number of application in
 
 #: ../../reference/apis/serving_cn.md
 msgid "update_strategy"
-msgstr ""
+msgstr "update_strategy"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[UpdateStrategy](#update-strategy)"
-msgstr ""
+msgstr "[UpdateStrategy](#update-strategy)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用升级策略"
@@ -550,11 +553,11 @@ msgstr "Application Update Strategy"
 
 #: ../../reference/apis/serving_cn.md
 msgid "resources"
-msgstr ""
+msgstr "resources"
 
 #: ../../reference/apis/serving_cn.md
 msgid "[Resource](#resource)[]"
-msgstr ""
+msgstr "[Resource](#resource)[]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "应用运行资源。若不设时，那么不会限制应用运行过程中使用的资源大小"
@@ -562,7 +565,7 @@ msgstr "Application runtime resources. If not set, there will be no limit on the
 
 #: ../../reference/apis/serving_cn.md
 msgid "service_name_prefix"
-msgstr ""
+msgstr "service_name_prefix"
 
 #: ../../reference/apis/serving_cn.md
 msgid ""
@@ -573,6 +576,12 @@ msgid ""
 "`deployTemplates.spec.containers.ports.name` </br> - 若不配置，Kuscia "
 "随机生成应用服务名称"
 msgstr ""
+"Custom application service name prefix. Length should not exceed 48 characters, compliant with [RFC 1123 label name requirements](https://kubernetes.io/docs/"
+"concepts/overview/working-with-objects/names/#dns-label-names). "
+"<br/> - If configured, the application service name concatenation rule is `{service_name_prefix}-{port_name}`, where port_name corresponds to"
+" `deployTemplates.spec.containers.ports.name` in [AppImage](../concepts/appimage_cn.md)"
+" </br> - If not configured, Kuscia will "
+"randomly generate the application service name"
 
 #: ../../reference/apis/serving_cn.md:618
 msgid "UpdateStrategy"
@@ -580,7 +589,7 @@ msgstr "UpdateStrategy"
 
 #: ../../reference/apis/serving_cn.md
 msgid "type"
-msgstr ""
+msgstr "type"
 
 #: ../../reference/apis/serving_cn.md
 msgid ""
@@ -588,22 +597,26 @@ msgid ""
 "\"Recreate\"：表示重建，在创建新的应用之前，所有现有应用都会被删除<br/> "
 "\"RollingUpdate\"：表示滚动升级，当应用升级时，结合\"max_surge\"和\"max_unavailable\"控制滚动升级过程"
 msgstr ""
+"Application upgrade strategy type: supports two types \"Recreate\" and \"RollingUpdate\"<br/> "
+"\"Recreate\": means rebuild, all existing applications will be deleted before creating new applications<br/> "
+"\"RollingUpdate\": means rolling upgrade, when upgrading applications, controls the rolling upgrade process using \"max_surge\" and \"max_unavailable\"
+
 
 #: ../../reference/apis/serving_cn.md
 msgid "max_surge"
-msgstr ""
+msgstr "max_surge"
 
 #: ../../reference/apis/serving_cn.md
-msgid "用来指定可以创建的超出应用总副本数的应用数量。默认为总副本数的\"25%\"。max_unavailable为0，则此值不能为0"
-msgstr ""
+msgid "Used to specify the number of applications that can be created exceeding the total number of replicas. Default is \"25%\" of total replicas. If max_unavailable is 0, this value cannot be 0"
+msgstr "Used to specify the number of applications that can be created exceeding the total number of replicas. Default is \"25%\" of total replicas. If max_unavailable is 0, this value cannot be 0"
 
 #: ../../reference/apis/serving_cn.md
 msgid "max_unavailable"
-msgstr ""
+msgstr "max_unavailable"
 
 #: ../../reference/apis/serving_cn.md
 msgid "用来指定升级过程中不可用的应用副本个数上限。默认为总副本数的\"25%\"。max_surge为0，则此值不能为0"
-msgstr ""
+msgstr "Used to specify the number of applications that can be created exceeding the total number of replicas. Default is \"25%\" of total replicas. If max_unavailable is 0, this value cannot be 0"
 
 #: ../../reference/apis/serving_cn.md:628
 msgid "Resource"
@@ -611,7 +624,7 @@ msgstr "Resource"
 
 #: ../../reference/apis/serving_cn.md
 msgid "container_name"
-msgstr ""
+msgstr "container_name"
 
 #: ../../reference/apis/serving_cn.md
 msgid ""
@@ -619,50 +632,53 @@ msgid ""
 "[AppImage](../concepts/appimage_cn.md) "
 "中的`deployTemplates.spec.containers.name`"
 msgstr ""
+"Container name. If empty, \"cpu\" and \"memory\" resources apply to all containers. Container name corresponds to "
+"the `deployTemplates.spec.containers.name` in "
+"[AppImage](../concepts/appimage_cn.md)"
 
 #: ../../reference/apis/serving_cn.md
 msgid "min_cpu"
-msgstr ""
+msgstr "min_cpu"
 
 #: ../../reference/apis/serving_cn.md
 msgid "最小cpu数量。例如：\"0.1\"：表示100毫核；\"1\"：表示1核"
-msgstr ""
+msgstr "Minimum CPU amount. For example: \"0.1\": means 100 millicores; \"1\": means 1 core"
 
 #: ../../reference/apis/serving_cn.md
 msgid "max_cpu"
-msgstr ""
+msgstr "max_cpu"
 
 #: ../../reference/apis/serving_cn.md
 msgid "最大cpu数量。例如：\"0.1\"：表示100毫核；\"1\"：表示1核"
-msgstr ""
+msgstr "Maxmum CPU amount. For example: \"0.1\": means 100 millicores; \"1\": means 1 core"
 
 #: ../../reference/apis/serving_cn.md
 msgid "min_memory"
-msgstr ""
+msgstr "min_memory"
 
 #: ../../reference/apis/serving_cn.md
 msgid "最小memory数量。单位：\"Mi\"，\"Gi\"；例如：\"100Mi\"：表示100兆字节"
-msgstr ""
+msgstr "Minimum memory amount. Units: \"Mi\", \"Gi\"; For example: \"100Mi\": means 100 megabytes"
 
 #: ../../reference/apis/serving_cn.md
 msgid "max_memory"
-msgstr ""
+msgstr "max_memory"
 
 #: ../../reference/apis/serving_cn.md
 msgid "最大memory数量。单位：\"Mi\"，\"Gi\"；例如：\"100Mi\"：表示100兆字节"
-msgstr ""
+msgstr "Maximum memory amount. Units: \"Mi\", \"Gi\"; For example: \"100Mi\": means 100 megabytes"
 
 #: ../../reference/apis/serving_cn.md:640
 msgid "State"
-msgstr ""
+msgstr "State"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Name"
-msgstr ""
+msgstr "Name"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Number"
-msgstr ""
+msgstr "Number"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Unknown"
@@ -670,7 +686,7 @@ msgstr "Unknown"
 
 #: ../../reference/apis/serving_cn.md
 msgid "0"
-msgstr ""
+msgstr "0"
 
 #: ../../reference/apis/serving_cn.md
 msgid "未知"
@@ -682,11 +698,11 @@ msgstr "Pending"
 
 #: ../../reference/apis/serving_cn.md
 msgid "1"
-msgstr ""
+msgstr "1"
 
 #: ../../reference/apis/serving_cn.md
 msgid "还未被处理"
-msgstr ""
+msgstr "Unknown"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Progressing"
@@ -694,7 +710,7 @@ msgstr "Progressing"
 
 #: ../../reference/apis/serving_cn.md
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布中，至少有一方不可用"
@@ -706,7 +722,7 @@ msgstr "PartialAvailable"
 
 #: ../../reference/apis/serving_cn.md
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布完成，至少有一方的多应用实例不是全部可用"
@@ -718,7 +734,7 @@ msgstr "Available"
 
 #: ../../reference/apis/serving_cn.md
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布完成，所有方的所有应用实例全部可用"
@@ -730,7 +746,7 @@ msgstr "Failed"
 
 #: ../../reference/apis/serving_cn.md
 msgid "5"
-msgstr ""
+msgstr "5"
 
 #: ../../reference/apis/serving_cn.md
 msgid "发布失败"
