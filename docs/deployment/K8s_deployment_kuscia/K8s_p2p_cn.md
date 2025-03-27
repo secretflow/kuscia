@@ -92,15 +92,15 @@ Alice 和 Bob 授权之前可以先检测下相互之间的通信是否正常
 
 ```bash
 # 将 Alice 节点的 domain.crt 证书 cp 到 跳板机当前目录并改名 alice.domain.crt
-kubectl cp autonomy-alice/kuscia-autonomy-alice-686d6747c-gc2kk:var/certs/domain.crt alice.domain.crt
+kubectl cp autonomy-alice/${alice_pod_name}:var/certs/domain.crt alice.domain.crt
 # 将 alice.domain.crt 证书 cp 到 Bob 节点的里
-kubectl cp alice.domain.crt autonomy-bob/kuscia-autonomy-bob-89cf8bc77-cvn9f:var/certs/
+kubectl cp alice.domain.crt autonomy-bob/${bob_pod_name}:var/certs/
 # 登录到 Bob 节点
-kubectl -n autonomy-bob exec -it kuscia-autonomy-bob-89cf8bc77-cvn9f -- bash 
+kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash 
 # [pod 内部] 在 Bob 里添加 Alice 的证书等信息
 scripts/deploy/add_domain.sh alice p2p
 # 登录到 Alice 节点
-kubectl -n autonomy-alice exec -it kuscia-autonomy-alice-686d6747c-gc2kk -- bash 
+kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
 # [pod 内部] 建立 Alice 到 Bob 的通信
 scripts/deploy/join_to_host.sh alice bob http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080
 ```
@@ -109,15 +109,15 @@ scripts/deploy/join_to_host.sh alice bob http://kuscia-autonomy-bob.autonomy-bob
 
 ```bash
 # 将 Bob 节点的 domain.crt 证书 cp 到 跳板机当前目录并改 bob.domain.crt
-kubectl cp autonomy-bob/kuscia-autonomy-bob-89cf8bc77-cvn9f:var/certs/domain.crt bob.domain.crt
+kubectl cp autonomy-bob/${bob_pod_name}:var/certs/domain.crt bob.domain.crt
 # 将 bob.domain.crt 证书 cp 到 Alice 节点的里
-kubectl cp bob.domain.crt autonomy-alice/kuscia-autonomy-alice-686d6747c-gc2kk:var/certs/
+kubectl cp bob.domain.crt autonomy-alice/${alice_pod_name}:var/certs/
 # 登录到 Alice 节点
-kubectl -n autonomy-alice exec -it kuscia-autonomy-alice-686d6747c-gc2kk -- bash 
+kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
 # [pod 内部] 在 Alice 里添加 Bob 的证书等信息
 scripts/deploy/add_domain.sh bob p2p
 # 登录到 Bob 节点
-kubectl -n autonomy-bob exec -it kuscia-autonomy-bob-89cf8bc77-cvn9f -- bash 
+kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash 
 # [pod 内部] 建立 Bob 到 Alice 的通信
 scripts/deploy/join_to_host.sh bob alice http://kuscia-autonomy-alice.autonomy-alice.svc.cluster.local:1080
 ```
@@ -127,7 +127,7 @@ scripts/deploy/join_to_host.sh bob alice http://kuscia-autonomy-alice.autonomy-a
 在 Alice 节点 pod 内执行 `kubectl get cdr alice-bob -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"`，在 Bob 节点 pod 内执行 `kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"` 得到下面示例返回结果表示授权成功
 
 ```bash
-{"effectiveInstances":["kuscia-autonomy-alice-686d6747c-gc2kk"],"expirationTime":"2123-11-24T02:42:12Z","isReady":true,"revision":1,"revisionTime":"2023-11-24T02:42:12Z","token":"dVYZ4Ld/i7msNwuLoT+F8kFaCXbgXk6FziaU5PMASl8ReFfOVpsUt0qijlQaKTLm+OKzABfMQEI4jGeJ/Qsmhr6XOjc+7rkSCa5bmCxw5YVq+UtIFwNnjyRDaBV6A+ViiEMZwuaLIiFMtsPLki2SXzcA7LiLZY3oZvHfgf0m8LenMfU9tmZEptRoTBeL3kKagMBhxLxXL4rZzmI1bBwi49zxwOmg3c/MbDP8JiI6zIM7/NdIAEJhqsbzC5/Yw1qajr7D+NLXhsdrtTDSHN8gSB8D908FxYvcxeUTHqDQJT1mWcXs2N4r/Z/3OydkwJiQQokpjfZsR0T4xmbVTJd5qw=="}
+{"effectiveInstances":["kuscia-autonomy-alice-xxxxxxxxx-xxxxx"],"expirationTime":"2123-11-24T02:42:12Z","isReady":true,"revision":1,"revisionTime":"2023-11-24T02:42:12Z","token":"dVYZ4Ld/i7msNwuLoT+F8kFaCXbgXk6FziaU5PMASl8ReFfOVpsUt0qijlQaKTLm+OKzABfMQEI4jGeJ/Qsmhr6XOjc+7rkSCa5bmCxw5YVq+UtIFwNnjyRDaBV6A+ViiEMZwuaLIiFMtsPLki2SXzcA7LiLZY3oZvHfgf0m8LenMfU9tmZEptRoTBeL3kKagMBhxLxXL4rZzmI1bBwi49zxwOmg3c/MbDP8JiI6zIM7/NdIAEJhqsbzC5/Yw1qajr7D+NLXhsdrtTDSHN8gSB8D908FxYvcxeUTHqDQJT1mWcXs2N4r/Z/3OydkwJiQQokpjfZsR0T4xmbVTJd5qw=="}
 ```
 
 在 Alice、Bob 节点 pod 内执行 `kubectl get cdr` 返回 Ready 为 True 时，表示授权成功，示例如下：
@@ -160,7 +160,7 @@ kubectl get po -n autonomy-alice
 
 ### 准备本地测试数据
 
-kuscia默认提供了本地测试数据源`default-data-source`，可登录到节点的 Pod 中查看，本地数据地址为`/home/kuscia/var/storage/data`
+Kuscia 默认提供了本地数据源 `default-data-source`，可登录到节点的 Pod 中查看，本地数据地址为 `/home/kuscia/var/storage/data`
 
 ```bash
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
@@ -334,11 +334,11 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 #### Bob 节点准备本地测试数据
 
-登录到 Bob 节点的 Pod 中，查看bob默认数据源`default-data-source`
+登录到 Bob 节点的 Pod 中，查看 Bob 默认本地数据源 `default-data-source`
 
 ```bash
 kubectl exec -it ${bob_pod_name} bash -n autonomy-bob
-kubectl -n bob get domaindatasource  -oyaml default-data-source
+kubectl -n bob get domaindatasource -oyaml default-data-source
 ```
 
 为 Bob 的测试数据创建 DomainData
