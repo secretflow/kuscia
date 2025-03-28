@@ -20,10 +20,11 @@ msgstr ""
 #: ../../reference/apis/datamesh/summary_cn.md:1
 msgid "概览"
 msgstr ""
+"Overview"
 
 #: ../../reference/apis/datamesh/summary_cn.md:3
 msgid "Data Mesh API 使用场景"
-msgstr ""
+msgstr "Data Mesh API Use Cases"
 
 #: ../../reference/apis/datamesh/summary_cn.md:5
 msgid ""
@@ -34,7 +35,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/summary_cn.md:7
 msgid "Data Mesh API 约定"
-msgstr ""
+msgstr "Data Mesh API Conventions"
 
 #: ../../reference/apis/datamesh/summary_cn.md:9
 msgid "Data Mesh API 提供 HTTP 和 GRPC 两种访问方法。"
@@ -171,7 +172,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/summary_cn.md:50
 msgid "如何使用 Data Mesh API"
-msgstr ""
+msgstr "How to Use the Data Mesh API"
 
 #: ../../reference/apis/datamesh/summary_cn.md:52
 msgid ""
