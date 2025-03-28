@@ -79,10 +79,7 @@ docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/token .
 
 为了使用 GRPC 连接上 Kuscia API，您需要：
 
-1. 从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) 下载 Kuscia 的 protobuf 文件，使用
-   protoc
-   生成对应编程语言的客户端桩代码。
-   关于如何生成客户端桩代码，请参看 [Protobuf 官方教程](https://protobuf.dev/getting-started/)。
+1. 从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。关于如何生成客户端桩代码，请参看 [Protobuf 官方教程](https://protobuf.dev/getting-started/)。
 2. 在初始化 GRPC 客户端时，设置 HTTP 双向验证的配置。
 3. 在初始化 GRPC 客户端时，读取 token 文件内容，设置 Metadata：Token={token}。
 4. 使用 GRPC 客户端发起请求。

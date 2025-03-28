@@ -3,7 +3,6 @@
 # This file is distributed under the same license as the Kuscia package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Kuscia \n"
@@ -66,10 +65,11 @@ msgstr "The Kuscia API provides two access methods: HTTP and gRPC."
 #: ../../reference/apis/summary_cn.md:24
 msgid ""
 "当您使用 GRPC 时，您可以通过 protoc 生成出对应编程语言的客户端桩代码，您可以在 "
-"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)"
-" 找到 Kuscia API 的 protobuf 文件。"
-msgstr "When using gRPC, you can generate client stub code for your programming language using `protoc`.“
-” You can find the Kuscia API protobuf files [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)."
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) "
+"找到 Kuscia API 的 protobuf 文件。"
+msgstr ""
+"When using gRPC, you can generate client stub code for your programming language with `protoc`. "
+"You can find the Kuscia API protobuf definitions [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)."
 
 #: ../../reference/apis/summary_cn.md:28
 msgid ""
@@ -78,15 +78,17 @@ msgid ""
 "guides/proto3/#json) 。当请求的 `Content-Type` 为 `application/x-protobuf` 时，使用"
 " PROTOBUF 编码，否则使用 JSON 编码。"
 msgstr ""
-"When using HTTP, access the corresponding port where the Kuscia API endpoints are exposed through "
-"`POST+JSON` or `POST+PROTOBUF` formats compliant with the [Protocol Buffers JSON Mapping](https://protobuf.dev/programming-"
-"guides/proto3/#json). Requests with `Content-Type: application/x-protobuf` will use PROTOBUF encoding; "
-"all others default to JSON."
+"When using HTTP, you can access the corresponding HTTP port. The Kuscia API "
+"interfaces are provided in the form of POST+JSON or POST+PROTOBUF and comply "
+"with protobuf's [JSON Mapping](https://protobuf.dev/programming-guides/proto3/#json). "
+"When the request's `Content-Type` is `application/x-protobuf`, PROTOBUF encoding "
+"is used; otherwise, JSON encoding is used."
+
 
 #: ../../reference/apis/summary_cn.md:33
 msgid "请求和响应约定"
 msgstr ""
-"Request/Response Conventions"
+"Request and Response Conventions"
 
 #: ../../reference/apis/summary_cn.md:35
 msgid ""
@@ -94,8 +96,9 @@ msgid ""
 "[CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， "
 "该字段可以携带您自定义的一些数据。"
 msgstr ""
-"All requests must include a header field of type [RequestHeader](#requestheader), such as "
-"[CreateDomainDataRequest](domaindata_cn.md#request-createdomaindatarequest), which can carry custom metadata."
+"A request always includes a header field of type [RequestHeader](#requestheader), "
+"such as [CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest). "
+"This field can carry custom data defined by you."
 
 #: ../../reference/apis/summary_cn.md:38
 msgid ""
@@ -104,7 +107,7 @@ msgid ""
 " 该字段描述了响应的状态信息。"
 msgstr ""
 "All responses must contain a status field of type [Status](#status), such as "
-"[CreateDomainDataResponse](domaindata_cn.md#response-createdomaindataresponse), which provides response status information."
+"[CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse), which provides response status information."
 
 #: ../../reference/apis/summary_cn.md:43
 msgid "RequestHeader"
@@ -174,6 +177,11 @@ msgstr ""
 "Reference: [gRPC Status Definition](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)"
 
 #: ../../reference/apis/summary_cn.md
+msgid "示例"
+msgstr ""
+"Example"
+
+#: ../../reference/apis/summary_cn.md
 msgid "code"
 msgstr ""
 "code"
@@ -191,7 +199,7 @@ msgstr ""
 #: ../../reference/apis/summary_cn.md
 msgid "message"
 msgstr ""
-"Message"
+"message"
 
 #: ../../reference/apis/summary_cn.md
 msgid "string"
@@ -202,6 +210,11 @@ msgstr ""
 msgid "错误信息"
 msgstr ""
 "Error message"
+
+#: ../../reference/apis/summary_cn.md
+msgid "错误码"
+msgstr ""
+"Error code"
 
 #: ../../reference/apis/summary_cn.md
 msgid "details"
@@ -247,15 +260,11 @@ msgstr ""
 
 #: ../../reference/apis/summary_cn.md:82
 msgid ""
-"从 "
-"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)"
-" 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。 关于如何生成客户端桩代码，请参看 "
-"[Protobuf 官方教程](https://protobuf.dev/getting-started/)。"
+"从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。关于如何生成客户端桩代码，请参看 [Protobuf 官方教程](https://protobuf.dev/getting-started/)。"
 msgstr ""
-"1. Download the Kuscia protobuf files from "
-"[here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) "
-"2. Generate client code using `protoc`. For generation instructions, refer to "
-"[Protobuf Official Tutorial](https://protobuf.dev/getting-started/)."
+"Download Kuscia's protobuf files from [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi), "
+"and use `protoc` to generate client stub code for the corresponding programming language. "
+"For details on how to generate client stub code, please refer to the [Protobuf official tutorial](https://protobuf.dev/getting-started/)."
 
 #: ../../reference/apis/summary_cn.md:86
 msgid "在初始化 GRPC 客户端时，设置 HTTP 双向验证的配置。"
@@ -266,7 +275,7 @@ msgstr ""
 #: ../../reference/apis/summary_cn.md:87
 msgid "在初始化 GRPC 客户端时，读取 token 文件内容，设置 Metadata：Token={token}。"
 msgstr ""
-"During gRPC client initialization: load token file content and set metadata header `Token={token}`."
+"When initializing the GRPC client, read the token file content and set the Metadata: Token={token}."
 
 #: ../../reference/apis/summary_cn.md:88
 msgid "使用 GRPC 客户端发起请求。"
