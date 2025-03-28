@@ -83,7 +83,7 @@ msgstr "Currently, DataMesh only supports the following query capabilities:"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:53
 msgid "注意事项"
-msgstr "Precautions"
+msgstr "Reminders"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:55
 msgid ""
