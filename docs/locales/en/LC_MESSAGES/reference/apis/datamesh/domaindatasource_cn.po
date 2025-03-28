@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:1
 msgid "DomainDataSource"
-msgstr ""
+msgstr "DomainDataSource"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:3
 msgid ""
@@ -31,7 +31,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md
 msgid "方法名"
@@ -67,7 +67,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:12
 msgid "接口详情"
-msgstr ""
+msgstr "API Details"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:16
 msgid "查询数据源"
