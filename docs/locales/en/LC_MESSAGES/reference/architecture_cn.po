@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../reference/architecture_cn.md:1
 msgid "架构"
-msgstr ""
+msgstr "Architecture"
 
 #: ../../reference/architecture_cn.md:3
 msgid ""
@@ -27,123 +27,166 @@ msgid ""
 "的轻量级隐私计算任务编排框架，旨在屏蔽异构基础设施和协议，并提供统一的隐私计算底座。在此基础上，kuscia "
 "提供了资源管理、应用调度、容器加载、服务发现、数据安全访问、运维监控等诸多能力。"
 msgstr ""
+"Kuscia (Kubernetes-based Secure Collaborative InfrA) is a lightweight "
+"privacy-preserving computation task orchestration framework based on K3s, "
+"designed to abstract heterogeneous infrastructures and protocols while "
+"providing a unified privacy computing foundation. Additionally, Kuscia offers "
+"capabilities including resource management, application scheduling, container "
+"loading, service discovery, secure data access, and operational monitoring."
 
 #: ../../reference/architecture_cn.md:5
 msgid "Kuscia 集群由控制平面（俗称调度面、Master）和节点组成。控制平面负责调度，节点负责计算。"
 msgstr ""
+"A Kuscia cluster consists of a control plane (commonly called the scheduling "
+"plane or Master) and nodes. The control plane handles scheduling while nodes "
+"perform computations."
 
 #: ../../reference/architecture_cn.md:7
 msgid ""
 "一般来讲，控制平面和节点之间，1:N 组成了中心化网络，1:1 组成了点对点（P2P）网络。中心化网络中的节点称为 Lite "
 "节点，点对点网络中的节点称为 Autonomy 节点。"
 msgstr ""
+"Typically, the control plane and nodes form either a centralized network (1:N), where nodes are called Lite nodes, or a peer-to-peer (P2P) network (1:1), where nodes are called Autonomy nodes."
+
 
 #: ../../reference/architecture_cn.md:9
 msgid "![Kuscia Architecture](../imgs/kuscia_architecture.png)"
-msgstr ""
+msgstr "![Kuscia Architecture](../imgs/kuscia_architecture.png)"
 
 #: ../../reference/architecture_cn.md:9
 msgid "Kuscia Architecture"
-msgstr ""
+msgstr "Kuscia Architecture"
 
 #: ../../reference/architecture_cn.md:11
 msgid ""
 "Kuscia 支持 Lite 节点与 Autonomy "
 "节点、以及两个中心化网络互联互通，并支持与第三方厂商的节点互联互通，从而构建更大的隐私计算网络。"
 msgstr ""
+"Kuscia supports interconnection between Lite and Autonomy nodes, between two "
+"centralized networks, and with third-party vendor nodes, enabling larger "
+"privacy computing networks."
 
 #: ../../reference/architecture_cn.md:13
 msgid "![Deployment Mode](../imgs/linkaged_network.png)"
-msgstr ""
+msgstr "![Deployment Mode](../imgs/linkaged_network.png)"
 
 #: ../../reference/architecture_cn.md:13 ../../reference/architecture_cn.md:147
 #: ../../reference/architecture_cn.md:160
 msgid "Deployment Mode"
-msgstr ""
+msgstr "Deployment Mode"
 
 #: ../../reference/architecture_cn.md:15
 msgid "Kuscia 组件"
-msgstr ""
+msgstr "Kuscia Components"
 
 #: ../../reference/architecture_cn.md:17
 msgid "控制平面"
-msgstr ""
+msgstr "Control Plane"
 
 #: ../../reference/architecture_cn.md:19
 msgid ""
 "控制平面监听和响应集群事件，实现资源管理和应用调度功能，核心组件包括 K3s、Kuscia Controllers、Kuscia "
 "Storage(暂未开源)、Envoy、互联互通适配器。"
 msgstr ""
+"The control plane monitors and responds to cluster events, implementing "
+"resource management and application scheduling. Core components include K3s, "
+"Kuscia Controllers, Kuscia Storage (not yet open-sourced), Envoy, and "
+"interconnection adapters."
 
 #: ../../reference/architecture_cn.md:21
 msgid "K3s"
-msgstr ""
+msgstr "K3s"
 
 #: ../../reference/architecture_cn.md:23
 msgid "[K3s](https://K3s.io/) 是一个轻量级的 Kubernetes 发行版，用于处理 Kubernetes 的内置资源。"
 msgstr ""
+"[K3s](https://K3s.io/) is a lightweight Kubernetes distribution for handling "
+"Kubernetes built-in resources."
 
 #: ../../reference/architecture_cn.md:25
 msgid "Kuscia Controllers"
-msgstr ""
+msgstr "Kuscia Controllers"
 
 #: ../../reference/architecture_cn.md:27
 msgid "Kuscia 扩展了一组 K3s 控制器，用于处理 Kuscia 的自定义资源，这些控制器包括："
 msgstr ""
+"Kuscia extends K3s with custom controllers for handling Kuscia-specific "
+"resources, including:"
 
 #: ../../reference/architecture_cn.md:29
 msgid "Job Controller：作业控制器，负责解析作业 DAG 的描述信息，进行 DAG 的编排与多任务调度、采集任务状态。"
 msgstr ""
+"**Job Controller**: Parses job DAG descriptions, orchestrates DAG workflows, "
+"schedules multiple tasks, and collects task statuses."
 
 #: ../../reference/architecture_cn.md:30
 msgid "Task Controller：任务控制器，负责解析任务的描述信息，实现多方任务的 Co-Scheduling 调度，对应作业 DAG 中的顶点。"
 msgstr ""
+"**Task Controller**: Parses task descriptions and implements co-scheduling for "
+"multi-party tasks, corresponding to vertices in the job DAG."
 
 #: ../../reference/architecture_cn.md:31
 msgid ""
 "Kuscia Scheduler： Kuscia 调度器，负责多方 Pod 的 Co-Scheduling 调度，具备 All-or-"
 "Nothing 调度效果。"
 msgstr ""
+"**Kuscia Scheduler**: Handles co-scheduling of multi-party Pods with all-or-"
+"nothing scheduling behavior."
 
 #: ../../reference/architecture_cn.md:32
 msgid "Domain Controller：节点控制器，负责管理节点资源、为节点分配 Namespace。"
 msgstr ""
+"**Domain Controller**: Manages node resources and assigns namespaces to nodes."
 
 #: ../../reference/architecture_cn.md:33
 msgid "DomainRoute Controller：路由控制器，负责管理节点与节点、节点与 Master 的路由规则以及身份认证和鉴权策略。"
 msgstr ""
+"**DomainRoute Controller**: Manages routing rules and authentication/authorization "
+"policies between nodes and between nodes and Master."
 
 #: ../../reference/architecture_cn.md:34
 msgid "InterConn Controllers：互联互通控制器，负责不同控制平面下的节点互通，从而协同完成多方任务调度，支持多种互联互通协议。"
 msgstr ""
+"**InterConn Controllers**: Enable node communication across different control "
+"planes for collaborative multi-party task scheduling, supporting various "
+"interconnection protocols."
 
 #: ../../reference/architecture_cn.md:35
 msgid "Data Controller: 数据控制器，负责数据授权管理，暂未开源。"
-msgstr ""
+msgstr "**Data Controller**: Manages data authorization (not yet open-sourced)."
 
 #: ../../reference/architecture_cn.md:36
 msgid "Serving Controller：服务控制器，负责常驻任务流的编排和调度，暂未开源。"
 msgstr ""
+"**Serving Controller**: Orchestrates and schedules persistent task flows (not yet "
+"open-sourced)."
 
 #: ../../reference/architecture_cn.md:38
 msgid "Kuscia Storage"
-msgstr ""
+msgstr "Kuscia Storage"
 
 #: ../../reference/architecture_cn.md:40
 msgid ""
 "Kuscia Storage 是对 K3s 原生集群存储的补充。K3s 原生集群存储不适合存储大 value，因此对于大 value "
 "的资源属性，如作业配置等，将存储在 Kuscia Storage 中。该模块暂未开源。"
 msgstr ""
+"Kuscia Storage supplements K3s native cluster storage. As K3s storage isn't "
+"suitable for large values, resource attributes like job configurations are "
+"stored in Kuscia Storage (module not yet open-sourced)."
 
 #: ../../reference/architecture_cn.md:43 ../../reference/architecture_cn.md:100
 msgid "Envoy"
-msgstr ""
+msgstr "Envoy"
 
 #: ../../reference/architecture_cn.md:45
 msgid ""
 "[Envoy](https://www.Envoyproxy.io/) 是一个开源的边缘和服务代理。在控制平面中，Envoy 是节点与 "
 "Master、Master 与 Master 之间的流量代理，从 DomainRoute Controller 接收路由规则和身份认证、鉴权策略。"
 msgstr ""
+"[Envoy](https://www.Envoyproxy.io/) is an open-source edge and service proxy. "
+"In the control plane, Envoy proxies traffic between nodes and Master and "
+"between Masters, receiving routing rules and auth policies from DomainRoute "
+"Controller."
 
 #: ../../reference/architecture_cn.md:47
 msgid ""
@@ -151,172 +194,183 @@ msgid ""
 "架构，则转发给对端网关），同时对来自节点和互联互通合作方 Master 的请求进行身份认证和鉴权，将合法请求转发给 K3s 的 ApiServer"
 " 或 Kuscia Storage。"
 msgstr ""
+"Envoy forwards requests to partner Masters to their Envoy (or gateway if non-"
+"Kuscia), authenticates requests from nodes and partner Masters, and forwards "
+"valid requests to K3s ApiServer or Kuscia Storage."
 
 #: ../../reference/architecture_cn.md:50
 msgid "节点"
-msgstr ""
+msgstr "Nodes"
 
 #: ../../reference/architecture_cn.md:52
 msgid ""
 "节点的全称为隐私计算节点，由一组工作机器（或虚拟机）组成，托管运行隐私计算应用的 Pod。 根据组网模式的不同，节点分为 Lite 和 "
 "Autonomy 两种类型："
 msgstr ""
+"Nodes (full name: privacy computing nodes) consist of worker machines/VMs that "
+"host Pods running privacy computing applications. Node types differ by "
+"networking mode:"
 
 #: ../../reference/architecture_cn.md:55
 msgid "中心化网络中的节点称为 Lite 节点，Lite 节点不包含控制平面。"
-msgstr ""
+msgstr "Lite nodes (centralized networks) lack control planes."
 
 #: ../../reference/architecture_cn.md:56
 msgid "点对点网络（P2P）中的节点称为 Autonomy 节点，每个 Autonomy 节点包含独立的控制平面。"
-msgstr ""
+msgstr "Autonomy nodes (P2P networks) have independent control planes."
 
 #: ../../reference/architecture_cn.md:58
 msgid "Lite 节点主要由 Agent、NetworkMesh、DataMesh（功能暂不完备），提供容器管理、通信管理、数据管理等功能。"
 msgstr ""
+"Lite nodes primarily consist of Agent, NetworkMesh, and DataMesh (incomplete) "
+"for container, communication, and data management."
 
 #: ../../reference/architecture_cn.md:60
 msgid "此外，节点支持服务组件可插拔，用户可根据实际场景使用所需要的服务组件。"
-msgstr ""
+msgstr "Additionally, nodes support pluggable service components, allowing users to select required components based on actual scenarios."
 
 #: ../../reference/architecture_cn.md:62
 msgid "Agent"
-msgstr ""
+msgstr "Agent"
 
 #: ../../reference/architecture_cn.md:64
 msgid ""
 "Agent 主要负责节点实例注册和容器管理。将节点实例注册为 K3s 集群的工作节点后，用于管理 K3s 集群下发的任务 Pod，并对 Pod "
 "生命周期和节点实例生命周期进行管理。"
 msgstr ""
+"The Agent primarily handles node instance registration and container management. After registering node instances as worker nodes in the K3s cluster, it manages task Pods dispatched by the K3s cluster and oversees both Pod lifecycle and node instance lifecycle."
 
 #: ../../reference/architecture_cn.md:66
 msgid "Agent 当前支持 RunC、 RunP 和 RunK 三种运行时："
-msgstr ""
+msgstr "The Agent currently supports three runtime types: RunC, RunP, and RunK:"
 
 #: ../../reference/architecture_cn.md:68
 msgid "RunC：即容器运行时，以原生容器的方式拉起任务 Pod。"
-msgstr ""
+msgstr "**RunC**: Container runtime that launches task Pods as native containers."
 
 #: ../../reference/architecture_cn.md:69
 msgid "RunP：即进程运行时，直接在 Agent 容器内以进程形式拉起任务 Pod。"
-msgstr ""
+msgstr "**RunP**: Process runtime that launches task Pods as processes directly within the Agent container."
 
 #: ../../reference/architecture_cn.md:70
 msgid "RunK：即 K8s 运行时，对接 K8s 集群，将任务 Pod 转发提交至 K8s 集群中执行。"
-msgstr ""
+msgstr "**RunK**: Kubernetes runtime that interfaces with K8s clusters, forwarding task Pods for execution in the K8s cluster."
 
 #: ../../reference/architecture_cn.md:72
 msgid "![Runtime](../imgs/runtime.png)"
-msgstr ""
+msgstr "![Runtime](../imgs/runtime.png)"
 
 #: ../../reference/architecture_cn.md:72
 msgid "Runtime"
-msgstr ""
+msgstr "Runtime"
 
 #: ../../reference/architecture_cn.md:74
 msgid "三种运行时有各自的适用场景，你可以在不同的场景中根据运行时的特性来选择最合适的运行时："
-msgstr ""
+msgstr "Each runtime has its applicable scenarios. You can select the most suitable runtime based on their characteristics for different use cases:"
 
 #: ../../reference/architecture_cn.md:76
 msgid "RunC： 在 ECS 部署环境中推荐使用，兼顾了安全性与便捷性。"
-msgstr ""
+msgstr "**RunC**: Recommended for ECS deployment environments, balancing security and convenience."
 
 #: ../../reference/architecture_cn.md:77
 msgid "RunP： 在 K8s 部署环境中推荐使用，架构简单且对权限无要求。"
-msgstr ""
+msgstr "**RunP**: Recommended for K8s deployment environments with simple architecture and no special permission requirements."
 
 #: ../../reference/architecture_cn.md:78
 msgid "RunK： 在高并发任务场景中推荐使用，安全性强且资源利用率高。"
-msgstr ""
+msgstr "**RunK**: Recommended for high-concurrency task scenarios with strong security and high resource utilization."
 
 #: ../../reference/architecture_cn.md
 msgid "RunC"
-msgstr ""
+msgstr "RunC"
 
 #: ../../reference/architecture_cn.md
 msgid "RunP"
-msgstr ""
+msgstr "RunP"
 
 #: ../../reference/architecture_cn.md
 msgid "RunK"
-msgstr ""
+msgstr "RunK"
 
 #: ../../reference/architecture_cn.md
 msgid "资源隔离"
-msgstr ""
+msgstr "Resource Isolation"
 
 #: ../../reference/architecture_cn.md
 msgid "支持"
-msgstr ""
+msgstr "Supported"
 
 #: ../../reference/architecture_cn.md
 msgid "不支持"
-msgstr ""
+msgstr "Not Supported"
 
 #: ../../reference/architecture_cn.md
 msgid "部署权限"
-msgstr ""
+msgstr "Deployment Permissions"
 
 #: ../../reference/architecture_cn.md
 msgid "Kuscia 容器特权启动"
-msgstr ""
+msgstr "Kuscia container privileged startup"
 
 #: ../../reference/architecture_cn.md
 msgid "无要求"
-msgstr ""
+msgstr "No requirements"
 
 #: ../../reference/architecture_cn.md
 msgid "申请机构 K8s 动态创建资源权限（例如 Pod、ConfigMap 等）"
-msgstr ""
+msgstr "Requires institutional K8s dynamic resource creation permissions (e.g., Pods, ConfigMaps)"
 
 #: ../../reference/architecture_cn.md
 msgid "任务安全风险扩散"
-msgstr ""
+msgstr "Task Security Risk Propagation"
 
 #: ../../reference/architecture_cn.md
 msgid "任务运行在不同容器中，不易扩散"
-msgstr ""
+msgstr "Tasks run in separate containers, minimizing risk propagation"
 
 #: ../../reference/architecture_cn.md
 msgid "任务运行在同一容器中，易扩散"
-msgstr ""
+msgstr "Tasks run in the same container, facilitating risk propagation"
 
 #: ../../reference/architecture_cn.md
 msgid "任务运行在不同容器（Pod）中，不易扩散"
-msgstr ""
+msgstr "Tasks run in separate containers (Pods), minimizing risk propagation"
 
 #: ../../reference/architecture_cn.md
 msgid "资源利用率"
-msgstr ""
+msgstr "Resource Utilization"
 
 #: ../../reference/architecture_cn.md
 msgid "较低"
-msgstr ""
+msgstr "Lower"
 
 #: ../../reference/architecture_cn.md
 msgid "较高（任务需要的资源可以在机构 K8s 侧动态扩缩）"
-msgstr ""
+msgstr "Higher (Resources can be dynamically scaled on institutional K8s side)"
 
 #: ../../reference/architecture_cn.md:87
 msgid "NetworkMesh"
-msgstr ""
+msgstr "NetworkMesh"
 
 #: ../../reference/architecture_cn.md:89
 msgid ""
 "NetworkMesh 是算法容器之间进行网络通信的基础设施，包含 CoreDNS、DomainRoute、Envoy、Transport "
 "四个组件。"
 msgstr ""
+"NetworkMesh is the infrastructure for network communication between algorithm containers, consisting of four components: CoreDNS, DomainRoute, Envoy, and Transport."
 
 #: ../../reference/architecture_cn.md:91
 msgid "CoreDNS"
-msgstr ""
+msgstr "CoreDNS"
 
 #: ../../reference/architecture_cn.md:93
 msgid "CoreDNS 是一个灵活可扩展的 DNS 服务器，在 Kuscia 中，主要用于解析应用 Service 的域名，从而实现域内的服务发现。"
 msgstr ""
+"CoreDNS is a flexible and extensible DNS server. In Kuscia, it primarily resolves application Service domains to enable service discovery within domains."
 
 #: ../../reference/architecture_cn.md:95
 msgid "DomainRoute"
-msgstr ""
+msgstr "DomainRoute"
 
 #: ../../reference/architecture_cn.md:97
 msgid ""
@@ -324,64 +378,70 @@ msgid ""
 "之间的路由规则、身份认证和鉴权策略；另一方面监听节点命名空间下的 Service 和 Endpoints，配置 Envoy 的 Upstream "
 "Cluster，从而实现跨域的服务发现。"
 msgstr ""
+"On the node side, DomainRoute: (1) Monitors routing rules and authentication/authorization policies between nodes and between nodes and master configured by DomainRoute Controller; (2) Monitors Services and Endpoints in node namespaces to configure Envoy's Upstream Clusters, enabling cross-domain service discovery."
 
 #: ../../reference/architecture_cn.md:102
 msgid ""
 "在节点侧，Envoy 是节点与 Master、节点与节点之间流量代理，从 DomainRoute 接收路由规则、身份认证和鉴权策略以及 "
 "Upstream Cluster 配置。"
 msgstr ""
+"On the node side, Envoy acts as a traffic proxy between nodes and Master and between nodes, receiving routing rules, authentication/authorization policies, and Upstream Cluster configurations from DomainRoute."
 
 #: ../../reference/architecture_cn.md:104
 msgid ""
 "Envoy 将发送给 Master 和合作节点的请求转发给对端的 Envoy（若对端非 Kuscia "
 "架构，则转发给对端网关），同时对来自合作节点的请求进行身份认证和鉴权， 将合法请求转发到目标应用的 Pod 上。"
 msgstr ""
+"Envoy forwards requests to Master and partner nodes to their Envoy (or gateway if non-Kuscia architecture), while authenticating and authorizing requests from partner nodes, forwarding valid requests to target application Pods."
 
 #: ../../reference/architecture_cn.md:107
 msgid "Transport"
-msgstr ""
+msgstr "Transport"
 
 #: ../../reference/architecture_cn.md:109
 msgid "适配《北京金融科技产业联盟互联互通标准》的传输层通信组件，提供消息队列的传输模式。"
 msgstr ""
+"A transport layer communication component compliant with the Beijing FinTech Industry Alliance Interconnection Standard, providing message queue transmission mode."
 
 #: ../../reference/architecture_cn.md:111
 msgid "DataMesh"
-msgstr ""
+msgstr "DataMesh"
 
 #: ../../reference/architecture_cn.md:113
 msgid "负责数据源和数据集（数据表、模型、任务报告等）的注册和管理，元信息的查询修改功能。注意该组件暂未实现权限管控功能，请勿在生产环境中使用该组件。"
 msgstr ""
+"Responsible for registering and managing data sources and datasets (data tables, models, task reports, etc.), including metadata query and modification functions. Note: This component currently lacks permission control features and should not be used in production environments."
 
 #: ../../reference/architecture_cn.md:115
 msgid "组网模式"
-msgstr ""
+msgstr "Networking Modes"
 
 #: ../../reference/architecture_cn.md:117
 msgid "Kuscia 支持两种组网模式：中心化组网模式和点对点组网模式。"
-msgstr ""
+msgstr "Kuscia supports two networking modes: centralized and peer-to-peer (P2P)."
 
 #: ../../reference/architecture_cn.md:121
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../reference/architecture_cn.md:123
 msgid ""
 "中心化组网模式下，多个节点共享控制平面，控制平面负责管理多个节点的资源和任务调度。这种模式下节点占用资源较少，称为 Lite 节点。 "
 "中心化组网模式适合于大型机构内部的节点互联，通过统一的控制平面，可显著降低运维和资源成本，且便于快速新增节点。"
 msgstr ""
+"In centralized networking mode, multiple nodes share a control plane that manages resources and task scheduling. Nodes in this mode (called Lite nodes) consume fewer resources. This mode suits large institutions for internal node interconnection, significantly reducing operational and resource costs through unified control while facilitating rapid node addition."
 
 #: ../../reference/architecture_cn.md:126
 msgid "![Centralized Network Mode](../imgs/centralized_network_mode.png)"
-msgstr ""
+msgstr "![Centralized Network Mode](../imgs/centralized_network_mode.png)"
 
 #: ../../reference/architecture_cn.md:126
 msgid "Centralized Network Mode"
-msgstr ""
+msgstr "Centralized Network Mode"
 
 #: ../../reference/architecture_cn.md:130
 msgid "点对点组网模式"
-msgstr ""
+msgstr "Peer-to-Peer Networking Mode"
 
 #: ../../reference/architecture_cn.md:132
 msgid ""
@@ -389,86 +449,91 @@ msgid ""
 "Autonomy 节点。 在该模式下，参与方通过 InterConn Controller， 从调度方同步 Pod 到本集群，由本方 "
 "Scheduler 绑定到节点实例。 点对点组网模式适合小型机构或是安全性要求高的场景。"
 msgstr ""
+"In peer-to-peer (P2P) networking mode, nodes (called Autonomy nodes) have independent control planes, with node instances and control planes in the same subnet. Participants synchronize Pods from the scheduling party to their own clusters via InterConn Controller, with local Scheduler binding them to node instances. This mode suits small institutions or high-security scenarios."
 
 #: ../../reference/architecture_cn.md:137
 msgid "![Decentralized Network Mode](../imgs/p2p_network_mode.png)"
-msgstr ""
+msgstr "![Decentralized Network Mode](../imgs/p2p_network_mode.png)"
 
 #: ../../reference/architecture_cn.md:137
 msgid "Decentralized Network Mode"
-msgstr ""
+msgstr "Decentralized Network Mode"
 
 #: ../../reference/architecture_cn.md:139
 msgid "部署模式"
-msgstr ""
+msgstr "Deployment Modes"
 
 #: ../../reference/architecture_cn.md:141
 msgid "Kuscia 提供三种部署模式：Docker 模式、K8s 模式、K8s 控制器模式，以适配不同机构的基础设施。"
-msgstr ""
+msgstr "Kuscia offers three deployment modes (Docker, K8s, and K8s Controller) to accommodate different institutional infrastructures."
 
 #: ../../reference/architecture_cn.md:143
 msgid "**Docker 模式**：适合基于物理机或虚拟机部署隐私计算任务的机构，可以直接在机器上以 Docker 容器方式部署控制平面和节点实例。"
-msgstr ""
+msgstr "**Docker Mode**: Suitable for institutions deploying privacy computing tasks on physical or virtual machines, allowing direct deployment of control plane and node instances as Docker containers."
 
 #: ../../reference/architecture_cn.md:144
 msgid "**K8s 模式**：适合基于公有 K8s 集群部署隐私计算任务的机构，可将控制平面和节点以 K8s 应用的方式部署到机构 K8s 集群中。"
-msgstr ""
+msgstr "**K8s Mode**: Suitable for institutions using public K8s clusters, deploying control plane and nodes as K8s applications in institutional K8s clusters."
 
 #: ../../reference/architecture_cn.md:145
 msgid ""
 "**K8s 控制器模式**：适合基于专有 K8s 集群部署隐私计算任务的机构，可将 Kuscia Controllers、Kuscia "
 "Storage、Envoy 部署在 K8s 集群的控制平面中。"
 msgstr ""
+"**K8s Controller Mode**: Suitable for institutions with dedicated K8s clusters, deploying Kuscia Controllers, Kuscia Storage, and Envoy in the K8s cluster control plane."
 
 #: ../../reference/architecture_cn.md:147
 msgid "![Deployment Mode](../imgs/deployment_mode.png)"
-msgstr ""
+msgstr "![Deployment Mode](../imgs/deployment_mode.png)"
 
 #: ../../reference/architecture_cn.md:149
 msgid "作业编排与任务调度"
-msgstr ""
+msgstr "Job Orchestration and Task Scheduling"
 
 #: ../../reference/architecture_cn.md:151
 msgid ""
 "在 Kuscia 编排框架中，作业（Job）编排和任务（Task）调度主要通过 Job Controller、Task "
 "Controller、InterConn Controller、Kuscia Scheduler 协同完成。"
 msgstr ""
+"In the Kuscia orchestration framework, job orchestration and task scheduling are primarily achieved through collaboration between Job Controller, Task Controller, InterConn Controller, and Kuscia Scheduler."
 
 #: ../../reference/architecture_cn.md:153
 msgid ""
 "Job Controller：负责 Job DAG 调度和 Job 生命周期管理。根据 Job DAG 中的 Task 依赖关系、调度参数等控制 "
 "Task 的调度顺序以及并行度。"
 msgstr ""
+"**Job Controller**: Manages Job DAG scheduling and lifecycle, controlling task execution order and parallelism based on task dependencies and scheduling parameters in the Job DAG."
 
 #: ../../reference/architecture_cn.md:154
 msgid "Task Controller：负责 Task 多个参与方之间的 Co-Scheduling 调度和 Task 生命周期管理。"
-msgstr ""
+msgstr "**Task Controller**: Handles co-scheduling among multiple task participants and manages task lifecycles."
 
 #: ../../reference/architecture_cn.md:155
 msgid "Kuscia Scheduler：负责 Task 在一个参与方下的多个 Pod 之间的 Co-Scheduling 调度和 Pod 生命周期管理。"
-msgstr ""
+msgstr "**Kuscia Scheduler**: Manages co-scheduling among multiple Pods under one participant and oversees Pod lifecycles."
 
 #: ../../reference/architecture_cn.md:156
 msgid "InterConn Controller：用于点对点（P2P）组网模式下，调度方与参与方之间的 Task 资源同步。"
-msgstr ""
+msgstr "**InterConn Controller**: Synchronizes task resources between scheduler and participants in P2P networking mode."
 
 #: ../../reference/architecture_cn.md:158
 msgid "在点对点（P2P）组网模式下，Job 的调度时序图如下："
-msgstr ""
+msgstr "In P2P networking mode, the job scheduling sequence is as follows:"
 
 #: ../../reference/architecture_cn.md:160
 msgid "![Deployment Mode](../imgs/job_schedule.png)"
-msgstr ""
+msgstr "![Deployment Mode](../imgs/job_schedule.png)"
 
 #: ../../reference/architecture_cn.md:162
 msgid "其中 Job 中的一个 Task 调度流程如下:"
-msgstr ""
+msgstr "The scheduling flow for a single task within a job is as follows:"
 
 #: ../../reference/architecture_cn.md:164
 msgid ""
 "Task Controller 在各参与方节点的 Namespace 下分别创建 TaskResource 对象和 PodGroup（包含一组 "
 "Label 相同的任务 Pod）。"
 msgstr ""
+"Task Controller creates TaskResource objects and PodGroups (containing task Pods with identical labels) in each participant node's namespace."
 
 #: ../../reference/architecture_cn.md:165
 msgid ""
@@ -476,6 +541,7 @@ msgid ""
 "同步到参与方集群中。参与方集群中的 TaskResource 和 PodGroup 的状态也会通过 InterConn Controller "
 "同步到调度方集群中。"
 msgstr ""
+"Participants' InterConn Controllers synchronize their TaskResources and PodGroups from the scheduler cluster. Status updates from participants are similarly synchronized back to the scheduler cluster."
 
 #: ../../reference/architecture_cn.md:167
 msgid ""
@@ -483,16 +549,25 @@ msgid ""
 "MinReservedPods 阀值时，将 PodGroup 对应的 TaskResource 状态更新为 "
 "Reserved。在点对点（P2P）组网模式下，调度方的 Kuscia Scheduler 不会调度本集群中非本方的 Pod。"
 msgstr ""
+"Kuscia Scheduler reserves resources for Pods in each PodGroup. When the number "
+"of successfully reserved Pods reaches the MinReservedPods threshold, it updates "
+"the corresponding TaskResource status to Reserved. In P2P networking mode, the "
+"scheduler's Kuscia Scheduler will not schedule Pods belonging to other parties "
+"within its own cluster."
 
 #: ../../reference/architecture_cn.md:169
 msgid ""
 "Task Controller 监听到 TaskResource 预留成功的数量满足 MinReservedMembers 阈值时，则将各参与方的"
 " TaskResource 的状态更新为 Schedulable。"
 msgstr ""
+"When Task Controller detects that the number of successfully reserved "
+"TaskResources meets the MinReservedMembers threshold, it updates all "
+"participants' TaskResource statuses to Schedulable."
 
 #: ../../reference/architecture_cn.md:170
 msgid ""
 "Kuscia Scheduler 监听到 TaskResource 的状态变为 Schedulable 后，绑定 PodGroup 中的任务 "
 "Pod 到已分配的节点上。"
 msgstr ""
-
+"Upon detecting TaskResource status changes to Schedulable, Kuscia Scheduler "
+"binds task Pods in the PodGroup to their allocated nodes."
