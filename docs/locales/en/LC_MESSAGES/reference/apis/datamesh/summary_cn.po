@@ -218,4 +218,18 @@ msgstr ""
 "and use protoc to generate client stub code for your programming language. "
 "For instructions on generating client stub code, refer to the [official Protobuf tutorial](https://protobuf.dev/getting-started/)."
 
+#: ../../reference/apis/datamesh/summary_cn.md:61
+msgid "使用 GRPC 客户端发起请求。"
+msgstr "Use a GRPC client to send requests."
 
+#: ../../reference/apis/datamesh/summary_cn.md:63
+msgid "GRPC 端口默认在：Domain 的 8071。"
+msgstr "The default GRPC port for the Domain is 8071."
+
+#: ../../reference/apis/datamesh/summary_cn.md:67
+msgid "您也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，您需要替换 {} 中的内容："
+msgstr "You can also use an HTTP client tool, such as curl, to connect to the Kuscia API. You need to replace the content inside {}."
+
+#: ../../reference/apis/datamesh/summary_cn.md:75
+msgid "HTTP 端口默认在：Domain 的 8070。"
+msgstr "The default HTTP port for the Domain is 8070."
