@@ -46,9 +46,8 @@ msgid ""
 "一般来讲，控制平面和节点之间，1:N 组成了中心化网络，1:1 组成了点对点（P2P）网络。中心化网络中的节点称为 Lite "
 "节点，点对点网络中的节点称为 Autonomy 节点。"
 msgstr ""
-"Typically, the control plane and nodes form either: [1] a centralized network "
-"(1:N) where nodes are called Lite nodes, or [2] a peer-to-peer (P2P) network "
-"(1:1) where nodes are called Autonomy nodes."
+"Typically, the control plane and nodes form either a centralized network (1:N), where nodes are called Lite nodes, or a peer-to-peer (P2P) network (1:1), where nodes are called Autonomy nodes."
+
 
 #: ../../reference/architecture_cn.md:9
 msgid "![Kuscia Architecture](../imgs/kuscia_architecture.png)"
@@ -117,13 +116,13 @@ msgstr ""
 #: ../../reference/architecture_cn.md:29
 msgid "Job Controller：作业控制器，负责解析作业 DAG 的描述信息，进行 DAG 的编排与多任务调度、采集任务状态。"
 msgstr ""
-"Job Controller: Parses job DAG descriptions, orchestrates DAG workflows, "
+"**Job Controller**: Parses job DAG descriptions, orchestrates DAG workflows, "
 "schedules multiple tasks, and collects task statuses."
 
 #: ../../reference/architecture_cn.md:30
 msgid "Task Controller：任务控制器，负责解析任务的描述信息，实现多方任务的 Co-Scheduling 调度，对应作业 DAG 中的顶点。"
 msgstr ""
-"Task Controller: Parses task descriptions and implements co-scheduling for "
+"**Task Controller**: Parses task descriptions and implements co-scheduling for "
 "multi-party tasks, corresponding to vertices in the job DAG."
 
 #: ../../reference/architecture_cn.md:31
@@ -131,35 +130,35 @@ msgid ""
 "Kuscia Scheduler： Kuscia 调度器，负责多方 Pod 的 Co-Scheduling 调度，具备 All-or-"
 "Nothing 调度效果。"
 msgstr ""
-"Kuscia Scheduler: Handles co-scheduling of multi-party Pods with all-or-"
+"**Kuscia Scheduler**: Handles co-scheduling of multi-party Pods with all-or-"
 "nothing scheduling behavior."
 
 #: ../../reference/architecture_cn.md:32
 msgid "Domain Controller：节点控制器，负责管理节点资源、为节点分配 Namespace。"
 msgstr ""
-"Domain Controller: Manages node resources and assigns namespaces to nodes."
+"**Domain Controller**: Manages node resources and assigns namespaces to nodes."
 
 #: ../../reference/architecture_cn.md:33
 msgid "DomainRoute Controller：路由控制器，负责管理节点与节点、节点与 Master 的路由规则以及身份认证和鉴权策略。"
 msgstr ""
-"DomainRoute Controller: Manages routing rules and authentication/authorization "
+"**DomainRoute Controller**: Manages routing rules and authentication/authorization "
 "policies between nodes and between nodes and Master."
 
 #: ../../reference/architecture_cn.md:34
 msgid "InterConn Controllers：互联互通控制器，负责不同控制平面下的节点互通，从而协同完成多方任务调度，支持多种互联互通协议。"
 msgstr ""
-"InterConn Controllers: Enable node communication across different control "
+"**InterConn Controllers**: Enable node communication across different control "
 "planes for collaborative multi-party task scheduling, supporting various "
 "interconnection protocols."
 
 #: ../../reference/architecture_cn.md:35
 msgid "Data Controller: 数据控制器，负责数据授权管理，暂未开源。"
-msgstr "Data Controller: Manages data authorization (not yet open-sourced)."
+msgstr "**Data Controller**: Manages data authorization (not yet open-sourced)."
 
 #: ../../reference/architecture_cn.md:36
 msgid "Serving Controller：服务控制器，负责常驻任务流的编排和调度，暂未开源。"
 msgstr ""
-"Serving Controller: Orchestrates and schedules persistent task flows (not yet "
+"**Serving Controller**: Orchestrates and schedules persistent task flows (not yet "
 "open-sourced)."
 
 #: ../../reference/architecture_cn.md:38
@@ -247,15 +246,15 @@ msgstr "The Agent currently supports three runtime types: RunC, RunP, and RunK:"
 
 #: ../../reference/architecture_cn.md:68
 msgid "RunC：即容器运行时，以原生容器的方式拉起任务 Pod。"
-msgstr "RunC: Container runtime that launches task Pods as native containers."
+msgstr "**RunC**: Container runtime that launches task Pods as native containers."
 
 #: ../../reference/architecture_cn.md:69
 msgid "RunP：即进程运行时，直接在 Agent 容器内以进程形式拉起任务 Pod。"
-msgstr "RunP: Process runtime that launches task Pods as processes directly within the Agent container."
+msgstr "**RunP**: Process runtime that launches task Pods as processes directly within the Agent container."
 
 #: ../../reference/architecture_cn.md:70
 msgid "RunK：即 K8s 运行时，对接 K8s 集群，将任务 Pod 转发提交至 K8s 集群中执行。"
-msgstr "RunK: Kubernetes runtime that interfaces with K8s clusters, forwarding task Pods for execution in the K8s cluster."
+msgstr "**RunK**: Kubernetes runtime that interfaces with K8s clusters, forwarding task Pods for execution in the K8s cluster."
 
 #: ../../reference/architecture_cn.md:72
 msgid "![Runtime](../imgs/runtime.png)"
@@ -271,15 +270,15 @@ msgstr "Each runtime has its applicable scenarios. You can select the most suita
 
 #: ../../reference/architecture_cn.md:76
 msgid "RunC： 在 ECS 部署环境中推荐使用，兼顾了安全性与便捷性。"
-msgstr "RunC: Recommended for ECS deployment environments, balancing security and convenience."
+msgstr "**RunC**: Recommended for ECS deployment environments, balancing security and convenience."
 
 #: ../../reference/architecture_cn.md:77
 msgid "RunP： 在 K8s 部署环境中推荐使用，架构简单且对权限无要求。"
-msgstr "RunP: Recommended for K8s deployment environments with simple architecture and no special permission requirements."
+msgstr "**RunP**: Recommended for K8s deployment environments with simple architecture and no special permission requirements."
 
 #: ../../reference/architecture_cn.md:78
 msgid "RunK： 在高并发任务场景中推荐使用，安全性强且资源利用率高。"
-msgstr "RunK: Recommended for high-concurrency task scenarios with strong security and high resource utilization."
+msgstr "**RunK**: Recommended for high-concurrency task scenarios with strong security and high resource utilization."
 
 #: ../../reference/architecture_cn.md
 msgid "RunC"
@@ -503,19 +502,19 @@ msgid ""
 "Job Controller：负责 Job DAG 调度和 Job 生命周期管理。根据 Job DAG 中的 Task 依赖关系、调度参数等控制 "
 "Task 的调度顺序以及并行度。"
 msgstr ""
-"Job Controller: Manages Job DAG scheduling and lifecycle, controlling task execution order and parallelism based on task dependencies and scheduling parameters in the Job DAG."
+"**Job Controller**: Manages Job DAG scheduling and lifecycle, controlling task execution order and parallelism based on task dependencies and scheduling parameters in the Job DAG."
 
 #: ../../reference/architecture_cn.md:154
 msgid "Task Controller：负责 Task 多个参与方之间的 Co-Scheduling 调度和 Task 生命周期管理。"
-msgstr "Task Controller: Handles co-scheduling among multiple task participants and manages task lifecycles."
+msgstr "**Task Controller**: Handles co-scheduling among multiple task participants and manages task lifecycles."
 
 #: ../../reference/architecture_cn.md:155
 msgid "Kuscia Scheduler：负责 Task 在一个参与方下的多个 Pod 之间的 Co-Scheduling 调度和 Pod 生命周期管理。"
-msgstr "Kuscia Scheduler: Manages co-scheduling among multiple Pods under one participant and oversees Pod lifecycles."
+msgstr "**Kuscia Scheduler**: Manages co-scheduling among multiple Pods under one participant and oversees Pod lifecycles."
 
 #: ../../reference/architecture_cn.md:156
 msgid "InterConn Controller：用于点对点（P2P）组网模式下，调度方与参与方之间的 Task 资源同步。"
-msgstr "InterConn Controller: Synchronizes task resources between scheduler and participants in P2P networking mode."
+msgstr "**InterConn Controller**: Synchronizes task resources between scheduler and participants in P2P networking mode."
 
 #: ../../reference/architecture_cn.md:158
 msgid "在点对点（P2P）组网模式下，Job 的调度时序图如下："
@@ -572,4 +571,3 @@ msgid ""
 msgstr ""
 "Upon detecting TaskResource status changes to Schedulable, Kuscia Scheduler "
 "binds task Pods in the PodGroup to their allocated nodes."
-
