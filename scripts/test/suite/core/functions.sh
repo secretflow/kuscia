@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -167,7 +167,7 @@ function start_center_mode() {
   # get kuscia api resource
   mkdir -p "${test_suite_run_kuscia_dir}"/master
   ## generate client certs
-  docker exec -it ${MASTER_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it "${MASTER_CONTAINER}" sh scripts/deploy/init_kusciaapi_client_certs.sh
   docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/master
   docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/master
   docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/master
@@ -205,13 +205,13 @@ function start_p2p_mode() {
   mkdir -p "${test_suite_run_kuscia_dir}"/alice
   mkdir -p "${test_suite_run_kuscia_dir}"/bob
   ## generate client certs
-  docker exec -it ${AUTONOMY_ALICE_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it "${AUTONOMY_ALICE_CONTAINER}" sh scripts/deploy/init_kusciaapi_client_certs.sh
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/alice
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/alice
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/alice
   ## generate client certs
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/token "${test_suite_run_kuscia_dir}"/alice
-  docker exec -it ${AUTONOMY_BOB_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it "${AUTONOMY_BOB_CONTAINER}" sh scripts/deploy/init_kusciaapi_client_certs.sh
   docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/bob
   docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/bob
   docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/bob
@@ -239,7 +239,7 @@ function get_ipv4_address() {
     ipv4=$(ipconfig getifaddr en0) || true
     ;;
   esac
-  echo $ipv4
+  echo "$ipv4"
 }
 
 
@@ -250,7 +250,7 @@ function get_ipv4_address() {
 function get_dr_dst_token_value() {
   local ctr=$1
   local dr_name=$2
-  docker exec "${ctr}" kubectl get dr $dr_name -o jsonpath='{.status.tokenStatus.revisionToken.token}'
+  docker exec "${ctr}" kubectl get dr "$dr_name" -o jsonpath='{.status.tokenStatus.revisionToken.token}'
 }
 
 # @return domain route source token
@@ -260,7 +260,7 @@ function get_dr_dst_token_value() {
 function get_dr_src_token_value() {
   local ctr=$1
   local dr_name=$2
-  docker exec "${ctr}" kubectl get dr $dr_name -o jsonpath='{.status.tokenStatus.revisionToken.token}'
+  docker exec "${ctr}" kubectl get dr "$dr_name" -o jsonpath='{.status.tokenStatus.revisionToken.token}'
 }
 
 
@@ -271,7 +271,7 @@ function get_dr_src_token_value() {
 function get_cdr_dst_token_value() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.destinationTokens[-1].token}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.destinationTokens[-1].token}'
 }
 
 
@@ -282,7 +282,7 @@ function get_cdr_dst_token_value() {
 function get_cdr_src_token_value() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.sourceTokens[-1].token}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.sourceTokens[-1].token}'
 }
 
 
@@ -293,7 +293,7 @@ function get_cdr_src_token_value() {
 function get_cdr_dst_token_revision() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.destinationTokens[-1].revision}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.destinationTokens[-1].revision}'
 }
 
 
@@ -304,7 +304,7 @@ function get_cdr_dst_token_revision() {
 function get_cdr_src_token_revision() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.sourceTokens[-1].revision}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.sourceTokens[-1].revision}'
 }
 
 
@@ -315,7 +315,7 @@ function get_cdr_src_token_revision() {
 function get_cdr_token_status() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.conditions[0].type}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.conditions[0].type}'
 }
 
 
@@ -328,7 +328,7 @@ function get_dr_revision_token_ready() {
   local ctr=$1
   local dr_name=$2
   local domain=$3
-  docker exec "${ctr}" kubectl get dr $dr_name -n $domain -o jsonpath='{.status.tokenStatus.revisionToken.isReady}'
+  docker exec "${ctr}" kubectl get dr "$dr_name" -n "$domain" -o jsonpath='{.status.tokenStatus.revisionToken.isReady}'
 }
 
 
@@ -340,7 +340,7 @@ function set_cdr_token_rolling_period() {
   local ctr=$1
   local cdr_name=$2
   local peroid=$3
-  docker exec "${ctr}" kubectl patch cdr $cdr_name --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${period}}]"
+  docker exec "${ctr}" kubectl patch cdr "$cdr_name" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${period}}]"
 }
 
 
@@ -351,7 +351,7 @@ function set_cdr_token_rolling_period() {
 function get_cdr_token_rolling_period() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.spec.tokenConfig.rollingUpdatePeriod}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.spec.tokenConfig.rollingUpdatePeriod}'
 }
 
 # @return get images
