@@ -45,19 +45,19 @@ msgstr "Types of File Permissions:"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:11
 msgid "读取权限（4）：允许读取文件内容。"
-msgstr "Read Permission (4): Allows reading file contents."
+msgstr "**Read Permission (4)**: Allows reading file contents."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:12
 msgid "写入权限（2）：允许写入文件内容。"
-msgstr "Write Permission (2): Allows writing to file contents."
+msgstr "**Write Permission (2)**: Allows writing to file contents."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:13
 msgid "执行权限（1）：允许执行文件。"
-msgstr "Execute Permission (1): Allows executing the file."
+msgstr "**Execute Permission (1)**: Allows executing the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:14
 msgid "特殊权限（0）：禁止访问文件或者特殊权限位。"
-msgstr "Special Permission (0): Prohibits file access or represents special permission bits."
+msgstr "**Special Permission (0)**: Prohibits file access or represents special permission bits."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:16
 msgid "文件权限用户："
@@ -65,15 +65,15 @@ msgstr "File Permission Users:"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:18
 msgid "文件所有者：拥有文件的权限。"
-msgstr "File Owner: Has permissions for the file."
+msgstr "**File Owner**: Has permissions for the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:19
 msgid "文件所属组：拥有文件的权限的组。"
-msgstr "File Group: The group that has permissions for the file."
+msgstr "**File Group**: The group that has permissions for the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:20
 msgid "其他用户：拥有文件的权限的其他用户。"
-msgstr "Other Users: Other users who have permissions for the file."
+msgstr "**Other Users**: Other users who have permissions for the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:22
 msgid ""
