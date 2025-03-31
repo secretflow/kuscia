@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,5 +58,5 @@ function wait_csr_token() {
   done
 }
 
-wait_csr_token ${DOMAIN_ID}
+wait_csr_token "${DOMAIN_ID}"
 echo "${csrToken}"
