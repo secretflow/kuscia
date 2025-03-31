@@ -91,7 +91,8 @@ function import_engine_image() {
         echo -e "${GREEN}Start pulling image '${IMAGE}' ...${NC}"
         docker pull "${IMAGE}"
      fi
-     local image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
+     local image_random
+     image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
      echo -e "${GREEN}Start importing image '${IMAGE}' Please be patient...${NC}"
     
      local image_tar=${DOMAIN_IMAGE_WORK_DIR}/${image_random}.tar
@@ -133,7 +134,8 @@ function register_default_app_image() {
   if [[ ${image_tag} = "" ]]; then
     image_tag="latest"
   fi
-  local app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
+  local app_type
+  app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
   if [[ ${app_type} != "psi" ]] && [[ ${app_type} != "dataproxy" ]] && [[ ${app_type} != "kuscia" ]]; then
      app_type="secretflow"
   fi

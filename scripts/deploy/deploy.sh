@@ -27,7 +27,8 @@ function log() {
 }
 
 function arch_check() {
-  local arch=$(uname -a)
+  local arch
+  arch=$(uname -a)
   if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
     echo "Warning: arm64 architecture. Continuing..."
   elif [[ $arch == *"x86_64"* ]]; then
@@ -357,7 +358,8 @@ function deploy_lite() {
   fi
   local runtime
   runtime=$(get_runtime "${kuscia_config_file}")
-  local HttpResponseCode=$(docker run -it --rm --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" curl -k -s -o /dev/null -w "%{http_code}" "${MASTER_ENDPOINT}")
+  local HttpResponseCode
+  HttpResponseCode=$(docker run -it --rm --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" curl -k -s -o /dev/null -w "%{http_code}" "${MASTER_ENDPOINT}")
   arch_check
 
   if need_start_docker_container "$domain_ctr"; then

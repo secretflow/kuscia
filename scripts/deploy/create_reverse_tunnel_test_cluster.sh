@@ -21,7 +21,8 @@ function docker_get_ctrs() {
 }
 
 function build_replica_conn() {
-  local hostname=$(hostname -I | awk '{print $1}')
+  local hostname
+  hostname=$(hostname -I | awk '{print $1}')
 
   read -ra alice_ctrs <<< $(docker_get_ctrs kuscia-autonomy-alice)
   read -ra bob_ctrs <<< $(docker_get_ctrs kuscia-autonomy-bob)
@@ -59,9 +60,13 @@ function build_replica_conn() {
 }
 
 function rm_iptables() {
-  local ctr=$1
-  local pid=$(docker inspect --format '{{.State.Pid}}' "$ctr")
-  local name=$(docker inspect --format '{{.Name}}' "$ctr" | cut -b 2- | cut -d '.' -f1,2 | sed 's/_/-/g')
+  local ctr
+  local pid
+  local name
+
+  ctr=$1
+  pid=$(docker inspect --format '{{.State.Pid}}' "$ctr")
+  name=$(docker inspect --format '{{.Name}}' "$ctr" | cut -b 2- | cut -d '.' -f1,2 | sed 's/_/-/g')
   nsenter -t "$pid" -n iptables -L -n -v
   nsenter -t "$pid" -n iptables -F INPUT
   nsenter -t "$pid" -n iptables -F OUTPUT
@@ -70,7 +75,8 @@ function rm_iptables() {
 }
 
 function create_network() {
-  local hostname=$(hostname -I | awk '{print $1}')
+  local hostname
+  hostname=$(hostname -I | awk '{print $1}')
 
   network_name="kuscia-swarm-exchange"
   exists=$(docker network ls | grep $network_name | wc -l)
@@ -83,7 +89,8 @@ function create_network() {
 }
 
 function create_kuscia_yaml() {
-  local hostname=$(hostname -I | awk '{print $1}')
+  local hostname
+  hostname=$(hostname -I | awk '{print $1}')
 
   if [ ! -d alice ]; then
     mkdir alice

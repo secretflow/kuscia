@@ -50,16 +50,20 @@ function test_centralized_example_kuscia_job() {
 }
 
 function test_centralized_kuscia_api_http_available() {
-  local http_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8082/tcp") 0).HostPort}}' "${MASTER_CONTAINER}")
-  local http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:${http_port}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
+  local http_port
+  http_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8082/tcp") 0).HostPort}}' "${MASTER_CONTAINER}")
+  local http_status_code
+  http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:${http_port}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
   assertEquals "KusciaApi healthZ http code" "200" "${http_status_code}"
 
   unset http_status_code
 }
 
 function test_centralized_kuscia_api_grpc_available() {
-  local grpc_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8083/tcp") 0).HostPort}}' "${MASTER_CONTAINER}")
-  local status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:${grpc_port}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
+  local grpc_port
+  grpc_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8083/tcp") 0).HostPort}}' "${MASTER_CONTAINER}")
+  local status_message
+  status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:${grpc_port}" "${TEST_SUITE_RUN_KUSCIA_DIR}"/master)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
   unset status_message
@@ -80,16 +84,20 @@ function try_centralized_token_rolling() {
   set_cdr_token_rolling_period "${ctr}" "$cdr_name" $period
 
   # get initial token reversion
-  local prev_src_revision=$(get_cdr_src_token_revision "${ctr}" "$cdr_name")
-  local prev_dst_revision=$(get_cdr_dst_token_revision "${ctr}" "$cdr_name")
+  local prev_src_revision
+  prev_src_revision=$(get_cdr_src_token_revision "${ctr}" "$cdr_name")
+  local prev_dst_revision
+  prev_dst_revision=$(get_cdr_dst_token_revision "${ctr}" "$cdr_name")
 
   for ((i=1; i<loop_count; i++)); do
     # wait for period(s)
     sleep $(($period+3))
 
     # get new token reversion
-    local src_revision=$(get_cdr_src_token_revision "${ctr}" "$cdr_name")
-    local dst_revision=$(get_cdr_dst_token_revision "${ctr}" "$cdr_name")
+    local src_revision
+    src_revisio=$(get_cdr_src_token_revision "${ctr}" "$cdr_name")
+    local dst_revision
+    dst_revision=$(get_cdr_dst_token_revision "${ctr}" "$cdr_name")
 
     assertNotEquals "source token revision must change" "$src_revision" "$prev_src_revision"
     assertNotEquals "destination token revision must change" "$dst_revision" "$prev_dst_revision"
@@ -117,20 +125,21 @@ function test_centralized_token_rolling_party_offline() {
   local src_domain="alice"
   local period=30
 
-  local ready=$(get_dr_revision_token_ready "$master_ctr" $dr_name $src_domain)
+  local ready
+  ready=$(get_dr_revision_token_ready "$master_ctr" $dr_name $src_domain)
   assertEquals "true" "$ready"
   # party offline
   docker stop "$bob_ctr"
   sleep $period
 
-  local ready=$(get_dr_revision_token_ready "$master_ctr" $dr_name $src_domain)
+  ready=$(get_dr_revision_token_ready "$master_ctr" $dr_name $src_domain)
   assertEquals "false" "$ready"
 
   # back online
   docker start "$bob_ctr"
   sleep $period
 
-  local ready=$(get_dr_revision_token_ready "$master_ctr" $dr_name $src_domain)
+  ready=$(get_dr_revision_token_ready "$master_ctr" $dr_name $src_domain)
   assertEquals "true" "$ready"
 
   # run task

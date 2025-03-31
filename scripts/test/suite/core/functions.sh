@@ -38,7 +38,8 @@ function wait_kuscia_job_until() {
   local times=$((${timeout_seconds} / ${TIMEOUT_DURATION_SECONDS}))
   local current=0
   while [ "${current}" -lt "${times}" ]; do
-    local job_phase=$(docker exec -it "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
+    local job_phase
+    job_phase=$(docker exec -it "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
     case "${job_phase}" in
     Succeeded)
       echo "Succeeded"
@@ -151,17 +152,20 @@ function get_container_ip() {
 #   test_suite_run_kuscia_dir: location to save kuscia api resource
 function start_center_mode() {
   local test_suite_run_kuscia_dir=$1
+  local master_container_state
+  local lite_alice_container_state
+  local lite_bob_container_state
   mkdir -p "${test_suite_run_kuscia_dir}"
 
   # Run as Center
   ./kuscia.sh center --expose-ports
 
   # Check centralized container Up
-  local master_container_state=$(get_container_state "${MASTER_CONTAINER}")
+  master_container_state=$(get_container_state "${MASTER_CONTAINER}")
   assertEquals "Container ${MASTER_CONTAINER} not running}" running "${master_container_state}"
-  local lite_alice_container_state=$(get_container_state "${LITE_ALICE_CONTAINER}")
+  lite_alice_container_state=$(get_container_state "${LITE_ALICE_CONTAINER}")
   assertEquals "Container ${LITE_ALICE_CONTAINER} not running}" running "${lite_alice_container_state}"
-  local lite_bob_container_state=$(get_container_state "${LITE_BOB_CONTAINER}")
+  lite_bob_container_state=$(get_container_state "${LITE_BOB_CONTAINER}")
   assertEquals "Container ${LITE_BOB_CONTAINER} not running}" running "${lite_bob_container_state}"
 
   # get kuscia api resource
@@ -189,15 +193,17 @@ function stop_center_mode() {
 #   test_suite_run_kuscia_dir: location to save kuscia api resource
 function start_p2p_mode() {
   local test_suite_run_kuscia_dir=$1
+  local autonomy_alice_container_state
+  local autonomy_bob_container_state
   mkdir -p "${test_suite_run_kuscia_dir}"
 
   # Run as P2P
   ./kuscia.sh p2p --expose-ports
 
   # Check p2p container Up
-  local autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")
+  autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")
   assertEquals "Container ${AUTONOMY_ALICE_CONTAINER} not running}" running "${autonomy_alice_container_state}"
-  local autonomy_bob_container_state=$(get_container_state "${AUTONOMY_BOB_CONTAINER}")
+  autonomy_bob_container_state=$(get_container_state "${AUTONOMY_BOB_CONTAINER}")
   assertEquals "Container ${AUTONOMY_BOB_CONTAINER} not running}" running "${autonomy_bob_container_state}"
 
   # get kuscia api resource

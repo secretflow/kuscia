@@ -86,7 +86,8 @@ function pre_check() {
 }
 
 function init_k3s_data() {
-  local random=$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)
+  local random
+  random=$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)
   local kuscia_tmp_container="kuscia_tmp_${random}"
   OLD_DOMAIN_K3S_DB_DIR="${HOME}/kuscia/${domain_ctr}/k3s"
   if [ -d "${DOMAIN_K3S_DB_DIR}" ]; then
@@ -261,7 +262,8 @@ function probe_gateway_crd() {
 
   local retry=0
   while [ $retry -lt $max_retry ]; do
-    local line_num=$(docker exec -it $master kubectl get gateways -n $domain | grep -i $gw_name | wc -l | xargs)
+    local line_num
+    line_num=$(docker exec -it $master kubectl get gateways -n $domain | grep -i $gw_name | wc -l | xargs)
     if [[ $line_num == "1" ]]; then
       return
     fi
@@ -362,7 +364,8 @@ function init_kuscia_conf_file() {
   local kuscia_conf_file=$4
   local master_endpoint=$5
   local runtime=${RUNTIME:-"runc"}
-  local master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
+  local master_ctr
+  master_ctr=$(echo "${master_endpoint}" | cut -d'/' -f3 | cut -d':' -f1)
   if [[ "${domain_type}" = "lite" ]]; then
     token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" | tr -d '\r\n')
     docker run --rm ${KUSCIA_IMAGE} kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" --master-endpoint ${master_endpoint} --lite-deploy-token ${token} > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
@@ -541,7 +544,8 @@ function start_kuscia_container() {
         k3s_volume="-v ${DOMAIN_K3S_DB_DIR}:${CTR_ROOT}/var/k3s/server/db"
       fi
     fi
-    local mount_flag=$(generate_mount_flag $domain_type)
+    local mount_flag
+    mount_flag=$(generate_mount_flag $domain_type)
     start_container "${domain_ctr}" "${domain_id}" "${kuscia_conf_file}" "${mount_flag}" "${memory_limit}" "${domain_host_port}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}" "${domain_hostname}"
     [[ "$domain_type" != "lite" ]] && probe_gateway_crd "${domain_ctr}" "${domain_id}" "${domain_hostname}" 60
     [[ "$domain_type" != "master" ]] && probe_datamesh "${domain_ctr}"
@@ -587,12 +591,19 @@ function pre_check_center_runtime() {
 
 function start_kuscia() {
   local kuscia_conf_file=${KUSCIA_CONFIG_FILE}
-  local domain_id=$(get_config_value "$kuscia_conf_file" "domainID")
-  local deploy_mode=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')
-  local master_endpoint=$(get_config_value "$kuscia_conf_file" "masterEndpoint")
-  local store_endpoint=$(get_config_value "$kuscia_conf_file" "datastoreEndpoint")
-  local protocol=$(get_config_value "$kuscia_conf_file" "protocol" | tr '[:upper:]' '[:lower:]')
-  local runtime=$(get_runtime "$kuscia_conf_file")
+  local domain_id
+  local deploy_mode
+  local master_endpoint
+  local store_endpoint
+  local protocol
+  local runtime
+
+  domain_id=$(get_config_value "$kuscia_conf_file" "domainID")
+  deploy_mode=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')
+  master_endpoint=$(get_config_value "$kuscia_conf_file" "masterEndpoint")
+  store_endpoint=$(get_config_value "$kuscia_conf_file" "datastoreEndpoint")
+  protocol=$(get_config_value "$kuscia_conf_file" "protocol" | tr '[:upper:]' '[:lower:]')
+  runtime=$(get_runtime "$kuscia_conf_file")
   local privileged_flag
   local domain_host_internal_port=${DOMAIN_HOST_INTERNAL_PORT:-13081}
   local kusciaapi_http_port=${KUSCIAAPI_HTTP_PORT:-13082}
@@ -613,7 +624,8 @@ function start_kuscia() {
   [[ ${dataproxy} == "true" ]] && dataproxy_config ${kuscia_conf_file}
   [[ ${DOMAIN_HOST_PORT} == "" ]] && { printf "empty domain host port\n" >&2; exit 1; }
   init "${domain_ctr}" "${runtime}" "${deploy_mode}"
-  local mount_flag=$(generate_mount_flag $deploy_mode)
+  local mount_flag
+  mount_flag=$(generate_mount_flag $deploy_mode)
   start_kuscia_container "${deploy_mode}" "${domain_id}" "$runtime" "$master_endpoint" "${domain_ctr}" "false" "${mount_flag}" "${DOMAIN_HOST_PORT}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}"
 }
 
@@ -662,12 +674,14 @@ function start_data_proxy() {
           header+=("--cacert" "${CTR_CERT_ROOT}/ca.crt")
           kusciaapi_endpoint="https://localhost:8082/api/v1/serving"
       fi
-      local query_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/query" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}")
+      local query_response
+      query_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/query" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}")
       if echo "$query_response" | grep -q '"code":0'; then
         docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/delete" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\"}"
       fi
       while [[ "$counter" -lt "$max_test_counter" ]]; do
-        local deploy_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/create" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\",\"initiator\":\"${domain_id}\",\"parties\":[{\"domain_id\":\"${domain_id}\",\"app_image\":\"dataproxy-image\",\"service_name_prefix\":\"dataproxy\"}]}")
+        local deploy_response
+        deploy_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/create" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\",\"initiator\":\"${domain_id}\",\"parties\":[{\"domain_id\":\"${domain_id}\",\"app_image\":\"dataproxy-image\",\"service_name_prefix\":\"dataproxy\"}]}")
         if echo "$deploy_response" | grep -q '"code":0'; then
           break
           rm -rf token
@@ -810,16 +824,27 @@ function start_cxp_cluster() {
 
 function upgrade_kuscia() {
   local domain_ctr=$1
-  local kuscia_conf_file=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/etc/conf/kuscia.yaml"}}{{.Source}}{{end}}{{end}}' "$domain_ctr" | sed 's|/host_mnt||')
-  local kuscia_volumes=$(docker inspect -f '{{ range .Mounts }}-v {{ .Source }}:{{ .Destination }}{{ "\n" }}{{ end }}' "$domain_ctr" | sed 's|/host_mnt||')
-  local kuscia_ports=$(docker port "$domain_ctr" | awk '{split($1, a, "/"); split($3, b, ":"); if (b[2] != "") printf "-p %s:%s ", b[2], a[1]}')
-  local network_name=$(docker inspect -f '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}' "$domain_ctr")
-  local domain_hostname=$(generate_hostname "${domain_ctr}") || { echo -e "${RED}Failed to generate hostname${NC}"; exit 1; }
-  local domain_type=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')
-  local runtime=$(get_config_value "$kuscia_conf_file" "runtime")
-  local domain_id=$(get_config_value "$kuscia_conf_file" "domainID")  
-  local user=$(docker exec -i "$domain_ctr" bash -c "whoami")
-  local memory=$(docker inspect --format='{{.HostConfig.Memory}}' "$domain_ctr")
+  local kuscia_conf_file
+  local kuscia_volumes
+  local kuscia_ports
+  local network_name
+  local domain_hostname
+  local domain_type
+  local runtime
+  local domain_id
+  local user
+  local memory
+
+  kuscia_conf_file=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/etc/conf/kuscia.yaml"}}{{.Source}}{{end}}{{end}}' "$domain_ctr" | sed 's|/host_mnt||')
+  kuscia_volumes=$(docker inspect -f '{{ range .Mounts }}-v {{ .Source }}:{{ .Destination }}{{ "\n" }}{{ end }}' "$domain_ctr" | sed 's|/host_mnt||')
+  kuscia_ports=$(docker port "$domain_ctr" | awk '{split($1, a, "/"); split($3, b, ":"); if (b[2] != "") printf "-p %s:%s ", b[2], a[1]}')
+  network_name=$(docker inspect -f '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}' "$domain_ctr")
+  domain_hostname=$(generate_hostname "${domain_ctr}") || { echo -e "${RED}Failed to generate hostname${NC}"; exit 1; }
+  domain_type=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')
+  runtime=$(get_config_value "$kuscia_conf_file" "runtime")
+  domain_id=$(get_config_value "$kuscia_conf_file" "domainID")  
+  user=$(docker exec -i "$domain_ctr" bash -c "whoami")
+  memory=$(docker inspect --format='{{.HostConfig.Memory}}' "$domain_ctr")
 
   [[ "$memory" -ne 0 ]] && memory_limit="-m ${memory}"
   [[ ${domain_type} != "master" && ${runtime} == "runc" ]] && privileged_flag=" --privileged"
