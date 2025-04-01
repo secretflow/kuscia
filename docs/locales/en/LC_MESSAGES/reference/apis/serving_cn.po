@@ -355,7 +355,7 @@ msgstr "[ServingStatus](#serving-status)[]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Serving 状态列表"
-msgstr "Serving List"
+msgstr "Serving Status List"
 
 #: ../../reference/apis/serving_cn.md:551
 msgid "公共"
@@ -607,7 +607,7 @@ msgid "max_surge"
 msgstr "max_surge"
 
 #: ../../reference/apis/serving_cn.md
-msgid "Used to specify the number of applications that can be created exceeding the total number of replicas. Default is \"25%\" of total replicas. If max_unavailable is 0, this value cannot be 0"
+msgid "用来指定可以创建的超出应用总副本数的应用数量。默认为总副本数的\"25%\"。max_unavailable为0，则此值不能为0"
 msgstr "Used to specify the number of applications that can be created exceeding the total number of replicas. Default is \"25%\" of total replicas. If max_unavailable is 0, this value cannot be 0"
 
 #: ../../reference/apis/serving_cn.md
@@ -702,7 +702,7 @@ msgstr "1"
 
 #: ../../reference/apis/serving_cn.md
 msgid "还未被处理"
-msgstr "Unknown"
+msgstr "Not yet processed"
 
 #: ../../reference/apis/serving_cn.md
 msgid "Progressing"
