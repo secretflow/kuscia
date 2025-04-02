@@ -30,7 +30,7 @@ msgid ""
 "本教程帮助您在 K8s 集群上使用 [中心化组网模式](../../reference/architecture_cn.md#中心化组网模式) "
 "来部署 Kuscia 集群。"
 msgstr ""
-"This tutorial helps you deploy a Kuscia cluster on K8s using the [Centralized Networking Mode](../../reference/architecture.md#centralized-networking-mode)."
+"This tutorial helps you deploy a Kuscia cluster on K8s using the [Centralized Networking Mode](../../reference/architecture_cn.md#centralized-networking-mode)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:7
 msgid ""
@@ -38,7 +38,7 @@ msgid ""
 "的 Pod "
 "有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)"
 msgstr ""
-"Currently, when deploying Kuscia on K8s, privacy computing tasks support two runtime modes: RunK and RunP. The RunC mode currently requires privileged containers for Kuscia Pods, which is not particularly recommended at this time. For details, please refer to [Container Runtime Modes](../../reference/architecture.md#agent)."
+"Currently, when deploying Kuscia on K8s, privacy computing tasks support two runtime modes: RunK and RunP. The RunC mode currently requires privileged containers for Kuscia Pods, which is not particularly recommended at this time. For details, please refer to [Container Runtime Modes](../../reference/architecture_cn.md#agent)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:9
 msgid ""
@@ -46,7 +46,7 @@ msgid ""
 "[使用进程运行时部署节点](./deploy_with_runp_cn.md)，非 root "
 "用户部署请参考[这里](./k8s_deploy_kuscia_with_rootless.md)。"
 msgstr ""
-"This tutorial uses RunK mode by default for deployment (requires permissions to create task Pods on the host K8s). For RunP mode deployment, please refer to [Deploying Nodes with Process Runtime](./deploy_with_runp.md), and for non-root user deployment, please refer to [here](./k8s_deploy_kuscia_with_rootless.md)."
+"This tutorial uses RunK mode by default for deployment (requires permissions to create task Pods on the host K8s). For RunP mode deployment, please refer to [Deploying Nodes with Process Runtime](./deploy_with_runp_cn.md), and for non-root user deployment, please refer to [here](./k8s_deploy_kuscia_with_rootless.md)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:11
 msgid "![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)"
@@ -69,7 +69,7 @@ msgid ""
 "部署 master 需提前准备好 MySQL 数据库表并且符合 [Kuscia "
 "配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 ConfigMap 中。"
 msgstr ""
-"To deploy the master, you need to prepare MySQL database tables that comply with the specifications in [Kuscia Configuration](../kuscia_config.md#id3). Database account, password, and other information should be configured in the ConfigMap in Step 3."
+"To deploy the master, you need to prepare MySQL database tables that comply with the specifications in [Kuscia Configuration](../kuscia_config_cn.md#id3). Database account, password, and other information should be configured in the ConfigMap in Step 3."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:19
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:69
@@ -104,7 +104,7 @@ msgstr "Get the [service.yaml](https://github.com/secretflow/kuscia/blob/main/ha
 msgid ""
 "<span style=\"color:red;\">注意：<br> 1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia "
 "端口介绍](../kuscia_ports_cn.md) </span>"
-msgstr "<span style=\"color:red;\">Note:<br> 1. For Kuscia ports that need to be exposed to collaborating parties, please refer to [Kuscia Port Introduction](../kuscia_ports.md) </span>"
+msgstr "<span style=\"color:red;\">Note:<br> 1. For Kuscia ports that need to be exposed to collaborating parties, please refer to [Kuscia Port Introduction](../kuscia_ports_cn.md) </span>"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:40
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:93
@@ -116,7 +116,7 @@ msgstr "Step 3: Create ConfigMap"
 msgid ""
 "ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍参考 [Kuscia "
 "配置](../kuscia_config_cn.md)"
-msgstr "ConfigMap is used to configure Kuscia's configuration files. For detailed configuration file information, refer to [Kuscia Configuration](../kuscia_config.md)"
+msgstr "ConfigMap is used to configure Kuscia's configuration files. For detailed configuration file information, refer to [Kuscia Configuration](../kuscia_config_cn.md)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:44
 msgid ""
@@ -310,7 +310,7 @@ msgid ""
 "RunK "
 "模式不支持使用本地数据训练，请准备[OSS数据](K8s_master_lite_cn.md#准备-oss-测试数据)。使用本地数据请先切换至 "
 "RunP 模式，详情请参考 [使用 RunP 运行时部署节点](./deploy_with_runp_cn.md)。"
-msgstr "RunK mode does not support training with local data. Please prepare [OSS data](K8s_master_lite.md#prepare-oss-test-data). To use local data, please switch to RunP mode first. For details, refer to [Deploying Nodes with RunP Runtime](./deploy_with_runp.md)."
+msgstr "RunK mode does not support training with local data. Please prepare [OSS data](K8s_master_lite_cn.md#prepare-oss-test-data). To use local data, please switch to RunP mode first. For details, refer to [Deploying Nodes with RunP Runtime](./deploy_with_runp_cn.md)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:223
 msgid "准备本地测试数据"

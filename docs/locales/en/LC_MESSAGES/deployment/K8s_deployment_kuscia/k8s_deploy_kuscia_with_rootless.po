@@ -39,7 +39,7 @@ msgstr "In K8s mode, deploying as a non-root user requires some modifications to
 
 #: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:11
 msgid "我们已经为您准备好了修改后的模板文件，您只需参考[k8s 部署文档](./K8s_p2p_cn.md)进行部署即可，本文不做过多赘述。"
-msgstr "We have prepared modified template files for you. You only need to refer to the [K8s deployment documentation](./K8s_p2p.md) for deployment. This article will not elaborate further."
+msgstr "We have prepared modified template files for you. You only need to refer to the [K8s deployment documentation](./K8s_p2p_cn.md) for deployment. This article will not elaborate further."
 
 #: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:13
 msgid ""
@@ -73,7 +73,7 @@ msgstr ""
 
 #: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:19
 msgid "目前支持 [RunP](deploy_with_runp_cn.md) 或者 RunK 模式以非 root 用户来部署 Kuscia。"
-msgstr "Currently, [RunP](deploy_with_runp.md) or RunK modes are supported for deploying Kuscia as a non-root user."
+msgstr "Currently, [RunP](deploy_with_runp_cn.md) or RunK modes are supported for deploying Kuscia as a non-root user."
 
 #: ../../deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md:20
 msgid "更多部署要求请参考[这里](../deploy_check.md)。"
