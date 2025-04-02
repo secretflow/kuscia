@@ -193,6 +193,10 @@ msgid "应用配置。[Secretflow Serving 预测应用配置参考](https://www.
 msgstr "Application configuration. [Secretflow Serving prediction application configuration reference](https://www.secretflow.org.cn/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-description)"
 
 #: ../../reference/apis/serving_cn.md
+msgid "initiator"
+msgstr "initiator"
+
+#: ../../reference/apis/serving_cn.md
 msgid "发起方节点 DomainID"
 msgstr "Initiator Node DomainID"
 
