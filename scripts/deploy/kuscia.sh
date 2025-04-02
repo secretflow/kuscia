@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -474,18 +474,19 @@ function start_container() {
   # 构建命令数组，避免空变量导致的多余单引号问题以及 "" 包裹后被解释成一个参数
   cmd=("docker" "run" "-dit")
   
-  # 有条件地添加参数
-  [[ -n "${privileged_flag}" ]] && cmd+=($privileged_flag)
-  [[ -n "${user_flag}" ]] && cmd+=($user_flag)
+  # 有条件地添加参数, 由于部分变量(如${export_port}) 是由多个参数组成的
+  # 直接使用 "" 包裹会有问题, 因此使用 read -ra args 进行转换后拼接命令
+  [[ -n "${privileged_flag}" ]] && { read -ra args <<< "${privileged_flag}"; cmd+=("${args[@]}"); }
+  [[ -n "${user_flag}" ]] && { read -ra args <<< "${user_flag}"; cmd+=("${args[@]}"); }
   cmd+=("--name=${domain_ctr}" "--hostname=${domain_hostname}" "--restart=always" "--network=${local_network_name}")
-  [[ -n "${memory_limit}" ]] && cmd+=($memory_limit)
-  [[ -n "${export_port}" ]] && cmd+=($export_port)
-  [[ -n "${mountcontainerd}" ]] && cmd+=($mountcontainerd)
-  [[ -n "${capability_opts}" ]] && cmd+=($capability_opts)
+  [[ -n "${memory_limit}" ]] && { read -ra args <<< "${memory_limit}"; cmd+=("${args[@]}"); }
+  [[ -n "${export_port}" ]] && { read -ra args <<< "${export_port}"; cmd+=("${args[@]}"); }
+  [[ -n "${mountcontainerd}" ]] && { read -ra args <<< "${mountcontainerd}"; cmd+=("${args[@]}"); }
+  [[ -n "${capability_opts}" ]] && { read -ra args <<< "${capability_opts}"; cmd+=("${args[@]}"); }
   cmd+=("-v" "${kuscia_conf_file}:${CTR_ROOT}/etc/conf/kuscia.yaml")
-  [[ -n "${mount_flag}" ]] && cmd+=($mount_flag)
-  [[ -n "${dns_flag}" ]] && cmd+=($dns_flag)
-  [[ -n "${user_flag}" ]] && cmd+=($user_flag)
+  [[ -n "${mount_flag}" ]] && { read -ra args <<< "${mount_flag}"; cmd+=("${args[@]}"); }
+  [[ -n "${dns_flag}" ]] && { read -ra args <<< "${dns_flag}"; cmd+=("${args[@]}"); }
+  [[ -n "${user_flag}" ]] && { read -ra args <<< "${user_flag}"; cmd+=("${args[@]}"); }
   cmd+=("${KUSCIA_IMAGE}" "bin/kuscia" "start" "-c" "etc/conf/kuscia.yaml")
   
   "${cmd[@]}"

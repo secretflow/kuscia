@@ -16,7 +16,6 @@
 #
 
 set -e
-set -x
 
 SELECTED_TEST_SUITE=${1}
 
