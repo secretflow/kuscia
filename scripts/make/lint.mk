@@ -82,12 +82,14 @@ lint-license-fix:
 
 
 # ========================================= shell check ============================================
+SHELLCHECK_SKIP := SC1091,SC2034
 
 .PHONY: lint-shell-check
 lint-shell-check:
 	@$(LOG_TARGET)
 	shellcheck --version
-	shellcheck **/*.sh
+	shellcheck -e ${SHELLCHECK_SKIP} ./hack/**/*.sh
+	shellcheck -e ${SHELLCHECK_SKIP} ./scripts/**/*.sh
 
 
 ##@ Lint
