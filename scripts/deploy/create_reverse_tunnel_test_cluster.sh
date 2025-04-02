@@ -79,7 +79,7 @@ function create_network() {
   hostname=$(hostname -I | awk '{print $1}')
 
   network_name="kuscia-swarm-exchange"
-  exists=$(docker network ls | grep $network_name | wc -l)
+  exists=$(docker network ls | grep -c $network_name)
   if [ "$exists" != "1" ]; then
     docker swarm init --advertise-addr "$hostname"
     docker network create -d overlay --subnet 12.0.0.0/8 --attachable $network_name

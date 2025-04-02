@@ -172,9 +172,9 @@ function apply_appimage_crd(){
 function gen_domain_container_names(){
   IFS=',' read -ra DOMAINS <<< "$DOMAIN_IDS"
   for DOMAIN in "${DOMAINS[@]}"; do
-    container_name=("${DEPLOY_USER}-kuscia-lite-${DOMAIN}")
+    container_name="${DEPLOY_USER}-kuscia-lite-${DOMAIN}"
     if [[ $DEPLOY_MODE = "p2p" ]]; then
-      container_name=("${DEPLOY_USER}-kuscia-autonomy-${DOMAIN}")
+      container_name="${DEPLOY_USER}-kuscia-autonomy-${DOMAIN}"
     fi
 
     if [[ -n $(docker ps -q -f "name=${container_name}") ]]; then

@@ -167,7 +167,7 @@ function probe_gateway_crd() {
   local retry=0
   while [ $retry -lt "$max_retry" ]; do
     local line_num
-    line_num=$(docker exec -it "${master}" kubectl get gateways -n "${domain}" | grep -i "${gw_name}" | wc -l | xargs)
+    line_num=$(docker exec -it "${master}" kubectl get gateways -n "${domain}" | grep -c -i "${gw_name}" | xargs)
     if [[ "${line_num}" == "1" ]]; then
       return
     fi
