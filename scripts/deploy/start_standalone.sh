@@ -79,12 +79,12 @@ function init_sf_image_info() {
     SF_IMAGE_TAG=${SECRETFLOW_IMAGE##*:}
     path_separator_count="$(echo "$SECRETFLOW_IMAGE" | tr -cd "/" | wc -c)"
     if [ "${path_separator_count}" == 1 ]; then
-      SF_IMAGE_NAME=$(echo "$SECRETFLOW_IMAGE" | sed "s/:${SF_IMAGE_TAG}//")
+      SF_IMAGE_NAME=${SECRETFLOW_IMAGE//:${SF_IMAGE_TAG}/}
     elif [ "${path_separator_count}" == 2 ]; then
       registry=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 1)
       bucket=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 2)
       name_and_tag=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 3)
-      name=$(echo "${name_and_tag}" | sed "s/:${SF_IMAGE_TAG}//")
+      name=${name_and_tag//:${SF_IMAGE_TAG}/}
       SF_IMAGE_REGISTRY="$registry/$bucket"
       SF_IMAGE_NAME="$name"
     fi
@@ -120,8 +120,6 @@ function need_start_docker_container() {
     return 1
     ;;
   esac
-
-  return 1
 }
 
 function do_http_probe() {
@@ -617,7 +615,7 @@ function start_autonomy() {
     # init kuscia.yaml
     pre_check "${data_path}"
     docker run -it --rm "${IMAGE}" kuscia init --mode Autonomy --domain "${domain_id}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
-    wrap_kuscia_config_file "${kuscia_config_file}" "${p2p_protocol}"
+    wrap_kuscia_config_file "${kuscia_config_file}" "${p2p_protocol}" "${domain_id}"
 
     createVolume "${domain_ctr}-containerd"
 
@@ -690,6 +688,7 @@ function build_kuscia_network() {
 function wrap_kuscia_config_file() {
   local kuscia_config_file=$1
   local p2p_protocol=$2
+  local domain=$3
 
   PRIVILEGED_CONFIG="
 agent:
@@ -708,7 +707,7 @@ agent:
         envList:
           - envs:
               - name: system.transport
-                value: transport.${DOMAIN}.svc
+                value: transport.${domain}.svc
               - name: system.storage
                 value: file:///home/kuscia/var/storage
             selectors:
@@ -750,7 +749,7 @@ while getopts 'p:th' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG
-    [ "$interconn_protocol" == "bfia" -o "$interconn_protocol" == "kuscia" ] && continue
+    [[ "$interconn_protocol" == "bfia" || "$interconn_protocol" == "kuscia" ]] && continue
     printf "illegal value for -%s\n" "$option" >&2
     usage
     exit
@@ -776,8 +775,8 @@ shift $((OPTIND - 1))
 
 [ "$interconn_protocol" == "bfia" ] || interconn_protocol="kuscia"
 [ "$mode" == "" ] && mode=$1
-[ "$mode" == "" -o "$mode" == "centralized" ] && mode="center"
-if [ "$mode" == "center" -a "$interconn_protocol" != "kuscia" ]; then
+[[ "$mode" == "" || "$mode" == "centralized" ]] && mode="center"
+if [[ "$mode" == "center" && "$interconn_protocol" != "kuscia" ]]; then
   printf "In current quickstart script, center mode just support 'kuscia'\n" >&2
   exit 1
 fi

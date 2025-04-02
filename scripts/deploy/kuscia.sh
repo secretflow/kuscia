@@ -79,7 +79,7 @@ function arch_check() {
 }
 
 function pre_check() {
-  if ! mkdir -m 777 -p "$1" 2>/dev/null; then
+  if ! mkdir -p "$1" 2>/dev/null || ! chmod 777 "$1" 2>/dev/null; then
     echo -e "${RED}User does not have access to create the directory: $1${NC}"
     exit 1
   fi
@@ -135,12 +135,12 @@ function init_sf_image_info() {
     SF_IMAGE_TAG=${SECRETFLOW_IMAGE##*:}
     path_separator_count="$(echo "$SECRETFLOW_IMAGE" | tr -cd "/" | wc -c)"
     if [ "${path_separator_count}" == 1 ]; then
-      SF_IMAGE_NAME=$(echo "$SECRETFLOW_IMAGE" | sed "s/:${SF_IMAGE_TAG}//")
+      SF_IMAGE_NAME=${SECRETFLOW_IMAGE//:${SF_IMAGE_TAG}/}
     elif [ "${path_separator_count}" == 2 ]; then
       registry=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 1)
       bucket=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 2)
       name_and_tag=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 3)
-      name=$(echo "${name_and_tag}" | sed "s/:${SF_IMAGE_TAG}//")
+      name=${name_and_tag//:${SF_IMAGE_TAG}/}
       SF_IMAGE_REGISTRY="$registry/$bucket"
       SF_IMAGE_NAME="$name"
     fi
@@ -152,6 +152,7 @@ init_sf_image_info
 function wrap_kuscia_config_file() {
   local kuscia_config_file=$1
   local p2p_protocol=$2
+  local domain=$3
 
   PRIVILEGED_CONFIG="
 agent:
@@ -170,7 +171,7 @@ agent:
         envList:
           - envs:
               - name: system.transport
-                value: transport.${DOMAIN}.svc
+                value: transport.${domain}.svc
               - name: system.storage
                 value: file:///home/kuscia/var/storage
             selectors:
@@ -216,8 +217,6 @@ function need_start_docker_container() {
     exit 0
     ;;
   esac
-
-  return 1
 }
 
 function do_http_probe() {
@@ -352,7 +351,7 @@ function build_interconn() {
 
   log_info "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers "${member_ctr}:${CTR_CERT_ROOT}/domain.crt" "${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt"
-  docker exec -it "${host_ctr}" scripts/deploy/add_domain.sh "${member_domain}" "p2p" "${interconn_protocol}" "${master_domain}"
+  docker exec -it "${host_ctr}" scripts/deploy/add_domain.sh "${member_domain}" "p2p" "${interconn_protocol}" 
 
   docker exec -it "${member_ctr}" scripts/deploy/join_to_host.sh "${member_domain}" "${host_domain}" "https://${host_ctr}:1080" "-p ${interconn_protocol}"
   log_info "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
@@ -374,7 +373,7 @@ function init_kuscia_conf_file() {
     docker run --rm "${KUSCIA_IMAGE}" kuscia init --mode "${domain_type}" --domain "${domain_id}" -r "${runtime}" > "${kuscia_conf_file}" 2>&1 || cat "${kuscia_conf_file}"
   fi
   [[ "${dataproxy}" == "true" ]] && dataproxy_config "${kuscia_conf_file}"
-  wrap_kuscia_config_file "${kuscia_conf_file}" "${interconn_protocol}"
+  wrap_kuscia_config_file "${kuscia_conf_file}" "${interconn_protocol}" "${domain_id}"
 }
 
 function enable_rootless() {
@@ -996,7 +995,7 @@ while getopts 'P:a:c:d:l:m:p:q:s:tk:g:x:h' option; do
   case "$option" in
   P)
     interconn_protocol=$OPTARG
-    [ "$interconn_protocol" == "bfia" -o "$interconn_protocol" == "kuscia" ] && continue
+    [[ "$interconn_protocol" == "bfia" || "$interconn_protocol" == "kuscia" ]] && continue
     printf "illegal value for -%s\n" "$option" >&2
     usage
     exit
@@ -1054,7 +1053,7 @@ done
 shift $((OPTIND - 1))
 
 [ "$interconn_protocol" == "bfia" ] || interconn_protocol="kuscia"
-if [ "$mode" == "center" -a "$interconn_protocol" != "kuscia" ]; then
+if [[ "$mode" == "center" && "$interconn_protocol" != "kuscia" ]]; then
   printf "In current quickstart script, center mode just support 'kuscia'\n" >&2
   exit 1
 fi

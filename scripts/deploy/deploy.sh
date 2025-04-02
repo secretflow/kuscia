@@ -72,12 +72,12 @@ function init_sf_image_info() {
     SF_IMAGE_TAG=${SECRETFLOW_IMAGE##*:}
     path_separator_count="$(echo "$SECRETFLOW_IMAGE" | tr -cd "/" | wc -c)"
     if [ "${path_separator_count}" == 1 ]; then
-      SF_IMAGE_NAME=$(echo "$SECRETFLOW_IMAGE" | sed "s/:${SF_IMAGE_TAG}//")
+      SF_IMAGE_NAME=${SECRETFLOW_IMAGE//:${SF_IMAGE_TAG}/}
     elif [ "$path_separator_count" == 2 ]; then
       registry=$(echo "$SECRETFLOW_IMAGE" | cut -d "/" -f 1)
       bucket=$(echo "$SECRETFLOW_IMAGE" | cut -d "/" -f 2)
       name_and_tag=$(echo "$SECRETFLOW_IMAGE" | cut -d "/" -f 3)
-      name=$(echo "$name_and_tag" | sed "s/:${SF_IMAGE_TAG}//")
+      name=${name_and_tag//:${SF_IMAGE_TAG}/}
       SF_IMAGE_REGISTRY="$registry/$bucket"
       SF_IMAGE_NAME="$name"
     fi

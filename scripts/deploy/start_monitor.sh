@@ -76,8 +76,6 @@ function need_start_docker_container() {
     return 1
     ;;
   esac
-
-  return 1
 }
 
 function generate_config_block(){

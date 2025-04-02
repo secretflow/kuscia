@@ -346,7 +346,7 @@ function set_cdr_token_rolling_period() {
   local ctr=$1
   local cdr_name=$2
   local peroid=$3
-  docker exec "${ctr}" kubectl patch cdr "$cdr_name" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${period}}]"
+  docker exec "${ctr}" kubectl patch cdr "$cdr_name" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${peroid}}]"
 }
 
 
