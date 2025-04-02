@@ -22,8 +22,10 @@ msgid "Serving"
 msgstr "Serving"
 
 #: ../../reference/apis/serving_cn.md:3
-msgid "在 Kuscia 中，你可以使用 Serving 接口管理通用的常驻服务，例如：Secretflow Serving 等。 从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto) 可以找到对应的 protobuf 文件。"
-msgstr "In Kuscia, you can use the Serving interface to manage general resident services, such as Secretflow Serving, etc. You can find the corresponding protobuf file [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto)."
+msgid ""
+"在 Kuscia 中，你可以使用 Serving 接口管理通用的常驻服务，例如：Secretflow Serving 等。 从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto) 可以找到对应的 protobuf 文件。"
+msgstr "" 
+"In Kuscia, you can use the Serving interface to manage general resident services, such as Secretflow Serving, etc. You can find the corresponding protobuf file [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/serving.proto)."
 
 #: ../../reference/apis/serving_cn.md:6
 msgid "接口总览"
