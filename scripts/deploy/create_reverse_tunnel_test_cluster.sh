@@ -24,8 +24,8 @@ function build_replica_conn() {
   local hostname
   hostname=$(hostname -I | awk '{print $1}')
 
-  read -ra alice_ctrs <<< $(docker_get_ctrs kuscia-autonomy-alice)
-  read -ra bob_ctrs <<< $(docker_get_ctrs kuscia-autonomy-bob)
+  read -ra alice_ctrs <<< "$(docker_get_ctrs kuscia-autonomy-alice)"
+  read -ra bob_ctrs <<< "$(docker_get_ctrs kuscia-autonomy-bob)"
 
   local alice_choice_ctr=${alice_ctrs[0]}
   local bob_choice_ctr=${bob_ctrs[0]}
@@ -104,7 +104,7 @@ function create_kuscia_yaml() {
 }
 
 function create_load() {
-  script_dir=$(realpath $(dirname "$0"))
+  script_dir=$(realpath "$(dirname "$0")")
   cat << EOF > kuscia-autonomy.yaml
   version: '3.8'
 

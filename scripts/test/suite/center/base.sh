@@ -91,11 +91,11 @@ function try_centralized_token_rolling() {
 
   for ((i=1; i<loop_count; i++)); do
     # wait for period(s)
-    sleep $(($period+3))
+    sleep $((period+3))
 
     # get new token reversion
     local src_revision
-    src_revisio=$(get_cdr_src_token_revision "${ctr}" "$cdr_name")
+    src_revision=$(get_cdr_src_token_revision "${ctr}" "$cdr_name")
     local dst_revision
     dst_revision=$(get_cdr_dst_token_revision "${ctr}" "$cdr_name")
 

@@ -35,7 +35,7 @@ function wait_kuscia_job_until() {
   local ctr=$1
   local timeout_seconds=$2
   local job_id=$3
-  local times=$((${timeout_seconds} / ${TIMEOUT_DURATION_SECONDS}))
+  local times=$((timeout_seconds / TIMEOUT_DURATION_SECONDS))
   local current=0
   while [ "${current}" -lt "${times}" ]; do
     local job_phase

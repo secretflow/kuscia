@@ -110,7 +110,7 @@ function import_appimage(){
   ctr_num=${#KUSCIA_DOMAIN_CONTAINER_NAMES[@]}
 
   idx=0
-  while (($idx<$ctr_num)); do
+  while ((idx<ctr_num)); do
     container_name=${KUSCIA_DOMAIN_CONTAINER_NAMES[$idx]}
     echo "=> => import app image into ${container_name} container"
     domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$container_name")

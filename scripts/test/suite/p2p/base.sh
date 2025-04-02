@@ -115,7 +115,7 @@ function try_p2p_token_rolling() {
 
   for ((i = 1; i < loop_count; i++)); do
     # wait for period(s)
-    sleep $(($period+3))
+    sleep $((period+3))
 
     # get new token reversion
     local src_revision
