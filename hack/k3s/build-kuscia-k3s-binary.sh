@@ -100,7 +100,7 @@ if [ "${ARCH}" = s390x ]; then
 fi
 
 echo Building k3s
-CGO_ENABLED=1 "${GO}" build "$BLDFLAGS" -tags "$TAGS" -buildvcs=false -gcflags="all=${GCFLAGS}" -ldflags "$VERSIONFLAGS $LDFLAGS $STATIC" -o bin/k3s ./cmd/server
+CGO_ENABLED=1 "${GO}" build "$LDFLAGS" -tags "$TAGS" -buildvcs=false -gcflags="all=${GCFLAGS}" -ldflags "$VERSIONFLAGS $LDFLAGS $STATIC" -o bin/k3s ./cmd/server
 
 stat bin/k3s
 exit 0
