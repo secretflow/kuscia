@@ -201,6 +201,14 @@ msgid "发起方节点 DomainID"
 msgstr "Initiator Node DomainID"
 
 #: ../../reference/apis/serving_cn.md
+msgid "parties"
+msgstr "parties"
+
+#: ../../reference/apis/serving_cn.md
+msgid "[ServingParty](#serving-party)[]"
+msgstr "[ServingParty](#serving-party)[]"
+
+#: ../../reference/apis/serving_cn.md
 msgid "参与方信息"
 msgstr "Party Information"
 
@@ -386,6 +394,10 @@ msgid "reason"
 msgstr "reason"
 
 #: ../../reference/apis/serving_cn.md
+msgid "处于该状态的原因，一般用于描述失败的状态"
+msgstr "Reason for this status, generally used to describe failure states"
+
+#: ../../reference/apis/serving_cn.md
 msgid "message"
 msgstr "message"
 
@@ -450,6 +462,14 @@ msgid "role"
 msgstr "role"
 
 #: ../../reference/apis/serving_cn.md
+msgid ""
+"角色，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 "
+"`deployTemplates.role`"
+msgstr ""
+"Role, for detailed explanation please refer to "
+"`deployTemplates.role` in [AppImage](../concepts/appimage_cn.md)"
+
+#: ../../reference/apis/serving_cn.md
 msgid "状态，参考 [State](#state)"
 msgstr "Status, refer to [State](#state)"
 
@@ -510,12 +530,32 @@ msgid "port_name"
 msgstr "port_name"
 
 #: ../../reference/apis/serving_cn.md
+msgid ""
+"应用服务端口名称，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 "
+"`deployTemplates.spec.containers.ports.name`"
+msgstr ""
+"Application service port name, for detailed explanation please refer to "
+"`deployTemplates.spec.containers.ports.name` in [AppImage](../concepts/appimage_cn.md)"
+
+#: ../../reference/apis/serving_cn.md
 msgid "scope"
 msgstr "scope"
 
 #: ../../reference/apis/serving_cn.md
+msgid ""
+"应用服务使用范围, 详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 "
+"`deployTemplates.spec.containers.ports.scope`"
+msgstr ""
+"Application service scope, for detailed explanation please refer to "
+"`deployTemplates.spec.containers.ports.scope` in [AppImage](../concepts/appimage_cn.md)"
+
+#: ../../reference/apis/serving_cn.md
 msgid "endpoint"
 msgstr "endpoint"
+
+#: ../../reference/apis/serving_cn.md
+msgid "应用服务暴露的访问地址"
+msgstr "Access address exposed by the application service"
 
 #: ../../reference/apis/serving_cn.md:604
 msgid "ServingParty"
