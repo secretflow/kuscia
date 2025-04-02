@@ -19,27 +19,26 @@ msgstr ""
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:1
 msgid "升级 Kuscia 版本"
-msgstr ""
+msgstr "Upgrade Kuscia Version"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:3
 msgid "步骤"
-msgstr ""
+msgstr "Steps"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:5
 msgid "您可以参考 [Kuscia 部署](./deploy_p2p_cn.md)中了解如何获取 Kuscia 脚本，本文不做过多赘述。"
-msgstr ""
+msgstr "You can refer to [Kuscia Deployment](./deploy_p2p_cn.md) to learn how to obtain the Kuscia script. This article will not elaborate further."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:7
 msgid "指定 Kuscia 使用的镜像版本，这里使用 0.14.0b0 版本。"
-msgstr ""
+msgstr "Specify the image version for Kuscia, here we use version 0.14.0b0."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:13
 msgid "升级 kuscia 版本只需要加上 upgrade 参数和容器名即可。示例如下："
-msgstr ""
+msgstr "To upgrade the Kuscia version, simply add the upgrade parameter and container name. Example as follows:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:20
 msgid ""
 "注意：[体验模式](../../getting_started/quickstart_cn.md)因未挂载 Volume "
 "到宿主机磁盘，无法使用以上方法升级 Kuscia 。"
-msgstr ""
-
+msgstr "Note: [Experience Mode](../../getting_started/quickstart_cn.md) cannot use the above method to upgrade Kuscia because no Volume is mounted to the host machine disk."
