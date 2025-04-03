@@ -19,31 +19,31 @@ msgstr ""
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:1
 msgid "FATE 部署失败"
-msgstr ""
+msgstr "FATE Deployment Failed"
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:3
 msgid "Pod 镜像拉取失败"
-msgstr ""
+msgstr "Pod Image Pull Failed"
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:5
 msgid "例如："
-msgstr ""
+msgstr "For example:"
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:14
 msgid "检查容器内的镜像"
-msgstr ""
+msgstr "Check the images inside the container."
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:16
 msgid "FATE 部署时会把相关的镜像 import 到节点容器中。"
-msgstr ""
+msgstr "During FATE deployment, relevant images will be imported into the node containers."
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:18
 msgid "进入节点，使用 `crictl images` 命令查看镜像。中心化组网的节点容器中完备的镜像如下："
-msgstr ""
+msgstr "Enter the node and use the `crictl images` command to view the images. The complete set of images in the node containers for a centralized networking setup is as follows:"
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:31
 msgid "P2P 组网的节点容器中完备的镜像如下："
-msgstr ""
+msgstr "The complete set of images in the node containers for a P2P (peer-to-peer) networking setup is as follows:"
 
 #: ../../troubleshoot/deployment/FATE_deploy_failed.md:44
 msgid ""
@@ -52,4 +52,7 @@ msgid ""
 "Kuscia 集群，按照[部署文档](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
 "Hans/tutorial/run_fate_cn)中的流程重新部署。"
 msgstr ""
-
+"If any of the images related to `secretflow/fate-adapter:0.0.1` and `secretflow/fate-deploy-basic:0.0.1`"
+" (note the prefix of the image addresses, there are four in total) are missing, please use the `crictl rmi`"
+" command to remove the images. After that, delete the already deployed Kuscia cluster and redeploy it "
+"following the process in the [deployment documentation](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/tutorial/run_fate_cn)."
