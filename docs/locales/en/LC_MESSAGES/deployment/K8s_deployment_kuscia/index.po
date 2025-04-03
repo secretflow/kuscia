@@ -19,5 +19,4 @@ msgstr ""
 
 #: ../../deployment/K8s_deployment_kuscia/index.rst:2
 msgid "K8s 集群部署 Kuscia"
-msgstr ""
-
+msgstr "Deploy Kuscia on K8s Cluster"
