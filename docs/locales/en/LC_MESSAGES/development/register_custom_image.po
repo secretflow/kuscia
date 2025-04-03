@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../development/register_custom_image.md:1
 msgid "注册自定义算法镜像"
-msgstr ""
+msgstr "Register Custom Algorithm Image"
 
 #: ../../development/register_custom_image.md:3
 msgid ""
@@ -28,138 +28,145 @@ msgid ""
 "[AppImage](../reference/concepts/appimage_cn.md) 名称，从而实现算法应用 Pod "
 "镜像启动模版的绑定，启动算法应用 Pod。"
 msgstr ""
+"In Kuscia, [AppImage](../reference/concepts/appimage_cn.md) is used to store algorithm image template information. When running tasks, you must specify the [AppImage](../reference/concepts/appimage_cn.md) name in the task to bind the algorithm application Pod image startup template and launch the algorithm application Pod."
 
 #: ../../development/register_custom_image.md:5
 msgid ""
 "若你想使用自定义算法镜像运行任务，那么可参考下面步骤准备算法镜像 "
 "[AppImage](../reference/concepts/appimage_cn.md) 和将算法镜像加载到节点容器中。"
 msgstr ""
+"If you want to use custom algorithm images to run tasks, you can follow the steps below to prepare the algorithm image [AppImage](../reference/concepts/appimage_cn.md) and load the algorithm image into the node container."
 
 #: ../../development/register_custom_image.md:7
 msgid "准备工具脚本"
-msgstr ""
+msgstr "Prepare Tool Script"
 
 #: ../../development/register_custom_image.md:9
 msgid "获取工具脚本"
-msgstr ""
+msgstr "Obtain Tool Script"
 
 #: ../../development/register_custom_image.md:18
 msgid "工具脚本介绍"
-msgstr ""
+msgstr "Tool Script Introduction"
 
 #: ../../development/register_custom_image.md:20
 msgid "工具脚本的功能如下："
-msgstr ""
+msgstr "The functions of the tool script are as follows:"
 
 #: ../../development/register_custom_image.md:22
 msgid "将自定义算法镜像加载到节点容器内"
-msgstr ""
+msgstr "Load custom algorithm images into node containers"
 
 #: ../../development/register_custom_image.md:23
 msgid "将自定义算法镜像的 AppImage 注册到 Kuscia 中"
-msgstr ""
+msgstr "Register AppImage of custom algorithm images in Kuscia"
 
 #: ../../development/register_custom_image.md:25
 msgid "查看工具脚本帮助信息"
-msgstr ""
+msgstr "View tool script help information"
 
 #: ../../development/register_custom_image.md:31
 msgid "工具脚本支持的 Flag 参数含义如下："
-msgstr ""
+msgstr "The meanings of the Flag parameters supported by the tool script are as follows:"
 
 #: ../../development/register_custom_image.md:33
 msgid "`-h`：可选参数，查看工具脚本帮助信息"
-msgstr ""
+msgstr "`-h`: Optional parameter, view tool script help information"
 
 #: ../../development/register_custom_image.md:34
 msgid "`-c`：必填参数，指定需要注册的自定义算法的 Docker 容器名"
-msgstr ""
+msgstr "`-c`: Required parameter, specify the Docker container name of the custom algorithm to be registered"
 
 #: ../../development/register_custom_image.md:35
 msgid "`-i`：必填参数，指定需要注册的自定义算法的 Docker 容器镜像名"
-msgstr ""
+msgstr "`-i`: Required parameter, specify the Docker container image name of the custom algorithm to be registered"
 
 #: ../../development/register_custom_image.md:36
 msgid ""
 "`-f`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 模版文件。推荐在工具脚本同级目录下，以规则`{Kuscia "
 "AppImage 名称}.yaml`命名模版文件。否则必须通过该标志指定模版文件。"
 msgstr ""
+"`-f`: Optional parameter, specify the Kuscia AppImage template file related to the custom algorithm image. It is recommended to name the template file in the same directory as the tool script with the rule `{Kuscia AppImage name}.yaml`. Otherwise, the template file must be specified through this flag."
 
 #: ../../development/register_custom_image.md:37
 msgid "`--import`：可选参数，将自定义算法镜像导入到节点容器中时指定该参数。"
-msgstr ""
+msgstr "`--import`: Optional parameter, specify this parameter when importing custom algorithm images into node containers."
 
 #: ../../development/register_custom_image.md:39
 msgid "准备自定义算法镜像的 AppImage"
-msgstr ""
+msgstr "Prepare AppImage for Custom Algorithm Images"
 
 #: ../../development/register_custom_image.md:41
 msgid "你可以在引擎官网获取到 AppImage 模版"
-msgstr ""
+msgstr "You can obtain AppImage templates from the engine's official website"
 
 #: ../../development/register_custom_image.md:43
 msgid ""
 "`Secretflow` "
 "引擎模版：[app_image.secretflow.yaml](https://github.com/secretflow/kuscia/blob/main/scripts/templates/app_image.secretflow.yaml)"
 msgstr ""
+"`Secretflow` engine template: [app_image.secretflow.yaml](https://github.com/secretflow/kuscia/blob/main/scripts/templates/app_image.secretflow.yaml)"
 
 #: ../../development/register_custom_image.md:44
 msgid ""
 "`Serving` 引擎模版：[app_image.serving.yaml](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.1b0/topics/deployment/serving_on_kuscia#appimage)"
 msgstr ""
+"`Serving` engine template: [app_image.serving.yaml](https://www.secretflow.org.cn/docs/serving/0.2.1b0/topics/deployment/serving_on_kuscia#appimage)"
 
 #: ../../development/register_custom_image.md:45
 msgid ""
 "`SCQL` 引擎模版：[app_image.scql.yaml](https://www.secretflow.org.cn/zh-"
 "CN/docs/scql/main/topics/deployment/run-scql-on-kuscia)"
 msgstr ""
+"`SCQL` engine template: [app_image.scql.yaml](https://www.secretflow.org.cn/docs/scql/main/topics/deployment/run-scql-on-kuscia)"
 
 #: ../../development/register_custom_image.md:46
 msgid "其他自定义算法镜像参考：[AppImage](../reference/concepts/appimage_cn)"
-msgstr ""
+msgstr "Other custom algorithm images reference: [AppImage](../reference/concepts/appimage_cn)"
 
 #: ../../development/register_custom_image.md:47
 msgid "自定义算法配置文件渲染参考： [配置文件渲染](../tutorial/config_render.md)"
-msgstr ""
+msgstr "Custom algorithm configuration file rendering reference: [Configuration File Rendering](../tutorial/config_render.md)"
 
 #: ../../development/register_custom_image.md:49
 msgid "加载自定义算法镜像到节点容器"
-msgstr ""
+msgstr "Load Custom Algorithm Images into Node Containers"
 
 #: ../../development/register_custom_image.md:51
 msgid "注册镜像"
-msgstr ""
+msgstr "Register Image"
 
 #: ../../development/register_custom_image.md:53
 msgid "点对点模式"
-msgstr ""
+msgstr "Peer-to-Peer Mode"
 
 #: ../../development/register_custom_image.md:55
 msgid ""
 "Autonomy 节点需要同时导入引擎镜像和注册 Appimage，下面以 root-kuscia-autonomy-alice 节点为例，其他 "
 "autonomy 节点也需要进行导入"
 msgstr ""
+"Autonomy nodes need to import both the engine image and register AppImage. The following uses the root-kuscia-autonomy-alice node as an example, other autonomy nodes also need to perform the import."
 
 #: ../../development/register_custom_image.md:61
 msgid "中心化模式"
-msgstr ""
+msgstr "Centralized Mode"
 
 #: ../../development/register_custom_image.md:63
 msgid "Master 节点注册 Appimage 即可，下面以 root-kuscia-master 为例"
-msgstr ""
+msgstr "The master node only needs to register AppImage. The following uses root-kuscia-master as an example"
 
 #: ../../development/register_custom_image.md:69
 msgid "Lite 节点导入引擎镜像即可，下面以 root-kuscia-lite-alice 节点为例，其他 lite 节点也需要进行导入"
-msgstr ""
+msgstr "Lite nodes only need to import the engine image. The following uses the root-kuscia-lite-alice node as an example, other lite nodes also need to perform the import."
 
 #: ../../development/register_custom_image.md:75
 msgid "使用自定义算法镜像运行作业"
-msgstr ""
+msgstr "Run Jobs Using Custom Algorithm Images"
 
 #: ../../development/register_custom_image.md:77
 msgid "通过前面步骤注册完自定义算法镜像后，你可以获取算法镜像对应的 AppImage 资源名称。后续使用自定义算法镜像运行任务时，只需修改相应的字段即可。"
-msgstr ""
+msgstr "After registering the custom algorithm image through the previous steps, you can obtain the AppImage resource name corresponding to the algorithm image. When running tasks using custom algorithm images later, you only need to modify the corresponding fields."
 
 #: ../../development/register_custom_image.md:79
 msgid ""
@@ -168,4 +175,6 @@ msgid ""
 "示例](../reference/concepts/kusciajob_cn.md#创建-kusciajob) 中 "
 "`spec.tasks[].appImage`字段的值。"
 msgstr ""
+"Take the AppImage named `secretflow-image` as an example. To run "
+"[KusciaJob](../reference/concepts/kusciajob_cn.md) jobs using custom algorithm images, modify the value of the `spec.tasks[].appImage` field in the [KusciaJob example](../reference/concepts/kusciajob_cn.md#创建-kusciajob)."
 

@@ -19,39 +19,39 @@ msgstr ""
 
 #: ../../development/build_kuscia_cn.md:1
 msgid "构建命令"
-msgstr ""
+msgstr "Build Commands"
 
 #: ../../development/build_kuscia_cn.md:3
 msgid "开发环境搭建"
-msgstr ""
+msgstr "Development Environment Setup"
 
 #: ../../development/build_kuscia_cn.md:5
 msgid "开发环境依赖"
-msgstr ""
+msgstr "Development Environment Dependencies"
 
 #: ../../development/build_kuscia_cn.md:7
 msgid "Golang: 1.19.4+"
-msgstr ""
+msgstr "Golang: 1.19.4+"
 
 #: ../../development/build_kuscia_cn.md:8
 msgid "Protoc"
-msgstr ""
+msgstr "Protoc"
 
 #: ../../development/build_kuscia_cn.md:9
 msgid "Docker"
-msgstr ""
+msgstr "Docker"
 
 #: ../../development/build_kuscia_cn.md:11
 msgid "安装 Golang"
-msgstr ""
+msgstr "Install Golang"
 
 #: ../../development/build_kuscia_cn.md:13
 msgid "[Golang 安装教程](https://go.dev/doc/install)"
-msgstr ""
+msgstr "[Golang Installation Guide](https://go.dev/doc/install)"
 
 #: ../../development/build_kuscia_cn.md:15
 msgid "安装 Protoc"
-msgstr ""
+msgstr "Install Protoc"
 
 #: ../../development/build_kuscia_cn.md:17
 msgid ""
@@ -59,44 +59,46 @@ msgid ""
 "安装教程](https://github.com/protocolbuffers/protobuf/blob/main/README.md"
 "#protobuf-compiler-installation)"
 msgstr ""
+"[Protoc Installation Guide](https://github.com/protocolbuffers/protobuf/blob/main/README.md"
+"#protobuf-compiler-installation)"
 
 #: ../../development/build_kuscia_cn.md:19
 msgid "安装 Docker"
-msgstr ""
+msgstr "Install Docker"
 
 #: ../../development/build_kuscia_cn.md:21
 msgid "[Docker Desktop 安装教程](https://docs.docker.com/desktop/)"
-msgstr ""
+msgstr "[Docker Desktop Installation Guide](https://docs.docker.com/desktop/)"
 
 #: ../../development/build_kuscia_cn.md:23
 msgid "[Docker Engine 安装教程](https://docs.docker.com/engine/install/)"
-msgstr ""
+msgstr "[Docker Engine Installation Guide](https://docs.docker.com/engine/install/)"
 
 #: ../../development/build_kuscia_cn.md:25
 msgid "构建 Kuscia"
-msgstr ""
+msgstr "Build Kuscia"
 
 #: ../../development/build_kuscia_cn.md:27
 msgid "Kuscia 提供了 Makefile 来构建镜像，您可以通过`make help`命令查看命令帮助，其中 Build 部分提供了构建能力："
-msgstr ""
+msgstr "Kuscia provides Makefile to build images. You can view command help through `make help`, where the Build section provides build capabilities:"
 
 #: ../../development/build_kuscia_cn.md:50
 msgid "构建可执行文件"
-msgstr ""
+msgstr "Build Executable Files"
 
 #: ../../development/build_kuscia_cn.md:52
 #: ../../development/build_kuscia_cn.md:65
 #: ../../development/build_kuscia_cn.md:89
 msgid "在 Kuscia 项目根目录下："
-msgstr ""
+msgstr "In the Kuscia project root directory:"
 
 #: ../../development/build_kuscia_cn.md:54
 msgid "执行`make build`命令，该命令将会构建出 Kuscia 的可执行文件，构建产物会生成在 ./build/ 目录下。"
-msgstr ""
+msgstr "Execute the `make build` command, which will build the Kuscia executable files. The build artifacts will be generated in the ./build/ directory."
 
 #: ../../development/build_kuscia_cn.md:56
 msgid "构建 Kuscia-Envoy Image"
-msgstr ""
+msgstr "Build Kuscia-Envoy Image"
 
 #: ../../development/build_kuscia_cn.md:58
 msgid ""
@@ -104,6 +106,9 @@ msgid ""
 "镜像](https://hub.docker.com/r/secretflow/kuscia-envoy/tags)。如果您选择使用默认的 "
 "Kuscia-Envoy 镜像，那么您可以跳过这一步。"
 msgstr ""
+"The Kuscia image build depends on the Kuscia-Envoy image. Kuscia provides a default [Kuscia-Envoy "
+"image](https://hub.docker.com/r/secretflow/kuscia-envoy/tags). If you choose to use the default "
+"Kuscia-Envoy image, you can skip this step."
 
 #: ../../development/build_kuscia_cn.md:60
 msgid ""
@@ -111,90 +116,105 @@ msgid ""
 "/kuscia-envoy) 项目的根目录下执行 `make image` 命令。 而后您可以用 `docker images | grep "
 "kuscia-envoy` 来查看 构建产出的 Kuscia-Envoy 镜像名称。"
 msgstr ""
+"If you choose to build the Kuscia-Envoy image yourself, execute the `make image` command in the root directory of the [Kuscia-Envoy](https://github.com/secretflow"
+"/kuscia-envoy) project. Then you can use `docker images | grep "
+"kuscia-envoy` to view the built Kuscia-Envoy image name."
 
 #: ../../development/build_kuscia_cn.md:63
 msgid "构建 Kuscia Image"
-msgstr ""
+msgstr "Build Kuscia Image"
 
 #: ../../development/build_kuscia_cn.md:67
 msgid "执行`make image`命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。"
-msgstr ""
+msgstr "Execute the `make image` command, which will use Docker commands to build the Kuscia image."
 
 #: ../../development/build_kuscia_cn.md:69
 msgid ""
 "如果您想依赖指定的 Kuscia-Envoy 镜像构建 Kuscia 镜像，您可以通过 `make image "
 "KUSCIA_ENVOY_IMAGE=${KUSCIA_ENVOY_IMAGE}` 来指定依赖镜像的名称。"
 msgstr ""
+"If you want to build the Kuscia image depending on a specified Kuscia-Envoy image, you can specify the dependent image name through `make image "
+"KUSCIA_ENVOY_IMAGE=${KUSCIA_ENVOY_IMAGE}`."
 
 #: ../../development/build_kuscia_cn.md:71
 msgid "构建 Kuscia-Secretflow Image"
-msgstr ""
+msgstr "Build Kuscia-Secretflow Image"
 
 #: ../../development/build_kuscia_cn.md:73
 msgid "在 kuscia/build/dockerfile 目录下："
-msgstr ""
+msgstr "In the kuscia/build/dockerfile directory:"
 
 #: ../../development/build_kuscia_cn.md:75
 msgid ""
 "执行`docker build -f ./kuscia-secretflow.Dockerfile .`命令会构建出 Kuscia-"
 "Secretflow 镜像。Kuscia-Secretflow 镜像在 Kuscia 镜像的基础上集成了 Secretflow 镜像。"
 msgstr ""
+"Executing the `docker build -f ./kuscia-secretflow.Dockerfile .` command will build the Kuscia-"
+"Secretflow image. The Kuscia-Secretflow image integrates the Secretflow image based on the Kuscia image."
 
 #: ../../development/build_kuscia_cn.md:77
 msgid "需要注意的是，仅 `RunP` 模式下需要构建 kuscia-secretflow 镜像。"
-msgstr ""
+msgstr "Note that the kuscia-secretflow image only needs to be built in `RunP` mode."
 
 #: ../../development/build_kuscia_cn.md:79
 msgid ""
 "kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 "
 "1.7.0b0，如果需要指定其他版本，可以使用如下命令："
 msgstr ""
+"The default Kuscia image version in the kuscia-secretflow.Dockerfile file is latest, and the Secretflow version is "
+"1.7.0b0. If you need to specify other versions, you can use the following command:"
 
 #: ../../development/build_kuscia_cn.md:81
 msgid "此处以 Kuscia 0.14.0b0，Secretflow 1.7.0b0 版本为例"
-msgstr ""
+msgstr "Here we take Kuscia 0.14.0b0 and Secretflow 1.7.0b0 versions as examples"
 
 #: ../../development/build_kuscia_cn.md:87
 msgid "编译文档"
-msgstr ""
+msgstr "Compile Documentation"
 
 #: ../../development/build_kuscia_cn.md:91
 msgid ""
 "执行`make docs`命令，该命令会生成 Kuscia 文档，生成的文档会放在 `docs/_build/html` 目录，用浏览器打开 "
 "`docs/_build/html/index.html` 就可以查看文档。"
 msgstr ""
+"Execute the `make docs` command, which will generate Kuscia documentation. The generated documentation will be placed in the `docs/_build/html` directory. Open "
+"`docs/_build/html/index.html` in a browser to view the documentation."
 
 #: ../../development/build_kuscia_cn.md:93
 msgid "该命令依赖于 python 环境，请确保已经安装 python 和 pip。您可以使用如下命令检查："
-msgstr ""
+msgstr "This command depends on the Python environment. Please ensure Python and pip are installed. You can check with the following commands:"
 
 #: ../../development/build_kuscia_cn.md:101
 msgid "集成测试"
-msgstr ""
+msgstr "Integration Testing"
 
 #: ../../development/build_kuscia_cn.md:103
 msgid "对已存在的镜像进行集成测试"
-msgstr ""
+msgstr "Integration testing for existing images"
 
 #: ../../development/build_kuscia_cn.md:105
 msgid ""
 "Kuscia 的集成测试可以对 Kuscia 镜像进行测试，创建测试目录 test 并获取 Kuscia "
 "集成测试脚本，集成测试脚本会下载到当前目录："
 msgstr ""
+"Kuscia's integration testing can test Kuscia images. Create a test directory and obtain the Kuscia "
+"integration test script, which will be downloaded to the current directory:"
 
 #: ../../development/build_kuscia_cn.md:113
 msgid "然后执行集成测试，第一个参数用于选择测试集合。"
-msgstr ""
+msgstr "Then execute the integration test, where the first parameter is used to select the test suite."
 
 #: ../../development/build_kuscia_cn.md:115
 msgid "目前支持：\\[all，center.base，p2p.base，center.example\\]，不填写则默认为 all。"
-msgstr ""
+msgstr "Currently supported: \\[all, center.base, p2p.base, center.example\\], defaults to all if not specified."
 
 #: ../../development/build_kuscia_cn.md:121
 msgid ""
 "在集成脚本执行的过程中，会自动安装依赖：[grpcurl](https://github.com/fullstorydev/grpcurl/releases)"
 " 和 [jq](https://jqlang.github.io/jq/download/) 在宿主机上。"
 msgstr ""
+"During the execution of the integration script, dependencies will be automatically installed: [grpcurl](https://github.com/fullstorydev/grpcurl/releases)"
+" and [jq](https://jqlang.github.io/jq/download/) on the host machine."
 
 #: ../../development/build_kuscia_cn.md:123
 msgid ""
@@ -202,20 +222,25 @@ msgid ""
 " 系统，如果您没有安装，会自动安装在 `test/test_run/bin` 目录下。 对于其他系统，您需要手动安装，然后将其配置到 `PATH`"
 " 环境变量中，或者放置在 `test/test_run/bin` 目录下。"
 msgstr ""
+"If already installed on the host machine and discoverable through the `PATH` environment variable, it won't be reinstalled. For `x86_64` architecture `macOS` and `Linux`"
+" systems, if not installed, it will be automatically installed in the `test/test_run/bin` directory. For other systems, you need to manually install and configure it in the `PATH`"
+" environment variable, or place it in the `test/test_run/bin` directory."
 
 #: ../../development/build_kuscia_cn.md:126
 msgid "使用 make 命令"
-msgstr ""
+msgstr "Using make command"
 
 #: ../../development/build_kuscia_cn.md:128
 msgid ""
 "如果您正在参与 Kuscia 的开发工作，您也可以通过 `make integration_test` 来进行测试，该命令会编译您当前的代码并构建"
 " Kuscia 镜像，然后进行集成测试。"
 msgstr ""
+"If you are participating in Kuscia development, you can also use `make integration_test` for testing. This command will compile your current code and build"
+" the Kuscia image, then perform integration testing."
 
 #: ../../development/build_kuscia_cn.md:130
 msgid "新增测试用例"
-msgstr ""
+msgstr "Add New Test Cases"
 
 #: ../../development/build_kuscia_cn.md:132
 msgid ""
@@ -227,26 +252,37 @@ msgid ""
 "`scripts/test/vendor` 下，您可以使用其中的断言函数。 Kuscia 也准备了一些常用的函数，您可以在 "
 "`scripts/test/suite/core` 下找到。"
 msgstr ""
+"If you want to add more test cases for Kuscia, you can add your test case code under `scripts/test/suite/center` and "
+"`scripts/test/suite/center/p2p` in the Kuscia project. You can refer to "
+"`scripts/test/suite/center/basic.sh` and "
+"`scripts/test/suite/center/example.sh` to write your test cases. Kuscia uses "
+"[shunit2](https://github.com/kward/shunit2) as the testing framework, installed under "
+"`scripts/test/vendor`, and you can use its assertion functions. Kuscia has also prepared some common functions, which you can find under "
+"`scripts/test/suite/core`."
 
 #: ../../development/build_kuscia_cn.md:137
 msgid "下面是详细步骤："
-msgstr ""
+msgstr "Here are the detailed steps:"
 
 #: ../../development/build_kuscia_cn.md:139
 msgid ""
 "对于中心化模式，在 `scripts/test/suite/center/` 下新建您的测试用例集文件，对于 P2P 模式，在 "
 "`scripts/test/suite/p2p/` 下新建您的测试用例文件。"
 msgstr ""
+"For centralized mode, create your test suite file under `scripts/test/suite/center/`. For P2P mode, create your test case file under "
+"`scripts/test/suite/p2p/`."
 
 #: ../../development/build_kuscia_cn.md:140
 msgid ""
 "编写您的测试用例集，确保您的测试用例集文件包含 `. ./test/vendor/shunit2`，具体请参考 "
 "[shunit2](https://github.com/kward/shunit2)。"
 msgstr ""
+"Write your test suite, ensuring your test suite file includes `. ./test/vendor/shunit2`. For details, please refer to "
+"[shunit2](https://github.com/kward/shunit2)."
 
 #: ../../development/build_kuscia_cn.md:141
 msgid "为您的测试用例集文件添加可执行权限：`chmod a+x {YOUR_TEST_SUITE_FILE}`。"
-msgstr ""
+msgstr "Add executable permissions to your test suite file: `chmod a+x {YOUR_TEST_SUITE_FILE}`."
 
 #: ../../development/build_kuscia_cn.md:142
 msgid ""
@@ -254,8 +290,10 @@ msgid ""
 "`TEST_SUITES[\"center.example\"]=\"./test/suite/center/example.sh\"`。变量 "
 "`TEST_SUITES` 的 key 为您的测试用例集的名称。"
 msgstr ""
+"Register your test suite in the `scripts/test/integration_test.sh` file. For example: "
+"`TEST_SUITES[\"center.example\"]=\"./test/suite/center/example.sh\"`. The key of the "
+"`TEST_SUITES` variable is the name of your test suite."
 
 #: ../../development/build_kuscia_cn.md:143
 msgid "运行您的测试用例集，如上例：`./test/integration_test.sh center.example`。"
-msgstr ""
-
+msgstr "Run your test suite, as in the above example: `./test/integration_test.sh center.example`."
