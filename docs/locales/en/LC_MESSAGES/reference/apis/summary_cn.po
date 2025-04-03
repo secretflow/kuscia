@@ -3,7 +3,6 @@
 # This file is distributed under the same license as the Kuscia package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Kuscia \n"
@@ -19,15 +18,15 @@ msgstr ""
 
 #: ../../reference/apis/summary_cn.md:1
 msgid "概览"
-msgstr ""
+msgstr "Overview"
 
 #: ../../reference/apis/summary_cn.md:5
 msgid "K8s API 和 Kuscia API"
-msgstr ""
+msgstr "K8s API and Kuscia API"
 
 #: ../../reference/apis/summary_cn.md:7
 msgid "Kuscia 提供了两套 API 接口，分别是 K8s API 和 Kuscia API。"
-msgstr ""
+msgstr "Kuscia provides two sets of API interfaces, namely the K8s API and the Kuscia API."
 
 #: ../../reference/apis/summary_cn.md:9
 msgid ""
@@ -36,31 +35,41 @@ msgid ""
 " 客户端 进行接入。 其他语言的接入方式，可以参考[这里](https://kubernetes.io/docs/reference/using-"
 "api/client-libraries/)。"
 msgstr ""
+"The K8s API is based on the K8s interface and is provided in the form of CRD. "
+"Please refer to [Concepts](../concepts/index). "
+"You can access it via kubectl or a Go client such as [client-go](https://github.com/kubernetes/client-go). "
+"For access methods in other programming languages, please refer to [here](https://kubernetes.io/docs/reference/using-api/client-libraries/)."
 
 #: ../../reference/apis/summary_cn.md:13
 msgid "Kuscia API 是在 K8s API 上的一层封装，提供了更加上层的逻辑，您可以通过 GRPC 或者 HTTP 进行接入。"
-msgstr ""
+msgstr "The Kuscia API is an abstraction layer built on top of the K8s API, providing higher-level operational logic."
+"It can be accessed via gRPC or HTTP."
 
 #: ../../reference/apis/summary_cn.md:15
 msgid ""
 "当前我们推荐基于 Kuscia API 接入隐语能力；仅当业务方对 K3s 非常熟悉，并且有很多 Kuscia API "
 "无法满足的复杂功能需要实现，才推荐基于 K8s API 接入。"
 msgstr ""
+"We recommend accessing SecretFlow capabilities through the ​Kuscia API by default. "
+"The ​K8s API is only suggested for business teams with in-depth knowledge of K3s and "
+"requirements for complex functionalities beyond the scope of Kuscia API."
 
 #: ../../reference/apis/summary_cn.md:20
 msgid "Kuscia API 约定"
-msgstr ""
+msgstr "Kuscia API Conventions"
 
 #: ../../reference/apis/summary_cn.md:22
 msgid "Kuscia API 提供 HTTP 和 GRPC 两种访问方法。"
-msgstr ""
+msgstr "The Kuscia API provides two access methods: HTTP and gRPC."
 
 #: ../../reference/apis/summary_cn.md:24
 msgid ""
 "当您使用 GRPC 时，您可以通过 protoc 生成出对应编程语言的客户端桩代码，您可以在 "
-"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)"
-" 找到 Kuscia API 的 protobuf 文件。"
+"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) "
+"找到 Kuscia API 的 protobuf 文件。"
 msgstr ""
+"When using gRPC, you can generate client stub code for your programming language with `protoc`. "
+"You can find the Kuscia API protobuf definitions [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)."
 
 #: ../../reference/apis/summary_cn.md:28
 msgid ""
@@ -69,10 +78,17 @@ msgid ""
 "guides/proto3/#json) 。当请求的 `Content-Type` 为 `application/x-protobuf` 时，使用"
 " PROTOBUF 编码，否则使用 JSON 编码。"
 msgstr ""
+"When using HTTP, you can access the corresponding HTTP port. The Kuscia API "
+"interfaces are provided in the form of POST+JSON or POST+PROTOBUF and comply "
+"with protobuf's [JSON Mapping](https://protobuf.dev/programming-guides/proto3/#json). "
+"When the request's `Content-Type` is `application/x-protobuf`, PROTOBUF encoding "
+"is used; otherwise, JSON encoding is used."
+
 
 #: ../../reference/apis/summary_cn.md:33
 msgid "请求和响应约定"
 msgstr ""
+"Request and Response Conventions"
 
 #: ../../reference/apis/summary_cn.md:35
 msgid ""
@@ -80,6 +96,9 @@ msgid ""
 "[CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， "
 "该字段可以携带您自定义的一些数据。"
 msgstr ""
+"A request always includes a header field of type [RequestHeader](#requestheader), "
+"such as [CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest). "
+"This field can carry custom data defined by you."
 
 #: ../../reference/apis/summary_cn.md:38
 msgid ""
@@ -87,142 +106,181 @@ msgid ""
 "[CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ，"
 " 该字段描述了响应的状态信息。"
 msgstr ""
+"All responses must contain a status field of type [Status](#status), such as "
+"[CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse), which provides response status information."
 
 #: ../../reference/apis/summary_cn.md:43
 msgid "RequestHeader"
 msgstr ""
+"RequestHeader"
 
 #: ../../reference/apis/summary_cn.md:45
 msgid "RequestHeader 可以携带自定义的信息。"
 msgstr ""
+"The RequestHeader can carry custom metadata."
 
 #: ../../reference/apis/summary_cn.md
 msgid "字段"
 msgstr ""
+"Field"
 
 #: ../../reference/apis/summary_cn.md
 msgid "类型"
 msgstr ""
+"Type"
 
 #: ../../reference/apis/summary_cn.md
 msgid "选填"
 msgstr ""
+"Optional"
 
 #: ../../reference/apis/summary_cn.md
 msgid "描述"
 msgstr ""
+"Description"
 
 #: ../../reference/apis/summary_cn.md
 msgid "custom_headers"
 msgstr ""
+"custom_headers"
 
 #: ../../reference/apis/summary_cn.md
 msgid "map<string, string>"
 msgstr ""
+"map<string, string>"
 
 #: ../../reference/apis/summary_cn.md
 msgid "可选"
 msgstr ""
+"Optional"
 
 #: ../../reference/apis/summary_cn.md
 msgid "自定义的键值对"
 msgstr ""
+"Custom key-value pairs"
 
 #: ../../reference/apis/summary_cn.md:53
 msgid "Status"
 msgstr ""
+"Status"
 
 #: ../../reference/apis/summary_cn.md:55
 msgid "Status 携带请求响应的状态信息。"
 msgstr ""
+"Status carries response status information."
 
 #: ../../reference/apis/summary_cn.md:57
 msgid ""
 "参考: [GRPC 的 Status "
 "定义](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)"
 msgstr ""
+"Reference: [gRPC Status Definition](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)"
+
+#: ../../reference/apis/summary_cn.md
+msgid "示例"
+msgstr ""
+"Example"
 
 #: ../../reference/apis/summary_cn.md
 msgid "code"
 msgstr ""
+"code"
 
 #: ../../reference/apis/summary_cn.md
 msgid "int32"
 msgstr ""
+"int32"
 
 #: ../../reference/apis/summary_cn.md
 msgid "必填"
 msgstr ""
-
-#: ../../reference/apis/summary_cn.md
-msgid "错误码"
-msgstr ""
+"Required"
 
 #: ../../reference/apis/summary_cn.md
 msgid "message"
 msgstr ""
+"message"
 
 #: ../../reference/apis/summary_cn.md
 msgid "string"
 msgstr ""
+"string"
 
 #: ../../reference/apis/summary_cn.md
 msgid "错误信息"
 msgstr ""
+"Error message"
+
+#: ../../reference/apis/summary_cn.md
+msgid "错误码"
+msgstr ""
+"Error code"
 
 #: ../../reference/apis/summary_cn.md
 msgid "details"
 msgstr ""
+"details"
 
 #: ../../reference/apis/summary_cn.md
 msgid ""
 "[google.protobuf.Any](https://protobuf.dev/programming-"
 "guides/proto3/#json)[]"
 msgstr ""
+"[google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[]"
 
 #: ../../reference/apis/summary_cn.md
 msgid "错误详细描述"
 msgstr ""
+"Detailed error description"
 
 #: ../../reference/apis/summary_cn.md:65
 msgid "如何使用 Kuscia API"
 msgstr ""
+"How to Use the Kuscia API"
 
 #: ../../reference/apis/summary_cn.md:67
 msgid "获取 Kuscia API Server 证书和私钥"
 msgstr ""
+"Obtain Kuscia API Server Certificate and Private Key"
 
 #: ../../reference/apis/summary_cn.md:69
 msgid "Kuscia master 部署完成之后，会默认生成一个 kuscia API Server 证书，您可以通过以下命令获取（以中心化组网模式为例）："
 msgstr ""
+"After Kuscia master deployment, a Kuscia API Server certificate is automatically generated. Use the following command to obtain it (centralized networking mode example):"
 
 #: ../../reference/apis/summary_cn.md:78
 msgid "GRPC"
 msgstr ""
+"gRPC"
 
 #: ../../reference/apis/summary_cn.md:80
 msgid "为了使用 GRPC 连接上 Kuscia API，您需要："
 msgstr ""
+"To establish gRPC connectivity with Kuscia API:"
 
 #: ../../reference/apis/summary_cn.md:82
 msgid ""
-"从 "
-"[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)"
-" 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。 关于如何生成客户端桩代码，请参看 "
-"[Protobuf 官方教程](https://protobuf.dev/getting-started/)。"
+"从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi) 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。关于如何生成客户端桩代码，请参看 [Protobuf 官方教程](https://protobuf.dev/getting-started/)。"
 msgstr ""
+"Download Kuscia's protobuf files from [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi), "
+"and use `protoc` to generate client stub code for the corresponding programming language. "
+"For details on how to generate client stub code, please refer to the [Protobuf official tutorial](https://protobuf.dev/getting-started/)."
 
 #: ../../reference/apis/summary_cn.md:86
 msgid "在初始化 GRPC 客户端时，设置 HTTP 双向验证的配置。"
 msgstr ""
+"When initializing the GRPC client, set the configuration for HTTP mutual "
+"authentication."
 
 #: ../../reference/apis/summary_cn.md:87
 msgid "在初始化 GRPC 客户端时，读取 token 文件内容，设置 Metadata：Token={token}。"
 msgstr ""
+"When initializing the GRPC client, read the token file content and set the Metadata: Token={token}."
 
 #: ../../reference/apis/summary_cn.md:88
 msgid "使用 GRPC 客户端发起请求。"
 msgstr ""
+"Use the GRPC client to make a request."
 
 #: ../../reference/apis/summary_cn.md:120
 msgid ""
@@ -230,12 +288,18 @@ msgid ""
 "[grpcurl](https://github.com/fullstorydev/grpcurl/releases)，您需要替换 {} "
 "中的内容："
 msgstr ""
+"You can also use GRPC client tools to connect to the Kuscia API, such as "
+"[grpcurl](https://github.com/fullstorydev/grpcurl/releases). You need to "
+"replace the content within {}:"
 
 #: ../../reference/apis/summary_cn.md:122
 msgid ""
 "如果 GRPC 的主机端口是 8083 ，则可以执行下面的命令，端口号不是 8083 ，可以先用 `docker inspect "
 "--format=\"{{json .NetworkSettings.Ports}}\" ${容器名}` 命令检查下端口"
 msgstr ""
+"If the GRPC host port is 8083, you can execute the following command. If the "
+"port is not 8083, you can first check the port using the command: "
+"`docker inspect --format=\"{{json .NetworkSettings.Ports}}\" ${container_name}`."
 
 #: ../../reference/apis/summary_cn.md:133
 msgid ""
@@ -243,38 +307,51 @@ msgid ""
 "可以通过 `docker inspect --format=\"{{json .NetworkSettings.Ports}}\" ${容器名}`"
 " 获得 8083 端口的主机映射。"
 msgstr ""
+"The default GRPC container port is 8083 on the master or autonomy node. The "
+"GRPC host port on the master or autonomy node can be obtained through: "
+"`docker inspect --format=\"{{json .NetworkSettings.Ports}}\" ${container_name}`, "
+"which maps to port 8083."
 
 #: ../../reference/apis/summary_cn.md:136
 msgid "HTTP"
-msgstr ""
+msgstr "HTTP"
 
 #: ../../reference/apis/summary_cn.md:138
 msgid "为了使用 HTTP 连接上 Kuscia API，您需要："
-msgstr ""
+msgstr "To use HTTP to connect to the Kuscia API, you need to:"
 
 #: ../../reference/apis/summary_cn.md:140
-msgid ""
-"使用编程语言的 HTTP 客户端库连接上 Kuscia API，注意：Kuscia API 使用 双向 HTTP，所以您需要配置您的客户端库的双向"
+msgid "使用编程语言的 HTTP 客户端库连接上 Kuscia API，注意：Kuscia API 使用 双向 HTTP，所以您需要配置您的客户端库的双向"
 " HTTP 配置。"
 msgstr ""
+"Use your programming language's HTTP client library to connect to the Kuscia API. "
+"Note: The Kuscia API uses mutual HTTP, so you need to configure your client "
+"library for mutual HTTP."
 
 #: ../../reference/apis/summary_cn.md:142
 msgid "读取 Token 文件内容，设置 HTTP 请求的 Header，增加：TOKEN={token}。"
 msgstr ""
+"Read the token file content, set the HTTP request header, and add: "
+"TOKEN={token}."
 
 #: ../../reference/apis/summary_cn.md:143
 msgid "发送请求。"
-msgstr ""
+msgstr "Send the request."
 
 #: ../../reference/apis/summary_cn.md:145
 msgid "您也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，您需要替换 {} 中的内容："
 msgstr ""
+"You can also use an HTTP client tool to connect to the Kuscia API, such as curl. "
+"You need to replace the content within {}:"
 
 #: ../../reference/apis/summary_cn.md:146
 msgid ""
 "如果 HTTP 的主机端口是 8082 ，则可以执行下面的命令，端口号不是 8082 ，可以先用 `docker inspect "
 "--format=\"{{json .NetworkSettings.Ports}}\" ${容器名}` 命令检查下端口"
 msgstr ""
+"If the HTTP host port is 8082, you can execute the following command. If the "
+"port is not 8082, you can first check the port using the command: "
+"`docker inspect --format=\"{{json .NetworkSettings.Ports}}\" ${container_name}`."
 
 #: ../../reference/apis/summary_cn.md:157
 msgid ""
@@ -282,4 +359,7 @@ msgid ""
 "可以通过 `docker inspect --format=\"{{json .NetworkSettings.Ports}}\" ${容器名}`"
 " 获得 8082 端口的主机映射。"
 msgstr ""
-
+"The default HTTP container port is 8082 on the master or autonomy node. The "
+"HTTP host port on the master or autonomy node can be obtained through: "
+"`docker inspect --format=\"{{json .NetworkSettings.Ports}}\" ${container_name}`, "
+"which maps to port 8082."

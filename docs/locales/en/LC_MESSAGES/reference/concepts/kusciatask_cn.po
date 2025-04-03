@@ -19,187 +19,189 @@ msgstr ""
 
 #: ../../reference/concepts/kusciatask_cn.md:1
 msgid "KusciaTask"
-msgstr ""
+msgstr "KusciaTask"
 
 #: ../../reference/concepts/kusciatask_cn.md:3
 msgid ""
 "在 Kuscia 中，任务是用 KusciaTask 描述的。如果要运行一个任务，那么需要创建一个 KusciaTask。KusciaTask "
 "Controller 将会根据 KusciaTask 的描述信息，在参与方节点下创建任务相关的资源。"
 msgstr ""
+"In Kuscia, tasks are described using KusciaTask. To execute a task, you must create a KusciaTask. The KusciaTask Controller will create task-related resources under the participant nodes based on the KusciaTask's configuration."
 
 #: ../../reference/concepts/kusciatask_cn.md:7
 msgid "状态说明"
-msgstr ""
+msgstr "State Explanation"
 
 #: ../../reference/concepts/kusciatask_cn.md:9
 msgid "下图为 KusciaTask(KT) 的状态流转图。"
-msgstr ""
+msgstr "The following figure shows the state transition diagram of KusciaTask (KT)."
 
 #: ../../reference/concepts/kusciatask_cn.md:11
 msgid "![KusciaTaskState](../../imgs/kuscia_task_state.png)"
-msgstr ""
+msgstr "![KusciaTaskState](../../imgs/kuscia_task_state.png)"
 
 #: ../../reference/concepts/kusciatask_cn.md:11
 msgid "KusciaTaskState"
-msgstr ""
+msgstr "KusciaTaskState"
 
 #: ../../reference/concepts/kusciatask_cn.md:13
 msgid "KusciaTask 在其生命周期中会处于以下几种状态："
-msgstr ""
+msgstr "A KusciaTask can be in the following states during its lifecycle:"
 
 #: ../../reference/concepts/kusciatask_cn.md:15
 msgid "Pending: 此时 KusciaTask 正在被处理。"
-msgstr ""
+msgstr "**Pending**: The KusciaTask is being processed."
 
 #: ../../reference/concepts/kusciatask_cn.md:16
 msgid "Running: 此时 KusciaTask 正处于运行状态。当至少有一方的应用 Pod 为 Running 时，会进入此状态。"
-msgstr ""
+msgstr "**Running**: The KusciaTask is actively executing. This state is entered when at least one participant's application Pod is in the Running state."
 
 #: ../../reference/concepts/kusciatask_cn.md:17
 msgid "Succeeded: 此时 KusciaTask 运行成功。"
-msgstr ""
+msgstr "**Succeeded**: The KusciaTask has completed successfully."
 
 #: ../../reference/concepts/kusciatask_cn.md:18
 msgid "Failed: 此时 KusciaTask 运行失败。当预处理任务出错或任务运行过程中出错时，会进入该状态。"
-msgstr ""
+msgstr "**Failed**: The KusciaTask has failed. This occurs if preprocessing errors or runtime errors occur during execution."
 
 #: ../../reference/concepts/kusciatask_cn.md:20
 msgid "用例"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../reference/concepts/kusciatask_cn.md:22
 msgid "以下是一些 KusciaTask 的典型用例："
-msgstr ""
+msgstr "The following are typical use cases for KusciaTask:"
 
 #: ../../reference/concepts/kusciatask_cn.md:24
 msgid "创建 KusciaTask，你将体验如何使用 KusciaTask 创建一个任务。实际场景中，推荐使用 KusciaJob 管理任务流程。"
-msgstr ""
+msgstr "**Create a KusciaTask**: Learn how to create a task using KusciaTask. In practice, KusciaJob is recommended for managing task workflows."
 
 #: ../../reference/concepts/kusciatask_cn.md:25
 msgid "查看 KusciaTask，你将熟悉如何查看已创建的 KusciaTask 的运行状态。"
-msgstr ""
+msgstr "**View a KusciaTask**: Learn how to check the runtime status of an existing KusciaTask."
 
 #: ../../reference/concepts/kusciatask_cn.md:26
 msgid "清理 KusciaTask，你将熟悉如何清理运行结束或运行失败的 KusciaTask。"
-msgstr ""
+msgstr "**Clean Up a KusciaTask**: Learn how to remove completed or failed KusciaTasks."
 
 #: ../../reference/concepts/kusciatask_cn.md:27
 msgid "参考 KusciaTask 对象定义，你将获取详细的 KusciaTask 描述信息。"
-msgstr ""
+msgstr "**Reference the KusciaTask Object Definition**: Obtain detailed descriptions of KusciaTask configurations."
 
 #: ../../reference/concepts/kusciatask_cn.md:29
 msgid "创建 KusciaTask"
-msgstr ""
+msgstr "Creating a KusciaTask"
 
 #: ../../reference/concepts/kusciatask_cn.md:31
 msgid "下面以 `secretflow-task-psi.yaml` 的内容为例，介绍创建 KusciaTask。"
-msgstr ""
+msgstr "The following example uses `secretflow-task-psi.yaml` to illustrate how to create a KusciaTask."
 
 #: ../../reference/concepts/kusciatask_cn.md:49
 msgid "在该示例中:"
-msgstr ""
+msgstr "In this example:"
 
 #: ../../reference/concepts/kusciatask_cn.md:51
 msgid "`.metadata.name`：表示 KusciaTask 的名称，当前示例为 `secretflow-task-psi` 。"
-msgstr ""
+msgstr "`.metadata.name`: Specifies the KusciaTask name (e.g., `secretflow-task-psi`)."
 
 #: ../../reference/concepts/kusciatask_cn.md:52
 msgid "`.spec.initiator`：表示任务参与方中负责发起任务的节点标识，当前示例为 `alice` 。"
-msgstr ""
+msgstr "`.spec.initiator`: Identifies the participant node responsible for initiating the task (e.g., `alice`)."
 
 #: ../../reference/concepts/kusciatask_cn.md:53
 msgid "`.spec.parties`：表示所有任务参与方的信息。该字段下主要包含以下子字段："
-msgstr ""
+msgstr "`.spec.parties`: Contains information about all participating nodes. Key sub-fields include:"
 
 #: ../../reference/concepts/kusciatask_cn.md:54
 msgid "`.spec.parties[0].domainID`：表示任务的一个参与方节点标识为 `bob` 。"
-msgstr ""
+msgstr "`.spec.parties[0].domainID`: Identifies a participant node (e.g., `bob`)."
 
 #: ../../reference/concepts/kusciatask_cn.md:55
 msgid ""
 "`.spec.parties[0].appImageRef`：表示节点标识为 `bob` 的任务参与方所依赖的应用镜像 AppImage 名称为 "
 "`secretflow-image` 。"
-msgstr ""
+msgstr "`.spec.parties[0].appImageRef`: Specifies the AppImage name (e.g., `secretflow-image`) used by the `bob` participant."
 
 #: ../../reference/concepts/kusciatask_cn.md:56
 msgid "`.spec.parties[1].domainID`：表示任务的另一个参与方节点标识为 `alice`。"
-msgstr ""
+msgstr "`.spec.parties[1].domainID`: Identifies another participant node (e.g., `alice`)."
 
 #: ../../reference/concepts/kusciatask_cn.md:57
 msgid ""
 "`.spec.parties[1].appImageRef`：表示节点标识为 `alice` 的任务参与方所依赖的应用镜像 AppImage "
 "名称为 `secretflow-image` 。"
-msgstr ""
+msgstr "`.spec.parties[1].appImageRef`: Specifies the AppImage name (e.g., `secretflow-image`) used by the `alice` participant."
 
 #: ../../reference/concepts/kusciatask_cn.md:58
 msgid "`.spec.taskInputConfig`：表示任务输入参数配置。"
-msgstr ""
+msgstr "`.spec.taskInputConfig`: Configures input parameters for the task."
 
 #: ../../reference/concepts/kusciatask_cn.md:60
 msgid "参考"
-msgstr ""
+msgstr "Reference"
 
 #: ../../reference/concepts/kusciatask_cn.md:62
 msgid "下面以 `task-template` 模版为例，介绍 KusciaTask 所包含的完整字段。"
-msgstr ""
+msgstr "The following example uses the `task-template` to describe all fields in a KusciaTask."
 
 #: ../../reference/concepts/kusciatask_cn.md:226
 msgid "KusciaTask `metadata` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed explanation of KusciaTask `metadata` sub-fields:"
 
 #: ../../reference/concepts/kusciatask_cn.md:228
 msgid "`name`：表示 KusciaTask 的名称。"
-msgstr ""
+msgstr "`name`: Specifies the KusciaTask name."
 
 #: ../../reference/concepts/kusciatask_cn.md:230
 msgid "KusciaTask `spec` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed explanation of KusciaTask `spec` sub-fields:"
 
 #: ../../reference/concepts/kusciatask_cn.md:232
 msgid "`initiator`：表示任务参与方中负责发起任务的节点标识。"
-msgstr ""
+msgstr "`initiator`: Identifies the node responsible for initiating the task."
 
 #: ../../reference/concepts/kusciatask_cn.md:233
 msgid "`scheduleConfig`：表示任务调度的相关配置。默认为空，表示使用默认值。"
-msgstr ""
+msgstr "`scheduleConfig`: Configures task scheduling parameters. Defaults to empty (uses default values)."
 
 #: ../../reference/concepts/kusciatask_cn.md:234
 msgid "`scheduleConfig.minReservedMembers`：表示任务调度成功时，需要最小的已预留成功的任务参与方个数。默认为空，表示所有任务参与方都需成功预留资源。"
-msgstr ""
+msgstr "`scheduleConfig.minReservedMembers`: Minimum number of successfully reserved participants required for scheduling success. Defaults to all participants needing to reserve resources."
 
 #: ../../reference/concepts/kusciatask_cn.md:235
 msgid "`scheduleConfig.resourceReservedSeconds`：表示成功预留资源的任务参与方，在等待其他任务参与方成功预留资源期间，占用资源的时长，默认为30s。若占用资源超过该时长，则释放该资源，等待下一轮调度。"
-msgstr ""
+msgstr "`scheduleConfig.resourceReservedSeconds`: Time (default 30s) resources remain reserved while waiting for other participants. Exceeding this releases resources for re-scheduling."
 
 #: ../../reference/concepts/kusciatask_cn.md:236
 msgid "`scheduleConfig.lifecycleSeconds`：表示任务调度的生命周期，默认为300s。若在规定的时间内，任务没有完成调度，则将任务置为失败。"
-msgstr ""
+msgstr "`scheduleConfig.lifecycleSeconds`: Maximum task scheduling duration (default 300s). Tasks timing out are marked as failed."
 
 #: ../../reference/concepts/kusciatask_cn.md:237
 msgid "`scheduleConfig.retryIntervalSeconds`：表示任务在一个调度周期失败后，等待下次调度的时间间隔，默认为30s。"
-msgstr ""
+msgstr "`scheduleConfig.retryIntervalSeconds`: Wait time between scheduling retries (default 30s)."
 
 #: ../../reference/concepts/kusciatask_cn.md:238
 msgid "`taskInputConfig`：表示任务输入参数配置。"
-msgstr ""
+msgstr "`taskInputConfig`: Configures task input parameters."
 
 #: ../../reference/concepts/kusciatask_cn.md:239
 msgid "`parties`：表示所有任务参与方的信息。"
-msgstr ""
+msgstr "`parties`: Lists all participating nodes' information."
 
 #: ../../reference/concepts/kusciatask_cn.md:240
 msgid "`parties[].domainID`：表示任务参与方的节点标识。"
-msgstr ""
+msgstr "`parties[].domainID`: Identifier for each participant node."
 
 #: ../../reference/concepts/kusciatask_cn.md:241
 msgid "`parties[].appImageRef`：表示任务参与方所依赖的应用镜像名称。"
-msgstr ""
+msgstr "`parties[].appImageRef`: Name of the AppImage used by the participant."
 
 #: ../../reference/concepts/kusciatask_cn.md:242
 msgid ""
 "`parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，kuscia 会结合 "
 "[appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。"
 msgstr ""
+"`parties[].role`: Role of the participant (e.g., Host/Guest), defined by the engine. Kuscia uses the `role` field in the [AppImage](./appimage.md#appimage-ref) to select deployment templates."
 
 #: ../../reference/concepts/kusciatask_cn.md:243
 msgid ""
@@ -207,6 +209,7 @@ msgid ""
 "数量。Kuscia 调度器对每个任务参与方使用 Co-Scheduling 调度策略，  仅当任务参与方下已预留资源的 Pod "
 "数量大于等于该值时，设置该参与方为已完成预留资源。"
 msgstr ""
+"`parties[].minReservedPods`: Minimum number of reserved Pods for a participant. Defaults to all Pods. Kuscia uses Co-Scheduling: a participant is marked as reserved only if its reserved Pods meet or exceed this value."
 
 #: ../../reference/concepts/kusciatask_cn.md:245
 msgid ""
@@ -214,158 +217,160 @@ msgid ""
 "`parties[].appImageRef` 获取的模版信息。该字段下所包含的子字段含义，请参考概念 "
 "[AppImage](./appimage_cn.md)。"
 msgstr ""
+"`parties[].template`: Custom template for participant's application. Overrides the template from `parties[].appImageRef`. Refer to [AppImage](./appimage.md) for sub-field details."
 
 #: ../../reference/concepts/kusciatask_cn.md:247
 msgid "KusciaTask `status` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed explanation of KusciaTask `status` sub-fields:"
 
 #: ../../reference/concepts/kusciatask_cn.md:249
 msgid "`phase`：表示 KusciaTask 当前所处的阶段。[状态流转详情](#kuscia-task-state)。当前包括以下几种 PHASE："
-msgstr ""
+msgstr "`phase`: Current state of the KusciaTask. Possible values: [see state transitions](#kuscia-task-state)."
 
 #: ../../reference/concepts/kusciatask_cn.md:250
 msgid ""
 "`Pending`：表示 KusciaTask 被创建，然后 KusciaTask Controller 会根据 KusciaTask "
 "的描述信息，创建跟 KusciaTask 相关的任务资源，例如：ConfigMap、Service、Pod 等。"
 msgstr ""
+"`Pending`: The KusciaTask is created, and the Controller begins creating resources (e.g., ConfigMap, Service, Pods) based on its configuration."
 
 #: ../../reference/concepts/kusciatask_cn.md:251
 msgid "`Running`：表示 KusciaTask 正处于运行状态。"
-msgstr ""
+msgstr "`Running`: The KusciaTask is actively executing."
 
 #: ../../reference/concepts/kusciatask_cn.md:252
 msgid "`Succeeded`：表示 KusciaTask 运行成功。"
-msgstr ""
+msgstr "`Succeeded`: The KusciaTask has completed successfully."
 
 #: ../../reference/concepts/kusciatask_cn.md:253
 msgid "`Failed`：表示 KusciaTask 运行失败。"
-msgstr ""
+msgstr "`Failed`: The KusciaTask has failed."
 
 #: ../../reference/concepts/kusciatask_cn.md:254
 msgid "`partyTaskStatus`：表示参与方的任务运行状态。"
-msgstr ""
+msgstr "`partyTaskStatus`: Runtime status of each participant's task."
 
 #: ../../reference/concepts/kusciatask_cn.md:255
 msgid "`partyTaskStatus[].domainID`：表示参与方的节点标识。"
-msgstr ""
+msgstr "`partyTaskStatus[].domainID`: Identifier of the participant node."
 
 #: ../../reference/concepts/kusciatask_cn.md:256
 msgid "`partyTaskStatus[].role`：表示参与方的角色。"
-msgstr ""
+msgstr "`partyTaskStatus[].role`: Role of the participant."
 
 #: ../../reference/concepts/kusciatask_cn.md:257
 msgid "`partyTaskStatus[].phase`：表示所属参与方的单方任务当前所处阶段。"
-msgstr ""
+msgstr "`partyTaskStatus[].phase`: Current phase of the participant's task."
 
 #: ../../reference/concepts/kusciatask_cn.md:258
 msgid "`partyTaskStatus[].message`：表示所属参与方的单方任务运行失败时的详细信息。"
-msgstr ""
+msgstr "`partyTaskStatus[].message`: Detailed error information if the participant's task failed."
 
 #: ../../reference/concepts/kusciatask_cn.md:259
 msgid "`reason`: 表示为什么 KusciaTask 处于该阶段。"
-msgstr ""
+msgstr "`reason`: Reason for the current KusciaTask phase."
 
 #: ../../reference/concepts/kusciatask_cn.md:260
 msgid "`message`: 表示 KusciaTask 处于该阶段的详细描述信息，用于对 `reason` 的补充。"
-msgstr ""
+msgstr "`message`: Detailed description of the phase, providing additional context to `reason`."
 
 #: ../../reference/concepts/kusciatask_cn.md:261
 msgid "`conditions`: 表示 KusciaTask 处于该阶段时所包含的一些状况。"
-msgstr ""
+msgstr "`conditions`: Conditions associated with the current KusciaTask phase."
 
 #: ../../reference/concepts/kusciatask_cn.md:262
 msgid "`conditions[].type`: 表示状况的名称。"
-msgstr ""
+msgstr "`conditions[].type`: Name of the condition."
 
 #: ../../reference/concepts/kusciatask_cn.md:263
 msgid "`conditions[].status`: 表示该状况是否适用，可能的取值有 `True` 、`False` 或 `Unknown` 。"
-msgstr ""
+msgstr "`conditions[].status`: Status of the condition (possible values: `True`, `False`, `Unknown`)."
 
 #: ../../reference/concepts/kusciatask_cn.md:264
 msgid "`conditions[].reason`: 表示该状况的原因。"
-msgstr ""
+msgstr "`conditions[].reason`: Reason for the condition."
 
 #: ../../reference/concepts/kusciatask_cn.md:265
 msgid "`conditions[].message`: 表示该状况的详细信息。"
-msgstr ""
+msgstr "`conditions[].message`: Detailed information about the condition."
 
 #: ../../reference/concepts/kusciatask_cn.md:266
 msgid "`conditions[].lastTransitionTime`: 表示转换为该状态的时间戳。"
-msgstr ""
+msgstr "`conditions[].lastTransitionTime`: Timestamp of the last phase transition."
 
 #: ../../reference/concepts/kusciatask_cn.md:267
 msgid "`podStatuses`: 表示 KusciaTask 相关的所有参与方的 Pod 状态信息。"
-msgstr ""
+msgstr "`podStatuses`: Status information of all Pods related to the KusciaTask."
 
 #: ../../reference/concepts/kusciatask_cn.md:268
 msgid "`podStatuses[].podName`: 表示 Pod 的名称。"
-msgstr ""
+msgstr "`podStatuses[].podName`: Name of the Pod."
 
 #: ../../reference/concepts/kusciatask_cn.md:269
 msgid "`podStatuses[].namespace`: 表示 Pod 的所在的 Namespace。"
-msgstr ""
+msgstr "`podStatuses[].namespace`: Namespace where the Pod resides."
 
 #: ../../reference/concepts/kusciatask_cn.md:270
 msgid "`podStatuses[].nodeName`: 表示 Pod 的所在的 Node 名称。"
-msgstr ""
+msgstr "`podStatuses[].nodeName`: Name of the Node hosting the Pod."
 
 #: ../../reference/concepts/kusciatask_cn.md:271
 msgid "`podStatuses[].podPhase`: 表示 Pod 的所处阶段。"
-msgstr ""
+msgstr "`podStatuses[].podPhase`: Current phase of the Pod."
 
 #: ../../reference/concepts/kusciatask_cn.md:272
 msgid "`podStatuses[].reason`: 表示 Pod 处在该阶段的原因。"
-msgstr ""
+msgstr "`podStatuses[].reason`: Reason for the Pod's current phase."
 
 #: ../../reference/concepts/kusciatask_cn.md:273
 msgid "`podStatuses[].message`: 表示 Pod 处在该阶段的详细描述信息。"
-msgstr ""
+msgstr "`podStatuses[].message`: Detailed description of the Pod's phase."
 
 #: ../../reference/concepts/kusciatask_cn.md:274
 msgid "`podStatuses[].terminationLog`: 表示 Pod 异常终止时的日志信息。"
-msgstr ""
+msgstr "`podStatuses[].terminationLog`: Log information if the Pod terminated abnormally."
 
 #: ../../reference/concepts/kusciatask_cn.md:275
 msgid "`serviceStatuses`: 表示 KusciaTask 相关的所有参与方的 Service 状态信息。"
-msgstr ""
+msgstr "`serviceStatuses`: Status information of all Services related to the KusciaTask."
 
 #: ../../reference/concepts/kusciatask_cn.md:276
 msgid "`serviceStatuses[].createTime`: 表示 Service 的创建时间戳。"
-msgstr ""
+msgstr "`serviceStatuses[].createTime`: Creation timestamp of the Service."
 
 #: ../../reference/concepts/kusciatask_cn.md:277
 msgid "`serviceStatuses[].namespace`: 表示 Service 的所在的 Namespace。"
-msgstr ""
+msgstr "`serviceStatuses[].namespace`: Namespace where the Service resides."
 
 #: ../../reference/concepts/kusciatask_cn.md:278
 msgid "`serviceStatuses[].portName`: 表示 Service 的端口名称。"
-msgstr ""
+msgstr "`serviceStatuses[].portName`: Name of the Service's port."
 
 #: ../../reference/concepts/kusciatask_cn.md:279
 msgid "`serviceStatuses[].portNumber`: 表示 Service 的端口号。"
-msgstr ""
+msgstr "`serviceStatuses[].portNumber`: Port number of the Service."
 
 #: ../../reference/concepts/kusciatask_cn.md:280
 msgid "`serviceStatuses[].readyTime`: 表示 Service 就绪并可以对外提供服务的时间。"
-msgstr ""
+msgstr "`serviceStatuses[].readyTime`: Time when the Service became ready to serve requests."
 
 #: ../../reference/concepts/kusciatask_cn.md:281
 msgid "`serviceStatuses[].scope`: 表示 Service 的端口使用范围。"
-msgstr ""
+msgstr "`serviceStatuses[].scope`: Scope of the Service's port usage (e.g., ClusterIP, NodePort)."
 
 #: ../../reference/concepts/kusciatask_cn.md:282
 msgid "`serviceStatuses[].serviceName`: 表示 Service 的名称。"
-msgstr ""
+msgstr "`serviceStatuses[].serviceName`: Name of the Service."
 
 #: ../../reference/concepts/kusciatask_cn.md:283
 msgid "`startTime`: 表示 KusciaTask 第一次被 Kuscia 控制器处理的时间戳。"
-msgstr ""
+msgstr "`startTime`: Timestamp when the KusciaTask was first processed by the Kuscia Controller."
 
 #: ../../reference/concepts/kusciatask_cn.md:284
 msgid "`completionTime`: 表示 KusciaTask 运行完成的时间戳。"
-msgstr ""
+msgstr "`completionTime`: Timestamp when the KusciaTask completed execution."
 
 #: ../../reference/concepts/kusciatask_cn.md:285
 msgid "`lastReconcileTime`: 表示 KusciaTask 上次更新的时间戳。"
-msgstr ""
+msgstr "`lastReconcileTime`: Timestamp of the last reconciliation for the KusciaTask."
 

@@ -20,7 +20,7 @@ msgstr ""
 #: ../../reference/concepts/kusciajob_cn.md:1
 #: ../../reference/concepts/kusciajob_cn.md:8
 msgid "KusciaJob"
-msgstr ""
+msgstr "KusciaJob"
 
 #: ../../reference/concepts/kusciajob_cn.md:3
 msgid ""
@@ -29,56 +29,58 @@ msgid ""
 "Controller 将会按照您在 KusciaJob 中指定的调度模式自动推动 KusciaJob 中描述的 KusciaTask "
 "的创建，直到所有的 KusciaTask 都完成或失败。 每一个 KusciaTask 将会在多方之间执行一个联合计算的算子任务。"
 msgstr ""
+"In Kuscia, you can use KusciaJob to represent a workflow. A KusciaJob is a directed acyclic graph (DAG) composed of KusciaTasks, where for edge a -> b, we say task a is a dependency of task b. You can create a KusciaJob, and the KusciaJob Controller will automatically drive the creation of KusciaTasks according to the scheduling mode specified in the KusciaJob until all KusciaTasks complete or fail. Each KusciaTask will execute a federated computation operator task among multiple parties."
 
 #: ../../reference/concepts/kusciajob_cn.md:8
 msgid "![KusciaJob](../../imgs/kusciajob_example.png)"
-msgstr ""
+msgstr "![KusciaJob](../../imgs/kusciajob_example.png)"
 
 #: ../../reference/concepts/kusciajob_cn.md:10
 msgid "上面是一个典型的 KusciaJob 示例："
-msgstr ""
+msgstr "Above is a typical KusciaJob example:"
 
 #: ../../reference/concepts/kusciajob_cn.md:12
 msgid "**隐私求交** 将参与方的数据作为输入，求出参与方的交集。"
-msgstr ""
+msgstr "**Private Set Intersection (PSI)**: Takes participant data as input and computes their intersection."
 
 #: ../../reference/concepts/kusciajob_cn.md:13
 msgid "**随机分割** 将参与方的交集作为输入，切分成训练集和测试集。"
-msgstr ""
+msgstr "**Random Split**: Takes the intersection data as input and splits it into training and test sets."
 
 #: ../../reference/concepts/kusciajob_cn.md:14
 msgid "**模型训练** 将参与方的训练集作为输入，训练出算法模型。"
-msgstr ""
+msgstr "**Model Training**: Takes training sets as input and trains an algorithm model."
 
 #: ../../reference/concepts/kusciajob_cn.md:15
 msgid "**预测** 将算法模型和测试集作为输入，计算出预测结果。"
-msgstr ""
+msgstr "**Prediction**: Takes the algorithm model and test set as input to compute prediction results."
 
 #: ../../reference/concepts/kusciajob_cn.md:19
 msgid "状态说明"
-msgstr ""
+msgstr "State Description"
 
 #: ../../reference/concepts/kusciajob_cn.md:21
 msgid "下图为 KusciaJob 的状态流转图，其中红色字体表示 KusciaAPI 接口操作。"
-msgstr ""
+msgstr "The diagram below shows KusciaJob state transitions, with red text indicating KusciaAPI operations."
 
 #: ../../reference/concepts/kusciajob_cn.md:23
 msgid "![KusciaJobState](../../imgs/kuscia_job_state.png)"
-msgstr ""
+msgstr "![KusciaJobState](../../imgs/kuscia_job_state.png)"
 
 #: ../../reference/concepts/kusciajob_cn.md:23
 msgid "KusciaJobState"
-msgstr ""
+msgstr "KusciaJobState"
 
 #: ../../reference/concepts/kusciajob_cn.md:25
 msgid "KusciaJob 在其生命周期中会处于以下几种状态："
-msgstr ""
+msgstr "A KusciaJob may be in the following states during its lifecycle:"
 
 #: ../../reference/concepts/kusciajob_cn.md:27
 msgid ""
 "Initialized: 此时 Job 刚被发起方在发起方侧创建完成，但 Job 信息还未同步至其他参与方。若 Job 已同步至其他所有参与方则 "
 "Job 进入 AwaitingApproval 状态。"
 msgstr ""
+"**Initialized**: The job has just been created by the initiator but hasn't been synchronized to other participants. When synchronized to all participants, the job enters AwaitingApproval state."
 
 #: ../../reference/concepts/kusciajob_cn.md:28
 msgid ""
@@ -88,6 +90,7 @@ msgid ""
 "job)进行审批。待 Job 的所有参与方审批通过则 Job 进入 Pending 状态。若任一参与方审批拒绝则 Job 进入到 "
 "ApprovalReject 状态。"
 msgstr ""
+"**AwaitingApproval**: Only occurs in P2P networking mode with [job approval enabled](#enable-approval). Participants must call the [ApproveJob API](../apis/kusciajob_cn.md#approval-job). The job enters Pending state when all participants approve, or ApprovalReject state if any participant rejects."
 
 #: ../../reference/concepts/kusciajob_cn.md:29
 msgid ""
@@ -95,6 +98,7 @@ msgid ""
 "信令后，Job 进入到 Running状态（注：仅 BFIA 互联互通协议时发起方会向各参与方显式的发送 Start 信令，在 Kuscia "
 "内部协议中无需显式发送 Start 信令，Job 会自动从 Pending 状态进入到 Running 状态）。"
 msgstr ""
+"**Pending**: The job has been approved by all participants and awaits the initiator's Start command. After all participants receive the Start signal, the job enters Running state (Note: Only BFIA protocol requires explicit Start signals - Kuscia's internal protocol automatically transitions from Pending to Running)."
 
 #: ../../reference/concepts/kusciajob_cn.md:30
 msgid ""
@@ -103,6 +107,7 @@ msgid ""
 "进入 Succeeded 状态。 当 Job 中的 [关键 Task](#task-classification) 执行失败，则 Job 进入到 "
 "Failed 状态。"
 msgstr ""
+"**Running**: The job is in scheduling state. Note: Running state doesn't necessarily mean any task is running, as tasks may not be created yet. When all tasks succeed, the job enters Succeeded state. If any [critical task](#task-classification) fails, the job enters Failed state."
 
 #: ../../reference/concepts/kusciajob_cn.md:31
 msgid ""
@@ -111,12 +116,14 @@ msgid ""
 "会被终止掉，Task进入到Failed状态。 Suspended 状态的 Job 可通过 [Restart "
 "接口](../apis/kusciajob_cn.md#restart-job)重新运行。"
 msgstr ""
+"**Suspended**: Occurs when a participant [suspends](../apis/kusciajob_cn.md#suspend-job) a Running job. Running tasks are terminated (entering Failed state). Suspended jobs can be restarted via the [Restart API](../apis/kusciajob_cn.md#restart-job)."
 
 #: ../../reference/concepts/kusciajob_cn.md:32
 msgid ""
 "Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 "
 "Succeeded 状态。 Succeeded 状态是一种终态，终态则不会再流转到其他状态。"
 msgstr ""
+"**Succeeded**: All tasks are in Succeeded or Failed state, with all critical tasks succeeded. This is a terminal state with no further transitions."
 
 #: ../../reference/concepts/kusciajob_cn.md:33
 msgid ""
@@ -124,18 +131,19 @@ msgid ""
 "Failed 状态。 Failed 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md"
 "#restart-job)重新运行。"
 msgstr ""
+"**Failed**: All tasks are in Succeeded or Failed state, with at least one critical task failed. Failed jobs can be restarted via the [Restart API](../apis/kusciajob_cn.md#restart-job)."
 
 #: ../../reference/concepts/kusciajob_cn.md:34
 msgid "ApprovalReject: Job 被某一参与方审批为拒绝执行。 ApprovalReject 状态是一种终态，终态则不会再流转到其他状态。"
-msgstr ""
+msgstr "**ApprovalReject**: The job was rejected by a participant. This is a terminal state with no further transitions."
 
 #: ../../reference/concepts/kusciajob_cn.md:35
 msgid "Cancelled: Job 被某一方取消，被取消的 Job 不可被再次执行。 Cancelled 状态是一种终态，终态则不会再流转到其他状态。"
-msgstr ""
+msgstr "**Cancelled**: The job was canceled by a party and cannot be executed again. This is a terminal state with no further transitions."
 
 #: ../../reference/concepts/kusciajob_cn.md:39
 msgid "开启 Job 审批"
-msgstr ""
+msgstr "Enabling Job Approval"
 
 #: ../../reference/concepts/kusciajob_cn.md:41
 msgid ""
@@ -144,6 +152,7 @@ msgid ""
 "则一直处于待审批（AwaitingApproval）或审批拒绝（ApprovalReject）的状态不会被调度执行，作为发起方（Alice）无需要调用"
 " KusciaAPI 审批 Job。"
 msgstr ""
+"Job approval refers to the process where when the initiator (Alice) executes a Job, if a participant (Bob) has enabled Job approval configuration, the participant (Bob) must invoke the KusciaAPI to approve the Job. The Job will only execute on Bob's side after approval. Otherwise, the Job remains in AwaitingApproval or ApprovalReject states and will not be scheduled. The initiator (Alice) does not need to approve the Job via KusciaAPI."
 
 #: ../../reference/concepts/kusciajob_cn.md:43
 msgid ""
@@ -153,68 +162,71 @@ msgid ""
 "审批后，当本方作为参与方时需要调用 [KusciaAPI](../apis/kusciajob_cn.md#approval-job) 进行 "
 "Job 审批，审批通过后 Job 才可以在本方执行，否则 Job 不执行。当本方作为发起方时，本方无需审批。"
 msgstr ""
+"In P2P network mode, Job approval can be enabled in the control plane (Master or Autonomy). Set `enableWorkloadApprove` to `true` in the [kuscia.yaml](../../deployment/kuscia_config.md#configuration-detail) configuration file to enable Job approval. Once enabled, when acting as a participant, you must call the [KusciaAPI](../apis/kusciajob.md#approval-job) to approve Jobs before they can execute on your side. Without approval, Jobs will not execute. When acting as the initiator, no approval is required."
 
 #: ../../reference/concepts/kusciajob_cn.md:46
 msgid ""
 "在中心化组网模式下，仅有一个 Master 控制中心，且由唯一的控制中心完成 Job 的调度，所以无法开启 Job 审批配置也无需调用 "
 "KusciaAPI 进行 Job 审批。"
 msgstr ""
+"In centralized network mode, there is only one Master control center that handles all Job scheduling, so Job approval configuration cannot be enabled and there is no need to call KusciaAPI for Job approval."
 
 #: ../../reference/concepts/kusciajob_cn.md:48
 msgid "用例"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../reference/concepts/kusciajob_cn.md:50
 msgid "以下是一些 KusciaJob 的典型用例:"
-msgstr ""
+msgstr "The following are typical use cases for KusciaJob:"
 
 #: ../../reference/concepts/kusciajob_cn.md:52
 msgid ""
 "创建 KusciaJob 以完成一个任务流程。例如您可以创建一个 KusciaJob 来描述 _隐私求交->随机分割->训练模型->预测_ "
 "这样的任务流程。"
 msgstr ""
+"Create a KusciaJob to define workflows like: _PSI (Private Set Intersection) -> Random Split -> Model Training -> Prediction_."
 
 #: ../../reference/concepts/kusciajob_cn.md:53
 msgid "区分任务类型 以及 为 KusciaJob 指定调度模式。"
-msgstr ""
+msgstr "Differentiate between task types and configure appropriate scheduling modes for KusciaJobs."
 
 #: ../../reference/concepts/kusciajob_cn.md:54
 msgid "对于 KusciaJob 中那些即使失败也没关系的 KusciaTask， 通过`tasks[].tolerable`，您可以指定其为可容忍任务。"
-msgstr ""
+msgstr "Designate non-critical KusciaTasks as tolerable using the `tasks[].tolerable` parameter, allowing workflow execution to continue even if these tasks fail."
 
 #: ../../reference/concepts/kusciajob_cn.md:55
 msgid ""
 "通过设置 KusciaJob 的`scheduleMode`， 您可以为 KusciaJob 指定不同的调度模式。目前支持 BestEffort "
 "和 Strict 两种策略。"
-msgstr ""
+msgstr "Customize execution behavior by configuring the `scheduleMode` parameter. Currently supports two strategies: BestEffort and Strict."
 
 #: ../../reference/concepts/kusciajob_cn.md:56
 msgid "停止 KusciaJob。"
-msgstr ""
+msgstr "Terminate a running KusciaJob."
 
 #: ../../reference/concepts/kusciajob_cn.md:57
 msgid "清理 KusciaJob。"
-msgstr ""
+msgstr "Clean up KusciaJob resources."
 
 #: ../../reference/concepts/kusciajob_cn.md:61
 msgid "创建 KusciaJob"
-msgstr ""
+msgstr "Creating a KusciaJob"
 
 #: ../../reference/concepts/kusciajob_cn.md:63
 msgid "下面是一个 KusciaJob 的示例。"
-msgstr ""
+msgstr "Below is an example KusciaJob:"
 
 #: ../../reference/concepts/kusciajob_cn.md:65
 msgid "job-best-effort-linear.yaml:"
-msgstr ""
+msgstr "job-best-effort-linear.yaml:"
 
 #: ../../reference/concepts/kusciajob_cn.md:97
 msgid "在该例中："
-msgstr ""
+msgstr "Key aspects of this example:"
 
 #: ../../reference/concepts/kusciajob_cn.md:99
 msgid "创建名为 job-best-effort-linear （由`.metadata.name`字段标明）的 KusciaJob。"
-msgstr ""
+msgstr "A KusciaJob named `job-best-effort-linear` is created (specified by the `.metadata.name` field)."
 
 #: ../../reference/concepts/kusciajob_cn.md:100
 msgid ""
@@ -226,16 +238,17 @@ msgid ""
 "cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)**。"
 " 若您不指定 KusciaJob 中的 taskID，则 KusciaJob Controller 会生成该 taskID。"
 msgstr ""
+"Two KusciaTasks are created sequentially: `job-psi` for Private Set Intersection and `job-split` for random data splitting. The KusciaJob Controller first creates `job-psi`, and only after its successful completion will `job-split` be created, as specified by the `dependencies` field in `job-split`. **The `.metadata.name` of each created KusciaTask is determined by the `taskID` specified here. If you manually specify a `taskID`, ensure it's unique within the system and complies with [RFC 1123 label name requirements](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names)**. If you don't specify a `taskID` in the KusciaJob, the KusciaJob Controller will generate one automatically."
 
 #: ../../reference/concepts/kusciajob_cn.md:105
 msgid "`parties`指定了任务参与方的 ID 和角色，这个字段说明了这个算子将会在哪些参与方以什么角色执行。"
-msgstr ""
+msgstr "The `parties` field specifies the IDs and roles of task participants, defining which parties will execute the operator and in what capacity."
 
 #: ../../reference/concepts/kusciajob_cn.md:106
 msgid ""
 "`appImage`用于表明 KusciaTask 在多方计算中执行的算法镜像。您可以通过查看 "
 "[AppImage](./appimage_cn.md) 获得更多的信息。"
-msgstr ""
+msgstr "The `appImage` field identifies the algorithm container image used by the KusciaTask in multi-party computation. For more detailed information, refer to the [AppImage](./appimage.md) documentation."
 
 #: ../../reference/concepts/kusciajob_cn.md:107
 msgid ""
@@ -244,10 +257,11 @@ msgid ""
 "output.csv ，而 job-split 将会读取新产生的两个求交数据，并进行随机分割， 随机分割的结果也会保存在 alice 和 bob "
 "两方。"
 msgstr ""
+"The `taskInputConfig` field configures the operator parameters used during task execution. In this example, `job-psi` reads `alice.csv` from Alice and `bob.csv` from Bob to perform private set intersection, computing the intersection data and saving it as `psi-output.csv` on both sides. Subsequently, `job-split` processes these intersection outputs and performs random splitting, with the results also stored on both Alice and Bob's sides."
 
 #: ../../reference/concepts/kusciajob_cn.md:113
 msgid "KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。"
-msgstr ""
+msgstr "Operator parameters in KusciaJob are defined by the `taskInputConfig` field, with different parameters for different operators."
 
 #: ../../reference/concepts/kusciajob_cn.md:115
 msgid ""
@@ -255,10 +269,11 @@ msgid ""
 "[SecretFlow 官网](https://www.secretflow.org.cn/zh-"
 "CN/docs/secretflow/main/getting_started)："
 msgstr ""
+"This tutorial uses SecretFlow's operator parameter definitions (version `1.7.0b0`). For other versions, refer to the [SecretFlow official website](https://www.secretflow.org.cn/docs/secretflow/main/getting_started):"
 
 #: ../../reference/concepts/kusciajob_cn.md:117
 msgid "`sf_datasource_config`：表示 SecretFlow 输入输出所需要的节点数据源信息。"
-msgstr ""
+msgstr "`sf_datasource_config`: Node data source information required for SecretFlow input/output."
 
 #: ../../reference/concepts/kusciajob_cn.md:118
 msgid ""
@@ -266,6 +281,7 @@ msgid ""
 "集群文档](https://www.secretflow.org.cn/docs/secretflow/latest/zh-"
 "Hans/component/comp_spec_design#sfclusterdesc)。"
 msgstr ""
+"`sf_cluster_desc`: SecretFlow cluster information. See [SecretFlow cluster documentation](https://www.secretflow.org.cn/docs/secretflow/latest/en/component/comp_spec_design#sfclusterdesc) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:119
 msgid ""
@@ -273,6 +289,7 @@ msgid ""
 "算子运行配置文档](https://www.secretflow.org.cn/docs/spec/latest/zh-"
 "Hans/intro#nodeevalparam)。"
 msgstr ""
+"`sf_node_eval_param`: Detailed configuration for SecretFlow operators. See [SecretFlow operator configuration documentation](https://www.secretflow.org.cn/docs/spec/latest/en/intro#nodeevalparam) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:120
 msgid ""
@@ -281,6 +298,7 @@ msgid ""
 "[DistData](https://www.secretflow.org.cn/docs/spec/latest/zh-"
 "Hans/spec#distdata)。"
 msgstr ""
+"`sf_input_ids`: SecretFlow input data `id`. The SecretFlow engine converts Kuscia's [DomainData](../reference/concepts/domaindata.md) into the required [DistData](https://www.secretflow.org.cn/docs/spec/latest/en/spec#distdata)."
 
 #: ../../reference/concepts/kusciajob_cn.md:121
 msgid ""
@@ -289,22 +307,23 @@ msgid ""
 "Hans/spec#distdata) 转换成 Kuscia 的 "
 "[DomainData](../reference/concepts/domaindata_cn.md)。"
 msgstr ""
+"`sf_output_ids`: SecretFlow output data `id`. The SecretFlow engine converts output [DistData](https://www.secretflow.org.cn/docs/spec/latest/en/spec#distdata) into Kuscia's [DomainData](../reference/concepts/domaindata.md)."
 
 #: ../../reference/concepts/kusciajob_cn.md:122
 msgid "`sf_output_uris`：表示 SecretFlow 输出数据路径。"
-msgstr ""
+msgstr "`sf_output_uris`: SecretFlow output data paths."
 
 #: ../../reference/concepts/kusciajob_cn.md:126
 msgid "KusciaJob 的调度"
-msgstr ""
+msgstr "KusciaJob Scheduling"
 
 #: ../../reference/concepts/kusciajob_cn.md:130
 msgid "任务分类"
-msgstr ""
+msgstr "Task Classification"
 
 #: ../../reference/concepts/kusciajob_cn.md:132
 msgid "某些情况下，您可能有一些非关键的任务需要编排到 KusciaJob 中，这些任务即使失败也不应该对整个 KusciaJob 的调度结果有影响。"
-msgstr ""
+msgstr "In some cases, you may have non-critical tasks in KusciaJob that shouldn't affect overall scheduling even if they fail."
 
 #: ../../reference/concepts/kusciajob_cn.md:134
 msgid ""
@@ -312,26 +331,27 @@ msgid ""
 "含有隐私求交和数据统计两个任务，但是您可能只希望隐私求交的任务是必须成功的，但是数据统计的任务是允许失败的，换句话说， "
 "您只想要隐私求交的结果文件，而这个结果文件的统计信息您只是希望尽可能拿到。"
 msgstr ""
+"For example, a KusciaJob with two tasks: PSI (Private Set Intersection) and data statistics. You may require PSI to succeed but allow statistics to fail - meaning you primarily want the PSI result file, with statistics being optional."
 
 #: ../../reference/concepts/kusciajob_cn.md:137
 msgid "按照上述的情景，我们将任务分为了两种："
-msgstr ""
+msgstr "Based on this scenario, we classify tasks into two types:"
 
 #: ../../reference/concepts/kusciajob_cn.md:139
 msgid "Critical Task: 关键任务，失败了会影响 KusciaJob 的调度逻辑和最终状态，如上例中的隐私求交任务。"
-msgstr ""
+msgstr "Critical Task: Affects KusciaJob scheduling and final status if failed (e.g., PSI task)."
 
 #: ../../reference/concepts/kusciajob_cn.md:140
 msgid "Tolerable Task: 可容忍任务，失败了不会影响 KusciaJob 的调度逻辑和最终状态，如上例中的数据统计任务。"
-msgstr ""
+msgstr "Tolerable Task: Doesn't affect scheduling or final status if failed (e.g., statistics task)."
 
 #: ../../reference/concepts/kusciajob_cn.md:142
 msgid "字段`tasks[].tolerable`可以描述 KusciaJob 中的 Task 是否是容忍失败的， 默认值为 false。"
-msgstr ""
+msgstr "The `tasks[].tolerable` field indicates whether a task can tolerate failure (default: false)."
 
 #: ../../reference/concepts/kusciajob_cn.md:146
 msgid "KusciaJob 的调度模式"
-msgstr ""
+msgstr "KusciaJob Scheduling Modes"
 
 #: ../../reference/concepts/kusciajob_cn.md:148
 msgid ""
@@ -339,10 +359,11 @@ msgid ""
 "KusciaJob 中的某个 Critical KusciaTask （注意不包括 Tolerable KusciaTask） 失败时，整个 "
 "KusciaJob 是否继续进行调度。"
 msgstr ""
+"KusciaJob supports two scheduling modes: BestEffort and Strict. These modes determine whether the entire KusciaJob continues scheduling when a Critical KusciaTask (excluding Tolerable KusciaTasks) fails."
 
 #: ../../reference/concepts/kusciajob_cn.md:151
 msgid "BestEffort"
-msgstr ""
+msgstr "BestEffort"
 
 #: ../../reference/concepts/kusciajob_cn.md:153
 msgid ""
@@ -351,46 +372,51 @@ msgid ""
 "此时整个 KusciaJob 的状态仍处于 Running 状态。 当所有的 KusciaTask 都调度完成后，KusciaJob "
 "的状态会变更为 Failed 状态。"
 msgstr ""
+"In BestEffort mode, when a Critical KusciaTask fails, all subsequent tasks that depend on this failed KusciaTask will not execute. However, all KusciaTasks that do not depend on the failed KusciaTask will continue to be scheduled. During this process, the entire KusciaJob remains in Running state. Once all KusciaTasks have completed scheduling, the KusciaJob status will change to Failed."
 
 #: ../../reference/concepts/kusciajob_cn.md:156
 msgid "Strict"
-msgstr ""
+msgstr "Strict"
 
 #: ../../reference/concepts/kusciajob_cn.md:158
 msgid ""
 "而在 Strict 模式下，当 KusciaJob 中的某个 Critical KusciaTask 失败后，整个 KusciaJob 的所有 "
 "Task 都不再进行调度，并且 KusciaJob 的状态立即变更为 Failed 状态。"
 msgstr ""
+"In Strict mode, when a Critical KusciaTask fails: all tasks are canceled immediately, and the job status becomes Failed."
 
 #: ../../reference/concepts/kusciajob_cn.md:161
 msgid "理解 KusciaJob 调度的关键点"
-msgstr ""
+msgstr "Key Points of KusciaJob Scheduling"
 
 #: ../../reference/concepts/kusciajob_cn.md:163
 msgid ""
 "KusciaJob 最终状态取决于 是否有 Critical KusciaTask 失败，任意一个 Critical KusciaTask "
 "失败，都会使得 KusciaJob 最终状态为 Failed。**Tolerable Task 并不参与 KusciaJob 最终状态的计算。**"
 msgstr ""
+"The final status of a KusciaJob depends on whether any Critical KusciaTask has failed. If any Critical KusciaTask fails, the KusciaJob's final status will be Failed. **Tolerable Tasks do not contribute to the calculation of the KusciaJob's final status.**"
 
 #: ../../reference/concepts/kusciajob_cn.md:165
 msgid ""
 "KusciaJob 的 `scheduleMode`， 当某个 **Critical KusciaTask** "
 "失败，对于剩下仍然可调度的任务是否继续进行调度。"
 msgstr ""
+"`scheduleMode` determines whether to continue scheduling remaining tasks after a **Critical KusciaTask** failure."
 
 #: ../../reference/concepts/kusciajob_cn.md:167
 msgid "可容忍任务示例"
-msgstr ""
+msgstr "Tolerable Task Example"
 
 #: ../../reference/concepts/kusciajob_cn.md:169
 msgid ""
 "当该字段值为 true 时，如果这个 KusciaTask 失败了，那么整个 KusciaJob 的调度将会继续进行，并且这个 "
 "KusciaTask 的结果不影响最终整个 KusciaJob 的状态。"
 msgstr ""
+"When true, if this KusciaTask fails: job scheduling continues, and the task's outcome doesn't affect the final job status."
 
 #: ../../reference/concepts/kusciajob_cn.md:171
 msgid "下面的示例展示了这样的场景："
-msgstr ""
+msgstr "The following example demonstrates this scenario:"
 
 #: ../../reference/concepts/kusciajob_cn.md:204
 msgid ""
@@ -398,12 +424,14 @@ msgid ""
 "](#create-kuscia-job) 中的示例 job-best-effort-linear 的区别在于， 这个 KusciaJob 的 "
 "job-split 的 `tolerable` 字段是 true。"
 msgstr ""
+"The difference between `job-best-effort-linear-tolerable` and [Creating KusciaJob](#create-kuscia-job)'s `job-best-effort-linear` is that `job-split` has `tolerable: true`."
 
 #: ../../reference/concepts/kusciajob_cn.md:207
 msgid ""
 "对于 job-best-effort-linear ，如果 job-psi 成功 而 job-split 失败了，那么整个 KusciaJob "
 "的状态将会是 Failed。"
 msgstr ""
+"In `job-best-effort-linear`, if job-psi succeeds but job-split fails, the job becomes Failed."
 
 #: ../../reference/concepts/kusciajob_cn.md:208
 msgid ""
@@ -411,10 +439,11 @@ msgid ""
 "KusciaJob 的状态将会是 Succeeded 。因为 job-split 是容忍失败的，所以它的状态不会影响整个 KusciaJob "
 "的状态。"
 msgstr ""
+"For `job-best-effort-linear-tolerable`, if job-psi succeeds but job-split fails, the entire KusciaJob will have a Succeeded status. Since job-split is marked as tolerable, its failure does not affect the overall KusciaJob status."
 
 #: ../../reference/concepts/kusciajob_cn.md:211
 msgid "BestEffort 和 Strict 示例"
-msgstr ""
+msgstr "BestEffort and Strict Examples"
 
 #: ../../reference/concepts/kusciajob_cn.md:213
 msgid ""
@@ -422,96 +451,102 @@ msgid ""
 "job-split， 并且因为 psi1 的 priority 大于 psi2 的，所以 psi1 总是先于 psi2 启动。 "
 "它们的区别仅在于它们的`scheduleMode`分别为 BestEffort 和 Strict。"
 msgstr ""
+"Below are two KusciaJob examples with identical workflows: executing two PSI tasks (psi1 and psi2), followed by job-split after psi1 completes. Since psi1's priority is higher than psi2's, psi1 always starts before psi2. The only difference between these examples is their `scheduleMode`: BestEffort versus Strict."
 
 #: ../../reference/concepts/kusciajob_cn.md:292
 msgid "现在，我们假设 job-psi1 任务失败了，那么："
-msgstr ""
+msgstr "Now, let's assume job-psi1 fails:"
 
 #: ../../reference/concepts/kusciajob_cn.md:294
 msgid ""
 "对于 job-best-effort-dual-psi， job-split 将不会再被创建，而 job-psi2 仍然将会被创建，此时 "
 "KusciaJob 的状态为 Running，待 job-psi2 结束后，KusciaJob 状态将会变更为 Failed。"
 msgstr ""
+"For job-best-effort-dual-psi, job-split will not be created, but job-psi2 will still be created. The KusciaJob remains in Running state until job-psi2 completes, after which the KusciaJob status changes to Failed."
 
 #: ../../reference/concepts/kusciajob_cn.md:296
 msgid ""
 "对于 job-strict-dual-psi，job-split 和 job-psi2 都将不会再被创建，KusciaJob 状态会直接变更为 "
 "Failed。"
 msgstr ""
+"For job-strict-dual-psi, neither job-split nor job-psi2 will be created, and the KusciaJob status will immediately change to Failed."
 
 #: ../../reference/concepts/kusciajob_cn.md:298
 msgid "停止 KusciaJob"
-msgstr ""
+msgstr "Stopping a KusciaJob"
 
 #: ../../reference/concepts/kusciajob_cn.md:300
 msgid ""
 "在 KusciaJob 运行过程中，可以通过以下方式停止 KusciaJob。目前停止 KusciaJob 时，会将 KusciaJob "
 "状态置为失败状态。未来会引入挂起状态。"
 msgstr ""
+"During KusciaJob execution, you can stop a KusciaJob using the following method. Currently, stopping a KusciaJob sets its status to Failed. A suspended state will be introduced in the future."
 
 #: ../../reference/concepts/kusciajob_cn.md:306
 msgid "清理 KusciaJob"
-msgstr ""
+msgstr "Cleaning up a KusciaJob"
 
 #: ../../reference/concepts/kusciajob_cn.md:308
 msgid "在 KusciaJob 提交后，您可以通过"
-msgstr ""
+msgstr "After submitting a KusciaJob, you can use"
 
 #: ../../reference/concepts/kusciajob_cn.md:314
 msgid ""
 "来取消一个正在执行的 KusciaJob 或者删除一个已经执行完成的 KusciaJob。这会删除这个 KusciaJob 和这个 "
 "KusciaJob 创建的 KusciaTask。"
 msgstr ""
+"to cancel a running KusciaJob or delete a completed KusciaJob. This will remove both the KusciaJob and all KusciaTasks created by it."
 
 #: ../../reference/concepts/kusciajob_cn.md:316
 msgid "参考"
-msgstr ""
+msgstr "References"
 
 #: ../../reference/concepts/kusciajob_cn.md:318
 msgid "完整定义"
-msgstr ""
+msgstr "Complete Definition"
 
 #: ../../reference/concepts/kusciajob_cn.md:320
 msgid "下面以`job-template`模版为例，介绍 KusciaJob 所包含的完整字段。"
-msgstr ""
+msgstr "The following example uses the `job-template` template to illustrate all fields included in a KusciaJob."
 
 #: ../../reference/concepts/kusciajob_cn.md:374
 msgid "KusciaJob `metadata`的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed description of KusciaJob `metadata` subfields:"
 
 #: ../../reference/concepts/kusciajob_cn.md:376
 msgid "`name`：表示 KusciaTask 的名称。"
-msgstr ""
+msgstr "`name`: Specifies the name of the KusciaTask."
 
 #: ../../reference/concepts/kusciajob_cn.md:378
 msgid "KusciaJob `spec`的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed description of KusciaJob `spec` subfields:"
 
 #: ../../reference/concepts/kusciajob_cn.md:380
 msgid "`flowID`：表示 flow 标识。"
-msgstr ""
+msgstr "`flowID`: Specifies the flow identifier."
 
 #: ../../reference/concepts/kusciajob_cn.md:381
 msgid "`initiator`：表示参与方中负责发起任务的节点标识。"
-msgstr ""
+msgstr "`initiator`: Identifies the node responsible for initiating the task among participants."
 
 #: ../../reference/concepts/kusciajob_cn.md:382
 msgid ""
 "`scheduleMode`：表示调度模式，枚举值，可选：`BestEffort`和`Strict`，大小写敏感，详见 [KusciaJob "
 "的调度模式](#scheduling-mode)。"
 msgstr ""
+"`scheduleMode`: Specifies the scheduling mode. Enum values (case-sensitive): `BestEffort` and `Strict`. See [KusciaJob Scheduling Modes](#scheduling-mode) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:383
 msgid "`maxParallelism`：表示可以同时处于 Running 状态的任务的最大数量，可选，默认为 1，范围为 1-128。"
-msgstr ""
+msgstr "`maxParallelism`: Maximum number of tasks that can be in Running state simultaneously. Optional, defaults to 1, range 1-128."
 
 #: ../../reference/concepts/kusciajob_cn.md:384
 msgid "`tasks`：表示要执行的任务列表，最多 128 个。"
-msgstr ""
+msgstr "`tasks`: List of tasks to execute, maximum 128."
 
 #: ../../reference/concepts/kusciajob_cn.md:385
 msgid "`alias`：表示任务的别名，必填。KusciaJob 中所有任务的别名不能重复。"
-msgstr ""
+msgstr "`alias`: Task alias, required. All task aliases within a KusciaJob must be unique."
 
 #: ../../reference/concepts/kusciajob_cn.md:386
 msgid ""
@@ -520,42 +555,45 @@ msgid ""
 "objects/names/#dns-label-names)。  若任务发起方为 Kuscia 中的节点，且未指定该标识，则 KusciaJob"
 " Controller 会生成全局唯一的任务标识。"
 msgstr ""
+"`tasks[].taskID`: Used as task dependency identifier, globally unique, must comply with [RFC 1123 label name requirements](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names). If the task initiator is a node in Kuscia and this identifier is not specified, the KusciaJob Controller will generate a globally unique task identifier."
 
 #: ../../reference/concepts/kusciajob_cn.md:388
 msgid ""
 "`tasks[].priority`：表示任务优先级，根据 maxParallelism，当存在多个 KusciaTask "
 "可以被创建时，该值较高的优先被创建。"
 msgstr ""
+"`tasks[].priority`: Indicates task priority. Based on maxParallelism, when multiple KusciaTasks can be created, those with higher priority values are created first."
 
 #: ../../reference/concepts/kusciajob_cn.md:389
 msgid "`tasks[].tolerable`：表示是否可以容忍任务失败，详见 [任务分类](#task-classification)。"
-msgstr ""
+msgstr "`tasks[].tolerable`: Indicates whether task failure can be tolerated. See [Task Classification](#task-classification) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:390
 msgid "`tasks[].dependencies`：表示任务的前置依赖任务，每一个元素都是`tasks`列表中某一个任务的`alias`。"
-msgstr ""
+msgstr "`tasks[].dependencies`: Specifies prerequisite tasks, where each element is the `alias` of a task in the `tasks` list."
 
 #: ../../reference/concepts/kusciajob_cn.md:391
 msgid "`tasks[].taskInputConfig`：表示任务参数配置。"
-msgstr ""
+msgstr "`tasks[].taskInputConfig`: Specifies task parameter configuration."
 
 #: ../../reference/concepts/kusciajob_cn.md:392
 msgid "`tasks[].appImage`： 表示任务使用的 AppImage，详见 [AppImage](./appimage_cn.md)。"
-msgstr ""
+msgstr "`tasks[].appImage`: Specifies the AppImage used by the task. See [AppImage](./appimage.md) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:393
 msgid "`tasks[].parties`：表示任务参与方的信息。"
-msgstr ""
+msgstr "`tasks[].parties`: Information about task participants."
 
 #: ../../reference/concepts/kusciajob_cn.md:394
 msgid "`tasks[].parties[].domainID`：表示任务参与方的节点 ID。"
-msgstr ""
+msgstr "`tasks[].parties[].domainID`: Node ID of the task participant."
 
 #: ../../reference/concepts/kusciajob_cn.md:395
 msgid ""
 "`tasks[].parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，Kuscia "
 "会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。"
 msgstr ""
+"`tasks[].parties[].role`: Role of the task participant, defined by the engine. Common examples include Host and Guest. Kuscia combines this with the role field in [appImage](./appimage.md#appimage-ref) to select the appropriate deployment template for launching the engine."
 
 #: ../../reference/concepts/kusciajob_cn.md:396
 msgid ""
@@ -563,10 +601,11 @@ msgid ""
 "资源要求和限制](https://kubernetes.io/docs/concepts/configuration/manage-"
 "resources-containers/)。"
 msgstr ""
+"`tasks[].parties[].resources`: Resource information for the task participant. See [K8s Resource Requirements and Limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:397
 msgid "`tasks[].parties[].bandwidthLimits`：任务参与方的带宽限制信息。"
-msgstr ""
+msgstr "`tasks[].parties[].bandwidthLimits`: Bandwidth limitation information for the task participant."
 
 #: ../../reference/concepts/kusciajob_cn.md:398
 msgid ""
@@ -574,48 +613,50 @@ msgid ""
 "`tasks[].parties[].domainID` 发出，目的地为 `destinationID` 的 HTTP 流量 "
 "Request/Response 整体带宽。"
 msgstr ""
+"`tasks[].parties[].bandwidthLimits[].destinationID`: Specifies bandwidth limits for HTTP traffic (Request/Response) sent from `tasks[].parties[].domainID` to the destination `destinationID`."
 
 #: ../../reference/concepts/kusciajob_cn.md:399
 msgid "`tasks[].parties[].bandwidthLimits[].limitKBps`：表示上述带宽限制的取值，单位为 KiB/s。"
-msgstr ""
+msgstr "`tasks[].parties[].bandwidthLimits[].limitKBps`: Specifies the value of the above bandwidth limit in KiB/s."
 
 #: ../../reference/concepts/kusciajob_cn.md:401
 msgid "KusciaJob `status`的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed description of KusciaJob `status` subfields:"
 
 #: ../../reference/concepts/kusciajob_cn.md:403
 msgid "`phase`：表示 KusciaJob 当前所处的阶段，详见[状态说明](#kuscia-job-state)。"
-msgstr ""
+msgstr "`phase`: Indicates the current phase of the KusciaJob. See [State Description](#kuscia-job-state) for details."
 
 #: ../../reference/concepts/kusciajob_cn.md:404
 msgid ""
 "`taskStatus`：表示 KusciaJob 已经启动的 KusciaTask 状态信息， key 为 KusciaTask "
 "的名称，value 为 KusciaTask 的状态。"
 msgstr ""
+"`taskStatus`: Status information for KusciaTasks launched by the KusciaJob. The key is the KusciaTask name, and the value is the KusciaTask status."
 
 #: ../../reference/concepts/kusciajob_cn.md:405
 msgid "`startTime`：表示 KusciaJob 第一次被 Kuscia 控制器处理的时间戳。"
-msgstr ""
+msgstr "`startTime`: Timestamp when the KusciaJob was first processed by the Kuscia controller."
 
 #: ../../reference/concepts/kusciajob_cn.md:406
 msgid "`completionTime`：表示 KusciaJob 运行完成的时间戳。"
-msgstr ""
+msgstr "`completionTime`: Timestamp when the KusciaJob completed execution."
 
 #: ../../reference/concepts/kusciajob_cn.md:407
 msgid "`lastReconcileTime`：表示 KusciaJob 上次更新的时间戳。"
-msgstr ""
+msgstr "`lastReconcileTime`: Timestamp of the last update to the KusciaJob."
 
 #: ../../reference/concepts/kusciajob_cn.md:409
 msgid "其它查看方式"
-msgstr ""
+msgstr "Other Ways to View"
 
 #: ../../reference/concepts/kusciajob_cn.md:411
 msgid ""
 "您可以直接查看完整 CRD 定义：[KusciaJob "
 "CRD](https://github.com/secretflow/kuscia/blob/main/crds/v1alpha1/kuscia.secretflow_kusciajobs.yaml)。"
 msgstr ""
+"You can directly view the complete CRD definition: [KusciaJob CRD](https://github.com/secretflow/kuscia/blob/main/crds/v1alpha1/kuscia.secretflow_kusciajobs.yaml)."
 
 #: ../../reference/concepts/kusciajob_cn.md:413
 msgid "如果您已经部署了 Kuscia ，您也可以通过 kubectl 查看：`kubectl explain kj`。"
-msgstr ""
-
+msgstr "If you have already deployed Kuscia, you can also view it using kubectl: `kubectl explain kj`."
