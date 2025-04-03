@@ -1,6 +1,6 @@
 #!/bin/bash -x
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ set -o nounset
 set -o pipefail
 
 KUSCIA_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
-echo ${KUSCIA_ROOT}
+echo "${KUSCIA_ROOT}"
 TMP_DIR=${KUSCIA_ROOT}/tmp-crds
 CRD_VERSIONS=v1alpha1
 CRD_OUTPUTS=${KUSCIA_ROOT}/crds/${CRD_VERSIONS}
@@ -28,7 +28,7 @@ _crdOptions="crd:generateEmbeddedObjectMeta=true,allowDangerousTypes=true"
 
 function pre_install {
   # install controller-gen tool if not exist
-  if [ "$(which controller-gen)" == "" ]; then
+  if [ "$(command -v controller-gen)" == "" ]; then
     echo "Start to install controller-gen tool"
     GO111MODULE=on go install -v sigs.k8s.io/controller-tools/cmd/controller-gen@v0.15.0
   fi
@@ -36,13 +36,13 @@ function pre_install {
 
 function gen_crds {
   # generate crds
-  $(which controller-gen) paths="${KUSCIA_ROOT}/pkg/crd/..." ${_crdOptions} output:crd:artifacts:config=${TMP_DIR}
+  $(command -v controller-gen) paths="${KUSCIA_ROOT}/pkg/crd/..." ${_crdOptions} output:crd:artifacts:config="${TMP_DIR}"
 }
 
 function copy_to_destination {
   # rename files, copy files
-  mkdir -p ${CRD_OUTPUTS}
-  cp -r ${TMP_DIR}/*.yaml ${CRD_OUTPUTS}
+  mkdir -p "${CRD_OUTPUTS}"
+  cp -r "${TMP_DIR}"/*.yaml "${CRD_OUTPUTS}"
 }
 
 function cleanup {

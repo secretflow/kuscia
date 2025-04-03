@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ if [[ $MASTER_DOMAIN_ID == "" ]]; then
 fi
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-CERT=$(base64 $ROOT/var/certs/${DOMAIN_ID}.domain.crt | tr -d "\n")
+CERT=$(base64 "$ROOT"/var/certs/"${DOMAIN_ID}".domain.crt | tr -d "\n")
 
 DOMAIN_TEMPLATE="
 apiVersion: kuscia.secretflow/v1alpha1

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ NC='\033[0m'
 
 USAGE="$(basename "$0") [DOMAIN_ID]"
 
-DOMAIN_ID=$1
+DOMAIN_ID="$1"
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
-pushd ${ROOT} || exit
+pushd "${ROOT}" || exit
 
-if [[ $DOMAIN_ID == "" ]] ; then
-  echo $USAGE
+if [[ "$DOMAIN_ID" == "" ]] ; then
+  echo "$USAGE"
   exit 1
 fi
 

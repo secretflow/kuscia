@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ function log() {
 }
 
 function arch_check() {
-  local arch=$(uname -a)
+  local arch
+  arch=$(uname -a)
   if [[ $arch == *"ARM"* ]] || [[ $arch == *"aarch64"* ]]; then
     echo "Warning: arm64 architecture. Continuing..."
   elif [[ $arch == *"x86_64"* ]]; then
@@ -70,13 +71,13 @@ function init_sf_image_info() {
   if [ "$SECRETFLOW_IMAGE" != "" ]; then
     SF_IMAGE_TAG=${SECRETFLOW_IMAGE##*:}
     path_separator_count="$(echo "$SECRETFLOW_IMAGE" | tr -cd "/" | wc -c)"
-    if [ ${path_separator_count} == 1 ]; then
-      SF_IMAGE_NAME=$(echo "$SECRETFLOW_IMAGE" | sed "s/:${SF_IMAGE_TAG}//")
-    elif [ $path_separator_count == 2 ]; then
-      registry=$(echo $SECRETFLOW_IMAGE | cut -d "/" -f 1)
-      bucket=$(echo $SECRETFLOW_IMAGE | cut -d "/" -f 2)
-      name_and_tag=$(echo $SECRETFLOW_IMAGE | cut -d "/" -f 3)
-      name=$(echo "$name_and_tag" | sed "s/:${SF_IMAGE_TAG}//")
+    if [ "${path_separator_count}" == 1 ]; then
+      SF_IMAGE_NAME=${SECRETFLOW_IMAGE//:${SF_IMAGE_TAG}/}
+    elif [ "$path_separator_count" == 2 ]; then
+      registry=$(echo "$SECRETFLOW_IMAGE" | cut -d "/" -f 1)
+      bucket=$(echo "$SECRETFLOW_IMAGE" | cut -d "/" -f 2)
+      name_and_tag=$(echo "$SECRETFLOW_IMAGE" | cut -d "/" -f 3)
+      name=${name_and_tag//:${SF_IMAGE_TAG}/}
       SF_IMAGE_REGISTRY="$registry/$bucket"
       SF_IMAGE_NAME="$name"
     fi
@@ -88,7 +89,7 @@ init_sf_image_info
 function need_start_docker_container() {
   local ctr=$1
 
-  if [[ ! "$(docker ps -a -q -f name=^/${ctr}$)" ]]; then
+  if [[ ! "$(docker ps -a -q -f name=^/"${ctr}"$)" ]]; then
     # need start your container
     return 0
   fi
@@ -120,7 +121,7 @@ function do_http_probe() {
   local retry=0
   while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
-    status_code=$(docker exec -it $ctr curl -k --write-out '%{http_code}' --silent --output /dev/null ${endpoint} ${cert_config})
+    status_code=$(docker exec -it "$ctr" curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" "${cert_config}")
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -148,10 +149,10 @@ function probe_gateway_crd() {
   probe_k3s "$master"
 
   local retry=0
-  while [ $retry -lt $max_retry ]; do
+  while [ "$retry" -lt "$max_retry" ]; do
     local line_num
-    line_num=$(docker exec -it $master kubectl get gateways -n $domain | grep -i $gw_name | wc -l | xargs)
-    if [[ $line_num == "1" ]]; then
+    line_num=$(docker exec -it "$master" kubectl get gateways -n "$domain" | grep -c -i "$gw_name" | xargs)
+    if [[ "$line_num" == "1" ]]; then
       return
     fi
     sleep 1
@@ -163,7 +164,7 @@ function probe_gateway_crd() {
 
 function build_kuscia_network() {
   if [[ ! "$(docker network ls -q -f name=${NETWORK_NAME})" ]]; then
-    docker network create ${NETWORK_NAME}
+    docker network create "${NETWORK_NAME}"
   fi
 }
 
@@ -172,8 +173,8 @@ function check_sf_image() {
   local env_file=${ROOT}/env.list
   local default_repo=${SF_IMAGE_REGISTRY}
   local repo
-  if [ -e $env_file ]; then
-    repo=$(awk -F "=" '/REGISTRY_ENDPOINT/ {print $2}' $env_file)
+  if [ -e "$env_file" ]; then
+    repo=$(awk -F "=" '/REGISTRY_ENDPOINT/ {print $2}' "$env_file")
   fi
   local sf_image="${SF_IMAGE_NAME}:${SF_IMAGE_TAG}"
   if [ "$repo" != "" ]; then
@@ -185,14 +186,14 @@ function check_sf_image() {
     sf_image=$SECRETFLOW_IMAGE
   fi
 
-  if docker exec -it $domain_ctr crictl inspecti $sf_image >/dev/null 2>&1; then
+  if docker exec -it "$domain_ctr" crictl inspecti "$sf_image" >/dev/null 2>&1; then
     log "Image '${sf_image}' already exists in domain '${DOMAIN_ID}'"
-    SF_IMAGE_ID=$(docker exec -it $domain_ctr sh -c "crictl inspecti ${sf_image} | jq -r .status.id | tr -d ' \t\n\r'")
+    SF_IMAGE_ID=$(docker exec -it "$domain_ctr" sh -c "crictl inspecti ${sf_image} | jq -r .status.id | tr -d ' \t\n\r'")
     return
   fi
 
   local has_sf_image=false
-  if docker image inspect ${sf_image} >/dev/null 2>&1; then
+  if docker image inspect "${sf_image}" >/dev/null 2>&1; then
     has_sf_image=true
   fi
 
@@ -201,24 +202,24 @@ function check_sf_image() {
   else
     log "Not found the secretflow image '${sf_image}' on host"
     if [ "$repo" != "" ]; then
-      docker login $repo
+      docker login "$repo"
     fi
     log "Start pulling image '${sf_image}' ..."
-    docker pull ${sf_image}
+    docker pull "${sf_image}"
   fi
 
   log "Start importing image '${sf_image}' Please be patient..."
   local image_id
   image_id=$(docker images --filter="reference=${sf_image}" --format "{{.ID}}")
   local image_tar
-  image_tar=/tmp/$(echo ${sf_image} | sed 's/\//_/g').${image_id}.tar
-  if [ ! -e $image_tar ]; then
-    docker save $sf_image -o $image_tar
+  image_tar=/tmp/$(echo "${sf_image}" | sed 's/\//_/g').${image_id}.tar
+  if [ ! -e "$image_tar" ]; then
+    docker save "$sf_image" -o "$image_tar"
   fi
-  docker exec -it $domain_ctr ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import $image_tar
+  docker exec -it "$domain_ctr" ctr -a=${CTR_ROOT}/containerd/run/containerd.sock -n=k8s.io images import "$image_tar"
   log "Successfully imported image '${sf_image}' to container '${domain_ctr}' ..."
 
-  SF_IMAGE_ID=$(docker exec -it $domain_ctr sh -c "crictl inspecti ${sf_image} | jq -r .status.id | tr -d ' \t\n\r'")
+  SF_IMAGE_ID=$(docker exec -it "$domain_ctr" sh -c "crictl inspecti ${sf_image} | jq -r .status.id | tr -d ' \t\n\r'")
 }
 
 function create_secretflow_app_image() {
@@ -277,7 +278,7 @@ function generate_mount_flag() {
 function get_runtime() {
   local conf_file=$1
   local runtime
-  runtime=$(grep '^runtime:' ${conf_file} 2>/dev/null | cut -d':' -f2 | awk '{$1=$1};1' | tr -d '\r\n')
+  runtime=$(grep '^runtime:' "${conf_file}" 2>/dev/null | cut -d':' -f2 | awk '{$1=$1};1' | tr -d '\r\n')
   if [[ $runtime == "" ]]; then
     runtime=runc
   fi
@@ -287,7 +288,7 @@ function get_runtime() {
 function createVolume() {
   local VOLUME_NAME=$1
   if ! docker volume ls --format '{{.Name}}' | grep "^${VOLUME_NAME}$"; then
-    docker volume create $VOLUME_NAME
+    docker volume create "$VOLUME_NAME"
   fi
 }
 
@@ -299,7 +300,7 @@ function deploy_autonomy() {
     kuscia_config_file=${KUSCIA_CONFIG_FILE}
   fi
   local runtime
-  runtime=$(get_runtime ${kuscia_config_file})
+  runtime=$(get_runtime "${kuscia_config_file}")
   arch_check
   if need_start_docker_container "$domain_ctr"; then
     log "Starting container $domain_ctr ..."
@@ -308,7 +309,7 @@ function deploy_autonomy() {
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       mkdir -p "${conf_dir}"
-      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Autonomy --domain "${DOMAIN_ID}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
+      docker run -it --rm "${KUSCIA_IMAGE}" kuscia init --mode Autonomy --domain "${DOMAIN_ID}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
       wrap_kuscia_config_file "${kuscia_config_file}"
     fi
 
@@ -319,15 +320,15 @@ function deploy_autonomy() {
 
     createVolume "${domain_ctr}-containerd"
 
-    docker run -dit ${privileged_flag} --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${AUTONOMY_MEMORY_LIMIT} \
+    docker run -dit "${privileged_flag}" --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${AUTONOMY_MEMORY_LIMIT} \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${DOMAIN_HOST_INTERNAL_PORT}":80 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
-      -v ${domain_ctr}-containerd:${CTR_ROOT}/containerd \
-      -v ${kuscia_config_file}:/home/kuscia/etc/conf/kuscia.yaml \
-      ${env_flag} ${mount_flag} \
-      --env NAMESPACE=${DOMAIN_ID} \
+      -v "${domain_ctr}-containerd":${CTR_ROOT}/containerd \
+      -v "${kuscia_config_file}":/home/kuscia/etc/conf/kuscia.yaml \
+      "${env_flag}" "${mount_flag}" \
+      --env NAMESPACE="${DOMAIN_ID}" \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
     probe_datamesh "${domain_ctr}"
@@ -356,8 +357,9 @@ function deploy_lite() {
     kuscia_config_file=${KUSCIA_CONFIG_FILE}
   fi
   local runtime
-  runtime=$(get_runtime ${kuscia_config_file})
-  local HttpResponseCode=$(docker run -it --rm --network=${NETWORK_NAME} ${KUSCIA_IMAGE} curl -k -s -o /dev/null -w "%{http_code}" ${MASTER_ENDPOINT})
+  runtime=$(get_runtime "${kuscia_config_file}")
+  local HttpResponseCode
+  HttpResponseCode=$(docker run -it --rm --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" curl -k -s -o /dev/null -w "%{http_code}" "${MASTER_ENDPOINT}")
   arch_check
 
   if need_start_docker_container "$domain_ctr"; then
@@ -370,13 +372,13 @@ function deploy_lite() {
       echo -e "${GREEN}Communication with master is normal, response code is 401${NC}"
     else
       echo -e "${RED}Failed to connect to the master. Please check if the network link to the master is normal. Please refer to the kuscia documentation (https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/deployment/deploy_master_lite_cn) for the correct return results${NC}"
-      docker run -it --rm --network=${NETWORK_NAME} ${KUSCIA_IMAGE} curl -kvvv ${MASTER_ENDPOINT}
+      docker run -it --rm --network=${NETWORK_NAME} "${KUSCIA_IMAGE}" curl -kvvv "${MASTER_ENDPOINT}"
       exit 1
     fi
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       mkdir -p "${conf_dir}"
-      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Lite --domain "${DOMAIN_ID}" --master-endpoint "${MASTER_ENDPOINT}" --lite-deploy-token "${DOMAIN_TOKEN}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
+      docker run -it --rm "${KUSCIA_IMAGE}" kuscia init --mode Lite --domain "${DOMAIN_ID}" --master-endpoint "${MASTER_ENDPOINT}" --lite-deploy-token "${DOMAIN_TOKEN}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
       wrap_kuscia_config_file "${kuscia_config_file}"
     fi
 
@@ -387,15 +389,15 @@ function deploy_lite() {
 
     createVolume "${domain_ctr}-containerd"
 
-    docker run -dit${privileged_flag} --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
+    docker run -dit "${privileged_flag}" --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m $LITE_MEMORY_LIMIT \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${DOMAIN_HOST_INTERNAL_PORT}":80 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
-      -v ${domain_ctr}-containerd:${CTR_ROOT}/containerd \
-      -v ${kuscia_config_file}:/home/kuscia/etc/conf/kuscia.yaml \
-      ${env_flag} ${mount_flag} \
-      --env NAMESPACE=${DOMAIN_ID} \
+      -v "${domain_ctr}-containerd":${CTR_ROOT}/containerd \
+      -v "${kuscia_config_file}":/home/kuscia/etc/conf/kuscia.yaml \
+      "${env_flag}" "${mount_flag}" \
+      --env NAMESPACE="${DOMAIN_ID}" \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
     probe_datamesh "$domain_ctr"
@@ -429,19 +431,19 @@ function deploy_master() {
 
     if [[ ${KUSCIA_CONFIG_FILE} == "" ]]; then
       mkdir -p "${conf_dir}"
-      docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode Master --domain "$master_domain_id" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
+      docker run -it --rm "${KUSCIA_IMAGE}" kuscia init --mode Master --domain "$master_domain_id" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
     fi
 
     docker run -dit --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network=${NETWORK_NAME} -m ${MASTER_MEMORY_LIMIT} \
-      --env NAMESPACE=${master_domain_id} \
+      --env NAMESPACE="${master_domain_id}" \
       -p "${DOMAIN_HOST_PORT}":1080 \
       -p "${KUSCIAAPI_HTTP_PORT}":8082 \
       -p "${KUSCIAAPI_GRPC_PORT}":8083 \
-      -v ${kuscia_config_file}:/home/kuscia/etc/conf/kuscia.yaml \
-      ${env_flag} ${mount_flag} \
+      -v "${kuscia_config_file}":/home/kuscia/etc/conf/kuscia.yaml \
+      "${env_flag}" "${mount_flag}" \
       "${KUSCIA_IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
 
-    probe_gateway_crd "${domain_ctr}" ${master_domain_id} "${domain_ctr}" 60
+    probe_gateway_crd "${domain_ctr}" "${master_domain_id}" "${domain_ctr}" 60
     docker exec -it "${domain_ctr}" sh scripts/deploy/init_kusciaapi_client_certs.sh
     log "Master '${master_domain_id}' started successfully"
   fi
@@ -515,7 +517,7 @@ esac
 while getopts 'c:l:n:p:q:m:t:r:d:k:g:e:h' option; do
   case "$option" in
   c)
-    KUSCIA_CONFIG_FILE=$(get_absolute_path $OPTARG)
+    KUSCIA_CONFIG_FILE=$(get_absolute_path "$OPTARG")
     ;;
   l)
     DOMAIN_LOG_DIR=$OPTARG
@@ -615,7 +617,7 @@ autonomy)
     printf "empty domain id\n" >&2
     exit 1
   fi
-  init ${deploy_mode}
+  init "${deploy_mode}"
   deploy_autonomy
   ;;
 lite)
@@ -632,14 +634,14 @@ lite)
     exit 1
   fi
 
-  init ${deploy_mode}
+  init "${deploy_mode}"
   deploy_lite
   ;;
 master)
   if [[ ${DOMAIN_ID} == "" ]]; then
     DOMAIN_ID=kuscia-system
   fi
-  init ${deploy_mode}
+  init "${deploy_mode}"
   deploy_master
   ;;
 *)

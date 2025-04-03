@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,10 +35,11 @@ function wait_kuscia_job_until() {
   local ctr=$1
   local timeout_seconds=$2
   local job_id=$3
-  local times=$((${timeout_seconds} / ${TIMEOUT_DURATION_SECONDS}))
+  local times=$((timeout_seconds / TIMEOUT_DURATION_SECONDS))
   local current=0
   while [ "${current}" -lt "${times}" ]; do
-    local job_phase=$(docker exec -it "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
+    local job_phase
+    job_phase=$(docker exec -it "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
     case "${job_phase}" in
     Succeeded)
       echo "Succeeded"
@@ -151,23 +152,26 @@ function get_container_ip() {
 #   test_suite_run_kuscia_dir: location to save kuscia api resource
 function start_center_mode() {
   local test_suite_run_kuscia_dir=$1
+  local master_container_state
+  local lite_alice_container_state
+  local lite_bob_container_state
   mkdir -p "${test_suite_run_kuscia_dir}"
 
   # Run as Center
   ./kuscia.sh center --expose-ports
 
   # Check centralized container Up
-  local master_container_state=$(get_container_state "${MASTER_CONTAINER}")
+  master_container_state=$(get_container_state "${MASTER_CONTAINER}")
   assertEquals "Container ${MASTER_CONTAINER} not running}" running "${master_container_state}"
-  local lite_alice_container_state=$(get_container_state "${LITE_ALICE_CONTAINER}")
+  lite_alice_container_state=$(get_container_state "${LITE_ALICE_CONTAINER}")
   assertEquals "Container ${LITE_ALICE_CONTAINER} not running}" running "${lite_alice_container_state}"
-  local lite_bob_container_state=$(get_container_state "${LITE_BOB_CONTAINER}")
+  lite_bob_container_state=$(get_container_state "${LITE_BOB_CONTAINER}")
   assertEquals "Container ${LITE_BOB_CONTAINER} not running}" running "${lite_bob_container_state}"
 
   # get kuscia api resource
   mkdir -p "${test_suite_run_kuscia_dir}"/master
   ## generate client certs
-  docker exec -it ${MASTER_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it "${MASTER_CONTAINER}" sh scripts/deploy/init_kusciaapi_client_certs.sh
   docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/master
   docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/master
   docker cp "${MASTER_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/master
@@ -189,15 +193,17 @@ function stop_center_mode() {
 #   test_suite_run_kuscia_dir: location to save kuscia api resource
 function start_p2p_mode() {
   local test_suite_run_kuscia_dir=$1
+  local autonomy_alice_container_state
+  local autonomy_bob_container_state
   mkdir -p "${test_suite_run_kuscia_dir}"
 
   # Run as P2P
   ./kuscia.sh p2p --expose-ports
 
   # Check p2p container Up
-  local autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")
+  autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")
   assertEquals "Container ${AUTONOMY_ALICE_CONTAINER} not running}" running "${autonomy_alice_container_state}"
-  local autonomy_bob_container_state=$(get_container_state "${AUTONOMY_BOB_CONTAINER}")
+  autonomy_bob_container_state=$(get_container_state "${AUTONOMY_BOB_CONTAINER}")
   assertEquals "Container ${AUTONOMY_BOB_CONTAINER} not running}" running "${autonomy_bob_container_state}"
 
   # get kuscia api resource
@@ -205,13 +211,13 @@ function start_p2p_mode() {
   mkdir -p "${test_suite_run_kuscia_dir}"/alice
   mkdir -p "${test_suite_run_kuscia_dir}"/bob
   ## generate client certs
-  docker exec -it ${AUTONOMY_ALICE_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it "${AUTONOMY_ALICE_CONTAINER}" sh scripts/deploy/init_kusciaapi_client_certs.sh
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/alice
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/alice
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/alice
   ## generate client certs
   docker cp "${AUTONOMY_ALICE_CONTAINER}":/home/kuscia/var/certs/token "${test_suite_run_kuscia_dir}"/alice
-  docker exec -it ${AUTONOMY_BOB_CONTAINER} sh scripts/deploy/init_kusciaapi_client_certs.sh
+  docker exec -it "${AUTONOMY_BOB_CONTAINER}" sh scripts/deploy/init_kusciaapi_client_certs.sh
   docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.key "${test_suite_run_kuscia_dir}"/bob
   docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/kusciaapi-client.crt "${test_suite_run_kuscia_dir}"/bob
   docker cp "${AUTONOMY_BOB_CONTAINER}":/home/kuscia/var/certs/ca.crt "${test_suite_run_kuscia_dir}"/bob
@@ -239,7 +245,7 @@ function get_ipv4_address() {
     ipv4=$(ipconfig getifaddr en0) || true
     ;;
   esac
-  echo $ipv4
+  echo "$ipv4"
 }
 
 
@@ -250,7 +256,7 @@ function get_ipv4_address() {
 function get_dr_dst_token_value() {
   local ctr=$1
   local dr_name=$2
-  docker exec "${ctr}" kubectl get dr $dr_name -o jsonpath='{.status.tokenStatus.revisionToken.token}'
+  docker exec "${ctr}" kubectl get dr "$dr_name" -o jsonpath='{.status.tokenStatus.revisionToken.token}'
 }
 
 # @return domain route source token
@@ -260,7 +266,7 @@ function get_dr_dst_token_value() {
 function get_dr_src_token_value() {
   local ctr=$1
   local dr_name=$2
-  docker exec "${ctr}" kubectl get dr $dr_name -o jsonpath='{.status.tokenStatus.revisionToken.token}'
+  docker exec "${ctr}" kubectl get dr "$dr_name" -o jsonpath='{.status.tokenStatus.revisionToken.token}'
 }
 
 
@@ -271,7 +277,7 @@ function get_dr_src_token_value() {
 function get_cdr_dst_token_value() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.destinationTokens[-1].token}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.destinationTokens[-1].token}'
 }
 
 
@@ -282,7 +288,7 @@ function get_cdr_dst_token_value() {
 function get_cdr_src_token_value() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.sourceTokens[-1].token}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.sourceTokens[-1].token}'
 }
 
 
@@ -293,7 +299,7 @@ function get_cdr_src_token_value() {
 function get_cdr_dst_token_revision() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.destinationTokens[-1].revision}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.destinationTokens[-1].revision}'
 }
 
 
@@ -304,7 +310,7 @@ function get_cdr_dst_token_revision() {
 function get_cdr_src_token_revision() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.tokenStatus.sourceTokens[-1].revision}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.sourceTokens[-1].revision}'
 }
 
 
@@ -315,7 +321,7 @@ function get_cdr_src_token_revision() {
 function get_cdr_token_status() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.status.conditions[0].type}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.conditions[0].type}'
 }
 
 
@@ -328,7 +334,7 @@ function get_dr_revision_token_ready() {
   local ctr=$1
   local dr_name=$2
   local domain=$3
-  docker exec "${ctr}" kubectl get dr $dr_name -n $domain -o jsonpath='{.status.tokenStatus.revisionToken.isReady}'
+  docker exec "${ctr}" kubectl get dr "$dr_name" -n "$domain" -o jsonpath='{.status.tokenStatus.revisionToken.isReady}'
 }
 
 
@@ -340,7 +346,7 @@ function set_cdr_token_rolling_period() {
   local ctr=$1
   local cdr_name=$2
   local peroid=$3
-  docker exec "${ctr}" kubectl patch cdr $cdr_name --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${period}}]"
+  docker exec "${ctr}" kubectl patch cdr "$cdr_name" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${peroid}}]"
 }
 
 
@@ -351,7 +357,7 @@ function set_cdr_token_rolling_period() {
 function get_cdr_token_rolling_period() {
   local ctr=$1
   local cdr_name=$2
-  docker exec "${ctr}" kubectl get cdr $cdr_name -o jsonpath='{.spec.tokenConfig.rollingUpdatePeriod}'
+  docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.spec.tokenConfig.rollingUpdatePeriod}'
 }
 
 # @return get images

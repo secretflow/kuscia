@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,23 +52,23 @@ function log() {
 
 function need_start_docker_container() {
   ctr=$1
-  if [[ ! "$(docker ps -a -q -f name=^/${ctr}$)" ]]; then
+  if [[ ! "$(docker ps -a -q -f name=^/"${ctr}"$)" ]]; then
     # need start your container
     return 0
   fi
 
   if $FORCE_START; then
     log "Remove container '${ctr}' ..."
-    docker rm -f $ctr >/dev/null 2>&1
+    docker rm -f "$ctr" >/dev/null 2>&1
     # need start your container
     return 0
   fi
 
-  read -rp "$(echo -e ${GREEN}The container \'${ctr}\' already exists. Do you need to recreate it? [y/n]: ${NC})" yn
+  read -rp "$(echo -e "${GREEN}"The container \'"${ctr}"\' already exists. Do you need to recreate it? [y/n]: "${NC}")" yn
   case $yn in
   [Yy]*)
     echo -e "${GREEN}Remove container ${ctr} ...${NC}"
-    docker rm -f $ctr
+    docker rm -f "$ctr"
     # need start your container
     return 0
     ;;
@@ -76,8 +76,6 @@ function need_start_docker_container() {
     return 1
     ;;
   esac
-
-  return 1
 }
 
 function generate_config_block(){
@@ -95,15 +93,17 @@ function generate_config_block(){
     scheme: $scheme
 "
 }
+
 function generate_center_config(){
     local config_data=$1
     local alice_domain=${DOMAIN_PREFIX}"-lite-alice"
     local bob_domain=${DOMAIN_PREFIX}"-lite-bob"
-    config_data=$(generate_config_block "${config_data}" master 5 ${MASTER_DOMAIN}:9091 http)
-    config_data=$(generate_config_block "${config_data}" alice 5 ${alice_domain}:9091 http)
-    config_data=$(generate_config_block "${config_data}" bob 5 ${bob_domain}:9091 http)
+    config_data=$(generate_config_block "${config_data}" master 5 "${MASTER_DOMAIN}":9091 http)
+    config_data=$(generate_config_block "${config_data}" alice 5 "${alice_domain}":9091 http)
+    config_data=$(generate_config_block "${config_data}" bob 5 "${bob_domain}":9091 http)
     echo "${config_data}"
 }
+
 function generate_p2p_config(){
     local config_data=$1
     local domain_id=$2
@@ -117,19 +117,18 @@ function init_monitor_config(){
     local conf_dir=$2
     local domain_id=$3
     local config_data=$4
-    mkdir -p ${conf_dir}
+    mkdir -p "${conf_dir}"
     if [[ $mode == "center" ]]; then
-  config_data=$(generate_center_config "${config_data}")
-        echo "${config_data}" > ${conf_dir}/prometheus.yml
+      config_data=$(generate_center_config "${config_data}")
+      echo "${config_data}" > "${conf_dir}"/prometheus.yml
     elif [[ $mode == "p2p" ]]; then
-        config_data=$(generate_p2p_config "${config_data}" "${domain_id}")
-        echo "${config_data}" > ${conf_dir}/prometheus.yml
+      config_data=$(generate_p2p_config "${config_data}" "${domain_id}")
+      echo "${config_data}" > "${conf_dir}"/prometheus.yml
     else
-    echo "Unsupported mode: $mode"
-    exit 1
+      echo "Unsupported mode: $mode"
+      exit 1
     fi
 }
-
 
 function start_kuscia_monitor() {
   local domain_id=$1
@@ -138,18 +137,19 @@ function start_kuscia_monitor() {
   local image_name=$4
   local conf_dir=$5
   local name=${DOMAIN_PREFIX}-monitor-${domain_id}
-  echo ${name}
-  if need_start_docker_container ${name}; then
-    docker run -dit --name=${name} --hostname=${name} --restart=always --network=${NETWORK_NAME} -v ${conf_dir}:/home/config/ -p "${prometheus_port}":9090 -p "${grafana_port}":3000 ${image_name}
+  echo "${name}"
+  if need_start_docker_container "${name}"; then
+    docker run -dit --name="${name}" --hostname="${name}" --restart=always --network="${NETWORK_NAME}" -v "${conf_dir}":/home/config/ -p "${prometheus_port}":9090 -p "${grafana_port}":3000 "${image_name}"
     log "kuscia-monitor started successfully docker container name:'${name}'"
   fi
 }
-if [ ${MODE} == "center" ]; then
-  init_monitor_config center ${ROOT}/${MASTER_DOMAIN} center "${CONFIG_DATA}"
+
+if [ "${MODE}" == "center" ]; then
+  init_monitor_config center "${ROOT}"/"${MASTER_DOMAIN}" center "${CONFIG_DATA}"
   start_kuscia_monitor center 9090 3000 docker.io/secretflow/kuscia-monitor "${ROOT}/${MASTER_DOMAIN}/"
-elif [ ${MODE} == "p2p" ]; then
-  init_monitor_config p2p ${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN} ${ALICE_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${ALICE_DOMAIN} 9089 3000 docker.io/secretflow/kuscia-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN}" ${ALICE_DOMAIN}
-  init_monitor_config p2p ${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN} ${BOB_DOMAIN} "${CONFIG_DATA}"
-  start_kuscia_monitor ${BOB_DOMAIN} 9090 3001 docker.io/secretflow/kuscia-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN}"  ${BOB_DOMAIN}
+elif [ "${MODE}" == "p2p" ]; then
+  init_monitor_config p2p "${ROOT}"/"${DOMAIN_PREFIX}"-autonomy-"${ALICE_DOMAIN}" "${ALICE_DOMAIN}" "${CONFIG_DATA}"
+  start_kuscia_monitor "${ALICE_DOMAIN}" 9089 3000 docker.io/secretflow/kuscia-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${ALICE_DOMAIN}" "${ALICE_DOMAIN}"
+  init_monitor_config p2p "${ROOT}"/"${DOMAIN_PREFIX}"-autonomy-"${BOB_DOMAIN}" "${BOB_DOMAIN}" "${CONFIG_DATA}"
+  start_kuscia_monitor "${BOB_DOMAIN}" 9090 3001 docker.io/secretflow/kuscia-monitor "${ROOT}/${DOMAIN_PREFIX}-autonomy-${BOB_DOMAIN}" "${BOB_DOMAIN}"
 fi

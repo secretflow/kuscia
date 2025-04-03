@@ -112,7 +112,7 @@ while getopts 'p:a:t:x:k:i:h' option; do
     ;;
   a)
     auth_type=$OPTARG
-    [ "$auth_type" == "MTLS" -o "$auth_type" == "Token" -o "$auth_type" == "None" ] && continue
+    [[ "$auth_type" == "MTLS" || "$auth_type" == "Token" || "$auth_type" == "None" ]] && continue
     printf "illegal value for -%s\n" "$option" >&2
     usage
     exit

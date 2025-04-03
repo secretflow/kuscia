@@ -49,15 +49,21 @@ function test_p2p_kuscia_job() {
 }
 
 function test_p2p_kuscia_api_http_available() {
-  local alice_http_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8082/tcp") 0).HostPort}}' ${AUTONOMY_ALICE_CONTAINER})
-  local alice_http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:${alice_http_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
+  local alice_http_port
+  local alice_http_status_code
+  local autonomy_bob_container_ip
+  local bob_http_port
+  local bob_http_status_code
+
+  alice_http_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8082/tcp") 0).HostPort}}' "${AUTONOMY_ALICE_CONTAINER}")
+  alice_http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:${alice_http_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
   assertEquals "KusciaApi healthZ http code" "200" "${alice_http_status_code}"
 
   unset alice_http_status_code
 
-  local autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
-  local bob_http_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8082/tcp") 0).HostPort}}' ${AUTONOMY_BOB_CONTAINER})
-  local bob_http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:${bob_http_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
+  autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
+  bob_http_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8082/tcp") 0).HostPort}}' "${AUTONOMY_BOB_CONTAINER}")
+  bob_http_status_code=$(get_kuscia_api_healthz_http_status_code "127.0.0.1:${bob_http_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
   assertEquals "KusciaApi healthZ http code" "200" "${bob_http_status_code}"
 
   unset bob_http_status_code
@@ -66,15 +72,20 @@ function test_p2p_kuscia_api_http_available() {
 }
 
 function test_p2p_kuscia_api_grpc_available() {
- local alice_grpc_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8083/tcp") 0).HostPort}}' ${AUTONOMY_ALICE_CONTAINER})
-  local alice_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:${alice_grpc_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
+  local alice_grpc_port
+  local alice_status_message
+  local autonomy_bob_container_ip
+  local bob_grpc_port
+  local bob_status_message
+  alice_grpc_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8083/tcp") 0).HostPort}}' "${AUTONOMY_ALICE_CONTAINER}")
+  alice_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:${alice_grpc_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/alice)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${alice_status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
   unset alice_status_message
 
-  local autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
-  local bob_grpc_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8083/tcp") 0).HostPort}}' ${AUTONOMY_BOB_CONTAINER})
-  local bob_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:${bob_grpc_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
+  autonomy_bob_container_ip=$(get_container_ip "${AUTONOMY_BOB_CONTAINER}")
+  bob_grpc_port=$(docker inspect --format='{{(index (index .NetworkSettings.Ports "8083/tcp") 0).HostPort}}' "${AUTONOMY_BOB_CONTAINER}")
+  bob_status_message=$(get_kuscia_api_healthz_grpc_status_message "${TEST_BIN_DIR}"/grpcurl "127.0.0.1:${bob_grpc_port}" "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"/bob)
   assertEquals "KusciaApi healthZ grpc status message" "success" "$(echo "${bob_status_message}" | "${TEST_BIN_DIR}"/jq .status.message | sed -e 's/"//g')"
 
   unset bob_status_message
@@ -95,21 +106,25 @@ function try_p2p_token_rolling() {
   local period=15
 
   # set rolling period(s)
-  set_cdr_token_rolling_period ${src_ctr} $cdr_name $period
+  set_cdr_token_rolling_period "${src_ctr}" "${cdr_name}" "${period}"
 
-  local prev_src_revision=$(get_cdr_src_token_revision ${src_ctr} $cdr_name)
-  local prev_dst_revision=$(get_cdr_dst_token_revision ${dst_ctr} $cdr_name)
+  local prev_src_revision
+  prev_src_revision=$(get_cdr_src_token_revision "${src_ctr}" "${cdr_name}")
+  local prev_dst_revision
+  prev_dst_revision=$(get_cdr_dst_token_revision "${dst_ctr}" "${cdr_name}")
 
   for ((i = 1; i < loop_count; i++)); do
     # wait for period(s)
-    sleep $(($period+3))
+    sleep $((period+3))
 
     # get new token reversion
-    local src_revision=$(get_cdr_src_token_revision ${src_ctr} $cdr_name)
-    local dst_revision=$(get_cdr_dst_token_revision ${dst_ctr} $cdr_name)
+    local src_revision
+    src_revision=$(get_cdr_src_token_revision "${src_ctr}" "${cdr_name}")
+    local dst_revision
+    dst_revision=$(get_cdr_dst_token_revision "${dst_ctr}" "${cdr_name}")
 
-    assertNotEquals "source token revision must change" $src_revision $prev_src_revision
-    assertNotEquals "destination token revision must change" $dst_revision $prev_dst_revision
+    assertNotEquals "source token revision must change" "${src_revision}" "${prev_src_revision}"
+    assertNotEquals "destination token revision must change" "${dst_revision}" "${prev_dst_revision}"
 
     prev_src_revision=$src_revision
     prev_dst_revision=$dst_revision
@@ -117,57 +132,61 @@ function try_p2p_token_rolling() {
 }
 
 function test_p2p_token_rolling_all() {
-  try_p2p_token_rolling ${AUTONOMY_ALICE_CONTAINER} ${AUTONOMY_BOB_CONTAINER} "alice-bob" 2
-  try_p2p_token_rolling ${AUTONOMY_BOB_CONTAINER} ${AUTONOMY_ALICE_CONTAINER} "bob-alice" 2
+  try_p2p_token_rolling "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "alice-bob" 2
+  try_p2p_token_rolling "${AUTONOMY_BOB_CONTAINER}" "${AUTONOMY_ALICE_CONTAINER}" "bob-alice" 2
 }
 
 function test_p2p_token_rolling_party_offline() {
-  local alice_ctr=${AUTONOMY_ALICE_CONTAINER}
-  local bob_ctr=${AUTONOMY_BOB_CONTAINER}
+  local alice_ctr="${AUTONOMY_ALICE_CONTAINER}"
+  local bob_ctr="${AUTONOMY_BOB_CONTAINER}"
   local cdr_name="alice-bob"
   local dr_name="alice-bob"
   local src_domain="alice"
 
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-  assertEquals "true" "$ready"
+  local ready
+  ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+  assertEquals "true" "${ready}"
   # party offline
-  docker stop $bob_ctr
+  docker stop "${bob_ctr}"
 
   for i in {1..30}; do
-    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-    if [[ $ready == "false" ]]; then
+    local ready
+    ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+    if [[ "${ready}" == "false" ]]; then
       break
     fi
     sleep 2
   done
-  assertEquals "false" "$ready"
+  assertEquals "false" "${ready}"
 
   # back online
-  docker start $bob_ctr
+  docker start "${bob_ctr}"
 
   for i in {1..30}; do
-    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-    if [[ $ready == "true" ]]; then
+    local ready
+    ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+    if [[ "${ready}" == "true" ]]; then
       break
     fi
     sleep 2
   done
-  assertEquals "true" "$ready"
+  assertEquals "true" "${ready}"
 
   # run task
   test_p2p_kuscia_job
 }
 
 function test_p2p_token_rolling_auth_removal() {
-  local alice_ctr=${AUTONOMY_ALICE_CONTAINER}
-  local bob_ctr=${AUTONOMY_BOB_CONTAINER}
+  local alice_ctr="${AUTONOMY_ALICE_CONTAINER}"
+  local bob_ctr="${AUTONOMY_BOB_CONTAINER}"
   local cdr_name="alice-bob"
   local dr_name="alice-bob"
   local dst_domain="bob"
   local src_domain="alice"
 
-  local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-  assertEquals "true" "$ready"
+  local ready
+  ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+  assertEquals "true" "${ready}"
 
   # save dr
   docker exec "$bob_ctr" kubectl get cdr $cdr_name -o json | "${TEST_BIN_DIR}"/jq 'del(.status)' > tmp.json
@@ -175,64 +194,70 @@ function test_p2p_token_rolling_auth_removal() {
   docker exec "$bob_ctr" kubectl delete cdr $cdr_name
 
   for i in {1..30}; do
-    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-    if [[ $ready == "false" ]]; then
+    local ready
+    ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+    if [[ "${ready}" == "false" ]]; then
       break
     fi
     sleep 2
   done
-  assertEquals "false" "$ready"
+  assertEquals "false" "${ready}"
 
   # dr restore
-  docker cp tmp.json $bob_ctr:/home/kuscia/
-  docker exec "$bob_ctr" kubectl create -f /home/kuscia/tmp.json
+  docker cp tmp.json "${bob_ctr}":/home/kuscia/
+  docker exec "${bob_ctr}" kubectl create -f /home/kuscia/tmp.json
 
   for i in {1..30}; do
-    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-    if [[ $ready == "true" ]]; then
+    local ready
+    ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+    if [[ "${ready}" == "true" ]]; then
       break
     fi
     sleep 2
   done
-  assertEquals "true" "$ready"
+  assertEquals "true" "${ready}"
 
   # run task
   test_p2p_kuscia_job
 }
 
 function test_p2p_token_rolling_cert_misconfig() {
-  local alice_ctr=${AUTONOMY_ALICE_CONTAINER}
-  local bob_ctr=${AUTONOMY_BOB_CONTAINER}
+  local alice_ctr="${AUTONOMY_ALICE_CONTAINER}"
+  local bob_ctr="${AUTONOMY_BOB_CONTAINER}"
   local dr_name="alice-bob"
   local cdr_name="alice-bob"
   local dst_domain="bob"
   local src_domain="alice"
 
-  local dst_cert=$(docker exec "$alice_ctr" kubectl get domain $dst_domain -o jsonpath='{.spec.cert}')
-  local mis_cert=$(docker exec "$alice_ctr" kubectl get domain $src_domain -o jsonpath='{.spec.cert}') # use alice domain cert as misconfigured cert
+  local dst_cert
+  local mis_cert
+  dst_cert=$(docker exec "${alice_ctr}" kubectl get domain "${dst_domain}" -o jsonpath='{.spec.cert}')
+  mis_cert=$(docker exec "${alice_ctr}" kubectl get domain "${src_domain}" -o jsonpath='{.spec.cert}') # use alice domain cert as misconfigured cert
   # cert mis config
-  docker exec "$alice_ctr" kubectl patch domain $dst_domain --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${mis_cert}}]"
+  docker exec "${alice_ctr}" kubectl patch domain "${dst_domain}" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${mis_cert}}]"
 
   for i in {1..30}; do
-    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-    if [[ $ready == "false" ]]; then
+    local ready
+    ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+    if [[ "${ready}" == "false" ]]; then
       break
     fi
     sleep 2
   done
-  assertEquals "false" "$ready"
+  assertEquals "false" "${ready}"
 
   # cert restore
-  docker exec "$alice_ctr" kubectl patch domain $dst_domain --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${dst_cert}}]"
+  docker exec "${alice_ctr}" kubectl patch domain "${dst_domain}" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${dst_cert}}]"
 
   for i in {1..30}; do
-    local ready=$(get_dr_revision_token_ready $alice_ctr $dr_name $src_domain)
-    if [[ $ready == "true" ]]; then
+    local ready
+    ready=$(get_dr_revision_token_ready "${alice_ctr}" "${dr_name}" "${src_domain}")
+    if [[ "${ready}" == "true" ]]; then
       break
     fi
     sleep 2
   done
-  assertEquals "true" "$ready"
+  assertEquals "true" "${ready}"
 
   # run task
   test_p2p_kuscia_job

@@ -29,7 +29,7 @@ while true; do
 done
 
 datasource_uid=$(curl -s http://admin:admin@localhost:3000/api/datasources | jq -r '.[] | select(.name == "Kuscia-monitor") | .uid')
-kill $(ps -a | grep grafana | awk {'print $1'})
+kill "$(pgrep grafana)"
 sed -i "s/{{Kuscia-datasource}}/${datasource_uid}/g" /var/lib/grafana/dashboards/machine.json
 sed -i '1n;s/#//g' /usr/share/grafana/conf/provisioning/dashboards/sample.yaml
 cp /usr/share/grafana/conf/provisioning/dashboards/sample.yaml /etc/grafana/provisioning/dashboards/sample.yaml

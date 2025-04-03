@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ ldflags="-s -w -X github.com/secretflow/kuscia/pkg/utils/meta.KusciaVersion=$(gi
 function build_kuscia() {
   echo "build kuscia binary..."
   mkdir -p build/apps/kuscia
-  eval go build -ldflags=\"$ldflags\" -o build/apps/kuscia/kuscia ./cmd/kuscia
+  eval "go build -ldflags=\"$ldflags\" -o build/apps/kuscia/kuscia ./cmd/kuscia"
 }
 
 function build_transport() {
   mkdir -p build/apps/transport
-  eval go build -ldflags=\"$ldflags\" -o build/apps/transport/transport ./cmd/transport
+  eval "go build -ldflags=\"$ldflags\" -o build/apps/transport/transport ./cmd/transport"
 }
 
 usage="$(basename "$0") [OPTIONS]
@@ -65,7 +65,7 @@ done
 shift $((OPTIND - 1))
 
 base_dir=$(cd "$(dirname "$0")"/.. && pwd -P)
-pushd $base_dir
+pushd "$base_dir"
 
 if [[ $app_type == "" ]]; then
   echo "$usage"

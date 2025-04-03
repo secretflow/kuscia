@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ done
 
 function check_ttp_server_image() {
   local has_image=false
-  if docker image inspect ${TTP_IMAGE} >/dev/null 2>&1; then
+  if docker image inspect "${TTP_IMAGE}" >/dev/null 2>&1; then
     has_image=true
   fi
 
@@ -60,7 +60,7 @@ function check_ttp_server_image() {
     echo -e "${GREEN}Found the ttp server image '${TTP_IMAGE}' on host${NC}"
   else
     echo -e "${GREEN}Not found the ttp server image '${TTP_IMAGE}' on host and pulling...${NC}"
-    docker pull ${TTP_IMAGE}
+    docker pull "${TTP_IMAGE}"
   fi
 }
 
@@ -76,11 +76,11 @@ function run_ttp_server() {
 
   container_id=$(docker ps -a | grep ttp-server | awk '{print $1}')
   if [ "${container_id}" != "" ];then
-    docker rm ${TTP_SERVER_CONTAINER_NAME}
+    docker rm "${TTP_SERVER_CONTAINER_NAME}"
     return
   fi
 
-  docker run -d --name ${TTP_SERVER_CONTAINER_NAME} --restart=always --network=${NETWORK_NAME} ${TTP_IMAGE} || exit 1
+  docker run -d --name "${TTP_SERVER_CONTAINER_NAME}" --restart=always --network="${NETWORK_NAME}" "${TTP_IMAGE}" || exit 1
   echo -e "${GREEN}Finish deploying ttp server container '${TTP_SERVER_CONTAINER_NAME}'${NC}"
 }
 
