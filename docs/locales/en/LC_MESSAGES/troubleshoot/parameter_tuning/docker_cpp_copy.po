@@ -19,11 +19,11 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:1
 msgid "Docker 24.0 环境中 C++17 文件复制权限问题"
-msgstr ""
+msgstr "C++17 File Copy Permission Issues in Docker 24.0 Environment"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:3
 msgid "问题描述"
-msgstr ""
+msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:5
 msgid ""
@@ -33,46 +33,47 @@ msgid ""
 "系统调用流程中，该函数首先会创建一个具有仅写权限（0200）的目标文件，然后将源文件的内容写入该目标文件，最后复制源文件 mode "
 "至目标文件，mode 复制到目标文件失败，从而导致目标文件权限报错。"
 msgstr ""
+"When using the C++17 standard `std::filesystem::copy` system call in an environment with Docker 24.0, you may encounter `permission denied` errors. This occurs because Docker 24.0's HostPath mount sets default file permissions to 0600, which doesn't support 0200 (write-only) permissions. In the C++17 `std::filesystem::copy` system call process, the function first creates a target file with write-only permissions (0200), then writes the source file's content to this target file, and finally attempts to copy the source file's mode to the target file. This mode copying fails, resulting in permission errors for the target file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:7
 msgid "文件权限介绍"
-msgstr ""
+msgstr "Introduction to File Permissions"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:9
 msgid "文件权限种类："
-msgstr ""
+msgstr "Types of File Permissions:"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:11
 msgid "读取权限（4）：允许读取文件内容。"
-msgstr ""
+msgstr "**Read Permission (4)**: Allows reading file contents."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:12
 msgid "写入权限（2）：允许写入文件内容。"
-msgstr ""
+msgstr "**Write Permission (2)**: Allows writing to file contents."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:13
 msgid "执行权限（1）：允许执行文件。"
-msgstr ""
+msgstr "**Execute Permission (1)**: Allows executing the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:14
 msgid "特殊权限（0）：禁止访问文件或者特殊权限位。"
-msgstr ""
+msgstr "**Special Permission (0)**: Prohibits file access or represents special permission bits."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:16
 msgid "文件权限用户："
-msgstr ""
+msgstr "File Permission Users:"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:18
 msgid "文件所有者：拥有文件的权限。"
-msgstr ""
+msgstr "**File Owner**: Has permissions for the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:19
 msgid "文件所属组：拥有文件的权限的组。"
-msgstr ""
+msgstr "**File Group**: The group that has permissions for the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:20
 msgid "其他用户：拥有文件的权限的其他用户。"
-msgstr ""
+msgstr "**Other Users**: Other users who have permissions for the file."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:22
 msgid ""
@@ -80,14 +81,15 @@ msgid ""
 "`-` 表示文件，其他类型包括如 d 代表目录、l 代表链接等。`rw-` 表示文件所有者具有读写权限，`---` "
 "表示文件所属组无权限，`---` 表示其他用户无权限。"
 msgstr ""
+"In Linux systems, you can view file permissions using the `ls -la` command. For example, `-rw-------` indicates file permissions of `0600`. The first `-` indicates a file; other types include 'd' for directories, 'l' for links, etc. `rw-` means the file owner has read and write permissions, `---` means the file group has no permissions, and `---` means other users have no permissions."
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:24
 msgid "推荐解决方案"
-msgstr ""
+msgstr "Recommended Solution"
 
 #: ../../troubleshoot/parameter_tuning/docker_cpp_copy.md:26
 msgid ""
 "推荐的解决方法是使用 C++ 的 `fstream` 库以编程方式复制文件内容，并在创建新文件时指定 `0600` "
 "权限，然后将源文件内容写到目标文件。这样，新文件对拥有者提供读写权限，从而避免了权限问题。"
 msgstr ""
-
+"The recommended solution is to use C++'s `fstream` library to programmatically copy file contents, specifying `0600` permissions when creating the new file, and then writing the source file's contents to the target file. This way, the new file provides read and write permissions to the owner, avoiding permission issues."
