@@ -19,292 +19,294 @@ msgstr ""
 
 #: ../../reference/apis/config_cn.md:1
 msgid "Config"
-msgstr ""
+msgstr "Config"
 
 #: ../../reference/apis/config_cn.md:3
 msgid ""
 "在 Kuscia 中，你可以使用 Config 接口管理节点应用的配置，并且 Kuscia 会通过节点私钥加密保存注册的配置信息。 从 "
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/config.proto)"
 " 可以找到对应的 protobuf 文件。"
-msgstr ""
+msgstr "In Kuscia, you can use the Config interface to manage the configuration of node applications, and Kuscia will "
+"encrypt and save the registered configuration information using the node’s private key. You can find the corresponding "
+"protobuf file from [Here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/config.proto)"
 
 #: ../../reference/apis/config_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/config_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Function Name"
 
 #: ../../reference/apis/config_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/config_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/config_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/config_cn.md
 msgid "[CreateConfig](#create-config)"
-msgstr ""
+msgstr "[CreateConfig](#create-config)"
 
 #: ../../reference/apis/config_cn.md
 msgid "CreateConfigRequest"
-msgstr ""
+msgstr "CreateConfigRequest"
 
 #: ../../reference/apis/config_cn.md
 msgid "CreateConfigResponse"
-msgstr ""
+msgstr "CreateConfigResponse"
 
 #: ../../reference/apis/config_cn.md ../../reference/apis/config_cn.md:20
 msgid "注册配置"
-msgstr ""
+msgstr "Register Configuration"
 
 #: ../../reference/apis/config_cn.md
 msgid "[QueryConfig](#query-config)"
-msgstr ""
+msgstr "[QueryConfig](#query-config)"
 
 #: ../../reference/apis/config_cn.md
 msgid "QueryConfigRequest"
-msgstr ""
+msgstr "QueryConfigRequest"
 
 #: ../../reference/apis/config_cn.md
 msgid "QueryConfigResponse"
-msgstr ""
+msgstr "QueryConfigResponse"
 
 #: ../../reference/apis/config_cn.md ../../reference/apis/config_cn.md:82
 msgid "查询配置"
-msgstr ""
+msgstr "Query Configuration"
 
 #: ../../reference/apis/config_cn.md
 msgid "[UpdateConfig](#update-config)"
-msgstr ""
+msgstr "[UpdateConfig](#update-config)"
 
 #: ../../reference/apis/config_cn.md
 msgid "UpdateConfigRequest"
-msgstr ""
+msgstr "UpdateConfigRequest"
 
 #: ../../reference/apis/config_cn.md
 msgid "UpdateConfigResponse"
-msgstr ""
+msgstr "UpdateConfigResponse"
 
 #: ../../reference/apis/config_cn.md ../../reference/apis/config_cn.md:137
 msgid "更新配置"
-msgstr ""
+msgstr "Update Configuration"
 
 #: ../../reference/apis/config_cn.md
 msgid "[DeleteConfig](#delete-config)"
-msgstr ""
+msgstr "[DeleteConfig](#delete-config)"
 
 #: ../../reference/apis/config_cn.md
 msgid "DeleteConfigRequest"
-msgstr ""
+msgstr "DeleteConfigRequest"
 
 #: ../../reference/apis/config_cn.md
 msgid "DeleteConfigResponse"
-msgstr ""
+msgstr "DeleteConfigResponse"
 
 #: ../../reference/apis/config_cn.md ../../reference/apis/config_cn.md:195
 msgid "删除配置"
-msgstr ""
+msgstr "Delete Configuration"
 
 #: ../../reference/apis/config_cn.md
 msgid "[BatchQueryConfig](#batch-query-config)"
-msgstr ""
+msgstr "[BatchQueryConfig](#batch-query-config)"
 
 #: ../../reference/apis/config_cn.md
 msgid "BatchQueryConfigRequest"
-msgstr ""
+msgstr "BatchQueryConfigRequest"
 
 #: ../../reference/apis/config_cn.md
 msgid "BatchQueryConfigResponse"
-msgstr ""
+msgstr "BatchQueryConfigResponse"
 
 #: ../../reference/apis/config_cn.md ../../reference/apis/config_cn.md:246
 msgid "批量查询配置"
-msgstr ""
+msgstr "Batch Query Configuration"
 
 #: ../../reference/apis/config_cn.md:16
 msgid "接口详情"
-msgstr ""
+msgstr "Interface Details"
 
 #: ../../reference/apis/config_cn.md:22 ../../reference/apis/config_cn.md:84
 #: ../../reference/apis/config_cn.md:139 ../../reference/apis/config_cn.md:197
 #: ../../reference/apis/config_cn.md:248
 msgid "HTTP路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/config_cn.md:24
 msgid "/api/v1/config/create"
-msgstr ""
+msgstr "/api/v1/config/create"
 
 #: ../../reference/apis/config_cn.md:26
 msgid "请求（CreateConfigRequest）"
-msgstr ""
+msgstr "Request（CreateConfigRequest）"
 
 #: ../../reference/apis/config_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/config_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/config_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/config_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/config_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/config_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/config_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/config_cn.md
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/config_cn.md
 msgid "ConfigData[]"
-msgstr ""
+msgstr "ConfigData[]"
 
 #: ../../reference/apis/config_cn.md
 msgid "data[].key"
-msgstr ""
+msgstr "data[].key"
 
 #: ../../reference/apis/config_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/config_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/config_cn.md
 msgid "配置的键"
-msgstr ""
+msgstr "Configuration Key"
 
 #: ../../reference/apis/config_cn.md
 msgid "data[].value"
-msgstr ""
+msgstr "data[].value"
 
 #: ../../reference/apis/config_cn.md
 msgid "配置的值"
-msgstr ""
+msgstr "Configuration Value"
 
 #: ../../reference/apis/config_cn.md:35
 msgid "响应（CreateConfigResponse）"
-msgstr ""
+msgstr "Response（CreateConfigResponse）"
 
 #: ../../reference/apis/config_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/config_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/config_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/config_cn.md:41 ../../reference/apis/config_cn.md:103
 #: ../../reference/apis/config_cn.md:158 ../../reference/apis/config_cn.md:214
 #: ../../reference/apis/config_cn.md:268
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/config_cn.md:43 ../../reference/apis/config_cn.md:105
 #: ../../reference/apis/config_cn.md:160 ../../reference/apis/config_cn.md:216
 #: ../../reference/apis/config_cn.md:270
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate Request: "
 
 #: ../../reference/apis/config_cn.md:68 ../../reference/apis/config_cn.md:121
 #: ../../reference/apis/config_cn.md:181 ../../reference/apis/config_cn.md:232
 #: ../../reference/apis/config_cn.md:286
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Response: "
 
 #: ../../reference/apis/config_cn.md:86
 msgid "/api/v1/config/query"
-msgstr ""
+msgstr "/api/v1/config/query"
 
 #: ../../reference/apis/config_cn.md:88
 msgid "请求（QueryConfigRequest）"
-msgstr ""
+msgstr "Request（QueryConfigRequest）"
 
 #: ../../reference/apis/config_cn.md
 msgid "key"
-msgstr ""
+msgstr "key"
 
 #: ../../reference/apis/config_cn.md:95
 msgid "响应（QueryConfigResponse）"
-msgstr ""
+msgstr "Response（QueryConfigResponse）"
 
 #: ../../reference/apis/config_cn.md
 msgid "value"
-msgstr ""
+msgstr "value"
 
 #: ../../reference/apis/config_cn.md:141
 msgid "/api/v1/config/update"
-msgstr ""
+msgstr "/api/v1/config/update"
 
 #: ../../reference/apis/config_cn.md:143
 msgid "请求（UpdateConfigRequest）"
-msgstr ""
+msgstr "Request（UpdateConfigRequest）"
 
 #: ../../reference/apis/config_cn.md:152
 msgid "响应（UpdateConfigResponse）"
-msgstr ""
+msgstr "Response（UpdateConfigResponse）"
 
 #: ../../reference/apis/config_cn.md:199
 msgid "/api/v1/config/delete"
-msgstr ""
+msgstr "/api/v1/config/delete"
 
 #: ../../reference/apis/config_cn.md:201
 msgid "请求（DeleteConfigRequest）"
-msgstr ""
+msgstr "Request（DeleteConfigRequest）"
 
 #: ../../reference/apis/config_cn.md
 msgid "keys"
-msgstr ""
+msgstr "keys"
 
 #: ../../reference/apis/config_cn.md
 msgid "string[]"
-msgstr ""
+msgstr "string[]"
 
 #: ../../reference/apis/config_cn.md
 msgid "配置的键列表"
-msgstr ""
+msgstr "Configuration Key List"
 
 #: ../../reference/apis/config_cn.md:208
 msgid "响应（DeleteConfigResponse）"
-msgstr ""
+msgstr "Response（DeleteConfigResponse）"
 
 #: ../../reference/apis/config_cn.md:250
 msgid "/api/v1/config/batchQuery"
-msgstr ""
+msgstr "/api/v1/config/batchQuery"
 
 #: ../../reference/apis/config_cn.md:252
 msgid "请求（BatchQueryConfigRequest）"
-msgstr ""
+msgstr "Request（BatchQueryConfigRequest）"
 
 #: ../../reference/apis/config_cn.md:259
 msgid "响应（BatchQueryConfigResponse）"
-msgstr ""
+msgstr "Response（BatchQueryConfigResponse）"
 
