@@ -7,7 +7,7 @@ Kuscia 内置了对内核参数的检查，如果内核参数不满足 Kuscia �
 示例说明：
 
 ```bash
-# 在 Kuscia Master/Autonomy 容器内执行
+# Execute inside the Kuscia Master/Autonomy container
 kubectl get node <node-instance-id> -o yaml
 ```
 

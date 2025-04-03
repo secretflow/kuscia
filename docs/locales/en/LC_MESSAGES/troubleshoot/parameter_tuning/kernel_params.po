@@ -19,36 +19,39 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:1
 msgid "内核参数"
-msgstr ""
+msgstr "Kernel Parameters"
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:3
 msgid ""
-"Kuscia "
-"运行小任务时对内核参数要求不高，但是在运行一些比较大的任务或者任务并发量较高时，如果内核参数配置的不太合理，会非常容易导致任务失败（常见的表现是网络通讯失败）。"
-msgstr ""
+"Kuscia 运行小任务时对内核参数要求不高，但是在运行一些比较大的任务或者任务并发量较高时，如果内核参数配置的不太合理，会非常容易导致任务失败（常见的表现是网络通讯失败）。"
+msgstr "" 
+"Kuscia has low kernel parameter requirements when running small tasks, but when running larger tasks or with high concurrency, if the kernel parameters are not configured properly, tasks can easily fail (commonly manifesting as network communication failures)."
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:5
-msgid ""
-"Kuscia 内置了对内核参数的检查，如果内核参数不满足 Kuscia 推荐的高并发配置，会在节点实例的 `Node` 上进行 Condition"
-" 标记。日常运维时，可以通过该标记来排查任务失败是否可能是内核参数不满足要求导致的。"
-msgstr ""
+msgid "" 
+"Kuscia 内置了对内核参数的检查，如果内核参数不满足 Kuscia 推荐的高并发配置，会在节点实例的 `Node` 上进行 Condition 标记。日常运维时，可以通过该标记来排查任务失败是否可能是内核参数不满足要求导致的。"
+msgstr "" 
+"Kuscia has built-in kernel parameter checks. If the kernel parameters do not meet Kuscia's recommended high-concurrency configuration, a Condition mark will be made on the node instance's `Node`. During routine maintenance, this mark can be used to investigate whether task failures might be caused by insufficient kernel parameters."
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:7
 msgid "示例说明："
-msgstr ""
+msgstr "Example explanation:"
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:14
 msgid ""
-"如果返回如下的示例，代表内核参数不符合 Kuscia 的推荐配置，可以参考脚本 "
-"[script/deploy/set_kernel_params.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/set_kernel_params.sh)"
-" 来进行内核参数的调整："
-msgstr ""
+"如果返回如下的示例，代表内核参数不符合 Kuscia 的推荐配置，可以参考脚本 [script/deploy/set_kernel_params.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/set_kernel_params.sh) 来进行内核参数的调整："
+msgstr "" 
+"If the following example is returned, it indicates that the kernel parameters do not meet Kuscia's recommended configuration. You can refer to the script [script/deploy/set_kernel_params.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/set_kernel_params.sh) to adjust the kernel parameters:"
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:16
-msgid "注： 因为内核参数在容器内无法调整，需要在宿主机上进行调整（且需要 `root` 权限才可以调整）"
-msgstr ""
+msgid "" 
+"注： 因为内核参数在容器内无法调整，需要在宿主机上进行调整（且需要 `root` 权限才可以调整）"
+msgstr "" 
+"Note: Since kernel parameters cannot be adjusted within containers, they need to be adjusted on the host machine (and require `root` privileges to adjust)"
 
 #: ../../troubleshoot/parameter_tuning/kernel_params.md:27
-msgid "如果 `status: \"True\"` 代表宿主机内核参数符合 Kuscia 的推荐内核参数配置，不再需要调整。"
+msgid "" 
+"如果 `status: \"True\"` 代表宿主机内核参数符合 Kuscia 的推荐内核参数配置，不再需要调整。"
 msgstr ""
+"If `status: \"True\"`, it means the host machine's kernel parameters meet Kuscia's recommended kernel parameter configuration and no further adjustment is needed."
 
