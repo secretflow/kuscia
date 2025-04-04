@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Kuscia package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
-#, fuzzy
+
 msgid ""
 msgstr ""
 "Project-Id-Version: Kuscia \n"
@@ -19,11 +19,11 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/summary_cn.md:1
 msgid "概览"
-msgstr ""
+msgstr "Overview"
 
 #: ../../reference/apis/datamesh/summary_cn.md:3
 msgid "Data Mesh API 使用场景"
-msgstr ""
+msgstr "Data Mesh API Use Cases"
 
 #: ../../reference/apis/datamesh/summary_cn.md:5
 msgid ""
@@ -31,14 +31,17 @@ msgid ""
 "DomainDataSource 信息的能力。隐私计算平台（如 SecretPad）可以使用 [Kuscia "
 "API](../summary_cn.md)接口实现更广泛的功能。"
 msgstr ""
+"The Data Mesh API is designed for privacy computing applications (such as SecretFlow and TrustedFlow), "
+"providing the capability to retrieve DomainData and DomainDataSource information. "
+"Privacy computing platforms (such as SecretPad) can use the [Kuscia API](../summary_cn.md) to implement broader functionalities."
 
 #: ../../reference/apis/datamesh/summary_cn.md:7
 msgid "Data Mesh API 约定"
-msgstr ""
+msgstr "Data Mesh API Conventions"
 
 #: ../../reference/apis/datamesh/summary_cn.md:9
 msgid "Data Mesh API 提供 HTTP 和 GRPC 两种访问方法。"
-msgstr ""
+msgstr "The Data Mesh API provides two access methods: HTTP and GRPC."
 
 #: ../../reference/apis/datamesh/summary_cn.md:11
 msgid ""
@@ -46,6 +49,8 @@ msgid ""
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)"
 " 找到 Kuscia API 的 protobuf 文件。"
 msgstr ""
+"When using GRPC, you can generate client stub code for your programming language using protoc. "
+"You can find the Kuscia API protobuf files [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi)."
 
 #: ../../reference/apis/datamesh/summary_cn.md:15
 msgid ""
@@ -54,10 +59,14 @@ msgid ""
 "guides/proto3/#json) 。当请求的 `Content-Type` 为 `application/x-protobuf` 时，使用"
 " PROTOBUF 编码，否则使用 JSON 编码。"
 msgstr ""
+"When using HTTP, you can access the corresponding HTTP endpoints. "
+"The Kuscia API interface is provided in the form of POST+JSON or POST+PROTOBUF and conforms to protobuf's "
+"[JSON Mapping](https://protobuf.dev/programming-guides/proto3/#json). "
+"When the request `Content-Type` is `application/x-protobuf`, PROTOBUF encoding is used; otherwise, JSON encoding is used."
 
 #: ../../reference/apis/datamesh/summary_cn.md:18
 msgid "请求和响应约定"
-msgstr ""
+msgstr "Request and Response Conventions"
 
 #: ../../reference/apis/datamesh/summary_cn.md:20
 msgid ""
@@ -65,6 +74,9 @@ msgid ""
 "[CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest) ， "
 "该字段可以携带您自定义的一些数据。"
 msgstr ""
+"Requests always carry a header field of type [RequestHeader](#request-header), such as "
+"[CreateDomainDataRequest](domaindata_cn.md#请求createdomaindatarequest). "
+"This field can include user-defined data."
 
 #: ../../reference/apis/datamesh/summary_cn.md:22
 msgid ""
@@ -72,120 +84,127 @@ msgid ""
 "[CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ，"
 " 该字段描述了响应的状态信息。"
 msgstr ""
+"Responses always carry a status field of type [Status](#status), such as "
+"[CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse). "
+"This field describes the response status information."
 
 #: ../../reference/apis/datamesh/summary_cn.md:26
 msgid "RequestHeader"
-msgstr ""
+msgstr "RequestHeader"
 
 #: ../../reference/apis/datamesh/summary_cn.md:28
 msgid "RequestHeader 可以携带自定义的信息。"
-msgstr ""
+msgstr "RequestHeader can carry user-defined information."
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "custom_headers"
-msgstr ""
+msgstr "custom_headers"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "map<string, string>"
-msgstr ""
+msgstr "map<string, string>"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "自定义的键值对"
-msgstr ""
+msgstr "Custom key-value pairs"
 
 #: ../../reference/apis/datamesh/summary_cn.md:36
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: ../../reference/apis/datamesh/summary_cn.md:38
 msgid "Status 携带请求响应的状态信息。"
-msgstr ""
+msgstr "Status carries the status information of the request response."
 
 #: ../../reference/apis/datamesh/summary_cn.md:40
 msgid ""
 "参考: [GRPC 的 Status "
 "定义](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)"
 msgstr ""
+"Reference: [GRPC Status Definition](https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto)"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "code"
-msgstr ""
+msgstr "code"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "int32"
-msgstr ""
+msgstr "int32"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "错误码"
-msgstr ""
+msgstr "Error code"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "message"
-msgstr ""
+msgstr "message"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "错误信息"
-msgstr ""
+msgstr "Error message"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "details"
-msgstr ""
+msgstr "details"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid ""
 "[google.protobuf.Any](https://protobuf.dev/programming-"
 "guides/proto3/#json)[]"
 msgstr ""
+"[google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[]"
 
 #: ../../reference/apis/datamesh/summary_cn.md
 msgid "错误详细描述"
-msgstr ""
+msgstr "Detailed error description"
 
 #: ../../reference/apis/datamesh/summary_cn.md:50
 msgid "如何使用 Data Mesh API"
-msgstr ""
+msgstr "How to Use the Data Mesh API"
 
 #: ../../reference/apis/datamesh/summary_cn.md:52
 msgid ""
 "Data Mesh API 用于在 Domain 侧管理 DomainData，提供了 HTTP 和 GRPC 两种访问方法，在请求形式上和 "
 "Kuscia API 均相同。 和 Kuscia API 不同的是，Data Mesh API 位于 Domain 侧而不是 master 上。"
 msgstr ""
+"The Data Mesh API is used to manage DomainData on the Domain side, providing both HTTP and GRPC access methods. "
+"The request format is the same as the Kuscia API. However, unlike the Kuscia API, the Data Mesh API operates on the Domain side rather than the master."
 
 #: ../../reference/apis/datamesh/summary_cn.md:55
 msgid "GRPC"
-msgstr ""
+msgstr "GRPC"
 
 #: ../../reference/apis/datamesh/summary_cn.md:57
 msgid "为了使用 GRPC 连接上 Kuscia API，您需要："
-msgstr ""
+msgstr "To connect to the Kuscia API via GRPC, you need to:"
 
 #: ../../reference/apis/datamesh/summary_cn.md:59
 msgid ""
@@ -194,24 +213,23 @@ msgid ""
 " 下载 Kuscia 的 protobuf 文件，使用 protoc 生成对应编程语言的客户端桩代码。 关于如何生成客户端桩代码，请参看 "
 "[Protobuf官方教程](https://protobuf.dev/getting-started/)。"
 msgstr ""
+"Download the Kuscia protobuf files from "
+"[here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/datamesh) "
+"and use protoc to generate client stub code for your programming language. "
+"For instructions on generating client stub code, refer to the [official Protobuf tutorial](https://protobuf.dev/getting-started/)."
 
 #: ../../reference/apis/datamesh/summary_cn.md:61
 msgid "使用 GRPC 客户端发起请求。"
-msgstr ""
+msgstr "Use a GRPC client to send requests."
 
 #: ../../reference/apis/datamesh/summary_cn.md:63
 msgid "GRPC 端口默认在：Domain 的 8071。"
-msgstr ""
-
-#: ../../reference/apis/datamesh/summary_cn.md:65
-msgid "HTTP"
-msgstr ""
+msgstr "The default GRPC port for the Domain is 8071."
 
 #: ../../reference/apis/datamesh/summary_cn.md:67
 msgid "您也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，您需要替换 {} 中的内容："
-msgstr ""
+msgstr "You can also use an HTTP client tool, such as curl, to connect to the Kuscia API. You need to replace the content inside {}."
 
 #: ../../reference/apis/datamesh/summary_cn.md:75
 msgid "HTTP 端口默认在：Domain 的 8070。"
-msgstr ""
-
+msgstr "The default HTTP port for the Domain is 8070."

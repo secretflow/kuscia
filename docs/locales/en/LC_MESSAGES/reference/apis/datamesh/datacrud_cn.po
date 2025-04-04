@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:1
 msgid "DataMesh 数据读写"
-msgstr ""
+msgstr "DataMesh Data Read/Write"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:3
 msgid ""
@@ -29,7 +29,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:5
 msgid "如何通过Arrow Flight访问DataMesh"
-msgstr ""
+msgstr "How to Access DataMesh via Arrow Flight"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:7
 msgid ""
@@ -67,7 +67,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:19
 msgid "DataMesh 支持的数据服务"
-msgstr ""
+msgstr "Data Services Supported by DataMesh"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:21
 msgid "DataMesh 当前仅支持以下查询能力:"
@@ -75,7 +75,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:53
 msgid "注意事项"
-msgstr ""
+msgstr "Reminders"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:55
 msgid ""

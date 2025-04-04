@@ -20,7 +20,7 @@ msgstr ""
 #: ../../reference/apis/datamesh/domaindata_cn.md:1
 #: ../../reference/apis/datamesh/domaindata_cn.md:267
 msgid "DomainData"
-msgstr ""
+msgstr "DomainData"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:3
 msgid ""
@@ -32,7 +32,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:7
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "方法名"
@@ -103,7 +103,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:15
 msgid "接口详情"
-msgstr ""
+msgstr "API Details"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:21
 #: ../../reference/apis/datamesh/domaindata_cn.md:105
@@ -347,7 +347,7 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:253
 msgid "公共"
-msgstr ""
+msgstr "Common Part"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:257
 msgid "ListDomainDataRequestData"
