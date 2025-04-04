@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Kuscia package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
-#, fuzzy
+
 msgid ""
 msgstr ""
 "Project-Id-Version: Kuscia \n"
@@ -19,19 +19,19 @@ msgstr ""
 
 #: ../../deployment/deploy_check.md:1
 msgid "部署要求"
-msgstr ""
+msgstr "Deployment Requirements"
 
 #: ../../deployment/deploy_check.md:3
 msgid "前言"
-msgstr ""
+msgstr "Preface"
 
 #: ../../deployment/deploy_check.md:5
 msgid "Kuscia 对操作系统、Docker 版本、处理器型号等有一些要求，部署 Kuscia 请确保您的环境符合以下要求。"
-msgstr ""
+msgstr "Kuscia has specific requirements for the operating system, Docker version, processor model, etc. Please ensure your environment meets the following requirements before deploying Kuscia."
 
 #: ../../deployment/deploy_check.md:7
 msgid "Docker 版本要求"
-msgstr ""
+msgstr "Docker Version Requirements"
 
 #: ../../deployment/deploy_check.md:9
 msgid ""
@@ -39,10 +39,13 @@ msgid ""
 "的安装请参考[官方文档](https://docs.docker.com/engine/install/)，Docker "
 "部署包下载参考[Docker软件包](https://download.docker.com/linux/centos/7/x86_64/stable/Packages/)。"
 msgstr ""
+"We recommend using Docker **20.10.24 or later**. "
+"For Docker installation, please refer to the [official documentation](https://docs.docker.com/engine/install/). "
+"For Docker package downloads, see [Docker Packages](https://download.docker.com/linux/centos/7/x86_64/stable/Packages/)."
 
 #: ../../deployment/deploy_check.md:11
 msgid "K8s 版本要求"
-msgstr ""
+msgstr "K8s Version Requirements"
 
 #: ../../deployment/deploy_check.md:13
 msgid ""
@@ -50,114 +53,118 @@ msgid ""
 "的安装请参考[官方文档](https://kubernetes.io/docs/setup/production-"
 "environment/tools/kubeadm/install-kubeadm/)。"
 msgstr ""
+"We recommend using K8s **1.20.0 or later**. "
+"For K8s installation, please refer to the [official documentation](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)."
 
 #: ../../deployment/deploy_check.md:15
 msgid "MySQL 版本要求"
-msgstr ""
+msgstr "MySQL Version Requirements"
 
 #: ../../deployment/deploy_check.md:17
 msgid "我们推荐使用 MySQL **8.0.23 或者更高版本**，防止由于小版本(如 8.0.20) Bug 导致的连接异常。"
-msgstr ""
+msgstr "We recommend using MySQL **8.0.23 or later** to prevent connection issues caused by minor version bugs (e.g., 8.0.20)."
 
 #: ../../deployment/deploy_check.md:19
 msgid "处理器要求"
-msgstr ""
+msgstr "Processor Requirements"
 
 #: ../../deployment/deploy_check.md:21
 msgid "支持的处理器包括："
-msgstr ""
+msgstr "Supported processors include:"
 
 #: ../../deployment/deploy_check.md:23
 msgid "**x86_64**"
-msgstr ""
+msgstr "**x86_64**"
 
 #: ../../deployment/deploy_check.md:24
 msgid "**arm64**"
-msgstr ""
+msgstr "**arm64**"
 
 #: ../../deployment/deploy_check.md:26
 msgid "操作系统要求"
-msgstr ""
+msgstr "Operating System Requirements"
 
 #: ../../deployment/deploy_check.md:28
 msgid "支持的操作系统包括："
-msgstr ""
+msgstr "Supported operating systems include:"
 
 #: ../../deployment/deploy_check.md:30
 msgid "**MacOS**"
-msgstr ""
+msgstr "**MacOS**"
 
 #: ../../deployment/deploy_check.md:31
 msgid "**CentOS 7**"
-msgstr ""
+msgstr "**CentOS 7**"
 
 #: ../../deployment/deploy_check.md:32
 msgid "**CentOS 8**"
-msgstr ""
+msgstr "**CentOS 8**"
 
 #: ../../deployment/deploy_check.md:33
 msgid "**Ubuntu 16.04 及以上版本**"
-msgstr ""
+msgstr "**Ubuntu 16.04 and later**"
 
 #: ../../deployment/deploy_check.md:34
 msgid ""
 "**Windows** (通过 [WSL2 上的 Ubuntu](https://docs.microsoft.com/en-"
 "us/windows/wsl/install-win10))"
 msgstr ""
+"**Windows** (via [Ubuntu on WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10))"
 
 #: ../../deployment/deploy_check.md:36
 msgid "内核版本要求"
-msgstr ""
+msgstr "Kernel Version Requirements"
 
 #: ../../deployment/deploy_check.md:38
 msgid "支持的 Linux 内核版本为："
-msgstr ""
+msgstr "Supported Linux kernel versions:"
 
 #: ../../deployment/deploy_check.md:40
 msgid "**Kernel 4.6 或更高版本**"
-msgstr ""
+msgstr "**Kernel 4.6 or later**"
 
 #: ../../deployment/deploy_check.md:42
 msgid "资源要求"
-msgstr ""
+msgstr "Resource Requirements"
 
 #: ../../deployment/deploy_check.md:44
 msgid "部署 Kuscia 的最低资源为："
-msgstr ""
+msgstr "The minimum resources required to deploy Kuscia are:"
 
 #: ../../deployment/deploy_check.md:46
 msgid "**1 核 CPU**"
-msgstr ""
+msgstr "**1-core CPU**"
 
 #: ../../deployment/deploy_check.md:47
 msgid "**2 GB 内存**"
-msgstr ""
+msgstr "**2 GB RAM**"
 
 #: ../../deployment/deploy_check.md:48
 msgid "**20 GB 硬盘**"
-msgstr ""
+msgstr "**20 GB disk space**"
 
 #: ../../deployment/deploy_check.md:50
 msgid "为了确保良好的性能，建议的系统资源为："
-msgstr ""
+msgstr "To ensure optimal performance, the recommended system resources are:"
 
 #: ../../deployment/deploy_check.md:52
 msgid "**8 核 CPU**"
-msgstr ""
+msgstr "**8-core CPU**"
 
 #: ../../deployment/deploy_check.md:53
 msgid "**16 GB 内存**"
-msgstr ""
+msgstr "**16 GB RAM**"
 
 #: ../../deployment/deploy_check.md:54
 msgid "**200 GB 硬盘**"
-msgstr ""
+msgstr "**200 GB disk space**"
 
 #: ../../deployment/deploy_check.md:56
 msgid "网络要求"
-msgstr ""
+msgstr "Network Requirements"
 
 #: ../../deployment/deploy_check.md:58
 msgid "如果节点之间的入口网络存在网关时，为了确保节点之间通信正常，需要网关符合一些要求，详情请参考[网络要求](./networkrequirements.md)"
-msgstr ""
+msgstr "If there is a gateway in the ingress network between nodes, it must meet specific requirements to ensure proper communication. For details, please refer to [Network Requirements](./networkrequirements.md)."
+
 
