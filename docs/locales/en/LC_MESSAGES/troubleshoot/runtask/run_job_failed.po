@@ -19,25 +19,26 @@ msgstr ""
 
 #: ../../troubleshoot/runtask/run_job_failed.md:1
 msgid "作业运行失败"
-msgstr ""
+msgstr "Run Job failed"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:3
 msgid "排查步骤"
-msgstr ""
+msgstr "Troubleshooting steps"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:5
 msgid "检查机器配置"
-msgstr ""
+msgstr "Check the machine configuration"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:7
 msgid ""
 "若机器不满足[官网推荐配置](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
 "Hans/getting_started/quickstart_cn#id2)，可能会造成部分服务无法正常工作，从而导致作业运行失败。"
-msgstr ""
+msgstr "If the machine does not meet the [officially recommended configuration](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
+"Hans/getting_started/quickstart_cn#id2), some services may not work properly, resulting in job execution failure."
 
 #: ../../troubleshoot/runtask/run_job_failed.md:9
 msgid "检查网络授权"
-msgstr ""
+msgstr "Check network authorization"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:11
 msgid ""
@@ -45,64 +46,64 @@ msgid ""
 "容器）并执行`kubectl get cdr`命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST"
 " 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` "
 "命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](../network/network_authorization_check.md)。"
-msgstr ""
+msgstr "Most task failure issues are network-related. To check network authorization, log in to the container (the master container in centralized mode and the autonomy container in peer-to-peer mode) and execute the `kubectl get cdr` command to view the authorization information. When READY is True, it indicates normal communication; when it is empty, it indicates abnormal communication. You can first check if the HOST and port are correct or execute the `kubectl get cdr ${cdr_name} -oyaml` command to view detailed information. If the parameters are correct but communication is still abnormal, refer to [Authorization Error Troubleshooting](../network/network_authorization_check.md)."
 
 #: ../../troubleshoot/runtask/run_job_failed.md:13
 msgid "检查内核参数"
-msgstr ""
+msgstr "Check kernel parameters"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:15
 msgid ""
 "如果宿主机的内核参数配置过低，在运行一些比较大的任务或者并发多任务时，也容易出现任务失败的情况，可以参考 "
 "[内核参数](../parameter_tuning/kernel_params.md) 检查内核参数是否符合 Kuscia 的推荐配置。"
-msgstr ""
+msgstr "If the kernel parameters of the host machine are configured too low, task failures may easily occur when running large tasks or multiple concurrent tasks. You can refer to [Kernel Parameters](../parameter_tuning/kernel_params.md) to check if the kernel parameters meet Kuscia's recommended configuration."
 
 #: ../../troubleshoot/runtask/run_job_failed.md:17
 msgid "查看作业失败原因"
-msgstr ""
+msgstr "Check the reason for job failure"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:19
 msgid "登陆查看作业的容器"
-msgstr ""
+msgstr "Log in to the container to view the job"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:21
 msgid "若以中心化组网模式部署，请登陆到 Master 容器中"
-msgstr ""
+msgstr "If deployed in the centralized networking mode, log in to the Master container"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:27
 msgid "若以点对点组网模式部署，请登陆到下发作业的容器中，下面以 Alice 容器为例"
-msgstr ""
+msgstr "If deployed in the peer-to-peer networking mode, log in to the container that issues the job. The following uses the Alice container as an example"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:33
 msgid "查看作业信息："
-msgstr ""
+msgstr "View job information:"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:39
 msgid "查看作业下任务的详细信息"
-msgstr ""
+msgstr "View detailed information of tasks under the job"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:41
 #: ../../troubleshoot/runtask/run_job_failed.md:53
 msgid "具体失败原因可以查看 status 字段下的相关内容"
-msgstr ""
+msgstr "You can view the relevant content under the status field for the specific reason for failure"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:51
 msgid "查看任务 Pod 的详细信息"
-msgstr ""
+msgstr "View detailed information of the task Pod"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:75
 msgid "查看任务 Pod 详细日志"
-msgstr ""
+msgstr "View detailed logs of the task Pod"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:77
 msgid "若以中心化组网模式部署，登陆到 Alice 和 Bob 容器命令如下"
-msgstr ""
+msgstr "If deployed in the centralized networking mode, the commands to log in to the Alice and Bob containers are as follows"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:93
 msgid "若以点对点组网模式部署，登陆到 Alice 和 Bob 容器命令如下"
-msgstr ""
+msgstr "If deployed in the peer-to-peer networking mode, the commands to log in to the Alice and Bob containers are as follows"
 
 #: ../../troubleshoot/runtask/run_job_failed.md:109
 msgid "任务运行遇到网络错误时，可以参考[这里](../network/network_troubleshoot.md)排查。"
-msgstr ""
+msgstr "When a network error occurs during task execution, you can refer to [here](../network/network_troubleshoot.md) for troubleshooting."
 
