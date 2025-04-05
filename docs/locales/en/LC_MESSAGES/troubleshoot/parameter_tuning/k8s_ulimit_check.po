@@ -30,7 +30,7 @@ msgid ""
 "在 Kuscia K8s 部署模式下，SecretFlow 应用运行过程中出现创建线程失败问题：`pthread_create failed: "
 "Resource temporarily unavailable`。"
 msgstr "" 
-"In Kusicia K8s deployment mode, during the SecretFlow application runtime, the creation of new thread fails with the message: `pthread_create failed: "
+"In Kuscia K8s deployment mode, during the SecretFlow application runtime, thread creation fails with the message: `pthread_create failed: "
 "Resource temporarily unavailable.`"
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:7
@@ -42,7 +42,7 @@ msgid ""
 "K8s 集群 Kubelet 组件的 `podPidsLimit` 参数被限制为某个特定值，而 SecretFlow 默认启动线程数为：物理机 "
 "CPU * 32 + Ray 的线程数 ，如果 SecretFlow 运行启动的线程数超过了 Kubelet 限制的线程数时则会出现以上报错。"
 msgstr "In K8s clusters, the `podPidsLimit` parameter of the Kubelet components is configured to a specific value. However, SecretFlow's default startup threads count equals to:
-(Count of CPUs in physical machine) * 32 + (Count of threads in Ray). If the amount of threads created by SecretFlow exceeds the configuration of Kubelet, that error emerges."
+(Count of CPUs in physical machine) * 32 + (Count of threads in Ray). If the amount of threads created by SecretFlow exceeds the configuration of Kubelet, the above error occurs."
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:11
 msgid "解决方案"
@@ -55,9 +55,9 @@ msgid ""
 "官方文档](https://kubernetes.io/docs/reference/config-api/kubelet-"
 "config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)。"
 msgstr ""
-"1、Find the configuration file of kubelet.service /var/lib/kubelet/config.yaml（This example follows the official documentation's recommended configuration path）, correct "
-"the `podPidsLimit` parameter, like `podPidsLimit: -1`. See more "
-"details in the [K8s Official Documentation](https://kubernetes.io/docs/reference/config-api/kubelet-"
+"1、Locate the kubelet.service configuration file (e.g., /var/lib/kubelet/config.yaml as recommended in the official documentation), and adjust"
+"the `podPidsLimit` parameter (e.g., `podPidsLimit: -1`). For more "
+"information, see the [K8s Official Documentation](https://kubernetes.io/docs/reference/config-api/kubelet-"
 "config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)."
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:15

@@ -26,7 +26,7 @@ msgid ""
 "Health 提供了服务的健康检查，你可以借助这些 API 了解服务的健康状态。 你可以从 "
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto)"
 " 找到对应的 protobuf 文件。"
-msgstr "The Health component provides health check capabilities for Kuscia services. With the help of it, you can monitor and retrieve "
+msgstr "The Health component provides health check capabilities for Kuscia services. The API allows you to monitor and retrieve "
        "the health status of services. Click [HERE](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto)"
        " to find the corresponding protobuf files."
 
