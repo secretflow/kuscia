@@ -19,87 +19,86 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:1
 msgid "OSS（对象存储服务）Endpoint 配置问题"
-msgstr ""
+msgstr "OSS (Object Storage Service) Endpoint Configuration Issues"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:3
 msgid "问题描述"
-msgstr ""
+msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:5
 msgid "Kuscia 访问百度云数据存储服务 BOS 报错，报错如下所示："
-msgstr ""
+msgstr "Error when Kuscia accessing Baidu Cloud Object Storage (BOS) service, the error is shown below:"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:11
 msgid "解决方案"
-msgstr ""
+msgstr "Solution"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:13
 msgid ""
 "使用 Kuscia API 注册数据源的时候，需要带上 `s3` 前缀来标明 client 将使用 `AWS s3` 标准协议连接 BOS。即如果"
 " BOS 的地址为 `bcebos.xxx.com`，需要使用 `s3.bcebos.xxx.com` 作为 Endpoint。示例如下所示："
-msgstr ""
+msgstr "When registering a data source using Kuscia API, you need to add the `s3` prefix to indicate that the client will use the `AWS s3` standard protocol to connect to BOS. For example, if the BOS address is `bcebos.xxx.com`, you need to use `s3.bcebos.xxx.com` as the Endpoint. Example shown below:"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:41
 msgid "原因分析"
-msgstr ""
+msgstr "Root Cause Analysis"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:43
 msgid ""
 "AWS s3 服务在调用 ListObjectsV2 操作时报错 400 "
 "通常表示客户端发送了一个格式不正确或无效的请求。这可能是由于请求参数错误、缺失、或者请求的格式不符合 AWS 服务的要求。"
-msgstr ""
+msgstr "A 400 error when calling ListObjectsV2 operation in AWS s3 service usually indicates that the client sent an incorrectly formatted or invalid request. This may be due to incorrect request parameters, missing parameters, or request format not meeting AWS service requirements."
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:45
 msgid "问题总结"
-msgstr ""
+msgstr "Problem Summary"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:47
 msgid "不同云平台提供的存储服务 Endpoint 有所差异，需要根据具体平台的要求进行适配。"
-msgstr ""
+msgstr "Storage service Endpoints provided by different cloud platforms vary, and adaptation needs to be made according to specific platform requirements."
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md:49
 msgid ""
 "百度云 BOS 关于兼容 AWS s3 "
 "文档可以参考[这里](https://cloud.baidu.com/doc/BOS/s/ojwvyq973)。"
-msgstr ""
+msgstr "For Baidu Cloud BOS AWS s3 compatibility documentation, please refer to [here](https://cloud.baidu.com/doc/BOS/s/ojwvyq973)."
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "Java SDK 是否带 s3 前缀"
-msgstr ""
+msgstr "Whether Java SDK requires s3 prefix"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "Python SDK 是否带 s3 前缀"
-msgstr ""
+msgstr "Whether Python SDK requires s3 prefix"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "阿里云 OSS"
-msgstr ""
+msgstr "Alibaba Cloud OSS"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "带"
-msgstr ""
+msgstr "Required"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "带和不带前缀都支持"
-msgstr ""
+msgstr "Supports both with and without prefix"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "百度 BOS"
-msgstr ""
+msgstr "Baidu BOS"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "华为 OBS"
-msgstr ""
+msgstr "Huawei OBS"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "不带"
-msgstr ""
+msgstr "Not Required"
 
 #: ../../troubleshoot/parameter_tuning/kusciaapi_store_endpoint.md
 msgid "开源 minio"
-msgstr ""
-
+msgstr "Open Source MinIO"
