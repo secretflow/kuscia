@@ -228,7 +228,7 @@ msgstr "Status Information"
 #: ../../reference/apis/config_cn.md:158 ../../reference/apis/config_cn.md:214
 #: ../../reference/apis/config_cn.md:268
 msgid "请求示例"
-msgstr "Request Example"
+msgstr "Request Examples"
 
 #: ../../reference/apis/config_cn.md:43 ../../reference/apis/config_cn.md:105
 #: ../../reference/apis/config_cn.md:160 ../../reference/apis/config_cn.md:216
