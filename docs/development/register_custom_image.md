@@ -9,7 +9,7 @@
 ### 获取工具脚本
 
 ```shell
-# 使用的 Kuscia 镜像，这里使用 latest 版本镜像
+# Use Kuscia image, here we use the latest version
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 
 docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/register_app_image.sh > register_app_image.sh && chmod u+x register_app_image.sh
