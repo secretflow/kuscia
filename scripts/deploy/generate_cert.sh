@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,9 +32,9 @@ fi
 
 CERT_NAME=${DOMAIN_ID}.domain
 
-echo ${DOMAIN_KEY_DATA} | base64 -d > ${CERT_NAME}.key
+echo "${DOMAIN_KEY_DATA}" | base64 -d > "${CERT_NAME}".key
 
-openssl req -sha256 -new -key ${CERT_NAME}.key -out ${CERT_NAME}.csr -subj "/CN=${DOMAIN_ID}"
-openssl x509 -req -sha256 -days 36500 -in ${CERT_NAME}.csr -signkey ${CERT_NAME}.key -out ${CERT_NAME}.crt
+openssl req -sha256 -new -key "${CERT_NAME}".key -out "${CERT_NAME}".csr -subj "/CN=${DOMAIN_ID}"
+openssl x509 -req -sha256 -days 36500 -in "${CERT_NAME}".csr -signkey "${CERT_NAME}".key -out "${CERT_NAME}".crt
 
-cat ${CERT_NAME}.crt
+cat "${CERT_NAME}".crt

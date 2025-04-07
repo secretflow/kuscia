@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,21 +25,21 @@ KUSCIA_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 PROJECT_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 echo "${KUSCIA_ROOT}"
 
-if [ ! -d ${KUSCIA_ROOT}/kuscia ]; then
-  ln -s ${PROJECT_ROOT} ${KUSCIA_ROOT}/kuscia
+if [ ! -d "${KUSCIA_ROOT}"/kuscia ]; then
+  ln -s "${PROJECT_ROOT}" "${KUSCIA_ROOT}"/kuscia
 fi
 
 PROTO_ROOT_PATH=${KUSCIA_ROOT}/kuscia/proto
 
 function pre_install() {
   # install protoc-gen-go tool if not exist
-  if [ "$(which protoc-gen-go)" == "" ]; then
+  if [ "$(command -v protoc-gen-go)" == "" ]; then
     echo "Start to install protoc-gen-go tool"
     GO111MODULE=on go install -v google.golang.org/protobuf/cmd/protoc-gen-go
   fi
 
   # install protoc-gen-go-grpc tool if not exist
-  if [ "$(which protoc-gen-go-grpc)" == "" ]; then
+  if [ "$(command -v protoc-gen-go-grpc)" == "" ]; then
     echo "Start to install protoc-gen-go-grpc tool"
     GO111MODULE=on go install -v google.golang.org/grpc/cmd/protoc-gen-go-grpc
   fi

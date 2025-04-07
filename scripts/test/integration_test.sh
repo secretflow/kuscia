@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ TEST_BIN_DIR=${TEST_ROOT}/test_run/bin
 TEST_RUN_ROOT_DIR=${TEST_ROOT}/test_run
 IS_WSL=false
 
-if [ $WSL_DISTRO_NAME ]; then
+if [ "$WSL_DISTRO_NAME" ]; then
   IS_WSL=true
 fi
 echo "detect environment: is_wsl=${IS_WSL}"
@@ -74,7 +74,7 @@ function download_grpcurl() {
     ;;
   esac
   wget -O "${output_dir}"/grpcurl.tar.gz ${package_url}
-  tar -zxf "${output_dir}"/grpcurl.tar.gz -C ${output_dir}
+  tar -zxf "${output_dir}"/grpcurl.tar.gz -C "${output_dir}"
 }
 
 # Download jq
@@ -121,11 +121,11 @@ function installRequires() {
 }
 
 function copyTestScripts() {
-  docker run --name ${USER}-kuscia-integration-test --entrypoint="" -d ${KUSCIA_IMAGE} bash
-  docker cp ${USER}-kuscia-integration-test:/home/kuscia/scripts/test/suite ./test
-  docker cp ${USER}-kuscia-integration-test:/home/kuscia/scripts/test/vendor ./test
-  docker stop ${USER}-kuscia-integration-test
-  docker rm -v ${USER}-kuscia-integration-test
+  docker run --name "${USER}"-kuscia-integration-test --entrypoint="" -d "${KUSCIA_IMAGE}" bash
+  docker cp "${USER}"-kuscia-integration-test:/home/kuscia/scripts/test/suite ./test
+  docker cp "${USER}"-kuscia-integration-test:/home/kuscia/scripts/test/vendor ./test
+  docker stop "${USER}"-kuscia-integration-test
+  docker rm -v "${USER}"-kuscia-integration-test
 }
 
 
@@ -142,7 +142,7 @@ fi
 installRequires
 copyTestScripts
 
-docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker run --rm "${KUSCIA_IMAGE}" cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 
 if [ "${SELECTED_TEST_SUITE}" == "all" ]; then
   for suite in ${TEST_SUITES}; do

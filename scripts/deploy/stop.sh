@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,13 +56,13 @@ function get_running_container_list() {
 
   case "$container_type" in
       "p2p")
-          container_list=$(docker ps --format '{{.Names}}' -f name=^${P2P_PREFIX})
+          container_list=$(docker ps --format '{{.Names}}' -f name=^"${P2P_PREFIX}")
           ;;
       "center")
-          container_list=$(docker ps --format '{{.Names}}' -f name=^${CTR_PREFIX} | grep -v ^${P2P_PREFIX})
+          container_list=$(docker ps --format '{{.Names}}' -f name=^"${CTR_PREFIX}" | grep -v ^"${P2P_PREFIX}")
           ;;
       "all")
-          container_list=$(docker ps --format '{{.Names}}' -f name=^${CTR_PREFIX})
+          container_list=$(docker ps --format '{{.Names}}' -f name=^"${CTR_PREFIX}")
           ;;
   esac
 
@@ -88,7 +88,7 @@ function stop_container() {
       esac
   else
       log "Stopping Kuscia $container_type containers ..."
-      docker stop $container_list
+      docker stop "$container_list"
       log "Kuscia $container_type containers stopped successfully!"
   fi
 }

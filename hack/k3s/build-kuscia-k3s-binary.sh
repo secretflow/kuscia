@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 set -e -x
 
-cd $(dirname $0)/..
+cd "$(dirname "$0")"/..
 
 . ./scripts/version.sh
 
@@ -88,19 +88,19 @@ TAGS="static_build libsqlite3 ctrd apparmor seccomp netcgo osusergo providerless
 
 mkdir -p bin
 
-if [ ${ARCH} = armv7l ] || [ ${ARCH} = arm ]; then
+if [ "${ARCH}" = armv7l ] || [ "${ARCH}" = arm ]; then
     export GOARCH="arm"
     export GOARM="7"
     # Context: https://github.com/golang/go/issues/58425#issuecomment-1426415912
     export GOEXPERIMENT=nounified
 fi
 
-if [ ${ARCH} = s390x ]; then
+if [ "${ARCH}" = s390x ]; then
     export GOARCH="s390x"
 fi
 
 echo Building k3s
-CGO_ENABLED=1 "${GO}" build $BLDFLAGS -tags "$TAGS" -buildvcs=false -gcflags="all=${GCFLAGS}" -ldflags "$VERSIONFLAGS $LDFLAGS $STATIC" -o bin/k3s ./cmd/server
+CGO_ENABLED=1 "${GO}" build "$LDFLAGS" -tags "$TAGS" -buildvcs=false -gcflags="all=${GCFLAGS}" -ldflags "$VERSIONFLAGS $LDFLAGS $STATIC" -o bin/k3s ./cmd/server
 
 stat bin/k3s
 exit 0

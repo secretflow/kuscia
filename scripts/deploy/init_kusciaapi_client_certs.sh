@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ set -e
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
-mkdir -p ${ROOT}/var/certs
+mkdir -p "${ROOT}"/var/certs
 
-pushd ${ROOT}/var/certs >/dev/null || exit
+pushd "${ROOT}"/var/certs >/dev/null || exit
 
 CLIENT=kusciaapi-client
 
