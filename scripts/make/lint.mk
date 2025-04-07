@@ -82,14 +82,14 @@ lint-license-fix:
 
 
 # ========================================= shell check ============================================
-# todo: maybe need to fix?
-SHELLCHECK_SKIP := SC2317,SC2126,SC2153,SC2001,SC2086,SC2166,SC2155,SC2034,SC2154,SC2174
+SHELLCHECK_SKIP := SC1091,SC2034
 
 .PHONY: lint-shell-check
 lint-shell-check:
 	@$(LOG_TARGET)
 	shellcheck --version
-	shellcheck -e ${SHELLCHECK_SKIP} **/*.sh
+	shellcheck -e ${SHELLCHECK_SKIP} ./hack/**/*.sh
+	shellcheck -e ${SHELLCHECK_SKIP} ./scripts/**/*.sh
 
 
 ##@ Lint
