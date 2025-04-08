@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-
+	"github.com/lib/pq"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -40,6 +40,17 @@ func (mysqlValidator MySQLDatastoreEndpointValidator) PingDatastoreEndpoint(data
 	}
 
 	return pingDatastoreEndpointByDriverName(c.FormatDSN(), "mysql")
+}
+
+type PostgresDatastoreEndpointValidator struct{}
+
+func (postgresValidator PostgresDatastoreEndpointValidator) PingDatastoreEndpoint(datastoreEndpoint string) error {
+	errorFormat := "DatastoreEndpoint config error: %s"
+	c, err := pq.ParseURL(datastoreEndpoint)
+	if err != nil {
+		return fmt.Errorf(errorFormat, err.Error())
+	}
+	return pingDatastoreEndpointByDriverName(c, "postgresql")
 }
 
 func CheckDatastoreEndpoint(datastoreEndpoint string) error {
@@ -62,6 +73,8 @@ func CheckDatastoreEndpoint(datastoreEndpoint string) error {
 	switch driveName {
 	case "mysql":
 		datastoreEndpointValidator = MySQLDatastoreEndpointValidator{}
+	case "postgresql":
+		datastoreEndpointValidator = PostgresDatastoreEndpointValidator{}
 	default:
 		errMsg := fmt.Sprintf("Kuscia 'datastoreEndpoint' config: Driver Name is '%s' Not supported", driveName)
 		return fmt.Errorf("%s", errMsg)

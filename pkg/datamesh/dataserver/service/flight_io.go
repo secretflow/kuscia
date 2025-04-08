@@ -43,9 +43,10 @@ func NewFlightIO(dd service.IDomainDataService, ds service.IDomainDataSourceServ
 		dd: dd,
 		ds: ds,
 		ioMap: map[string]io.Server{
-			common.DomainDataSourceTypeLocalFS: inIO,
-			common.DomainDataSourceTypeOSS:     inIO,
-			common.DomainDataSourceTypeMysql:   inIO,
+			common.DomainDataSourceTypeLocalFS:    inIO,
+			common.DomainDataSourceTypeOSS:        inIO,
+			common.DomainDataSourceTypeMysql:      inIO,
+			common.DomainDataSourceTypePostgreSQL: inIO,
 		},
 		inIO: inIO,
 	}
@@ -61,6 +62,7 @@ func NewFlightIO(dd service.IDomainDataService, ds service.IDomainDataSourceServ
 
 func (dp *FlightIO) GetFlightInfo(ctx context.Context, msg proto.Message) (flightInfo *flight.FlightInfo, err error) {
 	reqCtx, err := utils.NewDataMeshRequestContext(dp.dd, dp.ds, msg)
+	nlog.Info(dp.ioMap)
 	if err != nil {
 		nlog.Warnf("GetFlightInfo create context fail: %s", err.Error())
 		return nil, err

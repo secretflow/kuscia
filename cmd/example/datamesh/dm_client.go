@@ -77,9 +77,10 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 		err          error
 		domainDataID string
 
-		localDatasourceID string
-		ossDatasourceID   string
-		mysqlDatasourceID string
+		localDatasourceID      string
+		ossDatasourceID        string
+		mysqlDatasourceID      string
+		postgresqlDatasourceID string
 	)
 
 	m.flightClient, _ = createFlightClient(metaServerEndpoint, config)
@@ -94,7 +95,11 @@ func (m *MockFlightClient) start(config *CertsConfig) error {
 	if mysqlDatasourceID, err = m.createMysqlDataSource(); err != nil {
 		return err
 	}
-	nlog.Infof("LocalFsID:%s ossID:%s mysqlID:%s", localDatasourceID, ossDatasourceID, mysqlDatasourceID)
+
+	if postgresqlDatasourceID, err = m.createPostgresqlDataSource(); err != nil {
+		return err
+	}
+	nlog.Infof("LocalFsID:%s ossID:%s mysqlID:%s postgresqlID:%s", localDatasourceID, ossDatasourceID, mysqlDatasourceID, postgresqlDatasourceID)
 
 	datasourceID := localDatasourceID
 	if err := m.QueryDataSource(datasourceID); err != nil {
@@ -163,6 +168,25 @@ func (m *MockFlightClient) createMysqlDataSource() (string, error) {
 		DomainId:     mockDomain,
 		DatasourceId: "",
 		Type:         "mysql",
+		Info: &kusciaapi.DataSourceInfo{
+			Database: &kusciaapi.DatabaseDataSourceInfo{
+				Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),
+				User:     "root",
+				Password: "passwd",
+				Database: "demo",
+			},
+		},
+	}
+	return m.createDataSource(createDatasourceReq)
+}
+
+func (m *MockFlightClient) createPostgresqlDataSource() (string, error) {
+	// CreateDatasource
+	createDatasourceReq := &kusciaapi.CreateDomainDataSourceRequest{
+		Header:       nil,
+		DomainId:     mockDomain,
+		DatasourceId: "",
+		Type:         "postgresql",
 		Info: &kusciaapi.DataSourceInfo{
 			Database: &kusciaapi.DatabaseDataSourceInfo{
 				Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),

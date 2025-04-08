@@ -154,7 +154,7 @@ type DomainDataSource struct {
 	DatasourceId string `protobuf:"bytes,1,opt,name=datasource_id,json=datasourceId,proto3" json:"datasource_id,omitempty"`
 	// datasource name
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// datasource type, enum [localfs, oss, mysql]
+	// datasource type, enum [localfs, oss, mysql, postgresql]
 	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	// datasource status, enum [Available,Unavailable]
 	Status string `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
@@ -261,7 +261,7 @@ type DataSourceInfo struct {
 	// OssDataSourceInfo is exist only if the type of datasource is oss
 	Localfs *LocalDataSourceInfo `protobuf:"bytes,1,opt,name=localfs,proto3" json:"localfs,omitempty"`
 	Oss     *OssDataSourceInfo   `protobuf:"bytes,2,opt,name=oss,proto3" json:"oss,omitempty"`
-	// Relational database info, such as Mysql/oracle/postgres
+	// Relational database info, such as Mysql/oracle/Postgresql
 	Database *DatabaseDataSourceInfo `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
 	// aliyun odps(MaxCompute)
 	Odps *OdpsDataSourceInfo `protobuf:"bytes,4,opt,name=odps,proto3" json:"odps,omitempty"`
@@ -489,7 +489,7 @@ func (x *OssDataSourceInfo) GetStorageType() string {
 	return ""
 }
 
-// datasource info for mysql/oracle/postgres
+// datasource info for mysql/oracle/postgresql
 type DatabaseDataSourceInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
