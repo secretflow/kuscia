@@ -17,13 +17,12 @@ package mods
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 
-	"github.com/agiledragon/gomonkey/v2"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/netstat"
 	"github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/xhd2015/xgo/runtime/mock"
 )
 
 func TestDomainRouteMod(t *testing.T) {
@@ -41,15 +40,13 @@ func TestDomainRouteMod(t *testing.T) {
 	mod := NewDomainRouteMod(reporter, nil, conf)
 	drMod := mod.(*DomainRouteMod)
 
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
+	mock.Patch(drMod.crdMod.Run, func(ctx context.Context) error {
 		return nil
 	})
-	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.taskGroup), "Start", func(_ *netstat.TaskGroup, ctx context.Context) ([]*netstat.TaskOutput, error) {
+	mock.Patch(drMod.taskGroup.Start, func(ctx context.Context) ([]*netstat.TaskOutput, error) {
 		return nil, nil
 	})
-	defer patch2.Reset()
 
 	err := mod.Run(context.Background())
 	assert.Nil(t, err)
@@ -70,15 +67,13 @@ func TestDomainRouteModFail(t *testing.T) {
 	mod := NewDomainRouteMod(reporter, nil, conf)
 	drMod := mod.(*DomainRouteMod)
 
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.crdMod), "Run", func(_ *CRDMod, ctx context.Context) error {
+	mock.Patch(drMod.crdMod.Run, func(ctx context.Context) error {
 		return nil
 	})
-	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(drMod.taskGroup), "Start", func(_ *netstat.TaskGroup, ctx context.Context) ([]*netstat.TaskOutput, error) {
+	mock.Patch(drMod.taskGroup.Start, func(ctx context.Context) ([]*netstat.TaskOutput, error) {
 		return nil, errors.New("")
 	})
-	defer patch2.Reset()
 
 	err := mod.Run(context.Background())
 	assert.NotNil(t, err)

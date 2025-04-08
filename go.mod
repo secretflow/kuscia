@@ -49,6 +49,7 @@ require (
 	github.com/stathat/consistent v1.0.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/match v1.1.1
+	github.com/xhd2015/xgo/runtime v1.1.2
 	gitlab.com/jonas.jasas/condchan v0.0.0-20190210165812-36637ad2b5bc
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.24.0

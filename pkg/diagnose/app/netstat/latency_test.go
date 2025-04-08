@@ -15,14 +15,13 @@
 package netstat
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
-	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
+	"github.com/xhd2015/xgo/runtime/mock"
 	"golang.org/x/net/context"
 	"gotest.tools/v3/assert"
 )
@@ -42,11 +41,10 @@ func TestLatency(t *testing.T) {
 			task := NewLatencyTask(cli, 20)
 			latencyTask := task.(*LatencyTask)
 
-			patches := gomonkey.ApplyMethod(reflect.TypeOf(cli), "Mock", func(_ *client.Client, ctx context.Context, request *diagnose.MockRequest) (response *diagnose.MockResponse, err error) {
+			mock.Patch(cli.Mock, func(ctx context.Context, request *diagnose.MockRequest) (response *diagnose.MockResponse, err error) {
 				time.Sleep(time.Duration(tt.latency) * time.Millisecond)
 				return nil, nil
 			})
-			defer patches.Reset()
 			latencyTask.Run(context.Background())
 			assert.Equal(t, latencyTask.output.Result, tt.result)
 		})

@@ -25,8 +25,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-
-	gomonkeyv2 "github.com/agiledragon/gomonkey/v2"
+	"github.com/xhd2015/xgo/runtime/mock"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
 	"github.com/secretflow/kuscia/pkg/gateway/utils"
@@ -89,7 +88,7 @@ func TestRegisterDomain_ServerNotExists(t *testing.T) {
 	csr, key := generateTestKey(t, utAlice)
 
 	// try to mock http request
-	gomonkeyv2.ApplyFunc(utils.DoHTTPWithRetry, func(i interface{}, out interface{}, hp *utils.HTTPParam, d time.Duration, tm int) error {
+	mock.Patch(utils.DoHTTPWithRetry, func(i interface{}, out interface{}, hp *utils.HTTPParam, d time.Duration, tm int) error {
 		assert.Equal(t, http.MethodPost, hp.Method)
 		assert.Equal(t, utAlice, hp.KusciaSource)
 		return nil

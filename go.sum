@@ -1341,6 +1341,12 @@ github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
 github.com/vishvananda/netns v0.0.4 h1:Oeaw1EM2JMxD51g9uhtC0D7erkIjgmj8+JZc26m1YX8=
 github.com/vishvananda/netns v0.0.4/go.mod h1:SpkAiCQRtJ6TvvxPnOSyH3BMl6unz3xZlaprSwhNNJM=
+github.com/xhd2015/xgo/runtime v1.1.0 h1:mC8VszBnvYQLA4IKUyxqUIo1OheesqcAKrSLt/pkncw=
+github.com/xhd2015/xgo/runtime v1.1.0/go.mod h1:9GBQ2SzJCzpD3T+HRN+2C0TUOGv7qIz4s0mad1xJ8Jo=
+github.com/xhd2015/xgo/runtime v1.1.1 h1:R1GUKbjCxBba5KFOBrYSue7Lgn/imRFaO9NcuQcBfhs=
+github.com/xhd2015/xgo/runtime v1.1.1/go.mod h1:9GBQ2SzJCzpD3T+HRN+2C0TUOGv7qIz4s0mad1xJ8Jo=
+github.com/xhd2015/xgo/runtime v1.1.2 h1:KdyJti7O1fxFkrIwEbfLfJYXMF4VZ1v3lqvrH/1Fbd0=
+github.com/xhd2015/xgo/runtime v1.1.2/go.mod h1:9GBQ2SzJCzpD3T+HRN+2C0TUOGv7qIz4s0mad1xJ8Jo=
 github.com/xhit/go-str2duration/v2 v2.1.0/go.mod h1:ohY8p+0f07DiV6Em5LKB0s2YpLtXVyJfNt1+BlmyAsU=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 h1:eY9dn8+vbi4tKz5Qo6v2eYzo7kUS51QINcR5jNpbZS8=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
