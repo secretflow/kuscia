@@ -16,16 +16,15 @@ package mods
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
-	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 	"github.com/stretchr/testify/assert"
+	"github.com/xhd2015/xgo/runtime/mock"
 )
 
 func TestCRDModSuccess(t *testing.T) {
@@ -39,7 +38,8 @@ func TestCRDModSuccess(t *testing.T) {
 	reporter := utils.NewReporter("")
 	mod := NewCRDMod(crdItems, reporter, nil)
 
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "QueryDomainRoute", func(_ *CRDMod, ctx context.Context, req *kusciaapi.QueryDomainRouteRequest) (*kusciaapi.QueryDomainRouteResponse, error) {
+	crdMod := mod.(*CRDMod)
+	mock.Patch(crdMod.QueryDomainRoute, func(ctx context.Context, req *kusciaapi.QueryDomainRouteRequest) (*kusciaapi.QueryDomainRouteResponse, error) {
 		resp := &kusciaapi.QueryDomainRouteResponse{
 			Status: &v1alpha1.Status{
 				Code: 0,
@@ -52,12 +52,10 @@ func TestCRDModSuccess(t *testing.T) {
 		}
 		return resp, nil
 	})
-	defer patch1.Reset()
 
-	patch2 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "CheckConnection", func(_ *CRDMod, domainroute *kusciaapi.QueryDomainRouteResponseData, item *CRDItem) error {
+	mock.Patch(crdMod.CheckConnection, func(domainroute *kusciaapi.QueryDomainRouteResponseData, item *CRDItem) error {
 		return nil
 	})
-	defer patch2.Reset()
 
 	err := mod.Run(context.Background())
 	assert.Nil(t, err)
@@ -73,8 +71,8 @@ func TestCRDModFail(t *testing.T) {
 	}
 	reporter := utils.NewReporter("")
 	mod := NewCRDMod(crdItems, reporter, nil)
-
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(mod), "QueryDomainRoute", func(_ *CRDMod, ctx context.Context, req *kusciaapi.QueryDomainRouteRequest) (*kusciaapi.QueryDomainRouteResponse, error) {
+	crdMod := mod.(*CRDMod)
+	mock.Patch(crdMod.QueryDomainRoute, func(ctx context.Context, req *kusciaapi.QueryDomainRouteRequest) (*kusciaapi.QueryDomainRouteResponse, error) {
 		resp := &kusciaapi.QueryDomainRouteResponse{
 			Status: &v1alpha1.Status{
 				Code: 20043,
@@ -82,7 +80,7 @@ func TestCRDModFail(t *testing.T) {
 		}
 		return resp, nil
 	})
-	defer patch1.Reset()
+
 	err := mod.Run(context.Background())
 	assert.NotNil(t, err)
 }

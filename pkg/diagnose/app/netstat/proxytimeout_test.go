@@ -16,13 +16,12 @@ package netstat
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
-	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
+	"github.com/xhd2015/xgo/runtime/mock"
 	"golang.org/x/net/context"
 	"gotest.tools/v3/assert"
 )
@@ -42,13 +41,12 @@ func TestProxyTask(t *testing.T) {
 			cli := client.NewDiagnoseClient("")
 			threshold := 2
 			task := NewProxyTimeoutTask(cli, threshold).(*ProxyTimeoutTask)
-			patches := gomonkey.ApplyMethod(reflect.TypeOf(cli), "Mock", func(_ *client.Client, ctx context.Context, request *diagnose.MockRequest) (response *diagnose.MockResponse, err error) {
+			mock.Patch(cli.Mock, func(ctx context.Context, request *diagnose.MockRequest) (response *diagnose.MockResponse, err error) {
 				if tt.duration > threshold {
 					return nil, fmt.Errorf("server timeout")
 				}
 				return nil, nil
 			})
-			defer patches.Reset()
 			task.Run(context.Background())
 			assert.Equal(t, task.output.Result, tt.result)
 		})
