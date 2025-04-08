@@ -64,7 +64,7 @@ msgstr "CreateAppImageResponse"
 
 #: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:20
 msgid "创建应用镜像模版"
-msgstr "Create application image template"
+msgstr "Create Application Image Template"
 
 #: ../../reference/apis/appimage_cn.md
 msgid "[UpdateAppImage](#update-appimage)"
@@ -80,7 +80,7 @@ msgstr "UpdateAppImageResponse"
 
 #: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:172
 msgid "更新应用镜像模版"
-msgstr "Update application image template"
+msgstr "Update Application Image Template"
 
 #: ../../reference/apis/appimage_cn.md
 msgid "[DeleteAppImage](#delete-appimage)"
@@ -96,7 +96,7 @@ msgstr "DeleteAppImageResponse"
 
 #: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:271
 msgid "删除应用镜像模版"
-msgstr "Delete application image template"
+msgstr "Delete Application Image Template"
 
 #: ../../reference/apis/appimage_cn.md
 msgid "[QueryAppImage](#query-appimage)"
@@ -112,7 +112,7 @@ msgstr "QueryAppImageResponse"
 
 #: ../../reference/apis/appimage_cn.md ../../reference/apis/appimage_cn.md:322
 msgid "查询应用镜像模版"
-msgstr "Query application image template"
+msgstr "Query Application Image Template"
 
 #: ../../reference/apis/appimage_cn.md
 msgid "[BatchQueryAppImage](#batch-query-appimage)"
@@ -128,7 +128,7 @@ msgstr "BatchQueryAppImageResponse"
 
 #: ../../reference/apis/appimage_cn.md
 msgid "批量查询应用镜像模版"
-msgstr "Batch query application image templates"
+msgstr "Batch Query Application Image Templates"
 
 #: ../../reference/apis/appimage_cn.md:16
 msgid "接口详情"
@@ -355,7 +355,7 @@ msgstr "data.deploy_templates"
 
 #: ../../reference/apis/appimage_cn.md:389
 msgid "批量查询节点状态"
-msgstr "Batch query node status"
+msgstr "Batch Query Node Status"
 
 #: ../../reference/apis/appimage_cn.md:393
 msgid "/api/v1/appimage/batch_query"
