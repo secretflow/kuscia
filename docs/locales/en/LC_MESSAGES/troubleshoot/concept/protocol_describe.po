@@ -19,46 +19,46 @@ msgstr ""
 
 #: ../../troubleshoot/concept/protocol_describe.md:1
 msgid "Protocol 通信协议"
-msgstr ""
+msgstr "Protocol Communication Protocol"
 
 #: ../../troubleshoot/concept/protocol_describe.md:3
 msgid "前言"
-msgstr ""
+msgstr "Introduction"
 
 #: ../../troubleshoot/concept/protocol_describe.md:5
 msgid ""
 "Protocol 是指 KusciaAPI "
 "以及节点对外网关使用的通信协议，有三种通信协议可供选择：NOTLS/TLS/MTLS（不区分大小写），详情请参考 [Kuscia "
 "配置文件](../../deployment/kuscia_config_cn.md#id3)。"
-msgstr ""
+msgstr "Protocol refers to the communication protocol used by KusciaAPI and node external gateway. There are three communication protocols available: NOTLS/TLS/MTLS (case-insensitive). For details, please refer to [Kuscia Configuration File](../../deployment/kuscia_config_cn.md#id3)."
 
 #: ../../troubleshoot/concept/protocol_describe.md:7
 msgid "不同 Protocol 对应的 KusciaAPI 请求"
-msgstr ""
+msgstr "KusciaAPI Requests for Different Protocols"
 
 #: ../../troubleshoot/concept/protocol_describe.md:9
 msgid ""
 "KusciaAPI 支持 NOTLS/TLS/MTLS 三种通信协议，在点对点和中心化部署模式中，KusciaAPI 接口默认使用的是 MTLS "
 "协议，不同协议使用 KusciaAPI 示例如下（此处以查询 domaindatasource 为例）："
-msgstr ""
+msgstr "KusciaAPI supports three communication protocols: NOTLS/TLS/MTLS. In peer-to-peer and centralized deployment modes, KusciaAPI interface uses MTLS protocol by default. Here are examples of using KusciaAPI with different protocols (using domaindatasource query as an example):"
 
 #: ../../troubleshoot/concept/protocol_describe.md:11
 msgid "NOTLS 协议下，KusciaAPI 接口使用 HTTP 协议，无需指定任何证书文件，示例如下："
-msgstr ""
+msgstr "Under NOTLS protocol, KusciaAPI interface uses HTTP protocol, no certificate files need to be specified. Example:"
 
 #: ../../troubleshoot/concept/protocol_describe.md:22
 msgid "MTLS 协议下，KusciaAPI 接口使用 HTTPS 协议，需要指定 TOKEN、CA 以及 KusciaAPI 证书文件，示例如下："
-msgstr ""
+msgstr "Under MTLS protocol, KusciaAPI interface uses HTTPS protocol, TOKEN, CA, and KusciaAPI certificate files need to be specified. Example:"
 
 #: ../../troubleshoot/concept/protocol_describe.md:37
 msgid ""
 "TLS协议下，KusciaAPI 接口使用 HTTPS 协议，需要指定 TOKEN、CA 证书文件，无需指定 KusciaAPI "
 "证书文件，示例如下："
-msgstr ""
+msgstr "Under TLS protocol, KusciaAPI interface uses HTTPS protocol, TOKEN and CA certificate files need to be specified, but KusciaAPI certificate file is not required. Example:"
 
 #: ../../troubleshoot/concept/protocol_describe.md:50
 msgid "不同 Protocol 对应的节点授权"
-msgstr ""
+msgstr "Node Authorization for Different Protocols"
 
 #: ../../troubleshoot/concept/protocol_describe.md:52
 msgid ""
@@ -66,11 +66,11 @@ msgid ""
 "配置文件](../../deployment/kuscia_config_cn.md#id3)。当本节点配置的 Protocol 为 "
 "TLS/MTLS 时，对端节点访问本节点使用 HTTPS 协议，当本节点配置的 Protocol 为 NOTLS 时，对端节点访问本节点使用 "
 "HTTP 协议，如下图所示。 ![protocol_describe](../../imgs/protocol_describe.png)"
-msgstr ""
+msgstr "For protocol types supported by Kuscia, please refer to [Kuscia Configuration File](../../deployment/kuscia_config_cn.md#id3). When the Protocol of this node is configured as TLS/MTLS, peer nodes access this node using HTTPS protocol. When the Protocol is configured as NOTLS, peer nodes access this node using HTTP protocol, as shown in the following figure. ![protocol_describe](../../imgs/protocol_describe.png)"
 
 #: ../../troubleshoot/concept/protocol_describe.md:52
 msgid "protocol_describe"
-msgstr ""
+msgstr "protocol_describe"
 
 #: ../../troubleshoot/concept/protocol_describe.md:55
 msgid ""
@@ -80,27 +80,26 @@ msgid ""
 " master 节点配置为 TLS 协议，lite 节点配置为 NOTLS 协议，即 lite 节点之间使用 HTTP 协议进行通信，lite "
 "访问 master 使用 HTTPS 协议进行通信，如下图所示。 "
 "![default_protocol](../../imgs/default_protocol.png)"
-msgstr ""
+msgstr "In the [Peer-to-Peer Mode Deployment](../../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md) documentation, the default node configuration is TLS protocol, meaning nodes communicate with each other using HTTPS protocol. In the [Centralized Mode Deployment](../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md) documentation, the master node is configured with TLS protocol by default, while lite nodes are configured with NOTLS protocol. This means lite nodes communicate with each other using HTTP protocol, and lite nodes access the master using HTTPS protocol, as shown in the following figure. ![default_protocol](../../imgs/default_protocol.png)"
 
 #: ../../troubleshoot/concept/protocol_describe.md:55
 msgid "default_protocol"
-msgstr ""
+msgstr "default_protocol"
 
 #: ../../troubleshoot/concept/protocol_describe.md:58
 msgid "修改 Protocol 的影响以及解决方法"
-msgstr ""
+msgstr "Impact and Solutions for Modifying Protocol"
 
 #: ../../troubleshoot/concept/protocol_describe.md:60
 msgid ""
 "用户在修改 [Kuscia 配置文件](../../deployment/kuscia_config_cn.md#id4)中的 Protocol "
 "协议之后，会导致 KusciaAPI 使用方式变化以及节点间的路由状态变为不可用，使用以下方法进行解决："
-msgstr ""
+msgstr "After modifying the Protocol in [Kuscia Configuration File](../../deployment/kuscia_config_cn.md#id4), it will cause changes in KusciaAPI usage and make the routing status between nodes unavailable. Use the following methods to resolve:"
 
 #: ../../troubleshoot/concept/protocol_describe.md:62
 msgid "KusciaApi 调用方式参考上述[不同 Protocol 对应的 KusciaAPI 请求](#protocol-kusciaapi)进行调整。"
-msgstr ""
+msgstr "Adjust the KusciaAPI calling method according to the above [KusciaAPI Requests for Different Protocols](#protocol-kusciaapi)."
 
 #: ../../troubleshoot/concept/protocol_describe.md:63
 msgid "通过 KusciaAPI 删除节点路由，按照上述[不同 Protocol 对应的节点授权](#id2)再重新创建。"
-msgstr ""
-
+msgstr "Delete node routes through KusciaAPI and recreate them according to the above [Node Authorization for Different Protocols](#id2)."
