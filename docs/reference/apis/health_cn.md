@@ -38,7 +38,7 @@ Health 提供了服务的健康检查，你可以借助这些 API 了解服务�
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# execution example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/healthZ' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
