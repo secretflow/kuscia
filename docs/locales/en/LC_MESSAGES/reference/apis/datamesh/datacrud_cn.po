@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Kuscia package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
 #
-#, fuzzy
+
 msgid ""
 msgstr ""
 "Project-Id-Version: Kuscia \n"
@@ -19,17 +19,20 @@ msgstr ""
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:1
 msgid "DataMesh 数据读写"
-msgstr ""
+msgstr "DataMesh Data Read and Write"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:3
 msgid ""
 "Kuscia DataMesh 提供了基于 gRRC 的数据读写操作，实现了 Arrow Flight "
 "提供的标准的数据服务接口，您可以通过初始化一个 Flight Client 来发起数据的请求。"
 msgstr ""
+"Kuscia DataMesh provides data read and write operations based on gRRC, "
+"implementing the standard data service interface provided by Arrow Flight. "
+"You can initiate data requests by initializing a Flight Client."
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:5
 msgid "如何通过Arrow Flight访问DataMesh"
-msgstr ""
+msgstr "How to Access DataMesh via Arrow Flight"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:7
 msgid ""
@@ -37,45 +40,50 @@ msgid ""
 " 服务交互，例如获取数据集信息、上传和下载数据等。在本例中，使用 Go 语言展示如何使用 "
 "`flight.FlightServiceClient`。"
 msgstr ""
+"FlightServiceClient is the main interface for clients in the Apache Arrow Flight framework. "
+"It provides a series of methods for interacting with the Flight service, such as retrieving dataset information, "
+"uploading, and downloading data. In this example, we demonstrate how to use `flight.FlightServiceClient` in Go."
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:9
 msgid ""
 "要使用 FlightServiceClient，您需要先建立一个与 Flight 服务端的 gRPC 连接，然后通过这个连接创建一个 "
 "FlightServiceClient 实例。"
 msgstr ""
+"To use FlightServiceClient, you first need to establish a gRPC connection with the Flight server, "
+"and then create a FlightServiceClient instance through this connection."
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:11
 msgid "查询数据"
-msgstr ""
+msgstr "Query Data"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:13
 msgid "![Alt text](../../../imgs/flight_do_get.png)"
-msgstr ""
+msgstr "![Alt text](../../../imgs/flight_do_get.png)"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:13
 #: ../../reference/apis/datamesh/datacrud_cn.md:17
 msgid "Alt text"
-msgstr ""
+msgstr "Alt text"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:15
 msgid "上传数据"
-msgstr ""
+msgstr "Upload Data"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:17
 msgid "![Alt text](../../../imgs/flight_do_put.png)"
-msgstr ""
+msgstr "![Alt text](../../../imgs/flight_do_put.png)"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:19
 msgid "DataMesh 支持的数据服务"
-msgstr ""
+msgstr "Data Services Supported by DataMesh"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:21
 msgid "DataMesh 当前仅支持以下查询能力:"
-msgstr ""
+msgstr "Currently, DataMesh only supports the following query capabilities:"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:53
 msgid "注意事项"
-msgstr ""
+msgstr "Reminders"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:55
 msgid ""
@@ -83,56 +91,66 @@ msgid ""
 "style=\"color: red;\">自动创建</span>。如果输出目标已经存在，均会尝试进行<span style=\"color: "
 "red;\">文件覆盖</span> ，具体来说"
 msgstr ""
-
-#: ../../reference/apis/datamesh/datacrud_cn.md:56
-msgid "localfs：打开输出文件时进行清空。如果目标目录不存在，会自动逐层创建。"
-msgstr ""
+"When using DataMesh (DataProxy) to output to various supported data sources, "
+"if the target file/table does not exist, it will be <span style=\"color: red;\">automatically created</span>. "
+"If the target already exists, it will attempt <span style=\"color: red;\">file overwrite</span>. Specifically:"
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:57
-msgid "OSS：直接上传文件。需配置 OSS 为允许自动创建目录、允许文件覆盖。"
+msgid "**localfs**：打开输出文件时进行清空。如果目标目录不存在，会自动逐层创建。"
 msgstr ""
+"**localfs**: The output file is cleared when opened. If the target directory does not exist, "
+"it will be automatically created layer by layer."
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:58
-msgid "MySQL："
+msgid "**OSS**：直接上传文件。需配置**OSS**为允许自动创建目录、允许文件覆盖。"
 msgstr ""
+"**OSS**: The file is directly uploaded. **OSS** must be configured to allow automatic directory creation and file overwriting."
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:59
-msgid "尝试 `DROP IF EXISTS` ，并重新创建表。"
-msgstr ""
+msgid "**MySQL**：尝试 `DROP IF EXISTS` ，并重新创建表。 "
+"如果 `DROP` 失败，继续尝试 `DELETE` 全表。仍失败则返回报错，退出存储。"
+"因此建议为 MySQL 配置 `CREATE / INSERT / SELECT / DROP` 权限。"
+"如果不能提供 `DROP` 权限，至少需具备 `DELETE` 权限。但注意此时清表速度将会下降。"
+msgstr "**MySQL**: "
+"Attempts `DROP IF EXISTS` and recreates the table."
+"If `DROP` fails, it attempts `DELETE` on the entire table. "
+"If that also fails, an error is returned, and storage exits."
+"It is recommended to configure **MySQL** with `CREATE / INSERT / SELECT / DROP` permissions. "
+"If `DROP` permission cannot be granted, at least `DELETE` permission is required. However, "
+"note that clearing the table will be slower in this case."
 
 #: ../../reference/apis/datamesh/datacrud_cn.md:60
-msgid "如果 `DROP` 失败，继续尝试 `DELETE` 全表。仍失败则返回报错，退出存储。"
-msgstr ""
+msgid "**ODPS**: 经过 DataProxy 服务代理实现"
+msgstr "**ODPS**: Implemented via the DataProxy service"
 
-#: ../../reference/apis/datamesh/datacrud_cn.md:62
-msgid ""
-"因此建议为 MySQL 配置 `CREATE / INSERT / SELECT / DROP` 权限。如果不能提供 `DROP` "
-"权限，至少需具备 `DELETE` 权限。但注意此时清表速度将会下降。"
-msgstr ""
-
-#: ../../reference/apis/datamesh/datacrud_cn.md:64
-msgid "ODPS: 经过 DataProxy 服务代理实现"
-msgstr ""
-
-#: ../../reference/apis/datamesh/datacrud_cn.md:65
+#: ../../reference/apis/datamesh/datacrud_cn.md:61
 msgid "读取数据时，需确保提供的 AK/SK 具备表的读取权限（没有 `Download` 权限只能查询低于 1W 行的数据）。"
 msgstr ""
+"When reading data, ensure that the provided AK/SK has read permissions for the table. "
+"Without `Download` permission, only up to 10,000 rows of data can be queried."
 
-#: ../../reference/apis/datamesh/datacrud_cn.md:66
+#: ../../reference/apis/datamesh/datacrud_cn.md:62
 msgid "写入数据时，需确保提供的 AK/SK 具备表的覆盖写权限；如果需要 DataProxy 自行建表，需确保具备创建表的权限。"
 msgstr ""
+"When writing data, ensure that the provided AK/SK has overwrite write permissions for the table. "
+"If DataProxy needs to create tables, ensure that it has table creation permissions."
 
-#: ../../reference/apis/datamesh/datacrud_cn.md:67
+#: ../../reference/apis/datamesh/datacrud_cn.md:63
 msgid ""
 "写入数据时，若表不存在，将创建表（表结构按照 DomainData "
 "的信息来创建）；若任务配置输出信息中包含分区信息，将创建分区表，并创建分区（分区字段类型断言为字符串类型）。"
 msgstr ""
+"When writing data, if the table does not exist, it will be created based on the structure of DomainData. "
+"If the task configuration includes partition information, a partitioned table will be created, along with partitions "
+"(partition fields are asserted as string type)."
 
-#: ../../reference/apis/datamesh/datacrud_cn.md:68
+#: ../../reference/apis/datamesh/datacrud_cn.md:64
 msgid "写入数据时，若表已存在，任务输出的分区不存在时，将按照任务配置中输出的分区信息创建分区，需保证分区信息正确并可正常创建，若创建失败，将导致失败报错。"
 msgstr ""
+"When writing data, if the table exists but the output partition does not, it will be created based on the task configuration. "
+"Ensure that the partition information is correct and can be successfully created; otherwise, an error will occur."
 
-#: ../../reference/apis/datamesh/datacrud_cn.md:69
+#: ../../reference/apis/datamesh/datacrud_cn.md:65
 msgid "写入数据时将采用覆盖写（普通表将覆盖整个表，分区表将覆盖分区）。"
-msgstr ""
+msgstr "When writing data, overwrite mode is used (regular tables will be completely overwritten, and partitioned tables will overwrite partitions)."
 

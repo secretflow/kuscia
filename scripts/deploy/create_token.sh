@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ fi
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 
 #create token
-kubectl create token $DOMAIN_ID --duration 87600h -n $DOMAIN_ID
+kubectl create token "$DOMAIN_ID" --duration 87600h -n "$DOMAIN_ID"
 
 # test
 # curl https://127.0.0.1:6443/api/v1/namespaces/${DOMAIN_ID}/pods -H"Authorization: Bearer ${TOKEN}"

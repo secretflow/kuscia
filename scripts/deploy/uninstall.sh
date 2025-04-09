@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,13 +57,13 @@ function get_running_container_list() {
 
   case "$container_type" in
       "p2p")
-          container_list=$(docker ps --format '{{.Names}}' -f name=^${P2P_PREFIX})
+          container_list=$(docker ps --format '{{.Names}}' -f name=^"${P2P_PREFIX}")
           ;;
       "center")
-          container_list=$(docker ps --format '{{.Names}}' -f name=^${CTR_PREFIX} | grep -v ^${P2P_PREFIX})
+          container_list=$(docker ps --format '{{.Names}}' -f name=^"${CTR_PREFIX}" | grep -v ^"${P2P_PREFIX}")
           ;;
       "all")
-          container_list=$(docker ps --format '{{.Names}}' -f name=^${CTR_PREFIX})
+          container_list=$(docker ps --format '{{.Names}}' -f name=^"${CTR_PREFIX}")
           ;;
   esac
 
@@ -75,13 +75,13 @@ function get_all_container_list() {
 
   case "$container_type" in
       "p2p")
-          container_list=$(docker ps -a --format '{{.Names}}' -f name=^${P2P_PREFIX})
+          container_list=$(docker ps -a --format '{{.Names}}' -f name=^"${P2P_PREFIX}")
           ;;
       "center")
-          container_list=$(docker ps -a --format '{{.Names}}' -f name=^${CTR_PREFIX} | grep -v ^${P2P_PREFIX})
+          container_list=$(docker ps -a --format '{{.Names}}' -f name=^"${CTR_PREFIX}" | grep -v ^"${P2P_PREFIX}")
           ;;
       "all")
-          container_list=$(docker ps -a --format '{{.Names}}' -f name=^${CTR_PREFIX})
+          container_list=$(docker ps -a --format '{{.Names}}' -f name=^"${CTR_PREFIX}")
           ;;
   esac
 
@@ -93,13 +93,13 @@ function get_volume_list() {
 
   case "$volume_type" in
       "p2p")
-          volume_list=$(docker volume ls --format '{{.Name}}' -f name=^${P2P_PREFIX})
+          volume_list=$(docker volume ls --format '{{.Name}}' -f name=^"${P2P_PREFIX}")
           ;;
       "center")
-          volume_list=$(docker volume ls --format '{{.Name}}' -f name=^${CTR_PREFIX} | grep -v ^${P2P_PREFIX})
+          volume_list=$(docker volume ls --format '{{.Name}}' -f name=^"${CTR_PREFIX}" | grep -v ^"${P2P_PREFIX}")
           ;;
       "all")
-          volume_list=$(docker volume ls --format '{{.Name}}' -f name=^${CTR_PREFIX})
+          volume_list=$(docker volume ls --format '{{.Name}}' -f name=^"${CTR_PREFIX}")
           ;;
   esac
 
@@ -114,11 +114,11 @@ function check_running_containers() {
   if [ -n "$container_list" ]; then
     log_hint "There are still running $container_type containers:"
     echo "$container_list"
-    read -rp "$(echo -e ${GREEN} Do you want to stop them now? [y/N]: ${NC})" choice
+    read -rp "$(echo -e "${GREEN}" Do you want to stop them now? [y/N]: "${NC}")" choice
     case "$choice" in
       y|Y )
         log "Stopping $container_type containers ..."
-        docker stop $container_list
+        docker stop "$container_list"
         log "Kuscia $container_type containers stopped successfully!"
         ;;
       n|N )
@@ -156,7 +156,7 @@ function remove_containers() {
       esac
   else
       log "Removing $container_type containers ..."
-      docker rm $container_list
+      docker rm "$container_list"
       log "Kuscia $container_type containers removed successfully!"
   fi
 
@@ -182,7 +182,7 @@ function remove_volumes() {
       esac
   else
       log "Removing $volume_type volumes ..."
-      docker volume rm $volume_list
+      docker volume rm "$volume_list"
       log "Kuscia $volume_type volumes removed successfully!"
   fi
 

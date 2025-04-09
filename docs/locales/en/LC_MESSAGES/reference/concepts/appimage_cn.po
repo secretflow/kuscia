@@ -19,237 +19,242 @@ msgstr ""
 
 #: ../../reference/concepts/appimage_cn.md:1
 msgid "AppImage"
-msgstr ""
+msgstr "AppImage"
 
 #: ../../reference/concepts/appimage_cn.md:3
 msgid ""
 "在 Kuscia 中，你可以使用 AppImage 存储注册应用镜像模版信息。后续在运行任务时，通过在任务中指定 AppImage "
 "名称，从而实现任务应用 Pod 镜像启动模版的绑定。具体用例请参考下文。"
 msgstr ""
+"In Kuscia, you can use AppImage to store application image template information. When executing tasks, you can bind task application Pod image startup templates by specifying the AppImage name. For specific use cases, refer to the following sections."
 
 #: ../../reference/concepts/appimage_cn.md:5
 msgid "用例"
-msgstr ""
+msgstr "Use Cases"
 
 #: ../../reference/concepts/appimage_cn.md:7
 msgid "以下是一些 AppImage 的典型用例："
-msgstr ""
+msgstr "The following are typical use cases for AppImage:"
 
 #: ../../reference/concepts/appimage_cn.md:9
 msgid "创建 AppImage，你将体验如何使用 AppImage 存储应用镜像的模版信息。"
-msgstr ""
+msgstr "**Create an AppImage**: Learn how to store application image templates using AppImage."
 
 #: ../../reference/concepts/appimage_cn.md:10
 msgid "更新 AppImage，你将熟悉如何更新现有的 AppImage，从而实现应用镜像模版信息的变更。"
-msgstr ""
+msgstr "**Update an AppImage**: Learn how to modify existing AppImage templates."
 
 #: ../../reference/concepts/appimage_cn.md:11
 msgid "清理 AppImage，你将熟悉如何清理不需要的 AppImage。"
-msgstr ""
+msgstr "**Clean Up an AppImage**: Learn how to remove unnecessary AppImages."
 
 #: ../../reference/concepts/appimage_cn.md:12
 msgid "参考 AppImage 对象定义，你将获取详细的 AppImage 描述信息。"
-msgstr ""
+msgstr "**Reference the AppImage Object Definition**: Obtain detailed descriptions of AppImage configurations."
 
 #: ../../reference/concepts/appimage_cn.md:14
 msgid "创建 AppImage"
-msgstr ""
+msgstr "Creating an AppImage"
 
 #: ../../reference/concepts/appimage_cn.md:16
 msgid "下面以 `secretflow-image.yaml` 的内容为例，介绍创建 AppImage。"
-msgstr ""
+msgstr "The following example uses `secretflow-image.yaml` to illustrate how to create an AppImage."
 
 #: ../../reference/concepts/appimage_cn.md:64
 msgid "在该示例中:"
-msgstr ""
+msgstr "In this example:"
 
 #: ../../reference/concepts/appimage_cn.md:66
 msgid "`.metadata.name`：表示 AppImage 名称，当前示例为`secretflow-image`。"
-msgstr ""
+msgstr "`.metadata.name`: Specifies the AppImage name (e.g., `secretflow-image`)."
 
 #: ../../reference/concepts/appimage_cn.md:67
 msgid "`.spec.configTemplates`：表示启动应用依赖的配置模版信息。"
-msgstr ""
+msgstr "`.spec.configTemplates`: Defines configuration templates required for application startup."
 
 #: ../../reference/concepts/appimage_cn.md:68
 msgid "`.spec.deployTemplates`：表示应用部署模版配置信息，在该模版中，可以配置应用的启动命令，监听的端口等信息。该字段下主要包含以下子字段："
-msgstr ""
+msgstr "`.spec.deployTemplates`: Contains deployment template configurations including startup commands and ports. Key sub-fields include:"
 
 #: ../../reference/concepts/appimage_cn.md:69
 msgid "`.spec.deployTemplates[0].name`：表示应用部署模版名称，当前示例为`secretflow`。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].name`: Name of the deployment template (e.g., `secretflow`)."
 
 #: ../../reference/concepts/appimage_cn.md:70
 msgid ""
 "`.spec.deployTemplates[0].replicas`：表示应用副本数，当前示例为`1`。相应地，在创建任务应用 Pod "
 "资源时，会将应用 Pod 副本数设置为`1`。"
 msgstr ""
+"`.spec.deployTemplates[0].replicas`: Number of application replicas (default `1`). Determines Pod replica count during task execution."
 
 #: ../../reference/concepts/appimage_cn.md:71
 msgid ""
 "`.spec.deployTemplates[0].spec.containers[0]`：表示应用容器信息。该字段主要复用 K8s Pod "
 "containers 部分字段以及扩展了一些自定义字段。该字段下主要包含以下子字段："
 msgstr ""
+"`.spec.deployTemplates[0].spec.containers[0]`: Configures container settings by reusing Kubernetes Pod Container fields and custom extensions. Sub-fields include:"
 
 #: ../../reference/concepts/appimage_cn.md:72
 msgid "`.spec.deployTemplates[0].spec.containers[0].command`：表示应用容器启动命令。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].command`: Startup command for the container."
 
 #: ../../reference/concepts/appimage_cn.md:73
 msgid "`.spec.deployTemplates[0].spec.containers[0].configVolumeMounts`：表示应用容器启动挂载卷信息。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].configVolumeMounts`: Volume mounts for container startup."
 
 #: ../../reference/concepts/appimage_cn.md:74
 msgid "`.spec.deployTemplates[0].spec.containers[0].name`：表示应用容器名称。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].name`: Name of the container."
 
 #: ../../reference/concepts/appimage_cn.md:75
 msgid "`.spec.deployTemplates[0].spec.containers[0].ports`：表示应用容器的启动端口。该字段下主要包含以下子字段："
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].ports`: Port configurations for the container. Key sub-fields:"
 
 #: ../../reference/concepts/appimage_cn.md:76
 msgid "`.spec.deployTemplates[0].spec.containers[0].ports[].name`：表示应用容器的端口名称。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].ports[].name`: Name of the port."
 
 #: ../../reference/concepts/appimage_cn.md:77
 msgid "`.spec.deployTemplates[0].spec.containers[0].ports[].protocol`：表示应用容器的端口使用的协议类型。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].ports[].protocol`: Protocol type (e.g., TCP/UDP)."
 
 #: ../../reference/concepts/appimage_cn.md:78
 msgid "`.spec.deployTemplates[0].spec.containers[0].ports[].scope`：表示应用端口使用范围。支持三种模式：`Cluster`、`Domain`、`Local`。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].ports[].scope`: Port accessibility scope (`Cluster`, `Domain`, `Local`)."
 
 #: ../../reference/concepts/appimage_cn.md:79
 msgid "`.spec.deployTemplates[0].spec.containers[0].workingDir`：表示应用容器的工作目录。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.containers[0].workingDir`: Working directory for the container."
 
 #: ../../reference/concepts/appimage_cn.md:80
 msgid "`.spec.deployTemplates[0].spec.restartPolicy`：表示应用的重启策略。对应于应用 Pod 的重启策略。"
-msgstr ""
+msgstr "`.spec.deployTemplates[0].spec.restartPolicy`: Restart policy for the Pod (e.g., Always, OnFailure)."
 
 #: ../../reference/concepts/appimage_cn.md:81
 msgid "`.spec.image`：表示应用镜像的信息。"
-msgstr ""
+msgstr "`.spec.image`: Information about the application image."
 
 #: ../../reference/concepts/appimage_cn.md:82
 msgid "`.spec.image.id`：表示应用镜像的 ID 信息。"
-msgstr ""
+msgstr "`.spec.image.id`: ID of the application image."
 
 #: ../../reference/concepts/appimage_cn.md:83
 msgid "`.spec.image.name`：表示应用镜像的名称信息。"
-msgstr ""
+msgstr "`.spec.image.name`: Name of the application image."
 
 #: ../../reference/concepts/appimage_cn.md:84
 msgid "`.spec.image.sign`：表示应用镜像的签名信息。Kuscia 会对应用镜像做签名校验，以保证镜像的合法性。"
-msgstr ""
+msgstr "`.spec.image.sign`: Signature for image validation to ensure authenticity."
 
 #: ../../reference/concepts/appimage_cn.md:85
 msgid "`.spec.image.tag`：表示应用镜像的 Tag 信息。"
-msgstr ""
+msgstr "`.spec.image.tag`: Tag of the application image."
 
 #: ../../reference/concepts/appimage_cn.md:87
 msgid "运行以下命令创建 AppImage。"
-msgstr ""
+msgstr "Execute the following command to create the AppImage:"
 
 #: ../../reference/concepts/appimage_cn.md:93
 msgid "检查 AppImage 是否创建成功。"
-msgstr ""
+msgstr "Verify if the AppImage was created successfully:"
 
 #: ../../reference/concepts/appimage_cn.md:99
 msgid "查询创建的 AppImage 详细信息。"
-msgstr ""
+msgstr "Query detailed information about the created AppImage:"
 
 #: ../../reference/concepts/appimage_cn.md:105
 msgid "更新 AppImage"
-msgstr ""
+msgstr "Updating an AppImage"
 
 #: ../../reference/concepts/appimage_cn.md:107
 msgid "下面以 `secretflow-image.yaml` 的内容为例，介绍更新 AppImage。"
-msgstr ""
+msgstr "The following example uses `secretflow-image.yaml` to illustrate how to update an AppImage."
 
 #: ../../reference/concepts/appimage_cn.md:155
 msgid "在该示例中，将 ports 下 name 为`global`的 port 端口号改为`8082`。"
-msgstr ""
+msgstr "In this example, the port named `global` is modified to use port number `8082`."
 
 #: ../../reference/concepts/appimage_cn.md:157
 msgid "运行以下命令更新 AppImage。"
-msgstr ""
+msgstr "Execute the following command to update the AppImage:"
 
 #: ../../reference/concepts/appimage_cn.md:163
 msgid "检查 AppImage 是否更新成功。"
-msgstr ""
+msgstr "Verify if the AppImage was updated successfully:"
 
 #: ../../reference/concepts/appimage_cn.md:172
 msgid "清理 AppImage"
-msgstr ""
+msgstr "Cleaning Up an AppImage"
 
 #: ../../reference/concepts/appimage_cn.md:174
 msgid "下面以 AppImage `secretflow-image` 为例，介绍清理 AppImage。"
-msgstr ""
+msgstr "The following example demonstrates how to clean up the `secretflow-image` AppImage."
 
 #: ../../reference/concepts/appimage_cn.md:176
 msgid "运行以下命令清理 AppImage。"
-msgstr ""
+msgstr "Execute the following command to remove the AppImage:"
 
 #: ../../reference/concepts/appimage_cn.md:182
 msgid "检查 AppImage 是否已被清理成功。"
-msgstr ""
+msgstr "Verify if the AppImage was removed successfully:"
 
 #: ../../reference/concepts/appimage_cn.md:191
 msgid "参考"
-msgstr ""
+msgstr "Reference"
 
 #: ../../reference/concepts/appimage_cn.md:193
 msgid "下面以 `app-template` 模版为例，介绍 AppImage 所包含的完整字段。"
-msgstr ""
+msgstr "The following example uses the `app-template` to describe all fields in an AppImage."
 
 #: ../../reference/concepts/appimage_cn.md:330
 msgid "AppImage `metadata` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed explanation of AppImage `metadata` sub-fields:"
 
 #: ../../reference/concepts/appimage_cn.md:332
 msgid "`name`：表示 AppImage 的名称，当前示例为`app-template`。"
-msgstr ""
+msgstr "`name`: Name of the AppImage (e.g., `app-template`)."
 
 #: ../../reference/concepts/appimage_cn.md:334
 msgid "AppImage `spec` 的子字段详细介绍如下："
-msgstr ""
+msgstr "Detailed explanation of AppImage `spec` sub-fields:"
 
 #: ../../reference/concepts/appimage_cn.md:336
 msgid ""
 "`configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为"
 "`task-config.conf`。 更多的信息请 [参考这里](../../tutorial/config_render.md)"
 msgstr ""
+"`configTemplates`: Defines configuration templates required for application startup. Example includes `task-config.conf`. [See more](../../tutorial/config_render.md)."
 
 #: ../../reference/concepts/appimage_cn.md:337
 msgid ""
 "`deployTemplates`：表示应用部署模版配置信息。Kuscia 控制器会根据该名称和角色，选择合适的 AppImage。若在 "
 "AppImage 没有查询到符合的部署模版，则将使用第一个部署模版。"
 msgstr ""
+"`deployTemplates`: Deployment templates used by Kuscia Controller to select appropriate configurations. Uses first template if no matching role is found."
 
 #: ../../reference/concepts/appimage_cn.md:338
 msgid "`deployTemplates[].name`：表示应用部署模版名称。"
-msgstr ""
+msgstr "`deployTemplates[].name`: Name of the deployment template."
 
 #: ../../reference/concepts/appimage_cn.md:339
 msgid "`deployTemplates[].role`：表示应用作为该角色时，使用的部署模版配置。这里的角色可以由应用自定义，示例：Host/Guest；如果应用不需要区分角色部署，这里可以填空。"
-msgstr ""
+msgstr "`deployTemplates[].role`: Role-specific deployment template (e.g., Host/Guest). Leave empty if roles are not used."
 
 #: ../../reference/concepts/appimage_cn.md:340
 msgid "`deployTemplates[].replicas`：表示应用运行的副本数，默认为`1`。"
-msgstr ""
+msgstr "`deployTemplates[].replicas`: Number of replicas (default `1`)."
 
 #: ../../reference/concepts/appimage_cn.md:341
 msgid "`deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问名称为`global`的端口。"
-msgstr ""
+msgstr "`deployTemplates[].networkPolicy`: Network policy configuration. Example: `server` role allows `client` role access to port `global`."
 
 #: ../../reference/concepts/appimage_cn.md:342
 msgid "`deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问。"
-msgstr ""
+msgstr "`...from.roles`: Roles permitted to access the application. Example: `server` allows `client`."
 
 #: ../../reference/concepts/appimage_cn.md:343
 msgid "`deployTemplates[].networkPolicy.ingresses[].ports[].port`：表示允许访问当前应用的端口。该示例表示：当前角色为`server`的应用允许所允许被访问的端口名称为`global`。"
-msgstr ""
+msgstr "`...ports[].port`: Accessible port names. Example: `global` port for `server` role."
 
 #: ../../reference/concepts/appimage_cn.md:344
 msgid ""
@@ -257,116 +262,118 @@ msgid ""
 "containers](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api"
 "/workload-resources/pod-v1/#Container) 部分字段以及扩展了一些自定义字段。主要包含以下子字段："
 msgstr ""
+"`...spec.containers`: Container configurations, reusing Kubernetes Pod Container fields with custom extensions. Includes:"
 
 #: ../../reference/concepts/appimage_cn.md:345
 msgid "`deployTemplates[].spec.containers[].command`：表示应用的启动命令。"
-msgstr ""
+msgstr "`...command`: Application startup command."
 
 #: ../../reference/concepts/appimage_cn.md:346
 msgid "`deployTemplates[].spec.containers[].args`：表示应用的启动参数。"
-msgstr ""
+msgstr "`...args`: Application startup arguments."
 
 #: ../../reference/concepts/appimage_cn.md:347
 msgid ""
 "`deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将`.spec.configTemplates`中定义的配置文件"
 "`task-config.conf`挂载到容器中的位置为`/work/kuscia/task-config.conf`。"
 msgstr ""
+"`...configVolumeMounts`: Mount configurations. Maps `task-config.conf` from `.spec.configTemplates` to `/work/kuscia/task-config.conf`."
 
 #: ../../reference/concepts/appimage_cn.md:348
 msgid "`deployTemplates[].spec.containers[].configVolumeMounts[].mountPath`：表示文件挂载到容器中的路径。"
-msgstr ""
+msgstr "`...mountPath`: Path where the file is mounted in the container."
 
 #: ../../reference/concepts/appimage_cn.md:349
 msgid "`deployTemplates[].spec.containers[].configVolumeMounts[].subPath`：表示文件挂载到容器中的子路径。"
-msgstr ""
+msgstr "`...subPath`: Subpath for mounting the file."
 
 #: ../../reference/concepts/appimage_cn.md:350
 msgid "`deployTemplates[].spec.containers[].name`：表示应用容器的名称。"
-msgstr ""
+msgstr "`...name`: Name of the container."
 
 #: ../../reference/concepts/appimage_cn.md:351
 msgid "`deployTemplates[].spec.containers[].ports`：表示应用容器的启动端口。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].ports`: Specifies the startup ports for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:352
 msgid "`.spec.deployTemplates[].spec.containers[].ports[].name`：表示应用容器的端口名称。"
-msgstr ""
+msgstr "`.spec.deployTemplates[].spec.containers[].ports[].name`: Specifies the name of the port in the application container."
 
 #: ../../reference/concepts/appimage_cn.md:353
 msgid "`.spec.deployTemplates[].spec.containers[].ports[].protocol`：表示应用容器的端口使用的协议类型。支持两种类型：`HTTP`、`GRPC`。"
-msgstr ""
+msgstr "`.spec.deployTemplates[].spec.containers[].ports[].protocol`: Specifies the protocol type used by the port. Supports two types: `HTTP` and `GRPC`."
 
 #: ../../reference/concepts/appimage_cn.md:354
 msgid ""
 "`.spec.deployTemplates[].spec.containers[].ports[].scope`：表示应用端口使用范围。支持三种模式：`Cluster`、`Domain`、`Local`。Kuscia"
 " 会根据 scope 取值的不同，限制 port 的网络访问策略。具体含义如下所示："
 msgstr ""
+"`.spec.deployTemplates[].spec.containers[].ports[].scope`: Defines the accessibility scope of the application port. Supports three modes: `Cluster`, `Domain`, and `Local`. Kuscia restricts network access policies for ports based on the scope value. The specific meanings are as follows:"
 
 #: ../../reference/concepts/appimage_cn.md:355
 msgid "`Cluster`：表示该 port 用于节点外部和节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。"
-msgstr ""
+msgstr "`Cluster`: Indicates that the port is used for both external and internal node access. Kuscia will create corresponding K3s service resources for this port."
 
 #: ../../reference/concepts/appimage_cn.md:356
 msgid "`Domain`：表示该 port 用于节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。"
-msgstr ""
+msgstr "`Domain`: Indicates that the port is used for internal node access only. Kuscia will create corresponding K3s service resources for this port."
 
 #: ../../reference/concepts/appimage_cn.md:357
 msgid "`Local`：表示该 port 用于 Pod 内部容器本地访问，Kuscia 不会给该 port 创建相对应的 K3s service 资源。"
-msgstr ""
+msgstr "`Local`: Indicates that the port is used for local access within the Pod container. Kuscia will not create corresponding K3s service resources for this port."
 
 #: ../../reference/concepts/appimage_cn.md:358
 msgid "`deployTemplates[].spec.containers[].envFrom`：表示使用`envFrom`为应用容器设置环境变量。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].envFrom`: Specifies the use of `envFrom` to set environment variables for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:359
 msgid "`deployTemplates[].spec.containers[].env`：表示使用`env`为应用容器设置环境变量。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].env`: Specifies the use of `env` to set environment variables for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:360
 msgid "`deployTemplates[].spec.containers[].resources`：表示应用容器申请的资源配置。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].resources`: Specifies the resource configuration requested by the application container."
 
 #: ../../reference/concepts/appimage_cn.md:361
 msgid "`deployTemplates[].spec.containers[].readinessProbe`：表示应用容器的就绪探针配置。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].readinessProbe`: Specifies the readiness probe configuration for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:362
 msgid "`deployTemplates[].spec.containers[].livenessProbe`：表示应用容器的存活探针配置。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].livenessProbe`: Specifies the liveness probe configuration for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:363
 msgid "`deployTemplates[].spec.containers[].startupProbe`：表示应用容器的启动探针配置。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].startupProbe`: Specifies the startup probe configuration for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:364
 msgid "`deployTemplates[].spec.containers[].imagePullPolicy`：表示应用容器的镜像拉取策略。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].imagePullPolicy`: Specifies the image pull policy for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:365
 msgid "`deployTemplates[].spec.containers[].workingDir`：表示应用容器的工作目录。"
-msgstr ""
+msgstr "`deployTemplates[].spec.containers[].workingDir`: Specifies the working directory for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:366
 msgid "`deployTemplates[].spec.restartPolicy`：表示应用的重启策略。对应于应用 Pod 的重启策略。"
-msgstr ""
+msgstr "`deployTemplates[].spec.restartPolicy`: Specifies the restart policy for the application, corresponding to the restart policy of the application Pod."
 
 #: ../../reference/concepts/appimage_cn.md:367
 msgid "`image`：表示应用镜像的信息。该字段包含以下子字段。"
-msgstr ""
+msgstr "`image`: Specifies information about the application image. This field contains the following sub-fields."
 
 #: ../../reference/concepts/appimage_cn.md:368
 msgid "`image.id`：表示应用镜像的 ID 信息。"
-msgstr ""
+msgstr "`image.id`: Specifies the ID information of the application image."
 
 #: ../../reference/concepts/appimage_cn.md:369
 msgid "`image.name`：表示应用镜像的名称信息。"
-msgstr ""
+msgstr "`image.name`: Specifies the name information of the application image."
 
 #: ../../reference/concepts/appimage_cn.md:370
 msgid "`image.sign`：表示应用镜像的签名信息。Kuscia 会对应用镜像做签名校验，以保证镜像的合法性。"
-msgstr ""
+msgstr "`image.sign`: Specifies the signature information of the application image. Kuscia performs signature verification on application images to ensure their legitimacy."
 
 #: ../../reference/concepts/appimage_cn.md:371
 msgid "`image.tag`：表示应用镜像的 Tag 信息。"
-msgstr ""
-
+msgstr "`image.tag`: Specifies the tag information of the application image."
