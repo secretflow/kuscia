@@ -265,7 +265,7 @@ msgstr "Get the [deployment.yaml](https://github.com/secretflow/kuscia/blob/main
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:175
 msgid "创建 lite-alice、lite-bob 之间的授权"
-msgstr "Create authorization between lite-alice and lite-bob"
+msgstr "Create Authorization Between Lite-alice And Lite-bob"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:177
 msgid "PS：目前因为安全性和时间因素，节点之间授权还是需要很多手动的操作，未来会优化。"
