@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../troubleshoot/concept/protocol_describe.md:1
 msgid "Protocol 通信协议"
-msgstr "Protocol Communication Protocol"
+msgstr "Communication Protocol"
 
 #: ../../troubleshoot/concept/protocol_describe.md:3
 msgid "前言"
