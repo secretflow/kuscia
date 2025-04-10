@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -84,25 +84,26 @@ function import_engine_image() {
   if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
      echo -e "${GREEN}Image '${IMAGE}' already exists in container ${KUSCIA_CONTAINER_NAME}${NC}"
   else
-     if docker image inspect ${IMAGE} >/dev/null 2>&1; then
+     if docker image inspect "${IMAGE}" >/dev/null 2>&1; then
         echo -e "${GREEN}Found the engine image '${IMAGE}' on host${NC}"
      else
         echo -e "${GREEN}Not found the engine image '${IMAGE}' on host${NC}"
         echo -e "${GREEN}Start pulling image '${IMAGE}' ...${NC}"
-        docker pull ${IMAGE}
+        docker pull "${IMAGE}"
      fi
-     local image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
+     local image_random
+     image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
      echo -e "${GREEN}Start importing image '${IMAGE}' Please be patient...${NC}"
     
      local image_tar=${DOMAIN_IMAGE_WORK_DIR}/${image_random}.tar
-     docker save ${IMAGE} -o ${image_tar}
-     docker exec -it ${KUSCIA_CONTAINER_NAME} kuscia image load -i /home/kuscia/var/images/${image_random}.tar
+     docker save "${IMAGE}" -o "${image_tar}"
+     docker exec -it "${KUSCIA_CONTAINER_NAME}" kuscia image load -i /home/kuscia/var/images/"${image_random}".tar
      if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
         echo -e "${GREEN}image ${IMAGE} import successfully${NC}"
      else
         echo -e "${RED}error: ${IMAGE} import failed${NC}"
      fi
-     rm -rf ${image_tar}
+     rm -rf "${image_tar}"
   fi
 }
 
@@ -114,14 +115,14 @@ function apply_appimage_crd() {
   if [[ ${image_tag} = "" ]]; then
     image_tag="latest"
   fi
-  if [[ ! -f $APP_IMAGE_FILE ]]; then
+  if [[ ! -f "$APP_IMAGE_FILE" ]]; then
     echo -e "${RED}${APP_IMAGE_FILE} does not exist, register fail${NC}"
   else
-    image_line=$(awk '/^  image:/{print NR; exit}' $APP_IMAGE_FILE)
-    head -n "$((image_line - 1))" $APP_IMAGE_FILE > ${DOMAIN_IMAGE_WORK_DIR}/engine_appimage.yaml
-    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> ${DOMAIN_IMAGE_WORK_DIR}/engine_appimage.yaml
-    docker exec -it ${KUSCIA_CONTAINER_NAME} kubectl apply -f /home/kuscia/var/images/engine_appimage.yaml
-    rm -rf ${DOMAIN_IMAGE_WORK_DIR}/engine_appimage.yaml
+    image_line=$(awk '/^  image:/{print NR; exit}' "$APP_IMAGE_FILE")
+    head -n "$((image_line - 1))" "$APP_IMAGE_FILE" > "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
+    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
+    docker exec -it "${KUSCIA_CONTAINER_NAME}" kubectl apply -f /home/kuscia/var/images/engine_appimage.yaml
+    rm -rf "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
   fi
 }
 
@@ -133,7 +134,8 @@ function register_default_app_image() {
   if [[ ${image_tag} = "" ]]; then
     image_tag="latest"
   fi
-  local app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
+  local app_type
+  app_type=$(echo "${image_repo}" | awk -F'/' '{print $NF}' | awk -F'-' '{print $1}')
   if [[ ${app_type} != "psi" ]] && [[ ${app_type} != "dataproxy" ]] && [[ ${app_type} != "kuscia" ]]; then
      app_type="secretflow"
   fi

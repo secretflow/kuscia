@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 Ant Group Co., Ltd.
+# Copyright 2025 Ant Group Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ DEFAULT_APP_IMAGE_FILE="${APP_IMAGE_FILE_DIR}/secretflow-image.yaml"
 APP_IMAGE_FILE=""
 
 function prepare_app_image() {
-  import_appimage $1 $2
-  apply_appimage_crd $1 $2
+  import_appimage "$1" "$2"
+  apply_appimage_crd "$1" "$2"
 }
 
 function import_appimage(){
@@ -110,13 +110,13 @@ function import_appimage(){
   ctr_num=${#KUSCIA_DOMAIN_CONTAINER_NAMES[@]}
 
   idx=0
-  while (($idx<$ctr_num)); do
+  while ((idx<ctr_num)); do
     container_name=${KUSCIA_DOMAIN_CONTAINER_NAMES[$idx]}
     echo "=> => import app image into ${container_name} container"
     domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$container_name")
     image_tar=${domain_image_work_dir}/${image_tag}.tar
     docker save "${image_name}:${image_tag}" -o "${image_tar}"
-    docker exec -it "${container_name}" kuscia image load -i ${CTR_ROOT}/var/images/${image_tag}.tar
+    docker exec -it "${container_name}" kuscia image load -i ${CTR_ROOT}/var/images/"${image_tag}".tar
     rm -rf "${image_tar}"
     idx+=1
   done
@@ -132,7 +132,7 @@ function apply_appimage_crd(){
   image_tag=$2
 
   if [[ ${APP_IMAGE_NAME_IN_KUSCIA} = "" ]]; then
-    APP_IMAGE_NAME_IN_KUSCIA=$(echo ${image_name##*/}-${image_tag} | sed 's/_/-/g')
+    APP_IMAGE_NAME_IN_KUSCIA=$(echo "${image_name##*/}"-"${image_tag}" | sed 's/_/-/g')
   fi
 
   if [[ ${APP_IMAGE_TEMPLATE_FILE} != "" ]]; then
@@ -155,16 +155,16 @@ function apply_appimage_crd(){
       for container_name in "${KUSCIA_DOMAIN_CONTAINER_NAMES[@]}"; do
         domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "$container_name")
         APP_IMAGE_TEMP_FILE="${domain_image_work_dir}/appimage_tmp.yaml"
-        echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
+        echo "${app_image_content}" > "${APP_IMAGE_TEMP_FILE}"
         docker exec -it "${container_name}" kubectl apply -f "${CTR_ROOT}/var/images/appimage_tmp.yaml" || exit 1
-        rm -rf ${APP_IMAGE_TEMP_FILE}
+        rm -rf "${APP_IMAGE_TEMP_FILE}"
       done
   else
       domain_image_work_dir=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/var/images"}}{{.Source}}{{end}}{{end}}' "${KUSCIA_MASTER_CONTAINER_NAME}")
       APP_IMAGE_TEMP_FILE="${domain_image_work_dir}/appimage_tmp.yaml"
-      echo "${app_image_content}" > ${APP_IMAGE_TEMP_FILE}
+      echo "${app_image_content}" > "${APP_IMAGE_TEMP_FILE}"
       docker exec -it "${KUSCIA_MASTER_CONTAINER_NAME}" kubectl apply -f "${CTR_ROOT}/var/images/appimage_tmp.yaml" || exit 1
-      rm -rf ${APP_IMAGE_TEMP_FILE}
+      rm -rf "${APP_IMAGE_TEMP_FILE}"
   fi
   echo "=> finish apply kuscia AppImage crd"
 }
@@ -172,9 +172,9 @@ function apply_appimage_crd(){
 function gen_domain_container_names(){
   IFS=',' read -ra DOMAINS <<< "$DOMAIN_IDS"
   for DOMAIN in "${DOMAINS[@]}"; do
-    container_name=("${DEPLOY_USER}-kuscia-lite-${DOMAIN}")
+    container_name="${DEPLOY_USER}-kuscia-lite-${DOMAIN}"
     if [[ $DEPLOY_MODE = "p2p" ]]; then
-      container_name=("${DEPLOY_USER}-kuscia-autonomy-${DOMAIN}")
+      container_name="${DEPLOY_USER}-kuscia-autonomy-${DOMAIN}"
     fi
 
     if [[ -n $(docker ps -q -f "name=${container_name}") ]]; then
