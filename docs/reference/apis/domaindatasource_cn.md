@@ -57,7 +57,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 ##### 创建本地文件数据源示例
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -82,7 +82,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 ##### 创建对象存储服务数据源示例
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -102,7 +102,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
           "prefix": "kuscia/",
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
-#         "virtualhost": true (阿里云 OSS 需要配置此项)
+#         "virtualhost": true (Required for Alibaba Cloud OSS configuration)
       }
   },
   "access_directly": true
@@ -112,7 +112,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 ##### 创建 MySQL 数据库数据源示例
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -143,7 +143,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 > Endpoint 支持 HTTP 和 HTTPS，若需要加密请求，请使用HTTPS。
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -216,7 +216,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/update' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -277,7 +277,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/update' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -331,7 +331,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -413,7 +413,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -535,7 +535,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/batchQuery' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Run the sample within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
