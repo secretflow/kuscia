@@ -54,7 +54,7 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 发起请求：
 
 ```bash
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
 -X POST -H 'content-type: application/json' \
@@ -132,7 +132,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
 发起请求：
 
 ```bash
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
 -X POST -H 'content-type: application/json' \
@@ -200,7 +200,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
 发起请求：
 
 ```bash
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 -X POST -H 'content-type: application/json' \
