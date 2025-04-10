@@ -91,34 +91,34 @@ Alice 和 Bob 授权之前可以先检测下相互之间的通信是否正常
 建立 Alice 到 Bob 授权
 
 ```bash
-# 将 Alice 节点的 domain.crt 证书 cp 到 跳板机当前目录并改名 alice.domain.crt
+# Copy Alice node's domain.crt certificate to the jump server's current directory and rename to alice.domain.crt
 kubectl cp autonomy-alice/${alice_pod_name}:var/certs/domain.crt alice.domain.crt
-# 将 alice.domain.crt 证书 cp 到 Bob 节点的里
+# Copy alice.domain.crt certificate to Bob node
 kubectl cp alice.domain.crt autonomy-bob/${bob_pod_name}:var/certs/
-# 登录到 Bob 节点
+# Login to Bob node
 kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash 
-# [pod 内部] 在 Bob 里添加 Alice 的证书等信息
+# [Inside Pod] Add Alice's certificate and other information in Bob
 scripts/deploy/add_domain.sh alice p2p
-# 登录到 Alice 节点
+# Login to Alice node
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
-# [pod 内部] 建立 Alice 到 Bob 的通信
+# [Inside Pod] Establish communication from Alice to Bob
 scripts/deploy/join_to_host.sh alice bob http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080
 ```
 
 建立 Bob 到 Alice 授权
 
 ```bash
-# 将 Bob 节点的 domain.crt 证书 cp 到 跳板机当前目录并改 bob.domain.crt
+# Copy Bob node's domain.crt certificate to the jump server's current directory and rename to bob.domain.crt
 kubectl cp autonomy-bob/${bob_pod_name}:var/certs/domain.crt bob.domain.crt
-# 将 bob.domain.crt 证书 cp 到 Alice 节点的里
+# Copy bob.domain.crt certificate to Alice node
 kubectl cp bob.domain.crt autonomy-alice/${alice_pod_name}:var/certs/
-# 登录到 Alice 节点
+# Login to Alice node
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
-# [pod 内部] 在 Alice 里添加 Bob 的证书等信息
+# [Inside Pod] Add Bob's certificate and other information in Alice
 scripts/deploy/add_domain.sh bob p2p
-# 登录到 Bob 节点
+# Login to Bob node
 kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash 
-# [pod 内部] 建立 Bob 到 Alice 的通信
+# [Inside Pod] Establish communication from Bob to Alice
 scripts/deploy/join_to_host.sh bob alice http://kuscia-autonomy-alice.autonomy-alice.svc.cluster.local:1080
 ```
 
@@ -170,7 +170,7 @@ kubectl -n alice get domaindatasource -oyaml default-data-source
 为 Alice 的测试数据创建 DomainData
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example in the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -320,7 +320,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Alice 的 DomainData 授权给 Bob
 
 ```bash
-# 在容器内执行示例
+# Execute the following example in the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
@@ -344,7 +344,7 @@ kubectl -n bob get domaindatasource -oyaml default-data-source
 为 Bob 的测试数据创建 DomainData
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example in the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -474,7 +474,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Bob 的 DomainData 授权给 Alice
 
 ```bash
-# 在容器内执行示例
+# Execute the following example in the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
@@ -496,7 +496,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 ```bash
 kubectl -n autonomy-alice exec -it ${alice_pod_name} -- bash 
-# 先删除默认数据源
+# First delete the default data source
 kubectl -n alice delete domaindatasource default-data-source
 ```
 
@@ -505,7 +505,7 @@ kubectl -n alice delete domaindatasource default-data-source
 创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example in the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --header 'Content-Type: application/json' \
@@ -522,8 +522,8 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
           "prefix": "kuscia/",
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
-#         "virtualhost": true (阿里云 OSS 需要配置此项)
-#         "storage_type": "minio" (Minio 需要配置此项)
+#         "virtualhost": true (Required for Alibaba Cloud OSS)
+#         "storage_type": "minio" (Required for Minio)
       }
   },
   "access_directly": true
@@ -533,7 +533,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 为 Alice 的测试数据创建 DomainData
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example in the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -683,7 +683,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Alice 的 DomainData 授权给 Bob
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example in the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
@@ -703,7 +703,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 ```bash
 kubectl -n autonomy-bob exec -it ${bob_pod_name} -- bash
-# 先删除默认数据源
+# First delete the default data source
 kubectl -n bob delete domaindatasource default-data-source
 ```
 
@@ -712,7 +712,7 @@ kubectl -n bob delete domaindatasource default-data-source
 创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example in the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --header 'Content-Type: application/json' \
@@ -729,8 +729,8 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
           "prefix": "kuscia/",
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
-#         "virtualhost": true (阿里云 OSS 需要配置此项)
-#         "storage_type": "minio" (Minio 需要配置此项)
+#         "virtualhost": true (Required for Alibaba Cloud OSS)
+#         "storage_type": "minio" (Required for Minio)
       }
   },
   "access_directly": true
@@ -740,7 +740,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 为 Bob 的测试数据创建 DomainData
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example in the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -870,7 +870,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Bob 的 DomainData 授权给 Alice
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example in the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \

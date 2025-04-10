@@ -107,11 +107,11 @@ lite-bob 配置与 lite-alice 一样，下面以 Alice 为例：
 
 ```bash
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
-# [pod 内部] 获取节点 Token
+# [Inside Pod] Get node Token
 scripts/deploy/add_domain_lite.sh alice
-# [pod 内部] 示例 Token
+# [Inside Pod] Example Token
 BMC4xjNqa7uAmWmyXLuJ4rrZw6brZeax
-# [pod 内部] 如果 Token 遗忘了，可以通过该命令重新获取
+# [Inside Pod] If Token is forgotten, you can retrieve it using this command
 kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
 ```
 
@@ -177,15 +177,15 @@ kubectl create -f deployment.yaml
 > PS：目前因为安全性和时间因素，节点之间授权还是需要很多手动的操作，未来会优化。
 
 ```bash
-# 登录 master
+# Login to master
 kubectl exec -it ${master_pod_name} bash -n kuscia-master
-# [pod 内部] 创建 Alice 到 Bob 的授权
+# [Inside Pod] Create authorization from Alice to Bob
 scripts/deploy/create_cluster_domain_route.sh alice bob http://kuscia-lite-bob.lite-bob.svc.cluster.local:1080
-# [pod 内部] 创建 Bob 到 Alice 的授权
+# [Inside Pod] Create authorization from Bob to Alice  
 scripts/deploy/create_cluster_domain_route.sh bob alice http://kuscia-lite-alice.lite-alice.svc.cluster.local:1080
-# [pod 内部] 执行以下命令，查看是否有内容，如果有说明 Alice 到 Bob 授权建立成功。
+# [Inside Pod] Execute the following command to check if there is content, if there is content it means the authorization from Alice to Bob is established successfully
 kubectl get cdr alice-bob -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
-# [pod 内部] 执行以下命令，查看是否有内容，如果有说明 Bob 到 Alice 授权建立成功
+# [Inside Pod] Execute the following command to check if there is content, if there is content it means the authorization from Bob to Alice is established successfully
 kubectl get cdr bob-alice -o=jsonpath="{.status.tokenStatus.sourceTokens[*]}"
 ```
 
@@ -235,7 +235,7 @@ kubectl exec -it ${alice_pod_name} bash -n lite-alice
 创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
 
 ```bash
-# 在容器内执行示例
+# Execute the following example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
  --header 'Content-Type: application/json' \
@@ -257,7 +257,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 为 Alice 的测试数据创建 DomainData
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example inside the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -407,7 +407,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Alice 的 DomainData 授权给 Bob
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example inside the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
@@ -453,7 +453,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 为 Bob 的测试数据创建 domaindata
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example inside the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -583,7 +583,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Bob 的 DomainData 授权给 Alice
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example inside the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
@@ -612,7 +612,7 @@ kubectl exec -it ${alice_pod_name} bash -n lite-alice
 创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example inside the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --header 'Content-Type: application/json' \
@@ -629,8 +629,8 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
           "prefix": "kuscia/",
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
-#         "virtualhost": true (阿里云 OSS 需要配置此项)
-#         "storage_type": "minio" (Minio 需要配置此项)
+#         "virtualhost": true (Required for Alibaba Cloud OSS)
+#         "storage_type": "minio" (Required for Minio)
       }
   },
   "access_directly": true
@@ -640,7 +640,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 为 Alice 的测试数据创建 DomainData
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example inside the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -790,7 +790,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Alice 的 DomainData 授权给 Bob
 
 ```bash
-# 在 alice 容器内执行示例
+# Execute the following example inside the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
@@ -817,7 +817,7 @@ kubectl exec -it ${bob_pod_name} bash -n lite-bob
 创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下：
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example inside the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --header 'Content-Type: application/json' \
@@ -834,8 +834,8 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
           "prefix": "kuscia/",
           "access_key_id":"ak-xxxx",
           "access_key_secret" :"sk-xxxx"
-#         "virtualhost": true (阿里云 OSS 需要配置此项)
-#         "storage_type": "minio" (Minio 需要配置此项)
+#         "virtualhost": true (Required for Alibaba Cloud OSS)
+#         "storage_type": "minio" (Required for Minio)
       }
   },
   "access_directly": true
@@ -845,7 +845,7 @@ curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 为 Bob 的测试数据创建 DomainData
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example inside the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 --header 'Content-Type: application/json' \
@@ -975,7 +975,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindata/create' \
 将 Bob 的 DomainData 授权给 Alice
 
 ```bash
-# 在 bob 容器内执行示例
+# Execute the following example inside the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
