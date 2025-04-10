@@ -19,55 +19,54 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:1
 msgid "如何通过 Docker 命令对已部署的节点进行 Memory 扩容"
-msgstr ""
+msgstr "How to Expand Memory for Deployed Nodes Using Docker Commands"
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:3
 msgid "背景"
-msgstr ""
+msgstr "Background"
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:5
 msgid "在使用脚本部署 Kuscia 时，可以使用 `-m` 或者 `--memory-limit` 参数给节点容器设置适当的内存限制。"
-msgstr ""
+msgstr "When deploying Kuscia using scripts, you can use the `-m` or `--memory-limit` parameter to set appropriate memory limits for node containers."
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:7
 msgid "例如:"
-msgstr ""
+msgstr "For example:"
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:9
 msgid "`-m 4GiB` 或 `--memory-limit=4GiB` 表示限制最大内存 4GiB。"
-msgstr ""
+msgstr "`-m 4GiB` or `--memory-limit=4GiB` means limiting the maximum memory to 4GiB."
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:10
 msgid "`-m -1` 或 `--memory-limit=-1` 表示没有限制。"
-msgstr ""
+msgstr "`-m -1` or `--memory-limit=-1` means no limit."
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:11
 msgid "不设置时默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。"
-msgstr ""
+msgstr "By default, if not set, master node is 2GiB, lite node is 4GiB, and autonomy node is 6GiB."
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:13
 msgid "如果您的节点已经部署好，但内存限制不符合需求，您可以通过 Docker 命令对已部署的节点进行 Memory 扩容。"
-msgstr ""
+msgstr "If your nodes are already deployed but the memory limits don't meet your requirements, you can expand the memory of deployed nodes using Docker commands."
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:15
 msgid "步骤"
-msgstr ""
+msgstr "Steps"
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:17
 msgid "运行以下命令来查看当前节点的内存限制："
-msgstr ""
+msgstr "Run the following command to view the current node's memory limit:"
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:23
 msgid "根据需要调整内存限制。例如，如果您需要增加内存限制到 20GiB，您可以运行以下命令："
-msgstr ""
+msgstr "Adjust the memory limit as needed. For example, if you need to increase the memory limit to 20GiB, you can run the following command:"
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:29
 msgid ""
 "<span style=\"color: red;\">注：</span> 使用 `docker update` 扩展内存时，如果 Kuscia "
 "以 `runtime: runc` 方式部署时，需要重启 Kuscia 后，内存调整的限制才能对任务调度实际生效。"
-msgstr ""
+msgstr "<span style=\"color: red;\">Note:</span> When using `docker update` to expand memory, if Kuscia is deployed with `runtime: runc`, you need to restart Kuscia for the memory limit adjustment to take effect on task scheduling."
 
 #: ../../troubleshoot/parameter_tuning/docker_memory_limit.md:32
 msgid "参考重启命令："
-msgstr ""
-
+msgstr "Reference restart command:"
