@@ -41,15 +41,15 @@ msgstr "Check the default configuration of system inotify:"
 
 #: ../../troubleshoot/deployment/create_fsnotify_failed.md:15
 msgid "max_user_watches 表示一个用户可以同时监视的最大文件数"
-msgstr "max_user_watches indicates the maximum number of files that a user can monitor simultaneously"
+msgstr "**max_user_watches** indicates the maximum number of files that a user can monitor simultaneously"
 
 #: ../../troubleshoot/deployment/create_fsnotify_failed.md:16
 msgid "max_user_instances 表示一个用户可以同时使用的最大 inotify 实例数"
-msgstr "max_user_instances indicates the maximum number of inotify instances that a user can use simultaneously"
+msgstr "**max_user_instances** indicates the maximum number of inotify instances that a user can use simultaneously"
 
 #: ../../troubleshoot/deployment/create_fsnotify_failed.md:17
 msgid "max_queued_events 表示内核队列中等待处理的事件的最大数量"
-msgstr "max_queued_events indicates the maximum number of events waiting to be processed in the kernel queue"
+msgstr "**max_queued_events** indicates the maximum number of events waiting to be processed in the kernel queue"
 
 #: ../../troubleshoot/deployment/create_fsnotify_failed.md:27
 msgid "出现上述报错时，推荐通过执行如下命令扩大一个用户能同时使用的 inotify 最大实例数来解决："
