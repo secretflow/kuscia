@@ -16,13 +16,12 @@ package mods
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
-	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/netstat"
 	"github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/xhd2015/xgo/runtime/mock"
 )
 
 func TestNetworkMod(t *testing.T) {
@@ -40,10 +39,10 @@ func TestNetworkMod(t *testing.T) {
 	mod := NewNetworkMod(reporter, nil, conf)
 	netMod := mod.(*NetworkMod)
 
-	patch1 := gomonkey.ApplyMethod(reflect.TypeOf(netMod.cdrMod), "Run", func(_ *DomainRouteMod, ctx context.Context) error {
+	mock.Patch(netMod.cdrMod.Run, func(ctx context.Context) error {
 		return nil
 	})
-	defer patch1.Reset()
+
 	err := mod.Run(context.Background())
 	assert.Nil(t, err)
 }
