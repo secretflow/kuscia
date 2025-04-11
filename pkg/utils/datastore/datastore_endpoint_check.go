@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 

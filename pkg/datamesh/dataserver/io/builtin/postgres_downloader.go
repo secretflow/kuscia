@@ -300,7 +300,6 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 
 	// query
 	sql := sqlbuilder.Select(backTickColumns...).From(tableName).String()
-	nlog.Info("posgresql", sql)
 	rows, err := d.db.Query(sql)
 	if err != nil {
 		nlog.Errorf("postgresql query failed(%s)", err)
