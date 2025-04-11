@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../tutorial/upgrade_engine.md:1
 msgid "如何在 Kuscia 中升级引擎镜像"
-msgstr "How to upgrade the engine image in Kuscia"
+msgstr "How to Upgrade the Engine Image in Kuscia"
 
 #: ../../tutorial/upgrade_engine.md:3
 msgid "Kuscia 支持在部署后升级引擎版本，本文档介绍如何在 Kuscia 中升级引擎镜像。"
