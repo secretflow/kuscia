@@ -19,91 +19,93 @@ msgstr ""
 
 #: ../../tutorial/upgrade_engine.md:1
 msgid "如何在 Kuscia 中升级引擎镜像"
-msgstr ""
+msgstr "How to Upgrade the Engine Image in Kuscia"
 
 #: ../../tutorial/upgrade_engine.md:3
 msgid "Kuscia 支持在部署后升级引擎版本，本文档介绍如何在 Kuscia 中升级引擎镜像。"
-msgstr ""
+msgstr "Kuscia supports upgrading the engine version after deployment. This document explains how to upgrade the engine image in Kuscia."
 
 #: ../../tutorial/upgrade_engine.md:5
 msgid "导入引擎镜像"
-msgstr ""
+msgstr "Import the engine image"
 
 #: ../../tutorial/upgrade_engine.md:7
 msgid "Kuscia 提供脚本升级镜像和手动升级镜像两种方式，您可以根据自己的需求选择合适的方式。"
-msgstr ""
+msgstr "Kuscia provides two methods for upgrading the image: script-based and manual. You can choose the appropriate method based on your needs."
 
 #: ../../tutorial/upgrade_engine.md:9
 msgid "脚本升级镜像"
-msgstr ""
+msgstr "Use script Upgrade Image"
 
 #: ../../tutorial/upgrade_engine.md:11
 msgid "获取工具脚本"
-msgstr ""
+msgstr "Get the tool script"
 
 #: ../../tutorial/upgrade_engine.md:17
 msgid "注册镜像"
-msgstr ""
+msgstr "Register Image"
 
 #: ../../tutorial/upgrade_engine.md:19
 msgid "**点对点模式**"
-msgstr ""
+msgstr "**Point-to-Point Mode**"
 
 #: ../../tutorial/upgrade_engine.md:21
 msgid ""
 "Autonomy 节点需要同时导入引擎镜像和注册 AppImage，下面以 root-kuscia-autonomy-alice 节点为例，其他 "
 "Autonomy 节点也需要进行导入"
 msgstr ""
+"The Autonomy node needs to import the engine image and register the AppImage simultaneously." 
+"Below, we take the root-kuscia-autonomy-alice node as an example; other Autonomy nodes also need to perform the import."
 
 #: ../../tutorial/upgrade_engine.md:27
 msgid "**中心化模式**"
-msgstr ""
+msgstr "**Centralized Mode**"
 
 #: ../../tutorial/upgrade_engine.md:29
 msgid "Master 节点注册 AppImage 即可，下面以 root-kuscia-master 为例"
-msgstr ""
+msgstr "The Master node only needs to register the AppImage; below, we take root-kuscia-master as an example."
 
 #: ../../tutorial/upgrade_engine.md:35
 msgid "Lite 节点导入引擎镜像即可，下面以 root-kuscia-lite-alice 节点为例，其他 Lite 节点也需要进行导入"
-msgstr ""
+msgstr "The Lite node only needs to import the engine image; below, we take the root-kuscia-lite-alice node as an example, and other Lite nodes also need to perform the import."
 
 #: ../../tutorial/upgrade_engine.md:41
 msgid "手动升级镜像"
-msgstr ""
+msgstr "Manual Upgrade of Image"
 
 #: ../../tutorial/upgrade_engine.md:43
 msgid "kuscia 命令支持在 RunC、RunP 模式中导入引擎镜像，使用示例如下："
-msgstr ""
+msgstr "The kuscia command supports importing the engine image in RunC and RunP modes, with usage examples as follows:"
 
 #: ../../tutorial/upgrade_engine.md:45
 msgid "登录到 Autonomy、Lite 节点中"
-msgstr ""
+msgstr "Log in to the Autonomy and Lite nodes"
 
 #: ../../tutorial/upgrade_engine.md:51
 msgid "导入镜像"
-msgstr ""
+msgstr "Import Image"
 
 #: ../../tutorial/upgrade_engine.md:53
 msgid "执行 kuscia image 导入镜像，此处以 sf 镜像为例"
-msgstr ""
+msgstr "Execute kuscia image to import the image, using the sf image as an example."
 
 #: ../../tutorial/upgrade_engine.md:60
 msgid "如果您使用的是`私有仓库`，请加上 creds 参数指定账户密码，示例如下："
-msgstr ""
+msgstr "If you are using a `private repository`, please add the creds parameter to specify the account password, as shown in the example below:"
 
 #: ../../tutorial/upgrade_engine.md:67
 msgid "如果您的环境无法访问镜像仓库，您也可以将镜像打成 tar 包传到容器里，然后通过 kuscia image load 导入，示例如下："
-msgstr ""
+msgstr "If your environment cannot access the image repository, you can also package the image into a tar file and transfer it to the container, then import it using kuscia image load, as shown in the example below:"
 
 #: ../../tutorial/upgrade_engine.md:74
 msgid "验证镜像导入成功"
-msgstr ""
+msgstr "Verify that the image import was successful"
 
 #: ../../tutorial/upgrade_engine.md:81
 msgid "注册 AppImage"
-msgstr ""
+msgstr "Register AppImage"
 
 #: ../../tutorial/upgrade_engine.md:83
 msgid "镜像导入之后需要在 Autonomy 和 Master 节点上修改 AppImage，Lite 节点无需执行，示例如下："
-msgstr ""
+msgstr "After importing the image, you need to modify the AppImage on the Autonomy and Master nodes; the Lite nodes do not need to perform this action, as shown in the example below:"
 
