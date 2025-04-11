@@ -29,6 +29,7 @@ require (
 	github.com/huandu/go-sqlbuilder v1.28.1
 	github.com/johannesboyne/gofakes3 v0.0.0-20240513200200-99de01ee122d
 	github.com/json-iterator/go v1.1.12
+	github.com/lib/pq v1.10.9
 	github.com/miekg/dns v1.1.58
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/moby/sys/mount v0.3.3

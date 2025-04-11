@@ -41,9 +41,10 @@ func NewIOServer() *IOServer {
 	return &IOServer{
 		cmds: gocache.New(time.Duration(10)*time.Minute, time.Minute),
 		ioChannels: map[string]DataMeshDataIOInterface{
-			common.DomainDataSourceTypeLocalFS: NewBuiltinLocalFileIOChannel(),
-			common.DomainDataSourceTypeOSS:     NewBuiltinOssIOChannel(),
-			common.DomainDataSourceTypeMysql:   NewBuiltinMySQLIOChannel(),
+			common.DomainDataSourceTypeLocalFS:    NewBuiltinLocalFileIOChannel(),
+			common.DomainDataSourceTypeOSS:        NewBuiltinOssIOChannel(),
+			common.DomainDataSourceTypeMysql:      NewBuiltinMySQLIOChannel(),
+			common.DomainDataSourceTypePostgreSQL: NewBuiltinPostgresIOChannel(),
 		},
 	}
 }

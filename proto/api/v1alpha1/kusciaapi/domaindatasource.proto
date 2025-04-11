@@ -128,7 +128,7 @@ message DomainDataSource {
     string datasource_id = 2;
     // datasource name
     string name = 3;
-    // datasource type, enum [localfs, oss, mysql]
+    // datasource type, enum [localfs, oss, mysql, postgresql]
     string type = 4;
     // datasource status, enum [Available,Unavailable]
     string status = 5;
@@ -154,7 +154,7 @@ message DataSourceInfo {
     LocalDataSourceInfo localfs = 1;
     // aws s3 object storage service
     OssDataSourceInfo oss = 2;
-    // Relational database info, such as Mysql/oracle/postgres
+    // Relational database info, such as Mysql/oracle/postgresql
     DatabaseDataSourceInfo database = 3;
     // aliyun odps(MaxCompute)
     OdpsDataSourceInfo odps = 4;
@@ -187,7 +187,7 @@ message OssDataSourceInfo {
     string storage_type = 8;
 }
 
-// datasource info for mysql/oracle/postgres
+// datasource info for mysql/oracle/postgresql
 message DatabaseDataSourceInfo {
     // endpoint for database, such as localhost:3306
     string endpoint = 1;

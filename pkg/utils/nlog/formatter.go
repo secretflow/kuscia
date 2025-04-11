@@ -40,6 +40,7 @@ func NewDefaultFormatter() Formatter {
 type ginLogFormatter struct {
 }
 
+// new log 的日志格式
 func (f *ginLogFormatter) Format(ctx context.Context, log string) string {
 	if ctx == nil {
 		return log
