@@ -19,45 +19,46 @@ msgstr ""
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:1
 msgid "Kine 表问题导致 Kuscia 启动失败"
-msgstr ""
+msgstr "Kuscia Startup Failure Due to Kine Table Issues"
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:3
 msgid "Kine 表不存在"
-msgstr ""
+msgstr "Kine Table Does Not Exist"
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:5
 msgid "Kuscia 启动失败可能是 Kine 表在数据库中不存在导致的，可以使用如下方法解决："
-msgstr ""
+msgstr "Kuscia startup failure may be caused by the non-existence of Kine table in the database. You can resolve it using the following methods:"
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:7
 msgid ""
 "部署 Kuscia 前先手动创建好 Kine "
 "表，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。"
 msgstr ""
+"Create the Kine table manually before deploying Kuscia. Refer to [kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql) for the table creation statement."
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:8
 msgid ""
 "提供的数据库账号有建表权限（账号具有 `DDL+DML` 权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 kuscia "
 "会启动失败。"
 msgstr ""
+"The provided database account should have table creation permissions (account with `DDL+DML` privileges). If the table doesn't exist, Kuscia will attempt to create it automatically. If creation fails, Kuscia will fail to start."
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:10
 msgid "Kine 多节点混用导致启动失败"
-msgstr ""
+msgstr "Startup Failure Due to Mixed Use of Kine Multi-nodes"
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:12
 msgid "Kuscia 启动失败可能是多个节点使用同一张表导致的，报错示例如下："
-msgstr ""
+msgstr "Kuscia startup failure may be caused by multiple nodes using the same table. Error example as follows:"
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:19
 msgid "可以使用如下方法解决："
-msgstr ""
+msgstr "You can resolve it using the following methods:"
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:21
 msgid "确保一个节点（Domain） 使用一张 Kine 表。"
-msgstr ""
+msgstr "Ensure one node (Domain) uses one Kine table."
 
 #: ../../troubleshoot/deployment/kuscia_mysql_kine.md:22
 msgid "复用 Kine 表需保证 DomainID 与之前的节点保持一致。"
-msgstr ""
-
+msgstr "When reusing a Kine table, ensure the DomainID matches that of the previous node."
