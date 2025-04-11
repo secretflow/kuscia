@@ -58,7 +58,7 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindata/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -137,7 +137,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindata/update' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -206,7 +206,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/update' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindata/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -259,7 +259,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindata/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -355,7 +355,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindata/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -448,7 +448,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/batchQuery' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
