@@ -19,93 +19,92 @@ msgstr ""
 
 #: ../../deployment/kuscia_deployment_instructions.md:1
 msgid "Kuscia 部署指引"
-msgstr ""
+msgstr "Kuscia Deployment Guide"
 
 #: ../../deployment/kuscia_deployment_instructions.md:3
 msgid "目前 Kuscia 支持 Docker 和 K8s 两种部署方式，请根据部署环境选择相应的部署方式。"
-msgstr ""
+msgstr "Currently, Kuscia supports two deployment methods: Docker and K8s. Please choose the appropriate method based on your deployment environment."
 
 #: ../../deployment/kuscia_deployment_instructions.md:5
 msgid "前置准备"
-msgstr ""
+msgstr "Prerequisites"
 
 #: ../../deployment/kuscia_deployment_instructions.md:7
 msgid "Kuscia 对部署环境有一定要求，请参考[部署要求](./deploy_check.md)提前准备好环境"
-msgstr ""
+msgstr "Kuscia has certain requirements for the deployment environment. Please refer to [Deployment Requirements](./deploy_check.md) to prepare the environment in advance"
 
 #: ../../deployment/kuscia_deployment_instructions.md:9
 msgid "Docker 多机部署 Kuscia"
-msgstr ""
+msgstr "Multi-Machine Deployment of Kuscia with Docker"
 
 #: ../../deployment/kuscia_deployment_instructions.md:11
 msgid "Docker 多机部署 Kuscia 分为点对点模式和中心化模式，请根据需要选择相应的部署方式。"
-msgstr ""
+msgstr "Multi-machine deployment of Kuscia with Docker is divided into peer-to-peer mode and centralized mode. Please choose the appropriate deployment method according to your needs."
 
 #: ../../deployment/kuscia_deployment_instructions.md:13
 msgid "点对点模式：部署参考[多机部署点对点集群](./Docker_deployment_kuscia/deploy_p2p_cn.md)"
-msgstr ""
+msgstr "Peer-to-peer mode: Refer to [Multi-Machine Deployment of Peer-to-Peer Cluster](./Docker_deployment_kuscia/deploy_p2p_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:14
 msgid "中心化模式：部署参考[多机部署中心化集群](./Docker_deployment_kuscia/deploy_master_lite_cn.md)"
-msgstr ""
+msgstr "Centralized mode: Refer to [Multi-Machine Deployment of Centralized Cluster](./Docker_deployment_kuscia/deploy_master_lite_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:16
 msgid "K8s 集群部署 Kuscia"
-msgstr ""
+msgstr "Deploying Kuscia on K8s Cluster"
 
 #: ../../deployment/kuscia_deployment_instructions.md:18
 msgid "在 K8s 集群部署中，我们将介绍点对点集群、中心化集群以及如何使用 RunP 运行时模式来训练任务。"
-msgstr ""
+msgstr "In K8s cluster deployment, we will introduce peer-to-peer clusters, centralized clusters, and how to use RunP runtime mode to train tasks."
 
 #: ../../deployment/kuscia_deployment_instructions.md:20
 msgid "点对点模式：部署参考[部署点对点集群](./K8s_deployment_kuscia/K8s_p2p_cn.md)"
-msgstr ""
+msgstr "Peer-to-peer mode: Refer to [Deploy Peer-to-Peer Cluster](./K8s_deployment_kuscia/K8s_p2p_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:21
 msgid "中心化模式：部署参考[部署中心化集群](./K8s_deployment_kuscia/K8s_master_lite_cn.md)"
-msgstr ""
+msgstr "Centralized mode: Refer to [Deploy Centralized Cluster](./K8s_deployment_kuscia/K8s_master_lite_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:22
 msgid ""
 "使用 RunP 运行时模式来训练任务：部署参考[使用 RunP "
 "模式部署节点](./K8s_deployment_kuscia/deploy_with_runp_cn.md)"
-msgstr ""
+msgstr "Using RunP runtime mode to train tasks: Refer to [Deploy Nodes with RunP Mode](./K8s_deployment_kuscia/deploy_with_runp_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:24
 msgid "验证部署"
-msgstr ""
+msgstr "Verify Deployment"
 
 #: ../../deployment/kuscia_deployment_instructions.md:26
 msgid "Kuscia 部署完成后，可以通过以下几个方面来验证部署是否成功："
-msgstr ""
+msgstr "After Kuscia deployment is complete, you can verify if the deployment was successful through the following aspects:"
 
 #: ../../deployment/kuscia_deployment_instructions.md:28
 msgid "查看 Kuscia 容器或者 Pod 是否正常运行"
-msgstr ""
+msgstr "Check if Kuscia containers or Pods are running normally"
 
 #: ../../deployment/kuscia_deployment_instructions.md:29
 msgid "查看 Kuscia 节点之间网络是否正常通行"
-msgstr ""
+msgstr "Check if the network between Kuscia nodes is functioning properly"
 
 #: ../../deployment/kuscia_deployment_instructions.md:30
 msgid "验证 Kuscia 是否可以正常训练任务"
-msgstr ""
+msgstr "Verify if Kuscia can train tasks normally"
 
 #: ../../deployment/kuscia_deployment_instructions.md:32
 msgid "故障排查"
-msgstr ""
+msgstr "Troubleshooting"
 
 #: ../../deployment/kuscia_deployment_instructions.md:34
 msgid "部署过程中遇到问题可以先参考[常见问题](../troubleshoot/deployment/deploy_failed.md)进行排查"
-msgstr ""
+msgstr "If you encounter issues during deployment, you can first refer to [Common Issues](../troubleshoot/deployment/deploy_failed.md) for troubleshooting"
 
 #: ../../deployment/kuscia_deployment_instructions.md:36
 msgid "更多帮助"
-msgstr ""
+msgstr "More Help"
 
 #: ../../deployment/kuscia_deployment_instructions.md:38
 msgid ""
 "如需进一步帮助，请在 Kuscia [Issue](https://github.com/secretflow/kuscia/issues) "
 "上提交问题。"
-msgstr ""
-
+msgstr "For further assistance, please submit an issue on Kuscia [Issues](https://github.com/secretflow/kuscia/issues)."
