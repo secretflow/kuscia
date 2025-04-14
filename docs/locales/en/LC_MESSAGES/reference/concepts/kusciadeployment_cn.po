@@ -84,7 +84,7 @@ msgstr ""
 
 #: ../../reference/concepts/kusciadeployment_cn.md:23
 msgid "用例"
-msgstr "Use case"
+msgstr "Use case "
 
 #: ../../reference/concepts/kusciadeployment_cn.md:25
 msgid "以下是一些 KusciaDeployment 的典型用例："
