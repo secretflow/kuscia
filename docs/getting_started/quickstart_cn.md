@@ -138,6 +138,9 @@ docker exec -it ${USER}-kuscia-lite-alice cat var/storage/data/psi-output.csv
 
 # 以点对点集群模式下的 alice 节点为例：
 docker exec -it ${USER}-kuscia-autonomy-alice cat var/storage/data/psi-output.csv
+
+# 以中心化 x 点对点集群模式下的 alice 节点为例：
+docker exec -it ${USER}-kuscia-lite-cxp-alice cat var/storage/data/psi-output.csv 
 ```
 
 结果输出（仅前 4 行）：
