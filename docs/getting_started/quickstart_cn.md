@@ -199,4 +199,4 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 
 请继续阅读 [KusciaJob][part-2] 章节，来了解示例作业背后的细节。
 
-- [part-2]: ./run_secretflow_cn.md
+[part-2]: ./run_secretflow_cn.md
