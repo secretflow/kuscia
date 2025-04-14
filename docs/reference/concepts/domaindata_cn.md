@@ -224,7 +224,7 @@ DomainData `spec` 的子字段详细介绍如下：
   比如您可以存储数据文件的md5值，或者存储行数，应用算法也可用于存储模型的类型等。
 - `columns`：表示对于表类型的 DomainData 的列信息。仅当`type`为`table`时，该字段才存在。
   - `name`：列字段名称。
-  - `type`：列字段的数据类型，默认支持的数据类型参考[data.proto](https://github.com/secretflow/spec/blob/main/secretflow/spec/v1/data.proto#L112)。该字段当前版本并非可枚举的，列字段的类型由应用算法组件进行定义和消费，Kuscia 仅作存储。
+  - `type`：列字段的数据类型，默认支持的数据类型参考[data.proto](https://github.com/secretflow/spec/blob/main/secretflow_spec/protos/secretflow_spec/v1/data.proto#L143)。该字段当前版本并非可枚举的，列字段的类型由应用算法组件进行定义和消费，Kuscia 仅作存储。
   - `comment`：列字段的注释，仅用作展示。
 - `dataSource`：表示 DomainData 所属的数据源。数据源是数据所存放的位置，存在多种类型的数据源，比如`localfs`类型数据源表示节点内的一个文件目录，`mysql`类型数据源表示mysql实例中的一个数据库。
   目前 Kuscia 仅支持`localfs`数据源，并且内置一个数据源实例`default-data-source`，即当前示例中所使用的数据源。该`default-data-source`数据源的根目录为节点内的`/home/kuscia/var/storage/data`目录。
