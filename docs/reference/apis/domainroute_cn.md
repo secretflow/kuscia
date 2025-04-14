@@ -50,7 +50,7 @@ Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domai
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/route/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
