@@ -19,83 +19,82 @@ msgstr ""
 
 #: ../../troubleshoot/network/network_authorization_check.md:1
 msgid "授权错误排查"
-msgstr ""
+msgstr "Authorization Error Troubleshooting"
 
 #: ../../troubleshoot/network/network_authorization_check.md:3
 msgid "排查步骤"
-msgstr ""
+msgstr "Troubleshooting Steps"
 
 #: ../../troubleshoot/network/network_authorization_check.md:5
 msgid "检查授权状态以及参数是否符合预期"
-msgstr ""
+msgstr "Check if the authorization status and parameters meet expectations"
 
 #: ../../troubleshoot/network/network_authorization_check.md:7
 msgid ""
 "登录到容器（中心化模式在 master 容器、点对点模式在 Autonomy 容器）并执行 `kubectl get cdr` "
 "命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST 和端口是否正确或者执行 `kubectl "
 "get cdr ${cdr_name} -oyaml` 命令看下详细信息，参数确认无误仍无法正常通信请参考下文。"
-msgstr ""
+msgstr "Log in to the container (master container in centralized mode, Autonomy container in P2P mode) and execute `kubectl get cdr` to view authorization information. When READY is True, it indicates normal communication; when empty, it indicates communication abnormal. You can first check if the HOST and port are correct or execute `kubectl get cdr ${cdr_name} -oyaml` to view detailed information. If parameters are confirmed correct but communication is still abnormal, please refer to the following."
 
 #: ../../troubleshoot/network/network_authorization_check.md:9
 msgid "授权正常示例如下："
-msgstr ""
+msgstr "Example of normal authorization:"
 
 #: ../../troubleshoot/network/network_authorization_check.md:18
 msgid "查看 curl 返回结果"
-msgstr ""
+msgstr "Check curl response results"
 
 #: ../../troubleshoot/network/network_authorization_check.md:20
 msgid ""
 "大部分的网络问题都是网络协议（http/https/mtls、IP、端口（包括端口映射）不正确导致的，最简单的方法就是通过在`源节点`手动访问（curl）`目标节点的地址`来判定。比如：curl"
 " -kvvv <https://1.1.1.1:18080>（此处为示例 ip 与端口），通过 curl "
 "命令能够快速分析网络授权异常原因，curl 返回的结果一般分为以下几种情况："
-msgstr ""
+msgstr "Most network issues are caused by incorrect network protocols (http/https/mtls, IP, ports including port mapping). The simplest method is to manually access (curl) the `target node address` from the `source node`. For example: curl -kvvv <https://1.1.1.1:18080> (example IP and port). Using the curl command can quickly analyze network authorization anomalies. The curl response results generally fall into the following categories:"
 
 #: ../../troubleshoot/network/network_authorization_check.md:22
 msgid "返回正常结果为 401，示例如下："
-msgstr ""
+msgstr "Normal response is 401, example as follows:"
 
 #: ../../troubleshoot/network/network_authorization_check.md:66
 msgid "一直处于请求连接状态，示例如下："
-msgstr ""
+msgstr "Continuously in connection request status, example as follows:"
 
 #: ../../troubleshoot/network/network_authorization_check.md:73
 msgid "这种情况通常是因为对端机构侧服务器没有给本端服务器出口 ip 加白，可以先 curl cip.cc 查询本端服务器出口 ip 给到对方加白。"
-msgstr ""
+msgstr "This situation usually occurs because the peer organization's server hasn't whitelisted the local server's outbound IP. You can first use curl cip.cc to query the local server's outbound IP and provide it to the other party for whitelisting."
 
 #: ../../troubleshoot/network/network_authorization_check.md:75
 msgid "请求返回报错 Connection refused，示例如下："
-msgstr ""
+msgstr "Request returns Connection refused error, example as follows:"
 
 #: ../../troubleshoot/network/network_authorization_check.md:82
 msgid ""
 "这种情况通常表示对端机构侧服务器已经给本端服务器加白了，但是对端服务器服务没有拉起或者端口没有打开，可以在对端服务器上 `docker ps` "
 "`netstat -anutp | grep \"${port}\"` 看下机器映射的端口是否正常打开。"
-msgstr ""
+msgstr "This situation usually indicates that the peer organization's server has whitelisted the local server, but the peer server service hasn't started or the port isn't open. You can check if the machine's mapped port is properly open on the peer server using `docker ps` and `netstat -anutp | grep \"${port}\"`."
 
 #: ../../troubleshoot/network/network_authorization_check.md:84
 msgid ""
 "其他各种非正常 401 "
 "返回的情形需要配合对方机构侧检查网络链路，例如：防火墙阻拦、网关代理配置有问题等。如果中间有机构网关，可以参考[网络要求](../../deployment/networkrequirements.md)的文档来确保网关符合要求。"
-msgstr ""
+msgstr "Other cases of abnormal 401 responses require cooperation with the peer organization to check network links, such as firewall blocking, gateway proxy configuration issues, etc. If there is an organizational gateway in between, refer to the [Network Requirements](../../deployment/networkrequirements.md) documentation to ensure the gateway meets requirements."
 
 #: ../../troubleshoot/network/network_authorization_check.md:86
 msgid "查看网关日志"
-msgstr ""
+msgstr "Check Gateway Logs"
 
 #: ../../troubleshoot/network/network_authorization_check.md:88
 msgid ""
 "通过日志能够很好的分析 Kuscia "
 "运行状态、连接情况、流量信息等，详细内容请参考[日志说明](../../deployment/logdescription.md/#envoy)"
-msgstr ""
+msgstr "Logs can effectively analyze Kuscia's running status, connection status, traffic information, etc. For detailed information, please refer to [Log Description](../../deployment/logdescription.md/#envoy)"
 
 #: ../../troubleshoot/network/network_authorization_check.md:90
 msgid "分析网络拓扑、使用抓包工具"
-msgstr ""
+msgstr "Analyze Network Topology and Use Packet Capture Tools"
 
 #: ../../troubleshoot/network/network_authorization_check.md:92
 msgid ""
 "在复杂的网络环境中，可以先整理两方机构之间的网络拓扑，以便于更加清晰、快速的定位，再配合 Tcpdump、Wireshark "
 "等抓包工具进行排查。一个机构的网络拓扑可以参考[网络要求](../../deployment/networkrequirements.md)"
-msgstr ""
-
+msgstr "In complex network environments, first organize the network topology between the two organizations for clearer and faster troubleshooting, then use packet capture tools like Tcpdump and Wireshark for investigation. For an organization's network topology, refer to [Network Requirements](../../deployment/networkrequirements.md)"

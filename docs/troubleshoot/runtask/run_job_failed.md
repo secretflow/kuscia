@@ -41,10 +41,10 @@ kubectl get kj -n cross-domain
 - 具体失败原因可以查看 status 字段下的相关内容
 
     ```shell
-    # 列出所有任务
+    # list all jobs
     kubectl get kt -n cross-domain
 
-    # 查看任务的详细信息，任务名称来自上述命令
+    # View the detailed information of the task. The task name comes from the above command.
     kubectl get kt {任务名称} -n cross-domain -o yaml
     ```
 
@@ -53,22 +53,22 @@ kubectl get kj -n cross-domain
 - 具体失败原因可以查看 status 字段下的相关内容
 
     ```shell
-    # 查看 alice 节点下的 pod 列表
+    # View the list of pods under the alice node
     kubectl get pod -n alice
 
-    # 查看 alice 节点下某个 pod 的详细信息
+    # View the detailed information of a certain pod under the alice node
     kubectl get pod xxxx -o yaml -n alice
 
-    # 查看 bob 节点下的 pod 列表
+    # View the list of pods under the bob node
     kubectl get pod -n bob
 
-    # 查看 bob 节点下某个 pod 的详细信息
+    # View the detailed information of a certain pod under the bob node
     kubectl get pod xxxx -o yaml -n bob
 
-    # 若 pod 状态为 Pending，可以继续查看相应节点详细信息
+    # If the pod status is Pending, you can continue to view the detailed information of the corresponding node
     kubectl get node
 
-    # 查看 node 详细信息
+    # View the detailed information of the node
     kubectl describe node xxxx
     ```
 
@@ -77,32 +77,32 @@ kubectl get kj -n cross-domain
 - 若以中心化组网模式部署，登陆到 Alice 和 Bob 容器命令如下
 
     ```shell
-    # 登陆到 alice 容器中
+    # Log in to the alice container
     docker exec -it ${USER}-kuscia-lite-alice bash
 
-    # 查看 alice 节点上任务 pod 日志
+    # View the task pod log on the alice node
     cat /home/kuscia/var/stdout/pods/podName_xxxx/xxxx/x.log
 
-    # 登陆到 bob 容器中
+    # Log in to the bob container
     docker exec -it ${USER}-kuscia-lite-bob bash
 
-    # 查看 bob 节点上任务 pod 日志
+    # View the task pod log on the bob node
     cat /home/kuscia/var/stdout/pods/podName_xxxx/xxxx/x.log
     ```
 
 - 若以点对点组网模式部署，登陆到 Alice 和 Bob 容器命令如下
 
     ```shell
-    # 登陆到 alice 容器中
+    # Log in to the alice container
     docker exec -it ${USER}-kuscia-autonomy-alice bash
 
-    # 查看 alice 节点上任务 pod 日志
+    # View the task pod log on the alice node
     cat /home/kuscia/var/stdout/pods/podName_xxxx/xxxx/x.log
 
-    # 登陆到 bob 容器中
+    # Log in to the bob container
     docker exec -it ${USER}-kuscia-autonomy-bob bash
 
-    # 查看 bob 节点上任务 pod 日志
+    # View the task pod log on the bob node
     cat /home/kuscia/var/stdout/pods/podName_xxxx/xxxx/x.log
     ```
   

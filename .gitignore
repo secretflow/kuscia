@@ -30,3 +30,5 @@ bazel-*
 # Python virtualenv
 .venv
 .DS_Store
+
+**.mo

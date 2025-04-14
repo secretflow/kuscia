@@ -19,144 +19,146 @@ msgstr ""
 
 #: ../../reference/apis/health_cn.md:1
 msgid "Health"
-msgstr ""
+msgstr "Health"
 
 #: ../../reference/apis/health_cn.md:3
 msgid ""
 "Health 提供了服务的健康检查，你可以借助这些 API 了解服务的健康状态。 你可以从 "
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto)"
 " 找到对应的 protobuf 文件。"
-msgstr ""
+msgstr "The Health component provides health check capabilities for Kuscia services. The API allows you to monitor and retrieve "
+       "the health status of services. Click [HERE](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/health.proto)"
+       " to find the corresponding protobuf files."
 
 #: ../../reference/apis/health_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/health_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/health_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/health_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/health_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/health_cn.md
 msgid "[healthZ](#healthZ)"
-msgstr ""
+msgstr "[healthZ](#healthZ)"
 
 #: ../../reference/apis/health_cn.md
 msgid "HealthRequest"
-msgstr ""
+msgstr "HealthRequest"
 
 #: ../../reference/apis/health_cn.md
 msgid "HealthResponse"
-msgstr ""
+msgstr "HealthResponse"
 
 #: ../../reference/apis/health_cn.md
 msgid "服务是否健康"
-msgstr ""
+msgstr "Checks if service runs healthily"
 
 #: ../../reference/apis/health_cn.md:12
 msgid "接口详情"
-msgstr ""
+msgstr "Details of Interface"
 
 #: ../../reference/apis/health_cn.md:16
 msgid "健康检查"
-msgstr ""
+msgstr "Health Check"
 
 #: ../../reference/apis/health_cn.md:18
 msgid "HTTP路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/health_cn.md:20
 msgid "/healthZ"
-msgstr ""
+msgstr "/healthZ"
 
 #: ../../reference/apis/health_cn.md:22
 msgid "请求（HealthRequest）"
-msgstr ""
+msgstr "Request (HealthRequest)"
 
 #: ../../reference/apis/health_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/health_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/health_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/health_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/health_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/health_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/health_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/health_cn.md:28
 msgid "响应（HealthResponse）"
-msgstr ""
+msgstr "Response (HealthResponse)"
 
 #: ../../reference/apis/health_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/health_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/health_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status info"
 
 #: ../../reference/apis/health_cn.md
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/health_cn.md
 msgid "HealthResponseData"
-msgstr ""
+msgstr "HealthResponseData"
 
 #: ../../reference/apis/health_cn.md
 msgid "data.ready"
-msgstr ""
+msgstr "data.ready"
 
 #: ../../reference/apis/health_cn.md
 msgid "bool"
-msgstr ""
+msgstr "bool"
 
 #: ../../reference/apis/health_cn.md
 msgid "是否就绪"
-msgstr ""
+msgstr "Is ready or not"
 
 #: ../../reference/apis/health_cn.md:36
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/health_cn.md:38
 msgid "发起请求："
-msgstr ""
+msgstr "Request initialization:"
 
 #: ../../reference/apis/health_cn.md:52
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful response："
 
