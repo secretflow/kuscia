@@ -101,11 +101,11 @@ docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
 # 启动集群，会拉起 4 个 docker 容器，包括两个控制平面 master-alice、master-bob 和两个 Lite 节点 alice、bob。
 ./kuscia.sh cxc
 
-# 登入 master-alice 容器创建并启动作业（两方 PSI 任务）。
-docker exec -it ${USER}-kuscia-master-alice scripts/user/create_example_job.sh
+# 登入 master-cxc-alice 容器创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-master-cxc-alice scripts/user/create_example_job.sh
 
 # 查看作业状态。
-docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
+docker exec -it ${USER}-kuscia-master-cxc-alice kubectl get kj -n cross-domain
 ```
 
 ### 中心化 x 点对点组网模式
@@ -114,11 +114,11 @@ docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
 # 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master-alice 和一个 Lite 节点 alice、一个 Autonomy 节点 bob。
 ./kuscia.sh cxp
 
-# 登入 master-alice 容器创建并启动作业（两方 PSI 任务）。
-docker exec -it ${USER}-kuscia-master-alice scripts/user/create_example_job.sh
+# 登入 master-cxp-alice 容器创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-master-cxp-alice scripts/user/create_example_job.sh
 
 # 查看作业状态。
-docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
+docker exec -it ${USER}-kuscia-master-cxp-alice kubectl get kj -n cross-domain
 ```
 
 ## 作业状态
