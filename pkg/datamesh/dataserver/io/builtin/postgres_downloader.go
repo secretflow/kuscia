@@ -265,7 +265,7 @@ func (d *PostgresDownloader) initFieldConverter(bldr array.Builder) func(string)
 		}
 
 	default:
-		panic(fmt.Errorf("postgresql to arrow conversion: unhandled field type %T", bldr.Type()))
+		panic(fmt.Errorf("Postgresql to arrow conversion: unhandled field type %T", bldr.Type()))
 	}
 }
 
@@ -302,7 +302,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 	sql := sqlbuilder.Select(backTickColumns...).From(tableName).String()
 	rows, err := d.db.Query(sql)
 	if err != nil {
-		nlog.Errorf("postgresql query failed(%s)", err)
+		nlog.Errorf("Postgresql query failed(%s)", err)
 		return err
 	}
 
@@ -310,7 +310,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 	defer func() {
 		if r := recover(); r != nil {
 			nlog.Errorf("Read domaindata(%s) panic %+v", d.data.DomaindataId, r)
-			err = fmt.Errorf("read domaindata(%s) panic: %+v", d.data.DomaindataId, r)
+			err = fmt.Errorf("Read domaindata(%s) panic: %+v", d.data.DomaindataId, r)
 		}
 	}()
 
@@ -357,7 +357,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 				if fieldList[i].Nullable {
 					d.builder.Field(i).AppendNull()
 				} else {
-					err = errors.Errorf("data column %s not allowed null value", fieldList[i].Name)
+					err = errors.Errorf("Data column %s not allowed null value", fieldList[i].Name)
 					nlog.Error(err)
 					return err
 				}

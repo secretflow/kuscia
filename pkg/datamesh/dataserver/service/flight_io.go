@@ -62,7 +62,6 @@ func NewFlightIO(dd service.IDomainDataService, ds service.IDomainDataSourceServ
 
 func (dp *FlightIO) GetFlightInfo(ctx context.Context, msg proto.Message) (flightInfo *flight.FlightInfo, err error) {
 	reqCtx, err := utils.NewDataMeshRequestContext(dp.dd, dp.ds, msg)
-	nlog.Info(dp.ioMap)
 	if err != nil {
 		nlog.Warnf("GetFlightInfo create context fail: %s", err.Error())
 		return nil, err
