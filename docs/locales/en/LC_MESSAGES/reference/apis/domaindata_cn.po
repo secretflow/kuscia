@@ -76,7 +76,7 @@ msgstr "CreateDomainDataResponse"
 #: ../../reference/apis/domaindata_cn.md
 #: ../../reference/apis/domaindata_cn.md:23
 msgid "创建数据对象"
-msgstr "Create Data Object"
+msgstr "Create DomainData"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[UpdateDomainData](#update-domain-data)"
@@ -93,7 +93,7 @@ msgstr "UpdateDomainDataResponse"
 #: ../../reference/apis/domaindata_cn.md
 #: ../../reference/apis/domaindata_cn.md:108
 msgid "更新数据对象"
-msgstr "Update Data Object"
+msgstr "Update DomainData"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[DeleteDomainData](#delete-domain-data)"
@@ -110,7 +110,7 @@ msgstr "DeleteDomainDataResponse"
 #: ../../reference/apis/domaindata_cn.md
 #: ../../reference/apis/domaindata_cn.md:184
 msgid "删除数据对象"
-msgstr "Delete Data Object"
+msgstr "Delete DomainData"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[QueryDomainData](#query-domain-data)"
@@ -127,7 +127,7 @@ msgstr "QueryDomainDataResponse"
 #: ../../reference/apis/domaindata_cn.md
 #: ../../reference/apis/domaindata_cn.md:237
 msgid "查询数据对象"
-msgstr "Query Data Object"
+msgstr "Query DomainData"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[BatchQueryDomainData](#batch-query-domain-data)"
@@ -144,7 +144,7 @@ msgstr "BatchQueryDomainDataResponse"
 #: ../../reference/apis/domaindata_cn.md
 #: ../../reference/apis/domaindata_cn.md:333
 msgid "批量查询数据对象"
-msgstr "Batch Query Data Objects"
+msgstr "Batch Query DomainDatas"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[ListDomainData](#list-domain-data)"
@@ -161,7 +161,7 @@ msgstr "ListDomainDataResponse"
 #: ../../reference/apis/domaindata_cn.md
 #: ../../reference/apis/domaindata_cn.md:426
 msgid "列出数据对象"
-msgstr "List Data Objects"
+msgstr "List DomainData"
 
 #: ../../reference/apis/domaindata_cn.md:19
 msgid "接口详情"
@@ -341,7 +341,7 @@ msgstr "data.domaindata_id"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "数据对象 ID"
-msgstr "Data object ID"
+msgstr "DomainData ID"
 
 #: ../../reference/apis/domaindata_cn.md:56
 #: ../../reference/apis/domaindata_cn.md:135
@@ -508,7 +508,7 @@ msgstr "[DomainData](#domain-data-entity)[]"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "数据对象列表"
-msgstr "Data Object List"
+msgstr "DomainData List"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "数据源 ID，参考 [DomainData 概念](../concepts/domaindata_cn.md)"
