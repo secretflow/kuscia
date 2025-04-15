@@ -29,137 +29,141 @@ msgid ""
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto)"
 " 找到对应的 protobuf 文件。"
 msgstr ""
+"DomainDataSource represents the data source managed by Kuscia. Refer to "
+"[DomainDataSource](../concepts/domaindatasource_cn.md). You can find the "
+"corresponding protobuf file [here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto)."
 
 #: ../../reference/apis/domaindatasource_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[CreateDomainDataSource](#create-domain-data-source)"
-msgstr ""
+msgstr "[CreateDomainDataSource](#create-domain-data-source)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "CreateDomainDataSourceRequest"
-msgstr ""
+msgstr "CreateDomainDataSourceRequest"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "CreateDomainDataSourceResponse"
-msgstr ""
+msgstr "CreateDomainDataSourceResponse"
 
 #: ../../reference/apis/domaindatasource_cn.md
 #: ../../reference/apis/domaindatasource_cn.md:21
 msgid "创建数据源"
-msgstr ""
+msgstr "Create Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[UpdateDomainDataSource](#update-domain-data-source)"
-msgstr ""
+msgstr "[UpdateDomainDataSource](#update-domain-data-source)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "UpdateDomainDataSourceRequest"
-msgstr ""
+msgstr "UpdateDomainDataSourceRequest"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "UpdateDomainDataSourceResponse"
-msgstr ""
+msgstr "UpdateDomainDataSourceResponse"
 
 #: ../../reference/apis/domaindatasource_cn.md
 #: ../../reference/apis/domaindatasource_cn.md:189
 msgid "更新数据源"
-msgstr ""
+msgstr "Update Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[DeleteDomainDataSource](#delete-domain-data-source)"
-msgstr ""
+msgstr "[DeleteDomainDataSource](#delete-domain-data-source)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "DeleteDomainDataSourceRequest"
-msgstr ""
+msgstr "DeleteDomainDataSourceRequest"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "DeleteDomainDataSourceResponse"
-msgstr ""
+msgstr "DeleteDomainDataSourceResponse"
 
 #: ../../reference/apis/domaindatasource_cn.md
 #: ../../reference/apis/domaindatasource_cn.md:255
 msgid "删除数据源"
-msgstr ""
+msgstr "Delete Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[QueryDomainDataSource](#query-domain-data-source)"
-msgstr ""
+msgstr "[QueryDomainDataSource](#query-domain-data-source)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "QueryDomainDataSourceRequest"
-msgstr ""
+msgstr "QueryDomainDataSourceRequest"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "QueryDomainDataSourceResponse"
-msgstr ""
+msgstr "QueryDomainDataSourceResponse"
 
 #: ../../reference/apis/domaindatasource_cn.md
 #: ../../reference/apis/domaindatasource_cn.md:308
 msgid "查询数据源"
-msgstr ""
+msgstr "Query Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[BatchQueryDomainDataSource](#batch-query-domain-data-source)"
-msgstr ""
+msgstr "[BatchQueryDomainDataSource](#batch-query-domain-data-source)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "BatchQueryDomainDataSourceRequest"
-msgstr ""
+msgstr "BatchQueryDomainDataSourceRequest"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "BatchQueryDomainDataSourceResponse"
-msgstr ""
+msgstr "BatchQueryDomainDataSourceResponse"
 
 #: ../../reference/apis/domaindatasource_cn.md
 #: ../../reference/apis/domaindatasource_cn.md:391
 msgid "批量查询数据源"
-msgstr ""
+msgstr "Batch Query Data Sources"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[ListDomainDataSource](#list-domain-data-source)"
-msgstr ""
+msgstr "[ListDomainDataSource](#list-domain-data-source)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "ListDomainDataSourceRequest"
-msgstr ""
+msgstr "ListDomainDataSourceRequest"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "ListDomainDataSourceResponse"
-msgstr ""
+msgstr "ListDomainDataSourceResponse"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "列出Domain下全部数据源"
-msgstr ""
+msgstr "List All Data Sources in Domain"
 
 #: ../../reference/apis/domaindatasource_cn.md:17
 msgid "接口详情"
-msgstr ""
+msgstr "Interface Details"
 
 #: ../../reference/apis/domaindatasource_cn.md:23
 msgid ""
 "如果创建的数据源是为了DataMesh（DataProxy）使用，需要确保数据源的配置满足一定的权限要求。详情请见 "
 "[DataMesh数据读写-注意事项](./datamesh/datacrud_cn.md#注意事项)"
 msgstr ""
+"If creating a data source for DataMesh (DataProxy) usage, ensure the data source configuration meets specific permission requirements. For details, see [DataMesh Read/Write - Notes](./datamesh/datacrud_cn.md#notes)."
 
 #: ../../reference/apis/domaindatasource_cn.md:25
 #: ../../reference/apis/domaindatasource_cn.md:191
@@ -168,63 +172,63 @@ msgstr ""
 #: ../../reference/apis/domaindatasource_cn.md:393
 #: ../../reference/apis/domaindatasource_cn.md:515
 msgid "HTTP 路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/domaindatasource_cn.md:27
 msgid "/api/v1/domaindatasource/create"
-msgstr ""
+msgstr "/api/v1/domaindatasource/create"
 
 #: ../../reference/apis/domaindatasource_cn.md:31
 msgid "请求（CreateDomainDataSourceRequest）"
-msgstr ""
+msgstr "Request (CreateDomainDataSourceRequest)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optionality"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom request content"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "domain_id"
-msgstr ""
+msgstr "domain_id"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "节点ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "datasource_id"
-msgstr ""
+msgstr "datasource_id"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
@@ -232,82 +236,84 @@ msgid ""
 "1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-"
 "with-objects/names/#dns-label-names)"
 msgstr ""
+"Data source ID. If left blank, kusciaapi will auto-generate and return it in response. If provided, the value must comply with [RFC 1123 label name specification](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names)."
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "type"
-msgstr ""
+msgstr "type"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源类型，支持 localfs, oss, mysql, odps"
-msgstr ""
+msgstr "Data source type. Supported values: localfs, oss, mysql, odps"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "name"
-msgstr ""
+msgstr "name"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源名称（无需唯一）"
-msgstr ""
+msgstr "Data source name (non-unique)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "info"
-msgstr ""
+msgstr "info"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[DataSourceInfo](#data-source-info)"
-msgstr ""
+msgstr "[DataSourceInfo](#data-source-info)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。"
-msgstr ""
+msgstr "Data source information. See [DataSourceInfo](#data-source-info). This field is optional when info_key is set."
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "info_key"
-msgstr ""
+msgstr "info_key"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
 "info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager "
 "的加密后端中获取数据源的信息。"
-msgstr ""
+msgstr "Either info or info_key should be provided. info_key is used to retrieve data source information from Kuscia ConfigManager's encrypted backend."
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "access_directly"
-msgstr ""
+msgstr "access_directly"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "bool"
-msgstr ""
+msgstr "bool"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
 "隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false:"
 " 应用可通过 DataProxy 访问数据源。当前建设设置为 true, 使用 odps 类型时目前必须经过 DataProxy"
 msgstr ""
+"Flag indicating whether privacy computing applications (e.g., SecretFlow) can directly access the data source (true: direct access without DataProxy; false: access via DataProxy). Currently defaults to true. ODPS type currently requires DataProxy."
 
 #: ../../reference/apis/domaindatasource_cn.md:46
 msgid "响应（CreateDomainDataSourceResponse）"
-msgstr ""
+msgstr "Response (CreateDomainDataSourceResponse)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status information"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "data.datasource_id"
-msgstr ""
+msgstr "data.datasource_id"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源 ID"
-msgstr ""
+msgstr "Data source ID"
 
 #: ../../reference/apis/domaindatasource_cn.md:53
 #: ../../reference/apis/domaindatasource_cn.md:214
@@ -316,7 +322,7 @@ msgstr ""
 #: ../../reference/apis/domaindatasource_cn.md:411
 #: ../../reference/apis/domaindatasource_cn.md:533
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/domaindatasource_cn.md:55
 #: ../../reference/apis/domaindatasource_cn.md:216
@@ -325,23 +331,23 @@ msgstr ""
 #: ../../reference/apis/domaindatasource_cn.md:413
 #: ../../reference/apis/domaindatasource_cn.md:535
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate request:"
 
 #: ../../reference/apis/domaindatasource_cn.md:57
 msgid "创建本地文件数据源示例"
-msgstr ""
+msgstr "Example: Create Local File Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md:82
 msgid "创建对象存储服务数据源示例"
-msgstr ""
+msgstr "Example: Create Object Storage Service Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md:112
 msgid "创建 MySQL 数据库数据源示例"
-msgstr ""
+msgstr "Example: Create MySQL Database Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md:140
 msgid "创建 ODPS 数据库数据源示例"
-msgstr ""
+msgstr "Example: Create ODPS Database Data Source"
 
 #: ../../reference/apis/domaindatasource_cn.md:142
 msgid ""
@@ -349,6 +355,7 @@ msgid ""
 "官网](https://help.aliyun.com/zh/maxcompute/user-guide/endpoints)提供， "
 "Endpoint 支持 HTTP 和 HTTPS，若需要加密请求，请使用HTTPS。"
 msgstr ""
+"ODPS service endpoints can be referenced from [MaxCompute Official Documentation](https://help.aliyun.com/zh/maxcompute/user-guide/endpoints). Endpoints support both HTTP and HTTPS. Use HTTPS for encrypted requests."
 
 #: ../../reference/apis/domaindatasource_cn.md:172
 #: ../../reference/apis/domaindatasource_cn.md:241
@@ -357,249 +364,250 @@ msgstr ""
 #: ../../reference/apis/domaindatasource_cn.md:442
 #: ../../reference/apis/domaindatasource_cn.md:551
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Response:"
 
 #: ../../reference/apis/domaindatasource_cn.md:193
 msgid "/api/v1/domaindatasource/update"
-msgstr ""
+msgstr "/api/v1/domaindatasource/update"
 
 #: ../../reference/apis/domaindatasource_cn.md:195
 msgid "请求（UpdateDomainDataSourceRequest）"
-msgstr ""
+msgstr "Request (UpdateDomainDataSourceRequest)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "要更新的数据源 ID"
-msgstr ""
+msgstr "Data source ID to update"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源类型，支持 localfs, oss, mysql"
-msgstr ""
+msgstr "Data source type. Supported values: localfs, oss, mysql"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
 "隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false:"
 " 应用可通过 DataProxy 访问数据源（DataProxy暂未支持）。当前建设设置为 true 。"
 msgstr ""
+"Flag indicating whether privacy computing applications (e.g., SecretFlow) can directly access the data source (true: direct access without DataProxy; false: access via DataProxy, currently unsupported). Currently defaults to true."
 
 #: ../../reference/apis/domaindatasource_cn.md:208
 msgid "响应（UpdateDomainDataSourceResponse）"
-msgstr ""
+msgstr "Response (UpdateDomainDataSourceResponse)"
 
 #: ../../reference/apis/domaindatasource_cn.md:259
 msgid "/api/v1/domaindatasource/delete"
-msgstr ""
+msgstr "/api/v1/domaindatasource/delete"
 
 #: ../../reference/apis/domaindatasource_cn.md:261
 msgid "请求（DeleteDomainDataSourceRequest）"
-msgstr ""
+msgstr "Request (DeleteDomainDataSourceRequest)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "节点 ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "要删除的数据源 ID"
-msgstr ""
+msgstr "Data source ID to delete"
 
 #: ../../reference/apis/domaindatasource_cn.md:269
 msgid "响应（DeleteDomainDataSourceResponse）"
-msgstr ""
+msgstr "Response (DeleteDomainDataSourceResponse)"
 
 #: ../../reference/apis/domaindatasource_cn.md:312
 msgid "/api/v1/domaindatasource/query"
-msgstr ""
+msgstr "/api/v1/domaindatasource/query"
 
 #: ../../reference/apis/domaindatasource_cn.md:314
 msgid "请求（QueryDomainDataSourceRequest）"
-msgstr ""
+msgstr "Request (QueryDomainDataSourceRequest)"
 
 #: ../../reference/apis/domaindatasource_cn.md:322
 msgid "响应（QueryDomainDataSourceResponse）"
-msgstr ""
+msgstr "Response (QueryDomainDataSourceResponse)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[DomainDataSource](#domain-data-source-entity)"
-msgstr ""
+msgstr "[DomainDataSource](#domain-data-source-entity)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源信息"
-msgstr ""
+msgstr "Data source information"
 
 #: ../../reference/apis/domaindatasource_cn.md:376
 msgid "请求响应异常结果：假设传入`datasource_id`不存在"
-msgstr ""
+msgstr "Error Response Example: Non-existent datasource_id provided"
 
 #: ../../reference/apis/domaindatasource_cn.md:395
 msgid "/api/v1/domaindatasource/batchQuery"
-msgstr ""
+msgstr "/api/v1/domaindatasource/batchQuery"
 
 #: ../../reference/apis/domaindatasource_cn.md:397
 msgid "请求（BatchQueryDomainDataSourceRequest）"
-msgstr ""
+msgstr "Request (BatchQueryDomainDataSourceRequest)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
 "[QueryDomainDataSourceRequestData](#query-domain-data-source-request-"
 "data)[]"
-msgstr ""
+msgstr "[QueryDomainDataSourceRequestData](#query-domain-data-source-request-data)[]"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "查询内容"
-msgstr ""
+msgstr "Query content"
 
 #: ../../reference/apis/domaindatasource_cn.md:404
 msgid "响应（BatchQueryDomainDataSourceResponse）"
-msgstr ""
+msgstr "Response (BatchQueryDomainDataSourceResponse)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "data.datasource_list"
-msgstr ""
+msgstr "data.datasource_list"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[DomainDataSource](#domain-data-source-entity)[]"
-msgstr ""
+msgstr "[DomainDataSource](#domain-data-source-entity)[]"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源信息列表"
-msgstr ""
+msgstr "List of data source information"
 
 #: ../../reference/apis/domaindatasource_cn.md:513
 msgid "列出数据源"
-msgstr ""
+msgstr "List Data Sources"
 
 #: ../../reference/apis/domaindatasource_cn.md:517
 msgid "/api/v1/domaindatasource/list"
-msgstr ""
+msgstr "/api/v1/domaindatasource/list"
 
 #: ../../reference/apis/domaindatasource_cn.md:519
 msgid "请求（ListDomainDataSourceRequest）"
-msgstr ""
+msgstr "Request (ListDomainDataSourceRequest)"
 
 #: ../../reference/apis/domaindatasource_cn.md:526
 msgid "响应（ListDomainDataSourceResponse）"
-msgstr ""
+msgstr "Response (ListDomainDataSourceResponse)"
 
 #: ../../reference/apis/domaindatasource_cn.md:639
 msgid "公共"
-msgstr ""
+msgstr "Common"
 
 #: ../../reference/apis/domaindatasource_cn.md:643
 msgid "DataSourceInfo"
-msgstr ""
+msgstr "DataSourceInfo"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "localfs"
-msgstr ""
+msgstr "localfs"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[LocalDataSourceInfo](#local-data-source-info)"
-msgstr ""
+msgstr "[LocalDataSourceInfo](#local-data-source-info)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "本地文件系统信息"
-msgstr ""
+msgstr "Local file system information"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "oss"
-msgstr ""
+msgstr "oss"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[OssDataSourceInfo](#oss-data-source-info)"
-msgstr ""
+msgstr "[OssDataSourceInfo](#oss-data-source-info)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "对象存储系统相关信息"
-msgstr ""
+msgstr "Object storage system information"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "database"
-msgstr ""
+msgstr "database"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[DatabaseDataSourceInfo](#database-data-source-info)"
-msgstr ""
+msgstr "[DatabaseDataSourceInfo](#database-data-source-info)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据库相关信息"
-msgstr ""
+msgstr "Database related information"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "odps"
-msgstr ""
+msgstr "odps"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "[OdpsDataSourceInfo](#odps-data-source-info)"
-msgstr ""
+msgstr "[OdpsDataSourceInfo](#odps-data-source-info)"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "ODPS 相关信息"
-msgstr ""
+msgstr "ODPS related information"
 
 #: ../../reference/apis/domaindatasource_cn.md:654
 msgid "LocalDataSourceInfo"
-msgstr ""
+msgstr "LocalDataSourceInfo"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "path"
-msgstr ""
+msgstr "path"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "本地文件系统绝对路径，建议为/home/kuscia/var/storage/data/或/home/kuscia/var/storage/data/的子目录"
-msgstr ""
+msgstr "Absolute path in local file system. Recommended: /home/kuscia/var/storage/data/ or its subdirectories"
 
 #: ../../reference/apis/domaindatasource_cn.md:662
 msgid "OssDataSourceInfo"
-msgstr ""
+msgstr "OssDataSourceInfo"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "endpoint"
-msgstr ""
+msgstr "endpoint"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "对象存储系统的链接地址，如: <https://oss.xxx.cn-xxx.com> 或 <http://127.0.0.1:9000>"
-msgstr ""
+msgstr "Object storage endpoint, e.g., <https://oss.xxx.cn-xxx.com> or <http://127.0.0.1:9000>"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "bucket"
-msgstr ""
+msgstr "bucket"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "对象存储系统桶 bucket 名称"
-msgstr ""
+msgstr "Bucket name in object storage system"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "prefix"
-msgstr ""
+msgstr "prefix"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
 "存储系统的路径前缀，可不填，当需要通过路径前缀prefix隔离区分不同数据文件时填写，如：data/traindata/ 或 "
 "data/predictdata/"
-msgstr ""
+msgstr "Path prefix in storage system. Optional. Use for path isolation, e.g., data/traindata/ or data/predictdata/"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "access_key_id"
-msgstr ""
+msgstr "access_key_id"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "访问 OSS 所需的 AK"
-msgstr ""
+msgstr "Access Key ID for OSS access"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "access_key_secret"
-msgstr ""
+msgstr "access_key_secret"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "访问 OSS 所需的 SK"
-msgstr ""
+msgstr "Secret Access Key for OSS access"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "virtualhost"
-msgstr ""
+msgstr "virtualhost"
 
 #: ../../reference/apis/domaindatasource_cn.md
 #, python-format
@@ -609,81 +617,80 @@ msgid ""
 "reference/overview-24?scm=20140722.S_help%40%40%E6%96%87%E6%A1%A3%40%40375247.S_RQW%40ag0%2BBB2%40ag0%2BBB1%40ag0%2Bos0.ID_375247"
 "-RL_virtualhost-LOC_doc%7EUND%7Eab-"
 "OR_ser-V_4-P0_1&spm=a2c4g.11186623.0.i3) 。"
-msgstr ""
+msgstr "Set virtualhost=true for Alibaba Cloud OSS. [See documentation](https://help.aliyun.com/zh/oss/developer-reference/overview-24)."
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "version"
-msgstr ""
+msgstr "version"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "AWS S3 协议版本号，可不填"
-msgstr ""
+msgstr "AWS S3 protocol version (optional)"
 
 #: ../../reference/apis/domaindatasource_cn.md:676
 msgid "DatabaseDataSourceInfo"
-msgstr ""
+msgstr "DatabaseDataSourceInfo"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据库的地址，如: localhost:3306"
-msgstr ""
+msgstr "Database address, e.g., localhost:3306"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "user"
-msgstr ""
+msgstr "user"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据库用户名"
-msgstr ""
+msgstr "Database username"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "password"
-msgstr ""
+msgstr "password"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据库密码"
-msgstr ""
+msgstr "Database password"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据库名称"
-msgstr ""
+msgstr "Database name"
 
 #: ../../reference/apis/domaindatasource_cn.md:687
 msgid "OdpsDataSourceInfo"
-msgstr ""
+msgstr "OdpsDataSourceInfo"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "服务地址，如: <http://service.xxx.com/api>"
-msgstr ""
+msgstr "Service address, e.g., <http://service.xxx.com/api>"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "访问 ODPS 所需的 AK"
-msgstr ""
+msgstr "Access Key ID for ODPS access"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "访问 ODPS 所需的 SK"
-msgstr ""
+msgstr "Secret Access Key for ODPS access"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "project"
-msgstr ""
+msgstr "project"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "访问 ODPS 的项目"
-msgstr ""
+msgstr "Project name for ODPS access"
 
 #: ../../reference/apis/domaindatasource_cn.md:698
 msgid "QueryDomainDataSourceRequestData"
-msgstr ""
+msgstr "QueryDomainDataSourceRequestData"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源唯一标识"
-msgstr ""
+msgstr "Data source unique identifier"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "数据源名称"
-msgstr ""
+msgstr "Data source name"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid "据源的状态，暂未支持校验数据源的状态，现为空字符串"
-msgstr ""
-
+msgstr "Data source status (currently unsupported, empty string)"

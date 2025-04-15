@@ -13,7 +13,7 @@
 ```shell
 docker logs -f fate-alice
 
-# 正常日志输出示例:
+# Example of normal log output
 wait to upload data, sleep 10
 ...
 wait to upload data, sleep 10
@@ -91,19 +91,19 @@ upload host data
 - 确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running
 
     ```shell
-    # 查看 bob 节点下的 pod 列表
+    # Check the pod list under the Bob node
     kubectl get pod -n bob
 
-    ## 正常输出示例:
+    ## Normal output example:
     NAME                               READY   STATUS    RESTARTS   AGE
     fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
     ...
 
-    # 若 fate-deploy-bob Pod 状态非 Running，通过以下命令查看 Pod 详细信息，具体原因可以查看 status 字段下的相关内容
+    # If the status of the fate-deploy-bob Pod is not Running, use the following command to check the detailed information of the Pod. You can check the relevant content under the status field for the specific reason.
     kubectl get pod fate-deploy-bob-6798765d84-84rm7 -o yaml -n bob
 
-    # 若 fate-deploy-bob Pod 状态为 Pending 且由于机器内存不足无法完成调度，则可以尝试使用下面命令减小 Pod 的请求内存大小
-    # 不推荐：调整后，虽然 Pod 可以 Running, 但是也可能会由于机器内存不足而导致任务失败
+    # If the status of the fate-deploy-bob Pod is Pending and the scheduling cannot be completed due to insufficient machine memory, you can try to use the following command to reduce the requested memory size of the Pod.
+    # It is not recommended because after the adjustment, the task may still fail due to insufficient machine memory though the Pod can run in the Running state.
     kubectl patch deploy fate-deploy-bob -n bob --patch '{"spec": {"template": {"spec": {"containers": [{"name": "fate-deploy-bob","resources": {"requests": {"memory": "1G"}}}]}}}}'
     ```
 

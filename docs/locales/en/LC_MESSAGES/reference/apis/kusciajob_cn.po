@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../reference/apis/kusciajob_cn.md:1
 msgid "KusciaJob"
-msgstr ""
+msgstr "KusciaJob"
 
 #: ../../reference/apis/kusciajob_cn.md:3
 msgid ""
@@ -28,199 +28,202 @@ msgid ""
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/job.proto)"
 " 找到对应的 protobuf 文件。"
 msgstr ""
+"In Kuscia, you can use KusciaJob to represent a task workflow. Please refer to "
+"[KusciaJob](../concepts/kusciajob_cn.md). You can find the corresponding protobuf file "
+"[here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/job.proto)."
 
 #: ../../reference/apis/kusciajob_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "API Overview"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[CreateJob](#create-job)"
-msgstr ""
+msgstr "[CreateJob](#create-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "CreateJobRequest"
-msgstr ""
+msgstr "CreateJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "CreateJobResponse"
-msgstr ""
+msgstr "CreateJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md ../../reference/apis/kusciajob_cn.md:25
 msgid "创建 Job"
-msgstr ""
+msgstr "Create Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[QueryJob](#query-job)"
-msgstr ""
+msgstr "[QueryJob](#query-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "QueryJobRequest"
-msgstr ""
+msgstr "QueryJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "QueryJobResponse"
-msgstr ""
+msgstr "QueryJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:129
 msgid "查询 Job"
-msgstr ""
+msgstr "Query Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[BatchQueryJobStatus](#batch-query-job-status)"
-msgstr ""
+msgstr "[BatchQueryJobStatus](#batch-query-job-status)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "BatchQueryJobStatusRequest"
-msgstr ""
+msgstr "BatchQueryJobStatusRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "BatchQueryJobStatusResponse"
-msgstr ""
+msgstr "BatchQueryJobStatusResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:257
 msgid "批量查询 Job 状态"
-msgstr ""
+msgstr "Query Job Status in Batch"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[DeleteJob](#delete-job)"
-msgstr ""
+msgstr "[DeleteJob](#delete-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "DeleteJobRequest"
-msgstr ""
+msgstr "DeleteJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "DeleteJobResponse"
-msgstr ""
+msgstr "DeleteJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:346
 msgid "删除 Job"
-msgstr ""
+msgstr "Delete Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[StopJob](#stop-job)"
-msgstr ""
+msgstr "[StopJob](#stop-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "StopJobRequest"
-msgstr ""
+msgstr "StopJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "StopJobResponse"
-msgstr ""
+msgstr "StopJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:402
 msgid "停止 Job"
-msgstr ""
+msgstr "Stop Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[WatchJob](#watch-job)"
-msgstr ""
+msgstr "[WatchJob](#watch-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "WatchJobRequest"
-msgstr ""
+msgstr "WatchJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "WatchJobEventResponse stream"
-msgstr ""
+msgstr "WatchJobEventResponse stream"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "监听 Job"
-msgstr ""
+msgstr "Monitor Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[ApproveJob](#approval-job)"
-msgstr ""
+msgstr "[ApproveJob](#approval-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "ApproveJobRequest"
-msgstr ""
+msgstr "ApproveJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "ApproveJobResponse"
-msgstr ""
+msgstr "ApproveJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:481
 msgid "审批 Job"
-msgstr ""
+msgstr "Approve Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[SuspendJob](#suspend-job)"
-msgstr ""
+msgstr "[SuspendJob](#suspend-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "SuspendJobRequest"
-msgstr ""
+msgstr "SuspendJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "SuspendJobResponse"
-msgstr ""
+msgstr "SuspendJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:508
 msgid "暂停 Job"
-msgstr ""
+msgstr "Suspend Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[RestartJob](#restart-job)"
-msgstr ""
+msgstr "[RestartJob](#restart-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "RestartJobRequest"
-msgstr ""
+msgstr "RestartJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "RestartJobResponse"
-msgstr ""
+msgstr "RestartJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:565
 msgid "重跑 Job"
-msgstr ""
+msgstr "Restart Job"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[CancelJob](#cancel-job)"
-msgstr ""
+msgstr "[CancelJob](#cancel-job)"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "CancelJobRequest"
-msgstr ""
+msgstr "CancelJobRequest"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "CancelJobResponse"
-msgstr ""
+msgstr "CancelJobResponse"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:622
 msgid "取消 Job"
-msgstr ""
+msgstr "Cancel Job"
 
 #: ../../reference/apis/kusciajob_cn.md:21
 msgid "接口详情"
-msgstr ""
+msgstr "API Details"
 
 #: ../../reference/apis/kusciajob_cn.md:27
 #: ../../reference/apis/kusciajob_cn.md:131
@@ -233,65 +236,65 @@ msgstr ""
 #: ../../reference/apis/kusciajob_cn.md:567
 #: ../../reference/apis/kusciajob_cn.md:624
 msgid "HTTP 路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/kusciajob_cn.md:29
 msgid "/api/v1/job/create"
-msgstr ""
+msgstr "/api/v1/job/create"
 
 #: ../../reference/apis/kusciajob_cn.md:31
 msgid "请求（CreateJobRequest）"
-msgstr ""
+msgstr "Request (CreateJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom request content"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "job_id"
-msgstr ""
+msgstr "job_id"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
@@ -299,91 +302,93 @@ msgid ""
 "JobID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
 msgstr ""
+"JobID, which must comply with [RFC 1123 label naming requirements](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)."
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "initiator"
-msgstr ""
+msgstr "initiator"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "发起方节点 ID"
-msgstr ""
+msgstr "Initiator Node ID"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "max_parallelism"
-msgstr ""
+msgstr "max_parallelism"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "int32"
-msgstr ""
+msgstr "int32"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "并发度，参考 [KusciaJob 概念](../concepts/kusciajob_cn.md)"
-msgstr ""
+msgstr "Parallelism, refer to [KusciaJob Concepts](../concepts/kusciajob_cn.md)"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "tasks"
-msgstr ""
+msgstr "tasks"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "[Task](#task)[]"
-msgstr ""
+msgstr "[Task](#task)[]"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "任务参数"
-msgstr ""
+msgstr "Task Parameters"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "custom_fields"
-msgstr ""
+msgstr "custom_fields"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "map<string, string>"
-msgstr ""
+msgstr "map<string, string>"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "自定义参数，会同步给参与方，key不超过38个字符，value不超过63个字符。"
-msgstr ""
+msgstr "Custom parameters that will be synchronized with the parties. "
+"The key should not exceed 38 characters and the value should not exceed 63 characters."
 
 #: ../../reference/apis/kusciajob_cn.md:42
 msgid "响应（CreateJobResponse）"
-msgstr ""
+msgstr "Response (CreateJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/kusciajob_cn.md
 msgid "CreateJobResponseData"
-msgstr ""
+msgstr "CreateJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.job_id"
-msgstr ""
+msgstr "data.job_id"
 
 #: ../../reference/apis/kusciajob_cn.md
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "JobID"
-msgstr ""
+msgstr "JobID"
 
 #: ../../reference/apis/kusciajob_cn.md:50
 #: ../../reference/apis/kusciajob_cn.md:155
@@ -394,7 +399,7 @@ msgstr ""
 #: ../../reference/apis/kusciajob_cn.md:587
 #: ../../reference/apis/kusciajob_cn.md:644
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/kusciajob_cn.md:52
 #: ../../reference/apis/kusciajob_cn.md:157
@@ -405,7 +410,7 @@ msgstr ""
 #: ../../reference/apis/kusciajob_cn.md:589
 #: ../../reference/apis/kusciajob_cn.md:646
 msgid "发起请求："
-msgstr ""
+msgstr "Raising Request:"
 
 #: ../../reference/apis/kusciajob_cn.md:106
 #: ../../reference/apis/kusciajob_cn.md:173
@@ -416,482 +421,492 @@ msgstr ""
 #: ../../reference/apis/kusciajob_cn.md:605
 #: ../../reference/apis/kusciajob_cn.md:662
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Response Result:"
 
 #: ../../reference/apis/kusciajob_cn.md:123
 msgid ""
 "上述请求示例中的引擎镜像基于 SecretFlow `1.7.0b0` 版本。算子参数的 `taskInputConfig` "
 "内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)"
 msgstr ""
+"The engine image in the above request example is based on SecretFlow version `1.7.0b0`. "
+"For operator parameters, refer to `taskInputConfig` in [KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)."
 
 #: ../../reference/apis/kusciajob_cn.md:133
 msgid "/api/v1/job/query"
-msgstr ""
+msgstr "/api/v1/job/query"
 
 #: ../../reference/apis/kusciajob_cn.md:135
 msgid "请求（QueryJobRequest）"
-msgstr ""
+msgstr "Request (QueryJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:142
 msgid "响应（QueryJobResponse）"
-msgstr ""
+msgstr "Response (QueryJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "QueryJobResponseData"
-msgstr ""
+msgstr "QueryJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.initiator"
-msgstr ""
+msgstr "data.initiator"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "发起方"
-msgstr ""
+msgstr "Initiator"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.max_parallelism"
-msgstr ""
+msgstr "data.max_parallelism"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "并发度"
-msgstr ""
+msgstr "Parallelism"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.tasks"
-msgstr ""
+msgstr "data.tasks"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[TaskConfig](#task-config)[]"
-msgstr ""
+msgstr "[TaskConfig](#task-config)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务列表"
-msgstr ""
+msgstr "Task List"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.status"
-msgstr ""
+msgstr "data.status"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[JobStatusDetail](#job-status-detail)"
-msgstr ""
+msgstr "[JobStatusDetail](#job-status-detail)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 状态"
-msgstr ""
+msgstr "Job Status"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.custom_fields"
-msgstr ""
+msgstr "data.custom_fields"
 
 #: ../../reference/apis/kusciajob_cn.md:261
 msgid "/api/v1/job/status/batchQuery"
-msgstr ""
+msgstr "/api/v1/job/status/batchQuery"
 
 #: ../../reference/apis/kusciajob_cn.md:263
 msgid "请求（BatchQueryJobStatusRequest）"
-msgstr ""
+msgstr "Request (BatchQueryJobStatusRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "job_ids"
-msgstr ""
+msgstr "job_ids"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "string[]"
-msgstr ""
+msgstr "string[]"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "JobID 列表"
-msgstr ""
+msgstr "JobID List"
 
 #: ../../reference/apis/kusciajob_cn.md:270
 msgid "响应（BatchQueryJobStatusResponse）"
-msgstr ""
+msgstr "Response (BatchQueryJobStatusResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "BatchQueryJobStatusResponseData"
-msgstr ""
+msgstr "BatchQueryJobStatusResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "data.jobs"
-msgstr ""
+msgstr "data.jobs"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[JobStatus](#job-status)[]"
-msgstr ""
+msgstr "[JobStatus](#job-status)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 状态列表"
-msgstr ""
+msgstr "Job Status List"
 
 #: ../../reference/apis/kusciajob_cn.md:350
 msgid "/api/v1/job/delete"
-msgstr ""
+msgstr "/api/v1/job/delete"
 
 #: ../../reference/apis/kusciajob_cn.md:352
 msgid "请求（DeleteJobRequest）"
-msgstr ""
+msgstr "Request (DeleteJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:359
 msgid "响应（DeleteJobResponse）"
-msgstr ""
+msgstr "Response (DeleteJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "DeleteJobResponseData"
-msgstr ""
+msgstr "DeleteJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:406
 msgid "/api/v1/job/stop"
-msgstr ""
+msgstr "/api/v1/job/stop"
 
 #: ../../reference/apis/kusciajob_cn.md:408
 msgid "请求（StopJobRequest）"
-msgstr ""
+msgstr "Request (StopJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "reason"
-msgstr ""
+msgstr "reason"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "停止Job的原因"
-msgstr ""
+msgstr "Reason for stopping the job"
 
 #: ../../reference/apis/kusciajob_cn.md:416
 msgid "响应（StopJobResponse）"
-msgstr ""
+msgstr "Response (StopJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "StopJobResponseData"
-msgstr ""
+msgstr "StopJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:459
 msgid "监控 Job"
-msgstr ""
+msgstr "Monitor Job"
 
 #: ../../reference/apis/kusciajob_cn.md:463
 msgid "/api/v1/job/watch"
-msgstr ""
+msgstr "/api/v1/job/watch"
 
 #: ../../reference/apis/kusciajob_cn.md:465
 msgid "请求（WatchJobRequest）"
-msgstr ""
+msgstr "Request (WatchJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "timeout_seconds"
-msgstr ""
+msgstr "timeout_seconds"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "int64"
-msgstr ""
+msgstr "int64"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "请求连接的生命周期，服务端将在超时后断开连接，不管是否有活跃事件。超时时间取值范围：[0, "
 "2^31-1]，默认为0，表示不超时。即使在未设置超时时间的情况下, 也会因为网络环境导致断连，客户端根据需求决定是否重新发起请求"
 msgstr ""
+"Request connection lifetime. The server will disconnect after the timeout regardless of active events. The timeout range is [0, 2^31-1] with a default of 0, meaning no timeout. Even without a set timeout, network conditions may cause disconnections, and the client can decide whether to retry."
 
 #: ../../reference/apis/kusciajob_cn.md:472
 msgid "响应（WatchJobEventResponse）"
-msgstr ""
+msgstr "Response (WatchJobEventResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[EventType](#event-type)"
-msgstr ""
+msgstr "[EventType](#event-type)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "事件类型"
-msgstr ""
+msgstr "Event Type"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "object"
-msgstr ""
+msgstr "object"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[JobStatus](#job-status)"
-msgstr ""
+msgstr "[JobStatus](#job-status)"
 
 #: ../../reference/apis/kusciajob_cn.md:483
 msgid ""
 "只有在 P2P 组网模式下且[开启 Job 审批](../concepts/kusciajob_cn.md#enable-"
 "approval)的情况下才需要调用此接口进行 job 审批。"
 msgstr ""
+"This API for job approval only needs to be called in P2P networking mode "
+"when [Job Approval is enabled](../concepts/kusciajob_cn.md#enable-approval)."
 
 #: ../../reference/apis/kusciajob_cn.md:487
 msgid "/api/v1/job/approve"
-msgstr ""
+msgstr "/api/v1/job/approve"
 
 #: ../../reference/apis/kusciajob_cn.md:489
 msgid "请求（ApprovalJobRequest）"
-msgstr ""
+msgstr "Request (ApprovalJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "result"
-msgstr ""
+msgstr "result"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[ApproveResult](approve-result)"
-msgstr ""
+msgstr "[ApproveResult](approve-result)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "审批结果，接收或拒绝，接收则作业(job)可以执行，拒绝则作业不可执行"
 msgstr ""
+"Approval result: Accept or Reject. If accepted, the job can proceed; if rejected, the job will not be executed."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "接收或拒绝的理由"
-msgstr ""
+msgstr "Reason for acceptance or rejection"
 
 #: ../../reference/apis/kusciajob_cn.md:498
 msgid "响应（ApprovalJobResponse）"
-msgstr ""
+msgstr "Response (ApprovalJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "ApprovalJobResponseData"
-msgstr ""
+msgstr "ApprovalJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:512
 msgid "/api/v1/job/suspend"
-msgstr ""
+msgstr "/api/v1/job/suspend"
 
 #: ../../reference/apis/kusciajob_cn.md:514
 msgid "请求（SuspendJobRequest）"
-msgstr ""
+msgstr "Request (SuspendJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "暂停Job的原因"
-msgstr ""
+msgstr "Reason for suspending the job"
 
 #: ../../reference/apis/kusciajob_cn.md:522
 msgid "响应（SuspendJobResponse）"
-msgstr ""
+msgstr "Response (SuspendJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "SuspendJobResponseData"
-msgstr ""
+msgstr "SuspendJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:569
 msgid "/api/v1/job/restart"
-msgstr ""
+msgstr "/api/v1/job/restart"
 
 #: ../../reference/apis/kusciajob_cn.md:571
 msgid "请求（RestartJobRequest）"
-msgstr ""
+msgstr "Request (RestartJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "重跑Job的原因"
-msgstr ""
+msgstr "Reason for restarting the job"
 
 #: ../../reference/apis/kusciajob_cn.md:579
 msgid "响应（RestartJobResponse）"
-msgstr ""
+msgstr "Response (RestartJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "RestartJobResponseData"
-msgstr ""
+msgstr "RestartJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:626
 msgid "/api/v1/job/cancel"
-msgstr ""
+msgstr "/api/v1/job/cancel"
 
 #: ../../reference/apis/kusciajob_cn.md:628
 msgid "请求（CancelJobRequest）"
-msgstr ""
+msgstr "Request (CancelJobRequest)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "取消Job的原因"
-msgstr ""
+msgstr "Reason for cancelling the job"
 
 #: ../../reference/apis/kusciajob_cn.md:636
 msgid "响应（CancelJobResponse）"
-msgstr ""
+msgstr "Response (CancelJobResponse)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "CancelJobResponseData"
-msgstr ""
+msgstr "CancelJobResponseData"
 
 #: ../../reference/apis/kusciajob_cn.md:677
 msgid "公共"
-msgstr ""
+msgstr "Common"
 
 #: ../../reference/apis/kusciajob_cn.md:681
 msgid "JobStatus"
-msgstr ""
+msgstr "JobStatus"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 状态详情"
-msgstr ""
+msgstr "Job Status Details"
 
 #: ../../reference/apis/kusciajob_cn.md:690
 msgid "JobStatusDetail"
-msgstr ""
+msgstr "JobStatusDetail"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "state"
-msgstr ""
+msgstr "state"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "作业状态, 参考 [State](#state)"
-msgstr ""
+msgstr "Job state, refer to [State](#state)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "err_msg"
-msgstr ""
+msgstr "err_msg"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "错误信息"
-msgstr ""
+msgstr "Error message"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "create_time"
-msgstr ""
+msgstr "create_time"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "创建时间"
-msgstr ""
+msgstr "Creation Time"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "start_time"
-msgstr ""
+msgstr "start_time"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "启动时间"
-msgstr ""
+msgstr "Start Time"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "end_time"
-msgstr ""
+msgstr "end_time"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "结束时间"
-msgstr ""
+msgstr "End Time"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[TaskStatus](#task-status)[]"
-msgstr ""
+msgstr "[TaskStatus](#task-status)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:703
 msgid "Party"
-msgstr ""
+msgstr "Party"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "domain_id"
-msgstr ""
+msgstr "domain_id"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "DomainID"
-msgstr ""
+msgstr "DomainID"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "role"
-msgstr ""
+msgstr "role"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) "
 "的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)"
 msgstr ""
+"Party role, defined by the engine and corresponding to the deployment template "
+"in [AppImage](../concepts/appimage_cn.md#appimage-ref); "
+"for more details, refer to [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "resources"
-msgstr ""
+msgstr "resources"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 #: ../../reference/apis/kusciajob_cn.md:714
 msgid "JobResource"
-msgstr ""
+msgstr "JobResource"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "参与方资源配置"
-msgstr ""
+msgstr "Party resource configuration"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "bandwidth_limits"
-msgstr ""
+msgstr "bandwidth_limits"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[BandwidthLimit](#bandwidth-limit)[]"
-msgstr ""
+msgstr "[BandwidthLimit](#bandwidth-limit)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "节点请求其他节点的带宽限制配置"
-msgstr ""
+msgstr "Bandwidth limit configuration requested by one node from another"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "cpu"
-msgstr ""
+msgstr "cpu"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "参与方可用 CPU 资源上限"
-msgstr ""
+msgstr "Maximum available CPU resources for the party"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "memory"
-msgstr ""
+msgstr "memory"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "参与方可用内存资源上限"
-msgstr ""
+msgstr "Maximum available memory resources for the party"
 
 #: ../../reference/apis/kusciajob_cn.md:723
 msgid "PartyStatus"
-msgstr ""
+msgstr "PartyStatus"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "节点 ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "参与方任务状态, 参考 [State](#state)"
-msgstr ""
+msgstr "Party task status, refer to [State](#state)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "endpoints"
-msgstr ""
+msgstr "endpoints"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[JobPartyEndpoint](#job-party-endpoint)[]"
-msgstr ""
+msgstr "[JobPartyEndpoint](#job-party-endpoint)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "应用对外暴露的访问地址信息"
-msgstr ""
+msgstr "Externally exposed access address information for the application"
 
 #: ../../reference/apis/kusciajob_cn.md:734
 msgid "Task"
-msgstr ""
+msgstr "Task"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "app_image"
-msgstr ""
+msgstr "app_image"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务镜像"
-msgstr ""
+msgstr "Task image"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "parties"
-msgstr ""
+msgstr "parties"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[Party](#party)[]"
-msgstr ""
+msgstr "[Party](#party)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "参与方节点 ID"
-msgstr ""
+msgstr "Party node ID"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "alias"
-msgstr ""
+msgstr "alias"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "任务别名，同一个 Job 中唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
 msgstr ""
+"Task alias, unique within a job, and must comply with [RFC 1123 label naming requirements](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "task_id"
-msgstr ""
+msgstr "task_id"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
@@ -899,388 +914,405 @@ msgid ""
 "标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-"
 "objects/names/#dns-label-names)"
 msgstr ""
+"Task ID. If not provided, Kuscia will randomly generate a unique task_id that complies with [RFC 1123 label naming conventions](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "dependencies"
-msgstr ""
+msgstr "dependencies"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系"
-msgstr ""
+msgstr "Dependent tasks, which define the dependencies between tasks in a job using the alias field."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "task_input_config"
-msgstr ""
+msgstr "task_input_config"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务配置"
-msgstr ""
+msgstr "Task configuration"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "priority"
-msgstr ""
+msgstr "priority"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "优先级，值越大优先级越高"
-msgstr ""
+msgstr "Priority: the higher the value, the higher the priority"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "schedule_config"
-msgstr ""
+msgstr "schedule_config"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[ScheduleConfig](#schedule-config)"
-msgstr ""
+msgstr "[ScheduleConfig](#schedule-config)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务调度配置"
-msgstr ""
+msgstr "Task scheduling configuration"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "tolerable"
-msgstr ""
+msgstr "tolerable"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "bool"
-msgstr ""
+msgstr "bool"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "标识 Task 是否可容忍失败（默认为 false），若 tolerable=true 即使此 task 失败也不会导致 Job 失败。若 "
 "tolerable=false 则此 task 失败会判定整个 Job 失败。"
 msgstr ""
+"Indicates whether a task can tolerate failure (default is false). "
+"If tolerable=true, the task's failure will not cause the entire job to fail; "
+"if tolerable=false, the failure of this task will cause the job to fail."
 
 #: ../../reference/apis/kusciajob_cn.md:750
 msgid "ScheduleConfig"
-msgstr ""
+msgstr "ScheduleConfig"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "task_timeout_seconds"
-msgstr ""
+msgstr "task_timeout_seconds"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务超时时间，默认值: 300，当任务在 300 秒内没有被调度成功时，会将任务置为失败状态"
 msgstr ""
+"Task timeout in seconds, default is 300. If the task is not successfully scheduled within 300 seconds, "
+"it will be marked as failed."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "resource_reserved_seconds"
-msgstr ""
+msgstr "resource_reserved_seconds"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "任务预留资源时间，默认值: 30，当任务参与方在扣减完资源(cpu/memory)后，会占用 30 秒，如果在 30 "
 "秒内，存在部分参与方没有成功扣减资源，那么已扣减资源的参与方将会释放扣减的资源"
 msgstr ""
+"Resource reservation time for the task, default is 30 seconds. After resource (CPU/memory) allocation for the participating parties, "
+"they will hold the resources for 30 seconds. If some parties fail to allocate resources successfully within 30 seconds, "
+"the allocated resources will be released."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "resource_reallocation_interval_seconds"
-msgstr ""
+msgstr "resource_reallocation_interval_seconds"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务重新扣减资源的时间间隔，默认值: 30，当已扣减资源的参与方在释放完扣减的资源后，下次重新扣减资源的时间间隔"
 msgstr ""
+"The time interval for the task to rededuct resources. Default value: 30. "
+"It refers to the time interval for the next resource deduction after the participant "
+"who has had resources deducted has released the deducted resources."
 
 #: ../../reference/apis/kusciajob_cn.md:760
 msgid "TaskConfig"
-msgstr ""
+msgstr "TaskConfig"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "参与方"
-msgstr ""
+msgstr "Party"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务别名"
-msgstr ""
+msgstr "Task Alias"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务 ID"
-msgstr ""
+msgstr "Task ID"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "依赖任务"
-msgstr ""
+msgstr "Dependent Tasks"
 
 #: ../../reference/apis/kusciajob_cn.md:774
 msgid "TaskStatus"
-msgstr ""
+msgstr "TaskStatus"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "任务状态，参考 [State](#state)"
-msgstr ""
+msgstr "Task status, refer to [State](#state)"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "创建事件"
-msgstr ""
+msgstr "Creation Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "开始事件"
-msgstr ""
+msgstr "Start Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "结束事件"
-msgstr ""
+msgstr "End Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "[PartyStatus](#party-status)[]"
-msgstr ""
+msgstr "[PartyStatus](#party-status)[]"
 
 #: ../../reference/apis/kusciajob_cn.md:789
 msgid "EventType"
-msgstr ""
+msgstr "EventType"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Name"
-msgstr ""
+msgstr "Name"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Number"
-msgstr ""
+msgstr "Number"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "ADDED"
-msgstr ""
+msgstr "ADDED"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "0"
-msgstr ""
+msgstr "0"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "增加事件"
-msgstr ""
+msgstr "Added Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "MODIFIED"
-msgstr ""
+msgstr "MODIFIED"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "1"
-msgstr ""
+msgstr "1"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "修改事件"
-msgstr ""
+msgstr "Modified Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "DELETED"
-msgstr ""
+msgstr "DELETED"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "删除事件"
-msgstr ""
+msgstr "Deleted Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "ERROR"
-msgstr ""
+msgstr "ERROR"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "错误事件"
-msgstr ""
+msgstr "Error Event"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "HEARTBEAT"
-msgstr ""
+msgstr "HEARTBEAT"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "心跳事件"
-msgstr ""
+msgstr "Heartbeat Event"
 
 #: ../../reference/apis/kusciajob_cn.md:801
 msgid "ApproveResult"
-msgstr ""
+msgstr "ApproveResult"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "APPROVE_RESULT_UNKNOWN"
-msgstr ""
+msgstr "APPROVE_RESULT_UNKNOWN"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "未知状态"
-msgstr ""
+msgstr "Unknown Status"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "APPROVE_RESULT_ACCEPT"
-msgstr ""
+msgstr "APPROVE_RESULT_ACCEPT"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "审批通过"
-msgstr ""
+msgstr "Approval Accepted"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "APPROVE_RESULT_REJECT"
-msgstr ""
+msgstr "APPROVE_RESULT_REJECT"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "审批拒绝"
-msgstr ""
+msgstr "Approval Rejected"
 
 #: ../../reference/apis/kusciajob_cn.md:811
 msgid "State"
-msgstr ""
+msgstr "State"
 
 #: ../../reference/apis/kusciajob_cn.md:813
 msgid "KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state)。"
 msgstr ""
+"See [documentation](../concepts/kusciajob_cn.md#kuscia-state) for a detailed description of KusciaJob states."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Unknown"
-msgstr ""
+msgstr "Unknown"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "未知"
-msgstr ""
+msgstr "Unknown"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Pending"
-msgstr ""
+msgstr "Pending"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "未开始运行"
-msgstr ""
+msgstr "Not Started"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Running"
-msgstr ""
+msgstr "Running"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "运行中"
-msgstr ""
+msgstr "In Progress"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Succeeded"
-msgstr ""
+msgstr "Succeeded"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "成功"
-msgstr ""
+msgstr "Successful"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Failed"
-msgstr ""
+msgstr "Failed"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "失败"
-msgstr ""
+msgstr "Failed"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "AwaitingApproval"
-msgstr ""
+msgstr "AwaitingApproval"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "5"
-msgstr ""
+msgstr "5"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "等待参与方审批 Job"
-msgstr ""
+msgstr "Waiting for party approval of the job"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "ApprovalReject"
-msgstr ""
+msgstr "ApprovalReject"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "6"
-msgstr ""
+msgstr "6"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 被审批为拒绝执行"
-msgstr ""
+msgstr "Job has been rejected for execution"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Cancelled"
-msgstr ""
+msgstr "Cancelled"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "7"
-msgstr ""
+msgstr "7"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 被取消，被取消的 Job 不可被再次执行"
-msgstr ""
+msgstr "Job has been cancelled; a cancelled job cannot be executed again"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Suspended"
-msgstr ""
+msgstr "Suspended"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "8"
-msgstr ""
+msgstr "8"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 被暂停，可通过 Restart 接口重跑"
-msgstr ""
+msgstr "Job has been suspended; it can be restarted using the Restart interface"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Initialized"
-msgstr ""
+msgstr "Initialized"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "9"
-msgstr ""
+msgstr "9"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "Job 初始状态"
-msgstr ""
+msgstr "Job Initial State"
 
 #: ../../reference/apis/kusciajob_cn.md:830
 msgid "JobPartyEndpoint"
-msgstr ""
+msgstr "JobPartyEndpoint"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "port_name"
-msgstr ""
+msgstr "port_name"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "应用服务端口名称，详细解释请参考[AppImage](../concepts/appimage_cn.md) "
 "`deployTemplates.spec.containers.ports.name`"
 msgstr ""
+"Application service port name. For details, refer to [AppImage](../concepts/appimage_cn.md) "
+"`deployTemplates.spec.containers.ports.name`."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "scope"
-msgstr ""
+msgstr "scope"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid ""
 "应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) "
 "`deployTemplates.spec.containers.ports.scope`"
 msgstr ""
+"Scope of the application service. For details, refer to [AppImage](../concepts/appimage_cn.md) "
+"`deployTemplates.spec.containers.ports.scope`."
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "endpoint"
-msgstr ""
+msgstr "endpoint"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "应用服务访问地址"
-msgstr ""
+msgstr "Application service access address"
 
 #: ../../reference/apis/kusciajob_cn.md:840
 msgid "BandwidthLimit"
-msgstr ""
+msgstr "BandwidthLimit"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "destination_id"
-msgstr ""
+msgstr "destination_id"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "目标节点     ID"
-msgstr ""
+msgstr "Target node ID"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "limit_kbps"
-msgstr ""
+msgstr "limit_kbps"
 
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "带宽限制，单位为 KiB/s"
-msgstr ""
+msgstr "Bandwidth limit, in KiB/s"
 

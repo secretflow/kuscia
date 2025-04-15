@@ -28,26 +28,30 @@ msgid ""
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto)"
 " 找到对应的 protobuf 文件。"
 msgstr ""
+"In Kuscia, nodes for privacy computing are referred to as Domains. A Domain can contain multiple "
+"K3s worker nodes (Nodes). For details, please refer to the [Domain](../concepts/domain_cn.md) "
+"documentation. You can find the corresponding protobuf file here:"
+"(https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain.proto)"
 
 #: ../../reference/apis/domain_cn.md:7
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/domain_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/domain_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/domain_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/domain_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/domain_cn.md
 msgid "[CreateDomain](#create-domain)"
@@ -63,7 +67,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md ../../reference/apis/domain_cn.md:21
 msgid "创建节点"
-msgstr ""
+msgstr "Create Node"
 
 #: ../../reference/apis/domain_cn.md
 msgid "[UpdateDomain](#update-domain)"
@@ -79,7 +83,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md ../../reference/apis/domain_cn.md:92
 msgid "更新节点"
-msgstr ""
+msgstr "Update Node"
 
 #: ../../reference/apis/domain_cn.md
 msgid "[DeleteDomain](#delete-domain)"
@@ -95,7 +99,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md ../../reference/apis/domain_cn.md:163
 msgid "删除节点"
-msgstr ""
+msgstr "Delete Node"
 
 #: ../../reference/apis/domain_cn.md
 msgid "[QueryDomain](#query-domain)"
@@ -111,7 +115,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md ../../reference/apis/domain_cn.md:226
 msgid "查询节点"
-msgstr ""
+msgstr "Query Node"
 
 #: ../../reference/apis/domain_cn.md
 msgid "[BatchQueryDomain](#batch-query-domain)"
@@ -127,17 +131,17 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md ../../reference/apis/domain_cn.md:313
 msgid "批量查询节点状态"
-msgstr ""
+msgstr "Batch Query Node Status"
 
 #: ../../reference/apis/domain_cn.md:17
 msgid "接口详情"
-msgstr ""
+msgstr "Interface Details"
 
 #: ../../reference/apis/domain_cn.md:23 ../../reference/apis/domain_cn.md:94
 #: ../../reference/apis/domain_cn.md:165 ../../reference/apis/domain_cn.md:228
 #: ../../reference/apis/domain_cn.md:315
 msgid "HTTP 路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/domain_cn.md:25
 msgid "/api/v1/domain/create"
@@ -145,19 +149,19 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md:27
 msgid "请求（CreateDomainRequest）"
-msgstr ""
+msgstr "Request (CreateDomainRequest)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/domain_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/domain_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domain_cn.md
 msgid "header"
@@ -169,11 +173,11 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domain_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/domain_cn.md
 msgid "domain_id"
@@ -185,7 +189,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Mandatory"
 
 #: ../../reference/apis/domain_cn.md
 msgid ""
@@ -194,6 +198,10 @@ msgid ""
 "names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` "
 "、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。"
 msgstr ""
+"The Node ID must comply with the RFC 1123 label name requirements. Refer to the [DomainId rules "
+"and requirements](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names"
+"/#dns-label-names) for details. The following are predefined Node IDs in Kuscia and cannot be used:"
+" `default`, `kube-system`, `kube-public`, `kube-node-lease`, `master`, and `cross-domain`."
 
 #: ../../reference/apis/domain_cn.md
 msgid "role"
@@ -204,6 +212,8 @@ msgid ""
 "角色：\\[\"\", \"partner\"]；中心化模式使用(\"\"), 点对点模式使用(\"partner\")，更多请参考 "
 "[Domain 概念](../concepts/domain_cn.md)"
 msgstr ""
+"Roles: \\[\"\", \"partner\"]； the centralized mode uses (\"\"), and the peer-to-peer mode uses "
+"(\"partner\"). For more details, please refer to the [Domain Concept](../concepts/domain_cn.md)."
 
 #: ../../reference/apis/domain_cn.md
 msgid "cert"
@@ -214,6 +224,8 @@ msgid ""
 "仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考"
 " [Domain 概念](../concepts/domain_cn.md)"
 msgstr ""
+"This field is only required for the `peer-to-peer` mode. It is the privacy computing node certificate (located "
+"at `/home/kuscia/var/certs/domain.crt` on the node to be added). For more details, please refer to the [Domain Concept](../concepts/domain_cn.md)."
 
 #: ../../reference/apis/domain_cn.md
 msgid "master_domain_id"
@@ -224,6 +236,9 @@ msgid ""
 "Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite "
 "节点必填；普通中心化模式，点对点模式不需要填写"
 msgstr ""
+"Master Domain ID, the default value is Domain ID. This field must be filled in for centralized × "
+"centralized and centralized × peer-to-peer networking modes (Lite nodes). For ordinary centralized "
+"mode and peer-to-peer mode, this field does not need to be filled."
 
 #: ../../reference/apis/domain_cn.md
 msgid "auth_center"
@@ -235,15 +250,15 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "已废弃"
-msgstr ""
+msgstr "Deprecated"
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点的授权模式（已废弃，不需填写）"
-msgstr ""
+msgstr "The authorization mode of the node (deprecated and does not need to be filled in)."
 
 #: ../../reference/apis/domain_cn.md:38
 msgid "响应（CreateDomainResponse）"
-msgstr ""
+msgstr "Response (CreateDomainResponse)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "status"
@@ -255,29 +270,29 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/domain_cn.md:44 ../../reference/apis/domain_cn.md:115
 #: ../../reference/apis/domain_cn.md:182 ../../reference/apis/domain_cn.md:254
 #: ../../reference/apis/domain_cn.md:334
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/domain_cn.md:46 ../../reference/apis/domain_cn.md:117
 #: ../../reference/apis/domain_cn.md:184 ../../reference/apis/domain_cn.md:256
 #: ../../reference/apis/domain_cn.md:336
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate Request:"
 
 #: ../../reference/apis/domain_cn.md:66 ../../reference/apis/domain_cn.md:137
 #: ../../reference/apis/domain_cn.md:200 ../../reference/apis/domain_cn.md:272
 #: ../../reference/apis/domain_cn.md:354
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Request Success Response Result:"
 
 #: ../../reference/apis/domain_cn.md:78
 msgid "请求响应异常结果：假设`cert`传入值为无效的base64字符串"
-msgstr ""
+msgstr "Request Response Exception Result: Assuming the value passed for `cert` is an invalid base64 string."
 
 #: ../../reference/apis/domain_cn.md:96
 msgid "/api/v1/domain/update"
@@ -285,35 +300,39 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md:98
 msgid "请求（UpdateDomainRequest）"
-msgstr ""
+msgstr "Request (UpdateDomainRequest)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点 ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/domain_cn.md
 msgid "角色：\\[\"\", \"partner\"]，参考 [Domain 概念](../concepts/domain_cn.md)"
-msgstr ""
+msgstr "Roles: \\[\"\", \"partner\"]. Refer to the [Domain Concept](../concepts/domain_cn.md) for more details."
 
 #: ../../reference/apis/domain_cn.md
 msgid ""
 "仅`点对点`模式需要填写此字段, 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain "
 "概念](../concepts/domain_cn.md)"
 msgstr ""
+"This field is only required for the `peer-to-peer` mode. It is the privacy computing "
+"node certificate in BASE64 encoded format. Refer to the [Domain Concept](../concepts/domain_cn.md) for more details."
 
 #: ../../reference/apis/domain_cn.md
 msgid ""
 "Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite "
 "节点必填，普通中心化模式，点对点模式不需要填写"
 msgstr ""
+"Master Domain ID, the default value is Domain ID. This field must be filled in for centralized × centralized"
+" and centralized × peer-to-peer networking modes (Lite nodes). For ordinary centralized mode and peer-to-peer mode, this field does not need to be filled."
 
 #: ../../reference/apis/domain_cn.md:109
 msgid "响应（UpdateDomainResponse）"
-msgstr ""
+msgstr "Response (UpdateDomainResponse)"
 
 #: ../../reference/apis/domain_cn.md:149
 msgid "请求响应异常结果：假设修改的`domainId`为 `update-bob` 且不存在"
-msgstr ""
+msgstr "Request Response Exception Result: Assuming the modified `domainId` is `update-bob` and does not exist."
 
 #: ../../reference/apis/domain_cn.md:167
 msgid "/api/v1/domain/delete"
@@ -321,15 +340,15 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md:169
 msgid "请求（DeleteDomainRequest）"
-msgstr ""
+msgstr "Request (DeleteDomainRequest)"
 
 #: ../../reference/apis/domain_cn.md:176
 msgid "响应（DeleteDomainResponse）"
-msgstr ""
+msgstr "Response (DeleteDomainResponse)"
 
 #: ../../reference/apis/domain_cn.md:212
 msgid "请求响应异常结果：假设删除的节点为`delete-bob`"
-msgstr ""
+msgstr "Request Response Exception Result: Assuming the node to be deleted is `delete-bob`."
 
 #: ../../reference/apis/domain_cn.md:230
 msgid "/api/v1/domain/query"
@@ -337,11 +356,11 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md:232
 msgid "请求（QueryDomainRequest）"
-msgstr ""
+msgstr "Request (QueryDomainRequest)"
 
 #: ../../reference/apis/domain_cn.md:239
 msgid "响应（QueryDomainResponse）"
-msgstr ""
+msgstr "Response (QueryDomainResponse)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "data"
@@ -365,7 +384,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)"
-msgstr ""
+msgstr "This field is the privacy computing node certificate in BASE64 encoded format. Refer to the [Domain Concept](../concepts/domain_cn.md) for more details."
 
 #: ../../reference/apis/domain_cn.md
 msgid "data.annotations"
@@ -377,7 +396,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点的额外信息，比如是否是内置节点等"
-msgstr ""
+msgstr "Additional information about the node, such as whether it is a built-in node or not."
 
 #: ../../reference/apis/domain_cn.md
 msgid "data.node_statuses"
@@ -389,7 +408,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "物理节点状态"
-msgstr ""
+msgstr "Physical Node Status"
 
 #: ../../reference/apis/domain_cn.md
 msgid "data.deploy_token_statuses"
@@ -401,11 +420,11 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "部署令牌状态"
-msgstr ""
+msgstr "Deployment Token Status"
 
 #: ../../reference/apis/domain_cn.md
 msgid "Master Domain ID（未来预留字段）"
-msgstr ""
+msgstr "Master Domain ID (Reserved for Future Use)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "data.auth_center"
@@ -413,11 +432,11 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点到中心的授权模式（已废弃）"
-msgstr ""
+msgstr "Node to Center Authorization Mode (Deprecated)"
 
 #: ../../reference/apis/domain_cn.md:298
 msgid "请求响应异常结果：假设请求的`domain_id`为`query-bob`且不存在"
-msgstr ""
+msgstr "Request Response Exception Result: Assuming the requested `domain_id` is `query-bob` and does not exist."
 
 #: ../../reference/apis/domain_cn.md:317
 msgid "/api/v1/domain/batchQuery"
@@ -425,7 +444,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md:319
 msgid "请求（BatchQueryDomainRequest）"
-msgstr ""
+msgstr "Request (BatchQueryDomainRequest)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "domain_ids"
@@ -437,11 +456,11 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "待查询的节点 ID 列表"
-msgstr ""
+msgstr "List of Node IDs to be Queried"
 
 #: ../../reference/apis/domain_cn.md:326
 msgid "响应（ BatchQueryDomainResponse）"
-msgstr ""
+msgstr "Response (BatchQueryDomainResponse)"
 
 #: ../../reference/apis/domain_cn.md
 msgid "BatchQueryDomainResponseData"
@@ -457,21 +476,23 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点列表"
-msgstr ""
+msgstr "Node List"
 
 #: ../../reference/apis/domain_cn.md:376
 msgid "请求响应异常结果：假设请求的`domain_ids`包含不存在的 DomainId `batchQuery-bob`"
-msgstr ""
+msgstr "Request Response Exception Result: Assuming the requested `domain_ids` include a non-existent DomainId `batchQuery-bob`."
 
 #: ../../reference/apis/domain_cn.md:389
 msgid "公共"
-msgstr ""
+msgstr "Public"
 
 #: ../../reference/apis/domain_cn.md
 msgid ""
 "仅 P2P 模式需要填写此字段，此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain "
 "概念](../concepts/domain_cn.md)"
 msgstr ""
+"This field is only required for the P2P mode. It is the privacy computing node "
+"certificate in BASE64 encoded format. Refer to the [Domain Concept](../concepts/domain_cn.md) for more details."
 
 #: ../../reference/apis/domain_cn.md
 msgid "node_statuses"
@@ -479,7 +500,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "真实物理节点状态"
-msgstr ""
+msgstr "Real Physical Node State."
 
 #: ../../reference/apis/domain_cn.md
 msgid "deploy_token_statuses"
@@ -495,11 +516,11 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点名称"
-msgstr ""
+msgstr "Node Name."
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点状态 Ready, NotReady"
-msgstr ""
+msgstr "Node State Ready, NotReady."
 
 #: ../../reference/apis/domain_cn.md
 msgid "version"
@@ -507,7 +528,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "节点 Agent 版本"
-msgstr ""
+msgstr "Node Agent Version."
 
 #: ../../reference/apis/domain_cn.md
 msgid "last_heartbeat_time"
@@ -515,7 +536,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z）"
-msgstr ""
+msgstr "Last Heartbeat Time, RFC3339 Format (e.g. 2006-01-02T15:04:05Z)."
 
 #: ../../reference/apis/domain_cn.md
 msgid "last_transition_time"
@@ -523,7 +544,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z）"
-msgstr ""
+msgstr "Last Update Time, RFC3339 Format (e.g. 2006-01-02T15:04:05Z)."
 
 #: ../../reference/apis/domain_cn.md:417
 msgid "DeployTokenStatus"
@@ -535,7 +556,7 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "部署令牌"
-msgstr ""
+msgstr "Deployment Token."
 
 #: ../../reference/apis/domain_cn.md
 msgid "state"
@@ -543,19 +564,21 @@ msgstr ""
 
 #: ../../reference/apis/domain_cn.md
 msgid "部署令牌状态 used, unsed"
-msgstr ""
+msgstr "Deployment Token Status: Used, Unused."
 
 #: ../../reference/apis/domain_cn.md:427
 msgid "AuthCenter[已废弃]"
-msgstr ""
+msgstr "AuthCenter[Deprecated]."
 
 #: ../../reference/apis/domain_cn.md:429
 msgid ""
 "该字段目前已废弃，用户无需再关心。所有的Kuscia节点之间的握手（master-lite，master-"
 "master），都将默认使用Token，并以`RSA-GEN`方式，安全性更高。"
 msgstr ""
+"This field is now deprecated, and users no longer need to worry about it. All handshakes "
+"(master-lite, master-to-master) between Kuscia nodes will default to using tokens in the `RSA-GEN` method for higher security."
 
 #: ../../reference/apis/domain_cn.md:431
 msgid "对于已运行的Kuscia容器，我们也建议用户升级Kuscia后，重新配置节点间连接，以使用最新的握手逻辑，提高安全性。"
-msgstr ""
+msgstr "For running Kuscia containers, we also recommend that users reconfigure the inter-node connections after upgrading Kuscia to use the latest handshake logic and enhance security."
 

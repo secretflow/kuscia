@@ -52,7 +52,7 @@
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -157,7 +157,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -280,7 +280,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -369,7 +369,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -426,7 +426,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -532,7 +532,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -589,7 +589,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -646,7 +646,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Example of execution within a container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
