@@ -19,65 +19,73 @@ msgstr ""
 
 #: ../../tutorial/user_defined_service_route.md:1
 msgid "如何给 Kuscia 自定义 Service 路由"
-msgstr ""
+msgstr "How to Customize Service Router for Kuscia"
 
 #: ../../tutorial/user_defined_service_route.md:3
 msgid "说明"
-msgstr ""
+msgstr "Demonstration"
 
 #: ../../tutorial/user_defined_service_route.md:5
 msgid "通过复用 Kuscia 提供的网络打平功能，可以在 Alice 和 Bob 中自定义 service，进行请求转发。"
-msgstr ""
+msgstr "By utilizing the network flattening functionality provided by Kuscia, it is allowed to customize services between two containers(e.g. Alice&Bob). "
+"So that the requests can be forwarded in between."
 
 #: ../../tutorial/user_defined_service_route.md:7
 msgid "示例"
-msgstr ""
+msgstr "Example"
 
 #: ../../tutorial/user_defined_service_route.md:9
 msgid "下面是 Alice 和 Bob 的管理平台之间需要进行通信示例："
-msgstr ""
+msgstr "The following is the communication example between Alice's and Bob's management platform: "
 
 #: ../../tutorial/user_defined_service_route.md:11
 msgid ""
 "在 Alice 节点容器内，手动创建一个 ExternalName 类型的 Service， 其中 ExternalName 设置为 Alice "
 "平台的地址，例如:"
 msgstr ""
+"In Alice-side node container, create a Service of type ExternalName, where ExternalName is set as "
+"the address of Bob-side platform, for example: "
 
 #: ../../tutorial/user_defined_service_route.md:31
 msgid "内容 copy 到 alice-pad.yaml，执行 `kubectl create -f alice-pad.yaml` 创建"
-msgstr ""
+msgstr "Copy the content to alice-pad.yaml, then execute `kubectl create -f alice-pad.yaml` to create."
 
 #: ../../tutorial/user_defined_service_route.md:33
 msgid ""
 "在 Bob 节点容器内，手动创建一个 ExternalName 类型的 Service, 其中 ExternalName 设置为 Bob "
 "平台的地址，例如:"
 msgstr ""
+"In Bob's node container, manually create a Service of type ExternalName, where ExternalName is set as "
+"the address of Bob-side platform, for example: "
 
 #: ../../tutorial/user_defined_service_route.md:53
 msgid "内容 copy 到 bob-pad.yaml，执行 `kubectl create -f bob-pad.yaml` 创建"
-msgstr ""
+msgstr "Copy the content to bob-pad.yaml, then execute `kubectl create -f bob-pad.yaml` to create."
 
 #: ../../tutorial/user_defined_service_route.md:55
 msgid "访问方法"
-msgstr ""
+msgstr "How to Access"
 
 #: ../../tutorial/user_defined_service_route.md:57
 msgid "下面是 Alice 访问 Bob 侧平台的方法，反之类似："
-msgstr ""
+msgstr "The following outlines the procedure for Alice to access the Bob-side platform. The reverse scenario (Bob accessing Alice's platform) follows an analogous methodology."
 
 #: ../../tutorial/user_defined_service_route.md:59
 msgid "若在 Alice Docker 容器内，直接访问 Bob 平台的方式：`curl -v http://bob-pad.bob.svc`"
-msgstr ""
+msgstr "To obtain access to Bob-side platform inside of Alice-side Docker container, run the command "
+"`curl -v http://bob-pad.bob.svc`"
 
 #: ../../tutorial/user_defined_service_route.md:60
 msgid ""
 "若在 Alice Docker 容器外，那么需要把 Alice 节点的 80 端口暴露到宿主机上，然后通过 `curl -v "
 "http://127.0.0.1:{暴露在宿主机上的端口} -H \"host:bob-pad.bob.svc\"`"
 msgstr ""
+"To obtain such access from outside of Alice-side Docker container, you must expose its internal port 80 to a host port, after which run the command `curl -v http://127.0.0.1:{port_exposed_to_host} -H \"host:bob-pad.bob.svc\"`"
 
 #: ../../tutorial/user_defined_service_route.md:62
 msgid ""
 "Tips：通过上述方式，将 Service 暴露出来后，虽然 Kuscia 做了安全性的防护（只有授权后的节点才能访问到该 "
 "Service），但是毕竟是内部服务暴露出来给其他机构，请注意服务自身的安全性加强，比如越权漏洞等。"
 msgstr ""
-
+"Tips: After exposing the service through the method above, although Kuscia implements security measures"
+"(only authorized nodes can access the service), it is still an internal service exposed to external entities. It is strongly recommended to enhance the service's own security, such as addressing potential unauthorized access vulnerabilities or other risks. "

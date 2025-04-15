@@ -17,11 +17,11 @@
       name: alice-pad
       namespace: alice
     spec:
-      # 10.88.0.2为alice平台服务的地址
+      # Alice-side platform runs on address 10.88.0.2
       externalName: 10.88.0.2
       ports:
       - name: cluster
-      # 10010为 alice 平台服务的端口
+      # Alice-side platform runs on port 10010
         port: 10010
       type: ExternalName
     status:
@@ -39,11 +39,11 @@
       name: bob-pad
       namespace: bob
     spec:
-      # 10.88.0.3为bob平台服务的地址
+      # bob-side platform runs on address 10.88.0.3
       externalName: 10.88.0.3
       ports:
       - name: cluster
-      # 10010为 bob 平台服务的端口
+      # bob-side platform runs on port 10010
         port: 10010
       type: ExternalName
     status:
