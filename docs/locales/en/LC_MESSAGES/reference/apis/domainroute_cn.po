@@ -70,7 +70,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:20
 msgid "创建节点路由"
-msgstr "Create Node Route"
+msgstr "Create DomainRoute"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[DeleteDomainRoute](#delete-domain-route)"
@@ -87,7 +87,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:109
 msgid "删除节点路由"
-msgstr "Delete Node Route"
+msgstr "Delete DomainRoute"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[QueryDomainRoute](#query-domain-route)"
@@ -104,7 +104,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:174
 msgid "查询节点路由"
-msgstr "Query Node Route"
+msgstr "Query DomainRoute"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[BatchQueryDomainRouteStatus](#batch-query-domain-route-status)"
@@ -121,7 +121,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:278
 msgid "批量查询节点路由状态"
-msgstr "Batch Query Node Route Status"
+msgstr "Batch Query DomainRoute Status"
 
 #: ../../reference/apis/domainroute_cn.md:16
 msgid "接口详情"
