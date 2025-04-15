@@ -64,22 +64,22 @@ msgstr "KusciaDeployment will be in the following states during its lifecycle:"
 
 #: ../../reference/concepts/kusciadeployment_cn.md:18
 msgid "Progressing: 此时 KusciaDeployment 正在被处理，至少有一方不可用。"
-msgstr "Progressing: At this time, KusciaDeployment is being processed, and at least one party is unavailable."
+msgstr "`Progressing`: At this time, KusciaDeployment is being processed, and at least one party is unavailable."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:19
 msgid "PartialAvailable: 此时所有参与方可用，但是至少有一方非全部应用实例可用。"
-msgstr "PartialAvailable: All participants are available, but at least one party does not have all application instances available."
+msgstr "`PartialAvailable`: All participants are available, but at least one party does not have all application instances available."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:20
 msgid "Available: 此时所有参与方可用，且各参与方下的全部应用实例可用。"
-msgstr "Available: At this time, all participants are available, and all application instances under each participant are also available."
+msgstr "`Available`: At this time, all participants are available, and all application instances under each participant are also available."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:21
 msgid ""
 "Failed: 处理 KusciaDeployment 资源失败。在该状态下，若解决了失败的根因，可通过更新 "
 "KusciaDeployment，恢复 KusciaDeployment 的状态。"
 msgstr ""
-"Failed: The processing of KusciaDeployment resources has failed. "
+"`Failed`: The processing of KusciaDeployment resources has failed. "
 "If the root cause is resolved, update the KusciaDeployment to restore its status."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:23
