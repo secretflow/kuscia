@@ -29,26 +29,31 @@ msgid ""
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain_route.proto)"
 " 找到对应的 protobuf 文件。"
 msgstr ""
+"DomainRoute is used to configure routing rules between Lite nodes "
+"and the Master in a centralized network, between Lite nodes themselves, and "
+"among Autonomy nodes in a peer-to-peer (P2P) network. Please refer to [DomainRoute](../concepts/"
+"domainroute_cn.md). The protobuf file is available [here](https://github.com/"
+"secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domain_route.proto)."
 
 #: ../../reference/apis/domainroute_cn.md:7
 msgid "接口总览"
-msgstr ""
+msgstr "Interface Overview"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[CreateDomainRoute](#create-domain-route)"
@@ -65,7 +70,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:20
 msgid "创建节点路由"
-msgstr ""
+msgstr "Create DomainRoute"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[DeleteDomainRoute](#delete-domain-route)"
@@ -82,7 +87,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:109
 msgid "删除节点路由"
-msgstr ""
+msgstr "Delete DomainRoute"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[QueryDomainRoute](#query-domain-route)"
@@ -99,7 +104,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:174
 msgid "查询节点路由"
-msgstr ""
+msgstr "Query DomainRoute"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[BatchQueryDomainRouteStatus](#batch-query-domain-route-status)"
@@ -116,18 +121,18 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md
 #: ../../reference/apis/domainroute_cn.md:278
 msgid "批量查询节点路由状态"
-msgstr ""
+msgstr "Batch Query DomainRoute Status"
 
 #: ../../reference/apis/domainroute_cn.md:16
 msgid "接口详情"
-msgstr ""
+msgstr "Interface Details"
 
 #: ../../reference/apis/domainroute_cn.md:22
 #: ../../reference/apis/domainroute_cn.md:111
 #: ../../reference/apis/domainroute_cn.md:176
 #: ../../reference/apis/domainroute_cn.md:280
 msgid "HTTP 路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/domainroute_cn.md:24
 msgid "/api/v1/route/create"
@@ -135,19 +140,19 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md:26
 msgid "请求（CreateDomainRouteRequest）"
-msgstr ""
+msgstr "Request (CreateDomainRouteRequest)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "header"
@@ -159,11 +164,11 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "请求头"
-msgstr ""
+msgstr "Request Header"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "authentication_type"
@@ -175,13 +180,15 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Mandatory"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid ""
 "认证类型：\\[Token，MTLS，None]，参考 [DomainRoute "
 "概念](../concepts/domainroute_cn.md)"
 msgstr ""
+"Authentication Type: [Token, MTLS, None], refer to the [DomainRoute "
+"Concept](../concepts/domainroute_cn.md)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "destination"
@@ -189,7 +196,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标节点ID"
-msgstr ""
+msgstr "Target Node ID"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "endpoint"
@@ -204,6 +211,8 @@ msgid ""
 "目标节点的地址（请填写域名，端口和协议不需要填写）；如果是[路由转发模式](../concepts/domainroute_cn.md"
 "#domain-route-advance)则不需要填该字段"
 msgstr ""
+"The address of the target node (please fill in the domain name, port "
+"and protocol are not required); if it is [routing forwarding mode](../concepts/domainroute_cn.md#domain-route-advance), this field is not required."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "source"
@@ -211,7 +220,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "源节点ID"
-msgstr ""
+msgstr "Source Node ID"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "token_config"
@@ -223,7 +232,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "Token 相关配置；authenticationType 为`Token`，需要配置该字段。"
-msgstr ""
+msgstr "Token-related configuration; if the authenticationType is `Token`, this field needs to be configured."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "mtls_config"
@@ -235,7 +244,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "MTLS 相关配置，authenticationType 为`MTLS`时，需要配置该字段。"
-msgstr ""
+msgstr "MTLS-related configuration; if the authenticationType is `MTLS`, this field needs to be configured."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "transit"
@@ -247,7 +256,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "路由转发配置"
-msgstr ""
+msgstr "Routing Forwarding Configuration"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "body_encryption"
@@ -259,11 +268,11 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "加密配置；当路由为转发模式时需要配置该字段"
-msgstr ""
+msgstr "Encryption Configuration; when the routing is in forwarding mode, this field needs to be configured."
 
 #: ../../reference/apis/domainroute_cn.md:40
 msgid "响应（CreateDomainRouteResponse）"
-msgstr ""
+msgstr "Response (CreateDomainRouteResponse)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "status"
@@ -275,7 +284,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "data"
@@ -291,32 +300,32 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "名称"
-msgstr ""
+msgstr "Name"
 
 #: ../../reference/apis/domainroute_cn.md:48
 #: ../../reference/apis/domainroute_cn.md:129
 #: ../../reference/apis/domainroute_cn.md:205
 #: ../../reference/apis/domainroute_cn.md:299
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/domainroute_cn.md:50
 #: ../../reference/apis/domainroute_cn.md:131
 #: ../../reference/apis/domainroute_cn.md:207
 #: ../../reference/apis/domainroute_cn.md:301
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate Request:"
 
 #: ../../reference/apis/domainroute_cn.md:81
 #: ../../reference/apis/domainroute_cn.md:148
 #: ../../reference/apis/domainroute_cn.md:224
 #: ../../reference/apis/domainroute_cn.md:326
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Request Response Result:"
 
 #: ../../reference/apis/domainroute_cn.md:94
 msgid "请求响应异常结果："
-msgstr ""
+msgstr "Exceptional Request Response Result:"
 
 #: ../../reference/apis/domainroute_cn.md:113
 msgid "/api/v1/route/delete"
@@ -324,27 +333,27 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md:115
 msgid "请求（DeleteDomainRequest）"
-msgstr ""
+msgstr "Request (DeleteDomainRequest)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标节点"
-msgstr ""
+msgstr "Target Node"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "源节点"
-msgstr ""
+msgstr "Source Node"
 
 #: ../../reference/apis/domainroute_cn.md:123
 msgid "响应（DeleteDomainResponse）"
-msgstr ""
+msgstr "Response (DeleteDomainResponse)"
 
 #: ../../reference/apis/domainroute_cn.md:160
 msgid "请求响应异常结果：假设删除路由为 `delete-alice` -> `delete-bob` 且不存在"
-msgstr ""
+msgstr "Exceptional Request Response Result: Assuming the deletion of the route `delete-alice` -> `delete-bob` and it does not exist."
 
 #: ../../reference/apis/domainroute_cn.md:178
 msgid "/api/v1/route/query"
@@ -352,19 +361,19 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md:180
 msgid "请求（QueryDomainRouteRequest）"
-msgstr ""
+msgstr "Query Domain Route Request"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标地址"
-msgstr ""
+msgstr "Target Address"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "源地址"
-msgstr ""
+msgstr "Source Address"
 
 #: ../../reference/apis/domainroute_cn.md:188
 msgid "响应（QueryDomainRouteResponse）"
-msgstr ""
+msgstr "Response (QueryDomainRouteResponse)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "[Status](./summary_cn.md#status)"
@@ -376,7 +385,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "节点名称"
-msgstr ""
+msgstr "Node Name"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "data.authentication_type"
@@ -392,7 +401,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标节点的地址，参考 [DomainRoute 概念](../concepts/domainroute_cn.md)"
-msgstr ""
+msgstr "The target node's address, refer to the [DomainRoute Concept](../concepts/domainroute_cn.md)."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "data.source"
@@ -404,7 +413,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "Token 配置"
-msgstr ""
+msgstr "Token Configuration"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "data.mtls_config"
@@ -416,7 +425,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "MTLS 配置"
-msgstr ""
+msgstr "MTLS Configuration"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "data.transit"
@@ -428,7 +437,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "加密配置"
-msgstr ""
+msgstr "Encryption Configuration"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "data.status"
@@ -440,11 +449,11 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "状态"
-msgstr ""
+msgstr "Status"
 
 #: ../../reference/apis/domainroute_cn.md:263
 msgid "请求响应异常结果：假设请求路由为 `query-alice` -> `query-bob` 且不存在"
-msgstr ""
+msgstr "Exceptional Request Response Result: Assuming the requested route is `query-alice` -> `query-bob` and it does not exist."
 
 #: ../../reference/apis/domainroute_cn.md:282
 msgid "/api/v1/route/status/batchQuery"
@@ -452,7 +461,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md:284
 msgid "请求（BatchQueryDomainRouteStatusRequest）"
-msgstr ""
+msgstr "Request(BatchQueryDomainRouteStatusRequest)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "route_keys"
@@ -464,11 +473,11 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "路由列表"
-msgstr ""
+msgstr "Route List"
 
 #: ../../reference/apis/domainroute_cn.md:291
 msgid "响应（BatchQueryDomainRouteStatusResponse）"
-msgstr ""
+msgstr "Response(BatchQueryDomainRouteStatusRespons)"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "BatchQueryDomainRouteStatusResponseData"
@@ -484,15 +493,15 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "授权路由列表"
-msgstr ""
+msgstr "Authorized Route List"
 
 #: ../../reference/apis/domainroute_cn.md:360
 msgid "请求响应异常结果：假设查询中包含不存在的路由 `status-alice` -> `status-bob`"
-msgstr ""
+msgstr "Exceptional Request Response Result: Assuming the query includes a non-existent route `status-alice` -> `status-bob`."
 
 #: ../../reference/apis/domainroute_cn.md:373
 msgid "公共"
-msgstr ""
+msgstr "Public"
 
 #: ../../reference/apis/domainroute_cn.md:377
 msgid "DomainRouteKey"
@@ -500,11 +509,11 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "源节点 ID"
-msgstr ""
+msgstr "Source Node ID"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标节点 ID"
-msgstr ""
+msgstr "Target Node ID"
 
 #: ../../reference/apis/domainroute_cn.md:386
 msgid "DomainRouteStatus"
@@ -528,7 +537,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "端口号，有效值1-65535"
-msgstr ""
+msgstr "Port Number, valid value 1-65535"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "protocol"
@@ -536,7 +545,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "端口协议：\\[HTTP, GRPC]"
-msgstr ""
+msgstr "Port Protocol:\\ [HTTP, GRPC]"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "isTLS"
@@ -548,7 +557,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "是否开启 TLS，默认为 false"
-msgstr ""
+msgstr "Whether to enable TLS, default is false."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "path_prefix"
@@ -556,7 +565,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "如果非空，网关会对发送的请求进行 path rewrite，在请求的path 前加上 path_prefix 的值"
-msgstr ""
+msgstr "If not empty, the gateway will perform path rewrite on the sent request, adding the value of path_prefix in front of the request's path."
 
 #: ../../reference/apis/domainroute_cn.md:408
 msgid "RouteEndpoint"
@@ -568,7 +577,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标主机"
-msgstr ""
+msgstr "Target Host"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "ports"
@@ -580,7 +589,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "目标端口"
-msgstr ""
+msgstr "Target Port"
 
 #: ../../reference/apis/domainroute_cn.md:417
 msgid "RouteStatus"
@@ -588,7 +597,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "是否成功：\\[Succeeded,Failed]"
-msgstr ""
+msgstr "Whether Succeeded: \\[Succeeded, Failed]"
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "reason"
@@ -596,7 +605,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "原因"
-msgstr ""
+msgstr "Reason"
 
 #: ../../reference/apis/domainroute_cn.md:426
 msgid "MTLSConfig"
@@ -607,7 +616,7 @@ msgstr ""
 #: ../../reference/apis/domainroute_cn.md:451
 #: ../../reference/apis/domainroute_cn.md:468
 msgid "详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。"
-msgstr ""
+msgstr "Refer to the [DomainRoute Concept](../concepts/domainroute_cn.md) for more details."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "tls_ca"
@@ -615,7 +624,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "TLS 的 CA，BASE64 编码格式"
-msgstr ""
+msgstr "The CA of TLS in BASE64 encoding format."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "source_client_private_key"
@@ -623,7 +632,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "来源客户端的私钥，BASE64 编码格式"
-msgstr ""
+msgstr "The private key of the source client in BASE64 encoding format."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "source_client_cert"
@@ -631,7 +640,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "来源客户端的证书，BASE64 编码格式"
-msgstr ""
+msgstr "The certificate of the source client in BASE64 encoding format."
 
 #: ../../reference/apis/domainroute_cn.md:438
 msgid "TokenConfig"
@@ -647,7 +656,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "滚动更新间隔，单位：秒，默认值为 0"
-msgstr ""
+msgstr "The rolling update interval in seconds, with a default value of 0."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "token_gen_method"
@@ -658,6 +667,8 @@ msgid ""
 "签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token "
 "有效性"
 msgstr ""
+"Signature Method: `RSA-GEN`, which means each party generates half of the token, combines them into a 32-character "
+"communication token, and encrypts it with the other party's public key. Both parties will use their own private key to verify the token's validity."
 
 #: ../../reference/apis/domainroute_cn.md:449
 msgid "Transit"
@@ -672,6 +683,8 @@ msgid ""
 "路由转发类型：\\[THIRD-DOMAIN，REVERSE-TUNNEL]。THIRD-DOMAIN 表示经由第三方节点转发，REVERSE-"
 "TUNNEL 表示经由反向隧道转发"
 msgstr ""
+"Routing Forwarding Type: [THIRD-DOMAIN, REVERSE-TUNNEL]. THIRD-DOMAIN means forwarded through "
+"a third party node, while REVERSE-TUNNEL indicates forwarding via a reverse tunnel."
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "domain"
@@ -683,7 +696,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "transit_method 为 THIRD-DOMAIN 时需要填写，否则不需要填写"
-msgstr ""
+msgstr "The transit_method needs to be filled in when it is THIRD-DOMAIN, otherwise it does not need to be filled in."
 
 #: ../../reference/apis/domainroute_cn.md:460
 msgid "Transit_Domain"
@@ -695,7 +708,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "第三方节点 ID"
-msgstr ""
+msgstr "Third-party Node ID"
 
 #: ../../reference/apis/domainroute_cn.md:466
 msgid "BodyEncryption"
@@ -707,5 +720,4 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid "加密方法，当前只支持 AES"
-msgstr ""
-
+msgstr "Encryption Method, currently only supports AES."
