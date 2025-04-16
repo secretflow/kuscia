@@ -53,7 +53,7 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -115,7 +115,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/update' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -170,7 +170,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/update' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -224,7 +224,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -314,7 +314,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \

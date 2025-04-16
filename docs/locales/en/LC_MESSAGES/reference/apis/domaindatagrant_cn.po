@@ -20,7 +20,7 @@ msgstr ""
 #: ../../reference/apis/domaindatagrant_cn.md:1
 #: ../../reference/apis/domaindatagrant_cn.md:401
 msgid "DomainDataGrant"
-msgstr ""
+msgstr "DomainDataGrant"
 
 #: ../../reference/apis/domaindatagrant_cn.md:3
 msgid ""
@@ -29,115 +29,118 @@ msgid ""
 "[这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatagrant.proto)"
 " 找到对应的 protobuf 文件。"
 msgstr ""
+"DomainDataGrant represents data authorization objects managed by Kuscia. Please refer to "
+"[DomainDataGrant](../concepts/domaindatagrant_cn.md). You can find the corresponding protobuf file "
+"[here](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatagrant.proto)."
 
 #: ../../reference/apis/domaindatagrant_cn.md:6
 msgid "接口总览"
-msgstr ""
+msgstr "API Overview"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[CreateDomainDataGrant](#create-domain-data-grant)"
-msgstr ""
+msgstr "[CreateDomainDataGrant](#create-domain-data-grant)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "CreateDomainDataGrantRequest"
-msgstr ""
+msgstr "CreateDomainDataGrantRequest"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "CreateDomainDataGrantResponse"
-msgstr ""
+msgstr "CreateDomainDataGrantResponse"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 #: ../../reference/apis/domaindatagrant_cn.md:20
 msgid "创建数据对象授权"
-msgstr ""
+msgstr "Create DomainDataGrant"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[UpdateDomainDataGrant](#update-domain-data-grant)"
-msgstr ""
+msgstr "[UpdateDomainDataGrant](#update-domain-data-grant)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "UpdateDomainDataGrantRequest"
-msgstr ""
+msgstr "UpdateDomainDataGrantRequest"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "UpdateDomainDataGrantResponse"
-msgstr ""
+msgstr "UpdateDomainDataGrantResponse"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 #: ../../reference/apis/domaindatagrant_cn.md:88
 msgid "更新数据对象授权"
-msgstr ""
+msgstr "Update DomainDataGrant"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[DeleteDomainDataGrant](#delete-domain-data-grant)"
-msgstr ""
+msgstr "[DeleteDomainDataGrant](#delete-domain-data-grant)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "DeleteDomainDataGrantRequest"
-msgstr ""
+msgstr "DeleteDomainDataGrantRequest"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "DeleteDomainDataGrantResponse"
-msgstr ""
+msgstr "DeleteDomainDataGrantResponse"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 #: ../../reference/apis/domaindatagrant_cn.md:148
 msgid "删除数据对象授权"
-msgstr ""
+msgstr "Delete DomainDataGrant"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[QueryDomainDataGrant](#query-domain-data-grant)"
-msgstr ""
+msgstr "[QueryDomainDataGrant](#query-domain-data-grant)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "QueryDomainDataGrantRequest"
-msgstr ""
+msgstr "QueryDomainDataGrantRequest"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "QueryDomainDataGrantResponse"
-msgstr ""
+msgstr "QueryDomainDataGrantResponse"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 #: ../../reference/apis/domaindatagrant_cn.md:201
 msgid "查询数据对象授权"
-msgstr ""
+msgstr "Query DomainDataGrant"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[BatchQueryDomainDataGrant](#batch-query-domain-data-grant)"
-msgstr ""
+msgstr "[BatchQueryDomainDataGrant](#batch-query-domain-data-grant)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "BatchQueryDomainDataGrantRequest"
-msgstr ""
+msgstr "BatchQueryDomainDataGrantRequest"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "BatchQueryDomainDataGrantResponse"
-msgstr ""
+msgstr "BatchQueryDomainDataGrantResponse"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 #: ../../reference/apis/domaindatagrant_cn.md:292
 msgid "批量查询数据对象授权"
-msgstr ""
+msgstr "Batch Query DomainDataGrant"
 
 #: ../../reference/apis/domaindatagrant_cn.md:16
 msgid "接口详情"
-msgstr ""
+msgstr "API Details"
 
 #: ../../reference/apis/domaindatagrant_cn.md:22
 #: ../../reference/apis/domaindatagrant_cn.md:90
@@ -145,51 +148,51 @@ msgstr ""
 #: ../../reference/apis/domaindatagrant_cn.md:203
 #: ../../reference/apis/domaindatagrant_cn.md:294
 msgid "HTTP 路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/domaindatagrant_cn.md:24
 msgid "/api/v1/domaindatagrant/create"
-msgstr ""
+msgstr "/api/v1/domaindatagrant/create"
 
 #: ../../reference/apis/domaindatagrant_cn.md:28
 msgid "请求（CreateDomainDataGrantRequest）"
-msgstr ""
+msgstr "Request (CreateDomainDataGrantRequest)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom request content"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "domaindatagrant_id"
-msgstr ""
+msgstr "domaindatagrant_id"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid ""
@@ -197,104 +200,106 @@ msgid ""
 "[RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview"
 "/working-with-objects/names/#dns-label-names)"
 msgstr ""
+"DomainDataGrant ID. If not filled, it will be automatically generated by kusciaapi and returned in the response. If filled, the provided value will be used. Please note that it must comply with [RFC 1123 label name requirements](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "domaindata_id"
-msgstr ""
+msgstr "domaindata_id"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "数据对象 ID"
-msgstr ""
+msgstr "DomainData ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "grant_domain"
-msgstr ""
+msgstr "grant_domain"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "被授权节点ID"
-msgstr ""
+msgstr "Authorized node ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "limit"
-msgstr ""
+msgstr "limit"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[GrantLimit](#grant-limit-entity)"
-msgstr ""
+msgstr "[GrantLimit](#grant-limit-entity)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权限制条件"
-msgstr ""
+msgstr "Authorization limit conditions"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "description"
-msgstr ""
+msgstr "description"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "map<string, string>"
-msgstr ""
+msgstr "map<string, string>"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "自定义描述"
-msgstr ""
+msgstr "Custom description"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "domain_id"
-msgstr ""
+msgstr "domain_id"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权信息所有者节点ID"
-msgstr ""
+msgstr "Authorization information owner node ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "signature"
-msgstr ""
+msgstr "signature"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid ""
 "表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。 "
 "目前该字段为预留字段，暂未开启，填空字符串即可"
 msgstr ""
+"Represents the signature of the authorization information, signed with the author's node private key. The grantDomain can verify the authenticity of the authorization information using the author's public key. Currently, this field is reserved and not enabled, so an empty string can be used."
 
 #: ../../reference/apis/domaindatagrant_cn.md:43
 msgid "响应（CreateDomainDataGrantResponse）"
-msgstr ""
+msgstr "Response (CreateDomainDataGrantResponse)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status information"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "CreateDomainDataGrantResponseData"
-msgstr ""
+msgstr "CreateDomainDataGrantResponseData"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权信息结果"
-msgstr ""
+msgstr "Authorization information result"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "data.domaindatagrant_id"
-msgstr ""
+msgstr "data.domaindatagrant_id"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "数据对象授权 ID"
-msgstr ""
+msgstr "DomainDataGrant ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md:51
 #: ../../reference/apis/domaindatagrant_cn.md:113
@@ -302,7 +307,7 @@ msgstr ""
 #: ../../reference/apis/domaindatagrant_cn.md:222
 #: ../../reference/apis/domaindatagrant_cn.md:312
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/domaindatagrant_cn.md:53
 #: ../../reference/apis/domaindatagrant_cn.md:115
@@ -310,7 +315,7 @@ msgstr ""
 #: ../../reference/apis/domaindatagrant_cn.md:224
 #: ../../reference/apis/domaindatagrant_cn.md:314
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate Request:"
 
 #: ../../reference/apis/domaindatagrant_cn.md:71
 #: ../../reference/apis/domaindatagrant_cn.md:134
@@ -318,265 +323,266 @@ msgstr ""
 #: ../../reference/apis/domaindatagrant_cn.md:241
 #: ../../reference/apis/domaindatagrant_cn.md:335
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Response Result:"
 
 #: ../../reference/apis/domaindatagrant_cn.md:92
 msgid "/api/v1/domaindatagrant/update"
-msgstr ""
+msgstr "/api/v1/domaindatagrant/update"
 
 #: ../../reference/apis/domaindatagrant_cn.md:94
 msgid "请求（UpdateDomainDataGrantRequest）"
-msgstr ""
+msgstr "Request (UpdateDomainDataGrantRequest)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "数据对象授权ID"
-msgstr ""
+msgstr "DomainDataGrant ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "数据对象ID"
-msgstr ""
+msgstr "DomainData ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid ""
 "表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author "
 "的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，填空字符串即可"
 msgstr ""
+"Represents the signature of the authorization information, signed with the author's node private key. The grantDomain can verify the authenticity of the authorization information using the author's public key. Currently, this field is reserved and not enabled, so an empty string can be used."
 
 #: ../../reference/apis/domaindatagrant_cn.md:107
 msgid "响应（UpdateDomainDataGrantResponse）"
-msgstr ""
+msgstr "Response (UpdateDomainDataGrantResponse)"
 
 #: ../../reference/apis/domaindatagrant_cn.md:152
 msgid "/api/v1/domaindatagrant/delete"
-msgstr ""
+msgstr "/api/v1/domaindatagrant/delete"
 
 #: ../../reference/apis/domaindatagrant_cn.md:154
 msgid "请求（DeleteDomainDataGrantRequest）"
-msgstr ""
+msgstr "Request (DeleteDomainDataGrantRequest)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "节点 ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md:162
 msgid "响应（DeleteDomainDataGrantResponse）"
-msgstr ""
+msgstr "Response (DeleteDomainDataGrantResponse)"
 
 #: ../../reference/apis/domaindatagrant_cn.md:205
 msgid "/api/v1/domaindatagrant/query"
-msgstr ""
+msgstr "/api/v1/domaindatagrant/query"
 
 #: ../../reference/apis/domaindatagrant_cn.md:207
 msgid "请求（QueryDomainGrantRequest）"
-msgstr ""
+msgstr "Request (QueryDomainGrantRequest)"
 
 #: ../../reference/apis/domaindatagrant_cn.md:215
 msgid "响应（QueryDomainGrantResponse）"
-msgstr ""
+msgstr "Response (QueryDomainGrantResponse)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[DomainDataGrant](#domain-data-grant-entity)"
-msgstr ""
+msgstr "[DomainDataGrant](#domain-data-grant-entity)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权信息"
-msgstr ""
+msgstr "Authorization Information"
 
 #: ../../reference/apis/domaindatagrant_cn.md:277
 msgid "请求响应异常结果：假设传入`domaindatagrant_id`不存在"
-msgstr ""
+msgstr "Error Response Result: Assuming the input `domaindatagrant_id` does not exist"
 
 #: ../../reference/apis/domaindatagrant_cn.md:296
 msgid "/api/v1/domaindatagrant/batchQuery"
-msgstr ""
+msgstr "/api/v1/domaindatagrant/batchQuery"
 
 #: ../../reference/apis/domaindatagrant_cn.md:298
 msgid "请求（BatchQueryDomainDataGrantRequest）"
-msgstr ""
+msgstr "Request (BatchQueryDomainDataGrantRequest)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[QueryDomainDataGrantRequestData](#query-domain-data-grant-request-data)[]"
-msgstr ""
+msgstr "[QueryDomainDataGrantRequestData](#query-domain-data-grant-request-data)[]"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "查询内容"
-msgstr ""
+msgstr "Query content"
 
 #: ../../reference/apis/domaindatagrant_cn.md:305
 msgid "响应（BatchQueryDomainDataGrantResponse）"
-msgstr ""
+msgstr "Response (BatchQueryDomainDataGrantResponse)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[DomainDataGrant](#domain-data-grant-entity)[]"
-msgstr ""
+msgstr "[DomainDataGrant](#domain-data-grant-entity)[]"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权信息列表"
-msgstr ""
+msgstr "Authorization information list"
 
 #: ../../reference/apis/domaindatagrant_cn.md:375
 msgid "公共"
-msgstr ""
+msgstr "Common"
 
 #: ../../reference/apis/domaindatagrant_cn.md:379
 msgid "GrantLimit"
-msgstr ""
+msgstr "GrantLimit"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "expiration_time"
-msgstr ""
+msgstr "expiration_time"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "int64"
-msgstr ""
+msgstr "int64"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权过期时间，Unix 时间戳，精确到纳秒"
-msgstr ""
+msgstr "Authorization expiration time, Unix timestamp, accurate to nanoseconds"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "use_count"
-msgstr ""
+msgstr "use_count"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "int32"
-msgstr ""
+msgstr "int32"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权使用次数"
-msgstr ""
+msgstr "Number of authorization uses"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "flow_id"
-msgstr ""
+msgstr "flow_id"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权对应的任务流ID"
-msgstr ""
+msgstr "Task flow ID corresponding to the authorization"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "components"
-msgstr ""
+msgstr "components"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "repeated string"
-msgstr ""
+msgstr "repeated string"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权可用的组件ID"
-msgstr ""
+msgstr "Component IDs available for authorization"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "initiator"
-msgstr ""
+msgstr "initiator"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权指定的发起方"
-msgstr ""
+msgstr "Initiator specified by the authorization"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "input_config"
-msgstr ""
+msgstr "input_config"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权指定的算子输入参数"
-msgstr ""
+msgstr "Operator input parameters specified by the authorization"
 
 #: ../../reference/apis/domaindatagrant_cn.md:392
 msgid "QueryDomainDataGrantRequestData"
-msgstr ""
+msgstr "QueryDomainDataGrantRequestData"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[DomainDataGrantData](#domain-data-grant-data-entity)"
-msgstr ""
+msgstr "[DomainDataGrantData](#domain-data-grant-data-entity)"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "[DomainDataGrantStatus](#domain-data-grant-status-entity)"
-msgstr ""
+msgstr "[DomainDataGrantStatus](#domain-data-grant-status-entity)"
 
 #: ../../reference/apis/domaindatagrant_cn.md:410
 msgid "DomainDataGrantData"
-msgstr ""
+msgstr "DomainDataGrantData"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "author"
-msgstr ""
+msgstr "author"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "数据对象授权方节点 ID"
-msgstr ""
+msgstr "DomainDataGrant node ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "被授权节点 ID"
-msgstr ""
+msgstr "Authorized node ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权信息所有者节点 ID"
-msgstr ""
+msgstr "Authorization information owner node ID"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid ""
 "表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author "
 "的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，暂时为空字符串"
 msgstr ""
+"Represents the signature of the authorization information, signed with the author's node private key. The grantDomain can verify the authenticity of the authorization information using the author's public key. Currently, this field is reserved and not enabled, so it is temporarily an empty string."
 
 #: ../../reference/apis/domaindatagrant_cn.md:425
 msgid "DomainDataGrantStatus"
-msgstr ""
+msgstr "DomainDataGrantStatus"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "phase"
-msgstr ""
+msgstr "phase"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "状态"
-msgstr ""
+msgstr "Status"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "message"
-msgstr ""
+msgstr "message"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "状态描述信息"
-msgstr ""
+msgstr "Status description information"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "records"
-msgstr ""
+msgstr "records"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "UseRecord[]"
-msgstr ""
+msgstr "UseRecord[]"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "授权使用记录"
-msgstr ""
+msgstr "Authorization usage records"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "records[].use_time"
-msgstr ""
+msgstr "records[].use_time"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "读取授权信息时间，Unix 时间戳，精确到纳秒"
-msgstr ""
+msgstr "Time when authorization information was read, Unix timestamp, accurate to nanoseconds"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "records[].grant_domain"
-msgstr ""
+msgstr "records[].grant_domain"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "records[].component"
-msgstr ""
+msgstr "records[].component"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "使用授权的组件"
-msgstr ""
+msgstr "Component using the authorization"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "records[].output"
-msgstr ""
+msgstr "records[].output"
 
 #: ../../reference/apis/domaindatagrant_cn.md
 msgid "使用授权的任务输出"
-msgstr ""
-
+msgstr "Task output using the authorization"
