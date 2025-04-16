@@ -27,7 +27,7 @@ msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:5
 msgid "Kuscia 执行任务报错："
-msgstr "Kuscia task execution error: "
+msgstr "Kuscia Task Execution Error: "
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:11
 msgid "解决方法"
@@ -51,7 +51,7 @@ msgstr "Modify the MySQL database configuration file my.cnf to increase the maxi
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:38
 msgid "重启 MySQL 服务"
-msgstr "Restart MySQL service"
+msgstr "Restart MySQL Service"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:44
 msgid "参考"
