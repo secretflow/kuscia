@@ -25,7 +25,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 指定 Secretflow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
+# Using Secretflow image, version 1.7.0b0 is used here
 export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
 ```
 
@@ -38,7 +38,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 生成 alice 节点配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#id3)：
 
 ```bash
-# --domain 参数传递的是节点 ID
+# The --domain parameter specifies the node ID
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice" > autonomy_alice.yaml 2>&1 || cat autonomy_alice.yaml
 ```
 
@@ -47,10 +47,10 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 启动节点，默认会在当前目录下创建 ${USER}-kuscia-autonomy-alice/data 目录用来存放 alice 的数据。部署节点需要使用 `kuscia.sh` 脚本并传入节点配置文件：
 
 ```bash
-# -p 参数传递的是节点容器映射到主机的 HTTPS 端口，保证和主机上现有的端口不冲突即可
-# -k 参数传递的是节点容器 KusciaAPI 映射到主机的 MTLS 端口，保证和主机上现有的端口不冲突即可
-# -a 指定自动导入的引擎镜像，-a none: 不自动导入引擎镜像，-a secretflow（默认）: 自动导入 secretflow 引擎镜像
-# -m 或者 --memory-limit 参数给节点容器设置适当的内存限制。例如，'-m 4GiB 或 --memory-limit=4GiB' 表示限制最大内存 4GiB，'-m -1 或 --memory-limit=-1'表示没有限制，不设置默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。
+# -p: Specifies the mapping of the HTTPS port from the node container to the host. Ensure this port does not conflict with existing ports on the host.
+# -k: Specifies the mapping of the MTLS port for the Kuscia API from the node container to the host. Ensure this port does not conflict with existing ports on the host. 
+# -a: Specifies auto-import of engine images. Use -a none to disable auto-import. Use -a secretflow (default) to auto-import the SecretFlow engine image.
+# -m or --memory-limit: Sets appropriate memory limits for node containers. For example, '-m 4GiB or --memory-limit=4GiB' means limiting max memory to 4GiB, '-m -1 or --memory-limit=-1' means no limit. If not set, defaults are: master 2GiB, lite node 4GiB, autonomy node 6GiB.
 ./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081
 ```
 
@@ -78,21 +78,21 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 准备 Alice 的公钥，在 Alice 节点的机器上，可以看到包含公钥的 crt 文件：
 
 ```bash
-# [alice 机器] 将 domain.crt 从容器内部拷贝出来并重命名为 alice.domain.crt
+# [alice machine] Copy domain.crt from inside the container and rename it to alice.domain.crt
 docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/domain.crt alice.domain.crt
 ```
 
 将 alice 的公钥 alice.domain.crt 拷贝到 bob 容器的 /home/kuscia/var/certs/ 目录中：
 
 ```bash
-# [bob 机器] 确保 alice.domain.crt 位于 bob 容器的 /home/kuscia/var/certs/ 目录中
+# [bob machine] Make sure alice.domain.crt is in the /home/kuscia/var/certs/ directory of bob container
 docker cp alice.domain.crt ${USER}-kuscia-autonomy-bob:/home/kuscia/var/certs/
 ```
 
 在 Bob 里添加 Alice 的证书等信息：
 
 ```bash
-# [bob 机器] 添加 alice 的证书等信息
+# [bob machine] Add alice's certificate and other information
 docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice p2p
 ```
 
@@ -101,21 +101,21 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/add_domain.sh alice p
 准备 Bob 的公钥，在 Bob 节点的机器上，可以看到包含公钥的 crt 文件：
 
 ```bash
-# [bob 机器] 将 domain.crt 从容器内部拷贝出来并重命名为 bob.domain.crt
+# [bob machine] Copy domain.crt from inside the container and rename it to bob.domain.crt
 docker cp ${USER}-kuscia-autonomy-bob:/home/kuscia/var/certs/domain.crt bob.domain.crt
 ```
 
 将 Bob 的公钥 bob.domain.crt 拷贝到 alice 容器的 /home/kuscia/var/certs/ 目录中：
 
 ```bash
-# [alice 机器] 确保 bob.domain.crt 位于 alice 容器的 /home/kuscia/var/certs/ 目录中
+# [alice machine] Make sure bob.domain.crt is in the /home/kuscia/var/certs/ directory of alice container
 docker cp bob.domain.crt ${USER}-kuscia-autonomy-alice:/home/kuscia/var/certs/
 ```
 
 在 Alice 里添加 Bob 的证书等信息：
 
 ```bash
-# [alice 机器] 添加 bob 的证书等信息
+# [alice machine] Add bob's certificate and other information
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p2p
 ```
 
@@ -126,20 +126,20 @@ docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/add_domain.sh bob p
 #### 创建 Alice 到 Bob 的授权
 
 ```bash
-# [alice 机器]
-# 假设 bob 的对外 IP 是 2.2.2.2，21080 是上文中 bob 暴露的访问端口
-# 为了减少授权错误的排查成本，建议在 alice 容器内(curl)访问 bob 地址判定是否能联通，之后再授权
-# 示例：curl -kvvv https://2.2.2.2:21080 返回正常的 HTTP 错误码是 401
+# [alice machine]
+# Assuming bob's external IP is 2.2.2.2, 21080 is bob's exposed access port mentioned above
+# To reduce troubleshooting costs for authorization errors, it's recommended to test connectivity to bob's address from within the alice container (using curl) before authorizing
+# Example: curl -kvvv https://2.2.2.2:21080 should return HTTP error code 401 normally
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/deploy/join_to_host.sh alice bob https://2.2.2.2:21080
 ```
 
 #### 创建 Bob 到 Alice 的授权
 
 ```bash
-# [bob 机器]
-# 假设 alice 的对外 IP 是 1.1.1.1，11080 是上文中 alice 暴露的访问端口
-# 为了减少授权错误的排查成本，建议在 bob 容器内(curl)访问 alice 地址判定是否能联通，之后再授权
-# 示例：curl -kvvv https://1.1.1.1:11080 返回正常的 HTTP 错误码是 401
+# [bob machine]
+# Assuming alice's external IP is 1.1.1.1, 11080 is alice's exposed access port mentioned above
+# To reduce troubleshooting costs for authorization errors, it's recommended to test connectivity to alice's address from within the bob container (using curl) before authorizing
+# Example: curl -kvvv https://1.1.1.1:11080 should return HTTP error code 401 normally
 docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob alice https://1.1.1.1:11080
 ```
 
