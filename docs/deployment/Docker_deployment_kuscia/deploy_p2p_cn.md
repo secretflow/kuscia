@@ -47,10 +47,10 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 启动节点，默认会在当前目录下创建 ${USER}-kuscia-autonomy-alice/data 目录用来存放 alice 的数据。部署节点需要使用 `kuscia.sh` 脚本并传入节点配置文件：
 
 ```bash
-# -p parameter specifies the HTTPS port mapping from node container to host, ensure it doesn't conflict with existing host ports
-# -k parameter specifies the MTLS port mapping for KusciaAPI from node container to host, ensure it doesn't conflict with existing host ports  
-# -a specifies auto-import of engine images: -a none means no auto-import, -a secretflow (default) means auto-import secretflow engine image
-# -m or --memory-limit parameter sets appropriate memory limits for node containers. For example, '-m 4GiB or --memory-limit=4GiB' means limiting max memory to 4GiB, '-m -1 or --memory-limit=-1' means no limit. If not set, defaults are: master 2GiB, lite node 4GiB, autonomy node 6GiB.
+# -p: Specifies the mapping of the HTTPS port from the node container to the host. Ensure this port does not conflict with existing ports on the host.
+# -k: Specifies the mapping of the MTLS port for the Kuscia API from the node container to the host. Ensure this port does not conflict with existing ports on the host. 
+# -a: Specifies auto-import of engine images. Use -a none to disable auto-import. Use -a secretflow (default) to auto-import the SecretFlow engine image.
+# -m or --memory-limit: Sets appropriate memory limits for node containers. For example, '-m 4GiB or --memory-limit=4GiB' means limiting max memory to 4GiB, '-m -1 or --memory-limit=-1' means no limit. If not set, defaults are: master 2GiB, lite node 4GiB, autonomy node 6GiB.
 ./kuscia.sh start -c autonomy_alice.yaml -p 11080 -k 11081
 ```
 
