@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:1
 msgid "数据库连接数过多"
-msgstr "Too many connections to the database"
+msgstr "Too Many Database Connections"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:3
 msgid "问题描述"
