@@ -133,10 +133,10 @@ func TestPostgresqlDownloader_Read_Success(t *testing.T) {
 
 	columns := make([]string, len(domaindataSpec.Columns))
 	for idx, col := range domaindataSpec.Columns {
-		columns[idx] = "`" + col.Name + "`"
+		columns[idx] = "\"" + col.Name + "\""
 	}
 
-	sql := sqlbuilder.Select(columns...).From("`" + domaindataSpec.RelativeURI + "`").String()
+	sql := sqlbuilder.Select(columns...).From("\"" + domaindataSpec.RelativeURI + "\"").String()
 
 	resultRow := mock.NewRows(columns)
 	resultRow.AddRow("alice", int64(1), true, int8(0x7f), int16(0x7fff), int32(0x7fffffff),
@@ -170,7 +170,7 @@ func TestPostgresqlDownloader_Read_PartialColumn(t *testing.T) {
 	// can't parse 1.0 to int
 	rows.AddRow(1)
 
-	mock.ExpectQuery("SELECT `id` FROM `" + tableName + "`").WillReturnRows(rows)
+	mock.ExpectQuery("SELECT \"i\" FROM \"" + tableName + "\"").WillReturnRows(rows)
 
 	dd, _, err := rc.GetDomainDataAndSource(ctx)
 	assert.NoError(t, err)
@@ -214,7 +214,7 @@ func TestPostgresqlDownloader_Read_ParseError(t *testing.T) {
 	// can't parse 1.0 to int
 	parseErrorRows.AddRow("alice", "1.0")
 
-	mock.ExpectQuery("SELECT `name`, `id` FROM `" + tableName + "`").WillReturnRows(parseErrorRows)
+	mock.ExpectQuery("SELECT \"name\", \"id\" FROM \"" + tableName + "\"").WillReturnRows(parseErrorRows)
 
 	dd, _, err := rc.GetDomainDataAndSource(ctx)
 	assert.NoError(t, err)
@@ -226,7 +226,7 @@ func TestPostgresqlDownloader_Read_ParseError(t *testing.T) {
 
 func TestPostgresqlDownloader_Read_UnsafeTable(t *testing.T) {
 	t.Parallel()
-	tableName := "`testTable"
+	tableName := "\"testTable"
 
 	domaindataSpec := &v1alpha1.DomainDataSpec{
 		RelativeURI: tableName,
@@ -263,7 +263,7 @@ func TestPostgresqlDownloader_Read_UnsafeTable(t *testing.T) {
 
 func TestPostgresqlDownloader_Read_UnsupportColumnType(t *testing.T) {
 	t.Parallel()
-	tableName := "`testTable"
+	tableName := "\"testTable"
 
 	domaindataSpec := &v1alpha1.DomainDataSpec{
 		RelativeURI: tableName,
@@ -310,7 +310,7 @@ func TestPostgresqlDownloader_Read_QueryError(t *testing.T) {
 	}
 
 	sqlErr := fmt.Errorf("test error")
-	mock.ExpectQuery("SELECT `name`, `id` FROM `" + tableName + "`").WillReturnError(sqlErr)
+	mock.ExpectQuery("SELECT \"name\", \"id\" FROM \"" + tableName + "\"").WillReturnError(sqlErr)
 
 	dd, _, err := rc.GetDomainDataAndSource(ctx)
 	assert.NoError(t, err)

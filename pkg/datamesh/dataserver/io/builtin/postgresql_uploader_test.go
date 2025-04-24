@@ -117,24 +117,24 @@ func TestPostgresqlUploader_Write_Commit(t *testing.T) {
 		},
 	}
 
-	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "`output`", domaindataSpec)
+	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
-	columnDefines := "`name` TEXT, `id` BIGINT SIGNED, `boolTest` TINYINT(1)"
-	columnDefines += ", `int8Test` TINYINT SIGNED, `int16Test` SMALLINT SIGNED"
-	columnDefines += ", `int32Test` INT SIGNED, `int64Test` BIGINT SIGNED"
-	columnDefines += ", `uint8Test` TINYINT UNSIGNED, `uint16Test` SMALLINT UNSIGNED"
-	columnDefines += ", `uint32Test` INT UNSIGNED, `uint64Test` BIGINT UNSIGNED"
-	columnDefines += ", `uintTest` BIGINT UNSIGNED, `float32Test` FLOAT, `float64Test` DOUBLE"
+	columnDefines := "\"name\" TEXT, \"id\" BIGINT SIGNED, \"boolTest\" TINYINT(1)"
+	columnDefines += ", \"int8Test\" TINYINT SIGNED, \"int16Test\" SMALLINT SIGNED"
+	columnDefines += ", \"int32Test\" INT SIGNED, \"int64Test\" BIGINT SIGNED"
+	columnDefines += ", \"uint8Test\" TINYINT UNSIGNED, \"uint16Test\" SMALLINT UNSIGNED"
+	columnDefines += ", \"uint32Test\" INT UNSIGNED, \"uint64Test\" BIGINT UNSIGNED"
+	columnDefines += ", \"uintTest\" BIGINT UNSIGNED, \"float32Test\" FLOAT, \"float64Test\" DOUBLE"
 
-	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS `output` ")
-	sql := regexp.QuoteMeta("CREATE TABLE `output` (" + columnDefines + ")")
+	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS \"output\" ")
+	sql := regexp.QuoteMeta("CREATE TABLE \"output\" (" + columnDefines + ")")
 
 	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec(sql).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectBegin()
-	prepare := mock.ExpectPrepare("INSERT INTO `output`")
+	prepare := mock.ExpectPrepare("INSERT INTO \"output\"")
 	prepare.ExpectExec().WithArgs("alice", "1", "1", "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
 		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(1, 1))
@@ -198,18 +198,18 @@ func TestPostgresqlUplaoder_Write_Delete(t *testing.T) {
 		},
 	}
 
-	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "`output`", domaindataSpec)
+	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
 
-	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS `output` ")
-	deleteSQL := regexp.QuoteMeta("DELETE FROM `output`")
+	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS \"output\" ")
+	deleteSQL := regexp.QuoteMeta("DELETE FROM \"output\"")
 
 	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnError(fmt.Errorf("DROP permission denied.")).WillReturnResult(sqlmock.NewResult(1, 0))
 	mock.ExpectExec(deleteSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectBegin()
-	prepare := mock.ExpectPrepare("INSERT INTO `output`")
+	prepare := mock.ExpectPrepare("INSERT INTO \"output\"")
 	prepare.ExpectExec().WithArgs("alice").WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -247,7 +247,7 @@ func TestPostgresqlUploader_Write_UnsafeColumn(t *testing.T) {
 		Author:      "alice",
 		Columns: []v1alpha1.DataColumn{
 			{
-				Name: "`name",
+				Name: "\"name",
 				Type: "str",
 			},
 			{
@@ -257,7 +257,7 @@ func TestPostgresqlUploader_Write_UnsafeColumn(t *testing.T) {
 		},
 	}
 
-	_, _, _, uploader, rc, err := initPostgresqlUploader(t, "`output`", domaindataSpec)
+	_, _, _, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
 
@@ -288,7 +288,7 @@ func TestPostgresqlUploader_Write_UnsafeTable(t *testing.T) {
 	t.Parallel()
 
 	domaindataSpec := &v1alpha1.DomainDataSpec{
-		RelativeURI: "`output",
+		RelativeURI: "\"output",
 		Name:        "alice-table",
 		Type:        "TABLE",
 		DataSource:  "data-" + uuid.New().String(),
@@ -305,7 +305,7 @@ func TestPostgresqlUploader_Write_UnsafeTable(t *testing.T) {
 		},
 	}
 
-	_, _, _, uploader, rc, err := initPostgresqlUploader(t, "`output`", domaindataSpec)
+	_, _, _, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
 
@@ -353,16 +353,16 @@ func TestPostgresqlUploader_Write_Rollback(t *testing.T) {
 		},
 	}
 
-	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "`output`", domaindataSpec)
+	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
 
 	// must use regexp to escape
-	expectSQL := regexp.QuoteMeta("CREATE TABLE IF NOT EXISTS `output` (`name` TEXT, `id` BIGINT SIGNED)")
+	expectSQL := regexp.QuoteMeta("CREATE TABLE IF NOT EXISTS \"output\" (\"name\" TEXT, \"id\" BIGINT SIGNED)")
 	mock.ExpectExec(expectSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectBegin()
-	prepare := mock.ExpectPrepare("INSERT INTO `output`")
+	prepare := mock.ExpectPrepare("INSERT INTO \"output\"")
 	prepare.ExpectExec().WithArgs("alice", "1").WillReturnResult(sqlmock.NewResult(1, 1))
 	prepare.ExpectExec().WithArgs("bob", "2").WillReturnError(errors.Errorf("test error"))
 	mock.ExpectRollback()
