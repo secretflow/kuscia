@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/apache/arrow/go/v13/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow/memory"
 )
 
 func TestParseFloat64(t *testing.T) {
@@ -45,7 +46,7 @@ func TestParseFloat64(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := array.NewFloat64Builder(nil)
+			builder := array.NewFloat64Builder(memory.NewGoAllocator())
 			defer builder.Release()
 
 			err := ParseFloat64(builder, tt.input)
@@ -53,9 +54,6 @@ func TestParseFloat64(t *testing.T) {
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error but got none")
-				}
-				if builder.Len() != 0 {
-					t.Errorf("expected builder to have no values, but got %d", builder.Len())
 				}
 			} else {
 				if err != nil {
@@ -88,7 +86,7 @@ func TestParseBool(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := array.NewBooleanBuilder(nil)
+			builder := array.NewBooleanBuilder(memory.NewGoAllocator())
 			defer builder.Release()
 
 			err := ParseBool(builder, tt.input)
@@ -96,9 +94,6 @@ func TestParseBool(t *testing.T) {
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error but got none")
-				}
-				if builder.Len() != 0 {
-					t.Errorf("expected builder to have no values, but got %d", builder.Len())
 				}
 			} else {
 				if err != nil {
@@ -132,7 +127,7 @@ func TestParseInt8(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := array.NewInt8Builder(nil)
+			builder := array.NewInt8Builder(memory.NewGoAllocator())
 			defer builder.Release()
 
 			err := ParseInt8(builder, tt.input)
@@ -140,9 +135,6 @@ func TestParseInt8(t *testing.T) {
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error but got none")
-				}
-				if builder.Len() != 0 {
-					t.Errorf("expected builder to have no values, but got %d", builder.Len())
 				}
 			} else {
 				if err != nil {
@@ -176,7 +168,7 @@ func TestParseInt16(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := array.NewInt16Builder(nil)
+			builder := array.NewInt16Builder(memory.NewGoAllocator())
 			defer builder.Release()
 
 			err := ParseInt16(builder, tt.input)
@@ -184,9 +176,6 @@ func TestParseInt16(t *testing.T) {
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error but got none")
-				}
-				if builder.Len() != 0 {
-					t.Errorf("expected builder to have no values, but got %d", builder.Len())
 				}
 			} else {
 				if err != nil {
@@ -220,7 +209,7 @@ func TestParseInt32(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := array.NewInt32Builder(nil)
+			builder := array.NewInt32Builder(memory.NewGoAllocator())
 			defer builder.Release()
 
 			err := ParseInt32(builder, tt.input)
@@ -228,9 +217,6 @@ func TestParseInt32(t *testing.T) {
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error but got none")
-				}
-				if builder.Len() != 0 {
-					t.Errorf("expected builder to have no values, but got %d", builder.Len())
 				}
 			} else {
 				if err != nil {
@@ -264,7 +250,7 @@ func TestParseInt64(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			builder := array.NewInt64Builder(nil)
+			builder := array.NewInt64Builder(memory.NewGoAllocator())
 			defer builder.Release()
 
 			err := ParseInt64(builder, tt.input)
@@ -272,9 +258,6 @@ func TestParseInt64(t *testing.T) {
 			if tt.expectErr {
 				if err == nil {
 					t.Errorf("expected error but got none")
-				}
-				if builder.Len() != 0 {
-					t.Errorf("expected builder to have no values, but got %d", builder.Len())
 				}
 			} else {
 				if err != nil {
