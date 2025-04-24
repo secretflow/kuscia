@@ -44,7 +44,7 @@ func NewIOServer() *IOServer {
 			common.DomainDataSourceTypeLocalFS:    NewBuiltinLocalFileIOChannel(),
 			common.DomainDataSourceTypeOSS:        NewBuiltinOssIOChannel(),
 			common.DomainDataSourceTypeMysql:      NewBuiltinMySQLIOChannel(),
-			common.DomainDataSourceTypePostgreSQL: NewBuiltinPostgresIOChannel(),
+			common.DomainDataSourceTypePostgreSQL: NewBuiltinPostgresqlIOChannel(),
 		},
 	}
 }

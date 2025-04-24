@@ -189,7 +189,7 @@ func (m *MockFlightClient) createPostgresqlDataSource() (string, error) {
 		Type:         "postgresql",
 		Info: &kusciaapi.DataSourceInfo{
 			Database: &kusciaapi.DatabaseDataSourceInfo{
-				Endpoint: fmt.Sprintf("%s:3306", dataMeshHost),
+				Endpoint: fmt.Sprintf("%s:5432", dataMeshHost),
 				User:     "root",
 				Password: "passwd",
 				Database: "demo",

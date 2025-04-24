@@ -1,10 +1,23 @@
+// Copyright 2024 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package builtin
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/apache/arrow/go/v13/arrow"
@@ -19,7 +32,7 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
-type PostgresDownloader struct {
+type PostgresqlDownloader struct {
 	ctx            context.Context
 	db             *sql.DB
 	data           *datamesh.DomainData
@@ -32,8 +45,8 @@ type PostgresDownloader struct {
 	writeBatchSize int
 }
 
-func NewPostgresDownloader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *PostgresDownloader {
-	return &PostgresDownloader{
+func NewPostgresqlDownloader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *PostgresqlDownloader {
+	return &PostgresqlDownloader{
 		ctx:            ctx,
 		db:             db,
 		data:           data,
@@ -47,10 +60,10 @@ func NewPostgresDownloader(ctx context.Context, db *sql.DB, data *datamesh.Domai
 }
 
 // check if d.query fit the domaindata, and return the domaindata column map, and the real query orderedNames
-func (d *PostgresDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColumn, []string, error) {
+func (d *PostgresqlDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColumn, []string, error) {
 	// create domaindata and query column map[columnName->columnType]
 	if len(d.data.Columns) == 0 {
-		return nil, nil, errors.Errorf("No data column available, terminate reading")
+		return nil, nil, errors.Errorf("no data column available, terminate reading")
 	}
 	var domaindataColumnMap map[string]*v1alpha1.DataColumn
 	var orderedNames []string
@@ -71,7 +84,7 @@ func (d *PostgresDownloader) generateQueryColumns() (map[string]*v1alpha1.DataCo
 	for _, column := range d.query.Columns {
 		v, ok := domaindataColumnMap[column]
 		if !ok {
-			return nil, nil, errors.Errorf("Query column(%s) is not defined in domaindata(%s)", column, d.data.DomaindataId)
+			return nil, nil, errors.Errorf("query column(%s) is not defined in domaindata(%s)", column, d.data.DomaindataId)
 		}
 		orderedNames = append(orderedNames, v.Name)
 	}
@@ -79,185 +92,87 @@ func (d *PostgresDownloader) generateQueryColumns() (map[string]*v1alpha1.DataCo
 	return domaindataColumnMap, orderedNames, nil
 }
 
-func (d *PostgresDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.DataColumn, orderedNames []string) error {
+func (d *PostgresqlDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.DataColumn, orderedNames []string) error {
 	// check backtick, check type (only key in orderedNames)
 	for _, val := range orderedNames {
 		k, v := val, columnMap[val]
 		if strings.IndexByte(k, '`') != -1 {
-			return errors.Errorf("Invalid column name(%s). For safety reason, backtick is not allowed", k)
+			return errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", k)
 		}
 		if strings.Contains(v.Type, "date") || strings.Contains(v.Type, "binary") {
-			return errors.Errorf("Type(%s) is not supported now, please consider change another type", v.Type)
+			return errors.Errorf("type(%s) is not supported now, please consider change another type", v.Type)
 		}
 	}
 	return nil
 }
 
-// following parse functions are copied and modified from arrow v13@v13.0.0 /csv/reader
-func (d *PostgresDownloader) parseBool(field array.Builder, str string) {
-	v, err := strconv.ParseBool(str)
-	if err != nil {
-		d.err = fmt.Errorf("%w: unrecognized boolean: %s", err, str)
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.BooleanBuilder).Append(v)
-}
-
-func (d *PostgresDownloader) parseInt8(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 8)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int8Builder).Append(int8(v))
-}
-
-func (d *PostgresDownloader) parseInt16(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 16)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int16Builder).Append(int16(v))
-}
-
-func (d *PostgresDownloader) parseInt32(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 32)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int32Builder).Append(int32(v))
-}
-
-func (d *PostgresDownloader) parseInt64(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 64)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int64Builder).Append(v)
-}
-
-func (d *PostgresDownloader) parseUint8(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 8)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint8Builder).Append(uint8(v))
-}
-
-func (d *PostgresDownloader) parseUint16(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 16)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint16Builder).Append(uint16(v))
-}
-
-func (d *PostgresDownloader) parseUint32(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 32)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint32Builder).Append(uint32(v))
-}
-
-func (d *PostgresDownloader) parseUint64(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 64)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint64Builder).Append(v)
-}
-
-func (d *PostgresDownloader) parseFloat32(field array.Builder, str string) {
-	v, err := strconv.ParseFloat(str, 32)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-	field.(*array.Float32Builder).Append(float32(v))
-}
-
-func (d *PostgresDownloader) parseFloat64(field array.Builder, str string) {
-	v, err := strconv.ParseFloat(str, 64)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-	field.(*array.Float64Builder).Append(v)
-}
-
-func (d *PostgresDownloader) initFieldConverter(bldr array.Builder) func(string) {
+func (d *PostgresqlDownloader) initFieldConverter(bldr array.Builder) func(string) {
 	switch bldr.Type().(type) {
 	case *arrow.BooleanType:
 		return func(str string) {
-			d.parseBool(bldr, str)
+			if err := ParseBool(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int8Type:
 		return func(str string) {
-			d.parseInt8(bldr, str)
+			if err := ParseInt8(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int16Type:
 		return func(str string) {
-			d.parseInt16(bldr, str)
+			if err := ParseInt16(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int32Type:
 		return func(str string) {
-			d.parseInt32(bldr, str)
+			if err := ParseInt32(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int64Type:
 		return func(str string) {
-			d.parseInt64(bldr, str)
+			if err := ParseInt64(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint8Type:
 		return func(str string) {
-			d.parseUint8(bldr, str)
+			if err := ParseUint8(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint16Type:
 		return func(str string) {
-			d.parseUint16(bldr, str)
+			if err := ParseUint16(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint32Type:
 		return func(str string) {
-			d.parseUint32(bldr, str)
+			if err := ParseUint32(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint64Type:
 		return func(str string) {
-			d.parseUint64(bldr, str)
+			if err := ParseUint64(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Float32Type:
 		return func(str string) {
-			d.parseFloat32(bldr, str)
+			if err := ParseFloat32(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Float64Type:
 		return func(str string) {
-			d.parseFloat64(bldr, str)
+			if err := ParseFloat64(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.StringType:
 		return func(str string) {
@@ -265,11 +180,11 @@ func (d *PostgresDownloader) initFieldConverter(bldr array.Builder) func(string)
 		}
 
 	default:
-		panic(fmt.Errorf("Postgresql to arrow conversion: unhandled field type %T", bldr.Type()))
+		panic(fmt.Errorf("postgresql to arrow conversion: unhandled field type %T", bldr.Type()))
 	}
 }
 
-func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter) (err error) {
+func (d *PostgresqlDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter) (err error) {
 	// transfer postgresql rows to arrow record
 	columnMap, orderedNames, err := d.generateQueryColumns()
 
@@ -283,7 +198,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 		return err
 	}
 	if strings.IndexByte(d.data.RelativeUri, '`') != -1 {
-		err = errors.Errorf("Invalid table name(%s). For safety reason, backtick is not allowed", d.data.RelativeUri)
+		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", d.data.RelativeUri)
 		nlog.Error(err)
 		return err
 	}
@@ -357,7 +272,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 				if fieldList[i].Nullable {
 					d.builder.Field(i).AppendNull()
 				} else {
-					err = errors.Errorf("Data column %s not allowed null value", fieldList[i].Name)
+					err = errors.Errorf("data column %s not allowed null value", fieldList[i].Name)
 					nlog.Error(err)
 					return err
 				}
@@ -376,6 +291,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 
 		record = d.builder.NewRecord()
 		record.Retain()
+		defer record.Release()
 		if err = w.Write(record); err != nil {
 			nlog.Errorf("Domaindata(%s) to flight stream failed with error %s", d.data.DomaindataId, err.Error())
 			return err
@@ -388,6 +304,7 @@ func (d *PostgresDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWri
 		rowCount = 0
 		record = d.builder.NewRecord()
 		record.Retain()
+		defer record.Release()
 		if err = w.Write(record); err != nil {
 			nlog.Errorf("Domaindata(%s) to flight stream failed with error %s", d.data.DomaindataId, err.Error())
 			return err

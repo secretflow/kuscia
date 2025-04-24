@@ -1,3 +1,17 @@
+// Copyright 2024 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package builtin
 
 import (
@@ -17,7 +31,7 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
-type PostgresUploader struct {
+type PostgresqlUploader struct {
 	ctx       context.Context
 	db        *sql.DB
 	data      *datamesh.DomainData
@@ -25,8 +39,8 @@ type PostgresUploader struct {
 	nullValue string
 }
 
-func NewPostgresUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *PostgresUploader {
-	return &PostgresUploader{
+func NewPostgresqlUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *PostgresqlUploader {
+	return &PostgresqlUploader{
 		ctx:       ctx,
 		db:        db,
 		data:      data,
@@ -35,7 +49,7 @@ func NewPostgresUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainD
 	}
 }
 
-func (u *PostgresUploader) transformColToStringArr(typ arrow.DataType, col arrow.Array) []string {
+func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arrow.Array) []string {
 	res := make([]string, col.Len())
 	switch typ.(type) {
 	case *arrow.BooleanType:
@@ -150,12 +164,12 @@ func (u *PostgresUploader) transformColToStringArr(typ arrow.DataType, col arrow
 			}
 		}
 	default:
-		panic(fmt.Errorf("arrow to Postgres: field has unsupported data type %s", typ.String()))
+		panic(fmt.Errorf("arrow to Postgresql: field has unsupported data type %s", typ.String()))
 	}
 	return res
 }
 
-func (u *PostgresUploader) ArrowDataTypeToPostgresType(colType arrow.DataType) string {
+func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataType) string {
 	switch colType {
 	case arrow.PrimitiveTypes.Uint8:
 		return "SMALLINT"
@@ -182,11 +196,11 @@ func (u *PostgresUploader) ArrowDataTypeToPostgresType(colType arrow.DataType) s
 	case arrow.PrimitiveTypes.Float64:
 		return "DOUBLE PRECISION"
 	default:
-		panic(fmt.Errorf("create Postgres Table: field has unsupported data type %s", colType))
+		panic(fmt.Errorf("create Postgresql Table: field has unsupported data type %s", colType))
 	}
 }
 
-func (u *PostgresUploader) PrepareOutputTable(tableName string, columnNames []string, fields []arrow.Field) error {
+func (u *PostgresqlUploader) PrepareOutputTable(tableName string, columnNames []string, fields []arrow.Field) error {
 	// if exist, try to drop it
 	_, err := u.db.Exec("DROP TABLE IF EXISTS " + tableName)
 	// maybe permission denied, try delete
@@ -205,7 +219,7 @@ func (u *PostgresUploader) PrepareOutputTable(tableName string, columnNames []st
 	ctb := sqlbuilder.NewCreateTableBuilder()
 	ctb.CreateTable(tableName)
 	for idx, field := range fields {
-		ctb.Define(columnNames[idx], u.ArrowDataTypeToPostgresType(field.Type))
+		ctb.Define(columnNames[idx], u.ArrowDataTypeToPostgresqlType(field.Type))
 	}
 	sql := ctb.String()
 	nlog.Infof("Prepare output table sql(%s)", sql)
@@ -217,14 +231,14 @@ func (u *PostgresUploader) PrepareOutputTable(tableName string, columnNames []st
 	return nil
 }
 
-func (u *PostgresUploader) FlightStreamToDataProxyContentPostgres(reader *flight.Reader) (err error) {
+func (u *PostgresqlUploader) FlightStreamToDataProxyContentPostgresql(reader *flight.Reader) (err error) {
 	// read data from flight.Reader, and write to postgresql transaction
 
 	// schema field check
 	backTickHeaders := make([]string, reader.Schema().NumFields())
 	for idx, col := range reader.Schema().Fields() {
 		if strings.IndexByte(col.Name, '"') != -1 {
-			err = errors.Errorf("Invalid column name(%s). For safety reason, backtick is not allowed", col.Name)
+			err = errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", col.Name)
 			nlog.Error(err)
 			return err
 		}
@@ -232,7 +246,7 @@ func (u *PostgresUploader) FlightStreamToDataProxyContentPostgres(reader *flight
 	}
 
 	if strings.IndexByte(u.data.RelativeUri, '"') != -1 {
-		err = errors.Errorf("Invalid table name(%s). For safety reason, backtick is not allowed", u.data.RelativeUri)
+		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", u.data.RelativeUri)
 		nlog.Error(err)
 		return err
 	}
@@ -250,7 +264,7 @@ func (u *PostgresUploader) FlightStreamToDataProxyContentPostgres(reader *flight
 	// prepare table
 	err = u.PrepareOutputTable(tableName, backTickHeaders, reader.Schema().Fields())
 	if err != nil {
-		nlog.Errorf("Prepare Postgres output table failed(%s)", err)
+		nlog.Errorf("Prepare Postgresql output table failed(%s)", err)
 		return err
 	}
 
@@ -300,6 +314,7 @@ func (u *PostgresUploader) FlightStreamToDataProxyContentPostgres(reader *flight
 	for reader.Next() {
 		record := reader.Record()
 		record.Retain()
+		defer record.Release()
 		// read field data from record
 		recs := make([][]any, record.NumRows())
 		for i := range recs {
@@ -315,7 +330,7 @@ func (u *PostgresUploader) FlightStreamToDataProxyContentPostgres(reader *flight
 		for _, row := range recs {
 			result, err := stmt.Exec(row...)
 			if err != nil {
-				nlog.Errorf("Postgres insert exec failed result(%s),error(%s)", result, err)
+				nlog.Errorf("Postgresql insert exec failed result(%s),error(%s)", result, err)
 				return err
 			}
 		}
@@ -323,7 +338,7 @@ func (u *PostgresUploader) FlightStreamToDataProxyContentPostgres(reader *flight
 	}
 	if err := reader.Err(); err != nil {
 		// in this case, stmt.Exec are all success, try to commit, rather than fail
-		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s. Postgres upload result may have problems", u.data.DomaindataId, err)
+		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s. Postgresql upload result may have problems", u.data.DomaindataId, err)
 	}
 	nlog.Infof("Domaindata(%s) write total row: %d.", u.data.DomaindataId, iCount)
 	return nil

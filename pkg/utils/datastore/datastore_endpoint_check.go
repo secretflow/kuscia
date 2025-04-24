@@ -43,9 +43,9 @@ func (mysqlValidator MySQLDatastoreEndpointValidator) PingDatastoreEndpoint(data
 	return pingDatastoreEndpointByDriverName(c.FormatDSN(), "mysql")
 }
 
-type PostgresDatastoreEndpointValidator struct{}
+type PostgresqlDatastoreEndpointValidator struct{}
 
-func (postgresValidator PostgresDatastoreEndpointValidator) PingDatastoreEndpoint(datastoreEndpoint string) error {
+func (postgresqlValidator PostgresqlDatastoreEndpointValidator) PingDatastoreEndpoint(datastoreEndpoint string) error {
 	errorFormat := "DatastoreEndpoint config error: %s"
 	c, err := pq.ParseURL(datastoreEndpoint)
 	if err != nil {
@@ -75,7 +75,7 @@ func CheckDatastoreEndpoint(datastoreEndpoint string) error {
 	case "mysql":
 		datastoreEndpointValidator = MySQLDatastoreEndpointValidator{}
 	case "postgresql":
-		datastoreEndpointValidator = PostgresDatastoreEndpointValidator{}
+		datastoreEndpointValidator = PostgresqlDatastoreEndpointValidator{}
 	default:
 		errMsg := fmt.Sprintf("Kuscia 'datastoreEndpoint' config: Driver Name is '%s' Not supported", driveName)
 		return fmt.Errorf("%s", errMsg)

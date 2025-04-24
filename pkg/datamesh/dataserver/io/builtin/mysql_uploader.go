@@ -243,7 +243,7 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	backTickHeaders := make([]string, reader.Schema().NumFields())
 	for idx, col := range reader.Schema().Fields() {
 		if strings.IndexByte(col.Name, '`') != -1 {
-			err = errors.Errorf("Invalid column name(%s). For safety reason, backtick is not allowed", col.Name)
+			err = errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", col.Name)
 			nlog.Error(err)
 			return err
 		}
@@ -251,7 +251,7 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	}
 
 	if strings.IndexByte(u.data.RelativeUri, '`') != -1 {
-		err = errors.Errorf("Invalid table name(%s). For safety reason, backtick is not allowed", u.data.RelativeUri)
+		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", u.data.RelativeUri)
 		nlog.Error(err)
 		return err
 	}
@@ -315,6 +315,7 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	for reader.Next() {
 		record := reader.Record()
 		record.Retain()
+		defer record.Release()
 		// read field data from record
 		recs := make([][]any, record.NumRows())
 		for i := range recs {

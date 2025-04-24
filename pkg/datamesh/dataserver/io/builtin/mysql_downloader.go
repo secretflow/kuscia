@@ -18,7 +18,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/apache/arrow/go/v13/arrow"
@@ -65,7 +64,7 @@ func (d *MySQLDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColum
 	// create domaindata and query column map[columnName->columnType]
 
 	if len(d.data.Columns) == 0 {
-		return nil, nil, errors.Errorf("No data column available, terminate reading")
+		return nil, nil, errors.Errorf("no data column available, terminate reading")
 	}
 	var domaindataColumnMap map[string]*v1alpha1.DataColumn
 	var orderedNames []string
@@ -86,7 +85,7 @@ func (d *MySQLDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColum
 	for _, column := range d.query.Columns {
 		v, ok := domaindataColumnMap[column]
 		if !ok {
-			return nil, nil, errors.Errorf("Query column(%s) is not defined in domaindata(%s)", column, d.data.DomaindataId)
+			return nil, nil, errors.Errorf("query column(%s) is not defined in domaindata(%s)", column, d.data.DomaindataId)
 		}
 		orderedNames = append(orderedNames, v.Name)
 	}
@@ -99,180 +98,82 @@ func (d *MySQLDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.DataCol
 	for _, val := range orderedNames {
 		k, v := val, columnMap[val]
 		if strings.IndexByte(k, '`') != -1 {
-			return errors.Errorf("Invalid column name(%s). For safety reason, backtick is not allowed", k)
+			return errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", k)
 		}
 		if strings.Contains(v.Type, "date") || strings.Contains(v.Type, "binary") {
-			return errors.Errorf("Type(%s) is not supported now, please consider change another type", v.Type)
+			return errors.Errorf("type(%s) is not supported now, please consider change another type", v.Type)
 		}
 	}
 	return nil
-}
-
-// following parse functions are copied and modified from arrow v13@v13.0.0 /csv/reader
-func (d *MySQLDownloader) parseBool(field array.Builder, str string) {
-	v, err := strconv.ParseBool(str)
-	if err != nil {
-		d.err = fmt.Errorf("%w: unrecognized boolean: %s", err, str)
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.BooleanBuilder).Append(v)
-}
-
-func (d *MySQLDownloader) parseInt8(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 8)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int8Builder).Append(int8(v))
-}
-
-func (d *MySQLDownloader) parseInt16(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 16)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int16Builder).Append(int16(v))
-}
-
-func (d *MySQLDownloader) parseInt32(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 32)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int32Builder).Append(int32(v))
-}
-
-func (d *MySQLDownloader) parseInt64(field array.Builder, str string) {
-	v, err := strconv.ParseInt(str, 10, 64)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Int64Builder).Append(v)
-}
-
-func (d *MySQLDownloader) parseUint8(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 8)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint8Builder).Append(uint8(v))
-}
-
-func (d *MySQLDownloader) parseUint16(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 16)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint16Builder).Append(uint16(v))
-}
-
-func (d *MySQLDownloader) parseUint32(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 32)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint32Builder).Append(uint32(v))
-}
-
-func (d *MySQLDownloader) parseUint64(field array.Builder, str string) {
-	v, err := strconv.ParseUint(str, 10, 64)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-
-	field.(*array.Uint64Builder).Append(v)
-}
-
-func (d *MySQLDownloader) parseFloat32(field array.Builder, str string) {
-	v, err := strconv.ParseFloat(str, 32)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-	field.(*array.Float32Builder).Append(float32(v))
-}
-
-func (d *MySQLDownloader) parseFloat64(field array.Builder, str string) {
-	v, err := strconv.ParseFloat(str, 64)
-	if err != nil && d.err == nil {
-		d.err = err
-		field.AppendNull()
-		return
-	}
-	field.(*array.Float64Builder).Append(v)
 }
 
 func (d *MySQLDownloader) initFieldConverter(bldr array.Builder) func(string) {
 	switch bldr.Type().(type) {
 	case *arrow.BooleanType:
 		return func(str string) {
-			d.parseBool(bldr, str)
+			if err := ParseBool(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int8Type:
 		return func(str string) {
-			d.parseInt8(bldr, str)
+			if err := ParseInt8(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int16Type:
 		return func(str string) {
-			d.parseInt16(bldr, str)
+			if err := ParseInt16(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int32Type:
 		return func(str string) {
-			d.parseInt32(bldr, str)
+			if err := ParseInt32(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Int64Type:
 		return func(str string) {
-			d.parseInt64(bldr, str)
+			if err := ParseInt64(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint8Type:
 		return func(str string) {
-			d.parseUint8(bldr, str)
+			if err := ParseUint8(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint16Type:
 		return func(str string) {
-			d.parseUint16(bldr, str)
+			if err := ParseUint16(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint32Type:
 		return func(str string) {
-			d.parseUint32(bldr, str)
+			if err := ParseUint32(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Uint64Type:
 		return func(str string) {
-			d.parseUint64(bldr, str)
+			if err := ParseUint64(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Float32Type:
 		return func(str string) {
-			d.parseFloat32(bldr, str)
+			if err := ParseFloat32(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.Float64Type:
 		return func(str string) {
-			d.parseFloat64(bldr, str)
+			if err := ParseFloat64(bldr, str); err != nil && d.err == nil{
+				d.err = err
+			}
 		}
 	case *arrow.StringType:
 		return func(str string) {
@@ -299,7 +200,7 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 		return err
 	}
 	if strings.IndexByte(d.data.RelativeUri, '`') != -1 {
-		err = errors.Errorf("Invalid table name(%s). For safety reason, backtick is not allowed", d.data.RelativeUri)
+		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", d.data.RelativeUri)
 		nlog.Error(err)
 		return err
 	}
@@ -391,6 +292,7 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 
 		record = d.builder.NewRecord()
 		record.Retain()
+		defer record.Release()
 		if err = w.Write(record); err != nil {
 			nlog.Errorf("Domaindata(%s) to flight stream failed with error %s", d.data.DomaindataId, err.Error())
 			return err
@@ -403,6 +305,7 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 		rowCount = 0
 		record = d.builder.NewRecord()
 		record.Retain()
+		defer record.Release()
 		if err = w.Write(record); err != nil {
 			nlog.Errorf("Domaindata(%s) to flight stream failed with error %s", d.data.DomaindataId, err.Error())
 			return err
