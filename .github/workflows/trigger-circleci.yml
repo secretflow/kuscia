@@ -29,7 +29,7 @@ jobs:
 
       - name: secretflow-kuscia-deploy
         id: secretflow-kuscia-deploy
-        uses: CircleCI-Public/trigger-circleci-pipeline-action@ef1944e67053c1923ad772d2377575f2fd962169 # v1.0.5
+        uses: CircleCI-Public/trigger-circleci-pipeline-action@a81cd720792a6088debd7f182b552845abb86f1b # v1.2.0
         with:
           GHA_Meta: "publish_pypi"
         env:
