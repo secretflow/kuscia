@@ -1,4 +1,4 @@
-// Copyright 2024 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -300,7 +300,7 @@ func TestPostgresqlIOChannel_Read_Success(t *testing.T) {
 	rows.AddRow("alice", 1)
 	rows.AddRow("bob", 2)
 
-	mock.ExpectQuery("SELECT `name`, `id` FROM `" + tableName + "`").WillReturnRows(rows)
+	mock.ExpectQuery("SELECT \"name\", \"id\" FROM \"" + tableName + "\"").WillReturnRows(rows)
 
 	dd, _, err := rc.GetDomainDataAndSource(ctx)
 	assert.NoError(t, err)
@@ -335,7 +335,7 @@ func TestPostgresqlIOChannel_Write_Success(t *testing.T) {
 		},
 	}
 
-	ctx, _, mock, uploader, rc, err := initPostgresqlUploader(t, "`output`", domaindataSpec)
+	ctx, _, mock, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
 
@@ -356,13 +356,13 @@ func TestPostgresqlIOChannel_Write_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
-	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS `output`")
-	expectSQL := regexp.QuoteMeta("CREATE TABLE `output` (`name` TEXT, `id` BIGINT SIGNED)")
+	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS \"output\"")
+	expectSQL := regexp.QuoteMeta("CREATE TABLE \"output\" (\"name\" TEXT, \"id\" BIGINT SIGNED)")
 	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec(expectSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectBegin()
-	prepare := mock.ExpectPrepare("INSERT INTO `output`")
+	prepare := mock.ExpectPrepare("INSERT INTO \"output\"")
 	prepare.ExpectExec().WithArgs("alice", "1").WillReturnResult(sqlmock.NewResult(1, 1))
 	prepare.ExpectExec().WithArgs("bob", "2").WillReturnResult(sqlmock.NewResult(2, 1))
 	mock.ExpectCommit()

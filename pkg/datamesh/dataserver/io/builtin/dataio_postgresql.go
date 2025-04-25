@@ -1,4 +1,4 @@
-// Copyright 2024 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,14 @@ func (o *BuiltinPostgresqlIO) newPostgresqlSession(config *datamesh.DatabaseData
 
 	host, port, err := net.SplitHostPort(config.GetEndpoint())
 	if err != nil {
-		nlog.Errorf("Endpoint can't be resolved with net.SplitHostPort()")
+		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
+			host = config.GetEndpoint()
+			port = "5432"
+			err = nil
+		}
+	}
+	if err != nil {
+		nlog.Errorf("Endpoint \"%s\" can't be resolved with net.SplitHostPort()", config.GetEndpoint())
 		return nil, err
 	}
 	dsn := fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port)

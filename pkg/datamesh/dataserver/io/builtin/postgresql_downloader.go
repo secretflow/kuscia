@@ -1,4 +1,4 @@
-// Copyright 2024 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ func (d *PostgresqlDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.Da
 	// check backtick, check type (only key in orderedNames)
 	for _, val := range orderedNames {
 		k, v := val, columnMap[val]
-		if strings.IndexByte(k, '`') != -1 {
+		if strings.IndexByte(k, '"') != -1 {
 			return errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", k)
 		}
 		if strings.Contains(v.Type, "date") || strings.Contains(v.Type, "binary") {
@@ -197,7 +197,7 @@ func (d *PostgresqlDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordW
 		nlog.Error(err)
 		return err
 	}
-	if strings.IndexByte(d.data.RelativeUri, '`') != -1 {
+	if strings.IndexByte(d.data.RelativeUri, '"') != -1 {
 		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", d.data.RelativeUri)
 		nlog.Error(err)
 		return err
