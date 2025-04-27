@@ -120,12 +120,12 @@ func TestPostgresqlUploader_Write_Commit(t *testing.T) {
 	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
-	columnDefines := "\"name\" TEXT, \"id\" BIGINT SIGNED, \"boolTest\" TINYINT(1)"
-	columnDefines += ", \"int8Test\" TINYINT SIGNED, \"int16Test\" SMALLINT SIGNED"
-	columnDefines += ", \"int32Test\" INT SIGNED, \"int64Test\" BIGINT SIGNED"
-	columnDefines += ", \"uint8Test\" TINYINT UNSIGNED, \"uint16Test\" SMALLINT UNSIGNED"
-	columnDefines += ", \"uint32Test\" INT UNSIGNED, \"uint64Test\" BIGINT UNSIGNED"
-	columnDefines += ", \"uintTest\" BIGINT UNSIGNED, \"float32Test\" FLOAT, \"float64Test\" DOUBLE"
+	columnDefines := "\"name\" TEXT, \"id\" BIGINT, \"boolTest\" SMALLINT"
+	columnDefines += ", \"int8Test\" SMALLINT, \"int16Test\" SMALLINT"
+	columnDefines += ", \"int32Test\" INTEGER, \"int64Test\" BIGINT"
+	columnDefines += ", \"uint8Test\" SMALLINT, \"uint16Test\" INTEGER"
+	columnDefines += ", \"uint32Test\" BIGINT, \"uint64Test\" BIGINT"
+	columnDefines += ", \"uintTest\" BIGINT, \"float32Test\" REAL, \"float64Test\" DOUBLE PRECISION"
 
 	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS \"output\" ")
 	sql := regexp.QuoteMeta("CREATE TABLE \"output\" (" + columnDefines + ")")

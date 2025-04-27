@@ -20,6 +20,7 @@ import (
 	"crypto/rsa"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -41,14 +42,14 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// func dbInfoToDsn(info *datamesh.DatabaseDataSourceInfo) string {
-// 	return fmt.Sprintf("%s:%s@tcp(%s)/%s",
-// 		info.User,
-// 		info.Password,
-// 		info.Endpoint,
-// 		info.Database,
-// 	)
-// }
+func dbInfoToDsnPg(info *datamesh.DatabaseDataSourceInfo) string {
+	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=5432",
+		info.User,
+		info.Password,
+		info.Endpoint,
+		info.Database,
+	)
+}
 
 func initPostgresqlContextTestEnv(t *testing.T, domaindataSpec *v1alpha1.DomainDataSpec) *config.DataMeshConfig {
 	conf := config.NewDefaultDataMeshConfig()
@@ -95,19 +96,6 @@ func registerPostgresqlDomainDataSource(t *testing.T, conf *config.DataMeshConfi
 
 	assert.NoError(t, err)
 }
-
-// func registerDomainData(t *testing.T, conf *config.DataMeshConfig, domaindataSpec *v1alpha1.DomainDataSpec) *v1alpha1.DomainData {
-// 	domainDataID := domaindataSpec.Name
-// 	dd, err := conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Create(context.Background(), &v1alpha1.DomainData{
-// 		ObjectMeta: v1.ObjectMeta{
-// 			Name: domainDataID,
-// 		},
-// 		Spec: *domaindataSpec,
-// 	}, v1.CreateOptions{})
-// 	assert.NoError(t, err)
-
-// 	return dd
-// }
 
 // TEST ONLY! if domaindataSpec is nil, generate a basic spec
 func initPostgresqlIOTestRequestContext(t *testing.T, tableName string, dbInfo *datamesh.DatabaseDataSourceInfo, domaindataSpec *v1alpha1.DomainDataSpec, isQuery bool) (*config.DataMeshConfig, *utils.DataMeshRequestContext, *sql.DB, sqlmock.Sqlmock) {
@@ -170,111 +158,11 @@ func initPostgresqlIOTestRequestContext(t *testing.T, tableName string, dbInfo *
 	assert.NoError(t, err)
 	assert.NotNil(t, ctx)
 
-	db, mock, err := sqlmock.NewWithDSN(dbInfoToDsn(dbInfo))
+	db, mock, err := sqlmock.NewWithDSN(dbInfoToDsnPg(dbInfo))
 	assert.NoError(t, err)
 	return conf, ctx, db, mock
 }
 
-// func getTableFlightData(t *testing.T, ctx *utils.DataMeshRequestContext, colType []arrow.DataType, dataRows [][]any) []*flight.FlightData {
-// 	// use a writer to store input data
-// 	mgs := &mockDoGetServer{
-// 		ServerStream: &mockGrpcServerStream{},
-// 	}
-// 	dd, _, err := ctx.GetDomainDataAndSource(context.Background())
-// 	assert.NoError(t, err)
-// 	schema, err := utils.GenerateArrowSchema(dd)
-// 	assert.NoError(t, err)
-// 	writer := flight.NewRecordWriter(mgs, ipc.WithSchema(schema))
-
-// 	recordBuilder := make([]array.Builder, len(colType))
-// 	builderFunc := make([]func(array.Builder, any), len(colType))
-// 	for idx := range recordBuilder {
-// 		switch colType[idx].(type) {
-// 		case *arrow.StringType:
-// 			recordBuilder[idx] = array.NewStringBuilder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.StringBuilder).Append(val.(string))
-// 			}
-// 		case *arrow.BooleanType:
-// 			recordBuilder[idx] = array.NewBooleanBuilder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.BooleanBuilder).Append(val.(bool))
-// 			}
-// 		case *arrow.Float32Type:
-// 			recordBuilder[idx] = array.NewFloat32Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Float32Builder).Append(val.(float32))
-// 			}
-// 		case *arrow.Float64Type:
-// 			recordBuilder[idx] = array.NewFloat64Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Float64Builder).Append(val.(float64))
-// 			}
-// 		case *arrow.Int8Type:
-// 			recordBuilder[idx] = array.NewInt8Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Int8Builder).Append(val.(int8))
-// 			}
-// 		case *arrow.Int16Type:
-// 			recordBuilder[idx] = array.NewInt16Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Int16Builder).Append(val.(int16))
-// 			}
-// 		case *arrow.Int32Type:
-// 			recordBuilder[idx] = array.NewInt32Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Int32Builder).Append(val.(int32))
-// 			}
-// 		case *arrow.Int64Type:
-// 			recordBuilder[idx] = array.NewInt64Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Int64Builder).Append(val.(int64))
-// 			}
-// 		case *arrow.Uint8Type:
-// 			recordBuilder[idx] = array.NewUint8Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Uint8Builder).Append(val.(uint8))
-// 			}
-// 		case *arrow.Uint16Type:
-// 			recordBuilder[idx] = array.NewUint16Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Uint16Builder).Append(val.(uint16))
-// 			}
-// 		case *arrow.Uint32Type:
-// 			recordBuilder[idx] = array.NewUint32Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Uint32Builder).Append(val.(uint32))
-// 			}
-// 		case *arrow.Uint64Type:
-// 			recordBuilder[idx] = array.NewUint64Builder(memory.DefaultAllocator)
-// 			builderFunc[idx] = func(bld array.Builder, val any) {
-// 				bld.(*array.Uint64Builder).Append(val.(uint64))
-// 			}
-// 		default:
-// 			panic("invalid unit test data type")
-// 		}
-
-// 	}
-
-// 	for _, row := range dataRows {
-// 		for idx, val := range row {
-// 			builderFunc[idx](recordBuilder[idx], val)
-// 		}
-// 	}
-
-// 	// prepare record
-// 	recordData := make([]arrow.Array, len(colType))
-// 	for idx, builder := range recordBuilder {
-// 		recordData[idx] = builder.NewArray()
-// 	}
-
-// 	// prepare dataList
-// 	assert.NoError(t, writer.Write(array.NewRecord(schema, recordData, int64(len(dataRows)))))
-
-// 	writer.Close()
-
-// 	return mgs.dataList
-// }
 
 func TestPostgresqlIOChannel_New(t *testing.T) {
 	t.Parallel()
@@ -357,7 +245,7 @@ func TestPostgresqlIOChannel_Write_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reader)
 	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS \"output\"")
-	expectSQL := regexp.QuoteMeta("CREATE TABLE \"output\" (\"name\" TEXT, \"id\" BIGINT SIGNED)")
+	expectSQL := regexp.QuoteMeta("CREATE TABLE \"output\" (\"name\" TEXT, \"id\" BIGINT)")
 	mock.ExpectExec(dropSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectExec(expectSQL).WithoutArgs().WillReturnResult(sqlmock.NewResult(1, 1))
 

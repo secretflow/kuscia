@@ -170,7 +170,7 @@ func TestPostgresqlDownloader_Read_PartialColumn(t *testing.T) {
 	// can't parse 1.0 to int
 	rows.AddRow(1)
 
-	mock.ExpectQuery("SELECT \"i\" FROM \"" + tableName + "\"").WillReturnRows(rows)
+	mock.ExpectQuery("SELECT \"id\" FROM \"" + tableName + "\"").WillReturnRows(rows)
 
 	dd, _, err := rc.GetDomainDataAndSource(ctx)
 	assert.NoError(t, err)
