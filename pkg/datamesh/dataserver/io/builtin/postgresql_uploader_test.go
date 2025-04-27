@@ -124,8 +124,8 @@ func TestPostgresqlUploader_Write_Commit(t *testing.T) {
 	columnDefines += ", \"int8Test\" SMALLINT, \"int16Test\" SMALLINT"
 	columnDefines += ", \"int32Test\" INTEGER, \"int64Test\" BIGINT"
 	columnDefines += ", \"uint8Test\" SMALLINT, \"uint16Test\" INTEGER"
-	columnDefines += ", \"uint32Test\" BIGINT, \"uint64Test\" BIGINT"
-	columnDefines += ", \"uintTest\" BIGINT, \"float32Test\" REAL, \"float64Test\" DOUBLE PRECISION"
+	columnDefines += ", \"uint32Test\" BIGINT, \"uint64Test\" DECIMAL(20, 0)"
+	columnDefines += ", \"uintTest\" DECIMAL(20, 0), \"float32Test\" REAL, \"float64Test\" DOUBLE PRECISION"
 
 	dropSQL := regexp.QuoteMeta("DROP TABLE IF EXISTS \"output\" ")
 	sql := regexp.QuoteMeta("CREATE TABLE \"output\" (" + columnDefines + ")")
