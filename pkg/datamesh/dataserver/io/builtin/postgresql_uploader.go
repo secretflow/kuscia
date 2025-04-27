@@ -184,7 +184,7 @@ func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataTyp
 	case arrow.PrimitiveTypes.Int32:
 		return "INTEGER"
 	case arrow.PrimitiveTypes.Uint64:
-		return "BIGINT"
+		return "DECIMAL(20, 0)"
 	case arrow.PrimitiveTypes.Int64:
 		return "BIGINT"
 	case arrow.FixedWidthTypes.Boolean:
