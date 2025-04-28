@@ -80,6 +80,7 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 			}
 		}
 		record.Retain()
+		defer record.Release()
 		if err := w.Write(record); err != nil {
 			nlog.Warnf("Domaindata(%s) to flight stream failed with error %s", data.DomaindataId, err.Error())
 			return err
@@ -148,6 +149,7 @@ func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, r
 	for reader.Next() {
 		record := reader.Record()
 		record.Retain()
+		defer record.Release()
 		if err := csvWriter.Write(record); err != nil {
 			nlog.Warnf("Domaindata(%s) write content to remote failed with error: %s", data.GetDomaindataId(), err.Error())
 			return err

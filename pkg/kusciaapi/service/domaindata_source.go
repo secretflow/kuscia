@@ -492,7 +492,7 @@ func validateDataSourceType(t string) error {
 		t != common.DomainDataSourceTypeLocalFS &&
 		t != common.DomainDataSourceTypeODPS &&
 		t != common.DomainDataSourceTypePostgreSQL {
-		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps]", t)
+		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql]", t)
 	}
 	return nil
 }
@@ -658,7 +658,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 		}
 		uri = info.Odps.Endpoint + "/" + info.Odps.Project
 	default:
-		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps]", sourceType)
+		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps,postgresql]", sourceType)
 		nlog.Error(err)
 		return
 	}
@@ -714,19 +714,19 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		}
 	case common.DomainDataSourceTypePostgreSQL:
 		if info.Database == nil {
-			return fmt.Errorf("postgres info is nil")
+			return fmt.Errorf("postgresql info is nil")
 		}
 		if info.Database.Endpoint == "" {
-			return fmt.Errorf("postgres 'endpoint' is empty")
+			return fmt.Errorf("postgresql 'endpoint' is empty")
 		}
 		if info.Database.Database == "" {
-			return fmt.Errorf("postgres 'database' is empty")
+			return fmt.Errorf("postgresql 'database' is empty")
 		}
 		if info.Database.User == "" {
-			return fmt.Errorf("postgres 'user' is empty")
+			return fmt.Errorf("postgresql 'user' is empty")
 		}
 		if info.Database.Password == "" {
-			return fmt.Errorf("postgres 'password' is empty")
+			return fmt.Errorf("postgresql 'password' is empty")
 		}
 	case common.DomainDataSourceTypeODPS:
 		if info.Odps == nil {
