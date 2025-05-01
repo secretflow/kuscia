@@ -19,13 +19,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+	"github.com/xhd2015/xgo/runtime/mock"
 	"gotest.tools/v3/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,10 +67,11 @@ func TestK8sLogWorker(t *testing.T) {
 				return
 			}
 			worker := NewK8sLogWorker(rootDir, pod, client, bkNamespace, tt.stream)
-			patches := gomonkey.ApplyMethod(reflect.TypeOf(worker), "RequestLog", func(_ *K8sLogWorker, ctx context.Context, container string, follow bool) (io.ReadCloser, error) {
+			// patch worker.RequestLog method, only effective for this sub-test, and
+			// for this instance of worker
+			mock.Patch(worker.RequestLog, func(ctx context.Context, container string, follow bool) (io.ReadCloser, error) {
 				return newMyReadCloser(log), nil
 			})
-			defer patches.Reset()
 
 			if tt.stream {
 				worker.Start(context.Background())
@@ -126,6 +126,10 @@ func TestK8sLogManager(t *testing.T) {
 
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
+			// setup mock before sub-goroutine starts
+			mock.Patch((*K8sLogWorker).RequestLog, func(_ *K8sLogWorker, ctx context.Context, container string, follow bool) (io.ReadCloser, error) {
+				return newMyReadCloser(log), nil
+			})
 			pod, bkPod := buildPodCase(name, namespace, bkNamespace, nodeName, UID, container, restart, tt.podStatus)
 
 			bkClient := fake.NewSimpleClientset()
@@ -148,11 +152,6 @@ func TestK8sLogManager(t *testing.T) {
 			if err != nil {
 				t.Errorf("can't create mirror pod")
 			}
-			var k8sLogWorker *K8sLogWorker
-			patches := gomonkey.ApplyMethod(reflect.TypeOf(k8sLogWorker), "RequestLog", func(_ *K8sLogWorker, ctx context.Context, container string, follow bool) (io.ReadCloser, error) {
-				return newMyReadCloser(log), nil
-			})
-			defer patches.Reset()
 			time.Sleep(time.Second)
 			logPath := filepath.Join(rootDir, logPathPostfix)
 			if !paths.CheckFileExist(logPath) {

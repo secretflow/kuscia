@@ -16,12 +16,11 @@ package netstat
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
 
-	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
+	"github.com/xhd2015/xgo/runtime/mock"
 	"golang.org/x/net/context"
 	"gotest.tools/v3/assert"
 )
@@ -40,10 +39,9 @@ func TestBandWidth(t *testing.T) {
 			cli := client.NewDiagnoseClient("")
 			task := NewBandWidthTask(cli, 20)
 			bwTask := task.(*BandWidthTask)
-			patch := gomonkey.ApplyMethod(reflect.TypeOf(bwTask), "RecordData", func(_ *BandWidthTask, resp *http.Response) int {
+			mock.Patch(bwTask.RecordData, func(resp *http.Response) int {
 				return 100
 			})
-			defer patch.Reset()
 
 			bwTask.Run(context.Background())
 			assert.Equal(t, bwTask.output.Result, tt.result)
