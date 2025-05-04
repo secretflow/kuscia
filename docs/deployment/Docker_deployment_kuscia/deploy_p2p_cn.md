@@ -32,7 +32,7 @@ export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretfl
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 生成 alice 节点配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#id3)：
@@ -190,7 +190,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob a
     登录到安装 Alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
     ```bash
-    docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
+    docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
     docker cp /tmp/alice.csv ${USER}-kuscia-autonomy-alice:/home/kuscia/var/storage/data/
     rm -rf /tmp/alice.csv
     ```
@@ -217,7 +217,7 @@ docker exec -it ${USER}-kuscia-autonomy-bob scripts/deploy/join_to_host.sh bob a
     登录到安装 Bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-autonomy-alice/data 下
 
     ```bash
-    docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
+    docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
     docker cp /tmp/bob.csv ${USER}-kuscia-autonomy-bob:/home/kuscia/var/storage/data/
     rm -rf /tmp/bob.csv
     ```

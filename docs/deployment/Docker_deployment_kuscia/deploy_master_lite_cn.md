@@ -31,7 +31,7 @@ export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretfl
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 生成 master 节点的配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#id3)：
@@ -163,7 +163,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 生成 Alice 节点的配置文件：
@@ -225,7 +225,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取部署脚本，部署脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 生成 Bob 节点的配置文件：
@@ -289,7 +289,7 @@ docker exec -it ${USER}-kuscia-master kubectl get cdr
 登录到安装 Alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-alice/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/var/storage/data/alice.csv > /tmp/alice.csv
 docker cp /tmp/alice.csv ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
 rm -rf /tmp/alice.csv
 ```
@@ -297,7 +297,7 @@ rm -rf /tmp/alice.csv
 登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-bob/data 下
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/var/storage/data/bob.csv > /tmp/bob.csv
 docker cp /tmp/bob.csv ${USER}-kuscia-lite-bob:/home/kuscia/var/storage/data/
 rm -rf /tmp/bob.csv
 ```
