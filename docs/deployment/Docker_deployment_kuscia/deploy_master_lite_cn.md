@@ -125,30 +125,32 @@ alias km="docker exec -it ${USER}-kuscia-master"
 
 #### 部署 lite 节点 Alice
 
-在部署 Alice 节点之前，我们需要在 master 上注册 Alice 节点并获取部署时需要用到的 Token 。
+在部署 Alice 节点之前，我们需要在 master 注册 Alice 节点，并获取到部署时需要用到的 Token 并存入环境变量。
 
-执行以下命令，完成节点注册并从返回中得到 Token （下文将以 abcdefg 为例）。
+执行以下命令，完成节点注册并从返回中得到 Token 并存入环境变量：
 
 ```bash
-docker exec -i ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh alice
+export ALICE_TOKEN=$(docker exec -i ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh alice)
+echo "Alice 的部署 Token: ${ALICE_TOKEN}"
 ```
 
 输出示例：
 
 ```bash
-abcdefg
+Alice 的部署 Token: abcdefg
 ```
 
 如果 Token 遗忘了，可以通过该命令重新获取
 
 ```bash
-docker exec -it ${USER}-kuscia-master kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
+export ALICE_TOKEN=$(docker exec -it ${USER}-kuscia-master kubectl get domain alice -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}')
+echo "Alice 的部署 Token: ${ALICE_TOKEN}"
 ```
 
 输出示例：
 
 ```bash
-abcdefg
+Alice 的部署 Token: abcdefg
 ```
 
 接下来，登录到安装 Alice 的机器上，假设对外暴露的 IP 是 2.2.2.2。
@@ -172,7 +174,7 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 # --domain 参数传递的是节点 ID
 # --lite-deploy-token 参数传递的是节点部署的 Token
 # --master-endpoint 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是 1.1.1.1，端口是18080
-docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "abcdefg" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "${ALICE_TOKEN}" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
 ```
 
 启动 Alice，默认会在当前目录下创建 ${USER}-kuscia-lite-alice/data 目录用来存放 alice 的数据：
@@ -187,30 +189,32 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --m
 
 #### 部署 lite 节点 bob
 
-在部署 Bob 节点之前，我们需要在 master 注册 bob 节点，并获取到部署时需要用到的 Token 。
+在部署 Bob 节点之前，我们需要在 master 注册 Bob 节点，并获取到部署时需要用到的 Token 并存入环境变量。
 
-执行以下命令，完成节点注册并从返回中得到 Token （下文将以 hijklmn 为例）。
+执行以下命令，完成节点注册并从返回中得到 Token：
 
 ```bash
-docker exec -i ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh bob
+export BOB_TOKEN=$(docker exec -i ${USER}-kuscia-master sh scripts/deploy/add_domain_lite.sh bob)
+echo "Bob 的部署 Token: ${BOB_TOKEN}"
 ```
 
 输出示例：
 
 ```bash
-hijklmn
+Bob 的部署 Token: hijklmn
 ```
 
 如果 Token 遗忘了，可以通过该命令重新获取
 
 ```bash
-docker exec -it ${USER}-kuscia-master kubectl get domain bob -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}' && echo
+export BOB_TOKEN=$(docker exec -it ${USER}-kuscia-master kubectl get domain bob -o=jsonpath='{.status.deployTokenStatuses[?(@.state=="unused")].token}')
+echo "Bob 的部署 Token: ${BOB_TOKEN}"
 ```
 
 输出示例：
 
 ```bash
-hijklmn
+Bob 的部署 Token: hijklmn
 ```
 
 接下来，登录到安装 Bob 的机器上，假设对暴露的 IP 是 3.3.3.3。
@@ -234,7 +238,7 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 # --domain 参数传递的是节点 ID
 # --lite-deploy-token 参数传递的是节点部署的 Token
 # --master-endpoint 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是 1.1.1.1，端口是18080
-docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "hijklmn" > lite_bob.yaml 2>&1 || cat lite_bob.yaml
+docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "${BOB_TOKEN}" > lite_bob.yaml 2>&1 || cat lite_bob.yaml
 ```
 
 启动 Bob，默认会在当前目录下创建 ${USER}-kuscia-lite-bob/data 目录用来存放 bob 的数据：
