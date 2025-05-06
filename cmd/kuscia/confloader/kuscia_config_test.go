@@ -121,20 +121,17 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
-	dir := t.TempDir()
 
-	filename := filepath.Join(dir, "kuscia.yaml")
-	assert.NoError(t, os.WriteFile(filename, data, 600))
+	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
+	assert.NoError(t, os.WriteFile(filename, data, 0600))
 
 	autonomyConfig, _ := LoadAutonomyConfig(filename)
-	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
 	conf := KusciaConfig{
 		RunMode: common.RunModeAutonomy,
 		Agent: config.AgentConfig{
 			KusciaAPIProtocol: common.MTLS,
 		},
 	}
-	// use autonomyConfig(from file) to overwrite conf
 	autonomyConfig.OverwriteKusciaConfig(&conf)
 
 	resultCfg := KusciaConfig{
@@ -162,7 +159,6 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, data1, data2)
 
-	// other branch
 	autonomyConfig.Logrotate.MaxFileSizeMB = 0
 	autonomyConfig.Logrotate.MaxFiles = 0
 	autonomyConfig.Runk = RunkConfig{}
@@ -176,7 +172,6 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 			MaxFileSizeMB: 400,
 		},
 	}
-	// use autonomyConfig(from file) to overwrite conf
 	autonomyConfig.OverwriteKusciaConfig(&conf)
 	resultCfg.Agent.Provider.K8s.LogMaxFiles = 9
 	resultCfg.Agent.Provider.K8s.LogMaxSize = "400Mi"
@@ -189,10 +184,10 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 	data2, err = yaml.Marshal(conf)
 	assert.NoError(t, err)
 
-	filename = filepath.Join(dir, "kuscia1.yaml")
-	assert.NoError(t, os.WriteFile(filename, data1, 600))
-	filename = filepath.Join(dir, "kuscia2.yaml")
-	assert.NoError(t, os.WriteFile(filename, data2, 600))
+	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia1.yaml")
+	assert.NoError(t, os.WriteFile(filename, data1, 0600))
+	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia2.yaml")
+	assert.NoError(t, os.WriteFile(filename, data2, 0600))
 
 	assert.Equal(t, data1, data2)
 }
@@ -235,10 +230,9 @@ func TestLiteOverwriteKusciaConfig(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
-	dir := t.TempDir()
 
-	filename := filepath.Join(dir, "kuscia.yaml")
-	assert.NoError(t, os.WriteFile(filename, data, 600))
+	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
+	assert.NoError(t, os.WriteFile(filename, data, 0600))
 
 	liteConfig, _ := LoadLiteConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
@@ -299,10 +293,9 @@ func TestMasterOverwriteKusciaConfig(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
-	dir := t.TempDir()
 
-	filename := filepath.Join(dir, "kuscia.yaml")
-	assert.NoError(t, os.WriteFile(filename, data, 600))
+	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
+	assert.NoError(t, os.WriteFile(filename, data, 0600))
 
 	liteConfig, _ := LoadMasterConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
@@ -326,10 +319,10 @@ func TestMasterOverwriteKusciaConfig(t *testing.T) {
 	data2, err := yaml.Marshal(conf)
 	assert.NoError(t, err)
 
-	filename = filepath.Join(dir, "kuscia1.yaml")
-	assert.NoError(t, os.WriteFile(filename, data1, 600))
-	filename = filepath.Join(dir, "kuscia2.yaml")
-	assert.NoError(t, os.WriteFile(filename, data2, 600))
+	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia1.yaml")
+	assert.NoError(t, os.WriteFile(filename, data1, 0600))
+	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia2.yaml")
+	assert.NoError(t, os.WriteFile(filename, data2, 0600))
 
 	assert.Equal(t, data1, data2)
 

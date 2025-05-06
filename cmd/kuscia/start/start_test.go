@@ -59,7 +59,7 @@ func Test_Start_Autonomy(t *testing.T) {
 		return dir
 	}
 
-	filename := filepath.Join(dir, "kuscia.yaml")
+	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 	defer os.Remove(filename)
 

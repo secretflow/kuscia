@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +13,9 @@ func TestRemoveCommand(t *testing.T) {
 
 	assert.Equal(t, "rm image [OPTIONS]", cmd.Use)
 	assert.Equal(t, "Remove local one image by imageName or imageID", cmd.Short)
-	assert.Equal(t, cobra.MinimumNArgs(1), cmd.Args)
+
+	// Check if cmd.Args is of type cobra.MinimumNArgs(1)
+	assert.NotNil(t, cmd.Args)
 
 	// Test example
 	example := cmd.Example

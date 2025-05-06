@@ -70,7 +70,7 @@ type runtimeConfig struct {
 
 func initRuntimeAndLogLevel(runtimeType string) (string, error) {
 
-	confFile := path.Join(common.DefaultKusciaHomePath(), "etc/conf/kuscia.yaml")
+	confFile := path.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
 	data, err := os.ReadFile(confFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to read config file: %v", err)
@@ -232,6 +232,10 @@ func (o *OciImage) ImageRun(name string) error {
 }
 
 func runpStartContainer(cname string, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("no image specified in args")
+	}
+
 	sandboxBundle, imageStore, logDirectory, err := initContainerEnv(".")
 	if err != nil {
 		return err

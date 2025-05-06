@@ -8,7 +8,11 @@ domainID: alice
 # Domain RSA private key encoded with base64。
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
 # Logging level, INFO、DEBUG、WARN
-logLevel: INFO
+logLevel: "info"
+logrotate:
+  maxFiles: 5
+  maxFileSizeMB: 100
+  maxAgeDays: 7
 
 #############################################################################
 ############                       Lite Configs                  ############
@@ -113,3 +117,11 @@ dataMesh:
 #
 # confManager:
 #   backend: default
+
+agent:
+  provider:
+    runtime: "k8s"
+    k8s:
+      logDirectory: "/var/log/kuscia"
+      logMaxFiles: 5
+      logMaxSize: "100Mi"

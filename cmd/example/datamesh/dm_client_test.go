@@ -7,20 +7,21 @@ import (
 )
 
 func TestCreateLocalFsDataSource(t *testing.T) {
-	client := &MockFlightClient{}
-	datasourceID, err := client.createLocalFsDataSource()
-	assert.NotEmpty(t, datasourceID)
-	assert.Nil(t, err)
+	client := &MockFlightClient{
+		datasourceSvc: &MockDatasourceService{}, // Mock implementation
+	}
+	id, err := client.createLocalFsDataSource()
+	assert.NotEmpty(t, id)
+	assert.NoError(t, err)
 }
 
 func TestCreateDomainData(t *testing.T) {
 	client := &MockFlightClient{
-		testDataType: "primitives",
+		datasourceSvc: &MockDatasourceService{}, // Mock implementation
 	}
-	datasourceID := "test-datasource"
-	domainDataID, err := client.createDomainData(datasourceID)
+	domainDataID, err := client.createDomainData("test-datasource-id")
 	assert.NotEmpty(t, domainDataID)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestQueryDataSource(t *testing.T) {
