@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/secretflow/kuscia/test/util"
+	"github.com/secretflow/kuscia/tests/util"
 )
 
 func TestTokenCrypt(t *testing.T) {

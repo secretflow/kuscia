@@ -25,7 +25,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	"github.com/secretflow/kuscia/test/util"
+	"github.com/secretflow/kuscia/tests/util"
 )
 
 func TestNewController(t *testing.T) {
