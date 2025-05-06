@@ -1,4 +1,4 @@
-// Copyright 2024 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,14 +24,14 @@ import (
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
 	"github.com/apache/arrow/go/v13/arrow/flight"
-	"github.com/go-sql-driver/mysql"
 	"github.com/huandu/go-sqlbuilder"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
-type MySQLUploader struct {
+type PostgresqlUploader struct {
 	ctx       context.Context
 	db        *sql.DB
 	data      *datamesh.DomainData
@@ -39,13 +39,8 @@ type MySQLUploader struct {
 	nullValue string
 }
 
-// define some mysql error
-const (
-	ER_NO_SUCH_TABLE uint16 = 1146
-)
-
-func NewMySQLUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *MySQLUploader {
-	return &MySQLUploader{
+func NewPostgresqlUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *PostgresqlUploader {
+	return &PostgresqlUploader{
 		ctx:       ctx,
 		db:        db,
 		data:      data,
@@ -54,7 +49,7 @@ func NewMySQLUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData
 	}
 }
 
-func (u *MySQLUploader) transformColToStringArr(typ arrow.DataType, col arrow.Array) []string {
+func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arrow.Array) []string {
 	res := make([]string, col.Len())
 	switch typ.(type) {
 	case *arrow.BooleanType:
@@ -169,43 +164,43 @@ func (u *MySQLUploader) transformColToStringArr(typ arrow.DataType, col arrow.Ar
 			}
 		}
 	default:
-		panic(fmt.Errorf("arrow to MySQL: field has unsupported data type %s", typ.String()))
+		panic(fmt.Errorf("arrow to Postgresql: field has unsupported data type %s", typ.String()))
 	}
 	return res
 }
 
-func (u *MySQLUploader) ArrowDataTypeToMySQLType(colType arrow.DataType) string {
+func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataType) string {
 	switch colType {
 	case arrow.PrimitiveTypes.Uint8:
-		return "TINYINT UNSIGNED"
+		return "SMALLINT"
 	case arrow.PrimitiveTypes.Int8:
-		return "TINYINT SIGNED"
+		return "SMALLINT"
 	case arrow.PrimitiveTypes.Uint16:
-		return "SMALLINT UNSIGNED"
+		return "INTEGER"
 	case arrow.PrimitiveTypes.Int16:
-		return "SMALLINT SIGNED"
+		return "SMALLINT"
 	case arrow.PrimitiveTypes.Uint32:
-		return "INT UNSIGNED"
+		return "BIGINT"
 	case arrow.PrimitiveTypes.Int32:
-		return "INT SIGNED"
+		return "INTEGER"
 	case arrow.PrimitiveTypes.Uint64:
-		return "BIGINT UNSIGNED"
+		return "DECIMAL(20, 0)"
 	case arrow.PrimitiveTypes.Int64:
-		return "BIGINT SIGNED"
+		return "BIGINT"
 	case arrow.FixedWidthTypes.Boolean:
-		return "TINYINT(1)"
+		return "SMALLINT"
 	case arrow.BinaryTypes.String:
 		return "TEXT"
 	case arrow.PrimitiveTypes.Float32:
-		return "FLOAT"
+		return "REAL"
 	case arrow.PrimitiveTypes.Float64:
-		return "DOUBLE"
+		return "DOUBLE PRECISION"
 	default:
-		panic(fmt.Errorf("create MySQL Table: field has unsupported data type %s", colType))
+		panic(fmt.Errorf("create Postgresql Table: field has unsupported data type %s", colType))
 	}
 }
 
-func (u *MySQLUploader) PrepareOutputTable(tableName string, columnNames []string, fields []arrow.Field) error {
+func (u *PostgresqlUploader) PrepareOutputTable(tableName string, columnNames []string, fields []arrow.Field) error {
 	// if exist, try to drop it
 	_, err := u.db.Exec("DROP TABLE IF EXISTS " + tableName)
 	// maybe permission denied, try delete
@@ -213,7 +208,7 @@ func (u *MySQLUploader) PrepareOutputTable(tableName string, columnNames []strin
 		nlog.Infof("Sql drop with err(%s), try to sql delete", err)
 		_, deleteErr := u.db.Exec("DELETE FROM " + tableName)
 		// if there is no table, we can try to create
-		if sqlErr, ok := deleteErr.(*mysql.MySQLError); ok && sqlErr.Number == uint16(ER_NO_SUCH_TABLE) {
+		if sqlErr, ok := deleteErr.(*pq.Error); ok && sqlErr.Code.Name() == "undefined_table" {
 			nlog.Infof("Table(%s) not exist", tableName)
 		} else {
 			// table exists but can't delete, or other error
@@ -224,7 +219,7 @@ func (u *MySQLUploader) PrepareOutputTable(tableName string, columnNames []strin
 	ctb := sqlbuilder.NewCreateTableBuilder()
 	ctb.CreateTable(tableName)
 	for idx, field := range fields {
-		ctb.Define(columnNames[idx], u.ArrowDataTypeToMySQLType(field.Type))
+		ctb.Define(columnNames[idx], u.ArrowDataTypeToPostgresqlType(field.Type))
 	}
 	sql := ctb.String()
 	nlog.Infof("Prepare output table sql(%s)", sql)
@@ -236,26 +231,26 @@ func (u *MySQLUploader) PrepareOutputTable(tableName string, columnNames []strin
 	return nil
 }
 
-func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reader) (err error) {
-	// read data from flight.Reader, and write to mysql transaction
+func (u *PostgresqlUploader) FlightStreamToDataProxyContentPostgresql(reader *flight.Reader) (err error) {
+	// read data from flight.Reader, and write to postgresql transaction
 
 	// schema field check
 	backTickHeaders := make([]string, reader.Schema().NumFields())
 	for idx, col := range reader.Schema().Fields() {
-		if strings.IndexByte(col.Name, '`') != -1 {
+		if strings.IndexByte(col.Name, '"') != -1 {
 			err = errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", col.Name)
 			nlog.Error(err)
 			return err
 		}
-		backTickHeaders[idx] = "`" + col.Name + "`"
+		backTickHeaders[idx] = "\"" + col.Name + "\""
 	}
 
-	if strings.IndexByte(u.data.RelativeUri, '`') != -1 {
+	if strings.IndexByte(u.data.RelativeUri, '"') != -1 {
 		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", u.data.RelativeUri)
 		nlog.Error(err)
 		return err
 	}
-	tableName := "`" + u.data.RelativeUri + "`"
+	tableName := "\"" + u.data.RelativeUri + "\""
 	iCount := 0
 
 	// in the end, avoid panic
@@ -269,7 +264,7 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	// prepare table
 	err = u.PrepareOutputTable(tableName, backTickHeaders, reader.Schema().Fields())
 	if err != nil {
-		nlog.Errorf("Prepare MySQL output table failed(%s)", err)
+		nlog.Errorf("Prepare Postgresql output table failed(%s)", err)
 		return err
 	}
 
@@ -298,6 +293,10 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	}()
 
 	sql := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...).Values(make([]interface{}, len(backTickHeaders))...).String()
+	for i := 1; i <= len(backTickHeaders); i++ {
+		sql = strings.Replace(sql, "?", fmt.Sprintf("$%d", i), 1)
+	}
+	nlog.Info(sql)
 	stmt, err := tx.Prepare(sql)
 	if err != nil {
 		nlog.Errorf("Prepare insert failed(%s)", err)
@@ -331,7 +330,7 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 		for _, row := range recs {
 			result, err := stmt.Exec(row...)
 			if err != nil {
-				nlog.Errorf("MySQL insert exec failed result(%s),error(%s)", result, err)
+				nlog.Errorf("Postgresql insert exec failed result(%s),error(%s)", result, err)
 				return err
 			}
 		}
@@ -339,7 +338,7 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	}
 	if err := reader.Err(); err != nil {
 		// in this case, stmt.Exec are all success, try to commit, rather than fail
-		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s. MySQL upload result may have problems", u.data.DomaindataId, err)
+		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s. Postgresql upload result may have problems", u.data.DomaindataId, err)
 	}
 	nlog.Infof("Domaindata(%s) write total row: %d.", u.data.DomaindataId, iCount)
 	return nil

@@ -1,4 +1,4 @@
-// Copyright 2024 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 
-type MySQLDownloader struct {
+type PostgresqlDownloader struct {
 	ctx            context.Context
 	db             *sql.DB
 	data           *datamesh.DomainData
@@ -45,8 +45,8 @@ type MySQLDownloader struct {
 	writeBatchSize int
 }
 
-func NewMySQLDownloader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *MySQLDownloader {
-	return &MySQLDownloader{
+func NewPostgresqlDownloader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *PostgresqlDownloader {
+	return &PostgresqlDownloader{
 		ctx:            ctx,
 		db:             db,
 		data:           data,
@@ -60,9 +60,8 @@ func NewMySQLDownloader(ctx context.Context, db *sql.DB, data *datamesh.DomainDa
 }
 
 // check if d.query fit the domaindata, and return the domaindata column map, and the real query orderedNames
-func (d *MySQLDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColumn, []string, error) {
+func (d *PostgresqlDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColumn, []string, error) {
 	// create domaindata and query column map[columnName->columnType]
-
 	if len(d.data.Columns) == 0 {
 		return nil, nil, errors.Errorf("no data column available, terminate reading")
 	}
@@ -93,11 +92,11 @@ func (d *MySQLDownloader) generateQueryColumns() (map[string]*v1alpha1.DataColum
 	return domaindataColumnMap, orderedNames, nil
 }
 
-func (d *MySQLDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.DataColumn, orderedNames []string) error {
+func (d *PostgresqlDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.DataColumn, orderedNames []string) error {
 	// check backtick, check type (only key in orderedNames)
 	for _, val := range orderedNames {
 		k, v := val, columnMap[val]
-		if strings.IndexByte(k, '`') != -1 {
+		if strings.IndexByte(k, '"') != -1 {
 			return errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", k)
 		}
 		if strings.Contains(v.Type, "date") || strings.Contains(v.Type, "binary") {
@@ -107,7 +106,7 @@ func (d *MySQLDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.DataCol
 	return nil
 }
 
-func (d *MySQLDownloader) initFieldConverter(bldr array.Builder) func(string) {
+func (d *PostgresqlDownloader) initFieldConverter(bldr array.Builder) func(string) {
 	switch bldr.Type().(type) {
 	case *arrow.BooleanType:
 		return func(str string) {
@@ -181,25 +180,24 @@ func (d *MySQLDownloader) initFieldConverter(bldr array.Builder) func(string) {
 		}
 
 	default:
-		panic(fmt.Errorf("mysql to arrow conversion: unhandled field type %T", bldr.Type()))
+		panic(fmt.Errorf("postgresql to arrow conversion: unhandled field type %T", bldr.Type()))
 	}
 }
 
-func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter) (err error) {
-	// transfer mysql rows to arrow record
+func (d *PostgresqlDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter) (err error) {
+	// transfer postgresql rows to arrow record
 	columnMap, orderedNames, err := d.generateQueryColumns()
 
 	if err != nil {
 		nlog.Errorf("Generate query columns failed(%s)", err)
 		return err
 	}
-
 	err = d.checkSQLSupport(columnMap, orderedNames)
 	if err != nil {
 		nlog.Error(err)
 		return err
 	}
-	if strings.IndexByte(d.data.RelativeUri, '`') != -1 {
+	if strings.IndexByte(d.data.RelativeUri, '"') != -1 {
 		err = errors.Errorf("invalid table name(%s). For safety reason, backtick is not allowed", d.data.RelativeUri)
 		nlog.Error(err)
 		return err
@@ -209,16 +207,17 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 
 	// generate column names with backtick
 	backTickColumns := make([]string, 0, fieldNums)
+
 	for _, name := range orderedNames {
-		backTickColumns = append(backTickColumns, "`"+name+"`")
+		backTickColumns = append(backTickColumns, "\""+name+"\"")
 	}
-	tableName := "`" + d.data.RelativeUri + "`"
+	tableName := "\"" + d.data.RelativeUri + "\""
 
 	// query
 	sql := sqlbuilder.Select(backTickColumns...).From(tableName).String()
 	rows, err := d.db.Query(sql)
 	if err != nil {
-		nlog.Errorf("MySQL query failed(%s)", err)
+		nlog.Errorf("Postgresql query failed(%s)", err)
 		return err
 	}
 
@@ -226,7 +225,7 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 	defer func() {
 		if r := recover(); r != nil {
 			nlog.Errorf("Read domaindata(%s) panic %+v", d.data.DomaindataId, r)
-			err = fmt.Errorf("read domaindata(%s) panic: %+v", d.data.DomaindataId, r)
+			err = fmt.Errorf("Read domaindata(%s) panic: %+v", d.data.DomaindataId, r)
 		}
 	}()
 
@@ -261,7 +260,7 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 	for rows.Next() {
 		rowCount++
 		if err = rows.Scan(scanArgs...); err != nil {
-			nlog.Errorf("Read domaindata(%s) MySQL data failed, %s", d.data.DomaindataId, err.Error())
+			nlog.Errorf("Read domaindata(%s) postgresql data failed, %s", d.data.DomaindataId, err.Error())
 			return err
 		}
 
@@ -281,7 +280,7 @@ func (d *MySQLDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordWriter
 		}
 		err = d.err
 		if err != nil {
-			nlog.Errorf("Read domaindata(%s) MySQL failed, %s", d.data.DomaindataId, err.Error())
+			nlog.Errorf("Read domaindata(%s) postgresql failed, %s", d.data.DomaindataId, err.Error())
 			return err
 		}
 		// for better performance batch send to flight

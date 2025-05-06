@@ -43,9 +43,10 @@ func NewFlightIO(dd service.IDomainDataService, ds service.IDomainDataSourceServ
 		dd: dd,
 		ds: ds,
 		ioMap: map[string]io.Server{
-			common.DomainDataSourceTypeLocalFS: inIO,
-			common.DomainDataSourceTypeOSS:     inIO,
-			common.DomainDataSourceTypeMysql:   inIO,
+			common.DomainDataSourceTypeLocalFS:    inIO,
+			common.DomainDataSourceTypeOSS:        inIO,
+			common.DomainDataSourceTypeMysql:      inIO,
+			common.DomainDataSourceTypePostgreSQL: inIO,
 		},
 		inIO: inIO,
 	}

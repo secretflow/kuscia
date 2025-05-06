@@ -19,47 +19,48 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:1
 msgid "数据库连接数过多"
-msgstr ""
+msgstr "Too Many Database Connections"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:3
 msgid "问题描述"
-msgstr ""
+msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:5
 msgid "Kuscia 执行任务报错："
-msgstr ""
+msgstr "Kuscia Task Execution Error: "
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:11
 msgid "解决方法"
-msgstr ""
+msgstr "Solution"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:13
 msgid "检查 MySQL 数据库配置的最大连接数 max_connections"
-msgstr ""
+msgstr "Check the maximum connections configured for the MySQL database with the parameter `max_connections`"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:19
 msgid "查看当前数据库连接进程"
-msgstr ""
+msgstr "Show the current database connection processes"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:25
 msgid "临时修改数据库配置的最大连接数，此处以 1000 为例"
-msgstr ""
+msgstr "Temporarily adjust the maximum connections of database in the configuration, with an example value set to 1000."
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:31
 msgid "修改 MySQL 数据库配置文件 my.cnf，增加最大连接数"
-msgstr ""
+msgstr "Modify the MySQL database configuration file my.cnf to increase the maximum connections"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:38
 msgid "重启 MySQL 服务"
-msgstr ""
+msgstr "Restart MySQL Service"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:44
 msgid "参考"
-msgstr ""
+msgstr "Reference"
 
 #: ../../troubleshoot/parameter_tuning/mysql_too_many_connections.md:46
 msgid ""
 "[MySQL Max Connections](https://dev.mysql.com/doc/refman/8.0/en/server-"
 "system-variables.html#sysvar_max_connections)"
-msgstr ""
+msgstr "[MySQL Max Connections](https://dev.mysql.com/doc/refman/8.0/en/server-"
+"system-variables.html#sysvar_max_connections)"
 

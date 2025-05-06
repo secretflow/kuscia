@@ -42,7 +42,7 @@ message DomainDataSource {
   string datasource_id = 1;
   // datasource name
   string name = 2;
-  // datasource type, enum [localfs, oss, mysql]
+  // datasource type, enum [localfs, oss, mysql, postgresql]
   string type = 3;
   // datasource status, enum [Available,Unavailable]
   string status = 4;
@@ -67,7 +67,7 @@ message DataSourceInfo {
   // OssDataSourceInfo is exist only if the type of datasource is oss
   LocalDataSourceInfo localfs = 1;
   OssDataSourceInfo oss = 2;
-  // Relational database info, such as Mysql/oracle/postgres
+  // Relational database info, such as Mysql/oracle/postgresql
   DatabaseDataSourceInfo database = 3;
   // aliyun odps(MaxCompute)
   OdpsDataSourceInfo odps = 4;
@@ -100,7 +100,7 @@ message OssDataSourceInfo {
   string storage_type = 8;
 }
 
-// datasource info for mysql/oracle/postgres
+// datasource info for mysql/oracle/postgresql
 message DatabaseDataSourceInfo {
   // endpoint for database, such as localhost:3306
   string endpoint = 1;
