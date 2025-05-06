@@ -20,7 +20,7 @@ func TestNewCommand(t *testing.T) {
 
 func TestAddFlags(t *testing.T) {
 	o := &opts{}
-	fs := &cobra.Command{}.Flags()
+	fs := (&cobra.Command{}).Flags()
 	o.AddFlags(fs)
 
 	assert.NotNil(t, fs.Lookup("listenAddr"))

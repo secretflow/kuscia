@@ -15,5 +15,4 @@ func TestMainCommand(t *testing.T) {
 
 	assert.NotNil(t, rootCmd)
 	assert.IsType(t, &cobra.Command{}, rootCmd)
-	assert.NotNil(t, rootCmd.Flags().Lookup("example-flag")) // Replace with actual flag if available
 }

@@ -69,13 +69,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/signals"
 )
 
-// main.go 是 Kuscia 的主入口文件，定义了根命令和多个子命令。
-// 使用 cobra 库来处理命令行参数。
+// main.go is the main entry file for Kuscia, defining the root command and multiple subcommands.
+// It uses the cobra library to handle command-line arguments.
 
-// rootCmd 是 Kuscia 的根命令，用户可以通过它选择子命令。
-// 子命令包括 image、container、start、diagnose、kusciainit 等。
-// 每个子命令的功能在对应的包中实现。
-// signals.NewKusciaContextWithStopCh 用于处理系统信号，确保程序优雅退出。
+// rootCmd is the root command of Kuscia, allowing users to select subcommands.
+// Subcommands include image, container, start, diagnose, kusciainit, etc.
+// The functionality of each subcommand is implemented in the corresponding package.
+// signals.NewKusciaContextWithStopCh is used to handle system signals, ensuring graceful program termination.
 
 func main() {
 	rootCmd := &cobra.Command{
