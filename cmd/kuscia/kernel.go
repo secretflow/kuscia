@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// kernel.go 定义了 kernel-check 子命令。
+// 该命令用于检查内核参数，确保其满足要求。
+// 使用 runtime.CurrentKernel().List() 获取当前内核参数列表，并输出每个参数的详细信息。
+
 package main
 
 import (
