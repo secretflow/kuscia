@@ -56,7 +56,7 @@ func NewStartCommand(ctx context.Context) *cobra.Command {
 			return Start(ctx, startConfigs.configFile)
 		},
 	}
-	cmd.Flags().StringVarP(&startConfigs.configFile, "config", "c", "/workspaces/kuscia/etc/conf/kuscia.yaml", "load config from file.")
+	cmd.Flags().StringVarP(&startConfigs.configFile, "config", "c", "etc/config/kuscia.yaml", "load config from file.")
 
 	// Must be enabled with -l=false or --loglevel-hot-reload=true. See: https://github.com/spf13/cobra/issues/1657
 	cmd.Flags().BoolVarP(&startConfigs.logLevelHotReload, "loglevel-hot-reload", "l", true, "enable kuscia configuration update, eg '-d=false'")

@@ -70,7 +70,7 @@ type runtimeConfig struct {
 
 func initRuntimeAndLogLevel(runtimeType string) (string, error) {
 
-	confFile := path.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
+	confFile := path.Join(common.DefaultKusciaHomePath(), "etc/conf/kuscia.yaml")
 	data, err := os.ReadFile(confFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to read config file: %v", err)

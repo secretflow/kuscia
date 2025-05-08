@@ -58,8 +58,8 @@ func Test_Start_Autonomy(t *testing.T) {
 	common.DefaultKusciaHomePath = func() string {
 		return dir
 	}
-
-	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
+	
+	filename := filepath.Join(dir, "kuscia.yaml")
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 	defer os.Remove(filename)
 
