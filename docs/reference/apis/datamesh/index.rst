@@ -1,5 +1,5 @@
 Kuscia DataMesh API
-===================
+===========
 
 .. toctree::
     :maxdepth: 2
