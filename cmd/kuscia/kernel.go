@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// kernel.go defines the kernel-check subcommand.  
-// This command is used to check kernel parameters to ensure they meet the requirements.  
-// Use runtime.CurrentKernel().List() to get the current kernel parameter list and output detailed information for each parameter.  
+// kernel.go defines the kernel-check subcommand.
+// This command is used to check kernel parameters to ensure they meet the requirements.
+// Use runtime.CurrentKernel().List() to get the current kernel parameter list and output detailed information for each parameter.
 package main
 
 import (
