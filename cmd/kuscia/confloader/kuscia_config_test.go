@@ -185,10 +185,10 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 	data2, err = yaml.Marshal(conf)
 	assert.NoError(t, err)
 
-	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia1.yaml")
-	assert.NoError(t, os.WriteFile(filename, data1, 0600))
-	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia2.yaml")
-	assert.NoError(t, os.WriteFile(filename, data2, 0600))
+	filename = filepath.Join(dir, "kuscia1.yaml")
+	assert.NoError(t, os.WriteFile(filename, data1, 600))
+	filename = filepath.Join(dir, "kuscia2.yaml")
+	assert.NoError(t, os.WriteFile(filename, data2, 600))
 
 	assert.Equal(t, data1, data2)
 }
@@ -231,9 +231,10 @@ func TestLiteOverwriteKusciaConfig(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
+	dir := t.TempDir()
 
-	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
-	assert.NoError(t, os.WriteFile(filename, data, 0600))
+	filename := filepath.Join(dir, "kuscia.yaml")
+	assert.NoError(t, os.WriteFile(filename, data, 600))
 
 	liteConfig, _ := LoadLiteConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
@@ -294,9 +295,10 @@ func TestMasterOverwriteKusciaConfig(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
+	dir := t.TempDir()
 
-	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
-	assert.NoError(t, os.WriteFile(filename, data, 0600))
+	filename := filepath.Join(dir, "kuscia.yaml")
+	assert.NoError(t, os.WriteFile(filename, data, 600))
 
 	liteConfig, _ := LoadMasterConfig(filename)
 	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
@@ -320,10 +322,10 @@ func TestMasterOverwriteKusciaConfig(t *testing.T) {
 	data2, err := yaml.Marshal(conf)
 	assert.NoError(t, err)
 
-	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia1.yaml")
-	assert.NoError(t, os.WriteFile(filename, data1, 0600))
-	filename = filepath.Join("/workspaces/kuscia/etc/conf", "kuscia2.yaml")
-	assert.NoError(t, os.WriteFile(filename, data2, 0600))
+	filename = filepath.Join(dir, "kuscia1.yaml")
+	assert.NoError(t, os.WriteFile(filename, data1, 600))
+	filename = filepath.Join(dir, "kuscia2.yaml")
+	assert.NoError(t, os.WriteFile(filename, data2, 600))
 
 	assert.Equal(t, data1, data2)
 
