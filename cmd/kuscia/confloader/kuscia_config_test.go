@@ -121,9 +121,10 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 
 	data, err := yaml.Marshal(kusciaConfig)
 	assert.NoError(t, err)
+	dir := t.TempDir()
 
-	filename := filepath.Join("/workspaces/kuscia/etc/conf", "kuscia.yaml")
-	assert.NoError(t, os.WriteFile(filename, data, 0600))
+	filename := filepath.Join(dir, "kuscia.yaml")
+	assert.NoError(t, os.WriteFile(filename, data, 600))
 
 	autonomyConfig, _ := LoadAutonomyConfig(filename)
 	conf := KusciaConfig{
