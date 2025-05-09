@@ -538,9 +538,8 @@ func (s domainDataService) normalizationCreateRequest(request *kusciaapi.CreateD
 	}
 	// truncate slash
 	// fix Issue:
-	// datasource-path: "/home/admin" ; datasource-prefix: "/test/" ; domainData-relativeURI: "/data/alice.csv"
-	// os.path.join(path,prefix,uri) would be /data/alice.csv , this is not expect, expect is /home/admin/test/data/alice.csv
-	// so trim the prefix filepath.Separator
+	// datasource-path: "/home/admin" ; datasource-prefix: "/test/" ; domainData-relativeURI: "/data/alice.csv" -> "/test/data/alice.csv"
+	// os.path.join(path,prefix,uri) would be /data/alice.csv , this is not expect, expect is /home/admin/test/data/alice.csv -> /home/admin/test/data/alice.csv
 	request.RelativeUri = strings.TrimPrefix(request.RelativeUri, string(filepath.Separator))
 }
 

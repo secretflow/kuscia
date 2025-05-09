@@ -37,7 +37,7 @@ import (
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/scheduler/kusciascheduling/core"
-	"github.com/secretflow/kuscia/test/util"
+	"github.com/secretflow/kuscia/tests/util"
 )
 
 func TestParseArgs(t *testing.T) {

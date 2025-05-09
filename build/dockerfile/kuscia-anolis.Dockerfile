@@ -55,7 +55,7 @@ COPY --chown=kuscia:kuscia build/pause/pause-${TARGETARCH}.tar ${HOME_DIR}/pause
 COPY --chown=kuscia:kuscia crds/v1alpha1 ${HOME_DIR}/crds/v1alpha1
 COPY --chown=kuscia:kuscia etc/conf ${HOME_DIR}/etc/conf
 COPY --chown=kuscia:kuscia etc/cni ${HOME_DIR}/etc/cni
-COPY --chown=kuscia:kuscia testdata ${HOME_DIR}/var/storage/data
+COPY --chown=kuscia:kuscia tests/data ${HOME_DIR}/var/storage/data
 COPY --chown=kuscia:kuscia scripts ${HOME_DIR}/scripts
 COPY --chown=kuscia:kuscia thirdparty/*/scripts ${HOME_DIR}/scripts
 COPY --chown=kuscia:kuscia --from=kuscia_envoy /home/kuscia/bin/envoy ${HOME_DIR}/bin
