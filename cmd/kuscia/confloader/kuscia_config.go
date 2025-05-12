@@ -330,10 +330,10 @@ func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrot
 
 	// Add validation for default values in overwriteKusciaConfigAgentLogrotate
 	if kusciaAgentConfig.ContainerLogMaxFiles <= 0 {
-		kusciaAgentConfig.ContainerLogMaxFiles = 1 // Default to 1 if invalid
+		kusciaAgentConfig.ContainerLogMaxFiles = 5
 	}
 	if kusciaAgentConfig.ContainerLogMaxSize == "" {
-		kusciaAgentConfig.ContainerLogMaxSize = "10Mi" // Default to 10Mi if invalid
+		kusciaAgentConfig.ContainerLogMaxSize = "10Mi"
 	}
 }
 
