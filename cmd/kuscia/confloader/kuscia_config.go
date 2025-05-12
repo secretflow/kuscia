@@ -333,7 +333,7 @@ func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrot
 	}
 
 	if kusciaAgentConfig.ContainerLogMaxSize == "" {
-		kusciaAgentConfig.ContainerLogMaxSize = "10Mi"
+		kusciaAgentConfig.ContainerLogMaxSize = "config.DefaultLogRotateMaxSizeStr"
 	}
 }
 

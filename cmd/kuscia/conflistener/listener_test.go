@@ -52,4 +52,3 @@ func TestConcurrentUpdates(t *testing.T) {
 	close(start) 
 	wg.Wait()    
 }
-

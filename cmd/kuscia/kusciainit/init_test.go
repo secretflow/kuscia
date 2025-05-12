@@ -186,3 +186,4 @@ func TestNewInitCommand(t *testing.T) {
 	assert.NotNil(t, flags.Lookup("protocol"))
 	assert.NotNil(t, flags.Lookup("enable-workload-approve"))
 }
+
