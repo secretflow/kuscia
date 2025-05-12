@@ -327,16 +327,15 @@ func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrot
 	if overwriteLogrotate != nil && overwriteLogrotate.MaxFileSizeMB > 0 {
 		kusciaAgentConfig.ContainerLogMaxSize = fmt.Sprintf("%dMi", overwriteLogrotate.MaxFileSizeMB)
 	}
-	
-    if kusciaAgentConfig.ContainerLogMaxFiles <= 0 {
-        kusciaAgentConfig.ContainerLogMaxFiles = config.DefaultLogRotateMaxFiles 
-    }
-    
-    if kusciaAgentConfig.ContainerLogMaxSize == "" {
-        kusciaAgentConfig.ContainerLogMaxSize = "10Mi"
-    }
-}
 
+	if kusciaAgentConfig.ContainerLogMaxFiles <= 0 {
+		kusciaAgentConfig.ContainerLogMaxFiles = config.DefaultLogRotateMaxFiles
+	}
+
+	if kusciaAgentConfig.ContainerLogMaxSize == "" {
+		kusciaAgentConfig.ContainerLogMaxSize = "10Mi"
+	}
+}
 
 // try to overwrite kuscia logrotate default config with kuscia yaml logrotate config
 func overwriteKusciaConfigLogrotate(kusciaConfig, overwriteLogrotate *LogrotateConfig) {
