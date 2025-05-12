@@ -58,7 +58,6 @@ type FlightServiceClient interface {
 2. **OSS**：直接上传文件。需配置**OSS**为允许自动创建目录、允许文件覆盖。
 3. **MySQL**：尝试 `DROP IF EXISTS` ，并重新创建表。 如果 `DROP` 失败，继续尝试 `DELETE` 全表。仍失败则返回报错，退出存储。因此建议为 MySQL 配置 `CREATE / INSERT / SELECT / DROP` 权限。如果不能提供 `DROP` 权限，至少需具备 `DELETE` 权限。但注意此时清表速度将会下降。
 4. **ODPS**: 经过 DataProxy 服务代理实现
-
 - 读取数据时，需确保提供的 AK/SK 具备表的读取权限（没有 `Download` 权限只能查询低于 1W 行的数据）。
 - 写入数据时，需确保提供的 AK/SK 具备表的覆盖写权限；如果需要 DataProxy 自行建表，需确保具备创建表的权限。
 - 写入数据时，若表不存在，将创建表（表结构按照 DomainData 的信息来创建）；若任务配置输出信息中包含分区信息，将创建分区表，并创建分区（分区字段类型断言为字符串类型）。
