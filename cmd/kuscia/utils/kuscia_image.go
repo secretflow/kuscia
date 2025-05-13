@@ -232,6 +232,10 @@ func (o *OciImage) ImageRun(name string) error {
 }
 
 func runpStartContainer(cname string, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("no image specified in args")
+	}
+
 	sandboxBundle, imageStore, logDirectory, err := initContainerEnv(".")
 	if err != nil {
 		return err
