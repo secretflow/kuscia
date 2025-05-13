@@ -57,37 +57,32 @@ func (m *MockFlightClientWrapper) Close() error {
 	return args.Error(0)
 }
 
-
 func TestCreateFlightClient_Insecure(t *testing.T) {
-	
+
 	client, err := createFlightClient("grpc://localhost:8080", nil)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, client)
 	client.Close()
 }
 
 func TestCreateClientCertificate(t *testing.T) {
-	
+
 	tempDir := t.TempDir()
 	os.Chdir(tempDir)
 	defer os.Chdir("..")
 
-	
 	config, err := createClientCertificate()
 
-	
 	assert.NoError(t, err)
 	assert.NotNil(t, config)
 
-	
 	assert.FileExists(t, config.serverCertFile)
 	assert.FileExists(t, config.serverKeyFile)
 	assert.FileExists(t, config.clientCertFile)
 	assert.FileExists(t, config.clientKeyFile)
 	assert.FileExists(t, config.caFile)
 }
-
 
 type MockDoActionClient struct {
 	mock.Mock
@@ -103,7 +98,6 @@ func (m *MockDoActionClient) CloseSend() error {
 	args := m.Called()
 	return args.Error(0)
 }
-
 
 type MockDoPutClient struct {
 	mock.Mock
