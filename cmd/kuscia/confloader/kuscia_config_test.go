@@ -127,12 +127,14 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 	assert.NoError(t, os.WriteFile(filename, data, 600))
 
 	autonomyConfig, _ := LoadAutonomyConfig(filename)
+	// conf := defaultAutonomy(common.DefaultKusciaHomePath)
 	conf := KusciaConfig{
 		RunMode: common.RunModeAutonomy,
 		Agent: config.AgentConfig{
 			KusciaAPIProtocol: common.MTLS,
 		},
 	}
+	// use autonomyConfig(from file) to overwrite conf
 	autonomyConfig.OverwriteKusciaConfig(&conf)
 
 	resultCfg := KusciaConfig{
@@ -160,6 +162,7 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, data1, data2)
 
+	// other branch
 	autonomyConfig.Logrotate.MaxFileSizeMB = 0
 	autonomyConfig.Logrotate.MaxFiles = 0
 	autonomyConfig.Runk = RunkConfig{}
@@ -173,6 +176,7 @@ func TestAutonomyOverwriteKusciaConfig(t *testing.T) {
 			MaxFileSizeMB: 400,
 		},
 	}
+	// use autonomyConfig(from file) to overwrite conf
 	autonomyConfig.OverwriteKusciaConfig(&conf)
 	resultCfg.Agent.Provider.K8s.LogMaxFiles = 9
 	resultCfg.Agent.Provider.K8s.LogMaxSize = "400Mi"
