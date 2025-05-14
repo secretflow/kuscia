@@ -111,67 +111,67 @@ func (d *MySQLDownloader) initFieldConverter(bldr array.Builder) func(string) {
 	switch bldr.Type().(type) {
 	case *arrow.BooleanType:
 		return func(str string) {
-			if err := ParseBool(bldr, str); err != nil && d.err == nil{
+			if err := ParseBool(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Int8Type:
 		return func(str string) {
-			if err := ParseInt8(bldr, str); err != nil && d.err == nil{
+			if err := ParseInt8(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Int16Type:
 		return func(str string) {
-			if err := ParseInt16(bldr, str); err != nil && d.err == nil{
+			if err := ParseInt16(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Int32Type:
 		return func(str string) {
-			if err := ParseInt32(bldr, str); err != nil && d.err == nil{
+			if err := ParseInt32(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Int64Type:
 		return func(str string) {
-			if err := ParseInt64(bldr, str); err != nil && d.err == nil{
+			if err := ParseInt64(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Uint8Type:
 		return func(str string) {
-			if err := ParseUint8(bldr, str); err != nil && d.err == nil{
+			if err := ParseUint8(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Uint16Type:
 		return func(str string) {
-			if err := ParseUint16(bldr, str); err != nil && d.err == nil{
+			if err := ParseUint16(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Uint32Type:
 		return func(str string) {
-			if err := ParseUint32(bldr, str); err != nil && d.err == nil{
+			if err := ParseUint32(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Uint64Type:
 		return func(str string) {
-			if err := ParseUint64(bldr, str); err != nil && d.err == nil{
+			if err := ParseUint64(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Float32Type:
 		return func(str string) {
-			if err := ParseFloat32(bldr, str); err != nil && d.err == nil{
+			if err := ParseFloat32(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}
 	case *arrow.Float64Type:
 		return func(str string) {
-			if err := ParseFloat64(bldr, str); err != nil && d.err == nil{
+			if err := ParseFloat64(bldr, str); err != nil && d.err == nil {
 				d.err = err
 			}
 		}

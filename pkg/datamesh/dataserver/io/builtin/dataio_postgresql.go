@@ -34,7 +34,7 @@ type BuiltinPostgresqlIO struct {
 
 func NewBuiltinPostgresqlIOChannel() DataMeshDataIOInterface {
 	return &BuiltinPostgresqlIO{
-		driverName: "postgresql",
+		driverName: "postgres",
 	}
 }
 

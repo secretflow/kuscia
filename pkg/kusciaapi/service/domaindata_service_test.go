@@ -97,7 +97,7 @@ func mockCreateDomainData(domainDataService IDomainDataService) *kusciaapi.Creat
 
 func TestCreateDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 
 	mockCreateDomainDataSource(t, conf)
 
@@ -123,7 +123,7 @@ func TestCreateDomainData(t *testing.T) {
 
 func TestCreateDomainDataWithoutDatasource(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	res := mockCreateDomainData(domainDataService)
 
 	assert.Equal(t, int32(errorcode.ErrorCode_KusciaAPIErrDomainDataSourceNotExists), res.Status.Code)
@@ -131,7 +131,7 @@ func TestCreateDomainDataWithoutDatasource(t *testing.T) {
 
 func TestCreateDomainDataWithVendor(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	attr := make(map[string]string)
@@ -173,7 +173,7 @@ func TestCreateDomainDataWithVendor(t *testing.T) {
 
 func TestQueryDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	res := mockCreateDomainData(domainDataService)
@@ -191,7 +191,7 @@ func TestQueryDomainData(t *testing.T) {
 
 func TestUpdateDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	res := mockCreateDomainData(domainDataService)
@@ -214,7 +214,7 @@ func TestUpdateDomainData(t *testing.T) {
 
 func TestUpdateDomainDataWithVendor(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	res := mockCreateDomainData(domainDataService)
@@ -253,7 +253,7 @@ func TestUpdateDomainDataWithVendor(t *testing.T) {
 
 func TestDeleteDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	res := mockCreateDomainData(domainDataService)
@@ -267,9 +267,31 @@ func TestDeleteDomainData(t *testing.T) {
 	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
 }
 
+func TestDeleteDomainDataAndSource(t *testing.T) {
+	conf := makeDomainDataServiceConfig(t)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
+	mockCreateDomainDataSource(t, conf)
+
+	// Create a mock domain data
+	res := mockCreateDomainData(domainDataService)
+	assert.NotNil(t, res)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
+
+	// Call DeleteDomainDataAndSource
+	res1 := domainDataService.DeleteDomainDataAndSource(context.Background(), &kusciaapi.DeleteDomainDataAndSourceRequest{
+		Header:       nil,
+		DomaindataId: res.Data.DomaindataId,
+		DomainId:     domainID,
+	})
+	assert.NotNil(t, res1)
+	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
+
+}
+
+
 func TestBatchQueryDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	attr := make(map[string]string)
@@ -324,7 +346,7 @@ func TestBatchQueryDomainData(t *testing.T) {
 
 func TestListDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
-	domainDataService := NewDomainDataService(conf)
+	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
 
 	attr := make(map[string]string)

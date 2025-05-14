@@ -33,12 +33,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	DomainDataService_CreateDomainData_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/CreateDomainData"
-	DomainDataService_UpdateDomainData_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/UpdateDomainData"
-	DomainDataService_DeleteDomainData_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/DeleteDomainData"
-	DomainDataService_QueryDomainData_FullMethodName      = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/QueryDomainData"
-	DomainDataService_BatchQueryDomainData_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/BatchQueryDomainData"
-	DomainDataService_ListDomainData_FullMethodName       = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/ListDomainData"
+	DomainDataService_CreateDomainData_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/CreateDomainData"
+	DomainDataService_UpdateDomainData_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/UpdateDomainData"
+	DomainDataService_DeleteDomainData_FullMethodName          = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/DeleteDomainData"
+	DomainDataService_DeleteDomainDataAndSource_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/DeleteDomainDataAndSource"
+	DomainDataService_QueryDomainData_FullMethodName           = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/QueryDomainData"
+	DomainDataService_BatchQueryDomainData_FullMethodName      = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/BatchQueryDomainData"
+	DomainDataService_ListDomainData_FullMethodName            = "/kuscia.proto.api.v1alpha1.kusciaapi.DomainDataService/ListDomainData"
 )
 
 // DomainDataServiceClient is the client API for DomainDataService service.
@@ -48,6 +49,7 @@ type DomainDataServiceClient interface {
 	CreateDomainData(ctx context.Context, in *CreateDomainDataRequest, opts ...grpc.CallOption) (*CreateDomainDataResponse, error)
 	UpdateDomainData(ctx context.Context, in *UpdateDomainDataRequest, opts ...grpc.CallOption) (*UpdateDomainDataResponse, error)
 	DeleteDomainData(ctx context.Context, in *DeleteDomainDataRequest, opts ...grpc.CallOption) (*DeleteDomainDataResponse, error)
+	DeleteDomainDataAndSource(ctx context.Context, in *DeleteDomainDataAndSourceRequest, opts ...grpc.CallOption) (*DeleteDomainDataAndSourceResponse, error)
 	QueryDomainData(ctx context.Context, in *QueryDomainDataRequest, opts ...grpc.CallOption) (*QueryDomainDataResponse, error)
 	BatchQueryDomainData(ctx context.Context, in *BatchQueryDomainDataRequest, opts ...grpc.CallOption) (*BatchQueryDomainDataResponse, error)
 	ListDomainData(ctx context.Context, in *ListDomainDataRequest, opts ...grpc.CallOption) (*ListDomainDataResponse, error)
@@ -88,6 +90,15 @@ func (c *domainDataServiceClient) DeleteDomainData(ctx context.Context, in *Dele
 	return out, nil
 }
 
+func (c *domainDataServiceClient) DeleteDomainDataAndSource(ctx context.Context, in *DeleteDomainDataAndSourceRequest, opts ...grpc.CallOption) (*DeleteDomainDataAndSourceResponse, error) {
+	out := new(DeleteDomainDataAndSourceResponse)
+	err := c.cc.Invoke(ctx, DomainDataService_DeleteDomainDataAndSource_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *domainDataServiceClient) QueryDomainData(ctx context.Context, in *QueryDomainDataRequest, opts ...grpc.CallOption) (*QueryDomainDataResponse, error) {
 	out := new(QueryDomainDataResponse)
 	err := c.cc.Invoke(ctx, DomainDataService_QueryDomainData_FullMethodName, in, out, opts...)
@@ -122,6 +133,7 @@ type DomainDataServiceServer interface {
 	CreateDomainData(context.Context, *CreateDomainDataRequest) (*CreateDomainDataResponse, error)
 	UpdateDomainData(context.Context, *UpdateDomainDataRequest) (*UpdateDomainDataResponse, error)
 	DeleteDomainData(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataResponse, error)
+	DeleteDomainDataAndSource(context.Context, *DeleteDomainDataAndSourceRequest) (*DeleteDomainDataAndSourceResponse, error)
 	QueryDomainData(context.Context, *QueryDomainDataRequest) (*QueryDomainDataResponse, error)
 	BatchQueryDomainData(context.Context, *BatchQueryDomainDataRequest) (*BatchQueryDomainDataResponse, error)
 	ListDomainData(context.Context, *ListDomainDataRequest) (*ListDomainDataResponse, error)
@@ -140,6 +152,9 @@ func (UnimplementedDomainDataServiceServer) UpdateDomainData(context.Context, *U
 }
 func (UnimplementedDomainDataServiceServer) DeleteDomainData(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDomainData not implemented")
+}
+func (UnimplementedDomainDataServiceServer) DeleteDomainDataAndSource(context.Context, *DeleteDomainDataAndSourceRequest) (*DeleteDomainDataAndSourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteDomainDataAndSource not implemented")
 }
 func (UnimplementedDomainDataServiceServer) QueryDomainData(context.Context, *QueryDomainDataRequest) (*QueryDomainDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryDomainData not implemented")
@@ -217,6 +232,24 @@ func _DomainDataService_DeleteDomainData_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DomainDataService_DeleteDomainDataAndSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteDomainDataAndSourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DomainDataServiceServer).DeleteDomainDataAndSource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DomainDataService_DeleteDomainDataAndSource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DomainDataServiceServer).DeleteDomainDataAndSource(ctx, req.(*DeleteDomainDataAndSourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _DomainDataService_QueryDomainData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryDomainDataRequest)
 	if err := dec(in); err != nil {
@@ -289,6 +322,10 @@ var DomainDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteDomainData",
 			Handler:    _DomainDataService_DeleteDomainData_Handler,
+		},
+		{
+			MethodName: "DeleteDomainDataAndSource",
+			Handler:    _DomainDataService_DeleteDomainDataAndSource_Handler,
 		},
 		{
 			MethodName: "QueryDomainData",
