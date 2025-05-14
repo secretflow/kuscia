@@ -20,12 +20,24 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -42,16 +54,6 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
-	"net"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 type IDomainDataService interface {
@@ -286,10 +288,11 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 }
 
 func deleteLocalFsFile(path, relativeUri string) error {
+	var err error
 	// Check if the file exists
 	filePath := filepath.Join(path, relativeUri)
-	if _, err := os.Stat(filePath); err == nil {
-		if err := os.Remove(filePath); err != nil {
+	if _, err = os.Stat(filePath); err == nil {
+		if err = os.Remove(filePath); err != nil {
 			return fmt.Errorf("failed to delete file %s: %v", filePath, err)
 		}
 	} else if !os.IsNotExist(err) {
@@ -429,19 +432,20 @@ func (s domainDataService) decryptInfo(cipherInfo string) (*kusciaapi.DataSource
 }
 
 func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, request *kusciaapi.DeleteDomainDataAndSourceRequest) *kusciaapi.DeleteDomainDataAndSourceResponse {
+	var err error
 	// do validate
 	if request.DomaindataId == "" || request.DomainId == "" {
 		return &kusciaapi.DeleteDomainDataAndSourceResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
-	if err := s.validateRequestWhenLite(request); err != nil {
+	if err = s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.DeleteDomainDataAndSourceResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// auth pre handler
-	if err := s.authHandler(ctx, request); err != nil {
+	if err = s.authHandler(ctx, request); err != nil {
 		return &kusciaapi.DeleteDomainDataAndSourceResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
@@ -463,10 +467,10 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 
 	domaindatasource, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(domainData.Namespace).Get(context.Background(), datasourceId, metav1.GetOptions{})
 
-	var domaindatasourceInfo *kusciaapi.DataSourceInfo
+	var domaindatasourceInfo, info *kusciaapi.DataSourceInfo
 	// decrypt the info
 	if len(domaindatasource.Spec.InfoKey) != 0 {
-		info, err := s.getDsInfoByKey(ctx, domaindatasource.Spec.Type, domaindatasource.Spec.InfoKey)
+		info, err = s.getDsInfoByKey(ctx, domaindatasource.Spec.Type, domaindatasource.Spec.InfoKey)
 		if err != nil {
 			nlog.Errorf("Failed to get DomainDataSource info by key %s: %v", domaindatasource.Spec.InfoKey, err)
 			return &kusciaapi.DeleteDomainDataAndSourceResponse{
@@ -492,21 +496,21 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 	}
 	switch domaindatasource.Spec.Type {
 	case "localfs":
-		if err := deleteLocalFsFile(domaindatasourceInfo.Localfs.Path, relativeUri); err != nil {
+		if err = deleteLocalFsFile(domaindatasourceInfo.Localfs.Path, relativeUri); err != nil {
 			nlog.Errorf("Failed to delete local file at %s %s: %v", domaindatasourceInfo.Localfs.Path, relativeUri, err)
 			return &kusciaapi.DeleteDomainDataAndSourceResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
 	case "oss":
-		if err := deleteOSSFile(domaindatasourceInfo.Oss.AccessKeyId, domaindatasourceInfo.Oss.AccessKeySecret, domaindatasourceInfo.Oss.Endpoint, domaindatasourceInfo.Oss.Bucket, domaindatasourceInfo.Oss.Prefix, relativeUri, domaindatasourceInfo.Oss.Virtualhost); err != nil {
+		if err = deleteOSSFile(domaindatasourceInfo.Oss.AccessKeyId, domaindatasourceInfo.Oss.AccessKeySecret, domaindatasourceInfo.Oss.Endpoint, domaindatasourceInfo.Oss.Bucket, domaindatasourceInfo.Oss.Prefix, relativeUri, domaindatasourceInfo.Oss.Virtualhost); err != nil {
 			nlog.Errorf("Failed to delete OSS file at %s: %v", relativeUri, err)
 			return &kusciaapi.DeleteDomainDataAndSourceResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
 	case "mysql":
-		if err := deleteMysqlTable(domaindatasourceInfo.Database.User, domaindatasourceInfo.Database.Password, domaindatasourceInfo.Database.Endpoint, domaindatasourceInfo.Database.Database, relativeUri); err != nil {
+		if err = deleteMysqlTable(domaindatasourceInfo.Database.User, domaindatasourceInfo.Database.Password, domaindatasourceInfo.Database.Endpoint, domaindatasourceInfo.Database.Database, relativeUri); err != nil {
 			nlog.Errorf("Failed to delete MySQL table at %s: %v", relativeUri, err)
 			return &kusciaapi.DeleteDomainDataAndSourceResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
@@ -514,7 +518,7 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 		}
 
 	case "postgresql":
-		if err := deletePostgresqlTable(domaindatasourceInfo.Database.User, domaindatasourceInfo.Database.Password, domaindatasourceInfo.Database.Endpoint, domaindatasourceInfo.Database.Database, relativeUri); err != nil {
+		if err = deletePostgresqlTable(domaindatasourceInfo.Database.User, domaindatasourceInfo.Database.Password, domaindatasourceInfo.Database.Endpoint, domaindatasourceInfo.Database.Database, relativeUri); err != nil {
 			nlog.Errorf("Failed to delete PostgreSQL table at %s: %v", relativeUri, err)
 			return &kusciaapi.DeleteDomainDataAndSourceResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),

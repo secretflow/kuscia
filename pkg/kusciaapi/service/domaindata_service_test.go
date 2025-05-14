@@ -288,7 +288,6 @@ func TestDeleteDomainDataAndSource(t *testing.T) {
 
 }
 
-
 func TestBatchQueryDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
 	domainDataService := NewDomainDataService(conf, makeConfigService(t))
