@@ -107,7 +107,7 @@ Kuscia 的集成测试可以对 Kuscia 镜像进行测试，创建测试目录 t
 ```shell
 export KUSCIA_IMAGE={YOUR_KUSCIA_IMAGE}
 mkdir -p test
-docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/tests/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
 ```
 
 然后执行集成测试，第一个参数用于选择测试集合。
@@ -129,15 +129,15 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 
 #### 新增测试用例
 
-如果您希望为 Kuscia 新增更多的测试用例，您可以在 Kuscia 项目的 `scripts/test/suite/center` 和 `scripts/test/suite/center/p2p` 下添加您的测试用例代码。
-您可以参考 `scripts/test/suite/center/basic.sh` 和 `scripts/test/suite/center/example.sh` 来编写您的测试用例。
-Kuscia 使用 [shunit2](https://github.com/kward/shunit2) 作为测试框架，安装在 `scripts/test/vendor` 下，您可以使用其中的断言函数。
-Kuscia 也准备了一些常用的函数，您可以在 `scripts/test/suite/core` 下找到。
+如果您希望为 Kuscia 新增更多的测试用例，您可以在 Kuscia 项目的 `tests/suite/center` 和 `tests/suite/center/p2p` 下添加您的测试用例代码。
+您可以参考 `tests/suite/center/basic.sh` 和 `tests/suite/center/example.sh` 来编写您的测试用例。
+Kuscia 使用 [shunit2](https://github.com/kward/shunit2) 作为测试框架，安装在 `tests/vendor` 下，您可以使用其中的断言函数。
+Kuscia 也准备了一些常用的函数，您可以在 `tests/suite/core` 下找到。
 
 下面是详细步骤：
 
-1. 对于中心化模式，在 `scripts/test/suite/center/` 下新建您的测试用例集文件，对于 P2P 模式，在 `scripts/test/suite/p2p/` 下新建您的测试用例文件。
+1. 对于中心化模式，在 `tests/suite/center/` 下新建您的测试用例集文件，对于 P2P 模式，在 `tests/suite/p2p/` 下新建您的测试用例文件。
 2. 编写您的测试用例集，确保您的测试用例集文件包含 `. ./test/vendor/shunit2`，具体请参考 [shunit2](https://github.com/kward/shunit2)。
 3. 为您的测试用例集文件添加可执行权限：`chmod a+x {YOUR_TEST_SUITE_FILE}`。
-4. 在 `scripts/test/integration_test.sh` 文件中注册您的测试用例集。如 `TEST_SUITES["center.example"]="./test/suite/center/example.sh"`。变量 `TEST_SUITES` 的 key 为您的测试用例集的名称。
+4. 在 `tests/integration_test.sh` 文件中注册您的测试用例集。例如 `TEST_SUITES["center.example"]="./tests/suite/center/example.sh"`。变量 `TEST_SUITES` 的 key 为您的测试用例集的名称。
 5. 运行您的测试用例集，如上例：`./test/integration_test.sh center.example`。

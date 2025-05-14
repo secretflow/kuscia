@@ -25,7 +25,7 @@ import (
 
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	"github.com/secretflow/kuscia/test/util"
+	"github.com/secretflow/kuscia/tests/util"
 )
 
 func TestCreateDomain(t *testing.T) {
