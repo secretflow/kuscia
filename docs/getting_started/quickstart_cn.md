@@ -64,7 +64,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 ### 中心化组网模式
@@ -163,7 +163,7 @@ id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previ
 获取 Kuscia 停止脚本，脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
 ```
 
 使用方法：
@@ -188,7 +188,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 获取 Kuscia 卸载脚本，脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
 ```
 
 与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 network（若无其他容器使用）等。例如：

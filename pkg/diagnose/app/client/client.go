@@ -62,18 +62,18 @@ func (c *Client) invokeProto(ctx context.Context, request proto.Message, respons
 		var err error
 		byteReq, err = proto.Marshal(request)
 		if err != nil {
-			nlog.Errorf("Send request %+v ,marshal request failed: %s", request, err.Error())
+			nlog.Errorf("Marshal request failed: %s", err.Error())
 			return err
 		}
 	}
 	byteBody, err := c.invokeProtoRequest(ctx, method, path, byteReq)
 	if err != nil {
-		nlog.Errorf("Send request %+v failed: %s", request, err.Error())
+		nlog.Errorf("Invoke proto request failed: %s", err.Error())
 		return err
 	}
 	err = proto.Unmarshal(byteBody, response)
 	if err != nil {
-		nlog.Errorf("Send request %+v ,Unmarshal response body %s failed: %s", request, byteBody, err.Error())
+		nlog.Errorf("Unmarshal response body failed: %s", err.Error())
 		return err
 	}
 	return nil
