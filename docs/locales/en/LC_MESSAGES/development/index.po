@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../development/index.rst:2
 msgid "开发 Kuscia"
-msgstr ""
+msgstr "Developing Kuscia"
 

@@ -19,47 +19,47 @@ msgstr ""
 
 #: ../../troubleshoot/network/network_troubleshoot.md:1
 msgid "任务运行网络错误排查"
-msgstr ""
+msgstr "Task Running Network Error Troubleshooting"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:3
 msgid "大多数任务失败是因为在运行任务前没做节点间授权，或者授权有问题，请提前参考[授权错误排查](../network/network_authorization_check.md)确保授权没有问题"
-msgstr ""
+msgstr "Most task failures occur because node authorization was not done before running the task, or there are authorization issues. Please refer to [Authorization Error Troubleshooting](../network/network_authorization_check.md) in advance to ensure there are no authorization problems."
 
 #: ../../troubleshoot/network/network_troubleshoot.md:5
 msgid "问题排查的准入---找到问题请求的 traceid"
-msgstr ""
+msgstr "Prerequisite for Problem Troubleshooting---Finding the traceid of the Problematic Request"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:7
 msgid "envoy 通过 http 请求头中 x-b3-traceid 字段来标识一个请求，根据 traceid 从 Envoy 日志中的请求："
-msgstr ""
+msgstr "Envoy identifies a request through the x-b3-traceid field in the HTTP request header. Based on the traceid from the Envoy logs:"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:9
 msgid "如果引擎日志有打印 traceid，从 task 日志中获取 traceid 即可。"
-msgstr ""
+msgstr "If the engine log prints the traceid, you can obtain the traceid from the task log."
 
 #: ../../troubleshoot/network/network_troubleshoot.md:10
 msgid "如果引擎日志没有 traceid，则根据请求 taskid、url 或请求时间点，从 Envoy 日志找到匹配的请求，从中找出 traceid。"
-msgstr ""
+msgstr "If the engine log does not have a traceid, find the matching request from the Envoy log based on the request taskid, url, or request timestamp, and identify the traceid from it."
 
 #: ../../troubleshoot/network/network_troubleshoot.md:12
 msgid "如下示例，Envoy 的 internal.log 和 external.log 日志中 url 后面的第一个字段即 traceid。"
-msgstr ""
+msgstr "In the following example, the first field after the url in Envoy's internal.log and external.log is the traceid."
 
 #: ../../troubleshoot/network/network_troubleshoot.md:18
 msgid "认识 gateway 的日志格式"
-msgstr ""
+msgstr "Understanding the Gateway Log Format"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:20
 msgid "日志格式"
-msgstr ""
+msgstr "Log Format"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:22
 msgid "Envoy 的日志参考 [envoy 日志](../../deployment/logdescription.md#envoy)"
-msgstr ""
+msgstr "For Envoy logs, refer to [Envoy Logs](../../deployment/logdescription.md#envoy)"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:24
 msgid "怎么区分是入口流量还是出口流量呢"
-msgstr ""
+msgstr "How to Distinguish Between Inbound and Outbound Traffic"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:26
 msgid ""
@@ -69,24 +69,24 @@ msgid ""
 "的网关所以 Bob 的 External 和 Intenral.log 里会有对应该请求的 traceid 的两条日志，也可以根据请求的域名判断 "
 "ServiceName 中的 NameSpace 是不是自己的节点"
 msgstr ""
+"Typically, requests in External.log are inbound traffic, while requests in Internal.log are outbound traffic. However, there is a special scenario: the forwarding scenario, Alice --> Bob --> Carol. On Bob, if a request is received for Carol, such as a request with the domain name xxx.carol.svc, Alice's request enters through the ExternalPort, then transfers to the InternalPort, and finally forwards to Carol's gateway. Therefore, Bob's External and Internal.log will have two log entries with the corresponding traceid for this request. You can also determine whether the NameSpace in the ServiceName is your own node based on the request's domain name."
 
 #: ../../troubleshoot/network/network_troubleshoot.md:28
 msgid "示例如下："
-msgstr ""
+msgstr "Example as follows:"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:34
 msgid "正常请求的日志 Demo"
-msgstr ""
+msgstr "Log Demo for Normal Requests"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:36
 msgid "查看 traceid=`b257a3410662f1f3`日志"
-msgstr ""
+msgstr "View logs with traceid=`b257a3410662f1f3`"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:38
 msgid "发送端的internal.log"
-msgstr ""
+msgstr "Sender's internal.log"
 
 #: ../../troubleshoot/network/network_troubleshoot.md:44
 msgid "接收端的exernal.log"
-msgstr ""
-
+msgstr "Receiver's external.log"

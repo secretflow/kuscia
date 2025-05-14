@@ -200,6 +200,9 @@ func (m *MockFlightClient) createPostgresqlDataSource() (string, error) {
 }
 
 func (m *MockFlightClient) createDataSource(createDatasourceReq *kusciaapi.CreateDomainDataSourceRequest) (string, error) {
+	if m.datasourceSvc == nil {
+		return "", fmt.Errorf("datasourceSvc is nil")
+	}
 	resp := m.datasourceSvc.CreateDomainDataSource(context.Background(), createDatasourceReq)
 	if resp == nil {
 		err := fmt.Errorf("create domainDataSource source fail")

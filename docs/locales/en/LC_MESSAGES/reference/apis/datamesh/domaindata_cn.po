@@ -20,7 +20,7 @@ msgstr ""
 #: ../../reference/apis/datamesh/domaindata_cn.md:1
 #: ../../reference/apis/datamesh/domaindata_cn.md:267
 msgid "DomainData"
-msgstr ""
+msgstr "DomainData"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:3
 msgid ""
@@ -28,380 +28,380 @@ msgid ""
 "的能力。请参考 [DomainData](../../concepts/domaindata_cn.md)。 您可以从 "
 "[这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/datamesh/domaindata.proto)"
 " 找到对应的 protobuf 文件。"
-msgstr ""
+msgstr "DomainData represents data managed by Kuscia, and Data Mesh API provides the ability to manage DomainData from the Domain side. Please refer to [DomainData](../../concepts/domaindata_cn.md). You can find the corresponding protobuf file [here](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/datamesh/domaindata.proto)."
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:7
 msgid "接口总览"
-msgstr ""
+msgstr "API Overview"
+
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "方法名"
-msgstr ""
+msgstr "Method Name"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "请求类型"
-msgstr ""
+msgstr "Request Type"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "响应类型"
-msgstr ""
+msgstr "Response Type"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[CreateDomainData](#create-domain-data)"
-msgstr ""
+msgstr "[CreateDomainData](#create-domain-data)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "CreateDomainDataRequest"
-msgstr ""
+msgstr "CreateDomainDataRequest"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "CreateDomainDataResponse"
-msgstr ""
+msgstr "CreateDomainDataResponse"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 #: ../../reference/apis/datamesh/domaindata_cn.md:19
 msgid "创建数据对象"
-msgstr ""
+msgstr "Create Data Object"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[UpdateDomainData](#update-domain-data)"
-msgstr ""
+msgstr "[UpdateDomainData](#update-domain-data)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "UpdateDomainDataRequest"
-msgstr ""
+msgstr "UpdateDomainDataRequest"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "UpdateDomainDataResponse"
-msgstr ""
+msgstr "UpdateDomainDataResponse"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 #: ../../reference/apis/datamesh/domaindata_cn.md:103
 msgid "更新数据对象"
-msgstr ""
+msgstr "Update Data Object"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[QueryDomainData](#query-domain-data)"
-msgstr ""
+msgstr "[QueryDomainData](#query-domain-data)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "QueryDomainDataRequest"
-msgstr ""
+msgstr "QueryDomainDataRequest"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "QueryDomainDataResponse"
-msgstr ""
+msgstr "QueryDomainDataResponse"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 #: ../../reference/apis/datamesh/domaindata_cn.md:178
 msgid "查询数据对象"
-msgstr ""
+msgstr "Query Data Object"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:15
 msgid "接口详情"
-msgstr ""
+msgstr "API Details"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:21
 #: ../../reference/apis/datamesh/domaindata_cn.md:105
 #: ../../reference/apis/datamesh/domaindata_cn.md:180
 msgid "HTTP路径"
-msgstr ""
+msgstr "HTTP Path"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:23
 msgid "/api/v1/datamesh/domaindata/create"
-msgstr ""
+msgstr "/api/v1/datamesh/domaindata/create"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:27
 msgid "请求（CreateDomainDataRequest）"
-msgstr ""
+msgstr "Request (CreateDomainDataRequest)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "字段"
-msgstr ""
+msgstr "Field"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "选填"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "header"
-msgstr ""
+msgstr "header"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[RequestHeader](summary_cn.md#requestheader)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#requestheader)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "可选"
-msgstr ""
+msgstr "Optional"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "自定义请求内容"
-msgstr ""
+msgstr "Custom Request Content"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "domaindata_id"
-msgstr ""
+msgstr "domaindata_id"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "string"
-msgstr ""
+msgstr "string"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid ""
 "数据对象ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-"
 "cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
-msgstr ""
+msgstr "Data object ID, compliant with [RFC 1123 label name requirements](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "name"
-msgstr ""
+msgstr "name"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "必填"
-msgstr ""
+msgstr "Required"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "名称"
-msgstr ""
+msgstr "Name"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "type"
-msgstr ""
+msgstr "type"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "类型，如\\[table,model,rule,report]，大小写敏感"
-msgstr ""
+msgstr "Type, such as \\[table,model,rule,report], case-sensitive"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "relative_uri"
-msgstr ""
+msgstr "relative_uri"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "相对数据源所在位置的路径，参考 [DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Path relative to the data source location, refer to [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "datasource_id"
-msgstr ""
+msgstr "datasource_id"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "数据源ID，不填写则使用默认数据源，参考 [DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Data source ID, uses default data source if not specified, refer to [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "attributes"
-msgstr ""
+msgstr "attributes"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "map<string,string>"
-msgstr ""
+msgstr "map<string,string>"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid ""
 "自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 "
 "[DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Custom attributes, used for users or application algorithm components to add extension information to data objects, refer to [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "partition"
-msgstr ""
+msgstr "partition"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[Partition](#partition)"
-msgstr ""
+msgstr "[Partition](#partition)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "暂不支持"
-msgstr ""
+msgstr "Not supported yet"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "columns"
-msgstr ""
+msgstr "columns"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[DataColumn](#data-column) array"
-msgstr ""
+msgstr "[DataColumn](#data-column) array"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "列信息"
-msgstr ""
+msgstr "Column Information"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "vendor"
-msgstr ""
+msgstr "vendor"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid ""
 "来源，用于查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-"
 "data) 和 [DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Source, used for query interface to filter data objects, refer to [ListDomainDataRequestData](#list-domain-data-request-data) and [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:44
 msgid "响应（CreateDomainDataResponse）"
-msgstr ""
+msgstr "Response (CreateDomainDataResponse)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "status"
-msgstr ""
+msgstr "status"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[Status](summary_cn.md#status)"
-msgstr ""
+msgstr "[Status](summary_cn.md#status)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "状态信息"
-msgstr ""
+msgstr "Status Information"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "data"
-msgstr ""
+msgstr "data"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "CreateDomainDataResponseData"
-msgstr ""
+msgstr "CreateDomainDataResponseData"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "data.domaindata_id"
-msgstr ""
+msgstr "data.domaindata_id"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "数据对象ID"
-msgstr ""
+msgstr "Data Object ID"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:52
 #: ../../reference/apis/datamesh/domaindata_cn.md:130
 #: ../../reference/apis/datamesh/domaindata_cn.md:198
 msgid "请求示例"
-msgstr ""
+msgstr "Request Example"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:54
 #: ../../reference/apis/datamesh/domaindata_cn.md:132
 #: ../../reference/apis/datamesh/domaindata_cn.md:200
 msgid "发起请求："
-msgstr ""
+msgstr "Initiate Request:"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:86
 #: ../../reference/apis/datamesh/domaindata_cn.md:164
 #: ../../reference/apis/datamesh/domaindata_cn.md:215
 msgid "请求响应成功结果："
-msgstr ""
+msgstr "Successful Response Result:"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:107
 msgid "/api/v1/datamesh/domaindata/update"
-msgstr ""
+msgstr "/api/v1/datamesh/domaindata/update"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:109
 msgid "请求（UpdateDomainDataRequest）"
-msgstr ""
+msgstr "Request (UpdateDomainDataRequest)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[RequestHeader](summary_cn.md#请求和响应约定)"
-msgstr ""
+msgstr "[RequestHeader](summary_cn.md#request-and-response-conventions)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "类型，\\[table,model,rule,report,unknown]，大小写敏感"
-msgstr ""
+msgstr "Type, \\[table,model,rule,report,unknown], case-sensitive"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[DataColumn](#data-column)[]"
-msgstr ""
+msgstr "[DataColumn](#data-column)[]"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid ""
 "来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-"
 "request-data) 和 [DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Source, used for batch query interface to filter data objects, refer to [ListDomainDataRequestData](#list-domain-data-request-data) and [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:124
 msgid "响应（UpdateDomainDataResponse）"
-msgstr ""
+msgstr "Response (UpdateDomainDataResponse)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:182
 msgid "/api/v1/datamesh/domaindata/query"
-msgstr ""
+msgstr "/api/v1/datamesh/domaindata/query"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:184
 msgid "请求（QueryDomainDataRequest）"
-msgstr ""
+msgstr "Request (QueryDomainDataRequest)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "查询内容"
-msgstr ""
+msgstr "Query Content"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:191
 msgid "响应（QueryDomainDataResponse）"
-msgstr ""
+msgstr "Response (QueryDomainDataResponse)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "[DomainData](#domain-data-entity)"
-msgstr ""
+msgstr "[DomainData](#domain-data-entity)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:253
 msgid "公共"
-msgstr ""
+msgstr "Common"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:257
 msgid "ListDomainDataRequestData"
-msgstr ""
+msgstr "ListDomainDataRequestData"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "domain_id"
-msgstr ""
+msgstr "domain_id"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "节点ID"
-msgstr ""
+msgstr "Node ID"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "domaindata_type"
-msgstr ""
+msgstr "domaindata_type"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "domaindata_vendor"
-msgstr ""
+msgstr "domaindata_vendor"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "来源"
-msgstr ""
+msgstr "Source"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "数据源ID，参考 [DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Data source ID, refer to [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:284
 msgid "Partition"
-msgstr ""
+msgstr "Partition"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "fields"
-msgstr ""
+msgstr "fields"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md:293
 msgid "DataColumn"
-msgstr ""
+msgstr "DataColumn"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "列名称"
-msgstr ""
+msgstr "Column Name"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "类型，当前版本由应用算法组件定义和消费，参考 [DomainData概念](../../concepts/domaindata_cn.md)"
-msgstr ""
+msgstr "Type, defined and consumed by application algorithm components in current version, refer to [DomainData Concept](../../concepts/domaindata_cn.md)"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "comment"
-msgstr ""
+msgstr "comment"
 
 #: ../../reference/apis/datamesh/domaindata_cn.md
 msgid "列注释"
-msgstr ""
-
+msgstr "Column Comment"

@@ -19,45 +19,44 @@ msgstr ""
 
 #: ../../troubleshoot/deployment/deploy_failed.md:1
 msgid "部署失败日志排查"
-msgstr ""
+msgstr "Deployment Failure Log Troubleshooting"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:3
 msgid "排查步骤"
-msgstr ""
+msgstr "Troubleshooting Steps"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:5
 msgid "检查机器配置"
-msgstr ""
+msgstr "Check Machine Configuration"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:7
 msgid ""
 "若机器不满足[官网推荐配置](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
 "Hans/getting_started/quickstart_cn#id2)，可能会造成部分服务无法正常工作，从而导致部署失败。"
-msgstr ""
+msgstr "If the machine does not meet the [official recommended configuration](https://www.secretflow.org.cn/docs/kuscia/latest/getting_started/quickstart#id2), some services may not work properly, leading to deployment failure."
 
 #: ../../troubleshoot/deployment/deploy_failed.md:9
 msgid "查看服务日志"
-msgstr ""
+msgstr "View Service Logs"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:11
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:13
 msgid "查看 Master 日志"
-msgstr ""
+msgstr "View Master Logs"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:26
 #: ../../troubleshoot/deployment/deploy_failed.md:48
 msgid "查看 Alice 节点日志"
-msgstr ""
+msgstr "View Alice Node Logs"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:36
 #: ../../troubleshoot/deployment/deploy_failed.md:61
 msgid "查看 Bob 节点日志"
-msgstr ""
+msgstr "View Bob Node Logs"
 
 #: ../../troubleshoot/deployment/deploy_failed.md:46
 msgid "点对点组网模式"
-msgstr ""
-
+msgstr "Peer-to-Peer Networking Mode"

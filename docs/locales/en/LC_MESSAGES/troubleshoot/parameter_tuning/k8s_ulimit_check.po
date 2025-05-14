@@ -19,31 +19,33 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:1
 msgid "Kuscia K8s 部署模式下 SecretFlow 应用线程限制问题"
-msgstr ""
+msgstr "Thread Limitation Issues in SecretFlow Applications Under Kuscia K8s Deployment Mode"
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:3
 msgid "问题描述"
-msgstr ""
+msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:5
 msgid ""
 "在 Kuscia K8s 部署模式下，SecretFlow 应用运行过程中出现创建线程失败问题：`pthread_create failed: "
 "Resource temporarily unavailable`。"
-msgstr ""
+msgstr "" 
+"In Kuscia K8s deployment mode, during the SecretFlow application runtime, thread creation fails with the message: `pthread_create failed: "
+"Resource temporarily unavailable.`"
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:7
 msgid "原因分析"
-msgstr ""
+msgstr "Cause Analysis"
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:9
 msgid ""
 "K8s 集群 Kubelet 组件的 `podPidsLimit` 参数被限制为某个特定值，而 SecretFlow 默认启动线程数为：物理机 "
 "CPU * 32 + Ray 的线程数 ，如果 SecretFlow 运行启动的线程数超过了 Kubelet 限制的线程数时则会出现以上报错。"
-msgstr ""
+msgstr "In K8s clusters, the `podPidsLimit` parameter of the Kubelet components is configured to a specific value. However, SecretFlow's default startup threads count equals to:(Count of CPUs in physical machine) * 32 + (Count of threads in Ray). If the amount of threads created by SecretFlow exceeds the configuration of Kubelet, the above error occurs."
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:11
 msgid "解决方案"
-msgstr ""
+msgstr "Solution"
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:13
 msgid ""
@@ -52,8 +54,13 @@ msgid ""
 "官方文档](https://kubernetes.io/docs/reference/config-api/kubelet-"
 "config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)。"
 msgstr ""
+"1、Locate the kubelet.service configuration file (e.g., /var/lib/kubelet/config.yaml as recommended in the official documentation), and adjust "
+"the `podPidsLimit` parameter (e.g., `podPidsLimit: -1`). For more "
+"information, see the [K8s Official Documentation](https://kubernetes.io/docs/reference/config-api/kubelet-"
+"config.v1beta1/#kubelet-config-k8s-io-v1beta1-KubeletConfiguration)."
 
 #: ../../troubleshoot/parameter_tuning/k8s_ulimit_check.md:15
 msgid "2、修改后重启 Kubelet 服务"
 msgstr ""
+"2、After the correction, restart Kubelet service."
 

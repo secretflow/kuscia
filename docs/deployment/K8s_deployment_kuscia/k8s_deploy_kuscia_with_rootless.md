@@ -64,7 +64,7 @@
 ```yaml
 data:
   resolv.conf: |-
-    # k8s 集群中的 dns 配置
+    # DNS configuration in k8s cluster
     nameserver 172.21.0.10
     search default.svc.cluster.local svc.cluster.local cluster.local
     options ndots:5

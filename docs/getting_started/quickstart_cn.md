@@ -64,7 +64,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
 ```
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
 ### 中心化组网模式
@@ -101,11 +101,11 @@ docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
 # 启动集群，会拉起 4 个 docker 容器，包括两个控制平面 master-alice、master-bob 和两个 Lite 节点 alice、bob。
 ./kuscia.sh cxc
 
-# 登入 master-alice 容器创建并启动作业（两方 PSI 任务）。
-docker exec -it ${USER}-kuscia-master-alice scripts/user/create_example_job.sh
+# 登入 master-cxc-alice 容器创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-master-cxc-alice scripts/user/create_example_job.sh
 
 # 查看作业状态。
-docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
+docker exec -it ${USER}-kuscia-master-cxc-alice kubectl get kj -n cross-domain
 ```
 
 ### 中心化 x 点对点组网模式
@@ -114,11 +114,11 @@ docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
 # 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master-alice 和一个 Lite 节点 alice、一个 Autonomy 节点 bob。
 ./kuscia.sh cxp
 
-# 登入 master-alice 容器创建并启动作业（两方 PSI 任务）。
-docker exec -it ${USER}-kuscia-master-alice scripts/user/create_example_job.sh
+# 登入 master-cxp-alice 容器创建并启动作业（两方 PSI 任务）。
+docker exec -it ${USER}-kuscia-master-cxp-alice scripts/user/create_example_job.sh
 
 # 查看作业状态。
-docker exec -it ${USER}-kuscia-master-alice kubectl get kj -n cross-domain
+docker exec -it ${USER}-kuscia-master-cxp-alice kubectl get kj -n cross-domain
 ```
 
 ## 作业状态
@@ -138,6 +138,9 @@ docker exec -it ${USER}-kuscia-lite-alice cat var/storage/data/psi-output.csv
 
 # 以点对点集群模式下的 alice 节点为例：
 docker exec -it ${USER}-kuscia-autonomy-alice cat var/storage/data/psi-output.csv
+
+# 以中心化 x 点对点集群模式下的 alice 节点为例：
+docker exec -it ${USER}-kuscia-lite-cxp-alice cat var/storage/data/psi-output.csv 
 ```
 
 结果输出（仅前 4 行）：
@@ -160,7 +163,7 @@ id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previ
 获取 Kuscia 停止脚本，脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/stop.sh > stop.sh && chmod u+x stop.sh
 ```
 
 使用方法：
@@ -185,7 +188,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 获取 Kuscia 卸载脚本，脚本会下载到当前目录：
 
 ```bash
-docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
+docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/uninstall.sh > uninstall.sh && chmod u+x uninstall.sh
 ```
 
 与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 network（若无其他容器使用）等。例如：

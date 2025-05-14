@@ -19,275 +19,275 @@ msgstr ""
 
 #: ../../deployment/operation_cn.md:1
 msgid "运维操作"
-msgstr ""
+msgstr "Operation and Maintenance"
 
 #: ../../deployment/operation_cn.md:3
 msgid "宿主机"
-msgstr ""
+msgstr "Host Machine"
 
 #: ../../deployment/operation_cn.md:5
 msgid "查看 Kuscia 相关容器"
-msgstr ""
+msgstr "View Kuscia-related Containers"
 
 #: ../../deployment/operation_cn.md:11
 msgid "如下，是 Kuscia 创建的容器列表："
-msgstr ""
+msgstr "Below is the list of containers created by Kuscia:"
 
 #: ../../deployment/operation_cn.md:13
 msgid "alice 节点容器"
-msgstr ""
+msgstr "alice node container"
 
 #: ../../deployment/operation_cn.md:14
 msgid "bob 节点容器"
-msgstr ""
+msgstr "bob node container"
 
 #: ../../deployment/operation_cn.md:15 ../../deployment/operation_cn.md:66
 msgid "master 容器"
-msgstr ""
+msgstr "master container"
 
 #: ../../deployment/operation_cn.md:19
 msgid "在中心化组网模式下会有单独的 master 容器："
-msgstr ""
+msgstr "In centralized networking mode, there will be a separate master container:"
 
 #: ../../deployment/operation_cn.md:28
 msgid "而在点对点组网模式下，master 在节点容器中："
-msgstr ""
+msgstr "In peer-to-peer networking mode, the master is within the node container:"
 
 #: ../../deployment/operation_cn.md:36
 msgid "进入容器内部"
-msgstr ""
+msgstr "Enter Container"
 
 #: ../../deployment/operation_cn.md:42
 msgid "{container_name} 是您要进入的容器的 NAME。"
-msgstr ""
+msgstr "{container_name} is the NAME of the container you want to enter."
 
 #: ../../deployment/operation_cn.md:44 ../../deployment/operation_cn.md:60
 #: ../../deployment/operation_cn.md:133 ../../deployment/operation_cn.md:172
 #: ../../deployment/operation_cn.md:198 ../../deployment/operation_cn.md:224
 msgid "**示例**"
-msgstr ""
+msgstr "**Example**"
 
 #: ../../deployment/operation_cn.md:50
 msgid "复制文件到容器中"
-msgstr ""
+msgstr "Copy Files to Container"
 
 #: ../../deployment/operation_cn.md:56
 msgid "{src_file} 是源文件的路径。"
-msgstr ""
+msgstr "{src_file} is the path of the source file."
 
 #: ../../deployment/operation_cn.md:57
 msgid "{container_name} 是目标容器的 NAME。"
-msgstr ""
+msgstr "{container_name} is the NAME of the target container."
 
 #: ../../deployment/operation_cn.md:58
 msgid "{dst_path_or_file_on_container} 是目标容器的路径或目标文件名。"
-msgstr ""
+msgstr "{dst_path_or_file_on_container} is the path or filename on the target container."
 
 #: ../../deployment/operation_cn.md:68
 msgid "前置操作"
-msgstr ""
+msgstr "Prerequisites"
 
 #: ../../deployment/operation_cn.md:70
 msgid "进入 master 容器"
-msgstr ""
+msgstr "Enter Master Container"
 
 #: ../../deployment/operation_cn.md:76
 msgid "查看 Kuscia 安装的 CRD"
-msgstr ""
+msgstr "View CRDs Installed by Kuscia"
 
 #: ../../deployment/operation_cn.md:78
 msgid ""
 "Kuscia 基于通过 [Kubernetes](https://kubernetes.io/zh-cn/) 提供的 CRD "
 "拓展能力来实现隐私计算的调度能力。如果您对 K3s 比较熟悉，您可以通过查看 CRD 来了解 Kuscia 提供的能力。"
-msgstr ""
+msgstr "Kuscia implements privacy computing scheduling capabilities based on the CRD extension capabilities provided by [Kubernetes](https://kubernetes.io/). If you are familiar with K3s, you can understand Kuscia's capabilities by viewing the CRDs."
 
 #: ../../deployment/operation_cn.md:82
 msgid "查看 Kuscia 安装的 CRD 列表"
-msgstr ""
+msgstr "View List of CRDs Installed by Kuscia"
 
 #: ../../deployment/operation_cn.md:84
 msgid "通过下面的命令，您可以查看 Kuscia 安装的 CRD："
-msgstr ""
+msgstr "You can view the CRDs installed by Kuscia using the following command:"
 
 #: ../../deployment/operation_cn.md:90 ../../deployment/operation_cn.md:105
 msgid "或者"
-msgstr ""
+msgstr "Or"
 
 #: ../../deployment/operation_cn.md:96
 msgid "查看 Kuscia 安装的某个 CRD 的详细信息"
-msgstr ""
+msgstr "View Detailed Information of a Specific CRD Installed by Kuscia"
 
 #: ../../deployment/operation_cn.md:98
 msgid "如果您想要了解某个 CRD 的详细信息，则可以通过下面的命令查看更详细的说明。 我们以 KusciaJob 为例："
-msgstr ""
+msgstr "If you want to understand the detailed information of a specific CRD, you can view more detailed instructions using the following command. Let's take KusciaJob as an example:"
 
 #: ../../deployment/operation_cn.md:111
 msgid "更多 Kubectl 使用"
-msgstr ""
+msgstr "More Kubectl Usage"
 
 #: ../../deployment/operation_cn.md:113
 msgid ""
 "如果您想了解 kubectl 命令的使用，您可以查阅 [Kubernetes 官方文档](https://kubernetes.io/zh-"
 "cn/docs/reference/kubectl/) 。"
-msgstr ""
+msgstr "If you want to learn about kubectl command usage, you can refer to the [Kubernetes Official Documentation](https://kubernetes.io/docs/reference/kubectl/)."
 
 #: ../../deployment/operation_cn.md:115
 msgid "Domain"
-msgstr ""
+msgstr "Domain"
 
 #: ../../deployment/operation_cn.md:117
 msgid "Domain 在 Kuscia 中表示隐私计算节点。"
-msgstr ""
+msgstr "In Kuscia, Domain represents a privacy computing node."
 
 #: ../../deployment/operation_cn.md:119
 msgid "查看所有的 Domain"
-msgstr ""
+msgstr "View All Domains"
 
 #: ../../deployment/operation_cn.md:125
 msgid "查看某个 Domain 的详细信息"
-msgstr ""
+msgstr "View Detailed Information of a Specific Domain"
 
 #: ../../deployment/operation_cn.md:131
 msgid "{domain_name} 为要查看 Domain 的名称。"
-msgstr ""
+msgstr "{domain_name} is the name of the Domain to view."
 
 #: ../../deployment/operation_cn.md:139
 msgid "您会看到类似信息："
-msgstr ""
+msgstr "You will see information similar to:"
 
 #: ../../deployment/operation_cn.md:157
 msgid ""
 "其中，我们需要关注`.status.nodeStatuses[].status`，这个字段记录了 Domain 下的节点是否正常。 有关 "
 "Domain 的更多信息，请查看 [Domain](../reference/concepts/domain_cn.md) 。"
-msgstr ""
+msgstr "Among them, we need to focus on `.status.nodeStatuses[].status`, which records whether the nodes under the Domain are normal. For more information about Domain, please see [Domain](../reference/concepts/domain_cn.md)."
 
 #: ../../deployment/operation_cn.md:160
 msgid "DomainRoute"
-msgstr ""
+msgstr "DomainRoute"
 
 #: ../../deployment/operation_cn.md:162
 msgid "DomainRoute 在 Kuscia 中表示一对隐私计算节点的单向授权，只有授权后才能进行联合隐私计算任务。"
-msgstr ""
+msgstr "In Kuscia, DomainRoute represents unidirectional authorization between a pair of privacy computing nodes. Joint privacy computing tasks can only be performed after authorization."
 
 #: ../../deployment/operation_cn.md:164
 msgid "查看 Domain 相关的 DomainRoute"
-msgstr ""
+msgstr "View Domain-related DomainRoute"
 
 #: ../../deployment/operation_cn.md:170
 msgid "{domain_name} 为要查看的 Domain 的名称。"
-msgstr ""
+msgstr "{domain_name} is the name of the Domain to view."
 
 #: ../../deployment/operation_cn.md:178
 msgid "您会看到类似如下信息："
-msgstr ""
+msgstr "You will see information similar to the following:"
 
 #: ../../deployment/operation_cn.md:186
 msgid ""
 "其中，alice-bob 表示 bob 授权给 alice 访问权限，alice 可以通过 172.17.0.4 访问 bob 相关的服务。 而 "
 "bob-alice， 则表示 alice 授权给 bob 访问权限，bob 可以通过 172.17.0.3 访问 alice 相关的服务。"
-msgstr ""
+msgstr "Here, alice-bob means bob authorizes access permissions to alice, and alice can access bob's related services through 172.17.0.4. While bob-alice means alice authorizes access permissions to bob, and bob can access alice's related services through 172.17.0.3."
 
 #: ../../deployment/operation_cn.md:189
 msgid "查看 DomainRoute 的详细信息"
-msgstr ""
+msgstr "View Detailed Information of DomainRoute"
 
 #: ../../deployment/operation_cn.md:195
 msgid "{domain_name} 为要查看的 DomainRoute 所在的 Domain 的名称。"
-msgstr ""
+msgstr "{domain_name} is the name of the Domain where the DomainRoute to be viewed is located."
 
 #: ../../deployment/operation_cn.md:196
 msgid "{domain_router_name} 为要查看的 DomainRoute 的名称。"
-msgstr ""
+msgstr "{domain_router_name} is the name of the DomainRoute to be viewed."
 
 #: ../../deployment/operation_cn.md:204
 msgid ""
 "有关 DomainRoute 的更多信息，请查看 "
 "[DomainRoute](../reference/concepts/domainroute_cn.md) 。"
-msgstr ""
+msgstr "For more information about DomainRoute, please see [DomainRoute](../reference/concepts/domainroute_cn.md)."
 
 #: ../../deployment/operation_cn.md:206
 msgid "AppImage"
-msgstr ""
+msgstr "AppImage"
 
 #: ../../deployment/operation_cn.md:208
 msgid ""
 "AppImage 在 Kuscia 中用于注册应用镜像模版信息。在执行 KusciaJob 时，通过在 KusciaTask 中指定 "
 "AppImage 名称从而实现任务应用 Pod 镜像启动模版的绑定。"
-msgstr ""
+msgstr "AppImage is used in Kuscia to register application image template information. When executing a KusciaJob, by specifying the AppImage name in KusciaTask, it achieves the binding of task application Pod image startup template."
 
 #: ../../deployment/operation_cn.md:210
 msgid "查看所有的 AppImage"
-msgstr ""
+msgstr "View All AppImages"
 
 #: ../../deployment/operation_cn.md:216
 msgid "查看 AppImage 的详细信息"
-msgstr ""
+msgstr "View Detailed Information of AppImage"
 
 #: ../../deployment/operation_cn.md:222
 msgid "{aimg-name}为要查看的 AppImage 的名称。"
-msgstr ""
+msgstr "{aimg-name} is the name of the AppImage to view."
 
 #: ../../deployment/operation_cn.md:230
 msgid "有关 AppImage 的更多信息，请查看 [AppImage](../reference/concepts/appimage_cn.md) 。"
-msgstr ""
+msgstr "For more information about AppImage, please see [AppImage](../reference/concepts/appimage_cn.md)."
 
 #: ../../deployment/operation_cn.md:232
 msgid "KusciaJob & KusciaTask"
-msgstr ""
+msgstr "KusciaJob & KusciaTask"
 
 #: ../../deployment/operation_cn.md:234
 msgid ""
 "关于如何配置、运行和查看 KusciaJob 和 KusciaTask，请参考 [如何运行一个 SecretFlow "
 "作业](../getting_started/run_secretflow_cn.md) 和 "
 "[KusciaJob](../reference/concepts/kusciajob_cn.md) 。"
-msgstr ""
+msgstr "For information on how to configure, run, and view KusciaJob and KusciaTask, please refer to [How to Run a SecretFlow Job](../getting_started/run_secretflow_cn.md) and [KusciaJob](../reference/concepts/kusciajob_cn.md)."
 
 #: ../../deployment/operation_cn.md:236
 msgid "节点容器"
-msgstr ""
+msgstr "Node Container"
 
 #: ../../deployment/operation_cn.md:238
 msgid "进入 Lite 节点容器"
-msgstr ""
+msgstr "Enter Lite Node Container"
 
 #: ../../deployment/operation_cn.md:244
 msgid "隐私计算任务"
-msgstr ""
+msgstr "Privacy Computing Task"
 
 #: ../../deployment/operation_cn.md:246
 msgid ""
 "隐私计算任务将会以容器的形式在 节点容器 内部运行。以 alice 节点容器为例，每当一个新的隐私计算任务分派到 alice 节点时，alice "
 "节点容器都会启动一个容器来处理任务。 这是一个容器嵌套容器的形式：宿主机上通过 docker 启动了 alice 节点容器，而在 alice "
 "节点容器中，通过 crictl 启动了任务容器，理解这一点非常重要。"
-msgstr ""
+msgstr "Privacy computing tasks will run as containers inside the node container. Taking the alice node container as an example, whenever a new privacy computing task is assigned to the alice node, the alice node container will start a container to process the task. This is a container-nested-container form: the alice node container is started via docker on the host machine, while task containers are started via crictl inside the alice node container. Understanding this is very important."
 
 #: ../../deployment/operation_cn.md:249
 msgid "查看当前 Lite 节点上正在进行的任务"
-msgstr ""
+msgstr "View Current Tasks on Lite Node"
 
 #: ../../deployment/operation_cn.md:251
 msgid "在 alice 节点容器内，通过"
-msgstr ""
+msgstr "Inside the alice node container, through"
 
 #: ../../deployment/operation_cn.md:257
 msgid "您可以查看到启动的任务容器和它的运行状态。"
-msgstr ""
+msgstr "You can view the started task containers and their running status."
 
 #: ../../deployment/operation_cn.md:259
 msgid "进入 Lite 节点上的任务容器"
-msgstr ""
+msgstr "Enter Task Container on Lite Node"
 
 #: ../../deployment/operation_cn.md:261
 msgid "如果您需要调试任务，那么您可能需要在某些场景下进入任务容器内部，这时候您可以执行下面的命令："
-msgstr ""
+msgstr "If you need to debug a task, you may need to enter the task container in some scenarios. In this case, you can execute the following command:"
 
 #: ../../deployment/operation_cn.md:267
 msgid "{container_id-name}为要进入任务容器的 ID。"
-msgstr ""
+msgstr "{container_id-name} is the ID of the task container to enter."
 
 #: ../../deployment/operation_cn.md:269
 msgid "隐私计算任务使用您自己的数据文件"
-msgstr ""
+msgstr "Using Your Own Data Files in Privacy Computing Tasks"
 
 #: ../../deployment/operation_cn.md:271
 msgid ""
@@ -295,39 +295,38 @@ msgid ""
 "cp`将数据文件复制到节点容器，但是任务执行在由节点容器创建的任务容器内，这时候任务容器并不和节点容器共用一套文件系统，怎么在隐私计算任务中使用您自己的文件呢？"
 " "
 "实际上，节点容器的`/home/kuscia/var/storage`会被挂载到任务容器的同名目录下，所以，您只需要将您自己的数据文件放到节点容器的这个目录下，就能在任务中使用了。"
-msgstr ""
+msgstr "We can copy data files to the node container using `docker cp`, but the task runs in a task container created by the node container, and at this point, the task container does not share the same file system with the node container. How can you use your own files in privacy computing tasks? Actually, the `/home/kuscia/var/storage` directory of the node container is mounted to the same directory in the task container, so you just need to put your data files in this directory of the node container to use them in the task."
 
 #: ../../deployment/operation_cn.md:274
 msgid "如何调试一个任务"
-msgstr ""
+msgstr "How to Debug a Task"
 
 #: ../../deployment/operation_cn.md:276
 msgid "通过将 AppImage 的 command 调整为`sleep`命令可以帮助您调试一个任务："
-msgstr ""
+msgstr "Adjusting the AppImage's command to `sleep` can help you debug a task:"
 
 #: ../../deployment/operation_cn.md:278
 msgid ""
 "修改 AppImage 或新建一个同样 Spec 的 AppImage， 修改 command 为`sh -c sleep 360000`， "
 "保存原来的 command。"
-msgstr ""
+msgstr "Modify the AppImage or create a new AppImage with the same spec, change the command to `sh -c sleep 360000`, and save the original command."
 
 #: ../../deployment/operation_cn.md:279
 msgid "使用这个 AppImage，创建 KusciaJob。"
-msgstr ""
+msgstr "Use this AppImage to create a KusciaJob."
 
 #: ../../deployment/operation_cn.md:280
 msgid "进入任务容器，执行原来的 command 进行调试操作。"
-msgstr ""
+msgstr "Enter the task container and execute the original command for debugging operations."
 
 #: ../../deployment/operation_cn.md:282
 msgid "安全建议"
-msgstr ""
+msgstr "Security Recommendations"
 
 #: ../../deployment/operation_cn.md:284
 msgid "Envoy"
-msgstr ""
+msgstr "Envoy"
 
 #: ../../deployment/operation_cn.md:286
 msgid "Envoy 的 Admin 端口仅用于本地监听，请勿将 Admin 端口暴露在非安全的网络中，防止信息泄露。"
-msgstr ""
-
+msgstr "Envoy's Admin port is only for local listening. Do not expose the Admin port to insecure networks to prevent information leakage."

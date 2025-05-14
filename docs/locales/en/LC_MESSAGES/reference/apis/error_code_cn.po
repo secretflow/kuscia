@@ -19,885 +19,885 @@ msgstr ""
 
 #: ../../reference/apis/error_code_cn.md:1
 msgid "Error Code"
-msgstr ""
+msgstr "Error Code"
 
 #: ../../reference/apis/error_code_cn.md:3
 msgid "在 Kuscia API 请求返回结果中，关于错误码的映射说明"
-msgstr ""
+msgstr "Mapping description of error codes in Kuscia API request response results"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "错误码"
-msgstr ""
+msgstr "Error Code"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "描述"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "解决方案"
-msgstr ""
+msgstr "Solution"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11100"
-msgstr ""
+msgstr "11100"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "请求入参校验错误"
-msgstr ""
+msgstr "Request parameter validation error"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "请求入参校验不通过，可根据具体错误描述信息检查请求入参对应字段"
-msgstr ""
+msgstr "Request parameter validation failed, check the corresponding field in the request parameters according to the specific error description"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11101"
-msgstr ""
+msgstr "11101"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "未知异常"
-msgstr ""
+msgstr "Unknown exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "系统未捕获异常，需通过日志排查具体错误原因"
-msgstr ""
+msgstr "System uncaught exception, need to troubleshoot the specific error cause through logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11102"
-msgstr ""
+msgstr "11102"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "权限校验异常"
-msgstr ""
+msgstr "Permission validation exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "权限校验异常，请确认请求接口具备相应权限"
-msgstr ""
+msgstr "Permission validation exception, please confirm that the request interface has the appropriate permissions"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11103"
-msgstr ""
+msgstr "11103"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "请求 Master 失败"
-msgstr ""
+msgstr "Request to Master failed"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "请求 Master 失败，请确认 Master 节点的连接状态"
-msgstr ""
+msgstr "Request to Master failed, please confirm the connection status of the Master node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11104"
-msgstr ""
+msgstr "11104"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "Lite 节点不支持的 API"
-msgstr ""
+msgstr "API not supported by Lite node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "Lite 节点不支持的 API，请确认请求节点地址"
-msgstr ""
+msgstr "API not supported by Lite node, please confirm the request node address"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11105"
-msgstr ""
+msgstr "11105"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "Master 节点不支持的 API"
-msgstr ""
+msgstr "API not supported by Master node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "Master 节点不支持的 API，请确认请求节点地址"
-msgstr ""
+msgstr "API not supported by Master node, please confirm the request node address"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11201"
-msgstr ""
+msgstr "11201"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建任务失败"
-msgstr ""
+msgstr "Failed to create task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11202"
-msgstr ""
+msgstr "11202"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询任务失败"
-msgstr ""
+msgstr "Failed to query task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11203"
-msgstr ""
+msgstr "11203"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询任务状态失败"
-msgstr ""
+msgstr "Failed to query task status"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询任务状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query task status: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11204"
-msgstr ""
+msgstr "11204"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除任务失败"
-msgstr ""
+msgstr "Failed to delete task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11205"
-msgstr ""
+msgstr "11205"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "停止任务失败"
-msgstr ""
+msgstr "Failed to stop task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "停止任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to stop task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11206"
-msgstr ""
+msgstr "11206"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "审批任务失败"
-msgstr ""
+msgstr "Failed to approve task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "审批任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to approve task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11207"
-msgstr ""
+msgstr "11207"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "暂停任务失败"
-msgstr ""
+msgstr "Failed to suspend task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "暂停任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to suspend task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11208"
-msgstr ""
+msgstr "11208"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "重跑任务失败"
-msgstr ""
+msgstr "Failed to rerun task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "重跑任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to rerun task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11209"
-msgstr ""
+msgstr "11209"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "取消任务失败"
-msgstr ""
+msgstr "Failed to cancel task"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "取消任务失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to cancel task: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11210"
-msgstr ""
+msgstr "11210"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "暂停Job失败，无法暂停非Running状态Job"
-msgstr ""
+msgstr "Failed to suspend Job, cannot suspend a Job that is not in Running state"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "仅Running状态Job可执行暂停"
-msgstr ""
+msgstr "Only Jobs in Running state can be suspended"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11211"
-msgstr ""
+msgstr "11211"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "重跑Job失败，无法重跑非Failed或Suspended状态Job"
-msgstr ""
+msgstr "Failed to rerun Job, cannot rerun a Job that is not in Failed or Suspended state"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "仅Failed或Suspended状态Job可执行重跑"
-msgstr ""
+msgstr "Only Jobs in Failed or Suspended state can be rerun"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11300"
-msgstr ""
+msgstr "11300"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建节点失败"
-msgstr ""
+msgstr "Failed to create node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create node: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11301"
-msgstr ""
+msgstr "11301"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点失败"
-msgstr ""
+msgstr "Failed to query node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query node: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11302"
-msgstr ""
+msgstr "11302"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点状态失败"
-msgstr ""
+msgstr "Failed to query node status"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query node status: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11303"
-msgstr ""
+msgstr "11303"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新节点失败"
-msgstr ""
+msgstr "Failed to update node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update node: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11304"
-msgstr ""
+msgstr "11304"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除节点失败"
-msgstr ""
+msgstr "Failed to delete node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete node: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11305"
-msgstr ""
+msgstr "11305"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点不存在异常"
-msgstr ""
+msgstr "Node does not exist exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点不存在异常，确认节点是否存在"
-msgstr ""
+msgstr "Node does not exist exception, please confirm if the node exists"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11306"
-msgstr ""
+msgstr "11306"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点已存在异常"
-msgstr ""
+msgstr "Node already exists exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点已存在异常，是否需要使用更新接口"
-msgstr ""
+msgstr "Node already exists exception, consider using the update interface"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11400"
-msgstr ""
+msgstr "11400"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建节点路由失败"
-msgstr ""
+msgstr "Failed to create node route"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建节点路由失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create node route: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11401"
-msgstr ""
+msgstr "11401"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点路由失败"
-msgstr ""
+msgstr "Failed to query node route"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点路由失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query node route: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11402"
-msgstr ""
+msgstr "11402"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点路由状态失败"
-msgstr ""
+msgstr "Failed to query node route status"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询节点路由状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query node route status: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11403"
-msgstr ""
+msgstr "11403"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除节点路由失败"
-msgstr ""
+msgstr "Failed to delete node route"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除节点路由失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete node route: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11404"
-msgstr ""
+msgstr "11404"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点路由不存在异常"
-msgstr ""
+msgstr "Node route does not exist exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点路由不存在异常，请确认路由已创建"
-msgstr ""
+msgstr "Node route does not exist exception, please confirm if the route has been created"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11405"
-msgstr ""
+msgstr "11405"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点路由已存在异常"
-msgstr ""
+msgstr "Node route already exists exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点路由已存在异常，如果需要变更，需要删除后再创建"
-msgstr ""
+msgstr "Node route already exists exception, if changes are needed, delete it first and then create a new one"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11500"
-msgstr ""
+msgstr "11500"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建节点数据失败"
-msgstr ""
+msgstr "Failed to create node data"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建节点数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create node data: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11501"
-msgstr ""
+msgstr "11501"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除节点数据失败"
-msgstr ""
+msgstr "Failed to delete node data"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除节点数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete node data: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11502"
-msgstr ""
+msgstr "11502"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "获取节点数据失败"
-msgstr ""
+msgstr "Failed to get node data"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "获取节点数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to get node data: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11503"
-msgstr ""
+msgstr "11503"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "获取节点数据列表失败"
-msgstr ""
+msgstr "Failed to get node data list"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "获取节点数据列表失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to get node data list: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11504"
-msgstr ""
+msgstr "11504"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新合并数据失败"
-msgstr ""
+msgstr "Failed to update merged data"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新合并数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update merged data: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11505"
-msgstr ""
+msgstr "11505"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新补充数据失败"
-msgstr ""
+msgstr "Failed to update supplementary data"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新补充数据失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update supplementary data: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11506"
-msgstr ""
+msgstr "11506"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点数据不存在异常"
-msgstr ""
+msgstr "Node data does not exist exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点数据不存在异常，请确认请求入参的节点数据 ID"
-msgstr ""
+msgstr "Node data does not exist exception, please confirm the node data ID in the request parameters"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11507"
-msgstr ""
+msgstr "11507"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点数据已存在异常"
-msgstr ""
+msgstr "Node data already exists exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "节点数据已存在异常，请确认请求入参的节点数据 ID"
-msgstr ""
+msgstr "Node data already exists exception, please confirm the node data ID in the request parameters"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11600"
-msgstr ""
+msgstr "11600"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建 Serving 失败"
-msgstr ""
+msgstr "Failed to create Serving"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create Serving: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11601"
-msgstr ""
+msgstr "11601"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询 Serving 失败"
-msgstr ""
+msgstr "Failed to query Serving"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query Serving: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11602"
-msgstr ""
+msgstr "11602"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询 Serving 状态失败"
-msgstr ""
+msgstr "Failed to query Serving status"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询 Serving 状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query Serving status: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11603"
-msgstr ""
+msgstr "11603"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新 Serving 失败"
-msgstr ""
+msgstr "Failed to update Serving"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update Serving: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11604"
-msgstr ""
+msgstr "11604"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除 Serving 失败"
-msgstr ""
+msgstr "Failed to delete Serving"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除 Serving 失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete Serving: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11700"
-msgstr ""
+msgstr "11700"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建数据授权失败"
-msgstr ""
+msgstr "Failed to create data authorization"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create data authorization: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11701"
-msgstr ""
+msgstr "11701"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新数据授权失败"
-msgstr ""
+msgstr "Failed to update data authorization"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update data authorization: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11702"
-msgstr ""
+msgstr "11702"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询数据授权失败"
-msgstr ""
+msgstr "Failed to query data authorization"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query data authorization: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11703"
-msgstr ""
+msgstr "11703"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除数据授权失败"
-msgstr ""
+msgstr "Failed to delete data authorization"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除数据授权失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete data authorization: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11704"
-msgstr ""
+msgstr "11704"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据授权已存在异常"
-msgstr ""
+msgstr "Data authorization already exists exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据授权已存在异常，请确认请求入参授权 ID"
-msgstr ""
+msgstr "Data authorization already exists exception, please confirm the authorization ID in request parameters"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11705"
-msgstr ""
+msgstr "11705"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据授权不存在异常"
-msgstr ""
+msgstr "Data authorization does not exist exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据授权不存在异常，请确认请求入参授权 ID"
-msgstr ""
+msgstr "Data authorization does not exist exception, please confirm the authorization ID in request parameters"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11800"
-msgstr ""
+msgstr "11800"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建数据源失败"
-msgstr ""
+msgstr "Failed to create data source"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create data source: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11801"
-msgstr ""
+msgstr "11801"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新数据源失败"
-msgstr ""
+msgstr "Failed to update data source"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update data source: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11802"
-msgstr ""
+msgstr "11802"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询数据源失败"
-msgstr ""
+msgstr "Failed to query data source"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query data source: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11803"
-msgstr ""
+msgstr "11803"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "批量查询数据源失败"
-msgstr ""
+msgstr "Failed to batch query data sources"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "批量查询数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to batch query data sources: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11804"
-msgstr ""
+msgstr "11804"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除数据源失败"
-msgstr ""
+msgstr "Failed to delete data source"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete data source: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11805"
-msgstr ""
+msgstr "11805"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据源已存在异常"
-msgstr ""
+msgstr "Data source already exists exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据源已存在异常，请确认数据源 ID"
-msgstr ""
+msgstr "Data source already exists exception, please confirm the data source ID"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11806"
-msgstr ""
+msgstr "11806"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据源不存在异常"
-msgstr ""
+msgstr "Data source does not exist exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据源不存在异常，请确认数据源 ID"
-msgstr ""
+msgstr "Data source does not exist exception, please confirm the data source ID"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11807"
-msgstr ""
+msgstr "11807"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据源信息转码异常"
-msgstr ""
+msgstr "Data source information transcoding exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "数据源信息转码异常，参考接口异常返回或日志中确认具体错误原因"
-msgstr ""
+msgstr "Data source information transcoding exception, refer to interface exception return or logs to confirm specific error reasons"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11808"
-msgstr ""
+msgstr "11808"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "列出数据源失败"
-msgstr ""
+msgstr "Failed to list data sources"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "列出数据源失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to list data sources: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11900"
-msgstr ""
+msgstr "11900"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建配置失败"
-msgstr ""
+msgstr "Failed to create configuration"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create configuration: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11901"
-msgstr ""
+msgstr "11901"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询配置失败"
-msgstr ""
+msgstr "Failed to query configuration"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query configuration: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11902"
-msgstr ""
+msgstr "11902"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新配置失败"
-msgstr ""
+msgstr "Failed to update configuration"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "更新配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to update configuration: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11903"
-msgstr ""
+msgstr "11903"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除配置失败"
-msgstr ""
+msgstr "Failed to delete configuration"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete configuration: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "11904"
-msgstr ""
+msgstr "11904"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "批量查询配置失败"
-msgstr ""
+msgstr "Failed to batch query configurations"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "批量查询配置失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to batch query configurations: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13100"
-msgstr ""
+msgstr "13100"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建应用镜像失败"
-msgstr ""
+msgstr "Failed to create application image"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "创建应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to create application image: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13101"
-msgstr ""
+msgstr "13101"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询应用镜像失败"
-msgstr ""
+msgstr "Failed to query application image"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query application image: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13102"
-msgstr ""
+msgstr "13102"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询应用镜像状态失败"
-msgstr ""
+msgstr "Failed to query application image status"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询应用镜像状态失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query application image status: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13103"
-msgstr ""
+msgstr "13103"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除应用镜像失败"
-msgstr ""
+msgstr "Failed to delete application image"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "删除应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to delete application image: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13104"
-msgstr ""
+msgstr "13104"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "批量查询应用镜像失败"
-msgstr ""
+msgstr "Failed to batch query application images"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "批量查询应用镜像失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to batch query application images: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13105"
-msgstr ""
+msgstr "13105"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "应用镜像不存在异常"
-msgstr ""
+msgstr "Application image does not exist exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "应用镜像不存在异常，确认应用镜像是否存在"
-msgstr ""
+msgstr "Application image does not exist exception, please confirm if the application image exists"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13106"
-msgstr ""
+msgstr "13106"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "应用镜像已存在异常"
-msgstr ""
+msgstr "Application image already exists exception"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "应用镜像已存在异常，确认应用镜像是否存在"
-msgstr ""
+msgstr "Application image already exists exception, please confirm if the application image exists"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13200"
-msgstr ""
+msgstr "13200"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询日志失败"
-msgstr ""
+msgstr "Failed to query logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询日志失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query logs: API request exception, specific reasons can be confirmed through error messages and logs"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "13201"
-msgstr ""
+msgstr "13201"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询实例节点失败"
-msgstr ""
+msgstr "Failed to query instance node"
 
 #: ../../reference/apis/error_code_cn.md
 msgid "查询实例节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
-msgstr ""
+msgstr "Failed to query instance node: API request exception, specific reasons can be confirmed through error messages and logs"
 

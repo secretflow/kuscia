@@ -46,9 +46,9 @@
 发起请求：
 
 ```sh
-# 在容器内执行示例
-# --cert 是请求服务端进行双向认证使用的证书
-# body 中的 cert 是目标节点的证书，默认为目标节点容器内：/home/kuscia/var/certs/domain.crt 需要转换为 base64 编码
+# Execute examples within the container.
+# --cert is a certificate used for requesting two-way authentication with the server.
+# In the body, "cert" refers to the certificate of the target node, which is default located at: /home/kuscia/var/certs/domain.crt within the target node's container. It needs to be converted to base64 encoding.
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -117,9 +117,9 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
-# --cert 是请求服务端进行双向认证使用的证书
-# body 中的 cert 是目标节点的证书，默认为目标节点容器内：/home/kuscia/var/certs/domain.crt 需要转换为 base64 编码
+# Execute examples within the container.
+# --cert is a certificate used for requesting two-way authentication with the server.
+# In the body, "cert" refers to the certificate of the target node, which is default located at: /home/kuscia/var/certs/domain.crt within the target node's container. It needs to be converted to base64 encoding.
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domain/update' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -184,7 +184,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/update' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute examples within the container.
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -256,7 +256,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute examples within the container.
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -336,7 +336,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute examples within the container.
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \

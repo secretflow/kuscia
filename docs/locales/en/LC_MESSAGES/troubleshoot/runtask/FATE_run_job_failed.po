@@ -19,59 +19,61 @@ msgstr ""
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:1
 msgid "FATE 作业运行失败"
-msgstr ""
+msgstr "FATE Job Execution Failure"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:3
 msgid "排查步骤"
-msgstr ""
+msgstr "Troubleshooting Steps"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:5
 msgid "检查机器配置"
-msgstr ""
+msgstr "Check Machine Configuration"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:7
 msgid ""
 "若机器不满足[官网推荐配置](https://www.secretflow.org.cn/docs/kuscia/latest/zh-"
 "Hans/getting_started/quickstart_cn#id2)，可能会造成部分服务无法正常工作，从而导致作业运行失败。"
 msgstr ""
+"If the machine does not meet the [recommended configuration](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/getting_started/quickstart_cn#id2) from the official website, "
+"some services may not function properly, which could lead to job failure."
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:9
 msgid "检查 fate-alice 容器是否运行正常"
-msgstr ""
+msgstr "Check if the fate-alice container is running properly"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:11
 msgid "查看 fate-alice 容器日志，检查是否运行正常"
-msgstr ""
+msgstr "Review the fate-alice container logs to verify proper operation"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:73
 msgid "查看 fate-deploy-bob Pod 是否运行正常"
-msgstr ""
+msgstr "Check if the fate-deploy-bob Pod is running properly"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:75
 msgid "登陆查看作业的容器"
-msgstr ""
+msgstr "Log in to inspect the job's container"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:77
 msgid "若以中心化组网模式部署，请登陆到 Master 容器中"
-msgstr ""
+msgstr "If deployed in centralized networking mode, please log in to the Master container"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:83
 msgid "若以点对点组网模式部署，请登陆到 Bob 容器中"
-msgstr ""
+msgstr "If deployed in peer-to-peer networking mode, please log in to the Bob container"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:89
 msgid "检查 fate-deploy-bob Pod 运行情况"
-msgstr ""
+msgstr "Check the status of the fate-deploy-bob Pod"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:91
 msgid "确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running"
-msgstr ""
+msgstr "Ensure that the Pod with the fate-deploy-bob prefix is in the Running state"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:110
 msgid "查看作业失败原因"
-msgstr ""
+msgstr "Check the job failure reason"
 
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:112
 msgid "请参考[作业运行失败](../troubleshoot/run_job_failed.md)"
-msgstr ""
+msgstr "Please refer to [Job Execution Failure](../troubleshoot/run_job_failed.md)"
 

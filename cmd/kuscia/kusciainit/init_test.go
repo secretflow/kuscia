@@ -15,6 +15,7 @@
 package kusciainit
 
 import (
+	"context"
 	"path"
 	"testing"
 
@@ -165,3 +166,24 @@ func TestLoadDomainKeyData_EmptyFile(t *testing.T) {
 	_, err := loadDomainKeyData("")
 	assert.Nil(t, err)
 }
+
+func TestNewInitCommand(t *testing.T) {
+	ctx := context.Background()
+	cmd := NewInitCommand(ctx)
+
+	assert.Equal(t, "init", cmd.Use)
+	assert.Equal(t, "Init means init Kuscia config", cmd.Short)
+
+	flags := cmd.Flags()
+	assert.NotNil(t, flags.Lookup("mode"))
+	assert.NotNil(t, flags.Lookup("domain"))
+	assert.NotNil(t, flags.Lookup("runtime"))
+	assert.NotNil(t, flags.Lookup("domain-key-file"))
+	assert.NotNil(t, flags.Lookup("log-level"))
+	assert.NotNil(t, flags.Lookup("lite-deploy-token"))
+	assert.NotNil(t, flags.Lookup("master-endpoint"))
+	assert.NotNil(t, flags.Lookup("datastore-endpoint"))
+	assert.NotNil(t, flags.Lookup("protocol"))
+	assert.NotNil(t, flags.Lookup("enable-workload-approve"))
+}
+

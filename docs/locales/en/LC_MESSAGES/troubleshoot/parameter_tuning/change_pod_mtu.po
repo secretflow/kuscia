@@ -19,88 +19,87 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:1
 msgid "MTU 配置导致的网络异常"
-msgstr ""
+msgstr "Network Anomalies Caused by MTU Configuration"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:3
 msgid "MTU 简述"
-msgstr ""
+msgstr "MTU Overview"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:5
 msgid ""
 "MTU（Maximum Transmission Unit）是网络中数据包的最大传输单元，即数据链路层一次能传输的最大数据量。MTU "
 "的配置不当会导致网络传输效率低下，甚至导致网络超时。"
-msgstr ""
+msgstr "MTU (Maximum Transmission Unit) is the largest unit of data that can be transmitted in a network packet, i.e., the maximum amount of data that can be transmitted at once at the data link layer. Improper MTU configuration can lead to poor network transmission efficiency or even network timeouts."
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:7
 msgid "问题描述"
-msgstr ""
+msgstr "Problem Description"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:9
 msgid ""
 "Kuscia 内引擎 Pod 网卡 MTU 配置默认为 1500，如果机构的网络网卡 MTU 限制与 Kuscia "
 "默认配置不匹配时（例如，机构网卡 MTU 为 1350，Kuscia Pod MTU 1500），会导致任务网络超时。报错如下："
-msgstr ""
+msgstr "The default MTU configuration for Kuscia engine Pod network interface is 1500. If the organization's network interface MTU limit doesn't match Kuscia's default configuration (e.g., organization's NIC MTU is 1350, Kuscia Pod MTU is 1500), it will cause task network timeout. The error is as follows:"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:15
 msgid "解决方案"
-msgstr ""
+msgstr "Solution"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:17
 msgid "Kuscia 容器修改 MTU"
-msgstr ""
+msgstr "Modify MTU for Kuscia Container"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:19
 msgid "所有 docker 容器统一修改 MTU"
-msgstr ""
+msgstr "Modify MTU for All Docker Containers"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:31
 msgid "单个容器修改 MTU"
-msgstr ""
+msgstr "Modify MTU for Single Container"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:33
 msgid "与 kuscia-exchange 网络断开连接"
-msgstr ""
+msgstr "Disconnect from kuscia-exchange Network"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:39
 msgid "删除 kuscia-exchange 网络"
-msgstr ""
+msgstr "Delete kuscia-exchange Network"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:45
 msgid "重新创建 kuscia-exchange 网络，并设置 MTU"
-msgstr ""
+msgstr "Recreate kuscia-exchange Network and Set MTU"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:51
 msgid "将 kuscia 容器重新连接到 kuscia-exchange 网络"
-msgstr ""
+msgstr "Reconnect Kuscia Container to kuscia-exchange Network"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:57
 msgid "Kuscia 内引擎 Pod 修改 MTU"
-msgstr ""
+msgstr "Modify MTU for Kuscia Engine Pod"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:59
 msgid "临时方案"
-msgstr ""
+msgstr "Temporary Solution"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:61
 msgid "登录到 kuscia 容器"
-msgstr ""
+msgstr "Log in to Kuscia Container"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:67
 msgid "修改 cni 配置文件 10-containerd-net.conflist，示例如下："
-msgstr ""
+msgstr "Modify CNI configuration file 10-containerd-net.conflist, example as follows:"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:105
 msgid "重启 kuscia 容器"
-msgstr ""
+msgstr "Restart Kuscia Container"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:111
 msgid "长期方案"
-msgstr ""
+msgstr "Long-term Solution"
 
 #: ../../troubleshoot/parameter_tuning/change_pod_mtu.md:113
 msgid ""
 "可以通过修改 kuscia "
 "代码并重新编译镜像生效，详情参考[github](https://github.com/secretflow/kuscia/blob/main/etc/cni/net.d/10"
 "-containerd-net.conflist)"
-msgstr ""
-
+msgstr "You can modify the Kuscia code and rebuild the image to take effect. For details, refer to [github](https://github.com/secretflow/kuscia/blob/main/etc/cni/net.d/10-containerd-net.conflist)"

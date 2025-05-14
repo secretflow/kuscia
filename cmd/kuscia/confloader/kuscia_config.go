@@ -327,6 +327,14 @@ func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrot
 	if overwriteLogrotate != nil && overwriteLogrotate.MaxFileSizeMB > 0 {
 		kusciaAgentConfig.ContainerLogMaxSize = fmt.Sprintf("%dMi", overwriteLogrotate.MaxFileSizeMB)
 	}
+
+	if kusciaAgentConfig.ContainerLogMaxFiles <= 0 {
+		kusciaAgentConfig.ContainerLogMaxFiles = config.DefaultLogRotateMaxFiles
+	}
+
+	if kusciaAgentConfig.ContainerLogMaxSize == "" {
+		kusciaAgentConfig.ContainerLogMaxSize = config.DefaultLogRotateMaxSizeStr
+	}
 }
 
 // try to overwrite kuscia logrotate default config with kuscia yaml logrotate config
@@ -356,6 +364,9 @@ func loadConfig(configFile string, conf interface{}) error {
 }
 
 func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
+	if domainKeyData == "" {
+		nlog.Fatalf("Domain key data is empty. Please provide a valid domainKeyData.")
+	}
 	domainKeyDataDecoded, err := base64.StdEncoding.DecodeString(domainKeyData)
 	if err != nil {
 		nlog.Fatalf("Load domain key file error: %v", err.Error())

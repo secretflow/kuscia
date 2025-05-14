@@ -31,7 +31,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
-	"github.com/secretflow/kuscia/test/util"
+	"github.com/secretflow/kuscia/tests/util"
 )
 
 func TestNewTaskResourceManager(t *testing.T) {

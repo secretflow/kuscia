@@ -39,7 +39,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example in container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl https://127.0.0.1:8070/api/v1/datamesh/domaindatasource/query \
 -X POST -H 'content-type: application/json' \

@@ -27,7 +27,7 @@ import (
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 
 	resourcetest "github.com/secretflow/kuscia/pkg/agent/resource/testing"
-	testutil "github.com/secretflow/kuscia/test/util"
+	testutil "github.com/secretflow/kuscia/tests/util"
 )
 
 const (

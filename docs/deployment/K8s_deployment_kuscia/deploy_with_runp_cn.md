@@ -40,10 +40,10 @@
 1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
 
    ```bash
-   # DOMAIN_KEY_DATA 请用以下命令生成
+   # Generate DOMAIN_KEY_DATA using the following command
    docker run -it --rm ${KUSCIA_IMAGE} scripts/deploy/generate_rsa_key.sh
 
-   # -c 参数传递的是指定的 Kuscia 配置文件路径。
+   # The -c parameter specifies the path to the Kuscia configuration file
    ./deploy.sh autonomy -n alice -i 1.1.1.1 -p 11001 -k 11002 -g 11003 -c kuscia-autonomy.yaml
    ```
 
@@ -59,7 +59,7 @@
    ```yaml
    runtime: runp
 
-   # runk 配置不需要关注
+   # runk configuration does not need attention
    runk:
       namespace:
       dnsServers:
@@ -74,6 +74,6 @@
           spec:
             containers:
               - image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-secretflow:latest
-            # 可以设置为 false，降低对 K8s 集群权限的依赖（可选）
+            # Can be set to false to reduce dependency on K8s cluster permissions (optional)
             automountServiceAccountToken: false
       ```

@@ -19,17 +19,18 @@ msgstr ""
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:1
 msgid "部署中心化集群"
-msgstr ""
+msgstr "Deploying Centralized Cluster"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:3
 msgid "前言"
-msgstr ""
+msgstr "Introduction"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:5
 msgid ""
 "本教程帮助您在 K8s 集群上使用 [中心化组网模式](../../reference/architecture_cn.md#中心化组网模式) "
 "来部署 Kuscia 集群。"
 msgstr ""
+"This tutorial helps you deploy a Kuscia cluster on K8s using the [Centralized Networking Mode](../../reference/architecture_cn.md#centralized-networking-mode)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:7
 msgid ""
@@ -37,6 +38,7 @@ msgid ""
 "的 Pod "
 "有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)"
 msgstr ""
+"Currently, when deploying Kuscia on K8s, privacy computing tasks support two runtime modes: RunK and RunP. The RunC mode currently requires privileged containers for Kuscia Pods, which is not particularly recommended at this time. For details, please refer to [Container Runtime Modes](../../reference/architecture_cn.md#agent)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:9
 msgid ""
@@ -44,75 +46,77 @@ msgid ""
 "[使用进程运行时部署节点](./deploy_with_runp_cn.md)，非 root "
 "用户部署请参考[这里](./k8s_deploy_kuscia_with_rootless.md)。"
 msgstr ""
+"This tutorial uses RunK mode by default for deployment (requires permissions to create task Pods on the host K8s). For RunP mode deployment, please refer to [Deploying Nodes with Process Runtime](./deploy_with_runp_cn.md), and for non-root user deployment, please refer to [here](./k8s_deploy_kuscia_with_rootless.md)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:11
 msgid "![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)"
-msgstr ""
+msgstr "![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:11
 msgid "k8s_master_lite_deploy"
-msgstr ""
+msgstr "k8s_master_lite_deploy"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:13
 msgid "部署 master"
-msgstr ""
+msgstr "Deploy Master"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:15
 msgid "前置准备"
-msgstr ""
+msgstr "Prerequisites"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:17
 msgid ""
 "部署 master 需提前准备好 MySQL 数据库表并且符合 [Kuscia "
 "配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 ConfigMap 中。"
 msgstr ""
+"To deploy the master, you need to prepare MySQL database tables that comply with the specifications in [Kuscia Configuration](../kuscia_config_cn.md#id3). Database account, password, and other information should be configured in the ConfigMap in Step 3."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:19
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:69
 msgid "步骤一：创建 Namespace"
-msgstr ""
+msgstr "Step 1: Create Namespace"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:21
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:71
 msgid "创建 Namespace 需要先获取 create 权限，避免出现 \"namespaces is forbidden\" 报错"
-msgstr ""
+msgstr "You need to obtain create permission before creating a Namespace to avoid the \"namespaces is forbidden\" error"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:23
 msgid ""
 "Namespace 名称可以按照自己的意愿来定，也可以复用已经有的，下文以 kuscia-master 为例（Namespace 名称需要与 "
 "yaml 文件里的 Namespace 字段对应起来）"
-msgstr ""
+msgstr "The Namespace name can be defined as you wish, or you can reuse an existing one. The following example uses kuscia-master (the Namespace name must correspond to the Namespace field in the yaml file)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:29
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:79
 msgid "步骤二：创建 Service"
-msgstr ""
+msgstr "Step 2: Create Service"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:31
 msgid ""
 "获取 "
 "[service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/service.yaml)"
 " 文件，创建 service"
-msgstr ""
+msgstr "Get the [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/service.yaml) file and create the service"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:33
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:86
 msgid ""
 "<span style=\"color:red;\">注意：<br> 1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia "
 "端口介绍](../kuscia_ports_cn.md) </span>"
-msgstr ""
+msgstr "<span style=\"color:red;\">Note:<br> 1. For Kuscia ports that need to be exposed to collaborating parties, please refer to [Kuscia Port Introduction](../kuscia_ports_cn.md) </span>"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:40
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:93
 msgid "步骤三：创建 ConfigMap"
-msgstr ""
+msgstr "Step 3: Create ConfigMap"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:42
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:95
 msgid ""
 "ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍参考 [Kuscia "
 "配置](../kuscia_config_cn.md)"
-msgstr ""
+msgstr "ConfigMap is used to configure Kuscia's configuration files. For detailed configuration file information, refer to [Kuscia Configuration](../kuscia_config_cn.md)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:44
 msgid ""
@@ -121,13 +125,13 @@ msgid ""
 "-it --rm secretflow-registry.cn-"
 "hangzhou.cr.aliyuncs.com/secretflow/kuscia "
 "scripts/deploy/generate_rsa_key.sh` 生成"
-msgstr ""
+msgstr "The domainID, private key, and database connection string (user, password, host, database) in the datastoreEndpoint field need to be replaced with real and valid information. The private key can be generated using the command `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh`"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:48
 msgid ""
 "修改 ConfigMap 配置后，需执行 kubectl delete po {pod-name} -n {namespace} 重新拉起 Pod"
 " 生效"
-msgstr ""
+msgstr "After modifying the ConfigMap configuration, you need to execute kubectl delete po {pod-name} -n {namespace} to restart the Pod for the changes to take effect"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:49
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:102
@@ -136,35 +140,35 @@ msgid ""
 "cn/docs/concepts/overview/working-with-objects/names/#dns-label-"
 "names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` "
 "、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。"
-msgstr ""
+msgstr "The node ID must be globally unique and comply with RFC 1123 label name rules, for details please refer to [here](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names). `default`, `kube-system`, `kube-public`, `kube-node-lease`, `master`, and `cross-domain` are predefined node IDs for Kuscia and cannot be used."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:53
 msgid ""
 "获取 "
 "[configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/configmap.yaml)"
 " 文件，创建 ConfigMap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。"
-msgstr ""
+msgstr "Get the [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/configmap.yaml) file and create the ConfigMap; since it contains many sensitive configurations, make sure to reconfigure it for production use and do not use the default configuration."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:59
 msgid "步骤四：创建 Deployment"
-msgstr ""
+msgstr "Step 4: Create Deployment"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:61
 msgid ""
 "获取 "
 "[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/deployment.yaml)"
 " 文件，创建 Deployment"
-msgstr ""
+msgstr "Get the [deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/deployment.yaml) file and create the Deployment"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:67
 msgid "部署 Lite"
-msgstr ""
+msgstr "Deploy Lite"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:73
 msgid ""
 "Namespace 名称可以按照自己的意愿来定，也可以复用已经有的，下文以 lite-alice 为例（Namespace 名称需要与 yaml "
 "文件里的 Namespace 字段对应起来）"
-msgstr ""
+msgstr "The Namespace name can be defined as you wish, or you can reuse an existing one. The following example uses lite-alice (the Namespace name must correspond to the Namespace field in the yaml file)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:81
 msgid ""
@@ -178,7 +182,7 @@ msgid ""
 "[NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-"
 "networking/service/#type-nodeport)， 并在 ConfigMap 的 masterEndpoint "
 "字段改为可正常访问的地址，创建 Service。"
-msgstr ""
+msgstr "Get the [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/service.yaml) file. If master and lite are not in the same K8s cluster, you can change the master Service type to [LoadBalancer](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) (public cloud, for example: [Alibaba Cloud](https://help.aliyun.com/zh/ack/serverless-kubernetes/user-guide/use-annotations-to-configure-load-balancing)) or [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport), and modify the masterEndpoint field in the ConfigMap to an accessible address, then create the Service."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:97
 msgid ""
@@ -186,53 +190,53 @@ msgid ""
 "domainID 和 liteDeployToken 字段中，私钥可以通过命令 `docker run -it --rm secretflow-"
 "registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia "
 "scripts/deploy/generate_rsa_key.sh` 生成并填写到 domainKeyData 字段中"
-msgstr ""
+msgstr "Before deploying ConfigMap, you need to generate domainID and Token inside the master node Pod and fill them in the domainID and liteDeployToken fields of the ConfigMap. The private key can be generated using the command `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` and filled in the domainKeyData field"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:101
 msgid "修改 ConfigMap 配置后，需执行 kubectl delete po pod-name -n namespace 重新拉起 Pod 生效"
-msgstr ""
+msgstr "After modifying the ConfigMap configuration, execute kubectl delete po pod-name -n namespace to restart the Pod for the changes to take effect"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:106
 msgid "lite-bob 配置与 lite-alice 一样，下面以 Alice 为例："
-msgstr ""
+msgstr "The configuration for lite-bob is the same as lite-alice, here's an example using Alice:"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:118
 msgid "特殊说明：为了使 ServiceAccount 具有创建、查看、删除等资源权限，RunK 模式提供两种方式："
-msgstr ""
+msgstr "Special Note: To grant ServiceAccount permissions for creating, viewing, and deleting resources, RunK mode provides two approaches:"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:120
 msgid "方式一：在 ConfigMap 的 KubeconfigFile 字段配置具有同等权限的 Kubeconfig"
-msgstr ""
+msgstr "Method 1: Configure a Kubeconfig with equivalent permissions in the KubeconfigFile field of the ConfigMap"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:121
 msgid "方式二：不配置 KubeconfigFile，执行步骤四，创建具有所需权限的 Role 和 RoleBinding"
-msgstr ""
+msgstr "Method 2: Do not configure KubeconfigFile, execute Step 4 to create Role and RoleBinding with the required permissions"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:123
 msgid ""
 "获取 "
 "[configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/configmap.yaml)"
 " 文件，创建 ConfigMap；因为这里面涉及很多敏感配置，请在生产时务必重新配置，不使用默认配置。"
-msgstr ""
+msgstr "Get the [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/configmap.yaml) file and create the ConfigMap; since it contains many sensitive configurations, make sure to reconfigure it for production use and do not use the default configuration."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:129
 msgid "步骤四（可选）：创建 RBAC"
-msgstr ""
+msgstr "Step 4 (Optional): Create RBAC"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:131
 msgid ""
 "获取 "
 "[rbac.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/rbac.yaml)"
 " 文件，创建 Role 和 RoleBinding"
-msgstr ""
+msgstr "Get the [rbac.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/rbac.yaml) file and create Role and RoleBinding"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:137
 msgid "步骤五：创建 Deployment"
-msgstr ""
+msgstr "Step 5: Create Deployment"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:139
 msgid "拉起 lite Pod 前可以先检测下与 master 之前的通信是否正常"
-msgstr ""
+msgstr "Before starting the lite Pod, check if the communication with the master is working properly"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:141
 msgid ""
@@ -240,197 +244,196 @@ msgid ""
 "master.svc.cluster.local:1080;（此处以 HTTP 为例，HTTPS 可以删除 master ConfigMap 里的"
 " Protocol: NOTLS 字段，重启 Pod 生效。LoadBalancer 或者 NodePort 方式可以用 curl -kvvv "
 "http://ip:port）检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是：unauthorized"
-msgstr ""
+msgstr "It is recommended to use curl -kvvv http://kuscia-master.kuscia-master.svc.cluster.local:1080; (using HTTP as an example, for HTTPS remove the Protocol: NOTLS field in the master ConfigMap and restart the Pod. For LoadBalancer or NodePort methods, use curl -kvvv http://ip:port) to check if the connection is accessible. Under normal circumstances, the HTTP error code should be 401 with the content: unauthorized"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:143
 msgid "示例如下："
-msgstr ""
+msgstr "Example as follows:"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:167
 msgid ""
 "<span style=\"color:red;\">注意：如果 master 的入口网络存在网关时，为了确保节点与 master "
 "之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)</span>"
-msgstr ""
+msgstr "<span style=\"color:red;\">Note: If there is a gateway in the master's ingress network, to ensure normal communication between nodes and master, the gateway needs to meet certain requirements. For details, please refer to [here](../networkrequirements.md)</span>"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:169
 msgid ""
 "获取 "
 "[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/deployment.yaml)"
 " 文件，创建 Deployment"
-msgstr ""
+msgstr "Get the [deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/lite/deployment.yaml) file and create the Deployment"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:175
 msgid "创建 lite-alice、lite-bob 之间的授权"
-msgstr ""
+msgstr "Create Authorization Between Lite-alice And Lite-bob"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:177
 msgid "PS：目前因为安全性和时间因素，节点之间授权还是需要很多手动的操作，未来会优化。"
-msgstr ""
+msgstr "PS: Currently, due to security and timing factors, authorization between nodes still requires many manual operations. This will be optimized in the future."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:192
 msgid ""
 "`pod 内部` 在执行 master Pod 内执行 `kubectl get cdr` 返回 Ready 为 True "
 "时，表示授权成功，示例如下："
-msgstr ""
+msgstr "Inside the pod, when executing `kubectl get cdr` in the master Pod returns Ready as True, it indicates successful authorization. Example as follows:"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:202
 msgid "授权失败，请参考[授权错误排查](../../troubleshoot/network/network_authorization_check.md)文档"
-msgstr ""
+msgstr "If authorization fails, please refer to the [Authorization Error Troubleshooting](../../troubleshoot/network/network_authorization_check.md) document"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:204
 msgid "确认部署成功"
-msgstr ""
+msgstr "Confirm Successful Deployment"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:206
 msgid "检查 Pod 状态"
-msgstr ""
+msgstr "Check Pod Status"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:208
 msgid "pod 处于 running 状态表示部署成功"
-msgstr ""
+msgstr "Pod in running state indicates successful deployment"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:215
 msgid "检查数据库连接状态"
-msgstr ""
+msgstr "Check Database Connection Status"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:217
 msgid "数据库内生成表格 Kine 并且有数据表示数据库连接成功"
-msgstr ""
+msgstr "The Kine table is generated in the database and contains data, indicating a successful database connection"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:219
 msgid "运行任务"
-msgstr ""
+msgstr "Run Tasks"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:221
 msgid ""
 "RunK "
 "模式不支持使用本地数据训练，请准备[OSS数据](K8s_master_lite_cn.md#准备-oss-测试数据)。使用本地数据请先切换至 "
 "RunP 模式，详情请参考 [使用 RunP 运行时部署节点](./deploy_with_runp_cn.md)。"
-msgstr ""
+msgstr "RunK mode does not support training with local data. Please prepare [OSS data](K8s_master_lite_cn.md#prepare-oss-test-data). To use local data, please switch to RunP mode first. For details, refer to [Deploying Nodes with RunP Runtime](./deploy_with_runp_cn.md)."
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:223
 msgid "准备本地测试数据"
-msgstr ""
+msgstr "Prepare Local Test Data"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:225
 msgid "Alice 节点准备本地测试数据"
-msgstr ""
+msgstr "Prepare Local Test Data for Alice Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:227
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:604
 msgid "登录到 Alice 节点的 Pod 中"
-msgstr ""
+msgstr "Log into Alice Node's Pod"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:233
 msgid "为 Alice 节点创建本地数据源"
-msgstr ""
+msgstr "Create Local Data Source for Alice Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:235
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:432
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:612
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:817
 msgid "创建 DomainData 的时候要指定 datasource_id，所以要先创建数据源，再创建 DomainData，示例如下："
-msgstr ""
+msgstr "When creating DomainData, you need to specify the datasource_id, so create the data source first, then create DomainData. Example as follows:"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:257
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:640
 msgid "为 Alice 的测试数据创建 DomainData"
-msgstr ""
+msgstr "Create DomainData for Alice's Test Data"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:407
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:790
 msgid "将 Alice 的 DomainData 授权给 Bob"
-msgstr ""
+msgstr "Grant Authorization of Alice's DomainData to Bob"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:422
 msgid "Bob 节点准备本地测试数据"
-msgstr ""
+msgstr "Prepare Local Test Data for Bob Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:424
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:809
 msgid "登录到 Bob 节点的 Pod 中"
-msgstr ""
+msgstr "Log into Bob Node's Pod"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:430
 msgid "为 Bob 节点创建本地数据源"
-msgstr ""
+msgstr "Create Local Data Source for Bob Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:453
 msgid "为 Bob 的测试数据创建 domaindata"
-msgstr ""
+msgstr "Create DomainData for Bob's Test Data"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:583
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:975
 msgid "将 Bob 的 DomainData 授权给 Alice"
-msgstr ""
+msgstr "Grant Authorization of Bob's DomainData to Alice"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:598
 msgid "准备 OSS 测试数据"
-msgstr ""
+msgstr "Prepare OSS Test Data"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:600
 msgid "Alice 节点准备 OSS 数据"
-msgstr ""
+msgstr "Prepare OSS Data for Alice Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:602
 msgid ""
 "请先将 Alice 节点测试数据 "
 "[alice.csv](https://github.com/secretflow/kuscia/blob/main/testdata/alice.csv)"
 " 上传至 OSS"
-msgstr ""
+msgstr "Please upload Alice node's test data [alice.csv](https://github.com/secretflow/kuscia/blob/main/testdata/alice.csv) to OSS first"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:610
 msgid "为 Alice 节点创建 OSS 数据源"
-msgstr ""
+msgstr "Create OSS Data Source for Alice Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:805
 msgid "Bob 节点准备 OSS 测试数据"
-msgstr ""
+msgstr "Prepare OSS Test Data for Bob Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:807
 msgid ""
 "请先将 Bob 节点测试数据 "
 "[bob.csv](https://github.com/secretflow/kuscia/blob/main/testdata/bob.csv)"
 " 上传至 OSS"
-msgstr ""
+msgstr "Please upload Bob node's test data [bob.csv](https://github.com/secretflow/kuscia/blob/main/testdata/bob.csv) to OSS first"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:815
 msgid "为 Bob 节点创建 OSS 数据源"
-msgstr ""
+msgstr "Create OSS Data Source for Bob Node"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:845
 msgid "为 Bob 的测试数据创建 DomainData"
-msgstr ""
+msgstr "Create DomainData for Bob's Test Data"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:990
 msgid "创建 AppImage"
-msgstr ""
+msgstr "Create AppImage"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:992
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:1006
 msgid "登录到 master pod"
-msgstr ""
+msgstr "Log into the master pod"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:998
 msgid ""
 "`pod 内部`获取 "
 "[AppImage.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/AppImage.yaml)"
 " 文件并创建 AppImage"
-msgstr ""
+msgstr "Inside the pod, get the [AppImage.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/AppImage.yaml) file and create AppImage"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:1004
 msgid "执行测试作业"
-msgstr ""
+msgstr "Execute Test Job"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:1012
 msgid "`pod 内部`创建并启动作业（两方 PSI 任务）"
-msgstr ""
+msgstr "Inside the pod, create and start the job (two-party PSI task)"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:1018
 msgid "`pod 内部`查看作业状态"
-msgstr ""
+msgstr "Inside the pod, check the job status"
 
 #: ../../deployment/K8s_deployment_kuscia/K8s_master_lite_cn.md:1024
 msgid "RunK 模式可以在 Kuscia Pod 所在集群中执行如下命令查看引擎日志"
-msgstr ""
-
+msgstr "In RunK mode, you can execute the following command in the cluster where the Kuscia Pod is located to view the engine logs"

@@ -92,5 +92,5 @@ integration_test: ## Run Integration Test
 integration_test: image
 integration_test:
 	mkdir -p run/test
-	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/scripts/test/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
+	cd run && KUSCIA_IMAGE=${IMG} docker run --rm ${IMG} cat /home/kuscia/tests/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
 	cd run && KUSCIA_IMAGE=${IMG} ./test/integration_test.sh ${TEST_SUITE}
