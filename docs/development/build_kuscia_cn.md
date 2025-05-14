@@ -108,7 +108,6 @@ Kuscia 的集成测试可以对 Kuscia 镜像进行测试，创建测试目录 t
 export KUSCIA_IMAGE={YOUR_KUSCIA_IMAGE}
 mkdir -p test
 docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/tests/integration_test.sh > ./test/integration_test.sh && chmod u+x ./test/integration_test.sh
-
 ```
 
 然后执行集成测试，第一个参数用于选择测试集合。
