@@ -21,5 +21,7 @@ COPY --from=k3s-image /bin/aux /image/bin/aux
 
 COPY build/${TARGETPLATFORM}/k3s/bin/k3s /image/home/kuscia/bin/
 
+COPY tests /home/kuscia/tests/
+
 RUN wget "https://github.com/krallin/tini/releases/download/v0.19.0/tini-${TARGETARCH}" -O /image/home/kuscia/bin/tini && \
     chmod +x /image/home/kuscia/bin/tini

@@ -122,8 +122,8 @@ function installRequires() {
 
 function copyTestScripts() {
   docker run --name ${USER}-kuscia-integration-test --entrypoint="" -d ${KUSCIA_IMAGE} bash
-  docker cp ${USER}-kuscia-integration-test:/home/kuscia/scripts/test/suite ./test
-  docker cp ${USER}-kuscia-integration-test:/home/kuscia/scripts/test/vendor ./test
+  docker cp ${USER}-kuscia-integration-test:/home/kuscia/tests/suite ./test
+  docker cp ${USER}-kuscia-integration-test:/home/kuscia/tests/vendor ./test
   docker stop ${USER}-kuscia-integration-test
   docker rm -v ${USER}-kuscia-integration-test
 }
