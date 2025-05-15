@@ -73,7 +73,7 @@ func mockCreateDomainDataSourceLocalFS(t *testing.T, conf *config.KusciaAPIConfi
 		Type:         common.DomainDataSourceTypeLocalFS,
 		Info: &kusciaapi.DataSourceInfo{
 			Localfs: &kusciaapi.LocalDataSourceInfo{
-				Path: "/home/kuscia/var/storage/data",
+				Path: "var/storage/data",
 			},
 		},
 	})
