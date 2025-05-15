@@ -290,8 +290,8 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 
 func deleteLocalFsFile(path, relativeUri string) error {
 	// Validate the base path to ensure it is within the allowed directory
-	if !strings.HasPrefix(path, "/home/kuscia/var/storage/data") {
-		return fmt.Errorf("invalid base path: %s, must be within /home/kuscia/var/storage/data", path)
+	if !strings.HasPrefix(path, common.DefaultDomainDataSourceLocalFSPath) {
+		return fmt.Errorf("invalid base path: %s, must be within %s", path, common.DefaultDomainDataSourceLocalFSPath)
 	}
 
 	// Validate the relativeUri to ensure it does not escape the base path
@@ -325,7 +325,8 @@ func deleteOSSFile(accessKey, secretKey, endpoint, bucketName, prefix, relativeU
 	})
 
 	if err != nil {
-		nlog.Warnf("OSS(%s) create session failed with error: %s", endpoint, err.Error())
+		nlog.Errorf("OSS(%s) create session failed with error: %s", endpoint, err.Error())
+		return fmt.Errorf("failed create oss %s session failed with error: %s", endpoint, err.Error())
 	}
 	client := s3.New(sess)
 
