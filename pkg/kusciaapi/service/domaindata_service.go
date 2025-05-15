@@ -41,6 +41,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	cmservice "github.com/secretflow/kuscia/pkg/confmanager/service"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/io/builtin"
 	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/constants"
@@ -54,7 +55,6 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/io/builtin"
 )
 
 type IDomainDataService interface {
@@ -489,7 +489,7 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 	domaindatasource, err := s.getDomainDataSourceById(domainData.Namespace, datasourceId)
 
 	if err != nil {
-		return &kusciaapi.DeleteDomainDataResponse{ 
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrDomainDataSourceNotExists), err.Error()),
 		}
 	}
