@@ -312,8 +312,8 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "deleteDataAndSource",
-					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewDeleteDomainDataAndSourceHandler(domainDataService))},
+					RelativePath: "deleteDataAndRaw",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewDeleteDomainDataAndRawHandler(domainDataService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,

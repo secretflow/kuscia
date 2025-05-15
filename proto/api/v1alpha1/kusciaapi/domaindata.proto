@@ -28,7 +28,7 @@ service DomainDataService {
 
   rpc DeleteDomainData(DeleteDomainDataRequest) returns (DeleteDomainDataResponse);
 
-  rpc DeleteDomainDataAndSource(DeleteDomainDataAndSourceRequest) returns (DeleteDomainDataAndSourceResponse);
+  rpc DeleteDomainDataAndRaw(DeleteDomainDataRequest) returns (DeleteDomainDataRequest);
 
   rpc QueryDomainData(QueryDomainDataRequest) returns (QueryDomainDataResponse);
 
@@ -119,17 +119,6 @@ message UpdateDomainDataResponse {
 }
 
 message DeleteDomainDataRequest {
-  RequestHeader header = 1;
-  // domaindata id
-  string domain_id = 2;
-  string domaindata_id = 3;
-}
-
-message DeleteDomainDataAndSourceResponse {
-  Status status = 1;
-}
-
-message DeleteDomainDataAndSourceRequest {
   RequestHeader header = 1;
   // domaindata id
   string domain_id = 2;

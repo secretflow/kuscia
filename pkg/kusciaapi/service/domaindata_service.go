@@ -54,13 +54,14 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/confmanager"
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
+	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/io/builtin"
 )
 
 type IDomainDataService interface {
 	CreateDomainData(ctx context.Context, request *kusciaapi.CreateDomainDataRequest) *kusciaapi.CreateDomainDataResponse
 	UpdateDomainData(ctx context.Context, request *kusciaapi.UpdateDomainDataRequest) *kusciaapi.UpdateDomainDataResponse
 	DeleteDomainData(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse
-	DeleteDomainDataAndSource(ctx context.Context, request *kusciaapi.DeleteDomainDataAndSourceRequest) *kusciaapi.DeleteDomainDataAndSourceResponse
+	DeleteDomainDataAndRaw(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse
 	QueryDomainData(ctx context.Context, request *kusciaapi.QueryDomainDataRequest) *kusciaapi.QueryDomainDataResponse
 	BatchQueryDomainData(ctx context.Context, request *kusciaapi.BatchQueryDomainDataRequest) *kusciaapi.BatchQueryDomainDataResponse
 	ListDomainData(ctx context.Context, request *kusciaapi.ListDomainDataRequest) *kusciaapi.ListDomainDataResponse
@@ -288,6 +289,16 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 }
 
 func deleteLocalFsFile(path, relativeUri string) error {
+	// Validate the base path to ensure it is within the allowed directory
+	if !strings.HasPrefix(path, "/home/kuscia/var/storage/data") {
+		return fmt.Errorf("invalid base path: %s, must be within /home/kuscia/var/storage/data", path)
+	}
+
+	// Validate the relativeUri to ensure it does not escape the base path
+	cleanRelativeUri := filepath.Clean(relativeUri)
+	if strings.HasPrefix(cleanRelativeUri, "..") || strings.Contains(cleanRelativeUri, "../") {
+		return fmt.Errorf("invalid relative URI: %s, must not escape the base path", relativeUri)
+	}
 	var err error
 	// Check if the file exists
 	filePath := filepath.Join(path, relativeUri)
@@ -321,20 +332,21 @@ func deleteOSSFile(accessKey, secretKey, endpoint, bucketName, prefix, relativeU
 	// Check if the object exists
 	_, err = client.HeadObject(&s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(path.Join(prefix, relativeURI)),
+		Key:    aws.String(filepath.ToSlash(filepath.Join(prefix, relativeURI))),
 	})
 	if err != nil {
 		if aerr, ok := err.(s3.RequestFailure); ok && aerr.StatusCode() == 404 {
 			nlog.Infof("Object %s does not exist in bucket %s", path.Join(prefix, relativeURI), bucketName)
 			return nil
 		}
+		nlog.Errorf("Error occurred while checking existence of object %s in bucket %s: %v", path.Join(prefix, relativeURI), bucketName, err)
 		return fmt.Errorf("failed to check existence of object %s in bucket %s: %v", path.Join(prefix, relativeURI), bucketName, err)
 	}
 
 	// Delete the object from the bucket
 	_, err = client.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(path.Join(prefix, relativeURI)),
+		Key:    aws.String(filepath.ToSlash(filepath.Join(prefix, relativeURI))),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to delete object %s from bucket %s: %v", path.Join(prefix, relativeURI), bucketName, err)
@@ -374,13 +386,11 @@ func deletePostgresqlTable(user, passwd, endpoint, database, relativeURI string)
 	if err != nil {
 		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
 			host = endpoint
-			port = "5432"
-			err = nil
+			port = builtin.PostgresqlPort
+		} else {
+			nlog.Errorf("Endpoint \"%s\" can't be resolved with net.SplitHostPort()", endpoint)
+			return err
 		}
-	}
-	if err != nil {
-		nlog.Errorf("Endpoint \"%s\" can't be resolved with net.SplitHostPort()", endpoint)
-		return err
 	}
 	dsn := fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", user, passwd, host, database, port)
 
@@ -419,6 +429,17 @@ func (s domainDataService) getDsInfoByKey(ctx context.Context, sourceType string
 	return info, err
 }
 
+func (s domainDataService) getDomainDataSourceById(namespace string, datasourceId string) (*v1alpha1.DomainDataSource, error) {
+	domaindatasource, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(namespace).Get(context.Background(), datasourceId, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, fmt.Errorf("domain %v data source %v doesn't exist", namespace, datasourceId)
+		}
+		return nil, fmt.Errorf("query DataSource %s of DomainData fail: %v", datasourceId, err)
+	}
+	return domaindatasource, nil
+}
+
 func (s domainDataService) decryptInfo(cipherInfo string) (*kusciaapi.DataSourceInfo, error) {
 	plaintext, err := tls.DecryptOAEP(s.conf.DomainKey, cipherInfo)
 	if err != nil {
@@ -431,22 +452,22 @@ func (s domainDataService) decryptInfo(cipherInfo string) (*kusciaapi.DataSource
 	return info, nil
 }
 
-func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, request *kusciaapi.DeleteDomainDataAndSourceRequest) *kusciaapi.DeleteDomainDataAndSourceResponse {
+func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse {
 	var err error
 	// do validate
 	if request.DomaindataId == "" || request.DomainId == "" {
-		return &kusciaapi.DeleteDomainDataAndSourceResponse{
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
 	if err = s.validateRequestWhenLite(request); err != nil {
-		return &kusciaapi.DeleteDomainDataAndSourceResponse{
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 	// auth pre handler
 	if err = s.authHandler(ctx, request); err != nil {
-		return &kusciaapi.DeleteDomainDataAndSourceResponse{
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
@@ -456,7 +477,7 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 	domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("Failed to get DomainData with ID %s: %v", request.DomaindataId, err)
-		return &kusciaapi.DeleteDomainDataAndSourceResponse{
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrGetDomainDataFailed), err.Error()),
 		}
 	}
@@ -465,31 +486,36 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 	datasourceId := domainData.Spec.DataSource
 	relativeUri := domainData.Spec.RelativeURI
 
-	domaindatasource, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(domainData.Namespace).Get(context.Background(), datasourceId, metav1.GetOptions{})
+	domaindatasource, err := s.getDomainDataSourceById(domainData.Namespace, datasourceId)
 
+	if err != nil {
+		return &kusciaapi.DeleteDomainDataResponse{ 
+			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataSourceErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrDomainDataSourceNotExists), err.Error()),
+		}
+	}
 	var domaindatasourceInfo, info *kusciaapi.DataSourceInfo
 	// decrypt the info
 	if len(domaindatasource.Spec.InfoKey) != 0 {
 		info, err = s.getDsInfoByKey(ctx, domaindatasource.Spec.Type, domaindatasource.Spec.InfoKey)
 		if err != nil {
 			nlog.Errorf("Failed to get DomainDataSource info by key %s: %v", domaindatasource.Spec.InfoKey, err)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
 		domaindatasourceInfo = info
 	} else {
-		encryptedInfo, exist := domaindatasource.Spec.Data[encryptedInfo]
+		encryptedContent, exist := domaindatasource.Spec.Data[encryptedInfo]
 		if !exist {
 			nlog.Errorf("DomainDataSource %s does not have encrypted info", datasourceId)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, "DomainDataSource does not have encrypted info"),
 			}
 		}
-		domaindatasourceInfo, err = s.decryptInfo(encryptedInfo)
+		domaindatasourceInfo, err = s.decryptInfo(encryptedContent)
 		if err != nil {
 			nlog.Errorf("Failed to decrypt DomainDataSource info: %v", err)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
@@ -498,21 +524,21 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 	case "localfs":
 		if err = deleteLocalFsFile(domaindatasourceInfo.Localfs.Path, relativeUri); err != nil {
 			nlog.Errorf("Failed to delete local file at %s %s: %v", domaindatasourceInfo.Localfs.Path, relativeUri, err)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
 	case "oss":
 		if err = deleteOSSFile(domaindatasourceInfo.Oss.AccessKeyId, domaindatasourceInfo.Oss.AccessKeySecret, domaindatasourceInfo.Oss.Endpoint, domaindatasourceInfo.Oss.Bucket, domaindatasourceInfo.Oss.Prefix, relativeUri, domaindatasourceInfo.Oss.Virtualhost); err != nil {
 			nlog.Errorf("Failed to delete OSS file at %s: %v", relativeUri, err)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
 	case "mysql":
 		if err = deleteMysqlTable(domaindatasourceInfo.Database.User, domaindatasourceInfo.Database.Password, domaindatasourceInfo.Database.Endpoint, domaindatasourceInfo.Database.Database, relativeUri); err != nil {
 			nlog.Errorf("Failed to delete MySQL table at %s: %v", relativeUri, err)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
@@ -520,13 +546,13 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 	case "postgresql":
 		if err = deletePostgresqlTable(domaindatasourceInfo.Database.User, domaindatasourceInfo.Database.Password, domaindatasourceInfo.Database.Endpoint, domaindatasourceInfo.Database.Database, relativeUri); err != nil {
 			nlog.Errorf("Failed to delete PostgreSQL table at %s: %v", relativeUri, err)
-			return &kusciaapi.DeleteDomainDataAndSourceResponse{
+			return &kusciaapi.DeleteDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, err.Error()),
 			}
 		}
 	default:
 		nlog.Warnf("Unsupported domainDataSource type: %s", domaindatasource.Spec.Type)
-		return &kusciaapi.DeleteDomainDataAndSourceResponse{
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, "unsupported domainDataSource type"),
 		}
 	}
@@ -534,11 +560,11 @@ func (s domainDataService) DeleteDomainDataAndSource(ctx context.Context, reques
 	err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
 		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
-		return &kusciaapi.DeleteDomainDataAndSourceResponse{
+		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed), err.Error()),
 		}
 	}
-	return &kusciaapi.DeleteDomainDataAndSourceResponse{
+	return &kusciaapi.DeleteDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 	}
 }
@@ -812,8 +838,8 @@ func (s domainDataService) normalizationCreateRequest(request *kusciaapi.CreateD
 	}
 	// truncate slash
 	// fix Issue:
-	// datasource-path: "/home/admin" ; datasource-prefix: "/test/" ; domainData-relativeURI: "/data/alice.csv"
-	// os.path.join(path,prefix,uri) would be /data/alice.csv , this is not expect, expect is /home/admin/test/data/alice.csv
+	// datasource-path: "/home/admin" ; datasource-prefix: "/test/" ; domainData-relativeURI: "/data/alice.csv" -> "/test/data/alice.csv"
+	// os.path.join(path,prefix,uri) would be /data/alice.csv , this is not expect, expect is /home/admin/test/data/alice.csv -> /home/admin/test/data/alice.csv
 	// so trim the prefix filepath.Separator
 	request.RelativeUri = strings.TrimPrefix(request.RelativeUri, string(filepath.Separator))
 }

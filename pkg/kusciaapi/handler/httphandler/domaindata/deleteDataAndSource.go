@@ -25,24 +25,24 @@ import (
 )
 
 // Delete handler
-type deleteDomainDataAndSourceHandler struct {
+type deleteDomainDataAndRawHandler struct {
 	domainDataService service.IDomainDataService
 }
 
-func NewDeleteDomainDataAndSourceHandler(domainDataService service.IDomainDataService) api.ProtoHandler {
-	return &deleteDomainDataAndSourceHandler{
+func NewDeleteDomainDataAndRawHandler(domainDataService service.IDomainDataService) api.ProtoHandler {
+	return &deleteDomainDataAndRawHandler{
 		domainDataService: domainDataService,
 	}
 }
 
-func (h *deleteDomainDataAndSourceHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
+func (h *deleteDomainDataAndRawHandler) Validate(context *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
 }
 
-func (h *deleteDomainDataAndSourceHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	deleteRequest, _ := request.(*kusciaapi.DeleteDomainDataAndSourceRequest)
-	return h.domainDataService.DeleteDomainDataAndSource(context.Context, deleteRequest)
+func (h *deleteDomainDataAndRawHandler) Handle(context *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
+	deleteRequest, _ := request.(*kusciaapi.DeleteDomainDataRequest)
+	return h.domainDataService.DeleteDomainDataAndRaw(context.Context, deleteRequest)
 }
 
-func (h *deleteDomainDataAndSourceHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(kusciaapi.DeleteDomainDataAndSourceRequest{}), reflect.TypeOf(kusciaapi.DeleteDomainDataAndSourceResponse{})
+func (h *deleteDomainDataAndRawHandler) GetType() (reqType, respType reflect.Type) {
+	return reflect.TypeOf(kusciaapi.DeleteDomainDataRequest{}), reflect.TypeOf(kusciaapi.DeleteDomainDataResponse{})
 }

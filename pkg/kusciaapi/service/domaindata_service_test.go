@@ -267,7 +267,7 @@ func TestDeleteDomainData(t *testing.T) {
 	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
 }
 
-func TestDeleteDomainDataAndSource(t *testing.T) {
+func TestDeleteDomainDataAndRaw(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
 	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 	mockCreateDomainDataSource(t, conf)
@@ -277,15 +277,14 @@ func TestDeleteDomainDataAndSource(t *testing.T) {
 	assert.NotNil(t, res)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
 
-	// Call DeleteDomainDataAndSource
-	res1 := domainDataService.DeleteDomainDataAndSource(context.Background(), &kusciaapi.DeleteDomainDataAndSourceRequest{
+	// Call DeleteDomainDataAndRaw
+	res1 := domainDataService.DeleteDomainDataAndRaw(context.Background(), &kusciaapi.DeleteDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
 		DomainId:     domainID,
 	})
 	assert.NotNil(t, res1)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
-
 }
 
 func TestBatchQueryDomainData(t *testing.T) {
