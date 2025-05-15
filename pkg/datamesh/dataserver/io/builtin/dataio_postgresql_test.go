@@ -163,7 +163,6 @@ func initPostgresqlIOTestRequestContext(t *testing.T, tableName string, dbInfo *
 	return conf, ctx, db, mock
 }
 
-
 func TestPostgresqlIOChannel_New(t *testing.T) {
 	t.Parallel()
 	assert.NotNil(t, NewBuiltinPostgresqlIOChannel())

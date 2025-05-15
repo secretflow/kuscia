@@ -261,7 +261,7 @@ type DataSourceInfo struct {
 	// OssDataSourceInfo is exist only if the type of datasource is oss
 	Localfs *LocalDataSourceInfo `protobuf:"bytes,1,opt,name=localfs,proto3" json:"localfs,omitempty"`
 	Oss     *OssDataSourceInfo   `protobuf:"bytes,2,opt,name=oss,proto3" json:"oss,omitempty"`
-	// Relational database info, such as Mysql/oracle/Postgresql
+	// Relational database info, such as Mysql/oracle/postgresql
 	Database *DatabaseDataSourceInfo `protobuf:"bytes,3,opt,name=database,proto3" json:"database,omitempty"`
 	// aliyun odps(MaxCompute)
 	Odps *OdpsDataSourceInfo `protobuf:"bytes,4,opt,name=odps,proto3" json:"odps,omitempty"`
