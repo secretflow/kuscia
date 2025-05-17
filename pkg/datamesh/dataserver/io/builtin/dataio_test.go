@@ -19,13 +19,13 @@ import (
 	"errors"
 	"testing"
 
-	gomonkeyv2 "github.com/agiledragon/gomonkey/v2"
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/apache/arrow/go/v13/arrow/memory"
 	"github.com/stretchr/testify/assert"
+	"github.com/xhd2015/xgo/runtime/mock"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
@@ -45,12 +45,9 @@ func TestDataProxyContentToFlightStreamBinary_WriteFailed(t *testing.T) {
 	reader := bytes.NewReader([]byte("abcdefg"))
 
 	writer := &flight.Writer{}
-	// mock writer.write
-
-	patch := gomonkeyv2.ApplyMethod(writer, "Write", func(w *flight.Writer, rec arrow.Record) error {
+	mock.Patch(writer.Write, func(rec arrow.Record) error {
 		return errors.New("write failed")
 	})
-	defer patch.Reset()
 
 	assert.Error(t, DataProxyContentToFlightStreamBinary(data, reader, writer, 1024))
 }
@@ -178,13 +175,12 @@ func TestFlightStreamToDataProxyContentBinary_ErrorFormat(t *testing.T) {
 	reader := &flight.Reader{}
 
 	times := 0
-	patch := gomonkeyv2.ApplyMethod(reader.Reader, "Next", func(*ipc.Reader) bool {
+	mock.Patch(reader.Reader.Next, func() bool {
 		times++
 		// first return true, second return false
 		return times == 1
 	})
-
-	patch.ApplyMethod(reader.Reader, "Record", func(*ipc.Reader) arrow.Record {
+	mock.Patch(reader.Reader.Record, func() arrow.Record {
 		// column error
 		builder := array.NewBinaryBuilder(memory.NewGoAllocator(), arrow.BinaryTypes.Binary)
 		builder.Append([]byte("xyz"))
@@ -198,9 +194,7 @@ func TestFlightStreamToDataProxyContentBinary_ErrorFormat(t *testing.T) {
 		builder2.Append(true)
 
 		return array.NewRecord(schema, []arrow.Array{builder.NewArray(), builder2.NewArray()}, 1)
-
 	})
-	defer patch.Reset()
 
 	assert.Error(t, FlightStreamToDataProxyContentBinary(data, writer, reader))
 	assert.Equal(t, "xyz", writer.String())

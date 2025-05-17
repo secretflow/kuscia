@@ -45,8 +45,9 @@ test:
 	rm -rf ./test-results
 	mkdir -p test-results
 
-	GOEXPERIMENT=nocoverageredesign go test $$(go list ./cmd/... | grep -Ev ${CMD_EXCLUDE_TESTS}) --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
-	GOEXPERIMENT=nocoverageredesign go test $$(go list ./pkg/... | grep -Ev ${PKG_EXCLUDE_TESTS}) --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
+	go install github.com/xhd2015/xgo/cmd/xgo@latest
+	GOEXPERIMENT=nocoverageredesign xgo test $$(go list ./cmd/... | grep -Ev ${CMD_EXCLUDE_TESTS}) --parallel 4 -coverprofile=test-results/cmd.covprofile.out | tee test-results/cmd.output.txt
+	GOEXPERIMENT=nocoverageredesign xgo test $$(go list ./pkg/... | grep -Ev ${PKG_EXCLUDE_TESTS}) --parallel 4 -coverprofile=test-results/pkg.covprofile.out | tee test-results/pkg.output.txt
 
 	cat ./test-results/cmd.output.txt | go-junit-report > ./test-results/TEST-cmd.xml
 	cat ./test-results/pkg.output.txt | go-junit-report > ./test-results/TEST-pkg.xml
