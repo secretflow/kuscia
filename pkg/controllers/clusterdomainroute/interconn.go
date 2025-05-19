@@ -110,7 +110,8 @@ func (c *controller) needCreateInteropConfig(cdr *kusciaapisv1alpha1.ClusterDoma
 		nlog.Warnf("get Domain %s fail: %v", cdr.Spec.Destination, err)
 		return false, err
 	}
-	if domain.Spec.Role == kusciaapisv1alpha1.Partner && domain.Spec.MasterDomain == domain.Name {
+	// BFIA doesn't need interop
+	if domain.Spec.Role == kusciaapisv1alpha1.Partner && domain.Spec.MasterDomain == domain.Name && cdr.Spec.InterConnProtocol != kusciaapisv1alpha1.InterConnBFIA {
 		return true, nil
 	}
 	return false, nil

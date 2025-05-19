@@ -81,7 +81,7 @@ func setTestProbe(pod *v1.Pod, probeType probeType, probeSpec v1.Probe) {
 		TCPSocket: &v1.TCPSocketAction{Port: intstr.IntOrString{Type: intstr.Int, IntVal: 80}, Host: "127.0.0.1"},
 	}
 
-	// Apply test defaults, overwridden for test speed.
+	// Apply test defaults, overridden for test speed.
 	defaults := map[string]int64{
 		"TimeoutSeconds":   1,
 		"PeriodSeconds":    1,

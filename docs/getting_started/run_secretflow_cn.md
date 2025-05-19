@@ -12,7 +12,7 @@
 
 您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。
 
-在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
+在 Kuscia 中，节点数据文件的存放路径为节点容器的 `/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
 
 ### 查看 Kuscia 示例数据
 
@@ -129,7 +129,7 @@ spec:
     priority: 100
     taskID: job-psi
     alias: job-psi
-    taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+    taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"SEMI2K\",\"field\":\"FM128\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\":\"PHEU\", \"schema\": \"paillier\", \"key_size\":2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"1.0.0","attr_paths":["input/input_ds1/keys","input/input_ds2/keys","protocol","sort_result","receiver_parties","allow_empty_result","join_type","input_ds1_keys_duplicated","input_ds2_keys_duplicated"],"attrs":[{"is_na":false,"ss":["id1"]},{"is_na":false,"ss":["id2"]},{"is_na":false,"s":"PROTOCOL_RR22"},{"b":true,"is_na":false},{"is_na":false,"ss":["alice","bob"]},{"is_na":true},{"is_na":false,"s":"inner_join"},{"b":true,"is_na":false},{"b":true,"is_na":false}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output-0","psi-output-1"],"sf_output_uris":["psi-output-0","psi-output-1"]}'
     tolerable: false
   - appImage: secretflow-image
     dependencies:
@@ -140,7 +140,7 @@ spec:
     priority: 100
     taskID: job-split
     alias: job-split
-    taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"train_test_split","version":"0.0.1","attr_paths":["train_size","test_size","random_state","shuffle"],"attrs":[{"f":0.75},{"f":0.25},{"i64":1234},{"b":true}]},"sf_output_uris":["train-dataset.csv","test-dataset.csv"],"sf_output_ids":["train-dataset","test-dataset"],"sf_input_ids":["psi-output"]}'
+    taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"SEMI2K\",\"field\":\"FM128\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\":\"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"train_test_split","version":"1.0.0"},"sf_output_uris":["train-dataset.csv","test-dataset.csv"],"sf_output_ids":["train-dataset","test-dataset"],"sf_input_ids":["psi-output-0"]}'
     tolerable: false
 status:
   completionTime: "2023-03-30T12:12:07Z"

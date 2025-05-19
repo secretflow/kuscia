@@ -43,7 +43,7 @@ msgstr "Check network authorization"
 #: ../../troubleshoot/runtask/run_job_failed.md:11
 msgid ""
 "大部分任务失败问题都是网络问题，检查网络授权可以登录到容器（中心化模式在 master 容器、点对点模式在 automony "
-"容器）并执行`kubectl get cdr`命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST"
+"容器）并执行 `kubectl get cdr` 命令查看授权信息，READY 为 True 时表明通信正常，为空时表明通信异常，可以先看下 HOST"
 " 和端口是否正确或者执行 `kubectl get cdr ${cdr_name} -oyaml` "
 "命令看下详细信息，参数确认无误仍无法正常通信请参考[授权错误排查](../network/network_authorization_check.md)。"
 msgstr "Most task failure issues are network-related. To check network authorization, log in to the container (the master container in centralized mode and the autonomy container in peer-to-peer mode) and execute the `kubectl get cdr` command to view the authorization information. When READY is True, it indicates normal communication; when it is empty, it indicates abnormal communication. You can first check if the HOST and port are correct or execute the `kubectl get cdr ${cdr_name} -oyaml` command to view detailed information. If the parameters are correct but communication is still abnormal, refer to [Authorization Error Troubleshooting](../network/network_authorization_check.md)."

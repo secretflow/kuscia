@@ -29,6 +29,33 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
+func GetJobParties(job *kusciaapisv1alpha1.KusciaJob) map[string]kusciaapisv1alpha1.Party {
+	partyMap := make(map[string]kusciaapisv1alpha1.Party)
+	for _, t := range job.Spec.Tasks {
+		for _, p := range t.Parties {
+			partyMap[p.DomainID] = p
+		}
+	}
+	return partyMap
+}
+
+func AllJobPartiesHaveStage(job *kusciaapisv1alpha1.KusciaJob, stage kusciaapisv1alpha1.JobStagePhase) bool {
+	for _, party := range GetJobParties(job) {
+		if stageStatus, ok := job.Status.StageStatus[party.DomainID]; ok && stageStatus == stage {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func SetJobPartiesStageStatus(job *kusciaapisv1alpha1.KusciaJob, party string, stage kusciaapisv1alpha1.JobStagePhase) {
+	if job.Status.StageStatus == nil {
+		job.Status.StageStatus = make(map[string]kusciaapisv1alpha1.JobStagePhase)
+	}
+	job.Status.StageStatus[party] = stage
+}
+
 // GetKusciaJobCondition gets kuscia job condition.
 func GetKusciaJobCondition(status *kusciaapisv1alpha1.KusciaJobStatus,
 	condType kusciaapisv1alpha1.KusciaJobConditionType,

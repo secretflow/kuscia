@@ -17,8 +17,8 @@ package builtin
 import (
 	"fmt"
 	"strconv"
+
 	"github.com/apache/arrow/go/v13/arrow/array"
-	
 )
 
 // following parse functions are copied and modified from arrow v13@v13.0.0 /csv/reader
@@ -46,7 +46,7 @@ func ParseInt8(field array.Builder, str string) error {
 
 func ParseInt16(field array.Builder, str string) error {
 	v, err := strconv.ParseInt(str, 10, 16)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}
@@ -55,9 +55,9 @@ func ParseInt16(field array.Builder, str string) error {
 	return nil
 }
 
-func ParseInt32(field array.Builder, str string) error{
+func ParseInt32(field array.Builder, str string) error {
 	v, err := strconv.ParseInt(str, 10, 32)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}
@@ -65,9 +65,9 @@ func ParseInt32(field array.Builder, str string) error{
 	return nil
 }
 
-func ParseInt64(field array.Builder, str string) error{
+func ParseInt64(field array.Builder, str string) error {
 	v, err := strconv.ParseInt(str, 10, 64)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}
@@ -76,9 +76,9 @@ func ParseInt64(field array.Builder, str string) error{
 	return nil
 }
 
-func ParseUint8(field array.Builder, str string) error{
+func ParseUint8(field array.Builder, str string) error {
 	v, err := strconv.ParseUint(str, 10, 8)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}
@@ -86,7 +86,7 @@ func ParseUint8(field array.Builder, str string) error{
 	return nil
 }
 
-func ParseUint16(field array.Builder, str string) error{
+func ParseUint16(field array.Builder, str string) error {
 	v, err := strconv.ParseUint(str, 10, 16)
 	if err != nil {
 		field.AppendNull()
@@ -98,7 +98,7 @@ func ParseUint16(field array.Builder, str string) error{
 
 func ParseUint32(field array.Builder, str string) error {
 	v, err := strconv.ParseUint(str, 10, 32)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}
@@ -107,7 +107,7 @@ func ParseUint32(field array.Builder, str string) error {
 	return nil
 }
 
-func ParseUint64(field array.Builder, str string) error{
+func ParseUint64(field array.Builder, str string) error {
 	v, err := strconv.ParseUint(str, 10, 64)
 	if err != nil {
 		field.AppendNull()
@@ -119,7 +119,7 @@ func ParseUint64(field array.Builder, str string) error{
 
 func ParseFloat32(field array.Builder, str string) error {
 	v, err := strconv.ParseFloat(str, 32)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}
@@ -129,7 +129,7 @@ func ParseFloat32(field array.Builder, str string) error {
 
 func ParseFloat64(field array.Builder, str string) error {
 	v, err := strconv.ParseFloat(str, 64)
-	if err != nil{
+	if err != nil {
 		field.AppendNull()
 		return err
 	}

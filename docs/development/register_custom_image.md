@@ -33,7 +33,7 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 - `-h`：可选参数，查看工具脚本帮助信息
 - `-c`：必填参数，指定需要注册的自定义算法的 Docker 容器名
 - `-i`：必填参数，指定需要注册的自定义算法的 Docker 容器镜像名
-- `-f`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 模版文件。推荐在工具脚本同级目录下，以规则`{Kuscia AppImage 名称}.yaml`命名模版文件。否则必须通过该标志指定模版文件。
+- `-f`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 模版文件。推荐在工具脚本同级目录下，以规则 `{Kuscia AppImage 名称}.yaml` 命名模版文件。否则必须通过该标志指定模版文件。
 - `--import`：可选参数，将自定义算法镜像导入到节点容器中时指定该参数。
 
 ## 准备自定义算法镜像的 AppImage
@@ -76,4 +76,4 @@ docker pull $KUSCIA_IMAGE && docker run --rm $KUSCIA_IMAGE cat /home/kuscia/scri
 
 通过前面步骤注册完自定义算法镜像后，你可以获取算法镜像对应的 AppImage 资源名称。后续使用自定义算法镜像运行任务时，只需修改相应的字段即可。
 
-以名称为`secretflow-image`的 AppImage 为例，使用自定义算法镜像运行 [KusciaJob](../reference/concepts/kusciajob_cn.md) 作业，修改[KusciaJob 示例](../reference/concepts/kusciajob_cn.md#创建-kusciajob) 中 `spec.tasks[].appImage`字段的值。
+以名称为 `secretflow-image` 的 AppImage 为例，使用自定义算法镜像运行 [KusciaJob](../reference/concepts/kusciajob_cn.md) 作业，修改 [KusciaJob 示例](../reference/concepts/kusciajob_cn.md#创建-kusciajob) 中 `spec.tasks[].appImage` 字段的值。

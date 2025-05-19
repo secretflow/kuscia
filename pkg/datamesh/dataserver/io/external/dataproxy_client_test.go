@@ -18,11 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/secretflow/kuscia/pkg/datamesh/config"
-
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/secretflow/kuscia/pkg/datamesh/config"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
 

@@ -235,7 +235,7 @@ func getFromEnv(name string, config framework.Config, errs *errorcode.Errs) {
 		val, ok := os.LookupEnv(envName)
 		if !ok {
 			if _, ok = tag.Lookup("required"); ok {
-				errs.AppendErr(fmt.Errorf("can not get equired config (%s)", envName))
+				errs.AppendErr(fmt.Errorf("can not get required config (%s)", envName))
 			}
 			continue
 		}

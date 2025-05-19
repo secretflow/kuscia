@@ -48,7 +48,7 @@ func setJobOnePartyCreateFailed(job *kusciaapisv1alpha1.KusciaJob) {
 	job.Status.StageStatus["bob"] = kusciaapisv1alpha1.JobCreateStageFailed
 }
 
-// only one party sucess
+// only one party success
 func setJobOnlyOnePartyCreateSuccess(job *kusciaapisv1alpha1.KusciaJob) {
 	job.Status.Phase = kusciaapisv1alpha1.KusciaJobPending
 	job.Status.StageStatus = map[string]kusciaapisv1alpha1.JobStagePhase{}

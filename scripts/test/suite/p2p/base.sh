@@ -233,8 +233,9 @@ function test_p2p_token_rolling_cert_misconfig() {
   local mis_cert
   dst_cert=$(docker exec "${alice_ctr}" kubectl get domain "${dst_domain}" -o jsonpath='{.spec.cert}')
   mis_cert=$(docker exec "${alice_ctr}" kubectl get domain "${src_domain}" -o jsonpath='{.spec.cert}') # use alice domain cert as misconfigured cert
-  # cert mis config
+  # misconfigured cert
   docker exec "${alice_ctr}" kubectl patch domain "${dst_domain}" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/cert\", \"value\": ${mis_cert}}]"
+
 
   for i in {1..30}; do
     local ready
@@ -261,6 +262,20 @@ function test_p2p_token_rolling_cert_misconfig() {
 
   # run task
   test_p2p_kuscia_job
+}
+
+function test_diagnose_tool() {
+  for i in {1..5}; do
+    local result=$(docker exec -it "${AUTONOMY_ALICE_CONTAINER}" kuscia diagnose network alice bob)
+    if [[ ! $result == *"[PASS]"* ]] || [[ $result == *"[FAIL]"* ]]; then
+      sleep 3
+      continue
+    fi
+    break
+  done
+  if [[ ! $result == *"[PASS]"* ]] || [[ $result == *"[FAIL]"* ]]; then
+    fail "The diagnose failed, result: ${result}"
+  fi
 }
 
 function test_kuscia_images() {

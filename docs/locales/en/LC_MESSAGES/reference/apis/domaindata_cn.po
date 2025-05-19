@@ -407,8 +407,8 @@ msgid "/api/v1/domaindata/query"
 msgstr "/api/v1/domaindata/query"
 
 #: ../../reference/apis/domaindata_cn.md:243
-msgid "请求（QueryDomainRequest）"
-msgstr "Request (QueryDomainRequest)"
+msgid "请求（QueryDomainDataRequest）"
+msgstr "Request (QueryDomainDataRequest)"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[QueryDomainDataRequestData](#query-domain-data-request-data)"
@@ -419,8 +419,8 @@ msgid "查询内容"
 msgstr "Query Content"
 
 #: ../../reference/apis/domaindata_cn.md:250
-msgid "响应（QueryDomainResponse）"
-msgstr "Response (QueryDomainResponse)"
+msgid "响应（QueryDomainDataResponse）"
+msgstr "Response (QueryDomainDataResponse)"
 
 #: ../../reference/apis/domaindata_cn.md
 msgid "[DomainData](#domain-data-entity)"

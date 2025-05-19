@@ -26,9 +26,10 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
-	"github.com/stretchr/testify/assert"
 )
 
 func initMySQLUploader(t *testing.T, tableName string, ddSpec *v1alpha1.DomainDataSpec) (context.Context, *sql.DB, sqlmock.Sqlmock, *MySQLUploader, *utils.DataMeshRequestContext, error) {

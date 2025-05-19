@@ -763,6 +763,7 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 	serviceStatuses := map[string]*kusciaapisv1alpha1.ServiceStatus{}
 
 	if len(partyKit.configTemplates) > 0 {
+		nlog.Infof("Generate config map for task %s", partyKit.kusciaTask.Name)
 		configMap := generateConfigMap(partyKit)
 		if err := h.submitConfigMap(configMap); err != nil {
 			return nil, nil, fmt.Errorf("failed to submit configmap %q, %v", configMap.Name, err)
@@ -770,6 +771,7 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 	}
 
 	for _, podKit := range partyKit.pods {
+		nlog.Infof("Generate pod for task %s pod %s", partyKit.kusciaTask.Name, podKit.podName)
 		pod, err := h.generatePod(partyKit, podKit)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generate pod %q spec, %v", podKit.podName, err)
@@ -907,9 +909,10 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 				common.KusciaPartyMasterDomainAnnotationKey: kusciaTask.Annotations[common.KusciaPartyMasterDomainAnnotationKey],
 			},
 			Labels: map[string]string{
-				common.LabelController: common.ControllerKusciaTask,
-				common.LabelJobUID:     jobUID,
-				common.LabelTaskUID:    string(kusciaTask.UID),
+				common.LabelInterConnProtocolType: kusciaTask.Labels[common.LabelInterConnProtocolType],
+				common.LabelController:            common.ControllerKusciaTask,
+				common.LabelJobUID:                jobUID,
+				common.LabelTaskUID:               string(kusciaTask.UID),
 			},
 		},
 		Spec: kusciaapisv1alpha1.TaskResourceGroupSpec{
@@ -1110,6 +1113,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 
 			if metricPath != "" && metricPortName != "" {
 				if portInfo, ok := podKit.ports[metricPortName]; ok {
+					pod.Annotations[common.MetricAnnotationKey] = "true"
 					pod.Annotations[common.MetricPathAnnotationKey] = metricPath
 					pod.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
 				} else {

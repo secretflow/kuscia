@@ -52,7 +52,7 @@ msgstr "The following is the state transition diagram of KusciaDeployment (KD)."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:14
 msgid "![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)"
-msgstr "![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)"
+msgstr "![KusciaDeploymentState](../../imgs/en_images/kuscia_deployment_state.png)"
 
 #: ../../reference/concepts/kusciadeployment_cn.md:14
 msgid "KusciaDeploymentState"
@@ -111,7 +111,7 @@ msgid "创建 KusciaDeployment"
 msgstr "Create a KusciaDeployment."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:34
-msgid "下面以名称为`secretflow-serving.yaml`的内容为例，介绍创建 KusciaDeployment。"
+msgid "下面以名称为 `secretflow-serving.yaml` 的内容为例，介绍创建 KusciaDeployment。"
 msgstr "Next, take the content of `secretflow-serving.yaml` as an example to introduce the creation of KusciaDeployment."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:54
@@ -120,18 +120,18 @@ msgstr "In this example:"
 
 #: ../../reference/concepts/kusciadeployment_cn.md:56
 msgid ""
-"`.metadata.labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-"
-"type: serving`表示管理的应用为预测类型。"
+"`.metadata.labels`：表示 KusciaDeployment 的标签。当前示例 `kuscia.secretflow/app-"
+"type: serving` 表示管理的应用为预测类型。"
 msgstr ""
 "`.metadata.labels`: It represents the labels of KusciaDeployment. In the current example,"
 "`kuscia.secretflow/app-type: serving` indicates that the managed application is of the prediction type."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:57
-msgid "`.metadata.name`：表示 KusciaDeployment 的名称，当前示例为`secretflow-serving`。"
+msgid "`.metadata.name`：表示 KusciaDeployment 的名称，当前示例为 `secretflow-serving`。"
 msgstr "`.metadata.name`: It represents the name of the KusciaDeployment, which is `secretflow-serving` in the current example."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:58
-msgid "`.spec.initiator`：表示发起方的节点标识，当前示例为`alice`。"
+msgid "`.spec.initiator`：表示发起方的节点标识，当前示例为 `alice`。"
 msgstr "`.spec.initiator`: It represents the node identifier of the initiator, which is `alice` in the current example."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:59
@@ -144,8 +144,8 @@ msgstr "`.spec.parties`: It represents the information of all participating part
 
 #: ../../reference/concepts/kusciadeployment_cn.md:61
 msgid ""
-"`.spec.parties[0].appImageRef`：表示节点标识为`alice`的参与方所依赖的应用镜像 AppImage 名称为"
-"`secretflow-serving-image`，详细定义请参考 [Serving "
+"`.spec.parties[0].appImageRef`：表示节点标识为 `alice` 的参与方所依赖的应用镜像 AppImage 名称为"
+" `secretflow-serving-image`，详细定义请参考 [Serving "
 "Appimage](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)"
 msgstr ""
@@ -155,23 +155,23 @@ msgstr ""
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:62
-msgid "`.spec.parties[0].domainID`：表示参与方节点标识为`alice`。"
+msgid "`.spec.parties[0].domainID`：表示参与方节点标识为 `alice`。"
 msgstr "`.spec.parties[0].domainID`: It represents the node identifier of the participant, which is `alice`."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:63
 msgid ""
-"`.spec.parties[1].appImageRef`：表示节点标识为`bob`的参与方所依赖的应用镜像 AppImage 名称为"
-"`secretflow-serving-image`，详细定义请参考 [Serving "
+"`.spec.parties[1].appImageRef`：表示节点标识为 `bob` 的参与方所依赖的应用镜像 AppImage 名称为"
+" `secretflow-serving-image`，详细定义请参考 [Serving "
 "Appimage](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)"
-msgstr 
+msgstr ""
 "`.spec.parties[1].appImageRef`: It represents the AppImage name of the application dependency "
 "for the participant identified as `bob`, which is `secretflow-serving-image`. For detailed"
 "definitions, please refer to the [Serving AppImage](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:64
-msgid "`.spec.parties[1].domainID`：表示参与方节点标识为`bob`。"
+msgid "`.spec.parties[1].domainID`：表示参与方节点标识为 `bob`。"
 msgstr "`.spec.parties[1].domainID`: It represents the node identifier of the participant, which is `bob`."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:66
@@ -183,7 +183,7 @@ msgid "查看 KusciaDeployment"
 msgstr "View KusciaDeployment."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:74
-msgid "下面以名称为`secretflow-serving`的 KusciaDeployment 为例，介绍如何查看相关资源。"
+msgid "下面以名称为 `secretflow-serving` 的 KusciaDeployment 为例，介绍如何查看相关资源。"
 msgstr "The following takes the KusciaDeployment named `secretflow-serving` as an example to introduce how to view the related resources."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:76
@@ -246,7 +246,7 @@ msgid "清理 KusciaDeployment"
 msgstr "Clean up the KusciaDeployment"
 
 #: ../../reference/concepts/kusciadeployment_cn.md:206
-msgid "下面以名称为`secretflow-serving`的 KusciaDeployment 为例，介绍如何清理 KusciaDeployment。"
+msgid "下面以名称为 `secretflow-serving` 的 KusciaDeployment 为例，介绍如何清理 KusciaDeployment。"
 msgstr "The following takes the KusciaDeployment named `secretflow-serving` as an example to introduce how to clean up the KusciaDeployment."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:208
@@ -267,7 +267,7 @@ msgstr "Detailed Introduction to KusciaDeployment."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:225
 msgid ""
-"下面以名称为`secretflow-serving`的 KusciaDeployment 模版为例，介绍 KusciaDeployment "
+"下面以名称为 `secretflow-serving` 的 KusciaDeployment 模版为例，介绍 KusciaDeployment "
 "所包含的完整字段。"
 msgstr ""
 "The following takes the template of the KusciaDeployment named `secretflow-serving`"
@@ -279,8 +279,8 @@ msgstr "The detailed introduction of the subfields of KusciaDeployment `metadata
 
 #: ../../reference/concepts/kusciadeployment_cn.md:314
 msgid ""
-"`labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-type: "
-"serving`表示管理的应用为预测类型。"
+"`labels`：表示 KusciaDeployment 的标签。当前示例 `kuscia.secretflow/app-type: "
+"serving` 表示管理的应用为预测类型。"
 msgstr ""
 "`labels`: It represents the labels of the KusciaDeployment. In the current example, `kuscia.secretflow/app-type:"
 "serving` indicates that the managed application is of the serving type."
@@ -322,7 +322,7 @@ msgid "`parties[].role`：表示参与方的角色。"
 msgstr "`parties[].role`: It represents the role of the participating party."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:325
-msgid "`parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从`parties[].appImageRef`获取的对应模版信息。"
+msgid "`parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从 `parties[].appImageRef` 获取的对应模版信息。"
 msgstr "`parties[].template`: It represents the template information of the participating party's application. If this template is configured, the corresponding template information from `parties[].appImageRef` will be replaced with the information configured in this template."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:326
@@ -331,7 +331,7 @@ msgstr "`template.replicas`: It represents the desired number of replicas for th
 
 #: ../../reference/concepts/kusciadeployment_cn.md:327
 msgid ""
-"`template.strategy`：表示应用的更新策略。当前支持`Recreate`和`RollingUpdate`两种策略，详细解释请参考 "
+"`template.strategy`：表示应用的更新策略。当前支持 `Recreate` 和 `RollingUpdate` 两种策略，详细解释请参考 "
 "[Strategy](https://kubernetes.io/zh-"
 "cn/docs/concepts/workloads/controllers/deployment/#strategy)"
 msgstr ""
@@ -379,7 +379,7 @@ msgstr "`Available`: It indicates that all participating parties are available, 
 #: ../../reference/concepts/kusciadeployment_cn.md:336
 msgid ""
 "`Failed`：表示 KusciaDeployment Controller 处理 KusciaDeployment "
-"资源失败，详细失败描述可以从`message`和`reason`中获取。"
+"资源失败，详细失败描述可以从 `message` 和 `reason` 中获取。"
 msgstr ""
 "`Failed`: It indicates that the KusciaDeployment Controller failed to process the KusciaDeployment resource."
 "Detailed failure descriptions can be obtained from the `message` and `reason` fields."
@@ -397,7 +397,7 @@ msgid "`lastReconcileTime`：表示 KusciaDeployment 最近一次更新的时间
 msgstr "`lastReconcileTime`: It represents the timestamp of the most recent update of the KusciaDeployment."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:340
-msgid "`message`：表示 KusciaDeployment 处于该阶段的详细描述信息，用于对`reason`的补充。一般用于记录详细失败信息。"
+msgid "`message`：表示 KusciaDeployment 处于该阶段的详细描述信息，用于对 `reason` 的补充。一般用于记录详细失败信息。"
 msgstr "`message`: It represents the detailed description information of the KusciaDeployment being in this phase, which is used as a supplement to `reason`. It is generally used to record detailed failure information."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:341
@@ -416,15 +416,15 @@ msgstr ""
 
 #: ../../reference/concepts/kusciadeployment_cn.md:344
 msgid ""
-"`alice.secretflow-serving`：表示参与方的节点名称为`alice`，Deployment 资源名称为"
-"`secretflow-serving`。"
+"`alice.secretflow-serving`：表示参与方的节点名称为 `alice`，Deployment 资源名称为"
+" `secretflow-serving`。"
 msgstr ""
 "`alice.secretflow-serving`: It indicates that the node name of the participating party"
 "is `alice` and the name of the Deployment resource is `secretflow-serving`."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:345
 msgid ""
-"`alice.secretflow-serving.conditions`：表示名称为`secretflow-serving`的 "
+"`alice.secretflow-serving.conditions`：表示名称为 `secretflow-serving` 的 "
 "Deployment 资源的详细状况信息。"
 msgstr ""
 "`alice.secretflow-serving.conditions`: It represents the detailed status"
@@ -432,7 +432,7 @@ msgstr ""
 
 #: ../../reference/concepts/kusciadeployment_cn.md:346
 msgid ""
-"`alice.secretflow-serving.creationTimestamp`：表示名称为`secretflow-serving`的 "
+"`alice.secretflow-serving.creationTimestamp`：表示名称为 `secretflow-serving` 的 "
 "Deployment 资源的创建时间。"
 msgstr ""
 "`alice.secretflow-serving.creationTimestamp`: It represents the creation time"
@@ -440,7 +440,7 @@ msgstr ""
 
 #: ../../reference/concepts/kusciadeployment_cn.md:347
 msgid ""
-"`alice.secretflow-serving.phase`：表示名称为`secretflow-serving`的 Deployment "
+"`alice.secretflow-serving.phase`：表示名称为 `secretflow-serving` 的 Deployment "
 "资源的状态。当前包括以下几种 PHASE："
 msgstr ""
 "`alice.secretflow-serving.phase`: It represents the status of the Deployment"

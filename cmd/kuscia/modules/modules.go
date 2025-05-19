@@ -40,13 +40,13 @@ var (
 type ModuleReadyHook func(m Module) error
 
 type Module interface {
-	// Startup Module. this function will hold until module stoped
+	// Run Startup Module. this function will hold until module stopped
 	Run(ctx context.Context) error
 
-	// wait unit module is ready
+	// WaitReady wait unit module is ready
 	WaitReady(ctx context.Context) error
 
-	// get module name
+	// Name get module name
 	Name() string
 }
 

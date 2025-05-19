@@ -59,7 +59,7 @@ func (r *reportService) ReportProgress(ctx context.Context, request *reporter.Re
 				Message: "TaskID should not be empty"},
 		}
 	}
-	// use request.Progress to update progess field in kuscia task crd
+	// use request.Progress to update process field in kuscia task crd
 	kt, err := r.kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).Get(ctx, taskID, metav1.GetOptions{})
 	if err != nil {
 		nlog.Infof("Failed to get Kuscia Task %v", err)
@@ -94,7 +94,7 @@ func (r *reportService) ReportProgress(ctx context.Context, request *reporter.Re
 		return &reporter.CommonReportResponse{
 			Status: &pbv1alpha.Status{
 				Code:    int32(pberrorcode.ErrorCode_ReporterErrForUnexptected),
-				Message: "Failed to update Kuscia Task Status Prgress"},
+				Message: "Failed to update Kuscia Task Status Progress"},
 		}
 	}
 	// return success

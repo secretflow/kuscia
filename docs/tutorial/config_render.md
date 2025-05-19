@@ -5,7 +5,7 @@
 如果应用需要在 Kuscia 上运行，需要适配 Kuscia 的配置文件渲染模式来解决应用运行时的端口冲突，参与方地址，数据访问地址等问题，详细如下：
 
 - 端口： Kuscia 要求应用能够支持指定监听端口，主要是解决 RunP 场景下，端口冲突的问题
-- 任务输入： 用户通过 KusciaAPI/KusciaJob/KusciaTask/KusciaDeployment 指定的任务参数，比如： `taskInputConfig`
+- 任务输入：用户通过 KusciaAPI/KusciaJob/KusciaTask/KusciaDeployment 指定的任务参数，比如：`taskInputConfig`
 - 集群信息： 其他参与方的地址等信息
 - 内部环境： 比如 DataMesh 地址 等信息
 - 其他动态配置: 应用依赖的某个配置在不同机构，可能对应的值不一样，需要从 Kuscia 配置系统 中提取对应的值
@@ -61,8 +61,8 @@ spec:
 
 注：
 
-- `configTemplates`: 应用自己的配置文件模版， Kuscia运行应用前，会根据模版渲染出真实的配置文件； 详细参考： [AppImage](../reference/concepts/appimage_cn.md)
-- `deployTemplates[].spec.containers[].configVolumeMounts[]`: 供应用读取的配置文件挂载地址（配置文件内容，对应到`configTemplates`）；详细参考： [AppImage](../reference/concepts/appimage_cn.md)
+- `configTemplates`: 应用自己的配置文件模版， Kuscia 运行应用前，会根据模版渲染出真实的配置文件；详细参考：[AppImage](../reference/concepts/appimage_cn.md)
+- `deployTemplates[].spec.containers[].configVolumeMounts[]`: 供应用读取的配置文件挂载地址（配置文件内容，对应到 `configTemplates`）；详细参考：[AppImage](../reference/concepts/appimage_cn.md)
 
 ## 配置文件渲染
 
@@ -98,7 +98,7 @@ Kuscia 在 `text/template` 语法之外，为了方便配置文件更加简单�
 | `{{{.VariableName.Field1}}}`                                 | 解决嵌套结构的访问，嵌套层次暂无限制（比如：`{{{.VariableName.Field1.SubField2}}}` | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.selfPartyIdx}}}`                                                                            |
 | `{{{.VariableName.Field1[<idx>].SubField2}}}`                | 选择指定数组索引的元素                                                  | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[0].name}}}`                                                                         |
 | `{{{.VariableName.Field1[.VariableName.Field2].SubField2}}}` | 选择指定数组索引的元素（索引来自于 VariableName 中的某个字段）                       | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[.TASK_CLUSTER_DEFINE.selfPartyIdx].services[0].endpoints[0]}}}`                     |
-| `{{{.VariableName.Field1[<key>=<value>].SubField2}}}`        | 筛选符合指定条件的数组元素（如果有多个满足条件，只选择第一个）                              | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[name=alice].role}}}` 来查找 `TASK_CLUSTER_DEFINE.parties`所有元素中，满足 `name` 值为 `alice`的元素 |
+| `{{{.VariableName.Field1[<key>=<value>].SubField2}}}`        | 筛选符合指定条件的数组元素（如果有多个满足条件，只选择第一个）                              | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[name=alice].role}}}` 来查找 `TASK_CLUSTER_DEFINE.parties`所有元素中，满足 `name` 值为 `alice` 的元素 |
 
 {#kuscia-cm}
 
@@ -131,6 +131,6 @@ Kuscia 在节点侧拉起应用容器时，会解析应用配置文件，并从�
 - 如果只是简单的字符串替换，请使用 Golang 原生语法 `{{X}}`
 - 如果涉及从 Json 配置中获取某个具体字段，请使用 Kuscia 高级语法 `{{{X.X1}}}`
 - Kuscia 高级语法功能比较限定，请严格按照上述示例来填写，其他行为未知（也不保证非定义行为的兼容性）
-- 在过滤筛选语法中 `<key>`, `<value>`请确保没有 `="[]` 等字符串，否则行为会未知
+- 在过滤筛选语法中 `<key>`, `<value>` 请确保没有 `="[]` 等字符串，否则行为会未知
 - 如果输出的类型非原子类型（比如：结构体/Map/Array等），默认会使用Json来进行序列化，所以请确保输出内容符合目标配置文件格式
 :::

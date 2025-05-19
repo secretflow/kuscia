@@ -40,7 +40,7 @@
 发起请求
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -v -k -X POST 'https://localhost:8082/api/v1/log/task/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \

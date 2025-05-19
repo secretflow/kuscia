@@ -90,6 +90,7 @@ function prepare_operator_image() {
     docker save "${OPERATOR_IMAGE}" -o "${image_tar}"
   fi
 
+  docker cp "${image_tar}" "${KUSCIA_CONTAINER_NAME}":/tmp
   docker exec -it "${KUSCIA_CONTAINER_NAME}" ctr -a="${CTR_ROOT}/containerd/run/containerd.sock" -n=k8s.io images import "${image_tar}"
   rm -rf "${image_tar}"
   echo -e "${GREEN}Finish preparing operator image '${OPERATOR_IMAGE}' to container '${KUSCIA_CONTAINER_NAME}'...${NC}"
@@ -112,6 +113,7 @@ spec:
     spec:
       containers:
       - name: ss-lr
+        workingDir: /work
   image:
     id: 880258fc0d3b
     name: ${image_name}
@@ -119,7 +121,8 @@ spec:
     tag: ${image_tag}
 " > "${app_image_name}"
 
-docker exec -it "${KUSCIA_CONTAINER_NAME}" kubectl apply -f "${app_image_name}"
+docker cp ${app_image_name} "${KUSCIA_CONTAINER_NAME}":/home/kuscia
+docker exec -it "${KUSCIA_CONTAINER_NAME}" kubectl apply -f /home/kuscia/ss-lr-appImage.yaml
 docker exec -it "${KUSCIA_CONTAINER_NAME}" kubectl annotate appimage ss-lr kuscia.secretflow/component-spec='{"component.1.description":"ss-lr","component.1.input.1.categories":"dataset","component.1.input.1.description":"train data","component.1.input.1.name":"train_data","component.1.name":"ss_lr","component.1.output.1.categories":"dataset","component.1.output.1.description":"train data","component.1.output.1.name":"train_data"}' --overwrite
 
 rm -rf "${app_image_name}"

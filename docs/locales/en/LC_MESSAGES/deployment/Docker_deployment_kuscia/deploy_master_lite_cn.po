@@ -19,71 +19,75 @@ msgstr ""
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:1
 msgid "多机部署中心化集群"
-msgstr ""
+msgstr "Multi-machine Deployment of Centralized Cluster"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:3
 msgid "前言"
-msgstr ""
+msgstr "Introduction"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:5
 msgid ""
 "本教程帮助您在多台机器上使用 [中心化组网模式](../../reference/architecture_cn.md#中心化组网模式) 来部署 "
 "Kuscia 集群。"
 msgstr ""
+"This tutorial helps you deploy a Kuscia cluster on multiple machines using the [Centralized Networking Mode](../../reference/architecture_cn.md#centralized-networking-mode)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:7
 msgid "前置准备"
-msgstr ""
+msgstr "Prerequisites"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:9
 msgid ""
 "在部署 Kuscia "
 "之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deploy_check.md)。"
 msgstr ""
+"Before deploying Kuscia, please ensure that the environment is fully prepared, including all necessary software, resources, operating system versions, and network environments, to ensure a smooth deployment process. For details, refer to [Deployment Requirements](../deploy_check.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:11
 msgid "部署流程（基于TOKEN认证）"
-msgstr ""
+msgstr "Deployment Process (Based on TOKEN Authentication)"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:13
 msgid "部署 master 节点"
-msgstr ""
+msgstr "Deploy Master Node"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:15
 msgid "登录到安装 master 的机器上，假设对外 IP 是 1.1.1.1。"
-msgstr ""
+msgstr "Log in to the machine where the master is installed, assuming the external IP is 1.1.1.1."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:17
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:156
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:218
 msgid "指定 Kuscia 版本："
-msgstr ""
+msgstr "Specify Kuscia Version:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:24
 msgid "指定 SecretFlow 版本："
-msgstr ""
+msgstr "Specify SecretFlow Version:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:31
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:163
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:225
 msgid "获取部署脚本，部署脚本会下载到当前目录："
-msgstr ""
+msgstr "Download the deployment script, which will be saved to the current directory:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:37
 msgid ""
 "生成 master 节点的配置文件，kuscia init 参数请参考 [Kuscia "
 "配置文件](../kuscia_config_cn.md#id3)："
 msgstr ""
+"Generate the configuration file for the master node. For kuscia init parameters, refer to [Kuscia Configuration File](../kuscia_config_cn.md#id3):"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:44
 msgid "建议检查生成的文件，避免配置文件错误导致的部署启动问题。"
-msgstr ""
+msgstr "It is recommended to check the generated files to avoid deployment issues caused by configuration errors."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:46
 msgid ""
 "启动 master，默认会在当前目录下创建 ${USER}-kuscia-master/{data、logs} 用来存储 master "
 "的数据、日志："
 msgstr ""
+"Start the master, which will create ${USER}-kuscia-master/{data, logs} in the current directory to store the master's data and logs:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:58
 msgid ""
@@ -92,100 +96,106 @@ msgid ""
 "names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` "
 "、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。"
 msgstr ""
+"Node ID needs to be globally unique and comply with the RFC 1123 label name rules. For details, refer to [here](https://kubernetes.io/en/docs/concepts/overview/working-with-objects/names/#dns-label-names). `default`, `kube-system`, `kube-public`, `kube-node-lease`, `master`, and `cross-domain` are predefined node IDs in Kuscia and cannot be used."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:59
 msgid ""
 "目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving "
 "以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)"
 msgstr ""
+"The current kuscia.sh script only supports importing Secretflow images. For scql, serving, and other custom images, please refer to [Register Custom Algorithm Images](../../development/register_custom_image.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:60
 msgid ""
 "如果 master 的入口网络存在网关时，为了确保节点与 master "
 "之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)。"
 msgstr ""
+"If the master's entry network has a gateway, to ensure normal communication between nodes and the master, the gateway needs to meet certain requirements. For details, refer to [here](../networkrequirements.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:61
 msgid ""
 "master 节点默认使用 SQLite 作为存储，如果生产部署，需要配置链接到 MySQL "
 "数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)"
 msgstr ""
+"The master node uses SQLite as the default storage. For production deployment, you need to configure the connection string to link to a MySQL database. For specific configuration, refer to [here](../kuscia_config_cn.md#id3)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:62
 msgid "需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)"
-msgstr ""
+msgstr "You need to expose the Kuscia ports to the collaborating parties. Refer to [Kuscia Port Introduction](../kuscia_ports_cn.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:63
 msgid "非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)"
-msgstr ""
+msgstr "For deployment by non-root users, refer to [here](./docker_deploy_kuscia_with_rootless.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:64
 msgid "升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)"
-msgstr ""
+msgstr "For upgrading engine images, refer to the [Guide](../../tutorial/upgrade_engine.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:67
 msgid ""
 "建议使用 `curl -kvvv https://ip:port` 检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 "
 "401，内容是：unauthorized。 示例如下："
 msgstr ""
+"It is recommended to use `curl -kvvv https://ip:port` to check if the access is successful. Normally, the returned HTTP error code should be 401, with the content: unauthorized. Example as follows:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:112
 msgid "Tips"
-msgstr ""
+msgstr "Tips"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:114
 msgid ""
 "本文后续还会经常使用到 `docker exec -it ${USER}-kuscia-master xxxxx` "
 "类似的命令。建议以如下方式简化输入。"
 msgstr ""
+"The following sections will frequently use commands similar to `docker exec -it ${USER}-kuscia-master xxxxx`. It is recommended to simplify the input as follows."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:120
 msgid "后续相关命令可以简化为 `km xxxxx`。"
-msgstr ""
+msgstr "Subsequent related commands can be simplified to `km xxxxx`."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:122
 msgid "部署 lite 节点"
-msgstr ""
+msgstr "Deploy Lite Nodes"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:124
 msgid "您可以选择在任一台机器上部署 lite 节点（下文以 alice、bob 为例）。"
-msgstr ""
+msgstr "You can choose to deploy the lite nodes on any machine (the following examples use alice and bob)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:126
 msgid "部署 lite 节点 Alice"
-msgstr ""
+msgstr "Deploy Lite Node Alice"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:128
 msgid "在部署 Alice 节点之前，我们需要在 master 上注册 Alice 节点并获取部署时需要用到的 Token 。"
-msgstr ""
+msgstr "Before deploying the Alice node, we need to register the Alice node on the master and obtain the Token required for deployment."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:130
 msgid "执行以下命令，完成节点注册并从返回中得到 Token （下文将以 abcdefg 为例）。"
-msgstr ""
+msgstr "Execute the following command to complete node registration and obtain the Token from the response (the following example uses abcdefg)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:136
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:148
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:198
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:210
 msgid "输出示例："
-msgstr ""
+msgstr "Output Example:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:142
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:204
 msgid "如果 Token 遗忘了，可以通过该命令重新获取"
-msgstr ""
+msgstr "If you forget the Token, you can retrieve it using this command."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:154
 msgid "接下来，登录到安装 Alice 的机器上，假设对外暴露的 IP 是 2.2.2.2。"
-msgstr ""
+msgstr "Next, log in to the machine where Alice is installed, assuming the exposed IP is 2.2.2.2."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:169
 msgid "生成 Alice 节点的配置文件："
-msgstr ""
+msgstr "Generate the configuration file for the Alice node:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:178
 msgid "启动 Alice，默认会在当前目录下创建 ${USER}-kuscia-lite-alice/data 目录用来存放 alice 的数据："
-msgstr ""
+msgstr "Start Alice, which will create the ${USER}-kuscia-lite-alice/data directory in the current directory to store Alice's data:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:186
 msgid ""
@@ -193,30 +203,31 @@ msgid ""
 "参数指定下端口号（例如：./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081 -g "
 "28082 -q 28083 -x 28084），防止出现端口冲突。"
 msgstr ""
+"If the master and multiple lite nodes are deployed on the same physical machine, you can use the -p -k -g -q -x parameters to specify different port numbers (e.g., ./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081 -g 28082 -q 28083 -x 28084) to prevent port conflicts."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:188
 msgid "部署 lite 节点 bob"
-msgstr ""
+msgstr "Deploy Lite Node Bob"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:190
 msgid "在部署 Bob 节点之前，我们需要在 master 注册 bob 节点，并获取到部署时需要用到的 Token 。"
-msgstr ""
+msgstr "Before deploying the Bob node, we need to register the Bob node on the master and obtain the Token required for deployment."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:192
 msgid "执行以下命令，完成节点注册并从返回中得到 Token （下文将以 hijklmn 为例）。"
-msgstr ""
+msgstr "Execute the following command to complete node registration and obtain the Token from the response (the following example uses hijklmn)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:216
 msgid "接下来，登录到安装 Bob 的机器上，假设对暴露的 IP 是 3.3.3.3。"
-msgstr ""
+msgstr "Next, log in to the machine where Bob is installed, assuming the exposed IP is 3.3.3.3."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:231
 msgid "生成 Bob 节点的配置文件："
-msgstr ""
+msgstr "Generate the configuration file for the Bob node:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:240
 msgid "启动 Bob，默认会在当前目录下创建 ${USER}-kuscia-lite-bob/data 目录用来存放 bob 的数据："
-msgstr ""
+msgstr "Start Bob, which will create the ${USER}-kuscia-lite-bob/data directory in the current directory to store Bob's data:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:248
 msgid ""
@@ -224,102 +235,105 @@ msgid ""
 "参数指定下端口号（例如：./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081 -g 38082"
 " -q 38083 -x 38084），防止出现端口冲突。"
 msgstr ""
+"If the master and multiple lite nodes are deployed on the same physical machine, you can use the -p -k -g -q -x parameters to specify different port numbers (e.g., ./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081 -g 38082 -q 38083 -x 38084) to prevent port conflicts."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:250
 msgid "配置授权"
-msgstr ""
+msgstr "Configure Authorization"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:252
 msgid "如果要发起由两个 lite 节点参与的任务，您需要给这两个节点之间建立授权。"
-msgstr ""
+msgstr "If you want to initiate a task involving two lite nodes, you need to establish authorization between these two nodes."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:254
 msgid "创建 alice 和 bob 之间的授权"
-msgstr ""
+msgstr "Create Authorization Between Alice and Bob"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:256
 msgid "在 master 机器上执行创建授权的命令"
-msgstr ""
+msgstr "Execute the authorization creation command on the master machine."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:267
 msgid "执行以下命令："
-msgstr ""
+msgstr "Execute the following command:"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:273
 msgid ""
 "当 `type` 为 Ready 的 condition 的 `status` 值为 \"True\" 则说明 Alice 和 Bob "
 "之间授权建立成功。"
 msgstr ""
+"When the `status` value of the condition with `type` Ready is \"True\", it indicates that the authorization between Alice and Bob has been successfully established."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:277
 msgid "如果节点之间的入口网络存在网关时，为了确保节点与节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)"
 msgstr ""
+"If the entry network between nodes has a gateway, to ensure normal communication between nodes, the gateway needs to meet certain requirements. For details, refer to [here](../networkrequirements.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:278
 msgid "授权失败，请参考[授权错误排查](../../troubleshoot/network/network_authorization_check.md)"
-msgstr ""
+msgstr "Authorization failed, please refer to [Authorization Error Troubleshooting](../../troubleshoot/network/network_authorization_check.md)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:281
 msgid "运行任务"
-msgstr ""
+msgstr "Run Task"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:283
 msgid "接下来，运行一个测试任务以验证部署是否成功。"
-msgstr ""
+msgstr "Next, run a test task to verify the successful deployment."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:285
 msgid "准备数据"
-msgstr ""
+msgstr "Prepare Data"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:287
 msgid "获取测试数据集"
-msgstr ""
+msgstr "Obtain Test Dataset"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:289
 msgid "登录到安装 Alice 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-alice/data 下"
-msgstr ""
+msgstr "Log in to the machine where Alice is installed and copy the default test data to the ${USER}-kuscia-lite-alice/data directory in the previous deployment directory."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:297
 msgid "登录到安装 bob 的机器上，将默认的测试数据拷贝到之前部署目录的 ${USER}-kuscia-lite-bob/data 下"
-msgstr ""
+msgstr "Log in to the machine where Bob is installed and copy the default test data to the ${USER}-kuscia-lite-bob/data directory in the previous deployment directory."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:305
 msgid "创建测试数据表"
-msgstr ""
+msgstr "Create Test Data Table"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:307
 msgid "登录到安装 master 的机器上，为 Alice 和 Bob 的测试数据创建 domaindata"
-msgstr ""
+msgstr "Log in to the machine where the master is installed and create domaindata for Alice and Bob's test data."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:314
 msgid "创建测试数据表授权"
-msgstr ""
+msgstr "Create Authorization for Test Data Table"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:316
 msgid "登录到安装 master 的机器上，为 Alice 的测试数据创建 domaindatagrant"
-msgstr ""
+msgstr "Log in to the machine where the master is installed and create domaindatagrant for Alice's test data."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:327
 msgid "同理，登录到安装 master 的机器上，为 Bob 的测试数据创建 domaindatagrant"
-msgstr ""
+msgstr "Similarly, log in to the machine where the master is installed and create domaindatagrant for Bob's test data."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:338
 msgid "执行测试作业"
-msgstr ""
+msgstr "Execute Test Job"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:340
 msgid "登录到安装 master 的机器上"
-msgstr ""
+msgstr "Log in to the machine where the master is installed."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:342
 msgid "创建并启动作业（两方 PSI 任务）"
-msgstr ""
+msgstr "Create and Start Job (Two-party PSI Task)"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:348
 msgid "查看作业状态"
-msgstr ""
+msgstr "Check Job Status"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md:354
 msgid "任务运行遇到网络错误时，可以参考[这里](../../troubleshoot/network/network_troubleshoot.md)排查"
-msgstr ""
+msgstr "If the task encounters network errors, you can refer to [here](../../troubleshoot/network/network_troubleshoot.md) for troubleshooting."
 

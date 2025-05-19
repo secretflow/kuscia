@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../deployment/kuscia_monitor.md:1
 msgid "Kuscia 监控"
-msgstr ""
+msgstr "Kuscia Monitoring"
 
 #: ../../deployment/kuscia_monitor.md:3
 msgid ""
@@ -29,110 +29,123 @@ msgid ""
 " 和 [ss](https://man7.org/linux/man-pages/man8/ss.8.html) "
 "暴露网络指标。后续预计集成包括引擎、Kuscia-API、跨机构的指标数据。"
 msgstr ""
+"Kuscia exposes some metric data that can be used as a data source for external monitoring tools (such as Prometheus). Currently, machine metrics are exposed via [node_exporter](https://github.com/prometheus/node_exporter), and network metrics are exposed via [Envoy](https://www.envoyproxy.io/docs/envoy/v1.29.0/configuration/upstream/cluster_manager/cluster_stats#general) and [ss](https://man7.org/linux/man-pages/man8/ss.8.html). Future plans include integrating metrics from engines, Kuscia-API, and cross-institutional data."
 
 #: ../../deployment/kuscia_monitor.md:5
 msgid "1 监控能力"
-msgstr ""
+msgstr "1 Monitoring Capabilities"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "指标"
-msgstr ""
+msgstr "Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "来源模块"
-msgstr ""
+msgstr "Source Module"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "集成"
-msgstr ""
+msgstr "Integration"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "介绍"
-msgstr ""
+msgstr "Introduction"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "机器指标"
-msgstr ""
+msgstr "Machine Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_exporter"
-msgstr ""
+msgstr "node_exporter"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "已集成"
-msgstr ""
+msgstr "Integrated"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "Kuscia 所在容器的 CPU/MEM/DISK/LOAD 等核心指标"
-msgstr ""
+msgstr "Core metrics such as CPU, MEM, DISK, and LOAD of the container where Kuscia is running"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "网络指标"
-msgstr ""
+msgstr "Network Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy/ss"
-msgstr ""
+msgstr "envoy/ss"
 
 #: ../../deployment/kuscia_monitor.md
-msgid "网络收发，QPS等指标"
-msgstr ""
+msgid "已集成"
+msgstr "Integrated"
+
+#: ../../deployment/kuscia_monitor.md
+msgid "网络收发，QPS 等指标"
+msgstr "Metrics such as network receive/transmit and QPS"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "引擎指标"
-msgstr ""
+msgstr "Engine Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "-"
-msgstr ""
+msgstr "-"
 
 #: ../../deployment/kuscia_monitor.md
-msgid "未集成"
-msgstr ""
+msgid "已集成，详见 [Kuscia 引擎指标监控](./kuscia_engine_monitor.md)"
+msgstr "Integrated, see [Kuscia Engine Metrics Monitoring](./kuscia_engine_monitor.md) for details."
 
 #: ../../deployment/kuscia_monitor.md
 msgid "运行在kuscia上各引擎的指标，如： secretflow/serving/psi/scql/...等"
-msgstr ""
+msgstr "Metrics of various engines running on Kuscia, such as secretflow, serving, psi, scql, etc."
 
 #: ../../deployment/kuscia_monitor.md
-msgid "Kuscia-API指标"
-msgstr ""
+msgid "Kuscia-API 指标"
+msgstr "Kuscia-API Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "kuscia-api"
-msgstr ""
+msgstr "kuscia-api"
 
 #: ../../deployment/kuscia_monitor.md
-msgid "kuscia-api 错误/QPS等指标"
-msgstr ""
+msgid "未集成"
+msgstr "Not Integrated"
+
+#: ../../deployment/kuscia_monitor.md
+msgid "kuscia-api 错误/QPS 等指标"
+msgstr "Metrics such as errors and QPS for kuscia-api"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "跨机构指标"
-msgstr ""
+msgstr "Cross-institutional Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "kuscia"
-msgstr ""
+msgstr "kuscia"
+
+#: ../../deployment/kuscia_monitor.md
+msgid "未集成"
+msgstr "Not Integrated"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "在允许的情况下采集其他机构指标"
-msgstr ""
+msgstr "Collect metrics from other institutions if allowed"
 
 #: ../../deployment/kuscia_monitor.md:15
 msgid "2 配置监控"
-msgstr ""
+msgstr "2 Configure Monitoring"
 
 #: ../../deployment/kuscia_monitor.md:17
 msgid "2.1 Kuscia 暴露的指标采集端口"
-msgstr ""
+msgstr "2.1 Kuscia Exposed Metric Collection Port"
 
 #: ../../deployment/kuscia_monitor.md:19
 msgid "指标端口位于 9091 端口的 /metrics, container_ip 请赋值为机构容器的 IP 地址"
-msgstr ""
+msgstr "The metrics port is located at /metrics on port 9091. Please set container_ip to the IP address of the institution's container."
 
 #: ../../deployment/kuscia_monitor.md:25
 msgid "2.2 Prometheus/Grafana 监控 Kuscia"
-msgstr ""
+msgstr "2.2 Monitoring Kuscia with Prometheus/Grafana"
 
 #: ../../deployment/kuscia_monitor.md:27
 msgid ""
@@ -146,410 +159,413 @@ msgid ""
 "ID（可通过可视化界面查看，也可通过 `curl -s "
 "http://admin:admin@localhost:3000/api/datasources` 查询）。"
 msgstr ""
+"Prometheus and Grafana can be configured to monitor Kuscia. For example, in centralized mode, to obtain metric data from one party of the institution (such as root-kuscia-lite-alice), assuming the container IP address container_ip = 172.18.0.3, you can retrieve the metrics exposed by the container. Create a [prometheus.yml example file](https://github.com/secretflow/kuscia/blob/main/scripts/templates/prometheus.yml), and fill in the institution container's IP address (172.18.0.3) and port number (default port is 9091) in the configuration file. After starting Prometheus and Grafana, create a metric data source in Grafana and import the [Grafana template file](https://github.com/secretflow/kuscia/blob/main/scripts/templates/grafana-dashboard-machine.json). Note that you need to replace the data source {{Kuscia-datasource}} with the created data source ID (which can be viewed through the visualization interface or queried using `curl -s http://admin:admin@localhost:3000/api/datasources`)."
 
 #: ../../deployment/kuscia_monitor.md:30
 msgid "2.4 部署 Kuscia-monitor 快速体验监控"
-msgstr ""
+msgstr "2.4 Deploy Kuscia-monitor for Quick Monitoring Experience"
 
 #: ../../deployment/kuscia_monitor.md:32
 msgid ""
-"Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 \\${USER}-kuscia-monitor-"
-"center 下，点对点模式各参与方的指标分别导入到容器 \\${USER}-kuscia-monitor-\\${DOMAIN_ID}下。 "
-"在通过 kuscia/scripts/deploy/start_standalone.sh 部署完毕 kuscia 后，利用 "
+"Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 \${USER}-kuscia-monitor-"
+"center 下，点对点模式各参与方的指标分别导入到容器 \${USER}-kuscia-monitor-\\${DOMAIN_ID}下。"
+"在通过 kuscia/scripts/deploy/kuscia.sh 部署完毕 kuscia 后，利用 "
 "kuscia/scripts/deploy/start_monitor.sh 脚本部署 Kuscia-monitor 在 kuscia 目录下，"
 msgstr ""
+"Kuscia-monitor is a cluster monitoring tool for Kuscia. In centralized mode, metrics are imported into the container \\${USER}-kuscia-monitor-center. In peer-to-peer mode, metrics from each participating party are imported into separate containers \\${USER}-kuscia-monitor-\\${DOMAIN_ID}. After deploying Kuscia using kuscia/scripts/deploy/kuscia.sh, use the kuscia/scripts/deploy/start_monitor.sh script to deploy Kuscia-monitor in the kuscia directory,"
 
 #: ../../deployment/kuscia_monitor.md:40
 msgid "中心化模式"
-msgstr ""
+msgstr "Centralized Mode"
 
 #: ../../deployment/kuscia_monitor.md:46
 msgid "p2p模式"
-msgstr ""
+msgstr "Peer-to-Peer Mode"
 
 #: ../../deployment/kuscia_monitor.md:52
 msgid ""
 "浏览器打开 Granafa 的页面 localhost:3000, 账号密码均为 admin（登陆后可修改密码）。进入后，选择 Dashboard"
 " 界面的 machine-center 看板进入监控界面。"
 msgstr ""
+"Open the Grafana page at localhost:3000 in your browser, where both the username and password are admin (you can change the password after logging in). Once inside, select the machine-center dashboard from the Dashboard interface to access the monitoring interface."
 
 #: ../../deployment/kuscia_monitor.md:54
 msgid "3 Kuscia 监控指标项"
-msgstr ""
+msgstr "3 Kuscia Monitoring Metrics"
 
 #: ../../deployment/kuscia_monitor.md:56
 msgid "Kuscia 暴露的监控指标项"
-msgstr ""
+msgstr "Kuscia Exposed Monitoring Metrics"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "模块"
-msgstr ""
+msgstr "Module"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "类型"
-msgstr ""
+msgstr "Type"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "含义"
-msgstr ""
+msgstr "Description"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "CPU"
-msgstr ""
+msgstr "CPU"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_cpu_seconds_total"
-msgstr ""
+msgstr "node_cpu_seconds_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "Counter"
-msgstr ""
+msgstr "Counter"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "CPU 总使用时间(可计算cpu使用率)"
-msgstr ""
+msgstr "Total CPU usage time (can calculate CPU usage rate)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "MEM"
-msgstr ""
+msgstr "MEM"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_memory_MemTotal_bytes"
-msgstr ""
+msgstr "node_memory_MemTotal_bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "Gauge"
-msgstr ""
+msgstr "Gauge"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "总内存字节数"
-msgstr ""
+msgstr "Total memory in bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_memory_MemAvailable_bytes"
-msgstr ""
+msgstr "node_memory_MemAvailable_bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "可用内存字节数(可计算内存使用率)"
-msgstr ""
+msgstr "Available memory in bytes (can calculate memory usage rate)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "process_virtual_memory_max_bytes"
-msgstr ""
+msgstr "process_virtual_memory_max_bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "最大虚拟内存字节数"
-msgstr ""
+msgstr "Maximum virtual memory in bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "process_virtual_memory_bytes"
-msgstr ""
+msgstr "process_virtual_memory_bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前虚拟内存字节数"
-msgstr ""
+msgstr "Current virtual memory in bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "DISK"
-msgstr ""
+msgstr "DISK"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_disk_io_now"
-msgstr ""
+msgstr "node_disk_io_now"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "磁盘 io 次数"
-msgstr ""
+msgstr "Disk I/O operations"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_disk_io_time_seconds_total"
-msgstr ""
+msgstr "node_disk_io_time_seconds_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "磁盘 io 时间"
-msgstr ""
+msgstr "Total disk I/O time in seconds"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_disk_read_bytes_total"
-msgstr ""
+msgstr "node_disk_read_bytes_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "磁盘读取总字节数"
-msgstr ""
+msgstr "Total bytes read from disk"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_disk_read_time_seconds_total"
-msgstr ""
+msgstr "node_disk_read_time_seconds_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "磁盘读取总时间"
-msgstr ""
+msgstr "Total time spent reading from disk in seconds"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_disk_written_bytes_total"
-msgstr ""
+msgstr "node_disk_written_bytes_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "磁盘写入总字节数"
-msgstr ""
+msgstr "Total bytes written to disk"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_disk_write_time_seconds_total"
-msgstr ""
+msgstr "node_disk_write_time_seconds_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "磁盘写入总时间"
-msgstr ""
+msgstr "Total time spent writing to disk in seconds"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_filesystem_avail_bytes"
-msgstr ""
+msgstr "node_filesystem_avail_bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "可用磁盘字节数"
-msgstr ""
+msgstr "Available disk space in bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_filesystem_size_bytes"
-msgstr ""
+msgstr "node_filesystem_size_bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "总磁盘字节数"
-msgstr ""
+msgstr "Total disk space in bytes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_filesystem_files"
-msgstr ""
+msgstr "node_filesystem_files"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "系统总文件数（iNode）"
-msgstr ""
+msgstr "Total number of system files (iNode)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_filesystem_files_free"
-msgstr ""
+msgstr "node_filesystem_files_free"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "系统空闲文件数（iNode）"
-msgstr ""
+msgstr "Total number of free system files (iNode)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "process_max_fds"
-msgstr ""
+msgstr "process_max_fds"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "最大开启文件描述符"
-msgstr ""
+msgstr "Maximum number of open file descriptors"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "process_open_fds"
-msgstr ""
+msgstr "process_open_fds"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "开启文件描述符"
-msgstr ""
+msgstr "Number of open file descriptors"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "LOAD"
-msgstr ""
+msgstr "LOAD"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_load1/5/15"
-msgstr ""
+msgstr "node_load1/5/15"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "结点1/5/15分钟内平均load"
-msgstr ""
+msgstr "Average load over 1/5/15 minutes"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "NET"
-msgstr ""
+msgstr "NET"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_network_receive_bytes_total"
-msgstr ""
+msgstr "node_network_receive_bytes_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "网卡设备接收的总字节数"
-msgstr ""
+msgstr "Total bytes received by network interface"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_network_receive_packets_total"
-msgstr ""
+msgstr "node_network_receive_packets_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "网卡设备接收的总包数"
-msgstr ""
+msgstr "Total packets received by network interface"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_network_transmit_bytes_total"
-msgstr ""
+msgstr "node_network_transmit_bytes_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "网卡设备发送的总字节数"
-msgstr ""
+msgstr "Total bytes transmitted by network interface"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_network_transmit_packets_total"
-msgstr ""
+msgstr "node_network_transmit_packets_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "网卡设备发送的总包数"
-msgstr ""
+msgstr "Total packets transmitted by network interface"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_netstat_Tcp_CurrEstab"
-msgstr ""
+msgstr "node_netstat_Tcp_CurrEstab"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前 TCP 建立的总连接数"
-msgstr ""
+msgstr "Total number of current established TCP connections"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_sockstat_TCP_tw"
-msgstr ""
+msgstr "node_sockstat_TCP_tw"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前 TCP 处在 time_wait 的总连接数"
-msgstr ""
+msgstr "Total number of TCP connections in time_wait state"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_netstat_Tcp_ActiveOpens"
-msgstr ""
+msgstr "node_netstat_Tcp_ActiveOpens"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前 TCP 处在active_open 的总连接数"
-msgstr ""
+msgstr "Total number of TCP connections in active_open state"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_netstat_Tcp_PassiveOpens"
-msgstr ""
+msgstr "node_netstat_Tcp_PassiveOpens"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前 TCP 处在passive_open 的总连接数"
-msgstr ""
+msgstr "Total number of TCP connections in passive_open state"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_sockstat_TCP_alloc"
-msgstr ""
+msgstr "node_sockstat_TCP_alloc"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前 TCP 处在 allocate 状态的总连接数"
-msgstr ""
+msgstr "Total number of TCP connections in allocate state"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "node_sockstat_TCP_inuse"
-msgstr ""
+msgstr "node_sockstat_TCP_inuse"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "当前 TCP 处在inuse 状态的总连接数"
-msgstr ""
+msgstr "Total number of TCP connections in inuse state"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "ss_rtt"
-msgstr ""
+msgstr "ss_rtt"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "tcp连接的流平均往返时延（Round Trip Tie）"
-msgstr ""
+msgstr "Average round-trip time (RTT) for TCP connections"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "ss_retrans"
-msgstr ""
+msgstr "ss_retrans"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "tcp重传次数"
-msgstr ""
+msgstr "Number of TCP retransmissions"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "ss_retran_rate"
-msgstr ""
+msgstr "ss_retran_rate"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "tcp重传率 （重传次数/总连接）"
-msgstr ""
+msgstr "TCP retransmission rate (number of retransmissions / total connections)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "ss_total_connections"
-msgstr ""
+msgstr "ss_total_connections"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "与各个Domain的 TCP 连接数"
-msgstr ""
+msgstr "Number of TCP connections to each Domain"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "ENVOY"
-msgstr ""
+msgstr "ENVOY"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_rq_total"
-msgstr ""
+msgstr "envoy_cluster_upstream_rq_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）请求总数"
-msgstr ""
+msgstr "Total number of upstream requests (envoy as server)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_cx_total"
-msgstr ""
+msgstr "envoy_cluster_upstream_cx_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端））连接总数"
-msgstr ""
+msgstr "Total number of upstream connections (envoy as server)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_cx_tx_bytes_total"
-msgstr ""
+msgstr "envoy_cluster_upstream_cx_tx_bytes_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）发送连接字节总数"
-msgstr ""
+msgstr "Total bytes transmitted in upstream connections (envoy as server)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_cx_rx_bytes_total"
-msgstr ""
+msgstr "envoy_cluster_upstream_cx_rx_bytes_total"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）接收连接字节总数"
-msgstr ""
+msgstr "Total bytes received in upstream connections (envoy as server)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_health_check_attempt"
-msgstr ""
+msgstr "envoy_cluster_health_check_attempt"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy 针对上游服务器集群健康检查次数"
-msgstr ""
+msgstr "Number of health checks performed by envoy on upstream server clusters"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_health_check_failure"
-msgstr ""
+msgstr "envoy_cluster_health_check_failure"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy 针对上游服务器集群立即失败的健康检查次数（如 HTTP 50 错误）以及网络故障导致的失败次数"
-msgstr ""
+msgstr "Number of health checks that immediately failed (e.g., HTTP 50 errors) and failures due to network issues performed by envoy on upstream server clusters"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_cx_connect_fail"
-msgstr ""
+msgstr "envoy_cluster_upstream_cx_connect_fail"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）总连接失败次数"
-msgstr ""
+msgstr "Total number of upstream connection failures (envoy as server)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_cx_connect_timeout"
-msgstr ""
+msgstr "envoy_cluster_upstream_cx_connect_timeout"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）总连接超时次数"
-msgstr ""
+msgstr "Total number of upstream connection timeouts (envoy as server)"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "envoy_cluster_upstream_rq_timeout"
-msgstr ""
+msgstr "envoy_cluster_upstream_rq_timeout"
 
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）等待响应超时的总请求次数"
-msgstr ""
+msgstr "Total number of upstream requests that timed out waiting for a response (envoy as server)"
 

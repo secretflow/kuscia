@@ -19,7 +19,7 @@
 
 证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)
 
-这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
+这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -30,7 +30,7 @@
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -282,7 +282,7 @@ kubectl apply -f /home/kuscia/scripts/templates/scql/broker_alice.yaml
 ```bash
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get po -A
 
-# Pod 状态为 Running 时，表示部署成功:
+# When the Pod status is Running, it indicates that the deployment was successful:
 NAMESPACE   NAME                           READY   STATUS    RESTARTS   AGE
 alice       scql-broker-6f4f85b64f-fsgq8   1/1     Running   0          2m42s
 ```
@@ -777,10 +777,10 @@ docker exec -it ${USER}-kuscia-autonomy-alice kubectl delete kd scql -n cross-do
     在目录 `/home/kuscia/var/stdout/pods` 下可以看到对应 SCQL Broker 和 Engine 应用容器的目录。后续进入到相应目录下，即可查看应用的日志。
 
     ```bash
-    # 查看当前应用容器的目录
+    # View the current application container's directory
     ls /home/kuscia/var/stdout/pods
 
-    # 查看应用容器的日志，示例如下:
+    # View the application container's logs, example as follows:
     cat /home/kuscia/var/stdout/pods/alice_xxxx_engine_xxxx/secretflow/0.log
     cat /home/kuscia/var/stdout/pods/alice_xxxx_broker_xxxx/secretflow/0.log
     ```

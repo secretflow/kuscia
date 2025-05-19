@@ -48,7 +48,7 @@ func (s logServiceLite) QueryTaskLog(ctx context.Context, request *kusciaapi.Que
 	podName := fmt.Sprintf("%s/%s-%d", domain, request.TaskId, request.ReplicaIdx)
 	if request.Local {
 		// local query
-		nlog.Infof("Perfrom local log query for pod %s", podName)
+		nlog.Infof("Perform local log query for pod %s", podName)
 		if err := localQueryLog(request, domain, s.conf.StdoutPath, eventCh); err != nil {
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to local query, err: %v", err))}
 		}
@@ -66,13 +66,13 @@ func (s logServiceLite) QueryTaskLog(ctx context.Context, request *kusciaapi.Que
 	nlog.Infof("Query log get pod node %s, self node name: %s", nodeName, s.conf.NodeName)
 	if nodeName == s.conf.NodeName {
 		// local query
-		nlog.Infof("Perfrom local log query for pod %s", podName)
+		nlog.Infof("Perform local log query for pod %s", podName)
 		if err := localQueryLog(request, domain, s.conf.StdoutPath, eventCh); err != nil {
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to local query, err: %v", err))}
 		}
 	} else {
 		// proxy to another node which owns the pod
-		nlog.Infof("Perfrom proxy log query for pod %s, ip %s", podName, nodeResp.NodeIp)
+		nlog.Infof("Perform proxy log query for pod %s, ip %s", podName, nodeResp.NodeIp)
 		if err := proxyQueryLog(ctx, nodeResp.NodeIp, s.conf, request, eventCh); err != nil {
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to proxy query, err: %v", err))}
 		}

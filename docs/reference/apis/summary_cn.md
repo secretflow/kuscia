@@ -85,7 +85,7 @@ docker cp ${USER}-kuscia-master:/home/kuscia/var/certs/token .
 4. 使用 GRPC 客户端发起请求。
 
 ```python
-# Python 示例 #
+# Python Example #
 
 import os
 import grpc

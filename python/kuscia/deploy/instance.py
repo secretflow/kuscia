@@ -69,7 +69,7 @@ class KusciaInstance(ABC):
 
         with open(cfgfile, "w") as file:
             yaml.dump(self.config, file)
-            logging.info("[%s] config file wirte to %s", self.domain_id, cfgfile)
+            logging.info("[%s] config file write to %s", self.domain_id, cfgfile)
         return cfgfile
 
     def get_private_key(self):

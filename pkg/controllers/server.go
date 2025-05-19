@@ -57,7 +57,7 @@ type Server struct {
 	kusciaClient            kusciaclientset.Interface
 	extensionClient         apiextensionsclientset.Interface
 	leaderElector           election.Elector
-	electionChecker         *leaderelection.HealthzAdaptor
+	electionCheckerTimeout  time.Duration
 	controllers             []IController
 	controllerConstructions []ControllerConstruction
 }
@@ -77,13 +77,13 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 		kubeClient:              clients.KubeClient,
 		kusciaClient:            clients.KusciaClient,
 		extensionClient:         clients.ExtensionsClient,
-		electionChecker:         leaderelection.NewLeaderHealthzAdaptor(leaderHealthzAdaptorTimeout),
+		electionCheckerTimeout:  leaderHealthzAdaptorTimeout,
 		controllerConstructions: controllerConstructions,
 	}
 	leaderElector := election.NewElector(
 		s.kubeClient,
 		s.options.ControllerName,
-		election.WithHealthChecker(s.electionChecker),
+		election.WithHealthChecker(s.electionCheckerTimeout),
 		election.WithOnNewLeader(s.onNewLeader),
 		election.WithOnStartedLeading(s.onStartedLeading),
 		election.WithOnStoppedLeading(s.onStoppedLeading))
@@ -189,7 +189,7 @@ func (s *Server) controllersIsEmpty() bool {
 // runHealthCheckServer runs health check server.
 func (s *Server) runHealthCheckServer() {
 	var checks []healthz.HealthChecker
-	checks = append(checks, s.electionChecker)
+	checks = append(checks, leaderelection.NewLeaderHealthzAdaptor(s.electionCheckerTimeout))
 
 	mux := http.NewServeMux()
 	healthz.InstallPathHandler(mux, "/healthz", checks...)
