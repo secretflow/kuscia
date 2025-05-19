@@ -17,8 +17,8 @@
 指定 Kuscia 版本：
 
 ```bash
-# The Kuscia image used, here using version 0.14.0b0 image
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
+# The Kuscia image used, here using version 0.15.0b0 image
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.15.0b0
 ```
 
 指定 SecretFlow 版本：
@@ -156,8 +156,8 @@ abcdefg
 指定 Kuscia 版本：
 
 ```bash
-# The Kuscia image used, here using version 0.14.0b0 image
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
+# The Kuscia image used, here using version 0.15.0b0 image
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.15.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -218,8 +218,8 @@ hijklmn
 指定 Kuscia 版本：
 
 ```bash
-# The Kuscia image used, here using version 0.14.0b0 image
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
+# The Kuscia image used, here using version 0.15.0b0 image
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.15.0b0
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：

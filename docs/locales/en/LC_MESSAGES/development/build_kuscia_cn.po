@@ -165,8 +165,8 @@ msgstr ""
 "1.11.0b1. If you need to specify other versions, you can use the following command:"
 
 #: ../../development/build_kuscia_cn.md:81
-msgid "此处以 Kuscia 0.14.0b0，Secretflow 1.11.0b1 版本为例"
-msgstr "Here we take Kuscia 0.14.0b0 and Secretflow 1.11.0b1 versions as examples"
+msgid "此处以 Kuscia 0.15.0b0，Secretflow 1.11.0b1 版本为例"
+msgstr "Here we take Kuscia 0.15.0b0 and Secretflow 1.11.0b1 versions as examples"
 
 #: ../../development/build_kuscia_cn.md:87
 msgid "编译文档"

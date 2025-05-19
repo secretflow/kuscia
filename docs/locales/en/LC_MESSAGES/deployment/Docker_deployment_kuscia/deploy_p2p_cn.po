@@ -58,8 +58,8 @@ msgid "登录到安装 alice 的机器上，本文为叙述方便，假定节点
 msgstr "Log in to the machine where Alice will be installed. For convenience in this article, we assume the node ID is alice and the externally accessible PORT is 11080."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md:19
-msgid "指定 Kuscia 使用的镜像版本，这里使用 0.14.0b0 版本"
-msgstr "Specify the image version used by Kuscia, here we use version 0.14.0b0"
+msgid "指定 Kuscia 使用的镜像版本，这里使用 0.15.0b0 版本"
+msgstr "Specify the image version used by Kuscia, here we use version 0.15.0b0"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md:25
 msgid "指定 Secretflow 版本："

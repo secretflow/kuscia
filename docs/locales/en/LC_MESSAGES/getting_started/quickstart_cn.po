@@ -121,10 +121,10 @@ msgstr "Prerequisites"
 
 #: ../../getting_started/quickstart_cn.md:54
 msgid ""
-"配置 Kuscia 镜像，以下示例选择使用 0.14.0b0 版本镜像（更多镜像版本请参考 [Kuscia "
+"配置 Kuscia 镜像，以下示例选择使用 0.15.0b0 版本镜像（更多镜像版本请参考 [Kuscia "
 "tags](https://hub.docker.com/r/secretflow/kuscia/tags)）："
 msgstr ""
-"Configure the Kuscia image. The following example uses the 0.14.0b0 version of the image (for more image versions, please refer to [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)):"
+"Configure the Kuscia image. The following example uses the 0.15.0b0 version of the image (for more image versions, please refer to [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)):"
 
 #: ../../getting_started/quickstart_cn.md:64
 msgid "获取 Kuscia 安装脚本，安装脚本会下载到当前目录："
