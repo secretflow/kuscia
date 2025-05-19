@@ -123,7 +123,8 @@ func updateDeploymentStatus(deployment *v1alpha1.KusciaDeployment,
 	deploymentSummary *v1alpha1.KusciaDeploymentSummary,
 	domainIDs []string) bool {
 	updated := false
-	if deploymentSummary.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed &&
+	if (deploymentSummary.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed ||
+		deploymentSummary.Status.Phase == v1alpha1.KusciaDeploymentPhaseProgressing) &&
 		deployment.Status.Phase != deploymentSummary.Status.Phase {
 		updated = true
 		deployment.Status.Phase = deploymentSummary.Status.Phase

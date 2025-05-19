@@ -24,7 +24,7 @@
 
 ## 构建 Kuscia
 
-Kuscia 提供了 Makefile 来构建镜像，您可以通过`make help`命令查看命令帮助，其中 Build 部分提供了构建能力：
+Kuscia 提供了 Makefile 来构建镜像，您可以通过 `make help` 命令查看命令帮助，其中 Build 部分提供了构建能力：
 
 ```shell
 Usage:
@@ -51,7 +51,7 @@ Build
 
 在 Kuscia 项目根目录下：
 
-执行`make build`命令，该命令将会构建出 Kuscia 的可执行文件，构建产物会生成在 ./build/ 目录下。
+执行 `make build` 命令，该命令将会构建出 Kuscia 的可执行文件，构建产物会生成在 ./build/ 目录下。
 
 ### 构建 Kuscia-Envoy Image
 
@@ -64,7 +64,7 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 
 在 Kuscia 项目根目录下：
 
-执行`make image`命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。
+执行 `make image` 命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。
 
 如果您想依赖指定的 Kuscia-Envoy 镜像构建 Kuscia 镜像，您可以通过 `make image KUSCIA_ENVOY_IMAGE=${KUSCIA_ENVOY_IMAGE}` 来指定依赖镜像的名称。
 
@@ -72,23 +72,23 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 
 在 kuscia/build/dockerfile 目录下：
 
-执行`docker build -f ./kuscia-secretflow.Dockerfile .`命令会构建出 Kuscia-Secretflow 镜像。Kuscia-Secretflow 镜像在 Kuscia 镜像的基础上集成了 Secretflow 镜像。
+执行 `docker build -f ./kuscia-secretflow.Dockerfile .` 命令会构建出 Kuscia-Secretflow 镜像。Kuscia-Secretflow 镜像在 Kuscia 镜像的基础上集成了 Secretflow 镜像。
 
 需要注意的是，仅 `RunP` 模式下需要构建 kuscia-secretflow 镜像。
 
-kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 1.7.0b0，如果需要指定其他版本，可以使用如下命令：
+kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 1.11.0b1，如果需要指定其他版本，可以使用如下命令：
 
-此处以 Kuscia 0.14.0b0，Secretflow 1.7.0b0 版本为例
+此处以 Kuscia 0.14.0b0，Secretflow 1.11.0b1 版本为例
 
 ```bash
-docker build  --build-arg KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0  --build-arg  SF_VERSION=1.7.0b0 -f ./kuscia-secretflow.Dockerfile .
+docker build  --build-arg KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0  --build-arg  SF_VERSION=1.11.0b1 -f ./kuscia-secretflow.Dockerfile .
 ```
 
 ### 编译文档
 
 在 Kuscia 项目根目录下：
 
-执行`make docs`命令，该命令会生成 Kuscia 文档，生成的文档会放在 `docs/_build/html` 目录，用浏览器打开 `docs/_build/html/index.html` 就可以查看文档。
+执行 `make docs` 命令，该命令会生成 Kuscia 文档，生成的文档会放在 `docs/_build/html` 目录，用浏览器打开 `docs/_build/html/index.html` 就可以查看文档。
 
 该命令依赖于 python 环境，请确保已经安装 python 和 pip。您可以使用如下命令检查：
 

@@ -323,7 +323,7 @@ func (s *ociStore) LoadImage(tarFile string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// if image aready exists, will update it
+	// if image already exists, will update it
 	if err = s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, "")); err != nil {
 		return err
 	}

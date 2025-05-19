@@ -51,7 +51,7 @@ msgstr ""
 
 #: ../../reference/architecture_cn.md:9
 msgid "![Kuscia Architecture](../imgs/kuscia_architecture.png)"
-msgstr "![Kuscia Architecture](../imgs/kuscia_architecture.png)"
+msgstr "![Kuscia Architecture](../imgs/en_images/kuscia_architecture.png)"
 
 #: ../../reference/architecture_cn.md:9
 msgid "Kuscia Architecture"
@@ -258,7 +258,7 @@ msgstr "**RunK**: Kubernetes runtime that interfaces with K8s clusters, forwardi
 
 #: ../../reference/architecture_cn.md:72
 msgid "![Runtime](../imgs/runtime.png)"
-msgstr "![Runtime](../imgs/runtime.png)"
+msgstr "![Runtime](../imgs/en_images/runtime.png)"
 
 #: ../../reference/architecture_cn.md:72
 msgid "Runtime"

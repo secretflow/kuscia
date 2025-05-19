@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:1
 msgid "MySQL（数据库） optimizer_switch 参数优化"
-msgstr "MySQL（Database） `optimizer_switch` Parameter Optimization"
+msgstr "MySQL（Database）optimizer_switch Parameter Optimization"
 
 #: ../../troubleshoot/parameter_tuning/mysql_derived_merge.md:3
 msgid "问题描述"

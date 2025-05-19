@@ -22,22 +22,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/record"
 )
 
 type Options struct {
-	Identity      string
-	LockType      string
-	KubeClient    kubernetes.Interface
-	EventRecorder record.EventRecorder
-	Namespace     string
-	Name          string
-	LeaseDuration time.Duration
-	RenewDuration time.Duration
-	RetryPeriod   time.Duration
-	HealthChecker *leaderelection.HealthzAdaptor
+	HealthCheckerTimeout time.Duration
 
 	// OnStartedLeading is called when a LeaderElector client starts leading
 	OnStartedLeading func(context.Context)
@@ -47,20 +36,18 @@ type Options struct {
 	// not the previously observed leader. This includes the first observed
 	// leader when the client starts.
 	OnNewLeader func(identity string)
+
+	Name       string
+	LockType   string
+	Namespace  string
+	KubeClient kubernetes.Interface
 }
 
 func defaultOptions() *Options {
 	return &Options{
-		Identity:      genIdentity(),
-		LockType:      resourcelock.LeasesResourceLock,
-		KubeClient:    nil,
-		EventRecorder: nil,
-		Namespace:     "kube-system",
-		Name:          "",
-		LeaseDuration: 15 * time.Second,
-		RenewDuration: 5 * time.Second,
-		RetryPeriod:   3 * time.Second,
-		HealthChecker: nil,
+		HealthCheckerTimeout: 0,
+		Namespace:            "kube-system",
+		LockType:             resourcelock.LeasesResourceLock,
 	}
 }
 
@@ -88,24 +75,27 @@ func genIdentity() string {
 
 type Option func(*Options)
 
-func WithHealthChecker(healthChecker *leaderelection.HealthzAdaptor) Option {
+func WithHealthChecker(healthCheckTimeout time.Duration) Option {
 	return func(o *Options) {
-		o.HealthChecker = healthChecker
+		o.HealthCheckerTimeout = healthCheckTimeout
 	}
 }
 
+// onStartedLeading MUST be non-blocking
 func WithOnStartedLeading(onStartedLeading func(context.Context)) Option {
 	return func(o *Options) {
 		o.OnStartedLeading = onStartedLeading
 	}
 }
 
-func WithOnStoppedLeading(onStartedLeading func()) Option {
+// onStoppedLeading MUST be non-blocking
+func WithOnStoppedLeading(onStoppedLeading func()) Option {
 	return func(o *Options) {
-		o.OnStoppedLeading = onStartedLeading
+		o.OnStoppedLeading = onStoppedLeading
 	}
 }
 
+// onNewLeader MUST be non-blocking
 func WithOnNewLeader(onNewLeader func(string)) Option {
 	return func(o *Options) {
 		o.OnNewLeader = onNewLeader

@@ -428,6 +428,11 @@ func failTaskResourceGroup(trg *kusciaapisv1alpha1.TaskResourceGroup) {
 }
 
 func (c *Controller) skipTr(tr *kusciaapisv1alpha1.TaskResource) bool {
+	// bfia logic, the patrner need to aggregate tr's status
+	if utilsres.IsBFIAResource(tr) {
+		return false
+	}
+
 	if !utilsres.SelfClusterAsInitiator(c.namespaceLister, tr.Spec.Initiator, tr.Annotations) &&
 		tr.Status.Phase != kusciaapisv1alpha1.TaskResourcePhaseReserving {
 		return true

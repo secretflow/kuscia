@@ -472,7 +472,7 @@ func (cp *CRIProvider) makeMounts(pod *v1.Pod, container *v1.Container, podVolum
 			hostPath = filepath.Join(vol.HostPath, mount.SubPath)
 
 			if subPathExists, err := paths.CheckExists(paths.CheckSymlinkOnly, hostPath); err != nil {
-				nlog.Errorf("Could not determine if subPath exists, will not attempt to change its permissions, paht=%v", hostPath)
+				nlog.Errorf("Could not determine if subPath exists, will not attempt to change its permissions, path=%v", hostPath)
 			} else if !subPathExists {
 				// Create the sub path now because if it's auto-created later when referenced, it may have an
 				// incorrect ownership and mode. For example, the sub path directory must have at least g+rwx

@@ -23,6 +23,7 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
@@ -34,7 +35,7 @@ type BuiltinPostgresqlIO struct {
 
 func NewBuiltinPostgresqlIOChannel() DataMeshDataIOInterface {
 	return &BuiltinPostgresqlIO{
-		driverName: "postgresql",
+		driverName: "postgres",
 	}
 }
 

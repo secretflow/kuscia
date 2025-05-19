@@ -200,7 +200,7 @@ func (c *DomainRouteController) registerHandle(w http.ResponseWriter, r *http.Re
 		nlog.Infof("Domain %s register success, set domain cert", domain.Name)
 	}
 	var pubKeyStr string
-	// for compability, if domain explicitly set TokenConfig as UID, we won't return master pub key
+	// for compatibility, if domain explicitly set TokenConfig as UID, we won't return master pub key
 	if domain.Spec.AuthCenter == nil || domain.Spec.AuthCenter.TokenGenMethod != kusciaapisv1alpha1.TokenGenUIDRSA {
 		pubKeyStr = base64.StdEncoding.EncodeToString(tls.EncodePKCS1PublicKey(c.prikey))
 	}
@@ -279,7 +279,7 @@ func verifyJwtToken(jwtTokenStr string, pubKey interface{}, req *handshake.Regis
 		return err
 	}
 	if !jwtToken.Valid {
-		return fmt.Errorf("%s", "verify jwt failed, detail: jwt token decrpted fail")
+		return fmt.Errorf("%s", "verify jwt failed, detail: jwt token decrypted fail")
 	}
 	if time.Since(rjc.ExpiresAt.Time) > 0 {
 		return fmt.Errorf("%s", "verify jwt failed, detail: token expired")

@@ -19,73 +19,74 @@ msgstr ""
 
 #: ../../getting_started/quickstart_cn.md:1
 msgid "Kuscia 入门教程 —— 快速开始"
-msgstr ""
+msgstr "Kuscia Getting Started Tutorial —— Quick Start"
 
 #: ../../getting_started/quickstart_cn.md:3
 msgid "您将会在单台机器上准备 Kuscia 需要的环境、快速部署一个示例 Kuscia 集群，然后尝试运行一个 [SecretFlow] 作业。"
-msgstr ""
+msgstr "You will prepare the environment required for Kuscia on a single machine, quickly deploy a sample Kuscia cluster, and then attempt to run a [SecretFlow](https://www.secretflow.org.cn/docs/secretflow/) job."
 
 #: ../../getting_started/quickstart_cn.md:7
 msgid "部署模式说明"
-msgstr ""
+msgstr "Deployment Mode Description"
 
 #: ../../getting_started/quickstart_cn.md:9
 msgid "当前为体验模式，生产模式请参考[这里](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)部署。"
-msgstr ""
+msgstr "The current mode is the trial mode. For production mode, please refer to [here](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md) for deployment."
 
 #: ../../getting_started/quickstart_cn.md:11
 msgid "在部署时有两种组网模式可供选择："
-msgstr ""
+msgstr "There are two networking modes available for selection during deployment:"
 
 #: ../../getting_started/quickstart_cn.md:13
 msgid ""
 "[中心化组网模式](../reference/architecture_cn.md#中心化组网模式)：启动一个控制平面（master）容器和两个 "
 "Lite 节点（alice 和 bob）容器"
-msgstr ""
+msgstr "[Centralized Networking Mode](../reference/architecture_cn.md#中心化组网模式): Start a control plane (master) container and two Lite node (alice and bob) containers"
 
 #: ../../getting_started/quickstart_cn.md:14
 msgid ""
 "[点对点组网模式](../reference/architecture_cn.md#点对点组网模式)：启动两个 Autonomy 节点（alice"
 " 和 bob）容器"
-msgstr ""
+msgstr "[Peer-to-Peer Networking Mode](../reference/architecture_cn.md#点对点组网模式): Start two Autonomy node (alice and bob) containers"
 
 #: ../../getting_started/quickstart_cn.md:16
 msgid "您可以选择其中任意一种或两种模式进行部署体验，在单台机器上可以同时部署两种模式。"
-msgstr ""
+msgstr "You can choose either one or both modes for deployment experience. Both modes can be deployed simultaneously on a single machine."
 
 #: ../../getting_started/quickstart_cn.md:18
 msgid "环境"
-msgstr ""
+msgstr "Environment"
 
 #: ../../getting_started/quickstart_cn.md:20
 msgid "机器"
-msgstr ""
+msgstr "Machine"
 
 #: ../../getting_started/quickstart_cn.md:22
 msgid "操作系统：macOS, CentOS7, CentOS8, Ubuntu 16.04 及以上版本, Windows(Ubuntu on WSL2)"
-msgstr ""
+msgstr "Operating System: macOS, CentOS7, CentOS8, Ubuntu 16.04 and above, Windows (Ubuntu on WSL2)"
 
 #: ../../getting_started/quickstart_cn.md:24
 msgid "资源：8 core / 16G memory / 200G hard disk"
-msgstr ""
+msgstr "Resources: 8 cores / 16G memory / 200G hard disk"
 
 #: ../../getting_started/quickstart_cn.md:26
 msgid "CPU 架构：x86"
-msgstr ""
+msgstr "CPU Architecture: x86"
 
 #: ../../getting_started/quickstart_cn.md:28
 msgid "单机体验版需要部署多个节点和平台，且要预留资源运行各类隐私计算任务，所以这里的资源需求要比节点最低资源大一些"
-msgstr ""
+msgstr "The standalone experience version requires deploying multiple nodes and platforms, and reserving resources to run various privacy computation tasks. Therefore, the resource requirements here should be greater than the minimum resources required for a single node"
 
 #: ../../getting_started/quickstart_cn.md:30
 msgid "环境准备"
-msgstr ""
+msgstr "Environment Preparation"
 
 #: ../../getting_started/quickstart_cn.md:32
 msgid ""
 "在部署 Kuscia "
 "之前，请确保环境准备齐全，包括所有必要的软件、资源、操作系统版本和网络环境等满足要求，以确保部署过程顺畅进行，详情参考[部署要求](../deployment/deploy_check.md)。"
 msgstr ""
+"Before deploying Kuscia, please ensure that the environment is fully prepared, including all necessary software, resources, operating system versions, and network environments, to ensure a smooth deployment process. For details, refer to [Deployment Requirements](../deployment/deploy_check.md)."
 
 #: ../../getting_started/quickstart_cn.md:34
 msgid ""
@@ -93,102 +94,114 @@ msgid ""
 "的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 "
 "Docker 的示例："
 msgstr ""
+"The deployment of Kuscia relies on a Docker environment. For Docker installation, please refer to the [official documentation](https://docs.docker.com/engine/install/). Below is an example of installing Docker on a CentOS system:"
+
+#: ../../getting_started/quickstart_cn.md:37
+msgid "# 安装 docker。"
+msgstr "# Install Docker."
+
+#: ../../getting_started/quickstart_cn.md:44
+msgid "# 启动 docker。"
+msgstr "# Start Docker."
 
 #: ../../getting_started/quickstart_cn.md:48
 msgid "部署体验"
-msgstr ""
+msgstr "Deployment Experience"
 
 #: ../../getting_started/quickstart_cn.md:50
 msgid ""
 "本文旨在帮助您快速体验 "
 "Kuscia，不涉及任何宿主机端口暴露配置。如需暴露端口，请前往[多机部署](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)"
 msgstr ""
+"This article aims to help you quickly experience Kuscia without involving any host port exposure configuration. If you need to expose ports, please go to [Multi-machine Deployment](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)"
 
 #: ../../getting_started/quickstart_cn.md:52
 msgid "前置操作"
-msgstr ""
+msgstr "Prerequisites"
 
 #: ../../getting_started/quickstart_cn.md:54
 msgid ""
-"配置 Kuscia 镜像，以下示例选择使用 latest 版本镜像（更多镜像版本请参考 [Kuscia "
+"配置 Kuscia 镜像，以下示例选择使用 0.14.0b0 版本镜像（更多镜像版本请参考 [Kuscia "
 "tags](https://hub.docker.com/r/secretflow/kuscia/tags)）："
 msgstr ""
+"Configure the Kuscia image. The following example uses the 0.14.0b0 version of the image (for more image versions, please refer to [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)):"
 
 #: ../../getting_started/quickstart_cn.md:64
 msgid "获取 Kuscia 安装脚本，安装脚本会下载到当前目录："
-msgstr ""
+msgstr "Get the Kuscia installation script. The script will be downloaded to the current directory:"
 
 #: ../../getting_started/quickstart_cn.md:70
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../getting_started/quickstart_cn.md:85
 msgid "点对点组网模式"
-msgstr ""
+msgstr "Peer-to-Peer Networking Mode"
 
 #: ../../getting_started/quickstart_cn.md:98
 msgid "中心化 x 中心化组网模式"
-msgstr ""
+msgstr "Centralized x Centralized Networking Mode"
 
 #: ../../getting_started/quickstart_cn.md:111
 msgid "中心化 x 点对点组网模式"
-msgstr ""
+msgstr "Centralized x Peer-to-Peer Networking Mode"
 
 #: ../../getting_started/quickstart_cn.md:124
 msgid "作业状态"
-msgstr ""
+msgstr "Job Status"
 
 #: ../../getting_started/quickstart_cn.md:126
 msgid "如果作业执行成功，则 `kubectl get kj -n cross-domain` 命令会显示类似下方的输出，Succeeded 表示成功状态："
-msgstr ""
+msgstr "If the job executes successfully, the `kubectl get kj -n cross-domain` command will display output similar to the one below, where Succeeded indicates a successful status:"
 
 #: ../../getting_started/quickstart_cn.md:133
 msgid "同时，在 alice 和 bob 节点容器中能看到 PSI 结果输出文件："
-msgstr ""
+msgstr "At the same time, the PSI result output file can be seen in the containers of the alice and bob nodes:"
 
 #: ../../getting_started/quickstart_cn.md:143
 msgid "结果输出（仅前 4 行）："
-msgstr ""
+msgstr "Result Output (first 4 lines):"
 
 #: ../../getting_started/quickstart_cn.md:152
 msgid "停止/卸载体验集群"
-msgstr ""
+msgstr "Stop/Uninstall the Experience Cluster"
 
 #: ../../getting_started/quickstart_cn.md:156
 msgid "停止体验集群"
-msgstr ""
+msgstr "Stop the Experience Cluster"
 
 #: ../../getting_started/quickstart_cn.md:158
 msgid "如果您需要停止并卸载体验集群，可以直接运行[卸载脚本](#uninstall)。"
-msgstr ""
+msgstr "If you need to stop and uninstall the experience cluster, you can directly run the [uninstall script](#uninstall)."
 
 #: ../../getting_started/quickstart_cn.md:160
 msgid "获取 Kuscia 停止脚本，脚本会下载到当前目录："
-msgstr ""
+msgstr "Get the Kuscia stop script, the script will be downloaded to the current directory:"
 
 #: ../../getting_started/quickstart_cn.md:166
 msgid "使用方法："
-msgstr ""
+msgstr "Usage:"
 
 #: ../../getting_started/quickstart_cn.md:183
 msgid "卸载体验集群"
-msgstr ""
+msgstr "Uninstall the Experience Cluster"
 
 #: ../../getting_started/quickstart_cn.md:185
 msgid "获取 Kuscia 卸载脚本，脚本会下载到当前目录："
-msgstr ""
+msgstr "Get the Kuscia uninstall script, the script will be downloaded to the current directory:"
 
 #: ../../getting_started/quickstart_cn.md:191
 msgid ""
 "与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 "
 "network（若无其他容器使用）等。例如："
 msgstr ""
+"The usage is the same as the [stop script](#stop). Running the uninstall script will uninstall the corresponding networking mode cluster, including deleting Kuscia containers, volumes, and network (if no other containers are using it) etc. For example:"
 
 #: ../../getting_started/quickstart_cn.md:198
 msgid "接下来"
-msgstr ""
+msgstr "Next"
 
 #: ../../getting_started/quickstart_cn.md:200
 msgid "请继续阅读 [KusciaJob][part-2] 章节，来了解示例作业背后的细节。"
-msgstr ""
+msgstr "Please continue reading the [KusciaJob][part-2] section to understand the details behind the example job."
 

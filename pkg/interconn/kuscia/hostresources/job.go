@@ -18,6 +18,7 @@ package hostresources
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -169,7 +170,38 @@ func (c *hostResourcesController) createJob(ctx context.Context, hostJob *kuscia
 
 	_, err = c.memberKusciaClient.KusciaV1alpha1().KusciaJobs(kj.Namespace).Create(ctx, kj, metav1.CreateOptions{})
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
+		reasonErr, ok := err.(k8serrors.APIStatus)
+		if !ok {
+			return err
+		}
+		nlog.Infof("Create member job %v failed, reason: %v,code: %d", kj.Name, reasonErr.Status().Reason, reasonErr.Status().Code)
+		if reasonErr.Status().Code == http.StatusUnauthorized && reasonErr.Status().Reason == common.CreateKDOrKJError {
+			return c.updateHostJobSummaryStatusFailed(ctx, hostJob)
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *hostResourcesController) updateHostJobSummaryStatusFailed(ctx context.Context, job *kusciaapisv1alpha1.KusciaJob) error {
+	hostKjs, err := c.hostKusciaClient.KusciaV1alpha1().KusciaJobSummaries(job.Namespace).Get(ctx, job.Name, metav1.GetOptions{})
+	if err != nil {
 		return err
 	}
+	kjs := hostKjs.DeepCopy()
+	kjs.Status.Phase = kusciaapisv1alpha1.KusciaJobFailed
+	kjs.Status.Reason = string(kusciaapisv1alpha1.ValidateFailed)
+	kjs.Status.Message = common.CreateKDOrKJError
+	now := ikcommon.GetCurrentTime()
+	kjs.Status.LastReconcileTime = now
+	kjs.Status.CompletionTime = now
+	nlog.Infof("Start update host job summary namespace=%s, name=%s", kjs.Namespace, kjs.Name)
+	_, err = c.hostKusciaClient.KusciaV1alpha1().KusciaJobSummaries(kjs.Namespace).Update(ctx, kjs, metav1.UpdateOptions{})
+	if err != nil {
+		nlog.Errorf("Failed to update host job summary namespace=%s, name=%s, %v, waiting for the next one", kjs.Namespace, kjs.Name, err)
+		return err
+	}
+	nlog.Infof("Complete update host job summary namespace=%s, name=%s", kjs.Namespace, kjs.Name)
 	return nil
 }

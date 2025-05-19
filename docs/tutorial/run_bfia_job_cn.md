@@ -17,8 +17,8 @@
 在执行启动集群命令时，需要新增一个命令行参数`-p bfia`，详细命令如下：
 
 ```shell
-# 启动集群，会拉起两个 docker 容器，分别表示 Autonomy 节点 alice 和 bob。
-./start_standalone.sh p2p -p bfia
+# Start the cluster, which will launch two docker containers, representing the Autonomy nodes alice and bob.
+./kuscia.sh p2p -P bfia -a none
 ```
 
 ### 准备工具脚本
@@ -49,8 +49,7 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/user/bfia/ .
 
 ### 部署 TTP Server 服务
 
-因为秘密分享-逻辑回归（SS-LR）算子依赖一个可信第三方 TTP（Trusted Third Patry）Server，所以本教程使用本地 Docker 容器的方式和运行银联 BFIA 协议的节点容器部署在同一套环境中，
-从而方便快速搭建运行互联互通银联 BFIA 协议作业的体验环境。
+因为秘密分享-逻辑回归（SS-LR）算子依赖一个可信第三方 TTP（Trusted Third Party）Server，所以本教程使用本地 Docker 容器的方式和运行银联 BFIA 协议的节点容器部署在同一套环境中，从而方便快速搭建运行互联互通银联 BFIA 协议作业的体验环境。
 
 1. 部署 TTP Server 服务
 
@@ -68,7 +67,7 @@ docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/user/bfia/ .
 
 您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。
 
-在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
+在 Kuscia 中，节点数据文件的存放路径为节点容器的 `/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
 
 ### 查看 Kuscia 示例数据
 
@@ -117,7 +116,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 
 - 算子通过读取 alice 和 bob 的数据文件，完成秘密分享逻辑回归任务。
 
-- KusciaJob 的名称为 job-ss-lr，在一个 Kuscia 集群中，这个名称必须是唯一的，由`.metadata.name`指定。
+- KusciaJob 的名称为 job-ss-lr，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `.metadata.name` 指定。
 
 在 Alice 容器中，创建文件 job-ss-lr.yaml，内容如下：
 
@@ -143,7 +142,7 @@ spec:
 
 #### 算子参数描述
 
-KusciaJob 中算子参数由`taskInputConfig`字段定义，对于不同的算子，算子的参数不同
+KusciaJob 中算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同
 
 - 秘密分享-逻辑回归（SS-LR）算子相关信息可参考 [SS-LR 参考实现](https://github.com/secretflow/interconnection-impl)
 - 本教程秘密分享-逻辑回归（SS-LR）算子对应的 KusciaJob TaskInputConfig 结构可参考 [TaskInputConfig 结构示例](#ss-lr-task-input-config)
@@ -200,7 +199,7 @@ job-ss-lr       3s                           3s                  Running
 
 ### 查看运行中的 KusciaJob 的详细状态
 
-通过指定`-o yaml`参数，能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ss-lr 是提交的作业名称。
+通过指定 `-o yaml` 参数，能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ss-lr 是提交的作业名称。
 
 ```shell
 kubectl get kj job-ss-lr -n cross-domain -o yaml
@@ -262,12 +261,12 @@ status:
     job-ss-lr-26e3489ac66e: Succeeded
 ```
 
-- `status`字段记录了 KusciaJob 的运行状态，`.status.phase`字段描述了 KusciaJob 的整体状态，而 `.status.taskStatus`则描述了包含的 KusciaTask 的状态。
+- `status` 字段记录了 KusciaJob 的运行状态，`.status.phase` 字段描述了 KusciaJob 的整体状态，而 `.status.taskStatus` 则描述了包含的 KusciaTask 的状态。
 详细信息请参考 [KusciaJob](../reference/concepts/kusciajob_cn.md)。
 
 ### 查看 KusciaJob 中 KusciaTask 的详细状态
 
-KusciaJob 中的每一个 KusciaTask 都有一个`taskID`，通过`taskID`我们可以查看 KusciaTask 的详细状态。
+KusciaJob 中的每一个 KusciaTask 都有一个 `taskID`，通过 `taskID` 我们可以查看 KusciaTask 的详细状态。
 
 ```shell
 kubectl get kt job-ss-lr-26e3489ac66e -n cross-domain -o yaml
@@ -283,10 +282,10 @@ KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_c
     若已经在容器中，跳过该步骤
 
     ```shell
-    # 进入 alice 节点容器
+    # Enter the alice node container
     docker exec -it ${USER}-kuscia-autonomy-alice bash
 
-    # 进入 bob 节点容器
+    # Enter the bob node container
     docker exec -it ${USER}-kuscia-autonomy-bob bash
     ```
 
@@ -303,10 +302,10 @@ KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_c
     输出内容表示 SS-LR 算子权重向量的密态分片
 
     ```shell
-    # 在 alice 容器中查看输出结果
+    # View the output result in the alice container
     more /home/kuscia/var/storage/job-ss-lr-host-0/job-ss-lr-{random-id}-result
 
-    # 在 bob 容器中查看输出结果
+    # View the output result in the bob container
     more /home/kuscia/var/storage/job-ss-lr-guest-0/job-ss-lr-{random-id}-result
     ```
 
@@ -387,13 +386,13 @@ kubectl delete kj job-ss-lr -n cross-domain
 
 字段说明
 
-- `name`描述了任务算子的名称。
-- `module_name`描述了任务算子所属模块名称。
-- `input`描述了任务算子的输入，若任务不依赖其他任务的输出，则可以将该项置为空。
-- `output`描述了任务算子的输出。
-- `role`描述了任务的角色。
-- `initiator`描述了任务发起方的信息。
-- `task_params`描述了任务算子依赖的参数。
+- `name` 描述了任务算子的名称。
+- `module_name` 描述了任务算子所属模块名称。
+- `input` 描述了任务算子的输入，若任务不依赖其他任务的输出，则可以将该项置为空。
+- `output` 描述了任务算子的输出。
+- `role` 描述了任务的角色。
+- `initiator` 描述了任务发起方的信息。
+- `task_params` 描述了任务算子依赖的参数。
 
 {#bfia-create-job-req-body}
 
@@ -486,6 +485,6 @@ kubectl delete kj job-ss-lr -n cross-domain
 
 ### 字段说明
 
-- `job_id`描述了作业的标识。
-- `dag`描述了作业的组件之间组合的配置。
-- `config`描述了作业运行时的参数配置。
+- `job_id` 描述了作业的标识。
+- `dag` 描述了作业的组件之间组合的配置。
+- `config` 描述了作业运行时的参数配置。

@@ -154,7 +154,7 @@ status:
       version: a50f56e-a50f56e
 ```
 
-其中，我们需要关注`.status.nodeStatuses[].status`，这个字段记录了 Domain 下的节点是否正常。 有关 Domain
+其中，我们需要关注 `.status.nodeStatuses[].status`，这个字段记录了 Domain 下的节点是否正常。 有关 Domain
 的更多信息，请查看 [Domain](../reference/concepts/domain_cn.md) 。
 
 ### DomainRoute
@@ -268,14 +268,14 @@ crictl exec -it {container_id} bash
 
 ### 隐私计算任务使用您自己的数据文件
 
-我们可以通过`docker cp`将数据文件复制到节点容器，但是任务执行在由节点容器创建的任务容器内，这时候任务容器并不和节点容器共用一套文件系统，怎么在隐私计算任务中使用您自己的文件呢？
-实际上，节点容器的`/home/kuscia/var/storage`会被挂载到任务容器的同名目录下，所以，您只需要将您自己的数据文件放到节点容器的这个目录下，就能在任务中使用了。
+我们可以通过 `docker cp` 将数据文件复制到节点容器，但是任务执行在由节点容器创建的任务容器内，这时候任务容器并不和节点容器共用一套文件系统，怎么在隐私计算任务中使用您自己的文件呢？
+实际上，节点容器的 `/home/kuscia/var/storage` 会被挂载到任务容器的同名目录下，所以，您只需要将您自己的数据文件放到节点容器的这个目录下，就能在任务中使用了。
 
 ### 如何调试一个任务
 
-通过将 AppImage 的 command 调整为`sleep`命令可以帮助您调试一个任务：
+通过将 AppImage 的 command 调整为 `sleep` 命令可以帮助您调试一个任务：
 
-1. 修改 AppImage 或新建一个同样 Spec 的 AppImage， 修改 command 为`sh -c sleep 360000`， 保存原来的 command。
+1. 修改 AppImage 或新建一个同样 Spec 的 AppImage， 修改 command 为 `sh -c sleep 360000`， 保存原来的 command。
 2. 使用这个 AppImage，创建 KusciaJob。
 3. 进入任务容器，执行原来的 command 进行调试操作。
 

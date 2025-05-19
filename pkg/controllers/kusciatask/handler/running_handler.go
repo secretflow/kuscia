@@ -152,6 +152,13 @@ func (h *RunningHandler) reconcileTaskStatus(taskStatus *kusciaapisv1alpha1.Kusc
 
 	validPartyCount := len(trg.Spec.Parties) + len(trg.Spec.OutOfControlledParties)
 	minReservedMembers := trg.Spec.MinReservedMembers
+
+	// bfia logic, the partner need not care about other partner's party task status
+	if utilsres.IsBFIAResource(trg) && !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, nil) {
+		minReservedMembers = minReservedMembers - len(trg.Spec.OutOfControlledParties)
+		validPartyCount = len(trg.Spec.Parties)
+	}
+
 	if minReservedMembers > validPartyCount-failedPartyCount {
 		taskStatus.Phase = kusciaapisv1alpha1.TaskFailed
 		taskStatus.Message = fmt.Sprintf("The remaining no-failed party task counts %v are less than the task success threshold %v. pending party[%v], running party[%v], successful party[%v], failed party[%v]",

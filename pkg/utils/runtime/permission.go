@@ -26,7 +26,7 @@ import (
 // ref: https://fossd.anu.edu.au/linux/latest/source/include/uapi/linux/capability.h
 // Linux Kernel >= 3.5 (CentOS >= 7, Ubuntu >= 12.10)
 // const CAP_PRIVILEGED uint64 = 0x1fffffffff
-// Linux Kernal >= 2.6.25 (CentOS >= 6, Ubuntu >= 8.10)
+// Linux Kernel >= 2.6.25 (CentOS >= 6, Ubuntu >= 8.10)
 const CAP_PRIVILEGED uint64 = 0x3ffffffff
 const CAP_SYS_ADMIN uint64 = 1 << 21
 const CAP_SYS_RESOURCE uint64 = 1 << 24

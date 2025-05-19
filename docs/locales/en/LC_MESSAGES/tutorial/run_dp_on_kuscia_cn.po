@@ -19,165 +19,168 @@ msgstr ""
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:1
 msgid "如何使用 Kuscia API 部署 DataProxy"
-msgstr ""
+msgstr "How to Deploy DataProxy Using Kuscia API"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:3
 msgid ""
 "本教程将以 [Kuscia API Serving](../reference/apis/serving_cn) 作为参考，介绍如何使用 "
 "Kuscia API 部署 DataProxy。"
 msgstr ""
+"This tutorial will use [Kuscia API Serving](../reference/apis/serving_cn) as a reference to introduce how to deploy DataProxy using the Kuscia API."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:5
 msgid "准备节点"
-msgstr ""
+msgstr "Prepare Nodes"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:7
 msgid "Docker 部署节点请参考[这里](../deployment/Docker_deployment_kuscia/index.rst)。"
-msgstr ""
+msgstr "For Docker deployment of nodes, please refer [here](../deployment/Docker_deployment_kuscia/index.rst)."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:8
 msgid "K8s 部署节点请参考[这里](../deployment/K8s_deployment_kuscia/index.rst)。"
-msgstr ""
+msgstr "For K8s deployment of nodes, please refer [here](../deployment/K8s_deployment_kuscia/index.rst)."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:10
 msgid "本示例在**点对点组网模式**下完成。在中心化组网模式下，证书的配置会有所不同。"
-msgstr ""
+msgstr "This example is completed in **peer-to-peer networking mode**. In centralized networking mode, the certificate configuration will be different."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:14
 msgid "获取 KusciaAPI 证书和 Token"
-msgstr ""
+msgstr "Obtain KusciaAPI Certificates and Token"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:16
 msgid ""
 "如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 "
 "Token。协议参考[这里](../troubleshoot/concept/protocol_describe.md)。"
 msgstr ""
+"If KusciaAPI has enabled the MTLS protocol, you need to prepare the MTLS certificates and Token in advance. Refer to the protocol description [here](../troubleshoot/concept/protocol_describe.md)."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:18
 msgid "点对点组网模式"
-msgstr ""
+msgstr "Peer-to-Peer Networking Mode"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:20
 msgid "证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)"
-msgstr ""
+msgstr "Refer to [Configuration Authorization](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#configuration-authorization) for certificate configuration."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:22
 msgid ""
 "这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice "
-"节点的`/home/kuscia/var/certs/`目录下："
+"节点的 `/home/kuscia/var/certs/` 目录下："
 msgstr ""
+"Here, we take the alice node as an example. The certificate files required by the interface are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-autonomy-alice node:"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "文件名"
-msgstr ""
+msgstr "File Name"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "文件功能"
-msgstr ""
+msgstr "File Function"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "kusciaapi-server.key"
-msgstr ""
+msgstr "kusciaapi-server.key"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "服务端私钥文件"
-msgstr ""
+msgstr "Server Private Key File"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "kusciaapi-server.crt"
-msgstr ""
+msgstr "kusciaapi-server.crt"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "服务端证书文件"
-msgstr ""
+msgstr "Server Certificate File"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "ca.crt"
-msgstr ""
+msgstr "ca.crt"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "CA 证书文件"
-msgstr ""
+msgstr "CA Certificate File"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "token"
-msgstr ""
+msgstr "token"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md
 msgid "认证 Token ，在 headers 中添加 Token: { token 文件内容}"
-msgstr ""
+msgstr "Authentication Token, add Token: { token file content} in the headers."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:31
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:33
-msgid "证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下："
-msgstr ""
+msgid "证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下："
+msgstr "Certificate files are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-master node:"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:42
 msgid "K8s 模式部署 DataProxy"
-msgstr ""
+msgstr "Deploy DataProxy in K8s Mode"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:44
 msgid "下面以 K8s RunK 模式为例。"
-msgstr ""
+msgstr "The following example uses K8s RunK mode."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:46
 #: ../../tutorial/run_dp_on_kuscia_cn.md:158
 msgid "修改 cm 配置文件，并重启节点"
-msgstr ""
+msgstr "Modify the cm configuration file and restart the node."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:64
 #: ../../tutorial/run_dp_on_kuscia_cn.md:176
 msgid "登录节点"
-msgstr ""
+msgstr "Login to the Node"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:70
 #: ../../tutorial/run_dp_on_kuscia_cn.md:182
 msgid "注册 AppImage"
-msgstr ""
+msgstr "Register AppImage"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:76
 #: ../../tutorial/run_dp_on_kuscia_cn.md:188
 msgid "使用 Kuscia API 部署 DataProx"
-msgstr ""
+msgstr "Deploy DataProxy Using Kuscia API"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:78
 #: ../../tutorial/run_dp_on_kuscia_cn.md:190
 msgid "下面以 MTLS 协议为例，其他协议请参考[这里](../troubleshoot/concept/protocol_describe.md)。"
-msgstr ""
+msgstr "The following example uses the MTLS protocol. For other protocols, please refer [here](../troubleshoot/concept/protocol_describe.md)."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:80
 #: ../../tutorial/run_dp_on_kuscia_cn.md:192
 msgid "部署 DataProxy"
-msgstr ""
+msgstr "Deploy DataProxy"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:102
 #: ../../tutorial/run_dp_on_kuscia_cn.md:214
 msgid "查询 DataProxy"
-msgstr ""
+msgstr "Query DataProxy"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:118
 #: ../../tutorial/run_dp_on_kuscia_cn.md:230
 msgid "删除 DataProxy"
-msgstr ""
+msgstr "Delete DataProxy"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:134
 #: ../../tutorial/run_dp_on_kuscia_cn.md:246
 msgid "验证部署完成"
-msgstr ""
+msgstr "Verify Deployment Completion"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:136
 #: ../../tutorial/run_dp_on_kuscia_cn.md:248
 msgid "执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。"
-msgstr ""
+msgstr "Execute the following command to see the pod status as running, indicating successful deployment of DataProxy."
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:154
 msgid "Docker 模式部署 DataProxy"
-msgstr ""
+msgstr "Deploy DataProxy in Docker Mode"
 
 #: ../../tutorial/run_dp_on_kuscia_cn.md:156
 msgid "下面以 Docker RunC 模式为例。"
-msgstr ""
+msgstr "The following example uses Docker RunC mode."
 

@@ -22,7 +22,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/secretflow/kuscia/pkg/common"
@@ -115,34 +114,6 @@ func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alp
 		return fmt.Errorf("task resource %v/%v labels job id/task id/task alias can't be empty", tr.Namespace, tr.Name)
 	}
 
-	var taskUID string
-	if tr.Labels != nil {
-		taskUID = tr.Labels[common.LabelTaskUID]
-	}
-
-	trs, listErr := c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
-	if listErr != nil {
-		nlog.Errorf("List namespace %v task resources with label %v failed, %v", tr.Namespace, common.LabelTaskUID, listErr)
-		return listErr
-	}
-
-	hasReservedTr := false
-	var reservingTrs []*kusciaapisv1alpha1.TaskResource
-	for idx, item := range trs {
-		if item.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseReserving {
-			reservingTrs = append(reservingTrs, trs[idx])
-			continue
-		}
-
-		if item.Status.Phase == kusciaapisv1alpha1.TaskResourcePhaseReserved {
-			hasReservedTr = true
-		}
-	}
-
-	if hasReservedTr && len(reservingTrs) > 0 {
-		return c.updateTaskResourcesStatus(reservingTrs, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "Start interconn task succeeded")
-	}
-
 	cacheKey := getCacheKeyName(reqTypeStartTask, resourceTypeTaskResource, fmt.Sprintf("%v/%v", tr.Namespace, taskID))
 	if _, ok := c.inflightRequestCache.Get(cacheKey); ok {
 		c.trQueue.AddAfter(key, 2*time.Second)
@@ -156,21 +127,26 @@ func (c *Controller) handleTaskResource(ctx context.Context, tr *kusciaapisv1alp
 		rawKt, err := c.ktLister.KusciaTasks(common.KusciaCrossDomain).Get(taskID)
 		if err != nil {
 			message := fmt.Sprintf("get kuscia task %v failed, %v", taskID, err)
-			_ = c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionFalse, message)
+			_ = c.updateTaskResourceStatus(tr, kusciaapisv1alpha1.TaskResourcePhaseFailed, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionFalse, message)
 			return
 		}
 
 		kt := rawKt.DeepCopy()
+		nlog.Infof("Send task %s:%s start request", tr.Namespace, taskID)
 		_, startTaskErr := c.bfiaClient.StartTask(ctx, c.getReqDomainIDFromKusciaTask(kt), buildHostFor(tr.Namespace), jobID, taskID, taskName)
 		if startTaskErr != nil {
+			nlog.Errorf("Send task %s:%s start request failed, error: %v", tr.Namespace, taskID, startTaskErr)
 			message := fmt.Sprintf("start task request failed, %v", startTaskErr)
 			c.setPartyTaskStatuses(kt, tr.Namespace, message, kusciaapisv1alpha1.TaskFailed)
 			return
 		}
 
-		trs, _ = c.trLister.TaskResources(tr.Namespace).List(labels.SelectorFromSet(labels.Set{common.LabelTaskUID: taskUID}))
+		nlog.Infof("Set party task %s and taskresource %s:%s status", kt.Name, tr.Namespace, tr.Name)
 		c.setPartyTaskStatuses(kt, tr.Namespace, "", kusciaapisv1alpha1.TaskPending)
-		_ = c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "Start interconn task succeeded")
+		err = c.updateTaskResourceStatus(tr, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "Start interconn task succeeded")
+		if err != nil {
+			nlog.Errorf("Update partner taskresources %s:%s to reserved failed, %v", tr.Namespace, tr.Name, err)
+		}
 	}()
 
 	return nil
@@ -194,26 +170,24 @@ func (c *Controller) setPartyTaskStatuses(task *kusciaapisv1alpha1.KusciaTask, d
 }
 
 // updateTaskResourcesStatus updates task resources status.
-func (c *Controller) updateTaskResourcesStatus(trs []*kusciaapisv1alpha1.TaskResource,
+func (c *Controller) updateTaskResourceStatus(tr *kusciaapisv1alpha1.TaskResource,
 	phase kusciaapisv1alpha1.TaskResourcePhase,
 	condType kusciaapisv1alpha1.TaskResourceConditionType,
 	condStatus corev1.ConditionStatus,
 	reason string) error {
 
 	now := metav1.Now().Rfc3339Copy()
-	for idx := range trs {
-		rawTr := trs[idx]
-		trCopy := rawTr.DeepCopy()
-		trCopy.Status.LastTransitionTime = &now
-		trCopy.Status.Phase = phase
-		trCopy.Status.CompletionTime = &now
-		trCond := utilsres.GetTaskResourceCondition(&trCopy.Status, condType)
-		trCond.LastTransitionTime = &now
-		trCond.Status = condStatus
-		trCond.Reason = reason
-		if err := utilsres.PatchTaskResource(context.Background(), c.kusciaClient, utilsres.ExtractTaskResourceStatus(rawTr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
-			return fmt.Errorf("patch interconn task resource %v/%v status failed, %v", trCopy.Namespace, trCopy.Name, err)
-		}
+	trCopy := tr.DeepCopy()
+	trCopy.Status.LastTransitionTime = &now
+	trCopy.Status.Phase = phase
+	trCopy.Status.CompletionTime = &now
+	trCond := utilsres.GetTaskResourceCondition(&trCopy.Status, condType)
+	trCond.LastTransitionTime = &now
+	trCond.Status = condStatus
+	trCond.Reason = reason
+	if err := utilsres.PatchTaskResource(context.Background(), c.kusciaClient, utilsres.ExtractTaskResourceStatus(tr), utilsres.ExtractTaskResourceStatus(trCopy)); err != nil {
+		return fmt.Errorf("patch interconn task resource %v/%v status failed, %v", trCopy.Namespace, trCopy.Name, err)
 	}
+
 	return nil
 }

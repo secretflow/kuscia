@@ -556,7 +556,7 @@ msgid "path"
 msgstr "path"
 
 #: ../../reference/apis/domaindatasource_cn.md
-msgid "本地文件系统绝对路径，建议为/home/kuscia/var/storage/data/或/home/kuscia/var/storage/data/的子目录"
+msgid "本地文件系统绝对路径，建议为 /home/kuscia/var/storage/data/ 或 /home/kuscia/var/storage/data/ 的子目录"
 msgstr "Absolute path in local file system. Recommended: /home/kuscia/var/storage/data/ or its subdirectories"
 
 #: ../../reference/apis/domaindatasource_cn.md:662

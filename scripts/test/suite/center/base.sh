@@ -146,6 +146,20 @@ function test_centralized_token_rolling_party_offline() {
   test_centralized_example_kuscia_job
 }
 
+function test_diagnose_tool() {
+  for i in {1..5}; do
+    local result=$(docker exec -it "${LITE_ALICE_CONTAINER}" kuscia diagnose network alice bob)
+    if [[ ! $result == *"[PASS]"* ]] || [[ $result == *"[FAIL]"* ]]; then
+      sleep 3
+      continue
+    fi
+    break
+  done
+  if [[ ! $result == *"[PASS]"* ]] || [[ $result == *"[FAIL]"* ]]; then
+    fail "The diagnose failed, result: ${result}"
+  fi
+}
+
 function test_kuscia_images() {
     test_runc_kuscia_images
     test_runp_kuscia_images

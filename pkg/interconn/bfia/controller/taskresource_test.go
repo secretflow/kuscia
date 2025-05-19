@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	gochache "github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,9 +155,10 @@ func TestHandleTaskResource(t *testing.T) {
 	trInformer.Informer().GetStore().Add(tr3)
 
 	c := &Controller{
-		kusciaClient: kusciaFakeClient,
-		ktLister:     ktInformer.Lister(),
-		trLister:     trInformer.Lister(),
+		kusciaClient:         kusciaFakeClient,
+		ktLister:             ktInformer.Lister(),
+		trLister:             trInformer.Lister(),
+		inflightRequestCache: gochache.New(inflightRequestCacheExpiration, inflightRequestCacheExpiration),
 	}
 
 	tests := []struct {
@@ -253,8 +255,7 @@ func TestUpdateTaskResourcesStatus(t *testing.T) {
 	c := &Controller{
 		kusciaClient: kusciaFakeClient,
 	}
-	trs := []*kusciaapisv1alpha1.TaskResource{tr}
-	c.updateTaskResourcesStatus(trs, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "")
+	c.updateTaskResourceStatus(tr, kusciaapisv1alpha1.TaskResourcePhaseReserved, kusciaapisv1alpha1.TaskResourceCondReserved, corev1.ConditionTrue, "")
 	got, err := kusciaFakeClient.KusciaV1alpha1().TaskResources(tr.Namespace).Get(context.Background(), tr.Name, metav1.GetOptions{})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, kusciaapisv1alpha1.TaskResourcePhaseReserved, got.Status.Phase)

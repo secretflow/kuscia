@@ -119,10 +119,11 @@ function apply_appimage_crd() {
     echo -e "${RED}${APP_IMAGE_FILE} does not exist, register fail${NC}"
   else
     image_line=$(awk '/^  image:/{print NR; exit}' "$APP_IMAGE_FILE")
-    head -n "$((image_line - 1))" "$APP_IMAGE_FILE" > "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
-    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
-    docker exec -it "${KUSCIA_CONTAINER_NAME}" kubectl apply -f /home/kuscia/var/images/engine_appimage.yaml
-    rm -rf "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
+    head -n "$((image_line - 1))" "$APP_IMAGE_FILE" > engine_appimage.yaml
+    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> engine_appimage.yaml
+    docker cp engine_appimage.yaml "${KUSCIA_CONTAINER_NAME}":/home/kuscia
+    docker exec -i "${KUSCIA_CONTAINER_NAME}" kubectl apply -f engine_appimage.yaml && rm -rf engine_appimage.yaml
+    rm -rf engine_appimage.yaml
   fi
 }
 

@@ -26,7 +26,7 @@ msgid "前言"
 msgstr "Preface"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:5
-msgid "本教程帮助您使用 Docker 组网模式来完成部署 Kuscia 集群。"
+msgid "本教程帮助您使用 Docker 组网模式来完成 Kuscia 集群部署。"
 msgstr "This tutorial helps you deploy a Kuscia cluster using Docker networking mode."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:7
@@ -100,7 +100,7 @@ msgstr "Initialize Swarm"
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:41
 msgid ""
 "执行完上述命令可得到以下描述信息，以及 Token，需要记录该 Token 字符串，在 worker 节点宿主机执行可加入该 docker "
-"swarm 集群。   Token 遗忘丢失也可以通过`docker swarm join-token manager`命令进行查询"
+"swarm 集群。   Token 遗忘丢失也可以通过 `docker swarm join-token manager` 命令进行查询"
 msgstr ""
 "After executing the command, record the generated Token string for worker nodes to join the Swarm cluster. If lost, retrieve via `docker swarm join-token manager`."
 
@@ -118,7 +118,7 @@ msgstr ""
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:67
 msgid ""
-"`--subnet`按需（最多多少个容器使用该网段）进行设置，可不设置。 `kuscia-exchange-cluster`network "
+"`--subnet` 按需（最多多少个容器使用该网段）进行设置，可不设置。`kuscia-exchange-cluster` network "
 "名字，需要在脚本部署时使用，**必须是这个名字**。"
 msgstr ""
 "`--subnet` Set based on container capacity needs (optional). Network name `kuscia-exchange-cluster` **must remain unchanged** for deployment scripts."
@@ -166,7 +166,7 @@ msgstr "Kuscia Deployment Example"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:101
 msgid ""
-"这里使用 kuscia.sh 实现 P2P 模式中`alice`节点的双机双副本部署。 "
+"这里使用 kuscia.sh 实现 P2P 模式中 `alice` 节点的双机双副本部署。 "
 "部署参考：[多机部署点对点集群](./deploy_p2p_cn.md)"
 msgstr ""
 "Deploy dual-node Alice in P2P mode using kuscia.sh. Refer to [Multi-node P2P Deployment](./deploy_p2p_cn.md)."
@@ -197,7 +197,7 @@ msgstr "Refer to [Port Documentation](../kuscia_ports_cn.md) for port configurat
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:139
 msgid ""
-"如果部署时报错 `kuscia-exchange-cluster 已经存在且不是预期的类型` 等类似错误，需要将 network "
+"如果部署时报错 `kuscia-exchange-cluster 已经存在且不是预期的类型`等类似错误，需要将 network "
 "手动删除后重新部署："
 msgstr ""
 "If error occurs (`kuscia-exchange-cluster exists with unexpected type`), manually delete the network and redeploy:"
@@ -229,7 +229,7 @@ msgid "修改配置文件"
 msgstr "Modify Configuration File"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:164
-msgid "从 NGINX 镜像中拷贝配置文件至宿主机当前命令目录"
+msgid "从 Nginx 镜像中拷贝配置文件至宿主机当前命令目录"
 msgstr "Copy NGINX configuration file from image to host's current directory"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:172
@@ -241,11 +241,11 @@ msgstr ""
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:175
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:177
-msgid "nginx 代理参数配置示例"
+msgid "Nginx 代理参数配置示例"
 msgstr "Nginx Proxy Configuration Example"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:177
-msgid "nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。"
+msgid "Nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。"
 msgstr "Nginx proxy configuration example. Details reference [here](../networkrequirements.md#nginx)."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:179

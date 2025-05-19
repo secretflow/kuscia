@@ -35,6 +35,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 	intercommon "github.com/secretflow/kuscia/pkg/interconn/kuscia/common"
@@ -73,7 +74,7 @@ func (h *JobScheduler) handleStageCommand(now metav1.Time, job *kusciaapisv1alph
 		return
 	}
 
-	nlog.Infof("Handle stage trigger: %s send command: %s.", cmdTrigger, stageCmd)
+	nlog.Infof("Job %s Handle stage trigger: %s send command: %s.", job.Name, cmdTrigger, stageCmd)
 	switch kusciaapisv1alpha1.JobStage(stageCmd) {
 	case kusciaapisv1alpha1.JobStartStage:
 		return h.handleStageCmdStart(job)
@@ -91,6 +92,11 @@ func (h *JobScheduler) handleStageCommand(now metav1.Time, job *kusciaapisv1alph
 
 // handleStageCmdStart handles job-start stage.
 func (h *JobScheduler) handleStageCmdStart(job *kusciaapisv1alpha1.KusciaJob) (hasReconciled bool, err error) {
+	// initiator start process is handled by bfia job controller. skip here
+	if utilsres.SelfClusterAsInitiator(h.namespaceLister, job.Spec.Initiator, job.Annotations) && utilsres.IsBFIAResource(job) {
+		return false, nil
+	}
+
 	// get own party
 	ownP, _, _ := h.getAllParties(job)
 	if job.Status.StageStatus == nil {
@@ -166,7 +172,7 @@ func (h *JobScheduler) handleStageCmdRestart(now metav1.Time, job *kusciaapisv1a
 		}
 		return false, nil
 	}
-	nlog.Errorf("Unexpect phase: %s of job: %s.", job.Status.Phase, job.Name)
+	nlog.Errorf("Unexpected phase: %s of job: %s.", job.Status.Phase, job.Name)
 	return false, nil
 }
 
@@ -266,7 +272,7 @@ func (h *JobScheduler) handleStageCmdSuspend(now metav1.Time, job *kusciaapisv1a
 
 func (h *JobScheduler) getStageCmd(job *kusciaapisv1alpha1.KusciaJob) (stageCmd, cmdTrigger string, ok bool) {
 	stageCmd, ok = job.Labels[common.LabelJobStage]
-	cmdTrigger, ok = job.Labels[common.LabelJobStageTrigger]
+	cmdTrigger = job.Labels[common.LabelJobStageTrigger]
 	return
 }
 
@@ -303,7 +309,7 @@ func (h *JobScheduler) validateJob(now metav1.Time, job *kusciaapisv1alpha1.Kusc
 
 // someApprovalReject:  All of the parties accept means the job is accepted
 func (h *JobScheduler) allApprovalAccept(job *kusciaapisv1alpha1.KusciaJob) (ture bool, err error) {
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		domain, err := h.domainLister.Get(party.DomainID)
 		if err != nil {
 			nlog.Errorf("Check approval failed, error: %s.", err.Error())
@@ -324,7 +330,7 @@ func (h *JobScheduler) allApprovalAccept(job *kusciaapisv1alpha1.KusciaJob) (tur
 
 // someApprovalReject:  One of the parties reject means the job is rejected
 func (h *JobScheduler) someApprovalReject(job *kusciaapisv1alpha1.KusciaJob) (ture bool, rejectParty string, err error) {
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		domain, err := h.domainLister.Get(party.DomainID)
 		if err != nil {
 			nlog.Errorf("Check approval failed, error: %s.", err.Error())
@@ -343,7 +349,7 @@ func (h *JobScheduler) someApprovalReject(job *kusciaapisv1alpha1.KusciaJob) (tu
 }
 
 func (h *JobScheduler) allPartyCreateSuccess(job *kusciaapisv1alpha1.KusciaJob) (ture bool, err error) {
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		domain, err := h.domainLister.Get(party.DomainID)
 		if err != nil {
 			nlog.Errorf("Check party create success status failed, error: %s.", err.Error())
@@ -359,7 +365,7 @@ func (h *JobScheduler) allPartyCreateSuccess(job *kusciaapisv1alpha1.KusciaJob) 
 }
 
 func (h *JobScheduler) somePartyCreateFailed(job *kusciaapisv1alpha1.KusciaJob) (ture bool, rejectParty string, err error) {
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		domain, err := h.domainLister.Get(party.DomainID)
 		if err != nil {
 			nlog.Errorf("Check party create fail status failed, error: %s.", err.Error())
@@ -372,23 +378,8 @@ func (h *JobScheduler) somePartyCreateFailed(job *kusciaapisv1alpha1.KusciaJob) 
 	return false, "", nil
 }
 
-func (h *JobScheduler) allPartyStartSuccess(job *kusciaapisv1alpha1.KusciaJob) (ture bool, err error) {
-	for _, party := range h.getParties(job) {
-		domain, err := h.domainLister.Get(party.DomainID)
-		if err != nil {
-			nlog.Errorf("Check party create success status failed, error: %s.", err.Error())
-			return false, err
-		}
-		if stageStatus, ok := job.Status.StageStatus[domain.Name]; ok && stageStatus == kusciaapisv1alpha1.JobStartStageSucceeded {
-			continue
-		}
-		return false, nil
-	}
-	return true, nil
-}
-
 func (h *JobScheduler) somePartyStartFailed(job *kusciaapisv1alpha1.KusciaJob) (ture bool, failedParty string, err error) {
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		domain, err := h.domainLister.Get(party.DomainID)
 		if err != nil {
 			nlog.Errorf("Check party create fail status failed, error: %s.", err.Error())
@@ -403,7 +394,7 @@ func (h *JobScheduler) somePartyStartFailed(job *kusciaapisv1alpha1.KusciaJob) (
 }
 
 func (h *JobScheduler) isAllPartyRestartComplete(job *kusciaapisv1alpha1.KusciaJob) bool {
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		stageStatus, ok := job.Status.StageStatus[party.DomainID]
 		if !ok {
 			return false
@@ -437,16 +428,6 @@ func (h *JobScheduler) getAllParties(job *kusciaapisv1alpha1.KusciaJob) (ownPart
 		ownParties[k] = v
 	}
 	return
-}
-
-func (h *JobScheduler) getParties(job *kusciaapisv1alpha1.KusciaJob) map[string]kusciaapisv1alpha1.Party {
-	partyMap := make(map[string]kusciaapisv1alpha1.Party)
-	for _, t := range job.Spec.Tasks {
-		for _, p := range t.Parties {
-			partyMap[p.DomainID] = p
-		}
-	}
-	return partyMap
 }
 
 func (h *JobScheduler) stopTasks(now metav1.Time, kusciaJob *kusciaapisv1alpha1.KusciaJob) error {
@@ -631,7 +612,7 @@ func (h *JobScheduler) annotateInterConn(job *kusciaapisv1alpha1.KusciaJob) (err
 		selfDomainList   []string
 	)
 
-	for _, party := range h.getParties(job) {
+	for _, party := range utilsres.GetJobParties(job) {
 		ns, err := h.namespaceLister.Get(party.DomainID)
 		if err != nil {
 			nlog.Errorf("labelInterConn failed to get domain %v namespace, %v", party.DomainID, err)
@@ -655,9 +636,17 @@ func (h *JobScheduler) annotateInterConn(job *kusciaapisv1alpha1.KusciaJob) (err
 		}
 	}
 
+	if len(bfiaDomainList) > 0 && len(kusciaDomainList) > 0 {
+		return fmt.Errorf("can't create a job with partners using both bfia and kuscia protocol")
+	}
+
 	if len(bfiaDomainList) > 0 {
 		value := domainListToString(bfiaDomainList)
 		job.Annotations[common.InterConnBFIAPartyAnnotationKey] = value
+		if job.Labels == nil {
+			job.Labels = make(map[string]string)
+		}
+		job.Labels[common.LabelInterConnProtocolType] = string(kusciaapisv1alpha1.InterConnBFIA)
 	}
 	if len(kusciaDomainList) > 0 {
 		value := domainListToString(kusciaDomainList)
@@ -742,19 +731,25 @@ func (h *JobScheduler) setJobTaskID(kusciaJob *kusciaapisv1alpha1.KusciaJob) (bo
 }
 
 // isBFIAInterConnJob checks if the job is interconn with BFIA protocol.
-func isBFIAInterConnJob(nsLister corelisters.NamespaceLister, kusciaJob *kusciaapisv1alpha1.KusciaJob) (bool, error) {
-	if kusciaJob.Labels != nil {
-		if _, ok := kusciaJob.Annotations[common.InterConnBFIAPartyAnnotationKey]; ok {
-			return true, nil
+func isBFIAInterConnJob(nsLister corelisters.NamespaceLister, kusciaJob *kusciaapisv1alpha1.KusciaJob) bool {
+	if kusciaJob.Annotations != nil {
+		if val, ok := kusciaJob.Annotations[common.InterConnBFIAPartyAnnotationKey]; ok && val != "" {
+			return true
 		}
 	}
-	return false, nil
+	if kusciaJob.Labels != nil {
+		if interConnType, ok := kusciaJob.Labels[common.LabelInterConnProtocolType]; ok && interConnType == string(kusciaapisv1alpha1.InterConnBFIA) {
+			return true
+		}
+	}
+	return false
 }
 
 func isInterConnJob(kusciaJob *kusciaapisv1alpha1.KusciaJob) bool {
 	_, existBFIA := kusciaJob.Annotations[common.InterConnBFIAPartyAnnotationKey]
 	_, existKuscia := kusciaJob.Annotations[common.InterConnKusciaPartyAnnotationKey]
-	if existBFIA || existKuscia {
+	_, existInterconn := kusciaJob.Labels[common.LabelInterConnProtocolType]
+	if existBFIA || existKuscia || existInterconn {
 		return true
 	}
 	return false
@@ -1045,8 +1040,8 @@ func (h *RunningHandler) buildWillStartKusciaTask(kusciaJob *kusciaapisv1alpha1.
 			taskObject.Annotations[common.InterConnKusciaPartyAnnotationKey] = kusciaJob.Annotations[common.InterConnKusciaPartyAnnotationKey]
 			taskObject.Annotations[common.InterConnSelfPartyAnnotationKey] = kusciaJob.Annotations[common.InterConnSelfPartyAnnotationKey]
 			taskObject.Annotations[common.InitiatorAnnotationKey] = kusciaJob.Annotations[common.InitiatorAnnotationKey]
+			taskObject.Labels[common.LabelInterConnProtocolType] = kusciaJob.Labels[common.LabelInterConnProtocolType]
 			if kusciaJob.Labels[common.LabelInterConnProtocolType] == string(kusciaapisv1alpha1.InterConnBFIA) {
-				// todo
 				taskObject.Labels[common.LabelTaskUnschedulable] = common.True
 			}
 			if kusciaJob.Annotations[common.KusciaPartyMasterDomainAnnotationKey] != "" {

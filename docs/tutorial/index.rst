@@ -9,6 +9,7 @@
     run_dp_on_kuscia_cn
     run_fate_cn
     run_scql_on_kuscia_cn
+    run_bfia_job_cn
     upgrade_engine.md
     custom_registry
     config_render

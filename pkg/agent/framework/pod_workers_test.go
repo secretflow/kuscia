@@ -811,7 +811,7 @@ func TestStaticPodExclusion(t *testing.T) {
 
 	assert.EqualValues(t, map[string]types.UID{"pod1_test1": "6-static"}, podWorkers.startedStaticPodsByFullname)
 
-	// no static pods shoud be waiting
+	// no static pods should be waiting
 	assert.EqualValues(t, map[string][]types.UID{}, podWorkers.waitingToStartStaticPodsByFullname)
 
 	// prove 6-static synced

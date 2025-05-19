@@ -57,7 +57,7 @@ func (h *PendingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (bool
 	if err := validate(trg); err != nil {
 		trg.Status.Phase = kusciaapisv1alpha1.TaskResourceGroupPhaseFailed
 		utilsres.SetTaskResourceGroupCondition(&now, validatedCond, v1.ConditionFalse,
-			fmt.Sprintf("Validate task resouce group failed, %v", err.Error()))
+			fmt.Sprintf("Validate task resource group failed, %v", err.Error()))
 		return true, nil
 	}
 

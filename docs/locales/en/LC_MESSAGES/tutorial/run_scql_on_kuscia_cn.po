@@ -19,138 +19,142 @@ msgstr ""
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:1
 msgid "如何在 Kuscia 上运行 SCQL 联合分析任务"
-msgstr ""
+msgstr "How to Run an SCQL Federated Analysis Task on Kuscia"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:3
 msgid ""
 "本教程将以 [KusciaAPI](../reference/apis/summary_cn.md) 创建本地数据源作为示例，介绍如何在 "
 "Kuscia 上运行 SCQL 联合分析任务。"
 msgstr ""
+"This tutorial will use [KusciaAPI](../reference/apis/summary_cn.md) to create a local data source as an example, demonstrating how to run an SCQL federated analysis task on Kuscia."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:5
 msgid "准备节点"
-msgstr ""
+msgstr "Prepare Nodes"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:7
 msgid "体验部署请选择[快速入门](../getting_started/quickstart_cn.md)。"
-msgstr ""
+msgstr "For trial deployment, please refer to [Quick Start](../getting_started/quickstart_cn.md)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:8
 msgid "生产部署请选择[多机部署](../deployment/Docker_deployment_kuscia/index.rst)。"
-msgstr ""
+msgstr "For production deployment, please refer to [Multi-Machine Deployment](../deployment/Docker_deployment_kuscia/index.rst)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:10
 msgid "本示例在**点对点组网模式**下完成。在中心化组网模式下，证书的配置会有所不同。"
-msgstr ""
+msgstr "This example is completed in **peer-to-peer networking mode**. In centralized networking mode, the certificate configuration will be different."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:14
 msgid "获取 KusciaAPI 证书和 Token"
-msgstr ""
+msgstr "Obtain KusciaAPI Certificates and Token"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:16
 msgid ""
-"在下面[准备数据](./run_scql_on_kuscia_cn.md#alice-准备测试数据)步骤中需要使用到 KusciaAPI，如果 "
-"KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 "
+"在下面[准备数据](./run_scql_on_kuscia_cn.md#alice-准备测试数据)步骤中需要使用到 KusciaAPI，"
+"如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 "
 "Token。协议参考[这里](../troubleshoot/concept/protocol_describe.md)。"
 msgstr ""
+"In the [prepare data](./run_scql_on_kuscia_cn.md#alice-准备测试数据) step below, you will need to use the KusciaAPI,if KusciaAPI has enabled the MTLS protocol, you need to prepare the MTLS certificates and Token in advance. Refer to the protocol description [here](../troubleshoot/concept/protocol_describe.md)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:18
 msgid "点对点组网模式"
-msgstr ""
+msgstr "Peer-to-Peer Networking Mode"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:20
 msgid "证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)"
-msgstr ""
+msgstr "Refer to [Configuration Authorization](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#configuration-authorization) for certificate configuration."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:22
 msgid ""
 "这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice "
-"节点的`/home/kuscia/var/certs/`目录下："
+"节点的 `/home/kuscia/var/certs/` 目录下："
 msgstr ""
+"Here, we take the Alice node as an example. The certificate files required by the interface are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-autonomy-alice node:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "文件名"
-msgstr ""
+msgstr "File Name"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "文件功能"
-msgstr ""
+msgstr "File Function"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "kusciaapi-server.key"
-msgstr ""
+msgstr "kusciaapi-server.key"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "服务端私钥文件"
-msgstr ""
+msgstr "Server Private Key File"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "kusciaapi-server.crt"
-msgstr ""
+msgstr "kusciaapi-server.crt"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "服务端证书文件"
-msgstr ""
+msgstr "Server Certificate File"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "ca.crt"
-msgstr ""
+msgstr "ca.crt"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "CA 证书文件"
-msgstr ""
+msgstr "CA Certificate File"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "token"
-msgstr ""
+msgstr "token"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md
 msgid "认证 Token ，在 headers 中添加 Token: { token 文件内容}"
-msgstr ""
+msgstr "Authentication Token, add Token: { token file content} in the headers."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:31
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:33
-msgid "证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下："
-msgstr ""
+msgid "证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下："
+msgstr "Certificate files are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-master node:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:42
 msgid "准备数据"
-msgstr ""
+msgstr "Prepare Data"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:44
 msgid "您可以使用本文示例的测试数据文件，或者使用您自己的数据文件。"
-msgstr ""
+msgstr "You can use the test data files provided in this example or your own data files."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:46
 msgid ""
 "在 Kuscia 中，在节点容器的 `/home/kuscia/var/storage` 目录存放内置测试数据文件，下面 Alice 和 Bob "
 "节点分别使用的是 scql-alice.csv 和 scql-bob.csv，您可以在容器中查看这两个数据文件。"
 msgstr ""
+"In Kuscia, the built-in test data files are stored in the `/home/kuscia/var/storage` directory of the node containers. Below, the Alice and Bob nodes use scql-alice.csv and scql-bob.csv, respectively. You can view these data files within the containers."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:48
 msgid "准备测试数据"
-msgstr ""
+msgstr "Prepare Test Data"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:50
 msgid "Alice 准备测试数据"
-msgstr ""
+msgstr "Alice Prepares Test Data"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:52
 msgid "这里以 Docker 部署模式为例，登录到 alice 节点中"
-msgstr ""
+msgstr "Here, we use Docker deployment mode as an example. Log in to the alice node."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:58
 #: ../../tutorial/run_scql_on_kuscia_cn.md:136
 msgid "创建 DomainDataSource"
-msgstr ""
+msgstr "Create DomainDataSource"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:60
 #: ../../tutorial/run_scql_on_kuscia_cn.md:138
 msgid "下面 datasource_id 名称以 scql-demo-local-datasource 为例："
-msgstr ""
+msgstr "The following example uses scql-demo-local-datasource as the datasource_id:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:85
 msgid ""
@@ -158,23 +162,26 @@ msgid ""
 "数据源](../reference/apis/domaindatasource_cn.md#id5)，并将 "
 "/home/kuscia/var/storage/data/scql-alice.csv 示例数据放入 OSS 中。"
 msgstr ""
+"When deploying Kuscia in K8S RunK mode, you need to use the [OSS "
+"Data Source](../reference/apis/domaindatasource_cn.md#id5) and place the example data "
+"/home/kuscia/var/storage/data/scql-alice.csv in OSS."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:88
 #: ../../tutorial/run_scql_on_kuscia_cn.md:166
 msgid "创建 DomainData"
-msgstr ""
+msgstr "Create DomainData"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:90
 msgid "下面 domaindata_id 名称以 scql-alice-table 为例："
-msgstr ""
+msgstr "The following example uses scql-alice-table as the domaindata_id:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:128
 msgid "Bob 准备测试数据"
-msgstr ""
+msgstr "Bob Prepares Test Data"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:130
 msgid "这里以 Docker 部署模式为例，登录到 Bob 节点中"
-msgstr ""
+msgstr "Here, we use Docker deployment mode as an example. Log in to the Bob node."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:163
 msgid ""
@@ -182,32 +189,35 @@ msgid ""
 "数据源](../reference/apis/domaindatasource_cn.md#id5)，并将 "
 "/home/kuscia/var/storage/data/scql-bob.csv 示例数据放入 OSS 中。"
 msgstr ""
+"When deploying Kuscia in K8S RunK mode, you need to use the [OSS "
+"Data Source](../reference/apis/domaindatasource_cn.md#id5) and place the example data "
+"/home/kuscia/var/storage/data/scql-bob.csv in OSS."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:168
 msgid "下面 domaindata_id 名称以 scql-bob-table 为例："
-msgstr ""
+msgstr "The following example uses scql-bob-table as the domaindata_id:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:202
 msgid "部署 SCQL"
-msgstr ""
+msgstr "Deploy SCQL"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:204
 msgid "Alice 部署 SCQL"
-msgstr ""
+msgstr "Alice Deploys SCQL"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:206
 msgid "登陆到 alice 节点容器中"
-msgstr ""
+msgstr "Log in to the alice node container."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:212
 #: ../../tutorial/run_scql_on_kuscia_cn.md:249
 msgid "如果是中心化组网模式，则需要登录到 master 节点容器中。"
-msgstr ""
+msgstr "If in centralized networking mode, you need to log in to the master node container."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:218
 #: ../../tutorial/run_scql_on_kuscia_cn.md:255
 msgid "获取 SCQL 应用的镜像模版 AppImage"
-msgstr ""
+msgstr "Obtain the SCQL Application Image Template AppImage"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:220
 #: ../../tutorial/run_scql_on_kuscia_cn.md:257
@@ -216,11 +226,12 @@ msgid ""
 "[SCQL AppImage](https://www.secretflow.org.cn/zh-"
 "CN/docs/scql/main/topics/deployment/run-scql-on-kuscia)。"
 msgstr ""
+"Obtain the specific content of the AppImage from the SCQL official documentation and save it to the scql-image.yaml file. For the specific template content, refer to [SCQL AppImage](https://www.secretflow.org.cn/en/docs/scql/main/topics/deployment/run-scql-on-kuscia)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:222
 #: ../../tutorial/run_scql_on_kuscia_cn.md:259
 msgid "注意："
-msgstr ""
+msgstr "Note:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:224
 #: ../../tutorial/run_scql_on_kuscia_cn.md:261
@@ -228,6 +239,7 @@ msgid ""
 "如果 `secretflow/scql` 仓库访问网速较慢，可以替换为 `secretflow-registry.cn-"
 "hangzhou.cr.aliyuncs.com/secretflow/scql`。"
 msgstr ""
+"If the access speed to the `secretflow/scql` repository is slow, you can replace it with `secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/scql`."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:225
 #: ../../tutorial/run_scql_on_kuscia_cn.md:262
@@ -235,11 +247,13 @@ msgid ""
 "请删除 `#--datasource_router=kusciadatamesh` 代码行前面的 # 符号，以启用 Datamesh "
 "本地数据源配置。"
 msgstr ""
+"Please remove the # symbol in front of the `#--datasource_router=kusciadatamesh` line to enable the Datamesh local data source configuration."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:226
 #: ../../tutorial/run_scql_on_kuscia_cn.md:263
 msgid "在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径。"
 msgstr ""
+"Add `--enable_restricted_read_path=false` to the `engineConf` field to restrict the read path of csv files."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:227
 #: ../../tutorial/run_scql_on_kuscia_cn.md:264
@@ -247,259 +261,266 @@ msgid ""
 "K8S RunK 模式部署 Kuscia 时，需要使用 MySQL 存储 Broker 元数据。修改 `storage` 字段的 `type` 为"
 " MySQL 和 `conn_str` 对应的数据库连接字符串。"
 msgstr ""
+"When deploying Kuscia in K8S RunK mode, you need to use MySQL to store Broker metadata. Modify the `type` field in `storage` to MySQL and the `conn_str` to the corresponding database connection string."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:229
 #: ../../tutorial/run_scql_on_kuscia_cn.md:266
 msgid "创建 SCQL 应用的镜像模版 AppImage"
-msgstr ""
+msgstr "Create the SCQL Application Image Template AppImage"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:235
 #: ../../tutorial/run_scql_on_kuscia_cn.md:272
 msgid "部署 Broker"
-msgstr ""
+msgstr "Deploy Broker"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:241
 msgid "Bob 部署 SCQL"
-msgstr ""
+msgstr "Bob Deploys SCQL"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:243
 msgid "登陆到 Bob 节点容器中"
-msgstr ""
+msgstr "Log in to the Bob node container."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:278
 msgid "查看 broker 是否部署成功"
-msgstr ""
+msgstr "Check if Broker is Successfully Deployed"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:280
 msgid "下面以 Alice 节点为例，Bob 节点类似"
-msgstr ""
+msgstr "The following example uses the Alice node. The Bob node is similar."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:290
 msgid "使用 SCQL 进行联合分析"
-msgstr ""
+msgstr "Use SCQL for Federated Analysis"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:292
 msgid ""
 "下面仅以流程步骤作为示例展示，更多接口参数请参考 [SCQL API](https://www.secretflow.org.cn/zh-"
 "CN/docs/scql/main/reference/broker-api)。"
 msgstr ""
+"The following example only demonstrates the process steps. For more interface parameters, refer to [SCQL API](https://www.secretflow.org.cn/en/docs/scql/main/reference/broker-api)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:294
 msgid "创建项目并邀请参与方加入"
-msgstr ""
+msgstr "Create a Project and Invite Participants"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:296
 msgid "Alice 创建项目，并邀请 Bob 加入"
-msgstr ""
+msgstr "Alice Creates a Project and Invites Bob to Join"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:298
 #: ../../tutorial/run_scql_on_kuscia_cn.md:377
 msgid "登录到 Alice 节点容器中"
-msgstr ""
+msgstr "Log in to the Alice node container."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:304
 msgid "创建项目"
-msgstr ""
+msgstr "Create Project"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:306
 msgid "下面项目名称以 \"demo\" 为例："
-msgstr ""
+msgstr "The following example uses \"demo\" as the project name:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:325
 msgid "查看项目"
-msgstr ""
+msgstr "View Project"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:333
 msgid "邀请 Bob 加入到 \"demo\" 项目中"
-msgstr ""
+msgstr "Invite Bob to Join the \"demo\" Project"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:345
 msgid "查看邀请状态"
-msgstr ""
+msgstr "Check Invitation Status"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:353
 msgid "Bob 接受邀请"
-msgstr ""
+msgstr "Bob Accepts Invitation"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:355
 #: ../../tutorial/run_scql_on_kuscia_cn.md:408
 msgid "登录到 Bob 节点容器中"
-msgstr ""
+msgstr "Log in to the Bob node container."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:361
 msgid "Bob 接受 Alice 的入项邀请"
-msgstr ""
+msgstr "Bob Accepts Alice's Invitation"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:373
 #: ../../tutorial/run_scql_on_kuscia_cn.md:383
 #: ../../tutorial/run_scql_on_kuscia_cn.md:414
 msgid "创建数据表"
-msgstr ""
+msgstr "Create Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:375
 msgid "Alice 创建数据表"
-msgstr ""
+msgstr "Alice Creates Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:385
 msgid ""
 "下面 table_name 以 ta 为例，ref_table 参数的值为[创建 "
 "DomainData](./run_scql_on_kuscia_cn.md#alice-准备测试数据)时的 `domaindata_id`"
 msgstr ""
+"The following example uses ta as the table_name, and the value of the ref_table parameter is the `domaindata_id` from [Creating "
+"DomainData](./run_scql_on_kuscia_cn.md#alice-prepare-test-data)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:406
 msgid "Bob 创建数据表"
-msgstr ""
+msgstr "Bob Creates Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:416
 msgid ""
 "下面 table_name 以 ta 为例，ref_table 参数的值为[创建 "
 "DomainData](./run_scql_on_kuscia_cn.md#bob-准备测试数据)时的 `domaindata_id`"
 msgstr ""
+"The following example uses ta as the table_name, and the value of the ref_table parameter is the `domaindata_id` from [Creating "
+"DomainData](./run_scql_on_kuscia_cn.md#bob-prepare-test-data)."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:436
 msgid "查看数据表"
-msgstr ""
+msgstr "View Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:438
 #: ../../tutorial/run_scql_on_kuscia_cn.md:543
 msgid "下面以 Alice 为例，Bob 节点类似"
-msgstr ""
+msgstr "The following example uses Alice. The Bob node is similar."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:450
 msgid "删除数据表"
-msgstr ""
+msgstr "Delete Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:452
 msgid "若想删除创建的数据表时，可以参考下面命令。以 Alice 节点为例，Bob 节点类似。"
-msgstr ""
+msgstr "If you want to delete the created data table, you can refer to the following command. The example uses the Alice node. The Bob node is similar."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:465
 msgid "数据表授权"
-msgstr ""
+msgstr "Data Table Authorization"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:467
 msgid "Alice 的数据表授权"
-msgstr ""
+msgstr "Alice Authorizes Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:469
 msgid "将 ta 数据表授权给 Alice"
-msgstr ""
+msgstr "Authorize the ta data table to Alice"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:487
 msgid "将 ta 表授权给 Bob 节点"
-msgstr ""
+msgstr "Authorize the ta table to the Bob node"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:505
 msgid "Bob 的数据表授权"
-msgstr ""
+msgstr "Bob Authorizes Data Table"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:507
 msgid "将 tb 表授权给 Alice 节点"
-msgstr ""
+msgstr "Authorize the tb table to the Alice node"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:524
 msgid "将 tb 表授权给 Bob 节点"
-msgstr ""
+msgstr "Authorize the tb table to the Bob node"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:541
 msgid "查看数据表授权"
-msgstr ""
+msgstr "View Data Table Authorization"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:557
 msgid "撤销数据表授权"
-msgstr ""
+msgstr "Revoke Data Table Authorization"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:559
 msgid "若想撤销数据表授权，那么可以参考下面命令。以 Alice 节点为例，Bob 节点类似。"
-msgstr ""
+msgstr "If you want to revoke data table authorization, you can refer to the following command. The example uses the Alice node. The Bob node is similar."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:577
 msgid "进行联合分析"
-msgstr ""
+msgstr "Perform Federated Analysis"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:579
 msgid "同步查询"
-msgstr ""
+msgstr "Synchronous Query"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:581
 msgid "下面以 Alice 节点查询为例 Bob 节点类似。"
-msgstr ""
+msgstr "The following example uses a query from the Alice node. The Bob node is similar."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:594
 msgid "返回的成功结果如下:"
-msgstr ""
+msgstr "The successful result returned is as follows:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:694
 msgid "异步查询"
-msgstr ""
+msgstr "Asynchronous Query"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:696
 msgid "下面以 Alice 节点为例，Bob 节点类似。"
-msgstr ""
+msgstr "The following example uses the Alice node. The Bob node is similar."
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:698
 msgid "提交 query"
-msgstr ""
+msgstr "Submit Query"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:711
 msgid "获取结果"
-msgstr ""
+msgstr "Get Results"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:723
 msgid "参考"
-msgstr ""
+msgstr "References"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:725
 msgid "常用命令"
-msgstr ""
+msgstr "Common Commands"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:727
 msgid "查看 broker kd 状态："
-msgstr ""
+msgstr "Check Broker KD Status:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:733
 msgid "查看 broker deployment 状态"
-msgstr ""
+msgstr "Check Broker Deployment Status"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:739
 msgid "查看 broker 应用状态"
-msgstr ""
+msgstr "Check Broker Application Status"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:745
 msgid "查看 broker configmap"
-msgstr ""
+msgstr "Check Broker ConfigMap"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:751
 msgid "查看 appImage"
-msgstr ""
+msgstr "Check AppImage"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:757
 msgid "删除 broker"
-msgstr ""
+msgstr "Delete Broker"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:763
 msgid "如何查看 SCQL 应用容器日志"
-msgstr ""
+msgstr "How to View SCQL Application Container Logs"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:765
 msgid "在 Kuscia 中，可以登陆到节点容器内查看 SCQL 应用容器的日志。具体方法如下。"
-msgstr ""
+msgstr "In Kuscia, you can log in to the node container to view the SCQL application container logs. The specific method is as follows:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:767
 msgid "登陆到节点容器中"
-msgstr ""
+msgstr "Log in to the Node Container"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:769
 msgid "下面以 Alice 节点为例："
-msgstr ""
+msgstr "The following example uses the Alice node:"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:775
 msgid "查看日志"
-msgstr ""
+msgstr "View Logs"
 
 #: ../../tutorial/run_scql_on_kuscia_cn.md:777
 msgid ""
 "在目录 `/home/kuscia/var/stdout/pods` 下可以看到对应 SCQL Broker 和 Engine "
 "应用容器的目录。后续进入到相应目录下，即可查看应用的日志。"
 msgstr ""
+"In the directory `/home/kuscia/var/stdout/pods`, you can see the directories corresponding to the SCQL Broker and Engine application containers. You can then navigate to the respective directories to view the application logs."
 

@@ -95,7 +95,7 @@ func getPublickeyFromCert(certString string) ([]byte, error) {
 	}
 	rsaPub, ok := cert.PublicKey.(*rsa.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("%s", "Cant get publickey from src domain")
+		return nil, fmt.Errorf("%s", "Can't get publickey from src domain")
 	}
 	block := &pem.Block{
 		Type:  "RSA PUBLIC KEY",

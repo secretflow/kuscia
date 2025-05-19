@@ -52,7 +52,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
-	// envoy build-in plugins for Unmarshal listeners
+	// envoy built-in plugins for Unmarshal listeners
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	bandwidth_limitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_bridge/v3"
@@ -162,7 +162,7 @@ func runServer(ctx context.Context, srv server.Server, port uint32) {
 
 	select {
 	case <-ctx.Done():
-		// notity server stop
+		// notify server stop
 		grpcServer.Stop()
 	case <-ch:
 	}

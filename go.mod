@@ -19,7 +19,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-sql-driver/mysql v1.6.0
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
@@ -298,6 +298,7 @@ replace (
 	k8s.io/cri-api => k8s.io/cri-api v0.28.12
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.28.12
 	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.28.12
+	k8s.io/endpointslice => k8s.io/endpointslice v0.28.12
 	k8s.io/kms => k8s.io/kms v0.28.12
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.28.12
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.28.12

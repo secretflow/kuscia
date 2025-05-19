@@ -86,6 +86,10 @@ func (c *hostResourcesController) syncDeploymentSummaryHandler(ctx context.Conte
 }
 
 func (c *hostResourcesController) updateMemberDeployment(ctx context.Context, deploymentSummary *kusciaapisv1alpha1.KusciaDeploymentSummary) error {
+	if deploymentSummary.Status.Phase == kusciaapisv1alpha1.KusciaDeploymentPhaseFailed {
+		nlog.Infof("Host kds namespace:%s,name: %s is failed, so don't create member deployment,skip processing it", deploymentSummary.Namespace, deploymentSummary.Name)
+		return nil
+	}
 	originalKd, err := c.memberDeploymentLister.KusciaDeployments(common.KusciaCrossDomain).Get(deploymentSummary.Name)
 	if err != nil {
 		return err

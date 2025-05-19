@@ -20,10 +20,11 @@ set -e
 SELECTED_TEST_SUITE=${1}
 
 # TEST_SUITES hold all test suites.
-TEST_SUITES="center.base p2p.base center.example"
+TEST_SUITES="center.base p2p.base center.example bfia.base"
 WSL_IGNORE_SUITES="center.nsjail p2p.nsjail"
 center_base="./test/suite/center/base.sh"
 p2p_base="./test/suite/p2p/base.sh"
+bfia_base="./test/suite/bfia/base.sh"
 center_nsjail="./test/suite/center/nsjail.sh"
 p2p_nsjail="./test/suite/p2p/nsjail.sh"
 center_example="./test/suite/center/example.sh"

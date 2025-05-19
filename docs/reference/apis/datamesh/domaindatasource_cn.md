@@ -7,11 +7,11 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 | 方法名                                              | 请求类型                        | 响应类型                         | 描述 |
 |--------------------------------------------------|-----------------------------|------------------------------|----------|
-| [QueryDomainDataSource](#query-domain-data-source) | QueryDomainDataSourceRequest | QueryDomainDataSourceResponse      | 查询数据 |
+| [QueryDomainDataSource](#datamesh-query-domain-data-source) | QueryDomainDataSourceRequest | QueryDomainDataSourceResponse      | 查询数据 |
 
 ## 接口详情
 
-{#query-domain-data-source}
+{#datamesh-query-domain-data-source}
 
 ### 查询数据源
 
@@ -19,7 +19,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 /api/v1/domaindatasource/query
 
-#### 请求（QueryDomainGrantRequest）
+#### 请求（QueryDomainDataSourceRequest）
 
 | 字段     | 类型                                                            | 选填 | 描述      |
 |--------|---------------------------------------------------------------|-----|--------------|
@@ -27,7 +27,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 | domain_id             | string                                         | 必填 | 节点 ID   |
 | datasource_id    | string                                         | 必填 | 数据源 ID |
 
-#### 响应（QueryDomainGrantResponse）
+#### 响应（QueryDomainDataSourceResponse）
 
 | 字段     | 类型                                | 选填 | 描述   |
 |--------|--------------------------------------|----|------|

@@ -67,7 +67,7 @@ GRPC 端口默认在：Domain 的 8071。
 您也可以使用 HTTP 的客户端工具连接上 Kuscia API，如 curl，您需要替换 {} 中的内容：
 
 ```shell
-curl -X POST 'http://{{USER-kuscia-lite-alice}:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
+curl -X POST 'http://{{USER}-kuscia-lite-alice}:8070/api/v1/datamesh/domaindata/query' --header 'Content-Type: application/json' -d '{
   "domaindata_id": "alice"
 }'
 ```
