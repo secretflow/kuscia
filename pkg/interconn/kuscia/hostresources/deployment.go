@@ -130,7 +130,7 @@ func (c *hostResourcesController) processDeployment(ctx context.Context, deploym
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			// if hostDeploymentSummary status phase is failed, don't create member deployment
-			hostKds, kdsErr := c.hostDeploymentSummaryLister.KusciaDeploymentSummaries(deployment.Namespace).Get(deployment.Name)
+			hostKds, kdsErr := c.hostKusciaClient.KusciaV1alpha1().KusciaDeployments(deployment.Namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
 			if kdsErr != nil {
 				if k8serrors.IsNotFound(kdsErr) {
 					nlog.Infof("Host kds namespace:%s,name: %s is not found, so don't create member deployment,skip processing it", deployment.Namespace, deployment.Name)

@@ -225,6 +225,7 @@
     > 2. 请删除 `#--datasource_router=kusciadatamesh` 代码行前面的 # 符号，以启用 Datamesh 本地数据源配置。
     > 3. 在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径。
     > 4. K8S RunK 模式部署 Kuscia 时，需要使用 MySQL 存储 Broker 元数据。修改 `storage` 字段的 `type` 为 MySQL 和 `conn_str` 对应的数据库连接字符串。
+    > 5. 如果 AppImage 配置有改动可以重启 Kuscia 或重新创建 Broker 使配置生效。示例命令：`kubectl delete KusciaDeployment scql -n cross-domain` `kubectl apply -f broker-deploy.yaml` 。
 
 3. 创建 SCQL 应用的镜像模版 AppImage
 
@@ -262,6 +263,7 @@ kubectl apply -f /home/kuscia/scripts/templates/scql/broker_alice.yaml
     > 2. 请删除 `#--datasource_router=kusciadatamesh` 代码行前面的 # 符号，以启用 Datamesh 本地数据源配置。
     > 3. 在 `engineConf` 字段加上 `--enable_restricted_read_path=false` 限制 csv 文件的读取路径。
     > 4. K8S RunK 模式部署 Kuscia 时，需要使用 MySQL 存储 Broker 元数据。修改 `storage` 字段的 `type` 为 MySQL 和 `conn_str` 对应的数据库连接字符串。
+    > 5. 如果 AppImage 配置有改动可以重启 Kuscia 或重新创建 Broker 使配置生效。示例命令：`kubectl delete KusciaDeployment scql -n cross-domain` `kubectl apply -f broker-deploy.yaml` 。
 
 3. 创建 SCQL 应用的镜像模版 AppImage
 

@@ -263,6 +263,11 @@ msgid ""
 msgstr ""
 "When deploying Kuscia in K8S RunK mode, you need to use MySQL to store Broker metadata. Modify the `type` field in `storage` to MySQL and the `conn_str` to the corresponding database connection string."
 
+#: ../../tutorial/run_scql_on_kuscia_cn.md:228
+#: ../../tutorial/run_scql_on_kuscia_cn.md:266
+msgid "如果 AppImage 配置有改动可以重启 Kuscia 或重新创建 Broker 使配置生效。示例命令：`kubectl delete KusciaDeployment scql -n cross-domain` `kubectl apply -f broker-deploy.yaml` 。"
+msgstr "If the AppImage configuration is modified, you can restart Kuscia or recreate the Broker to make the configuration effective. Example commands: `kubectl delete KusciaDeployment scql -n cross-domain` `kubectl apply -f broker-deploy.yaml`."
+
 #: ../../tutorial/run_scql_on_kuscia_cn.md:229
 #: ../../tutorial/run_scql_on_kuscia_cn.md:266
 msgid "创建 SCQL 应用的镜像模版 AppImage"
