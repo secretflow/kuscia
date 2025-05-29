@@ -1,0 +1,366 @@
+#!/bin/bash
+#
+# Copyright 2025 Ant Group Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Version consistency checker for Kuscia and SecretFlow
+# This script checks markdown files for version inconsistencies and can optionally fix them
+
+set -euo pipefail
+
+# Color codes for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Default values
+KUSCIA_VERSION=""
+SECRETFLOW_VERSION=""
+CHECK_DIRS="docs scripts hack"
+MODE="check"
+VERBOSE=false
+
+# Latest known versions (for reference)
+LATEST_KUSCIA_VERSION="v0.15.0b1"
+LATEST_SECRETFLOW_VERSION="v1.12.0b0"
+
+# Usage function
+usage() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Check and validate Kuscia and SecretFlow version consistency in markdown files.
+
+OPTIONS:
+    --kuscia-version VERSION        Expected Kuscia version (required)
+    --secretflow-version VERSION    Expected SecretFlow version (required)
+    --check-dirs DIRS              Directories to check (default: "docs scripts hack")
+    --mode MODE                    Operation mode: check or fix (default: check)
+    --verbose                      Enable verbose output
+    -h, --help                     Show this help message
+
+EXAMPLES:
+    $0 --kuscia-version v0.10.0b0 --secretflow-version v1.12.0b0
+    $0 --kuscia-version v0.10.0b0 --secretflow-version v1.12.0b0 --mode fix
+    $0 --kuscia-version v0.10.0b0 --secretflow-version v1.12.0b0 --check-dirs "docs" --verbose
+
+EOF
+}
+
+# Logging functions
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+log_verbose() {
+    if [[ "$VERBOSE" == "true" ]]; then
+        echo -e "${BLUE}[VERBOSE]${NC} $1"
+    fi
+}
+
+# Parse command line arguments
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --kuscia-version)
+                KUSCIA_VERSION="$2"
+                shift 2
+                ;;
+            --secretflow-version)
+                SECRETFLOW_VERSION="$2"
+                shift 2
+                ;;
+            --check-dirs)
+                CHECK_DIRS="$2"
+                shift 2
+                ;;
+            --mode)
+                MODE="$2"
+                shift 2
+                ;;
+            --verbose)
+                VERBOSE=true
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Validate arguments
+validate_args() {
+    if [[ -z "$KUSCIA_VERSION" ]]; then
+        log_error "Kuscia version is required (--kuscia-version)"
+        exit 1
+    fi
+    
+    if [[ -z "$SECRETFLOW_VERSION" ]]; then
+        log_error "SecretFlow version is required (--secretflow-version)"
+        exit 1
+    fi
+    
+    if [[ "$MODE" != "check" && "$MODE" != "fix" ]]; then
+        log_error "Mode must be 'check' or 'fix'"
+        exit 1
+    fi
+}
+
+# Find markdown files in specified directories
+find_markdown_files() {
+    local dirs=($CHECK_DIRS)
+    local files=()
+    
+    for dir in "${dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            log_verbose "Searching for markdown files in: $dir"
+            while IFS= read -r -d '' file; do
+                files+=("$file")
+            done < <(find "$dir" -type f \( -name "*.md" -o -name "*.markdown" \) -print0 2>/dev/null)
+        else
+            log_warn "Directory not found: $dir"
+        fi
+    done
+    
+    printf '%s\n' "${files[@]}"
+}
+
+# Enhanced version pattern matching for multiple formats
+extract_version() {
+    local text="$1"
+    # Match comprehensive version patterns:
+    # - v0.10.0b0, v1.12.0b0 (standard format)
+    # - 0.10.0b0, 1.12.0b0 (without v prefix)
+    # - v0.10.0-beta0, v1.12.0-beta0 (beta format)
+    # - 0.10.0, 1.12.0 (release format)
+    # - Handles legacy patterns like 0.6.0b0, 1.5.0b0
+    echo "$text" | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9\-\.]*)?'
+}
+
+# Check version consistency in a file
+check_file_versions() {
+    local file="$1"
+    local issues=()
+    local line_num=0
+    
+    log_verbose "Checking file: $file"
+    
+    while IFS= read -r line; do
+        ((line_num++))
+        
+        # Check for Kuscia version patterns (enhanced matching)
+        if echo "$line" | grep -qiE "(kuscia)" && echo "$line" | grep -qE 'v?[0-9]+\.[0-9]+\.[0-9]+'; then
+            local found_versions=($(extract_version "$line"))
+            for version in "${found_versions[@]}"; do
+                # Skip if this might be a port number or other numeric pattern
+                if [[ ! "$line" =~ (localhost|127\.0\.0\.1|:[0-9]+|port.*[0-9]+) ]]; then
+                    if [[ "$version" != "$KUSCIA_VERSION" ]]; then
+                        issues+=("$file:$line_num: Found Kuscia version '$version', expected '$KUSCIA_VERSION'")
+                        log_verbose "  Line $line_num: $line"
+                    fi
+                fi
+            done
+        fi
+        
+        # Check for SecretFlow version patterns (enhanced matching)
+        if echo "$line" | grep -qiE "(secretflow|secret-flow)" && echo "$line" | grep -qE 'v?[0-9]+\.[0-9]+\.[0-9]+'; then
+            local found_versions=($(extract_version "$line"))
+            for version in "${found_versions[@]}"; do
+                # Skip if this might be a port number or other numeric pattern
+                if [[ ! "$line" =~ (localhost|127\.0\.0\.1|:[0-9]+|port.*[0-9]+) ]]; then
+                    if [[ "$version" != "$SECRETFLOW_VERSION" ]]; then
+                        issues+=("$file:$line_num: Found SecretFlow version '$version', expected '$SECRETFLOW_VERSION'")
+                        log_verbose "  Line $line_num: $line"
+                    fi
+                fi
+            done
+        fi
+        
+        # Check for Docker/container image references with version tags
+        if echo "$line" | grep -qE "(kuscia|secretflow).*:[v]?[0-9]+\.[0-9]+\.[0-9]+"; then
+            if echo "$line" | grep -qiE "(^|[^a-zA-Z])kuscia([^a-zA-Z]|$)"; then
+                local found_versions=($(extract_version "$line"))
+                for version in "${found_versions[@]}"; do
+                    # Additional validation for image tags
+                    if echo "$line" | grep -qE "kuscia[^:]*:.*$version"; then
+                        if [[ "$version" != "$KUSCIA_VERSION" ]]; then
+                            issues+=("$file:$line_num: Found Kuscia image version '$version', expected '$KUSCIA_VERSION'")
+                            log_verbose "  Line $line_num: $line"
+                        fi
+                    fi
+                done
+            elif echo "$line" | grep -qiE "(secretflow|secret-flow)"; then
+                local found_versions=($(extract_version "$line"))
+                for version in "${found_versions[@]}"; do
+                    # Additional validation for image tags
+                    if echo "$line" | grep -qE "(secretflow|secret-flow)[^:]*:.*$version"; then
+                        if [[ "$version" != "$SECRETFLOW_VERSION" ]]; then
+                            issues+=("$file:$line_num: Found SecretFlow image version '$version', expected '$SECRETFLOW_VERSION'")
+                            log_verbose "  Line $line_num: $line"
+                        fi
+                    fi
+                done
+            fi
+        fi
+    done < "$file"
+    
+    printf '%s\n' "${issues[@]}"
+}
+
+# Fix version inconsistencies in a file
+fix_file_versions() {
+    local file="$1"
+    local temp_file=$(mktemp)
+    local fixed=false
+    
+    log_verbose "Fixing file: $file"
+    
+    # Create comprehensive regex patterns for replacement
+    # Kuscia patterns: match various formats including legacy versions
+    local kuscia_pattern_1='(kuscia[^:]*:)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    local kuscia_pattern_2='(kuscia[[:space:]]+)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    local kuscia_pattern_3='(kuscia[[:space:]]*version[[:space:]]*:?[[:space:]]*)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    
+    # SecretFlow patterns: handle both secretflow and secret-flow variants
+    local secretflow_pattern_1='(secretflow[^:]*:|secret-flow[^:]*:)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    local secretflow_pattern_2='(secretflow[[:space:]]+|secret-flow[[:space:]]+)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    local secretflow_pattern_3='((secretflow|secret-flow)[[:space:]]*version[[:space:]]*:?[[:space:]]*)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    
+    # Fix Kuscia versions with multiple patterns
+    for pattern in "$kuscia_pattern_1" "$kuscia_pattern_2" "$kuscia_pattern_3"; do
+        if sed -E "s|$pattern|\1$KUSCIA_VERSION|gi" "$file" > "$temp_file"; then
+            if ! cmp -s "$file" "$temp_file"; then
+                fixed=true
+            fi
+            cp "$temp_file" "$file"
+        fi
+    done
+    
+    # Fix SecretFlow versions with multiple patterns
+    for pattern in "$secretflow_pattern_1" "$secretflow_pattern_2" "$secretflow_pattern_3"; do
+        if sed -E "s|$pattern|\1$SECRETFLOW_VERSION|gi" "$file" > "$temp_file"; then
+            if ! cmp -s "$file" "$temp_file"; then
+                fixed=true
+            fi
+            cp "$temp_file" "$file"
+        fi
+    done
+    
+    rm -f "$temp_file"
+    
+    if [[ "$fixed" == "true" ]]; then
+        log_verbose "  Fixed versions in: $file"
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Main function
+main() {
+    parse_args "$@"
+    validate_args
+    
+    log_info "Starting version consistency check..."
+    log_info "Kuscia version: $KUSCIA_VERSION"
+    log_info "SecretFlow version: $SECRETFLOW_VERSION"
+    log_info "Check directories: $CHECK_DIRS"
+    log_info "Mode: $MODE"
+    
+    local files=($(find_markdown_files))
+    local total_files=${#files[@]}
+    local total_issues=0
+    local files_with_issues=()
+    local fixed_files=()
+    
+    if [[ $total_files -eq 0 ]]; then
+        log_warn "No markdown files found in specified directories"
+        exit 0
+    fi
+    
+    log_info "Found $total_files markdown files to check"
+    
+    for file in "${files[@]}"; do
+        if [[ "$MODE" == "check" ]]; then
+            local issues=($(check_file_versions "$file"))
+            if [[ ${#issues[@]} -gt 0 ]]; then
+                files_with_issues+=("$file")
+                total_issues=$((total_issues + ${#issues[@]}))
+                log_error "Issues found in $file:"
+                for issue in "${issues[@]}"; do
+                    echo "  $issue"
+                done
+            fi
+        elif [[ "$MODE" == "fix" ]]; then
+            if fix_file_versions "$file"; then
+                fixed_files+=("$file")
+                log_info "Fixed versions in: $file"
+            fi
+        fi
+    done
+    
+    echo ""
+    
+    if [[ "$MODE" == "check" ]]; then
+        if [[ $total_issues -eq 0 ]]; then
+            log_success "No version inconsistencies found! All $total_files files are consistent."
+            exit 0
+        else
+            log_error "Found $total_issues version inconsistencies in ${#files_with_issues[@]} files:"
+            for file in "${files_with_issues[@]}"; do
+                echo "  - $file"
+            done
+            echo ""
+            log_error "Version consistency check failed!"
+            log_info "To fix these issues automatically, run with --mode fix"
+            exit 1
+        fi
+    elif [[ "$MODE" == "fix" ]]; then
+        if [[ ${#fixed_files[@]} -eq 0 ]]; then
+            log_success "No files needed version fixes."
+        else
+            log_success "Fixed versions in ${#fixed_files[@]} files:"
+            for file in "${fixed_files[@]}"; do
+                echo "  - $file"
+            done
+            log_warn "Please review the changes and commit them if appropriate."
+        fi
+        exit 0
+    fi
+}
+
+# Run main function with all arguments
+main "$@"
