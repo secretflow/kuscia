@@ -11,4 +11,4 @@ sphinxcontrib-seqdiag==3.0.0
 pytablewriter==0.64.2
 linkify-it-py==2.0.2
 sphinx_design==0.4.1
-pydata-sphinx-theme==0.13.3
+pydata-sphinx-theme==0.15.2
