@@ -149,7 +149,7 @@ find_markdown_files() {
             log_verbose "Searching for markdown files in: $dir"
             while IFS= read -r -d '' file; do
                 files+=("$file")
-            done < <(find "$dir" -type f \( -name "*.md" -o -name "*.markdown" \) -print0 2>/dev/null)
+            done < <(find "$dir" -type f \( -name "*.md" -o -name "*.markdown" \) -print0)
         else
             log_warn "Directory not found: $dir"
         fi
@@ -158,16 +158,31 @@ find_markdown_files() {
     printf '%s\n' "${files[@]}"
 }
 
-# Enhanced version pattern matching for multiple formats
-extract_version() {
+# Enhanced version pattern matching
+extract_kuscia_version() {
     local text="$1"
-    # Match comprehensive version patterns:
-    # - v0.10.0b0, v1.12.0b0 (standard format)
-    # - 0.10.0b0, 1.12.0b0 (without v prefix)
-    # - v0.10.0-beta0, v1.12.0-beta0 (beta format)
-    # - 0.10.0, 1.12.0 (release format)
-    # - Handles legacy patterns like 0.6.0b0, 1.5.0b0
-    echo "$text" | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+([a-zA-Z0-9\-\.]*)?'
+    # Match Kuscia version only when directly associated with kuscia keyword
+    # Patterns: kuscia version 1.2.3, kuscia:1.2.3, kuscia-1.2.3, kuscia v1.2.3
+    echo "$text" | grep -oiE "kuscia[[:space:]]*[-:]?[[:space:]]*(version[[:space:]]+)?v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*" | \
+                   grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
+}
+
+extract_secretflow_version() {
+    local text="$1"
+    # Match SecretFlow version only when directly associated with secretflow keyword
+    # Patterns: secretflow:1.2.3, secret-flow 1.2.3, secretflow v1.2.3
+    echo "$text" | grep -oiE "(secretflow|secret-flow)[[:space:]]*[-:]?[[:space:]]*(version[[:space:]]+)?v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*" | \
+                   grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
+}
+
+extract_image_version() {
+    local text="$1"
+    local product="$2"  # "kuscia" or "secretflow"
+    
+    # Match Docker image format: product/image:version or product:version
+    local pattern="(^|[[:space:]])$product[^[:space:]]*:[[:space:]]*v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*"
+    echo "$text" | grep -oiE "$pattern" | \
+                   grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
 }
 
 # Check version consistency in a file
@@ -181,60 +196,33 @@ check_file_versions() {
     while IFS= read -r line; do
         ((line_num++))
         
-        # Check for Kuscia version patterns (enhanced matching)
-        if echo "$line" | grep -qiE "(kuscia)" && echo "$line" | grep -qE 'v?[0-9]+\.[0-9]+\.[0-9]+'; then
-            local found_versions=($(extract_version "$line"))
-            for version in "${found_versions[@]}"; do
-                # Skip if this might be a port number or other numeric pattern
-                if [[ ! "$line" =~ (localhost|127\.0\.0\.1|:[0-9]+|port.*[0-9]+) ]]; then
-                    if [[ "$version" != "$KUSCIA_VERSION" ]]; then
-                        issues+=("$file:$line_num: Found Kuscia version '$version', expected '$KUSCIA_VERSION'")
-                        log_verbose "  Line $line_num: $line"
-                    fi
-                fi
-            done
+        # Check for Kuscia versions with context awareness
+        local kuscia_version=$(extract_kuscia_version "$line")
+        if [[ -n "$kuscia_version" && "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
+            issues+=("$file:$line_num: Found Kuscia version '$kuscia_version', expected '$KUSCIA_VERSION'")
+            log_verbose "  Line $line_num: $line"
         fi
         
-        # Check for SecretFlow version patterns (enhanced matching)
-        if echo "$line" | grep -qiE "(secretflow|secret-flow)" && echo "$line" | grep -qE 'v?[0-9]+\.[0-9]+\.[0-9]+'; then
-            local found_versions=($(extract_version "$line"))
-            for version in "${found_versions[@]}"; do
-                # Skip if this might be a port number or other numeric pattern
-                if [[ ! "$line" =~ (localhost|127\.0\.0\.1|:[0-9]+|port.*[0-9]+) ]]; then
-                    if [[ "$version" != "$SECRETFLOW_VERSION" ]]; then
-                        issues+=("$file:$line_num: Found SecretFlow version '$version', expected '$SECRETFLOW_VERSION'")
-                        log_verbose "  Line $line_num: $line"
-                    fi
-                fi
-            done
+        # Check for SecretFlow versions with context awareness
+        local sf_version=$(extract_secretflow_version "$line")
+        if [[ -n "$sf_version" && "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
+            issues+=("$file:$line_num: Found SecretFlow version '$sf_version', expected '$SECRETFLOW_VERSION'")
+            log_verbose "  Line $line_num: $line"
         fi
         
-        # Check for Docker/container image references with version tags
-        if echo "$line" | grep -qE "(kuscia|secretflow).*:[v]?[0-9]+\.[0-9]+\.[0-9]+"; then
-            if echo "$line" | grep -qiE "(^|[^a-zA-Z])kuscia([^a-zA-Z]|$)"; then
-                local found_versions=($(extract_version "$line"))
-                for version in "${found_versions[@]}"; do
-                    # Additional validation for image tags
-                    if echo "$line" | grep -qE "kuscia[^:]*:.*$version"; then
-                        if [[ "$version" != "$KUSCIA_VERSION" ]]; then
-                            issues+=("$file:$line_num: Found Kuscia image version '$version', expected '$KUSCIA_VERSION'")
-                            log_verbose "  Line $line_num: $line"
-                        fi
-                    fi
-                done
-            elif echo "$line" | grep -qiE "(secretflow|secret-flow)"; then
-                local found_versions=($(extract_version "$line"))
-                for version in "${found_versions[@]}"; do
-                    # Additional validation for image tags
-                    if echo "$line" | grep -qE "(secretflow|secret-flow)[^:]*:.*$version"; then
-                        if [[ "$version" != "$SECRETFLOW_VERSION" ]]; then
-                            issues+=("$file:$line_num: Found SecretFlow image version '$version', expected '$SECRETFLOW_VERSION'")
-                            log_verbose "  Line $line_num: $line"
-                        fi
-                    fi
-                done
-            fi
+        # Check for Docker/container image versions
+        local kuscia_image_version=$(extract_image_version "$line" "kuscia")
+        if [[ -n "$kuscia_image_version" && "$kuscia_image_version" != "$KUSCIA_VERSION" ]]; then
+            issues+=("$file:$line_num: Found Kuscia image version '$kuscia_image_version', expected '$KUSCIA_VERSION'")
+            log_verbose "  Line $line_num: $line"
         fi
+        
+        local sf_image_version=$(extract_image_version "$line" "secretflow")
+        if [[ -n "$sf_image_version" && "$sf_image_version" != "$SECRETFLOW_VERSION" ]]; then
+            issues+=("$file:$line_num: Found SecretFlow image version '$sf_image_version', expected '$SECRETFLOW_VERSION'")
+            log_verbose "  Line $line_num: $line"
+        fi
+        
     done < "$file"
     
     printf '%s\n' "${issues[@]}"
