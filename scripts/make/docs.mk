@@ -41,10 +41,14 @@ SPHINX_AUTOBUILD	 ?= sphinx-autobuild
 SPHINX_OPTS    		 ?= -b html
 LANGUAGE             ?= zh_CN
 
+# Version check configuration
+VERSION_CHECK_SCRIPT ?= hack/version_check.sh
+VERSION_CHECK_DIRS   ?= docs scripts hack
 
 .PHONY: sphinx-build
 sphinx-build: sphinx-clean
 sphinx-build: markdown-check
+sphinx-build: version_check
 sphinx-build:
 	@$(LOG_TARGET)
 	@$(call errorLog, Warning: if build failed please check sphinx version it must to be 6.2.1!)
@@ -107,12 +111,37 @@ gen_error_code_doc: verify_error_code # Generate error code markdown doc.
 	bash hack/errorcode/gen_error_code_doc.sh doc proto/api/v1alpha1/errorcode/error_code.proto hack/errorcode/i18n/errorcode.zh-CN.toml docs/reference/apis/error_code_cn.md
 
 
-# todo: add version related.
 .PHONY: version_check
-version_check: 
-	@$(call log, "docs kuscia version check ....")
-	@grep -rilE '(kuscia).*0\.[0-9]+\.(0b0)' docs scripts hack | xargs sed -i -E 's/0\.[0-9]+\.(0b0)/$(KUSCIA_VERSION)/g'
-	@grep -rilE '(secretflow).*1\.[0-9]+\.(0b0)' docs scripts hack | xargs sed -i -E 's/1\.[0-9]+\.(0b0)/$(SECRETFLOW_VERSION)/g'
+version_check: ## Check and validate Kuscia and SecretFlow version consistency in markdown files.
+	@$(LOG_TARGET)
+	@$(call log, "Starting version consistency check...")
+	@if [ ! -f "$(VERSION_CHECK_SCRIPT)" ]; then \
+		$(call errorLog, "Version check script not found: $(VERSION_CHECK_SCRIPT)"); \
+		exit 1; \
+	fi
+	@bash $(VERSION_CHECK_SCRIPT) \
+		--kuscia-version "$(KUSCIA_VERSION)" \
+		--secretflow-version "$(SECRETFLOW_VERSION)" \
+		--check-dirs "$(VERSION_CHECK_DIRS)" \
+		--mode check
+	@$(call log, "Version consistency check completed successfully!")
+
+
+.PHONY: version_fix
+version_fix: ## Fix version inconsistencies in markdown files (use with caution).
+	@$(LOG_TARGET)
+	@$(call log, "Starting version fix...")
+	@if [ ! -f "$(VERSION_CHECK_SCRIPT)" ]; then \
+		$(call errorLog, "Version check script not found: $(VERSION_CHECK_SCRIPT)"); \
+		exit 1; \
+	fi
+	@bash $(VERSION_CHECK_SCRIPT) \
+		--kuscia-version "$(KUSCIA_VERSION)" \
+		--secretflow-version "$(SECRETFLOW_VERSION)" \
+		--check-dirs "$(VERSION_CHECK_DIRS)" \
+		--mode fix
+	@$(call log, "Version fix completed!")
+
 
 ##@ Docs
 
