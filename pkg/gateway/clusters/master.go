@@ -249,7 +249,7 @@ func generateDefaultCluster(name string, config *config.ClusterConfig) (*envoycl
 	return cluster, nil
 }
 
-func getMasterNamespace(soure string, pathPrefix string) (string, error) {
+func getMasterNamespace(source string, pathPrefix string) (string, error) {
 	kusciaStatus := map[string]interface{}{}
 	handshakePath := utils.GetHandshakePathOfPrefix(pathPrefix)
 	err := utils.DoHTTP(nil, &kusciaStatus, &utils.HTTPParam{
@@ -257,7 +257,7 @@ func getMasterNamespace(soure string, pathPrefix string) (string, error) {
 		Path:         handshakePath,
 		KusciaHost:   fmt.Sprintf("%s.master.svc", utils.ServiceHandshake),
 		ClusterName:  GetMasterClusterName(),
-		KusciaSource: soure,
+		KusciaSource: source,
 	})
 	if err != nil {
 		return "", err

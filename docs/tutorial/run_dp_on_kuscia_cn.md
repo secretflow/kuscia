@@ -19,7 +19,7 @@
 
 证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)
 
-这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
+这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -30,7 +30,7 @@
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -46,10 +46,10 @@
 1. 修改 cm 配置文件，并重启节点
 
    ```bash
-   # 编辑 cm 配置文件
+   # Edit the cm configuration file
    kubectl edit cm kuscia-autonomy-alice-cm -n autonomy-alice
 
-   # 增加 dataMesh 配置，格式上跟 protocol 字段对齐即可
+   # Add dataMesh configuration, align the format with the protocol field
    protocol: MTLS
    dataMesh:
      dataProxyList:
@@ -57,7 +57,7 @@
          dataSourceTypes:
            - "odps"
 
-   # 重启节点
+   # Restart the node
    kubectl delete pod kuscia-autonomy-alice-xxxx -n autonomy-alice
    ```
 
@@ -136,13 +136,13 @@
    执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。
 
    ```bash
-   # 查看 pod 状态
+   # View pod status
    kubectl get po -n alice
 
    NAME                               READY   STATUS    RESTARTS   AGE
    dataproxy-alice-67cfc45499-xdfxr   1/1     Running   0          97s
 
-   # 服务网络检测
+   # Service network detection
    ping dataproxy-grpc
 
    PING dataproxy-grpc (1.1.1.1) 56(84) bytes of data.
@@ -158,10 +158,10 @@
 1. 修改 cm 配置文件，并重启节点
 
    ```bash
-   # 编辑 kuscia.yaml 配置文件
+   # Edit the kuscia.yaml configuration file
    vi autonomy_alice.yaml
 
-   # 增加 dataMesh 配置，格式上跟 datastoreEndpoint 对齐即可
+   # Add dataMesh configuration, align the format with the datastoreEndpoint field
    datastoreEndpoint: ""
    dataMesh:
      dataProxyList:
@@ -169,7 +169,7 @@
          dataSourceTypes:
            - "odps"
 
-   # 重启节点
+   # Restart the node
    docker restart root-kuscia-autonomy-alice
    ```
 
@@ -248,13 +248,13 @@
    执行如下命令看到 pod 为 running 代表 DataProxy 部署成功。
 
    ```bash
-   # 查看 pod 状态
+   # View pod status
    kubectl get po -n alice
 
    NAME                               READY   STATUS    RESTARTS   AGE
    dataproxy-alice-67cfc45499-xdfxr   1/1     Running   0          97s
 
-   # 服务网络检测
+   # Service network detection
    ping dataproxy-grpc
 
    PING dataproxy-grpc (1.1.1.1) 56(84) bytes of data.

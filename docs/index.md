@@ -7,7 +7,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - 统一的 API 接口：您可以使用 [HTTP/GRPC API 接口](./reference/apis/summary_cn.md)集成隐私计算能力。
 - 互联互通：您可以与行业内多种隐私计算系统进行互联互通。
 
-更多 Kuscia 的能力介绍，请参考[Kuscia 概述](./reference/overview.md)。
+更多 Kuscia 的能力介绍，请参考 [Kuscia 概述](./reference/overview.md)。
 
 ## 入门
 
@@ -58,11 +58,13 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - [指南：Docker 多机部署 Kuscia][deploy-kuscia-use-docker]
 - [指南：K8s 集群部署 Kuscia][deploy-kuscia-use-k8s]
 - [指南：使用 RunP 模式部署节点][deploy-with-runp]
-- [常见运维操作][ops-cheatsheet]
-- [网络要求][deploy-networkrequirements]
-- [日志说明][deploy-logdescription]
-- [Kuscia 监控][deploy-kuscia_monitor_cn]
-- [Kuscia 配置文件][deploy-kuscia_config_cn]
+- [指南：常见运维操作][ops-cheatsheet]
+- [指南：Kuscia 网络要求][deploy-networkrequirements]
+- [指南：Kuscia 日志说明][deploy-logdescription]
+- [指南：Kuscia 监控][deploy-kuscia_monitor_cn]
+- [指南：Kuscia 引擎指标监控][deploy-kuscia_engine_monitor_cn]
+- [指南：Kuscia 配置文件][deploy-kuscia_config_cn]
+- [指南：Kuscia 端口介绍][deploy-kuscia_ports_cn]
 
 [deploy-guide]: ./deployment/kuscia_deployment_instructions.md
 [deploy-check]: ./deployment/deploy_check.md
@@ -73,7 +75,9 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [deploy-networkrequirements]: ./deployment/networkrequirements.md
 [deploy-logdescription]: ./deployment/logdescription.md
 [deploy-kuscia_monitor_cn]: ./deployment/kuscia_monitor.md
+[deploy-kuscia_engine_monitor_cn]: ./deployment/kuscia_engine_monitor.md
 [deploy-kuscia_config_cn]: ./deployment/kuscia_config_cn.md
+[deploy-kuscia_ports_cn]: ./deployment/kuscia_ports_cn.md
 
 ## 更多指南
 

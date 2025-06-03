@@ -19,46 +19,48 @@ msgstr ""
 
 #: ../../tutorial/security_plan_cn.md:1
 msgid "安全加固方案"
-msgstr ""
+msgstr "Security Hardening Plan"
 
 #: ../../tutorial/security_plan_cn.md:3
 msgid "说明"
-msgstr ""
+msgstr "Description"
 
 #: ../../tutorial/security_plan_cn.md:5
 msgid ""
 "在面对不可知任务场景或未知代码执行的场景中，建议使用进程安全沙箱 "
 "[NsJail](https://github.com/google/nsjail) 保障运行时安全以及使用安全容器 "
-"[Kata](https://github.com/kata-containers/kata-containers)  保障容器安全。"
+"[Kata](https://github.com/kata-containers/kata-containers)  保障容器安全。"
 msgstr ""
+"In scenarios with unknown tasks or unknown code execution, it is recommended to use the process security sandbox [NsJail](https://github.com/google/nsjail) to ensure runtime security and the secure container [Kata](https://github.com/kata-containers/kata-containers) to ensure container security."
 
 #: ../../tutorial/security_plan_cn.md:7
 msgid "SecretFlow 支持通过 NsJail 启动，这使得 SecretFlow 任务可以在安全沙箱中运行，增强任务运行时的安全性。"
-msgstr ""
+msgstr "SecretFlow supports starting with NsJail, which allows SecretFlow tasks to run in a secure sandbox, enhancing the security of task execution."
 
 #: ../../tutorial/security_plan_cn.md:9
 msgid "在安全沙箱中运行 SecretFlow 任务"
-msgstr ""
+msgstr "Running SecretFlow Tasks in a Secure Sandbox"
 
 #: ../../tutorial/security_plan_cn.md:11
 msgid ""
 "基于 Kuscia 框架， 您可以快速体验在安全沙箱中运行 SecretFlow "
 "任务，这里以部署中心化组网模式为例，关于更多的部署细节请参考[快速入门](../getting_started/quickstart_cn.md)。"
 msgstr ""
+"Based on the Kuscia framework, you can quickly experience running SecretFlow tasks in a secure sandbox. Here, we use the deployment of centralized networking mode as an example. For more deployment details, please refer to [Quick Start](../getting_started/quickstart_cn.md)."
 
 #: ../../tutorial/security_plan_cn.md:13
 msgid "配置 Kuscia 镜像，以下示例选择使用 latest 版本镜像："
-msgstr ""
+msgstr "Configure the Kuscia image, the following example uses the latest version of the image:"
 
 #: ../../tutorial/security_plan_cn.md:19
 msgid "获取 Kuscia 安装脚本，安装脚本会下载到当前目录："
-msgstr ""
+msgstr "Obtain the Kuscia installation script, which will be downloaded to the current directory:"
 
 #: ../../tutorial/security_plan_cn.md:25
 msgid "开启特权配置，并以中心化组网模式启动集群（开启容器特权时，会带来容器逃逸的风险，建议使用安全容器 kata)："
-msgstr ""
+msgstr "Enable privileged configuration and start the cluster in centralized networking mode (enabling container privileges poses a risk of container escape; it is recommended to use the secure container kata):"
 
 #: ../../tutorial/security_plan_cn.md:35
 msgid "执行作业："
-msgstr ""
+msgstr "Execute the Job:"
 

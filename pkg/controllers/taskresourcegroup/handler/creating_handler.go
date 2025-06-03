@@ -73,7 +73,9 @@ func (h *CreatingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (nee
 // createTaskResource is used to create task resources.
 func (h *CreatingHandler) createTaskResources(trg *kusciaapisv1alpha1.TaskResourceGroup) error {
 	interConnDomains := utilsres.GetInterConnParties(trg.Annotations)
-	if utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, trg.Annotations) {
+	// Both initiator and partner need to create other's task resource in bfia protocol
+	// The above creation is done by kuscia task resource controller in kuscia protocol
+	if utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, trg.Annotations) || utilsres.IsBFIAResource(trg) {
 		for _, party := range trg.Spec.OutOfControlledParties {
 			_, err := h.trLister.TaskResources(party.DomainID).Get(party.TaskResourceName)
 			if err != nil {
@@ -171,6 +173,13 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 	phase := kusciaapisv1alpha1.TaskResourcePhaseReserving
 	condType := kusciaapisv1alpha1.TaskResourceCondReserving
 	condReason := "Create task resource from task resource group"
+	// Partners do not care about others resource status, just set all other task resource phase to reserved.
+	if !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, nil) &&
+		utilsres.IsOuterBFIAInterConnDomain(h.namespaceLister, party.DomainID) {
+		phase = kusciaapisv1alpha1.TaskResourcePhaseReserved
+		condType = kusciaapisv1alpha1.TaskResourceCondReserved
+		condReason = "Create task resource for outer domain"
+	}
 
 	isPartner, err := utilsres.IsPartnerDomain(h.namespaceLister, party.DomainID)
 	if err != nil {
@@ -187,7 +196,8 @@ func (h *CreatingHandler) buildTaskResource(party *kusciaapisv1alpha1.TaskResour
 				*metav1.NewControllerRef(trg, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("TaskResourceGroup")),
 			},
 			Labels: map[string]string{
-				common.LabelTaskResourceGroupUID: string(trg.UID),
+				common.LabelTaskResourceGroupUID:  string(trg.UID),
+				common.LabelInterConnProtocolType: trg.Labels[common.LabelInterConnProtocolType],
 			},
 			Annotations: map[string]string{
 				common.InitiatorAnnotationKey:               trg.Spec.Initiator,

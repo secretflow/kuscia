@@ -664,7 +664,7 @@ msgstr ""
 
 #: ../../reference/apis/domainroute_cn.md
 msgid ""
-"签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token "
+"签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个 32 长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token "
 "有效性"
 msgstr ""
 "Signature Method: `RSA-GEN`, which means each party generates half of the token, combines them into a 32-character "

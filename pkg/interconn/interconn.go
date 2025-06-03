@@ -26,6 +26,7 @@ import (
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	"github.com/secretflow/kuscia/pkg/interconn/bfia"
 	iccommon "github.com/secretflow/kuscia/pkg/interconn/common"
@@ -36,7 +37,7 @@ import (
 )
 
 var (
-	serverName = "interconn"
+	serverName = common.KusciaControllerManagerLeaseName
 )
 
 // Server defines detailed info which used to run Server.

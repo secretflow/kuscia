@@ -2,7 +2,7 @@
 
 ## 前言
 
-本教程帮助您使用 Docker 组网模式来完成部署 Kuscia 集群。
+本教程帮助您使用 Docker 组网模式来完成 Kuscia 集群部署。
 
 <span style="color: red;">注：</span>目前只支持 Kuscia 以 `runp` 模式以此方式组网。
 
@@ -33,14 +33,14 @@
 #### 初始化 swarm
 
 ```shell
-# 选择其中一台主机初始化为 Docker manager 节点，IP 为当前主机宿主机端口，Docker 集群管理监听使用 IP，具体以 Docker 官方描述为准
-# 管理端口使用默认端口（2377），可根据 Docker 官网文档进行设置 (format: <ip|interface>[:port])
+# Select one of the hosts to initialize as a Docker manager node. The IP should be the host's IP address, which Docker cluster management will listen on. For specific details, refer to the official Docker documentation.
+# The management port uses the default port (2377), but it can be configured according to the Docker official documentation (format: <ip|interface>[:port])
 docker swarm init --advertise-addr 127.0.0.2
 ```
 
 执行完上述命令可得到以下描述信息，以及 Token，需要记录该 Token 字符串，在 worker 节点宿主机执行可加入该 docker swarm
 集群。  
-Token 遗忘丢失也可以通过`docker swarm join-token manager`命令进行查询
+Token 遗忘丢失也可以通过 `docker swarm join-token manager` 命令进行查询
 
 ```shell
 [root@node-01 ~]# docker swarm init --advertise-addr 127.0.0.2
@@ -64,8 +64,7 @@ To add a manager to this swarm, run 'docker swarm join-token manager' and follow
 docker network create -d overlay --subnet 16.0.0.0/8 --attachable kuscia-exchange-cluster
 ```
 
-`--subnet`按需（最多多少个容器使用该网段）进行设置，可不设置。
-`kuscia-exchange-cluster`network 名字，需要在脚本部署时使用，**必须是这个名字**。
+`--subnet` 按需（最多多少个容器使用该网段）进行设置，可不设置。`kuscia-exchange-cluster` network 名字，需要在脚本部署时使用，**必须是这个名字**。
 
 #### Worker 节点加入 Swarm
 
@@ -98,12 +97,12 @@ ID                            HOSTNAME        STATUS    AVAILABILITY   MANAGER S
 
 ### Kuscia 部署实例
 
-> 这里使用 kuscia.sh 实现 P2P 模式中`alice`节点的双机双副本部署。
+> 这里使用 kuscia.sh 实现 P2P 模式中 `alice` 节点的双机双副本部署。
 > 部署参考：[多机部署点对点集群](./deploy_p2p_cn.md)
 
 ```shell
-# 指定 Kuscia 使用的镜像版本，这里使用 0.14.0b0 版本
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
+# Specify the image version for Kuscia, using version 0.15.0b0 here.
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.15.0b0
 ```
 
 ```shell
@@ -115,8 +114,8 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 验证使用的示例，仅供参考：
 
 ```shell
-# 拉起 MySQL 服务，并且不挂载磁盘，仅用于测试示例
-# 拉起一个 MySQL 8.0 的容器，使用 password 作为密码，创建 database kine
+# Start the MySQL service without mounting a disk, for testing purposes only.
+# Start a MySQL 8.0 container using "password" as the password and create a database named "kine".
 docker run -d --name alice-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=kine mysql:8
 ```
 
@@ -136,10 +135,10 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode autonomy --domain "alice"
 ./kuscia.sh start -c ./autonomy_alice.yaml -p 20000 -q 20001 -k 20010 -g 20011 -a none -m 8G --cluster
 ```
 
-如果部署时报错 `kuscia-exchange-cluster 已经存在且不是预期的类型` 等类似错误，需要将 network 手动删除后重新部署：
+如果部署时报错 `kuscia-exchange-cluster 已经存在且不是预期的类型`等类似错误，需要将 network 手动删除后重新部署：
 
 ```bash
-# 删除 network
+# Delete network
 docker network rm kuscia-exchange-cluster
 ```
 
@@ -155,13 +154,13 @@ docker network rm kuscia-exchange-cluster
 > 拉起 Nginx 服务通过 8080 端口代理多副本中 alice 的宿主机地址与端口。
 
 ```shell
-# 拉取 nginx latest 镜像
+# Pull the latest Nginx image
 docker pull nginx:latest
 ```
 
 #### 修改配置文件
 
-1. 从 NGINX 镜像中拷贝配置文件至宿主机当前命令目录
+1. 从 Nginx 镜像中拷贝配置文件至宿主机当前命令目录
 
    ```shell
    docker run --rm nginx:latest cat /etc/nginx/nginx.conf > ./nginx.conf
@@ -172,9 +171,9 @@ docker pull nginx:latest
    参考官网中 Nginx 配置示例修改配置文件中 http 代理块，如果 Kuscia 需要使用 https 访问，在修改的配置中 `server` 块中使用
    https，并注释原有 http 和打开 https 注释部分
 
-## nginx 代理参数配置示例
+## Nginx 代理参数配置示例
 
-- nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。
+- Nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。
 
 ### 启动并挂载配置
 
@@ -194,7 +193,7 @@ curl -kv http://127.0.0.1:8080
 
 #### 完整配置文件参考
 
-```nginx
+```conf
 user  nginx;
 worker_processes  auto;
 

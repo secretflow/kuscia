@@ -64,7 +64,7 @@ msgid "`name`：表示数据源的标识，用于唯一标识数据源。"
 msgstr "`name`: Unique identifier for the data source."
 
 #: ../../reference/concepts/domaindatasource_cn.md:30
-msgid "`namespace`：表示 DomainDataSource 所属的命名空间，即所属的节点，当前示例为`alice`。"
+msgid "`namespace`：表示 DomainDataSource 所属的命名空间，即所属的节点，当前示例为 `alice`。"
 msgstr ""
 "`namespace`: Specifies the node namespace to which the DomainDataSource "
 "belongs, currently `alice` in this example."
@@ -75,12 +75,9 @@ msgstr "The subfields of DomainDataSource `spec` are detailed below:"
 
 #: ../../reference/concepts/domaindatasource_cn.md:34
 msgid ""
-"`accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy "
-"访问数据源（DataProxy 暂未支持），当前默认直连数据源，不经过 DataProxy。"
+"`accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy 访问数据源，默认值为 false，表示直接连接数据源；当值为 true 时，表示通过 DataProxy 连接数据源。"
 msgstr ""
-"`accessDirectly`: Determines whether privacy computing applications "
-"(e.g., SecretFlow) should access the data source directly or via "
-"DataProxy (currently unsupported). The default is direct access."
+"`accessDirectly`: Indicates whether privacy computing applications (e.g., SecretFlow) should access the data source directly or through DataProxy. The default value is false, meaning direct connection to the data source. When set to true, the data source is accessed via DataProxy."
 
 #: ../../reference/concepts/domaindatasource_cn.md:35
 msgid "`encryptedInfo`：加密存储访问数据源所需的信息，如数据源为 MySQL 时，此字段会加密保存 MySQL 的链接串。"
@@ -138,7 +135,7 @@ msgid ""
 msgstr ""
 "Since DomainDataSource contains encryptedInfo requiring domain node "
 "public key encryption, use the Kuscia API for creation. Reference: "
-"[Kuscia API Documentation](../apis/domaindatasource_en.md#create-domain-"
+"[Kuscia API Documentation](../apis/domaindatasource_cn.md#create-domain-"
 "data-source)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:54
@@ -149,7 +146,7 @@ msgid ""
 msgstr ""
 "Updates require re-encryption of encryptedInfo with the domain node's "
 "public key. Use the Kuscia API for updates. Reference: [Kuscia API "
-"Documentation](../apis/domaindatasource_en.md#update-domain-data-source)."
+"Documentation](../apis/domaindatasource_cn.md#update-domain-data-source)."
 
 #: ../../reference/concepts/domaindatasource_cn.md:58
 msgid ""

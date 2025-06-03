@@ -39,11 +39,11 @@ spec:
 在该示例中:
 
 - `.metadata.labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
-- `.metadata.name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为`alice-bob`。
-- `.metadata.namespace`: 表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为`alice`。
-- `.spec.author`：表示授权方节点 ID 。当前示例授权方节点为`alice`。
+- `.metadata.name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为 `alice-bob`。
+- `.metadata.namespace`: 表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为 `alice`。
+- `.spec.author`：表示授权方节点 ID 。当前示例授权方节点为 `alice`。
 - `.spec.domainDataID`：表示 DomainDataGrant 所属的 DomainData。
-- `.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为`bob`。
+- `.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为 `bob`。
 
 1. 参照 [DomainData](./domaindata_cn.md) 中的方法，先创建 `alice-table` 这个 DomainData 资源。
 
@@ -86,7 +86,7 @@ spec:
     name: test2
 ```
 
-在该示例中，将`.spec.description.name`的值调整为`test2`。
+在该示例中，将 `.spec.description.name` 的值调整为 `test2`。
 
 1. 运行以下命令更新 DomainDataGrant。
 
@@ -191,8 +191,8 @@ spec:
 DomainDataGrant `metadata` 的子字段详细介绍如下：
 
 - `labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
-- `name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为`alice-bob`。
-- `namespace`：表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为`alice`。
+- `name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为 `alice-bob`。
+- `namespace`：表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为 `alice`。
 
 DomainDataGrant `spec` 的子字段详细介绍如下：
 

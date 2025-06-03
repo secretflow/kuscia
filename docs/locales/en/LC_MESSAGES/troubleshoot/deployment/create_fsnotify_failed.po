@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../troubleshoot/deployment/create_fsnotify_failed.md:1
 msgid "Kuscia 启动失败：Create fsnotify failed"
-msgstr "Kuscia startup failed: Create fsnotify failed"
+msgstr "Kuscia Startup Failed: Create fsnotify failed"
 
 #: ../../troubleshoot/deployment/create_fsnotify_failed.md:3
 msgid "问题描述"

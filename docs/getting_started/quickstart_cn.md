@@ -34,14 +34,14 @@ CPU 架构：x86
 Kuscia 的部署需要依赖 Docker 环境，Docker 的安装请参考[官方文档](https://docs.docker.com/engine/install/)。以下为 CentOS 系统安装 Docker 的示例：
 
 ```bash
-# 安装 docker。
+# Install Docker.
 yum install -y yum-utils
 yum-config-manager \
  --add-repo \
  https://download.docker.com/linux/centos/docker-ce.repo
 yum install -y docker-ce docker-ce-cli containerd.io
 
-# 启动 docker。
+# Start Docker.
 systemctl start docker
 ```
 
@@ -51,14 +51,14 @@ systemctl start docker
 
 ### 前置操作
 
-配置 Kuscia 镜像，以下示例选择使用 latest 版本镜像（更多镜像版本请参考 [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)）：
+配置 Kuscia 镜像，以下示例选择使用 0.15.0b0 版本镜像（更多镜像版本请参考 [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)）：
 
 ```bash
-# Docker Hub 镜像
-export KUSCIA_IMAGE=secretflow/kuscia
+# Docker Hub Image
+export KUSCIA_IMAGE=secretflow/kuscia:0.15.0b0
 
-# 阿里云镜像（推荐国内用户使用）
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
+# Alibaba Cloud Image (Recommended for domestic users)
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.15.0b0
 ```
 
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
@@ -70,13 +70,13 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 ### 中心化组网模式
 
 ```bash
-# 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master 和两个 Lite 节点 alice 和 bob。
+# Start the cluster, which will launch 3 Docker containers, including a control plane master and two Lite nodes alice and bob.
 ./kuscia.sh center
 
-# 创建并启动作业（两方 PSI 任务）。
+# Create and start the job (two-party PSI task).
 docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 
-# 查看作业状态。
+# Check the job status.
 docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ```
 
@@ -85,39 +85,39 @@ docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ### 点对点组网模式
 
 ```bash
-# 启动集群，会拉起两个 docker 容器，分别表示 Autonomy 节点 alice 和 bob。
+# Start the cluster, which will launch two Docker containers, representing the Autonomy nodes alice and bob.
 ./kuscia.sh p2p
 
-# 登入 alice 节点容器（或 bob 节点容器）创建并启动作业（两方 PSI 任务）。
+# Log into the alice node container (or bob node container) to create and start the job (two-party PSI task).
 docker exec -it ${USER}-kuscia-autonomy-alice scripts/user/create_example_job.sh
 
-# 查看作业状态。
+# Check the job status.
 docker exec -it ${USER}-kuscia-autonomy-alice kubectl get kj -n cross-domain
 ```
 
 ### 中心化 x 中心化组网模式
 
 ```bash
-# 启动集群，会拉起 4 个 docker 容器，包括两个控制平面 master-alice、master-bob 和两个 Lite 节点 alice、bob。
+# Start the cluster, which will launch 4 Docker containers, including two control planes master-alice and master-bob, and two Lite nodes alice and bob.
 ./kuscia.sh cxc
 
-# 登入 master-cxc-alice 容器创建并启动作业（两方 PSI 任务）。
+# Log into the master-cxc-alice container to create and start the job (two-party PSI task).
 docker exec -it ${USER}-kuscia-master-cxc-alice scripts/user/create_example_job.sh
 
-# 查看作业状态。
+# Check the job status.
 docker exec -it ${USER}-kuscia-master-cxc-alice kubectl get kj -n cross-domain
 ```
 
 ### 中心化 x 点对点组网模式
 
 ```bash
-# 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master-alice 和一个 Lite 节点 alice、一个 Autonomy 节点 bob。
+# Start the cluster, which will launch 3 Docker containers, including a control plane master-alice, a Lite node alice, and an Autonomy node bob.
 ./kuscia.sh cxp
 
-# 登入 master-cxp-alice 容器创建并启动作业（两方 PSI 任务）。
+# Log into the master-cxp-alice container to create and start the job (two-party PSI task).
 docker exec -it ${USER}-kuscia-master-cxp-alice scripts/user/create_example_job.sh
 
-# 查看作业状态。
+# Check the job status.
 docker exec -it ${USER}-kuscia-master-cxp-alice kubectl get kj -n cross-domain
 ```
 
@@ -133,14 +133,14 @@ secretflow-task-20230406162606   50s         50s              50s               
 同时，在 alice 和 bob 节点容器中能看到 PSI 结果输出文件：
 
 ```bash
-# 以中心化集群模式下的 alice 节点为例：
+# Example for the alice node in a centralized cluster mode:
 docker exec -it ${USER}-kuscia-lite-alice cat var/storage/data/psi-output.csv
 
-# 以点对点集群模式下的 alice 节点为例：
+# Example for the alice node in a point-to-point cluster mode:
 docker exec -it ${USER}-kuscia-autonomy-alice cat var/storage/data/psi-output.csv
 
-# 以中心化 x 点对点集群模式下的 alice 节点为例：
-docker exec -it ${USER}-kuscia-lite-cxp-alice cat var/storage/data/psi-output.csv 
+# Example for the alice node in a centralized x point-to-point cluster mode:
+docker exec -it ${USER}-kuscia-lite-cxp-alice cat var/storage/data/psi-output.csv
 ```
 
 结果输出（仅前 4 行）：
@@ -171,13 +171,13 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 ```bash
 ./stop.sh [center/p2p/all]
 
-# 停止点对点组网模式集群
+# Stop the point-to-point networking mode cluster
 ./stop.sh p2p
 
-# 停止中心化组网模式集群
+# Stop the centralized networking mode cluster
 ./stop.sh center
 
-# 停止所有组网模式集群（可省略参数）
+# Stop all networking mode clusters (parameter can be omitted)
 ./stop.sh all
 ```
 
@@ -194,7 +194,7 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 与[停止脚本](#stop)使用方法相同，运行卸载脚本将卸载相应组网模式的集群，包括删除 Kuscia 容器、volume 和 network（若无其他容器使用）等。例如：
 
 ```bash
-# 卸载所有组网模式集群
+# Uninstall all networking mode clusters
 ./uninstall.sh
 ```
 

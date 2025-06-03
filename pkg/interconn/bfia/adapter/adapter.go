@@ -66,6 +66,9 @@ func GenerateInterConnJobInfoFrom(kusciaJob *kusciaapisv1alpha1.KusciaJob, appIm
 		if err != nil {
 			return nil, fmt.Errorf("unmarshal task %v taskInputConfig failed, %v", task.Alias, err)
 		}
+		if !isValidTaskInputConfig(taskInputConfig) {
+			return nil, fmt.Errorf("invalid task input config, %+v", task.TaskInputConfig)
+		}
 
 		aimg, err := appImageLister.Get(task.AppImage)
 		if err != nil {
@@ -103,7 +106,7 @@ func GenerateInterConnJobInfoFrom(kusciaJob *kusciaapisv1alpha1.KusciaJob, appIm
 			}
 		}
 
-		if jobInfo.Config.JobParams == nil {
+		if taskInputConfig.Role != nil && jobInfo.Config.JobParams == nil {
 			jobParams, err := buildJobParams(taskInputConfig.Role)
 			if err != nil {
 				return nil, fmt.Errorf("build job params failed, %v", err)
@@ -132,6 +135,7 @@ func GenerateKusciaJobFrom(jobInfo *InterConnJobInfo) (*kusciaapisv1alpha1.Kusci
 
 	kusciaJob := &kusciaapisv1alpha1.KusciaJob{}
 	kusciaJob.Name = jobInfo.JodID
+	kusciaJob.Namespace = common.KusciaCrossDomain
 	kusciaJob.Labels = map[string]string{
 		common.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
 		common.LabelJobStage:              string(kusciaapisv1alpha1.JobCreateStage),
@@ -310,7 +314,7 @@ func buildInterConnJobConfig(jobSpec *InterConnJobInfo, commonAttr, hostAttr, gu
 	if commonAttr != nil {
 		common, err := structpb.NewStruct(commonAttr)
 		if err != nil {
-			return fmt.Errorf("new struct for task_params common atrribute failed, %v", err)
+			return fmt.Errorf("new struct for task_params common attribute failed, %v", err)
 		}
 		taskParams.Common = common
 	}
@@ -318,7 +322,7 @@ func buildInterConnJobConfig(jobSpec *InterConnJobInfo, commonAttr, hostAttr, gu
 	if hostAttr != nil {
 		host, err := structpb.NewStruct(hostAttr)
 		if err != nil {
-			return fmt.Errorf("new struct for task_params host atrribute failed, %v", err)
+			return fmt.Errorf("new struct for task_params host attribute failed, %v", err)
 		}
 		taskParams.Host = host
 	}
@@ -326,7 +330,7 @@ func buildInterConnJobConfig(jobSpec *InterConnJobInfo, commonAttr, hostAttr, gu
 	if guestAttr != nil {
 		guest, err := structpb.NewStruct(guestAttr)
 		if err != nil {
-			return fmt.Errorf("new struct for task_params guest atrribute failed, %v", err)
+			return fmt.Errorf("new struct for task_params guest attribute failed, %v", err)
 		}
 		taskParams.Guest = guest
 	}
@@ -334,7 +338,7 @@ func buildInterConnJobConfig(jobSpec *InterConnJobInfo, commonAttr, hostAttr, gu
 	if arbiterAttr != nil {
 		arbiter, err := structpb.NewStruct(arbiterAttr)
 		if err != nil {
-			return fmt.Errorf("new struct for task_params arbiter atrribute failed, %v", err)
+			return fmt.Errorf("new struct for task_params arbiter attribute failed, %v", err)
 		}
 		taskParams.Arbiter = arbiter
 	}
@@ -479,4 +483,14 @@ func parseTaskRoleParams(roleParams *structpb.Struct, roles []string, componentN
 		return nil, nil, err
 	}
 	return s, parties, nil
+}
+
+func isValidTaskInputConfig(taskInputConfig *interconn.TaskInputConfig) bool {
+	if taskInputConfig == nil {
+		return false
+	}
+	if taskInputConfig.Initiator == nil || taskInputConfig.ModuleName == "" || taskInputConfig.Name == "" || taskInputConfig.Role == nil || taskInputConfig.TaskParams == nil {
+		return false
+	}
+	return true
 }

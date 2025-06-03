@@ -19,187 +19,193 @@ msgstr ""
 
 #: ../../tutorial/run_bfia_job_cn.md:1
 msgid "如何运行一个互联互通银联 BFIA 协议作业"
-msgstr ""
+msgstr "How to Run a Kuscia Interconnection UnionPay BFIA Protocol Job"
 
 #: ../../tutorial/run_bfia_job_cn.md:3
 msgid "**Tips：由于内部 Kuscia P2P 协议升级，当前版本暂不支持银联 BFIA 协议，适配银联 BFIA 正在进行中。**"
-msgstr ""
+msgstr "**Note: Due to the upgrade of the internal Kuscia P2P protocol, the current version does not support the UnionPay BFIA protocol. Adaptation to the UnionPay BFIA protocol is ongoing.**"
 
 #: ../../tutorial/run_bfia_job_cn.md:5
 msgid "若您使用第三方算法镜像提交互联互通作业，强烈建议您检查镜像安全性。"
-msgstr ""
+msgstr "If you submit an interconnection job using a third-party algorithm image, it is strongly recommended that you check the image's security."
 
 #: ../../tutorial/run_bfia_job_cn.md:7
 msgid ""
 "本教程以秘密分享-逻辑回归（SS-LR）算子为示例，介绍如何通过互联互通银联 BFIA（Beijing FinTech Industry "
 "Alliance 北京金融科技产业联盟）协议运行一个包含两方任务的作业。"
 msgstr ""
+"This tutorial uses the Secret Sharing-Logistic Regression (SS-LR) operator as an example to demonstrate how to run a job containing two tasks using the Kuscia Interconnection UnionPay BFIA (Beijing FinTech Industry Alliance) protocol."
 
 #: ../../tutorial/run_bfia_job_cn.md:9
 msgid ""
 "在本教程中，通过两个 Kuscia Autonomy 节点来模拟不同框架底座的节点。在这两个节点之间，通过互联互通银联 BFIA "
 "协议运行一个包含两方任务的作业。"
 msgstr ""
+"In this tutorial, two Kuscia Autonomy nodes are used to simulate nodes with different framework bases. Between these two nodes, a job containing two tasks is run using the Kuscia Interconnection UnionPay BFIA protocol."
 
 #: ../../tutorial/run_bfia_job_cn.md:11
 msgid "准备环境"
-msgstr ""
+msgstr "Prepare Environment"
 
 #: ../../tutorial/run_bfia_job_cn.md:13
 msgid "准备运行银联 BFIA 协议的节点"
-msgstr ""
+msgstr "Prepare Nodes for UnionPay BFIA Protocol"
 
 #: ../../tutorial/run_bfia_job_cn.md:15
 msgid ""
 "部署运行银联 BFIA 协议的节点，请参考 "
 "[快速入门点对点组网模式](../getting_started/quickstart_cn.md/#点对点组网模式)。"
 msgstr ""
+"Deploy nodes for the UnionPay BFIA protocol, please refer to [Quick Start Peer-to-Peer Networking Mode](../getting_started/quickstart_cn.md/#peer-to-peer-networking-mode)."
 
 #: ../../tutorial/run_bfia_job_cn.md:17
 msgid "在执行启动集群命令时，需要新增一个命令行参数`-p bfia`，详细命令如下："
-msgstr ""
+msgstr "When executing the cluster start command, you need to add a command-line parameter `-p bfia`. The detailed command is as follows:"
 
 #: ../../tutorial/run_bfia_job_cn.md:24
 msgid "准备工具脚本"
-msgstr ""
+msgstr "Prepare Tool Scripts"
 
 #: ../../tutorial/run_bfia_job_cn.md:30
 msgid "准备秘密分享-逻辑回归（SS-LR）算子镜像"
-msgstr ""
+msgstr "Prepare Secret Sharing-Logistic Regression (SS-LR) Operator Image"
 
 #: ../../tutorial/run_bfia_job_cn.md:32
 msgid "准备 Alice 节点中算子镜像"
-msgstr ""
+msgstr "Prepare Operator Image in Alice Node"
 
 #: ../../tutorial/run_bfia_job_cn.md:38
 msgid "准备 Bob 节点中算子镜像"
-msgstr ""
+msgstr "Prepare Operator Image in Bob Node"
 
 #: ../../tutorial/run_bfia_job_cn.md:44 ../../tutorial/run_bfia_job_cn.md:61
 msgid "工具帮助信息"
-msgstr ""
+msgstr "Tool Help Information"
 
 #: ../../tutorial/run_bfia_job_cn.md:50 ../../tutorial/run_bfia_job_cn.md:55
 msgid "部署 TTP Server 服务"
-msgstr ""
+msgstr "Deploy TTP Server Service"
 
 #: ../../tutorial/run_bfia_job_cn.md:52
 msgid ""
-"因为秘密分享-逻辑回归（SS-LR）算子依赖一个可信第三方 TTP（Trusted Third Patry）Server，所以本教程使用本地 "
-"Docker 容器的方式和运行银联 BFIA 协议的节点容器部署在同一套环境中， 从而方便快速搭建运行互联互通银联 BFIA 协议作业的体验环境。"
+"因为秘密分享-逻辑回归（SS-LR）算子依赖一个可信第三方 TTP（Trusted Third Party）Server，所以本教程使用本地 "
+"Docker 容器的方式和运行银联 BFIA 协议的节点容器部署在同一套环境中，从而方便快速搭建运行互联互通银联 BFIA 协议作业的体验环境。"
 msgstr ""
+"Since the Secret Sharing-Logistic Regression (SS-LR) operator depends on a trusted third-party TTP (Trusted Third Party) Server, this tutorial deploys the TTP Server using a local Docker container in the same environment as the nodes running the UnionPay BFIA protocol, making it easy to quickly set up an experience environment for running interconnection UnionPay BFIA protocol jobs."
 
 #: ../../tutorial/run_bfia_job_cn.md:67
 msgid "准备数据"
-msgstr ""
+msgstr "Prepare Data"
 
 #: ../../tutorial/run_bfia_job_cn.md:69
 msgid "您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。"
-msgstr ""
+msgstr "You can use the data files included in Kuscia or your own data files."
 
 #: ../../tutorial/run_bfia_job_cn.md:71
-msgid "在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。"
-msgstr ""
+msgid "在 Kuscia 中，节点数据文件的存放路径为节点容器的 `/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。"
+msgstr "In Kuscia, the path for node data files is `/home/kuscia/var/storage` within the node container. You can view the data files within the container."
 
 #: ../../tutorial/run_bfia_job_cn.md:73
 msgid "查看 Kuscia 示例数据"
-msgstr ""
+msgstr "View Kuscia Sample Data"
 
 #: ../../tutorial/run_bfia_job_cn.md:75
 msgid "查看 Alice 节点示例数据"
-msgstr ""
+msgstr "View Sample Data in Alice Node"
 
 #: ../../tutorial/run_bfia_job_cn.md:81
 msgid "查看 Bob 节点示例数据"
-msgstr ""
+msgstr "View Sample Data in Bob Node"
 
 #: ../../tutorial/run_bfia_job_cn.md:87
 msgid "准备您自己的数据"
-msgstr ""
+msgstr "Prepare Your Own Data"
 
 #: ../../tutorial/run_bfia_job_cn.md:89
 msgid "您也可以使用您自己的数据文件，首先您要将数据文件复制到节点容器中，以 Alice 节点为例："
-msgstr ""
+msgstr "You can also use your own data files. First, you need to copy the data files into the node container. For example, in the Alice node:"
 
 #: ../../tutorial/run_bfia_job_cn.md:95
 msgid "接下来您可以像[查看 Kuscia 示例数据](#kuscia) 一样查看您的数据文件，这里不再赘述。"
-msgstr ""
+msgstr "You can then view your data files in the same way as [viewing Kuscia sample data](#kuscia). Further details are omitted here."
 
 #: ../../tutorial/run_bfia_job_cn.md:97
 msgid "提交一个银联 BFIA 协议的作业"
-msgstr ""
+msgstr "Submit a UnionPay BFIA Protocol Job"
 
 #: ../../tutorial/run_bfia_job_cn.md:99
 msgid "目前在 Kuscia 中有两种方式提交银联 BFIA 协议的作业"
-msgstr ""
+msgstr "Currently, there are two ways to submit a UnionPay BFIA protocol job in Kuscia."
 
 #: ../../tutorial/run_bfia_job_cn.md:101 ../../tutorial/run_bfia_job_cn.md:106
 msgid "通过配置 KusciaJob 提交作业"
-msgstr ""
+msgstr "Submit Job via KusciaJob Configuration"
 
 #: ../../tutorial/run_bfia_job_cn.md:102
 msgid "通过银联 BFIA 协议创建作业 API 接口提交作业"
-msgstr ""
+msgstr "Submit Job via UnionPay BFIA Protocol Create Job API Interface"
 
 #: ../../tutorial/run_bfia_job_cn.md:108
 msgid "数据准备好之后，我们将 alice 作为任务发起方，进入 alice 节点容器中，然后配置和运行作业。"
-msgstr ""
+msgstr "After preparing the data, we will use alice as the task initiator, enter the alice node container, and then configure and run the job."
 
 #: ../../tutorial/run_bfia_job_cn.md:114
 msgid "使用 Kuscia 示例数据配置 KusciaJob"
-msgstr ""
+msgstr "Configure KusciaJob Using Kuscia Sample Data"
 
 #: ../../tutorial/run_bfia_job_cn.md:116
 msgid "下面的示例展示了一个 KusciaJob， 该作业包含 1 个任务"
-msgstr ""
+msgstr "The following example shows a KusciaJob that contains 1 task."
 
 #: ../../tutorial/run_bfia_job_cn.md:118
 msgid "算子通过读取 alice 和 bob 的数据文件，完成秘密分享逻辑回归任务。"
-msgstr ""
+msgstr "The operator reads the data files from alice and bob to complete the secret sharing logistic regression task."
 
 #: ../../tutorial/run_bfia_job_cn.md:120
-msgid "KusciaJob 的名称为 job-ss-lr，在一个 Kuscia 集群中，这个名称必须是唯一的，由`.metadata.name`指定。"
-msgstr ""
+msgid "KusciaJob 的名称为 job-ss-lr，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `.metadata.name` 指定。"
+msgstr "The name of the KusciaJob is job-ss-lr, which must be unique within a Kuscia cluster and is specified by `.metadata.name`."
 
 #: ../../tutorial/run_bfia_job_cn.md:122
 msgid "在 Alice 容器中，创建文件 job-ss-lr.yaml，内容如下："
-msgstr ""
+msgstr "In the Alice container, create a file named job-ss-lr.yaml with the following content:"
 
 #: ../../tutorial/run_bfia_job_cn.md:144
 msgid "算子参数描述"
-msgstr ""
+msgstr "Description of Operator Parameters"
 
 #: ../../tutorial/run_bfia_job_cn.md:146
-msgid "KusciaJob 中算子参数由`taskInputConfig`字段定义，对于不同的算子，算子的参数不同"
-msgstr ""
+msgid "KusciaJob 中算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同"
+msgstr "Operator parameters in KusciaJob are defined by the `taskInputConfig` field. Parameters differ for different operators."
 
 #: ../../tutorial/run_bfia_job_cn.md:148
 msgid ""
 "秘密分享-逻辑回归（SS-LR）算子相关信息可参考 [SS-LR 参考实现](https://github.com/secretflow"
 "/interconnection-impl)"
 msgstr ""
+"Information related to the Secret Sharing-Logistic Regression (SS-LR) operator can be found in the [SS-LR Reference Implementation](https://github.com/secretflow/interconnection-impl)"
 
 #: ../../tutorial/run_bfia_job_cn.md:149
 msgid ""
 "本教程秘密分享-逻辑回归（SS-LR）算子对应的 KusciaJob TaskInputConfig 结构可参考 [TaskInputConfig"
 " 结构示例](#ss-lr-task-input-config)"
 msgstr ""
+"The TaskInputConfig structure for the Secret Sharing-Logistic Regression (SS-LR) operator in this tutorial can be referenced in the [TaskInputConfig Structure Example](#ss-lr-task-input-config)"
 
 #: ../../tutorial/run_bfia_job_cn.md:151
 msgid "提交 KusciaJob"
-msgstr ""
+msgstr "Submit KusciaJob"
 
 #: ../../tutorial/run_bfia_job_cn.md:153
 msgid "现在已经配置好了一个 KusciaJob，接下来，让运行以下命令提交这个 KusciaJob。"
-msgstr ""
+msgstr "A KusciaJob has now been configured. Next, run the following command to submit this KusciaJob."
 
 #: ../../tutorial/run_bfia_job_cn.md:159
 msgid "通过银联 BFIA 协议 API 接口提交作业"
-msgstr ""
+msgstr "Submit Job via UnionPay BFIA Protocol API Interface"
 
 #: ../../tutorial/run_bfia_job_cn.md:161
 msgid "数据准备好之后，将 Alice 作为任务发起方，进入 Alice 节点容器中。"
-msgstr ""
+msgstr "After preparing the data, use Alice as the task initiator and enter the Alice node container."
 
 #: ../../tutorial/run_bfia_job_cn.md:167
 msgid ""
@@ -207,155 +213,158 @@ msgid ""
 "协议规定的创建作业请求参数转化为 Kuscia 中的 KusciaJob 作业定义。 最后，InterConn 控制器在 Kuscia 中创建 "
 "KusciaJob 资源。"
 msgstr ""
+"The following uses the UnionPay BFIA protocol create job interface to submit the job. This job will be submitted to the Kuscia Interconnection InterConn controller, which will convert the job creation request parameters specified by the UnionPay BFIA protocol into a KusciaJob definition in Kuscia. Finally, the InterConn controller will create the KusciaJob resource in Kuscia."
 
 #: ../../tutorial/run_bfia_job_cn.md:177
 msgid "提交作业接口请求参数内容结构请参考 [提交 SS-LR 作业接口请求内容示例](#bfia-create-job-req-body)。"
-msgstr ""
+msgstr "Refer to [Submit SS-LR Job Interface Request Content Example](#bfia-create-job-req-body) for the structure of the submit job interface request parameters."
 
 #: ../../tutorial/run_bfia_job_cn.md:181
 msgid "查看 KusciaJob 运行状态"
-msgstr ""
+msgstr "View KusciaJob Running Status"
 
 #: ../../tutorial/run_bfia_job_cn.md:183
 msgid ""
 "在提交完 KusciaJob 作业后，我们可以在 alice 容器中通过下面的命令查看 Alice 方的 KusciaJob 的运行情况。 "
 "同样，也可以登陆到 bob 容器中查看 Bob 方的 KusciaJob 的运行情况。下面以 Alice 节点容器为例。"
 msgstr ""
+"After submitting the KusciaJob, you can view the running status of Alice's KusciaJob in the alice container using the following command. Similarly, you can log into the bob container to view the running status of Bob's KusciaJob. The following example uses the Alice node container."
 
 #: ../../tutorial/run_bfia_job_cn.md:186
 msgid "查看所有的 KusciaJob"
-msgstr ""
+msgstr "View All KusciaJobs"
 
 #: ../../tutorial/run_bfia_job_cn.md:192
 msgid "您可以看到如下输出："
-msgstr ""
+msgstr "You can see the following output:"
 
 #: ../../tutorial/run_bfia_job_cn.md:199
 msgid "job-ss-lr  就是刚刚创建出来的 KusciaJob。"
-msgstr ""
+msgstr "job-ss-lr is the KusciaJob that was just created."
 
 #: ../../tutorial/run_bfia_job_cn.md:201
 msgid "查看运行中的 KusciaJob 的详细状态"
-msgstr ""
+msgstr "View Detailed Status of Running KusciaJob"
 
 #: ../../tutorial/run_bfia_job_cn.md:203
-msgid "通过指定`-o yaml`参数，能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ss-lr 是提交的作业名称。"
-msgstr ""
+msgid "通过指定 `-o yaml` 参数，能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ss-lr 是提交的作业名称。"
+msgstr "By specifying the `-o yaml` parameter, you can view the detailed status of the KusciaJob in YAML format. job-ss-lr is the name of the submitted job."
 
 #: ../../tutorial/run_bfia_job_cn.md:209
 msgid "如果任务成功了，您可以看到如下输出："
-msgstr ""
+msgstr "If the task succeeds, you can see the following output:"
 
 #: ../../tutorial/run_bfia_job_cn.md:265
 msgid ""
-"`status`字段记录了 KusciaJob 的运行状态，`.status.phase`字段描述了 KusciaJob 的整体状态，而 "
-"`.status.taskStatus`则描述了包含的 KusciaTask 的状态。 详细信息请参考 "
+"`status` 字段记录了 KusciaJob 的运行状态，`.status.phase` 字段描述了 KusciaJob 的整体状态，而 "
+"`.status.taskStatus` 则描述了包含的 KusciaTask 的状态。 详细信息请参考 "
 "[KusciaJob](../reference/concepts/kusciajob_cn.md)。"
 msgstr ""
+"The `status` field records the running status of the KusciaJob, the `.status.phase` field describes the overall status of the KusciaJob, and the `.status.taskStatus` field describes the status of the included KusciaTasks. For more details, refer to [KusciaJob](../reference/concepts/kusciajob_cn.md)."
 
 #: ../../tutorial/run_bfia_job_cn.md:268
 msgid "查看 KusciaJob 中 KusciaTask 的详细状态"
-msgstr ""
+msgstr "View Detailed Status of KusciaTasks in KusciaJob"
 
 #: ../../tutorial/run_bfia_job_cn.md:270
-msgid "KusciaJob 中的每一个 KusciaTask 都有一个`taskID`，通过`taskID`我们可以查看 KusciaTask 的详细状态。"
-msgstr ""
+msgid "KusciaJob 中的每一个 KusciaTask 都有一个 `taskID`，通过 `taskID` 我们可以查看 KusciaTask 的详细状态。"
+msgstr "Each KusciaTask in a KusciaJob has a `taskID`. You can view the detailed status of a KusciaTask using its `taskID`."
 
 #: ../../tutorial/run_bfia_job_cn.md:276
 msgid "KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_cn.md)。"
-msgstr ""
+msgstr "For an introduction to KusciaTask, please refer to [KusciaTask](../reference/concepts/kusciatask_cn.md)."
 
 #: ../../tutorial/run_bfia_job_cn.md:278
 msgid "查看 SS-LR 算子运行结果"
-msgstr ""
+msgstr "View SS-LR Operator Run Results"
 
 #: ../../tutorial/run_bfia_job_cn.md:280
 msgid ""
 "可以通过 [查看 KusciaJob 运行状态](#get-kuscia-job-phase) 查询作业的运行状态。 当作业状态 PHASE 变成"
 " `Succeeded` 时，可以查看算子输出结果。"
 msgstr ""
+"You can query the job's running status via [View KusciaJob Running Status](#get-kuscia-job-phase). When the job status PHASE changes to `Succeeded`, you can view the operator's output results."
 
 #: ../../tutorial/run_bfia_job_cn.md:282
 msgid "进入节点 Alice 或 Bob 容器  若已经在容器中，跳过该步骤"
-msgstr ""
+msgstr "Enter the Alice or Bob node container. If you are already in the container, skip this step."
 
 #: ../../tutorial/run_bfia_job_cn.md:293
 msgid "查看 KusciaJob 作业状态"
-msgstr ""
+msgstr "View KusciaJob Status"
 
 #: ../../tutorial/run_bfia_job_cn.md:301
 msgid "查看 SS-LR 算子输出结果"
-msgstr ""
+msgstr "View SS-LR Operator Output Results"
 
 #: ../../tutorial/run_bfia_job_cn.md:303
 msgid "输出内容表示 SS-LR 算子权重向量的密态分片"
-msgstr ""
+msgstr "The output content represents the secret shares of the SS-LR operator's weight vector."
 
 #: ../../tutorial/run_bfia_job_cn.md:313
 msgid "删除 KusciaJob"
-msgstr ""
+msgstr "Delete KusciaJob"
 
 #: ../../tutorial/run_bfia_job_cn.md:315
 msgid "当您想清理这个 KusciaJob 时，您可以通过下面的命令完成："
-msgstr ""
+msgstr "When you want to clean up this KusciaJob, you can use the following command:"
 
 #: ../../tutorial/run_bfia_job_cn.md:321
 msgid "当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。"
-msgstr ""
+msgstr "When this KusciaJob is cleaned up, the KusciaTasks created by this KusciaJob will also be cleaned up."
 
 #: ../../tutorial/run_bfia_job_cn.md:323
 msgid "参考"
-msgstr ""
+msgstr "References"
 
 #: ../../tutorial/run_bfia_job_cn.md:327
 msgid "SS-LR 算子对应的 TaskInputConfig 结构示例"
-msgstr ""
+msgstr "Example of SS-LR Operator Corresponding TaskInputConfig Structure"
 
 #: ../../tutorial/run_bfia_job_cn.md:388 ../../tutorial/run_bfia_job_cn.md:487
 msgid "字段说明"
-msgstr ""
+msgstr "Field Description"
 
 #: ../../tutorial/run_bfia_job_cn.md:390
-msgid "`name`描述了任务算子的名称。"
-msgstr ""
+msgid "`name` 描述了任务算子的名称。"
+msgstr "`name` describes the name of the task operator."
 
 #: ../../tutorial/run_bfia_job_cn.md:391
-msgid "`module_name`描述了任务算子所属模块名称。"
-msgstr ""
+msgid "`module_name` 描述了任务算子所属模块名称。"
+msgstr "`module_name` describes the name of the module to which the task operator belongs."
 
 #: ../../tutorial/run_bfia_job_cn.md:392
-msgid "`input`描述了任务算子的输入，若任务不依赖其他任务的输出，则可以将该项置为空。"
-msgstr ""
+msgid "`input` 描述了任务算子的输入，若任务不依赖其他任务的输出，则可以将该项置为空。"
+msgstr "`input` describes the input of the task operator. If the task does not depend on the output of other tasks, this field can be left empty."
 
 #: ../../tutorial/run_bfia_job_cn.md:393
-msgid "`output`描述了任务算子的输出。"
-msgstr ""
+msgid "`output` 描述了任务算子的输出。"
+msgstr "`output` describes the output of the task operator."
 
 #: ../../tutorial/run_bfia_job_cn.md:394
-msgid "`role`描述了任务的角色。"
-msgstr ""
+msgid "`role` 描述了任务的角色。"
+msgstr "`role` describes the role of the task."
 
 #: ../../tutorial/run_bfia_job_cn.md:395
-msgid "`initiator`描述了任务发起方的信息。"
-msgstr ""
+msgid "`initiator` 描述了任务发起方的信息。"
+msgstr "`initiator` describes the information of the task initiator."
 
 #: ../../tutorial/run_bfia_job_cn.md:396
-msgid "`task_params`描述了任务算子依赖的参数。"
-msgstr ""
+msgid "`task_params` 描述了任务算子依赖的参数。"
+msgstr "`task_params` describes the parameters that the task operator depends on."
 
 #: ../../tutorial/run_bfia_job_cn.md:400
 msgid "提交 SS-LR 作业接口请求内容示例"
-msgstr ""
+msgstr "Example of Submit SS-LR Job Interface Request Content"
 
 #: ../../tutorial/run_bfia_job_cn.md:489
-msgid "`job_id`描述了作业的标识。"
-msgstr ""
+msgid "`job_id` 描述了作业的标识。"
+msgstr "`job_id` describes the identifier of the job."
 
 #: ../../tutorial/run_bfia_job_cn.md:490
-msgid "`dag`描述了作业的组件之间组合的配置。"
-msgstr ""
+msgid "`dag` 描述了作业的组件之间组合的配置。"
+msgstr "`dag` describes the configuration of the components' combination in the job."
 
 #: ../../tutorial/run_bfia_job_cn.md:491
-msgid "`config`描述了作业运行时的参数配置。"
-msgstr ""
-
+msgid "`config` 描述了作业运行时的参数配置。"
+msgstr "`config` describes the parameter configuration for the job at runtime."

@@ -215,7 +215,7 @@ func TestSessionDeadSessionID(t *testing.T) {
 		return !(sExists || iExists), nil
 	}))
 
-	// sesssion is dead, so can push message again
+	// session is dead, so can push message again
 	assert.Nil(t, sm.Push("session1", "topic", NewMessageByRandomStr(5), time.Millisecond*100))
 }
 

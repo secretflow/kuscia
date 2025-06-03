@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../base
+patches:
+- path: patch.yaml
+namespace: {{.NAMESPACE}} # modify here to your own domain
+configMapGenerator:
+- name: kubernetes-api-server-config
+  literals:
+  - KUBERNETES_SERVICE_HOST={{.KUBERNETES_SERVICE_HOST}} # modify here to your container ip
+replacements:
+  - source:
+      kind: Deployment
+      name: monitor
+      fieldPath: metadata.namespace
+    targets:
+      - select:
+          kind: Deployment
+          name: monitor
+        fieldPaths:
+          - spec.template.spec.nodeSelector.[kuscia.secretflow/namespace]
+  - source:
+      kind: ConfigMap
+      name: kubernetes-api-server-config
+      fieldPath: data.KUBERNETES_SERVICE_HOST
+    targets:
+      - select:
+          kind: Deployment
+          name: monitor
+        fieldPaths:
+          - spec.template.spec.containers.[name=monitor].env.[name=KUBERNETES_SERVICE_HOST].value

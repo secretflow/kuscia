@@ -20,10 +20,11 @@ set -e
 SELECTED_TEST_SUITE=${1}
 
 # TEST_SUITES hold all test suites.
-TEST_SUITES="center.base p2p.base center.example"
+TEST_SUITES="center.base p2p.base center.example bfia.base"
 WSL_IGNORE_SUITES="center.nsjail p2p.nsjail"
 center_base="./test/suite/center/base.sh"
 p2p_base="./test/suite/p2p/base.sh"
+bfia_base="./test/suite/bfia/base.sh"
 center_nsjail="./test/suite/center/nsjail.sh"
 p2p_nsjail="./test/suite/p2p/nsjail.sh"
 center_example="./test/suite/center/example.sh"
@@ -33,7 +34,7 @@ TEST_BIN_DIR=${TEST_ROOT}/test_run/bin
 TEST_RUN_ROOT_DIR=${TEST_ROOT}/test_run
 IS_WSL=false
 
-if [ $WSL_DISTRO_NAME ]; then
+if [ "$WSL_DISTRO_NAME" ]; then
   IS_WSL=true
 fi
 echo "detect environment: is_wsl=${IS_WSL}"
@@ -74,7 +75,7 @@ function download_grpcurl() {
     ;;
   esac
   wget -O "${output_dir}"/grpcurl.tar.gz ${package_url}
-  tar -zxf "${output_dir}"/grpcurl.tar.gz -C ${output_dir}
+  tar -zxf "${output_dir}"/grpcurl.tar.gz -C "${output_dir}"
 }
 
 # Download jq
@@ -142,7 +143,7 @@ fi
 installRequires
 copyTestScripts
 
-docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
+docker run --rm "${KUSCIA_IMAGE}" cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 
 if [ "${SELECTED_TEST_SUITE}" == "all" ]; then
   for suite in ${TEST_SUITES}; do
@@ -163,4 +164,3 @@ else
   TEST_SUITE_RUN_ROOT_DIR="${test_suite_run_root_dir}" TEST_BIN_DIR=${TEST_BIN_DIR} ${!SELECTED_TEST_SUITE_FOR_PATH}
   rm -rf "${test_suite_run_root_dir}"
 fi
-

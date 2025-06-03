@@ -18,6 +18,7 @@ package hostresources
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"reflect"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -128,6 +129,22 @@ func (c *hostResourcesController) processDeployment(ctx context.Context, deploym
 	memberDeployment, err := c.memberDeploymentLister.KusciaDeployments(common.KusciaCrossDomain).Get(deployment.Name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
+			// if hostDeploymentSummary status phase is failed, don't create member deployment
+			hostKds, kdsErr := c.hostKusciaClient.KusciaV1alpha1().KusciaDeployments(deployment.Namespace).Get(ctx, deployment.Name, metav1.GetOptions{})
+			if kdsErr != nil {
+				if k8serrors.IsNotFound(kdsErr) {
+					nlog.Infof("Host kds namespace:%s,name: %s is not found, so don't create member deployment,skip processing it", deployment.Namespace, deployment.Name)
+					return nil
+				} else {
+					nlog.Errorf("Failed to get host kds namespace:%s,name: %s, %v, skip processing it", deployment.Namespace, deployment.Name, kdsErr)
+					return err
+				}
+
+			}
+			if hostKds.Status.Phase == kusciaapisv1alpha1.KusciaDeploymentPhaseFailed {
+				nlog.Infof("Host kds namespace:%s,name: %s is failed, so don't create member deployment,skip processing it", deployment.Namespace, deployment.Name)
+				return nil
+			}
 			err = c.createDeployment(ctx, deployment)
 		}
 		return err
@@ -160,6 +177,18 @@ func (c *hostResourcesController) createDeployment(ctx context.Context, hostDepl
 	}
 
 	_, err = c.memberKusciaClient.KusciaV1alpha1().KusciaDeployments(kd.Namespace).Create(ctx, kd, metav1.CreateOptions{})
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
+		reasonErr, ok := err.(k8serrors.APIStatus)
+		if !ok {
+			return err
+		}
+		nlog.Infof("Create member kd %v failed, reason: %v,code: %d", kd.Name, reasonErr.Status().Reason, reasonErr.Status().Code)
+		if reasonErr.Status().Code == http.StatusUnauthorized && reasonErr.Status().Reason == common.CreateKDOrKJError {
+			return c.updateHostDeploymentSummaryStatus(ctx, hostDeployment)
+		} else {
+			return err
+		}
+	}
 	return err
 }
 
@@ -175,6 +204,27 @@ func (c *hostResourcesController) updateDeployment(ctx context.Context, hostDepl
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (c *hostResourcesController) updateHostDeploymentSummaryStatus(ctx context.Context, kd *kusciaapisv1alpha1.KusciaDeployment) error {
+
+	originalKds, err := c.hostKusciaClient.KusciaV1alpha1().KusciaDeploymentSummaries(kd.Namespace).Get(ctx, kd.Name, metav1.GetOptions{})
+	if err != nil {
+		nlog.Errorf("Failed to get host kds namespace=%s,name=%s, %v, skip processing it", kd.Namespace, kd.Name, err)
+		return err
+	}
+	kds := originalKds.DeepCopy()
+	kds.Status.Phase = kusciaapisv1alpha1.KusciaDeploymentPhaseFailed
+	kds.Status.Reason = string(kusciaapisv1alpha1.ValidateFailed)
+	kds.Status.Message = common.CreateKDOrKJError
+	kds.Status.LastReconcileTime = ikcommon.GetCurrentTime()
+
+	_, err = c.hostKusciaClient.KusciaV1alpha1().KusciaDeploymentSummaries(kds.Namespace).Update(ctx, kds, metav1.UpdateOptions{})
+	if err != nil {
+		nlog.Errorf("Failed to update host kds namespace=%s,name=%s, %v, waiting for the next one", kds.Namespace, kds.Name, err)
+		return err
 	}
 	return nil
 }

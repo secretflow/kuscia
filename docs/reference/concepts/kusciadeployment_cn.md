@@ -31,7 +31,7 @@ KusciaDeployment 在其生命周期中会处于以下几种状态：
 
 ## 创建 KusciaDeployment
 
-下面以名称为`secretflow-serving.yaml`的内容为例，介绍创建 KusciaDeployment。
+下面以名称为 `secretflow-serving.yaml` 的内容为例，介绍创建 KusciaDeployment。
 
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
@@ -53,15 +53,15 @@ spec:
 
 在该示例中:
 
-- `.metadata.labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-type: serving`表示管理的应用为预测类型。
-- `.metadata.name`：表示 KusciaDeployment 的名称，当前示例为`secretflow-serving`。
-- `.spec.initiator`：表示发起方的节点标识，当前示例为`alice`。
+- `.metadata.labels`：表示 KusciaDeployment 的标签。当前示例 `kuscia.secretflow/app-type: serving` 表示管理的应用为预测类型。
+- `.metadata.name`：表示 KusciaDeployment 的名称，当前示例为 `secretflow-serving`。
+- `.spec.initiator`：表示发起方的节点标识，当前示例为 `alice`。
 - `.spec.inputConfig`：表示输入参数配置。当前，该字段中的内容是临时的，预计下一期会有调整，后续也会补充该字段中的内容详细解释。
 - `.spec.parties`：表示所有参与方的信息。当前示例中，该字段包含以下子字段：
-  - `.spec.parties[0].appImageRef`：表示节点标识为`alice`的参与方所依赖的应用镜像 AppImage 名称为`secretflow-serving-image`，详细定义请参考 [Serving Appimage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)
-  - `.spec.parties[0].domainID`：表示参与方节点标识为`alice`。
-  - `.spec.parties[1].appImageRef`：表示节点标识为`bob`的参与方所依赖的应用镜像 AppImage 名称为`secretflow-serving-image`，详细定义请参考 [Serving Appimage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)
-  - `.spec.parties[1].domainID`：表示参与方节点标识为`bob`。
+  - `.spec.parties[0].appImageRef`：表示节点标识为 `alice` 的参与方所依赖的应用镜像 AppImage 名称为 `secretflow-serving-image`，详细定义请参考 [Serving Appimage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)
+  - `.spec.parties[0].domainID`：表示参与方节点标识为 `alice`。
+  - `.spec.parties[1].appImageRef`：表示节点标识为 `bob` 的参与方所依赖的应用镜像 AppImage 名称为 `secretflow-serving-image`，详细定义请参考 [Serving Appimage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)
+  - `.spec.parties[1].domainID`：表示参与方节点标识为 `bob`。
 
 1. 运行以下命令创建 KusciaDeployment。
 
@@ -71,7 +71,7 @@ kubectl apply -f secretflow-serving.yaml
 
 ## 查看 KusciaDeployment
 
-下面以名称为`secretflow-serving`的 KusciaDeployment 为例，介绍如何查看相关资源。
+下面以名称为 `secretflow-serving` 的 KusciaDeployment 为例，介绍如何查看相关资源。
 
 1. 运行以下命令查看 KusciaDeployment。
 
@@ -203,7 +203,7 @@ secretflow-serving-d7db48cc7-wbqv6   1/1     Running   0          89m
 
 ## 清理 KusciaDeployment
 
-下面以名称为`secretflow-serving`的 KusciaDeployment 为例，介绍如何清理 KusciaDeployment。
+下面以名称为 `secretflow-serving` 的 KusciaDeployment 为例，介绍如何清理 KusciaDeployment。
 
 1. 运行以下命令清理 KusciaDeployment。
 
@@ -222,7 +222,7 @@ Error from server (NotFound): kusciadeployments.kuscia.secretflow "secretflow-se
 
 ### KusciaDeployment 详细介绍
 
-下面以名称为`secretflow-serving`的 KusciaDeployment 模版为例，介绍 KusciaDeployment 所包含的完整字段。
+下面以名称为 `secretflow-serving` 的 KusciaDeployment 模版为例，介绍 KusciaDeployment 所包含的完整字段。
 
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
@@ -311,7 +311,7 @@ status:
 
 KusciaDeployment `metadata` 的子字段详细介绍如下：
 
-- `labels`：表示 KusciaDeployment 的标签。当前示例`kuscia.secretflow/app-type: serving`表示管理的应用为预测类型。
+- `labels`：表示 KusciaDeployment 的标签。当前示例 `kuscia.secretflow/app-type: serving` 表示管理的应用为预测类型。
 - `name`：表示 KusciaDeployment 的名称。
 
 KusciaDeployment `spec` 的子字段详细介绍如下：
@@ -322,9 +322,9 @@ KusciaDeployment `spec` 的子字段详细介绍如下：
   - `parties[].appImageRef`：表示参与方所依赖的应用镜像名称。有关 AppImage 的详细介绍，请参考 [AppImage](./appimage_cn.md)。
   - `parties[].domainID`：表示参与方的节点标识。
   - `parties[].role`：表示参与方的角色。
-  - `parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从`parties[].appImageRef`获取的对应模版信息。
+  - `parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从 `parties[].appImageRef` 获取的对应模版信息。
     - `template.replicas`：表示应用的期望副本数。
-    - `template.strategy`：表示应用的更新策略。当前支持`Recreate`和`RollingUpdate`两种策略，详细解释请参考 [Strategy](https://kubernetes.io/zh-cn/docs/concepts/workloads/controllers/deployment/#strategy)
+    - `template.strategy`：表示应用的更新策略。当前支持 `Recreate` 和 `RollingUpdate` 两种策略，详细解释请参考 [Strategy](https://kubernetes.io/zh-cn/docs/concepts/workloads/controllers/deployment/#strategy)
     - `template.spec`：表示应用容器配置信息。所支持的子字段请参考 AppImage 描述中的 [deployTemplates[].spec](./appimage_cn.md/#appimage-ref)
 
 KusciaDeployment `status` 的子字段详细介绍如下：
@@ -333,18 +333,18 @@ KusciaDeployment `status` 的子字段详细介绍如下：
   - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。KusciaDeployment Controller 会根据 KusciaDeployment 的描述信息，在各参与方节点下创建相关的资源，例如：Deployment、ConfigMap、Service 等。
   - `PartialAvailable`：表示所有参与方可用，但是在某些参与方节点下，应用可用副本数小于期望副本数。
   - `Available`：表示所有参与方可用，且各个参与方下应用可用副本数等于期望副本数。
-  - `Failed`：表示 KusciaDeployment Controller 处理 KusciaDeployment 资源失败，详细失败描述可以从`message`和`reason`中获取。
+  - `Failed`：表示 KusciaDeployment Controller 处理 KusciaDeployment 资源失败，详细失败描述可以从 `message` 和 `reason` 中获取。
 - `totalParties`：表示所有参与方的个数。
 - `availableParties`：表示可用参与方的个数。
 - `lastReconcileTime`：表示 KusciaDeployment 最近一次更新的时间戳。
-- `message`：表示 KusciaDeployment 处于该阶段的详细描述信息，用于对`reason`的补充。一般用于记录详细失败信息。
+- `message`：表示 KusciaDeployment 处于该阶段的详细描述信息，用于对 `reason` 的补充。一般用于记录详细失败信息。
 - `reason`：表示为什么 KusciaDeployment 处于该阶段。一般用于记录失败原因。
 - `partyDeploymentStatuses`：表示参与方的详细状态。其结构使用`map[string]map[string]Object`方式表示。其中，第一个 map 的字符串类型 key 表示节点标识，第二个 map 的字符串类型 key 表示节点下 Deployment 资源的名称，
 最后 Object 类型的 value 表示状态信息。下面以参与方 `alice` 为例，介绍各字段的含义：
-  - `alice.secretflow-serving`：表示参与方的节点名称为`alice`，Deployment 资源名称为`secretflow-serving`。
-  - `alice.secretflow-serving.conditions`：表示名称为`secretflow-serving`的 Deployment 资源的详细状况信息。
-  - `alice.secretflow-serving.creationTimestamp`：表示名称为`secretflow-serving`的 Deployment 资源的创建时间。
-  - `alice.secretflow-serving.phase`：表示名称为`secretflow-serving`的 Deployment 资源的状态。当前包括以下几种 PHASE：
+  - `alice.secretflow-serving`：表示参与方的节点名称为 `alice`，Deployment 资源名称为 `secretflow-serving`。
+  - `alice.secretflow-serving.conditions`：表示名称为 `secretflow-serving` 的 Deployment 资源的详细状况信息。
+  - `alice.secretflow-serving.creationTimestamp`：表示名称为 `secretflow-serving` 的 Deployment 资源的创建时间。
+  - `alice.secretflow-serving.phase`：表示名称为 `secretflow-serving` 的 Deployment 资源的状态。当前包括以下几种 PHASE：
     - `Progressing`：表示该资源正在被 KusciaDeployment Controller 处理。
     - `PartialAvailable`：表示该参与方下的应用部分可用，即应用可用副本数小于期望副本数。
     - `Available`：表示该参与方下的应用全部可用，即应用可用副本数等于期望副本数。

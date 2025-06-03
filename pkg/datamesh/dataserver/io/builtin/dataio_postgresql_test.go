@@ -29,6 +29,10 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -37,9 +41,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/datamesh/metaserver/service"
 	"github.com/secretflow/kuscia/pkg/utils/tls"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func dbInfoToDsnPg(info *datamesh.DatabaseDataSourceInfo) string {

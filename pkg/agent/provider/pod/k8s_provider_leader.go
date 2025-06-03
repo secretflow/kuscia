@@ -165,13 +165,13 @@ func (kp *K8sProvider) cleanupSubResources(ctx context.Context) error {
 	}
 
 	for _, configMap := range configMaps {
-		if err := cleanupSubResource[*v1.ConfigMap](ctx, configMap, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace)); err != nil {
+		if err := cleanupSubResource[*v1.ConfigMap](ctx, configMap, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace), false); err != nil {
 			nlog.Warnf("Failed to cleanup configmap %q: %v", configMap.Name, err)
 		}
 	}
 
 	for _, secret := range secrets {
-		if err := cleanupSubResource[*v1.Secret](ctx, secret, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().Secrets(kp.bkNamespace)); err != nil {
+		if err := cleanupSubResource[*v1.Secret](ctx, secret, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().Secrets(kp.bkNamespace), false); err != nil {
 			nlog.Warnf("Failed to cleanup secret %q: %v", secret.Name, err)
 		}
 	}

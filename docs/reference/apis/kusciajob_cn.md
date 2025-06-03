@@ -78,7 +78,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       ],
       "alias": "job-psi",
       "dependencies": [],
-      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_RR22\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"SEMI2K\\\",\\\"field\\\":\\\"FM128\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"1.0.0\",\"attr_paths\":[\"input/input_ds1/keys\",\"input/input_ds2/keys\",\"protocol\",\"sort_result\",\"receiver_parties\",\"allow_empty_result\",\"join_type\",\"input_ds1_keys_duplicated\",\"input_ds2_keys_duplicated\"],\"attrs\":[{\"is_na\":false,\"ss\":[\"id1\"]},{\"is_na\":false,\"ss\":[\"id2\"]},{\"is_na\":false,\"s\":\"PROTOCOL_RR22\"},{\"b\":true,\"is_na\":false},{\"is_na\":false,\"ss\":[\"alice\",\"bob\"]},{\"is_na\":true},{\"is_na\":false,\"s\":\"inner_join\"},{\"b\":true,\"is_na\":false},{\"b\":true,\"is_na\":false}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output-0\",\"psi-output-1\"],\"sf_output_uris\":[\"psi-output-0\",\"psi-output-1\"]}",
       "priority": 100
     },
     {
@@ -96,7 +96,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
       "dependencies": [
         "job-psi"
       ],
-      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
+      "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"SEMI2K\\\",\\\"field\\\":\\\"FM128\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"1.0.0\"},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output-0\"]}",
       "priority": 100
     }
   ]
@@ -120,7 +120,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 
 :::{tip}
 
-上述请求示例中的引擎镜像基于 SecretFlow `1.7.0b0` 版本。算子参数的 `taskInputConfig` 内容可参考[KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
+上述请求示例中的引擎镜像基于 SecretFlow `1.11.0b1` 版本。算子参数的 `taskInputConfig` 内容可参考 [KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob)
 
 :::
 
@@ -174,81 +174,188 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
 
 ```json
 {
-  "status": {
-    "code": 0,
-    "message": "success",
-    "details": []
-  },
-  "data": {
-    "job_id": "job-alice-bob-001",
-    "initiator": "alice",
-    "max_parallelism": 2,
-    "tasks": [
-      {
-        "app_image": "secretflow-image",
-        "parties": [
-          {
-            "domain_id": "alice"
-          },
-          {
-            "domain_id": "bob"
-          }
-        ],
-        "alias": "job-psi",
-        "task_id": "job-psi",
-        "dependencies": [
-          ""
-        ],
-        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"0.0.5\",\"attr_paths\":[\"protocol\",\"sort_result\",\"allow_duplicate_keys\",\"allow_duplicate_keys/yes/join_type\",\"allow_duplicate_keys/yes/join_type/left_join/left_side\",\"input/receiver_input/key\",\"input/sender_input/key\"],\"attrs\":[{\"s\":\"PROTOCOL_RR22\"},{\"b\":true},{\"s\":\"yes\"},{\"s\":\"left_join\"},{\"ss\":[\"alice\"]},{\"ss\":[\"id1\"]},{\"ss\":[\"id2\"]}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output\"],\"sf_output_uris\":[\"psi-output.csv\"]}",
-        "priority": 100
-      },
-      {
-        "app_image": "secretflow-image",
-        "parties": [
-          {
-            "domain_id": "alice"
-          },
-          {
-            "domain_id": "bob"
-          }
-        ],
-        "alias": "job-split",
-        "task_id": "job-split",
-        "dependencies": [
-          "job-psi"
-        ],
-        "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"REF2K\\\",\\\"field\\\":\\\"FM64\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"0.0.1\",\"attr_paths\":[\"train_size\",\"test_size\",\"random_state\",\"shuffle\"],\"attrs\":[{\"f\":0.75},{\"f\":0.25},{\"i64\":1234},{\"b\":true}]},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output\"]}",
-        "priority": 100
-      }
-    ],
     "status": {
-      "state": "Failed",
-      "err_msg": "",
-      "create_time": "2024-01-17T07:13:39Z",
-      "start_time": "2024-01-17T07:13:39Z",
-      "end_time": "2024-01-17T07:13:39Z",
-      "tasks": [
-        {
-          "task_id": "job-psi",
-          "state": "",
-          "err_msg": "",
-          "create_time": "",
-          "start_time": "",
-          "end_time": "",
-          "parties": []
+        "code": 0,
+        "message": "success",
+        "details": [
+
+        ]
+    },
+    "data": {
+        "job_id": "job-alice-bob-001",
+        "initiator": "alice",
+        "max_parallelism": 2,
+        "tasks": [
+            {
+                "app_image": "secretflow-image",
+                "parties": [
+                    {
+                        "domain_id": "alice",
+                        "role": "",
+                        "resources": null,
+                        "bandwidth_limits": [
+
+                        ]
+                    },
+                    {
+                        "domain_id": "bob",
+                        "role": "",
+                        "resources": null,
+                        "bandwidth_limits": [
+
+                        ]
+                    }
+                ],
+                "alias": "job-psi",
+                "task_id": "job-psi",
+                "dependencies": [
+
+                ],
+                "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"SEMI2K\\\",\\\"field\\\":\\\"FM128\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"psi\",\"version\":\"1.0.0\",\"attr_paths\":[\"input/input_ds1/keys\",\"input/input_ds2/keys\",\"protocol\",\"sort_result\",\"receiver_parties\",\"allow_empty_result\",\"join_type\",\"input_ds1_keys_duplicated\",\"input_ds2_keys_duplicated\"],\"attrs\":[{\"is_na\":false,\"ss\":[\"id1\"]},{\"is_na\":false,\"ss\":[\"id2\"]},{\"is_na\":false,\"s\":\"PROTOCOL_RR22\"},{\"b\":true,\"is_na\":false},{\"is_na\":false,\"ss\":[\"alice\",\"bob\"]},{\"is_na\":true},{\"is_na\":false,\"s\":\"inner_join\"},{\"b\":true,\"is_na\":false},{\"b\":true,\"is_na\":false}]},\"sf_input_ids\":[\"alice-table\",\"bob-table\"],\"sf_output_ids\":[\"psi-output-0\",\"psi-output-1\"],\"sf_output_uris\":[\"psi-output-0\",\"psi-output-1\"]}",
+                "priority": 100,
+                "schedule_config": null
+            },
+            {
+                "app_image": "secretflow-image",
+                "parties": [
+                    {
+                        "domain_id": "alice",
+                        "role": "",
+                        "resources": null,
+                        "bandwidth_limits": [
+
+                        ]
+                    },
+                    {
+                        "domain_id": "bob",
+                        "role": "",
+                        "resources": null,
+                        "bandwidth_limits": [
+
+                        ]
+                    }
+                ],
+                "alias": "job-split",
+                "task_id": "job-split",
+                "dependencies": [
+                    "job-psi"
+                ],
+                "task_input_config": "{\"sf_datasource_config\":{\"alice\":{\"id\":\"default-data-source\"},\"bob\":{\"id\":\"default-data-source\"}},\"sf_cluster_desc\":{\"parties\":[\"alice\",\"bob\"],\"devices\":[{\"name\":\"spu\",\"type\":\"spu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"runtime_config\\\":{\\\"protocol\\\":\\\"SEMI2K\\\",\\\"field\\\":\\\"FM128\\\"},\\\"link_desc\\\":{\\\"connect_retry_times\\\":60,\\\"connect_retry_interval_ms\\\":1000,\\\"brpc_channel_protocol\\\":\\\"http\\\",\\\"brpc_channel_connection_type\\\":\\\"pooled\\\",\\\"recv_timeout_ms\\\":1200000,\\\"http_timeout_ms\\\":1200000}}\"},{\"name\":\"heu\",\"type\":\"heu\",\"parties\":[\"alice\",\"bob\"],\"config\":\"{\\\"mode\\\": \\\"PHEU\\\", \\\"schema\\\": \\\"paillier\\\", \\\"key_size\\\": 2048}\"}],\"ray_fed_config\":{\"cross_silo_comm_backend\":\"brpc_link\"}},\"sf_node_eval_param\":{\"domain\":\"data_prep\",\"name\":\"train_test_split\",\"version\":\"1.0.0\"},\"sf_output_uris\":[\"train-dataset.csv\",\"test-dataset.csv\"],\"sf_output_ids\":[\"train-dataset\",\"test-dataset\"],\"sf_input_ids\":[\"psi-output-0\"]}",
+                "priority": 100,
+                "schedule_config": null
+            }
+        ],
+        "status": {
+            "state": "Succeeded",
+            "err_msg": "",
+            "create_time": "2025-04-16T10:42:55Z",
+            "start_time": "2025-04-16T10:42:55Z",
+            "end_time": "2025-04-16T10:43:12Z",
+            "tasks": [
+                {
+                    "task_id": "job-psi",
+                    "state": "Succeeded",
+                    "err_msg": "",
+                    "create_time": "2025-04-16T10:42:56Z",
+                    "start_time": "2025-04-16T10:42:56Z",
+                    "end_time": "2025-04-16T10:43:04Z",
+                    "parties": [
+                        {
+                            "domain_id": "alice",
+                            "state": "Succeeded",
+                            "err_msg": "",
+                            "endpoints": [
+                                {
+                                    "port_name": "fed",
+                                    "scope": "Cluster",
+                                    "endpoint": "job-psi-0-fed.alice.svc"
+                                },
+                                {
+                                    "port_name": "global",
+                                    "scope": "Domain",
+                                    "endpoint": "job-psi-0-global.alice.svc:26836"
+                                },
+                                {
+                                    "port_name": "inference",
+                                    "scope": "Cluster",
+                                    "endpoint": "job-psi-0-inference.alice.svc"
+                                },
+                                {
+                                    "port_name": "spu",
+                                    "scope": "Cluster",
+                                    "endpoint": "job-psi-0-spu.alice.svc"
+                                }
+                            ]
+                        }
+                    ],
+                    "alias": "job-psi",
+                    "progress": 1
+                },
+                {
+                    "task_id": "job-split",
+                    "state": "Succeeded",
+                    "err_msg": "",
+                    "create_time": "2025-04-16T10:43:04Z",
+                    "start_time": "2025-04-16T10:43:04Z",
+                    "end_time": "2025-04-16T10:43:12Z",
+                    "parties": [
+                        {
+                            "domain_id": "alice",
+                            "state": "Succeeded",
+                            "err_msg": "",
+                            "endpoints": [
+                                {
+                                    "port_name": "inference",
+                                    "scope": "Cluster",
+                                    "endpoint": "job-split-0-inference.alice.svc"
+                                },
+                                {
+                                    "port_name": "spu",
+                                    "scope": "Cluster",
+                                    "endpoint": "job-split-0-spu.alice.svc"
+                                },
+                                {
+                                    "port_name": "fed",
+                                    "scope": "Cluster",
+                                    "endpoint": "job-split-0-fed.alice.svc"
+                                },
+                                {
+                                    "port_name": "global",
+                                    "scope": "Domain",
+                                    "endpoint": "job-split-0-global.alice.svc:32369"
+                                }
+                            ]
+                        }
+                    ],
+                    "alias": "job-split",
+                    "progress": 1
+                }
+            ],
+            "stage_status_list": [
+                {
+                    "domain_id": "alice",
+                    "state": "JobCreateStageSucceeded"
+                },
+                {
+                    "domain_id": "bob",
+                    "state": "JobCreateStageSucceeded"
+                }
+            ],
+            "approve_status_list": [
+                {
+                    "domain_id": "alice",
+                    "state": "JobAccepted"
+                },
+                {
+                    "domain_id": "bob",
+                    "state": "JobAccepted"
+                }
+            ]
         },
-        {
-          "task_id": "job-split",
-          "state": "",
-          "err_msg": "",
-          "create_time": "",
-          "start_time": "",
-          "end_time": "",
-          "parties": []
+        "custom_fields": {
+
         }
-      ]
     }
-  }
 }
 ```
 
@@ -299,45 +406,127 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 
 ```json
 {
-  "status": {
-    "code": 0,
-    "message": "success",
-    "details": []
-  },
-  "data": {
-    "jobs": [
-      {
-        "job_id": "job-alice-bob-001",
-        "status": {
-          "state": "Failed",
-          "err_msg": "",
-          "create_time": "2024-01-17T07:13:39Z",
-          "start_time": "2024-01-17T07:13:39Z",
-          "end_time": "2024-01-17T07:13:39Z",
-          "tasks": [
+    "status": {
+        "code": 0,
+        "message": "success",
+        "details": [
+
+        ]
+    },
+    "data": {
+        "jobs": [
             {
-              "task_id": "job-psi",
-              "state": "",
-              "err_msg": "",
-              "create_time": "",
-              "start_time": "",
-              "end_time": "",
-              "parties": []
-            },
-            {
-              "task_id": "job-split",
-              "state": "",
-              "err_msg": "",
-              "create_time": "",
-              "start_time": "",
-              "end_time": "",
-              "parties": []
+                "job_id": "job-alice-bob-001",
+                "status": {
+                    "state": "Succeeded",
+                    "err_msg": "",
+                    "create_time": "2025-04-16T10:42:55Z",
+                    "start_time": "2025-04-16T10:42:55Z",
+                    "end_time": "2025-04-16T10:43:12Z",
+                    "tasks": [
+                        {
+                            "task_id": "job-psi",
+                            "state": "Succeeded",
+                            "err_msg": "",
+                            "create_time": "2025-04-16T10:42:56Z",
+                            "start_time": "2025-04-16T10:42:56Z",
+                            "end_time": "2025-04-16T10:43:04Z",
+                            "parties": [
+                                {
+                                    "domain_id": "alice",
+                                    "state": "Succeeded",
+                                    "err_msg": "",
+                                    "endpoints": [
+                                        {
+                                            "port_name": "spu",
+                                            "scope": "Cluster",
+                                            "endpoint": "job-psi-0-spu.alice.svc"
+                                        },
+                                        {
+                                            "port_name": "fed",
+                                            "scope": "Cluster",
+                                            "endpoint": "job-psi-0-fed.alice.svc"
+                                        },
+                                        {
+                                            "port_name": "global",
+                                            "scope": "Domain",
+                                            "endpoint": "job-psi-0-global.alice.svc:26836"
+                                        },
+                                        {
+                                            "port_name": "inference",
+                                            "scope": "Cluster",
+                                            "endpoint": "job-psi-0-inference.alice.svc"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "alias": "job-psi",
+                            "progress": 1
+                        },
+                        {
+                            "task_id": "job-split",
+                            "state": "Succeeded",
+                            "err_msg": "",
+                            "create_time": "2025-04-16T10:43:04Z",
+                            "start_time": "2025-04-16T10:43:04Z",
+                            "end_time": "2025-04-16T10:43:12Z",
+                            "parties": [
+                                {
+                                    "domain_id": "alice",
+                                    "state": "Succeeded",
+                                    "err_msg": "",
+                                    "endpoints": [
+                                        {
+                                            "port_name": "fed",
+                                            "scope": "Cluster",
+                                            "endpoint": "job-split-0-fed.alice.svc"
+                                        },
+                                        {
+                                            "port_name": "global",
+                                            "scope": "Domain",
+                                            "endpoint": "job-split-0-global.alice.svc:32369"
+                                        },
+                                        {
+                                            "port_name": "inference",
+                                            "scope": "Cluster",
+                                            "endpoint": "job-split-0-inference.alice.svc"
+                                        },
+                                        {
+                                            "port_name": "spu",
+                                            "scope": "Cluster",
+                                            "endpoint": "job-split-0-spu.alice.svc"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "alias": "job-split",
+                            "progress": 1
+                        }
+                    ],
+                    "stage_status_list": [
+                        {
+                            "domain_id": "alice",
+                            "state": "JobCreateStageSucceeded"
+                        },
+                        {
+                            "domain_id": "bob",
+                            "state": "JobCreateStageSucceeded"
+                        }
+                    ],
+                    "approve_status_list": [
+                        {
+                            "domain_id": "alice",
+                            "state": "JobAccepted"
+                        },
+                        {
+                            "domain_id": "bob",
+                            "state": "JobAccepted"
+                        }
+                    ]
+                }
             }
-          ]
-        }
-      }
-    ]
-  }
+        ]
+    }
 }
 ```
 

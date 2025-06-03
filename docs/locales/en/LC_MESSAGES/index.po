@@ -52,31 +52,27 @@ msgstr ""
 
 #: ../../index.md:8
 msgid "互联互通：您可以与行业内多种隐私计算系统进行互联互通。"
-msgstr ""
 msgstr "Interoperability: You can interconnect with various privacy computing systems in the industry."
 
 #: ../../index.md:10
-msgid "更多 Kuscia 的能力介绍，请参考[Kuscia 概述](./reference/overview.md)。"
-msgstr ""
-"For more information about Kuscia's capabilities, please refer to [Kuscia Overview](./reference/overview.md)."
+msgid "更多 Kuscia 的能力介绍，请参考 [Kuscia 概述](./reference/overview.md)。"
+msgstr "For more information about Kuscia's capabilities, please refer to [Kuscia Overview](./reference/overview.md)."
 
 #: ../../index.md:12
 msgid "入门"
-msgstr ""
 msgstr "Getting Started"
 
 #: ../../index.md:14
 msgid "从零到一运行您的第一个 SecretFlow 作业！"
-msgstr ""
 msgstr "Run your first SecretFlow job from scratch!"
 
 #: ../../index.md:16
 msgid "[安装 Kuscia 并运行示例任务][quickstart]"
-msgstr "[Install Kuscia and Run a Sample Task][quickstart]"
+msgstr "[Install Kuscia and Run a Sample Task](./getting_started/quickstart_cn.md)"
 
 #: ../../index.md:17
 msgid "[提交 KusciaJob][run-secretflow]"
-msgstr "[Submit a KusciaJob][run-secretflow]"
+msgstr "[Submit a KusciaJob](./getting_started/run_secretflow_cn.md)"
 
 #: ../../index.md:22
 msgid "架构及设计"
@@ -88,7 +84,7 @@ msgstr "Understand the Kuscia architecture and its key concepts."
 
 #: ../../index.md:26
 msgid "[架构总览][architecture]"
-msgstr "[Architecture Overview][architecture]"
+msgstr "[Architecture Overview](./reference/architecture_cn.md)"
 
 #: ../../index.md:27
 msgid ""
@@ -98,10 +94,10 @@ msgid ""
 "kusciadeployment] | [AppImage][concept-appimage] | [InteropConfig"
 "][concept-interopconfig]"
 msgstr ""
-"Kuscia Concepts: [Domain][concept-domain] | [DomainRoute][concept-domainroute] | "
-"[DomainData][concept-domaindata] | [KusciaJob][concept-kusciajob] | [KusciaTask]"
-"[concept-kusciatask] | [KusciaDeployment][concept-kusciadeployment] | "
-"[AppImage][concept-appimage] | [InteropConfig][concept-interopconfig]"
+"Kuscia Concepts: [Domain](./reference/concepts/domain_cn.md) | [DomainRoute](./reference/concepts/domainroute_cn.md) | "
+"[DomainData](./reference/concepts/domaindata_cn.md) | [KusciaJob](./reference/concepts/kusciajob_cn.md) | [KusciaTask]"
+"(./reference/concepts/kusciatask_cn.md) | [KusciaDeployment](./reference/concepts/kusciadeployment_cn.md) | "
+"[AppImage](./reference/concepts/appimage_cn.md) | [InteropConfig](./reference/concepts/interopconfig_cn.md)"
 
 #: ../../index.md:39
 msgid "Kuscia API"
@@ -112,7 +108,7 @@ msgid ""
 "[Kuscia API 介绍][api-overview] | [教程：用 Kuscia API 运行 SecretFlow 作业][api-"
 "tutorial]"
 msgstr ""
-"[Kuscia API Overview][api-overview] | [Tutorial: Running a SecretFlow Job with the Kuscia API][api-tutorial]"
+"[Kuscia API Overview](./reference/apis/summary_cn.md) | [Tutorial: Running a SecretFlow Job with the Kuscia API](./tutorial/run_sf_job_with_api_cn.md)"
 
 #: ../../index.md:42
 msgid ""
@@ -121,9 +117,10 @@ msgid ""
 "[KusciaJob][api-kusciajob] | [Serving][api-serving] | [Health][api-"
 "health]"
 msgstr ""
-"API Reference: [Request and Response][api-request-and-response] | [Domain][api-domain] | "
-"[DomainRoute][api-domainroute] | [DomainData][api-domaindata] | [KusciaJob][api-kusciajob] | "
-"[Serving][api-serving] | [Health][api-health]"
+"API Reference: [Request and Response](./reference/apis/summary_cn.md#请求和响应约定) | [Domain](./reference/apis/domain_cn.md) | "
+"[DomainRoute](./reference/apis/domainroute_cn.md) | [DomainData](./reference/apis/domaindata_cn.md) | [KusciaJob](./reference/apis/kusciajob_cn.md) | "
+"[Serving](./reference/apis/serving_cn.md) | [Health](./reference/apis/health_cn.md)"
+
 
 #: ../../index.md:54
 msgid "部署"
@@ -131,43 +128,51 @@ msgstr "Deployment"
 
 #: ../../index.md:56
 msgid "[指南：部署指引][deploy-guide]"
-msgstr "[Guide: Deployment Instructions][deploy-guide]"
+msgstr "[Guide: Deployment Instructions](./deployment/kuscia_deployment_instructions.md)"
 
 #: ../../index.md:57
 msgid "[指南：部署要求][deploy-check]"
-msgstr "[Guide: Deployment Requirements][deploy-check]"
+msgstr "[Guide: Deployment Requirements](./deployment/deploy_check.md)"
 
 #: ../../index.md:58
 msgid "[指南：Docker 多机部署 Kuscia][deploy-kuscia-use-docker]"
-msgstr "[Guide: Deploying Kuscia on Multiple Machines with Docker][deploy-kuscia-use-docker]"
+msgstr "[Guide: Deploying Kuscia on Multiple Machines with Docker](./deployment/Docker_deployment_kuscia/index.rst)"
 
 #: ../../index.md:59
 msgid "[指南：K8s 集群部署 Kuscia][deploy-kuscia-use-k8s]"
-msgstr "[Guide: Deploying Kuscia on a K8s Cluster][deploy-kuscia-use-k8s]"
+msgstr "[Guide: Deploying Kuscia on a K8s Cluster](./deployment/K8s_deployment_kuscia/index.rst)"
 
 #: ../../index.md:60
 msgid "[指南：使用 RunP 模式部署节点][deploy-with-runp]"
-msgstr "[Guide: Deploying Nodes Using RunP Mode][deploy-with-runp]"
+msgstr "[Guide: Deploying Nodes Using RunP Mode](./deployment/deploy_with_runp_cn.md)"
 
 #: ../../index.md:61
-msgid "[常见运维操作][ops-cheatsheet]"
-msgstr "[Common Operations][ops-cheatsheet]"
+msgid "[指南：常见运维操作][ops-cheatsheet]"
+msgstr "[Guide: Common Operations](./deployment/operation_cn.md)"
 
 #: ../../index.md:62
-msgid "[网络要求][deploy-networkrequirements]"
-msgstr "[Network Requirements][deploy-networkrequirements]"
+msgid "[指南：Kuscia 网络要求][deploy-networkrequirements]"
+msgstr "[Guide: Network Requirements](./deployment/networkrequirements.md)"
 
 #: ../../index.md:63
-msgid "[日志说明][deploy-logdescription]"
-msgstr "[Log Description][deploy-logdescription]"
+msgid "[指南：Kuscia 日志说明][deploy-logdescription]"
+msgstr "[Guide: Log Description](./deployment/logdescription.md)"
 
 #: ../../index.md:64
-msgid "[Kuscia 监控][deploy-kuscia_monitor_cn]"
-msgstr "[Kuscia Monitoring][deploy-kuscia_monitor_cn]"
+msgid "[指南：Kuscia 监控][deploy-kuscia_monitor_cn]"
+msgstr "[Guide: Kuscia Monitoring](./deployment/kuscia_monitor.md)"
 
 #: ../../index.md:65
-msgid "[Kuscia 配置文件][deploy-kuscia_config_cn]"
-msgstr "[Kuscia Configuration Files][deploy-kuscia_config_cn]"
+msgid "[指南：Kuscia 引擎指标监控][deploy-kuscia_engine_monitor_cn]"
+msgstr "[Guide: Kuscia Engine Metrics Monitoring](./deployment/kuscia_engine_monitor.md)"
+
+#: ../../index.md:66
+msgid "[指南：Kuscia 配置文件][deploy-kuscia_config_cn]"
+msgstr "[Guide: Kuscia Configuration Files](./deployment/kuscia_config_cn.md)"
+
+#: ../../index.md:67
+msgid "[指南：Kuscia 端口介绍][deploy-kuscia_ports_cn]"
+msgstr "[Guide: Kuscia Port Introduction](./deployment/kuscia_ports_cn.md)"
 
 #: ../../index.md:78
 msgid "更多指南"
@@ -175,43 +180,43 @@ msgstr "More Guides"
 
 #: ../../index.md:80
 msgid "[如何使用 Kuscia API 运行一个 SecretFlow 作业][how-to-sf-job]"
-msgstr "[How to Run a SecretFlow Job Using the Kuscia API][how-to-sf-job]"
+msgstr "[How to Run a SecretFlow Job Using the Kuscia API](./tutorial/run_sf_job_with_api_cn.md)"
 
 #: ../../index.md:81
 msgid "[如何使用 Kuscia API 运行一个 SecretFlow Serving][how-to-serving]"
-msgstr "[How to Run a SecretFlow Serving Using the Kuscia API][how-to-serving]"
+msgstr "[How to Run a SecretFlow Serving Using the Kuscia API](./tutorial/run_sf_serving_with_api_cn.md)"
 
 #: ../../index.md:82
 msgid "[如何使用 Kuscia API 部署 DataProxy][how-to-deploy-dp]"
-msgstr "[How to Deploy DataProxy Using the Kuscia API][how-to-deploy-dp]"
+msgstr "[How to Deploy DataProxy Using the Kuscia API](./tutorial/run_dp_on_kuscia_cn.md)"
 
 #: ../../index.md:83
 msgid "[如何运行一个 FATE 作业][how-to-fate]"
-msgstr "[How to Run a FATE Job][how-to-fate]"
+msgstr "[How to Run a FATE Job](./tutorial/run_fate_cn.md)"
 
 #: ../../index.md:84
 msgid "[如何在 Kuscia 上运行 SCQL 联合分析任务][how-to-run-scql]"
-msgstr "[How to Run an SCQL Federated Analysis Task on Kuscia][how-to-run-scql]"
+msgstr "[How to Run an SCQL Federated Analysis Task on Kuscia](./tutorial/run_scql_on_kuscia_cn.md)"
 
 #: ../../index.md:85
 msgid "[如何在 Kuscia 中使用自定义镜像仓库][how-to-use-custom-image]"
-msgstr "[How to Use a Custom Image Repository in Kuscia][how-to-use-custom-image]"
+msgstr "[How to Use a Custom Image Repository in Kuscia](./tutorial/custom_registry.md)"
 
 #: ../../index.md:86
 msgid "[如何在 Kuscia 中给自定义应用渲染配置文件][how-to-render-config]"
-msgstr "[How to Render Configuration Files for Custom Applications in Kuscia][how-to-render-config]"
+msgstr "[How to Render Configuration Files for Custom Applications in Kuscia](./tutorial/config_render.md)"
 
 #: ../../index.md:87
 msgid "[如何在 Kuscia 中升级引擎镜像][how-to-upgrade-engine-image]"
-msgstr "[How to Upgrade the Engine Image in Kuscia][how-to-upgrade-engine-image]"
+msgstr "[How to Upgrade the Engine Image in Kuscia](./tutorial/upgrade_engine.md)"
 
 #: ../../index.md:88
 msgid "[如何配置 Kuscia 对请求进行 Path Rewrite][how-to-path-rewrite]"
-msgstr "[How to Configure Path Rewrite for Requests in Kuscia][how-to-path-rewrite]"
+msgstr "[How to Configure Path Rewrite for Requests in Kuscia](./tutorial/kuscia_gateway_with_path.md)"
 
 #: ../../index.md:89
 msgid "[如何给 Kuscia 自定义 Service 路由][how-to-custom-service-route]"
-msgstr "[How to Customize Service Routing in Kuscia][how-to-custom-service-route]"
+msgstr "[How to Customize Service Routing in Kuscia](./tutorial/user_defined_service_route.md)"
 
 #: ../../index.md:102
 msgid "获得帮助"
@@ -223,11 +228,11 @@ msgstr "Encountering issues with Kuscia? Find help here."
 
 #: ../../index.md:106
 msgid "[常见问题（FAQ）][faq]"
-msgstr "[Frequently Asked Questions (FAQ)][faq]"
+msgstr "[Frequently Asked Questions (FAQ)](./troubleshoot/index.rst)"
 
 #: ../../index.md:107
 msgid "Kuscia 的 [Issues] 和 [讨论区]"
-msgstr "[Kuscia Issues] and [Discussion Forum]"
+msgstr "[Kuscia Issues](https://github.com/secretflow/kuscia/issues) and [Discussion Forum](https://github.com/secretflow/kuscia/discussions)"
 
 #: ../../index.md:113
 msgid "开发 Kuscia"
@@ -235,11 +240,11 @@ msgstr "Developing Kuscia"
 
 #: ../../index.md:115
 msgid "[构建 Kuscia][build-kuscia]"
-msgstr "[Build Kuscia][build-kuscia]"
+msgstr "[Build Kuscia](./development/build_kuscia_cn.md)"
 
 #: ../../index.md:116
 msgid "[注册自定义算法镜像][custom-image]"
-msgstr "[Register a Custom Algorithm Image][custom-image]"
+msgstr "[Register a Custom Algorithm Image](./development/register_custom_image.md)"
 
 #: ../../index.md:133
 msgid "常见问题"
@@ -247,23 +252,23 @@ msgstr "Frequently Asked Questions"
 
 #: ../../index.md:135
 msgid "[概念答疑][concept_clarity]"
-msgstr "[Concept Clarification][concept_clarity]"
+msgstr "[Concept Clarification](./troubleshoot/concept/index.rst)"
 
 #: ../../index.md:136
 msgid "[启动部署][deploy_failed]"
-msgstr "[Deployment Issues][deploy_failed]"
+msgstr "[Deployment Issues](./troubleshoot/deployment/index.rst)"
 
 #: ../../index.md:137
 msgid "[网络连接][network_failed]"
-msgstr "[Network Issues][network_failed]"
+msgstr "[Network Issues](./troubleshoot/network/index.rst)"
 
 #: ../../index.md:138
 msgid "[任务运行][run_job_failed]"
-msgstr "[Job Execution Issues][run_job_failed]"
+msgstr "[Job Execution Issues](./troubleshoot/runtask/index.rst)"
 
 #: ../../index.md:139
 msgid "[参数调优][parameter_tuning]"
-msgstr "[Parameter Tuning][parameter_tuning]"
+msgstr "[Parameter Tuning](./troubleshoot/index.rst)"
 
 #: ../../index.md:147
 msgid "版本更新日志"
@@ -271,4 +276,4 @@ msgstr "Changelog"
 
 #: ../../index.md:149
 msgid "[版本更新日志][change-log]"
-msgstr "[Changelog][change-log]"
+msgstr "[Changelog](./change_log.rst)"

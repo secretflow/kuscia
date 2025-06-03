@@ -437,13 +437,13 @@ func (c *Controller) Name() string {
 
 func (c *Controller) doValidate(dg *v1alpha1.DomainDataGrant) error {
 	if dg.Spec.Author == "" {
-		return fmt.Errorf("validate DomainDataGrant(%s/%s) err, author cant be null", dg.Namespace, dg.Name)
+		return fmt.Errorf("validate DomainDataGrant(%s/%s) err, author can't be null", dg.Namespace, dg.Name)
 	}
 	if dg.Spec.GrantDomain == "" {
-		return fmt.Errorf("validate DomainDataGrant(%s/%s) err, grantDomain cant be null", dg.Namespace, dg.Name)
+		return fmt.Errorf("validate DomainDataGrant(%s/%s) err, grantDomain can't be null", dg.Namespace, dg.Name)
 	}
 	if dg.Spec.GrantDomain == dg.Spec.Author {
-		return fmt.Errorf("grantDomain cant be Author, skip sync DomainDataGrant(%s/%s)", dg.Namespace, dg.Name)
+		return fmt.Errorf("grantDomain can't be Author, skip sync DomainDataGrant(%s/%s)", dg.Namespace, dg.Name)
 	}
 	return nil
 }
@@ -560,7 +560,7 @@ func getPublickeyFromCert(certString string) (*rsa.PublicKey, error) {
 	}
 	rsaPub, ok := cert.PublicKey.(*rsa.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("%s", "Cant get publickey from src domain")
+		return nil, fmt.Errorf("%s", "Can't get publickey from src domain")
 	}
 
 	return rsaPub, nil

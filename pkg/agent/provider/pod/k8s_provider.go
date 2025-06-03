@@ -166,7 +166,7 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 	jsonData, err := json.MarshalIndent(dep.K8sProviderCfg.AffinitiesToAdd, "", "  ")
 	if err != nil {
 		nlog.Errorf("transfer type err, %v", err)
-		return nil, fmt.Errorf("failed to transfer AffinitiesToAdd to json format for furthur unmarshal, detail-> %v", err)
+		return nil, fmt.Errorf("failed to transfer AffinitiesToAdd to json format for further unmarshal, detail-> %v", err)
 	}
 	if err = json.Unmarshal(jsonData, kp.affinitiesToAdd); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal json to Affinities, detail-> %v", err)
@@ -387,7 +387,6 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 	if err != nil {
 		return fmt.Errorf("failed to apply pod %v, detail-> %v", format.Pod(newPod), err)
 	}
-
 	return nil
 }
 
@@ -518,12 +517,47 @@ func (kp *K8sProvider) applyPod(ctx context.Context, pod *v1.Pod) (*v1.Pod, erro
 
 func (kp *K8sProvider) KillPod(ctx context.Context, pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
 	kp.podsApplyFailed.Delete(pod.Name)
+	// backend pod has more volumes than kuscia pod (volumes added from hook)
+	newPod, err := kp.podLister.Get(pod.Name)
+	if err != nil && k8serrors.IsNotFound(err) {
+		return nil
+	}
 	if err := kp.deleteBackendPod(ctx, kp.bkNamespace, pod.Name, gracePeriodOverride); err != nil {
 		return fmt.Errorf("failed to kill pod %q, detail-> %v", format.Pod(pod), err)
 	}
-
-	nlog.Infof("Pod %q killed successfully", format.Pod(pod))
-
+	nlog.Infof("Pod %q killed successfully.", format.Pod(pod))
+	if newPod != nil {
+		nlog.Infof("Start to remove subresource.")
+		// delete configmaps & secrets of this pod in k8s
+		for _, v := range newPod.Spec.Volumes {
+			if v.ConfigMap != nil {
+				configMap, err := kp.configMapLister.Get(v.ConfigMap.Name)
+				if err != nil {
+					if k8serrors.IsNotFound(err) {
+						continue
+					}
+					return fmt.Errorf("failed to get configmap %s, detail-> %v", v.ConfigMap.Name, err)
+				}
+				err = cleanupSubResource[*v1.ConfigMap](ctx, configMap, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace), true)
+				if err != nil && !k8serrors.IsNotFound(err) {
+					return err
+				}
+			}
+			if v.Secret != nil {
+				secret, err := kp.secretLister.Get(v.Secret.SecretName)
+				if err != nil {
+					if k8serrors.IsNotFound(err) {
+						continue
+					}
+					return fmt.Errorf("failed to get secret %s, detail-> %v", v.Secret.SecretName, err)
+				}
+				err = cleanupSubResource[*v1.Secret](ctx, secret, kp.bkClient.CoreV1().Pods(kp.bkNamespace), kp.bkClient.CoreV1().Secrets(kp.bkNamespace), true)
+				if err != nil && !k8serrors.IsNotFound(err) {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -749,9 +783,11 @@ func createSubResource[T metav1.Object](ctx context.Context, object T, lister re
 	return newObject, nil
 }
 
-func cleanupSubResource[T metav1.Object](ctx context.Context, object T, podGetter corev1client.PodInterface, stub resourceStub[T]) error {
-	if time.Since(object.GetCreationTimestamp().Time) < resourceMinLifeCycle {
-		return nil
+func cleanupSubResource[T metav1.Object](ctx context.Context, object T, podGetter corev1client.PodInterface, stub resourceStub[T], ignoreMinLife bool) error {
+	if !ignoreMinLife {
+		if time.Since(object.GetCreationTimestamp().Time) < resourceMinLifeCycle {
+			return nil
+		}
 	}
 
 	annotations := object.GetAnnotations()

@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../troubleshoot/index.rst:2
 msgid "常见问题"
-msgstr ""
+msgstr "Frequently Asked Questions (FAQ)"
 
