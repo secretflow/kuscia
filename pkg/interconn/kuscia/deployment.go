@@ -391,8 +391,10 @@ func (c *Controller) processDeploymentAsPartner(ctx context.Context, deployment 
 
 func updateDeploymentSummaryPartyStatus(deployment *v1alpha1.KusciaDeployment, deploymentSummary *v1alpha1.KusciaDeploymentSummary, isHost bool) bool {
 	updated := false
-	if deployment.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed &&
-		deployment.Status.Phase != deploymentSummary.Status.Phase {
+	if (deployment.Status.Phase == v1alpha1.KusciaDeploymentPhaseFailed &&
+		deployment.Status.Phase != deploymentSummary.Status.Phase) ||
+		(deployment.Status.Phase == v1alpha1.KusciaDeploymentPhaseProgressing &&
+			deployment.Status.Message != "") {
 		updated = true
 		deploymentSummary.Status.Phase = deployment.Status.Phase
 		deploymentSummary.Status.Reason = deployment.Status.Reason

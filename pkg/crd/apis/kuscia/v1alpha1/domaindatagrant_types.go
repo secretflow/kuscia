@@ -110,7 +110,7 @@ type UseRecord struct {
 	UseTime     metav1.Time `json:"use_time"`
 	GrantDomain string      `json:"grant_domain"`
 	// +optional
-	Component string `json:"componet,omitempty"`
+	Component string `json:"component,omitempty"`
 	// +optional
 	Output string `json:"output,omitempty"`
 }

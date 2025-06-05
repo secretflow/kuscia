@@ -28,7 +28,7 @@
 | 字段           | 类型                                           | 选填 | 描述      |
 |--------------|----------------------------------------------|----|---------|
 | header       | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| data         | ConfigData[]                                 |    |         |
+| data         | [ConfigData](#ConfigData)[]                                 |    |         |
 | data[].key   | string                                       | 必填 | 配置的键    |
 | data[].value | string                                       | 选填 | 配置的值    |
 
@@ -145,7 +145,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/query' \
 | 字段             | 类型                                           | 选填 | 描述   |
 |----------------|----------------------------------------------|----|------|
 | header         | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| data           | ConfigData[]                    |    |      |
+| data           | [ConfigData](#ConfigData)[]                    |    |      |
 | data[].key     | string                                       | 必填 | 配置的键 |
 | data[].value   | string                                       | 选填 | 配置的值 |
 
@@ -261,7 +261,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/delete' \
 | 字段            | 类型                             | 描述   |
 |---------------|--------------------------------|------|
 | status        | [Status](summary_cn.md#status) | 状态信息 |
-| data          | ConfigData[]                   |      |
+| data          | [ConfigData](#ConfigData)[]           |      |
 | data[].key    | string                         | 配置的键 |
 | data[].value  | string                         | 配置的值 |
 
@@ -304,3 +304,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/batchQuery' \
   ]
 }
 ```
+
+## 公共
+
+{#ConfigData}
+
+### ConfigData
+
+| 字段                    | 类型                                          | 描述         | 可选填 |
+|-----------------------|---------------------------------------------|------------|-----|
+| key                   | string                                      | 配置属性 key   | 是   |
+| value                 | string                                      | 配置属性 value | 是   |

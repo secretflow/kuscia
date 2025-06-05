@@ -49,7 +49,7 @@ class AppImage(ABC):
         with open(appfile, "w") as file:
             yaml.dump(self.app_config, file)
             logging.info(
-                "[%s] app image file wirte to %s",
+                "[%s] app image file write to %s",
                 self.app_config["metadata"]["name"],
                 appfile,
             )

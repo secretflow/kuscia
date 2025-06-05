@@ -187,7 +187,7 @@ func ConnectToMaster(ctx context.Context, gwConfig *config.GatewayConfig, client
 	// load master proxy config
 	masterProxyConfig, err := config.LoadMasterProxyConfig(gwConfig.MasterConfig)
 	if err != nil {
-		return nil, fmt.Errorf("load master proxy config faild, detail -> %v", err)
+		return nil, fmt.Errorf("load master proxy config failed, detail -> %v", err)
 	}
 	prikey := gwConfig.DomainKey
 	domainID := gwConfig.DomainID

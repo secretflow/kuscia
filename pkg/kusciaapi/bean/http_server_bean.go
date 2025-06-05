@@ -499,6 +499,11 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 				{
 					HTTPMethod:   http.MethodPost,
+					RelativePath: "list",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewListAppImageHandler(appImageService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
 					RelativePath: "batchQuery",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewBatchQueryAppImageHandler(appImageService))},
 				},

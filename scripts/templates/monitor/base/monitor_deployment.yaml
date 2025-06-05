@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor
+  labels:
+    app: monitor
+  namespace: alice
+spec:
+  replicas: 1  
+  selector:
+    matchLabels:
+      app: monitor
+  template:
+    metadata:
+      labels:
+        app: monitor
+    spec:
+      containers:
+      - name: monitor
+        image: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-monitor
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9090
+          name: prometheus
+          protocol: TCP
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        volumeMounts:
+          - name: config-volume
+            mountPath: /home/config
+            readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-config

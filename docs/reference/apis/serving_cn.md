@@ -44,7 +44,7 @@
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -137,7 +137,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -310,7 +310,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -387,7 +387,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -440,7 +440,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \

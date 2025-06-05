@@ -98,15 +98,15 @@ msgstr ""
 "`.metadata.labels`: Supports efficient querying and monitoring operations in K3s. Refer to [Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for details."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:42
-msgid "`.metadata.name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为`alice-bob`。"
+msgid "`.metadata.name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为 `alice-bob`。"
 msgstr "`.metadata.name`: Specifies the DomainDataGrant identifier, `alice-bob` in this case."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:43
-msgid "`.metadata.namespace`: 表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为`alice`。"
+msgid "`.metadata.namespace`: 表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为 `alice`。"
 msgstr "`.metadata.namespace`: Indicates the namespace to which the DomainDataGrant belongs, that is, the node to which it belongs. In the current example, it is `alice`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:44
-msgid "`.spec.author`：表示授权方节点 ID 。当前示例授权方节点为`alice`。"
+msgid "`.spec.author`：表示授权方节点 ID 。当前示例授权方节点为 `alice`。"
 msgstr "`.spec.author`: Indicates the grantor DomianID (`alice` here)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:45
@@ -114,7 +114,7 @@ msgid "`.spec.domainDataID`：表示 DomainDataGrant 所属的 DomainData。"
 msgstr "`.spec.domainDataID`: Associates with the corresponding DomainData resource."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:46
-msgid "`.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为`bob`。"
+msgid "`.spec.grantDomain`：表示被授权的节点 ID 。当前示例授权方节点为 `bob`。"
 msgstr "`.spec.grantDomain`: Identifies the grantee DomianID (`bob` in this example)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:48
@@ -144,7 +144,7 @@ msgid "下面以 `alice-bob.yaml` 的内容为例，介绍更新 DomainDataGrant
 msgstr "The following demonstrates DomainDataGrant updates using modified `alice-bob.yaml` content:"
 
 #: ../../reference/concepts/domaindatagrant_cn.md:89
-msgid "在该示例中，将`.spec.description.name`的值调整为`test2`。"
+msgid "在该示例中，将 `.spec.description.name` 的值调整为 `test2`。"
 msgstr "In this modification, the `.spec.description.name` value is updated to `test2`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:91
@@ -233,11 +233,11 @@ msgstr ""
 "`labels`: Enables efficient querying and monitoring in K3s. See [Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:194
-msgid "`name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为`alice-bob`。"
+msgid "`name`：表示隐私计算节点 DomainDataGrant 的名称，当前示例为 `alice-bob`。"
 msgstr "`name`: Indicates the name of the privacy-preserving computation node DomainDataGrant. The current example is `alice-bob`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:195
-msgid "`namespace`：表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为`alice`。"
+msgid "`namespace`：表示 DomainDataGrant 所属的命名空间，即所属的节点，当前示例为 `alice`。"
 msgstr "`namespace`: Indicates the namespace to which the DomainDataGrant belongs, that is, the node to which it belongs. In the current example, it is `alice`."
 
 #: ../../reference/concepts/domaindatagrant_cn.md:197

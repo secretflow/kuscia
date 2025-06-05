@@ -1,0 +1,98 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/deploy_with_runp_cn.md:1
+msgid "使用 RunP 模式部署节点"
+msgstr "Deploying Nodes with RunP Mode"
+
+#: ../../deployment/deploy_with_runp_cn.md:3
+msgid "前言"
+msgstr "Introduction"
+
+#: ../../deployment/deploy_with_runp_cn.md:5
+msgid ""
+"本教程帮助你使用进程运行时（RunP）来部署节点（Lite 和 Autonomy），当前本方案仅支持 SecretFlow "
+"引擎，对更多算法引擎的支持敬请期待。"
+msgstr ""
+"This tutorial helps you deploy nodes (Lite and Autonomy) using the process runtime (RunP). Currently, this solution only supports the SecretFlow engine. Support for more algorithm engines is coming soon."
+
+#: ../../deployment/deploy_with_runp_cn.md:7
+msgid "关于 RunP 以及更多运行时的介绍请参考 [容器运行模式](../reference/architecture_cn.md#agent)。"
+msgstr "For more information about RunP and other runtimes, please refer to [Container Runtime Modes](../reference/architecture_cn.md#agent)."
+
+#: ../../deployment/deploy_with_runp_cn.md:9
+msgid "部署流程"
+msgstr "Deployment Process"
+
+#: ../../deployment/deploy_with_runp_cn.md:11
+msgid "物理机和 K8s 两种部署环境的配置不同，接下来我们将分别介绍在这两种环境中 RunP 模式的部署流程。"
+msgstr "The configurations for the physical machine and K8s deployment environments are different. Next, we will introduce the deployment process for RunP mode in these two environments."
+
+#: ../../deployment/deploy_with_runp_cn.md:13
+msgid "在物理机上部署"
+msgstr "Deploying on a Physical Machine"
+
+#: ../../deployment/deploy_with_runp_cn.md:15
+msgid "完整的详细流程请参考 [多机部署中心化集群](./Docker_deployment_kuscia/deploy_master_lite_cn.md) 和 [多机部署点对点集群](./Docker_deployment_kuscia/deploy_p2p_cn.md)。"
+msgstr "For the complete detailed process, please refer to [Multi-machine Deployment Centralized Cluster](./Docker_deployment_kuscia/deploy_master_lite_cn.md) and [Multi-machine Deployment P2P Cluster](./Docker_deployment_kuscia/deploy_p2p_cn.md)."
+
+#: ../../deployment/deploy_with_runp_cn.md:17
+msgid "其中，使用 RunP 部署的不同点是："
+msgstr "Among these, the differences in deploying using RunP are:"
+
+#: ../../deployment/deploy_with_runp_cn.md:19
+msgid "需要在生成配置文件时，使用 --runtime 参数指定运行时为 `runp`。"
+msgstr "You need to use the `--runtime` parameter to specify the runtime as `runp` when generating the configuration file."
+
+#: ../../deployment/deploy_with_runp_cn.md:26
+msgid "在 K8s 集群上部署"
+msgstr "Deployment on K8s Cluster"
+
+#: ../../deployment/deploy_with_runp_cn.md:28
+msgid ""
+"完整的详细流程请参考 [K8s 部署中心化集群](./K8s_deployment_kuscia/K8s_master_lite_cn.md) 和 "
+"[K8s 部署点对点集群](./K8s_deployment_kuscia/K8s_p2p_cn.md)。"
+msgstr ""
+"For complete detailed processes, please refer to [K8s Centralized Cluster Deployment](./K8s_deployment_kuscia/K8s_master_lite_cn.m) and [K8s P2P Cluster Deployment](./K8s_deployment_kuscia/K8s_p2p_cn.md)."
+
+#: ../../deployment/deploy_with_runp_cn.md:30
+msgid "其中，使用 RunP 部署的不同点是："
+msgstr "Among these, the differences in deploying using RunP are:"
+
+#: ../../deployment/deploy_with_runp_cn.md:32
+msgid ""
+"修改 "
+"[configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/configmap.yaml)"
+" （以 autonomy 为例）文件中 Kuscia 的 `runtime` 配置为 `runp`， 以及填充模板变量，例如 "
+"`{{.DOMAIN_ID}}`、`{{.DOMAIN_KEY_DATA}}` 等。 `runk` 相关的配置不需要关注，包括不需要配置 "
+"`kubeconfigFile` 以及不需要创建 `rbac.yaml`。"
+msgstr ""
+"Modify the Kuscia `runtime` configuration to `runp` in the [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/configmap.yaml) file (using autonomy as an example), and fill in template variables such as `{{.DOMAIN_ID}}`, `{{.DOMAIN_KEY_DATA}}`, etc. You don't need to worry about `runk`-related configurations, including no need to configure `kubeconfigFile` or create `rbac.yaml`."
+
+#: ../../deployment/deploy_with_runp_cn.md:45
+msgid ""
+"创建 "
+"[deployment](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/deployment.yaml)"
+" 时修改镜像为 `kuscia-secretflow` 镜像，下面是一个示例镜像地址，您可以根据实际需求参考[这里](../development/build_kuscia_cn.md#kuscia-secretflow-image)自行编译。此外，`automountServiceAccountToken` 字段可以设置为 "
+"`false`。"
+msgstr ""
+"When creating the "
+"[deployment](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/deployment.yaml)"
+", modify the image to the `kuscia-secretflow` image. Below is an example image address. You can compile it yourself according to your actual needs by referring to [here](../development/build_kuscia_cn.md#kuscia-secretflow-image). Additionally, the `automountServiceAccountToken` field can be set to "
+"`false`."

@@ -19,7 +19,7 @@ curl --cert /home/kuscia/var/certs/kusciaapi-server.crt \
      --header 'Token: {token}' --header 'Content-Type: application/json' \
      'https://{{USER}-kuscia-master}:8082/api/v1/domain/update' \
      -d '{
-    "domain_id": "${节点ID}",
+    "domain_id": "${Node ID}",
     "cert": ""
 }'
 ```

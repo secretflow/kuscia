@@ -240,14 +240,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/delete' \
 
 /api/v1/domaindata/query
 
-#### 请求（QueryDomainRequest）
+#### 请求（QueryDomainDataRequest）
 
 | 字段     | 类型                                                            | 选填 | 描述      |
 |--------|---------------------------------------------------------------|----|---------|
 | header | [RequestHeader](summary_cn.md#requestheader)                  | 可选 | 自定义请求内容 |
 | data   | [QueryDomainDataRequestData](#query-domain-data-request-data) | 必填 | 查询内容    |
 
-#### 响应（QueryDomainResponse）
+#### 响应（QueryDomainDataResponse）
 
 | 字段     | 类型                                | 描述   |
 |--------|-----------------------------------|------|

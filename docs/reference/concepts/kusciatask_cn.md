@@ -43,7 +43,7 @@ spec:
     domainID: alice
   - appImageRef: secretflow-image
     domainID: bob
-  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"SEMI2K\",\"field\":\"FM128\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\":\"PHEU\", \"schema\": \"paillier\", \"key_size\":2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"1.0.0","attr_paths":["input/input_ds1/keys","input/input_ds2/keys","protocol","sort_result","receiver_parties","allow_empty_result","join_type","input_ds1_keys_duplicated","input_ds2_keys_duplicated"],"attrs":[{"is_na":false,"ss":["id1"]},{"is_na":false,"ss":["id2"]},{"is_na":false,"s":"PROTOCOL_RR22"},{"b":true,"is_na":false},{"is_na":false,"ss":["alice","bob"]},{"is_na":true},{"is_na":false,"s":"inner_join"},{"b":true,"is_na":false},{"b":true,"is_na":false}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output-0","psi-output-1"],"sf_output_uris":["psi-output-0","psi-output-1"]}'
 ```
 
 在该示例中:
@@ -74,7 +74,7 @@ spec:
     resourceReservedSeconds: 30
     lifecycleSeconds: 300
     retryIntervalSeconds: 15
-  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\": \"PHEU\", \"schema\": \"paillier\", \"key_size\": 2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"0.0.5","attr_paths":["protocol","sort_result","allow_duplicate_keys","allow_duplicate_keys/yes/join_type","allow_duplicate_keys/yes/join_type/left_join/left_side","input/receiver_input/key","input/sender_input/key"],"attrs":[{"s":"PROTOCOL_RR22"},{"b":true},{"s":"yes"},{"s":"left_join"},{"ss":["alice"]},{"ss":["id1"]},{"ss":["id2"]}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output"],"sf_output_uris":["psi-output.csv"]}'
+  taskInputConfig: '{"sf_datasource_config":{"alice":{"id":"default-data-source"},"bob":{"id":"default-data-source"}},"sf_cluster_desc":{"parties":["alice","bob"],"devices":[{"name":"spu","type":"spu","parties":["alice","bob"],"config":"{\"runtime_config\":{\"protocol\":\"SEMI2K\",\"field\":\"FM128\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"},{"name":"heu","type":"heu","parties":["alice","bob"],"config":"{\"mode\":\"PHEU\", \"schema\": \"paillier\", \"key_size\":2048}"}],"ray_fed_config":{"cross_silo_comm_backend":"brpc_link"}},"sf_node_eval_param":{"domain":"data_prep","name":"psi","version":"1.0.0","attr_paths":["input/input_ds1/keys","input/input_ds2/keys","protocol","sort_result","receiver_parties","allow_empty_result","join_type","input_ds1_keys_duplicated","input_ds2_keys_duplicated"],"attrs":[{"is_na":false,"ss":["id1"]},{"is_na":false,"ss":["id2"]},{"is_na":false,"s":"PROTOCOL_RR22"},{"b":true,"is_na":false},{"is_na":false,"ss":["alice","bob"]},{"is_na":true},{"is_na":false,"s":"inner_join"},{"b":true,"is_na":false},{"b":true,"is_na":false}]},"sf_input_ids":["alice-table","bob-table"],"sf_output_ids":["psi-output-0","psi-output-1"],"sf_output_uris":["psi-output-0","psi-output-1"]}'
   parties:
     - domainID: alice
       appImageRef: app-template
@@ -233,8 +233,8 @@ KusciaTask `spec` 的子字段详细介绍如下：
 - `scheduleConfig`：表示任务调度的相关配置。默认为空，表示使用默认值。
   - `scheduleConfig.minReservedMembers`：表示任务调度成功时，需要最小的已预留成功的任务参与方个数。默认为空，表示所有任务参与方都需成功预留资源。
   - `scheduleConfig.resourceReservedSeconds`：表示成功预留资源的任务参与方，在等待其他任务参与方成功预留资源期间，占用资源的时长，默认为30s。若占用资源超过该时长，则释放该资源，等待下一轮调度。
-  - `scheduleConfig.lifecycleSeconds`：表示任务调度的生命周期，默认为300s。若在规定的时间内，任务没有完成调度，则将任务置为失败。
-  - `scheduleConfig.retryIntervalSeconds`：表示任务在一个调度周期失败后，等待下次调度的时间间隔，默认为30s。
+  - `scheduleConfig.lifecycleSeconds`：表示任务调度的生命周期，默认为 300s。若在规定的时间内，任务没有完成调度，则将任务置为失败。
+  - `scheduleConfig.retryIntervalSeconds`：表示任务在一个调度周期失败后，等待下次调度的时间间隔，默认为 30s。
 - `taskInputConfig`：表示任务输入参数配置。
 - `parties`：表示所有任务参与方的信息。
   - `parties[].domainID`：表示任务参与方的节点标识。
@@ -260,7 +260,7 @@ KusciaTask `status` 的子字段详细介绍如下：
 - `message`: 表示 KusciaTask 处于该阶段的详细描述信息，用于对 `reason` 的补充。
 - `conditions`: 表示 KusciaTask 处于该阶段时所包含的一些状况。
   - `conditions[].type`: 表示状况的名称。
-  - `conditions[].status`: 表示该状况是否适用，可能的取值有 `True` 、`False` 或 `Unknown` 。
+  - `conditions[].status`: 表示该状况是否适用，可能的取值有 `True`、`False` 或 `Unknown`。
   - `conditions[].reason`: 表示该状况的原因。
   - `conditions[].message`: 表示该状况的详细信息。
   - `conditions[].lastTransitionTime`: 表示转换为该状态的时间戳。

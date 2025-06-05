@@ -19,142 +19,143 @@ msgstr ""
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:1
 msgid "更新日志"
-msgstr ""
+msgstr "Changelog"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:3
 msgid "本项目的所有显著变更都将记录在此文档中。"
-msgstr ""
+msgstr "All significant changes in this project will be recorded in this document."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:5
 msgid ""
 "变更记录的格式遵循 [保持变更日志](https://keepachangelog.com/zh-CN/1.0.0/) 约定， 同时本项目遵守 "
 "[语义化版本控制](https://semver.org/lang/zh-CN/spec/v2.0.0.html) 规范。"
 msgstr ""
+"The format of the change log follows the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) convention, and this project adheres to the [Semantic Versioning](https://semver.org/spec/v2.0.0.html) specification."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:8
 msgid "变更类型"
-msgstr ""
+msgstr "Change Types"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:10
 msgid "`新增`：引入新功能。"
-msgstr ""
+msgstr "`Added`: Introduced new features."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:11
 msgid "`修改`：对现有功能的改进或调整。"
-msgstr ""
+msgstr "`Changed`: Improvements or adjustments to existing features."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:12
 msgid "`废弃`：计划在未来移除的功能。"
-msgstr ""
+msgstr "`Deprecated`: Features planned for removal in the future."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:13
 msgid "`移除`：已从项目中移除的功能。"
-msgstr ""
+msgstr "`Removed`: Features that have been removed from the project."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:14
 msgid "`修复`：错误或漏洞的修复。"
-msgstr ""
+msgstr "`Fixed`: Fixes for errors or vulnerabilities."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:15
 msgid "`安全`：涉及安全漏洞的修复或更新。"
-msgstr ""
+msgstr "`Security`: Fixes or updates related to security vulnerabilities."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:16
 msgid "`重大变更`：引入了不兼容的更改，可能需要用户做出相应调整。"
-msgstr ""
+msgstr "`Breaking Changes`: Introduced incompatible changes that may require users to make adjustments."
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:18
 #: ../../../changelog/v0.11.0_CHANGELOG.md:71
 msgid "[v0.11.0.dev240630] - 2024-06-30"
-msgstr ""
+msgstr "[v0.11.0.dev240630] - 2024-06-30"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:20
 msgid "新增"
-msgstr ""
+msgstr "Added"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:22
 msgid "**[功能]** 支持 odps 数据源读写"
-msgstr ""
+msgstr "**[Feature]** Support for reading and writing to ODPS data source"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:23
 msgid "**[功能]** 支持 DataProxy-Java 部署"
-msgstr ""
+msgstr "**[Feature]** Support for DataProxy-Java deployment"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:24
 msgid "**[功能]** Kuscia-Seving 支持设置 Service 名称"
-msgstr ""
+msgstr "**[Feature]** Kuscia-Serving supports setting the Service name"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:25
 msgid "**[功能]** 通过 Proot 实现 RunP 运行时，解耦 App 镜像与 Kuscia 镜像 支持 App 镜像动态更新"
-msgstr ""
+msgstr "**[Feature]** Implemented RunP runtime using Proot, decoupling App image from Kuscia image and supporting dynamic updates of App image"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:27
 msgid "修改"
-msgstr ""
+msgstr "Changed"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:29
 msgid "**[依赖]** 升级 golang 版本至 1.22"
-msgstr ""
+msgstr "**[Dependency]** Upgraded golang version to 1.22"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:30
 msgid "**[文档]** 补充了网关 Path Rewrite 说明"
-msgstr ""
+msgstr "**[Documentation]** Added gateway Path Rewrite documentation"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:31
 msgid "**[文档]** 更新优化了 KusciaAPI 文档描述"
-msgstr ""
+msgstr "**[Documentation]** Updated and optimized KusciaAPI documentation"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:32
 msgid "**[文档]** 更新了 Kuscia 监控端口的暴露文档说明"
-msgstr ""
+msgstr "**[Documentation]** Updated documentation for exposing Kuscia monitoring ports"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:33
 msgid "**[文档]** 更新了内置 Domain 的说明"
-msgstr ""
+msgstr "**[Documentation]** Updated documentation for built-in Domains"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:34
 msgid "**[文档]** 更新了常见问题的文档路径"
-msgstr ""
+msgstr "**[Documentation]** Updated the documentation path for common issues"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:35
 msgid "**[功能]** KusciaAPI 创建任务支持参与方不包含自己的任务"
-msgstr ""
+msgstr "**[Feature]** KusciaAPI supports creating tasks where participants do not include their own tasks"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:36
 msgid "**[功能]** 权限前置检查"
-msgstr ""
+msgstr "**[Feature]** Pre-check for permissions"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:37
 msgid "**[功能]** 增强 KusciaDeployment 控制器在节点重启时的处理逻辑"
-msgstr ""
+msgstr "**[Feature]** Enhanced KusciaDeployment controller handling logic during node restarts"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:39
 msgid "重大变更"
-msgstr ""
+msgstr "Breaking Changes"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:41
 msgid "**[无]**"
-msgstr ""
+msgstr "**[None]**"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:43
 msgid "修复"
-msgstr ""
+msgstr "Fixed"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:45
 msgid "**[功能]** 修复 P2P 场景下 Job 校验失败或创建 Task 失败时，状态不同步问题"
-msgstr ""
+msgstr "**[Feature]** Fixed the issue of inconsistent status when Job validation fails or Task creation fails in P2P scenarios"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:46
 msgid "**[功能]** 修复了挂载宿主机数据路径可能因为权限导致的问题"
-msgstr ""
+msgstr "**[Feature]** Fixed the issue of permission-related errors when mounting host data paths"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:48
 msgid "安全"
-msgstr ""
+msgstr "Security"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:50
 msgid "**[漏洞]** 修复了部分安全漏洞"
-msgstr ""
+msgstr "**[Vulnerability]** Fixed several security vulnerabilities"
 
 #: ../../../changelog/v0.11.0_CHANGELOG.md:54
 msgid "Changelog"

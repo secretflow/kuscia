@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,7 +47,7 @@ func (c *Controller) handleAddedOrDeletedKusciaJob(obj interface{}) {
 	if utilsres.SelfClusterAsInitiator(c.nsLister, kj.Spec.Initiator, kj.Annotations) {
 		queue.EnqueueObjectWithKey(obj, c.kjQueue)
 	} else {
-		c.kjStatusSyncQueue.AddAfter(kj.Name, jobStatusSyncInterval)
+		c.kjStatusSyncQueue.AddAfter(strings.Join([]string{kj.Namespace, kj.Name}, "/"), jobStatusSyncInterval)
 	}
 }
 
@@ -84,7 +85,7 @@ func (c *Controller) runJobStatusSyncWorker(ctx context.Context) {
 	}
 }
 
-// processJobStatusSyncNextWorkItem precess job status sync queue item.
+// processJobStatusSyncNextWorkItem process job status sync queue item.
 func (c *Controller) processJobStatusSyncNextWorkItem(ctx context.Context) bool {
 	key, quit := c.kjStatusSyncQueue.Get()
 	if quit {
@@ -228,12 +229,8 @@ func (c *Controller) syncJobHandler(ctx context.Context, key string) (err error)
 
 // handleJobCreateStage handles kuscia job with create stage.
 func (c *Controller) handleJobCreateStage(ctx context.Context, kj *kusciaapisv1alpha1.KusciaJob) {
-	if _, found := utilsres.GetKusciaJobCondition(&kj.Status, kusciaapisv1alpha1.JobCreateSucceeded, false); found {
-		return
-	}
-
-	initializedCond, found := utilsres.GetKusciaJobCondition(&kj.Status, kusciaapisv1alpha1.JobCreateInitialized, false)
-	if !found || initializedCond.Status != corev1.ConditionTrue {
+	// check self stage status to avoid duplicate creation,
+	if _, ok := kj.Status.StageStatus[kj.Spec.Initiator]; ok {
 		return
 	}
 
@@ -247,16 +244,16 @@ func (c *Controller) createJob(ctx context.Context, kj *kusciaapisv1alpha1.Kusci
 	}
 
 	nlog.Infof("Create job %v", kj.Name)
-	succeededCond, _ := utilsres.GetKusciaJobCondition(&kj.Status, kusciaapisv1alpha1.JobCreateSucceeded, true)
 	interConnJobSpec, err := adapter.GenerateInterConnJobInfoFrom(kj, c.appImageLister)
 	if err != nil {
-		nlog.Errorf("Create job %v failed, %v", kj.Name, err)
-		utilsres.SetKusciaJobCondition(metav1.Now().Rfc3339Copy(), succeededCond, corev1.ConditionFalse, "ErrorGenerateInterConnJobConfig", err.Error())
+		nlog.Errorf("Generate interconn bfia job spec %v failed, %v", kj.Name, err)
+		utilsres.SetJobPartiesStageStatus(kj, kj.Spec.Initiator, kusciaapisv1alpha1.JobCreateStageFailed)
 		if err = c.updateJobStatus(kj, false, true); err != nil {
 			nlog.Errorf("Update kuscia job %v status condition failed, %v", kj.Name, err)
 		}
 		return
 	}
+	utilsres.SetJobPartiesStageStatus(kj, kj.Spec.Initiator, kusciaapisv1alpha1.JobCreateStageSucceeded)
 
 	cacheKeyName := getCacheKeyName(reqTypeCreateJob, resourceTypeKusciaJob, kj.Name)
 	_ = c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
@@ -265,27 +262,21 @@ func (c *Controller) createJob(ctx context.Context, kj *kusciaapisv1alpha1.Kusci
 	var errs errorcode.Errs
 	for domainID := range c.getPartiesDomainInfo(kj) {
 		wg.Add(1)
-		go func(domainID string) {
+		go func(domainID string, kj *kusciaapisv1alpha1.KusciaJob) {
 			createJobErr := c.bfiaClient.CreateJob(ctx, kj.Spec.Initiator, buildHostFor(domainID), interConnJobSpec.JodID, interConnJobSpec.FlowID, interConnJobSpec.DAG, interConnJobSpec.Config)
 			if createJobErr != nil {
 				errs.AppendErr(createJobErr)
+				utilsres.SetJobPartiesStageStatus(kj, domainID, kusciaapisv1alpha1.JobCreateStageFailed)
+			} else {
+				utilsres.SetJobPartiesStageStatus(kj, domainID, kusciaapisv1alpha1.JobCreateStageSucceeded)
 			}
 			defer wg.Done()
-		}(domainID)
+		}(domainID, kj)
 	}
 
 	go func(cacheKeyName string) {
 		defer c.inflightRequestCache.Set(cacheKeyName, "", finishedInflightRequestCacheExpiration)
 		wg.Wait()
-		now := metav1.Now().Rfc3339Copy()
-		if len(errs) > 0 {
-			err = fmt.Errorf("create interconn job %v request failed, %v", kj.Name, errs.String())
-			nlog.Error(err)
-			utilsres.SetKusciaJobCondition(now, succeededCond, corev1.ConditionFalse, "ErrorCreateJobRequest", err.Error())
-		} else {
-			utilsres.SetKusciaJobCondition(now, succeededCond, corev1.ConditionTrue, "", "")
-		}
-
 		if err = c.updateJobStatus(kj, false, true); err != nil {
 			nlog.Errorf("Update kuscia job %v status condition failed, %v", kj.Name, err)
 		}
@@ -413,12 +404,10 @@ func (c *Controller) stopPartyTasks(ctx context.Context, kj *kusciaapisv1alpha1.
 
 // handleJobCreateStage handles kuscia job with start stage.
 func (c *Controller) handleJobStartStage(ctx context.Context, kj *kusciaapisv1alpha1.KusciaJob) {
-	if _, found := utilsres.GetKusciaJobCondition(&kj.Status, kusciaapisv1alpha1.JobStartSucceeded, false); found {
-		return
-	}
-
-	initializedCond, found := utilsres.GetKusciaJobCondition(&kj.Status, kusciaapisv1alpha1.JobStartInitialized, false)
-	if !found || initializedCond.Status != corev1.ConditionTrue {
+	// check self stage status to avoid duplicate start
+	nlog.Infof("Check job %s stage status %+v", kj.Name, kj.Status.StageStatus)
+	stageStatus, ok := kj.Status.StageStatus[kj.Spec.Initiator]
+	if ok && (stageStatus == kusciaapisv1alpha1.JobStartStageSucceeded || stageStatus == kusciaapisv1alpha1.JobStartStageFailed) {
 		return
 	}
 
@@ -428,10 +417,12 @@ func (c *Controller) handleJobStartStage(ctx context.Context, kj *kusciaapisv1al
 // startJob starts job.
 func (c *Controller) startJob(ctx context.Context, kj *kusciaapisv1alpha1.KusciaJob) {
 	if _, ok := c.inflightRequestCache.Get(getCacheKeyName(reqTypeStartJob, resourceTypeKusciaJob, kj.Name)); ok {
+		nlog.Infof("Bfia job %v start request cache entered, skip start", kj.Name)
 		return
 	}
-
 	nlog.Infof("Start job %v", kj.Name)
+	utilsres.SetJobPartiesStageStatus(kj, kj.Spec.Initiator, kusciaapisv1alpha1.JobStartStageSucceeded)
+
 	cacheKeyName := getCacheKeyName(reqTypeStartJob, resourceTypeKusciaJob, kj.Name)
 	_ = c.inflightRequestCache.Add(cacheKeyName, "", inflightRequestCacheExpiration)
 
@@ -439,28 +430,21 @@ func (c *Controller) startJob(ctx context.Context, kj *kusciaapisv1alpha1.Kuscia
 	var errs errorcode.Errs
 	for domainID := range c.getPartiesDomainInfo(kj) {
 		wg.Add(1)
-		go func(domainID string) {
+		go func(domainID string, kj *kusciaapisv1alpha1.KusciaJob) {
 			startJobErr := c.bfiaClient.StartJob(ctx, kj.Spec.Initiator, buildHostFor(domainID), kj.Name)
 			if startJobErr != nil {
 				errs.AppendErr(startJobErr)
+				utilsres.SetJobPartiesStageStatus(kj, domainID, kusciaapisv1alpha1.JobStartStageFailed)
+			} else {
+				utilsres.SetJobPartiesStageStatus(kj, domainID, kusciaapisv1alpha1.JobStartStageSucceeded)
 			}
 			defer wg.Done()
-		}(domainID)
+		}(domainID, kj)
 	}
 
 	go func(cacheKeyName string) {
 		defer c.inflightRequestCache.Set(cacheKeyName, "", finishedInflightRequestCacheExpiration)
 		wg.Wait()
-		now := metav1.Now().Rfc3339Copy()
-		succeededCond, _ := utilsres.GetKusciaJobCondition(&kj.Status, kusciaapisv1alpha1.JobStartSucceeded, true)
-		if len(errs) > 0 {
-			err := fmt.Errorf("start interconn job %v request failed, %v", kj.Name, errs.String())
-			nlog.Error(err)
-			utilsres.SetKusciaJobCondition(now, succeededCond, corev1.ConditionFalse, "ErrorStartJobRequest", err.Error())
-		} else {
-			utilsres.SetKusciaJobCondition(now, succeededCond, corev1.ConditionTrue, "", "")
-		}
-
 		if err := c.updateJobStatus(kj, false, true); err != nil {
 			nlog.Errorf("Update kuscia job %v status condition failed, %v", kj.Name, err)
 		}
@@ -495,7 +479,7 @@ func (c *Controller) getReqDomainIDFromKusciaJob(kj *kusciaapisv1alpha1.KusciaJo
 }
 
 // updateJobStatus updates job status.
-func (c *Controller) updateJobStatus(kj *kusciaapisv1alpha1.KusciaJob, taskStatusUpdated, condUpdated bool) (err error) {
+func (c *Controller) updateJobStatus(kj *kusciaapisv1alpha1.KusciaJob, taskStatusUpdated, stageStatusUpdated bool) (err error) {
 	var originalTaskStatus map[string]kusciaapisv1alpha1.KusciaTaskPhase
 	if taskStatusUpdated {
 		originalTaskStatus = make(map[string]kusciaapisv1alpha1.KusciaTaskPhase)
@@ -504,16 +488,17 @@ func (c *Controller) updateJobStatus(kj *kusciaapisv1alpha1.KusciaJob, taskStatu
 		}
 	}
 
-	var originalConds []kusciaapisv1alpha1.KusciaJobCondition
-	if condUpdated {
-		for idx := range kj.Status.Conditions {
-			originalConds = append(originalConds, *kj.Status.Conditions[idx].DeepCopy())
+	var originalStageStatus map[string]kusciaapisv1alpha1.JobStagePhase
+	if stageStatusUpdated {
+		originalStageStatus = make(map[string]kusciaapisv1alpha1.JobStagePhase)
+		for k, v := range kj.Status.StageStatus {
+			originalStageStatus[k] = v
 		}
 	}
 
 	jobName := kj.Name
 	for i, curJob := 0, kj; ; i++ {
-		nlog.Infof("Start updating kuscia job %q status", jobName)
+		nlog.Infof("Start updating kuscia job %q status, %+v", jobName, curJob.Status)
 		if _, err = c.kusciaClient.KusciaV1alpha1().KusciaJobs(curJob.Namespace).UpdateStatus(context.Background(), curJob, metav1.UpdateOptions{}); err == nil {
 			nlog.Infof("Finish updating kuscia job %q status", jobName)
 			return nil
@@ -535,9 +520,9 @@ func (c *Controller) updateJobStatus(kj *kusciaapisv1alpha1.KusciaJob, taskStatu
 			curJob.Status.TaskStatus = originalTaskStatus
 		}
 
-		if condUpdated && !reflect.DeepEqual(curJob.Status.Conditions, originalConds) {
+		if stageStatusUpdated && !reflect.DeepEqual(curJob.Status.StageStatus, originalStageStatus) {
 			needUpdate = true
-			utilsres.MergeKusciaJobConditions(curJob, originalConds)
+			curJob.Status.StageStatus = originalStageStatus
 		}
 
 		if !needUpdate {

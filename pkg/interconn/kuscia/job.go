@@ -307,8 +307,19 @@ func (c *Controller) createJobSummary(ctx context.Context, job *v1alpha1.KusciaJ
 	return nil
 }
 
-func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJob, jobSummary *v1alpha1.KusciaJobSummary) error {
+func (c *Controller) updateJobSummary(ctx context.Context, job *v1alpha1.KusciaJob, orginJobSummary *v1alpha1.KusciaJobSummary) error {
 	needUpdate := false
+	kjs, err := c.kusciaClient.KusciaV1alpha1().KusciaJobSummaries(orginJobSummary.Namespace).Get(ctx, orginJobSummary.Name, metav1.GetOptions{})
+	if err != nil {
+		nlog.Warnf("Failed to get job summary %v/%v, skip processing it", orginJobSummary.Namespace, orginJobSummary.Name)
+		return nil
+	}
+	jobSummary := kjs.DeepCopy()
+	// if the job summary is failed, and the job is awaiting approval, we will not update the job summary
+	if jobSummary.Status.Phase == v1alpha1.KusciaJobFailed && job.Status.Phase == v1alpha1.KusciaJobAwaitingApproval {
+		nlog.Infof("The job summary %v/%v is failed, and the job is awaiting approval, skip updating it", orginJobSummary.Namespace, orginJobSummary.Name)
+		return nil
+	}
 	if job.Status.Phase != jobSummary.Status.Phase {
 		needUpdate = true
 		jobSummary.Status.Phase = job.Status.Phase

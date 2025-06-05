@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/secretflow/kuscia/pkg/common"
@@ -147,7 +148,7 @@ func (c *Controller) mergeAnnotations(kd *kusciav1alpha1.KusciaDeployment, annot
 	return updated
 }
 
-func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDeployment, partyKitInfos map[string]*PartyKitInfo) bool {
+func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDeployment, partyKitInfos []*PartyKitInfo) bool {
 	updated := false
 	if kd.Status.TotalParties == 0 {
 		updated = true
@@ -180,8 +181,9 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 
 	availableParties := 0
 	hasPartialAvailableParty := false
-	for _, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
-		for _, v := range partyDeploymentStatus {
+	progressingParties := 0
+	for domainID, partyDeploymentStatus := range kd.Status.PartyDeploymentStatuses {
+		for kdName, v := range partyDeploymentStatus {
 			if v.Phase == kusciav1alpha1.KusciaDeploymentPhaseAvailable {
 				availableParties++
 				continue
@@ -192,6 +194,22 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 				availableParties++
 				continue
 			}
+			if v.Phase == kusciav1alpha1.KusciaDeploymentPhaseProgressing {
+				progressingParties++
+				// Get the reason and message of the pod below kd
+				for _, partyKit := range partyKitInfos {
+					if partyKit.domainID == domainID {
+						reason, message, err := c.getPodInfoByKd(kdName, domainID)
+						if err != nil {
+							nlog.Warnf("Failed to get pod info for kd %v/%v: %v", domainID, kdName, err)
+						}
+						kd.Status.Reason = fmt.Sprintf("domainID: %s, reason: %s", domainID, reason)
+						kd.Status.Message = message
+						break
+					}
+				}
+				continue
+			}
 		}
 	}
 
@@ -199,28 +217,76 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 		kd.Status.AvailableParties = availableParties
 		updated = true
 	}
+	kdOriginStatusPhase := kd.Status.Phase
 
-	kdStatusPhase := kusciav1alpha1.KusciaDeploymentPhaseProgressing
-	if kd.Status.Phase != "" {
-		kdStatusPhase = kd.Status.Phase
+	//When one of the parties is unavailable, the overall state should be progressing
+	if progressingParties > 0 {
+		kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseProgressing
+		updated = true
 	}
 
 	if availableParties == kd.Status.TotalParties {
 		if hasPartialAvailableParty {
-			kdStatusPhase = kusciav1alpha1.KusciaDeploymentPhasePartialAvailable
+			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhasePartialAvailable
 		} else {
-			kdStatusPhase = kusciav1alpha1.KusciaDeploymentPhaseAvailable
+			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseAvailable
+		}
+	}
+	if kdOriginStatusPhase != kd.Status.Phase {
+		updated = true
+		if kd.Status.Phase == kusciav1alpha1.KusciaDeploymentPhaseAvailable || kd.Status.Phase == kusciav1alpha1.KusciaDeploymentPhasePartialAvailable {
+			kd.Status.Reason = ""
+			kd.Status.Message = ""
+		}
+	}
+	return updated
+}
+
+func (c *Controller) getPodInfoByKd(deploymentName, namespace string) (string, string, error) {
+	deployment, err := c.deploymentLister.Deployments(namespace).Get(deploymentName)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			deployment, err = c.kubeClient.AppsV1().Deployments(namespace).Get(context.Background(), deploymentName, metav1.GetOptions{})
+			if err != nil && k8serrors.IsNotFound(err) {
+				message := fmt.Sprintf("kd's deployment: %s not found", deploymentName)
+				return message, message, nil
+			} else {
+				return "", "", fmt.Errorf("get kd's deployment error: %v", err)
+			}
+		} else {
+			return "", "", fmt.Errorf("get kd's deployment error: %v", err)
 		}
 	}
 
-	if kd.Status.Phase != kdStatusPhase {
-		kd.Status.Phase = kdStatusPhase
-		kd.Status.Reason = ""
-		kd.Status.Message = ""
-		updated = true
+	if deployment.Spec.Selector == nil || deployment.Spec.Selector.MatchLabels == nil {
+		message := fmt.Sprintf("kd's deployment: %s labels selector is nil", deploymentName)
+		return message, message, nil
 	}
+	labelSelector := labels.Set(deployment.Spec.Selector.MatchLabels).AsSelector().String()
 
-	return updated
+	pods, err := c.kubeClient.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			message := fmt.Sprintf("kd's pods: %s not found", deploymentName)
+			return message, message, nil
+		} else {
+			return "", "", fmt.Errorf("get kd's pods error: %v", err)
+		}
+	}
+	if len(pods.Items) == 0 {
+		message := fmt.Sprintf("kd's pods: %s not found", deploymentName)
+		return message, message, nil
+	}
+	for _, pod := range pods.Items {
+		for _, containerStatus := range pod.Status.ContainerStatuses {
+			if containerStatus.State.Terminated != nil {
+				return containerStatus.State.Terminated.Reason, containerStatus.State.Terminated.Message, nil
+			}
+		}
+	}
+	return "", "", nil
 }
 
 func refreshPartyDeploymentStatus(partyDeploymentStatuses map[string]map[string]*kusciav1alpha1.KusciaDeploymentPartyStatus, deployment *appsv1.Deployment, role string) bool {
@@ -265,7 +331,7 @@ func refreshPartyDeploymentStatus(partyDeploymentStatuses map[string]map[string]
 	return false
 }
 
-func (c *Controller) syncResources(ctx context.Context, partyKitInfos map[string]*PartyKitInfo) (err error) {
+func (c *Controller) syncResources(ctx context.Context, partyKitInfos []*PartyKitInfo) (err error) {
 	if err = c.syncService(ctx, partyKitInfos); err != nil {
 		return err
 	}
@@ -281,7 +347,7 @@ func (c *Controller) syncResources(ctx context.Context, partyKitInfos map[string
 	return nil
 }
 
-func (c *Controller) syncService(ctx context.Context, partyKitInfos map[string]*PartyKitInfo) (err error) {
+func (c *Controller) syncService(ctx context.Context, partyKitInfos []*PartyKitInfo) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error syncing service, %v", err)
@@ -390,7 +456,7 @@ func generateService(partyKitInfo *PartyKitInfo, serviceName string, port kuscia
 	return svc, nil
 }
 
-func (c *Controller) syncConfigMap(ctx context.Context, partyKitInfos map[string]*PartyKitInfo) (err error) {
+func (c *Controller) syncConfigMap(ctx context.Context, partyKitInfos []*PartyKitInfo) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error syncing configmap, %v", err)
@@ -464,7 +530,7 @@ func generateConfigMap(partyKitInfo *PartyKitInfo) *corev1.ConfigMap {
 	}
 }
 
-func (c *Controller) syncDeployment(ctx context.Context, partyKitInfos map[string]*PartyKitInfo) (err error) {
+func (c *Controller) syncDeployment(ctx context.Context, partyKitInfos []*PartyKitInfo) (err error) {
 	defer func() {
 		if err != nil {
 			err = fmt.Errorf("error syncing deployment, %v", err)
@@ -568,6 +634,9 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 	if partyKitInfo.deployTemplate.Spec.Affinity != nil {
 		affinity = partyKitInfo.deployTemplate.Spec.Affinity.DeepCopy()
 		buildAffinity(affinity, partyKitInfo.dkInfo.deploymentName)
+	} else {
+		// If affinity is not set in AppImage, add the default PodAntiAffinity
+		affinity = buildDefaultPodAntiAffinity(partyKitInfo.dkInfo.deploymentName)
 	}
 
 	automountServiceAccountToken := false
@@ -617,6 +686,21 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 	for _, ctr := range partyKitInfo.deployTemplate.Spec.Containers {
 		if ctr.ImagePullPolicy == "" {
 			ctr.ImagePullPolicy = corev1.PullIfNotPresent
+		}
+
+		if ctr.MetricProbe != nil {
+			metricPath := ctr.MetricProbe.Path
+			metricPortName := ctr.MetricProbe.Port
+			if metricPath != "" && metricPortName != "" {
+				if portInfo, ok := partyKitInfo.dkInfo.ports[metricPortName]; ok {
+					deployment.Spec.Template.Annotations[common.MetricAnnotationKey] = "true"
+					deployment.Spec.Template.Annotations[common.MetricPathAnnotationKey] = metricPath
+					deployment.Spec.Template.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
+				} else {
+					return nil, fmt.Errorf("metric port name %s not found for deployment %s", metricPortName, deployment.Name)
+				}
+
+			}
 		}
 
 		resCtr := corev1.Container{
@@ -776,6 +860,12 @@ func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKi
 					needUpdate = true
 					deploymentCopy.Spec.Template.Spec.Affinity = affinity
 				}
+			} else {
+				// If affinity is not set in AppImage and original deployment Affinity is nil, add the default PodAntiAffinity
+				if deploymentCopy.Spec.Template.Spec.Affinity == nil {
+					needUpdate = true
+					deploymentCopy.Spec.Template.Spec.Affinity = buildDefaultPodAntiAffinity(deploymentCopy.Name)
+				}
 			}
 
 			// check container image
@@ -859,6 +949,27 @@ func buildAffinity(affinity *corev1.Affinity, deploymentName string) {
 			affinity.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[i].PodAffinityTerm.LabelSelector = labelSelector
 		}
 	}
+}
+
+func buildDefaultPodAntiAffinity(deploymentName string) *corev1.Affinity {
+
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: map[string]string{"kuscia.secretflow/deployment-name": deploymentName},
+	}
+	affinity := &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						LabelSelector: labelSelector,
+						TopologyKey:   "kubernetes.io/hostname",
+					},
+				},
+			},
+		},
+	}
+	return affinity
 }
 
 func (c *Controller) selfParties(kd *kusciav1alpha1.KusciaDeployment) ([]kusciav1alpha1.KusciaDeploymentParty, error) {

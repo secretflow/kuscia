@@ -273,7 +273,7 @@ func (m *ResourcesManager) InsertTask(jobID string, taskID string) error {
 
 	taskInfo, ok := m.jobTaskInfo[jobID]
 	if !ok {
-		return fmt.Errorf("failed to find job %v in cache, please make sure job has beed started", jobID)
+		return fmt.Errorf("failed to find job %v in cache, please make sure job has been started", jobID)
 	}
 	taskInfo[taskID] = struct{}{}
 	m.taskJobInfo[taskID] = jobID

@@ -47,7 +47,7 @@ msgstr "Register Image"
 
 #: ../../tutorial/upgrade_engine.md:19
 msgid "**点对点模式**"
-msgstr "**Point-to-Point Mode**"
+msgstr "**Peer-to-Peer Mode**"
 
 #: ../../tutorial/upgrade_engine.md:21
 msgid ""

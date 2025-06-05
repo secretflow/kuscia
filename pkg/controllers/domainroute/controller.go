@@ -190,7 +190,7 @@ func (c *controller) syncHandler(ctx context.Context, key string) error {
 
 	if dr.Spec.AuthenticationType == kusciaapisv1alpha1.DomainAuthenticationToken || dr.Spec.BodyEncryption != nil {
 		if dr.Spec.TokenConfig == nil {
-			return fmt.Errorf("tokenconfig cant be null")
+			return fmt.Errorf("tokenconfig can't be null")
 		}
 		if dr.Spec.TokenConfig.SourcePublicKey == "" || dr.Spec.TokenConfig.DestinationPublicKey == "" {
 			nlog.Warnf("domainroute %s/%s select initializer failed, because source or destination pub is null, wait domain update", dr.Namespace, dr.Name)

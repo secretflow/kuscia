@@ -75,12 +75,12 @@ msgstr "`logLevel`: Logging level options: INFO, DEBUG, WARN (default: INFO)"
 #: ../../deployment/kuscia_config_cn.md:102
 msgid ""
 "`liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token "
-"进行身份验证[获取Token](../deployment/deploy_master_lite_cn.md#lite-alice)，该 "
+"进行身份验证[获取 Token](./Docker_deployment_kuscia/deploy_master_lite_cn.md#lite-alice)，该 "
 "Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master "
 "上删除相应节点的公钥并重新获取 Token "
 "部署。详情请参考[私钥丢失如何重新部署](../troubleshoot/deployment/private_key_loss.md)"
 msgstr "`liteDeployToken`: When a node connects to the Master for the first time, it uses a one-time token issued by the Master for authentication "
-"[Get token](../deployment/deploy_master_lite_cn.md#lite-alice). "
+"[Get token](./Docker_deployment_kuscia/deploy_master_lite_cn.md#lite-alice). "
 "The token expires immediately after successful deployment. In multi-machine deployment, please keep the Token unchanged. "
 "If the node private key is lost, You must delete the public key of the corresponding node on the Master and re-obtain the token for deployment. Refer to "
 "[How to redeploy if the private key is lost](../troubleshoot/deployment/private_key_loss.md)."
@@ -142,17 +142,17 @@ msgstr "`ephemeralStorage`: Temporary storage bound to pod lifecycle (data clear
 #: ../../deployment/kuscia_config_cn.md:115
 msgid ""
 "`image`: 节点镜像配置, "
-"目前仅支持配置1个镜像仓库（更多请参考：[自定义镜像仓库](../tutorial/custom_registry.md)）"
+"目前仅支持配置 1 个镜像仓库（更多请参考：[自定义镜像仓库](../tutorial/custom_registry.md)）"
 msgstr "`image`: Container image configuration (currently supports single registry configuration). Refer to [custom registries](../tutorial/custom_registry.md) for advanced usage."
 
 #: ../../deployment/kuscia_config_cn.md:116
 msgid ""
 "`pullPolicy`: [暂不支持] "
-"镜像策略，使用本地镜像仓库还是远程镜像仓库；可选值有remote/local，不区分大小写，默认为local；当为remote时，如果发现本地镜像不存在，会根据registry账密自动拉取远程的镜像；如果为local时，镜像需要手动导入kuscia内，如果镜像没有导入kuscia，任务会启动失败。local模式因为不拉取远程镜像，安全性会更高，但会有易用性的损失，用户可结合业务场景自行选择。"
+"镜像策略，使用本地镜像仓库还是远程镜像仓库；可选值有 remote/local，不区分大小写，默认为 local；当为 remote 时，如果发现本地镜像不存在，会根据 registry 账密自动拉取远程的镜像；如果为 local 时，镜像需要手动导入 kuscia 内，如果镜像没有导入 kuscia，任务会启动失败。local 模式因为不拉取远程镜像，安全性会更高，但会有易用性的损失，用户可结合业务场景自行选择。"
 msgstr "`pullPolicy`: [Not supported] Image pull policy: `remote` (pull from registry if not local) or `local` (require manual import). `remote` automatically pulls images, while `local` enhances security but requires pre-importing images."
 
 #: ../../deployment/kuscia_config_cn.md:117
-msgid "`defaultRegistry`: 默认镜像仓库(对应registries中其中一个registry的name字段)"
+msgid "`defaultRegistry`: 默认镜像仓库(对应 registries 中其中一个 registry 的 name 字段)"
 msgstr "`defaultRegistry`: Default image registry (corresponds to name field in registries)"
 
 #: ../../deployment/kuscia_config_cn.md:118
@@ -182,7 +182,7 @@ msgstr "`password`: Registry password (optional for public registries)"
 #: ../../deployment/kuscia_config_cn.md:124
 msgid ""
 "`datastoreEndpoint`: 数据库连接串，不填默认使用 "
-"SQLite。示例：`mysql://username:password@tcp(hostname:3306)/database-name`使用 "
+"SQLite。示例：`mysql://username:password@tcp(hostname:3306)/database-name` 使用 "
 "MySQL 数据库存储需要符合以下规范："
 msgstr "`datastoreEndpoint`: Database connection string (default: SQLite). Example for MySQL: `mysql://username:password@tcp(hostname:3306)/database-name`. MySQL requirements:"
 
@@ -193,7 +193,7 @@ msgstr "Pre-create target database."
 #: ../../deployment/kuscia_config_cn.md:126
 msgid ""
 "创建 kine "
-"表，建表语句参考[kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。"
+"表，建表语句参考 [kine](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)。"
 msgstr "Create kine tables using schema from [kine.sql](https://github.com/secretflow/kuscia/blob/main/hack/k8s/kine.sql)."
 
 #: ../../deployment/kuscia_config_cn.md:127
@@ -202,7 +202,7 @@ msgstr "Manual table creation: Pre-create tables manually if DDL permissions are
 
 #: ../../deployment/kuscia_config_cn.md:128
 msgid ""
-"自动建表：如果提供的数据库账号有建表权限（账号具有`DDL+DML`权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 "
+"自动建表：如果提供的数据库账号有建表权限（账号具有 `DDL+DML` 权限），并且数据表不存在，kuscia 会尝试自动建表，如果创建失败 "
 "kuscia 会启动失败。"
 msgstr "Automatic creation: With DDL+DML permissions, Kuscia attempts automatic table creation. Startup fails if table creation fails."
 
@@ -231,29 +231,29 @@ msgstr "`MTLS`: Mutual TLS authentication requiring manual certificate exchange.
 #: ../../deployment/kuscia_config_cn.md:134
 msgid ""
 "`enableWorkloadApprove`: 是否开启工作负载审批，默认为 false，即关闭审批。取值范围:[true, "
-"false]。注：仅P2P组网时此配置才生效，中心化组网时执行 KusciaJob 无需审批。"
+"false]。注：仅 P2P 组网时此配置才生效，中心化组网时执行 KusciaJob 无需审批。"
 msgstr "`enableWorkloadApprove`: Enable workload approval mechanism (default: false). Valid values: [true, false]. Only effective in P2P networks."
 
 #: ../../deployment/kuscia_config_cn.md:135
 msgid ""
 "`logrotate`: "
-"日志轮转设置。为了避免kuscia、应用等运行产生的日志占用过多的磁盘，而引入了日志轮转功能。您可以根据自己的需要，调整默认配置。在日志轮转时将会根据本地时间进行重命名，超过2个文件之后，会进行日志文件压缩。该配置项不是必需项，在没有配置的情况下，仍然以同样的默认值进行轮转工作。注意，应用日志（如secretflow）和非应用日志（如kuscia）轮转逻辑略有区别。"
+"日志轮转设置。为了避免 kuscia、应用等运行产生的日志占用过多的磁盘，而引入了日志轮转功能。您可以根据自己的需要，调整默认配置。在日志轮转时将会根据本地时间进行重命名，超过 2 个文件之后，会进行日志文件压缩。该配置项不是必需项，在没有配置的情况下，仍然以同样的默认值进行轮转工作。注意，应用日志（如 secretflow）和非应用日志（如 kuscia）轮转逻辑略有区别。"
 msgstr "`logrotate`: Log rotation configuration to prevent excessive disk usage. Customizable parameters include file retention and compression. Default rotation occurs even without explicit configuration. Application logs (e.g., Secretflow) and system logs have different rotation policies."
 
 #: ../../deployment/kuscia_config_cn.md:136
 msgid ""
 "`maxFiles`: "
-"对于一种日志文件，最多保留的文件数量。该值建议大于1。对非应用日志，该值为0时，视为无数量限制。对应用日志，该值小于等于1时，仍会以默认值5进行工作。"
+"对于一种日志文件，最多保留的文件数量。该值建议大于 1。对非应用日志，该值为 0 时，视为无数量限制。对应用日志，该值小于等于 1 时，仍会以默认值 5 进行工作。"
 msgstr "`maxFiles`: Maximum retained log files per log type. Recommended >1. Non-application logs: 0 = unlimited. Application logs: ≤1 defaults to 5."
 
 #: ../../deployment/kuscia_config_cn.md:137
-msgid "`maxFileSizeMB`: 单个日志文件的轮转阈值，当一次轮转检查发生时，如果文件大小大于该值，将会进行轮转。该值应大于0。"
+msgid "`maxFileSizeMB`: 单个日志文件的轮转阈值，当一次轮转检查发生时，如果文件大小大于该值，将会进行轮转。该值应大于 0。"
 msgstr "`maxFileSizeMB`: Rotation threshold in MB (must be >0). Triggers rotation when file exceeds size."
 
 #: ../../deployment/kuscia_config_cn.md:138
 msgid ""
 "`maxAgeDays`: "
-"日志文件的最大保留天数。对非应用日志，直接删除超保留期限的日志文件。对应用日志，如果日志文件均超过该天数，且对应Pod处于结束状态。该Pod对应日志文件及其目录将会被删除。该值应大于0。"
+"日志文件的最大保留天数。对非应用日志，直接删除超保留期限的日志文件。对应用日志，如果日志文件均超过该天数，且对应 Pod 处于结束状态。该 Pod 对应日志文件及其目录将会被删除。该值应大于 0。"
 msgstr "`maxAgeDays`: Maximum retention days (must be >0). Non-application logs: direct deletion. Application logs: deletion of pod-related logs and directories occurs when all files exceed retention period and pod is terminated."
 
 #: ../../deployment/kuscia_config_cn.md:142
@@ -458,7 +458,7 @@ msgstr "After modifying kuscia.yaml on host, apply changes via `docker restart $
 #: ../../deployment/kuscia_config_cn.md:213
 msgid ""
 "Tips：如果要修改 Protocol 字段，请确保对该字段有充足的理解，否则会导致 KusciaAPI "
-"调用失败或者和其他节点的通讯异常。详情参考[Protocol "
+"调用失败或者和其他节点的通讯异常。详情参考 [Protocol "
 "通信协议](../troubleshoot/concept/protocol_describe.md)。"
 msgstr "Note: Protocol modifications require thorough understanding to prevent API/communication failures. Refer to [Protocol Documentation](../troubleshoot/concept/protocol_describe.md)."
 

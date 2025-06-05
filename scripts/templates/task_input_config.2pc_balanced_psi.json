@@ -13,7 +13,7 @@
       "name": "spu",
       "type": "spu",
       "parties": ["alice", "bob"],
-      "config": "{\"runtime_config\":{\"protocol\":\"REF2K\",\"field\":\"FM64\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
+      "config": "{\"runtime_config\":{\"protocol\":\"SEMI2K\",\"field\":\"FM128\"},\"link_desc\":{\"connect_retry_times\":60,\"connect_retry_interval_ms\":1000,\"brpc_channel_protocol\":\"http\",\"brpc_channel_connection_type\":\"pooled\",\"recv_timeout_ms\":1200000,\"http_timeout_ms\":1200000}}"
     }, {
       "name": "heu",
       "type": "heu",
@@ -27,25 +27,37 @@
   "sf_node_eval_param": {
     "domain": "data_prep",
     "name": "psi",
-    "version": "0.0.5",
-    "attr_paths": ["protocol", "sort_result", "allow_duplicate_keys", "allow_duplicate_keys/yes/join_type", "allow_duplicate_keys/yes/join_type/left_join/left_side", "input/receiver_input/key", "input/sender_input/key"],
+    "version": "1.0.0",
+    "attr_paths": ["input/input_ds1/keys", "input/input_ds2/keys", "protocol", "sort_result", "receiver_parties", "allow_empty_result", "join_type", "input_ds1_keys_duplicated", "input_ds2_keys_duplicated"],
     "attrs": [{
-      "s": "PROTOCOL_RR22"
-    }, {
-      "b": true
-    }, {
-      "s": "yes"
-    }, {
-      "s": "left_join"
-    }, {
-      "ss": ["alice"]
-    }, {
+      "is_na": false,
       "ss": ["id1"]
     }, {
+      "is_na": false,
       "ss": ["id2"]
+    }, {
+      "is_na": false,
+      "s": "PROTOCOL_RR22"
+    }, {
+      "b": true,
+      "is_na": false
+    }, {
+      "is_na": false,
+      "ss": ["alice", "bob"]
+    }, {
+      "is_na": true
+    }, {
+      "is_na": false,
+      "s": "inner_join"
+    }, {
+      "b": true,
+      "is_na": false
+    }, {
+      "b": true,
+      "is_na": false
     }]
   },
   "sf_input_ids": ["alice-table","bob-table"],
-  "sf_output_ids": ["psi-output"],
-  "sf_output_uris": ["psi-output.csv"]
+  "sf_output_ids": ["psi-output", "psi-output"],
+  "sf_output_uris": ["psi-output.csv", "psi-output.csv"]
 }

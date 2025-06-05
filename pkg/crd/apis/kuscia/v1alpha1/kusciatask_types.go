@@ -194,7 +194,7 @@ type KusciaTaskConditionType string
 
 // These are built-in conditions of kuscia task.
 const (
-	// KusciaTaskCondPortsAllocated means pods have beed allocated.
+	// KusciaTaskCondPortsAllocated means pods have been allocated.
 	KusciaTaskCondPortsAllocated KusciaTaskConditionType = "PortsAllocated"
 	// KusciaTaskCondResourceCreated means all sub-resources (e.g. services/pods) of the task has been created.
 	KusciaTaskCondResourceCreated KusciaTaskConditionType = "ResourceCreated"

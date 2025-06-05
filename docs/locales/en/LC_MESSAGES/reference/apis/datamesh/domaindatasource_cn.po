@@ -82,8 +82,8 @@ msgid "/api/v1/domaindatasource/query"
 msgstr "/api/v1/domaindatasource/query"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:22
-msgid "请求（QueryDomainGrantRequest）"
-msgstr "Request (QueryDomainGrantRequest)"
+msgid "请求（QueryDomainDataSourceRequest）"
+msgstr "Request (QueryDomainDataSourceRequest)"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md
 msgid "字段"
@@ -138,8 +138,8 @@ msgid "数据源 ID"
 msgstr "Data Source ID"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md:30
-msgid "响应（QueryDomainGrantResponse）"
-msgstr "Response (QueryDomainGrantResponse)"
+msgid "响应（QueryDomainDataSourceResponse）"
+msgstr "Response (QueryDomainDataSourceResponse)"
 
 #: ../../reference/apis/datamesh/domaindatasource_cn.md
 msgid "status"

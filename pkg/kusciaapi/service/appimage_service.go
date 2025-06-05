@@ -41,6 +41,7 @@ type IAppImageService interface {
 	UpdateAppImage(ctx context.Context, request *kusciaapi.UpdateAppImageRequest) *kusciaapi.UpdateAppImageResponse
 	DeleteAppImage(ctx context.Context, request *kusciaapi.DeleteAppImageRequest) *kusciaapi.DeleteAppImageResponse
 	BatchQueryAppImage(ctx context.Context, request *kusciaapi.BatchQueryAppImageRequest) *kusciaapi.BatchQueryAppImageResponse
+	ListAppImage(ctx context.Context, request *kusciaapi.ListAppImageRequest) *kusciaapi.ListAppImageResponse
 }
 
 type appImageService struct {
@@ -101,6 +102,36 @@ func (s appImageService) QueryAppImage(ctx context.Context, request *kusciaapi.Q
 		Status: utils.BuildSuccessResponseStatus(),
 		Data:   buildAppImage(k8sAppImage),
 	}
+}
+
+func (s appImageService) ListAppImage(ctx context.Context, request *kusciaapi.ListAppImageRequest) *kusciaapi.ListAppImageResponse {
+
+	// validate
+	pageSize := request.PageSize
+	if pageSize == 0 {
+		pageSize = 10
+	}
+
+	// list resources
+	k8sAppImageList, err := s.kusciaClient.KusciaV1alpha1().AppImages().List(ctx, metav1.ListOptions{
+		Limit:    pageSize,
+		Continue: request.PageToken,
+	})
+	if err != nil {
+		return &kusciaapi.ListAppImageResponse{
+			Status: utils.BuildErrorResponseStatus(errorcode.GetAppImageErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrListAppImage), err.Error()),
+		}
+	}
+	result := &kusciaapi.ListAppImageResponse{
+		Status: utils.BuildSuccessResponseStatus(),
+		Data:   new(kusciaapi.AppImageList),
+	}
+	result.Data.AppimageList = make([]*kusciaapi.QueryAppImageResponseData, 0)
+	result.Data.NextPageToken = k8sAppImageList.Continue
+	for _, k8sAppImage := range k8sAppImageList.Items {
+		result.Data.AppimageList = append(result.Data.AppimageList, buildAppImage(&k8sAppImage))
+	}
+	return result
 }
 
 func (s appImageService) BatchQueryAppImage(ctx context.Context, request *kusciaapi.BatchQueryAppImageRequest) *kusciaapi.BatchQueryAppImageResponse {

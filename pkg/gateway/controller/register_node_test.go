@@ -163,7 +163,7 @@ func verifyJwtTokenSha256(jwtTokenStr string, pubKey interface{}, req *handshake
 		return err
 	}
 	if !jwtToken.Valid {
-		return fmt.Errorf("%s", "jwt token decrpted fail")
+		return fmt.Errorf("%s", "jwt token decrypted fail")
 	}
 	if time.Since(rjc.ExpiresAt.Time) > 0 {
 		return fmt.Errorf("%s", "jwt verify error, token expired")

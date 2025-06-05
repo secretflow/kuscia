@@ -74,9 +74,10 @@ type DeploymentKitInfo struct {
 	allocatedPorts *proto.AllocatedPorts
 }
 
-func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (map[string]*PartyKitInfo, bool, error) {
-	partyKitInfos := make(map[string]*PartyKitInfo)
-	for _, party := range kd.Spec.Parties {
+func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) ([]*PartyKitInfo, bool, error) {
+	partyKitInfos := make([]*PartyKitInfo, 0)
+	partyKitInfosIndex := make(map[string]int)
+	for index, party := range kd.Spec.Parties {
 		kitInfo, err := c.buildPartyKitInfo(kd, &party)
 		if err != nil {
 			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
@@ -84,8 +85,9 @@ func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (ma
 			kd.Status.Message = fmt.Sprintf("failed to build domain %v kit info, %v", party.DomainID, err)
 			return nil, false, err
 		}
+		partyKitInfos = append(partyKitInfos, kitInfo)
 		key := party.DomainID + "/" + party.Role
-		partyKitInfos[key] = kitInfo
+		partyKitInfosIndex[key] = index
 	}
 
 	selfParties, err := c.selfParties(kd)
@@ -93,17 +95,19 @@ func (c *Controller) buildPartyKitInfos(kd *kusciav1alpha1.KusciaDeployment) (ma
 		return nil, false, err
 	}
 
-	selfPartyKitInfos := make(map[string]*PartyKitInfo)
+	selfPartyKitInfos := make([]*PartyKitInfo, 0)
+
 	for _, selfParty := range selfParties {
 		key := selfParty.DomainID + "/" + selfParty.Role
-		if partyKitInfos[key] == nil {
+		index, ok := partyKitInfosIndex[key]
+		if !ok {
 			err = fmt.Errorf("failed to get self party kit info for %v", key)
 			kd.Status.Phase = kusciav1alpha1.KusciaDeploymentPhaseFailed
 			kd.Status.Reason = string(getSelfPartyKitInfoFailed)
 			kd.Status.Message = err.Error()
 			return nil, false, err
 		}
-		selfPartyKitInfos[key] = partyKitInfos[key]
+		selfPartyKitInfos = append(selfPartyKitInfos, partyKitInfos[index])
 	}
 
 	needUpdate, err := allocatePorts(kd, selfPartyKitInfos)
@@ -210,7 +214,7 @@ func mergeDeployTemplate(appImageTemplate *kusciav1alpha1.DeployTemplate, partyT
 	return template
 }
 
-func (c *Controller) fillPartyClusterDefines(partyKitInfos map[string]*PartyKitInfo) error {
+func (c *Controller) fillPartyClusterDefines(partyKitInfos []*PartyKitInfo) error {
 	parties, err := c.generateClusterDefineParties(partyKitInfos)
 	if err != nil {
 		return err
@@ -250,7 +254,7 @@ func fillClusterDefine(dkInfo *DeploymentKitInfo, parties []*proto.Party, partyI
 	}
 }
 
-func allocatePorts(kd *kusciav1alpha1.KusciaDeployment, partyKitInfos map[string]*PartyKitInfo) (bool, error) {
+func allocatePorts(kd *kusciav1alpha1.KusciaDeployment, partyKitInfos []*PartyKitInfo) (bool, error) {
 	needUpdate := false
 
 	var partyAllocatedPorts []kusciav1alpha1.PartyAllocatedPorts
@@ -354,7 +358,7 @@ func fillAllocatedPorts(partyPorts *kusciav1alpha1.PartyAllocatedPorts, dkInfo *
 	return nil
 }
 
-func (c *Controller) generateClusterDefineParties(partyKitInfos map[string]*PartyKitInfo) ([]*proto.Party, error) {
+func (c *Controller) generateClusterDefineParties(partyKitInfos []*PartyKitInfo) ([]*proto.Party, error) {
 	var parties []*proto.Party
 	for _, kitInfo := range partyKitInfos {
 		party, err := c.generateClusterDefineParty(kitInfo)
@@ -547,7 +551,7 @@ func (c *Controller) isPartnerDomain(domainID string) (bool, error) {
 }
 
 func (c *Controller) handleError(ctx context.Context,
-	partyKitInfos map[string]*PartyKitInfo,
+	partyKitInfos []*PartyKitInfo,
 	preKdStatus *kusciav1alpha1.KusciaDeploymentStatus,
 	kd *kusciav1alpha1.KusciaDeployment,
 	err error) error {

@@ -193,7 +193,7 @@ func NewPodsController(cfg *PodsControllerConfig) (*PodsController, error) {
 // wait for workers to finish processing their current work items prior to
 // returning.
 //
-// Once this returns, you should not re-use the controller.
+// Once this returns, you should not reuse the controller.
 func (pc *PodsController) Run(ctx context.Context) error {
 	// Shutdowns are idempotent, so we can call it multiple times. This is in case we have to bail out early for some reason.
 	defer func() {

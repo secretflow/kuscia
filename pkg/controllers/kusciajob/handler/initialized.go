@@ -75,10 +75,13 @@ func (h *JobScheduler) handleInitialized(job *kusciaapisv1alpha1.KusciaJob) (nee
 		// self as initiator
 		// set own stageStatus to create success
 		// set own approvalStatus to approval accepted
+		// note: own stageStatus is set by bfia job controller
 		// note: approval accepted status would auto set by program
-		for p := range ownP {
-			job.Status.StageStatus[p] = kusciaapisv1alpha1.JobCreateStageSucceeded
-			job.Status.ApproveStatus[p] = kusciaapisv1alpha1.JobAccepted
+		if !utilsres.IsBFIAResource(job) {
+			for p := range ownP {
+				job.Status.StageStatus[p] = kusciaapisv1alpha1.JobCreateStageSucceeded
+				job.Status.ApproveStatus[p] = kusciaapisv1alpha1.JobAccepted
+			}
 		}
 	} else {
 		// self as partner
@@ -90,10 +93,13 @@ func (h *JobScheduler) handleInitialized(job *kusciaapisv1alpha1.KusciaJob) (nee
 		}
 	}
 	// inter connection job
-	if isInterConnJob(job) {
+	isBFIAJob := isBFIAInterConnJob(h.namespaceLister, job)
+	// bfia job and center mode skips approval
+	if isInterConnJob(job) && !isBFIAJob {
 		job.Status.Phase = kusciaapisv1alpha1.KusciaJobAwaitingApproval
 		return true, nil
 	}
+
 	// inner job
 	// set initialized --> pending
 	job.Status.Phase = kusciaapisv1alpha1.KusciaJobPending

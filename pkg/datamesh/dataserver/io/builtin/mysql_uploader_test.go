@@ -26,9 +26,10 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
-	"github.com/stretchr/testify/assert"
 )
 
 func initMySQLUploader(t *testing.T, tableName string, ddSpec *v1alpha1.DomainDataSpec) (context.Context, *sql.DB, sqlmock.Sqlmock, *MySQLUploader, *utils.DataMeshRequestContext, error) {
@@ -137,8 +138,7 @@ func TestMySQLUploader_Write_Commit(t *testing.T) {
 	prepare := mock.ExpectPrepare("INSERT INTO `output`")
 	prepare.ExpectExec().WithArgs("alice", "1", "1", "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
-		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(1, 1))
-	prepare.ExpectExec().WithArgs("bob", "2", "0", "127", "32767", "2147483647",
+		"1.000001", "1.00000000000001", "bob", "2", "0", "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
 		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(2, 1))
 	mock.ExpectCommit()

@@ -67,7 +67,7 @@ func NewFactory(agentConfig *config.AgentConfig, kubeClient kubernetes.Interface
 
 			bkClient, err = kubernetes.NewForConfig(inClusterConfig)
 			if err != nil {
-				return nil, fmt.Errorf("faild to create clientset for in cluster config, detail-> %v", err)
+				return nil, fmt.Errorf("failed to create clientset for in cluster config, detail-> %v", err)
 			}
 		}
 
