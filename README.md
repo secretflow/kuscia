@@ -23,11 +23,11 @@ For more information about Kuscia's capabilities, please refer to the [Kuscia Ov
 
 Currently, we only provide detailed documentations in Chinese.
 
-- [Kuscia](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/)
-- [Getting Started](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/getting_started/index.html)
-- [Reference](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/reference/index.html)
-- [Tutorial](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/tutorial/index.html)
-- [Development](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/development/index.html)
+- [Kuscia](https://www.secretflow.org.cn/docs/kuscia/)
+- [Getting Started](https://www.secretflow.org.cn/docs/kuscia/getting_started)
+- [Reference](https://www.secretflow.org.cn/docs/kuscia/reference)
+- [Tutorial](https://www.secretflow.org.cn/docs/kuscia/tutorial)
+- [Development](https://www.secretflow.org.cn/docs/kuscia/development)
 
 ## Contributing
 
