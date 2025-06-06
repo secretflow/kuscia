@@ -19,29 +19,30 @@ msgstr ""
 
 #: ../../tutorial/run_fate_cn.md:1
 msgid "如何运行一个 FATE 作业"
-msgstr ""
+msgstr "How to Run a FATE Job"
 
 #: ../../tutorial/run_fate_cn.md:3
 msgid ""
 "本教程介绍了如何通过 Kuscia 运行一个 LR 流程的 [FATE](https://fate.readthedocs.io) "
 "Pipeline 作业。"
 msgstr ""
+"This tutorial introduces how to run an LR process FATE Pipeline job using Kuscia."
 
 #: ../../tutorial/run_fate_cn.md:5
 msgid "**注： 该模式目前还处于研发阶段，在体验的时候，需要依赖源代码进行编译。**"
-msgstr ""
+msgstr "**Note: This mode is currently under development, and you need to compile the source code to experience it.**"
 
 #: ../../tutorial/run_fate_cn.md:7
 msgid "准备节点"
-msgstr ""
+msgstr "Prepare Nodes"
 
 #: ../../tutorial/run_fate_cn.md:9
 msgid "准备 Kuscia 节点请参考 [快速入门](../getting_started/quickstart_cn.md)。"
-msgstr ""
+msgstr "For preparing Kuscia nodes, please refer to [Quick Start](../getting_started/quickstart_cn.md)."
 
 #: ../../tutorial/run_fate_cn.md:11
 msgid "准备 FATE 集群"
-msgstr ""
+msgstr "Prepare FATE Cluster"
 
 #: ../../tutorial/run_fate_cn.md:13
 msgid ""
@@ -49,164 +50,174 @@ msgid ""
 "是一家部署 Kuscia 的机构，我们期望在 Bob 的 Kuscia 集群中部署 FATE，并达到与 Alice 的 FATE "
 "集群进行联合计算的目的。后续我们将在 Bob 中发起 FATE 作业的 KusciaJob。"
 msgstr ""
+"Here, we assume that Alice and Bob two institutions are conducting a federated learning experiment based on FATE. Alice has deployed FATE, while Bob has deployed Kuscia. We aim to deploy FATE in Bob's Kuscia cluster to achieve joint computation with Alice's FATE cluster. We will initiate the FATE job as a KusciaJob in Bob."
 
 #: ../../tutorial/run_fate_cn.md:15
 msgid "![FATE in Kuscia](../imgs/fate_in_kuscia.png)"
-msgstr ""
+msgstr "![FATE in Kuscia](../imgs/fate_in_kuscia.png)"
 
 #: ../../tutorial/run_fate_cn.md:15
 msgid "FATE in Kuscia"
-msgstr ""
+msgstr "FATE in Kuscia"
 
 #: ../../tutorial/run_fate_cn.md:17
 msgid ""
 "当然，如果你有已经部署好的 FATE 集群，可以跳过该步骤。**只要 FATEFlow 端口开放，无需进行任何修改就可以使用 KusciaJob "
 "对 FATE 集群发起联邦学习作业！**"
 msgstr ""
+"Of course, if you already have a deployed FATE cluster, you can skip this step. **As long as the FATEFlow port is open, you can use KusciaJob to initiate a federated learning job on the FATE cluster without any modifications!**"
 
 #: ../../tutorial/run_fate_cn.md:19
 msgid "注意： FATE 默认使用 8G 的内存，请确保机器资源是否足够。"
-msgstr ""
+msgstr "Note: FATE defaults to using 8G of memory. Please ensure that the machine resources are sufficient."
 
 #: ../../tutorial/run_fate_cn.md:21
 msgid "构建镜像"
-msgstr ""
+msgstr "Build Images"
 
 #: ../../tutorial/run_fate_cn.md:23
 msgid ""
 "部署 FATE 集群首先要准备相应的镜像，包括 FATE 集群镜像（v1.11.1 版本的 FATE）以及运行 FATE 作业的 AppImage"
 " 镜像："
 msgstr ""
+"To deploy the FATE cluster, you need to prepare the corresponding images, including the FATE cluster image (version 1.11.1 of FATE) and the AppImage image for running FATE jobs:"
 
 #: ../../tutorial/run_fate_cn.md:36
 msgid "adapter 镜像"
-msgstr ""
+msgstr "Adapter Image"
 
 #: ../../tutorial/run_fate_cn.md:38
 msgid ""
 "每一个 KusciaTask 会通过 AppImage 中的 adapater 镜像向 FATE 集群发起任务，并保持 KusciaTask "
 "状态与 FATE 任务的状态一致。"
 msgstr ""
+"Each KusciaTask will initiate a task to the FATE cluster using the adapter image within the AppImage and will maintain the KusciaTask status consistent with the FATE task status."
 
 #: ../../tutorial/run_fate_cn.md:40
 msgid "以中心化组网的 Kuscia 为例，整个过程为："
-msgstr ""
+msgstr "For example, in a centralized networking Kuscia, the entire process is as follows:"
 
 #: ../../tutorial/run_fate_cn.md:42
 msgid "![FATE with Kuscia](../imgs/fate_adapter.png)"
-msgstr ""
+msgstr "![FATE with Kuscia](../imgs/fate_adapter.png)"
 
 #: ../../tutorial/run_fate_cn.md:42 ../../tutorial/run_fate_cn.md:237
 msgid "FATE with Kuscia"
-msgstr ""
+msgstr "FATE with Kuscia"
 
 #: ../../tutorial/run_fate_cn.md:44
 msgid "部署 FATE"
-msgstr ""
+msgstr "Deploy FATE"
 
 #: ../../tutorial/run_fate_cn.md:46
 msgid "在节点准备完毕后，运行 FATE 集群部署脚本，脚本会进行三步操作："
-msgstr ""
+msgstr "After preparing the nodes, run the FATE cluster deployment script, which will perform three steps:"
 
 #: ../../tutorial/run_fate_cn.md:48
 msgid "检查部署 FATE 的 Kuscia 节点中是否包括上述镜像，若无则将镜像放入对应节点。"
-msgstr ""
+msgstr "Check if the Kuscia nodes deploying FATE include the above images. If not, place the images in the corresponding nodes."
 
 #: ../../tutorial/run_fate_cn.md:49
 msgid "在指定 Domain 下部署 Kuscia 外的 FATE 集群。"
-msgstr ""
+msgstr "Deploy the FATE cluster outside of Kuscia in the specified Domain."
 
 #: ../../tutorial/run_fate_cn.md:50
 msgid "在指定 Domain 下将 FATE 集群部署进 Kuscia 节点。"
-msgstr ""
+msgstr "Deploy the FATE cluster into the Kuscia nodes in the specified Domain."
 
 #: ../../tutorial/run_fate_cn.md:57
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../tutorial/run_fate_cn.md:59
 msgid "中心化组网模式下，在容器外的 Kuscia 代码根目录执行脚本："
-msgstr ""
+msgstr "In centralized networking mode, execute the script in the Kuscia code root directory outside the container:"
 
 #: ../../tutorial/run_fate_cn.md:75
 msgid ""
 "脚本将在 Bob Lite 中部署 Bob 命名空间下的 FATE 集群以及 Kuscia 节点外 Alice 机构的 fate-alice "
 "FATE 集群。"
 msgstr ""
+"The script will deploy the FATE cluster in Bob's namespace in Bob Lite, as well as the fate-alice FATE cluster outside the Kuscia nodes for the Alice institution."
 
 #: ../../tutorial/run_fate_cn.md:77
 msgid "P2P 组网模式"
-msgstr ""
+msgstr "P2P Networking Mode"
 
 #: ../../tutorial/run_fate_cn.md:79
 msgid "P2P 组网模式下，在容器外的 Kuscia 代码根目录下执行脚本："
-msgstr ""
+msgstr "In P2P networking mode, execute the script in the Kuscia code root directory outside the container:"
 
 #: ../../tutorial/run_fate_cn.md:95
 msgid ""
 "脚本将在 Bob Autonomy 中部署 Bob 命名空间下的 FATE 集群，以及 Kuscia 节点外 Alice 机构的 fate-"
 "alice FATE 集群。"
 msgstr ""
+"The script will deploy the FATE cluster in Bob's namespace in Bob Autonomy, as well as the fate-alice FATE cluster outside the Kuscia nodes for the Alice institution."
 
 #: ../../tutorial/run_fate_cn.md:97
 msgid ""
 "整个部署时长与部署的目标机器配置相关。在 4C16G 的节点上时间花销为 20 min 左右。可以登入对应的 节点|Pod 中查看 FATE "
 "的部署日志，当打印出 **HAVE FUN** 则表明当前环境的 FATE 部署成功："
 msgstr ""
+"The entire deployment duration is related to the configuration of the target machine. On a 4C16G node, it takes approximately 20 minutes. You can log into the corresponding node or Pod to view the FATE deployment logs. When **HAVE FUN** is printed, it indicates that the FATE deployment in the current environment is successful:"
 
 #: ../../tutorial/run_fate_cn.md:99
 msgid "![FATE deploy successfully](../imgs/fate_deploy_success.png)"
-msgstr ""
+msgstr "![FATE deploy successfully](../imgs/fate_deploy_success.png)"
 
 #: ../../tutorial/run_fate_cn.md:99
 msgid "FATE deploy successfully"
-msgstr ""
+msgstr "FATE deploy successfully"
 
 #: ../../tutorial/run_fate_cn.md:101
 msgid "**中心化组网下 Bob Lite 中 FATE in Kuscia 部署日志：**"
-msgstr ""
+msgstr "**FATE in Kuscia Deployment Log in Bob Lite under Centralized Networking Mode:**"
 
 #: ../../tutorial/run_fate_cn.md:117
 msgid "**P2P 组网下 Bob Autonomy 中 FATE in Kuscia 部署日志：**"
-msgstr ""
+msgstr "**FATE in Kuscia Deployment Log in Bob Autonomy under P2P Networking Mode:**"
 
 #: ../../tutorial/run_fate_cn.md:133
 msgid "**Kuscia 节点外 Alice 机构的 fate-alice 部署日志：**"
-msgstr ""
+msgstr "**fate-alice Deployment Log for Alice Institution outside Kuscia Nodes:**"
 
 #: ../../tutorial/run_fate_cn.md:143
 msgid "当 FATE 集群部署成功后，就可以通过 Kuscia 去运行 FATE 作业了。"
-msgstr ""
+msgstr "After the FATE cluster is successfully deployed, you can run FATE jobs using Kuscia."
 
 #: ../../tutorial/run_fate_cn.md:145
 msgid "准备数据"
-msgstr ""
+msgstr "Prepare Data"
 
 #: ../../tutorial/run_fate_cn.md:147
 msgid ""
 "FATE 镜像中带有两份测试数据，分别为 10 维 1W 行不带 label 的 lr_host 与 4 维 1W 行带 label 的 "
 "lr_guest。当然你也可以参考 FATE 文档将自己的数据导入到 FATE 集群中。"
 msgstr ""
+"The FATE image includes two test datasets: lr_host with 10 dimensions and 10,000 rows without labels, and lr_guest with 4 dimensions and 10,000 rows with labels. You can also refer to the FATE documentation to import your own data into the FATE cluster."
 
 #: ../../tutorial/run_fate_cn.md:149
 msgid "镜像自带测试数据会在 FATE 部署成功后自动上传到 FATE 集群，数据上传的作业信息会在日志中打印。以 ``fate-alice`` 为例："
 msgstr ""
+"The test data included in the image will be automatically uploaded to the FATE cluster after successful deployment. The job information for data upload will be printed in the logs. For example, in ``fate-alice``:"
 
 #: ../../tutorial/run_fate_cn.md:210
 msgid "下文中的示例 FATE 作业会使用此处上传的测试数据。如要运行示例作业，需等待其上传成功后再发起作业。"
 msgstr ""
+"The example FATE job in the following text will use the test data uploaded here. To run the example job, wait for the upload to complete before initiating the job."
 
 #: ../../tutorial/run_fate_cn.md:212
 msgid "运行示例 FATE 作业"
-msgstr ""
+msgstr "Run Example FATE Job"
 
 #: ../../tutorial/run_fate_cn.md:214
 msgid "确保 FATE 部署完毕后，就可以运行 FATE 作业了。"
-msgstr ""
+msgstr "After ensuring that FATE is fully deployed, you can run the FATE job."
 
 #: ../../tutorial/run_fate_cn.md:216
 msgid "Kuscia 中已经内置了一份 FATE 示例作业，可以登入对应的管控容器去执行。"
-msgstr ""
+msgstr "Kuscia already includes a FATE example job, which you can execute by logging into the corresponding management container."
 
 #: ../../tutorial/run_fate_cn.md:235
 msgid ""
@@ -214,68 +225,75 @@ msgid ""
 "读数据、数据转换、隐私求交、LR、二分类评估 算子构成的一个 LR 流程的 Pipeline。`lr_job.sh` 脚本完成了相应的 "
 "AppImage 与 KusciaJob 配置以及作业提交。"
 msgstr ""
+"The relevant files for the example job are located in the `/home/kuscia/scripts/templates/fate` directory within the container, describing a Pipeline consisting of the read data, data conversion, privacy intersection, LR, and binary classification evaluation operators for an LR process. The `lr_job.sh` script completes the corresponding AppImage and KusciaJob configuration and job submission."
 
 #: ../../tutorial/run_fate_cn.md:237
 msgid "![FATE with Kuscia](../imgs/fate_pipeline.png)"
-msgstr ""
+msgstr "![FATE with Kuscia](../imgs/fate_pipeline.png)"
 
 #: ../../tutorial/run_fate_cn.md:239
 msgid "你可以修改相关的配置并依旧采用该流程来运行自己想要的 Pipeline。当然你也可以按照下文去定义配置并提交自己的 KusciaJob。"
 msgstr ""
+"You can modify the relevant configurations and still use this process to run the Pipeline you want. Of course, you can also define the configuration and submit your own KusciaJob as described below."
 
 #: ../../tutorial/run_fate_cn.md:241
 msgid "配置 AppImage"
-msgstr ""
+msgstr "Configure AppImage"
 
 #: ../../tutorial/run_fate_cn.md:243
 msgid ""
 "运行 FATE 作业的 AppImage 相对来说要简单很多。下述为示例作业的 AppImage yaml（位于容器 "
 "`/home/kuscia/scripts/templates/fate/fate_job.yaml`）。"
 msgstr ""
+"Configuring the AppImage for running FATE jobs is relatively simple. The following is the AppImage yaml for the example job (located in the container `/home/kuscia/scripts/templates/fate/fate_job.yaml`)."
 
 #: ../../tutorial/run_fate_cn.md:245
 msgid ""
 "如果想在已经部署好的 FATE 集群上发起作业，只需要将 yaml 中容器启动命令的 `{{.CLUSTER_IP}}` 修改为 "
 "initiator 的 FATE 集群 IP 即可。"
 msgstr ""
+"If you want to initiate a job on an already deployed FATE cluster, you only need to modify the `{{.CLUSTER_IP}}` in the container start command of the yaml to the FATE cluster IP of the initiator."
 
 #: ../../tutorial/run_fate_cn.md:283
 msgid "配置 KusciaJob"
-msgstr ""
+msgstr "Configure KusciaJob"
 
 #: ../../tutorial/run_fate_cn.md:285
 msgid ""
 "KusciaJob 描述了一个 Pipeline，其中一个 **KusciaTask 对应一个 op 算子**。当然你也可以让一个 "
 "KusciaTask 去执行整条 Pipeline，其取决于 `taskInputConfig` 中的定义。"
 msgstr ""
+"KusciaJob describes a Pipeline, where each **KusciaTask corresponds to an op operator**. You can also have a single KusciaTask execute the entire Pipeline, depending on the definition in `taskInputConfig`."
 
 #: ../../tutorial/run_fate_cn.md:287
 msgid ""
 "对于示例中的 Pipeline，其 KusciaJob yaml 位于容器 "
 "`/home/kuscia/scripts/templates/fate/fate_job.yaml` 。如果需要查看可以进入发起任务的管控容器。"
 msgstr ""
+"For the Pipeline in the example, the KusciaJob yaml is located in the container `/home/kuscia/scripts/templates/fate/fate_job.yaml`. If you need to view it, you can enter the management container that initiates the task."
 
 #: ../../tutorial/run_fate_cn.md:289
 msgid "在该 yaml 中需要注意："
-msgstr ""
+msgstr "In this yaml, you need to pay attention to the following:"
 
 #: ../../tutorial/run_fate_cn.md:291
 msgid "`appImage` 需要指定为上述配置的 AppImage。"
-msgstr ""
+msgstr "`appImage` needs to be specified as the AppImage configured above."
 
 #: ../../tutorial/run_fate_cn.md:292
 msgid "`parties` 只填写 initiator 一方的 Domain name 即可。"
-msgstr ""
+msgstr "`parties` should only include the Domain name of the initiator."
 
 #: ../../tutorial/run_fate_cn.md:293
 msgid "FATE 中相关的 dsl 与 conf 配置在每个 KusciaTask 的 `taskInputConfig` 字段中进行定义。"
-msgstr ""
+msgstr "The related dsl and conf configurations in FATE are defined in the `taskInputConfig` field of each KusciaTask."
 
 #: ../../tutorial/run_fate_cn.md:294
 msgid ""
 "每个 KusciaTask 的 `alias` 和 `taskID` 需要与 `taskInputConfig` 中 dsl 的 op name "
 "保持一致！"
 msgstr ""
+"The `alias` and `taskID` of each KusciaTask need to be consistent with the op name in the dsl of `taskInputConfig`!"
 
 #: ../../tutorial/run_fate_cn.md:296
 msgid ""
@@ -285,4 +303,5 @@ msgid ""
 "`{{.JOB_NAME}}-intersection`；而在 `taskInputConfig` 中其 component name 同样为 "
 "`{{.JOB_NAME}}-hetero-lr`，依赖上游 `{{.JOB_NAME}}-intersection` 的输入。"
 msgstr ""
+"The following example uses the LR operator, where its `taskInputConfig` is defined in `/home/kuscia/scripts/templates/fate/task_input_config.hetero_lr.json`. In the KusciaJob yaml, its `alias` is `{{.JOB_NAME}}-hetero-lr`, and the dependency is `{{.JOB_NAME}}-intersection`. In the `taskInputConfig`, the component name is also `{{.JOB_NAME}}-hetero-lr`, and it depends on the input from the upstream `{{.JOB_NAME}}-intersection`."
 

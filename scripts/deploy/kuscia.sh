@@ -46,21 +46,18 @@ function log_error() {
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
   KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
 fi
-log_info "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
-
-if ! docker image inspect "${KUSCIA_IMAGE}" &>/dev/null; then
-  docker pull "${KUSCIA_IMAGE}"
-fi
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
-  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+  SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.11.0b1
 fi
-log_info "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
 
 if [[ "$DATAPROXY_IMAGE" == "" ]]; then
   DATAPROXY_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/dataproxy:0.1.0b1
 fi
-log_info "DATAPROXY_IMAGE=${DATAPROXY_IMAGE}"
+
+if [[ "$KUSCIA_MONITOR_IMAGE" == "" ]]; then
+  KUSCIA_MONITOR_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-monitor:latest
+fi
 
 function arch_check() {
   local arch
@@ -228,7 +225,6 @@ function do_http_probe() {
   local retry=0
   while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
-    # 在此处添加 cacert 配置, 防止 "" 包裹后被解释成一个参数
     if [[ "$enable_mtls" == "true" ]]; then
       status_code=$(docker exec -it "$ctr" curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key | tr -d '\r\n')
     else
@@ -351,7 +347,7 @@ function build_interconn() {
 
   log_info "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers "${member_ctr}:${CTR_CERT_ROOT}/domain.crt" "${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt"
-  docker exec -it "${host_ctr}" scripts/deploy/add_domain.sh "${member_domain}" "p2p" "${interconn_protocol}" 
+  docker exec -it "${host_ctr}" scripts/deploy/add_domain.sh "${member_domain}" "p2p" "${interconn_protocol}" ""
 
   docker exec -it "${member_ctr}" scripts/deploy/join_to_host.sh "${member_domain}" "${host_domain}" "https://${host_ctr}:1080" "-p ${interconn_protocol}"
   log_info "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
@@ -471,11 +467,8 @@ function start_container() {
     user_flag="--user $(id -u):kuscia"
   }
 
-  # 构建命令数组，避免空变量导致的多余单引号问题以及 "" 包裹后被解释成一个参数
   cmd=("docker" "run" "-dit")
-  
-  # 有条件地添加参数, 由于部分变量(如${export_port}) 是由多个参数组成的
-  # 直接使用 "" 包裹会有问题, 因此使用 read -ra args 进行转换后拼接命令
+
   [[ -n "${privileged_flag}" ]] && { read -ra args <<< "${privileged_flag}"; cmd+=("${args[@]}"); }
   [[ -n "${user_flag}" ]] && { read -ra args <<< "${user_flag}"; cmd+=("${args[@]}"); }
   cmd+=("--name=${domain_ctr}" "--hostname=${domain_hostname}" "--restart=always" "--network=${local_network_name}")
@@ -517,6 +510,12 @@ function start_kuscia_container() {
 
   local domain_hostname
   domain_hostname=$(generate_hostname "${domain_ctr}") || { echo -e "${RED}Failed to generate hostname${NC}"; exit 1; }
+
+  log_info "KUSCIA_IMAGE=${KUSCIA_IMAGE}"
+  log_info "SECRETFLOW_IMAGE=${SECRETFLOW_IMAGE}"
+  if ! docker image inspect "${KUSCIA_IMAGE}" &>/dev/null; then
+    docker pull "${KUSCIA_IMAGE}"
+  fi
 
   if [[ ${MEMORY_LIMIT} = "-1" ]]; then
     memory_limit=""
@@ -588,7 +587,7 @@ function start_kuscia_container() {
 function get_config_value() {
   local config_file=$1
   local key=$2
-  grep "$key:" "$config_file" | awk '{ print $2 }' | sed 's/"//g' | tr -d '\r\n'
+  grep -E "^[^#]*${key}:" "$config_file" | awk '{ print $2 }' | sed 's/"//g' | tr -d '\r\n'
 }
 
 # pre check runtime when cluster network mode
@@ -628,7 +627,7 @@ function start_kuscia() {
     pre_check_center_runtime "${runtime}"
   fi
 
-  wrap_kuscia_config_file "${kuscia_conf_file}" "${interconn_protocol}"
+  wrap_kuscia_config_file "${kuscia_conf_file}" "${interconn_protocol}" "${domain_id}"
   local ctr_prefix=${USER}-kuscia
   local master_ctr=${ctr_prefix}-master
   local domain_ctr="${ctr_prefix}-${deploy_mode}-${domain_id}"
@@ -664,6 +663,8 @@ function start_data_proxy() {
    local wait_time=4
    local counter=0
    local kusciaapi_endpoint="http://localhost:8082/api/v1/serving"
+   
+   log_info "DATAPROXY_IMAGE=${DATAPROXY_IMAGE}"
    # import dataproxy image
    if [[ "$deploy_mode" != "master" ]]; then
       docker run --rm "${KUSCIA_IMAGE}" cat "${CTR_ROOT}/scripts/deploy/register_app_image.sh" > "${DOMAIN_WORK_DIR}/register_app_image.sh" && chmod u+x "${DOMAIN_WORK_DIR}/register_app_image.sh"
@@ -708,6 +709,84 @@ function start_data_proxy() {
       else
         log_info "Dataproxy started successfully"
       fi
+   fi
+}
+
+function start_kuscia_monitor() {
+   local domain_id=$1
+   local kuscia_conf_file
+   local deploy_mode
+   local runtime
+
+   kuscia_conf_file=${CTR_ROOT}/etc/conf/kuscia.yaml
+   deploy_mode=$(get_config_value "$kuscia_conf_file" "mode" | tr '[:upper:]' '[:lower:]')   
+   if [[ -n "$MONITOR_LITE_RUNTIME" ]]; then
+      runtime="$MONITOR_LITE_RUNTIME"
+   else
+      runtime=$(get_runtime "$kuscia_conf_file")
+   fi
+   # deploy kuscia monitor
+   if [[ "$deploy_mode" != "lite" ]]; then
+      local container_ip
+      container_ip=$(hostname -i)
+      local max_test_counter=30
+      local wait_time=4
+      local counter=0
+
+      if [[ "$deploy_mode" == "master" ]] && [[ "$domain_id" = "" ]]; then
+         log_error "Please add current domain to start kuscia monitor"
+         exit 1
+      elif [[ "$deploy_mode" == "autonomy" ]] && [[ "$domain_id" = "" ]]; then
+         domain_id=$(get_config_value "$kuscia_conf_file" "domainID")
+      fi
+
+      local deploy_response
+      deploy_response=$(kubectl get po -n "$domain_id" | grep '^monitor-' | awk '{print $3}')      
+      if [[ "$deploy_response" == "Running" ]]; then
+        log_info "Monitor already deployed"
+        exit 1
+      fi
+
+      [[ -d /tmp/monitor ]] && rm -rf /tmp/monitor
+      cp -r ${CTR_ROOT}/scripts/templates/monitor /tmp/monitor
+      if [[ "$runtime" == "runk" ]]; then
+        local namespace
+        if [[ "$deploy_mode" == "master" ]]; then
+           [[ $LITE_NAMESPACE == "" ]] && { echo -e "${RED}empty namespace${NC}" >&2; exit 1; }
+           namespace=$LITE_NAMESPACE
+        else
+           namespace=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+        fi
+        sed -i "s/{{.NAMESPACE}}/${domain_id}/g" /tmp/monitor/runk/kustomization.yaml
+        sed -i "s/{{.NAMESPACE}}/${namespace}/g" /tmp/monitor/base/monitor_configmap.yaml
+        kubectl apply -k /tmp/monitor/runk/
+      else
+        sed -i "s/{{.KUBERNETES_SERVICE_HOST}}/${container_ip}/g" /tmp/monitor/runc/kustomization.yaml
+        sed -i "s/{{.NAMESPACE}}/${domain_id}/g" /tmp/monitor/runc/kustomization.yaml
+        sed -i "s/{{.NAMESPACE}}/${domain_id}/g" /tmp/monitor/base/monitor_configmap.yaml
+        kubectl apply -k /tmp/monitor/runc/
+      fi
+      
+      # check monitor deployment status
+      log_info "Checking monitor deployment status..."
+      while [[ "$counter" -lt "$max_test_counter" ]]; do
+        deploy_response=$(kubectl get po -n "$domain_id" | grep '^monitor-' | awk '{print $3}') 
+        svc_response=$(kubectl get svc -n "$domain_id" | grep 'prometheus' | awk '{print $1}')
+        if [[ "$deploy_response" == "Running" ]] && [[ "$svc_response" == "prometheus" ]]; then
+          break
+        fi
+        sleep "$wait_time"
+        counter=$((counter+1))
+      done
+      if [[ "$counter" -eq "$max_test_counter" ]]; then
+        log_error "Kuscia monitor deployment failed"
+      else
+        log_info "Kuscia monitor deployment successfully"
+        log_info "You can run the following command on the lite container to query targets for prometheus statistics:"
+        log_info "curl -kv -H 'Host: prometheus.$domain_id.svc' -H 'Kuscia-Source: $domain_id' http://localhost:80/api/v1/targets | jq"
+      fi
+   else
+      log_error "Kuscia monitor only support master and autonomy domain"
    fi
 }
 
@@ -781,12 +860,18 @@ function start_cxc_cluster() {
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -p "${p2p_protocol}"
   else
     docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -p "${p2p_protocol}"
+
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -x "${bob_master_domain}" -p "${p2p_protocol}"
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -x "${alice_master_domain}" -p "${p2p_protocol}"
+
+    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
     docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
+
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -p "${p2p_protocol}"
+
     docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -x "${alice_master_domain}" -p "${p2p_protocol}"
     docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -x "${bob_master_domain}" -p "${p2p_protocol}"
+
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
   fi
@@ -921,12 +1006,13 @@ function get_absolute_path() {
 usage() {
   echo "$(basename "$0") DEPLOY_MODE [OPTIONS]
 DEPLOY_MODE:
-    center                   centralized network mode
-    p2p                      p2p network mode
-    cxc                      center and center mode
-    cxp                      center and p2p mode
-    start                    Multi-machine mode
-    upgrade                  upgrade kuscia version. only applicable to Multi-machine mode
+    center                   centralized network mode.
+    p2p                      p2p network mode.
+    cxc                      center and center mode.
+    cxp                      center and p2p mode.
+    start                    Multi-machine mode.
+    upgrade                  upgrade kuscia version. only applicable to Multi-machine mode.
+    monitor                  deploy monitor on kuscia. You can execute './kuscia.sh monitor alice' in the master container, or'./kuscia.sh monitor' in the autonomy container.
 
 Common Options:
     -h,--help         Show this help text.
@@ -951,7 +1037,7 @@ Common Options:
 
 mode=
 case "$1" in
-center | p2p | cxc | cxp | start | upgrade)
+center | p2p | cxc | cxp | start | upgrade | monitor)
   mode=$1
   shift
   ;;
@@ -982,6 +1068,9 @@ for arg in "$@"; do
             ;;
         --runp)
             RUNTIME=runp
+            ;;
+        --runk)
+            MONITOR_LITE_RUNTIME=runk
             ;;
         *)
             NEW_ARGS+=("$arg")
@@ -1077,6 +1166,9 @@ start)
   ;;
 upgrade)
   upgrade_kuscia "$1"
+  ;;
+monitor)
+  start_kuscia_monitor "$1"
   ;;
 *)
   printf "unsupported network mode: %s\n" "$mode" >&2

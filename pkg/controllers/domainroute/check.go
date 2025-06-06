@@ -112,7 +112,7 @@ func DoValidate(spec *kusciaapisv1alpha1.DomainRouteSpec) error {
 		}
 	case kusciaapisv1alpha1.DomainAuthenticationNone:
 	default:
-		return fmt.Errorf("unsupport type %s", spec.AuthenticationType)
+		return fmt.Errorf("unsupported type %s", spec.AuthenticationType)
 	}
 	if spec.TokenConfig != nil {
 		if spec.TokenConfig.SourcePublicKey != "" {

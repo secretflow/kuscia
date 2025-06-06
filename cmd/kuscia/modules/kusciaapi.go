@@ -154,7 +154,7 @@ func KusciaAPIReadyZ(tlsConfig *webconfig.TLSServerConfig, httpPort, grpcPort in
 	// init client tls config
 	if tlsConfig != nil {
 		if protocol == common.TLS {
-			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.ServerCert)
+			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.RootCA)
 		} else {
 			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
 		}

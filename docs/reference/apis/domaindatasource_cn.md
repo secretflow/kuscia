@@ -655,7 +655,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 
 | 字段   | 类型     | 选填 | 描述                                                                              |
 |------|--------|----|---------------------------------------------------------------------------------|
-| path | string | 必填 | 本地文件系统绝对路径，建议为/home/kuscia/var/storage/data/或/home/kuscia/var/storage/data/的子目录 |
+| path | string | 必填 | 本地文件系统绝对路径，建议为 /home/kuscia/var/storage/data/ 或 /home/kuscia/var/storage/data/ 的子目录 |
 
 {#oss-data-source-info}
 

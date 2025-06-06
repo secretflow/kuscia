@@ -73,6 +73,13 @@ func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainR
 				},
 				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 			},
+			{
+				Header: &core.HeaderValue{
+					Key:   "Kuscia-Token",
+					Value: token,
+				},
+				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+			},
 		},
 	}
 
@@ -90,6 +97,13 @@ func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainR
 				Header: &core.HeaderValue{
 					Key:   interConnProtocolHeader,
 					Value: string(kusciaapisv1alpha1.InterConnBFIA),
+				},
+				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+			},
+			{
+				Header: &core.HeaderValue{
+					Key:   "Kuscia-Token",
+					Value: token,
 				},
 				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 			},

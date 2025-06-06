@@ -23,13 +23,13 @@
 部署 FATE 集群首先要准备相应的镜像，包括 FATE 集群镜像（v1.11.1 版本的 FATE）以及运行 FATE 作业的 AppImage 镜像：
 
 ```shell
-# 进入 FATE 相关的文件目录
+# Enter the FATE-related file directory
 cd thirdparty/fate
 
-# 构建 FATE 部署镜像
+# Build the FATE deployment image
 make deploy-image
 
-# 构建 AppImage 镜像
+# Build the AppImage image
 make fate-adaptor-app-image
 ```
 
@@ -50,8 +50,8 @@ make fate-adaptor-app-image
 3. 在指定 Domain 下将 FATE 集群部署进 Kuscia 节点。
 
 ```shell
-# 脚本包括 4 个参数，分别为 Kuscia 管控节点名、部署 FATE 的 Kuscia 节点名、部署 FATE 的 Kuscia Domain、单独部署 FATE 的 Domain
-bash ./thirdparty/fate/scripts/deploy/start_fate.sh {管控节点} {部署进 Kuscia 的节点} {部署进 Kuscia 的 Domian} {单独部署的 Domain}
+# The script includes 4 parameters: Kuscia control node name, Kuscia node name for deploying FATE, Kuscia Domain for deploying FATE, and a separate Domain for deploying FATE
+bash ./thirdparty/fate/scripts/deploy/start_fate.sh {control_node} {kuscia_node_for_fate} {kuscia_domain_for_fate} {separate_domain_for_fate}
 ```
 
 #### 中心化组网模式
@@ -61,13 +61,13 @@ bash ./thirdparty/fate/scripts/deploy/start_fate.sh {管控节点} {部署进 Ku
 ```shell
 bash ./thirdparty/fate/scripts/deploy/start_fate.sh ${USER}-kuscia-master ${USER}-kuscia-lite-bob bob alice
 
-# 查看 Alice 的 FATE 服务是否启动（能看到名为 fate-alice 的容器）
+# Check if Alice's FATE service is started (look for a container named fate-alice)
 docker ps
 
-# 进入 Master 容器，确认 Bob 机构的 FATE 启动完成（确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running）
+# Enter the Master container to confirm that Bob's FATE service has started (ensure that the Pod status with the fate-deploy-bob prefix is Running)
 docker exec -it ${USER}-kuscia-master bash
 kubectl get pods -n bob
-## 输出示例:
+## Output example:
 NAME                               READY   STATUS    RESTARTS   AGE
 fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
 ```
@@ -81,13 +81,13 @@ P2P 组网模式下，在容器外的 Kuscia 代码根目录下执行脚本：
 ```shell
 bash ./thirdparty/fate/scripts/deploy/start_fate.sh ${USER}-kuscia-autonomy-bob ${USER}-kuscia-autonomy-bob bob alice
 
-# 查看 Alice 的 FATE 服务是否启动（能看到名为 fate-alice 的容器）
+# Check if Alice's FATE service is started (look for a container named fate-alice)
 docker ps
 
-# 进入 Bob 容器，确认 Bob 机构的 FATE 启动完成（确保 fate-deploy-bob 前缀开头的 Pod 状态为 Running）
+# Enter the Bob container to confirm that Bob's FATE service has started (ensure that the Pod status with the fate-deploy-bob prefix is Running)
 docker exec -it ${USER}-kuscia-autonomy-bob bash
 kubectl get pods -n bob
-## 输出示例:
+## Output example:
 NAME                               READY   STATUS    RESTARTS   AGE
 fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
 ```
@@ -101,42 +101,42 @@ fate-deploy-bob-6798765d84-84rm7   1/1     Running   0          6m34s
 **中心化组网下 Bob Lite 中 FATE in Kuscia 部署日志：**
 
 ```shell
-# 登入 Bob lite 容器
+# Log in to the Bob lite container
 docker exec -it ${USER}-kuscia-lite-bob bash
 
-# 查看正在运行的 container，找到部署 FATE 的 container：fate-deploy-bob，复制其 CONTAINER-ID
+# View running containers and find the FATE deployment container: fate-deploy-bob, copy its CONTAINER-ID
 crictl ps
 
-# 通过 CONTAINER-ID 登入 container
+# Log in to the container using the CONTAINER-ID
 crictl exec -it ${CONTAINER-ID} bash
 
-# 查看 FATE 部署日志
+# View FATE deployment logs
 tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
 ```
 
 **P2P 组网下 Bob Autonomy 中 FATE in Kuscia 部署日志：**
 
 ```shell
-# 登入 Bob Autonomy 容器
+# Log in to the Bob Autonomy container
 docker exec -it ${USER}-kuscia-autonomy-bob bash
 
-# 查看正在运行的 container，找到部署 FATE 的 container：fate-deploy-bob，复制其 CONTAINER-ID
+# View running containers and find the FATE deployment container: fate-deploy-bob, copy its CONTAINER-ID
 crictl ps
 
-# 通过 CONTAINER-ID 登入 container
+# Log in to the container using the CONTAINER-ID
 crictl exec -it ${CONTAINER-ID} bash
 
-# 查看 FATE 部署日志
+# View FATE deployment logs
 tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
 ```
 
 **Kuscia 节点外 Alice 机构的 fate-alice 部署日志：**
 
 ```shell
-# 登入 fate-alice 容器
+# Log in to the fate-alice container
 docker exec -it fate-alice bash
 
-# 查看 FATE 部署日志
+# View FATE deployment logs
 tail -f fate_cluster_install_1.11.1_release/allInone/logs/deploy-host.log
 ```
 
@@ -216,19 +216,19 @@ upload host data
 Kuscia 中已经内置了一份 FATE 示例作业，可以登入对应的管控容器去执行。
 
 ```shell
-# 登入中心化组网的管控容器
+# Log in to the control container in the centralized networking
 docker exec -it ${USER}-kuscia-master bash
 
-# 登入 P2P 组网部署 FATE 集群的节点容器
+# Log in to the node container in the P2P networking for deploying the FATE cluster
 docker exec -it ${USER}-kuscia-autonomy-bob bash
 
-# 运行示例作业脚本
+# Run the example job script
 sh scripts/templates/fate/lr_job.sh
 
-# 查看作业
+# View the job
 kubectl get kj -n cross-domain
 
-# 查看任务
+# View the task
 kubectl get kt -n cross-domain
 ```
 

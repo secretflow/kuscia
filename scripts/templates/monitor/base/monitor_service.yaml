@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: alice
+spec:
+  selector:
+    app: monitor
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+      name: prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: alice
+spec:
+  selector:
+    app: monitor
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      name: grafana

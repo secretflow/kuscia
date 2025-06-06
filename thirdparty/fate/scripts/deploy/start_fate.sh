@@ -56,7 +56,7 @@ function cpoy_fate_adapater_image {
     return 
   fi
 
-  local image_tar=/tmp/date-adapter.${FATE_ADAPTER_IMAGE_TAG}.tar
+  local image_tar=/tmp/fate-deploy.${FATE_ADAPTER_IMAGE_TAG}.tar
 
   echo -e "Start importing image '${FATE_ADAPTER_IMAGE}'"
 

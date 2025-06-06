@@ -15,17 +15,17 @@
 - Kuscia 中心化部署参考[这里](../deployment/Docker_deployment_kuscia/deploy_master_lite_cn.md)
 - Kuscia 点对点部署参考[这里](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md)
 
-下面以 Alice 机构访问 Bob、Carol 机构的通信配置作为示例，其中 nginx 服务器地址为 1.1.1.1，Bob 机构地址为 2.2.2.2，Carol 机构地址为 3.3.3.3。
+下面以 Alice 机构访问 Bob、Carol 机构的通信配置作为示例，其中 Nginx 服务器地址为 1.1.1.1，Bob 机构地址为 2.2.2.2，Carol 机构地址为 3.3.3.3。
 
 ```bash
-# alice 访问 bob 地址
+# alice accesses bob's address
 http://1.1.1.1/foo
 
-# alice 访问 carol 地址
+# alice accesses carol's address
 http://1.1.1.1/bar
 ```
 
-nginx 配置示例如下：
+Nginx 配置示例如下：
 
 ```bash
 http {
@@ -84,8 +84,8 @@ http {
 下面以机构 Alice 访问机构 Bob 的场景为例，当机构 Bob 网关地址带 Path 时如何调用 KusciaAPI 设置 `endpoint` 的 `prefix` 字段。
 
 ```bash
-# 在容器内执行示例
-# --cert 是请求服务端进行双向认证使用的证书
+# Execute the example inside the container
+# --cert is the certificate used for mutual authentication with the server
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/route/create'
 --header "Token: $(cat ${CTR_CERTS_ROOT}/token)"
@@ -101,7 +101,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/create'
       {
         "port": 80,
         "protocol": "HTTP",
-        "isTLS": true, # 如果网关为域名并且支持 https, 可以设置 true, 否则为 false
+        "isTLS": true, # If the gateway is a domain and supports https, set to true, otherwise set to false
         "path_prefix": "/foo"
       }
     ]

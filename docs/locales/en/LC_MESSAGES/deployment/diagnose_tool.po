@@ -78,7 +78,7 @@ msgid "使用示例"
 msgstr "Usage Example"
 
 #: ../../deployment/diagnose_tool.md:27
-msgid "假设双方节点为alice和bob，需要检测到bob的网络通信，可以在 alice 的计算节点容器内执行："
+msgid "假设双方节点为 alice 和 bob，需要检测到 bob 的网络通信，可以在 alice 的计算节点容器内执行："
 msgstr "Assume the two nodes are alice and bob. To test the network communication from alice to bob, you can execute the following command in alice's compute node container:"
 
 #: ../../deployment/diagnose_tool.md:33

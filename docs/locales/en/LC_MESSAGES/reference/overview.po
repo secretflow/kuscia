@@ -288,7 +288,7 @@ msgid "为降低用户安装部署使用的门槛，Kuscia 提供了轻量化的
 msgstr "To lower the threshold for user installation, deployment, and use, Kuscia provides a lightweight deployment method. Mainly includes:"
 
 #: ../../reference/overview.md:85
-msgid "资源占用低：允许最低 1C2G 的机器（avx512指令集）部署 Kuscia 完成 100w 级数据的 PSI 求交。"
+msgid "资源占用低：允许最低 1C2G 的机器（avx512 指令集）部署 Kuscia 完成 100w 级数据的 PSI 求交。"
 msgstr "**Low resource usage:** Allows deployment of Kuscia on machines with as low as 1C2G (avx512 instruction set) to complete PSI intersection of 1 million-level data."
 
 #: ../../reference/overview.md:86
@@ -307,7 +307,7 @@ msgid "跨域网络安全通信"
 msgstr "Cross-Domain Secure Network Communication"
 
 #: ../../reference/overview.md:91
-msgid "隐私计算任务一般需要2方或2方以上参与完成，那么多方之间如何安全且便捷的通信？"
+msgid "隐私计算任务一般需要 2 方或 2 方以上参与完成，那么多方之间如何安全且便捷的通信？"
 msgstr "Privacy computing tasks typically require participation from two or more parties. How can secure and convenient communication be achieved among multiple parties?"
 
 #: ../../reference/overview.md:93

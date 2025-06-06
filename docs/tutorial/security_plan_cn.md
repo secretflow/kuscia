@@ -19,7 +19,7 @@ SecretFlow 支持通过 NsJail 启动，这使得 SecretFlow 任务可以在安�
 2. 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：
 
     ```bash
-    docker pull ${KUSCIA_IMAGE} && docker run --rm -v $(pwd):/tmp/kuscia ${KUSCIA_IMAGE} cp -f /home/kuscia/scripts/deploy/start_standalone.sh /tmp/kuscia
+    docker pull ${KUSCIA_IMAGE} && docker run --rm -v $(pwd):/tmp/kuscia ${KUSCIA_IMAGE} cp -f /home/kuscia/scripts/deploy/kuscia.sh /tmp/kuscia
     ```
 
 3. 开启特权配置，并以中心化组网模式启动集群（开启容器特权时，会带来容器逃逸的风险，建议使用安全容器 kata)：
@@ -29,7 +29,7 @@ SecretFlow 支持通过 NsJail 启动，这使得 SecretFlow 任务可以在安�
     export ALLOW_PRIVILEGED=true
 
     # 启动集群，会拉起 3 个 docker 容器，包括一个控制平面 master 和两个 Lite 节点 alice 和 bob。
-    ./start_standalone.sh center
+    ./kuscia.sh center
     ```
 
 4. 执行作业：

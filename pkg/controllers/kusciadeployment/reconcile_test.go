@@ -115,15 +115,15 @@ func TestRefreshPartyDeploymentStatuses(t *testing.T) {
 	kd := makeTestKusciaDeployment("kd-1", 1, 1, 1)
 	kd.Status = kusciav1alpha1.KusciaDeploymentStatus{}
 
-	partyKitInfos := map[string]*PartyKitInfo{
-		"alice": {
+	partyKitInfos := []*PartyKitInfo{
+		{
 			kd:       kd,
 			domainID: "alice",
 			dkInfo: &DeploymentKitInfo{
 				deploymentName: "kd-alice-1",
 			},
 		},
-		"bob": {
+		{
 			kd:       kd,
 			domainID: "bob",
 			dkInfo: &DeploymentKitInfo{
@@ -360,7 +360,7 @@ func TestSyncService(t *testing.T) {
 		serviceLister: svcInformer.Lister(),
 	}
 
-	err := c.syncService(context.Background(), map[string]*PartyKitInfo{"alice": partyKitInfo})
+	err := c.syncService(context.Background(), []*PartyKitInfo{partyKitInfo})
 	assert.NoError(t, err)
 }
 
@@ -457,7 +457,7 @@ func TestSyncConfigMap(t *testing.T) {
 		configMapLister: cmInformer.Lister(),
 	}
 
-	err := c.syncConfigMap(context.Background(), map[string]*PartyKitInfo{"alice": partyKitInfo})
+	err := c.syncConfigMap(context.Background(), []*PartyKitInfo{partyKitInfo})
 	assert.NoError(t, err)
 }
 
@@ -533,7 +533,7 @@ func TestSyncDeployment(t *testing.T) {
 		namespaceLister:  nsInformer.Lister(),
 	}
 
-	err := c.syncDeployment(context.Background(), map[string]*PartyKitInfo{"alice": partyKitInfo})
+	err := c.syncDeployment(context.Background(), []*PartyKitInfo{partyKitInfo})
 	assert.NoError(t, err)
 }
 

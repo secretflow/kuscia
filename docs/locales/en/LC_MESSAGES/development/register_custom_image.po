@@ -83,8 +83,8 @@ msgstr "`-i`: Required parameter, specify the Docker container image name of the
 
 #: ../../development/register_custom_image.md:36
 msgid ""
-"`-f`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 模版文件。推荐在工具脚本同级目录下，以规则`{Kuscia "
-"AppImage 名称}.yaml`命名模版文件。否则必须通过该标志指定模版文件。"
+"`-f`：可选参数，指定自定义算法镜像相关的 Kuscia AppImage 模版文件。推荐在工具脚本同级目录下，以规则 `{Kuscia "
+"AppImage 名称}.yaml` 命名模版文件。否则必须通过该标志指定模版文件。"
 msgstr ""
 "`-f`: Optional parameter, specify the Kuscia AppImage template file related to the custom algorithm image. It is recommended to name the template file in the same directory as the tool script with the rule `{Kuscia AppImage name}.yaml`. Otherwise, the template file must be specified through this flag."
 
@@ -170,11 +170,10 @@ msgstr "After registering the custom algorithm image through the previous steps,
 
 #: ../../development/register_custom_image.md:79
 msgid ""
-"以名称为`secretflow-image`的 AppImage 为例，使用自定义算法镜像运行 "
-"[KusciaJob](../reference/concepts/kusciajob_cn.md) 作业，修改[KusciaJob "
+"以名称为 `secretflow-image` 的 AppImage 为例，使用自定义算法镜像运行 "
+"[KusciaJob](../reference/concepts/kusciajob_cn.md) 作业，修改 [KusciaJob "
 "示例](../reference/concepts/kusciajob_cn.md#创建-kusciajob) 中 "
-"`spec.tasks[].appImage`字段的值。"
+"`spec.tasks[].appImage` 字段的值。"
 msgstr ""
 "Take the AppImage named `secretflow-image` as an example. To run "
 "[KusciaJob](../reference/concepts/kusciajob_cn.md) jobs using custom algorithm images, modify the value of the `spec.tasks[].appImage` field in the [KusciaJob example](../reference/concepts/kusciajob_cn.md#创建-kusciajob)."
-

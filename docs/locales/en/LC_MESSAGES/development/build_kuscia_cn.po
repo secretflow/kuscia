@@ -79,7 +79,7 @@ msgid "构建 Kuscia"
 msgstr "Build Kuscia"
 
 #: ../../development/build_kuscia_cn.md:27
-msgid "Kuscia 提供了 Makefile 来构建镜像，您可以通过`make help`命令查看命令帮助，其中 Build 部分提供了构建能力："
+msgid "Kuscia 提供了 Makefile 来构建镜像，您可以通过 `make help` 命令查看命令帮助，其中 Build 部分提供了构建能力："
 msgstr "Kuscia provides Makefile to build images. You can view command help through `make help`, where the Build section provides build capabilities:"
 
 #: ../../development/build_kuscia_cn.md:50
@@ -93,7 +93,7 @@ msgid "在 Kuscia 项目根目录下："
 msgstr "In the Kuscia project root directory:"
 
 #: ../../development/build_kuscia_cn.md:54
-msgid "执行`make build`命令，该命令将会构建出 Kuscia 的可执行文件，构建产物会生成在 ./build/ 目录下。"
+msgid "执行 `make build` 命令，该命令将会构建出 Kuscia 的可执行文件，构建产物会生成在 ./build/ 目录下。"
 msgstr "Execute the `make build` command, which will build the Kuscia executable files. The build artifacts will be generated in the ./build/ directory."
 
 #: ../../development/build_kuscia_cn.md:56
@@ -125,7 +125,7 @@ msgid "构建 Kuscia Image"
 msgstr "Build Kuscia Image"
 
 #: ../../development/build_kuscia_cn.md:67
-msgid "执行`make image`命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。"
+msgid "执行 `make image` 命令，该命令将会使用 Docker 命令构建出 Kuscia 镜像。"
 msgstr "Execute the `make image` command, which will use Docker commands to build the Kuscia image."
 
 #: ../../development/build_kuscia_cn.md:69
@@ -146,7 +146,7 @@ msgstr "In the kuscia/build/dockerfile directory:"
 
 #: ../../development/build_kuscia_cn.md:75
 msgid ""
-"执行`docker build -f ./kuscia-secretflow.Dockerfile .`命令会构建出 Kuscia-"
+"执行 `docker build -f ./kuscia-secretflow.Dockerfile .` 命令会构建出 Kuscia-"
 "Secretflow 镜像。Kuscia-Secretflow 镜像在 Kuscia 镜像的基础上集成了 Secretflow 镜像。"
 msgstr ""
 "Executing the `docker build -f ./kuscia-secretflow.Dockerfile .` command will build the Kuscia-"
@@ -159,14 +159,14 @@ msgstr "Note that the kuscia-secretflow image only needs to be built in `RunP` m
 #: ../../development/build_kuscia_cn.md:79
 msgid ""
 "kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 "
-"1.7.0b0，如果需要指定其他版本，可以使用如下命令："
+"1.11.0b1，如果需要指定其他版本，可以使用如下命令："
 msgstr ""
 "The default Kuscia image version in the kuscia-secretflow.Dockerfile file is latest, and the Secretflow version is "
-"1.7.0b0. If you need to specify other versions, you can use the following command:"
+"1.11.0b1. If you need to specify other versions, you can use the following command:"
 
 #: ../../development/build_kuscia_cn.md:81
-msgid "此处以 Kuscia 0.14.0b0，Secretflow 1.7.0b0 版本为例"
-msgstr "Here we take Kuscia 0.14.0b0 and Secretflow 1.7.0b0 versions as examples"
+msgid "此处以 Kuscia 0.14.0b0，Secretflow 1.11.0b1 版本为例"
+msgstr "Here we take Kuscia 0.14.0b0 and Secretflow 1.11.0b1 versions as examples"
 
 #: ../../development/build_kuscia_cn.md:87
 msgid "编译文档"
@@ -174,7 +174,7 @@ msgstr "Compile Documentation"
 
 #: ../../development/build_kuscia_cn.md:91
 msgid ""
-"执行`make docs`命令，该命令会生成 Kuscia 文档，生成的文档会放在 `docs/_build/html` 目录，用浏览器打开 "
+"执行 `make docs` 命令，该命令会生成 Kuscia 文档，生成的文档会放在 `docs/_build/html` 目录，用浏览器打开 "
 "`docs/_build/html/index.html` 就可以查看文档。"
 msgstr ""
 "Execute the `make docs` command, which will generate Kuscia documentation. The generated documentation will be placed in the `docs/_build/html` directory. Open "
@@ -269,7 +269,7 @@ msgid ""
 "对于中心化模式，在 `tests/suite/center/` 下新建您的测试用例集文件，对于 P2P 模式，在 "
 "`tests/suite/p2p/` 下新建您的测试用例文件。"
 msgstr ""
-"For centralized mode, create your test suite file under `scripts/test/suite/center/`. For P2P mode, create your test case file under "
+"For centralized mode, create your test suite file under `tests/suite/center/`. For P2P mode, create your test case file under "
 "`tests/suite/p2p/`."
 
 #: ../../development/build_kuscia_cn.md:140
@@ -277,7 +277,7 @@ msgid ""
 "编写您的测试用例集，确保您的测试用例集文件包含 `. ./tests/vendor/shunit2`，具体请参考 "
 "[shunit2](https://github.com/kward/shunit2)。"
 msgstr ""
-"Write your test suite, ensuring your test suite file includes `. ./test/vendor/shunit2`. For details, please refer to "
+"Write your test suite, ensuring your test suite file includes `. ./tests/vendor/shunit2`. For details, please refer to "
 "[shunit2](https://github.com/kward/shunit2)."
 
 #: ../../development/build_kuscia_cn.md:141

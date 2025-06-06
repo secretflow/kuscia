@@ -27,11 +27,11 @@ spec:
   - alice
 ```
 
-在该示例中，表示将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。
+在该示例中，表示将任务调度方 `bob` 集群中 `alice` Namespace 下任务相关的资源同步到任务参与方集群中的 `alice` Namespace 下。
 
-- `.metadata.name`：表示 InteropConfig 的名称，当前示例为`alice-2-bob`。
-- `.spec.host`：表示任务调度方的节点标识。当前示例为`bob`。
-- `.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`。
+- `.metadata.name`：表示 InteropConfig 的名称，当前示例为 `alice-2-bob`。
+- `.spec.host`：表示任务调度方的节点标识。当前示例为 `bob`。
+- `.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为 `alice`。
 
 1. 在参与方集群中运行以下命令创建 InteropConfig。
 
@@ -84,7 +84,7 @@ spec:
 
 在该示例中:
 
-**在`.spec.members`中新增一个节点标识为`alice-mock`的参与方。相应地，任务参与方通过 InteropController 将任务调度方`bob`集群中`alice-mock` Namespace 下任务相关的资源同步到任务参与方集群中的`alice-mock` Namespace 下。**
+**在 `.spec.members` 中新增一个节点标识为 `alice-mock` 的参与方。相应地，任务参与方通过 InteropController 将任务调度方 `bob` 集群中 `alice-mock` Namespace 下任务相关的资源同步到任务参与方集群中的 `alice-mock` Namespace 下。**
 
 1. 在参与方集群中运行以下命令更新 InteropConfig。
 
@@ -140,4 +140,4 @@ InteropConfig `metadata` 的子字段详细介绍如下：
 InteropConfig `spec` 的子字段详细介绍如下：
 
 - `host`：表示任务调度方的节点标识。
-- `members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`，相应地，任务参与方通过 InteropController 将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。
+- `members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为 `alice`，相应地，任务参与方通过 InteropController 将任务调度方 `bob` 集群中 `alice` Namespace 下任务相关的资源同步到任务参与方集群中的 `alice` Namespace 下。

@@ -17,6 +17,8 @@ package resources
 import (
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
@@ -45,4 +47,17 @@ func getInterConnPartiesByAnnotations(annotations map[string]string, key string,
 			res[domain] = key
 		}
 	}
+}
+func IsBFIAResource(obj metav1.Object) bool {
+	if obj.GetAnnotations() != nil {
+		if val, ok := obj.GetAnnotations()[common.InterConnBFIAPartyAnnotationKey]; ok && val != "" {
+			return true
+		}
+	}
+	if obj.GetLabels() != nil {
+		if interConnType, ok := obj.GetLabels()[common.LabelInterConnProtocolType]; ok && interConnType == string(kusciaapisv1alpha1.InterConnBFIA) {
+			return true
+		}
+	}
+	return false
 }

@@ -52,43 +52,52 @@ header:
     - '**'
 
   paths-ignore:
+
     - '.VERSION'
     - '.bazelversion'
 
-    - 'licenses'
     - 'OWNERS'
-    - 'WORKSPACE'
-    - 'LICENSE'
     - 'NOTICE'
     - 'go.mod'
     - 'go.sum'
+    - 'LICENSE'
+    - 'licenses'
+    - 'WORKSPACE'
+
+    - 'hack/proot/patch/path.patch'
+    - 'hack/k3s/Makefile.rebuild_k3s'
+
+    - 'etc/conf/corefile'
+    - 'etc/cni/net.d/10-containerd-net.conflist'
+
+    - 'tests/vendor/shunit2'
+    - 'scripts/linter/codespell/.codespell.skip'
+    - 'scripts/linter/codespell/.codespell.ignorewords'
+
+    - 'thirdparty/fate/build/dockerfile/etc/sudoers.d/app'
 
     - '**/*.md'
     - '**/*.json'
     - '**/*.csv'
     - '**/*.txt'
     - '**/*.rst'
-    - '**/*.yaml'
-    - '**/*.yml'
     - '**/*.tmpl'
     - '**/*.toml'
     - '**/*.excalidraw'
     - '**/*.conf'
-    - '**/*.Dockerfile'
+    - '**/*.po'
 
-    - 'etc/conf/corefile'
-    - 'etc/cni/net.d/10-containerd-net.conflist'
+    # For yaml/yml files
+    - 'hack/k8s/**/*.yaml'
+    - 'crds/v1alpha1/*.yaml'
+    - 'scripts/python/**/*.yaml'
+    - 'scripts/templates/**/*.yml'
+    - 'scripts/templates/**/*.yaml'
+    - 'scripts/tools/register_app_image/*.yaml'
+    - 'thirdparty/fate/scripts/templates/**/*.yaml'
+    - 'thirdparty/fate/build/dockerfile/conf/fate_deploy.yaml'
 
-    - 'hack/k3s/Makefile.rebuild_k3s'
-    - 'hack/proot/patch/path.patch'
-
-    - 'scripts/python/mockapp/Dockerfile'
-    - 'scripts/test/vendor/shunit2'
-    - 'scripts/linter/codespell/.codespell.ignorewords'
-    - 'scripts/linter/codespell/.codespell.skip'
-
-    - 'thirdparty/fate/build/dockerfile/etc/sudoers.d/app'
-
+    # For pkg go files.
     - 'pkg/agent/container/testing/mock_runtime_cache.go'
     - 'pkg/agent/framework/net/ip.go'
     - 'pkg/agent/framework/net/parse.go'
@@ -100,12 +109,16 @@ header:
     - 'pkg/transport/proto/mesh/mesh.x_grpc.pb.go'
     - 'pkg/transport/proto/mesh/mesh.y_grpc.pb.go'
     - 'pkg/utils/datastore/datastore_endpoint_check.go'
+
+    # For proto go files.
     - 'proto/api/v1alpha1/kusciaapi/domaindatagrant.pb.go'
     - 'proto/api/v1alpha1/kusciaapi/domaindatagrant.proto'
     - 'proto/api/v1alpha1/kusciaapi/domaindatagrant_grpc.pb.go'
 
     - 'python/MANIFEST.in'
     - 'python/generate_py_protobufs.py'
+
+    # For proto python files.
     - 'python/kuscia/proto/api/v1/interconn/common_pb2.py'
     - 'python/kuscia/proto/api/v1/interconn/common_pb2_grpc.py'
     - 'python/kuscia/proto/api/v1/interconn/job_pb2.py'

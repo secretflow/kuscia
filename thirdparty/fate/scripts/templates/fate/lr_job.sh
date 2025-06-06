@@ -38,7 +38,7 @@ READER_CONFIG=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g" <"${ROOT}/scripts/templates/
 TRANSFORM_CONFIG=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g" <"${ROOT}/scripts/templates/fate/task_input_config.data_transform.json"|jq -c . )
 INTERSECTION_CONFIG=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g" <"${ROOT}/scripts/templates/fate/task_input_config.intersection.json"|jq -c . )
 LR_CONFIG=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g" <"${ROOT}/scripts/templates/fate/task_input_config.hetero_lr.json"|jq -c . )
-EVALUATION_CONFIG=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g" <"${ROOT}/scripts/templates/fate/task_input_config.evalution.json"|jq -c . )
+EVALUATION_CONFIG=$(sed "s~{{.JOB_NAME}}~${JOB_NAME}~g" <"${ROOT}/scripts/templates/fate/task_input_config.evaluation.json"|jq -c . )
 
 
 APP_IMAGE="fate-image"

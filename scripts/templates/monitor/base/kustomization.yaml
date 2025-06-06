@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- monitor_rbac.yaml
+- monitor_configmap.yaml
+- monitor_deployment.yaml
+- monitor_service.yaml

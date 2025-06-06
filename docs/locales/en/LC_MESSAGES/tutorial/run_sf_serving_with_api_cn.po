@@ -19,93 +19,94 @@ msgstr ""
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:1
 msgid "如何使用 Kuscia API 运行一个 SecretFlow Serving"
-msgstr ""
+msgstr "How to Run a SecretFlow Serving Using Kuscia API"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:3
 msgid "本教程将以 SecretFlow Serving 内置测试模型为例，介绍如何基于 Kuscia API 运行一个多方的联合预测。"
-msgstr ""
+msgstr "This tutorial will use the built-in test model of SecretFlow Serving as an example to demonstrate how to run a multi-party federated prediction based on Kuscia API."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:5
 msgid "准备节点"
-msgstr ""
+msgstr "Prepare Nodes"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:7
 msgid "准备节点请参考[快速入门](../getting_started/quickstart_cn.md)。"
-msgstr ""
+msgstr "For preparing nodes, please refer to [Quick Start](../getting_started/quickstart_cn.md)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:9
 msgid "本示例在**中心化组网模式**下完成。在点对点组网模式下，证书的配置会有所不同。"
-msgstr ""
+msgstr "This example is completed in **centralized networking mode**. In peer-to-peer networking mode, the certificate configuration will be different."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:13
 msgid "确认证书和 Token"
-msgstr ""
+msgstr "Confirm Certificates and Token"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:15
 msgid "Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HTTPS 配置。"
-msgstr ""
+msgstr "Kuscia API uses mutual HTTPS, so you need to configure mutual HTTPS in your client library."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:17
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:19
-msgid "证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下："
-msgstr ""
+msgid "证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下："
+msgstr "Certificate files are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-master node:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "文件名"
-msgstr ""
+msgstr "File Name"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "文件功能"
-msgstr ""
+msgstr "File Function"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "kusciaapi-server.key"
-msgstr ""
+msgstr "kusciaapi-server.key"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "服务端私钥文件"
-msgstr ""
+msgstr "Server Private Key File"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "kusciaapi-server.crt"
-msgstr ""
+msgstr "kusciaapi-server.crt"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "服务端证书文件"
-msgstr ""
+msgstr "Server Certificate File"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "ca.crt"
-msgstr ""
+msgstr "ca.crt"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "CA 证书文件"
-msgstr ""
+msgstr "CA Certificate File"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "token"
-msgstr ""
+msgstr "token"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md
 msgid "认证 Token ，在 headers 中添加 Token: { token 文件内容}"
-msgstr ""
+msgstr "Authentication Token, add Token: { token file content} in the headers."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:28
 msgid "点对点组网模式"
-msgstr ""
+msgstr "Peer-to-Peer Networking Mode"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:30
 msgid ""
 "这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice "
-"节点的`/home/kuscia/var/certs/`目录下："
+"节点的 `/home/kuscia/var/certs/` 目录下："
 msgstr ""
+"Here, we take the alice node as an example. The certificate files required by the interface are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-autonomy-alice node:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:39
 msgid "准备 SecretFlow Serving 应用镜像模版"
-msgstr ""
+msgstr "Prepare SecretFlow Serving Application Image Template"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:41
 #: ../../tutorial/run_sf_serving_with_api_cn.md:72
@@ -113,15 +114,15 @@ msgstr ""
 #: ../../tutorial/run_sf_serving_with_api_cn.md:333
 #: ../../tutorial/run_sf_serving_with_api_cn.md:375
 msgid "登陆到 kuscia-master 节点容器中"
-msgstr ""
+msgstr "Login to the kuscia-master node container."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:47
 msgid "如果是点对点组网模式，则需要在 Alice 和 Bob 节点容器中分别创建上述应用的镜像模版 AppImage。"
-msgstr ""
+msgstr "If in peer-to-peer networking mode, you need to create the above application's image template AppImage in the Alice and Bob node containers separately."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:57
 msgid "获取 SecretFlow Serving 应用的镜像模版 AppImage"
-msgstr ""
+msgstr "Obtain the SecretFlow Serving Application Image Template AppImage"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:59
 msgid ""
@@ -130,36 +131,38 @@ msgid ""
 "AppImage](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)。"
 msgstr ""
+"Obtain the specific content of the AppImage from the SecretFlow Serving official documentation and save it to the `secretflow-serving-image.yaml` file. For the specific template content, refer to [Serving AppImage](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:62
 msgid "创建 SecretFlow Serving 应用的镜像模版 AppImage"
-msgstr ""
+msgstr "Create the SecretFlow Serving Application Image Template AppImage"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:68
 msgid "提交 SecretFlow Serving"
-msgstr ""
+msgstr "Submit SecretFlow Serving"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:70
 msgid "下面以 Alice 和 Bob 两方为例，提交一个两方的联合预测。"
-msgstr ""
+msgstr "The following example uses Alice and Bob as the two parties to submit a two-party federated prediction."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:78
 msgid "如果是点对点组网模式，则需要进入任务发起方节点容器，以 alice 节点为例："
-msgstr ""
+msgstr "If in peer-to-peer networking mode, you need to enter the task initiator node container, using the alice node as an example:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:84
 msgid "创建 SecretFlow Serving"
-msgstr ""
+msgstr "Create SecretFlow Serving"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:86
 msgid ""
 "请求[创建 Serving](../reference/apis/serving_cn.md#请求createservingrequest) "
 "接口提交一个两方的联合预测。"
 msgstr ""
+"Request the [Create Serving](../reference/apis/serving_cn.md#request-createservingrequest) interface to submit a two-party federated prediction."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:88
 msgid "在 kuscia-master 容器终端中，执行以下命令："
-msgstr ""
+msgstr "In the kuscia-master container terminal, execute the following command:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:113
 msgid ""
@@ -167,102 +170,111 @@ msgid ""
 "官方文档](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)。"
 msgstr ""
+"The `serving_input_config` field in the above command defines the related configuration for the federated prediction. For detailed information, refer to the [SecretFlow Serving Official Documentation](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:115
 msgid "如果提交成功了，您将得到如下返回："
-msgstr ""
+msgstr "If the submission is successful, you will receive the following response:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:121
 msgid "恭喜，这说明 Alice 和 Bob 两方的联合预测已经成功创建。"
-msgstr ""
+msgstr "Congratulations, this indicates that the two-party federated prediction for Alice and Bob has been successfully created."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:123
 msgid ""
 "如果遇到 HTTP 错误（即 HTTP Code 不为 200），请参考 [HTTP Error Code 处理](#http-error-"
 "code)。"
 msgstr ""
+"If you encounter an HTTP error (i.e., HTTP Code is not 200), please refer to [HTTP Error Code Handling](#http-error-code)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:125
 msgid ""
 "此外，在 Kuscia 中，使用 KusciaDeployment 资源对 Serving 类型的常驻服务进行管理。详细介绍可参考 "
 "[KusciaDeployment](../reference/concepts/kusciadeployment_cn.md)。"
 msgstr ""
+"Additionally, in Kuscia, the KusciaDeployment resource is used to manage Serving-type resident services. For detailed information, refer to [KusciaDeployment](../reference/concepts/kusciadeployment_cn.md)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:129
 msgid "查询 SecretFlow Serving 状态"
-msgstr ""
+msgstr "Query SecretFlow Serving Status"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:137
 msgid "如果是点对点组网模式，需要进入节点容器中，以 alice 为例："
-msgstr ""
+msgstr "If in peer-to-peer networking mode, you need to enter the node container, using the alice node as an example:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:143
 msgid "查询状态"
-msgstr ""
+msgstr "Query Status"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:145
 msgid ""
 "可以通过请求[批量查询 Serving 状态](../reference/apis/serving_cn.md#批量查询-serving-状态) "
 "接口来查询 Serving 的状态。"
 msgstr ""
+"You can query the status of Serving by requesting the [Batch Query Serving Status](../reference/apis/serving_cn.md#batch-query-serving-status) interface."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:147
 msgid "请求参数中 `serving_ids` 的值，需要填写前面创建过程中使用的 ID。"
-msgstr ""
+msgstr "The value of `serving_ids` in the request parameters should be the ID used in the previous creation process."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:161
 msgid "如果查询成功了，您将得到如下返回："
-msgstr ""
+msgstr "If the query is successful, you will receive the following response:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:254
 msgid "其中部分字段含义如下："
-msgstr ""
+msgstr "The meanings of some fields are as follows:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:256
 msgid "`data.servings[0].status.state`：表示 Serving 的全局状态，当前状态为 Available。"
-msgstr ""
+msgstr "`data.servings[0].status.state`: Indicates the global status of the Serving, which is currently Available."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:257
 msgid ""
 "`data.servings[0].status.party_statuses[0].state`： 表示 alice 方 Serving "
 "的状态，当前状态为 Available。"
 msgstr ""
+"`data.servings[0].status.party_statuses[0].state`: Indicates the status of the Serving on the alice side, which is currently Available."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:258
 msgid ""
 "`data.servings[0].status.party_statuses[1].state`： 表示 bob 方 Serving "
 "的状态，当前状态为 Available。"
 msgstr ""
+"`data.servings[0].status.party_statuses[1].state`: Indicates the status of the Serving on the bob side, which is currently Available."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:259
 msgid ""
 "`data.servings[0].status.party_statuses[0].endpoints`：表示 alice "
 "方应用对外提供的访问地址信息。"
 msgstr ""
+"`data.servings[0].status.party_statuses[0].endpoints`: Indicates the access address information provided by the alice side application."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:260
 msgid ""
 "`data.servings[0].status.party_statuses[1].endpoints`：表示 bob "
 "方应用对外提供的访问地址信息。"
 msgstr ""
+"`data.servings[0].status.party_statuses[1].endpoints`: Indicates the access address information provided by the bob side application."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:262
 msgid ""
 "上述字段详细介绍，请参考[批量查询 Serving "
 "状态](../reference/apis/serving_cn.md#批量查询-serving-状态)。"
 msgstr ""
+"Refer to [Batch Query Serving Status](../reference/apis/serving_cn.md#batch-query-serving-status) for detailed information on the above fields."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:264
 msgid "使用 SecretFlow Serving 进行预测"
-msgstr ""
+msgstr "Use SecretFlow Serving for Prediction"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:266
 msgid "下面以 Alice 为例，使用内置模型进行预测。在发起预测请求之前，请确保 Serving 的全局状态为 Available。"
-msgstr ""
+msgstr "The following example uses Alice to perform prediction with the built-in model. Ensure that the global status of the Serving is Available before initiating the prediction request."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:268
 msgid "获取 Alice 方 Serving 应用访问地址"
-msgstr ""
+msgstr "Obtain the Access Address of Alice's Serving Application"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:270
 msgid ""
@@ -270,166 +282,173 @@ msgid ""
 "Serving 应用对外提供的访问地址，这里需要选择 `port_name` 为 `service` 的 endpoint，  当前示例为 "
 "`serving-glm-test-1-service.alice.svc:53508`。"
 msgstr ""
+"Based on the previous [Query SecretFlow Serving Status](#query-sf-serving-status), obtain the access address provided by Alice's Serving application. Here, you need to select the endpoint with `port_name` as `service`, which is currently `serving-glm-test-1-service.alice.svc:53508`."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:273
 msgid "登陆到 Alice 节点容器中"
-msgstr ""
+msgstr "Login to the Alice node container."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:279
 msgid "如果是点对点组网模式，命令如下："
-msgstr ""
+msgstr "If in peer-to-peer networking mode, use the following command:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:285
 msgid "发起预测请求"
-msgstr ""
+msgstr "Initiate Prediction Request"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:287
 msgid "发起预测请求时，需要配置以下三个 Header："
-msgstr ""
+msgstr "When initiating a prediction request, you need to configure the following three Headers:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:289
 msgid "`Host: {服务地址}`"
-msgstr ""
+msgstr "`Host: {service address}`"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:290
 msgid "`Kuscia-Source: {alice 节点的 Domain ID}`"
-msgstr ""
+msgstr "`Kuscia-Source: {alice node's Domain ID}`"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:291
 msgid "`Content-Type: application/json`"
-msgstr ""
+msgstr "`Content-Type: application/json`"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:323
 msgid ""
 "上述命令中请求内容的详细介绍可参考 [SecretFlow Serving 官方文档](https://www.secretflow.org.cn"
 "/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)。"
 msgstr ""
+"Refer to the [SecretFlow Serving Official Documentation](https://www.secretflow.org.cn/zh-CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia) for detailed information on the request content in the above command."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:325
 msgid "如果预测成功了，您将得到如下返回："
-msgstr ""
+msgstr "If the prediction is successful, you will receive the following response:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:331
 msgid "更新 SecretFlow Serving"
-msgstr ""
+msgstr "Update SecretFlow Serving"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:339
 #: ../../tutorial/run_sf_serving_with_api_cn.md:381
 msgid "如果是点对点组网模式，需要进入任务发起方节点容器中，以 alice 为例："
-msgstr ""
+msgstr "If in peer-to-peer networking mode, you need to enter the task initiator node container, using the alice node as an example:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:345
 msgid "更新 Serving"
-msgstr ""
+msgstr "Update Serving"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:347
 msgid ""
 "当想要更新 SecretFlow Serving 的镜像或输入参数时，我们可以通过请求[更新 "
 "Serving](../reference/apis/serving_cn.md#更新-serving) 接口来更新指定的 Serving。"
 msgstr ""
+"When you want to update the image or input parameters of SecretFlow Serving, you can request the [Update Serving](../reference/apis/serving_cn.md#update-serving) interface to update the specified Serving."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:349
 #: ../../tutorial/run_sf_serving_with_api_cn.md:391
 msgid "请求参数中 `serving_id` 的值，需要填写前面创建过程中使用的 ID。"
-msgstr ""
+msgstr "The value of `serving_id` in the request parameters should be the ID used in the previous creation process."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:373
 msgid "删除 SecretFlow Serving"
-msgstr ""
+msgstr "Delete SecretFlow Serving"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:387
 msgid "删除 Serving"
-msgstr ""
+msgstr "Delete Serving"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:389
 msgid ""
 "我们可以通过请求[删除 Serving](../reference/apis/serving_cn.md#删除-serving) 接口来删除指定的"
 " Serving。"
 msgstr ""
+"We can request the [Delete Serving](../reference/apis/serving_cn.md#delete-serving) interface to delete the specified Serving."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:405
 msgid "如果删除成功了，您将得到如下返回："
-msgstr ""
+msgstr "If the deletion is successful, you will receive the following response:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:411
 msgid "参考"
-msgstr ""
+msgstr "References"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:413
 msgid "如何查看 Serving 应用容器日志"
-msgstr ""
+msgstr "How to View Serving Application Container Logs"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:415
 msgid "在 Kuscia 中，可以登陆到节点容器内查看 Serving 应用容器的日志。具体方法如下。"
-msgstr ""
+msgstr "In Kuscia, you can login to the node container to view the logs of the Serving application container. The specific method is as follows:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:417
 msgid "登陆到节点容器中，以 Alice 为例："
-msgstr ""
+msgstr "Login to the node container, using Alice as an example:"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:423
 msgid "如果是点对点组网模式，需要登陆到对应 autonomy 容器中。"
-msgstr ""
+msgstr "If in peer-to-peer networking mode, you need to login to the corresponding autonomy container."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:429
 msgid "查看日志"
-msgstr ""
+msgstr "View Logs"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:431
 msgid ""
 "在目录 `/home/kuscia/var/stdout/pods` 下可以看到对应 Serving "
 "应用容器的目录。后续进入到相应目录下，即可查看应用的日志。"
 msgstr ""
+"In the directory `/home/kuscia/var/stdout/pods`, you can see the directories corresponding to the Serving application containers. You can then navigate to the respective directories to view the application logs."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:443
 msgid "HTTP 客户端错误处理"
-msgstr ""
+msgstr "HTTP Client Error Handling"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:445
 msgid "curl: (56)"
-msgstr ""
+msgstr "curl: (56)"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:447
 msgid ""
 "curl: (56) OpenSSL SSL_read: error:14094412:SSL "
 "routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0"
 msgstr ""
+"curl: (56) OpenSSL SSL_read: error:14094412:SSL routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:449
 msgid "未配置 SSL 证书和私钥。请[确认证书和 Token](#cert-and-token)."
-msgstr ""
+msgstr "SSL certificate and private key are not configured. Please [confirm certificates and token](#cert-and-token)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:451
 msgid "curl: (58)"
-msgstr ""
+msgstr "curl: (58)"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:453
 msgid "curl: (58) unable to set XXX file"
-msgstr ""
+msgstr "curl: (58) unable to set XXX file"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:455
 msgid "SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 Token](#cert-and-token)."
-msgstr ""
+msgstr "SSL private key, SSL certificate, or CA certificate file path is incorrect. Please [confirm certificates and token](#cert-and-token)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:459
 msgid "HTTP Error Code 处理"
-msgstr ""
+msgstr "HTTP Error Code Handling"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:461
 msgid "401 Unauthorized"
-msgstr ""
+msgstr "401 Unauthorized"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:463
 msgid ""
 "身份认证失败。请检查是否在 Headers 中配置了正确的 Token 。 Token 内容详见[确认证书和 Token](#cert-and-"
 "token)."
 msgstr ""
+"Authentication failed. Please check if the correct Token is configured in the Headers. For Token content, see [Confirm Certificates and Token](#cert-and-token)."
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:465
 msgid "404 Page Not Found"
-msgstr ""
+msgstr "404 Page Not Found"
 
 #: ../../tutorial/run_sf_serving_with_api_cn.md:467
 msgid "接口 path 错误。请检查请求的 path 是否和文档中的一致。必要时可以提 issue 询问。"
-msgstr ""
+msgstr "Interface path error. Please check if the requested path is consistent with the documentation. If necessary, you can raise an issue to ask."
 

@@ -129,7 +129,7 @@ msgstr ""
 #: ../../reference/concepts/domain_cn.md:38
 msgid ""
 "`.spec.resourceQuota.podMaxCount`：表示 Domain "
-"所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为`100`。"
+"所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为 `100`。"
 msgstr ""
 "`.spec.resourceQuota.podMaxCount`: Specifies the maximum number of Pods "
 "allowed in the Namespace managed by the Domain, set to `100` in this "
@@ -157,7 +157,7 @@ msgstr ""
 "The following uses the content of `alice-domain.yaml` as an example to introduce how to update the Domain."
 
 #: ../../reference/concepts/domain_cn.md:84
-msgid "将 `.spec.resourceQuota.podMaxCount` 的值调整为`200`。"
+msgid "将 `.spec.resourceQuota.podMaxCount` 的值调整为 `200`。"
 msgstr "Adjust `.spec.resourceQuota.podMaxCount` to `200`."
 
 #: ../../reference/concepts/domain_cn.md:86
@@ -272,7 +272,7 @@ msgstr ""
 #: ../../reference/concepts/domain_cn.md:175
 msgid ""
 "`resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点 Namespace 下所允许创建的最大 Pod "
-"数量，当前示例为`100`。相应地，Kuscia 控制器会在 `domain-template` Namespace 下创建名称为 "
+"数量，当前示例为 `100`。相应地，Kuscia 控制器会在 `domain-template` Namespace 下创建名称为 "
 "`resource-limitation` 的 ResourceQuota 资源。"
 msgstr ""
 "`resourceQuota.podMaxCount`: Defines maximum Pod count (`100` in example) "

@@ -27,6 +27,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/huandu/go-sqlbuilder"
 	"github.com/pkg/errors"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
@@ -42,6 +43,11 @@ type MySQLUploader struct {
 // define some mysql error
 const (
 	ER_NO_SUCH_TABLE uint16 = 1146
+)
+
+// max placeholder. this means cols * rols should < 65535
+const (
+	DEFAULT_MAX_PLACEHOLDER = 65535
 )
 
 func NewMySQLUploader(ctx context.Context, db *sql.DB, data *datamesh.DomainData, query *datamesh.CommandDomainDataQuery) *MySQLUploader {
@@ -297,29 +303,14 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 		}
 	}()
 
-	sql := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...).Values(make([]interface{}, len(backTickHeaders))...).String()
-	stmt, err := tx.Prepare(sql)
-	if err != nil {
-		nlog.Errorf("Prepare insert failed(%s)", err)
-		return err
-	}
-
-	// close stmt first
-	defer func() {
-		stmtErr := stmt.Close()
-		if stmtErr != nil {
-			nlog.Errorf("Stmt close error")
-		}
-	}()
-
 	for reader.Next() {
 		record := reader.Record()
 		record.Retain()
 		defer record.Release()
 		// read field data from record
-		recs := make([][]any, record.NumRows())
+		recs := make([][]interface{}, record.NumRows())
 		for i := range recs {
-			recs[i] = make([]any, record.NumCols())
+			recs[i] = make([]interface{}, record.NumCols())
 		}
 		for j, col := range record.Columns() {
 			rows := u.transformColToStringArr(reader.Schema().Field(j).Type, col)
@@ -327,15 +318,30 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 				recs[i][j] = row
 			}
 		}
+		ib := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...)
+		placeholderCount := 0
 		// upload to sql
 		for _, row := range recs {
-			result, err := stmt.Exec(row...)
+			if placeholderCount+len(row) >= DEFAULT_MAX_PLACEHOLDER {
+				err = execOnce(ib, tx)
+				if err != nil {
+					return err
+				}
+				placeholderCount = 0
+				// start a new insert
+				ib = sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...)
+			}
+			ib.Values(row...)
+			placeholderCount += len(row)
+		}
+		if placeholderCount != 0 {
+			err = execOnce(ib, tx)
 			if err != nil {
-				nlog.Errorf("MySQL insert exec failed result(%s),error(%s)", result, err)
 				return err
 			}
 		}
 		iCount += int(record.NumRows())
+		nlog.Debugf("send rows=%d", iCount)
 	}
 	if err := reader.Err(); err != nil {
 		// in this case, stmt.Exec are all success, try to commit, rather than fail
@@ -343,4 +349,15 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	}
 	nlog.Infof("Domaindata(%s) write total row: %d.", u.data.DomaindataId, iCount)
 	return nil
+}
+
+func execOnce(ib *sqlbuilder.InsertBuilder, tx *sql.Tx) error {
+	sql, args := ib.Build()
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		nlog.Errorf("Prepare sql(%s) failed with error: %s", sql, err)
+		return err
+	}
+	_, err = stmt.Exec(args...)
+	return err
 }

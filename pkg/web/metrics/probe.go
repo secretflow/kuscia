@@ -46,7 +46,7 @@ func NewProbeInfo(servicename string, version string) *ProbeInfo {
 	}
 }
 
-// ProbeInfo store the info expored in probe url
+// ProbeInfo store the info exported in probe url
 type ProbeInfo struct {
 	ServiceName string
 	Host        string

@@ -44,7 +44,7 @@ for arg in "$@"; do
   esac
 done
 set -- "${NEW_ARGS[@]}"
-while getopts 'hc:i:mf:' option; do
+while getopts 'hc:i:mf:n:' option; do
   case "$option" in
   h)
     echo "$usage"
@@ -57,10 +57,13 @@ while getopts 'hc:i:mf:' option; do
     IMAGE=$OPTARG
     ;;
   m)
-    DEPLOY=ture
+    DEPLOY=true
     ;;
   f)
     APP_IMAGE_FILE=$OPTARG
+    ;;
+  n)
+    SF_NAME=$OPTARG
     ;;
   :)
     printf "missing argument for -%s\n" "$OPTARG" >&2
@@ -73,6 +76,11 @@ while getopts 'hc:i:mf:' option; do
   esac
 done
 
+if [[ -z "${SF_NAME}" ]]; then
+  SF_NAME="secretflow-image"
+fi
+
+
 count=$(echo "${IMAGE}" | grep -o "/" | wc -l)
 if [[ ${count} -eq 1 ]]; then
   IMAGE="docker.io/${IMAGE}"
@@ -80,7 +88,7 @@ elif [[ ${count} -eq 0 ]]; then
   IMAGE="docker.io/library/${IMAGE}"
 fi
 
-function import_engine_image() {   
+function import_engine_image() {
   if docker exec -i "${KUSCIA_CONTAINER_NAME}" bash -c "kuscia image list 2>&1 | awk '{print \$1\":\"\$2}' | grep -q \"^${IMAGE}$\""; then
      echo -e "${GREEN}Image '${IMAGE}' already exists in container ${KUSCIA_CONTAINER_NAME}${NC}"
   else
@@ -94,7 +102,7 @@ function import_engine_image() {
      local image_random
      image_random="image_$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)"
      echo -e "${GREEN}Start importing image '${IMAGE}' Please be patient...${NC}"
-    
+
      local image_tar=${DOMAIN_IMAGE_WORK_DIR}/${image_random}.tar
      docker save "${IMAGE}" -o "${image_tar}"
      docker exec -it "${KUSCIA_CONTAINER_NAME}" kuscia image load -i /home/kuscia/var/images/"${image_random}".tar
@@ -115,14 +123,18 @@ function apply_appimage_crd() {
   if [[ ${image_tag} = "" ]]; then
     image_tag="latest"
   fi
-  if [[ ! -f "$APP_IMAGE_FILE" ]]; then
+  if [[ ! -f $APP_IMAGE_FILE ]]; then
     echo -e "${RED}${APP_IMAGE_FILE} does not exist, register fail${NC}"
   else
     image_line=$(awk '/^  image:/{print NR; exit}' "$APP_IMAGE_FILE")
-    head -n "$((image_line - 1))" "$APP_IMAGE_FILE" > "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
-    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
-    docker exec -it "${KUSCIA_CONTAINER_NAME}" kubectl apply -f /home/kuscia/var/images/engine_appimage.yaml
-    rm -rf "${DOMAIN_IMAGE_WORK_DIR}"/engine_appimage.yaml
+    head -n "$((image_line - 1))" "$APP_IMAGE_FILE" > engine_appimage.yaml
+    echo -e "  image:\n    name: ${image_repo}\n    tag: ${image_tag}" >> engine_appimage.yaml
+    if grep -q "{{.SF_NAME}}" engine_appimage.yaml; then
+        sed -i "s/{{.SF_NAME}}/${SF_NAME}/g" engine_appimage.yaml
+    fi
+    docker cp engine_appimage.yaml "${KUSCIA_CONTAINER_NAME}":/home/kuscia
+    docker exec -i "${KUSCIA_CONTAINER_NAME}" kubectl apply -f engine_appimage.yaml && rm -rf engine_appimage.yaml
+    rm -rf engine_appimage.yaml
   fi
 }
 
@@ -141,9 +153,10 @@ function register_default_app_image() {
   fi
   if [[ ${app_type} == "secretflow" ]] || [[ ${app_type} == "psi" ]]; then
     app_image_template=$(sed "s!{{.SF_IMAGE_NAME}}!'${image_repo}'!g;
-    s!{{.SF_IMAGE_TAG}}!'${image_tag}'!g" \
+    s!{{.SF_IMAGE_TAG}}!'${image_tag}'!g;
+    s!{{.SF_NAME}}!'${SF_NAME}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
-  else 
+  else
     app_image_template=$(sed "s!{{.IMAGE_NAME}}!'${image_repo}'!g;
     s!{{.IMAGE_TAG}}!'${image_tag}'!g" \
     < "${ROOT}/scripts/templates/app_image.${app_type}.yaml")
@@ -173,7 +186,7 @@ function register_app_image() {
   fi
 }
 
-if [[ "${DEPLOY}" = "ture" ]]; then
+if [[ "${DEPLOY}" = "true" ]]; then
   register_default_app_image
 else
   register_app_image

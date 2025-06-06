@@ -17,7 +17,7 @@ With Kuscia:
 
 For more information about Kuscia's capabilities, please refer to the [Kuscia Overview](./docs/reference/overview.md).
 
-![Kuscia](./docs/imgs/kuscia_architecture.png)
+![Kuscia](./docs/imgs/en_images/kuscia_architecture.png)
 
 ## Documentation
 

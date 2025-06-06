@@ -94,7 +94,7 @@ func (s *ociStore) pullImageWorker(ctx context.Context, workerIdx uint32) {
 
 		var newPull *imageAction
 		s.mutex.Lock()
-		// clean up finsihed pull context
+		// clean up finished pull context
 		removeFinished := make(map[string]*imageAction)
 		for _, action := range s.pullingImages {
 			if action.status == 2 && time.Since(action.finishAt) > time.Minute {
@@ -176,7 +176,7 @@ func (s *ociStore) doPullImage(image string, auth *runtimeapi.AuthConfig) error 
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// if image aready exists, will update it
+	// if image already exists, will update it
 	if err = s.imagePath.ReplaceImage(flat, match.Name(ref.Name()), s.kusciaImageAnnotation(ref.Name(), "")); err != nil {
 		return err
 	}

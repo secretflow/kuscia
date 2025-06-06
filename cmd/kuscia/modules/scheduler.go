@@ -117,7 +117,7 @@ func (s *schedulerModule) Run(ctx context.Context) error {
 		if err != nil {
 			nlog.Warnf("Schedule run failed with: %s", err.Error())
 
-			// fix me: "finished without leader elect"/"lost lease" is copyed from app.Run function, may changed
+			// fix me: "finished without leader elect"/"lost lease" is copied from app.Run function, may changed
 			if err.Error() != "finished without leader elect" && err.Error() != "lost lease" {
 				return err
 			}

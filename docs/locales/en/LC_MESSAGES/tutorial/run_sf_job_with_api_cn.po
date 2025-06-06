@@ -19,339 +19,359 @@ msgstr ""
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:1
 msgid "如何使用 Kuscia API 运行一个 SecretFlow 作业"
-msgstr ""
+msgstr "How to Run a SecretFlow Job Using Kuscia API"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:3
 msgid "准备节点"
-msgstr ""
+msgstr "Prepare Nodes"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:5
 msgid "准备节点请参考[快速入门](../getting_started/quickstart_cn.md)。"
-msgstr ""
+msgstr "For preparing nodes, please refer to [Quick Start](../getting_started/quickstart_cn.md)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:7
 msgid "本示例在**中心化组网模式**下完成。在点对点组网模式下，证书的配置会有所不同。"
-msgstr ""
+msgstr "This example is completed in **centralized networking mode**. In peer-to-peer networking mode, the certificate configuration will be different."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:11
 msgid "确认证书和 Token"
-msgstr ""
+msgstr "Confirm Certificates and Token"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:13
 msgid "Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HTTPS 配置。"
-msgstr ""
+msgstr "Kuscia API uses mutual HTTPS, so you need to configure mutual HTTPS in your client library."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:15
 msgid "中心化组网模式"
-msgstr ""
+msgstr "Centralized Networking Mode"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:17
-msgid "证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下："
-msgstr ""
+msgid "证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下："
+msgstr "Certificate files are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-master node:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "文件名"
-msgstr ""
+msgstr "File Name"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "文件功能"
-msgstr ""
+msgstr "File Function"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "kusciaapi-server.key"
-msgstr ""
+msgstr "kusciaapi-server.key"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "服务端私钥文件"
-msgstr ""
+msgstr "Server Private Key File"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "kusciaapi-server.crt"
-msgstr ""
+msgstr "kusciaapi-server.crt"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "服务端证书文件"
-msgstr ""
+msgstr "Server Certificate File"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "ca.crt"
-msgstr ""
+msgstr "ca.crt"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "CA 证书文件"
-msgstr ""
+msgstr "CA Certificate File"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "token"
-msgstr ""
+msgstr "token"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md
 msgid "认证 Token ，在 headers 中添加 Token: { token 文件内容}"
-msgstr ""
+msgstr "Authentication Token, add Token: { token file content} in the headers."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:26
 msgid "点对点组网模式"
-msgstr ""
+msgstr "Peer-to-Peer Networking Mode"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:28
 msgid "证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)"
-msgstr ""
+msgstr "Refer to [Configuration Authorization](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#configuration-authorization) for certificate configuration."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:30
 msgid ""
 "这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice "
-"节点的`/home/kuscia/var/certs/`目录下："
+"节点的 `/home/kuscia/var/certs/` 目录下："
 msgstr ""
+"Here, we take the Alice node as an example. The certificate files required by the interface are located in the `/home/kuscia/var/certs/` directory of the ${USER}-kuscia-autonomy-alice node:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:39
 msgid "同时，还要保证节点间的授权证书配置正确，Alice 节点和 Bob 节点要完成授权的建立，否则双方无法共同参与计算任务。"
-msgstr ""
+msgstr "At the same time, ensure that the authorization certificate configurations between nodes are correct. The Alice node and Bob node need to establish authorization; otherwise, both parties cannot participate in the computation task together."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:41
 msgid "准备数据"
-msgstr ""
+msgstr "Prepare Data"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:43
 msgid "您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。"
-msgstr ""
+msgstr "You can use the data files included in Kuscia or your own data files."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:45
-msgid "在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。"
-msgstr ""
+msgid "在 Kuscia 中，节点数据文件的存放路径为节点容器的 `/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。"
+msgstr "In Kuscia, the node data files are stored in the `/home/kuscia/var/storage` directory of the node container. You can view these data files within the container."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:49
 msgid "查看 Kuscia 示例数据"
-msgstr ""
+msgstr "View Kuscia Example Data"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:51
 msgid "这里以 Alice 节点为例，首先进入节点容器："
-msgstr ""
+msgstr "Here, we take the Alice node as an example. First, log in to the node container:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:57
 msgid "在 Alice 节点容器中查看节点示例数据："
-msgstr ""
+msgstr "View the node example data in the Alice node container:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:63
 msgid "Bob 节点同理。"
-msgstr ""
+msgstr "The Bob node is similar."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:67
 msgid "准备您自己的数据"
-msgstr ""
+msgstr "Prepare Your Own Data"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:69
 msgid "您也可以使用您自己的数据文件，首先您要将您的数据文件复制到节点容器中，还是以 Alice 节点为例："
-msgstr ""
+msgstr "You can also use your own data files. First, copy your data files to the node container, using the Alice node as an example:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:75
-msgid "接下来您可以像[查看 Kuscia 示例数据](#kuscia)一样查看您的数据文件，这里不再赘述。"
-msgstr ""
+msgid "然后，您还需要参考[Kuscia API](../reference/apis/domaindata_cn.md#create-domain-data)给新的数据文件创建 domaindata。"
+msgstr "Then, you also need to refer to the [Kuscia API](../reference/apis/domaindata_cn.md#create-domain-data) to create domaindata for the new data file."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:79
-msgid "配置 KusciaJob"
-msgstr ""
+#: ../../tutorial/run_sf_job_with_api_cn.md:77
+msgid "接下来您可以像[查看 Kuscia 示例数据](#kuscia)一样查看您的数据文件，这里不再赘述。"
+msgstr "You can then view your data files as you would [view Kuscia example data](#kuscia). Further details are omitted here."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:81
+msgid "配置 KusciaJob"
+msgstr "Configure KusciaJob"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:83
 msgid "我们需要在 kuscia-master 节点容器中配置和运行 Job，首先，让我们先进入 kuscia-master 节点容器："
-msgstr ""
+msgstr "We need to configure and run the Job in the kuscia-master node container. First, let's log in to the kuscia-master node container:"
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:87
+#: ../../tutorial/run_sf_job_with_api_cn.md:89
 msgid "如果是点对点组网模式，则需要进入任务发起方节点容器，以 Alice 节点为例："
-msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:93
-msgid "注意，您只能向已和 Alice 节点建立了授权的节点发布计算任务。"
-msgstr ""
+msgstr "If in peer-to-peer networking mode, you need to enter the task initiator node container, using the Alice node as an example:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:95
-msgid "使用 Kuscia 示例数据配置 KusciaJob"
-msgstr ""
+msgid "注意，您只能向已和 Alice 节点建立了授权的节点发布计算任务。"
+msgstr "Note that you can only publish computation tasks to nodes that have established authorization with the Alice node."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:97
+msgid "使用 Kuscia 示例数据配置 KusciaJob"
+msgstr "Configure KusciaJob Using Kuscia Example Data"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:99
 msgid ""
 "此处以[KusciaJob 示例](../reference/apis/kusciajob_cn.md#请求示例)作为任务示例展示，该任务流完成 "
 "2 个任务："
 msgstr ""
+"Here, we use the [KusciaJob Example](../reference/apis/kusciajob_cn.md#request-example) as a task example, which completes 2 tasks:"
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:99
-msgid "job-psi 读取 Alice 和 Bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。"
-msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:100
-msgid ""
-"job-split 读取 Alice 和 Bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-"
-"dataset.csv`、`test-dataset.csv`。"
-msgstr ""
+#: ../../tutorial/run_sf_job_with_api_cn.md:101
+msgid "job-psi 读取 Alice 和 Bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的 `psi-output.csv`。"
+msgstr "job-psi reads the data files of Alice and Bob, performs privacy intersection, and saves the intersection results as `psi-output.csv` for each party."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:102
 msgid ""
-"这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia "
-"集群中，这个名称必须是唯一的，由`job_id`指定。"
+"job-split 读取 Alice 和 Bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的 `train-"
+"dataset.csv`、`test-dataset.csv`。"
 msgstr ""
+"job-split reads the intersection result files from Alice and Bob in the previous step, splits them into training and testing datasets, and saves them as `train-dataset.csv` and `test-dataset.csv` for each party."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:104
+msgid ""
+"这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia "
+"集群中，这个名称必须是唯一的，由 `job_id` 指定。"
+msgstr ""
+"The name of this KusciaJob is job-best-effort-linear, which must be unique within a Kuscia cluster and is specified by `job_id`."
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:106
 msgid ""
 "我们请求[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) "
 "接口来创建并运行这个 KusciaJob。"
 msgstr ""
+"We request the [Create Job](../reference/apis/kusciajob_cn.md#request-createjobrequest) interface to create and run this KusciaJob."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:106
+#: ../../tutorial/run_sf_job_with_api_cn.md:108
 msgid ""
 "具体字段数据格式和含义请参考[创建 "
 "Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) ，本文不再赘述。"
 msgstr ""
+"Refer to [Create Job](../reference/apis/kusciajob_cn.md#request-createjobrequest) for the specific field data formats and meanings. Further details are omitted here."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:108
+#: ../../tutorial/run_sf_job_with_api_cn.md:110
 msgid "如果您成功了，您将得到如下返回："
-msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:114
-msgid "恭喜，这说明 KusciaJob 已经成功创建并运行。"
-msgstr ""
+msgstr "If successful, you will receive the following response:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:116
+msgid "恭喜，这说明 KusciaJob 已经成功创建并运行。"
+msgstr "Congratulations, this indicates that the KusciaJob has been successfully created and is running."
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:118
 msgid ""
 "如果遇到 HTTP 错误（即 HTTP Code 不为 200），请参考 [HTTP Error Code 处理](#http-error-"
 "code)。"
 msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:118
-msgid "使用您自己的数据配置 KusciaJob"
-msgstr ""
+"If you encounter an HTTP error (i.e., HTTP Code is not 200), please refer to [HTTP Error Code Handling](#http-error-code)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:120
+msgid "使用您自己的数据配置 KusciaJob"
+msgstr "Configure KusciaJob Using Your Own Data"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:122
 msgid ""
 "如果您要使用您自己的数据，可以将两个算子中的 `taskInputConfig.sf_input_ids` 的数据文件 `id` 修改为您在 "
 "[准备您自己的数据](#prepare-your-own-data) 中的 `domaindata_id` 即可。"
 msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:122
-msgid "更多相关"
-msgstr ""
+"If you want to use your own data, you can modify the `id` of the data files in the `taskInputConfig.sf_input_ids` of the two operators to the `domaindata_id` you prepared in [Prepare Your Own Data](#prepare-your-own-data)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:124
+msgid "更多相关"
+msgstr "More Related Information"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:126
 msgid ""
 "更多有关 KusciaJob 配置的信息，请查看 "
 "[KusciaJob](../reference/concepts/kusciajob_cn.md) 和[算子参数描述](#input-"
 "config) 。 前者描述了 KusciaJob 的定义和相关说明，后者描述了支持的算子和参数。"
 msgstr ""
+"For more information on KusciaJob configuration, please refer to [KusciaJob](../reference/concepts/kusciajob_cn.md) and [Operator Parameter Description](#input-config). The former describes the definition and related information of KusciaJob, while the latter describes the supported operators and parameters."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:127
+#: ../../tutorial/run_sf_job_with_api_cn.md:129
 msgid "查看 KusciaJob 运行状态"
-msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:131
-msgid "查看运行中的 KusciaJob 的详细状态"
-msgstr ""
+msgstr "Check KusciaJob Running Status"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:133
+msgid "查看运行中的 KusciaJob 的详细状态"
+msgstr "Check the Detailed Status of the Running KusciaJob"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:135
 msgid ""
 "job-best-effort-linear 是您在[配置 Job](#configure-kuscia-job) 中指定的 KusciaJob "
 "的名称。"
 msgstr ""
+"job-best-effort-linear is the name of the KusciaJob you specified in [Configure KusciaJob](#configure-kuscia-job)."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:135
+#: ../../tutorial/run_sf_job_with_api_cn.md:137
 msgid ""
 "我们请求[批量查询 Job 状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)接口来批量查询 "
 "KusciaJob 的状态。"
 msgstr ""
+"We request the [Batch Query Job Status](../reference/apis/kusciajob_cn.md#batch-query-job-status) interface to batch query the status of KusciaJob."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:138
-msgid "请求参数`job_ids`是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。"
-msgstr ""
+#: ../../tutorial/run_sf_job_with_api_cn.md:140
+msgid "请求参数 `job_ids` 是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。"
+msgstr "The request parameter `job_ids` is an Array[String] and needs to list all the KusciaJob names to be queried."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:152
-#: ../../tutorial/run_sf_job_with_api_cn.md:310
+#: ../../tutorial/run_sf_job_with_api_cn.md:154
+#: ../../tutorial/run_sf_job_with_api_cn.md:312
 msgid "如果任务成功了，您可以得到如下返回："
-msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:288
-msgid ""
-"`data.jobs.status.state`字段记录了 KusciaJob "
-"的运行状态，`data.jobs.status.tasks.state`则记录了每个 KusciaTask 的运行状态。"
-msgstr ""
+msgstr "If the task is successful, you will receive the following response:"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:290
+msgid ""
+"`data.jobs.status.state` 字段记录了 KusciaJob "
+"的运行状态，`data.jobs.status.tasks.state` 则记录了每个 KusciaTask 的运行状态。"
+msgstr ""
+"The `data.jobs.status.state` field records the running status of the KusciaJob, while the `data.jobs.status.tasks.state` field records the running status of each KusciaTask."
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:292
 msgid ""
 "详细信息请参考 [KusciaJob](../reference/concepts/kusciajob_cn.md) 和[批量查询 Job "
 "状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)"
 msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:293
-msgid "删除 KusciaJob"
-msgstr ""
+"Refer to [KusciaJob](../reference/concepts/kusciajob_cn.md) and [Batch Query Job Status](../reference/apis/kusciajob_cn.md#batch-query-job-status) for detailed information."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:295
+msgid "删除 KusciaJob"
+msgstr "Delete KusciaJob"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:297
 msgid ""
 "当您想清理这个 KusciaJob 时，我们请求[删除 "
 "Job](../reference/apis/kusciajob_cn.md#删除-job) 接口来删除这个 KusciaJob."
 msgstr ""
+"When you want to clean up this KusciaJob, we request the [Delete Job](../reference/apis/kusciajob_cn.md#delete-job) interface to delete this KusciaJob."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:316
+#: ../../tutorial/run_sf_job_with_api_cn.md:318
 msgid "当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。"
-msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:320
-msgid "算子参数描述"
-msgstr ""
+msgstr "When this KusciaJob is cleaned up, the KusciaTasks created by this KusciaJob will also be cleaned up."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:322
-msgid "KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。"
-msgstr ""
+msgid "算子参数描述"
+msgstr "Operator Parameter Description"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:324
-msgid "对于 secretflow ，请参考：[Secretflow 官网](https://www.secretflow.org.cn/)。"
-msgstr ""
+msgid "KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同。"
+msgstr "The operator parameters of KusciaJob are defined in the `taskInputConfig` field. The parameters for different operators vary."
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:328
-msgid "HTTP 客户端错误处理"
-msgstr ""
+#: ../../tutorial/run_sf_job_with_api_cn.md:326
+msgid "对于 secretflow ，请参考：[Secretflow 官网](https://www.secretflow.org.cn/)。"
+msgstr "For SecretFlow, please refer to the [SecretFlow Official Website](https://www.secretflow.org.cn/)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:330
-msgid "curl: (56)"
-msgstr ""
+msgid "HTTP 客户端错误处理"
+msgstr "HTTP Client Error Handling"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:332
+msgid "curl: (56)"
+msgstr "curl: (56)"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:334
 msgid ""
 "curl: (56) OpenSSL SSL_read: error:14094412:SSL "
 "routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0"
 msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:334
-msgid "未配置 SSL 证书和私钥。请[确认证书和 Token](#cert-and-token)."
-msgstr ""
+"curl: (56) OpenSSL SSL_read: error:14094412:SSL routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:336
-msgid "curl: (58)"
-msgstr ""
+msgid "未配置 SSL 证书和私钥。请[确认证书和 Token](#cert-and-token)."
+msgstr "SSL certificate and private key are not configured. Please [confirm certificates and token](#cert-and-token)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:338
-msgid "curl: (58) unable to set XXX file"
-msgstr ""
+msgid "curl: (58)"
+msgstr "curl: (58)"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:340
-msgid "SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 Token](#cert-and-token)."
-msgstr ""
+msgid "curl: (58) unable to set XXX file"
+msgstr "curl: (58) unable to set XXX file"
 
-#: ../../tutorial/run_sf_job_with_api_cn.md:344
-msgid "HTTP Error Code 处理"
-msgstr ""
+#: ../../tutorial/run_sf_job_with_api_cn.md:342
+msgid "SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 Token](#cert-and-token)."
+msgstr "SSL private key, SSL certificate, or CA certificate file path is incorrect. Please [confirm certificates and token](#cert-and-token)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:346
-msgid "401 Unauthorized"
-msgstr ""
+msgid "HTTP Error Code 处理"
+msgstr "HTTP Error Code Handling"
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:348
+msgid "401 Unauthorized"
+msgstr "401 Unauthorized"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:350
 msgid ""
 "身份认证失败。请检查是否在 Headers 中配置了正确的 Token 。 Token 内容详见[确认证书和 Token](#cert-and-"
 "token)."
 msgstr ""
-
-#: ../../tutorial/run_sf_job_with_api_cn.md:350
-msgid "404 Page Not Found"
-msgstr ""
+"Authentication failed. Please check if the correct Token is configured in the Headers. For Token content, see [Confirm Certificates and Token](#cert-and-token)."
 
 #: ../../tutorial/run_sf_job_with_api_cn.md:352
+msgid "404 Page Not Found"
+msgstr "404 Page Not Found"
+
+#: ../../tutorial/run_sf_job_with_api_cn.md:354
 msgid "接口 path 错误。请检查请求的 path 是否和文档中的一致。必要时可以提 issue 询问。"
-msgstr ""
+msgstr "Interface path error. Please check if the requested path is consistent with the documentation. If necessary, you can raise an issue to ask."
 

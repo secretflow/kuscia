@@ -82,6 +82,10 @@ const (
 	PluginNameEnvImport     = "env-import"
 )
 
+const (
+	KusciaControllerManagerLeaseName = "kuscia-controller-manager"
+)
+
 type LoadBalancerType string
 
 const (
@@ -127,8 +131,11 @@ const (
 	TaskAliasAnnotationKey                = "kuscia.secretflow/task-alias"
 	TaskResourceGroupAnnotationKey        = "kuscia.secretflow/task-resource-group"
 	SelfClusterAsParticipantAnnotationKey = "kuscia.secretflow/self-cluster-as-participant"
-	MetricPathAnnotationKey               = "kuscia.secretflow/metric-path"
-	MetricPortAnnotationKey               = "kuscia.secretflow/metric-port"
+	// Use underscore to metric annotation key for prometheus kubernetes_sd_configs scraping rule
+	MetricPathAnnotationKey = "kuscia.secretflow/metric_path"
+	MetricPortAnnotationKey = "kuscia.secretflow/metric_port"
+	// MetricAnnotationKey is used for prometheus kubernetes_sd_configs to only scrape pods with this annotation being true
+	MetricAnnotationKey = "kuscia.secretflow/should_be_scraped"
 
 	TaskBandwidthLimitAnnotationPrefix = "kuscia.secretflow/bandwidth-limit-"
 
@@ -276,4 +283,9 @@ const (
 	defaultKusciaHomePath              = "/home/kuscia"
 	KusciaDefaultNamespaceOfContainerd = "k8s.io"
 	ImageIDPrefix                      = "sha256:"
+)
+
+// crd create err reason
+const (
+	CreateKDOrKJError = "create error"
 )

@@ -43,7 +43,7 @@ msgstr "Multi-machine deployment of Kuscia with Docker is divided into peer-to-p
 
 #: ../../deployment/kuscia_deployment_instructions.md:13
 msgid "点对点模式：部署参考[多机部署点对点集群](./Docker_deployment_kuscia/deploy_p2p_cn.md)"
-msgstr "Peer-to-peer mode: Refer to [Multi-Machine Deployment of Peer-to-Peer Cluster](./Docker_deployment_kuscia/deploy_p2p_cn.md)"
+msgstr "Peer-to-Peer mode: Refer to [Multi-Machine Deployment of Peer-to-Peer Cluster](./Docker_deployment_kuscia/deploy_p2p_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:14
 msgid "中心化模式：部署参考[多机部署中心化集群](./Docker_deployment_kuscia/deploy_master_lite_cn.md)"
@@ -59,7 +59,7 @@ msgstr "In K8s cluster deployment, we will introduce peer-to-peer clusters, cent
 
 #: ../../deployment/kuscia_deployment_instructions.md:20
 msgid "点对点模式：部署参考[部署点对点集群](./K8s_deployment_kuscia/K8s_p2p_cn.md)"
-msgstr "Peer-to-peer mode: Refer to [Deploy Peer-to-Peer Cluster](./K8s_deployment_kuscia/K8s_p2p_cn.md)"
+msgstr "Peer-to-Peer mode: Refer to [Deploy Peer-to-Peer Cluster](./K8s_deployment_kuscia/K8s_p2p_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:21
 msgid "中心化模式：部署参考[部署中心化集群](./K8s_deployment_kuscia/K8s_master_lite_cn.md)"
@@ -68,8 +68,8 @@ msgstr "Centralized mode: Refer to [Deploy Centralized Cluster](./K8s_deployment
 #: ../../deployment/kuscia_deployment_instructions.md:22
 msgid ""
 "使用 RunP 运行时模式来训练任务：部署参考[使用 RunP "
-"模式部署节点](./K8s_deployment_kuscia/deploy_with_runp_cn.md)"
-msgstr "Using RunP runtime mode to train tasks: Refer to [Deploy Nodes with RunP Mode](./K8s_deployment_kuscia/deploy_with_runp_cn.md)"
+"模式部署节点](../deployment/deploy_with_runp_cn.md)"
+msgstr "Using RunP runtime mode to train tasks: Refer to [Deploy Nodes with RunP Mode](../deployment/deploy_with_runp_cn.md)"
 
 #: ../../deployment/kuscia_deployment_instructions.md:24
 msgid "验证部署"

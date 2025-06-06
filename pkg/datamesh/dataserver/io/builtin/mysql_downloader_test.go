@@ -26,9 +26,10 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/google/uuid"
 	"github.com/huandu/go-sqlbuilder"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
-	"github.com/stretchr/testify/assert"
 )
 
 func initMySQLDownloader(t *testing.T, tableName string, ddSpec *v1alpha1.DomainDataSpec, queryColumn []string) (context.Context, *sql.DB, sqlmock.Sqlmock, *MySQLDownloader, *utils.DataMeshRequestContext, error) {

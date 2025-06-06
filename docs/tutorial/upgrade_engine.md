@@ -54,14 +54,14 @@ kuscia 命令支持在 RunC、RunP 模式中导入引擎镜像，使用示例如
 
     ```shell
     # Import Image
-    kuscia image pull secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+    kuscia image pull secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.11.0b1
     ```
 
     如果您使用的是`私有仓库`，请加上 creds 参数指定账户密码，示例如下：
 
     ```shell
     # Import Image
-    kuscia image pull --creds "user:password" private.registry.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+    kuscia image pull --creds "user:password" private.registry.com/secretflow/secretflow-lite-anolis8:1.11.0b1
     ```
 
     如果您的环境无法访问镜像仓库，您也可以将镜像打成 tar 包传到容器里，然后通过 kuscia image load 导入，示例如下：

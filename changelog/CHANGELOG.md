@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized processing flows for KusciaJob and KusciaTask.
 - Added isTLS field to the kuscia API for creating DomainRoute interface.
 - Kuscia API has added a Suspended state enumeration to kusciaJob.
-- Revised container launch deployment steps in point-to-point and centralized deployment documentation.
+- Revised container launch deployment steps in peer-to-peer and centralized deployment documentation.
 - Modified the pre-validation logic of the master address when initiating lite mode.
 
 ### Breaking Changes

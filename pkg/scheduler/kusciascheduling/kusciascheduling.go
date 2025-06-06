@@ -161,7 +161,7 @@ func (cs *KusciaScheduling) PostFilter(ctx context.Context, state *framework.Cyc
 	}
 
 	// It's based on an implicit assumption: if the nth Pod failed,
-	// it's inferrable other Pods belonging to the same TaskResource would be very likely to fail.
+	// it's inferable other Pods belonging to the same TaskResource would be very likely to fail.
 	cs.frameworkHandler.IterateOverWaitingPods(func(waitingPod framework.WaitingPod) {
 		trName, _ := core.GetTaskResourceName(waitingPod.GetPod())
 		if trName == tr.Name && waitingPod.GetPod().Namespace == pod.Namespace {

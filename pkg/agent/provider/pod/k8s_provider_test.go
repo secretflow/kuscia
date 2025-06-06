@@ -39,13 +39,15 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/election"
 )
 
+var kubeClient = fake.NewSimpleClientset()
+
 func createTestK8sProvider(t *testing.T, cfg *config.K8sProviderCfg, rm *resource.KubeResourceManager) *K8sProvider {
 
 	podProviderDep := &K8sProviderDependence{
 		NodeName:        "test-node",
 		Namespace:       "test-namespace",
-		KubeClient:      fake.NewSimpleClientset(),
-		BkClient:        fake.NewSimpleClientset(),
+		KubeClient:      kubeClient,
+		BkClient:        kubeClient,
 		PodSyncHandler:  frameworktest.FakeSyncHandler{},
 		ResourceManager: rm,
 		K8sProviderCfg:  cfg,
