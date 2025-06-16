@@ -32,8 +32,8 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/miekg/dns v1.1.58
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/moby/sys/mount v0.3.3
-	github.com/moby/sys/mountinfo v0.7.1
+	github.com/moby/sys/mount v0.3.4
+	github.com/moby/sys/mountinfo v0.7.2
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/image-spec v1.1.0-rc5
