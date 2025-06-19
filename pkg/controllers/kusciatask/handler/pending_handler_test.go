@@ -77,6 +77,15 @@ func makeTestPendingHandler() *PendingHandler {
 }
 
 func TestPendingHandler_Handle(t *testing.T) {
+	nodeStatusManager := common.NewNodeStatusManager()
+	nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{{
+		Name:            "mock-node",
+		DomainName:      "domain-a",
+		Status:          "Ready",
+		TotalCPURequest: 0,
+		TotalMemRequest: 0,
+	}})
+
 	t.Parallel()
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
