@@ -16,7 +16,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -27,7 +27,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
 
 ### 点对点组网模式
 
-这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
+这里以 alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -47,10 +47,10 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
     如果是点对点组网模式，则需要在 Alice 和 Bob 节点容器中分别创建上述应用的镜像模版 AppImage。
 
     ```shell
-    # 登陆到 alice 节点容器中
+    # Log in to the alice node container
     docker exec -it ${USER}-kuscia-autonomy-alice bash
 
-    # 登陆到 bob 节点容器中
+    # Log in to the bob node container
     docker exec -it ${USER}-kuscia-autonomy-bob bash
     ```
 
@@ -431,10 +431,10 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
     在目录 `/home/kuscia/var/stdout/pods` 下可以看到对应 Serving 应用容器的目录。后续进入到相应目录下，即可查看应用的日志。
 
     ```yaml
-    # 查看当前应用容器的目录
+    # View the current application container directory
     ls /home/kuscia/var/stdout/pods
 
-    # 查看应用容器的日志，示例如下:
+    # View the application container logs, example as follows:
     cat /home/kuscia/var/stdout/pods/alice_serving-glm-test-1-75d449f848-4gth9_2bd2f45f-51d8-4a18-afa2-ed7105bd47b5/secretflow/0.log
     ```
 

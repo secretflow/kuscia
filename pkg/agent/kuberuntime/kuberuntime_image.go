@@ -44,7 +44,7 @@ func (m *kubeGenericRuntimeManager) PullImage(ctx context.Context, image pkgcont
 
 		imageRef, err := m.imageService.PullImage(ctx, imgSpec, nil, podSandboxConfig)
 		if err != nil {
-			return "", fmt.Errorf("faile to pull image %q, detail-> %v", image.Image, err)
+			return "", fmt.Errorf("failed to pull image %q, detail-> %v", image.Image, err)
 		}
 
 		return imageRef, nil
@@ -62,7 +62,7 @@ func (m *kubeGenericRuntimeManager) PullImage(ctx context.Context, image pkgcont
 	nlog.Infof("Pulling image %q ...", image.Image)
 	imageRef, err := m.imageService.PullImage(ctx, imgSpec, apiAuth, podSandboxConfig)
 	if err != nil {
-		return "", fmt.Errorf("faile to pull image %q with credentials, detail-> %v", image.Image, err)
+		return "", fmt.Errorf("failed to pull image %q with credentials, detail-> %v", image.Image, err)
 	}
 
 	return imageRef, nil

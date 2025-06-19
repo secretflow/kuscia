@@ -673,7 +673,7 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 
 	// the start containers routines depend on pod ip(as in primary pod ip)
 	// instead of trying to figure out if we have 0 < len(podIPs)
-	// everytime, we short circuit it here
+	// every time, we short circuit it here
 	podIP := ""
 	if len(podIPs) != 0 {
 		podIP = podIPs[0]

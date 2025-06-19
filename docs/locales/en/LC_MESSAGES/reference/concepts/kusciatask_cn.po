@@ -38,7 +38,7 @@ msgstr "The following figure shows the state transition diagram of KusciaTask (K
 
 #: ../../reference/concepts/kusciatask_cn.md:11
 msgid "![KusciaTaskState](../../imgs/kuscia_task_state.png)"
-msgstr "![KusciaTaskState](../../imgs/kuscia_task_state.png)"
+msgstr "![KusciaTaskState](../../imgs/en_images/kuscia_task_state.png)"
 
 #: ../../reference/concepts/kusciatask_cn.md:11
 msgid "KusciaTaskState"
@@ -173,11 +173,11 @@ msgid "`scheduleConfig.resourceReservedSeconds`：表示成功预留资源的任
 msgstr "`scheduleConfig.resourceReservedSeconds`: Time (default 30s) resources remain reserved while waiting for other participants. Exceeding this releases resources for re-scheduling."
 
 #: ../../reference/concepts/kusciatask_cn.md:236
-msgid "`scheduleConfig.lifecycleSeconds`：表示任务调度的生命周期，默认为300s。若在规定的时间内，任务没有完成调度，则将任务置为失败。"
+msgid "`scheduleConfig.lifecycleSeconds`：表示任务调度的生命周期，默认为 300s。若在规定的时间内，任务没有完成调度，则将任务置为失败。"
 msgstr "`scheduleConfig.lifecycleSeconds`: Maximum task scheduling duration (default 300s). Tasks timing out are marked as failed."
 
 #: ../../reference/concepts/kusciatask_cn.md:237
-msgid "`scheduleConfig.retryIntervalSeconds`：表示任务在一个调度周期失败后，等待下次调度的时间间隔，默认为30s。"
+msgid "`scheduleConfig.retryIntervalSeconds`：表示任务在一个调度周期失败后，等待下次调度的时间间隔，默认为 30s。"
 msgstr "`scheduleConfig.retryIntervalSeconds`: Wait time between scheduling retries (default 30s)."
 
 #: ../../reference/concepts/kusciatask_cn.md:238
@@ -201,7 +201,7 @@ msgid ""
 "`parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，kuscia 会结合 "
 "[appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。"
 msgstr ""
-"`parties[].role`: Role of the participant (e.g., Host/Guest), defined by the engine. Kuscia uses the `role` field in the [AppImage](./appimage.md#appimage-ref) to select deployment templates."
+"`parties[].role`: Role of the participant (e.g., Host/Guest), defined by the engine. Kuscia uses the `role` field in the [AppImage](./appimage_cn.md#appimage-ref) to select deployment templates."
 
 #: ../../reference/concepts/kusciatask_cn.md:243
 msgid ""
@@ -217,7 +217,7 @@ msgid ""
 "`parties[].appImageRef` 获取的模版信息。该字段下所包含的子字段含义，请参考概念 "
 "[AppImage](./appimage_cn.md)。"
 msgstr ""
-"`parties[].template`: Custom template for participant's application. Overrides the template from `parties[].appImageRef`. Refer to [AppImage](./appimage.md) for sub-field details."
+"`parties[].template`: Custom template for participant's application. Overrides the template from `parties[].appImageRef`. Refer to [AppImage](./appimage_cn.md) for sub-field details."
 
 #: ../../reference/concepts/kusciatask_cn.md:247
 msgid "KusciaTask `status` 的子字段详细介绍如下："
@@ -283,7 +283,7 @@ msgid "`conditions[].type`: 表示状况的名称。"
 msgstr "`conditions[].type`: Name of the condition."
 
 #: ../../reference/concepts/kusciatask_cn.md:263
-msgid "`conditions[].status`: 表示该状况是否适用，可能的取值有 `True` 、`False` 或 `Unknown` 。"
+msgid "`conditions[].status`: 表示该状况是否适用，可能的取值有 `True`、`False` 或 `Unknown`。"
 msgstr "`conditions[].status`: Status of the condition (possible values: `True`, `False`, `Unknown`)."
 
 #: ../../reference/concepts/kusciatask_cn.md:264

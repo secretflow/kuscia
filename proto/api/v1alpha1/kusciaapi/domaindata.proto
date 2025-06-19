@@ -28,6 +28,8 @@ service DomainDataService {
 
   rpc DeleteDomainData(DeleteDomainDataRequest) returns (DeleteDomainDataResponse);
 
+  rpc DeleteDomainDataAndRaw(DeleteDomainDataRequest) returns (DeleteDomainDataRequest);
+
   rpc QueryDomainData(QueryDomainDataRequest) returns (QueryDomainDataResponse);
 
   rpc BatchQueryDomainData(BatchQueryDomainDataRequest) returns (BatchQueryDomainDataResponse);

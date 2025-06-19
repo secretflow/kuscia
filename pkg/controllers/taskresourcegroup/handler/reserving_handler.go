@@ -59,7 +59,8 @@ func (h *ReservingHandler) Handle(trg *kusciaapisv1alpha1.TaskResourceGroup) (ne
 		return true, err
 	}
 
-	if !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, trg.Annotations) {
+	// Only partner in kuscia protocol skip trg summarization and updation, which is done by kuscia trg controller
+	if !utilsres.SelfClusterAsInitiator(h.namespaceLister, trg.Spec.Initiator, trg.Annotations) && !utilsres.IsBFIAResource(trg) {
 		return false, nil
 	}
 	return h.summarizeTaskResourcesInfo(now, trg)
@@ -112,7 +113,7 @@ func (h *ReservingHandler) summarizeTaskResourcesInfo(now metav1.Time, trg *kusc
 		}
 		partySet[party.DomainID] = struct{}{}
 	}
-
+	nlog.Infof("Task resource group has %d resource in total, %d reserved, %d failed", trsCount, reservedCount, failedCount)
 	if utilsres.IsExistingTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed, v1.ConditionFalse) {
 		cond, _ := utilsres.GetTaskResourceGroupCondition(&trg.Status, kusciaapisv1alpha1.TaskResourcesListed)
 		needUpdate = utilsres.SetTaskResourceGroupCondition(&now, cond, v1.ConditionTrue, "")

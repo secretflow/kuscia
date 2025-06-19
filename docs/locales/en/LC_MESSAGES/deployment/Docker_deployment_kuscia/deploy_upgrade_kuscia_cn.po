@@ -40,5 +40,5 @@ msgstr "To upgrade the Kuscia version, simply add the upgrade parameter and cont
 #: ../../deployment/Docker_deployment_kuscia/deploy_upgrade_kuscia_cn.md:20
 msgid ""
 "注意：[体验模式](../../getting_started/quickstart_cn.md)因未挂载 Volume "
-"到宿主机磁盘，无法使用以上方法升级 Kuscia 。"
+"到宿主机磁盘，无法使用以上方法升级 Kuscia。"
 msgstr "Note: [Experience Mode](../../getting_started/quickstart_cn.md) cannot use the above method to upgrade Kuscia because no Volume is mounted to the host machine disk."

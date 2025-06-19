@@ -109,4 +109,4 @@ upload host data
 
 ### 查看作业失败原因
 
-请参考[作业运行失败](../troubleshoot/run_job_failed.md)
+请参考[作业运行失败](./run_job_failed.md)

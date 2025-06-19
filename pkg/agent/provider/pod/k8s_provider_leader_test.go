@@ -35,7 +35,8 @@ import (
 
 func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 	resourceMinLifeCycle = 0
-
+	// only node1 is valid
+	// pod running on other node will be removed by cleanupZombieResources
 	node1 := &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "node1",
@@ -100,7 +101,6 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 	kp.nodeName = "node4"
 	pod4 := createTestPod("004", "default", "pod4", "test-secret")
 	assert.NoError(t, kp.SyncPod(context.Background(), pod4, nil, nil))
-	assert.NoError(t, kp.KillPod(context.Background(), pod4, pkgcontainer.Pod{}, nil))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	kp.kubeInformerFactory.Start(ctx.Done())
@@ -109,10 +109,17 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 		t.Fatal("timeout waiting for caches to sync")
 	}
 
+	// kill pod will try to remove sub resource immediately
+	assert.NoError(t, kp.KillPod(context.Background(), pod4, pkgcontainer.Pod{}, nil))
+	if !cache.WaitForCacheSync(ctx.Done(), kp.podsSynced, kp.configMapSynced, kp.secretSynced) {
+		t.Fatal("timeout waiting for caches to sync")
+	}
+
 	assertCachedBackendResource(t, kp, "pod1", true, true)
 	assertCachedBackendResource(t, kp, "pod2", true, true)
 	assertCachedBackendResource(t, kp, "pod3", true, true)
-	assertCachedBackendResource(t, kp, "pod4", false, true)
+	// pod4 and its subresources are already removed
+	assertCachedBackendResource(t, kp, "pod4", false, false)
 
 	assert.NoError(t, kp.cleanupZombieResources(ctx))
 	assert.NoError(t, kp.cleanupSubResources(ctx))
@@ -140,7 +147,7 @@ func createTestPod(uid types.UID, namespace, name, secretName string) *v1.Pod {
 					Image:   "aa/bb:001",
 					VolumeMounts: []v1.VolumeMount{
 						{
-							Name:      "test-v",
+							Name:      secretName,
 							MountPath: "/etc/key",
 						},
 					},
@@ -148,7 +155,7 @@ func createTestPod(uid types.UID, namespace, name, secretName string) *v1.Pod {
 			},
 			Volumes: []v1.Volume{
 				{
-					Name: "test-v",
+					Name: secretName,
 					VolumeSource: v1.VolumeSource{
 						Secret: &v1.SecretVolumeSource{
 							SecretName: secretName,

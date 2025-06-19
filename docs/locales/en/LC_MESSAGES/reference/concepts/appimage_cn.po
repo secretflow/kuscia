@@ -65,7 +65,7 @@ msgid "在该示例中:"
 msgstr "In this example:"
 
 #: ../../reference/concepts/appimage_cn.md:66
-msgid "`.metadata.name`：表示 AppImage 名称，当前示例为`secretflow-image`。"
+msgid "`.metadata.name`：表示 AppImage 名称，当前示例为 `secretflow-image`。"
 msgstr "`.metadata.name`: Specifies the AppImage name (e.g., `secretflow-image`)."
 
 #: ../../reference/concepts/appimage_cn.md:67
@@ -77,13 +77,13 @@ msgid "`.spec.deployTemplates`：表示应用部署模版配置信息，在该�
 msgstr "`.spec.deployTemplates`: Contains deployment template configurations including startup commands and ports. Key sub-fields include:"
 
 #: ../../reference/concepts/appimage_cn.md:69
-msgid "`.spec.deployTemplates[0].name`：表示应用部署模版名称，当前示例为`secretflow`。"
+msgid "`.spec.deployTemplates[0].name`：表示应用部署模版名称，当前示例为 `secretflow`。"
 msgstr "`.spec.deployTemplates[0].name`: Name of the deployment template (e.g., `secretflow`)."
 
 #: ../../reference/concepts/appimage_cn.md:70
 msgid ""
-"`.spec.deployTemplates[0].replicas`：表示应用副本数，当前示例为`1`。相应地，在创建任务应用 Pod "
-"资源时，会将应用 Pod 副本数设置为`1`。"
+"`.spec.deployTemplates[0].replicas`：表示应用副本数，当前示例为 `1`。相应地，在创建任务应用 Pod "
+"资源时，会将应用 Pod 副本数设置为 `1`。"
 msgstr ""
 "`.spec.deployTemplates[0].replicas`: Number of application replicas (default `1`). Determines Pod replica count during task execution."
 
@@ -171,7 +171,7 @@ msgid "下面以 `secretflow-image.yaml` 的内容为例，介绍更新 AppImage
 msgstr "The following example uses `secretflow-image.yaml` to illustrate how to update an AppImage."
 
 #: ../../reference/concepts/appimage_cn.md:155
-msgid "在该示例中，将 ports 下 name 为`global`的 port 端口号改为`8082`。"
+msgid "在该示例中，将 ports 下 name 为 `global` 的 port 端口号改为 `8082`。"
 msgstr "In this example, the port named `global` is modified to use port number `8082`."
 
 #: ../../reference/concepts/appimage_cn.md:157
@@ -211,7 +211,7 @@ msgid "AppImage `metadata` 的子字段详细介绍如下："
 msgstr "Detailed explanation of AppImage `metadata` sub-fields:"
 
 #: ../../reference/concepts/appimage_cn.md:332
-msgid "`name`：表示 AppImage 的名称，当前示例为`app-template`。"
+msgid "`name`：表示 AppImage 的名称，当前示例为 `app-template`。"
 msgstr "`name`: Name of the AppImage (e.g., `app-template`)."
 
 #: ../../reference/concepts/appimage_cn.md:334
@@ -221,7 +221,7 @@ msgstr "Detailed explanation of AppImage `spec` sub-fields:"
 #: ../../reference/concepts/appimage_cn.md:336
 msgid ""
 "`configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为"
-"`task-config.conf`。 更多的信息请 [参考这里](../../tutorial/config_render.md)"
+" `task-config.conf`。 更多的信息请[参考这里](../../tutorial/config_render.md)"
 msgstr ""
 "`configTemplates`: Defines configuration templates required for application startup. Example includes `task-config.conf`. [See more](../../tutorial/config_render.md)."
 
@@ -241,20 +241,20 @@ msgid "`deployTemplates[].role`：表示应用作为该角色时，使用的部�
 msgstr "`deployTemplates[].role`: Role-specific deployment template (e.g., Host/Guest). Leave empty if roles are not used."
 
 #: ../../reference/concepts/appimage_cn.md:340
-msgid "`deployTemplates[].replicas`：表示应用运行的副本数，默认为`1`。"
+msgid "`deployTemplates[].replicas`：表示应用运行的副本数，默认为 `1`。"
 msgstr "`deployTemplates[].replicas`: Number of replicas (default `1`)."
 
 #: ../../reference/concepts/appimage_cn.md:341
-msgid "`deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问名称为`global`的端口。"
+msgid "`deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为 `server` 的应用允许角色为 `client` 的应用访问名称为 `global` 的端口。"
 msgstr "`deployTemplates[].networkPolicy`: Network policy configuration. Example: `server` role allows `client` role access to port `global`."
 
 #: ../../reference/concepts/appimage_cn.md:342
-msgid "`deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问。"
-msgstr "`...from.roles`: Roles permitted to access the application. Example: `server` allows `client`."
+msgid "`deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为 `server` 的应用允许角色为 `client` 的应用访问。"
+msgstr "`deployTemplates[].networkPolicy.ingresses[].from.roles`: Roles permitted to access the application. Example: `server` allows `client`."
 
 #: ../../reference/concepts/appimage_cn.md:343
-msgid "`deployTemplates[].networkPolicy.ingresses[].ports[].port`：表示允许访问当前应用的端口。该示例表示：当前角色为`server`的应用允许所允许被访问的端口名称为`global`。"
-msgstr "`...ports[].port`: Accessible port names. Example: `global` port for `server` role."
+msgid "`deployTemplates[].networkPolicy.ingresses[].ports[].port`：表示允许访问当前应用的端口。该示例表示：当前角色为 `server` 的应用允许所允许被访问的端口名称为 `global`。"
+msgstr "`deployTemplates[].networkPolicy.ingresses[].ports[].port`: Accessible port names. Example: `global` port for `server` role."
 
 #: ../../reference/concepts/appimage_cn.md:344
 msgid ""
@@ -262,34 +262,34 @@ msgid ""
 "containers](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api"
 "/workload-resources/pod-v1/#Container) 部分字段以及扩展了一些自定义字段。主要包含以下子字段："
 msgstr ""
-"`...spec.containers`: Container configurations, reusing Kubernetes Pod Container fields with custom extensions. Includes:"
+"`deployTemplates[].spec.containers`: Container configurations, reusing Kubernetes Pod Container fields with custom extensions. Includes:"
 
 #: ../../reference/concepts/appimage_cn.md:345
 msgid "`deployTemplates[].spec.containers[].command`：表示应用的启动命令。"
-msgstr "`...command`: Application startup command."
+msgstr "`deployTemplates[].spec.containers[].command`: Application startup command."
 
 #: ../../reference/concepts/appimage_cn.md:346
 msgid "`deployTemplates[].spec.containers[].args`：表示应用的启动参数。"
-msgstr "`...args`: Application startup arguments."
+msgstr "`deployTemplates[].spec.containers[].args`: Application startup arguments."
 
 #: ../../reference/concepts/appimage_cn.md:347
 msgid ""
-"`deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将`.spec.configTemplates`中定义的配置文件"
-"`task-config.conf`挂载到容器中的位置为`/work/kuscia/task-config.conf`。"
+"`deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将 `.spec.configTemplates` 中定义的配置文件"
+" `task-config.conf` 挂载到容器中的位置为 `/work/kuscia/task-config.conf`。"
 msgstr ""
-"`...configVolumeMounts`: Mount configurations. Maps `task-config.conf` from `.spec.configTemplates` to `/work/kuscia/task-config.conf`."
+"`deployTemplates[].spec.containers[].configVolumeMounts`: Mount configurations. Maps `task-config.conf` from `.spec.configTemplates` to `/work/kuscia/task-config.conf`."
 
 #: ../../reference/concepts/appimage_cn.md:348
 msgid "`deployTemplates[].spec.containers[].configVolumeMounts[].mountPath`：表示文件挂载到容器中的路径。"
-msgstr "`...mountPath`: Path where the file is mounted in the container."
+msgstr "`deployTemplates[].spec.containers[].configVolumeMounts[].mountPath`: Path where the file is mounted in the container."
 
 #: ../../reference/concepts/appimage_cn.md:349
 msgid "`deployTemplates[].spec.containers[].configVolumeMounts[].subPath`：表示文件挂载到容器中的子路径。"
-msgstr "`...subPath`: Subpath for mounting the file."
+msgstr "`deployTemplates[].spec.containers[].configVolumeMounts[].subPath`: Subpath for mounting the file."
 
 #: ../../reference/concepts/appimage_cn.md:350
 msgid "`deployTemplates[].spec.containers[].name`：表示应用容器的名称。"
-msgstr "`...name`: Name of the container."
+msgstr "`deployTemplates[].spec.containers[].name`: Name of the container."
 
 #: ../../reference/concepts/appimage_cn.md:351
 msgid "`deployTemplates[].spec.containers[].ports`：表示应用容器的启动端口。"
@@ -323,11 +323,11 @@ msgid "`Local`：表示该 port 用于 Pod 内部容器本地访问，Kuscia 不
 msgstr "`Local`: Indicates that the port is used for local access within the Pod container. Kuscia will not create corresponding K3s service resources for this port."
 
 #: ../../reference/concepts/appimage_cn.md:358
-msgid "`deployTemplates[].spec.containers[].envFrom`：表示使用`envFrom`为应用容器设置环境变量。"
+msgid "`deployTemplates[].spec.containers[].envFrom`：表示使用 `envFrom` 为应用容器设置环境变量。"
 msgstr "`deployTemplates[].spec.containers[].envFrom`: Specifies the use of `envFrom` to set environment variables for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:359
-msgid "`deployTemplates[].spec.containers[].env`：表示使用`env`为应用容器设置环境变量。"
+msgid "`deployTemplates[].spec.containers[].env`：表示使用 `env` 为应用容器设置环境变量。"
 msgstr "`deployTemplates[].spec.containers[].env`: Specifies the use of `env` to set environment variables for the application container."
 
 #: ../../reference/concepts/appimage_cn.md:360

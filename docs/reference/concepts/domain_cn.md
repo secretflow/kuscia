@@ -35,7 +35,7 @@ spec:
   - `partner`：表示外部节点，用在点对点组网模式下的协作方节点。点对点组网模式下，需要在任务调度方的集群中创建协作方的 Domain，在创建该 Domain 时，需要将 `role` 的值设置为 `partner` 。
   - `""`：表示内部节点。
 - `.spec.cert`：表示 BASE64 编码格式的隐私计算节点证书，该证书是配置文件中的 `domainKeyData` 私钥产生的，可以通过[这里](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/generate_cert.sh)的命令生成。在中心化模式场景不需要填充该字段。
-- `.spec.resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为`100`。
+- `.spec.resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点命名空间（Namespace）下所允许创建的最大 Pod 数量，当前示例为 `100`。
 
 1. 运行以下命令创建 Domain。
 
@@ -81,7 +81,7 @@ spec:
 
 在该示例中:
 
-- 将 `.spec.resourceQuota.podMaxCount` 的值调整为`200`。
+- 将 `.spec.resourceQuota.podMaxCount` 的值调整为 `200`。
 
 1. 运行以下命令更新 Domain。
 
@@ -172,7 +172,7 @@ Domain `spec` 的子字段详细介绍如下：
 - `interConnProtocols`：表示外部隐私计算节点支持的互联互通作业协议类型，默认为 `""`。支持两种取值：`kuscia` 和 `bfia` 。当前该字段只支持配置一种协议，若配置多个协议，则会选择第一个协议作为互联互通作业的协议类型。未来会支持多种协议。
   - `kuscia`：表示该外部节点参与隐私计算任务时，会使用互联互通蚂蚁 `kuscia` 协议运行隐私计算任务。
   - `bfia`：表示该外部节点参与隐私计算任务时，会使用互联互通银联 `bfia` 协议运行隐私计算任务。
-- `resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点 Namespace 下所允许创建的最大 Pod 数量，当前示例为`100`。相应地，Kuscia 控制器会在 `domain-template` Namespace 下创建名称为 `resource-limitation` 的 ResourceQuota 资源。
+- `resourceQuota.podMaxCount`：表示 Domain 所管理的隐私计算节点 Namespace 下所允许创建的最大 Pod 数量，当前示例为 `100`。相应地，Kuscia 控制器会在 `domain-template` Namespace 下创建名称为 `resource-limitation` 的 ResourceQuota 资源。
 
 Domain `status` 的子字段详细介绍如下：
 

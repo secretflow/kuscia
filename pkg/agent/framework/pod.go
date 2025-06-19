@@ -589,7 +589,7 @@ func (pc *PodsController) isAdmittedPodTerminal(pod *corev1.Pod) bool {
 		return true
 	}
 	// a pod that has been marked terminal within the Kubelet is considered
-	// inactive (may have been rejected by Kubelet admision)
+	// inactive (may have been rejected by Kubelet admission)
 	if sts, ok := pc.statusManager.GetPodStatus(pod.UID); ok {
 		if sts.Phase == corev1.PodSucceeded || sts.Phase == corev1.PodFailed {
 			return true

@@ -5,13 +5,14 @@
 
 ## 接口总览
 
-| 方法名                                     | 请求类型                    | 响应类型                     | 描述       |
-|-----------------------------------------|-------------------------|--------------------------|----------|
-| [CreateAppImage](#create-appimage)          | CreateAppImageRequest     | CreateAppImageResponse     | 创建应用镜像模版     |
-| [UpdateAppImage](#update-appimage)          | UpdateAppImageRequest     | UpdateAppImageResponse     | 更新应用镜像模版     |
-| [DeleteAppImage](#delete-appimage)          | DeleteAppImageRequest     | DeleteAppImageResponse     | 删除应用镜像模版     |
-| [QueryAppImage](#query-appimage)            | QueryAppImageRequest      | QueryAppImageResponse      | 查询应用镜像模版     |
+| 方法名                                     | 请求类型                    | 响应类型                     | 描述         |
+|-----------------------------------------|-------------------------|--------------------------|------------|
+| [CreateAppImage](#create-appimage)          | CreateAppImageRequest     | CreateAppImageResponse     | 创建应用镜像模版   |
+| [UpdateAppImage](#update-appimage)          | UpdateAppImageRequest     | UpdateAppImageResponse     | 更新应用镜像模版   |
+| [DeleteAppImage](#delete-appimage)          | DeleteAppImageRequest     | DeleteAppImageResponse     | 删除应用镜像模版   |
+| [QueryAppImage](#query-appimage)            | QueryAppImageRequest      | QueryAppImageResponse      | 查询应用镜像模版   |
 | [BatchQueryAppImage](#batch-query-appimage) | BatchQueryAppImageRequest | BatchQueryAppImageResponse | 批量查询应用镜像模版 |
+| [ListAppImage](#list-appimage) | ListAppImageRequest | ListAppImageResponse | 查询应用镜像模版列表 |
 
 ## 接口详情
 
@@ -454,6 +455,177 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/batchQuery' \
   "deploy_templates": [],
       }
     ]
+}
+```
+
+{#list-appimage}
+
+### 查询应用镜像模版列表
+
+#### HTTP 路径
+
+/api/v1/appimage/list
+
+#### 请求（ListAppImageRequest）
+
+| 字段     | 类型                                           | 选填  | 描述           |
+|--------|----------------------------------------------|-----|--------------|
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选  | 自定义请求内容      |
+| page_size | int64                                        | 必填  | 分页的每页条数      |
+| page_token | string                                       | 可选 | 第一页不用传，下一页根据上一页返回的next_page_token传入 |
+
+#### 响应（ListAppImageResponse）
+
+| 字段                                    | 类型                                  | 描述                                                       |
+|---------------------------------------|-------------------------------------|----------------------------------------------------------|
+| status                                | [Status](summary_cn.md#status)      | 状态信息                                                     |    
+| data                                  | AppImageList                        | 镜像列表                                                     |
+| next_page_token                       | string                              | 下一页分页参数                                                  |
+| data.appimage_list[].name             | string                              | 应用镜像名称                                                   |
+| data.appimage_list[].image            | [AppImageInfo](#AppImageInfo)       | 基础镜像信息                                                   |
+| data.appimage_list[].config_templates | [ConfigTemplate](#ConfigTemplate)   | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md) |
+| data.appimage_list[].deploy_templates              | [DeployTemplate](#DeployTemplate)[] | 应用部署模版配置信息                                               |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+ "page_size": 10
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
+  },
+  "data": {
+    "appimage_list": [{
+      "name": "secretflow-serving-image",
+      "image": {
+        "name": "registry.cn-hangzhou.aliyuncs.com/nueva-stack/serving-anolis8",
+        "tag": "0.9.0a0",
+        "id": "",
+        "sign": ""
+      },
+      "config_templates": {
+        "logging-config.conf": "{{.SERVING_LOGGING_CONFIG}}\n",
+        "serving-config.conf": "{\n  \"serving_id\": \"{{.SERVING_ID}}\",\n  \"input_config\": \"{{.INPUT_CONFIG}}\",\n  \"cluster_def\": \"{{.CLUSTER_DEFINE}}\",\n  \"allocated_ports\": \"{{.ALLOCATED_PORTS}}\",\n  \"oss_meta\": \"{{.SERVING_OSS_META}}\",\n  \"spi_tls_config\": \"{{.SERVING_SPI_TLS_CONFIG}}\",\n  \"http_source_meta\": \"{{.SERVING_HTTP_SOURCE_META}}\"\n}\n",
+        "trace-config.conf": "{{.SERVING_TRACE_CONFIG}}\n"
+      },
+      "deploy_templates": [{
+        "name": "secretflow",
+        "role": "",
+        "replicas": 1,
+        "restart_policy": "",
+        "containers": [{
+          "name": "secretflow",
+          "command": ["sh", "-c", "./secretflow_serving --flagfile=conf/gflags.conf --config_mode=kuscia --serving_config_file=/etc/kuscia/serving-config.conf --logging_config_file=/etc/kuscia/logging-config.conf --trace_config_file=/etc/kuscia/trace-config.conf"],
+          "args": [],
+          "working_dir": "/root/sf_serving",
+          "config_volume_mounts": [{
+            "mount_path": "/etc/kuscia/serving-config.conf",
+            "sub_path": "serving-config.conf"
+          }, {
+            "mount_path": "/etc/kuscia/logging-config.conf",
+            "sub_path": "logging-config.conf"
+          }, {
+            "mount_path": "/etc/kuscia/trace-config.conf",
+            "sub_path": "trace-config.conf"
+          }],
+          "ports": [{
+            "name": "service",
+            "protocol": "HTTP",
+            "scope": "Domain"
+          }, {
+            "name": "communication",
+            "protocol": "HTTP",
+            "scope": "Cluster"
+          }, {
+            "name": "internal",
+            "protocol": "HTTP",
+            "scope": "Domain"
+          }, {
+            "name": "brpc-builtin",
+            "protocol": "HTTP",
+            "scope": "Domain"
+          }],
+          "env_from": [],
+          "env": [],
+          "resources": null,
+          "liveness_probe": {
+            "exec": null,
+            "http_get": {
+              "path": "/health",
+              "port": "brpc-builtin",
+              "host": "",
+              "scheme": "",
+              "http_headers": []
+            },
+            "tcp_socket": null,
+            "grpc": null,
+            "initial_delay_seconds": 0,
+            "timeout_seconds": 0,
+            "period_seconds": 0,
+            "success_threshold": 0,
+            "failure_threshold": 0,
+            "termination_grace_period_seconds": "0"
+          },
+          "readiness_probe": {
+            "exec": null,
+            "http_get": {
+              "path": "/health",
+              "port": "brpc-builtin",
+              "host": "",
+              "scheme": "",
+              "http_headers": []
+            },
+            "tcp_socket": null,
+            "grpc": null,
+            "initial_delay_seconds": 0,
+            "timeout_seconds": 0,
+            "period_seconds": 0,
+            "success_threshold": 0,
+            "failure_threshold": 0,
+            "termination_grace_period_seconds": "0"
+          },
+          "startup_probe": {
+            "exec": null,
+            "http_get": {
+              "path": "/health",
+              "port": "brpc-builtin",
+              "host": "",
+              "scheme": "",
+              "http_headers": []
+            },
+            "tcp_socket": null,
+            "grpc": null,
+            "initial_delay_seconds": 0,
+            "timeout_seconds": 1,
+            "period_seconds": 10,
+            "success_threshold": 1,
+            "failure_threshold": 30,
+            "termination_grace_period_seconds": "0"
+          },
+          "image_pull_policy": ""
+        }]
+      }]
+    }],
+    "next_page_token": "eyJ2IjoibWV0YS5rOHMuaW8vdjEiLCJydiI6MTE4OTU1LCJzdGFydCI6InNlY3JldGZsb3ctbnNqYWlsLWltYWdlXHUwMDAwIn0"
+  }
 }
 ```
 

@@ -3,4 +3,4 @@
 ./docs/*
 go.mod
 go.sum
-*/testdata/*.csv
+*/tests/data/*.csv

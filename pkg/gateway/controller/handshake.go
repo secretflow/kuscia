@@ -159,7 +159,7 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 			dr.Status.IsDestinationUnreachable = false
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			if err == nil {
-				nlog.Infof("Domainroute %s found destination token(revsion %d) ready", dr.Name, revision)
+				nlog.Infof("Domainroute %s found destination token(revision %d) ready", dr.Name, revision)
 			}
 			return err
 		}
@@ -171,7 +171,7 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
 			_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
 			if err == nil {
-				nlog.Infof("Domainroute %s found destination token(revsion %d) not exist", dr.Name, revision)
+				nlog.Infof("Domainroute %s found destination token(revision %d) not exist", dr.Name, revision)
 			}
 			return err
 		}
@@ -189,11 +189,11 @@ func (c *DomainRouteController) handleGetResponse(out *getResponse, dr *kusciaap
 			dr.Status.IsDestinationUnreachable = false
 			dr.Status.TokenStatus = kusciaapisv1alpha1.DomainRouteTokenStatus{}
 			_, _ = c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(context.Background(), dr, metav1.UpdateOptions{})
-			return fmt.Errorf("%s cant contact destination because destination authentication is false", dr.Name)
+			return fmt.Errorf("%s can't contact destination because destination authentication is false", dr.Name)
 		}
 		return nil
 	case InternalError:
-		return fmt.Errorf("%s destination return unkown error", dr.Name)
+		return fmt.Errorf("%s destination return unknown error", dr.Name)
 	default:
 		return nil
 	}
@@ -561,7 +561,7 @@ func (c *DomainRouteController) DestReplyHandshake(req *handshake.HandShakeReque
 	} else if req.Type == handShakeTypeRSA {
 		msgHashSum, calErr := calcPublicKeyHash(dr.Spec.TokenConfig.SourcePublicKey)
 		if calErr != nil {
-			return buildFailedHandshakeReply(500, fmt.Errorf("caculate source domain [%s] publickey hash error: %s", srcDomain, calErr.Error()))
+			return buildFailedHandshakeReply(500, fmt.Errorf("calculate source domain [%s] publickey hash error: %s", srcDomain, calErr.Error()))
 		}
 		if req.TokenConfig.Pubhash != base64.StdEncoding.EncodeToString(msgHashSum) {
 			return buildFailedHandshakeReply(500, fmt.Errorf("source domain [%s] publickey hash mismatch in domainroute [%s]", srcDomain, dr.Name))

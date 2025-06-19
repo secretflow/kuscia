@@ -17,5 +17,5 @@
    ```
 
 :::{tip}
-注意：[体验模式](../../getting_started/quickstart_cn.md)因未挂载 Volume 到宿主机磁盘，无法使用以上方法升级 Kuscia 。
+注意：[体验模式](../../getting_started/quickstart_cn.md)因未挂载 Volume 到宿主机磁盘，无法使用以上方法升级 Kuscia。
 :::

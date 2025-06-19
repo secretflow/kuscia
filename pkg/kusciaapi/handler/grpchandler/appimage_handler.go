@@ -41,6 +41,10 @@ func (h appImageHandler) QueryAppImage(ctx context.Context, request *kusciaapi.Q
 	return h.appImageService.QueryAppImage(ctx, request), nil
 }
 
+func (h appImageHandler) ListAppImage(ctx context.Context, request *kusciaapi.ListAppImageRequest) (*kusciaapi.ListAppImageResponse, error) {
+	return h.appImageService.ListAppImage(ctx, request), nil
+}
+
 func (h appImageHandler) UpdateAppImage(ctx context.Context, request *kusciaapi.UpdateAppImageRequest) (*kusciaapi.UpdateAppImageResponse, error) {
 	return h.appImageService.UpdateAppImage(ctx, request), nil
 }

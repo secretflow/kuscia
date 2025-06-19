@@ -144,3 +144,7 @@ error_code_13200_description = "查询日志失败"
 error_code_13200_solution = "查询日志失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
 error_code_13201_description = "查询实例节点失败"
 error_code_13201_solution = "查询实例节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"
+# KusciaAPIErrListAppImage
+error_code_13107_description = "查询应用镜像列表失败"
+# KusciaAPIErrListAppImage
+error_code_13107_solution = "查询应用镜像列表失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因"

@@ -12,7 +12,7 @@ Kuscia支持自动拉取远程的应用镜像（比如：SecretFlow 等），这
 
 ```
 - image:
-  - defaultRegistry: private #随意，只需要对应到<image.registries[0].name>即可
+  - defaultRegistry: private # It doesn't matter, as long as it corresponds to <image.registries[0].name>
   - registries:
     - name: private
       endpoint: private.registry.com/test
@@ -26,7 +26,7 @@ Kuscia支持自动拉取远程的应用镜像（比如：SecretFlow 等），这
 
 ```
 - image:
-  - defaultRegistry: aliyun #随意，只需要对应到<image.registries[0].name>即可
+  - defaultRegistry: aliyun # It doesn't matter, as long as it corresponds to <image.registries[0].name>
   - registries:
     - name: aliyun
       endpoint: secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow

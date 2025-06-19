@@ -57,7 +57,7 @@ class Runtime(ABC):
     def cache_path(self, make_sure_exists: bool = True):
         """
         get cache path
-        make sure self.install_path is setted before.
+        make sure self.install_path is set before.
         make_sure_exists: if cache path is not exists, will auto create
         """
         cache = os.path.join(self.install_path, "cache")
@@ -73,7 +73,7 @@ class Runtime(ABC):
     def bind(self, *instances):
         """
         bind instances with this runtime.
-        instance can use runtime config and canbe managered by runtime(run/stop/remove)
+        instance can use runtime config and can be managered by runtime(run/stop/remove)
         """
         for instance in instances:
             if instance and instance not in self.instances:

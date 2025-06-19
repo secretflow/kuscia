@@ -23,9 +23,14 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
+
 	"github.com/secretflow/kuscia/pkg/datamesh/dataserver/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
+)
+
+const (
+	PostgresqlPort = "5432"
 )
 
 type BuiltinPostgresqlIO struct {
@@ -34,7 +39,7 @@ type BuiltinPostgresqlIO struct {
 
 func NewBuiltinPostgresqlIOChannel() DataMeshDataIOInterface {
 	return &BuiltinPostgresqlIO{
-		driverName: "postgresql",
+		driverName: "postgres",
 	}
 }
 
@@ -45,14 +50,14 @@ func (o *BuiltinPostgresqlIO) newPostgresqlSession(config *datamesh.DatabaseData
 	if err != nil {
 		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
 			host = config.GetEndpoint()
-			port = "5432"
+			port = PostgresqlPort
 			err = nil
+		} else {
+			nlog.Errorf("Endpoint \"%s\" can't be resolved with net.SplitHostPort()", config.GetEndpoint())
+			return nil, err
 		}
 	}
-	if err != nil {
-		nlog.Errorf("Endpoint \"%s\" can't be resolved with net.SplitHostPort()", config.GetEndpoint())
-		return nil, err
-	}
+
 	dsn := fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port)
 	db, err := sql.Open(o.driverName, dsn)
 	if err != nil {

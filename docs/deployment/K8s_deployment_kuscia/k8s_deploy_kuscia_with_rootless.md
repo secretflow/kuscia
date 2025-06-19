@@ -8,7 +8,7 @@
 
 在 K8s 模式中，非 root 用户部署需要对 root 用户部署的 Deployment 和 ConfigMap 部署模板进行一些修改。
 
-我们已经为您准备好了修改后的模板文件，您只需参考[k8s 部署文档](./K8s_p2p_cn.md)进行部署即可，本文不做过多赘述。
+我们已经为您准备好了修改后的模板文件，您只需参考 [k8s 部署文档](./K8s_p2p_cn.md)进行部署即可，本文不做过多赘述。
 
 - autonomy：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/autonomy/rootless/configmap.yaml)
 - master：[deployment.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/rootless/deployment.yaml) 和 [configmap.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/rootless/configmap.yaml)
@@ -16,7 +16,7 @@
 
 :::{tip}
 
-1. 目前支持 [RunP](deploy_with_runp_cn.md) 或者 RunK 模式以非 root 用户来部署 Kuscia。
+1. 目前支持 [RunP](../deploy_with_runp_cn.md) 或者 RunK 模式以非 root 用户来部署 Kuscia。
 2. 更多部署要求请参考[这里](../deploy_check.md)。
 :::
 
@@ -24,40 +24,40 @@
 
 下面展示非 root 用户部署时，Deployment 和 ConfigMap 模版中需要修改的地方。
 
-- Deployment 模版
+### Deployment 模版
 
-1. 在 spec 字段增加如下配置：
+   1. 在 spec 字段增加如下配置：
+   
+       ```yaml
+           spec:
+             dnsPolicy: None # Explicitly set dnsPolicy to None to fully manage DNS settings
+             dnsConfig:
+               nameservers:
+                 - 127.0.0.1
+       ```
 
-    ```yaml
-        spec:
-          dnsPolicy: None # Explicitly set dnsPolicy to None to fully manage DNS settings
-          dnsConfig:
-            nameservers:
-              - 127.0.0.1
-    ```
+   2. ConfigMap 文件挂载到容器内：
 
-2. ConfigMap 文件挂载到容器内：
+       ```yaml
+                volumeMounts:
+                  - mountPath: /home/kuscia/var/tmp/resolv.conf
+                    name: kuscia-config
+                    subPath: resolv.conf
+       ```
 
-    ```yaml
-              volumeMounts:
-                - mountPath: /home/kuscia/var/tmp/resolv.conf
-                  name: kuscia-config
-                  subPath: resolv.conf
-    ```
+   3. 在 containers 字段增加如下配置：
 
-3. 在 containers 字段增加如下配置：
+       ```yaml
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 1000
+                  runAsGroup: 1000
+                  capabilities:
+                    add:
+                      - NET_BIND_SERVICE
+       ```
 
-    ```yaml
-              securityContext:
-                runAsNonRoot: true
-                runAsUser: 1000
-                runAsGroup: 1000
-                capabilities:
-                  add:
-                    - NET_BIND_SERVICE
-    ```
-
-- ConfigMap 模版
+### ConfigMap 模版
 
 在 ConfigMap 模版中，只需要增加 resolv.conf 文件内容即可：
 

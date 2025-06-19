@@ -45,7 +45,7 @@ def regist_app_image(client, app_image):
 
     app_image_api.create(body=app_image)
     for i in range(50):
-        # wait image is registed
+        # wait image is registered
         try:
             app_image_api.get(name=app_image["metadata"]["name"])
             break

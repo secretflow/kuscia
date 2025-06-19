@@ -24,7 +24,7 @@
 
 ## 使用示例
 
-假设双方节点为alice和bob，需要检测到bob的网络通信，可以在 alice 的计算节点容器内执行：
+假设双方节点为 alice 和 bob，需要检测到 bob 的网络通信，可以在 alice 的计算节点容器内执行：
 
 ~~~
 kuscia diagnose network alice bob

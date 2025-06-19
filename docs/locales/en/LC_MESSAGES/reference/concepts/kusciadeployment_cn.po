@@ -473,4 +473,3 @@ msgstr "`alice.secretflow-serving.unavailableReplicas`: It represents the number
 #: ../../reference/concepts/kusciadeployment_cn.md:354
 msgid "`alice.secretflow-serving.updatedReplicas`：表示应用已更新的副本数。"
 msgstr "`alice.secretflow-serving.updatedReplicas`: It represents the number of replicas that have been updated for the application."
-

@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../deployment/index.rst:2
 msgid "部署"
-msgstr ""
+msgstr "Deployment"
 

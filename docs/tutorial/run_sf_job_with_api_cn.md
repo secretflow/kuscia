@@ -14,7 +14,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
 
 ### 中心化组网模式
 
-证书文件在 ${USER}-kuscia-master 节点的`/home/kuscia/var/certs/`目录下：
+证书文件在 ${USER}-kuscia-master 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -27,7 +27,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
 
 证书的配置参考[配置授权](../deployment/Docker_deployment_kuscia/deploy_p2p_cn.md#配置授权)
 
-这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的`/home/kuscia/var/certs/`目录下：
+这里以 Alice 节点为例，接口需要的证书文件在 ${USER}-kuscia-autonomy-alice 节点的 `/home/kuscia/var/certs/` 目录下：
 
 | 文件名               | 文件功能                                                |
 | -------------------- | ------------------------------------------------------- |
@@ -42,7 +42,7 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
 
 您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。
 
-在 Kuscia 中，节点数据文件的存放路径为节点容器的`/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
+在 Kuscia 中，节点数据文件的存放路径为节点容器的 `/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
 
 {#kuscia}
 
@@ -72,6 +72,8 @@ Bob 节点同理。
 docker cp {your_alice_data} ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
 ```
 
+然后，您还需要参考[Kuscia API](../reference/apis/domaindata_cn.md#create-domain-data)给新的数据文件创建 domaindata。
+
 接下来您可以像[查看 Kuscia 示例数据](#kuscia)一样查看您的数据文件，这里不再赘述。
 
 {#configure-kuscia-job}
@@ -96,10 +98,10 @@ docker exec -it ${USER}-kuscia-autonomy-alice
 
 此处以[KusciaJob 示例](../reference/apis/kusciajob_cn.md#请求示例)作为任务示例展示，该任务流完成 2 个任务：
 
-1. job-psi 读取 Alice 和 Bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的`psi-output.csv`。
-2. job-split 读取 Alice 和 Bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的`train-dataset.csv`、`test-dataset.csv`。
+1. job-psi 读取 Alice 和 Bob 的数据文件，进行隐私求交，求交的结果分别保存为两个参与方的 `psi-output.csv`。
+2. job-split 读取 Alice 和 Bob 上一步中求交的结果文件，并拆分成训练集和测试集，分别保存为两个参与方的 `train-dataset.csv`、`test-dataset.csv`。
 
-这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由`job_id`指定。
+这个 KusciaJob 的名称为 job-best-effort-linear，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `job_id` 指定。
 
 我们请求[创建 Job](../reference/apis/kusciajob_cn.md#请求createjobrequest) 接口来创建并运行这个 KusciaJob。
 
@@ -135,7 +137,7 @@ job-best-effort-linear 是您在[配置 Job](#configure-kuscia-job) 中指定的
 我们请求[批量查询 Job 状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)接口来批量查询 KusciaJob
 的状态。
 
-请求参数`job_ids`是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。
+请求参数 `job_ids` 是一个 Array[String] ，需要列出所有待查询的 KusciaJob 名称。
 
 ```shell
 curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
@@ -285,7 +287,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 }
 ```
 
-`data.jobs.status.state`字段记录了 KusciaJob 的运行状态，`data.jobs.status.tasks.state`则记录了每个 KusciaTask 的运行状态。
+`data.jobs.status.state` 字段记录了 KusciaJob 的运行状态，`data.jobs.status.tasks.state` 则记录了每个 KusciaTask 的运行状态。
 
 详细信息请参考 [KusciaJob](../reference/concepts/kusciajob_cn.md)
 和[批量查询 Job 状态](../reference/apis/kusciajob_cn.md#批量查询-job-状态)

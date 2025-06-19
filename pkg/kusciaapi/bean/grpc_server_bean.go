@@ -107,7 +107,7 @@ func (s *grpcServerBean) Start(ctx context.Context, e framework.ConfBeanRegistry
 	kusciaapi.RegisterDomainServiceServer(server, grpchandler.NewDomainHandler(service.NewDomainService(s.config)))
 	kusciaapi.RegisterDomainRouteServiceServer(server, grpchandler.NewDomainRouteHandler(service.NewDomainRouteService(s.config)))
 	kusciaapi.RegisterHealthServiceServer(server, grpchandler.NewHealthHandler(service.NewHealthService()))
-	kusciaapi.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config)))
+	kusciaapi.RegisterDomainDataServiceServer(server, grpchandler.NewDomainDataHandler(service.NewDomainDataService(s.config, s.cmConfigService)))
 	kusciaapi.RegisterDomainDataSourceServiceServer(server, grpchandler.NewDomainDataSourceHandler(service.NewDomainDataSourceService(s.config, s.cmConfigService)))
 	kusciaapi.RegisterServingServiceServer(server, grpchandler.NewServingHandler(service.NewServingService(s.config)))
 	kusciaapi.RegisterDomainDataGrantServiceServer(server, grpchandler.NewDomainDataGrantHandler(service.NewDomainDataGrantService(s.config)))

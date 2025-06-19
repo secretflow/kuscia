@@ -85,7 +85,7 @@ msgstr ""
 
 #: ../../reference/apis/serving_cn.md
 msgid "UpdateServingRequest"
-msgstr "[UpdateServing](#update-serving)"
+msgstr "[UpdateServingRequest]"
 
 #: ../../reference/apis/serving_cn.md
 msgid "UpdateServingResponse"

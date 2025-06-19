@@ -118,7 +118,7 @@ version_check:
 
 .PHONY: docs
 docs: ## Build docs.
-docs: docs-clean gen_error_code_doc version_check sphinx-build
+docs: docs-clean gen_error_code_doc sphinx-build
 
 .PHONY: docs-clean
 docs-clean: ## Clean docs build.

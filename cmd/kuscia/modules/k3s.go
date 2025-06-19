@@ -222,34 +222,34 @@ func (s *k3sModule) startCheckReady(ctx context.Context) error {
 
 func (s *k3sModule) initKusciaEnvAfterReady(ctx context.Context) error {
 	if err := applyCRD(s.conf); err != nil {
-		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		nlog.Errorf("Init failed after k3s started with err: %s", err.Error())
 		return err
 	}
 	if err := applyKusciaResources(s.conf); err != nil {
-		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		nlog.Errorf("Init failed after k3s started with err: %s", err.Error())
 		return err
 	}
 	if err := genKusciaKubeConfig(s.conf); err != nil {
-		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		nlog.Errorf("Init failed after k3s started with err: %s", err.Error())
 		return err
 	}
 
 	clients, err := kubeconfig.CreateClientSetsFromKubeconfig(s.conf.KubeconfigFile, s.conf.ApiserverEndpoint)
 	if err != nil {
-		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		nlog.Errorf("Init failed after k3s started with err: %s", err.Error())
 		return err
 	}
 
 	s.conf.Clients = clients
 
 	if err := createDefaultDomain(ctx, s.conf); err != nil {
-		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		nlog.Errorf("Init failed after k3s started with err: %s", err.Error())
 		return err
 	}
-	nlog.Infof("registed namespace %s without error", s.conf.DomainID)
+	nlog.Infof("Register namespace %s succeed.", s.conf.DomainID)
 
 	if err := createCrossNamespace(ctx, s.conf); err != nil {
-		nlog.Errorf("init failed after k3s started with err: %s", err.Error())
+		nlog.Errorf("Init failed after k3s started with err: %s", err.Error())
 		return err
 	}
 

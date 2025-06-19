@@ -35,6 +35,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	AppImageService_CreateAppImage_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.AppImageService/CreateAppImage"
 	AppImageService_QueryAppImage_FullMethodName      = "/kuscia.proto.api.v1alpha1.kusciaapi.AppImageService/QueryAppImage"
+	AppImageService_ListAppImage_FullMethodName       = "/kuscia.proto.api.v1alpha1.kusciaapi.AppImageService/ListAppImage"
 	AppImageService_UpdateAppImage_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.AppImageService/UpdateAppImage"
 	AppImageService_DeleteAppImage_FullMethodName     = "/kuscia.proto.api.v1alpha1.kusciaapi.AppImageService/DeleteAppImage"
 	AppImageService_BatchQueryAppImage_FullMethodName = "/kuscia.proto.api.v1alpha1.kusciaapi.AppImageService/BatchQueryAppImage"
@@ -46,6 +47,7 @@ const (
 type AppImageServiceClient interface {
 	CreateAppImage(ctx context.Context, in *CreateAppImageRequest, opts ...grpc.CallOption) (*CreateAppImageResponse, error)
 	QueryAppImage(ctx context.Context, in *QueryAppImageRequest, opts ...grpc.CallOption) (*QueryAppImageResponse, error)
+	ListAppImage(ctx context.Context, in *ListAppImageRequest, opts ...grpc.CallOption) (*ListAppImageResponse, error)
 	UpdateAppImage(ctx context.Context, in *UpdateAppImageRequest, opts ...grpc.CallOption) (*UpdateAppImageResponse, error)
 	DeleteAppImage(ctx context.Context, in *DeleteAppImageRequest, opts ...grpc.CallOption) (*DeleteAppImageResponse, error)
 	BatchQueryAppImage(ctx context.Context, in *BatchQueryAppImageRequest, opts ...grpc.CallOption) (*BatchQueryAppImageResponse, error)
@@ -71,6 +73,15 @@ func (c *appImageServiceClient) CreateAppImage(ctx context.Context, in *CreateAp
 func (c *appImageServiceClient) QueryAppImage(ctx context.Context, in *QueryAppImageRequest, opts ...grpc.CallOption) (*QueryAppImageResponse, error) {
 	out := new(QueryAppImageResponse)
 	err := c.cc.Invoke(ctx, AppImageService_QueryAppImage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appImageServiceClient) ListAppImage(ctx context.Context, in *ListAppImageRequest, opts ...grpc.CallOption) (*ListAppImageResponse, error) {
+	out := new(ListAppImageResponse)
+	err := c.cc.Invoke(ctx, AppImageService_ListAppImage_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +121,7 @@ func (c *appImageServiceClient) BatchQueryAppImage(ctx context.Context, in *Batc
 type AppImageServiceServer interface {
 	CreateAppImage(context.Context, *CreateAppImageRequest) (*CreateAppImageResponse, error)
 	QueryAppImage(context.Context, *QueryAppImageRequest) (*QueryAppImageResponse, error)
+	ListAppImage(context.Context, *ListAppImageRequest) (*ListAppImageResponse, error)
 	UpdateAppImage(context.Context, *UpdateAppImageRequest) (*UpdateAppImageResponse, error)
 	DeleteAppImage(context.Context, *DeleteAppImageRequest) (*DeleteAppImageResponse, error)
 	BatchQueryAppImage(context.Context, *BatchQueryAppImageRequest) (*BatchQueryAppImageResponse, error)
@@ -125,6 +137,9 @@ func (UnimplementedAppImageServiceServer) CreateAppImage(context.Context, *Creat
 }
 func (UnimplementedAppImageServiceServer) QueryAppImage(context.Context, *QueryAppImageRequest) (*QueryAppImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryAppImage not implemented")
+}
+func (UnimplementedAppImageServiceServer) ListAppImage(context.Context, *ListAppImageRequest) (*ListAppImageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAppImage not implemented")
 }
 func (UnimplementedAppImageServiceServer) UpdateAppImage(context.Context, *UpdateAppImageRequest) (*UpdateAppImageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateAppImage not implemented")
@@ -180,6 +195,24 @@ func _AppImageService_QueryAppImage_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppImageServiceServer).QueryAppImage(ctx, req.(*QueryAppImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AppImageService_ListAppImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAppImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppImageServiceServer).ListAppImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AppImageService_ListAppImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppImageServiceServer).ListAppImage(ctx, req.(*ListAppImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -252,6 +285,10 @@ var AppImageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryAppImage",
 			Handler:    _AppImageService_QueryAppImage_Handler,
+		},
+		{
+			MethodName: "ListAppImage",
+			Handler:    _AppImageService_ListAppImage_Handler,
 		},
 		{
 			MethodName: "UpdateAppImage",

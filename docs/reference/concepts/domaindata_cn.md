@@ -2,8 +2,8 @@
 
 在 Kuscia 中，DomainData 表示被 Kuscia 所管理的数据对象，包括 表、模型、规则和报告等。DomainData 属于节点内资源，每一个 DomainData 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
 
-一个常见的用例是：隐私求交参与方分别在自己的 Domain 下创建出自己要参与计算的表，即`type`为`table`的 DomainData，然后创建一个 [KusciaJob](kusciajob_cn.md) 进行隐私求交任务，
-该任务结束后，会在参与方生成新的隐私求交结果表，即生成`type`为`table`的 DomainData，参与方可以通过这个 DomainData 获取到文件地址或者将这个 DomainData 用于下次计算任务。
+一个常见的用例是：隐私求交参与方分别在自己的 Domain 下创建出自己要参与计算的表，即 `type` 为 `table` 的 DomainData，然后创建一个 [KusciaJob](kusciajob_cn.md) 进行隐私求交任务，
+该任务结束后，会在参与方生成新的隐私求交结果表，即生成 `type` 为 `table` 的 DomainData，参与方可以通过这个 DomainData 获取到文件地址或者将这个 DomainData 用于下次计算任务。
 
 值得注意的是：无论是创建、更新、清理 DomainData，都不会对真实的数据内容产生影响，Kuscia 仅仅记录数据的 meta 信息，用于在计算任务中协助应用算法组件读取数据。
 当前版本 Kuscia 暂未支持检查真实的数据内容是否满足 DomainData 中提交的 meta 信息定义，后续 Kuscia 会增加对提交的 meta 信息的验证。
@@ -57,25 +57,25 @@ spec:
 在该示例中:
 
 - `.metadata.labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
-- `.metadata.name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
-- `.metadata.namespace`: 表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
+- `.metadata.name`：表示隐私计算节点 DomainData 的名称，当前示例为 `alice-table`。
+- `.metadata.namespace`: 表示 DomainData 所属的命名空间，即所属的节点，当前示例为 `alice`。
 - `.spec.attributes`：表示 DomainData 的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，详细请查看 [参考](#refer)。
-- `.spec.columns`：表示对于表类型的 DomainData 的列信息。仅当`type`为`table`时，该字段才存在，详细请查看 [参考](#refer)。
+- `.spec.columns`：表示对于表类型的 DomainData 的列信息。仅当 `type` 为 `table` 时，该字段才存在，详细请查看 [参考](#refer)。
 - `.spec.dataSource`：表示 DomainData 所属的数据源。数据源是数据所存放的位置，存在多种类型的数据源，详细请查看 [参考](#refer)。
 - `.spec.name`：表示一个人类可读的名称，仅用作展示，可重复。
-- `.spec.relativeURI`：表示相对于数据源根路径的位置，当前示例的绝对路径为`/home/kuscia/var/storage/data/alice.csv`，详细请查看 [参考](#refer)。
+- `.spec.relativeURI`：表示相对于数据源根路径的位置，当前示例的绝对路径为 `/home/kuscia/var/storage/data/alice.csv`，详细请查看 [参考](#refer)。
 - `.spec.type`：表示 DomainData 的类型，如 `table`、`model`、`rule`、`report`，分别表示数据表，模型，规则，报告。
 - `.spec.vendor`：表示 DomainData 的来源，仅用作标识，详细请查看 [参考](#refer)。
 - `.spec.author`：表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的。
 
-1. 准备您的 CSV 数据文件，将您的数据文件重命名为 `alice.csv`，并拷贝到alice节点容器即`${USER}-kuscia-lite-alice`容器的`/home/kuscia/var/storage/data`目录下，运行以下命令可完成：
+1. 准备您的 CSV 数据文件，将您的数据文件重命名为 `alice.csv`，并拷贝到alice节点容器即 `${USER}-kuscia-lite-alice` 容器的 `/home/kuscia/var/storage/data` 目录下，运行以下命令可完成：
 
   ```shell
   mv {YOUR_CSV_DATA_FILE} alice.csv
   docker cp alice.csv ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
   ```
 
-2. 进入 master 容器即 `${USER}-kuscia-master` 容器，创建示例中的`alice-table.yaml`并根据您的 CSV文件 的列字段信息，调整上述示例中的`.spec.columns`字段。
+2. 进入 master 容器即 `${USER}-kuscia-master` 容器，创建示例中的 `alice-table.yaml` 并根据您的 CSV 文件 的列字段信息，调整上述示例中的 `.spec.columns` 字段。
 
 3. 在 master 容器即 `${USER}-kuscia-master` 容器中，运行以下命令创建 DomainData。
   
@@ -123,7 +123,7 @@ spec:
   author: alice
 ```
 
-在该示例中，将`.spec.name`的值调整为`alice-test.csv`。
+在该示例中，将 `.spec.name` 的值调整为 `alice-test.csv`。
 
 1. 运行以下命令更新 DomainData。
   
@@ -215,22 +215,21 @@ spec:
 DomainData `metadata` 的子字段详细介绍如下：
 
 - `labels`：标签在 K3s 中用于支持高效的查询和监听操作，参考：[标签和选择算符](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/)。
-- `name`：表示隐私计算节点 DomainData 的名称，当前示例为`alice-table`。
-- `namespace`：表示 DomainData 所属的命名空间，即所属的节点，当前示例为`alice`。
+- `name`：表示隐私计算节点 DomainData 的名称，当前示例为 `alice-table`。
+- `namespace`：表示 DomainData 所属的命名空间，即所属的节点，当前示例为 `alice`。
 
 DomainData `spec` 的子字段详细介绍如下：
 
 - `attributes`：表示 DomainData 的自定义属性，以键值对形式表示，用作用户或应用算法为数据对象添加扩展信息，Kuscia不感知，仅存储。您可以使用这个字段存储一些您自身业务属性的信息。
   比如您可以存储数据文件的md5值，或者存储行数，应用算法也可用于存储模型的类型等。
-- `columns`：表示对于表类型的 DomainData 的列信息。仅当`type`为`table`时，该字段才存在。
+- `columns`：表示对于表类型的 DomainData 的列信息。仅当 `type` 为 `table` 时，该字段才存在。
   - `name`：列字段名称。
-  - `type`：列字段的数据类型，默认支持的数据类型参考[data.proto](https://github.com/secretflow/spec/blob/main/secretflow_spec/protos/secretflow_spec/v1/data.proto#L143)。该字段当前版本并非可枚举的，列字段的类型由应用算法组件进行定义和消费，Kuscia 仅作存储。
+  - `type`：列字段的数据类型，默认支持的数据类型参考 [data.proto](https://github.com/secretflow/spec/blob/main/secretflow_spec/protos/secretflow_spec/v1/data.proto#L143)。该字段当前版本并非可枚举的，列字段的类型由应用算法组件进行定义和消费，Kuscia 仅作存储。
   - `comment`：列字段的注释，仅用作展示。
-- `dataSource`：表示 DomainData 所属的数据源。数据源是数据所存放的位置，存在多种类型的数据源，比如`localfs`类型数据源表示节点内的一个文件目录，`mysql`类型数据源表示mysql实例中的一个数据库。
-  目前 Kuscia 仅支持`localfs`数据源，并且内置一个数据源实例`default-data-source`，即当前示例中所使用的数据源。该`default-data-source`数据源的根目录为节点内的`/home/kuscia/var/storage/data`目录。
+- `dataSource`：表示 DomainData 所属的数据源。数据源是数据所存放的位置，存在多种类型的数据源，比如 `localfs` 类型数据源表示节点内的一个文件目录，`mysql`类型数据源表示mysql实例中的一个数据库。目前 Kuscia 支持 `localfs`、`oss`、`mysql` 数据源，并且内置了一个 `localfs` 类型的数据源实例 `default-data-source`，即当前示例中所使用的数据源。该 `default-data-source` 数据源的根目录为节点内的 `/home/kuscia/var/storage/data` 目录。
 - `name`：表示一个人类可读的名称，仅用作展示，可重复。
-- `relativeURI`：表示相对于数据源根路径的位置。对于`localfs`类型数据源来说，是相对于`localfs`类型数据源所表示的文件目录的相对位置，对于`mysql`类型数据源来说，是该mysql实例中的数据库的某个数据表。
-  在该示例中是对于`default-data-source`数据源根目录的相对位置，即`/home/kuscia/var/storage/data/alice.csv`。
-- `type`：表示 DomainData 的类型，目前支持 `table`、`model`、`rule`、`report`、`unknown`五种类型，分别表示数据表，模型，规则，报告和未知类型。
-- `vendor`：表示 DomainData 的来源，仅用作标识，对于您手动创建的 DomainData，可以将其设置为`manual`，对于应用算法组件生成的表，由算法组件本身填充，secretflow算法组件会填充`secretflow`。
+- `relativeURI`：表示相对于数据源根路径的位置。对于 `localfs` 类型数据源来说，是相对于 `localfs` 类型数据源所表示的文件目录的相对位置，对于 `mysql` 类型数据源来说，是该 mysql 实例中的数据库的某个数据表。
+  在该示例中是对于 `default-data-source` 数据源根目录的相对位置，即 `/home/kuscia/var/storage/data/alice.csv`。
+- `type`：表示 DomainData 的类型，目前支持 `table`、`model`、`rule`、`report`、`unknown` 五种类型，分别表示数据表，模型，规则，报告和未知类型。
+- `vendor`：表示 DomainData 的来源，仅用作标识，对于您手动创建的 DomainData，可以将其设置为 `manual`，对于应用算法组件生成的表，由算法组件本身填充，secretflow 算法组件会填充 `secretflow`。
 - `.spec.author`：表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的。

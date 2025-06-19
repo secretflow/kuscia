@@ -6,7 +6,7 @@
 
 目前 Kuscia 在部署到 K8s 上时，隐私计算任务的运行态支持 RunK 和 RunP 两种模式，RunC 模式目前需要部署 Kuscia 的 Pod 有特权容器，暂时不是特别推荐。详情请参考[容器运行模式](../../reference/architecture_cn.md#agent)
 
-本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod），RunP 模式的部署请参考 [使用进程运行时部署节点](./deploy_with_runp_cn.md)，非 root 用户部署请参考[这里](./k8s_deploy_kuscia_with_rootless.md)。
+本教程默认以 RunK 模式来进行部署（需要能够有权限在宿主的 K8s 上拉起任务 Pod），RunP 模式的部署请参考 [使用 RunP 运行时部署节点](../deploy_with_runp_cn.md)，非 root 用户部署请参考[这里](./k8s_deploy_kuscia_with_rootless.md)。
 
 ![k8s_master_lite_deploy](../../imgs/k8s_deploy_master_lite.png)
 
@@ -30,8 +30,7 @@ kubectl create ns kuscia-master
 
 获取 [service.yaml](https://github.com/secretflow/kuscia/blob/main/hack/k8s/master/service.yaml) 文件，创建 service
 
-<span style="color:red;">注意：<br>
-1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+<span style="color:red;">注意：<br> 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
 
 ```bash
 kubectl create -f service.yaml
@@ -83,8 +82,7 @@ kubectl create ns lite-alice
 例如：[阿里云](https://help.aliyun.com/zh/ack/serverless-kubernetes/user-guide/use-annotations-to-configure-load-balancing)）或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport)，
 并在 ConfigMap 的 masterEndpoint 字段改为可正常访问的地址，创建 Service。
 
-<span style="color:red;">注意：<br>
-1、需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
+<span style="color:red;">注意：<br> 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md) </span>
 
 ```bash
 kubectl create -f service.yaml
@@ -218,7 +216,7 @@ kubectl get po -n lite-alice
 
 ## 运行任务
 
-> RunK 模式不支持使用本地数据训练，请准备[OSS数据](K8s_master_lite_cn.md#准备-oss-测试数据)。使用本地数据请先切换至 RunP 模式，详情请参考 [使用 RunP 运行时部署节点](./deploy_with_runp_cn.md)。
+> RunK 模式不支持使用本地数据训练，请准备 [OSS 数据](K8s_master_lite_cn.md#准备-oss-测试数据)。使用本地数据请先切换至 RunP 模式，详情请参考 [使用 RunP 运行时部署节点](../deploy_with_runp_cn.md)。
 
 ### 准备本地测试数据
 
@@ -237,7 +235,7 @@ kubectl exec -it ${alice_pod_name} bash -n lite-alice
 ```bash
 # Execute the following example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
+curl -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
  --header 'Content-Type: application/json' \
  --cacert ${CTR_CERTS_ROOT}/ca.crt \
  -d '{
@@ -433,7 +431,7 @@ kubectl exec -it ${bob_pod_name} bash -n lite-bob
 
 ```bash
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
+curl -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
  --header 'Content-Type: application/json' \
  --cacert ${CTR_CERTS_ROOT}/ca.crt \
  -d '{
@@ -599,7 +597,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 #### Alice 节点准备 OSS 数据
 
-请先将 Alice 节点测试数据 [alice.csv](https://github.com/secretflow/kuscia/blob/main/testdata/alice.csv) 上传至 OSS
+请先将 Alice 节点测试数据 [alice.csv](https://github.com/secretflow/kuscia/blob/main/tests/data/alice.csv) 上传至 OSS
 
 登录到 Alice 节点的 Pod 中
 
@@ -614,7 +612,7 @@ kubectl exec -it ${alice_pod_name} bash -n lite-alice
 ```bash
 # Execute the following example inside the alice container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
+curl -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --header 'Content-Type: application/json' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
 -d '{
@@ -804,7 +802,7 @@ curl -X POST 'http://127.0.0.1:8082/api/v1/domaindatagrant/create' \
 
 #### Bob 节点准备 OSS 测试数据
 
-请先将 Bob 节点测试数据 [bob.csv](https://github.com/secretflow/kuscia/blob/main/testdata/bob.csv) 上传至 OSS
+请先将 Bob 节点测试数据 [bob.csv](https://github.com/secretflow/kuscia/blob/main/tests/data/bob.csv) 上传至 OSS
 
 登录到 Bob 节点的 Pod 中
 
@@ -819,7 +817,7 @@ kubectl exec -it ${bob_pod_name} bash -n lite-bob
 ```bash
 # Execute the following example inside the bob container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
-curl -k -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
+curl -X POST 'http://localhost:8082/api/v1/domaindatasource/create' \
 --header 'Content-Type: application/json' \
 --cacert ${CTR_CERTS_ROOT}/ca.crt \
 -d '{

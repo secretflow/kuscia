@@ -141,8 +141,8 @@ msgstr "`host`: Domain name or IP of the destination node."
 
 #: ../../reference/concepts/domainroute_cn.md:81
 msgid ""
-"`ports`：表示目标节点的端口，以及该端口的协议，协议类型为 HTTP或 "
-"GRPC协议，节点网关可在不同端口上分别支持http协议和GRPC协议。当前仅支持一个端口。"
+"`ports`：表示目标节点的端口，以及该端口的协议，协议类型为 HTTP 或 "
+"GRPC 协议，节点网关可在不同端口上分别支持 HTTP 协议和 GRPC 协议。当前仅支持一个端口。"
 msgstr ""
 "`ports`: Specifies port and protocol (HTTP/GRPC) for the destination node. Gateways can support different protocols on separate ports, though currently only one port is supported."
 
@@ -296,7 +296,7 @@ msgstr "DomainRoute `spec` subfields:"
 #: ../../reference/concepts/domainroute_cn.md:243
 #: ../../reference/concepts/domainroute_cn.md:363
 msgid ""
-"`authenticationType`：表示鉴权类型，支持`Token`、`MTLS`、`None`，其中 `Token` "
+"`authenticationType`：表示鉴权类型，支持 `Token`、`MTLS`、`None`，其中 `Token` "
 "类型仅支持在中心化组网模式下使用。"
 msgstr ""
 "`authenticationType`: Authentication type (Token/mTLS/None). Token is only supported in centralized networks."
@@ -345,18 +345,18 @@ msgstr "`port`: Indicates the port number."
 
 #: ../../reference/concepts/domainroute_cn.md:252
 #: ../../reference/concepts/domainroute_cn.md:371
-msgid "`protocol`：表示端口协议，支持`HTTP`或`GRPC`。"
+msgid "`protocol`：表示端口协议，支持 `HTTP` 或 `GRPC`。"
 msgstr "`protocol`: Specifies the port protocol, supporting `HTTP` or `GRPC`."
 
 #: ../../reference/concepts/domainroute_cn.md:253
 #: ../../reference/concepts/domainroute_cn.md:372
-msgid "`isTLS`：表示是否开启`HTTPS`或`GRPCS`。"
+msgid "`isTLS`：表示是否开启 `HTTPS` 或 `GRPCS`。"
 msgstr "`isTLS`: Indicates whether to enable `HTTPS` or `GRPCS`."
 
 #: ../../reference/concepts/domainroute_cn.md:254
 #: ../../reference/concepts/domainroute_cn.md:374
 msgid ""
-"`mTLSConfig`：表示 MTLS 配置，authenticationType 为`MTLS`时，源节点需配置 "
+"`mTLSConfig`：表示 MTLS 配置，authenticationType 为 `MTLS` 时，源节点需配置 "
 "mTLSConfig。该配置项在目标节点不生效。"
 msgstr ""
 "`mTLSConfig`: Specifies MTLS configuration. When authenticationType is `MTLS`, "
@@ -382,7 +382,7 @@ msgstr ""
 #: ../../reference/concepts/domainroute_cn.md:258
 #: ../../reference/concepts/domainroute_cn.md:378
 msgid ""
-"`tokenConfig`：表示 Token 配置，authenticationType 为`Token`或 bodyEncryption "
+"`tokenConfig`：表示 Token 配置，authenticationType 为 `Token` 或 bodyEncryption "
 "非空时，源节点需配置 TokenConfig。该配置项在目标节点不生效。"
 msgstr ""
 "`tokenConfig`: The tokenConfig defines the Token configuration. Mandatory on source nodes under: (1) Token authenticationType, (2) non-empty bodyEncryption. Configuration does not affect target nodes."
@@ -415,7 +415,7 @@ msgstr ""
 #: ../../reference/concepts/domainroute_cn.md:262
 #: ../../reference/concepts/domainroute_cn.md:382
 msgid ""
-"`tokenGenMethod`：表示 Token 生成算法，使用`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 "
+"`tokenGenMethod`：表示 Token 生成算法，使用 `RSA-GEN`，表示双方各生成一半，拼成一个 32 长度的通信 "
 "Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性。"
 msgstr ""
 "`tokenGenMethod`: Specifies the token generation algorithm. Using `RSA-GEN`, "
@@ -571,7 +571,7 @@ msgstr ""
 #: ../../reference/concepts/domainroute_cn.md:383
 msgid ""
 "`transit`：表示配置路由转发，如 alice-bob 的通信链路是 alice-joke-bob（alice-joke "
-"必须为直连）。若该配置不为空，endpoint 配置项将不生效。具体参考`DomainRoute 进阶`。"
+"必须为直连）。若该配置不为空，endpoint 配置项将不生效。具体参考 `DomainRoute 进阶`。"
 msgstr ""
 "`transit`: Configures route forwarding. For example, the alice-bob "
 "communication path becomes alice-joke-bob (alice-joke must be direct "
@@ -580,8 +580,8 @@ msgstr ""
 
 #: ../../reference/concepts/domainroute_cn.md:384
 msgid ""
-"`transitMethod`: 表示中转方式，目前支持`THIRD-DOMAIN`和`REVERSE-"
-"TUNNEL`两种方式，前者表示经第三方节点转发，后者表示反向隧道。"
+"`transitMethod`: 表示中转方式，目前支持 `THIRD-DOMAIN` 和 `REVERSE-"
+"TUNNEL` 两种方式，前者表示经第三方节点转发，后者表示反向隧道。"
 msgstr ""
 "`transitMethod`: Specifies transit method, currently supporting `THIRD-DOMAIN` "
 "(third-party node forwarding) and `REVERSE-TUNNEL` (reverse tunnel)."
@@ -599,7 +599,7 @@ msgid "`conditions[].type`: 表示状况的名称。"
 msgstr "`conditions[].type`: Specifies the condition name."
 
 #: ../../reference/concepts/domainroute_cn.md:395
-msgid "`conditions[].status`: 表示该状况是否适用，可能的取值有`True`、`False`或`Unknown`。"
+msgid "`conditions[].status`: 表示该状况是否适用，可能的取值有 `True`、`False` 或 `Unknown`。"
 msgstr ""
 "`conditions[].status`: Indicates condition applicability with possible values: "
 "`True`, `False`, or `Unknown`."
@@ -695,7 +695,7 @@ msgid "节点转发"
 msgstr "Node Forwarding"
 
 #: ../../reference/concepts/domainroute_cn.md:422
-msgid "节点转发，对应的转发类型`transitMethod`为——`THIRD-DOMAIN`，代表请求流量会经第三方节点转发。"
+msgid "节点转发，对应的转发类型 `transitMethod` 为——`THIRD-DOMAIN`，代表请求流量会经第三方节点转发。"
 msgstr ""
 "Node Forwarding corresponds to `transitMethod: THIRD-DOMAIN`, indicating "
 "requests are forwarded through third-party nodes."
@@ -811,7 +811,7 @@ msgstr ""
 #: ../../reference/concepts/domainroute_cn.md:532
 msgid ""
 "authenticationType 必须配置为 Token，才可以启用 AES 加密。转发的端对端加密密钥基于 Token "
-"生成，配置`rollingUpdatePeriod` 后，Token 会进行滚动更新，转发的密钥随之更新版本。"
+"生成，配置 `rollingUpdatePeriod` 后，Token 会进行滚动更新，转发的密钥随之更新版本。"
 msgstr ""
 "Set authenticationType to `Token` to enable AES encryption. End-to-end "
 "encryption keys are token-based. Token rotation via rollingUpdatePeriod "
@@ -860,8 +860,8 @@ msgstr ""
 msgid ""
 "隧道建立，对应上图中的 ⓪——用户向 Kuscia 注册一条类型为 `REVERSE-TUNNEL`、起点为 Alice、终点为 Bob "
 "的路由配置。Bob 侧 Kuscia Gateway 监听到这条配置后，会通过网关向 Alice 发起一次特殊的 HTTP 请求，这条请求到达 "
-"Alice 网关后，网关会记录这条请求的信息，回复`200状态码`和`Transfer-Encoding: "
-"Chunked`头，维持这条连接。这条连接之后会充当`反向隧道`。"
+"Alice 网关后，网关会记录这条请求的信息，回复 `200 状态码`和 `Transfer-Encoding: "
+"Chunked` 头，维持这条连接。这条连接之后会充当`反向隧道`。"
 msgstr ""
 "Tunnel Establishment (⓪): Register a `REVERSE-TUNNEL` CDR from Alice to Bob. "
 "Bob's gateway initiates a special HTTP request to Alice, which maintains the "
@@ -892,6 +892,17 @@ msgid "怎样配置反向隧道"
 msgstr "Configuring Reverse Tunnel"
 
 #: ../../reference/concepts/domainroute_cn.md:583
-msgid "要配置一条如上图所示的反向隧道路由规则，可以如下所示，设置`Transit`的`transitMethod`字段。**请注意，反向隧道可能会对系统性能产生一定影响。**"
-msgstr ""
-"To configure reverse tunnel routing as shown, set `transitMethod` of `Transit` . **Note: This may impact system performance.**"
+msgid "要配置一条如上图所示的反向隧道路由规则，Bob --> Alice 方向的 DomainRoute 与常规路由保持一致（即：无需设置 `transit` 字段），Alice --> Bob 方向的 DomainRoute 需要设置 `Transit` 的 `transitMethod` 字段为 `REVERSE-TUNNEL`，如下所示："
+msgstr "To configure a reverse tunnel routing rule as shown in the above figure, the DomainRoute from Bob --> Alice should remain consistent with the regular routing (i.e., no need to set the `transit` field). The DomainRoute from Alice --> Bob needs to set the `transitMethod` field of `Transit` to `REVERSE-TUNNEL`, as shown below:"
+
+#: ../../reference/concepts/domainroute_cn.md:585
+msgid "**请注意：**"
+msgstr "**Note:**"
+
+#: ../../reference/concepts/domainroute_cn.md:587
+msgid "**访问 Bob 的地址信息（`endpoint`）不可删除，配置固定，如下所示。**"
+msgstr "**The address information (endpoint) for accessing Bob cannot be deleted and is fixed, as shown below.**"
+
+#: ../../reference/concepts/domainroute_cn.md:588
+msgid "**反向隧道可能会对系统性能产生一定影响。**"
+msgstr "**Reverse tunneling may have a certain impact on system performance.**"

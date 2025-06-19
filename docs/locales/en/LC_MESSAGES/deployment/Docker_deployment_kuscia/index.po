@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../deployment/Docker_deployment_kuscia/index.rst:2
 msgid "Docker 多机部署 Kuscia"
-msgstr ""
+msgstr "Docker Multi-machine Deployment of Kuscia"
 

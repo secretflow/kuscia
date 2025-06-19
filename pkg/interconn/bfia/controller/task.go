@@ -73,10 +73,9 @@ func (c *Controller) handleAddedOrDeletedKusciaTask(obj interface{}) {
 	}
 
 	if utilsres.SelfClusterAsInitiator(c.nsLister, task.Spec.Initiator, task.Annotations) {
-		c.ktStatusSyncQueue.AddAfter(task.Name, taskStatusSyncInterval)
+		c.ktStatusSyncQueue.AddAfter(strings.Join([]string{task.Namespace, task.Name}, "/"), taskStatusSyncInterval)
 	}
-
-	c.ktQueue.Add(task.Name)
+	queue.EnqueueObjectWithKey(obj, c.ktQueue)
 }
 
 // runTaskWorker runs a worker thread that just dequeues task, processes task, and marks them done.
@@ -92,7 +91,6 @@ func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error
 		nlog.Errorf("Failed to split task key %v, %v, skip processing it", key, err)
 		return nil
 	}
-
 	rawKt, err := c.ktLister.KusciaTasks(namespace).Get(name)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -119,6 +117,7 @@ func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error
 
 	task := rawKt.DeepCopy()
 
+	nlog.Infof("Inject task env for bfia task %s", task.Name)
 	for i := range task.Spec.Parties {
 		if injectErr := c.injectPartyTaskEnv(&task.Spec.Parties[i], task); injectErr != nil {
 			return fmt.Errorf("failed to inject task %v env for party %v:%v, %v",
@@ -489,7 +488,7 @@ func (c *Controller) findTaskIOEnvNameFromImage(componentName string, appImageNa
 	for i := 1; ; i++ {
 		componentNameInSpec, ok := componentSpec[fmt.Sprintf(specKeyComponentNameFormat, i)]
 		if !ok {
-			return "", fmt.Errorf("not found expected compoent %v in component spec of AppImage %v", componentName, appImageName)
+			return "", fmt.Errorf("not found expected component %v in component spec of AppImage %v", componentName, appImageName)
 		}
 
 		if componentName != componentNameInSpec {
@@ -561,7 +560,7 @@ func (c *Controller) runTaskStatusSyncWorker(ctx context.Context) {
 	}
 }
 
-// processJobStatusSyncNextWorkItem precess task status sync queue item.
+// processJobStatusSyncNextWorkItem process task status sync queue item.
 func (c *Controller) processTaskStatusSyncNextWorkItem(ctx context.Context) bool {
 	key, quit := c.ktStatusSyncQueue.Get()
 	if quit {
@@ -570,7 +569,7 @@ func (c *Controller) processTaskStatusSyncNextWorkItem(ctx context.Context) bool
 
 	namespace, name, err := cache.SplitMetaNamespaceKey(key.(string))
 	if err != nil {
-		nlog.Errorf("Failed to split job key %v, %v, skip processing it", key, err)
+		nlog.Errorf("Failed to split task key %v, %v, skip processing it", key, err)
 		return false
 	}
 

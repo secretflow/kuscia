@@ -146,7 +146,7 @@ func (s logService) QueryTaskLog(ctx context.Context, request *kusciaapi.QueryLo
 	domain := s.conf.DomainID
 	podName := buildPodName(domain, request.TaskId, request.ReplicaIdx)
 	if request.Local {
-		nlog.Infof("Perfrom local log query for pod %s", podName)
+		nlog.Infof("Perform local log query for pod %s", podName)
 		if err := localQueryLog(request, domain, s.conf.StdoutPath, eventCh); err != nil {
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to local query, err: %v", err))}
 		}
@@ -176,7 +176,7 @@ func (s logService) QueryTaskLog(ctx context.Context, request *kusciaapi.QueryLo
 	nlog.Infof("Query log get pod node %s, self node name: %s", nodeName, s.conf.NodeName)
 	if nodeName == s.conf.NodeName {
 		// local query
-		nlog.Infof("Perfrom local log query for pod %s", podName)
+		nlog.Infof("Perform local log query for pod %s", podName)
 		if err := localQueryLog(request, domain, s.conf.StdoutPath, eventCh); err != nil {
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to local query, err: %v", err))}
 		}
@@ -187,7 +187,7 @@ func (s logService) QueryTaskLog(ctx context.Context, request *kusciaapi.QueryLo
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to get node ip for node %s, err: %v", nodeName, err))}
 			return
 		}
-		nlog.Infof("Perfrom proxy log query for pod %s, ip: %s", podName, nodeIP)
+		nlog.Infof("Perform proxy log query for pod %s, ip: %s", podName, nodeIP)
 		if err := proxyQueryLog(ctx, nodeIP, s.conf, request, eventCh); err != nil {
 			eventCh <- &kusciaapi.QueryLogResponse{Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrQueryLog, fmt.Sprintf("failed to proxy query, err: %v", err))}
 		}
@@ -282,7 +282,7 @@ func proxyQueryLog(ctx context.Context, nodeIP string, kusciaAPIConfig *config.K
 	// init client tls config
 	if tlsConfig != nil {
 		if protocol == common.TLS {
-			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.ServerCert)
+			clientTLSConfig, err = tlsutils.BuildClientSimpleTLSConfig(tlsConfig.RootCA)
 		} else {
 			clientTLSConfig, err = tlsutils.BuildClientTLSConfig(tlsConfig.RootCA, tlsConfig.ServerCert, tlsConfig.ServerKey)
 		}

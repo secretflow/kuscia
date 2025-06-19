@@ -296,7 +296,6 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 	if !needUpdate {
 		return nil
 	}
-
 	if err = utilsres.UpdateKusciaJobStatus(c.kusciaClient, preJob, curJob); err != nil {
 		return err
 	}

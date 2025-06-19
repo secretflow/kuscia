@@ -49,7 +49,7 @@ type Opts struct {
 }
 
 // SetDefaultOpts sets default options for unset values on the passed in option struct.
-// Fields tht are already set will not be modified.
+// Fields that are already set will not be modified.
 func SetDefaultOpts(c *Opts) {
 	c.Namespace = DefaultKubeNamespace
 

@@ -330,6 +330,7 @@ func (ec *EndpointsController) AddEnvoyClusterByExternalName(service *v1.Service
 func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, endpoints *v1.Endpoints, protocol string, namespace string,
 	name string, accessDomains string) error {
 	hosts := make(map[string][]uint32)
+	nlog.Infof("Generate envoy cluster host for endpoint %s", endpoints.Name)
 	for _, subset := range endpoints.Subsets {
 		for _, address := range subset.Addresses {
 			var ports []uint32
@@ -346,6 +347,7 @@ func (ec *EndpointsController) AddEnvoyClusterByEndpoints(service *v1.Service, e
 			hosts[address.IP] = ports
 		}
 	}
+	nlog.Infof("Endpoint %s has host %+v", endpoints.Name, hosts)
 	if len(hosts) == 0 {
 		return nil
 	}

@@ -168,7 +168,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 	domainService := service.NewDomainService(s.config)
 	routeService := service.NewDomainRouteService(s.config)
 	domainDataSourceService := service.NewDomainDataSourceService(s.config, s.cmConfigService)
-	domainDataService := service.NewDomainDataService(s.config)
+	domainDataService := service.NewDomainDataService(s.config, s.cmConfigService)
 	domainDataGrantService := service.NewDomainDataGrantService(s.config)
 	servingService := service.NewServingService(s.config)
 	appImageService := service.NewAppImageService(s.config)
@@ -309,6 +309,11 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "delete",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewDeleteDomainDataHandler(domainDataService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "deleteDataAndRaw",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewDeleteDomainDataAndRawHandler(domainDataService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
@@ -491,6 +496,11 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodPost,
 					RelativePath: "query",
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewQueryAppImageHandler(appImageService))},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: "list",
+					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewListAppImageHandler(appImageService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
