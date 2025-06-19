@@ -16,9 +16,8 @@ package builtin
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/apache/arrow/go/v13/arrow/array"
+	"strconv"
 )
 
 // following parse functions are copied and modified from arrow v13@v13.0.0 /csv/reader
