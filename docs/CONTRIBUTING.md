@@ -183,7 +183,6 @@ msgstr "Hello, world!"
 > <figure>
 >   <img src="https://github.com/secretflow/doctools/raw/21e7d4d04f88c29fb68d9d668c6a74d43726eddf/tests/demo/media/poedit.png" alt="screenshot of Poedit">
 > </figure>
-
 > [!IMPORTANT]
 >
 > 以下是翻译的一些注意事项：
@@ -412,7 +411,6 @@ and you should not modify them.
 > <figure>
 >   <img src="https://github.com/secretflow/doctools/raw/21e7d4d04f88c29fb68d9d668c6a74d43726eddf/tests/demo/media/poedit.png" alt="screenshot of Poedit">
 > </figure>
-
 > [!IMPORTANT]
 
 - `msgstr` may contain inline markups, such as bolded text or links. Translations should

@@ -54,7 +54,7 @@ msgstr ""
 
 #: ../../tutorial/run_fate_cn.md:15
 msgid "![FATE in Kuscia](../imgs/fate_in_kuscia.png)"
-msgstr "![FATE in Kuscia](../imgs/fate_in_kuscia.png)"
+msgstr "![FATE in Kuscia](../imgs/en_images/fate_in_kuscia.png)"
 
 #: ../../tutorial/run_fate_cn.md:15
 msgid "FATE in Kuscia"
@@ -99,7 +99,7 @@ msgstr "For example, in a centralized networking Kuscia, the entire process is a
 
 #: ../../tutorial/run_fate_cn.md:42
 msgid "![FATE with Kuscia](../imgs/fate_adapter.png)"
-msgstr "![FATE with Kuscia](../imgs/fate_adapter.png)"
+msgstr "![FATE with Kuscia](../imgs/en_images/fate_adapter.png)"
 
 #: ../../tutorial/run_fate_cn.md:42 ../../tutorial/run_fate_cn.md:237
 msgid "FATE with Kuscia"
