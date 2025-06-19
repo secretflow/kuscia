@@ -17,11 +17,14 @@ package domain
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"sync"
 	"time"
 
 	apicorev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	apismetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformers "k8s.io/client-go/informers"
@@ -64,6 +67,14 @@ const (
 )
 
 const (
+	addPod = "add"
+	deletePod = "delete"
+	addNode = "add"
+	updateNode = "update"
+	deleteNode = "delete"
+)
+
+const (
 	nodeStatusReady    = "Ready"
 	nodeStatusNotReady = "NotReady"
 )
@@ -85,9 +96,14 @@ type Controller struct {
 	nodeLister            listerscorev1.NodeLister
 	configmapLister       listerscorev1.ConfigMapLister
 	roleLister            rbaclisters.RoleLister
+	podLister			  listerscorev1.PodLister
 	workqueue             workqueue.RateLimitingInterface
+	podQueue              workqueue.RateLimitingInterface
+	nodeQueue	          workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
+	nodeStatusManager 	  *common.NodeStatusManager
+	nodeStatusesLock      sync.RWMutex
 }
 
 // NewController returns a controller instance.
@@ -99,6 +115,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	resourceQuotaInformer := kubeInformerFactory.Core().V1().ResourceQuotas()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	podInformer := kubeInformerFactory.Core().V1().Pods()
 	configmapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	roleInformer := kubeInformerFactory.Rbac().V1().Roles()
 
@@ -125,11 +142,15 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		domainLister:          domainInformer.Lister(),
 		namespaceLister:       namespaceInformer.Lister(),
 		nodeLister:            nodeInformer.Lister(),
+		podLister:             podInformer.Lister(),
 		configmapLister:       configmapInformer.Lister(),
 		roleLister:            roleInformer.Lister(),
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
+		podQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		nodeQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
 		recorder:              eventRecorder,
 		cacheSyncs:            cacheSyncs,
+		nodeStatusManager:     common.NewNodeStatusManager(),
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -138,8 +159,215 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addDomainEventHandler(domainInformer)
 	controller.addResourceQuotaEventHandler(resourceQuotaInformer)
 	controller.addConfigMapHandler(configmapInformer)
+	controller.addPodEventHandler(podInformer)
+	controller.addNodeEventHandler(nodeInformer)
+
+	nlog.Infof("domain newController created : %+v", controller)
 
 	return controller
+}
+
+func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer) {
+	_, _ = podInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: func(obj interface{}) bool {
+			nlog.Infof("podInformer EventHandler handle: %+v", obj.(*apicorev1.Pod))
+			pod, ok := obj.(*apicorev1.Pod)
+			if ok {
+				namespace := pod.Namespace
+				nodeName := pod.Spec.NodeName
+				_, err := c.domainLister.Get(namespace)
+				if err != nil {
+					nlog.Errorf("domainLister get %s failed with %v", namespace, err)
+					return false
+				}
+
+				if nodeName == "" {
+					nlog.Errorf("pod %v not hv nodeName", pod)
+					return false
+				}
+				return true
+			}
+			nlog.Errorf("item %v is not pod type", obj)
+			return false
+		},
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc:    c.handlePodAdd,
+			DeleteFunc: c.handlePodDelete,
+		},
+	})
+}
+
+func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInformer) {
+	_, _ = nodeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: func(obj interface{}) bool {
+			nlog.Infof("nodeInformer EventHandler handle: %+v", obj.(*apicorev1.Node))
+			nodeObj, ok := obj.(*apicorev1.Node)
+			if ok {
+				if c.matchNodeLabels(nodeObj) {
+					return true
+				}
+			}
+			nlog.Errorf("item %v is not node type", obj)
+			return false
+		},
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc: c.handleNodeAdd,
+			UpdateFunc: c.handleNodeUpdate,
+			DeleteFunc: c.handleNodeDelete,
+		},
+	})
+}
+
+func (c *Controller) handleNodeAdd(obj interface{}) {
+	nlog.Info("step handleNodeAdd")
+	c.handleNodeCommon(obj, addNode)
+}
+
+func (c *Controller) handleNodeUpdate(oldObj, newObj interface{}) {
+	nlog.Info("step handleNodeUpdate")
+	oldNode, _ := oldObj.(*apicorev1.Node)
+	newNode, _ := newObj.(*apicorev1.Node)
+
+	if oldNode.ResourceVersion == newNode.ResourceVersion {
+		return
+	}
+
+	if reflect.DeepEqual(oldNode.Status, newNode.Status) {
+		nlog.Infof("node %s have no actual change, skipping", newNode.Name)
+		return
+	}
+	c.handleNodeCommon(newObj, updateNode)
+}
+
+func (c *Controller) handleNodeDelete(obj interface{}) {
+	nlog.Info("step handleNodeDelete")
+	c.handleNodeCommon(obj, deleteNode)
+}
+
+func (c *Controller) handleNodeCommon(obj interface{}, op string) {
+	newNode, ok := obj.(*apicorev1.Node)
+	if !ok {
+		if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+			if newNode, ok = d.Obj.(*apicorev1.Node); !ok {
+				nlog.Errorf("Could not convert object %T to Node", d.Obj)
+				return
+			}
+		} else {
+			nlog.Errorf("Received unexpected object type %T for node %s event", obj, op)
+			return
+		}
+	}
+
+	if op == addNode && newNode.ResourceVersion == "" {
+		nlog.Errorf("Node %s/%s has empty ResourceVersion, skipping", newNode.Namespace, newNode.Name)
+		return
+	}
+	queue.EnqueueNodeObject(&queue.NodeQueueItem{Node: newNode}, c.nodeQueue)
+}
+
+func (c *Controller) handlePodAdd(obj interface{}) {
+	nlog.Info("step handlePodAdd")
+	c.handlePodCommon(obj, addPod)
+}
+
+func (c *Controller) handlePodDelete(obj interface{}) {
+	nlog.Info("step handlePodDelete")
+	c.handlePodCommon(obj, deletePod)
+}
+
+func (c *Controller) handlePodCommon(obj interface{}, op string)  {
+	pod, ok := obj.(*apicorev1.Pod)
+	if !ok {
+		if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+			if pod, ok = d.Obj.(*apicorev1.Pod); !ok {
+				nlog.Errorf("Could not convert object %T to Pod", d.Obj)
+				return
+			}
+		} else {
+			nlog.Errorf("Received unexpected object type %T for pod %s event", obj, op)
+			return
+		}
+	}
+
+	if op == addPod && pod.ResourceVersion == "" {
+		nlog.Errorf("Pod %s/%s has empty ResourceVersion, skipping", pod.Namespace, pod.Name)
+		return
+	}
+	queue.EnqueuePodObject(&queue.PodQueueItem{Pod: pod, Op: op}, c.podQueue)
+}
+
+func (c *Controller) nodeHandler(item *queue.NodeQueueItem) error {
+	nlog.Infof("Processing node item: %+v", item)
+	newStatus := common.LocalNodeStatus{
+		Name:              item.Node.Name,
+		DomainName:        item.Node.Labels[common.LabelNodeNamespace],
+	}
+
+	nlog.Infof("start newStatus to localNodeStatus item is : %+v", newStatus)
+	for _, cond := range item.Node.Status.Conditions {
+		if cond.Type == apicorev1.NodeReady {
+			switch cond.Status {
+			case apicorev1.ConditionTrue:
+				newStatus.Status = nodeStatusReady
+			default:
+				newStatus.Status = nodeStatusNotReady
+				for _, condReason := range item.Node.Status.Conditions {
+					if condReason.Status == apicorev1.ConditionTrue {
+						newStatus.UnreadyReason = string(condReason.Type)
+					}
+					break
+				}
+			}
+			newStatus.LastHeartbeatTime = cond.LastHeartbeatTime
+			newStatus.LastTransitionTime = cond.LastTransitionTime
+			break
+		}
+	}
+
+	nlog.Infof("end newStatus to localNodeStatus item is : %+v", newStatus)
+	return c.nodeStatusManager.UpdateStatus(newStatus)
+}
+
+func (c *Controller) podHandler(item *queue.PodQueueItem) error {
+	nlog.Infof("Processing pod item: %+v", item)
+	switch item.Op {
+	case addPod:
+		return c.addPodHandler(item.Pod)
+	case deletePod:
+		return c.deletePodHandler(item.Pod)
+	default:
+		return fmt.Errorf("unknown operation: %s", item.Op)
+	}
+}
+
+func (c *Controller) addPodHandler(pod *apicorev1.Pod) error {
+	nlog.Infof("step addPodHandler: %+v", pod)
+	cpuReq, memReq := c.calRequestResource(pod)
+	nlog.Infof("addPodHandler cpuReq is %d memReq is %d: ", cpuReq, memReq)
+	return c.nodeStatusManager.AddPodResources(pod.Spec.NodeName, cpuReq, memReq)
+}
+
+func (c *Controller) deletePodHandler(pod *apicorev1.Pod) error {
+	nlog.Infof("step deletePodHandler: %+v", pod)
+	cpuReq, memReq := c.calRequestResource(pod)
+	nlog.Infof("deletePodHandler cpuReq is %d memReq is %d: ", cpuReq, memReq)
+	return c.nodeStatusManager.RemovePodResources(pod.Spec.NodeName, cpuReq, memReq)
+}
+
+func (c *Controller) calRequestResource(pod *apicorev1.Pod) (int64, int64) {
+	var requestCPURequest, requestMEMRequest int64
+	for _, container := range pod.Spec.Containers {
+		if container.Resources.Requests == nil {
+			continue
+		}
+		if cpu := container.Resources.Requests.Cpu(); cpu != nil {
+			requestCPURequest += cpu.MilliValue()
+		}
+		if mem := container.Resources.Requests.Memory(); mem != nil {
+			requestMEMRequest += mem.Value()
+		}
+	}
+	return requestCPURequest, requestMEMRequest
 }
 
 // addNamespaceEventHandler is used to add event handler for namespace informer.
@@ -272,6 +500,28 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 	})
 }
 
+func (c *Controller) matchNodeLabels(obj *apicorev1.Node) bool {
+	if objLabels := obj.GetLabels(); objLabels != nil {
+		nlog.Infof("node labels is : %v\n", objLabels)
+		if value, exists := objLabels[common.LabelNodeNamespace]; exists {
+			if value != "" {
+				_, err := c.domainLister.Get(value)
+				if err != nil {
+					nlog.Errorf("get domain %s failed with %v", obj.Name, err)
+					return false
+				}
+				return true
+			}
+			nlog.Errorf("node %s hv no domain belonged to", obj.Name)
+			return false
+		}
+		nlog.Errorf("node %s hv no label about domain", obj.Name)
+		return false
+	}
+	nlog.Errorf("node %s get labels failed", obj.Name)
+	return false
+}
+
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -324,14 +574,105 @@ func (c *Controller) Run(workers int) error {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
+	nlog.Infof("Starting Init LocalNodeStatus")
+	err := c.initLocalNodeStatus()
+	if err != nil {
+		return fmt.Errorf("failed to initLocalNodeStatus with %v", err)
+	}
+
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
+		go wait.Until(c.runPodHandleWorker, time.Second, c.ctx.Done())
+		go wait.Until(c.runNodeHandleWorker, time.Second, c.ctx.Done())
 	}
 
 	nlog.Info("Starting sync domain status")
 	go wait.Until(c.syncDomainStatuses, 10*time.Second, c.ctx.Done())
 	<-c.ctx.Done()
+	return nil
+}
+
+func (c *Controller) initLocalNodeStatus() error {
+	nodes, err := c.nodeLister.List(labels.Everything())
+	if err != nil {
+		return fmt.Errorf("domain controller init localNodeStatus failed with %v", err)
+	}
+
+	for i, node := range nodes {
+		nlog.Infof("initLocalNodeStatus Node %d: Name=%s, Labels=%+v, Status=%+v",
+			i, node.Name, node.Labels, node.Status)
+	}
+
+	c.nodeStatusesLock.Lock()
+	defer c.nodeStatusesLock.Unlock()
+
+	var nodeStatuses []common.LocalNodeStatus
+	nlog.Infof("initLocalNodeStatus nodeStatuses is %v", nodeStatuses)
+	for _, nodeObj := range nodes {
+		if !c.matchNodeLabels(nodeObj) {
+			continue
+		}
+
+		nlog.Infof("initLocalNodeStatus nodeObj %+v", nodeObj)
+		domainName := nodeObj.Labels[common.LabelNodeNamespace]
+
+		var totalCPU, totalMEM int64
+		pods, _ := c.podLister.Pods(domainName).List(labels.Everything())
+		for _, pod := range pods {
+			if pod.Spec.NodeName == nodeObj.Name {
+				nlog.Infof("belong to node %s pod %s", nodeObj.Name, pod.Name)
+				cpu, mem := c.calRequestResource(pod)
+				totalCPU += cpu
+				totalMEM += mem
+			} else {
+				nlog.Infof("not belong to node %s pod %s", nodeObj.Name, pod.Name)
+			}
+		}
+
+		nlog.Infof("initLocalNodeStatus totalCPU is %d totalMEM is %d", totalCPU, totalMEM)
+
+		status := common.LocalNodeStatus{
+			Name:          nodeObj.Name,
+			DomainName:    domainName,
+			TotalCPURequest: totalCPU,
+			TotalMemRequest: totalMEM,
+			Status:         nodeStatusNotReady,
+			LastHeartbeatTime:  nodeObj.Status.Conditions[0].LastHeartbeatTime,
+			LastTransitionTime: nodeObj.Status.Conditions[0].LastTransitionTime,
+		}
+
+		for _, cond := range nodeObj.Status.Conditions {
+			if cond.Type == apicorev1.NodeReady {
+				if cond.Status == apicorev1.ConditionTrue {
+					status.Status = nodeStatusReady
+				}
+				status.LastHeartbeatTime = cond.LastHeartbeatTime
+				status.LastTransitionTime = cond.LastTransitionTime
+				break
+			}
+		}
+
+		nlog.Infof("initLocalNodeStatus loop item status is %+v", status)
+		nodeStatuses = append(nodeStatuses, status)
+	}
+
+	c.nodeStatusManager.ReplaceAll(nodeStatuses)
+
+	for i, status := range c.nodeStatusManager.GetAll() {
+		nlog.Debugf("NodeStatus[%d]:\n"+
+			"Name: %s\n"+
+			"Domain: %s\n"+
+			"Status: %s\n"+
+			"LastHeartbeatTime: %s\n" +
+			"LastTransitionTime: %s\n" +
+			"UnreadyReason: %s\n"+
+			"CPU: %d\n"+
+			"Memory: %d",
+			i, status.Name, status.DomainName, status.Status,
+			status.LastHeartbeatTime.Format(time.RFC3339), status.LastTransitionTime.Format(time.RFC3339),
+			status.UnreadyReason, status.TotalCPURequest, status.TotalMemRequest)
+	}
 	return nil
 }
 
@@ -348,6 +689,18 @@ func (c *Controller) Stop() {
 func (c *Controller) runWorker() {
 	for queue.HandleQueueItem(context.Background(), controllerName, c.workqueue, c.syncHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
+	}
+}
+
+func (c *Controller) runPodHandleWorker() {
+	for queue.HandlePodQueueItem(context.Background(), controllerName, c.podQueue, c.podHandler, maxRetries) {
+		metrics.WorkerQueueSize.Set(float64(c.podQueue.Len()))
+	}
+}
+
+func (c *Controller) runNodeHandleWorker() {
+	for queue.HandleNodeQueueItem(context.Background(), controllerName, c.nodeQueue, c.nodeHandler, maxRetries) {
+		metrics.WorkerQueueSize.Set(float64(c.nodeQueue.Len()))
 	}
 }
 

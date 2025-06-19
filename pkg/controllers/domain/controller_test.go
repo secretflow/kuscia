@@ -30,9 +30,16 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
+	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
+	kubeinformers "k8s.io/client-go/informers"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/utils/queue"
 	"github.com/secretflow/kuscia/pkg/utils/signals"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
 func TestNewController(t *testing.T) {
@@ -55,6 +62,518 @@ func TestNewController(t *testing.T) {
 	}()
 	err := c.Run(1)
 	assert.NoError(t, err)
+}
+
+// 新增节点事件处理测试用例
+func TestHandleNodeAdd(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 测试正常节点添加
+	node := &apicorev1.Node{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name: "test-node",
+			Labels: map[string]string{
+				common.LabelNodeNamespace: "test-domain",
+			},
+			ResourceVersion: "123",
+		},
+	}
+	c.handleNodeAdd(node)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "Node queue should have 1 item")
+
+	// 测试空ResourceVersion
+	node.ResourceVersion = ""
+	c.handleNodeAdd(node)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "Should skip node with empty ResourceVersion")
+}
+
+func TestHandleNodeUpdate(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	oldNode := &apicorev1.Node{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name: "test-node",
+			Labels: map[string]string{
+				common.LabelNodeNamespace: "test-domain",
+			},
+			ResourceVersion: "123",
+		},
+	}
+
+	// 测试状态变更
+	newNode := oldNode.DeepCopy()
+	newNode.ResourceVersion = "456"
+	newNode.Status.Conditions = []apicorev1.NodeCondition{{
+		Type:   apicorev1.NodeReady,
+		Status: apicorev1.ConditionTrue,
+	}}
+	c.handleNodeUpdate(oldNode, newNode)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "Should enqueue node with status change")
+
+	// 测试无实际变更
+	newNode.Status = oldNode.Status
+	c.handleNodeUpdate(oldNode, newNode)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "Should skip node with no status change")
+}
+
+func TestHandleNodeDelete(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 测试正常节点删除
+	node := &apicorev1.Node{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name: "test-node",
+			Labels: map[string]string{
+				common.LabelNodeNamespace: "test-domain",
+			},
+		},
+	}
+	c.handleNodeDelete(node)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "Node queue should have 1 item")
+
+	// 测试DeletedFinalStateUnknown类型
+	dfsu := cache.DeletedFinalStateUnknown{
+		Key: "test-node",
+		Obj: node,
+	}
+	c.handleNodeDelete(dfsu)
+	assert.Equal(t, 2, c.nodeQueue.Len(), "Should handle DeletedFinalStateUnknown")
+}
+
+// 新增Pod事件处理测试
+func TestHandlePodAdd(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 测试正常Pod添加
+	pod := &apicorev1.Pod{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name:            "test-pod",
+			Namespace:       "test-domain",
+			ResourceVersion: "123",
+		},
+		Spec: apicorev1.PodSpec{
+			NodeName: "test-node",
+		},
+	}
+	c.handlePodAdd(pod)
+	assert.Equal(t, 1, c.podQueue.Len(), "Pod队列应有1个元素")
+
+	// 测试空ResourceVersion过滤
+	emptyRVPod := pod.DeepCopy()
+	emptyRVPod.ResourceVersion = ""
+	c.handlePodAdd(emptyRVPod)
+	assert.Equal(t, 1, c.podQueue.Len(), "应过滤空ResourceVersion的Pod")
+}
+
+func TestHandlePodDelete(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 测试正常Pod删除
+	pod := &apicorev1.Pod{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name:            "test-pod",
+			Namespace:       "test-domain",
+			ResourceVersion: "123",
+		},
+		Spec: apicorev1.PodSpec{
+			NodeName: "test-node",
+		},
+	}
+	c.handlePodDelete(pod)
+	assert.Equal(t, 1, c.podQueue.Len(), "Pod队列应有1个元素")
+
+	// 测试DeletedFinalStateUnknown类型处理
+	dfsu := cache.DeletedFinalStateUnknown{
+		Key: "test-pod",
+		Obj: pod,
+	}
+	c.handlePodDelete(dfsu)
+	assert.Equal(t, 2, c.podQueue.Len(), "应处理DeletedFinalStateUnknown类型")
+
+	// 测试无效对象类型
+	c.handlePodDelete("invalid-type")
+	assert.Equal(t, 2, c.podQueue.Len(), "应跳过无效对象类型")
+}
+
+// 新增handlePodCommon测试
+func TestHandlePodCommon(t *testing.T) {
+	c, _, _ := setupController(t)
+
+	t.Run("AddOperation", func(t *testing.T) {
+		validPod := &apicorev1.Pod{ObjectMeta: apismetav1.ObjectMeta{ResourceVersion: "123"}}
+		c.handlePodCommon(validPod, addPod)
+		require.Equal(t, 1, c.podQueue.Len())
+	})
+
+	t.Run("DeleteOperation", func(t *testing.T) {
+		validPod := &apicorev1.Pod{ObjectMeta: apismetav1.ObjectMeta{ResourceVersion: "456"}}
+		c.handlePodCommon(validPod, deletePod)
+		require.Equal(t, 2, c.podQueue.Len())
+	})
+}
+
+func TestHandleNodeCommon(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 测试正常节点添加
+	node := &apicorev1.Node{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name: "test-node",
+			Labels: map[string]string{
+				common.LabelNodeNamespace: "test-domain",
+			},
+			ResourceVersion: "123",
+		},
+	}
+	c.handleNodeCommon(node, addNode)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "应入队正常节点")
+
+	// 测试空ResourceVersion过滤
+	emptyRVNode := node.DeepCopy()
+	emptyRVNode.ResourceVersion = ""
+	c.handleNodeCommon(emptyRVNode, addNode)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "应过滤空ResourceVersion节点")
+
+	// 测试DeletedFinalStateUnknown类型处理
+	dfsu := cache.DeletedFinalStateUnknown{
+		Key: "test-node",
+		Obj: "invalid-type",
+	}
+	c.handleNodeCommon(dfsu, deleteNode)
+	assert.Equal(t, 1, c.nodeQueue.Len(), "应处理无效对象类型")
+}
+
+func TestNodeHandler(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 准备测试节点
+	testNode := &apicorev1.Node{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name: "test-node",
+			Labels: map[string]string{
+				common.LabelNodeNamespace: "test-domain",
+			},
+		},
+		Status: apicorev1.NodeStatus{
+			Conditions: []apicorev1.NodeCondition{{
+				Type:               apicorev1.NodeReady,
+				Status:             apicorev1.ConditionTrue,
+				LastHeartbeatTime:  apismetav1.Now(),
+				LastTransitionTime: apismetav1.Now(),
+			}},
+		},
+	}
+
+	// 执行处理
+	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode})
+	assert.NoError(t, err, "处理节点不应返回错误")
+
+	// 验证状态更新
+	statuses := c.nodeStatusManager.GetAll()
+	assert.Equal(t, 1, len(statuses), "应更新节点状态")
+	assert.Equal(t, "test-node", statuses[0].Name, "节点名称匹配")
+	assert.Equal(t, nodeStatusReady, statuses[0].Status, "节点状态应为Ready")
+
+	// 测试无效节点状态
+	invalidNode := testNode.DeepCopy()
+	invalidNode.Status.Conditions[0].Status = apicorev1.ConditionFalse
+	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode})
+	assert.NoError(t, err)
+	updatedStatus := c.nodeStatusManager.GetAll()[0]
+	assert.Equal(t, nodeStatusNotReady, updatedStatus.Status, "应检测到节点不可用状态")
+}
+
+// 测试calRequestResource函数
+func TestCalRequestResource(t *testing.T) {
+	c := NewController(context.Background(), controllers.ControllerConfig{}).(*Controller)
+
+	// 测试无资源请求的Pod
+	emptyPod := &apicorev1.Pod{
+		Spec: apicorev1.PodSpec{
+			Containers: []apicorev1.Container{{
+				Name: "test-container",
+			}},
+		},
+	}
+	cpu, mem := c.calRequestResource(emptyPod)
+	assert.Equal(t, int64(0), cpu, "应处理无资源请求的Pod")
+	assert.Equal(t, int64(0), mem, "应处理无资源请求的Pod")
+
+	// 测试多容器资源请求
+	multiContainerPod := &apicorev1.Pod{
+		Spec: apicorev1.PodSpec{
+			Containers: []apicorev1.Container{{
+				Resources: apicorev1.ResourceRequirements{
+					Requests: apicorev1.ResourceList{
+						"cpu":    resource.MustParse("500m"),
+						"memory": resource.MustParse("1Gi"),
+					},
+				},
+			}, {
+				Resources: apicorev1.ResourceRequirements{
+					Requests: apicorev1.ResourceList{
+						"cpu":    resource.MustParse("1"),
+						"memory": resource.MustParse("2Gi"),
+					},
+				},
+			}},
+		},
+	}
+	cpu, mem = c.calRequestResource(multiContainerPod)
+	assert.Equal(t, int64(1500), cpu, "应正确累加多容器CPU请求")
+	assert.Equal(t, int64(3221225472), mem, "应正确累加多容器内存请求")
+}
+
+// 测试podHandler函数
+func TestPodHandler(t *testing.T) {
+	c, _, _ := setupController(t)
+
+	// 正确初始化节点状态
+	c.nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{{
+		Name:            "valid-node",
+		TotalCPURequest: 1000,
+		TotalMemRequest: 1024,
+	}})
+
+	testPod := &apicorev1.Pod{
+		Spec: apicorev1.PodSpec{
+			NodeName: "valid-node",
+			Containers: []apicorev1.Container{{
+				Resources: apicorev1.ResourceRequirements{
+					Requests: apicorev1.ResourceList{
+						"cpu":    resource.MustParse("500m"),
+						"memory": resource.MustParse("1Gi"),
+					},
+				},
+			}},
+		},
+	}
+
+	t.Run("AddOperation", func(t *testing.T) {
+		err := c.podHandler(&queue.PodQueueItem{Pod: testPod, Op: addPod})
+		require.NoError(t, err)
+
+		// 使用GetAll获取所有状态
+		statuses := c.nodeStatusManager.GetAll()
+		require.Equal(t, 1, len(statuses))
+		require.Equal(t, int64(1500), statuses[0].TotalCPURequest)
+	})
+}
+
+// 测试addPodHandler资源增加逻辑
+func TestAddPodHandler(t *testing.T) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 初始化节点状态
+	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
+		Name:       "test-node",
+		TotalCPURequest: 1000,
+		TotalMemRequest: 1024,
+	})
+
+	// 创建测试Pod
+	testPod := &apicorev1.Pod{
+		Spec: apicorev1.PodSpec{
+			NodeName: "test-node",
+			Containers: []apicorev1.Container{{
+				Resources: apicorev1.ResourceRequirements{
+					Requests: apicorev1.ResourceList{
+						"cpu":    resource.MustParse("500m"),
+						"memory": resource.MustParse("1Gi"),
+					},
+				},
+			}},
+		},
+	}
+
+	// 执行添加操作
+	err := c.addPodHandler(testPod)
+	assert.NoError(t, err, "应成功添加Pod资源")
+
+	// 验证资源统计
+	statuses := c.nodeStatusManager.GetAll()
+	assert.Equal(t, int64(1500), statuses[0].TotalCPURequest, "CPU请求应正确累加")
+	assert.Equal(t, int64(1073741824+1024), statuses[0].TotalMemRequest, "内存请求应正确累加")
+
+	// 测试无效节点
+	invalidPod := testPod.DeepCopy()
+	invalidPod.Spec.NodeName = "non-existent"
+	err = c.addPodHandler(invalidPod)
+	assert.Error(t, err, "应处理不存在的节点")
+}
+
+// 测试deletePodHandler资源减少逻辑
+func TestDeletePodHandler(t *testing.T) {
+	c, _, _ := setupController(t)
+	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
+		Name: "test-node",
+		TotalCPURequest: 5000,
+		TotalMemRequest: 4294967296,
+	})
+
+	testPod := &apicorev1.Pod{
+		Spec: apicorev1.PodSpec{
+			NodeName: "test-node",
+			Containers: []apicorev1.Container{{
+				Resources: apicorev1.ResourceRequirements{
+					Requests: apicorev1.ResourceList{
+						"cpu":    resource.MustParse("1000m"),
+						"memory": resource.MustParse("2Gi"),
+					},
+				},
+			}},
+		},
+	}
+
+	t.Run("ResourceUnderflow", func(t *testing.T) {
+		err := c.deletePodHandler(testPod)
+		require.Equal(t, nil, err)
+	})
+}
+
+// 新增matchNodeLabels测试
+func TestMatchNodeLabels(t *testing.T) {
+	c, _, domainStore := setupController(t)
+	domain := &kusciaapisv1alpha1.Domain{ObjectMeta: apismetav1.ObjectMeta{Name: "test-domain"}}
+	err := domainStore.Add(domain)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name     string
+		node     *apicorev1.Node
+		expected bool
+	}{
+		{
+			name: "valid domain label",
+			node: &apicorev1.Node{
+				ObjectMeta: apismetav1.ObjectMeta{
+					Labels: map[string]string{
+						common.LabelNodeNamespace: "test-domain",
+					},
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := c.matchNodeLabels(tc.node)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+// 新增initLocalNodeStatus测试
+func TestInitLocalNodeStatus(t *testing.T) {
+	c, nodeStore, domainStore := setupController(t)
+
+	node := &apicorev1.Node{
+		ObjectMeta: apismetav1.ObjectMeta{
+			Name: "test-node",
+			Labels: map[string]string{
+				common.LabelNodeNamespace: "test-domain",
+			},
+		},
+
+		Status: apicorev1.NodeStatus{
+			Conditions: []apicorev1.NodeCondition{
+				{
+					Type:               apicorev1.NodeReady,
+					Status:             apicorev1.ConditionTrue,
+					LastHeartbeatTime:  apismetav1.Now(),
+					LastTransitionTime: apismetav1.Now(),
+				},
+			},
+		},
+	}
+
+	err1 := nodeStore.Add(node)
+	require.NoError(t, err1)
+	domain := &kusciaapisv1alpha1.Domain{ObjectMeta: apismetav1.ObjectMeta{Name: "test-domain"}}
+	err := domainStore.Add(domain)
+	require.NoError(t, err)
+
+	t.Run("ValidInitialization", func(t *testing.T) {
+		err := c.initLocalNodeStatus()
+		require.NoError(t, err)
+
+		statuses := c.nodeStatusManager.GetAll()
+		require.Equal(t, 1, len(statuses), "应初始化1个节点状态")
+		require.Equal(t, "test-node", statuses[0].Name)
+	})
+}
+
+func setupController(t *testing.T) (*Controller, cache.Store, cache.Store) {
+	kubeClient := kubefake.NewSimpleClientset()
+	kusciaClient := kusciafake.NewSimpleClientset()
+	kusciaFakeClient := kusciafake.NewSimpleClientset()
+
+	nodeInformer := kubeinformers.NewSharedInformerFactory(kubeClient, 0).Core().V1().Nodes()
+	domainInformer := kusciainformers.NewSharedInformerFactory(kusciaFakeClient, 0).Kuscia().V1alpha1().Domains()
+
+	c := NewController(context.Background(), controllers.ControllerConfig{
+		KubeClient:   kubeClient,
+		KusciaClient: kusciaClient,
+	}).(*Controller)
+
+	// 通过直接赋值方式设置测试专用字段
+	c.nodeStatusManager = common.NewNodeStatusManager()
+	c.podQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	c.nodeQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	c.nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{})
+	c.nodeLister = nodeInformer.Lister()
+	c.domainLister = domainInformer.Lister()
+
+	nodeStore := nodeInformer.Informer().GetStore()
+	domainStore := domainInformer.Informer().GetStore()
+
+	t.Cleanup(func() {
+		c.podQueue.ShutDown()
+		c.nodeQueue.ShutDown()
+	})
+
+	return c, nodeStore, domainStore
 }
 
 func TestMatchLabels(t *testing.T) {
