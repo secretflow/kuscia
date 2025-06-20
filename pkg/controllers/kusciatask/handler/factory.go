@@ -30,6 +30,9 @@ type Dependencies struct {
 	KusciaClient     kusciaclientset.Interface
 	TrgLister        kuscialistersv1alpha1.TaskResourceGroupLister
 	NamespacesLister corelisters.NamespaceLister
+	DomainLister     kuscialistersv1alpha1.DomainLister
+	NodeLister       corelisters.NodeLister
+	CdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
 	PodsLister       corelisters.PodLister
 	ServicesLister   corelisters.ServiceLister
 	ConfigMapLister  corelisters.ConfigMapLister

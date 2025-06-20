@@ -45,7 +45,9 @@ func makeTestPendingHandler() *PendingHandler {
 	kubeInformersFactory := kubeinformers.NewSharedInformerFactory(kubeClient, 0)
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
+	nodeInformer := kubeInformersFactory.Core().V1().Nodes()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	cdrInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 
 	ns1 := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -62,6 +64,63 @@ func makeTestPendingHandler() *PendingHandler {
 	nsInformer.Informer().GetStore().Add(&ns2)
 	appImageInformer.Informer().GetStore().Add(makeTestAppImageCase1())
 
+	mockNodeA := &v1.Node {
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "mock-node-a",
+			Labels: map[string]string{
+				"kuscia.secretflow/namespace": "domain-a",
+			},
+		},
+		Status: v1.NodeStatus{
+			Allocatable: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("4"),
+				v1.ResourceMemory: resource.MustParse("8Gi"),
+			},
+		},
+	}
+
+	mockNodeB := &v1.Node {
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "mock-node-b",
+			Labels: map[string]string{
+				"kuscia.secretflow/namespace": "domain-b",
+			},
+		},
+		Status: v1.NodeStatus{
+			Allocatable: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("4"),
+				v1.ResourceMemory: resource.MustParse("8Gi"),
+			},
+		},
+	}
+
+	cdrAtoB := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-a-domain-a"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	cdrBtoA := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-a-domain-b"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	cdrInformer.Informer().GetStore().Add(cdrAtoB)
+	cdrInformer.Informer().GetStore().Add(cdrBtoA)
+	kubeClient.CoreV1().Nodes().Create(context.Background(), mockNodeA, metav1.CreateOptions{})
+	kubeClient.CoreV1().Nodes().Create(context.Background(), mockNodeB, metav1.CreateOptions{})
+	nodeInformer.Informer().GetStore().Add(mockNodeA)
+	nodeInformer.Informer().GetStore().Add(mockNodeB)
+
 	dep := &Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
@@ -71,12 +130,29 @@ func makeTestPendingHandler() *PendingHandler {
 		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
 		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
+		NodeLister:       nodeInformer.Lister(),
+		CdrLister:        cdrInformer.Lister(),
 	}
 
 	return NewPendingHandler(dep)
 }
 
 func TestPendingHandler_Handle(t *testing.T) {
+	nodeStatusManager := common.NewNodeStatusManager()
+	nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{{
+		Name:            "mock-node-a",
+		DomainName:      "domain-a",
+		Status:          "Ready",
+		TotalCPURequest: 0,
+		TotalMemRequest: 0,
+	},{
+		Name:            "mock-node-b",
+		DomainName:      "domain-b",
+		Status:          "Ready",
+		TotalCPURequest: 0,
+		TotalMemRequest: 0,
+	}})
+
 	t.Parallel()
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
@@ -335,7 +411,7 @@ metadata:
     kuscia.secretflow/pod-role: server
   annotations:
     kuscia.secretflow/config-template-volumes: config-template
-    kuscia.secretflow/initiator: ""
+    kuscia.secretflow/initiator: "domain-a"
     kuscia.secretflow/task-id: kusciatask-001
     kuscia.secretflow/task-resource: ""
     kuscia.secretflow/task-resource-group: kusciatask-001
@@ -423,7 +499,8 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 			Name:      "kusciatask-001",
 			Namespace: common.KusciaCrossDomain,
 		},
-		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
+		Spec: kusciaapisv1alpha1.KusciaTaskSpec {
+			Initiator: "domain-a",
 			TaskInputConfig: "task input config",
 			Parties: []kusciaapisv1alpha1.PartyInfo{
 				{
@@ -436,6 +513,12 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 								{
 									Name:    "container-0",
 									Command: []string{"pwd"},
+									Resources: v1.ResourceRequirements {
+										Requests: v1.ResourceList {
+											v1.ResourceCPU:    resource.MustParse("10m"),
+											v1.ResourceMemory: resource.MustParse("64Mi"),
+										},
+									},
 								},
 							},
 						},
@@ -451,6 +534,12 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 								{
 									Name:    "container-0",
 									Command: []string{"whoami"},
+									Resources: v1.ResourceRequirements {
+										Requests: v1.ResourceList {
+											v1.ResourceCPU:    resource.MustParse("10m"),
+											v1.ResourceMemory: resource.MustParse("64Mi"),
+										},
+									},
 								},
 							},
 						},
