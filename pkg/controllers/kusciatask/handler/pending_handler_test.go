@@ -47,6 +47,7 @@ func makeTestPendingHandler() *PendingHandler {
 	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
 	nodeInformer := kubeInformersFactory.Core().V1().Nodes()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	cdrInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 
 	ns1 := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -93,6 +94,28 @@ func makeTestPendingHandler() *PendingHandler {
 		},
 	}
 
+	cdrAtoB := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-a-domain-a"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	cdrBtoA := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-a-domain-b"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	cdrInformer.Informer().GetStore().Add(cdrAtoB)
+	cdrInformer.Informer().GetStore().Add(cdrBtoA)
 	kubeClient.CoreV1().Nodes().Create(context.Background(), mockNodeA, metav1.CreateOptions{})
 	kubeClient.CoreV1().Nodes().Create(context.Background(), mockNodeB, metav1.CreateOptions{})
 	nodeInformer.Informer().GetStore().Add(mockNodeA)
@@ -108,6 +131,7 @@ func makeTestPendingHandler() *PendingHandler {
 		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
 		NodeLister:       nodeInformer.Lister(),
+		CdrLister:        cdrInformer.Lister(),
 	}
 
 	return NewPendingHandler(dep)
@@ -475,7 +499,8 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 			Name:      "kusciatask-001",
 			Namespace: common.KusciaCrossDomain,
 		},
-		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
+		Spec: kusciaapisv1alpha1.KusciaTaskSpec {
+			Initiator: "domain-a",
 			TaskInputConfig: "task input config",
 			Parties: []kusciaapisv1alpha1.PartyInfo{
 				{

@@ -54,6 +54,7 @@ type PendingHandler struct {
 	namespacesLister corelisters.NamespaceLister
 	domainLister     kuscialistersv1alpha1.DomainLister
 	nodeLister       corelisters.NodeLister
+	cdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
 	podsLister       corelisters.PodLister
 	servicesLister   corelisters.ServiceLister
 	configMapLister  corelisters.ConfigMapLister
@@ -98,6 +99,7 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 		namespacesLister: deps.NamespacesLister,
 		domainLister:     deps.DomainLister,
 		nodeLister:       deps.NodeLister,
+		cdrLister:        deps.CdrLister,
 		podsLister:       deps.PodsLister,
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
@@ -274,7 +276,7 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 
 		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
 		nlog.Infof("cdrName is %s", cdrName)
-		cdr, err := h.kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Get(context.Background(), cdrName, metav1.GetOptions{})
+		cdr, err := h.cdrLister.Get(cdrName)
 		if err != nil {
 			return false, fmt.Errorf("get cdr %s failed with %v", cdrName, err)
 		}
