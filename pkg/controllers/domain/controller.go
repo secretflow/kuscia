@@ -658,21 +658,6 @@ func (c *Controller) initLocalNodeStatus() error {
 	}
 
 	c.nodeStatusManager.ReplaceAll(nodeStatuses)
-
-	for i, status := range c.nodeStatusManager.GetAll() {
-		nlog.Debugf("NodeStatus[%d]:\n"+
-			"Name: %s\n"+
-			"Domain: %s\n"+
-			"Status: %s\n"+
-			"LastHeartbeatTime: %s\n" +
-			"LastTransitionTime: %s\n" +
-			"UnreadyReason: %s\n"+
-			"CPU: %d\n"+
-			"Memory: %d",
-			i, status.Name, status.DomainName, status.Status,
-			status.LastHeartbeatTime.Format(time.RFC3339), status.LastTransitionTime.Format(time.RFC3339),
-			status.UnreadyReason, status.TotalCPURequest, status.TotalMemRequest)
-	}
 	return nil
 }
 
