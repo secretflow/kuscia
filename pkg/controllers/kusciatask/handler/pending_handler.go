@@ -291,6 +291,7 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 }
 
 func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, error) {
+	nlog.Infof("partyKitInfo struct is %+v", partyKitInfo)
 	var allContainerCPURequest, allContainerMEMRequest int64
 	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
 		if container.Resources.Requests == nil {
@@ -300,6 +301,7 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		}
 		cpuValue := container.Resources.Requests.Cpu().MilliValue()
 		memValue := container.Resources.Requests.Memory().Value()
+		nlog.Infof("here cpuValue is %d memValue is %d", cpuValue, memValue)
 		allContainerCPURequest += cpuValue
 		allContainerMEMRequest += memValue
 	}
@@ -310,6 +312,7 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 	nlog.Infof("kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
 
 	nodeStatuses := common.NewNodeStatusManager().GetAll()
+	nlog.Infof("nodeStatuses struct is %+v", nodeStatuses)
 
 	for _, nodeStatus := range nodeStatuses {
 		if nodeStatus.DomainName != partyKitInfo.domainID || nodeStatus.Status != nodeStatusReady {
@@ -321,6 +324,8 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		if err != nil {
 			nlog.Errorf("get node %s failed with %v", nodeStatus.Name, err)
 			continue
+		} else {
+			nlog.Errorf("node message is %+v", node)
 		}
 
 		nodeCPUValue := node.Status.Allocatable.Cpu().MilliValue()
