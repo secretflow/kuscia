@@ -92,6 +92,8 @@ type Controller struct {
 	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
 	kusciaTaskSynced cache.InformerSynced
 	appImageSynced   cache.InformerSynced
+	cdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
+	cdrSynced        cache.InformerSynced
 	trgSynced        cache.InformerSynced
 	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
 }
@@ -110,6 +112,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	configMapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	cdrInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
 
 	controller := &Controller{
@@ -128,6 +131,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kusciaTaskLister:      kusciaTaskInformer.Lister(),
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		appImageSynced:        appImageInformer.Informer().HasSynced,
+		cdrLister:             cdrInformer.Lister(),
+		cdrSynced:             cdrInformer.Informer().HasSynced,
 		trgLister:             trgInformer.Lister(),
 		trgSynced:             trgInformer.Informer().HasSynced,
 		taskQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskQueue),
@@ -144,6 +149,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		ServicesLister:   serviceInformer.Lister(),
 		ConfigMapLister:  configMapInformer.Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
+		CdrLister:        cdrInformer.Lister(),
 		Recorder:         eventRecorder,
 	})
 
