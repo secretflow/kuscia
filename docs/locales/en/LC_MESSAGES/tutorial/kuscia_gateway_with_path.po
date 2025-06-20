@@ -34,7 +34,7 @@ msgstr ""
 
 #: ../../tutorial/kuscia_gateway_with_path.md:7
 msgid "![image.png](../imgs/gateway_path.png)"
-msgstr "![image.png](../imgs/gateway_path.png)"
+msgstr "![image.png](../imgs/en_images/gateway_path.png)"
 
 #: ../../tutorial/kuscia_gateway_with_path.md:7
 msgid "image.png"
