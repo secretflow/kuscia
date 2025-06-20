@@ -411,7 +411,7 @@ metadata:
     kuscia.secretflow/pod-role: server
   annotations:
     kuscia.secretflow/config-template-volumes: config-template
-    kuscia.secretflow/initiator: ""
+    kuscia.secretflow/initiator: "domain-a"
     kuscia.secretflow/task-id: kusciatask-001
     kuscia.secretflow/task-resource: ""
     kuscia.secretflow/task-resource-group: kusciatask-001
