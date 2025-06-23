@@ -40,7 +40,7 @@ type NodeQueueItem struct {
 }
 
 func CheckType(obj interface{}) string {
-	switch _ := obj.(type) {
+	switch obj.(type) {
 	case *PodQueueItem:
 		return "PodQueueItem"
 	case *NodeQueueItem:
