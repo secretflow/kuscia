@@ -38,8 +38,6 @@ func NewNodeStatusManager() *NodeStatusManager {
 }
 
 func (m *NodeStatusManager) ReplaceAll(statuses []LocalNodeStatus) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
 	nlog.Infof("start ReplaceAll m statuses is %v", m.statuses)
 	nlog.Infof("start ReplaceAll statuses is %v", statuses)
 	m.statuses = statuses

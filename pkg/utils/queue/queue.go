@@ -51,17 +51,15 @@ func CheckType(obj interface{}) string {
 }
 
 func EnqueuePodObject(podQueueItem *PodQueueItem, queue workqueue.Interface) {
-	nlog.Infof("before pod queue size %d", queue.Len())
 	queue.Add(podQueueItem)
-	nlog.Infof("Enqueue Pod key: %s", podQueueItem.Pod.Name)
-	nlog.Infof("after pod queue size %d", queue.Len())
+	nlog.Debugf("Enqueue Pod key: %s", podQueueItem.Pod.Name)
+	nlog.Debugf("after pod queue size %d", queue.Len())
 }
 
 func EnqueueNodeObject(nodeQueueItem *NodeQueueItem, queue workqueue.Interface) {
-	nlog.Infof("before node queue size %d", queue.Len())
 	queue.Add(nodeQueueItem)
-	nlog.Infof("Enqueue Node key: %s", nodeQueueItem.Node.Name)
-	nlog.Infof("after node queue size %d", queue.Len())
+	nlog.Debugf("Enqueue Node key: %s", nodeQueueItem.Node.Name)
+	nlog.Debugf("after node queue size %d", queue.Len())
 }
 
 // EnqueueObjectWithKey is used to enqueue object key.

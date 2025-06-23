@@ -103,7 +103,6 @@ type Controller struct {
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
 	nodeStatusManager     *common.NodeStatusManager
-	nodeStatusesLock      sync.RWMutex
 }
 
 // NewController returns a controller instance.
@@ -170,8 +169,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer) {
 	_, _ = podInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
-			nlog.Infof("podInformer EventHandler handle: %+v", obj.(*apicorev1.Pod))
 			pod, ok := obj.(*apicorev1.Pod)
+			nlog.Infof("podInformer EventHandler handle: %+v", pod)
 			if ok {
 				namespace := pod.Namespace
 				nodeName := pod.Spec.NodeName
@@ -182,7 +181,7 @@ func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer)
 				}
 
 				if nodeName == "" {
-					nlog.Errorf("pod %v not hv nodeName", pod)
+					nlog.Errorf("Pod %s/%s has no node assigned yet, skipping", pod.Namespace, pod.Name)
 					return false
 				}
 				return true
@@ -197,11 +196,11 @@ func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer)
 	})
 }
 
-func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInformer) {
+func 	(c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInformer) {
 	_, _ = nodeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
-			nlog.Infof("nodeInformer EventHandler handle: %+v", obj.(*apicorev1.Node))
 			nodeObj, ok := obj.(*apicorev1.Node)
+			nlog.Infof("nodeInformer EventHandler handle: %+v", nodeObj)
 			if ok {
 				if c.matchNodeLabels(nodeObj) {
 					return true
@@ -233,7 +232,7 @@ func (c *Controller) handleNodeUpdate(oldObj, newObj interface{}) {
 	}
 
 	if reflect.DeepEqual(oldNode.Status, newNode.Status) {
-		nlog.Infof("node %s have no actual change, skipping", newNode.Name)
+		nlog.Debugf("node %s have no actual change, skipping", newNode.Name)
 		return
 	}
 	c.handleNodeCommon(newObj, updateNode)
@@ -517,7 +516,6 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 
 func (c *Controller) matchNodeLabels(obj *apicorev1.Node) bool {
 	if objLabels := obj.GetLabels(); objLabels != nil {
-		nlog.Infof("node labels is : %v\n", objLabels)
 		if value, exists := objLabels[common.LabelNodeNamespace]; exists {
 			if value != "" {
 				_, err := c.domainLister.Get(value)
@@ -618,9 +616,6 @@ func (c *Controller) initLocalNodeStatus() error {
 		nlog.Infof("initLocalNodeStatus Node %d: Name=%s, Labels=%+v, Status=%+v",
 			i, node.Name, node.Labels, node.Status)
 	}
-
-	c.nodeStatusesLock.Lock()
-	defer c.nodeStatusesLock.Unlock()
 
 	var nodeStatuses []common.LocalNodeStatus
 	nlog.Infof("initLocalNodeStatus nodeStatuses is %v", nodeStatuses)

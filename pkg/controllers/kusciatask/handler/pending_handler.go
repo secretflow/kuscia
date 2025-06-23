@@ -41,11 +41,6 @@ import (
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
-const (
-	nodeStatusReady    = "Ready"
-	nodeStatusNotReady = "NotReady"
-)
-
 // PendingHandler is used to handle kuscia task which phase is pending.
 type PendingHandler struct {
 	kubeClient       kubernetes.Interface
@@ -283,7 +278,7 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 
 		for _, condition := range cdr.Status.Conditions {
 			if condition.Type == kusciaapisv1alpha1.ClusterDomainRouteReady && condition.Status != v1.ConditionTrue {
-				return false, fmt.Errorf("initiator %s to collaborator %s failed with %v", initiator, party.DomainID, err)
+				return false, fmt.Errorf("initiator %s to collaborator %s failed with %v", initiator, party.DomainID, condition.Reason)
 			}
 		}
 	}
@@ -299,7 +294,6 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		if container.Resources.Requests == nil {
 			nlog.Warnf("kt %s container %s hv no requests settings", partyKitInfo.kusciaTask.Name, container.Name)
 			return true, nil
-			// break 配合mock来验证
 		}
 		cpuValue := container.Resources.Requests.Cpu().MilliValue()
 		memValue := container.Resources.Requests.Memory().Value()
@@ -317,7 +311,7 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 	nlog.Infof("nodeStatuses struct is %+v", nodeStatuses)
 
 	for _, nodeStatus := range nodeStatuses {
-		if nodeStatus.DomainName != partyKitInfo.domainID || nodeStatus.Status != nodeStatusReady {
+		if nodeStatus.DomainName != partyKitInfo.domainID || nodeStatus.Status != "Ready" {
 			nlog.Errorf("domain %s node %s status is %s", partyKitInfo.domainID, nodeStatus.Name, nodeStatus.Status)
 			continue
 		}
