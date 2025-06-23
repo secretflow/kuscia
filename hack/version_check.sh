@@ -34,10 +34,6 @@ CHECK_DIRS="docs scripts hack"
 MODE="check"
 VERBOSE=false
 
-# Latest known versions (for reference)
-LATEST_KUSCIA_VERSION="v0.15.0b1"
-LATEST_SECRETFLOW_VERSION="v1.12.0b0"
-
 # Usage function
 usage() {
     cat << EOF
@@ -141,7 +137,7 @@ validate_args() {
 
 # Find markdown files in specified directories
 find_markdown_files() {
-    local dirs=($CHECK_DIRS)
+    local dirs=("$CHECK_DIRS")
     local files=()
     
     for dir in "${dirs[@]}"; do
@@ -180,7 +176,7 @@ extract_image_version() {
     local product="$2"  # "kuscia" or "secretflow"
     
     # Match Docker image format: product/image:version or product:version
-    local pattern="(^|[[:space:]])$product[^[:space:]]*:[[:space:]]*v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*"
+    local pattern="(^|[[:space:]])${product}[^[:space:]]*:[[:space:]]*v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*"
     echo "$text" | grep -oiE "$pattern" | \
                    grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
 }
@@ -197,27 +193,31 @@ check_file_versions() {
         ((line_num++))
         
         # Check for Kuscia versions with context awareness
-        local kuscia_version=$(extract_kuscia_version "$line")
+        local kuscia_version
+        kuscia_version=$(extract_kuscia_version "$line")
         if [[ -n "$kuscia_version" && "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
             issues+=("$file:$line_num: Found Kuscia version '$kuscia_version', expected '$KUSCIA_VERSION'")
             log_verbose "  Line $line_num: $line"
         fi
         
         # Check for SecretFlow versions with context awareness
-        local sf_version=$(extract_secretflow_version "$line")
+        local sf_version
+        sf_version=$(extract_secretflow_version "$line")
         if [[ -n "$sf_version" && "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
             issues+=("$file:$line_num: Found SecretFlow version '$sf_version', expected '$SECRETFLOW_VERSION'")
             log_verbose "  Line $line_num: $line"
         fi
         
         # Check for Docker/container image versions
-        local kuscia_image_version=$(extract_image_version "$line" "kuscia")
+        local kuscia_image_version
+        kuscia_image_version=$(extract_image_version "$line" "kuscia")
         if [[ -n "$kuscia_image_version" && "$kuscia_image_version" != "$KUSCIA_VERSION" ]]; then
             issues+=("$file:$line_num: Found Kuscia image version '$kuscia_image_version', expected '$KUSCIA_VERSION'")
             log_verbose "  Line $line_num: $line"
         fi
         
-        local sf_image_version=$(extract_image_version "$line" "secretflow")
+        local sf_image_version
+        sf_image_version=$(extract_image_version "$line" "secretflow")
         if [[ -n "$sf_image_version" && "$sf_image_version" != "$SECRETFLOW_VERSION" ]]; then
             issues+=("$file:$line_num: Found SecretFlow image version '$sf_image_version', expected '$SECRETFLOW_VERSION'")
             log_verbose "  Line $line_num: $line"
@@ -231,8 +231,10 @@ check_file_versions() {
 # Fix version inconsistencies in a file
 fix_file_versions() {
     local file="$1"
-    local temp_file=$(mktemp)
+    local temp_file
     local fixed=false
+
+    temp_file=$(mktemp)
     
     log_verbose "Fixing file: $file"
     
@@ -288,12 +290,14 @@ main() {
     log_info "Check directories: $CHECK_DIRS"
     log_info "Mode: $MODE"
     
-    local files=($(find_markdown_files))
+    local files
     local total_files=${#files[@]}
     local total_issues=0
     local files_with_issues=()
     local fixed_files=()
     
+    files=($(find_markdown_files))
+
     if [[ $total_files -eq 0 ]]; then
         log_warn "No markdown files found in specified directories"
         exit 0
@@ -303,7 +307,8 @@ main() {
     
     for file in "${files[@]}"; do
         if [[ "$MODE" == "check" ]]; then
-            local issues=($(check_file_versions "$file"))
+            local issues
+            issues=($(check_file_versions "$file"))
             if [[ ${#issues[@]} -gt 0 ]]; then
                 files_with_issues+=("$file")
                 total_issues=$((total_issues + ${#issues[@]}))
