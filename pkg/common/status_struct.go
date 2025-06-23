@@ -2,23 +2,25 @@ package common
 
 import (
 	"fmt"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sync"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 var instance *NodeStatusManager
 var once sync.Once
 
 type LocalNodeStatus struct {
-	Name    string `json:"name"`
-	DomainName string `json:"domainName"`
-	Status  string `json:"status"`
-	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	Name               string      `json:"name"`
+	DomainName         string      `json:"domainName"`
+	Status             string      `json:"status"`
+	LastHeartbeatTime  metav1.Time `json:"lastHeartbeatTime,omitempty"`
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	UnreadyReason string `json:"unreadyReason,omitempty"`
-	TotalCPURequest int64 `json:"totalCPURequest"`
-	TotalMemRequest int64 `json:"totalMemRequest"`
+	UnreadyReason      string      `json:"unreadyReason,omitempty"`
+	TotalCPURequest    int64       `json:"totalCPURequest"`
+	TotalMemRequest    int64       `json:"totalMemRequest"`
 }
 
 type NodeStatusManager struct {

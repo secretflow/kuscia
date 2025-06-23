@@ -67,9 +67,9 @@ const (
 )
 
 const (
-	addPod = "add"
-	deletePod = "delete"
-	addNode = "add"
+	addPod     = "add"
+	deletePod  = "delete"
+	addNode    = "add"
 	updateNode = "update"
 	deleteNode = "delete"
 )
@@ -96,13 +96,13 @@ type Controller struct {
 	nodeLister            listerscorev1.NodeLister
 	configmapLister       listerscorev1.ConfigMapLister
 	roleLister            rbaclisters.RoleLister
-	podLister			  listerscorev1.PodLister
+	podLister             listerscorev1.PodLister
 	workqueue             workqueue.RateLimitingInterface
 	podQueue              workqueue.RateLimitingInterface
-	nodeQueue	          workqueue.RateLimitingInterface
+	nodeQueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
-	nodeStatusManager 	  *common.NodeStatusManager
+	nodeStatusManager     *common.NodeStatusManager
 	nodeStatusesLock      sync.RWMutex
 }
 
@@ -211,7 +211,7 @@ func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInform
 			return false
 		},
 		Handler: cache.ResourceEventHandlerFuncs{
-			AddFunc: c.handleNodeAdd,
+			AddFunc:    c.handleNodeAdd,
 			UpdateFunc: c.handleNodeUpdate,
 			DeleteFunc: c.handleNodeDelete,
 		},
@@ -275,7 +275,7 @@ func (c *Controller) handlePodDelete(obj interface{}) {
 	c.handlePodCommon(obj, deletePod)
 }
 
-func (c *Controller) handlePodCommon(obj interface{}, op string)  {
+func (c *Controller) handlePodCommon(obj interface{}, op string) {
 	pod, ok := obj.(*apicorev1.Pod)
 	if !ok {
 		if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
@@ -296,22 +296,30 @@ func (c *Controller) handlePodCommon(obj interface{}, op string)  {
 	queue.EnqueuePodObject(&queue.PodQueueItem{Pod: pod, Op: op}, c.podQueue)
 }
 
-func (c *Controller) nodeHandler(item *queue.NodeQueueItem) error {
-	nlog.Infof("Processing node item: %+v", item)
+func (c *Controller) nodeHandler(item interface{}) error {
+	var nodeItem *queue.NodeQueueItem
+	checkType := queue.CheckType(item)
+	if checkType == "NodeQueueItem" {
+		nodeItem = item.(*queue.NodeQueueItem)
+	} else {
+		nlog.Errorf("nodeHandler only support NodeQueueItem but get : %+v", item)
+		return nil
+	}
+
 	newStatus := common.LocalNodeStatus{
-		Name:              item.Node.Name,
-		DomainName:        item.Node.Labels[common.LabelNodeNamespace],
+		Name:       nodeItem.Node.Name,
+		DomainName: nodeItem.Node.Labels[common.LabelNodeNamespace],
 	}
 
 	nlog.Infof("start newStatus to localNodeStatus item is : %+v", newStatus)
-	for _, cond := range item.Node.Status.Conditions {
+	for _, cond := range nodeItem.Node.Status.Conditions {
 		if cond.Type == apicorev1.NodeReady {
 			switch cond.Status {
 			case apicorev1.ConditionTrue:
 				newStatus.Status = nodeStatusReady
 			default:
 				newStatus.Status = nodeStatusNotReady
-				for _, condReason := range item.Node.Status.Conditions {
+				for _, condReason := range nodeItem.Node.Status.Conditions {
 					if condReason.Status == apicorev1.ConditionTrue {
 						newStatus.UnreadyReason = string(condReason.Type)
 					}
@@ -328,15 +336,22 @@ func (c *Controller) nodeHandler(item *queue.NodeQueueItem) error {
 	return c.nodeStatusManager.UpdateStatus(newStatus)
 }
 
-func (c *Controller) podHandler(item *queue.PodQueueItem) error {
-	nlog.Infof("Processing pod item: %+v", item)
-	switch item.Op {
+func (c *Controller) podHandler(item interface{}) error {
+	var podItem *queue.PodQueueItem
+	checkType := queue.CheckType(item)
+	if checkType == "PodQueueItem" {
+		podItem = item.(*queue.PodQueueItem)
+	} else {
+		nlog.Errorf("podHandler only support PodQueueItem but get : %+v", item)
+		return nil
+	}
+	switch podItem.Op {
 	case addPod:
-		return c.addPodHandler(item.Pod)
+		return c.addPodHandler(podItem.Pod)
 	case deletePod:
-		return c.deletePodHandler(item.Pod)
+		return c.deletePodHandler(podItem.Pod)
 	default:
-		return fmt.Errorf("unknown operation: %s", item.Op)
+		return fmt.Errorf("unknown operation: %s", podItem.Op)
 	}
 }
 
@@ -633,11 +648,11 @@ func (c *Controller) initLocalNodeStatus() error {
 		nlog.Infof("initLocalNodeStatus totalCPU is %d totalMEM is %d", totalCPU, totalMEM)
 
 		status := common.LocalNodeStatus{
-			Name:          nodeObj.Name,
-			DomainName:    domainName,
-			TotalCPURequest: totalCPU,
-			TotalMemRequest: totalMEM,
-			Status:         nodeStatusNotReady,
+			Name:               nodeObj.Name,
+			DomainName:         domainName,
+			TotalCPURequest:    totalCPU,
+			TotalMemRequest:    totalMEM,
+			Status:             nodeStatusNotReady,
 			LastHeartbeatTime:  nodeObj.Status.Conditions[0].LastHeartbeatTime,
 			LastTransitionTime: nodeObj.Status.Conditions[0].LastTransitionTime,
 		}
@@ -678,13 +693,13 @@ func (c *Controller) runWorker() {
 }
 
 func (c *Controller) runPodHandleWorker() {
-	for queue.HandlePodQueueItem(context.Background(), controllerName, c.podQueue, c.podHandler, maxRetries) {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.podQueue, c.podHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(c.podQueue.Len()))
 	}
 }
 
 func (c *Controller) runNodeHandleWorker() {
-	for queue.HandleNodeQueueItem(context.Background(), controllerName, c.nodeQueue, c.nodeHandler, maxRetries) {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeQueue, c.nodeHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(c.nodeQueue.Len()))
 	}
 }

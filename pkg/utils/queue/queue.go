@@ -28,17 +28,26 @@ import (
 
 type queueHandler func(ctx context.Context, key string) error
 
-type queuePodHandler func(key *PodQueueItem) error
-
-type queueNodeHandler func(key *NodeQueueItem) error
+type queueNodeAndPodHandler func(obj interface{}) error
 
 type PodQueueItem struct {
-	Pod  *apicorev1.Pod
-	Op   string
+	Pod *apicorev1.Pod
+	Op  string
 }
 
 type NodeQueueItem struct {
-	Node  *apicorev1.Node
+	Node *apicorev1.Node
+}
+
+func CheckType(obj interface{}) string {
+	switch _ := obj.(type) {
+	case *PodQueueItem:
+		return "PodQueueItem"
+	case *NodeQueueItem:
+		return "NodeQueueItem"
+	default:
+		return "Unknown"
+	}
 }
 
 func EnqueuePodObject(podQueueItem *PodQueueItem, queue workqueue.Interface) {
@@ -164,7 +173,7 @@ func HandleQueueItem(ctx context.Context, queueID string, q workqueue.RateLimiti
 	return true
 }
 
-func HandlePodQueueItem(ctx context.Context, queueID string, q workqueue.RateLimitingInterface, handler queuePodHandler, maxRetries int) bool {
+func HandleNodeAndPodQueueItem(ctx context.Context, queueID string, q workqueue.RateLimitingInterface, handler queueNodeAndPodHandler, maxRetries int) bool {
 	defer utilruntime.HandleCrash()
 	obj, shutdown := q.Get()
 	if shutdown {
@@ -173,83 +182,26 @@ func HandlePodQueueItem(ctx context.Context, queueID string, q workqueue.RateLim
 	run := func(obj interface{}) {
 		startTime := time.Now()
 		defer q.Done(obj)
-		var key *PodQueueItem
-		var ok bool
-
-		if key, ok = obj.(*PodQueueItem); !ok {
-			q.Forget(obj)
-			nlog.Warnf("Get obj failed: expected PodQueueItem item in work queue id[%v] but got %#v", queueID, obj)
-			return
-		}
-
-		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, key)
-		if err := handler(key); err != nil {
-			if q.NumRequeues(key) < maxRetries {
-				nlog.Infof("Re-syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing (%v)", queueID, q.NumRequeues(key), key, err.Error(), time.Since(startTime))
-				q.AddRateLimited(key)
+		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, obj)
+		if err := handler(obj); err != nil {
+			if q.NumRequeues(obj) < maxRetries {
+				nlog.Infof("Re-syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing (%v)", queueID, q.NumRequeues(obj), obj, err.Error(), time.Since(startTime))
+				q.AddRateLimited(obj)
 				return
 			}
 
-			q.Forget(key)
+			q.Forget(obj)
 			nlog.Errorf("Forgetting: queue id[%v], key[%v] (%v), due to maximum retries[%v] reached, last error: %q",
-				queueID, key, time.Since(startTime), maxRetries, err.Error())
+				queueID, obj, time.Since(startTime), maxRetries, err.Error())
 			return
 		}
 
 		q.Forget(obj)
-
-		nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
+		nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, obj, time.Since(startTime))
 	}
 	select {
 	case <-ctx.Done():
-		nlog.Warnf("HandlePodQueueItem quit, because %s", ctx.Err().Error())
-		return false
-	default:
-		run(obj)
-	}
-
-	return true
-}
-
-func HandleNodeQueueItem(ctx context.Context, queueID string, q workqueue.RateLimitingInterface, handler queueNodeHandler, maxRetries int) bool {
-	defer utilruntime.HandleCrash()
-	obj, shutdown := q.Get()
-	if shutdown {
-		return false
-	}
-	run := func(obj interface{}) {
-		startTime := time.Now()
-		defer q.Done(obj)
-		var key *NodeQueueItem
-		var ok bool
-
-		if key, ok = obj.(*NodeQueueItem); !ok {
-			q.Forget(obj)
-			nlog.Warnf("Get obj failed: expected NodeQueueItem item in work queue id[%v] but got %#v", queueID, obj)
-			return
-		}
-
-		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, key)
-		if err := handler(key); err != nil {
-			if q.NumRequeues(key) < maxRetries {
-				nlog.Infof("Re-syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing (%v)", queueID, q.NumRequeues(key), key, err.Error(), time.Since(startTime))
-				q.AddRateLimited(key)
-				return
-			}
-
-			q.Forget(key)
-			nlog.Errorf("Forgetting: queue id[%v], key[%v] (%v), due to maximum retries[%v] reached, last error: %q",
-				queueID, key, time.Since(startTime), maxRetries, err.Error())
-			return
-		}
-
-		q.Forget(obj)
-
-		nlog.Infof("Finish processing item: queue id[%v], key[%v] (%v)", queueID, key, time.Since(startTime))
-	}
-	select {
-	case <-ctx.Done():
-		nlog.Warnf("HandleNodeQueueItem quit, because %s", ctx.Err().Error())
+		nlog.Warnf("quit, because %s", ctx.Err().Error())
 		return false
 	default:
 		run(obj)

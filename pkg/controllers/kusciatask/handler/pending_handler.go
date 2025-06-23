@@ -336,8 +336,8 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		nlog.Infof("node %s ncv is %d nmv is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue)
 		nlog.Infof("node %s tcr is %d tmr is %d", nodeStatus.Name, nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
 
-		if (nodeCPUValue - nodeStatus.TotalCPURequest) > allContainerCPURequest &&
-			(nodeMEMValue - nodeStatus.TotalMemRequest) > allContainerMEMRequest {
+		if (nodeCPUValue-nodeStatus.TotalCPURequest) > allContainerCPURequest &&
+			(nodeMEMValue-nodeStatus.TotalMemRequest) > allContainerMEMRequest {
 			nlog.Infof("domain %s node %s available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
 			return true, nil
 		} else {
