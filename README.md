@@ -38,3 +38,4 @@ Please check [CONTRIBUTING.md](./CONTRIBUTING.md)
 Non-release version of Kuscia is only for demonstration and should not be used in production environments.
 Although this version of Kuscia covers the basic abilities, there may be some security issues and functional defects due to insufficient functionality and unfinished items in the project.
 We welcome your active suggestions and look forward to the official release.
+ 
