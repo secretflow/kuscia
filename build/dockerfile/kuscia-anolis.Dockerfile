@@ -28,7 +28,7 @@ FROM ${BASE_IMAGE}
 
 ENV TZ=Asia/Shanghai
 ARG TARGETPLATFORM
-ARG TARGETARCH="amd64"
+ARG TARGETARCH
 ARG HOME_DIR="/home/kuscia"
 ENV HOME=${HOME_DIR}
 RUN yum install -y openssl net-tools which jq logrotate iproute procps-ng libcap gzip && \
