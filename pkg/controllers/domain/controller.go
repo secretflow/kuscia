@@ -195,7 +195,7 @@ func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer)
 	})
 }
 
-func 	(c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInformer) {
+func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInformer) {
 	_, _ = nodeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			nodeObj, ok := obj.(*apicorev1.Node)
