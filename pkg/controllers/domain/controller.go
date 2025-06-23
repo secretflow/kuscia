@@ -309,7 +309,7 @@ func (c *Controller) nodeHandler(item interface{}) error {
 		DomainName: nodeItem.Node.Labels[common.LabelNodeNamespace],
 	}
 
-	nlog.Infof("start newStatus to localNodeStatus item is : %+v", newStatus)
+	nlog.Debugf("start newStatus to localNodeStatus item is : %+v", newStatus)
 	for _, cond := range nodeItem.Node.Status.Conditions {
 		if cond.Type == apicorev1.NodeReady {
 			switch cond.Status {
@@ -330,7 +330,7 @@ func (c *Controller) nodeHandler(item interface{}) error {
 		}
 	}
 
-	nlog.Infof("end newStatus to localNodeStatus item is : %+v", newStatus)
+	nlog.Debugf("end newStatus to localNodeStatus item is : %+v", newStatus)
 	return c.nodeStatusManager.UpdateStatus(newStatus)
 }
 
@@ -354,16 +354,14 @@ func (c *Controller) podHandler(item interface{}) error {
 }
 
 func (c *Controller) addPodHandler(pod *apicorev1.Pod) error {
-	nlog.Infof("step addPodHandler: %+v", pod)
+	nlog.Debugf("step addPodHandler: %+v", pod)
 	cpuReq, memReq := c.calRequestResource(pod)
-	nlog.Infof("addPodHandler cpuReq is %d memReq is %d: ", cpuReq, memReq)
 	return c.nodeStatusManager.AddPodResources(pod.Spec.NodeName, cpuReq, memReq)
 }
 
 func (c *Controller) deletePodHandler(pod *apicorev1.Pod) error {
-	nlog.Infof("step deletePodHandler: %+v", pod)
+	nlog.Debugf("step deletePodHandler: %+v", pod)
 	cpuReq, memReq := c.calRequestResource(pod)
-	nlog.Infof("deletePodHandler cpuReq is %d memReq is %d: ", cpuReq, memReq)
 	return c.nodeStatusManager.RemovePodResources(pod.Spec.NodeName, cpuReq, memReq)
 }
 

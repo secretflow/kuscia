@@ -270,7 +270,7 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 		}
 
 		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
-		nlog.Infof("cdrName is %s", cdrName)
+		nlog.Debugf("cdrName is %s", cdrName)
 		cdr, err := h.cdrLister.Get(cdrName)
 		if err != nil {
 			return false, fmt.Errorf("get cdr %s failed with %v", cdrName, err)
@@ -282,13 +282,11 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 			}
 		}
 	}
-
-	nlog.Infof("initiator %s to collaborator cdr check success for kt %s", initiator, partyKitInfo.kusciaTask.Name)
 	return true, nil
 }
 
 func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, error) {
-	nlog.Infof("partyKitInfo struct is %+v", partyKitInfo)
+	nlog.Debugf("partyKitInfo struct is %+v", partyKitInfo)
 	var allContainerCPURequest, allContainerMEMRequest int64
 	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
 		if container.Resources.Requests == nil {
@@ -297,18 +295,13 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		}
 		cpuValue := container.Resources.Requests.Cpu().MilliValue()
 		memValue := container.Resources.Requests.Memory().Value()
-		nlog.Infof("here cpuValue is %d memValue is %d", cpuValue, memValue)
 		allContainerCPURequest += cpuValue
 		allContainerMEMRequest += memValue
 	}
 
-	// 配合mock来验证
-	//allContainerCPURequest = int64(10)  // 模拟0.01核CPU请求
-	//allContainerMEMRequest = int64(10485760) // 模拟10MB内存请求
-	nlog.Infof("kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
-
+	nlog.Debugf("kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
 	nodeStatuses := common.NewNodeStatusManager().GetAll()
-	nlog.Infof("nodeStatuses struct is %+v", nodeStatuses)
+	nlog.Debugf("nodeStatuses struct is %+v", nodeStatuses)
 
 	for _, nodeStatus := range nodeStatuses {
 		if nodeStatus.DomainName != partyKitInfo.domainID || nodeStatus.Status != "Ready" {
@@ -327,12 +320,11 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		nodeCPUValue := node.Status.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := node.Status.Allocatable.Memory().Value()
 
-		nlog.Infof("node %s ncv is %d nmv is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue)
-		nlog.Infof("node %s tcr is %d tmr is %d", nodeStatus.Name, nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
-
+		nlog.Debugf("node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
+			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
 		if (nodeCPUValue-nodeStatus.TotalCPURequest) > allContainerCPURequest &&
 			(nodeMEMValue-nodeStatus.TotalMemRequest) > allContainerMEMRequest {
-			nlog.Infof("domain %s node %s available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
+			nlog.Debugf("domain %s node %s available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
 			return true, nil
 		} else {
 			nlog.Errorf("domain %s node %s no available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)

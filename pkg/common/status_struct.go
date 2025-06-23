@@ -30,18 +30,14 @@ type NodeStatusManager struct {
 
 func NewNodeStatusManager() *NodeStatusManager {
 	once.Do(func() {
-		nlog.Infof("first time to create nsm instance")
+		nlog.Infof("create nsm instance")
 		instance = &NodeStatusManager{}
 	})
-	nlog.Infof("get nsm instance")
 	return instance
 }
 
 func (m *NodeStatusManager) ReplaceAll(statuses []LocalNodeStatus) {
-	nlog.Infof("start ReplaceAll m statuses is %v", m.statuses)
-	nlog.Infof("start ReplaceAll statuses is %v", statuses)
 	m.statuses = statuses
-	nlog.Infof("end ReplaceAll m statuses is %v", m.statuses)
 }
 
 func (m *NodeStatusManager) GetAll() []LocalNodeStatus {
@@ -56,17 +52,14 @@ func (m *NodeStatusManager) UpdateStatus(newStatus LocalNodeStatus) error {
 
 	for i, status := range m.statuses {
 		if status.Name == newStatus.Name {
-			nlog.Infof("start m statuses is : %+v", m.statuses[i])
+			nlog.Debugf("start m statuses is : %+v", m.statuses[i])
 			m.statuses[i] = newStatus
-			nlog.Infof("end m statuses is : %+v", m.statuses[i])
+			nlog.Debugf("end m statuses is : %+v", m.statuses[i])
 			return nil
 		}
 	}
 
-	// 如果节点不存在则追加新记录
-	nlog.Infof("start statuses length: %d", len(m.statuses))
 	m.statuses = append(m.statuses, newStatus)
-	nlog.Infof("end statuses length: %d", len(m.statuses))
 	return nil
 }
 
@@ -76,10 +69,10 @@ func (m *NodeStatusManager) AddPodResources(nodeName string, cpu, mem int64) err
 
 	for i := range m.statuses {
 		if m.statuses[i].Name == nodeName {
-			nlog.Infof("start AddPodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
+			nlog.Debugf("start AddPodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
 			m.statuses[i].TotalCPURequest += cpu
 			m.statuses[i].TotalMemRequest += mem
-			nlog.Infof("end m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
+			nlog.Debugf("end m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
 			return nil
 		}
 	}
@@ -92,10 +85,10 @@ func (m *NodeStatusManager) RemovePodResources(nodeName string, cpu, mem int64) 
 
 	for i := range m.statuses {
 		if m.statuses[i].Name == nodeName {
-			nlog.Infof("start RemovePodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
+			nlog.Debugf("start RemovePodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
 			m.statuses[i].TotalCPURequest -= cpu
 			m.statuses[i].TotalMemRequest -= mem
-			nlog.Infof("end RemovePodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
+			nlog.Debugf("end RemovePodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
 			return nil
 		}
 	}
