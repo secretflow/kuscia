@@ -32,12 +32,12 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
-	kubeinformers "k8s.io/client-go/informers"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 	"github.com/secretflow/kuscia/pkg/utils/signals"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/api/resource"
+	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -300,21 +300,21 @@ func TestNodeHandler(t *testing.T) {
 	}
 
 	// 执行处理
-	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode})
+	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode, Op: addNode})
 	assert.NoError(t, err, "处理节点不应返回错误")
 
 	// 验证状态更新
 	statuses := c.nodeStatusManager.GetAll()
 	assert.Equal(t, 1, len(statuses), "应更新节点状态")
-	assert.Equal(t, "test-node", statuses[0].Name, "节点名称匹配")
-	assert.Equal(t, nodeStatusReady, statuses[0].Status, "节点状态应为Ready")
+	assert.Equal(t, "test-node", statuses["test-node"].Name, "节点名称匹配")
+	assert.Equal(t, nodeStatusReady, statuses["test-node"].Status, "节点状态应为Ready")
 
 	// 测试无效节点状态
 	invalidNode := testNode.DeepCopy()
 	invalidNode.Status.Conditions[0].Status = apicorev1.ConditionFalse
-	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode})
+	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode, Op: addNode})
 	assert.NoError(t, err)
-	updatedStatus := c.nodeStatusManager.GetAll()[0]
+	updatedStatus := c.nodeStatusManager.Get("test-node")
 	assert.Equal(t, nodeStatusNotReady, updatedStatus.Status, "应检测到节点不可用状态")
 }
 
@@ -363,12 +363,11 @@ func TestCalRequestResource(t *testing.T) {
 func TestPodHandler(t *testing.T) {
 	c, _, _ := setupController(t)
 
-	// 正确初始化节点状态
-	c.nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{{
+	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
 		Name:            "valid-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
-	}})
+	}, "add")
 
 	testPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
@@ -388,10 +387,8 @@ func TestPodHandler(t *testing.T) {
 		err := c.podHandler(&queue.PodQueueItem{Pod: testPod, Op: addPod})
 		require.NoError(t, err)
 
-		// 使用GetAll获取所有状态
-		statuses := c.nodeStatusManager.GetAll()
-		require.Equal(t, 1, len(statuses))
-		require.Equal(t, int64(1500), statuses[0].TotalCPURequest)
+		localNodeStatus := c.nodeStatusManager.Get("valid-node")
+		require.Equal(t, int64(1500), localNodeStatus.TotalCPURequest)
 	})
 }
 
@@ -406,10 +403,10 @@ func TestAddPodHandler(t *testing.T) {
 
 	// 初始化节点状态
 	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
-		Name:       "test-node",
+		Name:            "test-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
-	})
+	}, "add")
 
 	// 创建测试Pod
 	testPod := &apicorev1.Pod{
@@ -431,9 +428,9 @@ func TestAddPodHandler(t *testing.T) {
 	assert.NoError(t, err, "应成功添加Pod资源")
 
 	// 验证资源统计
-	statuses := c.nodeStatusManager.GetAll()
-	assert.Equal(t, int64(1500), statuses[0].TotalCPURequest, "CPU请求应正确累加")
-	assert.Equal(t, int64(1073741824+1024), statuses[0].TotalMemRequest, "内存请求应正确累加")
+	status := c.nodeStatusManager.Get("test-node")
+	assert.Equal(t, int64(1500), status.TotalCPURequest, "CPU请求应正确累加")
+	assert.Equal(t, int64(1073741824+1024), status.TotalMemRequest, "内存请求应正确累加")
 
 	// 测试无效节点
 	invalidPod := testPod.DeepCopy()
@@ -446,10 +443,10 @@ func TestAddPodHandler(t *testing.T) {
 func TestDeletePodHandler(t *testing.T) {
 	c, _, _ := setupController(t)
 	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
-		Name: "test-node",
+		Name:            "test-node",
 		TotalCPURequest: 5000,
 		TotalMemRequest: 4294967296,
-	})
+	}, "delete")
 
 	testPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
@@ -458,7 +455,7 @@ func TestDeletePodHandler(t *testing.T) {
 				Resources: apicorev1.ResourceRequirements{
 					Requests: apicorev1.ResourceList{
 						"cpu":    resource.MustParse("1000m"),
-						"memory": resource.MustParse("2Gi"),
+						"memory": resource.MustParse("1Gi"),
 					},
 				},
 			}},
@@ -540,7 +537,7 @@ func TestInitLocalNodeStatus(t *testing.T) {
 
 		statuses := c.nodeStatusManager.GetAll()
 		require.Equal(t, 1, len(statuses), "应初始化1个节点状态")
-		require.Equal(t, "test-node", statuses[0].Name)
+		require.Equal(t, "test-node", statuses["test-node"].Name)
 	})
 }
 
@@ -561,7 +558,7 @@ func setupController(t *testing.T) (*Controller, cache.Store, cache.Store) {
 	c.nodeStatusManager = common.NewNodeStatusManager()
 	c.podQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	c.nodeQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	c.nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{})
+	c.nodeStatusManager.ReplaceAll(make(map[string]common.LocalNodeStatus))
 	c.nodeLister = nodeInformer.Lister()
 	c.domainLister = domainInformer.Lister()
 

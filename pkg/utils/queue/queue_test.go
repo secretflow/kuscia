@@ -54,7 +54,7 @@ func TestCheckType(t *testing.T) {
 	podItem := &PodQueueItem{Pod: &apicorev1.Pod{}}
 	assert.Equal(t, "PodQueueItem", CheckType(podItem))
 
-	nodeItem := &NodeQueueItem{Node: &apicorev1.Node{}}
+	nodeItem := &NodeQueueItem{Node: &apicorev1.Node{}, Op: "add"}
 	assert.Equal(t, "NodeQueueItem", CheckType(nodeItem))
 
 	assert.Equal(t, "Unknown", CheckType("invalid type"))

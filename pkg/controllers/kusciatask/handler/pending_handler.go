@@ -313,13 +313,10 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		if err != nil {
 			nlog.Errorf("get node %s failed with %v", nodeStatus.Name, err)
 			continue
-		} else {
-			nlog.Errorf("node message is %+v", node)
 		}
 
 		nodeCPUValue := node.Status.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := node.Status.Allocatable.Memory().Value()
-
 		nlog.Debugf("node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
 		if (nodeCPUValue-nodeStatus.TotalCPURequest) > allContainerCPURequest &&

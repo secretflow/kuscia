@@ -24,7 +24,7 @@ type LocalNodeStatus struct {
 }
 
 type NodeStatusManager struct {
-	statuses []LocalNodeStatus
+	statuses map[string]LocalNodeStatus
 	lock     sync.RWMutex
 }
 
@@ -36,30 +36,36 @@ func NewNodeStatusManager() *NodeStatusManager {
 	return instance
 }
 
-func (m *NodeStatusManager) ReplaceAll(statuses []LocalNodeStatus) {
+func (m *NodeStatusManager) ReplaceAll(statuses map[string]LocalNodeStatus) {
 	m.statuses = statuses
 }
 
-func (m *NodeStatusManager) GetAll() []LocalNodeStatus {
+func (m *NodeStatusManager) GetAll() map[string]LocalNodeStatus {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	return m.statuses
 }
 
-func (m *NodeStatusManager) UpdateStatus(newStatus LocalNodeStatus) error {
+func (m *NodeStatusManager) Get(nodeName string) LocalNodeStatus {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return m.statuses[nodeName]
+}
+
+func (m *NodeStatusManager) UpdateStatus(newStatus LocalNodeStatus, op string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	for i, status := range m.statuses {
-		if status.Name == newStatus.Name {
-			nlog.Debugf("start m statuses is : %+v", m.statuses[i])
-			m.statuses[i] = newStatus
-			nlog.Debugf("end m statuses is : %+v", m.statuses[i])
-			return nil
-		}
+	switch op {
+	case "add":
+		m.statuses[newStatus.Name] = newStatus
+	case "update":
+		m.statuses[newStatus.Name] = newStatus
+	case "delete":
+		delete(m.statuses, newStatus.Name)
+	default:
+		return fmt.Errorf("not support type %s", op)
 	}
-
-	m.statuses = append(m.statuses, newStatus)
 	return nil
 }
 
@@ -67,14 +73,11 @@ func (m *NodeStatusManager) AddPodResources(nodeName string, cpu, mem int64) err
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	for i := range m.statuses {
-		if m.statuses[i].Name == nodeName {
-			nlog.Debugf("start AddPodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
-			m.statuses[i].TotalCPURequest += cpu
-			m.statuses[i].TotalMemRequest += mem
-			nlog.Debugf("end m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
-			return nil
-		}
+	if status, exists := m.statuses[nodeName]; exists {
+		status.TotalCPURequest += cpu
+		status.TotalMemRequest += mem
+		m.statuses[nodeName] = status
+		return nil
 	}
 	return fmt.Errorf("node %s not found", nodeName)
 }
@@ -83,14 +86,11 @@ func (m *NodeStatusManager) RemovePodResources(nodeName string, cpu, mem int64) 
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	for i := range m.statuses {
-		if m.statuses[i].Name == nodeName {
-			nlog.Debugf("start RemovePodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
-			m.statuses[i].TotalCPURequest -= cpu
-			m.statuses[i].TotalMemRequest -= mem
-			nlog.Debugf("end RemovePodResources m.statuses %s tcr is %d tmr is %d", m.statuses[i].Name, m.statuses[i].TotalCPURequest, m.statuses[i].TotalMemRequest)
-			return nil
-		}
+	if status, exists := m.statuses[nodeName]; exists {
+		status.TotalCPURequest -= cpu
+		status.TotalMemRequest -= mem
+		m.statuses[nodeName] = status
+		return nil
 	}
 	return fmt.Errorf("node %s not found", nodeName)
 }

@@ -37,6 +37,7 @@ type PodQueueItem struct {
 
 type NodeQueueItem struct {
 	Node *apicorev1.Node
+	Op   string
 }
 
 func CheckType(obj interface{}) string {

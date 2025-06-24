@@ -260,7 +260,7 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 		nlog.Errorf("Node %s/%s has empty ResourceVersion, skipping", newNode.Namespace, newNode.Name)
 		return
 	}
-	queue.EnqueueNodeObject(&queue.NodeQueueItem{Node: newNode}, c.nodeQueue)
+	queue.EnqueueNodeObject(&queue.NodeQueueItem{Node: newNode, Op: op}, c.nodeQueue)
 }
 
 func (c *Controller) handlePodAdd(obj interface{}) {
@@ -296,8 +296,7 @@ func (c *Controller) handlePodCommon(obj interface{}, op string) {
 
 func (c *Controller) nodeHandler(item interface{}) error {
 	var nodeItem *queue.NodeQueueItem
-	checkType := queue.CheckType(item)
-	if checkType == "NodeQueueItem" {
+	if queue.CheckType(item) == "NodeQueueItem" {
 		nodeItem = item.(*queue.NodeQueueItem)
 	} else {
 		nlog.Errorf("nodeHandler only support NodeQueueItem but get : %+v", item)
@@ -309,7 +308,6 @@ func (c *Controller) nodeHandler(item interface{}) error {
 		DomainName: nodeItem.Node.Labels[common.LabelNodeNamespace],
 	}
 
-	nlog.Debugf("start newStatus to localNodeStatus item is : %+v", newStatus)
 	for _, cond := range nodeItem.Node.Status.Conditions {
 		if cond.Type == apicorev1.NodeReady {
 			switch cond.Status {
@@ -330,8 +328,8 @@ func (c *Controller) nodeHandler(item interface{}) error {
 		}
 	}
 
-	nlog.Debugf("end newStatus to localNodeStatus item is : %+v", newStatus)
-	return c.nodeStatusManager.UpdateStatus(newStatus)
+	nlog.Debugf("newStatus to localNodeStatus item is : %+v", newStatus)
+	return c.nodeStatusManager.UpdateStatus(newStatus, nodeItem.Op)
 }
 
 func (c *Controller) podHandler(item interface{}) error {
@@ -614,8 +612,7 @@ func (c *Controller) initLocalNodeStatus() error {
 			i, node.Name, node.Labels, node.Status)
 	}
 
-	var nodeStatuses []common.LocalNodeStatus
-	nlog.Infof("initLocalNodeStatus nodeStatuses is %v", nodeStatuses)
+	nodeStatuses := make(map[string]common.LocalNodeStatus)
 	for _, nodeObj := range nodes {
 		if !c.matchNodeLabels(nodeObj) {
 			continue
@@ -628,7 +625,6 @@ func (c *Controller) initLocalNodeStatus() error {
 		pods, _ := c.podLister.Pods(domainName).List(labels.Everything())
 		for _, pod := range pods {
 			if pod.Spec.NodeName == nodeObj.Name {
-				nlog.Infof("belong to node %s pod %s", nodeObj.Name, pod.Name)
 				cpu, mem := c.calRequestResource(pod)
 				totalCPU += cpu
 				totalMEM += mem
@@ -661,7 +657,7 @@ func (c *Controller) initLocalNodeStatus() error {
 		}
 
 		nlog.Infof("initLocalNodeStatus loop item status is %+v", status)
-		nodeStatuses = append(nodeStatuses, status)
+		nodeStatuses[status.Name] = status
 	}
 
 	c.nodeStatusManager.ReplaceAll(nodeStatuses)
