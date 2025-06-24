@@ -139,19 +139,22 @@ func makeTestPendingHandler() *PendingHandler {
 
 func TestPendingHandler_Handle(t *testing.T) {
 	nodeStatusManager := common.NewNodeStatusManager()
-	nodeStatusManager.ReplaceAll([]common.LocalNodeStatus{{
-		Name:            "mock-node-a",
-		DomainName:      "domain-a",
-		Status:          "Ready",
-		TotalCPURequest: 0,
-		TotalMemRequest: 0,
-	},{
-		Name:            "mock-node-b",
-		DomainName:      "domain-b",
-		Status:          "Ready",
-		TotalCPURequest: 0,
-		TotalMemRequest: 0,
-	}})
+	nodeStatusManager.ReplaceAll(map[string]common.LocalNodeStatus{
+		"mock-node-a": {
+			Name:            "mock-node-a",
+			DomainName:      "domain-a",
+			Status:          "Ready",
+			TotalCPURequest: 0,
+			TotalMemRequest: 0,
+		},
+		"mock-node-b": {
+			Name:            "mock-node-b",
+			DomainName:      "domain-b",
+			Status:          "Ready",
+			TotalCPURequest: 0,
+			TotalMemRequest: 0,
+		},
+	})
 
 	t.Parallel()
 	handler := makeTestPendingHandler()
