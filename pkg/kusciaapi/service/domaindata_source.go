@@ -492,9 +492,8 @@ func validateDataSourceType(t string) error {
 		t != common.DomainDataSourceTypeLocalFS &&
 		t != common.DomainDataSourceTypeODPS &&
 		t != common.DomainDataSourceTypePostgreSQL &&
-		t != common.DomainDataSourceTypeHive &&
-		t != common.DomainDataSourceTypeORACLE {
-		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql,hive,oracle]", t)
+		t != common.DomainDataSourceTypeHive {
+		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql,hive]", t)
 	}
 	return nil
 }
@@ -699,7 +698,9 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		if info.Oss.AccessKeySecret == "" {
 			return fmt.Errorf("oss 'access_key_secret' is empty")
 		}
-	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeORACLE:
+	case common.DomainDataSourceTypeMysql:
+	case common.DomainDataSourceTypePostgreSQL:
+	case common.DomainDataSourceTypeHive:
 		if info.Database == nil {
 			return fmt.Errorf("%v info is nil", sourceType)
 		}
@@ -709,12 +710,6 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		if info.Database.Database == "" {
 			return fmt.Errorf("%v 'database' is empty", sourceType)
 		}
-		// if info.Database.User == "" {
-		// 	return fmt.Errorf("mysql 'user' is empty")
-		// }
-		// if info.Database.Password == "" {
-		// 	return fmt.Errorf("mysql 'password' is empty")
-		// }
 	case common.DomainDataSourceTypeODPS:
 		if info.Odps == nil {
 			return fmt.Errorf("odps info is nil")
