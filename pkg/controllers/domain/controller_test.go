@@ -446,7 +446,7 @@ func TestDeletePodHandler(t *testing.T) {
 		Name:            "test-node",
 		TotalCPURequest: 5000,
 		TotalMemRequest: 4294967296,
-	}, "delete")
+	}, "add")
 
 	testPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
