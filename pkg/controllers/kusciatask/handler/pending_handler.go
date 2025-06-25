@@ -229,13 +229,13 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	for _, partyKitInfo := range selfPartyKitInfos {
 		_, err := h.nodeResourceCheck(*partyKitInfo)
 		if err != nil {
-			nlog.Errorf("domain %s hv no node can satisfy kt %s resource", partyKitInfo.domainID, partyKitInfo.kusciaTask.Name)
+			nlog.Errorf("Domain %s hv no node can satisfy kt %s resource", partyKitInfo.domainID, partyKitInfo.kusciaTask.Name)
 			return err
 		}
 
 		_, cdrErr := h.cdrReadyCheck(*partyKitInfo)
 		if cdrErr != nil {
-			nlog.Errorf("kt %s cdr check failed with %v", partyKitInfo.kusciaTask.Name, cdrErr)
+			nlog.Errorf("Kt %s cdr check failed with %v", partyKitInfo.kusciaTask.Name, cdrErr)
 			return err
 		}
 
@@ -270,7 +270,7 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 		}
 
 		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
-		nlog.Debugf("cdrName is %s", cdrName)
+		nlog.Debugf("CdrName is %s", cdrName)
 		cdr, err := h.cdrLister.Get(cdrName)
 		if err != nil {
 			return false, fmt.Errorf("get cdr %s failed with %v", cdrName, err)
@@ -286,11 +286,11 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 }
 
 func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, error) {
-	nlog.Debugf("partyKitInfo struct is %+v", partyKitInfo)
+	nlog.Debugf("PartyKitInfo struct is %+v", partyKitInfo)
 	var allContainerCPURequest, allContainerMEMRequest int64
 	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
 		if container.Resources.Requests == nil {
-			nlog.Warnf("kt %s container %s hv no requests settings", partyKitInfo.kusciaTask.Name, container.Name)
+			nlog.Warnf("Kt %s container %s hv no requests settings", partyKitInfo.kusciaTask.Name, container.Name)
 			return true, nil
 		}
 		cpuValue := container.Resources.Requests.Cpu().MilliValue()
@@ -299,32 +299,32 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 		allContainerMEMRequest += memValue
 	}
 
-	nlog.Debugf("kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
+	nlog.Debugf("Kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
 	nodeStatuses := common.NewNodeStatusManager().GetAll()
-	nlog.Debugf("nodeStatuses struct is %+v", nodeStatuses)
+	nlog.Debugf("NodeStatuses struct is %+v", nodeStatuses)
 
 	for _, nodeStatus := range nodeStatuses {
 		if nodeStatus.DomainName != partyKitInfo.domainID || nodeStatus.Status != "Ready" {
-			nlog.Errorf("domain %s node %s status is %s", partyKitInfo.domainID, nodeStatus.Name, nodeStatus.Status)
+			nlog.Warnf("Domain %s node %s status is %s", partyKitInfo.domainID, nodeStatus.Name, nodeStatus.Status)
 			continue
 		}
 
 		node, err := h.nodeLister.Get(nodeStatus.Name)
 		if err != nil {
-			nlog.Errorf("get node %s failed with %v", nodeStatus.Name, err)
+			nlog.Errorf("Get node %s failed with %v", nodeStatus.Name, err)
 			continue
 		}
 
 		nodeCPUValue := node.Status.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := node.Status.Allocatable.Memory().Value()
-		nlog.Debugf("node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
+		nlog.Debugf("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
 		if (nodeCPUValue-nodeStatus.TotalCPURequest) > allContainerCPURequest &&
 			(nodeMEMValue-nodeStatus.TotalMemRequest) > allContainerMEMRequest {
-			nlog.Debugf("domain %s node %s available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
+			nlog.Debugf("Domain %s node %s available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
 			return true, nil
 		} else {
-			nlog.Errorf("domain %s node %s no available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
+			nlog.Warnf("Domain %s node %s no available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
 			continue
 		}
 	}

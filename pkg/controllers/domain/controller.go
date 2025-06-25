@@ -66,14 +66,6 @@ const (
 )
 
 const (
-	addPod     = "add"
-	deletePod  = "delete"
-	addNode    = "add"
-	updateNode = "update"
-	deleteNode = "delete"
-)
-
-const (
 	nodeStatusReady    = "Ready"
 	nodeStatusNotReady = "NotReady"
 )
@@ -160,7 +152,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addPodEventHandler(podInformer)
 	controller.addNodeEventHandler(nodeInformer)
 
-	nlog.Infof("domain newController created : %+v", controller)
+	nlog.Infof("Domain newController created : %+v", controller)
 
 	return controller
 }
@@ -169,13 +161,13 @@ func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer)
 	_, _ = podInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			pod, ok := obj.(*apicorev1.Pod)
-			nlog.Infof("podInformer EventHandler handle: %+v", pod)
+			nlog.Infof("PodInformer EventHandler handle: %+v", pod)
 			if ok {
 				namespace := pod.Namespace
 				nodeName := pod.Spec.NodeName
 				_, err := c.domainLister.Get(namespace)
 				if err != nil {
-					nlog.Errorf("domainLister get %s failed with %v", namespace, err)
+					nlog.Errorf("DomainLister get %s failed with %v", namespace, err)
 					return false
 				}
 
@@ -185,7 +177,7 @@ func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer)
 				}
 				return true
 			}
-			nlog.Errorf("item %v is not pod type", obj)
+			nlog.Errorf("Item %v is not pod type", obj)
 			return false
 		},
 		Handler: cache.ResourceEventHandlerFuncs{
@@ -199,13 +191,13 @@ func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInform
 	_, _ = nodeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			nodeObj, ok := obj.(*apicorev1.Node)
-			nlog.Infof("nodeInformer EventHandler handle: %+v", nodeObj)
+			nlog.Infof("NodeInformer EventHandler handle: %+v", nodeObj)
 			if ok {
 				if c.matchNodeLabels(nodeObj) {
 					return true
 				}
 			}
-			nlog.Errorf("item %v is not node type", obj)
+			nlog.Errorf("Item %v is not node type", obj)
 			return false
 		},
 		Handler: cache.ResourceEventHandlerFuncs{
@@ -217,12 +209,12 @@ func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInform
 }
 
 func (c *Controller) handleNodeAdd(obj interface{}) {
-	nlog.Info("step handleNodeAdd")
-	c.handleNodeCommon(obj, addNode)
+	nlog.Debugf("Step handleNodeAdd")
+	c.handleNodeCommon(obj, common.Add)
 }
 
 func (c *Controller) handleNodeUpdate(oldObj, newObj interface{}) {
-	nlog.Info("step handleNodeUpdate")
+	nlog.Debugf("Step handleNodeUpdate")
 	oldNode, _ := oldObj.(*apicorev1.Node)
 	newNode, _ := newObj.(*apicorev1.Node)
 
@@ -231,15 +223,15 @@ func (c *Controller) handleNodeUpdate(oldObj, newObj interface{}) {
 	}
 
 	if reflect.DeepEqual(oldNode.Status, newNode.Status) {
-		nlog.Debugf("node %s have no actual change, skipping", newNode.Name)
+		nlog.Debugf("Node %s have no actual change, skipping", newNode.Name)
 		return
 	}
-	c.handleNodeCommon(newObj, updateNode)
+	c.handleNodeCommon(newObj, common.Update)
 }
 
 func (c *Controller) handleNodeDelete(obj interface{}) {
-	nlog.Info("step handleNodeDelete")
-	c.handleNodeCommon(obj, deleteNode)
+	nlog.Debugf("Step handleNodeDelete")
+	c.handleNodeCommon(obj, common.Delete)
 }
 
 func (c *Controller) handleNodeCommon(obj interface{}, op string) {
@@ -256,7 +248,7 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 		}
 	}
 
-	if op == addNode && newNode.ResourceVersion == "" {
+	if op == common.Add && newNode.ResourceVersion == "" {
 		nlog.Errorf("Node %s/%s has empty ResourceVersion, skipping", newNode.Namespace, newNode.Name)
 		return
 	}
@@ -264,13 +256,13 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 }
 
 func (c *Controller) handlePodAdd(obj interface{}) {
-	nlog.Info("step handlePodAdd")
-	c.handlePodCommon(obj, addPod)
+	nlog.Debugf("Step handlePodAdd")
+	c.handlePodCommon(obj, common.Add)
 }
 
 func (c *Controller) handlePodDelete(obj interface{}) {
-	nlog.Info("step handlePodDelete")
-	c.handlePodCommon(obj, deletePod)
+	nlog.Debugf("Step handlePodDelete")
+	c.handlePodCommon(obj, common.Delete)
 }
 
 func (c *Controller) handlePodCommon(obj interface{}, op string) {
@@ -287,7 +279,7 @@ func (c *Controller) handlePodCommon(obj interface{}, op string) {
 		}
 	}
 
-	if op == addPod && pod.ResourceVersion == "" {
+	if op == common.Add && pod.ResourceVersion == "" {
 		nlog.Errorf("Pod %s/%s has empty ResourceVersion, skipping", pod.Namespace, pod.Name)
 		return
 	}
@@ -299,7 +291,7 @@ func (c *Controller) nodeHandler(item interface{}) error {
 	if queue.CheckType(item) == "NodeQueueItem" {
 		nodeItem = item.(*queue.NodeQueueItem)
 	} else {
-		nlog.Errorf("nodeHandler only support NodeQueueItem but get : %+v", item)
+		nlog.Errorf("NodeHandler only support NodeQueueItem but get : %+v", item)
 		return nil
 	}
 
@@ -328,7 +320,7 @@ func (c *Controller) nodeHandler(item interface{}) error {
 		}
 	}
 
-	nlog.Debugf("newStatus to localNodeStatus item is : %+v", newStatus)
+	nlog.Debugf("NewStatus to localNodeStatus item is : %+v", newStatus)
 	return c.nodeStatusManager.UpdateStatus(newStatus, nodeItem.Op)
 }
 
@@ -338,13 +330,13 @@ func (c *Controller) podHandler(item interface{}) error {
 	if checkType == "PodQueueItem" {
 		podItem = item.(*queue.PodQueueItem)
 	} else {
-		nlog.Errorf("podHandler only support PodQueueItem but get : %+v", item)
+		nlog.Errorf("PodHandler only support PodQueueItem but get : %+v", item)
 		return nil
 	}
 	switch podItem.Op {
-	case addPod:
+	case common.Add:
 		return c.addPodHandler(podItem.Pod)
-	case deletePod:
+	case common.Delete:
 		return c.deletePodHandler(podItem.Pod)
 	default:
 		return fmt.Errorf("unknown operation: %s", podItem.Op)
@@ -352,13 +344,13 @@ func (c *Controller) podHandler(item interface{}) error {
 }
 
 func (c *Controller) addPodHandler(pod *apicorev1.Pod) error {
-	nlog.Debugf("step addPodHandler: %+v", pod)
+	nlog.Debugf("Step addPodHandler: %+v", pod)
 	cpuReq, memReq := c.calRequestResource(pod)
 	return c.nodeStatusManager.AddPodResources(pod.Spec.NodeName, cpuReq, memReq)
 }
 
 func (c *Controller) deletePodHandler(pod *apicorev1.Pod) error {
-	nlog.Debugf("step deletePodHandler: %+v", pod)
+	nlog.Debugf("Step deletePodHandler: %+v", pod)
 	cpuReq, memReq := c.calRequestResource(pod)
 	return c.nodeStatusManager.RemovePodResources(pod.Spec.NodeName, cpuReq, memReq)
 }
@@ -515,18 +507,18 @@ func (c *Controller) matchNodeLabels(obj *apicorev1.Node) bool {
 			if value != "" {
 				_, err := c.domainLister.Get(value)
 				if err != nil {
-					nlog.Errorf("get domain %s failed with %v", obj.Name, err)
+					nlog.Errorf("Get domain %s failed with %v", obj.Name, err)
 					return false
 				}
 				return true
 			}
-			nlog.Errorf("node %s hv no domain belonged to", obj.Name)
+			nlog.Errorf("Node %s hv no domain belonged to", obj.Name)
 			return false
 		}
-		nlog.Errorf("node %s hv no label about domain", obj.Name)
+		nlog.Errorf("Node %s hv no label about domain", obj.Name)
 		return false
 	}
-	nlog.Errorf("node %s get labels failed", obj.Name)
+	nlog.Errorf("Node %s get labels failed", obj.Name)
 	return false
 }
 
@@ -607,33 +599,32 @@ func (c *Controller) initLocalNodeStatus() error {
 		return fmt.Errorf("domain controller init localNodeStatus failed with %v", err)
 	}
 
-	for i, node := range nodes {
-		nlog.Infof("initLocalNodeStatus Node %d: Name=%s, Labels=%+v, Status=%+v",
-			i, node.Name, node.Labels, node.Status)
-	}
-
 	nodeStatuses := make(map[string]common.LocalNodeStatus)
+	domainPods := make(map[string][]*apicorev1.Pod)
 	for _, nodeObj := range nodes {
 		if !c.matchNodeLabels(nodeObj) {
 			continue
 		}
 
-		nlog.Infof("initLocalNodeStatus nodeObj %+v", nodeObj)
-		domainName := nodeObj.Labels[common.LabelNodeNamespace]
-
 		var totalCPU, totalMEM int64
-		pods, _ := c.podLister.Pods(domainName).List(labels.Everything())
-		for _, pod := range pods {
+		domainName := nodeObj.Labels[common.LabelNodeNamespace]
+		if _, exists := domainPods[domainName]; !exists {
+			pods, err := c.podLister.Pods(domainName).List(labels.Everything())
+			if err != nil {
+				return fmt.Errorf("InitLocalNodeStatus failed with %v", err)
+			}
+			domainPods[domainName] = pods
+		}
+
+		for _, pod := range domainPods[domainName] {
 			if pod.Spec.NodeName == nodeObj.Name {
 				cpu, mem := c.calRequestResource(pod)
 				totalCPU += cpu
 				totalMEM += mem
 			} else {
-				nlog.Infof("not belong to node %s pod %s", nodeObj.Name, pod.Name)
+				nlog.Infof("Not belong to node %s pod %s", nodeObj.Name, pod.Name)
 			}
 		}
-
-		nlog.Infof("initLocalNodeStatus totalCPU is %d totalMEM is %d", totalCPU, totalMEM)
 
 		status := common.LocalNodeStatus{
 			Name:               nodeObj.Name,
@@ -656,7 +647,7 @@ func (c *Controller) initLocalNodeStatus() error {
 			}
 		}
 
-		nlog.Infof("initLocalNodeStatus loop item status is %+v", status)
+		nlog.Infof("InitLocalNodeStatus loop item status is %+v", status)
 		nodeStatuses[status.Name] = status
 	}
 

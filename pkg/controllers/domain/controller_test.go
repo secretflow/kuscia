@@ -64,7 +64,7 @@ func TestNewController(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// 新增节点事件处理测试用例
+// Add test cases for handling node events
 func TestHandleNodeAdd(t *testing.T) {
 	kubeClient := kubefake.NewSimpleClientset()
 	kusciaClient := kusciafake.NewSimpleClientset()
@@ -73,7 +73,7 @@ func TestHandleNodeAdd(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 测试正常节点添加
+	// Test normal node addition
 	node := &apicorev1.Node{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name: "test-node",
@@ -86,7 +86,7 @@ func TestHandleNodeAdd(t *testing.T) {
 	c.handleNodeAdd(node)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "Node queue should have 1 item")
 
-	// 测试空ResourceVersion
+	// Test empty ResourceVersion
 	node.ResourceVersion = ""
 	c.handleNodeAdd(node)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "Should skip node with empty ResourceVersion")
@@ -110,7 +110,7 @@ func TestHandleNodeUpdate(t *testing.T) {
 		},
 	}
 
-	// 测试状态变更
+	// Test status change
 	newNode := oldNode.DeepCopy()
 	newNode.ResourceVersion = "456"
 	newNode.Status.Conditions = []apicorev1.NodeCondition{{
@@ -120,7 +120,7 @@ func TestHandleNodeUpdate(t *testing.T) {
 	c.handleNodeUpdate(oldNode, newNode)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "Should enqueue node with status change")
 
-	// 测试无实际变更
+	// Testing without actual changes
 	newNode.Status = oldNode.Status
 	c.handleNodeUpdate(oldNode, newNode)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "Should skip node with no status change")
@@ -134,7 +134,7 @@ func TestHandleNodeDelete(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 测试正常节点删除
+	// Test normal node deletion
 	node := &apicorev1.Node{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name: "test-node",
@@ -146,7 +146,7 @@ func TestHandleNodeDelete(t *testing.T) {
 	c.handleNodeDelete(node)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "Node queue should have 1 item")
 
-	// 测试DeletedFinalStateUnknown类型
+	// Test the DeletedFinalStateUnknown type
 	dfsu := cache.DeletedFinalStateUnknown{
 		Key: "test-node",
 		Obj: node,
@@ -155,7 +155,7 @@ func TestHandleNodeDelete(t *testing.T) {
 	assert.Equal(t, 2, c.nodeQueue.Len(), "Should handle DeletedFinalStateUnknown")
 }
 
-// 新增Pod事件处理测试
+// Add Pod event handling test
 func TestHandlePodAdd(t *testing.T) {
 	kubeClient := kubefake.NewSimpleClientset()
 	kusciaClient := kusciafake.NewSimpleClientset()
@@ -164,7 +164,7 @@ func TestHandlePodAdd(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 测试正常Pod添加
+	// Test normal Pod addition
 	pod := &apicorev1.Pod{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name:            "test-pod",
@@ -178,7 +178,7 @@ func TestHandlePodAdd(t *testing.T) {
 	c.handlePodAdd(pod)
 	assert.Equal(t, 1, c.podQueue.Len(), "Pod队列应有1个元素")
 
-	// 测试空ResourceVersion过滤
+	// Test empty ResourceVersion filtering
 	emptyRVPod := pod.DeepCopy()
 	emptyRVPod.ResourceVersion = ""
 	c.handlePodAdd(emptyRVPod)
@@ -193,7 +193,7 @@ func TestHandlePodDelete(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 测试正常Pod删除
+	// Test normal Pod deletion
 	pod := &apicorev1.Pod{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name:            "test-pod",
@@ -207,7 +207,7 @@ func TestHandlePodDelete(t *testing.T) {
 	c.handlePodDelete(pod)
 	assert.Equal(t, 1, c.podQueue.Len(), "Pod队列应有1个元素")
 
-	// 测试DeletedFinalStateUnknown类型处理
+	// Testing the handling of the DeletedFinalStateUnknown type
 	dfsu := cache.DeletedFinalStateUnknown{
 		Key: "test-pod",
 		Obj: pod,
@@ -215,24 +215,24 @@ func TestHandlePodDelete(t *testing.T) {
 	c.handlePodDelete(dfsu)
 	assert.Equal(t, 2, c.podQueue.Len(), "应处理DeletedFinalStateUnknown类型")
 
-	// 测试无效对象类型
+	// Test invalid object type
 	c.handlePodDelete("invalid-type")
 	assert.Equal(t, 2, c.podQueue.Len(), "应跳过无效对象类型")
 }
 
-// 新增handlePodCommon测试
+// Add handlePodCommon test
 func TestHandlePodCommon(t *testing.T) {
 	c, _, _ := setupController(t)
 
 	t.Run("AddOperation", func(t *testing.T) {
 		validPod := &apicorev1.Pod{ObjectMeta: apismetav1.ObjectMeta{ResourceVersion: "123"}}
-		c.handlePodCommon(validPod, addPod)
+		c.handlePodCommon(validPod, common.Add)
 		require.Equal(t, 1, c.podQueue.Len())
 	})
 
 	t.Run("DeleteOperation", func(t *testing.T) {
 		validPod := &apicorev1.Pod{ObjectMeta: apismetav1.ObjectMeta{ResourceVersion: "456"}}
-		c.handlePodCommon(validPod, deletePod)
+		c.handlePodCommon(validPod, common.Delete)
 		require.Equal(t, 2, c.podQueue.Len())
 	})
 }
@@ -245,7 +245,7 @@ func TestHandleNodeCommon(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 测试正常节点添加
+	// Test normal node addition
 	node := &apicorev1.Node{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name: "test-node",
@@ -255,21 +255,21 @@ func TestHandleNodeCommon(t *testing.T) {
 			ResourceVersion: "123",
 		},
 	}
-	c.handleNodeCommon(node, addNode)
+	c.handleNodeCommon(node, common.Add)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "应入队正常节点")
 
-	// 测试空ResourceVersion过滤
+	// Test empty ResourceVersion filtering
 	emptyRVNode := node.DeepCopy()
 	emptyRVNode.ResourceVersion = ""
-	c.handleNodeCommon(emptyRVNode, addNode)
+	c.handleNodeCommon(emptyRVNode, common.Add)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "应过滤空ResourceVersion节点")
 
-	// 测试DeletedFinalStateUnknown类型处理
+	// Testing the handling of the DeletedFinalStateUnknown type
 	dfsu := cache.DeletedFinalStateUnknown{
 		Key: "test-node",
 		Obj: "invalid-type",
 	}
-	c.handleNodeCommon(dfsu, deleteNode)
+	c.handleNodeCommon(dfsu, common.Delete)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "应处理无效对象类型")
 }
 
@@ -281,7 +281,7 @@ func TestNodeHandler(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 准备测试节点
+	// Prepare test nodes
 	testNode := &apicorev1.Node{
 		ObjectMeta: apismetav1.ObjectMeta{
 			Name: "test-node",
@@ -299,30 +299,30 @@ func TestNodeHandler(t *testing.T) {
 		},
 	}
 
-	// 执行处理
-	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode, Op: addNode})
+	// Execute processing
+	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode, Op: common.Add})
 	assert.NoError(t, err, "处理节点不应返回错误")
 
-	// 验证状态更新
+	// Verify status update
 	statuses := c.nodeStatusManager.GetAll()
 	assert.Equal(t, 1, len(statuses), "应更新节点状态")
 	assert.Equal(t, "test-node", statuses["test-node"].Name, "节点名称匹配")
 	assert.Equal(t, nodeStatusReady, statuses["test-node"].Status, "节点状态应为Ready")
 
-	// 测试无效节点状态
+	// Test invalid node status
 	invalidNode := testNode.DeepCopy()
 	invalidNode.Status.Conditions[0].Status = apicorev1.ConditionFalse
-	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode, Op: addNode})
+	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode, Op: common.Add})
 	assert.NoError(t, err)
 	updatedStatus := c.nodeStatusManager.Get("test-node")
 	assert.Equal(t, nodeStatusNotReady, updatedStatus.Status, "应检测到节点不可用状态")
 }
 
-// 测试calRequestResource函数
+// Test the calRequestResource function
 func TestCalRequestResource(t *testing.T) {
 	c := NewController(context.Background(), controllers.ControllerConfig{}).(*Controller)
 
-	// 测试无资源请求的Pod
+	// Test Pod without Resource Requests
 	emptyPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
 			Containers: []apicorev1.Container{{
@@ -334,7 +334,7 @@ func TestCalRequestResource(t *testing.T) {
 	assert.Equal(t, int64(0), cpu, "应处理无资源请求的Pod")
 	assert.Equal(t, int64(0), mem, "应处理无资源请求的Pod")
 
-	// 测试多容器资源请求
+	// Test multiple container resource requests
 	multiContainerPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
 			Containers: []apicorev1.Container{{
@@ -359,7 +359,7 @@ func TestCalRequestResource(t *testing.T) {
 	assert.Equal(t, int64(3221225472), mem, "应正确累加多容器内存请求")
 }
 
-// 测试podHandler函数
+// Test the podHandler function
 func TestPodHandler(t *testing.T) {
 	c, _, _ := setupController(t)
 
@@ -384,7 +384,7 @@ func TestPodHandler(t *testing.T) {
 	}
 
 	t.Run("AddOperation", func(t *testing.T) {
-		err := c.podHandler(&queue.PodQueueItem{Pod: testPod, Op: addPod})
+		err := c.podHandler(&queue.PodQueueItem{Pod: testPod, Op: common.Add})
 		require.NoError(t, err)
 
 		localNodeStatus := c.nodeStatusManager.Get("valid-node")
@@ -392,7 +392,7 @@ func TestPodHandler(t *testing.T) {
 	})
 }
 
-// 测试addPodHandler资源增加逻辑
+// Test addPodHandler resource to increase logic
 func TestAddPodHandler(t *testing.T) {
 	kubeClient := kubefake.NewSimpleClientset()
 	kusciaClient := kusciafake.NewSimpleClientset()
@@ -401,14 +401,14 @@ func TestAddPodHandler(t *testing.T) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 初始化节点状态
+	// Initialize node status
 	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
 		Name:            "test-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
 	}, "add")
 
-	// 创建测试Pod
+	// Create Test Pod
 	testPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
 			NodeName: "test-node",
@@ -423,23 +423,23 @@ func TestAddPodHandler(t *testing.T) {
 		},
 	}
 
-	// 执行添加操作
+	// Perform add operation
 	err := c.addPodHandler(testPod)
 	assert.NoError(t, err, "应成功添加Pod资源")
 
-	// 验证资源统计
+	// Verify resource statistics
 	status := c.nodeStatusManager.Get("test-node")
 	assert.Equal(t, int64(1500), status.TotalCPURequest, "CPU请求应正确累加")
 	assert.Equal(t, int64(1073741824+1024), status.TotalMemRequest, "内存请求应正确累加")
 
-	// 测试无效节点
+	// Test invalid nodes
 	invalidPod := testPod.DeepCopy()
 	invalidPod.Spec.NodeName = "non-existent"
 	err = c.addPodHandler(invalidPod)
 	assert.Error(t, err, "应处理不存在的节点")
 }
 
-// 测试deletePodHandler资源减少逻辑
+// Test deletePodHandler resource reduction logic
 func TestDeletePodHandler(t *testing.T) {
 	c, _, _ := setupController(t)
 	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
@@ -468,7 +468,7 @@ func TestDeletePodHandler(t *testing.T) {
 	})
 }
 
-// 新增matchNodeLabels测试
+// Add matchNodeLabels test
 func TestMatchNodeLabels(t *testing.T) {
 	c, _, domainStore := setupController(t)
 	domain := &kusciaapisv1alpha1.Domain{ObjectMeta: apismetav1.ObjectMeta{Name: "test-domain"}}
@@ -501,7 +501,7 @@ func TestMatchNodeLabels(t *testing.T) {
 	}
 }
 
-// 新增initLocalNodeStatus测试
+// Add initLocalNodeStatus test
 func TestInitLocalNodeStatus(t *testing.T) {
 	c, nodeStore, domainStore := setupController(t)
 
@@ -554,7 +554,7 @@ func setupController(t *testing.T) (*Controller, cache.Store, cache.Store) {
 		KusciaClient: kusciaClient,
 	}).(*Controller)
 
-	// 通过直接赋值方式设置测试专用字段
+	// Set test specific fields through direct assignment method
 	c.nodeStatusManager = common.NewNodeStatusManager()
 	c.podQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	c.nodeQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())

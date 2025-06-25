@@ -235,6 +235,12 @@ type CommunicationProtocol string
 type Protocol string
 
 const (
+	Add     = "add"
+	Delete  = "delete"
+	Update = "update"
+)
+
+const (
 	NOTLS Protocol = "NOTLS"
 	TLS   Protocol = "TLS"
 	MTLS  Protocol = "MTLS"
