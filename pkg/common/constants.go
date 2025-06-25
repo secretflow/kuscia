@@ -235,8 +235,8 @@ type CommunicationProtocol string
 type Protocol string
 
 const (
-	Add     = "add"
-	Delete  = "delete"
+	Add    = "add"
+	Delete = "delete"
 	Update = "update"
 )
 
