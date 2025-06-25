@@ -235,9 +235,11 @@ type CommunicationProtocol string
 type Protocol string
 
 const (
-	Add    = "add"
-	Delete = "delete"
-	Update = "update"
+	ResourceCheckForAddPod     = "resourceCheckForAddPod"
+	ResourceCheckForDeletePod  = "resourceCheckForDeletePod"
+	ResourceCheckForAddNode    = "resourceCheckForAddNode"
+	ResourceCheckForDeleteNode = "resourceCheckForDeleteNode"
+	ResourceCheckForUpdateNode = "resourceCheckForUpdateNode"
 )
 
 const (

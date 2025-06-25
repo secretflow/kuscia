@@ -226,13 +226,13 @@ func TestHandlePodCommon(t *testing.T) {
 
 	t.Run("AddOperation", func(t *testing.T) {
 		validPod := &apicorev1.Pod{ObjectMeta: apismetav1.ObjectMeta{ResourceVersion: "123"}}
-		c.handlePodCommon(validPod, common.Add)
+		c.handlePodCommon(validPod, common.ResourceCheckForAddPod)
 		require.Equal(t, 1, c.podQueue.Len())
 	})
 
 	t.Run("DeleteOperation", func(t *testing.T) {
 		validPod := &apicorev1.Pod{ObjectMeta: apismetav1.ObjectMeta{ResourceVersion: "456"}}
-		c.handlePodCommon(validPod, common.Delete)
+		c.handlePodCommon(validPod, common.ResourceCheckForDeletePod)
 		require.Equal(t, 2, c.podQueue.Len())
 	})
 }
@@ -255,13 +255,13 @@ func TestHandleNodeCommon(t *testing.T) {
 			ResourceVersion: "123",
 		},
 	}
-	c.handleNodeCommon(node, common.Add)
+	c.handleNodeCommon(node, common.ResourceCheckForAddNode)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "应入队正常节点")
 
 	// Test empty ResourceVersion filtering
 	emptyRVNode := node.DeepCopy()
 	emptyRVNode.ResourceVersion = ""
-	c.handleNodeCommon(emptyRVNode, common.Add)
+	c.handleNodeCommon(emptyRVNode, common.ResourceCheckForAddNode)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "应过滤空ResourceVersion节点")
 
 	// Testing the handling of the DeletedFinalStateUnknown type
@@ -269,7 +269,7 @@ func TestHandleNodeCommon(t *testing.T) {
 		Key: "test-node",
 		Obj: "invalid-type",
 	}
-	c.handleNodeCommon(dfsu, common.Delete)
+	c.handleNodeCommon(dfsu, common.ResourceCheckForDeleteNode)
 	assert.Equal(t, 1, c.nodeQueue.Len(), "应处理无效对象类型")
 }
 
@@ -300,7 +300,7 @@ func TestNodeHandler(t *testing.T) {
 	}
 
 	// Execute processing
-	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode, Op: common.Add})
+	err := c.nodeHandler(&queue.NodeQueueItem{Node: testNode, Op: common.ResourceCheckForAddNode})
 	assert.NoError(t, err, "处理节点不应返回错误")
 
 	// Verify status update
@@ -312,7 +312,7 @@ func TestNodeHandler(t *testing.T) {
 	// Test invalid node status
 	invalidNode := testNode.DeepCopy()
 	invalidNode.Status.Conditions[0].Status = apicorev1.ConditionFalse
-	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode, Op: common.Add})
+	err = c.nodeHandler(&queue.NodeQueueItem{Node: invalidNode, Op: common.ResourceCheckForAddNode})
 	assert.NoError(t, err)
 	updatedStatus := c.nodeStatusManager.Get("test-node")
 	assert.Equal(t, nodeStatusNotReady, updatedStatus.Status, "应检测到节点不可用状态")
@@ -384,7 +384,7 @@ func TestPodHandler(t *testing.T) {
 	}
 
 	t.Run("AddOperation", func(t *testing.T) {
-		err := c.podHandler(&queue.PodQueueItem{Pod: testPod, Op: common.Add})
+		err := c.podHandler(&queue.PodQueueItem{Pod: testPod, Op: common.ResourceCheckForAddPod})
 		require.NoError(t, err)
 
 		localNodeStatus := c.nodeStatusManager.Get("valid-node")

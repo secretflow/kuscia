@@ -210,7 +210,7 @@ func (c *Controller) addNodeEventHandler(nodeInformer informerscorev1.NodeInform
 
 func (c *Controller) handleNodeAdd(obj interface{}) {
 	nlog.Debugf("Step handleNodeAdd")
-	c.handleNodeCommon(obj, common.Add)
+	c.handleNodeCommon(obj, common.ResourceCheckForAddNode)
 }
 
 func (c *Controller) handleNodeUpdate(oldObj, newObj interface{}) {
@@ -226,12 +226,12 @@ func (c *Controller) handleNodeUpdate(oldObj, newObj interface{}) {
 		nlog.Debugf("Node %s have no actual change, skipping", newNode.Name)
 		return
 	}
-	c.handleNodeCommon(newObj, common.Update)
+	c.handleNodeCommon(newObj, common.ResourceCheckForUpdateNode)
 }
 
 func (c *Controller) handleNodeDelete(obj interface{}) {
 	nlog.Debugf("Step handleNodeDelete")
-	c.handleNodeCommon(obj, common.Delete)
+	c.handleNodeCommon(obj, common.ResourceCheckForDeleteNode)
 }
 
 func (c *Controller) handleNodeCommon(obj interface{}, op string) {
@@ -248,7 +248,7 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 		}
 	}
 
-	if op == common.Add && newNode.ResourceVersion == "" {
+	if op == common.ResourceCheckForAddNode && newNode.ResourceVersion == "" {
 		nlog.Errorf("Node %s/%s has empty ResourceVersion, skipping", newNode.Namespace, newNode.Name)
 		return
 	}
@@ -257,12 +257,12 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 
 func (c *Controller) handlePodAdd(obj interface{}) {
 	nlog.Debugf("Step handlePodAdd")
-	c.handlePodCommon(obj, common.Add)
+	c.handlePodCommon(obj, common.ResourceCheckForAddPod)
 }
 
 func (c *Controller) handlePodDelete(obj interface{}) {
 	nlog.Debugf("Step handlePodDelete")
-	c.handlePodCommon(obj, common.Delete)
+	c.handlePodCommon(obj, common.ResourceCheckForDeletePod)
 }
 
 func (c *Controller) handlePodCommon(obj interface{}, op string) {
@@ -279,7 +279,7 @@ func (c *Controller) handlePodCommon(obj interface{}, op string) {
 		}
 	}
 
-	if op == common.Add && pod.ResourceVersion == "" {
+	if op == common.ResourceCheckForAddPod && pod.ResourceVersion == "" {
 		nlog.Errorf("Pod %s/%s has empty ResourceVersion, skipping", pod.Namespace, pod.Name)
 		return
 	}
@@ -334,9 +334,9 @@ func (c *Controller) podHandler(item interface{}) error {
 		return nil
 	}
 	switch podItem.Op {
-	case common.Add:
+	case common.ResourceCheckForAddPod:
 		return c.addPodHandler(podItem.Pod)
-	case common.Delete:
+	case common.ResourceCheckForDeletePod:
 		return c.deletePodHandler(podItem.Pod)
 	default:
 		return fmt.Errorf("unknown operation: %s", podItem.Op)

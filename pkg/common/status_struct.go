@@ -57,11 +57,11 @@ func (m *NodeStatusManager) UpdateStatus(newStatus LocalNodeStatus, op string) e
 	defer m.lock.Unlock()
 
 	switch op {
-	case Add:
+	case ResourceCheckForAddNode:
 		m.statuses[newStatus.Name] = newStatus
-	case Update:
+	case ResourceCheckForUpdateNode:
 		m.statuses[newStatus.Name] = newStatus
-	case Delete:
+	case ResourceCheckForDeleteNode:
 		delete(m.statuses, newStatus.Name)
 	default:
 		return fmt.Errorf("not support type %s", op)
