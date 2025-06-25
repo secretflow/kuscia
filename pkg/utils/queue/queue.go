@@ -184,7 +184,7 @@ func HandleNodeAndPodQueueItem(ctx context.Context, queueID string, q workqueue.
 		nlog.Debugf("Start processing item: queue id[%v], key[%v]", queueID, obj)
 		if err := handler(obj); err != nil {
 			if q.NumRequeues(obj) < maxRetries {
-				nlog.Infof("Re-syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing (%v)", queueID, q.NumRequeues(obj), obj, err.Error(), time.Since(startTime))
+				nlog.Warnf("Re-syncing: queue id[%v], retry:[%d] key[%v]: %q, re-queuing (%v)", queueID, q.NumRequeues(obj), obj, err.Error(), time.Since(startTime))
 				q.AddRateLimited(obj)
 				return
 			}
@@ -200,7 +200,7 @@ func HandleNodeAndPodQueueItem(ctx context.Context, queueID string, q workqueue.
 	}
 	select {
 	case <-ctx.Done():
-		nlog.Warnf("quit, because %s", ctx.Err().Error())
+		nlog.Warnf("HandleNodeAndPodQueueItem Quit, because %s", ctx.Err().Error())
 		return false
 	default:
 		run(obj)
