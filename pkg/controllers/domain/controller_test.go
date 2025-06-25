@@ -367,7 +367,7 @@ func TestPodHandler(t *testing.T) {
 		Name:            "valid-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
-	}, "add")
+	}, common.ResourceCheckForAddNode)
 
 	testPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
@@ -406,7 +406,7 @@ func TestAddPodHandler(t *testing.T) {
 		Name:            "test-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
-	}, "add")
+	}, common.ResourceCheckForAddNode)
 
 	// Create Test Pod
 	testPod := &apicorev1.Pod{
@@ -446,7 +446,7 @@ func TestDeletePodHandler(t *testing.T) {
 		Name:            "test-node",
 		TotalCPURequest: 5000,
 		TotalMemRequest: 4294967296,
-	}, "add")
+	}, common.ResourceCheckForAddNode)
 
 	testPod := &apicorev1.Pod{
 		Spec: apicorev1.PodSpec{
