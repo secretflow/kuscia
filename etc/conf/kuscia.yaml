@@ -86,6 +86,7 @@ dataMesh:
     - endpoint: "dataproxy-grpc:8023" # data proxy endpoint
       dataSourceTypes:                # the type of datasource that data proxy supported
         - "odps"                      # odps also call as Aliyun MaxCompute
+        - "hive"
 
 #############################################################################
 ############                 SecretBackend Configs               ############
