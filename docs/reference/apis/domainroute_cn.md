@@ -50,7 +50,7 @@ Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domai
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/route/create' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -131,7 +131,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/create' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute example within the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/route/delete' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -207,7 +207,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/delete' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/route/query' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -301,7 +301,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/query' \
 发起请求：
 
 ```sh
-# 在容器内执行示例
+# Execute the example inside the container
 export CTR_CERTS_ROOT=/home/kuscia/var/certs
 curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
  --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
@@ -442,7 +442,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | 字段                     | 类型     | 选填 | 描述                        |
 |------------------------|--------|----|---------------------------|
 | rolling_update_period  | int64  |选填 | 滚动更新间隔，单位：秒，默认值为 0                                                   |
-| token_gen_method       | string | 必填 | 签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个32长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性  |
+| token_gen_method       | string | 必填 | 签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个 32 长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性  |
 
 {#transit}
 
@@ -450,10 +450,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
 
-| 字段           | 类型                                  | 选填 | 描述                                                                                      |
-| -------------- |-------------------------------------| ---- |-----------------------------------------------------------------------------------------|
-| transit_method | string                              | 必填 | 路由转发类型：\[THIRD-DOMAIN，REVERSE-TUNNEL]。THIRD-DOMAIN 表示经由第三方节点转发，REVERSE-TUNNEL 表示经由反向隧道转发 |
-| domain         | [Transit_Domain](#transit_domain)[] | 可选 | transit_method 为 THIRD-DOMAIN 时需要填写，否则不需要填写       |
+| 字段           | 类型                                | 选填 | 描述                                                                                      |
+| -------------- |-----------------------------------| ---- |-----------------------------------------------------------------------------------------|
+| transit_method | string                            | 必填 | 路由转发类型：\[THIRD-DOMAIN，REVERSE-TUNNEL]。THIRD-DOMAIN 表示经由第三方节点转发，REVERSE-TUNNEL 表示经由反向隧道转发 |
+| domain         | [Transit_Domain](#transit_domain) | 可选 | transit_method 为 THIRD-DOMAIN 时需要填写，否则不需要填写       |
 
 {#transit_domain}
 

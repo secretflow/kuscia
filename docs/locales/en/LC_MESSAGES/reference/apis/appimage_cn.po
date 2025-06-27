@@ -130,6 +130,23 @@ msgstr "BatchQueryAppImageResponse"
 msgid "批量查询应用镜像模版"
 msgstr "Batch Query Application Image Templates"
 
+#: ../../reference/apis/appimage_cn.md
+msgid "[ListAppImage](#list-appimage)"
+msgstr "[ListAppImage](#list-appimage)"
+
+#: ../../reference/apis/appimage_cn.md
+msgid "ListAppImageRequest"
+msgstr "ListAppImageRequest"
+
+#: ../../reference/apis/appimage_cn.md
+msgid "ListAppImageResponse"
+msgstr "ListAppImageResponse"
+
+#: ../../reference/apis/appimage_cn.md
+#: ../../reference/apis/appimage_cn.md:462
+msgid "查询应用镜像模版列表"
+msgstr "Query Application Image List"
+
 #: ../../reference/apis/appimage_cn.md:16
 msgid "接口详情"
 msgstr "API Details"
@@ -139,6 +156,7 @@ msgstr "API Details"
 #: ../../reference/apis/appimage_cn.md:273
 #: ../../reference/apis/appimage_cn.md:324
 #: ../../reference/apis/appimage_cn.md:391
+#: ../../reference/apis/appimage_cn.md:464
 msgid "HTTP 路径"
 msgstr "HTTP Path"
 
@@ -400,6 +418,62 @@ msgstr "data[].config_templates"
 #: ../../reference/apis/appimage_cn.md
 msgid "data[].deploy_templates"
 msgstr "data[].deploy_templates"
+
+#: ../../reference/apis/appimage_cn.md
+msgid "请求（ListAppImageRequest）"
+msgstr "Request (ListAppImageRequest)"
+
+#: ../../reference/apis/appimage_cn.md
+msgid "page_size"
+msgstr "page_size"
+
+#: ../../reference/apis/appimage_cn.md
+msgid "分页的每页条数"
+msgstr "Number of entries per page for paging"
+
+#: ../../reference/apis/appimage_cn.md
+msgid "page_token"
+msgstr "page_token"
+
+#: ../../reference/apis/appimage_cn.md:458
+msgid "第一页不用传，下一页根据上一页返回的next_page_token传入"
+msgstr "The first page doesn't need to be passed, the next page is passed in based on the next_page_token returned from the previous page."
+
+#: ../../reference/apis/appimage_cn.md
+msgid "响应（ListAppImageResponse）"
+msgstr "Response (ListAppImageResponse)"
+
+#: ../../reference/apis/appimage_cn.md:462
+msgid "AppImageList"
+msgstr "AppImageList"
+
+#: ../../reference/apis/appimage_cn.md:456
+msgid "镜像列表"
+msgstr "AppImage List"
+
+#: ../../reference/apis/appimage_cn.md:461
+msgid "next_page_token"
+msgstr "next_page_token"
+
+#: ../../reference/apis/appimage_cn.md:461
+msgid "下一页分页参数"
+msgstr "Next Page Pagination Parameters"
+
+#: ../../reference/apis/appimage_cn.md:461
+msgid "data.appimage_list[].name"
+msgstr "data.appimage_list[].name"
+
+#: ../../reference/apis/appimage_cn.md:461
+msgid "data.appimage_list[].image"
+msgstr "data.appimage_list[].image"
+
+#: ../../reference/apis/appimage_cn.md:461
+msgid "data.appimage_list[].config_templates"
+msgstr "data.appimage_list[].config_templates"
+
+#: ../../reference/apis/appimage_cn.md:461
+msgid "data.appimage_list[].deploy_templates"
+msgstr "data.appimage_list[].deploy_templates"
 
 #: ../../reference/apis/appimage_cn.md:460
 msgid "公共"

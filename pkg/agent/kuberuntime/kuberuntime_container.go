@@ -354,7 +354,7 @@ func (m *kubeGenericRuntimeManager) restoreSpecsFromContainerLabels(ctx context.
 
 	l := getContainerInfoFromLabels(s.Labels)
 	a := getContainerInfoFromAnnotations(s.Annotations)
-	// Notice that the followings are not full spec. The container killing code should not use
+	// Notice that the following are not full spec. The container killing code should not use
 	// un-restored fields.
 	pod = &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{

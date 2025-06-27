@@ -103,6 +103,7 @@ enum ErrorCode {
   KusciaAPIErrBatchQueryAppImage        = 13104;
   KusciaAPIErrAppImageNotExists        = 13105;
   KusciaAPIErrAppImageExists        = 13106;
+  KusciaAPIErrListAppImage             = 13107;
 
   KusciaAPIErrQueryLog = 13200;
   KusciaAPIErrQueryPodNode = 13201;

@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../troubleshoot/concept/index.rst:2
 msgid "概念答疑"
-msgstr ""
+msgstr "Concept Q&A"
 

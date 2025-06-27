@@ -252,7 +252,7 @@ func TestGetFlightInf_DataSource_Invalidate(t *testing.T) {
 	svr := NewDataMeshFlightHandler(domainDataService, datasourceService, []config.DataProxyConfig{})
 	assert.NotNil(t, svr)
 
-	// datasource not registed
+	// datasource not registered
 	domainDataID := registDomainData(t, conf, "test-datasouce", filename)
 	desc, err := utils.DescForCommand(&datamesh.CommandDomainDataQuery{
 		DomaindataId: domainDataID,
@@ -262,7 +262,7 @@ func TestGetFlightInf_DataSource_Invalidate(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, info)
 
-	// reigst datasource but type is invalidate
+	// registered datasource but type is invalidate
 	lfs, err := json.Marshal(&datamesh.DataSourceInfo{})
 	assert.NoError(t, err)
 
@@ -503,7 +503,7 @@ func TestDoAction_Success(t *testing.T) {
 		DomaindataId: "test-domain-data",
 	})
 
-	// datasource not registed
+	// datasource not registered
 	assert.Error(t, svr.DoAction(&flight.Action{
 		Type: "ActionCreateDomainDataRequest",
 		Body: body,

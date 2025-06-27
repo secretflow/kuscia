@@ -19,5 +19,5 @@ msgstr ""
 
 #: ../../troubleshoot/deployment/index.rst:2
 msgid "部署失败"
-msgstr ""
+msgstr "Deployment Failed"
 

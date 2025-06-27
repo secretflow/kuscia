@@ -19,31 +19,32 @@ msgstr ""
 
 #: ../../reference/api_whitelist_config_cn.md:1
 msgid "设置 K3S API 白名单"
-msgstr ""
+msgstr "Configure K3S API Whitelist"
 
 #: ../../reference/api_whitelist_config_cn.md:3
 msgid "说明"
-msgstr ""
+msgstr "Description"
 
 #: ../../reference/api_whitelist_config_cn.md:5
 msgid "K3S API 白名单会过滤由 Envoy 转发的 K3S API 请求，不在白名单中的请求会返回 404，在白名单请求可以正常返回。"
-msgstr ""
+msgstr "The K3S API whitelist filters K3S API requests forwarded by Envoy. Requests not in the whitelist will return a 404, while requests in the whitelist will return normally."
 
 #: ../../reference/api_whitelist_config_cn.md:7
 msgid "如果配置列表为空，则默认放行所有请求。"
-msgstr ""
+msgstr "If the configuration list is empty, all requests will be allowed by default."
 
 #: ../../reference/api_whitelist_config_cn.md:9
 msgid "配置方法"
-msgstr ""
+msgstr "Configuration Method"
 
 #: ../../reference/api_whitelist_config_cn.md:11
 msgid ""
 "配置文件位于 `/home/kuscia/etc/kuscia.yaml`，配置项位于 master.apiWhitelist "
 "节点下，由多个正则表达式组成，多个正则表达式之间是`或`的关系。"
 msgstr ""
+"The configuration file is located at `/home/kuscia/etc/kuscia.yaml`, and the configuration item is under the `master.apiWhitelist` node. It consists of multiple regular expressions, and the relationship between multiple regular expressions is `or`."
 
 #: ../../reference/api_whitelist_config_cn.md:13
 msgid "下面两个个配置的效果是一样的："
-msgstr ""
+msgstr "The following two configurations have the same effect:"
 

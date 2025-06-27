@@ -40,6 +40,12 @@ func (s appImageServiceLite) QueryAppImage(ctx context.Context, request *kusciaa
 	}
 }
 
+func (s appImageServiceLite) ListAppImage(ctx context.Context, request *kusciaapi.ListAppImageRequest) *kusciaapi.ListAppImageResponse {
+	return &kusciaapi.ListAppImageResponse{
+		Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrLiteAPINotSupport, "kuscia lite api not support this interface now"),
+	}
+}
+
 func (s appImageServiceLite) UpdateAppImage(ctx context.Context, request *kusciaapi.UpdateAppImageRequest) *kusciaapi.UpdateAppImageResponse {
 	return &kusciaapi.UpdateAppImageResponse{
 		Status: utils.BuildErrorResponseStatus(errorcode.ErrorCode_KusciaAPIErrLiteAPINotSupport, "kuscia lite api not support this interface now"),

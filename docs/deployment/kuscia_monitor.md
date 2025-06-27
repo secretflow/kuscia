@@ -7,9 +7,9 @@ Kuscia 暴露了一些指标数据，可作为数据源供外部观测工具采�
 | 指标 |来源模块 | 集成 | 介绍 |
 | -- | ---------------------- | --------------------- | ------------------------------------------------------------ |
 | 机器指标 | node_exporter | 已集成 | Kuscia 所在容器的 CPU/MEM/DISK/LOAD 等核心指标 |
-|   网络指标   |    envoy/ss    |    已集成      |   网络收发，QPS等指标    |
-|   引擎指标   |    -    |   未集成    |     运行在kuscia上各引擎的指标，如： secretflow/serving/psi/scql/...等 |
-|    Kuscia-API指标  |    kuscia-api    |      未集成     |    kuscia-api 错误/QPS等指标         |
+|   网络指标   |    envoy/ss    |    已集成      |   网络收发，QPS 等指标    |
+|   引擎指标   |    -    |   已集成，详见 [Kuscia 引擎指标监控](./kuscia_engine_monitor.md)    |     运行在kuscia上各引擎的指标，如： secretflow/serving/psi/scql/...等 |
+|    Kuscia-API 指标  |    kuscia-api    |      未集成     |    kuscia-api 错误/QPS 等指标         |
 |     跨机构指标 |    kuscia    |      未集成     |      在允许的情况下采集其他机构指标       |
 
 ## 2 配置监控
@@ -29,9 +29,7 @@ Kuscia 暴露了一些指标数据，可作为数据源供外部观测工具采�
 
 ### 2.4 部署 Kuscia-monitor 快速体验监控
 
-Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 \${USER}-kuscia-monitor-center 下，点对点模式各参与方的指标分别导入到容器 \${USER}-kuscia-monitor-\${DOMAIN_ID}下。
-在通过 kuscia/scripts/deploy/start_standalone.sh 部署完毕 kuscia 后，利用 kuscia/scripts/deploy/start_monitor.sh 脚本部署 Kuscia-monitor
-在 kuscia 目录下，
+Kuscia-monitor 是 Kuscia 的集群监控工具，中心化模式指标导入到容器 \${USER}-kuscia-monitor-center 下，点对点模式各参与方的指标分别导入到容器 \${USER}-kuscia-monitor-\${DOMAIN_ID}下。在通过 kuscia/scripts/deploy/kuscia.sh 部署完毕 kuscia 后，利用 kuscia/scripts/deploy/start_monitor.sh 脚本部署 Kuscia-monitor 在 kuscia 目录下，
 
 ```
 make build-monitor

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor
+  namespace: alice
+spec:
+  template:
+    spec:
+      containers:
+      - name: monitor
+        # for prometheus service discovery
+        env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: x.x.x.x
+        - name: KUBERNETES_SERVICE_PORT
+          value: "6443"
+        volumeMounts:
+          - name: sa-token
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
+      volumes:
+      - name: sa-token
+        secret:
+          secretName: prometheus-secret
+      # kuscia specific config
+      automountServiceAccountToken: false
+      tolerations:
+      - effect: NoSchedule
+        key: kuscia.secretflow/agent
+        operator: Exists
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+      schedulerName: kuscia-scheduler
+      nodeSelector: 
+        kuscia.secretflow/namespace: alice

@@ -50,7 +50,7 @@ func (c *controller) preRollingSourceDomainRoute(ctx context.Context, dr *kuscia
 }
 
 func (c *controller) selectInitializer(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) (string, error) {
-	// randomly choose a gateway from source namespace as revision intializer
+	// randomly choose a gateway from source namespace as revision initializer
 	gateways, err := c.gatewayLister.Gateways(dr.Namespace).List(labels.Everything())
 	if err != nil {
 		return "", err
@@ -74,7 +74,7 @@ func (c *controller) selectInitializer(ctx context.Context, dr *kusciaapisv1alph
 }
 
 func (c *controller) ensureInitializer(ctx context.Context, dr *kusciaapisv1alpha1.DomainRoute) (bool, error) {
-	// randomly choose a gateway from source namespace as revision intializer
+	// randomly choose a gateway from source namespace as revision initializer
 	initializer, err := c.selectInitializer(ctx, dr)
 	if err != nil || initializer == dr.Status.TokenStatus.RevisionInitializer {
 		return false, err

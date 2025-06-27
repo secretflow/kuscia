@@ -310,3 +310,38 @@ msgstr "Request（BatchQueryConfigRequest）"
 msgid "响应（BatchQueryConfigResponse）"
 msgstr "Response（BatchQueryConfigResponse）"
 
+#: ../../reference/apis/config_cn.md:308
+msgid "公共"
+msgstr "Public"
+
+#: ../../reference/apis/config_cn.md
+msgid "字段"
+msgstr "Field"
+
+#: ../../reference/apis/config_cn.md
+msgid "类型"
+msgstr "Type"
+
+#: ../../reference/apis/config_cn.md
+msgid "描述"
+msgstr "Description"
+
+#: ../../reference/apis/config_cn.md
+msgid "可选填"
+msgstr "Optional"
+
+#: ../../reference/apis/config_cn.md
+msgid "配置属性 key"
+msgstr "Configuration Property Key"
+
+#: ../../reference/apis/config_cn.md
+msgid "是"
+msgstr "Yes"
+
+#: ../../reference/apis/config_cn.md
+msgid "配置属性 value"
+msgstr "Configuration Property Value"
+
+#: ../../reference/apis/config_cn.md
+msgid "是"
+msgstr "Yes"

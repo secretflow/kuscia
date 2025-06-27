@@ -18,8 +18,8 @@ msgstr ""
 "Generated-By: Babel 2.14.0\n"
 
 #: ../../deployment/networkrequirements.md:1
-msgid "网络要求"
-msgstr "Network Requirements"
+msgid "Kuscia 网络要求"
+msgstr "Kuscia Network Requirements"
 
 #: ../../deployment/networkrequirements.md:3
 msgid "前言"
@@ -76,11 +76,11 @@ msgid "Keepalive 超时时间大于 20 分钟"
 msgstr "The Keepalive timeout should be greater than 20 minutes."
 
 #: ../../deployment/networkrequirements.md:22
-msgid "TCP层：请确认防火墙超时时间"
+msgid "TCP 层：请确认防火墙超时时间"
 msgstr "TCP layer: Please confirm the firewall timeout."
 
 #: ../../deployment/networkrequirements.md:23
-msgid "HTTP层：请确认机构代理（如：Nginx）超时时间"
+msgid "HTTP 层：请确认机构代理（如：Nginx）超时时间"
 msgstr "HTTP layer: Please confirm the timeout of the institutional proxy (e.g., Nginx)."
 
 #: ../../deployment/networkrequirements.md:24
@@ -108,15 +108,15 @@ msgid "在部署 Kuscia 的过程中，大概会出现以下三种不同的网�
 msgstr "During the deployment process of Kuscia, there will probably be the following three different network mapping scenarios: "
 
 #: ../../deployment/networkrequirements.md:33
-msgid "场景1：机构与外网之间直接`4层`通信。"
+msgid "场景 1：机构与外网之间直接 4 层通信。"
 msgstr "Scenario 1: Direct `Layer 4` communication between the institution and the external network. "
 
 #: ../../deployment/networkrequirements.md:34
-msgid "场景2：外部访问机构侧，机构侧有前置的`7层`网关，需要走`7层`代理访问 Kuscia；Kuscia 访问外部正常直接`4层`出去。"
+msgid "场景 2：外部访问机构侧，机构侧有前置的 7 层网关，需要走 7 层代理访问 Kuscia；Kuscia 访问外部正常直接 4 层出去。"
 msgstr "Scenario 2: When accessing the institutional side from the outside, there is a front-end `Layer 7` gateway on the institutional side. Access to Kuscia needs to go through the `Layer 7` proxy; when Kuscia accesses the outside, it can normally go out directly at the `Layer 4`.  "
 
 #: ../../deployment/networkrequirements.md:35
-msgid "场景3：机构侧有前置的`7层`网关，外部访问 Kuscia 走`7层`代理进来，Kuscia 访问外网也需要走`7层`代理出去。"
+msgid "场景 3：机构侧有前置的 7 层网关，外部访问 Kuscia 走 7 层代理进来，Kuscia 访问外网也需要走 7 层代理出去。"
 msgstr "Scenario 3: There is a front-end `Layer 7` gateway on the institutional side. When the outside accesses Kuscia, it comes in through the `Layer 7` proxy, and when Kuscia accesses the external network, it also needs to go out through the `Layer 7` proxy. "
 
 #: ../../deployment/networkrequirements.md:37
@@ -124,12 +124,12 @@ msgid "其中："
 msgstr "Among them:"
 
 #: ../../deployment/networkrequirements.md:39
-msgid "`4`层：一般指 TCP 等协议；代理包含阿里云`4`层 SLB 映射，LVS，F5 等方式。"
+msgid "`4 层`：一般指 TCP 等协议；代理包含阿里云 4 层 SLB 映射，LVS，F5 等方式。"
 msgstr "Layer` 4`: Generally refers to protocols such as TCP; proxy methods include Alibaba Cloud Layer` 4` SLB mapping, LVS, F5, etc."
 
 #: ../../deployment/networkrequirements.md:40
 msgid ""
-"`7`层：一般指 HTTP/HTTPS/GRPC/GRPCS 等协议；代理包含机构7层防火墙、阿里云`7`层 SLB "
+"`7 层`：一般指 HTTP/HTTPS/GRPC/GRPCS 等协议；代理包含机构7层防火墙、阿里云 7 层 SLB "
 "映射、Nginx、Ingress 等方式。"
 msgstr "Layer `7`: Generally refers to protocols such as HTTP/HTTPS/GRPC/GRPCS; proxy methods include the institutional Layer 7 firewall, Alibaba Cloud Layer` 7` SLB mapping, Nginx, Ingress, etc."
 
@@ -139,19 +139,19 @@ msgstr "How should the authorized address be filled in:"
 
 #: ../../deployment/networkrequirements.md:44
 msgid ""
-"在场景 1 中，如果经过了`4层` SLB 映射到 Kuscia，当配置外部节点访问本机构的 Kuscia 节点时，授权的目标地址可以使用 SLB"
+"在场景 1 中，如果经过了 4 层 SLB 映射到 Kuscia，当配置外部节点访问本机构的 Kuscia 节点时，授权的目标地址可以使用 SLB"
 " 对外暴露的 IP 和前端端口，例如：101.11.11.11:80；直连的情况可以授权宿主机 IP 和映射的端口。"
 msgstr "In Scenario 1, if there is a `Layer 4` SLB mapping to Kuscia, when configuring external nodes to access the Kuscia node of this institution, the authorized target address can use the IP address and front-end port exposed by the SLB to the outside. For example: 101.11.11.11:80; in the case of direct connection, the IP address of the host machine and the mapped port can be authorized. "
 
 #: ../../deployment/networkrequirements.md:45
 msgid ""
-"在场景 2 中，如果经过了`7层` SLB 或者代理映射到 Kuscia，当配置外部节点访问本机构的 Kuscia 节点时，授权的目标地址可以使用"
+"在场景 2 中，如果经过了 7 层 SLB 或者代理映射到 Kuscia，当配置外部节点访问本机构的 Kuscia 节点时，授权的目标地址可以使用"
 " Nginx 代理对外暴露的 IP 和前端端口，例如：<https://101.11.11.11:443>。"
 msgstr "In Scenario 2, if there is a `Layer 7` SLB or proxy mapping to Kuscia, when configuring external nodes to access the Kuscia node of this institution, the authorized target address can use the IP address and front-end port exposed by the Nginx proxy to the outside. For example: <https://101.11.11.11:443>. "
 
 #: ../../deployment/networkrequirements.md:46
 msgid ""
-"在场景 3 中，如果外部和机构侧之间都配置了前置的`7层`网关，当配置外部节点访问本机构的 Kuscia 节点时，授权的目标地址填 "
+"在场景 3 中，如果外部和机构侧之间都配置了前置的 7 层网关，当配置外部节点访问本机构的 Kuscia 节点时，授权的目标地址填 "
 "<https://101.11.11.11:443>；当配置本机构的 Kuscia 节点访问外部节点时，授权的目标地址填 "
 "<http://10.0.0.14>。"
 msgstr "In Scenario 3, if there are front-end `Layer 7` gateways configured both between the outside and the institutional side, when configuring external nodes to access the Kuscia node of this institution, the authorized target address should be filled in as <https://101.11.11.11:443>; when configuring the Kuscia node of this institution to access external nodes, the authorized target address should be filled in as <http://10.0.0.14>. "
@@ -169,7 +169,7 @@ msgid "network"
 msgstr "network"
 
 #: ../../deployment/networkrequirements.md:52
-msgid "nginx 代理参数配置示例"
+msgid "Nginx 代理参数配置示例"
 msgstr "Examples of Nginx Proxy Parameters Configuration"
 
 #: ../../deployment/networkrequirements.md:54

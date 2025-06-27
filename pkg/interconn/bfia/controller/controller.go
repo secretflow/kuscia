@@ -30,7 +30,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -183,11 +182,11 @@ func (c *Controller) resourceFilter(obj interface{}) bool {
 	filter := func(obj interface{}) bool {
 		switch t := obj.(type) {
 		case *kusciaapisv1alpha1.KusciaJob:
-			return c.matchLabels(t)
+			return utilsres.IsBFIAResource(t)
 		case *kusciaapisv1alpha1.TaskResource:
-			return c.taskResourceMatchLabels(t)
+			return c.taskResourceFilter(t)
 		case *kusciaapisv1alpha1.KusciaTask:
-			return c.matchLabels(t)
+			return utilsres.IsBFIAResource(t)
 		default:
 			return false
 		}
@@ -201,28 +200,9 @@ func (c *Controller) resourceFilter(obj interface{}) bool {
 	return filter(obj)
 }
 
-// jobMatchLabels is used to filter resources.
-func (c *Controller) matchLabels(obj metav1.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-
-	if labels[common.LabelInterConnProtocolType] != string(kusciaapisv1alpha1.InterConnBFIA) {
-		return false
-	}
-
-	return true
-}
-
 // taskResourceMatchLabels is used to filter task resource.
-func (c *Controller) taskResourceMatchLabels(obj metav1.Object) bool {
-	labels := obj.GetLabels()
-	if labels == nil {
-		return false
-	}
-
-	if labels[common.LabelInterConnProtocolType] != string(kusciaapisv1alpha1.InterConnBFIA) {
+func (c *Controller) taskResourceFilter(obj metav1.Object) bool {
+	if !utilsres.IsBFIAResource(obj) {
 		return false
 	}
 

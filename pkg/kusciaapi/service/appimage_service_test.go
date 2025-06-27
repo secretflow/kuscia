@@ -19,12 +19,13 @@ import (
 	"encoding/json"
 	"testing"
 
+	"gotest.tools/v3/assert"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/kusciaapi/config"
 	"github.com/secretflow/kuscia/pkg/web/utils"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
-	"gotest.tools/v3/assert"
 )
 
 var (
@@ -186,6 +187,17 @@ func TestQueryAppImage(t *testing.T) {
 		assert.Equal(t, resp.Data.DeployTemplates[i].String(), createReq.DeployTemplates[i].String())
 	}
 
+}
+
+func TestListAppImage(t *testing.T) {
+	conf := &config.KusciaAPIConfig{
+		KusciaClient: client,
+		RunMode:      common.RunModeAutonomy,
+	}
+	s := NewAppImageService(conf)
+	queryReq := &kusciaapi.ListAppImageRequest{}
+	resp := s.ListAppImage(context.Background(), queryReq)
+	assert.Equal(t, utils.IsSuccessCode(resp.Status.Code), true)
 }
 
 func TestUpdateAppImage(t *testing.T) {

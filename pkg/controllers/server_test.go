@@ -105,11 +105,13 @@ func Test_server_run(t *testing.T) {
 	}
 }*/
 
+var (
+	kubeClient   = kubefake.NewSimpleClientset()
+	kusciaClient = kusciafake.NewSimpleClientset()
+)
+
 func Test_server_restartLeading(t *testing.T) {
 	opts := &Options{Workers: 3, ControllerName: "test"}
-
-	kubeClient := kubefake.NewSimpleClientset()
-	kusciaClient := kusciafake.NewSimpleClientset()
 
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
@@ -126,7 +128,7 @@ func Test_server_restartLeading(t *testing.T) {
 	s.leaderElector = election.NewElector(
 		s.kubeClient,
 		s.options.ControllerName,
-		election.WithHealthChecker(s.electionChecker),
+		election.WithHealthChecker(s.electionCheckerTimeout),
 		election.WithOnNewLeader(s.onNewLeader),
 		election.WithOnStartedLeading(s.onStartedLeading),
 		election.WithOnStoppedLeading(s.onStoppedLeading))
@@ -151,9 +153,6 @@ func Test_server_restartLeading(t *testing.T) {
 func Test_server_NewLeading(t *testing.T) {
 	opts := &Options{Workers: 3, ControllerName: "test"}
 
-	kubeClient := kubefake.NewSimpleClientset()
-	kusciaClient := kusciafake.NewSimpleClientset()
-
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
@@ -170,7 +169,6 @@ func Test_server_NewLeading(t *testing.T) {
 	leaderElector := election.NewElector(
 		kubeClient,
 		"test",
-		election.WithHealthChecker(nil),
 		election.WithOnNewLeader(s.onNewLeader),
 		election.WithOnStartedLeading(s.onStartedLeading),
 		election.WithOnStoppedLeading(s.onStoppedLeading))

@@ -61,20 +61,20 @@ msgstr "The following example uses the content of `alice-2-bob.yaml` to demonstr
 
 #: ../../reference/concepts/interopconfig_cn.md:30
 msgid ""
-"在该示例中，表示将任务调度方`bob`集群中`alice` Namespace 下任务相关的资源同步到任务参与方集群中的`alice` "
+"在该示例中，表示将任务调度方 `bob` 集群中 `alice` Namespace 下任务相关的资源同步到任务参与方集群中的 `alice` "
 "Namespace 下。"
 msgstr "In this example, task-related resources under the `alice` namespace in the task scheduler `bob` cluster are synchronized to the `alice` namespace in the task participant cluster."
 
 #: ../../reference/concepts/interopconfig_cn.md:32
-msgid "`.metadata.name`：表示 InteropConfig 的名称，当前示例为`alice-2-bob`。"
+msgid "`.metadata.name`：表示 InteropConfig 的名称，当前示例为 `alice-2-bob`。"
 msgstr "`.metadata.name`: Represents the name of the InteropConfig, in this example it is `alice-2-bob`."
 
 #: ../../reference/concepts/interopconfig_cn.md:33
-msgid "`.spec.host`：表示任务调度方的节点标识。当前示例为`bob`。"
+msgid "`.spec.host`：表示任务调度方的节点标识。当前示例为 `bob`。"
 msgstr "`.spec.host`: Represents the node identifier of the task scheduler. In this example, it is `bob`."
 
 #: ../../reference/concepts/interopconfig_cn.md:34
-msgid "`.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`。"
+msgid "`.spec.members`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为 `alice`。"
 msgstr "`.spec.members`: Represents the node identifier of task participants. This example contains only one participant with the node identifier `alice`."
 
 #: ../../reference/concepts/interopconfig_cn.md:36
@@ -103,9 +103,9 @@ msgstr "In this example:"
 
 #: ../../reference/concepts/interopconfig_cn.md:87
 msgid ""
-"**在`.spec.members`中新增一个节点标识为`alice-mock`的参与方。相应地，任务参与方通过 "
-"InteropController 将任务调度方`bob`集群中`alice-mock` Namespace "
-"下任务相关的资源同步到任务参与方集群中的`alice-mock` Namespace 下。**"
+"**在 `.spec.members` 中新增一个节点标识为 `alice-mock` 的参与方。相应地，任务参与方通过 "
+"InteropController 将任务调度方 `bob` 集群中 `alice-mock` Namespace "
+"下任务相关的资源同步到任务参与方集群中的 `alice-mock` Namespace 下。**"
 msgstr "**Add a participant with node identifier `alice-mock` in `.spec.members`. Accordingly, the task participant uses InteropController to synchronize task-related resources under the `alice-mock` namespace in the task scheduler `bob` cluster to the `alice-mock` namespace in the task participant cluster.**"
 
 #: ../../reference/concepts/interopconfig_cn.md:89
@@ -158,7 +158,7 @@ msgstr "`host`: Represents the node identifier of the task scheduler."
 
 #: ../../reference/concepts/interopconfig_cn.md:143
 msgid ""
-"`members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为`alice`，相应地，任务参与方通过 "
-"InteropController 将任务调度方`bob`集群中`alice` Namespace "
-"下任务相关的资源同步到任务参与方集群中的`alice` Namespace 下。"
+"`members[]`：表示任务参与方的节点标识。当前示例仅包含一个参与方，节点标识为 `alice`，相应地，任务参与方通过 "
+"InteropController 将任务调度方 `bob` 集群中 `alice` Namespace "
+"下任务相关的资源同步到任务参与方集群中的 `alice` Namespace 下。"
 msgstr "`members[]`: Represents the node identifiers of task participants. This example contains only one participant with node identifier `alice`. Accordingly, the task participant uses InteropController to synchronize task-related resources under the `alice` namespace in the task scheduler `bob` cluster to the `alice` namespace in the task participant cluster."

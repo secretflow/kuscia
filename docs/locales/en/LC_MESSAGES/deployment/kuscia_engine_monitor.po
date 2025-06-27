@@ -1,0 +1,95 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2023 Ant Group Co., Ltd.
+# This file is distributed under the same license as the Kuscia package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Kuscia \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 20:35+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.14.0\n"
+
+#: ../../deployment/kuscia_engine_monitor.md:1
+msgid "Kuscia 引擎指标监控"
+msgstr "Kuscia Engine Metrics Monitoring"
+
+#: ../../deployment/kuscia_engine_monitor.md:3
+msgid "在生产环境中，Kuscia 中运行的引擎（如 SecretFlow-Serving）可能需要统计引擎相关的指标，比如引擎成功调用次数，引擎错误率，引擎运行延时等。"
+msgstr "In a production environment, engines running in Kuscia (such as SecretFlow-Serving) may need to collect engine-related metrics, such as the number of successful engine calls, engine error rate, engine running latency, etc."
+
+#: ../../deployment/kuscia_engine_monitor.md:5
+msgid "本文描述如何配置 Kuscia monitor 监控引擎层透出的指标，包括引擎配置和集群监控配置两个部分。"
+msgstr "This document describes how to configure Kuscia monitor to collect metrics exposed by the engine layer, including two parts: engine configuration and cluster monitoring configuration."
+
+#: ../../deployment/kuscia_engine_monitor.md:7
+msgid "1 引擎配置"
+msgstr "1 Engine Configuration"
+
+#: ../../deployment/kuscia_engine_monitor.md:9
+msgid "假设你的引擎为一个 Node Exporter 服务，并注册了 /metrics 接口，你希望将该接口用于 Prometheus 监控数据，可以通过以下例子来编写 appimage"
+msgstr "Assuming your engine is a Node Exporter service and has registered the /metrics interface, you want to use this interface for Prometheus monitoring data, you can write the appimage as follows"
+
+#: ../../deployment/kuscia_engine_monitor.md:48
+msgid "其中值得注意的是："
+msgstr "Notably, the following points should be considered:"
+
+#: ../../deployment/kuscia_engine_monitor.md:60
+msgid "ports[0] 为引擎定义了一个名为 metric 的 HTTP 端口，该端口的端口号会在引擎启动时分配，在本示例中会将端口号渲染至 `\\{{.ALLOCATED_PORTS.ports[name=metric].port}}` 的变量里，具体渲染规则详见[如何在 Kuscia 中给自定义应用渲染配置文件](../tutorial/config_render.md)"
+msgstr "ports[0] defines an HTTP port named metric for the engine, the port number of which will be allocated when the engine starts. In this example, the port number will be rendered to the variable `\\{{.ALLOCATED_PORTS.ports[name=metric].port}}`. For specific rendering rules, see [How to Render Configuration Files for Custom Applications in Kuscia](../tutorial/config_render.md)"
+
+#: ../../deployment/kuscia_engine_monitor.md:62
+msgid "metricProbe 表示该引擎和外部交互的指标统计接口，metricProbe.path 定义了接口路径（此处为 /metrics），metricProbe.port 定义了接口名称（此处为 metric，和 port[0] 的端口名称相互对应）。"
+msgstr "metricProbe represents the metrics collection interface for external interaction of the engine, metricProbe.path defines the interface path (here it is /metrics), and metricProbe.port defines the interface name (here it is metric, corresponding to the port name in port[0])."
+
+#: ../../deployment/kuscia_engine_monitor.md:64
+msgid "2 集群配置"
+msgstr "2 Cluster Configuration"
+
+#: ../../deployment/kuscia_engine_monitor.md:66
+msgid "前置准备"
+msgstr "Prerequisites"
+
+#: ../../deployment/kuscia_engine_monitor.md:68
+msgid "在部署 Kuscia monitor 前，您需要参考 [Docker 多机部署 Kuscia](./Docker_deployment_kuscia/index.rst) 和 [K8s 集群部署 Kuscia](./K8s_deployment_kuscia/index.rst) 文档部署 Kuscia 节点，并确保 Kuscia 节点正常运行。"
+msgstr "Before deploying Kuscia monitor, you need to refer to the [Docker Multi-Node Deployment of Kuscia](./Docker_deployment_kuscia/index.rst) and [K8s Cluster Deployment of Kuscia](./K8s_deployment_kuscia/index.rst) documents to deploy Kuscia nodes and ensure that the Kuscia nodes are running normally."
+
+#: ../../deployment/kuscia_engine_monitor.md:70
+msgid "部署"
+msgstr "Deployment"
+
+#: ../../deployment/kuscia_engine_monitor.md:72
+msgid "引擎会在 Kuscia 集群内运行，需要在 Kuscia 集群内部署 Kuscia monitor。"
+msgstr "The engine will run within the Kuscia cluster, and Kuscia monitor needs to be deployed within the Kuscia cluster."
+
+#: ../../deployment/kuscia_engine_monitor.md:74
+msgid "假设你的 Kuscia 实例运行在 alice（bob 同理）domain 下, 可以分为 Center 和 P2P 两种情况进行部署："
+msgstr "Assuming your Kuscia instance is running under the alice domain (similarly for bob), the deployment can be divided into two scenarios: Center and P2P."
+
+#: ../../deployment/kuscia_engine_monitor.md:76
+msgid "P2P 模式部署"
+msgstr "P2P Mode Deployment"
+
+#: ../../deployment/kuscia_engine_monitor.md:78
+#: ../../deployment/kuscia_engine_monitor.md:99
+msgid "alice 节点导入 monitor 镜像"
+msgstr "Import the monitor image into the alice node"
+
+#: ../../deployment/kuscia_engine_monitor.md:87
+msgid "登录到安装 alice 的容器里部署 monitor"
+msgstr "Log in to the container where alice is installed to deploy the monitor"
+
+#: ../../deployment/kuscia_engine_monitor.md:97
+msgid "Center 模式部署"
+msgstr "Center Mode Deployment"
+
+#: ../../deployment/kuscia_engine_monitor.md:108
+msgid "登录到安装 master 的容器里部署 monitor"
+msgstr "Log in to the container where master is installed to deploy the monitor"

@@ -95,8 +95,8 @@ func TestFillClusterDefine(t *testing.T) {
 }
 
 func TestAllocatePorts(t *testing.T) {
-	partyKitInfos := map[string]*PartyKitInfo{
-		"alice": {
+	partyKitInfos := []*PartyKitInfo{
+		{
 			domainID: "alice",
 			dkInfo: &DeploymentKitInfo{
 				ports: NamedPorts{
@@ -110,7 +110,7 @@ func TestAllocatePorts(t *testing.T) {
 				allocatedPorts: nil,
 			},
 		},
-		"bob": {
+		{
 			domainID: "bob",
 			dkInfo: &DeploymentKitInfo{
 				ports: NamedPorts{
@@ -130,7 +130,7 @@ func TestAllocatePorts(t *testing.T) {
 				allocatedPorts: nil,
 			},
 		},
-		"carol": {
+		{
 			domainID: "carol",
 			dkInfo: &DeploymentKitInfo{
 				ports:          NamedPorts{},
@@ -146,15 +146,15 @@ func TestAllocatePorts(t *testing.T) {
 	assert.True(t, needUpdate)
 	assert.True(t, kd.Annotations[common.AllocatedPortsAnnotationKey] != "")
 
-	alicePorts := partyKitInfos["alice"].dkInfo.allocatedPorts
+	alicePorts := partyKitInfos[0].dkInfo.allocatedPorts
 	assert.NotNil(t, alicePorts)
 	assert.Equal(t, 1, len(alicePorts.Ports))
 
-	bobPorts := partyKitInfos["bob"].dkInfo.allocatedPorts
+	bobPorts := partyKitInfos[1].dkInfo.allocatedPorts
 	assert.NotNil(t, bobPorts)
 	assert.Equal(t, 2, len(bobPorts.Ports))
 
-	carolPorts := partyKitInfos["carol"].dkInfo.allocatedPorts
+	carolPorts := partyKitInfos[2].dkInfo.allocatedPorts
 	assert.NotNil(t, carolPorts)
 	assert.Equal(t, 0, len(carolPorts.Ports))
 }
@@ -685,7 +685,7 @@ func TestHandleError(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		partyKitInfos map[string]*PartyKitInfo
+		partyKitInfos []*PartyKitInfo
 		preKdStatus   *kusciaapisv1alpha1.KusciaDeploymentStatus
 		kd            *kusciaapisv1alpha1.KusciaDeployment
 		wantErr       bool

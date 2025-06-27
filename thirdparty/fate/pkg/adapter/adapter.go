@@ -248,9 +248,9 @@ func (s *FateJobAdapter) HandleTaskConfig(config string) error {
 							jobID, jobErr := s.queryDependantFateJob(readerOpName)
 							err = jobErr
 							if err != nil || jobID == "" {
-								return errors.New("handle dependant job fail")
+								return errors.New("handle dependent job fail")
 							}
-							nlog.Infof("task %s dependant fate job: %s", s.KusciaTaskID, jobID)
+							nlog.Infof("task %s dependent fate job: %s", s.KusciaTaskID, jobID)
 
 							readerOpParam := map[string]any{
 								"table": map[string]string{

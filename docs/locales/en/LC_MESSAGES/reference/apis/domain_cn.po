@@ -581,4 +581,3 @@ msgstr ""
 #: ../../reference/apis/domain_cn.md:431
 msgid "对于已运行的Kuscia容器，我们也建议用户升级Kuscia后，重新配置节点间连接，以使用最新的握手逻辑，提高安全性。"
 msgstr "For running Kuscia containers, we also recommend that users reconfigure the inter-node connections after upgrading Kuscia to use the latest handshake logic and enhance security."
-

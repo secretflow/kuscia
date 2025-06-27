@@ -63,7 +63,7 @@ func UpdateKusciaTaskStatus(kusciaClient kusciaclientset.Interface, rawKt, curKt
 		nlog.Debugf("Kuscia task %v status does not change, skip to update it", curKt.Name)
 		return nil
 	}
-	nlog.Infof("Start updating kuscia task %q status", rawKt.Name)
+	nlog.Infof("Start updating kuscia task %q status, phase: %v, partyTaskStatus: %+v", rawKt.Name, curKt.Status.Phase, curKt.Status.PartyTaskStatus)
 	if _, err = kusciaClient.KusciaV1alpha1().KusciaTasks(common.KusciaCrossDomain).UpdateStatus(context.Background(), curKt, metav1.UpdateOptions{}); err != nil {
 		return err
 	}

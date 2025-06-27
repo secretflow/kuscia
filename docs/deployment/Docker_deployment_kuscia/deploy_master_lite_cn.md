@@ -17,15 +17,15 @@
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.14.0b0 版本镜像
+# The Kuscia image used, here using version 0.14.0b0 image
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
 指定 SecretFlow 版本：
 
 ```bash
-# 使用的 Secretflow 镜像，这里使用 1.7.0b0 版本镜像
-export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.7.0b0
+# The Secretflow image used, here using version 1.11.0b1 image
+export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.11.0b1
 ```
 
 获取部署脚本，部署脚本会下载到当前目录：
@@ -37,7 +37,7 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 生成 master 节点的配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#id3)：
 
 ```bash
-# --domain 参数传递的是 master 节点 ID，DomainID 需全局唯一并且符合 RFC 1123 标签名规范，详情参考: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names，生产环境建议使用公司名称-部门名称-节点名称，如: mycompany-secretflow-master
+# The --domain parameter passes the master node ID, DomainID must be globally unique and conform to the RFC 1123 label name specification. For details, refer to: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names. In a production environment, it is recommended to use the format: company-name-department-name-node-name, e.g., mycompany-secretflow-master
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompany-secretflow-master" > kuscia_master.yaml 2>&1 || cat kuscia_master.yaml
 ```
 
@@ -46,10 +46,10 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 启动 master，默认会在当前目录下创建 ${USER}-kuscia-master/{data、logs} 用来存储 master 的数据、日志：
 
 ```bash
-# -p 参数传递的是 master 容器映射到主机的端口，保证和主机上现有的端口不冲突即可
-# -k 参数传递的是 master 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
-# -a 指定自动导入的引擎镜像，-a none: 不自动导入引擎镜像，-a secretflow（默认）: 自动导入 secretflow 引擎镜像
-# -m 或者 --memory-limit 参数给节点容器设置适当的内存限制。例如，'-m 4GiB 或 --memory-limit=4GiB' 表示限制最大内存 4GiB，'-m -1 或 --memory-limit=-1'表示没有限制，不设置默认 master 为 2GiB，lite 节点 4GiB，autonomy 节点 6GiB。
+# The -p parameter passes the port that the master container maps to the host, ensuring it does not conflict with existing ports on the host.
+# The -k parameter passes the HTTP port that the master container's KusciaAPI maps to the host, ensuring it does not conflict with existing ports on the host.
+# The -a parameter specifies the engine image to be automatically imported. -a none: do not automatically import the engine image, -a secretflow (default): automatically import the secretflow engine image.
+# The -m or --memory-limit parameter sets an appropriate memory limit for the node container. For example, '-m 4GiB or --memory-limit=4GiB' indicates a maximum memory limit of 4GiB, '-m -1 or --memory-limit=-1' indicates no limit. If not set, the default is 2GiB for the master node, 4GiB for the lite node, and 6GiB for the autonomy node.
 ./kuscia.sh start -c kuscia_master.yaml -p 18080 -k 18081
 ```
 
@@ -158,7 +158,7 @@ Alice 的部署 Token: abcdefg
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.14.0b0 版本镜像
+# The Kuscia image used, here using version 0.14.0b0 image
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
@@ -171,17 +171,17 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 生成 Alice 节点的配置文件：
 
 ```bash
-# --domain 参数传递的是节点 ID
-# --lite-deploy-token 参数传递的是节点部署的 Token
-# --master-endpoint 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是 1.1.1.1，端口是18080
+# The --domain parameter passes the node ID.
+# The --lite-deploy-token parameter passes the Token for node deployment.
+# The --master-endpoint parameter passes the master container's exposed https://IP:PORT. For example, if the master is exposed at IP 1.1.1.1 and port 18080, it would be https://1.1.1.1:18080.
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "${ALICE_TOKEN}" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
 ```
 
 启动 Alice，默认会在当前目录下创建 ${USER}-kuscia-lite-alice/data 目录用来存放 alice 的数据：
 
 ```bash
-# -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
-# -k 参数传递的是 lite 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+# The -p parameter passes the port that the node container maps to the host, ensuring it does not conflict with existing ports on the host.
+# The -k parameter passes the HTTP port that the lite container's KusciaAPI maps to the host, ensuring it does not conflict with existing ports on the host.
 ./kuscia.sh start -c lite_alice.yaml -p 28080 -k 28081
 ```
 
@@ -222,7 +222,7 @@ Bob 的部署 Token: hijklmn
 指定 Kuscia 版本：
 
 ```bash
-# 使用的 Kuscia 镜像，这里使用 0.14.0b0 版本镜像
+# The Kuscia image used, here using version 0.14.0b0 image
 export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.14.0b0
 ```
 
@@ -235,17 +235,17 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 生成 Bob 节点的配置文件：
 
 ```bash
-# --domain 参数传递的是节点 ID
-# --lite-deploy-token 参数传递的是节点部署的 Token
-# --master-endpoint 参数传递的是 master 容器对外暴露的 https://IP:PORT，假设 master 对外暴露的 IP 是 1.1.1.1，端口是18080
+# The --domain parameter passes the node ID.
+# The --lite-deploy-token parameter passes the Token for node deployment.
+# The --master-endpoint parameter passes the master container's exposed https://IP:PORT. For example, if the master is exposed at IP 1.1.1.1 and port 18080, it would be https://1.1.1.1:18080.
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "${BOB_TOKEN}" > lite_bob.yaml 2>&1 || cat lite_bob.yaml
 ```
 
 启动 Bob，默认会在当前目录下创建 ${USER}-kuscia-lite-bob/data 目录用来存放 bob 的数据：
 
 ```bash
-# -p 参数传递的是节点容器映射到主机的端口，保证和主机上现有的端口不冲突即可
-# -k 参数传递的是 lite 容器 KusciaAPI 映射到主机的 HTTP 端口，保证和主机上现有的端口不冲突即可
+# The -p parameter passes the port that the node container maps to the host, ensuring it does not conflict with existing ports on the host.
+# The -k parameter passes the HTTP port that the lite container's KusciaAPI maps to the host, ensuring it does not conflict with existing ports on the host.
 ./kuscia.sh start -c lite_bob.yaml -p 38080 -k 38081
 ```
 
@@ -260,11 +260,11 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "bob" --mas
 在 master 机器上执行创建授权的命令
 
 ```bash
-# 为了减少授权错误的排查成本，建议在alice/bob容器内分别（curl）访问的对方地址判定是否能联通，之后再授权
-# 示例：curl -vvv http://ip:port 返回正常的HTTP错误码是401
-# bob 节点的访问地址，一般是 bob 的 http://ip:port，如上文，bob 的 ip 是 3.3.3.3 ，port 如上文为 38080.
+# To reduce the cost of troubleshooting authorization errors, it is recommended to separately (using curl) access the other party's address from within the alice/bob containers to determine if connectivity is possible, before proceeding with authorization.
+# Example: curl -vvv http://ip:port returns a normal HTTP error code of 401.
+# The access address for the bob node is generally http://ip:port for bob. As mentioned above, bob's IP is 3.3.3.3, and the port is 38080 as stated earlier.
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/create_cluster_domain_route.sh alice bob http://3.3.3.3:38080
-# alice 节点的访问地址，一般是 alice 的 http://ip:port，如上文，alice 的 ip 是 3.3.3.3，port 如上文为 28080.
+# The access address for the alice node is generally http://ip:port for alice. As mentioned above, alice's IP is 2.2.2.2, and the port is 28080 as stated earlier.
 docker exec -it ${USER}-kuscia-master sh scripts/deploy/create_cluster_domain_route.sh bob alice http://2.2.2.2:28080
 ```
 

@@ -67,8 +67,8 @@ func Test_Start_Autonomy(t *testing.T) {
 	assert.NoError(t, paths.CopyDirectory(filepath.Join(workDir, "etc"), common.DefaultKusciaHomePath()+"/etc"))
 	assert.NoError(t, paths.CopyDirectory(filepath.Join(workDir, "crds"), common.DefaultKusciaHomePath()+"/crds"))
 
-	runCtx, cancle := context.WithCancel(context.Background())
-	defer cancle()
+	runCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	kusciaConf, _ := confloader.ReadConfig(filename)
 	conf := modules.NewModuleRuntimeConfigs(runCtx, kusciaConf)
 	conf.Clients = &kubeconfig.KubeClients{

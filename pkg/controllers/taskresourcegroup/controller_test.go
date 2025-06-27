@@ -86,7 +86,7 @@ func TestHandleAddedTaskResourceGroup(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "object is vaild",
+			name: "object is valid",
 			obj:  trg,
 			want: 1,
 		},

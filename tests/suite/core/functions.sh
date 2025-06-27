@@ -20,6 +20,7 @@ LITE_ALICE_CONTAINER=${USER}-kuscia-lite-alice
 LITE_BOB_CONTAINER=${USER}-kuscia-lite-bob
 AUTONOMY_ALICE_CONTAINER=${USER}-kuscia-autonomy-alice
 AUTONOMY_BOB_CONTAINER=${USER}-kuscia-autonomy-bob
+TTP_SERVER="ttp-server"
 
 TIMEOUT_DURATION_SECONDS=10
 
@@ -51,7 +52,7 @@ function wait_kuscia_job_until() {
       unset ctr timeout_seconds job_id times  current
       return
       ;;
-    Pending | Running | AwaitingApproval | "" )
+    Pending | Running | AwaitingApproval | "<none>" | "" )
       ;;
     *)
       # unexpected
@@ -233,6 +234,64 @@ function stop_p2p_mode() {
   docker volume rm "${AUTONOMY_ALICE_CONTAINER}-containerd" "${AUTONOMY_BOB_CONTAINER}-containerd"
 }
 
+# Start bfia
+#
+# Args:
+#   test_suite_run_kuscia_dir: location to save kuscia api resource
+function start_bfia() {
+  local test_suite_run_kuscia_dir=$1
+  mkdir -p "${test_suite_run_kuscia_dir}"
+
+  # Run bfia 
+  ./kuscia.sh p2p -P bfia -a none
+  # Check bfia container Up
+  local autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")
+  assertEquals "Container ${AUTONOMY_ALICE_CONTAINER} not running}" running "${autonomy_alice_container_state}"
+  local autonomy_bob_container_state=$(get_container_state "${AUTONOMY_BOB_CONTAINER}")
+  assertEquals "Container ${AUTONOMY_BOB_CONTAINER} not running}" running "${autonomy_bob_container_state}"
+
+  # get kuscia bfia resource
+  mkdir -p "${test_suite_run_kuscia_dir}"
+  docker cp ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia/scripts/user/bfia/ "${test_suite_run_kuscia_dir}"
+
+  # Set ttp server
+  ${test_suite_run_kuscia_dir}/bfia/deploy_ttp_server.sh
+
+  # Register ss_lr image to container
+  ${test_suite_run_kuscia_dir}/bfia/prepare_ss_lr_image.sh -k ${AUTONOMY_ALICE_CONTAINER}
+  ${test_suite_run_kuscia_dir}/bfia/prepare_ss_lr_image.sh -k ${AUTONOMY_BOB_CONTAINER}
+
+  # Prepare job config
+  cat <<EOF > ${test_suite_run_kuscia_dir}/kuscia-job.yaml
+apiVersion: kuscia.secretflow/v1alpha1
+kind: KusciaJob
+metadata:
+  name: job-ss-lr
+  namespace: cross-domain
+spec:
+  initiator: alice
+  tasks:
+  - alias: ss_lr_1
+    appImage: ss-lr
+    parties:
+    - domainID: alice
+      role: host
+    - domainID: bob
+      role: guest
+    taskInputConfig: '{"name":"ss_lr_1","module_name":"ss_lr","output":[{"type":"dataset","key":"result"}],"role":{"host":["alice"],"guest":["bob"]},"initiator":{"role":"host","node_id":"alice"},"task_params":{"host":{"0":{"has_label":true,"name":"perfect_logit_a.csv","namespace":"data"}},"guest":{"0":{"has_label":false,"name":"perfect_logit_b.csv","namespace":"data"}},"common":{"skip_rows":1,"algo":"ss_lr","protocol_families":"ss","batch_size":21,"last_batch_policy":"discard","num_epoch":1,"l0_norm":0,"l1_norm":0,"l2_norm":0.5,"optimizer":"sgd","learning_rate":0.0001,"sigmoid_mode":"minimax_1","protocol":"semi2k","field":64,"fxp_bits":18,"trunc_mode":"probabilistic","shard_serialize_format":"raw","use_ttp":true,"ttp_server_host":"ttp-server:9449","ttp_session_id":"interconnection-root","ttp_adjust_rank":0}}}'
+    tolerable: false
+EOF
+  docker cp ${test_suite_run_kuscia_dir}/kuscia-job.yaml ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia
+  unset test_suite_run_kuscia_dir autonomy_alice_container_state autonomy_bob_container_state
+}
+
+# Stop bfia 
+function stop_bfia() {
+  docker stop "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "${TTP_SERVER}"
+  docker rm "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "${TTP_SERVER}"
+  docker volume rm "${AUTONOMY_ALICE_CONTAINER}-containerd" "${AUTONOMY_BOB_CONTAINER}-containerd"
+}
+
 # Get IpV4 Address
 function get_ipv4_address() {
   local ipv4=""
@@ -252,7 +311,7 @@ function get_ipv4_address() {
 # @return domain route destination token
 # Args:
 #   ctr: container name
-#   dr_name: dormain route name
+#   dr_name: domain route name
 function get_dr_dst_token_value() {
   local ctr=$1
   local dr_name=$2
@@ -262,7 +321,7 @@ function get_dr_dst_token_value() {
 # @return domain route source token
 # Args:
 #   ctr: container name
-#   dr_name: dormain route name
+#   dr_name: domain route name
 function get_dr_src_token_value() {
   local ctr=$1
   local dr_name=$2
@@ -273,7 +332,7 @@ function get_dr_src_token_value() {
 # @return cluster domain route destination token
 # Args:
 #   ctr: container name
-#   cdr_name: cluster dormain route name
+#   cdr_name: cluster domain route name
 function get_cdr_dst_token_value() {
   local ctr=$1
   local cdr_name=$2
@@ -284,7 +343,7 @@ function get_cdr_dst_token_value() {
 # @return cluster domain route source token
 # Args:
 #   ctr: container name
-#   dr_name: cluster dormain route name
+#   dr_name: cluster domain route name
 function get_cdr_src_token_value() {
   local ctr=$1
   local cdr_name=$2
@@ -295,7 +354,7 @@ function get_cdr_src_token_value() {
 # @return cluster domain route destination token revision
 # Args:
 #   ctr: container name
-#   cdr_name: cluster dormain route name
+#   cdr_name: cluster domain route name
 function get_cdr_dst_token_revision() {
   local ctr=$1
   local cdr_name=$2
@@ -306,7 +365,7 @@ function get_cdr_dst_token_revision() {
 # @return cluster domain route source token revision
 # Args:
 #   ctr: container name
-#   cdr_name: cluster dormain route name
+#   cdr_name: cluster domain route name
 function get_cdr_src_token_revision() {
   local ctr=$1
   local cdr_name=$2
@@ -317,7 +376,7 @@ function get_cdr_src_token_revision() {
 # @return cluster domain route token status
 # Args:
 #   ctr: container name
-#   cdr_name: cluster dormain route name
+#   cdr_name: cluster domain route name
 function get_cdr_token_status() {
   local ctr=$1
   local cdr_name=$2
@@ -328,7 +387,7 @@ function get_cdr_token_status() {
 # @return domain route party token ready status
 # Args:
 #   ctr: container name
-#   dr_name: dormain route name
+#   dr_name: domain route name
 #   domain: party
 function get_dr_revision_token_ready() {
   local ctr=$1
@@ -340,7 +399,7 @@ function get_dr_revision_token_ready() {
 
 # Args:
 #   ctr: container name
-#   cdr_name: cluster dormain route name
+#   cdr_name: cluster domain route name
 #   period: target token rolling period(s)
 function set_cdr_token_rolling_period() {
   local ctr=$1
@@ -353,7 +412,7 @@ function set_cdr_token_rolling_period() {
 # @return cluster domain route rolling period(s)
 # Args:
 #   ctr: container name
-#   cdr_name: cluster dormain route name
+#   cdr_name: cluster domain route name
 function get_cdr_token_rolling_period() {
   local ctr=$1
   local cdr_name=$2

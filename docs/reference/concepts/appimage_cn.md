@@ -63,11 +63,11 @@ spec:
 
 在该示例中:
 
-- `.metadata.name`：表示 AppImage 名称，当前示例为`secretflow-image`。
+- `.metadata.name`：表示 AppImage 名称，当前示例为 `secretflow-image`。
 - `.spec.configTemplates`：表示启动应用依赖的配置模版信息。
 - `.spec.deployTemplates`：表示应用部署模版配置信息，在该模版中，可以配置应用的启动命令，监听的端口等信息。该字段下主要包含以下子字段：
-  - `.spec.deployTemplates[0].name`：表示应用部署模版名称，当前示例为`secretflow`。
-  - `.spec.deployTemplates[0].replicas`：表示应用副本数，当前示例为`1`。相应地，在创建任务应用 Pod 资源时，会将应用 Pod 副本数设置为`1`。
+  - `.spec.deployTemplates[0].name`：表示应用部署模版名称，当前示例为 `secretflow`。
+  - `.spec.deployTemplates[0].replicas`：表示应用副本数，当前示例为 `1`。相应地，在创建任务应用 Pod 资源时，会将应用 Pod 副本数设置为 `1`。
   - `.spec.deployTemplates[0].spec.containers[0]`：表示应用容器信息。该字段主要复用 K8s Pod containers 部分字段以及扩展了一些自定义字段。该字段下主要包含以下子字段：
     - `.spec.deployTemplates[0].spec.containers[0].command`：表示应用容器启动命令。
     - `.spec.deployTemplates[0].spec.containers[0].configVolumeMounts`：表示应用容器启动挂载卷信息。
@@ -152,7 +152,7 @@ spec:
     tag: "latest"
 ```
 
-在该示例中，将 ports 下 name 为`global`的 port 端口号改为`8082`。
+在该示例中，将 ports 下 name 为 `global` 的 port 端口号改为 `8082`。
 
 1. 运行以下命令更新 AppImage。
 
@@ -329,22 +329,22 @@ spec:
 
 AppImage `metadata` 的子字段详细介绍如下：
 
-- `name`：表示 AppImage 的名称，当前示例为`app-template`。
+- `name`：表示 AppImage 的名称，当前示例为 `app-template`。
 
 AppImage `spec` 的子字段详细介绍如下：
 
-- `configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为`task-config.conf`。 更多的信息请 [参考这里](../../tutorial/config_render.md)
+- `configTemplates`：表示应用启动依赖的配置模版信息。在该字段下，应用可以自定义启动依赖的配置文件，当前示例包含的配置文件为 `task-config.conf`。 更多的信息请[参考这里](../../tutorial/config_render.md)
 - `deployTemplates`：表示应用部署模版配置信息。Kuscia 控制器会根据该名称和角色，选择合适的 AppImage。若在 AppImage 没有查询到符合的部署模版，则将使用第一个部署模版。
   - `deployTemplates[].name`：表示应用部署模版名称。
   - `deployTemplates[].role`：表示应用作为该角色时，使用的部署模版配置。这里的角色可以由应用自定义，示例：Host/Guest；如果应用不需要区分角色部署，这里可以填空。
-  - `deployTemplates[].replicas`：表示应用运行的副本数，默认为`1`。
-  - `deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问名称为`global`的端口。
-    - `deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为`server`的应用允许角色为`client`的应用访问。
-    - `deployTemplates[].networkPolicy.ingresses[].ports[].port`：表示允许访问当前应用的端口。该示例表示：当前角色为`server`的应用允许所允许被访问的端口名称为`global`。
+  - `deployTemplates[].replicas`：表示应用运行的副本数，默认为 `1`。
+  - `deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为 `server` 的应用允许角色为 `client` 的应用访问名称为 `global` 的端口。
+    - `deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为 `server` 的应用允许角色为 `client` 的应用访问。
+    - `deployTemplates[].networkPolicy.ingresses[].ports[].port`：表示允许访问当前应用的端口。该示例表示：当前角色为 `server` 的应用允许所允许被访问的端口名称为 `global`。
     - `deployTemplates[].spec.containers`：表示应用容器配置信息。该字段复用了 [K8s Pod containers](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/workload-resources/pod-v1/#Container) 部分字段以及扩展了一些自定义字段。主要包含以下子字段：
       - `deployTemplates[].spec.containers[].command`：表示应用的启动命令。
       - `deployTemplates[].spec.containers[].args`：表示应用的启动参数。
-      - `deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将`.spec.configTemplates`中定义的配置文件`task-config.conf`挂载到容器中的位置为`/work/kuscia/task-config.conf`。
+      - `deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将 `.spec.configTemplates` 中定义的配置文件 `task-config.conf` 挂载到容器中的位置为 `/work/kuscia/task-config.conf`。
         - `deployTemplates[].spec.containers[].configVolumeMounts[].mountPath`：表示文件挂载到容器中的路径。
         - `deployTemplates[].spec.containers[].configVolumeMounts[].subPath`：表示文件挂载到容器中的子路径。
       - `deployTemplates[].spec.containers[].name`：表示应用容器的名称。
@@ -355,8 +355,8 @@ AppImage `spec` 的子字段详细介绍如下：
           - `Cluster`：表示该 port 用于节点外部和节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。
           - `Domain`：表示该 port 用于节点内部访问，Kuscia 会给该 port 创建相对应的 K3s service 资源。
           - `Local`：表示该 port 用于 Pod 内部容器本地访问，Kuscia 不会给该 port 创建相对应的 K3s service 资源。
-      - `deployTemplates[].spec.containers[].envFrom`：表示使用`envFrom`为应用容器设置环境变量。
-      - `deployTemplates[].spec.containers[].env`：表示使用`env`为应用容器设置环境变量。
+      - `deployTemplates[].spec.containers[].envFrom`：表示使用 `envFrom` 为应用容器设置环境变量。
+      - `deployTemplates[].spec.containers[].env`：表示使用 `env` 为应用容器设置环境变量。
       - `deployTemplates[].spec.containers[].resources`：表示应用容器申请的资源配置。
       - `deployTemplates[].spec.containers[].readinessProbe`：表示应用容器的就绪探针配置。
       - `deployTemplates[].spec.containers[].livenessProbe`：表示应用容器的存活探针配置。

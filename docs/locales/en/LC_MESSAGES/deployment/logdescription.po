@@ -18,8 +18,8 @@ msgstr ""
 "Generated-By: Babel 2.14.0\n"
 
 #: ../../deployment/logdescription.md:1
-msgid "日志说明"
-msgstr "Log Description"
+msgid "Kuscia 日志说明"
+msgstr "Kuscia Log Description"
 
 #: ../../deployment/logdescription.md:3
 msgid "前言"

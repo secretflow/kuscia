@@ -19,11 +19,11 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 
 ## 文档
 
-- [Kuscia](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/)
-- [准备开始](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/getting_started/index.html)
-- [参考手册](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/reference/index.html)
-- [教程](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/tutorial/index.html)
-- [开发](https://www.secretflow.org.cn/docs/kuscia/latest/zh-Hans/development/index.html)
+- [Kuscia](https://www.secretflow.org.cn/docs/kuscia/)
+- [准备开始](https://www.secretflow.org.cn/docs/kuscia/getting_started)
+- [参考手册](https://www.secretflow.org.cn/docs/kuscia/reference)
+- [教程](https://www.secretflow.org.cn/docs/kuscia/tutorial)
+- [开发](https://www.secretflow.org.cn/docs/kuscia/development)
 
 ## 贡献代码
 

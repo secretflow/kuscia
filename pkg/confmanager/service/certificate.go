@@ -154,7 +154,7 @@ func (s *certificateService) ValidateGenerateKeyCertsRequest(ctx context.Context
 		errs.AppendErr(fmt.Errorf("duration sedconds must greater than 0"))
 	}
 	if request.KeyType != "" && request.KeyType != KeyTypeForPCKS1 && request.KeyType != KeyTypeForPCKS8 {
-		errs.AppendErr(fmt.Errorf("key tye must be [PKCS#1, PKCS#8]"))
+		errs.AppendErr(fmt.Errorf("key type must be [PKCS#1, PKCS#8]"))
 	}
 	if len(errs) == 0 {
 		return nil
