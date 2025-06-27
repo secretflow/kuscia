@@ -1,9 +1,10 @@
-package common
+package domain
 
 import (
 	"fmt"
 	"sync"
 
+	"github.com/secretflow/kuscia/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -57,11 +58,11 @@ func (m *NodeStatusManager) UpdateStatus(newStatus LocalNodeStatus, op string) e
 	defer m.lock.Unlock()
 
 	switch op {
-	case ResourceCheckForAddNode:
+	case common.ResourceCheckForAddNode:
 		m.statuses[newStatus.Name] = newStatus
-	case ResourceCheckForUpdateNode:
+	case common.ResourceCheckForUpdateNode:
 		m.statuses[newStatus.Name] = newStatus
-	case ResourceCheckForDeleteNode:
+	case common.ResourceCheckForDeleteNode:
 		delete(m.statuses, newStatus.Name)
 	default:
 		return fmt.Errorf("not support type %s", op)

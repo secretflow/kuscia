@@ -363,7 +363,7 @@ func TestCalRequestResource(t *testing.T) {
 func TestPodHandler(t *testing.T) {
 	c, _, _ := setupController(t)
 
-	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
+	c.nodeStatusManager.UpdateStatus(LocalNodeStatus{
 		Name:            "valid-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
@@ -402,7 +402,7 @@ func TestAddPodHandler(t *testing.T) {
 	}).(*Controller)
 
 	// Initialize node status
-	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
+	c.nodeStatusManager.UpdateStatus(LocalNodeStatus{
 		Name:            "test-node",
 		TotalCPURequest: 1000,
 		TotalMemRequest: 1024,
@@ -442,7 +442,7 @@ func TestAddPodHandler(t *testing.T) {
 // Test deletePodHandler resource reduction logic
 func TestDeletePodHandler(t *testing.T) {
 	c, _, _ := setupController(t)
-	c.nodeStatusManager.UpdateStatus(common.LocalNodeStatus{
+	c.nodeStatusManager.UpdateStatus(LocalNodeStatus{
 		Name:            "test-node",
 		TotalCPURequest: 5000,
 		TotalMemRequest: 4294967296,
@@ -555,10 +555,10 @@ func setupController(t *testing.T) (*Controller, cache.Store, cache.Store) {
 	}).(*Controller)
 
 	// Set test specific fields through direct assignment method
-	c.nodeStatusManager = common.NewNodeStatusManager()
+	c.nodeStatusManager = NewNodeStatusManager()
 	c.podQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 	c.nodeQueue = workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
-	c.nodeStatusManager.ReplaceAll(make(map[string]common.LocalNodeStatus))
+	c.nodeStatusManager.ReplaceAll(make(map[string]LocalNodeStatus))
 	c.nodeLister = nodeInformer.Lister()
 	c.domainLister = domainInformer.Lister()
 

@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/secretflow/kuscia/pkg/controllers/domain"
 	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -300,7 +301,7 @@ func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, err
 	}
 
 	nlog.Debugf("Kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
-	nodeStatuses := common.NewNodeStatusManager().GetAll()
+	nodeStatuses := domain.NewNodeStatusManager().GetAll()
 	nlog.Debugf("NodeStatuses struct is %+v", nodeStatuses)
 
 	for _, nodeStatus := range nodeStatuses {

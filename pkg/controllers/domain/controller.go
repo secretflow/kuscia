@@ -93,7 +93,7 @@ type Controller struct {
 	nodeQueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
-	nodeStatusManager     *common.NodeStatusManager
+	nodeStatusManager     *NodeStatusManager
 }
 
 // NewController returns a controller instance.
@@ -130,17 +130,17 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kusciaInformerFactory: kusciaInformerFactory,
 		resourceQuotaLister:   resourceQuotaInformer.Lister(),
 		domainLister:          domainInformer.Lister(),
-		namespaceLister:       namespaceInformer.Lister(),
-		nodeLister:            nodeInformer.Lister(),
-		podLister:             podInformer.Lister(),
-		configmapLister:       configmapInformer.Lister(),
-		roleLister:            roleInformer.Lister(),
-		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
-		podQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
-		nodeQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
-		recorder:              eventRecorder,
-		cacheSyncs:            cacheSyncs,
-		nodeStatusManager:     common.NewNodeStatusManager(),
+		namespaceLister:   namespaceInformer.Lister(),
+		nodeLister:        nodeInformer.Lister(),
+		podLister:         podInformer.Lister(),
+		configmapLister:   configmapInformer.Lister(),
+		roleLister:        roleInformer.Lister(),
+		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
+		podQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		nodeQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+		recorder:          eventRecorder,
+		cacheSyncs:        cacheSyncs,
+		nodeStatusManager: NewNodeStatusManager(),
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -320,7 +320,7 @@ func (c *Controller) nodeHandler(item interface{}) error {
 		return nil
 	}
 
-	newStatus := common.LocalNodeStatus{
+	newStatus := LocalNodeStatus{
 		Name:       nodeItem.Node.Name,
 		DomainName: nodeItem.Node.Labels[common.LabelNodeNamespace],
 	}
@@ -633,7 +633,7 @@ func (c *Controller) initLocalNodeStatus() error {
 		return fmt.Errorf("domain controller init localNodeStatus failed with %v", err)
 	}
 
-	nodeStatuses := make(map[string]common.LocalNodeStatus)
+	nodeStatuses := make(map[string]LocalNodeStatus)
 	domainPods := make(map[string][]*apicorev1.Pod)
 	for _, nodeObj := range nodes {
 		if !c.matchNodeLabels(nodeObj) {
@@ -660,7 +660,7 @@ func (c *Controller) initLocalNodeStatus() error {
 			}
 		}
 
-		status := common.LocalNodeStatus{
+		status := LocalNodeStatus{
 			Name:               nodeObj.Name,
 			DomainName:         domainName,
 			TotalCPURequest:    totalCPU,

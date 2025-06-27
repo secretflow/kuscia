@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers/domain"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -138,8 +139,8 @@ func makeTestPendingHandler() *PendingHandler {
 }
 
 func TestPendingHandler_Handle(t *testing.T) {
-	nodeStatusManager := common.NewNodeStatusManager()
-	nodeStatusManager.ReplaceAll(map[string]common.LocalNodeStatus{
+	nodeStatusManager := domain.NewNodeStatusManager()
+	nodeStatusManager.ReplaceAll(map[string]domain.LocalNodeStatus{
 		"mock-node-a": {
 			Name:            "mock-node-a",
 			DomainName:      "domain-a",
