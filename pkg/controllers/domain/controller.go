@@ -242,6 +242,9 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 			if newNode, ok = d.Obj.(*apicorev1.Node); !ok {
 				nlog.Errorf("Could not convert object %T to Node", d.Obj)
 				return
+			} else {
+				queue.EnqueueNodeObject(&queue.NodeQueueItem{Node: newNode, Op: common.ResourceCheckForDeleteNode}, c.nodeQueue)
+				return
 			}
 		} else {
 			nlog.Errorf("Received unexpected object type %T for node %s event", obj, op)
@@ -291,6 +294,9 @@ func (c *Controller) handlePodCommon(obj interface{}, op string) {
 			if pod, ok = d.Obj.(*apicorev1.Pod); !ok {
 				nlog.Errorf("Could not convert object %T to Pod", d.Obj)
 				return
+			} else {
+				queue.EnqueuePodObject(&queue.PodQueueItem{Pod: pod, Op: common.ResourceCheckForDeletePod}, c.podQueue)
+				return
 			}
 		} else {
 			nlog.Errorf("Received unexpected object type %T for pod %s event", obj, op)
@@ -324,6 +330,13 @@ func (c *Controller) nodeHandler(item interface{}) error {
 			switch cond.Status {
 			case apicorev1.ConditionTrue:
 				newStatus.Status = nodeStatusReady
+				for _, cond := range nodeItem.Node.Status.Conditions {
+					if cond.Type == apicorev1.NodeDiskPressure && cond.Status == apicorev1.ConditionTrue {
+						newStatus.Status = nodeStatusNotReady
+						newStatus.UnreadyReason = string(apicorev1.NodeDiskPressure)
+						break
+					}
+				}
 			default:
 				newStatus.Status = nodeStatusNotReady
 				for _, condReason := range nodeItem.Node.Status.Conditions {
@@ -660,7 +673,12 @@ func (c *Controller) initLocalNodeStatus() error {
 		for _, cond := range nodeObj.Status.Conditions {
 			if cond.Type == apicorev1.NodeReady {
 				if cond.Status == apicorev1.ConditionTrue {
-					status.Status = nodeStatusReady
+					for _, cond := range nodeObj.Status.Conditions {
+						if cond.Type == apicorev1.NodeDiskPressure && cond.Status != apicorev1.ConditionTrue {
+							status.Status = nodeStatusReady
+							break
+						}
+					}
 				}
 				status.LastHeartbeatTime = cond.LastHeartbeatTime
 				status.LastTransitionTime = cond.LastTransitionTime
