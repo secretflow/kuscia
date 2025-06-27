@@ -215,9 +215,9 @@ func TestBuildScheduleConfigForKusciaAPI(t *testing.T) {
 }
 
 func TestAggregateErrorMessage(t *testing.T) {
-	// 创建 jobService 实例用于测试
+	// Create jobService instance for testing
 	js := &jobService{}
-	
+
 	tests := []struct {
 		name     string
 		jobMsg   string
@@ -325,7 +325,7 @@ func TestAggregateErrorMessage(t *testing.T) {
 						{
 							DomainId: "bob",
 							State:    kusciaapi.JobState_Succeeded.String(),
-							ErrMsg:   "", // 成功的party不应该有错误信息
+							ErrMsg:   "", // Successful party should not have error message
 						},
 					},
 				},
@@ -344,7 +344,7 @@ func TestAggregateErrorMessage(t *testing.T) {
 						{
 							DomainId: "alice",
 							State:    kusciaapi.JobState_Failed.String(),
-							ErrMsg:   "", // 空错误信息应该被忽略
+							ErrMsg:   "", // Empty error message should be ignored
 						},
 					},
 				},
