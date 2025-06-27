@@ -237,6 +237,7 @@ type Protocol string
 const (
 	ResourceCheckForAddPod     = "resourceCheckForAddPod"
 	ResourceCheckForDeletePod  = "resourceCheckForDeletePod"
+	ResourceCheckForUpdatePod  = "ResourceCheckForUpdatePod"
 	ResourceCheckForAddNode    = "resourceCheckForAddNode"
 	ResourceCheckForDeleteNode = "resourceCheckForDeleteNode"
 	ResourceCheckForUpdateNode = "resourceCheckForUpdateNode"

@@ -182,6 +182,7 @@ func (c *Controller) addPodEventHandler(podInformer informerscorev1.PodInformer)
 		},
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    c.handlePodAdd,
+			UpdateFunc: c.handlePodUpdate,
 			DeleteFunc: c.handlePodDelete,
 		},
 	})
@@ -258,6 +259,24 @@ func (c *Controller) handleNodeCommon(obj interface{}, op string) {
 func (c *Controller) handlePodAdd(obj interface{}) {
 	nlog.Debugf("Step handlePodAdd")
 	c.handlePodCommon(obj, common.ResourceCheckForAddPod)
+}
+
+func (c *Controller) handlePodUpdate(oldObj, newObj interface{}) {
+	nlog.Debugf("Step handlePodUpdate")
+	oldPod, _ := oldObj.(*apicorev1.Pod)
+	newPod, _ := newObj.(*apicorev1.Pod)
+	if oldPod.ResourceVersion == newPod.ResourceVersion {
+		return
+	}
+
+	if reflect.DeepEqual(oldPod.Status, newPod.Status) {
+		nlog.Debugf("Pod %s have no actual change, skipping", newPod.Name)
+		return
+	}
+
+	if newPod.Status.Phase == apicorev1.PodFailed {
+		c.handlePodCommon(newPod, common.ResourceCheckForUpdatePod)
+	}
 }
 
 func (c *Controller) handlePodDelete(obj interface{}) {
@@ -337,6 +356,8 @@ func (c *Controller) podHandler(item interface{}) error {
 	case common.ResourceCheckForAddPod:
 		return c.addPodHandler(podItem.Pod)
 	case common.ResourceCheckForDeletePod:
+		return c.deletePodHandler(podItem.Pod)
+	case common.ResourceCheckForUpdatePod:
 		return c.deletePodHandler(podItem.Pod)
 	default:
 		return fmt.Errorf("unknown operation: %s", podItem.Op)
