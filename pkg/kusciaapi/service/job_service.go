@@ -928,6 +928,7 @@ func (h *jobService) buildJobStatus(ctx context.Context, kusciaJob *v1alpha1.Kus
 
 		statusDetail.Tasks = append(statusDetail.Tasks, ts)
 	}
+	statusDetail.ErrMsg = h.aggregateErrorMessage(kusciaJobStatus.Message, kusciaJobStatus.Phase, statusDetail.Tasks)
 	return &kusciaapi.JobStatus{
 		JobId:  kusciaJob.Name,
 		Status: statusDetail,
@@ -1132,4 +1133,33 @@ func getTaskState(taskPhase v1alpha1.KusciaTaskPhase) string {
 
 func jobCustomField2Label(name string) string {
 	return fmt.Sprintf("%s%s", common.JobCustomFieldsLabelPrefix, name)
+}
+
+func (h *jobService) aggregateErrorMessage(jobMsg string, jobPhase v1alpha1.KusciaJobPhase, tasks []*kusciaapi.TaskStatus) string {
+	// if jobMsg is not empty, return it
+	if jobMsg != "" {
+		return jobMsg
+	}
+
+	if jobPhase != v1alpha1.KusciaJobFailed {
+		return jobMsg
+	}
+
+	var errMsgs []string
+	for _, task := range tasks {
+		if task.State == kusciaapi.JobState_Failed.String() {
+			for _, party := range task.Parties {
+				if party.State == kusciaapi.JobState_Failed.String() && party.ErrMsg != "" {
+					errMsgs = append(errMsgs, fmt.Sprintf("Task[%s]-Party[%s]: %s",
+						task.Alias, party.DomainId, party.ErrMsg))
+				}
+			}
+		}
+	}
+
+	if len(errMsgs) > 0 {
+		return strings.Join(errMsgs, "; ")
+	}
+
+	return jobMsg
 }

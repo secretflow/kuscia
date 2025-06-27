@@ -213,3 +213,150 @@ func TestBuildScheduleConfigForKusciaAPI(t *testing.T) {
 		})
 	}
 }
+
+func TestAggregateErrorMessage(t *testing.T) {
+	// Create jobService instance for testing
+	js := &jobService{}
+
+	tests := []struct {
+		name     string
+		jobMsg   string
+		jobPhase v1alpha1.KusciaJobPhase
+		tasks    []*kusciaapi.TaskStatus
+		want     string
+	}{
+		{
+			name:     "job message not empty should return original message",
+			jobMsg:   "original job error",
+			jobPhase: v1alpha1.KusciaJobFailed,
+			tasks:    []*kusciaapi.TaskStatus{},
+			want:     "original job error",
+		},
+		{
+			name:     "job phase not failed should return original message",
+			jobMsg:   "",
+			jobPhase: v1alpha1.KusciaJobRunning,
+			tasks:    []*kusciaapi.TaskStatus{},
+			want:     "",
+		},
+		{
+			name:     "no failed tasks should return original message",
+			jobMsg:   "",
+			jobPhase: v1alpha1.KusciaJobFailed,
+			tasks: []*kusciaapi.TaskStatus{
+				{
+					Alias: "task1",
+					State: kusciaapi.JobState_Succeeded.String(),
+					Parties: []*kusciaapi.PartyStatus{
+						{DomainId: "alice", State: kusciaapi.JobState_Succeeded.String()},
+					},
+				},
+			},
+			want: "",
+		},
+		{
+			name:     "single task single party failed",
+			jobMsg:   "",
+			jobPhase: v1alpha1.KusciaJobFailed,
+			tasks: []*kusciaapi.TaskStatus{
+				{
+					Alias: "task1",
+					State: kusciaapi.JobState_Failed.String(),
+					Parties: []*kusciaapi.PartyStatus{
+						{
+							DomainId: "alice",
+							State:    kusciaapi.JobState_Failed.String(),
+							ErrMsg:   "connection timeout",
+						},
+					},
+				},
+			},
+			want: "Task[task1]-Party[alice]: connection timeout",
+		},
+		{
+			name:     "multiple tasks multiple parties failed",
+			jobMsg:   "",
+			jobPhase: v1alpha1.KusciaJobFailed,
+			tasks: []*kusciaapi.TaskStatus{
+				{
+					Alias: "task1",
+					State: kusciaapi.JobState_Failed.String(),
+					Parties: []*kusciaapi.PartyStatus{
+						{
+							DomainId: "alice",
+							State:    kusciaapi.JobState_Failed.String(),
+							ErrMsg:   "connection timeout",
+						},
+						{
+							DomainId: "bob",
+							State:    kusciaapi.JobState_Failed.String(),
+							ErrMsg:   "resource insufficient",
+						},
+					},
+				},
+				{
+					Alias: "task2",
+					State: kusciaapi.JobState_Failed.String(),
+					Parties: []*kusciaapi.PartyStatus{
+						{
+							DomainId: "charlie",
+							State:    kusciaapi.JobState_Failed.String(),
+							ErrMsg:   "data validation error",
+						},
+					},
+				},
+			},
+			want: "Task[task1]-Party[alice]: connection timeout; Task[task1]-Party[bob]: resource insufficient; Task[task2]-Party[charlie]: data validation error",
+		},
+		{
+			name:     "mixed party states only failed parties reported",
+			jobMsg:   "",
+			jobPhase: v1alpha1.KusciaJobFailed,
+			tasks: []*kusciaapi.TaskStatus{
+				{
+					Alias: "task1",
+					State: kusciaapi.JobState_Failed.String(),
+					Parties: []*kusciaapi.PartyStatus{
+						{
+							DomainId: "alice",
+							State:    kusciaapi.JobState_Failed.String(),
+							ErrMsg:   "connection timeout",
+						},
+						{
+							DomainId: "bob",
+							State:    kusciaapi.JobState_Succeeded.String(),
+							ErrMsg:   "", // Successful party should not have error message
+						},
+					},
+				},
+			},
+			want: "Task[task1]-Party[alice]: connection timeout",
+		},
+		{
+			name:     "failed party with empty error message should be ignored",
+			jobMsg:   "",
+			jobPhase: v1alpha1.KusciaJobFailed,
+			tasks: []*kusciaapi.TaskStatus{
+				{
+					Alias: "task1",
+					State: kusciaapi.JobState_Failed.String(),
+					Parties: []*kusciaapi.PartyStatus{
+						{
+							DomainId: "alice",
+							State:    kusciaapi.JobState_Failed.String(),
+							ErrMsg:   "", // Empty error message should be ignored
+						},
+					},
+				},
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := js.aggregateErrorMessage(tt.jobMsg, tt.jobPhase, tt.tasks)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
