@@ -5,9 +5,14 @@ import (
 	"fmt"
 
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/handler"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
+
+type ResourceRequest struct {
+	DomainName string
+	CpuReq int64
+	MemReq int64
+}
 
 type ResourceCheckPlugin struct{}
 
@@ -16,9 +21,9 @@ func NewResourceCheckPlugin() *CDRCheckPlugin {
 }
 
 func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
-	var resourceRequest *handler.ResourceRequest
+	var resourceRequest ResourceRequest
 	var ok bool
-	resourceRequest, ok = params.(*handler.ResourceRequest)
+	resourceRequest, ok = params.(ResourceRequest)
 	if !ok {
 		nlog.Errorf("Could not convert params %v to resourceRequest", params)
 		return false, nil

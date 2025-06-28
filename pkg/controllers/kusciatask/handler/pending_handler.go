@@ -270,7 +270,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	return nil
 }
 
-func (h *PendingHandler) resourceRequest(partyKitInfo PartyKitInfo) ResourceRequest {
+func (h *PendingHandler) resourceRequest(partyKitInfo PartyKitInfo) plugins.ResourceRequest {
 	var allContainerCPURequest, allContainerMEMRequest int64
 	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
 		if container.Resources.Requests == nil {
@@ -283,7 +283,7 @@ func (h *PendingHandler) resourceRequest(partyKitInfo PartyKitInfo) ResourceRequ
 		allContainerMEMRequest += memValue
 	}
 
-	return ResourceRequest{
+	return plugins.ResourceRequest{
 		DomainName: partyKitInfo.kusciaTask.Namespace,
 		CpuReq: allContainerCPURequest,
 		MemReq: allContainerMEMRequest,

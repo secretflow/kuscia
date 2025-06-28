@@ -44,12 +44,6 @@ const (
 	defaultRetryIntervalSeconds    = 30
 )
 
-type ResourceRequest struct {
-	DomainName string
-	CpuReq int64
-	MemReq int64
-}
-
 func selfClusterAsParticipant(namespacesLister corelisters.NamespaceLister, kusciaTask *kusciaapisv1alpha1.KusciaTask) (bool, error) {
 	if kusciaTask.Annotations != nil &&
 		kusciaTask.Annotations[common.SelfClusterAsParticipantAnnotationKey] == common.True {
