@@ -47,6 +47,7 @@ func makeTestPendingHandler() *PendingHandler {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	clusterDomainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 
 	ns1 := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -67,6 +68,7 @@ func makeTestPendingHandler() *PendingHandler {
 		KusciaClient:     kusciaClient,
 		TrgLister:        kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),
 		NamespacesLister: nsInformer.Lister(),
+		CdrLister:        clusterDomainRouteInformer.Lister(),
 		PodsLister:       kubeInformersFactory.Core().V1().Pods().Lister(),
 		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
 		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),

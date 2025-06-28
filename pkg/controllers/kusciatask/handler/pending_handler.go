@@ -49,8 +49,6 @@ type PendingHandler struct {
 	kusciaClient     kusciaclientset.Interface
 	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
 	namespacesLister corelisters.NamespaceLister
-	domainLister     kuscialistersv1alpha1.DomainLister
-	nodeLister       corelisters.NodeLister
 	cdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
 	podsLister       corelisters.PodLister
 	servicesLister   corelisters.ServiceLister
@@ -99,8 +97,6 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 		kusciaClient:     deps.KusciaClient,
 		trgLister:        deps.TrgLister,
 		namespacesLister: deps.NamespacesLister,
-		domainLister:     deps.DomainLister,
-		nodeLister:       deps.NodeLister,
 		cdrLister:        deps.CdrLister,
 		podsLister:       deps.PodsLister,
 		servicesLister:   deps.ServicesLister,
