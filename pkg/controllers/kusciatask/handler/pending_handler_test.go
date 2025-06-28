@@ -63,6 +63,30 @@ func makeTestPendingHandler() *PendingHandler {
 	nsInformer.Informer().GetStore().Add(&ns1)
 	nsInformer.Informer().GetStore().Add(&ns2)
 	appImageInformer.Informer().GetStore().Add(makeTestAppImageCase1())
+
+	cdrAtoB := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-a-domain-b"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	cdrBtoA := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-b-domain-a"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	clusterDomainRouteInformer.Informer().GetStore().Add(cdrAtoB)
+	clusterDomainRouteInformer.Informer().GetStore().Add(cdrBtoA)
+
 	dep := &Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
