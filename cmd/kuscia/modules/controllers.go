@@ -49,11 +49,7 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 			},
 			{
 				NewControler: domain.NewController,
-				CRDNames:     []string{controllers.CRDDomainsName},
-			},
-			{
-				NewControler: domain.NewResourceController,
-				CRDNames:     []string{controllers.CRDNodeResourceName},
+				CRDNames:     []string{controllers.CRDDomainsName, controllers.CRDNodeResourceName},
 			},
 			{
 				NewControler: kusciatask.NewController,
