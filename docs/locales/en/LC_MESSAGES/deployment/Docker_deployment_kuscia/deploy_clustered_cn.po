@@ -60,7 +60,7 @@ msgid ""
 "![image.png](../../imgs/deploy_clustered_structure.png)   注：实际生产环境中 Alice"
 " 应该对外暴露一个统一的 LB 地址，由 LB 将请求代理至 Alice1 或 Alice2 节点实例。"
 msgstr ""
-"![image.png](../../imgs/deploy_clustered_structure.png)   Note: In production, Alice should expose a unified LB address to proxy requests to Alice1/Alice2 instances."
+"![image.png](../../imgs/en_images/deploy_clustered_structure.png)   Note: In production, Alice should expose a unified LB address to proxy requests to Alice1/Alice2 instances."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:18
 msgid "image.png"
