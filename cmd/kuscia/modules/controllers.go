@@ -52,6 +52,10 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 				CRDNames:     []string{controllers.CRDDomainsName},
 			},
 			{
+				NewControler: domain.NewResourceController,
+				CRDNames:     []string{controllers.CRDNodeResourceName},
+			},
+			{
 				NewControler: kusciatask.NewController,
 				CRDNames:     []string{controllers.CRDKusciaTasksName, controllers.CRDAppImagesName},
 			},

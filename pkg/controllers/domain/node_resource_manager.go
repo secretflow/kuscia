@@ -3,13 +3,11 @@ package domain
 import (
 	"context"
 	"fmt"
-	"log"
+	"reflect"
 	"sync"
 	"time"
 
 	"github.com/secretflow/kuscia/pkg/controllers"
-	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/crd/informers/externalversions/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 	apicorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,33 +30,31 @@ import (
 )
 
 const (
-	nodeStateReady = "Ready"
-	nodeStateUnReady = "UnReady"
+	NodeStateReady   = "Ready"
+	NodeStateUnReady = "UnReady"
 )
 
 const nodeResourceControllerName = "node-resource-controller"
 
 var NodeResourceManager = &NodeStatusManager{
-	localNodeStatuses: make(map[string][]LocalNodeStatus),
-	lock:             sync.RWMutex{},
+	LocalNodeStatuses: make(map[string][]LocalNodeStatus),
+	Lock:              sync.RWMutex{},
 }
 
-var once sync.Once
-
 type NodeStatusManager struct {
-	localNodeStatuses map[string][]LocalNodeStatus
-	lock     sync.RWMutex
+	LocalNodeStatuses map[string][]LocalNodeStatus
+	Lock              sync.RWMutex
 }
 
 type LocalNodeStatus struct {
-	Name               string      `json:"name"`
-	Status             string      `json:"status"`
-	LastHeartbeatTime  metav1.Time `json:"lastHeartbeatTime,omitempty"`
-	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	UnreadyReason      string      `json:"unreadyReason,omitempty"`
-	TotalCPURequest    int64       `json:"totalCPURequest"`
-	TotalMemRequest    int64       `json:"totalMemRequest"`
-	Allocatable        apicorev1.ResourceList       `json:"allocatable"`
+	Name               string                 `json:"name"`
+	Status             string                 `json:"status"`
+	LastHeartbeatTime  metav1.Time            `json:"lastHeartbeatTime,omitempty"`
+	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
+	UnreadyReason      string                 `json:"unreadyReason,omitempty"`
+	TotalCPURequest    int64                  `json:"totalCPURequest"`
+	TotalMemRequest    int64                  `json:"totalMemRequest"`
+	Allocatable        apicorev1.ResourceList `json:"allocatable"`
 }
 
 type ResourceController struct {
@@ -85,7 +81,7 @@ func NewResourceController(ctx context.Context, config controllers.ControllerCon
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
 	podInformer := kubeInformerFactory.Core().V1().Pods()
 
-	cacheSyncs := []cache.InformerSynced {
+	cacheSyncs := []cache.InformerSynced{
 		domainInformer.Informer().HasSynced,
 		nodeInformer.Informer().HasSynced,
 		podInformer.Informer().HasSynced,
@@ -96,17 +92,19 @@ func NewResourceController(ctx context.Context, config controllers.ControllerCon
 		kusciaClient:          kusciaClient,
 		kubeInformerFactory:   kubeInformerFactory,
 		kusciaInformerFactory: kusciaInformerFactory,
-		domainLister:      domainInformer.Lister(),
-		nodeLister:        nodeInformer.Lister(),
-		podLister:         podInformer.Lister(),
-		podQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
-		nodeQueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
-		cacheSyncs:        cacheSyncs,
+		domainLister:          domainInformer.Lister(),
+		nodeLister:            nodeInformer.Lister(),
+		podLister:             podInformer.Lister(),
+		podQueue:              workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		nodeQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+		cacheSyncs:            cacheSyncs,
 	}
 
 	resourceController.ctx, resourceController.cancel = context.WithCancel(ctx)
 	resourceController.addPodEventHandler(podInformer)
 	resourceController.addNodeEventHandler(nodeInformer)
+
+	nlog.Infof("resourceController init finish %v", resourceController)
 
 	return resourceController
 }
@@ -114,25 +112,35 @@ func NewResourceController(ctx context.Context, config controllers.ControllerCon
 func (rc *ResourceController) addPodEventHandler(podInformer informerscorev1.PodInformer) {
 	_, _ = podInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
-			pod, ok := obj.(*apicorev1.Pod)
-			nlog.Infof("PodInformer EventHandler handle: %+v", pod)
-			if ok {
-				namespace := pod.Namespace
-				nodeName := pod.Spec.NodeName
-				_, err := rc.domainLister.Get(namespace)
-				if err != nil {
-					nlog.Errorf("DomainLister get %s failed with %v", namespace, err)
+			var pod *apicorev1.Pod
+			if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+				pod, ok = d.Obj.(*apicorev1.Pod)
+				if !ok {
+					nlog.Errorf("Could not convert deleted final state %v to Pod", d.Obj)
 					return false
 				}
-
-				if nodeName == "" {
-					nlog.Errorf("Pod %s/%s has no node assigned yet, skipping", pod.Namespace, pod.Name)
+			} else {
+				pod, ok = obj.(*apicorev1.Pod)
+				if !ok {
+					nlog.Errorf("Could not convert obj %v to Pod", d.Obj)
 					return false
 				}
-				return true
 			}
-			nlog.Errorf("Item %v is not pod type", obj)
-			return false
+
+			nlog.Infof("PodInformer EventHandler handle: %+v", pod)
+			namespace := pod.Namespace
+			nodeName := pod.Spec.NodeName
+			_, err := rc.domainLister.Get(namespace)
+			if err != nil {
+				nlog.Errorf("DomainLister get %s failed with %v", namespace, err)
+				return false
+			}
+
+			if nodeName == "" || pod.ResourceVersion == "" {
+				nlog.Errorf("Pod %s/%s has no node assigned or empty resourceVersion, skipping", pod.Namespace, pod.Name)
+				return false
+			}
+			return true
 		},
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    rc.handlePodAdd,
@@ -142,30 +150,75 @@ func (rc *ResourceController) addPodEventHandler(podInformer informerscorev1.Pod
 	})
 }
 
-func (rc *ResourceController) handlePodAdd (obj interface{}) {
-
+func (rc *ResourceController) handlePodAdd(obj interface{}) {
+	nlog.Infof("Step handlePodAdd")
+	rc.handlePodCommon(obj, nil, common.ResourceCheckForAddPod)
 }
 
-func (rc *ResourceController) handlePodUpdate (newObj, oldObj interface{}) {
+func (rc *ResourceController) handlePodUpdate(newObj, oldObj interface{}) {
+	nlog.Infof("Step handlePodUpdate")
+	oldPod, _ := oldObj.(*apicorev1.Pod)
+	newPod, _ := newObj.(*apicorev1.Pod)
+	if oldPod.ResourceVersion == newPod.ResourceVersion {
+		return
+	}
 
+	if !reflect.DeepEqual(oldPod.Spec, newPod.Spec) ||
+		newPod.Status.Phase != oldPod.Status.Phase {
+		rc.handlePodCommon(newPod, oldPod, common.ResourceCheckForUpdatePod)
+	}
 }
 
-func (rc *ResourceController) handlePodDelete (obj interface{}) {
+func (rc *ResourceController) handlePodDelete(obj interface{}) {
+	nlog.Infof("Step handlePodDelete")
+	rc.handlePodCommon(obj, nil, common.ResourceCheckForDeletePod)
+}
 
+func (rc *ResourceController) handlePodCommon(newObj interface{}, oldObj interface{}, op string) {
+	var newPod, oldPod *apicorev1.Pod
+	var ok bool
+
+	newPod, ok = newObj.(*apicorev1.Pod)
+	if oldObj != nil {
+		oldPod, _ = oldObj.(*apicorev1.Pod)
+	}
+
+	if !ok {
+		nlog.Errorf("Received unexpected object type %v for %s event", newObj, op)
+		return
+	}
+
+	queueItem := &queue.PodQueueItem{
+		NewPod: newPod,
+		OldPod: oldPod,
+		Op:     op,
+	}
+	queue.EnqueuePodObject(queueItem, rc.podQueue)
 }
 
 func (rc *ResourceController) addNodeEventHandler(nodeInformer informerscorev1.NodeInformer) {
 	_, _ = nodeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
-			nodeObj, ok := obj.(*apicorev1.Node)
-			nlog.Infof("NodeInformer EventHandler handle: %+v", nodeObj)
-			if ok {
-				if rc.matchNodeLabels(nodeObj) {
-					return true
+			var node *apicorev1.Node
+			if d, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+				node, ok = d.Obj.(*apicorev1.Node)
+				if !ok {
+					nlog.Errorf("Could not convert deleted final state %v to Node", d.Obj)
+					return false
+				}
+			} else {
+				node, ok = obj.(*apicorev1.Node)
+				if !ok {
+					nlog.Errorf("Could not convert obj %v to Node", d.Obj)
+					return false
 				}
 			}
-			nlog.Errorf("Item %v is not node type", obj)
-			return false
+
+			nlog.Infof("NodeInformer EventHandler handle: %+v", node)
+			if !rc.matchNodeLabels(node) {
+				return false
+			}
+			return true
 		},
 		Handler: cache.ResourceEventHandlerFuncs{
 			AddFunc:    rc.handleNodeAdd,
@@ -175,33 +228,64 @@ func (rc *ResourceController) addNodeEventHandler(nodeInformer informerscorev1.N
 	})
 }
 
-func (rc *ResourceController) handleNodeAdd (obj interface{}) {
-
+func (rc *ResourceController) handleNodeAdd(obj interface{}) {
+	nlog.Infof("Step handleNodeAdd")
+	rc.handleNodeCommon(obj, nil, common.ResourceCheckForAddNode)
 }
 
-func (rc *ResourceController) handleNodeUpdate (newObj, oldObj interface{}) {
+func (rc *ResourceController) handleNodeUpdate(newObj, oldObj interface{}) {
+	nlog.Infof("Step handleNodeUpdate")
+	oldNode, _ := oldObj.(*apicorev1.Node)
+	newNode, _ := newObj.(*apicorev1.Node)
+	if oldNode.ResourceVersion == newNode.ResourceVersion {
+		return
+	}
 
+	rc.handleNodeCommon(newNode, oldNode, common.ResourceCheckForUpdateNode)
 }
 
-func (rc *ResourceController) handleNodeDelete (obj interface{}) {
+func (rc *ResourceController) handleNodeDelete(obj interface{}) {
+	nlog.Infof("Step handleNodeDelete")
+	rc.handleNodeCommon(obj, nil, common.ResourceCheckForDeleteNode)
+}
 
+func (rc *ResourceController) handleNodeCommon(newObj interface{}, oldObj interface{}, op string) {
+	var newNode, oldNode *apicorev1.Node
+	var ok bool
+
+	newNode, ok = newObj.(*apicorev1.Node)
+	if oldObj != nil {
+		oldNode, _ = oldObj.(*apicorev1.Node)
+	}
+
+	if !ok {
+		nlog.Errorf("Received unexpected object type %v for %s event", newObj, op)
+		return
+	}
+
+	queueItem := &queue.NodeQueueItem{
+		NewNode: newNode,
+		OldNode: oldNode,
+		Op:      op,
+	}
+	queue.EnqueueNodeObject(queueItem, rc.nodeQueue)
 }
 
 func (rc *ResourceController) matchNodeLabels(obj *apicorev1.Node) bool {
 	if objLabels := obj.GetLabels(); objLabels != nil {
-		if value, exists := objLabels[common.LabelNodeNamespace]; exists {
-			if value != "" {
-				_, err := rc.domainLister.Get(value)
+		if domainName, exists := objLabels[common.LabelNodeNamespace]; exists {
+			if domainName != "" {
+				_, err := rc.domainLister.Get(domainName)
 				if err != nil {
 					nlog.Errorf("Get domain %s failed with %v", obj.Name, err)
 					return false
 				}
 				return true
 			}
-			nlog.Errorf("Node %s hv no domain belonged to", obj.Name)
+			nlog.Errorf("Node %s has empty domain label", obj.Name)
 			return false
 		}
-		nlog.Errorf("Node %s hv no label about domain", obj.Name)
+		nlog.Errorf("Node %s have no label about domain", obj.Name)
 		return false
 	}
 	nlog.Errorf("Node %s get labels failed", obj.Name)
@@ -250,29 +334,29 @@ func (rc *ResourceController) initLocalNodeStatus() error {
 		if exists && domainName != "" {
 			_, err := rc.domainLister.Get(domainName)
 			if err == nil {
-				nodeStatus := LocalNodeStatus {
-					Name:               node.Name,
-					Status:             nodeStatusNotReady,
-					UnreadyReason:      "",
-					TotalCPURequest:    0,
-					TotalMemRequest:    0,
-					Allocatable:        node.Status.Allocatable,
+				nodeStatus := LocalNodeStatus{
+					Name:            node.Name,
+					Status:          nodeStatusNotReady,
+					UnreadyReason:   "",
+					TotalCPURequest: 0,
+					TotalMemRequest: 0,
+					Allocatable:     node.Status.Allocatable,
 				}
 
 				for _, cond := range node.Status.Conditions {
 					if cond.Type == apicorev1.NodeReady {
 						switch cond.Status {
 						case apicorev1.ConditionTrue:
-							nodeStatus.Status = nodeStateReady
+							nodeStatus.Status = NodeStateReady
 							for _, cond := range node.Status.Conditions {
 								if cond.Type == apicorev1.NodeDiskPressure && cond.Status == apicorev1.ConditionTrue {
-									nodeStatus.Status = nodeStateUnReady
+									nodeStatus.Status = NodeStateUnReady
 									nodeStatus.UnreadyReason = string(apicorev1.NodeDiskPressure)
 									break
 								}
 							}
 						default:
-							nodeStatus.Status = nodeStateUnReady
+							nodeStatus.Status = NodeStateUnReady
 							for _, condReason := range node.Status.Conditions {
 								if condReason.Status == apicorev1.ConditionTrue {
 									nodeStatus.UnreadyReason = string(condReason.Type)
@@ -295,57 +379,208 @@ func (rc *ResourceController) initLocalNodeStatus() error {
 	}
 
 	if NodeResourceManager != nil {
-		NodeResourceManager.lock.Lock()
-		defer NodeResourceManager.lock.Unlock()
-		NodeResourceManager.localNodeStatuses = nodeStatuses
+		NodeResourceManager.Lock.Lock()
+		defer NodeResourceManager.Lock.Unlock()
+		NodeResourceManager.LocalNodeStatuses = nodeStatuses
 	}
 
+	nlog.Infof("NodeResourceManager.LocalNodeStatuses is %v", NodeResourceManager.LocalNodeStatuses)
 	return nil
 }
 
 func (rc *ResourceController) runPodHandleWorker() {
-	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, rc.podQueue, rc.podHandler, maxRetries) {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), nodeResourceControllerName, rc.podQueue, rc.podHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(rc.podQueue.Len()))
 	}
 }
 
 func (rc *ResourceController) runNodeHandleWorker() {
-	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, rc.nodeQueue, rc.nodeHandler, maxRetries) {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), nodeResourceControllerName, rc.nodeQueue, rc.nodeHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(rc.nodeQueue.Len()))
 	}
 }
 
 func (rc *ResourceController) podHandler(item interface{}) error {
 	var podItem *queue.PodQueueItem
-	checkType := queue.CheckType(item)
-	if checkType == "PodQueueItem" {
+	if queue.CheckType(item) == "PodQueueItem" {
 		podItem = item.(*queue.PodQueueItem)
 	} else {
 		nlog.Errorf("PodHandler only support PodQueueItem but get : %+v", item)
 		return nil
 	}
+
 	switch podItem.Op {
 	case common.ResourceCheckForAddPod:
-		return rc.addPodHandler(podItem.Pod)
+		return rc.addPodHandler(podItem.NewPod)
 	case common.ResourceCheckForDeletePod:
-		return rc.deletePodHandler(podItem.Pod)
+		return rc.deletePodHandler(podItem.NewPod)
 	case common.ResourceCheckForUpdatePod:
-		return rc.deletePodHandler(podItem.Pod)
+		return rc.updatePodHandler(podItem.NewPod, podItem.OldPod)
 	default:
 		return fmt.Errorf("unknown operation: %s", podItem.Op)
 	}
 }
 
 func (rc *ResourceController) addPodHandler(pod *apicorev1.Pod) error {
-	nlog.Debugf("Step addPodHandler: %+v", pod)
-	cpuReq, memReq := rc.calRequestResource(pod)
-	return rc.nodeStatusManager.AddPodResources(pod.Spec.NodeName, cpuReq, memReq)
+	nlog.Infof("Step addPodHandler: %+v", pod)
+
+	NodeResourceManager.Lock.Lock()
+	defer NodeResourceManager.Lock.Unlock()
+
+	domainName := pod.Namespace
+	nodes, exists := NodeResourceManager.LocalNodeStatuses[domainName]
+	if !exists {
+		nlog.Warnf("Domain %s not found when add pod %s", domainName, pod.Name)
+		return nil
+	}
+
+	nodeName := pod.Spec.NodeName
+	for i := range nodes {
+		if nodes[i].Name == nodeName {
+			cpu, mem := rc.calRequestResource(pod)
+			nodes[i].TotalCPURequest += cpu
+			nodes[i].TotalMemRequest += mem
+
+			NodeResourceManager.LocalNodeStatuses[domainName] = nodes
+			nlog.Infof("Added pod %s resources to node %s: CPU=%dm, MEM=%dB",
+				pod.Name, nodeName, cpu, mem)
+			return nil
+		}
+	}
+
+	nlog.Warnf("node %s not found when add pod %s", nodeName, pod.Name)
+	return nil
 }
 
 func (rc *ResourceController) deletePodHandler(pod *apicorev1.Pod) error {
-	nlog.Debugf("Step deletePodHandler: %+v", pod)
-	cpuReq, memReq := rc.calRequestResource(pod)
-	return rc.nodeStatusManager.RemovePodResources(pod.Spec.NodeName, cpuReq, memReq)
+	nlog.Infof("Step deletePodHandler: %+v", pod)
+
+	domainName := pod.Namespace
+	nodeName := pod.Spec.NodeName
+
+	NodeResourceManager.Lock.Lock()
+	defer NodeResourceManager.Lock.Unlock()
+
+	nodes, exists := NodeResourceManager.LocalNodeStatuses[domainName]
+	if !exists {
+		nlog.Warnf("Domain %s not found when delete pod %s", domainName, pod.Name)
+		return nil
+	}
+
+	cpu, mem := rc.calRequestResource(pod)
+	for i := range nodes {
+		if nodes[i].Name == nodeName {
+			if nodes[i].TotalCPURequest >= cpu {
+				nodes[i].TotalCPURequest -= cpu
+			} else {
+				nodes[i].TotalCPURequest = 0
+			}
+
+			if nodes[i].TotalMemRequest >= mem {
+				nodes[i].TotalMemRequest -= mem
+			} else {
+				nodes[i].TotalMemRequest = 0
+			}
+
+			NodeResourceManager.LocalNodeStatuses[domainName] = nodes
+			nlog.Infof("Removed pod %s resources from node %s: CPU=%dm, MEM=%dB",
+				pod.Name, nodeName, cpu, mem)
+			return nil
+		}
+	}
+
+	nlog.Warnf("node %s not found when delete pod %s", nodeName, pod.Name)
+	return nil
+}
+
+func (rc *ResourceController) updatePodHandler(newPod, oldPod *apicorev1.Pod) error {
+	nlog.Infof("Step updatePodHandler: newPod=%+v, oldPod=%+v", newPod, oldPod)
+
+	NodeResourceManager.Lock.Lock()
+	defer NodeResourceManager.Lock.Unlock()
+
+	domainName := newPod.Namespace
+	nodes, exists := NodeResourceManager.LocalNodeStatuses[domainName]
+	if !exists {
+		nlog.Warnf("Domain %s not found when update pod %s", domainName, newPod.Name)
+		return nil
+	}
+
+	// Calculate the difference in resources between new and old Pods
+	oldCPU, oldMem := rc.calRequestResource(oldPod)
+	newCPU, newMem := rc.calRequestResource(newPod)
+	deltaCPU := newCPU - oldCPU
+	deltaMem := newMem - oldMem
+
+	// Dealing with changes to nodeName
+	oldNodeName := oldPod.Spec.NodeName
+	newNodeName := newPod.Spec.NodeName
+
+	// Scenario 1: Node not changed
+	if oldNodeName == newNodeName && newNodeName != "" {
+		for i := range nodes {
+			if nodes[i].Name == newNodeName {
+				nodes[i].TotalCPURequest += deltaCPU
+				nodes[i].TotalMemRequest += deltaMem
+
+				// Ensure that resources are not negative
+				if nodes[i].TotalCPURequest < 0 {
+					nodes[i].TotalCPURequest = 0
+				}
+				if nodes[i].TotalMemRequest < 0 {
+					nodes[i].TotalMemRequest = 0
+				}
+
+				NodeResourceManager.LocalNodeStatuses[domainName] = nodes
+				nlog.Infof("Updated pod %s resources on node %s: CPU=%+dm, MEM=%+dB",
+					newPod.Name, newNodeName, deltaCPU, deltaMem)
+				return nil
+			}
+		}
+		nlog.Warnf("node %s not found when update pod %s", newNodeName, newPod.Name)
+		return nil
+	}
+
+	// Scenario 2: Node changes occur
+	if oldNodeName != "" {
+		// Remove resources from old nodes
+		for i := range nodes {
+			if nodes[i].Name == oldNodeName {
+				nodes[i].TotalCPURequest -= oldCPU
+				nodes[i].TotalMemRequest -= oldMem
+
+				if nodes[i].TotalCPURequest < 0 {
+					nodes[i].TotalCPURequest = 0
+				}
+				if nodes[i].TotalMemRequest < 0 {
+					nodes[i].TotalMemRequest = 0
+				}
+
+				NodeResourceManager.LocalNodeStatuses[domainName] = nodes
+				nlog.Infof("Removed old pod %s resources from node %s: CPU=%dm, MEM=%dB",
+					newPod.Name, oldNodeName, oldCPU, oldMem)
+				break
+			}
+		}
+	}
+
+	// Add resources to a new node
+	if newNodeName != "" {
+		for i := range nodes {
+			if nodes[i].Name == newNodeName {
+				nodes[i].TotalCPURequest += newCPU
+				nodes[i].TotalMemRequest += newMem
+
+				NodeResourceManager.LocalNodeStatuses[domainName] = nodes
+				nlog.Infof("Added new pod %s resources to node %s: CPU=%dm, MEM=%dB",
+					newPod.Name, newNodeName, newCPU, newMem)
+				return nil
+			}
+		}
+		nlog.Warnf("new node %s not found when update pod %s", newNodeName, newPod.Name)
+	}
+
+	return nil
 }
 
 func (rc *ResourceController) nodeHandler(item interface{}) error {
@@ -357,40 +592,120 @@ func (rc *ResourceController) nodeHandler(item interface{}) error {
 		return nil
 	}
 
-	newStatus := LocalNodeStatus{
-		Name:       nodeItem.Node.Name,
-		DomainName: nodeItem.Node.Labels[common.LabelNodeNamespace],
+	switch nodeItem.Op {
+	case common.ResourceCheckForAddNode:
+		return rc.addNodeHandler(nodeItem.NewNode)
+	case common.ResourceCheckForDeleteNode:
+		return rc.deleteNodeHandler(nodeItem.NewNode)
+	case common.ResourceCheckForUpdateNode:
+		return rc.updateNodeHandler(nodeItem.NewNode, nodeItem.OldNode)
+	default:
+		return fmt.Errorf("unknown operation: %s", nodeItem.Op)
 	}
+}
 
-	for _, cond := range nodeItem.Node.Status.Conditions {
+func determineNodeStatus(node *apicorev1.Node) (status, reason string) {
+	status = NodeStateUnReady
+	reason = ""
+
+	for _, cond := range node.Status.Conditions {
 		if cond.Type == apicorev1.NodeReady {
-			switch cond.Status {
-			case apicorev1.ConditionTrue:
-				newStatus.Status = nodeStatusReady
-				for _, cond := range nodeItem.Node.Status.Conditions {
-					if cond.Type == apicorev1.NodeDiskPressure && cond.Status == apicorev1.ConditionTrue {
-						newStatus.Status = nodeStatusNotReady
-						newStatus.UnreadyReason = string(apicorev1.NodeDiskPressure)
+			if cond.Status == apicorev1.ConditionTrue {
+				status = NodeStateReady
+				for _, pressureCond := range node.Status.Conditions {
+					if pressureCond.Type == apicorev1.NodeDiskPressure && pressureCond.Status == apicorev1.ConditionTrue {
+						status = NodeStateUnReady
+						reason = string(apicorev1.NodeDiskPressure)
 						break
 					}
 				}
-			default:
-				newStatus.Status = nodeStatusNotReady
-				for _, condReason := range nodeItem.Node.Status.Conditions {
-					if condReason.Status == apicorev1.ConditionTrue {
-						newStatus.UnreadyReason = string(condReason.Type)
-					}
-					break
-				}
+			} else {
+				status = NodeStateUnReady
+				reason = string(cond.Type)
 			}
-			newStatus.LastHeartbeatTime = cond.LastHeartbeatTime
-			newStatus.LastTransitionTime = cond.LastTransitionTime
 			break
 		}
 	}
+	return status, reason
+}
 
-	nlog.Debugf("NewStatus to localNodeStatus item is : %+v", newStatus)
-	return c.nodeStatusManager.UpdateStatus(newStatus, nodeItem.Op)
+func (rc *ResourceController) addNodeHandler(node *apicorev1.Node) error {
+	nlog.Infof("Adding node %s", node.Name)
+
+	NodeResourceManager.Lock.Lock()
+	defer NodeResourceManager.Lock.Unlock()
+
+	domainName := node.Labels[common.LabelNodeNamespace]
+	status, reason := determineNodeStatus(node)
+	nodeStatus := LocalNodeStatus{
+		Name:               node.Name,
+		Status:             status,
+		UnreadyReason:      reason,
+		TotalCPURequest:    0,
+		TotalMemRequest:    0,
+		Allocatable:        node.Status.Allocatable,
+		LastHeartbeatTime:  metav1.Now(),
+		LastTransitionTime: metav1.Now(),
+	}
+
+	if _, exists := NodeResourceManager.LocalNodeStatuses[domainName]; !exists {
+		NodeResourceManager.LocalNodeStatuses[domainName] = []LocalNodeStatus{nodeStatus}
+	} else {
+		NodeResourceManager.LocalNodeStatuses[domainName] = append(NodeResourceManager.LocalNodeStatuses[domainName], nodeStatus)
+	}
+
+	nlog.Infof("Added node %s to domain %s, status: %s", node.Name, domainName, status)
+	return nil
+}
+
+func (rc *ResourceController) deleteNodeHandler(node *apicorev1.Node) error {
+	nlog.Infof("Deleting node %s", node.Name)
+
+	domainName := node.Labels[common.LabelNodeNamespace]
+	NodeResourceManager.Lock.Lock()
+	defer NodeResourceManager.Lock.Unlock()
+
+	nodes := NodeResourceManager.LocalNodeStatuses[domainName]
+	for i := range nodes {
+		if nodes[i].Name == node.Name {
+			NodeResourceManager.LocalNodeStatuses[domainName] = append(nodes[:i], nodes[i+1:]...)
+			nlog.Infof("Removed node %s from domain %s", node.Name, domainName)
+			return nil
+		}
+	}
+
+	nlog.Warnf("Node %s not found in domain %s", node.Name, domainName)
+	return nil
+}
+
+func (rc *ResourceController) updateNodeHandler(newNode, oldNode *apicorev1.Node) error {
+	nlog.Infof("Updating node %s", newNode.Name)
+
+	NodeResourceManager.Lock.Lock()
+	defer NodeResourceManager.Lock.Unlock()
+
+	domainName := newNode.Labels[common.LabelNodeNamespace]
+	status, reason := determineNodeStatus(newNode)
+	allocatable := newNode.Status.Allocatable
+
+	nodes := NodeResourceManager.LocalNodeStatuses[domainName]
+	for i := range nodes {
+		if nodes[i].Name == newNode.Name {
+			nodes[i].Status = status
+			nodes[i].UnreadyReason = reason
+			nodes[i].Allocatable = allocatable
+			nodes[i].LastHeartbeatTime = metav1.Now()
+
+			// Retain the original resource request value
+			nodes[i].TotalCPURequest = oldNode.Status.Allocatable.Cpu().MilliValue()
+			nodes[i].TotalMemRequest = oldNode.Status.Allocatable.Memory().Value()
+			nlog.Infof("Updated node %s in domain %s, new status: %s", newNode.Name, domainName, status)
+			return nil
+		}
+	}
+
+	nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
+	return nil
 }
 
 func (rc *ResourceController) calRequestResource(pod *apicorev1.Pod) (int64, int64) {
@@ -419,70 +734,3 @@ func (rc *ResourceController) Stop() {
 func (rc *ResourceController) Name() string {
 	return nodeResourceControllerName
 }
-
-//func NewNodeStatusManager() *NodeStatusManager {
-//	once.Do(func() {
-//		nlog.Infof("create nsm instance")
-//		instance = &NodeStatusManager{}
-//	})
-//	return instance
-//}
-//
-//func (m *NodeStatusManager) ReplaceAll(statuses map[string]LocalNodeStatus) {
-//	m.statuses = statuses
-//}
-//
-//func (m *NodeStatusManager) GetAll() map[string]LocalNodeStatus {
-//	m.lock.RLock()
-//	defer m.lock.RUnlock()
-//	return m.statuses
-//}
-//
-//func (m *NodeStatusManager) Get(nodeName string) LocalNodeStatus {
-//	m.lock.RLock()
-//	defer m.lock.RUnlock()
-//	return m.statuses[nodeName]
-//}
-//
-//func (m *NodeStatusManager) UpdateStatus(newStatus LocalNodeStatus, op string) error {
-//	m.lock.Lock()
-//	defer m.lock.Unlock()
-//
-//	switch op {
-//	case common.ResourceCheckForAddNode:
-//		m.statuses[newStatus.Name] = newStatus
-//	case common.ResourceCheckForUpdateNode:
-//		m.statuses[newStatus.Name] = newStatus
-//	case common.ResourceCheckForDeleteNode:
-//		delete(m.statuses, newStatus.Name)
-//	default:
-//		return fmt.Errorf("not support type %s", op)
-//	}
-//	return nil
-//}
-//
-//func (m *NodeStatusManager) AddPodResources(nodeName string, cpu, mem int64) error {
-//	m.lock.Lock()
-//	defer m.lock.Unlock()
-//
-//	if status, exists := m.statuses[nodeName]; exists {
-//		status.TotalCPURequest += cpu
-//		status.TotalMemRequest += mem
-//		m.statuses[nodeName] = status
-//		return nil
-//	}
-//	return fmt.Errorf("node %s not found", nodeName)
-//}
-//
-//func (m *NodeStatusManager) RemovePodResources(nodeName string, cpu, mem int64) error {
-//	m.lock.Lock()
-//	defer m.lock.Unlock()
-//
-//	if status, exists := m.statuses[nodeName]; exists {
-//		status.TotalCPURequest -= cpu
-//		status.TotalMemRequest -= mem
-//		m.statuses[nodeName] = status
-//		return nil
-//	}
-//	return fmt.Errorf("node %s not found", nodeName)
-//}

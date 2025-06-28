@@ -22,7 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/secretflow/kuscia/pkg/controllers/domain"
+	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,6 +56,7 @@ type PendingHandler struct {
 	servicesLister   corelisters.ServiceLister
 	configMapLister  corelisters.ConfigMapLister
 	appImagesLister  kuscialistersv1alpha1.AppImageLister
+	pluginManager    *plugins.PluginManager
 }
 
 type NamedPorts map[string]kusciaapisv1alpha1.ContainerPort
@@ -88,6 +90,10 @@ type PartyKitInfo struct {
 
 // NewPendingHandler returns a PendingHandler instance.
 func NewPendingHandler(deps *Dependencies) *PendingHandler {
+	pm := plugins.NewPluginManager()
+	pm.Register(plugins.NewResourceCheckPlugin())
+	pm.Register(plugins.NewCDRCheckPlugin(deps.CdrLister))
+
 	return &PendingHandler{
 		kubeClient:       deps.KubeClient,
 		kusciaClient:     deps.KusciaClient,
@@ -100,6 +106,7 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
 		appImagesLister:  deps.AppImagesLister,
+		pluginManager: pm,
 	}
 }
 
@@ -228,16 +235,16 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
 	for _, partyKitInfo := range selfPartyKitInfos {
-		_, err := h.nodeResourceCheck(*partyKitInfo)
-		if err != nil {
-			nlog.Errorf("Domain %s hv no node can satisfy kt %s resource", partyKitInfo.domainID, partyKitInfo.kusciaTask.Name)
-			return err
+		resourceRequest := h.resourceRequest(*partyKitInfo)
+		cdrResourceRequest := h.cdrResourceRequest(*partyKitInfo)
+		passed, err := h.pluginManager.Permit(context.Background(), plugins.PluginTypeResourceCheck, resourceRequest)
+		if err != nil || !passed {
+			return fmt.Errorf("resource check failed: %v", err)
 		}
 
-		_, cdrErr := h.cdrReadyCheck(*partyKitInfo)
-		if cdrErr != nil {
-			nlog.Errorf("Kt %s cdr check failed with %v", partyKitInfo.kusciaTask.Name, cdrErr)
-			return err
+		cdrPassed, err := h.pluginManager.Permit(context.Background(), plugins.PluginTypeCDRCheck, cdrResourceRequest)
+		if err != nil || !cdrPassed {
+			return fmt.Errorf("cdr check failed: %v", err)
 		}
 
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
@@ -263,6 +270,42 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	return nil
 }
 
+func (h *PendingHandler) resourceRequest(partyKitInfo PartyKitInfo) ResourceRequest {
+	var allContainerCPURequest, allContainerMEMRequest int64
+	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
+		if container.Resources.Requests == nil {
+			nlog.Warnf("Kt %s container %s have no requests settings", partyKitInfo.kusciaTask.Name, container.Name)
+			continue
+		}
+		cpuValue := container.Resources.Requests.Cpu().MilliValue()
+		memValue := container.Resources.Requests.Memory().Value()
+		allContainerCPURequest += cpuValue
+		allContainerMEMRequest += memValue
+	}
+
+	return ResourceRequest{
+		DomainName: partyKitInfo.kusciaTask.Namespace,
+		CpuReq: allContainerCPURequest,
+		MemReq: allContainerMEMRequest,
+	}
+}
+
+func (h *PendingHandler) cdrResourceRequest(partyKitInfo PartyKitInfo) []string {
+	var cdrs []string
+	initiator := partyKitInfo.kusciaTask.Spec.Initiator
+
+	for _, party := range partyKitInfo.kusciaTask.Spec.Parties {
+		if party.DomainID == initiator {
+			continue
+		}
+
+		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
+		cdrs = append(cdrs, cdrName)
+	}
+
+	return cdrs
+}
+
 func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) {
 	initiator := partyKitInfo.kusciaTask.Spec.Initiator
 	for _, party := range partyKitInfo.kusciaTask.Spec.Parties {
@@ -284,53 +327,6 @@ func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) 
 		}
 	}
 	return true, nil
-}
-
-func (h *PendingHandler) nodeResourceCheck(partyKitInfo PartyKitInfo) (bool, error) {
-	nlog.Debugf("PartyKitInfo struct is %+v", partyKitInfo)
-	var allContainerCPURequest, allContainerMEMRequest int64
-	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
-		if container.Resources.Requests == nil {
-			nlog.Warnf("Kt %s container %s hv no requests settings", partyKitInfo.kusciaTask.Name, container.Name)
-			return true, nil
-		}
-		cpuValue := container.Resources.Requests.Cpu().MilliValue()
-		memValue := container.Resources.Requests.Memory().Value()
-		allContainerCPURequest += cpuValue
-		allContainerMEMRequest += memValue
-	}
-
-	nlog.Debugf("Kt %s allCCR is %d allCMR is %d", partyKitInfo.kusciaTask.Name, allContainerCPURequest, allContainerMEMRequest)
-	nodeStatuses := domain.NewNodeStatusManager().GetAll()
-	nlog.Debugf("NodeStatuses struct is %+v", nodeStatuses)
-
-	for _, nodeStatus := range nodeStatuses {
-		if nodeStatus.DomainName != partyKitInfo.domainID || nodeStatus.Status != "Ready" {
-			nlog.Warnf("Domain %s node %s status is %s", partyKitInfo.domainID, nodeStatus.Name, nodeStatus.Status)
-			continue
-		}
-
-		node, err := h.nodeLister.Get(nodeStatus.Name)
-		if err != nil {
-			nlog.Errorf("Get node %s failed with %v", nodeStatus.Name, err)
-			continue
-		}
-
-		nodeCPUValue := node.Status.Allocatable.Cpu().MilliValue()
-		nodeMEMValue := node.Status.Allocatable.Memory().Value()
-		nlog.Debugf("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
-			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
-		if (nodeCPUValue-nodeStatus.TotalCPURequest) > allContainerCPURequest &&
-			(nodeMEMValue-nodeStatus.TotalMemRequest) > allContainerMEMRequest {
-			nlog.Debugf("Domain %s node %s available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
-			return true, nil
-		} else {
-			nlog.Warnf("Domain %s node %s no available resource for kt %s", partyKitInfo.domainID, node.Name, partyKitInfo.kusciaTask.Name)
-			continue
-		}
-	}
-
-	return false, fmt.Errorf("domain %s no available node for kt %s", partyKitInfo.domainID, partyKitInfo.kusciaTask.Name)
 }
 
 func (h *PendingHandler) initPartyTaskStatus(kusciaTask *kusciaapisv1alpha1.KusciaTask, ktStatus *kusciaapisv1alpha1.KusciaTaskStatus) {

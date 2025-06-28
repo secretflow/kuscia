@@ -31,12 +31,14 @@ type queueHandler func(ctx context.Context, key string) error
 type queueNodeAndPodHandler func(obj interface{}) error
 
 type PodQueueItem struct {
-	Pod *apicorev1.Pod
+	NewPod *apicorev1.Pod
+	OldPod *apicorev1.Pod
 	Op  string
 }
 
 type NodeQueueItem struct {
-	Node *apicorev1.Node
+	NewNode *apicorev1.Node
+	OldNode *apicorev1.Node
 	Op   string
 }
 
@@ -53,14 +55,10 @@ func CheckType(obj interface{}) string {
 
 func EnqueuePodObject(podQueueItem *PodQueueItem, queue workqueue.Interface) {
 	queue.Add(podQueueItem)
-	nlog.Debugf("Enqueue Pod key: %s", podQueueItem.Pod.Name)
-	nlog.Debugf("after pod queue size %d", queue.Len())
 }
 
 func EnqueueNodeObject(nodeQueueItem *NodeQueueItem, queue workqueue.Interface) {
 	queue.Add(nodeQueueItem)
-	nlog.Debugf("Enqueue Node key: %s", nodeQueueItem.Node.Name)
-	nlog.Debugf("after node queue size %d", queue.Len())
 }
 
 // EnqueueObjectWithKey is used to enqueue object key.
