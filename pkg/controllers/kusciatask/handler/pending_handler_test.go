@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers/domain"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -78,6 +80,32 @@ func TestPendingHandler_Handle(t *testing.T) {
 	t.Parallel()
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
+
+	domain.NodeResourceManager = &domain.NodeStatusManager{
+		LocalNodeStatuses: map[string][]domain.LocalNodeStatus{
+			"domain-a": {
+				{
+					Name:       "mock-node-a",
+					Status:     domain.NodeStateReady,
+					Allocatable: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse("8"),
+						v1.ResourceMemory: resource.MustParse("16Gi"),
+					},
+				},
+			},
+			"domain-b": {
+				{
+					Name:       "mock-node-b",
+					Status:     domain.NodeStateReady,
+					Allocatable: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse("8"),
+						v1.ResourceMemory: resource.MustParse("16Gi"),
+					},
+				},
+			},
+		},
+		Lock: sync.RWMutex{},
+	}
 
 	_, err := handler.Handle(kusciaTask)
 	assert.NoError(t, err)
