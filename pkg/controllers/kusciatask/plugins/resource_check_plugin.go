@@ -16,8 +16,8 @@ type ResourceRequest struct {
 
 type ResourceCheckPlugin struct{}
 
-func NewResourceCheckPlugin() *CDRCheckPlugin {
-	return &CDRCheckPlugin{}
+func NewResourceCheckPlugin() *ResourceCheckPlugin {
+	return &ResourceCheckPlugin{}
 }
 
 func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
