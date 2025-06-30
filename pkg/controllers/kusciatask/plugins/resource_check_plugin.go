@@ -24,10 +24,10 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 	}
 
 	domainName := compositeRequest.ResourceReq.DomainName
-	domain.NodeResourceManager.Lock.RLock()
-	defer domain.NodeResourceManager.Lock.RUnlock()
+	domain.NodeResourceStore.Lock.RLock()
+	defer domain.NodeResourceStore.Lock.RUnlock()
 
-	localNodeStatuses, exists := domain.NodeResourceManager.LocalNodeStatuses[domainName]
+	localNodeStatuses, exists := domain.NodeResourceStore.LocalNodeStatuses[domainName]
 	if !exists {
 		nlog.Warnf("domain %s not have node", domainName)
 		return false, fmt.Errorf("no node status available for domain %s", domainName)

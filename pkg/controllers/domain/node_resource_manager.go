@@ -312,7 +312,7 @@ func (nrm *NodeResourceManager) initLocalNodeStatus() error {
 		NodeResourceStore.LocalNodeStatuses = nodeStatuses
 	}
 
-	nlog.Infof("NodeResourceManager.LocalNodeStatuses is %v", NodeResourceStore.LocalNodeStatuses)
+	nlog.Infof("NodeResourceStore.LocalNodeStatuses is %v", NodeResourceStore.LocalNodeStatuses)
 	return nil
 }
 
