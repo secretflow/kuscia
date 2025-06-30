@@ -258,10 +258,13 @@ func (nrm *NodeResourceManager) initLocalNodeStatus() error {
 
 	var nodeStatuses = make(map[string][]LocalNodeStatus)
 	for _, node := range nodes {
+		nlog.Infof("node find %s", node.Name)
 		domainName, exists := node.Labels[common.LabelNodeNamespace]
 		if exists && domainName != "" {
+			nlog.Infof("label domainName is %s", domainName)
 			_, err := nrm.domainInformer.Lister().Get(domainName)
 			if err == nil {
+				nlog.Infof("domainInformer find %s", domainName)
 				nodeStatus := LocalNodeStatus{
 					Name:            node.Name,
 					Status:          nodeStatusNotReady,
@@ -305,6 +308,8 @@ func (nrm *NodeResourceManager) initLocalNodeStatus() error {
 			}
 		}
 	}
+
+	nlog.Infof("cal nodeStatuses is %v", nodeStatuses)
 
 	if NodeResourceStore != nil {
 		NodeResourceStore.Lock.Lock()
@@ -611,7 +616,7 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 			nodes[i].UnreadyReason = reason
 			nodes[i].Allocatable = allocatable
 			nodes[i].LastHeartbeatTime = metav1.Now()
-			nlog.Infof("Updated node %s in domain %s, new status: %s", newNode.Name, domainName, status)
+			nlog.Infof("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodes[i])
 			return nil
 		}
 	}

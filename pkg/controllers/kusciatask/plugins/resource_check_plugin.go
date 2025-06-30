@@ -38,6 +38,7 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 			continue
 		}
 
+		nlog.Infof("nodeStatus is %v", nodeStatus)
 		nodeCPUValue := nodeStatus.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
 		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
