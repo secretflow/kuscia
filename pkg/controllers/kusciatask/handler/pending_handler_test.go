@@ -107,7 +107,7 @@ func TestPendingHandler_Handle(t *testing.T) {
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
 
-	domain.NodeResourceManager = &domain.NodeStatusManager{
+	domain.NodeResourceStore = &domain.NodeStatusStore{
 		LocalNodeStatuses: map[string][]domain.LocalNodeStatus{
 			"domain-a": {
 				{

@@ -231,16 +231,17 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
 	for _, partyKitInfo := range selfPartyKitInfos {
-		resourceRequest := h.resourceRequest(*partyKitInfo)
-		cdrResourceRequest := h.cdrResourceRequest(*partyKitInfo)
-		passed, err := h.pluginManager.Permit(context.Background(), plugins.PluginTypeResourceCheck, resourceRequest)
-		if err != nil || !passed {
-			return fmt.Errorf("resource check failed: %v", err)
+		compositeReq := plugins.CompositeRequest{
+			ResourceReq: h.resourceRequest(*partyKitInfo),
+			CDRReq:      h.cdrResourceRequest(*partyKitInfo),
 		}
-
-		cdrPassed, err := h.pluginManager.Permit(context.Background(), plugins.PluginTypeCDRCheck, cdrResourceRequest)
-		if err != nil || !cdrPassed {
-			return fmt.Errorf("cdr check failed: %v", err)
+		permit, errors := h.pluginManager.Permit(context.Background(), compositeReq)
+		if !permit {
+			var errMsgs []string
+			for _, e := range errors {
+				errMsgs = append(errMsgs, e.Error())
+			}
+			return fmt.Errorf(strings.Join(errMsgs, "; "))
 		}
 
 		ps, ss, err := h.createResourceForParty(partyKitInfo)

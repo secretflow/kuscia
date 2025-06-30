@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	v1 "k8s.io/api/core/v1"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -22,9 +23,15 @@ func NewCDRCheckPlugin(cdrLister kuscialistersv1alpha1.ClusterDomainRouteLister)
 }
 
 func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
-	cdrs, _ := params.([]string)
+	var compositeRequest CompositeRequest
+	var ok bool
+	compositeRequest, ok = params.(CompositeRequest)
+	if !ok {
+		nlog.Errorf("Could not convert params %v to compositeRequest", params)
+		return false, nil
+	}
 
-	for _, cdr := range cdrs {
+	for _, cdr := range compositeRequest.CDRReq {
 		cdrObj, err := p.cdrLister.Get(cdr)
 		if err != nil {
 			return false, fmt.Errorf("get cdr %s failed with %v", cdr, err)

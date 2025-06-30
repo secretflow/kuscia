@@ -8,12 +8,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-type ResourceRequest struct {
-	DomainName string
-	CpuReq int64
-	MemReq int64
-}
-
 type ResourceCheckPlugin struct{}
 
 func NewResourceCheckPlugin() *ResourceCheckPlugin {
@@ -21,15 +15,15 @@ func NewResourceCheckPlugin() *ResourceCheckPlugin {
 }
 
 func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
-	var resourceRequest ResourceRequest
+	var compositeRequest CompositeRequest
 	var ok bool
-	resourceRequest, ok = params.(ResourceRequest)
+	compositeRequest, ok = params.(CompositeRequest)
 	if !ok {
-		nlog.Errorf("Could not convert params %v to resourceRequest", params)
+		nlog.Errorf("Could not convert params %v to compositeRequest", params)
 		return false, nil
 	}
 
-	domainName := resourceRequest.DomainName
+	domainName := compositeRequest.ResourceReq.DomainName
 	domain.NodeResourceManager.Lock.RLock()
 	defer domain.NodeResourceManager.Lock.RUnlock()
 
@@ -48,8 +42,8 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
 		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
-		if (nodeCPUValue-nodeStatus.TotalCPURequest) > resourceRequest.CpuReq &&
-			(nodeMEMValue-nodeStatus.TotalMemRequest) > resourceRequest.MemReq {
+		if (nodeCPUValue-nodeStatus.TotalCPURequest) > compositeRequest.ResourceReq.CpuReq &&
+			(nodeMEMValue-nodeStatus.TotalMemRequest) > compositeRequest.ResourceReq.MemReq {
 			nlog.Infof("Domain %s node %s available resource", domainName, nodeStatus.Name)
 			return true, nil
 		}

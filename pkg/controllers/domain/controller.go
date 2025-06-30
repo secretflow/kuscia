@@ -88,6 +88,7 @@ type Controller struct {
 	workqueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
+	nodeResourceManager   *NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -99,17 +100,27 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	resourceQuotaInformer := kubeInformerFactory.Core().V1().ResourceQuotas()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	podInformer := kubeInformerFactory.Core().V1().Pods()
 	configmapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	roleInformer := kubeInformerFactory.Rbac().V1().Roles()
 
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
+	nodeResourceManager := NewNodeResourceManager(
+		domainInformer,
+		nodeInformer,
+		podInformer,
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+	)
+
 	cacheSyncs := []cache.InformerSynced{
 		resourceQuotaInformer.Informer().HasSynced,
 		domainInformer.Informer().HasSynced,
 		namespaceInformer.Informer().HasSynced,
 		nodeInformer.Informer().HasSynced,
+		podInformer.Informer().HasSynced,
 		configmapInformer.Informer().HasSynced,
 		roleInformer.Informer().HasSynced,
 	}
@@ -130,6 +141,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
 		recorder:          eventRecorder,
 		cacheSyncs:        cacheSyncs,
+		nodeResourceManager: nodeResourceManager,
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -324,6 +336,8 @@ func (c *Controller) Run(workers int) error {
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
+		go wait.Until(c.runPodHandleWorker, time.Second, c.ctx.Done())
+		go wait.Until(c.runNodeHandleWorker, time.Second, c.ctx.Done())
 	}
 
 	nlog.Info("Starting sync domain status")
@@ -346,6 +360,19 @@ func (c *Controller) runWorker() {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
 	}
 }
+
+func (c *Controller) runPodHandleWorker() {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeResourceManager.podQueue, c.nodeResourceManager.podHandler, maxRetries) {
+		metrics.WorkerQueueSize.Set(float64(c.nodeResourceManager.podQueue.Len()))
+	}
+}
+
+func (c *Controller) runNodeHandleWorker() {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeResourceManager.nodeQueue, c.nodeResourceManager.nodeHandler, maxRetries) {
+		metrics.WorkerQueueSize.Set(float64(c.nodeResourceManager.nodeQueue.Len()))
+	}
+}
+
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the domain resource
 // with the current status of the resource.
