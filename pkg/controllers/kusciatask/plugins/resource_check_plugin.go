@@ -29,7 +29,7 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 
 	localNodeStatuses, exists := domain.NodeResourceStore.LocalNodeStatuses[domainName]
 	if !exists {
-		nlog.Warnf("domain %s not have node", domainName)
+		nlog.Warnf("Domain %s not have node", domainName)
 		return false, fmt.Errorf("no node status available for domain %s", domainName)
 	}
 
@@ -38,14 +38,13 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 			continue
 		}
 
-		nlog.Infof("nodeStatus is %v", nodeStatus)
 		nodeCPUValue := nodeStatus.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
-		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
+		nlog.Debugf("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
 		if (nodeCPUValue-nodeStatus.TotalCPURequest) > compositeRequest.ResourceReq.CpuReq &&
 			(nodeMEMValue-nodeStatus.TotalMemRequest) > compositeRequest.ResourceReq.MemReq {
-			nlog.Infof("Domain %s node %s available resource", domainName, nodeStatus.Name)
+			nlog.Debugf("Domain %s node %s available resource", domainName, nodeStatus.Name)
 			return true, nil
 		}
 	}
