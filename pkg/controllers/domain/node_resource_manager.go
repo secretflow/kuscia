@@ -88,9 +88,15 @@ func (nrm *NodeResourceManager) addPodEventHandler() {
 			nlog.Infof("PodInformer EventHandler handle: %+v", pod)
 			namespace := pod.Namespace
 			nodeName := pod.Spec.NodeName
-			_, err := nrm.domainInformer.Lister().Get(namespace)
+			nlog.Infof("namespace is %s, nodeName is %s", namespace, nodeName)
+			domain, err := nrm.domainInformer.Lister().Get(namespace)
 			if err != nil {
 				nlog.Errorf("DomainLister get %s failed with %v", namespace, err)
+				return false
+			}
+
+			if domain == nil {
+				nlog.Errorf("DomainLister get %s is 0", namespace)
 				return false
 			}
 
@@ -254,6 +260,11 @@ func (nrm *NodeResourceManager) initLocalNodeStatus() error {
 	nodes, err := nrm.nodeInformer.Lister().List(labels.Everything())
 	if err != nil {
 		return fmt.Errorf("failed to list nodes: %v", err)
+	}
+
+	if len(nodes) == 0 {
+		nlog.Warn("No nodes found in cluster")
+		return nil
 	}
 
 	var nodeStatuses = make(map[string][]LocalNodeStatus)

@@ -150,11 +150,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addDomainEventHandler(domainInformer)
 	controller.addResourceQuotaEventHandler(resourceQuotaInformer)
 	controller.addConfigMapHandler(configmapInformer)
-	err := nodeResourceManager.initLocalNodeStatus()
-	if err != nil {
-		nlog.Errorf("nodeResourceManager initLocalNodeStatus failed with %v", err)
-		return nil
-	}
 	controller.nodeResourceManager.addPodEventHandler()
 	controller.nodeResourceManager.addNodeEventHandler()
 
@@ -340,6 +335,14 @@ func (c *Controller) Run(workers int) error {
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.cacheSyncs...) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
+
+	nlog.Info("nodeResourceManager start initLocalNodeStatus")
+	err := c.nodeResourceManager.initLocalNodeStatus()
+	if err != nil {
+		nlog.Errorf("nodeResourceManager initLocalNodeStatus failed with %v", err)
+		return nil
+	}
+
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())

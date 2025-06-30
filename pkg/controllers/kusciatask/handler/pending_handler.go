@@ -303,29 +303,6 @@ func (h *PendingHandler) cdrResourceRequest(partyKitInfo PartyKitInfo) []string 
 	return cdrs
 }
 
-func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) {
-	initiator := partyKitInfo.kusciaTask.Spec.Initiator
-	for _, party := range partyKitInfo.kusciaTask.Spec.Parties {
-		if party.DomainID == initiator {
-			continue
-		}
-
-		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
-		nlog.Debugf("CdrName is %s", cdrName)
-		cdr, err := h.cdrLister.Get(cdrName)
-		if err != nil {
-			return false, fmt.Errorf("get cdr %s failed with %v", cdrName, err)
-		}
-
-		for _, condition := range cdr.Status.Conditions {
-			if condition.Type == kusciaapisv1alpha1.ClusterDomainRouteReady && condition.Status != v1.ConditionTrue {
-				return false, fmt.Errorf("initiator %s to collaborator %s failed with %v", initiator, party.DomainID, condition.Reason)
-			}
-		}
-	}
-	return true, nil
-}
-
 func (h *PendingHandler) initPartyTaskStatus(kusciaTask *kusciaapisv1alpha1.KusciaTask, ktStatus *kusciaapisv1alpha1.KusciaTaskStatus) {
 	for _, party := range kusciaTask.Spec.Parties {
 		setPartyTaskStatus(party, ktStatus)
