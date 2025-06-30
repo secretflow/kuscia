@@ -88,6 +88,7 @@ type Controller struct {
 	workqueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
+	nodeResourceManager   *NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -99,17 +100,27 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	resourceQuotaInformer := kubeInformerFactory.Core().V1().ResourceQuotas()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	podInformer := kubeInformerFactory.Core().V1().Pods()
 	configmapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	roleInformer := kubeInformerFactory.Rbac().V1().Roles()
 
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
+	nodeResourceManager := NewNodeResourceManager(
+		domainInformer,
+		nodeInformer,
+		podInformer,
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+	)
+
 	cacheSyncs := []cache.InformerSynced{
 		resourceQuotaInformer.Informer().HasSynced,
 		domainInformer.Informer().HasSynced,
 		namespaceInformer.Informer().HasSynced,
 		nodeInformer.Informer().HasSynced,
+		podInformer.Informer().HasSynced,
 		configmapInformer.Informer().HasSynced,
 		roleInformer.Informer().HasSynced,
 	}
@@ -123,13 +134,14 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kusciaInformerFactory: kusciaInformerFactory,
 		resourceQuotaLister:   resourceQuotaInformer.Lister(),
 		domainLister:          domainInformer.Lister(),
-		namespaceLister:       namespaceInformer.Lister(),
-		nodeLister:            nodeInformer.Lister(),
-		configmapLister:       configmapInformer.Lister(),
-		roleLister:            roleInformer.Lister(),
-		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
-		recorder:              eventRecorder,
-		cacheSyncs:            cacheSyncs,
+		namespaceLister:   namespaceInformer.Lister(),
+		nodeLister:        nodeInformer.Lister(),
+		configmapLister:   configmapInformer.Lister(),
+		roleLister:        roleInformer.Lister(),
+		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
+		recorder:          eventRecorder,
+		cacheSyncs:        cacheSyncs,
+		nodeResourceManager: nodeResourceManager,
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -138,10 +150,16 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addDomainEventHandler(domainInformer)
 	controller.addResourceQuotaEventHandler(resourceQuotaInformer)
 	controller.addConfigMapHandler(configmapInformer)
+	err := nodeResourceManager.initLocalNodeStatus()
+	if err != nil {
+		nlog.Errorf("nodeResourceManager initLocalNodeStatus failed with %v", err)
+		return nil
+	}
+	controller.nodeResourceManager.addPodEventHandler()
+	controller.nodeResourceManager.addNodeEventHandler()
 
 	return controller
 }
-
 // addNamespaceEventHandler is used to add event handler for namespace informer.
 func (c *Controller) addNamespaceEventHandler(nsInformer informerscorev1.NamespaceInformer) {
 	_, _ = nsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
@@ -271,7 +289,6 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 		},
 	})
 }
-
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -323,10 +340,11 @@ func (c *Controller) Run(workers int) error {
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.cacheSyncs...) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
-
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
+		go wait.Until(c.runPodHandleWorker, time.Second, c.ctx.Done())
+		go wait.Until(c.runNodeHandleWorker, time.Second, c.ctx.Done())
 	}
 
 	nlog.Info("Starting sync domain status")
@@ -334,7 +352,6 @@ func (c *Controller) Run(workers int) error {
 	<-c.ctx.Done()
 	return nil
 }
-
 // Stop is used to stop the controller.
 func (c *Controller) Stop() {
 	if c.cancel != nil {
@@ -348,6 +365,18 @@ func (c *Controller) Stop() {
 func (c *Controller) runWorker() {
 	for queue.HandleQueueItem(context.Background(), controllerName, c.workqueue, c.syncHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
+	}
+}
+
+func (c *Controller) runPodHandleWorker() {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeResourceManager.podQueue, c.nodeResourceManager.podHandler, maxRetries) {
+		metrics.WorkerQueueSize.Set(float64(c.nodeResourceManager.podQueue.Len()))
+	}
+}
+
+func (c *Controller) runNodeHandleWorker() {
+	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeResourceManager.nodeQueue, c.nodeResourceManager.nodeHandler, maxRetries) {
+		metrics.WorkerQueueSize.Set(float64(c.nodeResourceManager.nodeQueue.Len()))
 	}
 }
 

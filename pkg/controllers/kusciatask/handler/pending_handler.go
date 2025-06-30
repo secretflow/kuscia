@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,10 +49,12 @@ type PendingHandler struct {
 	kusciaClient     kusciaclientset.Interface
 	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
 	namespacesLister corelisters.NamespaceLister
+	cdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
 	podsLister       corelisters.PodLister
 	servicesLister   corelisters.ServiceLister
 	configMapLister  corelisters.ConfigMapLister
 	appImagesLister  kuscialistersv1alpha1.AppImageLister
+	pluginManager    *plugins.PluginManager
 }
 
 type NamedPorts map[string]kusciaapisv1alpha1.ContainerPort
@@ -84,15 +88,21 @@ type PartyKitInfo struct {
 
 // NewPendingHandler returns a PendingHandler instance.
 func NewPendingHandler(deps *Dependencies) *PendingHandler {
+	pm := plugins.NewPluginManager()
+	pm.Register(plugins.NewResourceCheckPlugin())
+	pm.Register(plugins.NewCDRCheckPlugin(deps.CdrLister))
+
 	return &PendingHandler{
 		kubeClient:       deps.KubeClient,
 		kusciaClient:     deps.KusciaClient,
 		trgLister:        deps.TrgLister,
 		namespacesLister: deps.NamespacesLister,
+		cdrLister:        deps.CdrLister,
 		podsLister:       deps.PodsLister,
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
 		appImagesLister:  deps.AppImagesLister,
+		pluginManager: pm,
 	}
 }
 
@@ -221,6 +231,19 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
 	for _, partyKitInfo := range selfPartyKitInfos {
+		compositeReq := plugins.CompositeRequest{
+			ResourceReq: h.resourceRequest(*partyKitInfo),
+			CDRReq:      h.cdrResourceRequest(*partyKitInfo),
+		}
+		permit, errors := h.pluginManager.Permit(context.Background(), compositeReq)
+		if !permit {
+			var errMsgs []string
+			for _, e := range errors {
+				errMsgs = append(errMsgs, e.Error())
+			}
+			return fmt.Errorf(strings.Join(errMsgs, "; "))
+		}
+
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
 			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
@@ -242,6 +265,65 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 		return fmt.Errorf("failed to create task resource group for kuscia task %v, %v", kusciaTask.Name, err.Error())
 	}
 	return nil
+}
+
+func (h *PendingHandler) resourceRequest(partyKitInfo PartyKitInfo) plugins.ResourceRequest {
+	var allContainerCPURequest, allContainerMEMRequest int64
+	for _, container := range partyKitInfo.deployTemplate.Spec.Containers {
+		if container.Resources.Requests == nil {
+			nlog.Warnf("Kt %s container %s have no requests settings", partyKitInfo.kusciaTask.Name, container.Name)
+			continue
+		}
+		cpuValue := container.Resources.Requests.Cpu().MilliValue()
+		memValue := container.Resources.Requests.Memory().Value()
+		allContainerCPURequest += cpuValue
+		allContainerMEMRequest += memValue
+	}
+
+	return plugins.ResourceRequest{
+		DomainName: partyKitInfo.domainID,
+		CpuReq: allContainerCPURequest,
+		MemReq: allContainerMEMRequest,
+	}
+}
+
+func (h *PendingHandler) cdrResourceRequest(partyKitInfo PartyKitInfo) []string {
+	var cdrs []string
+	initiator := partyKitInfo.kusciaTask.Spec.Initiator
+
+	for _, party := range partyKitInfo.kusciaTask.Spec.Parties {
+		if party.DomainID == initiator {
+			continue
+		}
+
+		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
+		cdrs = append(cdrs, cdrName)
+	}
+
+	return cdrs
+}
+
+func (h *PendingHandler) cdrReadyCheck(partyKitInfo PartyKitInfo) (bool, error) {
+	initiator := partyKitInfo.kusciaTask.Spec.Initiator
+	for _, party := range partyKitInfo.kusciaTask.Spec.Parties {
+		if party.DomainID == initiator {
+			continue
+		}
+
+		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
+		nlog.Debugf("CdrName is %s", cdrName)
+		cdr, err := h.cdrLister.Get(cdrName)
+		if err != nil {
+			return false, fmt.Errorf("get cdr %s failed with %v", cdrName, err)
+		}
+
+		for _, condition := range cdr.Status.Conditions {
+			if condition.Type == kusciaapisv1alpha1.ClusterDomainRouteReady && condition.Status != v1.ConditionTrue {
+				return false, fmt.Errorf("initiator %s to collaborator %s failed with %v", initiator, party.DomainID, condition.Reason)
+			}
+		}
+	}
+	return true, nil
 }
 
 func (h *PendingHandler) initPartyTaskStatus(kusciaTask *kusciaapisv1alpha1.KusciaTask, ktStatus *kusciaapisv1alpha1.KusciaTaskStatus) {
