@@ -150,6 +150,13 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addDomainEventHandler(domainInformer)
 	controller.addResourceQuotaEventHandler(resourceQuotaInformer)
 	controller.addConfigMapHandler(configmapInformer)
+	err := nodeResourceManager.initLocalNodeStatus()
+	if err != nil {
+		nlog.Error("initLocalNodeStatus failed with %v", err)
+		return nil
+	}
+	controller.nodeResourceManager.addPodEventHandler()
+	controller.nodeResourceManager.addNodeEventHandler()
 
 	return controller
 }
