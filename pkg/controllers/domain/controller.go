@@ -152,7 +152,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addConfigMapHandler(configmapInformer)
 	err := nodeResourceManager.initLocalNodeStatus()
 	if err != nil {
-		nlog.Error("initLocalNodeStatus failed with %v", err)
+		nlog.Errorf("nodeResourceManager initLocalNodeStatus failed with %v", err)
 		return nil
 	}
 	controller.nodeResourceManager.addPodEventHandler()
