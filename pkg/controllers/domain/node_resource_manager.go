@@ -611,10 +611,6 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 			nodes[i].UnreadyReason = reason
 			nodes[i].Allocatable = allocatable
 			nodes[i].LastHeartbeatTime = metav1.Now()
-
-			// Retain the original resource request value
-			nodes[i].TotalCPURequest = oldNode.Status.Allocatable.Cpu().MilliValue()
-			nodes[i].TotalMemRequest = oldNode.Status.Allocatable.Memory().Value()
 			nlog.Infof("Updated node %s in domain %s, new status: %s", newNode.Name, domainName, status)
 			return nil
 		}
