@@ -134,14 +134,14 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kusciaInformerFactory: kusciaInformerFactory,
 		resourceQuotaLister:   resourceQuotaInformer.Lister(),
 		domainLister:          domainInformer.Lister(),
-		namespaceLister:   namespaceInformer.Lister(),
-		nodeLister:        nodeInformer.Lister(),
-		configmapLister:   configmapInformer.Lister(),
-		roleLister:        roleInformer.Lister(),
-		workqueue:         workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
-		recorder:          eventRecorder,
-		cacheSyncs:        cacheSyncs,
-		nodeResourceManager: nodeResourceManager,
+		namespaceLister:       namespaceInformer.Lister(),
+		nodeLister:            nodeInformer.Lister(),
+		configmapLister:       configmapInformer.Lister(),
+		roleLister:            roleInformer.Lister(),
+		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
+		recorder:              eventRecorder,
+		cacheSyncs:            cacheSyncs,
+		nodeResourceManager:   nodeResourceManager,
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -155,6 +155,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	return controller
 }
+
 // addNamespaceEventHandler is used to add event handler for namespace informer.
 func (c *Controller) addNamespaceEventHandler(nsInformer informerscorev1.NamespaceInformer) {
 	_, _ = nsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
@@ -284,6 +285,7 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 		},
 	})
 }
+
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -355,6 +357,7 @@ func (c *Controller) Run(workers int) error {
 	<-c.ctx.Done()
 	return nil
 }
+
 // Stop is used to stop the controller.
 func (c *Controller) Stop() {
 	if c.cancel != nil {

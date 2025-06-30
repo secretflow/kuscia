@@ -14,8 +14,8 @@ const (
 
 type ResourceRequest struct {
 	DomainName string
-	CpuReq int64
-	MemReq int64
+	CpuReq     int64
+	MemReq     int64
 }
 
 type CompositeRequest struct {
@@ -56,4 +56,3 @@ func (pm *PluginManager) Permit(ctx context.Context, params interface{}) (bool, 
 	}
 	return len(errors) == 0, errors
 }
-

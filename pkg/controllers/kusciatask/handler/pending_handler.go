@@ -102,7 +102,7 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
 		appImagesLister:  deps.AppImagesLister,
-		pluginManager: pm,
+		pluginManager:    pm,
 	}
 }
 
@@ -282,8 +282,8 @@ func (h *PendingHandler) resourceRequest(partyKitInfo PartyKitInfo) plugins.Reso
 
 	return plugins.ResourceRequest{
 		DomainName: partyKitInfo.domainID,
-		CpuReq: allContainerCPURequest,
-		MemReq: allContainerMEMRequest,
+		CpuReq:     allContainerCPURequest,
+		MemReq:     allContainerMEMRequest,
 	}
 }
 

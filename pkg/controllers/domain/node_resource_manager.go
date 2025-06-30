@@ -45,11 +45,11 @@ type LocalNodeStatus struct {
 }
 
 type NodeResourceManager struct {
-	domainInformer   kusciaextv1alpha1.DomainInformer
-	nodeInformer     informerscorev1.NodeInformer
-	podInformer      informerscorev1.PodInformer
-	podQueue         workqueue.RateLimitingInterface
-	nodeQueue        workqueue.RateLimitingInterface
+	domainInformer kusciaextv1alpha1.DomainInformer
+	nodeInformer   informerscorev1.NodeInformer
+	podInformer    informerscorev1.PodInformer
+	podQueue       workqueue.RateLimitingInterface
+	nodeQueue      workqueue.RateLimitingInterface
 }
 
 func NewNodeResourceManager(

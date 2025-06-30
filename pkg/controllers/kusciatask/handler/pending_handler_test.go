@@ -111,8 +111,8 @@ func TestPendingHandler_Handle(t *testing.T) {
 		LocalNodeStatuses: map[string][]domain.LocalNodeStatus{
 			"domain-a": {
 				{
-					Name:       "mock-node-a",
-					Status:     domain.NodeStateReady,
+					Name:   "mock-node-a",
+					Status: domain.NodeStateReady,
 					Allocatable: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("8"),
 						v1.ResourceMemory: resource.MustParse("16Gi"),
@@ -121,8 +121,8 @@ func TestPendingHandler_Handle(t *testing.T) {
 			},
 			"domain-b": {
 				{
-					Name:       "mock-node-b",
-					Status:     domain.NodeStateReady,
+					Name:   "mock-node-b",
+					Status: domain.NodeStateReady,
 					Allocatable: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("8"),
 						v1.ResourceMemory: resource.MustParse("16Gi"),
@@ -475,8 +475,8 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 			Name:      "kusciatask-001",
 			Namespace: common.KusciaCrossDomain,
 		},
-		Spec: kusciaapisv1alpha1.KusciaTaskSpec {
-			Initiator: "domain-a",
+		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
+			Initiator:       "domain-a",
 			TaskInputConfig: "task input config",
 			Parties: []kusciaapisv1alpha1.PartyInfo{
 				{
@@ -489,8 +489,8 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 								{
 									Name:    "container-0",
 									Command: []string{"pwd"},
-									Resources: v1.ResourceRequirements {
-										Requests: v1.ResourceList {
+									Resources: v1.ResourceRequirements{
+										Requests: v1.ResourceList{
 											v1.ResourceCPU:    resource.MustParse("10m"),
 											v1.ResourceMemory: resource.MustParse("64Mi"),
 										},
@@ -510,8 +510,8 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 								{
 									Name:    "container-0",
 									Command: []string{"whoami"},
-									Resources: v1.ResourceRequirements {
-										Requests: v1.ResourceList {
+									Resources: v1.ResourceRequirements{
+										Requests: v1.ResourceList{
 											v1.ResourceCPU:    resource.MustParse("10m"),
 											v1.ResourceMemory: resource.MustParse("64Mi"),
 										},
