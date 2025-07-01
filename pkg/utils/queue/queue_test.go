@@ -52,7 +52,7 @@ func TestHandleItemWithoutRetry(t *testing.T) {
 }
 
 func TestCheckType(t *testing.T) {
-	podItem := &PodQueueItem{NewPod: &apicorev1.Pod{}, OldPod: nil, Op: common.ResourceCheckForAddPod}
+	podItem := &PodQueueItem{NewPod: &apicorev1.Pod{}, OldPod: nil, Op: "resourceCheckForAddPod"}
 	assert.Equal(t, "PodQueueItem", CheckType(podItem))
 
 	nodeItem := &NodeQueueItem{NewNode: &apicorev1.Node{}, OldNode: nil, Op: common.ResourceCheckForAddNode}

@@ -18,12 +18,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strconv"
-	"strings"
-
-	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,8 +25,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
+	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -241,7 +240,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 			for _, e := range errors {
 				errMsgs = append(errMsgs, e.Error())
 			}
-			return fmt.Errorf(strings.Join(errMsgs, "; "))
+			return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
 		}
 
 		ps, ss, err := h.createResourceForParty(partyKitInfo)

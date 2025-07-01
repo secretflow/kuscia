@@ -108,6 +108,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
 	nodeResourceManager := NewNodeResourceManager(
+		ctx,
 		domainInformer,
 		nodeInformer,
 		podInformer,
@@ -338,18 +339,16 @@ func (c *Controller) Run(workers int) error {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	nlog.Info("nodeResourceManager start initLocalNodeStatus")
-	err := c.nodeResourceManager.initLocalNodeStatus()
-	if err != nil {
-		nlog.Errorf("nodeResourceManager initLocalNodeStatus failed with %v", err)
-		return nil
-	}
-
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
-		go wait.Until(c.runPodHandleWorker, time.Second, c.ctx.Done())
-		go wait.Until(c.runNodeHandleWorker, time.Second, c.ctx.Done())
+	}
+
+	nlog.Info("Starting NodeResourceManager workers")
+	err := c.nodeResourceManager.Run(c.ctx, workers)
+	if err != nil {
+		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
+		return err
 	}
 
 	nlog.Info("Starting sync domain status")
@@ -371,18 +370,6 @@ func (c *Controller) Stop() {
 func (c *Controller) runWorker() {
 	for queue.HandleQueueItem(context.Background(), controllerName, c.workqueue, c.syncHandler, maxRetries) {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
-	}
-}
-
-func (c *Controller) runPodHandleWorker() {
-	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeResourceManager.podQueue, c.nodeResourceManager.podHandler, maxRetries) {
-		metrics.WorkerQueueSize.Set(float64(c.nodeResourceManager.podQueue.Len()))
-	}
-}
-
-func (c *Controller) runNodeHandleWorker() {
-	for queue.HandleNodeAndPodQueueItem(context.Background(), controllerName, c.nodeResourceManager.nodeQueue, c.nodeResourceManager.nodeHandler, maxRetries) {
-		metrics.WorkerQueueSize.Set(float64(c.nodeResourceManager.nodeQueue.Len()))
 	}
 }
 

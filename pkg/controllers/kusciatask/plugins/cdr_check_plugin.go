@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	v1 "k8s.io/api/core/v1"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type CDRCheckPlugin struct {

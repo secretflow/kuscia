@@ -235,15 +235,6 @@ type CommunicationProtocol string
 type Protocol string
 
 const (
-	ResourceCheckForAddPod     = "resourceCheckForAddPod"
-	ResourceCheckForDeletePod  = "resourceCheckForDeletePod"
-	ResourceCheckForUpdatePod  = "ResourceCheckForUpdatePod"
-	ResourceCheckForAddNode    = "resourceCheckForAddNode"
-	ResourceCheckForDeleteNode = "resourceCheckForDeleteNode"
-	ResourceCheckForUpdateNode = "resourceCheckForUpdateNode"
-)
-
-const (
 	NOTLS Protocol = "NOTLS"
 	TLS   Protocol = "TLS"
 	MTLS  Protocol = "MTLS"
