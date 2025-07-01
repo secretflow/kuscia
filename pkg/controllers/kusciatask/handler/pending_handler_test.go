@@ -24,6 +24,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -132,7 +133,7 @@ func TestPendingHandler_Handle(t *testing.T) {
 		},
 		Lock: sync.RWMutex{},
 	}
-
+	nlog.Infof("here test kt is %v", kusciaTask)
 	_, err := handler.Handle(kusciaTask)
 	assert.NoError(t, err)
 	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)
