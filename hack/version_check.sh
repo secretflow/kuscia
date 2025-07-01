@@ -291,12 +291,12 @@ main() {
     log_info "Mode: $MODE"
     
     local files
+    files=($(find_markdown_files))
+    
     local total_files=${#files[@]}
     local total_issues=0
     local files_with_issues=()
     local fixed_files=()
-    
-    files=($(find_markdown_files))
 
     if [[ $total_files -eq 0 ]]; then
         log_warn "No markdown files found in specified directories"
