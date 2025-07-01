@@ -7,9 +7,9 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type CDRCheckPlugin struct {
@@ -23,30 +23,42 @@ func NewCDRCheckPlugin(cdrLister kuscialistersv1alpha1.ClusterDomainRouteLister)
 }
 
 func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
-	var compositeRequest CompositeRequest
+	var partyKitInfo kusciatask.PartyKitInfo
 	var ok bool
-	compositeRequest, ok = params.(CompositeRequest)
+	partyKitInfo, ok = params.(kusciatask.PartyKitInfo)
 	if !ok {
-		nlog.Errorf("Could not convert params %v to compositeRequest", params)
-		return false, nil
+		return false, fmt.Errorf("cdr-check could not convert params %v to PartyKitInfo", params)
 	}
 
-	for _, cdr := range compositeRequest.CDRReq {
+	cdrResourceRequest := p.cdrResourceRequest(partyKitInfo)
+	for _, cdr := range cdrResourceRequest {
 		cdrObj, err := p.cdrLister.Get(cdr)
 		if err != nil {
-			return false, fmt.Errorf("get cdr %s failed with %v", cdr, err)
+			return false, fmt.Errorf("cdr-check get cdr %s failed with %v", cdr, err)
 		}
 
 		parts := strings.Split(cdr, "-")
 		for _, condition := range cdrObj.Status.Conditions {
 			if condition.Type == kusciaapisv1alpha1.ClusterDomainRouteReady && condition.Status != v1.ConditionTrue {
-				return false, fmt.Errorf("initiator %s to collaborator %s failed with %v", parts[0], parts[1], condition.Reason)
+				return false, fmt.Errorf("cdr-check initiator %s to collaborator %s failed with %v", parts[0], parts[1], condition.Reason)
 			}
 		}
 	}
 	return true, nil
 }
 
-func (p *CDRCheckPlugin) Type() PluginType {
-	return PluginTypeCDRCheck
+func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo kusciatask.PartyKitInfo) []string {
+	var cdrs []string
+	initiator := partyKitInfo.KusciaTask.Spec.Initiator
+
+	for _, party := range partyKitInfo.KusciaTask.Spec.Parties {
+		if party.DomainID == initiator {
+			continue
+		}
+
+		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
+		cdrs = append(cdrs, cdrName)
+	}
+
+	return cdrs
 }

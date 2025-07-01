@@ -322,20 +322,20 @@ func Test_generatePortAccessDomains(t *testing.T) {
 func Test_generatePod(t *testing.T) {
 	t.Parallel()
 	partyKit := &PartyKitInfo{
-		kusciaTask:            makeTestKusciaTaskCase1(),
-		domainID:              "domain-a",
-		role:                  "server",
-		image:                 "test-image:0.0.1",
-		deployTemplate:        makeTestDeployTemplateCase1(),
-		configTemplatesCMName: "kusciatask-001-configtemplate",
-		configTemplates:       map[string]string{"task-config.config": "task_input_config: {{.TASK_INPUT_CONFIG}}"},
-		servicedPorts:         []string{"cluster", "domain"},
-		portAccessDomains:     map[string]string{},
-		pods: []*PodKitInfo{
+		KusciaTask:            makeTestKusciaTaskCase1(),
+		DomainID:              "domain-a",
+		Role:                  "server",
+		Image:                 "test-image:0.0.1",
+		DeployTemplate:        makeTestDeployTemplateCase1(),
+		ConfigTemplatesCMName: "kusciatask-001-configtemplate",
+		ConfigTemplates:       map[string]string{"task-config.config": "task_input_config: {{.TASK_INPUT_CONFIG}}"},
+		ServicedPorts:         []string{"cluster", "domain"},
+		PortAccessDomains:     map[string]string{},
+		Pods: []*PodKitInfo{
 			{
-				index:   0,
-				podName: "kusciatask-001-server-0",
-				ports: NamedPorts{
+				Index:   0,
+				PodName: "kusciatask-001-server-0",
+				Ports: NamedPorts{
 					"cluster": kusciaapisv1alpha1.ContainerPort{
 						Name:  "cluster",
 						Port:  10000,
@@ -352,13 +352,13 @@ func Test_generatePod(t *testing.T) {
 						Scope: kusciaapisv1alpha1.ScopeLocal,
 					},
 				},
-				clusterDef:     &proto.ClusterDefine{},
-				allocatedPorts: &proto.AllocatedPorts{},
+				ClusterDef:     &proto.ClusterDefine{},
+				AllocatedPorts: &proto.AllocatedPorts{},
 			},
 		},
 	}
 
-	podKit := partyKit.pods[0]
+	podKit := partyKit.Pods[0]
 	h := makeTestPendingHandler()
 	pod, err := h.generatePod(partyKit, podKit)
 	assert.NoError(t, err)

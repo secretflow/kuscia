@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"fmt"
 )
 
 type PluginType string
@@ -25,33 +24,29 @@ type CompositeRequest struct {
 
 type Plugin interface {
 	Permit(ctx context.Context, params interface{}) (bool, error)
-	Type() PluginType
 }
 
 type PluginManager struct {
-	plugins map[PluginType]Plugin
+	plugins []Plugin
 }
 
 func NewPluginManager() *PluginManager {
 	return &PluginManager{
-		plugins: make(map[PluginType]Plugin),
+		plugins: make([]Plugin, 0),
 	}
 }
 
 func (pm *PluginManager) Register(p Plugin) {
-	pm.plugins[p.Type()] = p
+	pm.plugins = append(pm.plugins, p)
 }
 
 func (pm *PluginManager) Permit(ctx context.Context, params interface{}) (bool, []error) {
 	var errors []error
 	for _, p := range pm.plugins {
-		passed, err := p.Permit(ctx, params)
+		_, err := p.Permit(ctx, params)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("%s plugin: %v", p.Type(), err))
+			errors = append(errors, err)
 			continue
-		}
-		if !passed {
-			errors = append(errors, fmt.Errorf("%s check failed", p.Type()))
 		}
 	}
 	return len(errors) == 0, errors
