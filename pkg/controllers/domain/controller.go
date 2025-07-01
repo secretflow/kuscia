@@ -345,7 +345,7 @@ func (c *Controller) Run(workers int) error {
 	}
 
 	nlog.Info("Starting NodeResourceManager workers")
-	err := c.nodeResourceManager.Run(c.ctx, workers)
+	err := c.nodeResourceManager.Run(workers)
 	if err != nil {
 		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
 		return err
