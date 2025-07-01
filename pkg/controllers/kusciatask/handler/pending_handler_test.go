@@ -133,7 +133,6 @@ func TestPendingHandler_Handle(t *testing.T) {
 		},
 		Lock: sync.RWMutex{},
 	}
-	nlog.Infof("here test kt is %v", kusciaTask)
 	_, err := handler.Handle(kusciaTask)
 	assert.NoError(t, err)
 	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)
