@@ -33,13 +33,13 @@ type queueNodeAndPodHandler func(obj interface{}) error
 type PodQueueItem struct {
 	NewPod *apicorev1.Pod
 	OldPod *apicorev1.Pod
-	Op  string
+	Op     string
 }
 
 type NodeQueueItem struct {
 	NewNode *apicorev1.Node
 	OldNode *apicorev1.Node
-	Op   string
+	Op      string
 }
 
 func CheckType(obj interface{}) string {
