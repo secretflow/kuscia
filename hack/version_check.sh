@@ -151,7 +151,9 @@ find_markdown_files() {
         fi
     done
     
-    printf '%s\n' "${files[@]}"
+    if [[ ${#files[@]} -gt 0 ]]; then
+        printf '%s\n' "${files[@]}"
+    fi
 }
 
 # Enhanced version pattern matching
