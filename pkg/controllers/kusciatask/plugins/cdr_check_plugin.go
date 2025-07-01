@@ -7,7 +7,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 )
@@ -23,9 +23,9 @@ func NewCDRCheckPlugin(cdrLister kuscialistersv1alpha1.ClusterDomainRouteLister)
 }
 
 func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
-	var partyKitInfo kusciatask.PartyKitInfo
+	var partyKitInfo common.PartyKitInfo
 	var ok bool
-	partyKitInfo, ok = params.(kusciatask.PartyKitInfo)
+	partyKitInfo, ok = params.(common.PartyKitInfo)
 	if !ok {
 		return false, fmt.Errorf("cdr-check could not convert params %v to PartyKitInfo", params)
 	}
@@ -47,7 +47,7 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 	return true, nil
 }
 
-func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo kusciatask.PartyKitInfo) []string {
+func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo common.PartyKitInfo) []string {
 	var cdrs []string
 	initiator := partyKitInfo.KusciaTask.Spec.Initiator
 

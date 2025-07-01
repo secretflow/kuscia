@@ -1,4 +1,4 @@
-package kusciatask
+package common
 
 import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"

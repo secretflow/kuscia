@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/secretflow/kuscia/pkg/controllers/domain"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -16,9 +16,9 @@ func NewResourceCheckPlugin() *ResourceCheckPlugin {
 }
 
 func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
-	var partyKitInfo kusciatask.PartyKitInfo
+	var partyKitInfo common.PartyKitInfo
 	var ok bool
-	partyKitInfo, ok = params.(kusciatask.PartyKitInfo)
+	partyKitInfo, ok = params.(common.PartyKitInfo)
 	if !ok {
 		return false, fmt.Errorf("resource-check could not convert params %v to PartyKitInfo", params)
 	}
@@ -51,7 +51,7 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 	return false, fmt.Errorf("resource-check no node status available for kusciatask %s", partyKitInfo.KusciaTask.Name)
 }
 
-func (p *ResourceCheckPlugin) resourceRequest(partyKitInfo kusciatask.PartyKitInfo) ResourceRequest {
+func (p *ResourceCheckPlugin) resourceRequest(partyKitInfo common.PartyKitInfo) ResourceRequest {
 	var allContainerCPURequest, allContainerMEMRequest int64
 	for _, container := range partyKitInfo.DeployTemplate.Spec.Containers {
 		if container.Resources.Requests == nil {
