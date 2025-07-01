@@ -4,22 +4,10 @@ import (
 	"context"
 )
 
-type PluginType string
-
-const (
-	PluginTypeResourceCheck PluginType = "resource-check"
-	PluginTypeCDRCheck      PluginType = "cdr-check"
-)
-
 type ResourceRequest struct {
 	DomainName string
 	CpuReq     int64
 	MemReq     int64
-}
-
-type CompositeRequest struct {
-	ResourceReq ResourceRequest
-	CDRReq      []string
 }
 
 type Plugin interface {

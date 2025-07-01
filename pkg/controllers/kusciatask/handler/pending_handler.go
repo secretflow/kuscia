@@ -87,7 +87,6 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 // Handle is used to perform the real logic.
 func (h *PendingHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (needUpdate bool, err error) {
 	now := metav1.Now().Rfc3339Copy()
-	nlog.Infof("here kt is %v", kusciaTask)
 	if needUpdate, err = h.prepareTaskResources(now, kusciaTask); needUpdate || err != nil {
 		return needUpdate, err
 	}
@@ -210,7 +209,7 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
 	for _, partyKitInfo := range selfPartyKitInfos {
-		permit, errors := h.pluginManager.Permit(context.Background(), partyKitInfo)
+		permit, errors := h.pluginManager.Permit(context.Background(), *partyKitInfo)
 		if !permit {
 			var errMsgs []string
 			for _, e := range errors {
