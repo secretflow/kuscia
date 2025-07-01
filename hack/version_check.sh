@@ -137,10 +137,11 @@ validate_args() {
 
 # Find markdown files in specified directories
 find_markdown_files() {
-    local dirs=("$CHECK_DIRS")
+    local dirs_array
+    IFS=' ' read -ra dirs_array <<< "$CHECK_DIRS"
     local files=()
     
-    for dir in "${dirs[@]}"; do
+    for dir in "${dirs_array[@]}"; do
         if [[ -d "$dir" ]]; then
             log_verbose "Searching for markdown files in: $dir"
             while IFS= read -r -d '' file; do
@@ -292,8 +293,8 @@ main() {
     log_info "Check directories: $CHECK_DIRS"
     log_info "Mode: $MODE"
     
-    local files
-    files=($(find_markdown_files))
+    local files=()
+    mapfile -t files < <(find_markdown_files)
     
     local total_files=${#files[@]}
     local total_issues=0
@@ -309,8 +310,8 @@ main() {
     
     for file in "${files[@]}"; do
         if [[ "$MODE" == "check" ]]; then
-            local issues
-            issues=($(check_file_versions "$file"))
+            local issues=()
+            mapfile -t issues < <(check_file_versions "$file")
             if [[ ${#issues[@]} -gt 0 ]]; then
                 files_with_issues+=("$file")
                 total_issues=$((total_issues + ${#issues[@]}))
