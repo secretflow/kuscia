@@ -254,7 +254,7 @@ fix_file_versions() {
     
     # Fix Kuscia versions with multiple patterns
     for pattern in "$kuscia_pattern_1" "$kuscia_pattern_2" "$kuscia_pattern_3"; do
-        if sed -E "s|$pattern|\1$KUSCIA_VERSION|gi" "$file" > "$temp_file"; then
+        if sed "s|$pattern|\1$KUSCIA_VERSION|g" "$file" > "$temp_file"; then
             if ! cmp -s "$file" "$temp_file"; then
                 fixed=true
             fi
@@ -264,7 +264,7 @@ fix_file_versions() {
     
     # Fix SecretFlow versions with multiple patterns
     for pattern in "$secretflow_pattern_1" "$secretflow_pattern_2" "$secretflow_pattern_3"; do
-        if sed -E "s|$pattern|\1$SECRETFLOW_VERSION|gi" "$file" > "$temp_file"; then
+        if sed "s|$pattern|\1$SECRETFLOW_VERSION|g" "$file" > "$temp_file"; then
             if ! cmp -s "$file" "$temp_file"; then
                 fixed=true
             fi
