@@ -151,7 +151,7 @@ find_markdown_files() {
             log_warn "Directory not found: $dir"
         fi
     done
-    
+
     if [[ ${#files[@]} -gt 0 ]]; then
         printf '%s\n' "${files[@]}"
     fi
@@ -241,41 +241,69 @@ fix_file_versions() {
     
     log_verbose "Fixing file: $file"
     
-    # Create comprehensive regex patterns for replacement
-    # Kuscia patterns: match various formats including legacy versions
-    local kuscia_pattern_1='(kuscia[^:]*:)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
-    local kuscia_pattern_2='(kuscia[[:space:]]+)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
-    local kuscia_pattern_3='(kuscia[[:space:]]*version[[:space:]]*:?[[:space:]]*)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
+    # Copy original file to temp
+    cp "$file" "$temp_file"
     
-    # SecretFlow patterns: handle both secretflow and secret-flow variants
-    local secretflow_pattern_1='(secretflow[^:]*:|secret-flow[^:]*:)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
-    local secretflow_pattern_2='(secretflow[[:space:]]+|secret-flow[[:space:]]+)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
-    local secretflow_pattern_3='((secretflow|secret-flow)[[:space:]]*version[[:space:]]*:?[[:space:]]*)v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*'
-    
-    # Fix Kuscia versions with multiple patterns
-    for pattern in "$kuscia_pattern_1" "$kuscia_pattern_2" "$kuscia_pattern_3"; do
-        if sed "s|$pattern|\1$KUSCIA_VERSION|g" "$file" > "$temp_file"; then
-            if ! cmp -s "$file" "$temp_file"; then
-                fixed=true
-            fi
-            cp "$temp_file" "$file"
+    # Fix Kuscia versions - using # as separator to avoid conflicts
+    # Pattern 1: kuscia:version or kuscia-version
+    if sed 's#\(kuscia[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
         fi
-    done
+        mv "$temp_file.tmp" "$temp_file"
+    fi
     
-    # Fix SecretFlow versions with multiple patterns
-    for pattern in "$secretflow_pattern_1" "$secretflow_pattern_2" "$secretflow_pattern_3"; do
-        if sed "s|$pattern|\1$SECRETFLOW_VERSION|g" "$file" > "$temp_file"; then
-            if ! cmp -s "$file" "$temp_file"; then
-                fixed=true
-            fi
-            cp "$temp_file" "$file"
+    # Pattern 2: kuscia followed by space and version
+    if sed 's#\(kuscia[ \t][ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
         fi
-    done
+        mv "$temp_file.tmp" "$temp_file"
+    fi
     
-    rm -f "$temp_file"
+    # Pattern 3: kuscia version:
+    if sed 's#\(kuscia[ \t]*version[ \t]*:[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Fix SecretFlow versions
+    # Pattern 1: secretflow: or secret-flow:
+    if sed 's#\(secretflow[^:]*:\|secret-flow[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Pattern 2: secretflow or secret-flow followed by space
+    if sed 's#\(secretflow[ \t][ \t]*\|secret-flow[ \t][ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Pattern 3: secretflow version: or secret-flow version:
+    if sed 's#\(\(secretflow\|secret-flow\)[ \t]*version[ \t]*:[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Update original file if changes were made
+    if [[ "$fixed" == "true" ]]; then
+        cp "$temp_file" "$file"
+        log_verbose "  Fixed versions in: $file"
+    fi
+    
+    # Clean up
+    rm -f "$temp_file" "$temp_file.tmp"
     
     if [[ "$fixed" == "true" ]]; then
-        log_verbose "  Fixed versions in: $file"
         return 0
     else
         return 1
@@ -295,11 +323,12 @@ main() {
     
     local files=()
     mapfile -t files < <(find_markdown_files)
-    
+
     local total_files=${#files[@]}
     local total_issues=0
     local files_with_issues=()
     local fixed_files=()
+    
 
     if [[ $total_files -eq 0 ]]; then
         log_warn "No markdown files found in specified directories"
