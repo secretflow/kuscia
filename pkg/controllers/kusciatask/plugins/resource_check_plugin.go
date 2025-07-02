@@ -1,10 +1,24 @@
+// Copyright 2023 Ant Group Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+//nolint:dupl
 package plugins
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/secretflow/kuscia/pkg/controllers/domain"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
@@ -23,31 +37,6 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 		return false, fmt.Errorf("resource-check could not convert params %v to PartyKitInfo", params)
 	}
 
-	requestReq := p.resourceRequest(partyKitInfo)
-	domainName := requestReq.DomainName
-	domain.NodeResourceStore.Lock.RLock()
-	defer domain.NodeResourceStore.Lock.RUnlock()
-
-	localNodeStatuses, exists := domain.NodeResourceStore.LocalNodeStatuses[domainName]
-	if !exists {
-		return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
-	}
-
-	for _, nodeStatus := range localNodeStatuses {
-		if nodeStatus.Status != domain.NodeStateReady {
-			continue
-		}
-
-		nodeCPUValue := nodeStatus.Allocatable.Cpu().MilliValue()
-		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
-		nlog.Debugf("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
-			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
-		if (nodeCPUValue-nodeStatus.TotalCPURequest) > requestReq.CpuReq &&
-			(nodeMEMValue-nodeStatus.TotalMemRequest) > requestReq.MemReq {
-			nlog.Debugf("Domain %s node %s available resource", domainName, nodeStatus.Name)
-			return true, nil
-		}
-	}
 	return false, fmt.Errorf("resource-check no node status available for kusciatask %s", partyKitInfo.KusciaTask.Name)
 }
 

@@ -151,8 +151,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	controller.addDomainEventHandler(domainInformer)
 	controller.addResourceQuotaEventHandler(resourceQuotaInformer)
 	controller.addConfigMapHandler(configmapInformer)
-	controller.nodeResourceManager.addPodEventHandler()
-	controller.nodeResourceManager.addNodeEventHandler()
 
 	return controller
 }
