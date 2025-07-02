@@ -88,6 +88,7 @@ type Controller struct {
 	workqueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
+	nodeResourceManager   *NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -99,17 +100,28 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	resourceQuotaInformer := kubeInformerFactory.Core().V1().ResourceQuotas()
 	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	podInformer := kubeInformerFactory.Core().V1().Pods()
 	configmapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	roleInformer := kubeInformerFactory.Rbac().V1().Roles()
 
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
+	nodeResourceManager := NewNodeResourceManager(
+		ctx,
+		domainInformer,
+		nodeInformer,
+		podInformer,
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+	)
+
 	cacheSyncs := []cache.InformerSynced{
 		resourceQuotaInformer.Informer().HasSynced,
 		domainInformer.Informer().HasSynced,
 		namespaceInformer.Informer().HasSynced,
 		nodeInformer.Informer().HasSynced,
+		podInformer.Informer().HasSynced,
 		configmapInformer.Informer().HasSynced,
 		roleInformer.Informer().HasSynced,
 	}
@@ -130,6 +142,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
 		recorder:              eventRecorder,
 		cacheSyncs:            cacheSyncs,
+		nodeResourceManager:   nodeResourceManager,
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -327,6 +340,13 @@ func (c *Controller) Run(workers int) error {
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
+	}
+
+	nlog.Info("Starting NodeResourceManager workers")
+	err := c.nodeResourceManager.Run(workers)
+	if err != nil {
+		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
+		return err
 	}
 
 	nlog.Info("Starting sync domain status")

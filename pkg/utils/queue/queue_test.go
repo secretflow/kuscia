@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	apicorev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -47,4 +48,16 @@ func TestHandleItemWithoutRetry(t *testing.T) {
 		})) // world
 	assert.Equal(t, q.Len(), 0)
 	assert.Equal(t, true, !HandleQueueItemWithoutRetry(context.Background(), "TestQ", q, handler)) // shutdown
+}
+
+func TestCheckType(t *testing.T) {
+	podItem := &PodQueueItem{NewPod: &apicorev1.Pod{}, OldPod: nil, Op: "resourceCheckForAddPod"}
+	assert.Equal(t, "PodQueueItem", CheckType(podItem))
+
+	nodeItem := &NodeQueueItem{NewNode: &apicorev1.Node{}, OldNode: nil, Op: "resourceCheckForAddNode"}
+	assert.Equal(t, "NodeQueueItem", CheckType(nodeItem))
+
+	assert.Equal(t, "Unknown", CheckType("invalid type"))
+	assert.Equal(t, "Unknown", CheckType(123))
+	assert.Equal(t, "Unknown", CheckType(nil))
 }
