@@ -136,17 +136,17 @@ validate_args() {
 }
 
 # Find markdown files in specified directories
-find_markdown_files() {
+find_files() {
     local dirs_array
     IFS=' ' read -ra dirs_array <<< "$CHECK_DIRS"
     local files=()
     
     for dir in "${dirs_array[@]}"; do
         if [[ -d "$dir" ]]; then
-            log_verbose "Searching for markdown files in: $dir"
+            log_verbose "Searching for markdown, po, and yaml files in: $dir"
             while IFS= read -r -d '' file; do
                 files+=("$file")
-            done < <(find "$dir" -type f \( -name "*.md" -o -name "*.markdown" \) -print0)
+            done < <(find "$dir" -type f \( -name "*.md" -o -name "*.markdown" -o -name "*.po" -o -name "*.yaml" -o -name "*.yml" \) -print0)
         else
             log_warn "Directory not found: $dir"
         fi
@@ -236,7 +236,7 @@ fix_file_versions() {
     local file="$1"
     local temp_file
     local fixed=false
-
+    
     temp_file=$(mktemp)
     
     log_verbose "Fixing file: $file"
@@ -244,50 +244,102 @@ fix_file_versions() {
     # Copy original file to temp
     cp "$file" "$temp_file"
     
-    # Fix Kuscia versions - using # as separator to avoid conflicts
-    # Pattern 1: kuscia:version or kuscia-version
-    if sed 's#\(kuscia[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+    # 先处理更具体的模式，避免误匹配
+    
+    # 优先处理 Kuscia 镜像的特殊情况
+    # Pattern: KUSCIA_IMAGE 环境变量中的版本 (支持多种镜像源)
+    if sed 's#\(KUSCIA_IMAGE=.*kuscia:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
         if ! cmp -s "$temp_file" "$temp_file.tmp"; then
             fixed=true
         fi
         mv "$temp_file.tmp" "$temp_file"
     fi
     
-    # Pattern 2: kuscia followed by space and version
-    if sed 's#\(kuscia[ \t][ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+    # Pattern: export KUSCIA_IMAGE 的情况
+    if sed 's#\(export[ \t][ \t]*KUSCIA_IMAGE=.*kuscia:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
         if ! cmp -s "$temp_file" "$temp_file.tmp"; then
             fixed=true
         fi
         mv "$temp_file.tmp" "$temp_file"
     fi
     
-    # Pattern 3: kuscia version:
-    if sed 's#\(kuscia[ \t]*version[ \t]*:[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+    # 处理其他 Kuscia 版本引用
+    
+    # Pattern: kuscia:version or kuscia-version
+    if sed 's#\b\(kuscia[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
         if ! cmp -s "$temp_file" "$temp_file.tmp"; then
             fixed=true
         fi
         mv "$temp_file.tmp" "$temp_file"
     fi
     
-    # Fix SecretFlow versions
-    # Pattern 1: secretflow: or secret-flow:
-    if sed 's#\(secretflow[^:]*:\|secret-flow[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+    # Pattern: kuscia followed by space and version
+    if sed 's#\bkuscia[ \t][ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#kuscia '"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
         if ! cmp -s "$temp_file" "$temp_file.tmp"; then
             fixed=true
         fi
         mv "$temp_file.tmp" "$temp_file"
     fi
     
-    # Pattern 2: secretflow or secret-flow followed by space
-    if sed 's#\(secretflow[ \t][ \t]*\|secret-flow[ \t][ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+    # Pattern: kuscia version:
+    if sed 's#\bkuscia[ \t]*version[ \t]*:[ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#kuscia version: '"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
         if ! cmp -s "$temp_file" "$temp_file.tmp"; then
             fixed=true
         fi
         mv "$temp_file.tmp" "$temp_file"
     fi
     
-    # Pattern 3: secretflow version: or secret-flow version:
-    if sed 's#\(\(secretflow\|secret-flow\)[ \t]*version[ \t]*:[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+    # Pattern: 文档中的 Kuscia 版本号引用
+    if sed 's#\([^a-zA-Z]*[kK]uscia[^a-zA-Z][^0-9]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*版本[^a-zA-Z]*\)#\1'"$KUSCIA_VERSION"'\2#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # 处理 SecretFlow 版本（已经处理完 kuscia 镜像，不会冲突）
+    
+    # Pattern: secretflow: or secret-flow: 
+    # 使用更精确的模式，确保不会匹配到已经处理过的 kuscia 镜像
+    if sed 's#\b\(secretflow\(/[^/]*\)\?:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        # 检查是否意外匹配到了 kuscia 镜像，如果是则回滚
+        if grep -q "kuscia:$SECRETFLOW_VERSION" "$temp_file.tmp"; then
+            # 回滚这个修改
+            cp "$temp_file" "$temp_file.tmp"
+        else
+            if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+                fixed=true
+            fi
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Pattern: secret-flow:
+    if sed 's#\b\(secret-flow[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Pattern: secretflow or secret-flow followed by space
+    if sed 's#\b\(secretflow\|secret-flow\)[ \t][ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1 '"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Pattern: secretflow version: or secret-flow version:
+    if sed 's#\b\(secretflow\|secret-flow\)[ \t]*version[ \t]*:[ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1 version: '"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
+        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
+            fixed=true
+        fi
+        mv "$temp_file.tmp" "$temp_file"
+    fi
+    
+    # Pattern: 文档中的 SecretFlow 版本号引用
+    if sed 's#\([^a-zA-Z]*[sS]ecret[fF]low[^a-zA-Z][^0-9]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*版本[^a-zA-Z]*\)#\1'"$SECRETFLOW_VERSION"'\2#g' "$temp_file" > "$temp_file.tmp"; then
         if ! cmp -s "$temp_file" "$temp_file.tmp"; then
             fixed=true
         fi
@@ -322,7 +374,7 @@ main() {
     log_info "Mode: $MODE"
     
     local files=()
-    mapfile -t files < <(find_markdown_files)
+    mapfile -t files < <(find_files)
 
     local total_files=${#files[@]}
     local total_issues=0
@@ -331,11 +383,11 @@ main() {
     
 
     if [[ $total_files -eq 0 ]]; then
-        log_warn "No markdown files found in specified directories"
+        log_warn "No files found in specified directories"
         exit 0
     fi
     
-    log_info "Found $total_files markdown files to check"
+    log_info "Found $total_files files to check"
     
     for file in "${files[@]}"; do
         if [[ "$MODE" == "check" ]]; then
