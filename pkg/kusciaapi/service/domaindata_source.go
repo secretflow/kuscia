@@ -492,8 +492,9 @@ func validateDataSourceType(t string) error {
 		t != common.DomainDataSourceTypeLocalFS &&
 		t != common.DomainDataSourceTypeODPS &&
 		t != common.DomainDataSourceTypePostgreSQL &&
-		t != common.DomainDataSourceTypeHive {
-		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql,hive]", t)
+		t != common.DomainDataSourceTypeHive &&
+		t != common.DomainDataSourceTypeOracle {
+		return fmt.Errorf("domain data source type %q doesn't support, the available types are [localfs,oss,mysql,odps,postgresql,hive,oracle]", t)
 	}
 	return nil
 }
@@ -595,7 +596,7 @@ func decodeDataSourceInfo(sourceType string, connectionStr string) (*kusciaapi.D
 	case common.DomainDataSourceTypeOSS:
 		dsInfo.Oss = &kusciaapi.OssDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Oss)
-	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeOracle:
 		dsInfo.Database = &kusciaapi.DatabaseDataSourceInfo{}
 		err = json.Unmarshal(connectionBytes, dsInfo.Database)
 	case common.DomainDataSourceTypeLocalFS:
@@ -649,7 +650,7 @@ func parseAndNormalizeDataSource(sourceType string, info *kusciaapi.DataSourceIn
 		// truncate slash
 		info.Localfs.Path = strings.TrimRight(info.Localfs.Path, string(filepath.Separator))
 		uri = info.Localfs.Path
-	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeOracle:
 		if isInvalid(info.Database == nil) {
 			return
 		}
@@ -698,9 +699,7 @@ func validateDataSourceInfo(sourceType string, info *kusciaapi.DataSourceInfo) e
 		if info.Oss.AccessKeySecret == "" {
 			return fmt.Errorf("oss 'access_key_secret' is empty")
 		}
-	case common.DomainDataSourceTypeMysql:
-	case common.DomainDataSourceTypePostgreSQL:
-	case common.DomainDataSourceTypeHive:
+	case common.DomainDataSourceTypeMysql, common.DomainDataSourceTypePostgreSQL, common.DomainDataSourceTypeHive, common.DomainDataSourceTypeOracle:
 		if info.Database == nil {
 			return fmt.Errorf("%v info is nil", sourceType)
 		}

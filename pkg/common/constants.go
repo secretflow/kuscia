@@ -215,6 +215,7 @@ const (
 	DomainDataSourceTypeODPS           = "odps"
 	DomainDataSourceTypePostgreSQL     = "postgresql"
 	DomainDataSourceTypeHive           = "hive"
+	DomainDataSourceTypeOracle         = "oracle"
 	DefaultDomainDataSourceLocalFSPath = "var/storage/data"
 )
 
