@@ -43,6 +43,7 @@ LANGUAGE             ?= zh_CN
 
 # Version check configuration
 VERSION_CHECK_SCRIPT ?= hack/version_check.sh
+# Note: The script will automatically detect MODULE.bazel files in addition to markdown, po, and yaml files
 VERSION_CHECK_DIRS   ?= docs scripts hack
 
 .PHONY: sphinx-build
@@ -112,7 +113,7 @@ gen_error_code_doc: verify_error_code # Generate error code markdown doc.
 
 
 .PHONY: version_check
-version_check: ## Check and validate Kuscia and SecretFlow version consistency in markdown files.
+version_check: ## Check and validate Kuscia and SecretFlow version consistency in markdown, po, yaml, and MODULE.bazel files.
 	@$(LOG_TARGET)
 	@$(call log, "Starting version consistency check...")
 	@if [ ! -f "$(VERSION_CHECK_SCRIPT)" ]; then \
@@ -128,7 +129,7 @@ version_check: ## Check and validate Kuscia and SecretFlow version consistency i
 
 
 .PHONY: version_fix
-version_fix: ## Fix version inconsistencies in markdown files (use with caution).
+version_fix: ## Fix version inconsistencies in markdown, po, yaml, and MODULE.bazel files (use with caution).
 	@$(LOG_TARGET)
 	@$(call log, "Starting version fix...")
 	@if [ ! -f "$(VERSION_CHECK_SCRIPT)" ]; then \
@@ -147,7 +148,7 @@ version_fix: ## Fix version inconsistencies in markdown files (use with caution)
 
 .PHONY: docs
 docs: ## Build docs.
-docs: docs-clean gen_error_code_doc sphinx-build
+docs: docs-clean gen_error_code_doc version_check sphinx-build
 
 .PHONY: docs-clean
 docs-clean: ## Clean docs build.
