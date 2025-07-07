@@ -13,10 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-
-# Version consistency checker for Kuscia and SecretFlow
-# This script checks markdown files for version inconsistencies and can optionally fix them
 
 set -euo pipefail
 
@@ -135,31 +131,127 @@ validate_args() {
     fi
 }
 
-# Find markdown files in specified directories
+# 定义版本匹配和替换规则
+declare -A KUSCIA_PATTERNS=(
+    # KUSCIA_IMAGE 环境变量（包括 export）
+    ["kuscia_image"]="(export[[:space:]]+)?KUSCIA_IMAGE=.*kuscia:"
+    # 镜像路径格式
+    ["kuscia_image_path"]="([a-zA-Z0-9\-\.]+/)*kuscia:"
+    # 简单格式 kuscia:version
+    ["kuscia_colon"]="(^|[^a-zA-Z0-9\-/])kuscia:"
+    # kuscia version:
+    ["kuscia_version_colon"]="kuscia[[:space:]]*version[[:space:]]*:"
+    # kuscia 空格 version
+    ["kuscia_space"]="kuscia[[:space:]]+"
+    # 文档中的版本引用（中文）
+    ["kuscia_doc_cn"]="[kK]uscia[^a-zA-Z][^0-9]*"
+    # msgstr/msgid 中的版本
+    ["kuscia_msg"]="msg(str|id).*[kK]uscia.*version[[:space:]]*"
+    # URL 路径中的版本
+    ["kuscia_url"]="docs/kuscia/v"
+)
+
+declare -A SECRETFLOW_PATTERNS=(
+    # secretflow 镜像格式（包含路径的）
+    ["sf_image_path"]="([a-zA-Z0-9\-\.]+/)+(secretflow|secret-flow):"
+    # 简单格式 secretflow:version
+    ["sf_colon"]="(^|[^a-zA-Z0-9\-/])(secretflow|secret-flow):"
+    # secretflow version:
+    ["sf_version_colon"]="(secretflow|secret-flow)[[:space:]]*version[[:space:]]*:"
+    # secretflow 空格 version
+    ["sf_space"]="(secretflow|secret-flow)[[:space:]]+"
+    # 文档中的版本引用（中文）
+    ["sf_doc_cn"]="[sS]ecret[fF]low[^a-zA-Z][^0-9]*"
+    # msgstr/msgid 中的版本
+    ["sf_msg"]="msg(str|id).*[sS]ecret[fF]*low.*version[[:space:]]*"
+    # URL 路径中的版本
+    ["sf_url"]="docs/secretflow/v"
+)
+
+# 检查是否应该跳过这个版本号（排除误检测）
+should_skip_version() {
+    local content="$1"
+    local found_version="$2"
+    local product_type="$3"  # "kuscia" or "secretflow"
+    
+    # 1. 跳过 URL 中的版本号
+    if echo "$content" | grep -qE "https?://[^[:space:]]*${found_version}"; then
+        log_verbose "  Skipping version in URL: $found_version"
+        return 0
+    fi
+    
+    # 2. 跳过 Markdown 链接中的版本号
+    if echo "$content" | grep -qE "\[[^\]]*\]\([^)]*${found_version}[^)]*\)"; then
+        log_verbose "  Skipping version in Markdown link: $found_version"
+        return 0
+    fi
+    
+    # 3. 跳过其他已知产品的版本号
+    if echo "$content" | grep -qiE "(envoy|prometheus|node_exporter|grafana|docker|kubernetes|k8s|etcd|containerd|nginx|apache|mysql|postgresql|redis|mongodb|elasticsearch).*${found_version}"; then
+        log_verbose "  Skipping other product version: $found_version"
+        return 0
+    fi
+    
+    # 4. 跳过文档路径中非目标产品的版本号
+    if echo "$content" | grep -qE "docs/[^/]*/${found_version}" && ! echo "$content" | grep -qiE "docs/(kuscia|secretflow)/${found_version}"; then
+        log_verbose "  Skipping version in non-target docs path: $found_version"
+        return 0
+    fi
+    
+    # 5. 对于 Kuscia，确保版本号确实与 Kuscia 相关
+    if [[ "$product_type" == "kuscia" ]]; then
+        # 检查版本号前后是否有明确的 Kuscia 上下文指示
+        local before_version after_version
+        before_version=$(echo "$content" | sed "s/${found_version}.*//" | tail -c 50)
+        after_version=$(echo "$content" | sed "s/.*${found_version}//" | head -c 50)
+        
+        # 如果版本号附近没有 Kuscia 相关的关键词，可能是误检测
+        if ! echo "$before_version$after_version" | grep -qiE "(kuscia|KUSCIA_IMAGE|容器|镜像|版本|version)"; then
+            # 除非是特定的已知模式（如 kuscia: 镜像格式）
+            if ! echo "$content" | grep -qE "kuscia:.*${found_version}"; then
+                log_verbose "  Skipping version without clear Kuscia context: $found_version"
+                return 0
+            fi
+        fi
+    fi
+    
+    # 6. 对于 SecretFlow，确保版本号确实与 SecretFlow 相关
+    if [[ "$product_type" == "secretflow" ]]; then
+        local before_version after_version
+        before_version=$(echo "$content" | sed "s/${found_version}.*//" | tail -c 50)
+        after_version=$(echo "$content" | sed "s/.*${found_version}//" | head -c 50)
+        
+        if ! echo "$before_version$after_version" | grep -qiE "(secretflow|secret-flow|版本|version)"; then
+            if ! echo "$content" | grep -qE "(secretflow|secret-flow):.*${found_version}"; then
+                log_verbose "  Skipping version without clear SecretFlow context: $found_version"
+                return 0
+            fi
+        fi
+    fi
+    
+    return 1  # 不跳过，应该检测这个版本号
+}
+
+# 获取版本号正则表达式
+get_version_regex() {
+    echo "v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*"
+}
+
+# 查找需要检查的文件
 find_files() {
     local dirs_array
     IFS=' ' read -ra dirs_array <<< "$CHECK_DIRS"
     local files=()
     
-    # 专门检查根目录下的 MODULE.bazel 文件
-    if [[ -f "./MODULE.bazel" ]]; then
-        files+=("./MODULE.bazel")
-        log_verbose "Found MODULE.bazel in current directory"
-    fi
-    
-    # 原有的逻辑保持不变
+    # 查找其他文件
     for dir in "${dirs_array[@]}"; do
         if [[ -d "$dir" ]]; then
-            log_verbose "Searching for markdown, po, yaml, and MODULE.bazel files in: $dir"
-            # Search for markdown, po, yaml files
+            log_verbose "Searching files in: $dir"
+            # 查找 markdown, po, yaml 文件
             while IFS= read -r -d '' file; do
                 files+=("$file")
             done < <(find "$dir" -type f \( -name "*.md" -o -name "*.markdown" -o -name "*.po" -o -name "*.yaml" -o -name "*.yml" \) -print0)
             
-            # Search for MODULE.bazel files specifically
-            while IFS= read -r -d '' file; do
-                files+=("$file")
-            done < <(find "$dir" -type f -name "MODULE.bazel" -print0)
         else
             log_warn "Directory not found: $dir"
         fi
@@ -170,453 +262,438 @@ find_files() {
     fi
 }
 
-# Enhanced version pattern matching
-extract_kuscia_version() {
-    local text="$1"
-    # Match Kuscia version only when directly associated with kuscia keyword
-    # Patterns: kuscia version 1.2.3, kuscia:1.2.3, kuscia-1.2.3, kuscia v1.2.3
-    echo "$text" | grep -oiE "kuscia[[:space:]]*[-:]?[[:space:]]*(version[[:space:]]+)?v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*" | \
-                   grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
-}
-
-extract_secretflow_version() {
-    local text="$1"
-    # Match SecretFlow version only when directly associated with secretflow keyword
-    # Patterns: secretflow:1.2.3, secret-flow 1.2.3, secretflow v1.2.3
-    echo "$text" | grep -oiE "(secretflow|secret-flow)[[:space:]]*[-:]?[[:space:]]*(version[[:space:]]+)?v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*" | \
-                   grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
-}
-
-extract_image_version() {
-    local text="$1"
-    local product="$2"  # "kuscia" or "secretflow"
+# 使用优化的方法检查版本
+check_versions_optimized() {
+    local files=("$@")
+    local total_issues=0
+    local files_with_issues=()
     
-    # Match Docker image format: product/image:version or product:version
-    local pattern="(^|[[:space:]])${product}[^[:space:]]*:[[:space:]]*v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*"
-    echo "$text" | grep -oiE "$pattern" | \
-                   grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\-\.]*' | head -1
-}
-
-# Check version consistency in a file
-# check_file_versions() {
-#     local file="$1"
-#     local issues=()
-#     local line_num=0
+    local version_regex
+    version_regex=$(get_version_regex)
     
-#     log_verbose "Checking file: $file"
+    log_verbose "Using version regex: $version_regex"
     
-#     while IFS= read -r line; do
-#         ((line_num++))
-        
-#         # Check for Kuscia versions with context awareness
-#         local kuscia_version
-#         kuscia_version=$(extract_kuscia_version "$line")
-#         if [[ -n "$kuscia_version" && "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
-#             issues+=("$file:$line_num: Found Kuscia version '$kuscia_version', expected '$KUSCIA_VERSION'")
-#             log_verbose "  Line $line_num: $line"
-#         fi
-        
-#         # Check for SecretFlow versions with context awareness
-#         local sf_version
-#         sf_version=$(extract_secretflow_version "$line")
-#         if [[ -n "$sf_version" && "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
-#             issues+=("$file:$line_num: Found SecretFlow version '$sf_version', expected '$SECRETFLOW_VERSION'")
-#             log_verbose "  Line $line_num: $line"
-#         fi
-        
-#         # Check for Docker/container image versions
-#         local kuscia_image_version
-#         kuscia_image_version=$(extract_image_version "$line" "kuscia")
-#         if [[ -n "$kuscia_image_version" && "$kuscia_image_version" != "$KUSCIA_VERSION" ]]; then
-#             issues+=("$file:$line_num: Found Kuscia image version '$kuscia_image_version', expected '$KUSCIA_VERSION'")
-#             log_verbose "  Line $line_num: $line"
-#         fi
-        
-#         local sf_image_version
-#         sf_image_version=$(extract_image_version "$line" "secretflow")
-#         if [[ -n "$sf_image_version" && "$sf_image_version" != "$SECRETFLOW_VERSION" ]]; then
-#             issues+=("$file:$line_num: Found SecretFlow image version '$sf_image_version', expected '$SECRETFLOW_VERSION'")
-#             log_verbose "  Line $line_num: $line"
-#         fi
-        
-#     done < "$file"
+    # 第一步：检查所有 Kuscia 版本（包括镜像路径中包含secretflow的情况）
+    log_verbose "Step 1: Checking all Kuscia versions"
     
-#     printf '%s\n' "${issues[@]}"
-# }
-# 增强版的 check_file_versions 函数
-check_file_versions() {
-    local file="$1"
-    local issues=()
-    local line_num=0
-    
-    log_verbose "Checking file: $file"
-    
-    # 特殊处理 MODULE.bazel 文件
-    if [[ "$file" == *"MODULE.bazel" ]]; then
-        log_verbose "  Special handling for MODULE.bazel file"
-        
-        # 检查 kuscia 模块
-        if grep -q 'name.*=.*"kuscia"' "$file"; then
-            log_verbose "  Found kuscia module definition"
-            
-            # 查找版本号
-            local current_version
-            current_version=$(grep -A 10 'name.*=.*"kuscia"' "$file" | grep -o 'version.*=.*"[^"]*"' | grep -o '"[^"]*"' | tr -d '"' | head -1)
-            
-            if [[ -n "$current_version" && "$current_version" != "$KUSCIA_VERSION" ]]; then
-                local version_line_num
-                version_line_num=$(grep -n 'version.*=.*"[^"]*"' "$file" | head -1 | cut -d: -f1)
-                issues+=("$file:$version_line_num: Found Kuscia version '$current_version', expected '$KUSCIA_VERSION'")
-                log_verbose "  MODULE.bazel: Found Kuscia version '$current_version', expected '$KUSCIA_VERSION'"
-            fi
-        fi
-        
-        # 检查 secretflow 模块
-        if grep -q 'name.*=.*"secretflow"' "$file"; then
-            log_verbose "  Found secretflow module definition"
-            
-            local current_version
-            current_version=$(grep -A 10 'name.*=.*"secretflow"' "$file" | grep -o 'version.*=.*"[^"]*"' | grep -o '"[^"]*"' | tr -d '"' | head -1)
-            
-            if [[ -n "$current_version" && "$current_version" != "$SECRETFLOW_VERSION" ]]; then
-                local version_line_num
-                version_line_num=$(grep -n 'version.*=.*"[^"]*"' "$file" | head -1 | cut -d: -f1)
-                issues+=("$file:$version_line_num: Found SecretFlow version '$current_version', expected '$SECRETFLOW_VERSION'")
-                log_verbose "  MODULE.bazel: Found SecretFlow version '$current_version', expected '$SECRETFLOW_VERSION'"
-            fi
-        fi
-        
-        # 检查 bazel_dep 中的版本
+    # 1. 优先检查 KUSCIA_IMAGE 和任何包含 kuscia: 的行
+    local kuscia_image_results
+    if kuscia_image_results=$(grep -rn -E "kuscia:${version_regex}" "${files[@]}" 2>/dev/null || true); then
         while IFS= read -r line; do
-            ((line_num++))
-            
-            # 检查 bazel_dep 中的 kuscia 版本
-            if echo "$line" | grep -q 'bazel_dep.*name.*=.*"kuscia"'; then
-                local dep_version
-                dep_version=$(echo "$line" | grep -o 'version.*=.*"[^"]*"' | grep -o '"[^"]*"' | tr -d '"')
-                if [[ -n "$dep_version" && "$dep_version" != "$KUSCIA_VERSION" ]]; then
-                    issues+=("$file:$line_num: Found Kuscia bazel_dep version '$dep_version', expected '$KUSCIA_VERSION'")
-                    log_verbose "  Line $line_num: $line"
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取版本号
+                local found_version
+                found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
+                
+                if [[ -n "$found_version" && "$found_version" != "$KUSCIA_VERSION" ]]; then
+                    if should_skip_version "$content" "$found_version" "kuscia"; then
+                        continue
+                    fi
+                    log_error "Issue found in $file_line:$line_num"
+                    echo "  Found Kuscia version '$found_version' (kuscia image), expected '$KUSCIA_VERSION'"
+                    echo "  Content: $content"
+                    ((total_issues++))
+                    
+                    if [[ ! " ${files_with_issues[*]} " =~ " $file_line " ]]; then
+                        files_with_issues+=("$file_line")
+                    fi
                 fi
             fi
-            
-            # 检查 bazel_dep 中的 secretflow 版本
-            if echo "$line" | grep -q 'bazel_dep.*name.*=.*"secretflow"'; then
-                local dep_version
-                dep_version=$(echo "$line" | grep -o 'version.*=.*"[^"]*"' | grep -o '"[^"]*"' | tr -d '"')
-                if [[ -n "$dep_version" && "$dep_version" != "$SECRETFLOW_VERSION" ]]; then
-                    issues+=("$file:$line_num: Found SecretFlow bazel_dep version '$dep_version', expected '$SECRETFLOW_VERSION'")
-                    log_verbose "  Line $line_num: $line"
-                fi
-            fi
-        done < "$file"
-    else
-        # 其他文件
-        while IFS= read -r line; do
-            ((line_num++))
-            
-            # Check for Kuscia versions with context awareness
-            local kuscia_version
-            kuscia_version=$(extract_kuscia_version "$line")
-            if [[ -n "$kuscia_version" && "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
-                issues+=("$file:$line_num: Found Kuscia version '$kuscia_version', expected '$KUSCIA_VERSION'")
-                log_verbose "  Line $line_num: $line"
-            fi
-            
-            # Check for SecretFlow versions with context awareness
-            local sf_version
-            sf_version=$(extract_secretflow_version "$line")
-            if [[ -n "$sf_version" && "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
-                issues+=("$file:$line_num: Found SecretFlow version '$sf_version', expected '$SECRETFLOW_VERSION'")
-                log_verbose "  Line $line_num: $line"
-            fi
-            
-            # Check for Docker/container image versions
-            local kuscia_image_version
-            kuscia_image_version=$(extract_image_version "$line" "kuscia")
-            if [[ -n "$kuscia_image_version" && "$kuscia_image_version" != "$KUSCIA_VERSION" ]]; then
-                issues+=("$file:$line_num: Found Kuscia image version '$kuscia_image_version', expected '$KUSCIA_VERSION'")
-                log_verbose "  Line $line_num: $line"
-            fi
-            
-            local sf_image_version
-            sf_image_version=$(extract_image_version "$line" "secretflow")
-            if [[ -n "$sf_image_version" && "$sf_image_version" != "$SECRETFLOW_VERSION" ]]; then
-                issues+=("$file:$line_num: Found SecretFlow image version '$sf_image_version', expected '$SECRETFLOW_VERSION'")
-                log_verbose "  Line $line_num: $line"
-            fi
-            
-        done < "$file"
+        done <<< "$kuscia_image_results"
     fi
     
-    printf '%s\n' "${issues[@]}"
+    # 2. 检查其他 Kuscia 版本模式（排除已经检查过的镜像）
+    for pattern_name in "${!KUSCIA_PATTERNS[@]}"; do
+        # 跳过镜像相关的模式，因为已经在上面处理了
+        if [[ "$pattern_name" == "kuscia_image" || "$pattern_name" == "kuscia_image_path" ]]; then
+            continue
+        fi
+        
+        local pattern="${KUSCIA_PATTERNS[$pattern_name]}"
+        log_verbose "Checking Kuscia pattern: $pattern_name"
+        
+        local grep_results
+        if grep_results=$(grep -rn -E "${pattern}${version_regex}" "${files[@]}" 2>/dev/null || true); then
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    local file_line="${line%%:*}"
+                    local line_num="${line#*:}"
+                    line_num="${line_num%%:*}"
+                    local content="${line#*:*:}"
+                    
+                    # 跳过包含 kuscia: 的行（因为已经在第1步处理过了）
+                    if echo "$content" | grep -q "kuscia:"; then
+                        continue
+                    fi
+                    
+                    # 提取版本号
+                    local found_version
+                    found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
+                    
+                    if [[ -n "$found_version" && "$found_version" != "$KUSCIA_VERSION" ]]; then
+                        if should_skip_version "$content" "$found_version" "kuscia"; then
+                            continue
+                        fi
+                        log_error "Issue found in $file_line:$line_num"
+                        echo "  Found Kuscia version '$found_version' (pattern: $pattern_name), expected '$KUSCIA_VERSION'"
+                        echo "  Content: $content"
+                        ((total_issues++))
+                        
+                        if [[ ! " ${files_with_issues[*]} " =~ " $file_line " ]]; then
+                            files_with_issues+=("$file_line")
+                        fi
+                    fi
+                fi
+            done <<< "$grep_results"
+        fi
+    done
+    
+    # 第二步：检查 SecretFlow 版本（排除包含 kuscia: 的行）
+    log_verbose "Step 2: Checking SecretFlow versions (excluding kuscia images)"
+    
+    for pattern_name in "${!SECRETFLOW_PATTERNS[@]}"; do
+        local pattern="${SECRETFLOW_PATTERNS[$pattern_name]}"
+        log_verbose "Checking SecretFlow pattern: $pattern_name"
+        
+        local grep_results
+        if grep_results=$(grep -rn -E "${pattern}${version_regex}" "${files[@]}" 2>/dev/null || true); then
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    local file_line="${line%%:*}"
+                    local line_num="${line#*:}"
+                    line_num="${line_num%%:*}"
+                    local content="${line#*:*:}"
+                    
+                    # 重要：跳过包含 kuscia: 的行，这些应该被识别为 Kuscia 镜像
+                    if echo "$content" | grep -q "kuscia:"; then
+                        log_verbose "  Skipping line with kuscia: $content"
+                        continue
+                    fi
+                    
+                    # 提取版本号
+                    local found_version
+                    # 首先尝试提取紧跟在 secretflow 关键词后的版本号
+                    found_version=$(echo "$content" | grep -oiE "(secretflow|secret-flow)[^0-9]*${version_regex}" | grep -oE "$version_regex" | head -1)
+                    # 如果没有找到，再提取整行第一个版本号
+                    if [[ -z "$found_version" ]]; then
+                        found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
+                    fi
+                    
+                    if [[ -n "$found_version" && "$found_version" != "$SECRETFLOW_VERSION" ]]; then
+                        if should_skip_version "$content" "$found_version" "secretflow"; then
+                            continue
+                        fi
+                        log_error "Issue found in $file_line:$line_num"
+                        echo "  Found SecretFlow version '$found_version' (pattern: $pattern_name), expected '$SECRETFLOW_VERSION'"
+                        echo "  Content: $content"
+                        ((total_issues++))
+                        
+                        if [[ ! " ${files_with_issues[*]} " =~ " $file_line " ]]; then
+                            files_with_issues+=("$file_line")
+                        fi
+                    fi
+                fi
+            done <<< "$grep_results"
+        fi
+    done
+    
+    # 第三步：检查复合模式（同时包含两个版本号的情况）
+    log_verbose "Step 3: Checking combined version patterns"
+    
+    # 中文组合模式检查
+    local combined_cn_results
+    if combined_cn_results=$(grep -rn -E "此处以[[:space:]]*[kK]uscia[[:space:]]*${version_regex}[[:space:]]*[,，][[:space:]]*[sS]ecret[fF]*low[[:space:]]*${version_regex}[[:space:]]*版本为例" "${files[@]}" 2>/dev/null || true); then
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取两个版本号
+                local versions
+                versions=($(echo "$content" | grep -oE "$version_regex"))
+                
+                if [[ ${#versions[@]} -ge 2 ]]; then
+                    local kuscia_version="${versions[0]}"
+                    local sf_version="${versions[1]}"
+                    
+                    if [[ "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
+                        if ! should_skip_version "$content" "$kuscia_version" "kuscia"; then
+                            log_error "Issue found in $file_line:$line_num"
+                            echo "  Found Kuscia version '$kuscia_version' in combined pattern, expected '$KUSCIA_VERSION'"
+                            echo "  Content: $content"
+                            ((total_issues++))
+                            
+                            if [[ ! " ${files_with_issues[*]} " =~ " $file_line " ]]; then
+                                files_with_issues+=("$file_line")
+                            fi
+                        fi
+                    fi
+                    
+                    if [[ "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
+                        if ! should_skip_version "$content" "$sf_version" "secretflow"; then
+                            log_error "Issue found in $file_line:$line_num"
+                            echo "  Found SecretFlow version '$sf_version' in combined pattern, expected '$SECRETFLOW_VERSION'"
+                            echo "  Content: $content"
+                            ((total_issues++))
+                            
+                            if [[ ! " ${files_with_issues[*]} " =~ " $file_line " ]]; then
+                                files_with_issues+=("$file_line")
+                            fi
+                        fi
+                    fi
+                fi
+            fi
+        done <<< "$combined_cn_results"
+    fi
+
+    echo "$total_issues:${files_with_issues[*]}"
 }
 
-fix_file_versions() {
-    local file="$1"
-    local temp_file
-    local fixed=false
+# 修复版本号 - 严格按照检查到的位置修改
+fix_versions_optimized() {
+    local files=("$@")
+    local fixed_files=()
+    local version_regex
+    version_regex=$(get_version_regex)
     
-    temp_file=$(mktemp)
+    log_verbose "Starting precise fix based on check results"
     
-    log_verbose "Fixing file: $file"
+    # 第一步：修复所有 Kuscia 版本（包括镜像路径中包含secretflow的情况）
+    log_verbose "Step 1: Fixing all Kuscia versions"
     
-    # Copy original file to temp
-    cp "$file" "$temp_file"
-    
-    # 先处理更具体的模式，避免误匹配
-    
-    # 优先处理 Kuscia 镜像的特殊情况
-    # Pattern: KUSCIA_IMAGE 环境变量中的版本 (支持多种镜像源)
-    if sed 's#\(KUSCIA_IMAGE=.*kuscia:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: export KUSCIA_IMAGE 的情况
-    if sed 's#\(export[ \t][ \t]*KUSCIA_IMAGE=.*kuscia:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 处理其他 Kuscia 版本引用
-    
-    # Pattern: kuscia:version or kuscia-version
-    if sed 's#\b\(kuscia[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: kuscia followed by space and version
-    if sed 's#\bkuscia[ \t][ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#kuscia '"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: kuscia version:
-    if sed 's#\bkuscia[ \t]*version[ \t]*:[ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#kuscia version: '"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: 文档中的 Kuscia 版本号引用
-    if sed 's#\([^a-zA-Z]*[kK]uscia[^a-zA-Z][^0-9]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*版本[^a-zA-Z]*\)#\1'"$KUSCIA_VERSION"'\2#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 处理 msgstr/msgid 中的 Kuscia 版本号
-    # Pattern: msgstr "...Kuscia, here we use version X.X.X..."
-    if sed 's#\(msgstr.*[kK]uscia.*version[ \t][ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: msgid "...Kuscia version..."
-    if sed 's#\(msgid.*[kK]uscia.*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 新增：处理 URL 路径中的 Kuscia 版本号
-    # Pattern: docs/kuscia/vX.X.X/
-    if sed 's#\(docs/kuscia/v\)[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$KUSCIA_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 新增：处理中英文文档中同时包含 Kuscia 和 SecretFlow 版本的情况
-    # 注意：需要特别处理，因为一行中可能同时包含两个版本号
-    # Pattern: 此处以 Kuscia X.X.X，Secretflow Y.Y.Y 版本为例
-    if sed 's#\(此处以[ \t]*[kK]uscia[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*[,，][ \t]*[sS]ecret[fF]*low[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*版本为例\)#\1'"$KUSCIA_VERSION"'\2'"$SECRETFLOW_VERSION"'\3#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: Here we take Kuscia X.X.X and Secretflow Y.Y.Y versions as examples
-    if sed 's#\(Here we take [kK]uscia[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*and[ \t]*[sS]ecret[fF]*low[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*versions as examples\)#\1'"$KUSCIA_VERSION"'\2'"$SECRETFLOW_VERSION"'\3#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: msgstr/msgid 中同时包含两个版本号的情况
-    if sed 's#\(msg[si].*[kK]uscia[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*[,，][ \t]*[sS]ecret[fF]*low[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*版本为例\)#\1'"$KUSCIA_VERSION"'\2'"$SECRETFLOW_VERSION"'\3#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: msgstr 中英文版本的情况
-    if sed 's#\(msgstr.*[kK]uscia[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*and[ \t]*[sS]ecret[fF]*low[ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*versions\)#\1'"$KUSCIA_VERSION"'\2'"$SECRETFLOW_VERSION"'\3#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 处理 SecretFlow 版本（已经处理完 kuscia 镜像，不会冲突）
-    
-    # Pattern: secretflow: or secret-flow: 
-    # 使用更精确的模式，确保不会匹配到已经处理过的 kuscia 镜像
-    if sed 's#\b\(secretflow\(/[^/]*\)\?:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        # 检查是否意外匹配到了 kuscia 镜像，如果是则回滚
-        if grep -q "kuscia:$SECRETFLOW_VERSION" "$temp_file.tmp"; then
-            # 回滚这个修改
-            cp "$temp_file" "$temp_file.tmp"
-        else
-            if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-                fixed=true
-            fi
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: secret-flow:
-    if sed 's#\b\(secret-flow[^:]*:\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: secretflow or secret-flow followed by space
-    if sed 's#\b\(secretflow\|secret-flow\)[ \t][ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1 '"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: secretflow version: or secret-flow version:
-    if sed 's#\b\(secretflow\|secret-flow\)[ \t]*version[ \t]*:[ \t]*v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1 version: '"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: 文档中的 SecretFlow 版本号引用
-    if sed 's#\([^a-zA-Z]*[sS]ecret[fF]low[^a-zA-Z][^0-9]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\([ \t]*版本[^a-zA-Z]*\)#\1'"$SECRETFLOW_VERSION"'\2#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 新增：处理 msgstr/msgid 中的 SecretFlow 版本号（单独出现的情况）
-    # Pattern: msgstr "...SecretFlow version X.X.X..."
-    if sed 's#\(msgstr.*[sS]ecret[fF]*low.*version[ \t][ \t]*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # Pattern: msgid "...SecretFlow version..."
-    if sed 's#\(msgid.*[sS]ecret[fF]*low.*\)v\?[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-    
-    # 新增：处理 URL 路径中的 SecretFlow 版本号
-    # Pattern: docs/secretflow/vX.X.X/
-    if sed 's#\(docs/secretflow/v\)[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\b#\1'"$SECRETFLOW_VERSION"'#g' "$temp_file" > "$temp_file.tmp"; then
-        if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-            fixed=true
-        fi
-        mv "$temp_file.tmp" "$temp_file"
-    fi
-
-    # 新增：处理 MODULE.bazel 文件中的特殊模式
-    if [[ "$file" == "MODULE.bazel" ]]; then
-        log_verbose "  Processing MODULE.bazel file: $file"
-        
-        # 检查是否是 kuscia 模块
-        if grep -q 'name.*=.*"kuscia"' "$temp_file"; then
-            log_verbose "  Found kuscia module definition"
-            
-            # Pattern 1: 处理多行格式的 version 行
-            if sed 's/^\([ \t]*version[ \t]*=[ \t]*"\)[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\(",.*\)$/\1'"$KUSCIA_VERSION"'\2/' "$temp_file" > "$temp_file.tmp"; then
-                if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-                    fixed=true
-                    log_verbose "  Applied kuscia multi-line version pattern"
+    # 1. 修复任何包含 kuscia: 的行
+    local kuscia_image_results
+    if kuscia_image_results=$(grep -rn -E "kuscia:${version_regex}" "${files[@]}" 2>/dev/null || true); then
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取版本号
+                local found_version
+                found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
+                
+                if [[ -n "$found_version" && "$found_version" != "$KUSCIA_VERSION" ]]; then
+                    if should_skip_version "$content" "$found_version" "kuscia"; then
+                        continue
+                    fi
+                    log_verbose "Fixing Kuscia version at $file_line:$line_num: $found_version -> $KUSCIA_VERSION"
+                    
+                    # 使用 sed 精确替换该行的版本号
+                    sed -i "${line_num}s/${found_version}/${KUSCIA_VERSION}/g" "$file_line"
+                    
+                    if [[ ! " ${fixed_files[*]} " =~ " $file_line " ]]; then
+                        fixed_files+=("$file_line")
+                    fi
                 fi
-                mv "$temp_file.tmp" "$temp_file"
             fi
-            
-            # Pattern 2: 处理单行格式
-            if sed 's/\(module.*name.*=.*"kuscia".*version.*=.*"\)[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\("/\1'"$KUSCIA_VERSION"'\2/g' "$temp_file" > "$temp_file.tmp"; then
-                if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-                    fixed=true
-                    log_verbose "  Applied kuscia single-line version pattern"
-                fi
-                mv "$temp_file.tmp" "$temp_file"
-            fi
+        done <<< "$kuscia_image_results"
+    fi
+    
+    # 2. 修复其他 Kuscia 版本模式（排除已经检查过的镜像）
+    for pattern_name in "${!KUSCIA_PATTERNS[@]}"; do
+        # 跳过镜像相关的模式，因为已经在上面处理了
+        if [[ "$pattern_name" == "kuscia_image" || "$pattern_name" == "kuscia_image_path" ]]; then
+            continue
         fi
         
-        # 检查是否是 secretflow 模块
-        if grep -q 'name.*=.*"secretflow"' "$temp_file"; then
-            log_verbose "  Found secretflow module definition"
-            
-            # Pattern 1: 处理多行格式的 version 行
-            if sed 's/^\([ \t]*version[ \t]*=[ \t]*"\)[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\(",.*\)$/\1'"$SECRETFLOW_VERSION"'\2/' "$temp_file" > "$temp_file.tmp"; then
-                if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-                    fixed=true
-                    log_verbose "  Applied secretflow multi-line version pattern"
+        local pattern="${KUSCIA_PATTERNS[$pattern_name]}"
+        log_verbose "Fixing Kuscia pattern: $pattern_name"
+        
+        local grep_results
+        if grep_results=$(grep -rn -E "${pattern}${version_regex}" "${files[@]}" 2>/dev/null || true); then
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    local file_line="${line%%:*}"
+                    local line_num="${line#*:}"
+                    line_num="${line_num%%:*}"
+                    local content="${line#*:*:}"
+                    
+                    # 跳过包含 kuscia: 的行（因为已经在第1步处理过了）
+                    if echo "$content" | grep -q "kuscia:"; then
+                        continue
+                    fi
+                    
+                    # 提取版本号
+                    local found_version
+                    found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
+                    
+                    if [[ -n "$found_version" && "$found_version" != "$KUSCIA_VERSION" ]]; then
+                        if should_skip_version "$content" "$found_version" "kuscia"; then
+                            continue
+                        fi
+                        log_verbose "Fixing Kuscia version at $file_line:$line_num: $found_version -> $KUSCIA_VERSION"
+                        
+                        # 使用 sed 精确替换该行的版本号
+                        sed -i "${line_num}s/${found_version}/${KUSCIA_VERSION}/g" "$file_line"
+                        
+                        if [[ ! " ${fixed_files[*]} " =~ " $file_line " ]]; then
+                            fixed_files+=("$file_line")
+                        fi
+                    fi
                 fi
-                mv "$temp_file.tmp" "$temp_file"
-            fi
-            
-            # Pattern 2: 处理单行格式
-            if sed 's/\(module.*name.*=.*"secretflow".*version.*=.*"\)[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*[a-zA-Z0-9\-\.]*\("/\1'"$SECRETFLOW_VERSION"'\2/g' "$temp_file" > "$temp_file.tmp"; then
-                if ! cmp -s "$temp_file" "$temp_file.tmp"; then
-                    fixed=true
-                    log_verbose "  Applied secretflow single-line version pattern"
-                fi
-                mv "$temp_file.tmp" "$temp_file"
-            fi
+            done <<< "$grep_results"
         fi
-    fi
-
-    # Update original file if changes were made
-    if [[ "$fixed" == "true" ]]; then
-        cp "$temp_file" "$file"
-        log_verbose "  Fixed versions in: $file"
+    done
+    
+    # 第二步：修复 SecretFlow 版本（排除包含 kuscia: 的行）
+    log_verbose "Step 2: Fixing SecretFlow versions (excluding kuscia images)"
+    
+    for pattern_name in "${!SECRETFLOW_PATTERNS[@]}"; do
+        local pattern="${SECRETFLOW_PATTERNS[$pattern_name]}"
+        log_verbose "Fixing SecretFlow pattern: $pattern_name"
+        
+        local grep_results
+        if grep_results=$(grep -rn -E "${pattern}${version_regex}" "${files[@]}" 2>/dev/null || true); then
+            while IFS= read -r line; do
+                if [[ -n "$line" ]]; then
+                    local file_line="${line%%:*}"
+                    local line_num="${line#*:}"
+                    line_num="${line_num%%:*}"
+                    local content="${line#*:*:}"
+                    
+                    # 重要：跳过包含 kuscia: 的行，这些应该被识别为 Kuscia 镜像
+                    if echo "$content" | grep -q "kuscia:"; then
+                        log_verbose "  Skipping line with kuscia: $content"
+                        continue
+                    fi
+                    
+                    # 提取版本号
+                    local found_version
+                    # 首先尝试提取紧跟在 secretflow 关键词后的版本号
+                    found_version=$(echo "$content" | grep -oiE "(secretflow|secret-flow)[^0-9]*${version_regex}" | grep -oE "$version_regex" | head -1)
+                    # 如果没有找到，再提取整行第一个版本号
+                    if [[ -z "$found_version" ]]; then
+                        found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
+                    fi
+                    
+                    if [[ -n "$found_version" && "$found_version" != "$SECRETFLOW_VERSION" ]]; then
+                        if should_skip_version "$content" "$found_version" "secretflow"; then
+                            continue
+                        fi
+                        log_verbose "Fixing SecretFlow version at $file_line:$line_num: $found_version -> $SECRETFLOW_VERSION"
+                        
+                        # 使用 sed 精确替换该行的版本号
+                        sed -i "${line_num}s/${found_version}/${SECRETFLOW_VERSION}/g" "$file_line"
+                        
+                        if [[ ! " ${fixed_files[*]} " =~ " $file_line " ]]; then
+                            fixed_files+=("$file_line")
+                        fi
+                    fi
+                fi
+            done <<< "$grep_results"
+        fi
+    done
+    
+    # 第三步：处理复合模式（同时包含两个版本号的情况）
+    log_verbose "Step 3: Fixing combined version patterns"
+    
+    # 中文组合模式：此处以 Kuscia X.X.X，SecretFlow Y.Y.Y 版本为例
+    local combined_cn_results
+    if combined_cn_results=$(grep -rn -E "此处以[[:space:]]*[kK]uscia[[:space:]]*${version_regex}[[:space:]]*[,，][[:space:]]*[sS]ecret[fF]*low[[:space:]]*${version_regex}[[:space:]]*版本为例" "${files[@]}" 2>/dev/null || true); then
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取两个版本号
+                local versions
+                versions=($(echo "$content" | grep -oE "$version_regex"))
+                
+                if [[ ${#versions[@]} -ge 2 ]]; then
+                    local kuscia_version="${versions[0]}"
+                    local sf_version="${versions[1]}"
+                    
+                    local need_fix=false
+                    if [[ "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
+                        if ! should_skip_version "$content" "$kuscia_version" "kuscia"; then
+                            need_fix=true
+                        fi
+                    fi
+                    if [[ "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
+                        if ! should_skip_version "$content" "$sf_version" "secretflow"; then
+                            need_fix=true
+                        fi
+                    fi
+                    
+                    if [[ "$need_fix" == "true" ]]; then
+                        log_verbose "Fixing combined pattern at $file_line:$line_num: Kuscia $kuscia_version -> $KUSCIA_VERSION, SecretFlow $sf_version -> $SECRETFLOW_VERSION"
+                        
+                        # 精确替换：先替换第一个版本号，再替换第二个版本号
+                        if [[ "$kuscia_version" != "$KUSCIA_VERSION" ]] && ! should_skip_version "$content" "$kuscia_version" "kuscia"; then
+                            sed -i "${line_num}s/${kuscia_version}/${KUSCIA_VERSION}/" "$file_line"
+                        fi
+                        if [[ "$sf_version" != "$SECRETFLOW_VERSION" ]] && ! should_skip_version "$content" "$sf_version" "secretflow"; then
+                            sed -i "${line_num}s/${sf_version}/${SECRETFLOW_VERSION}/" "$file_line"
+                        fi
+                        
+                        if [[ ! " ${fixed_files[*]} " =~ " $file_line " ]]; then
+                            fixed_files+=("$file_line")
+                        fi
+                    fi
+                fi
+            fi
+        done <<< "$combined_cn_results"
     fi
     
-    # Clean up
-    rm -f "$temp_file" "$temp_file.tmp"
-    
-    if [[ "$fixed" == "true" ]]; then
-        return 0
-    else
-        return 1
+    # 英文组合模式：Here we take Kuscia X.X.X and SecretFlow Y.Y.Y versions as examples
+    local combined_en_results
+    if combined_en_results=$(grep -rn -E "Here we take [kK]uscia[[:space:]]*${version_regex}[[:space:]]*and[[:space:]]*[sS]ecret[fF]*low[[:space:]]*${version_regex}[[:space:]]*versions as examples" "${files[@]}" 2>/dev/null || true); then
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取两个版本号
+                local versions
+                versions=($(echo "$content" | grep -oE "$version_regex"))
+                
+                if [[ ${#versions[@]} -ge 2 ]]; then
+                    local kuscia_version="${versions[0]}"
+                    local sf_version="${versions[1]}"
+                    
+                    local need_fix=false
+                    if [[ "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
+                        need_fix=true
+                    fi
+                    if [[ "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
+                        need_fix=true
+                    fi
+                    
+                    if [[ "$need_fix" == "true" ]]; then
+                        log_verbose "Fixing English combined pattern at $file_line:$line_num: Kuscia $kuscia_version -> $KUSCIA_VERSION, SecretFlow $sf_version -> $SECRETFLOW_VERSION"
+                        
+                        # 精确替换：先替换第一个版本号，再替换第二个版本号
+                        if [[ "$kuscia_version" != "$KUSCIA_VERSION" ]]; then
+                            sed -i "${line_num}s/${kuscia_version}/${KUSCIA_VERSION}/" "$file_line"
+                        fi
+                        if [[ "$sf_version" != "$SECRETFLOW_VERSION" ]]; then
+                            sed -i "${line_num}s/${sf_version}/${SECRETFLOW_VERSION}/" "$file_line"
+                        fi
+                        
+                        if [[ ! " ${fixed_files[*]} " =~ " $file_line " ]]; then
+                            fixed_files+=("$file_line")
+                        fi
+                    fi
+                fi
+            fi
+        done <<< "$combined_en_results"
     fi
+    
+    printf '%s\n' "${fixed_files[@]}"
 }
 
 # Main function
@@ -634,10 +711,6 @@ main() {
     mapfile -t files < <(find_files)
 
     local total_files=${#files[@]}
-    local total_issues=0
-    local files_with_issues=()
-    local fixed_files=()
-    
 
     if [[ $total_files -eq 0 ]]; then
         log_warn "No files found in specified directories"
@@ -646,50 +719,38 @@ main() {
     
     log_info "Found $total_files files to check"
     
-    for file in "${files[@]}"; do
-        if [[ "$MODE" == "check" ]]; then
-            local issues=()
-            mapfile -t issues < <(check_file_versions "$file")
-            if [[ ${#issues[@]} -gt 0 ]]; then
-                files_with_issues+=("$file")
-                total_issues=$((total_issues + ${#issues[@]}))
-                log_error "Issues found in $file:"
-                for issue in "${issues[@]}"; do
-                    echo "  $issue"
-                done
-            fi
-        elif [[ "$MODE" == "fix" ]]; then
-            if fix_file_versions "$file"; then
-                fixed_files+=("$file")
-                log_info "Fixed versions in: $file"
-            fi
-        fi
-    done
-    
-    echo ""
-    
     if [[ "$MODE" == "check" ]]; then
+        local check_result
+        check_result=$(check_versions_optimized "${files[@]}")
+        local total_issues="${check_result%%:*}"
+        local files_with_issues_str="${check_result#*:}"
+        
         if [[ $total_issues -eq 0 ]]; then
             log_success "No version inconsistencies found! All $total_files files are consistent."
             exit 0
         else
-            log_error "Found $total_issues version inconsistencies in ${#files_with_issues[@]} files:"
-            for file in "${files_with_issues[@]}"; do
-                echo "  - $file"
-            done
+            log_error "Found $total_issues version inconsistencies"
+            if [[ -n "$files_with_issues_str" ]]; then
+                echo ""
+                log_error "Files with issues:"
+                local files_with_issues_array=($files_with_issues_str)
+                for file in "${files_with_issues_array[@]}"; do
+                    echo "  - $file"
+                done
+            fi
             echo ""
             log_error "Version consistency check failed!"
             log_info "To fix these issues automatically, run with --mode fix"
             exit 1
         fi
     elif [[ "$MODE" == "fix" ]]; then
+        local fixed_files=()
+        mapfile -t fixed_files < <(fix_versions_optimized "${files[@]}")
+        
         if [[ ${#fixed_files[@]} -eq 0 ]]; then
             log_success "No files needed version fixes."
         else
-            log_success "Fixed versions in ${#fixed_files[@]} files:"
-            for file in "${fixed_files[@]}"; do
-                echo "  - $file"
-            done
+            log_success "Fixed versions in ${#fixed_files[@]} files: ${fixed_files[*]}"
             log_warn "Please review the changes and commit them if appropriate."
         fi
         exit 0
