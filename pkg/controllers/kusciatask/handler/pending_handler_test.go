@@ -62,10 +62,9 @@ func makeTestPendingHandler() *PendingHandler {
 	field := value.FieldByName("resourceStore")
 
 	mockResourceStore := &ktresource.NodeStatusStore{
-		LocalNodeStatuses: map[string][]ktresource.LocalNodeStatus{
+		LocalNodeStatuses: map[string]map[string]*ktresource.LocalNodeStatus{
 			"domain-a": {
-				{
-					Name:   "mock-node-a",
+				"mock-node-a": {
 					Status: ktresource.NodeStateReady,
 					Allocatable: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("8"),
@@ -74,8 +73,7 @@ func makeTestPendingHandler() *PendingHandler {
 				},
 			},
 			"domain-b": {
-				{
-					Name:   "mock-node-b",
+				"mock-node-b": {
 					Status: ktresource.NodeStateReady,
 					Allocatable: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("8"),
@@ -86,6 +84,7 @@ func makeTestPendingHandler() *PendingHandler {
 		},
 		Lock: sync.RWMutex{},
 	}
+
 	reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.ValueOf(mockResourceStore))
 
 	ns1 := v1.Namespace{

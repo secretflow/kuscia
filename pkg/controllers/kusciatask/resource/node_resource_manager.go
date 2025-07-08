@@ -57,12 +57,11 @@ const (
 )
 
 type NodeStatusStore struct {
-	LocalNodeStatuses map[string][]LocalNodeStatus
+	LocalNodeStatuses map[string]map[string]*LocalNodeStatus
 	Lock              sync.RWMutex
 }
 
 type LocalNodeStatus struct {
-	Name               string                 `json:"name"`
 	Status             string                 `json:"status"`
 	LastHeartbeatTime  metav1.Time            `json:"lastHeartbeatTime,omitempty"`
 	LastTransitionTime metav1.Time            `json:"lastTransitionTime,omitempty"`
@@ -90,7 +89,7 @@ func NewNodeResourceManager(
 	podQueue workqueue.RateLimitingInterface,
 	nodeQueue workqueue.RateLimitingInterface) *NodeResourceManager {
 	nodeStatusStore := &NodeStatusStore{
-		LocalNodeStatuses: make(map[string][]LocalNodeStatus),
+		LocalNodeStatuses: make(map[string]map[string]*LocalNodeStatus),
 		Lock:              sync.RWMutex{},
 	}
 
@@ -303,24 +302,21 @@ func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
 	defer nrm.resourceStore.Lock.Unlock()
 
 	domainName := pod.Namespace
-	nodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
+	domainNodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
 	if !exists {
 		nlog.Warnf("Domain %s not found when add pod %s", domainName, pod.Name)
 		return nil
 	}
 
 	nodeName := pod.Spec.NodeName
-	for i := range nodes {
-		if nodes[i].Name == nodeName {
-			cpu, mem := nrm.calRequestResource(pod)
-			nodes[i].TotalCPURequest += cpu
-			nodes[i].TotalMemRequest += mem
+	if nodeStatus, exists := domainNodes[nodeName]; exists {
+		cpu, mem := nrm.calRequestResource(pod)
+		nodeStatus.TotalCPURequest += cpu
+		nodeStatus.TotalMemRequest += mem
 
-			nrm.resourceStore.LocalNodeStatuses[domainName] = nodes
-			nlog.Infof("Added pod %s resources to node %s: CPU=%dm, MEM=%dB",
-				pod.Name, nodeName, cpu, mem)
-			return nil
-		}
+		nlog.Infof("Added pod %s resources to node %s: CPU=%dm, MEM=%dB",
+			pod.Name, nodeName, cpu, mem)
+		return nil
 	}
 
 	nlog.Warnf("node %s not found when add pod %s", nodeName, pod.Name)
@@ -336,32 +332,29 @@ func (nrm *NodeResourceManager) deletePodHandler(pod *apicorev1.Pod) error {
 	nrm.resourceStore.Lock.Lock()
 	defer nrm.resourceStore.Lock.Unlock()
 
-	nodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
+	domainNodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
 	if !exists {
 		nlog.Warnf("Domain %s not found when delete pod %s", domainName, pod.Name)
 		return nil
 	}
 
 	cpu, mem := nrm.calRequestResource(pod)
-	for i := range nodes {
-		if nodes[i].Name == nodeName {
-			if nodes[i].TotalCPURequest >= cpu {
-				nodes[i].TotalCPURequest -= cpu
-			} else {
-				nodes[i].TotalCPURequest = 0
-			}
-
-			if nodes[i].TotalMemRequest >= mem {
-				nodes[i].TotalMemRequest -= mem
-			} else {
-				nodes[i].TotalMemRequest = 0
-			}
-
-			nrm.resourceStore.LocalNodeStatuses[domainName] = nodes
-			nlog.Infof("Removed pod %s resources from node %s: CPU=%dm, MEM=%dB",
-				pod.Name, nodeName, cpu, mem)
-			return nil
+	if nodeStatus, exists := domainNodes[nodeName]; exists {
+		if nodeStatus.TotalCPURequest >= cpu {
+			nodeStatus.TotalCPURequest -= cpu
+		} else {
+			nodeStatus.TotalCPURequest = 0
 		}
+
+		if nodeStatus.TotalMemRequest >= mem {
+			nodeStatus.TotalMemRequest -= mem
+		} else {
+			nodeStatus.TotalMemRequest = 0
+		}
+
+		nlog.Infof("Removed pod %s resources from node %s: CPU=%dm, MEM=%dB",
+			pod.Name, nodeName, cpu, mem)
+		return nil
 	}
 
 	nlog.Warnf("Node %s not found when delete pod %s", nodeName, pod.Name)
@@ -375,7 +368,7 @@ func (nrm *NodeResourceManager) updatePodHandler(newPod, oldPod *apicorev1.Pod) 
 	defer nrm.resourceStore.Lock.Unlock()
 
 	domainName := newPod.Namespace
-	nodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
+	domainNodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
 	if !exists {
 		nlog.Warnf("Domain %s not found when update pod %s", domainName, newPod.Name)
 		return nil
@@ -393,58 +386,47 @@ func (nrm *NodeResourceManager) updatePodHandler(newPod, oldPod *apicorev1.Pod) 
 
 	// Scenario 1: Node not changed
 	if oldNodeName == newNodeName {
-		for i := range nodes {
-			if nodes[i].Name == newNodeName {
-				nodes[i].TotalCPURequest += deltaCPU
-				nodes[i].TotalMemRequest += deltaMem
+		if nodeStatus, exists := domainNodes[newNodeName]; exists {
+			nodeStatus.TotalCPURequest += deltaCPU
+			nodeStatus.TotalMemRequest += deltaMem
 
-				// Ensure that resources are not negative
-				if nodes[i].TotalCPURequest < 0 {
-					nodes[i].TotalCPURequest = 0
-				}
-				if nodes[i].TotalMemRequest < 0 {
-					nodes[i].TotalMemRequest = 0
-				}
-
-				nrm.resourceStore.LocalNodeStatuses[domainName] = nodes
-				nlog.Infof("Updated pod %s resources on node %s: CPU=%+dm, MEM=%+dB",
-					newPod.Name, newNodeName, deltaCPU, deltaMem)
-				return nil
+			if nodeStatus.TotalCPURequest < 0 {
+				nodeStatus.TotalCPURequest = 0
 			}
+			if nodeStatus.TotalMemRequest < 0 {
+				nodeStatus.TotalMemRequest = 0
+			}
+
+			nlog.Infof("Updated pod %s resources on node %s: CPU=%+dm, MEM=%+dB",
+				newPod.Name, newNodeName, deltaCPU, deltaMem)
+			return nil
 		}
 	}
 
 	// Scenario 2: Node changes occur, Remove resources from old nodes
-	for i := range nodes {
-		if nodes[i].Name == oldNodeName {
-			nodes[i].TotalCPURequest -= oldCPU
-			nodes[i].TotalMemRequest -= oldMem
+	if oldNodeStatus, exists := domainNodes[oldNodeName]; exists {
+		oldNodeStatus.TotalCPURequest -= oldCPU
+		oldNodeStatus.TotalMemRequest -= oldMem
 
-			if nodes[i].TotalCPURequest < 0 {
-				nodes[i].TotalCPURequest = 0
-			}
-			if nodes[i].TotalMemRequest < 0 {
-				nodes[i].TotalMemRequest = 0
-			}
-
-			nrm.resourceStore.LocalNodeStatuses[domainName] = nodes
-			nlog.Infof("Removed old pod %s resources from node %s: CPU=%dm, MEM=%dB",
-				newPod.Name, oldNodeName, oldCPU, oldMem)
-			break
+		if oldNodeStatus.TotalCPURequest < 0 {
+			oldNodeStatus.TotalCPURequest = 0
 		}
+		if oldNodeStatus.TotalMemRequest < 0 {
+			oldNodeStatus.TotalMemRequest = 0
+		}
+
+		nlog.Infof("Removed old pod %s resources from node %s: CPU=%dm, MEM=%dB",
+			newPod.Name, oldNodeName, oldCPU, oldMem)
 	}
 
 	// Add resources to a new node
-	for i := range nodes {
-		if nodes[i].Name == newNodeName {
-			nodes[i].TotalCPURequest += newCPU
-			nodes[i].TotalMemRequest += newMem
+	if newNodeStatus, exists := domainNodes[newNodeName]; exists {
+		newNodeStatus.TotalCPURequest += newCPU
+		newNodeStatus.TotalMemRequest += newMem
 
-			nrm.resourceStore.LocalNodeStatuses[domainName] = nodes
-			nlog.Infof("Added new pod %s resources to node %s: CPU=%dm, MEM=%dB",
-				newPod.Name, newNodeName, newCPU, newMem)
-			return nil
-		}
+		nlog.Infof("Added new pod %s resources to node %s: CPU=%dm, MEM=%dB",
+			newPod.Name, newNodeName, newCPU, newMem)
+		return nil
 	}
 
 	return nil
@@ -531,21 +513,19 @@ func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
 
 	domainName := node.Labels[common.LabelNodeNamespace]
 	status, reason := determineNodeStatus(node)
-	nodeStatus := LocalNodeStatus{
-		Name:               node.Name,
-		Status:             status,
-		UnreadyReason:      reason,
-		TotalCPURequest:    0,
-		TotalMemRequest:    0,
-		Allocatable:        node.Status.Allocatable,
-		LastHeartbeatTime:  metav1.Now(),
-		LastTransitionTime: metav1.Now(),
-	}
 
 	if _, exists := nrm.resourceStore.LocalNodeStatuses[domainName]; !exists {
-		nrm.resourceStore.LocalNodeStatuses[domainName] = []LocalNodeStatus{nodeStatus}
+		nrm.resourceStore.LocalNodeStatuses[domainName] = make(map[string]*LocalNodeStatus)
 	} else {
-		nrm.resourceStore.LocalNodeStatuses[domainName] = append(nrm.resourceStore.LocalNodeStatuses[domainName], nodeStatus)
+		nrm.resourceStore.LocalNodeStatuses[domainName][node.Name] = &LocalNodeStatus{
+			Status:             status,
+			UnreadyReason:      reason,
+			TotalCPURequest:    0,
+			TotalMemRequest:    0,
+			Allocatable:        node.Status.Allocatable,
+			LastHeartbeatTime:  metav1.Now(),
+			LastTransitionTime: metav1.Now(),
+		}
 	}
 
 	nlog.Infof("Added node %s to domain %s, status: %s", node.Name, domainName, status)
@@ -559,10 +539,9 @@ func (nrm *NodeResourceManager) deleteNodeHandler(node *apicorev1.Node) error {
 	nrm.resourceStore.Lock.Lock()
 	defer nrm.resourceStore.Lock.Unlock()
 
-	nodes := nrm.resourceStore.LocalNodeStatuses[domainName]
-	for i := range nodes {
-		if nodes[i].Name == node.Name {
-			nrm.resourceStore.LocalNodeStatuses[domainName] = append(nodes[:i], nodes[i+1:]...)
+	if nodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]; exists {
+		if _, nodeExists := nodes[node.Name]; nodeExists {
+			delete(nodes, node.Name)
 			nlog.Infof("Removed node %s from domain %s", node.Name, domainName)
 			return nil
 		}
@@ -582,16 +561,14 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 	status, reason := determineNodeStatus(newNode)
 	allocatable := newNode.Status.Allocatable
 
-	nodes := nrm.resourceStore.LocalNodeStatuses[domainName]
-	for i := range nodes {
-		if nodes[i].Name == newNode.Name {
-			nodes[i].Status = status
-			nodes[i].UnreadyReason = reason
-			nodes[i].Allocatable = allocatable
-			nodes[i].LastHeartbeatTime = metav1.Now()
-			nlog.Infof("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodes[i])
-			return nil
-		}
+	domainNodes := nrm.resourceStore.LocalNodeStatuses[domainName]
+	if nodeStatus, exists := domainNodes[newNode.Name]; exists {
+		nodeStatus.Status = status
+		nodeStatus.UnreadyReason = reason
+		nodeStatus.Allocatable = allocatable
+		nodeStatus.LastHeartbeatTime = metav1.Now()
+		nlog.Infof("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodeStatus)
+		return nil
 	}
 
 	nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
@@ -618,25 +595,29 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 	nrm.resourceStore.Lock.RLock()
 	defer nrm.resourceStore.Lock.RUnlock()
 
-	localNodeStatuses, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
+	domainNodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
 	if !exists {
 		return false, fmt.Errorf("resource-check no node cache to %s", domainName)
 	}
 
-	for _, nodeStatus := range localNodeStatuses {
+	for nodeName, nodeStatus := range domainNodes {
 		if nodeStatus.Status != NodeStateReady {
 			continue
 		}
 
 		nodeCPUValue := nodeStatus.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
-		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d", nodeStatus.Name, nodeCPUValue, nodeMEMValue,
+
+		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d",
+			nodeName, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
-		if (nodeCPUValue-nodeStatus.TotalCPURequest) > cpuReq &&
-			(nodeMEMValue-nodeStatus.TotalMemRequest) > memReq {
-			nlog.Infof("Domain %s node %s available resource", domainName, nodeStatus.Name)
+
+		if (nodeCPUValue-nodeStatus.TotalCPURequest) >= cpuReq &&
+			(nodeMEMValue-nodeStatus.TotalMemRequest) >= memReq {
+			nlog.Infof("Domain %s node %s available resource", domainName, nodeName)
 			return true, nil
 		}
 	}
+
 	return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
 }
