@@ -407,6 +407,11 @@ check_versions_optimized() {
                     found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
                     
                     if [[ -n "$found_version" && "$found_version" != "$KUSCIA_VERSION" ]]; then
+                        local context_between
+                        context_between=$(echo "$content" | sed -n "s/.*[kK]uscia\(.*\)${found_version}.*/\1/p")
+                        if echo "$context_between" | grep -qiE 'secretflow|secret-flow'; then
+                            continue
+                        fi
                         if should_skip_version "$content" "$found_version" "kuscia"; then
                             continue
                         fi
@@ -456,6 +461,11 @@ check_versions_optimized() {
                     fi
                     
                     if [[ -n "$found_version" && "$found_version" != "$SECRETFLOW_VERSION" ]]; then
+                        local context_between
+                        context_between=$(echo "$content" | sed -n "s/.*[sS]ecret[fF]*low\(.*\)${found_version}.*/\1/p")
+                        if echo "$context_between" | grep -qi 'kuscia'; then
+                            continue
+                        fi
                         if should_skip_version "$content" "$found_version" "secretflow"; then
                             continue
                         fi
@@ -599,6 +609,11 @@ fix_versions_optimized() {
                     found_version=$(echo "$content" | grep -oE "$version_regex" | head -1)
                     
                     if [[ -n "$found_version" && "$found_version" != "$KUSCIA_VERSION" ]]; then
+                        local context_between
+                        context_between=$(echo "$content" | sed -n "s/.*[kK]uscia\(.*\)${found_version}.*/\1/p")
+                        if echo "$context_between" | grep -qiE 'secretflow|secret-flow'; then
+                            continue
+                        fi
                         if should_skip_version "$content" "$found_version" "kuscia"; then
                             continue
                         fi
@@ -648,6 +663,11 @@ fix_versions_optimized() {
                     fi
                     
                     if [[ -n "$found_version" && "$found_version" != "$SECRETFLOW_VERSION" ]]; then
+                        local context_between
+                        context_between=$(echo "$content" | sed -n "s/.*[sS]ecret[fF]*low\(.*\)${found_version}.*/\1/p")
+                        if echo "$context_between" | grep -qi 'kuscia'; then
+                            continue
+                        fi
                         if should_skip_version "$content" "$found_version" "secretflow"; then
                             continue
                         fi
