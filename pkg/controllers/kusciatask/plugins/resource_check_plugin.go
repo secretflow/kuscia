@@ -25,12 +25,12 @@ import (
 )
 
 type ResourceCheckPlugin struct{
-	*resource.NodeResourceManager
+	nrm *resource.NodeResourceManager
 }
 
 func NewResourceCheckPlugin(manager *resource.NodeResourceManager) *ResourceCheckPlugin {
 	return &ResourceCheckPlugin{
-		manager,
+		nrm: manager,
 	}
 }
 
@@ -54,7 +54,7 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 		allContainerMEMRequest += memValue
 	}
 
-	_, err := p.NodeResourceManager.ResourceCheck(partyKitInfo.DomainID, allContainerCPURequest, allContainerMEMRequest)
+	_, err := p.nrm.ResourceCheck(partyKitInfo.DomainID, allContainerCPURequest, allContainerMEMRequest)
 	if err != nil {
 		return false, err
 	}

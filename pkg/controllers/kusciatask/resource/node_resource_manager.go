@@ -482,12 +482,6 @@ func (nrm *NodeResourceManager) Run(workers int) error {
 		go wait.Until(nrm.runNodeHandleWorker, time.Second, nrm.ctx.Done())
 	}
 
-	go wait.Until(func() {
-		nrm.resourceStore.Lock.RLock()
-		defer nrm.resourceStore.Lock.RUnlock()
-		nlog.Infof("NodeResourceManager status: %+v", nrm.resourceStore.LocalNodeStatuses)
-	}, 10*time.Second, nrm.ctx.Done())
-
 	<-nrm.ctx.Done()
 	return nil
 }

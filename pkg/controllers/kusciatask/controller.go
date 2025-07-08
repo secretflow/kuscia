@@ -270,18 +270,18 @@ func (c *Controller) Run(workers int) error {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	nlog.Info("Starting NodeResourceManager workers")
-	err := c.nodeResourceManager.Run(workers)
-	if err != nil {
-		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
-		return err
-	}
-
 	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())
 	// Launch workers to process KusciaTask resources
 	for i := 0; i < workers; i++ {
 		go c.runWorker()
 		go c.runDeletedTaskWorker(c.ctx)
+	}
+
+	nlog.Info("Starting NodeResourceManager workers")
+	err := c.nodeResourceManager.Run(workers)
+	if err != nil {
+		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
+		return err
 	}
 
 	<-c.ctx.Done()
