@@ -248,8 +248,19 @@ should_skip_version() {
     
     # 3. 跳过其他已知产品的版本号
     if echo "$content" | grep -qiE "(envoy|prometheus|node_exporter|grafana|docker|kubernetes|k8s|etcd|containerd|nginx|apache|mysql|postgresql|redis|mongodb|elasticsearch|python|java|golang|nodejs|react|vue|angular).*${found_version}"; then
-        log_verbose "  Skipping other product version: $found_version"
-        return 0
+        local do_not_skip=false
+        if [[ "$product_type" == "kuscia" ]] && echo "$content" | grep -qiE 'kuscia|KUSCIA_IMAGE'; then
+            do_not_skip=true
+        elif [[ "$product_type" == "secretflow" ]] && echo "$content" | grep -qiE 'secretflow|secret-flow|SF_VERSION'; then
+            do_not_skip=true
+        fi
+
+        if [[ "$do_not_skip" == "false" ]] then
+            log_verbose "  Skipping other product version: $found_version"
+            return 0
+        else
+            log_verbose "  Found other product keyword, but also target keyword. Not skipping."
+        fi
     fi
     
     # 4. 跳过文档路径中非目标产品的版本号
