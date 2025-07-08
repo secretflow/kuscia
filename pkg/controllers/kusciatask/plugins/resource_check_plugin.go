@@ -19,14 +19,19 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-type ResourceCheckPlugin struct{}
+type ResourceCheckPlugin struct{
+	*kusciatask.NodeResourceManager
+}
 
-func NewResourceCheckPlugin() *ResourceCheckPlugin {
-	return &ResourceCheckPlugin{}
+func NewResourceCheckPlugin(manager *kusciatask.NodeResourceManager) *ResourceCheckPlugin {
+	return &ResourceCheckPlugin{
+		manager,
+	}
 }
 
 func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
@@ -37,10 +42,6 @@ func (p *ResourceCheckPlugin) Permit(ctx context.Context, params interface{}) (b
 		return false, fmt.Errorf("resource-check could not convert params %v to PartyKitInfo", params)
 	}
 
-	return false, fmt.Errorf("resource-check no node status available for kusciatask %s", partyKitInfo.KusciaTask.Name)
-}
-
-func (p *ResourceCheckPlugin) resourceRequest(partyKitInfo common.PartyKitInfo) ResourceRequest {
 	var allContainerCPURequest, allContainerMEMRequest int64
 	for _, container := range partyKitInfo.DeployTemplate.Spec.Containers {
 		if container.Resources.Requests == nil {
@@ -53,9 +54,9 @@ func (p *ResourceCheckPlugin) resourceRequest(partyKitInfo common.PartyKitInfo) 
 		allContainerMEMRequest += memValue
 	}
 
-	return ResourceRequest{
-		DomainName: partyKitInfo.DomainID,
-		CpuReq:     allContainerCPURequest,
-		MemReq:     allContainerMEMRequest,
+	_, err := p.NodeResourceManager.ResourceCheck(partyKitInfo.DomainID, allContainerCPURequest, allContainerMEMRequest)
+	if err != nil {
+		return false, err
 	}
+	return true, nil
 }

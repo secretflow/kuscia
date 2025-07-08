@@ -88,7 +88,6 @@ type Controller struct {
 	workqueue             workqueue.RateLimitingInterface
 	recorder              record.EventRecorder
 	cacheSyncs            []cache.InformerSynced
-	nodeResourceManager   *NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -106,15 +105,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 5*time.Minute)
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
-
-	nodeResourceManager := NewNodeResourceManager(
-		ctx,
-		domainInformer,
-		nodeInformer,
-		podInformer,
-		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
-		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
-	)
 
 	cacheSyncs := []cache.InformerSynced{
 		resourceQuotaInformer.Informer().HasSynced,
@@ -142,7 +132,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		workqueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "domain"),
 		recorder:              eventRecorder,
 		cacheSyncs:            cacheSyncs,
-		nodeResourceManager:   nodeResourceManager,
 	}
 
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
@@ -284,7 +273,6 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 		},
 	})
 }
-
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -336,17 +324,9 @@ func (c *Controller) Run(workers int) error {
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.cacheSyncs...) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
-
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
-	}
-
-	nlog.Info("Starting NodeResourceManager workers")
-	err := c.nodeResourceManager.Run(workers)
-	if err != nil {
-		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
-		return err
 	}
 
 	nlog.Info("Starting sync domain status")
@@ -354,7 +334,6 @@ func (c *Controller) Run(workers int) error {
 	<-c.ctx.Done()
 	return nil
 }
-
 // Stop is used to stop the controller.
 func (c *Controller) Stop() {
 	if c.cancel != nil {
@@ -370,7 +349,6 @@ func (c *Controller) runWorker() {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
 	}
 }
-
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the domain resource
 // with the current status of the resource.

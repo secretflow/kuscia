@@ -22,6 +22,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -107,12 +108,12 @@ func TestPendingHandler_Handle(t *testing.T) {
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
 
-	domain.NodeResourceStore = &domain.NodeStatusStore{
-		LocalNodeStatuses: map[string][]domain.LocalNodeStatus{
+	domain.NodeResourceStore = &kusciatask.NodeStatusStore{
+		LocalNodeStatuses: map[string][]kusciatask.LocalNodeStatus{
 			"domain-a": {
 				{
 					Name:   "mock-node-a",
-					Status: domain.NodeStateReady,
+					Status: kusciatask.NodeStateReady,
 					Allocatable: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("8"),
 						v1.ResourceMemory: resource.MustParse("16Gi"),
@@ -122,7 +123,7 @@ func TestPendingHandler_Handle(t *testing.T) {
 			"domain-b": {
 				{
 					Name:   "mock-node-b",
-					Status: domain.NodeStateReady,
+					Status: kusciatask.NodeStateReady,
 					Allocatable: v1.ResourceList{
 						v1.ResourceCPU:    resource.MustParse("8"),
 						v1.ResourceMemory: resource.MustParse("16Gi"),

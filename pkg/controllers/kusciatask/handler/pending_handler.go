@@ -67,7 +67,7 @@ type PendingHandler struct {
 // NewPendingHandler returns a PendingHandler instance.
 func NewPendingHandler(deps *Dependencies) *PendingHandler {
 	pm := plugins.NewPluginManager()
-	pm.Register(plugins.NewResourceCheckPlugin())
+	pm.Register(plugins.NewResourceCheckPlugin(&deps.NodeResourceManager))
 	pm.Register(plugins.NewCDRCheckPlugin(deps.CdrLister))
 
 	return &PendingHandler{

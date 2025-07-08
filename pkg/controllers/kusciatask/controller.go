@@ -83,6 +83,10 @@ type Controller struct {
 
 	namespaceLister  corelisters.NamespaceLister
 	namespaceSynced  cache.InformerSynced
+	nodeLister       corelisters.NodeLister
+	nodeSynced       cache.InformerSynced
+	domainLister     kuscialistersv1alpha1.DomainLister
+	domainSynced     cache.InformerSynced
 	podsLister       corelisters.PodLister
 	podsSynced       cache.InformerSynced
 	servicesSynced   cache.InformerSynced
@@ -96,6 +100,7 @@ type Controller struct {
 	cdrSynced        cache.InformerSynced
 	trgSynced        cache.InformerSynced
 	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
+	nodeResourceManager   *NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -114,6 +119,17 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
 	cdrInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
+	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+
+	nodeResourceManager := NewNodeResourceManager(
+		ctx,
+		domainInformer,
+		nodeInformer,
+		podInformer,
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+	)
 
 	controller := &Controller{
 		kubeClient:            kubeClient,
@@ -124,6 +140,10 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		podsLister:            podInformer.Lister(),
 		podsSynced:            podInformer.Informer().HasSynced,
+		nodeLister:            nodeInformer.Lister(),
+		nodeSynced:            nodeInformer.Informer().HasSynced,
+		domainLister:          domainInformer.Lister(),
+		domainSynced:          domainInformer.Informer().HasSynced,
 		servicesSynced:        serviceInformer.Informer().HasSynced,
 		servicesLister:        serviceInformer.Lister(),
 		configMapSynced:       configMapInformer.Informer().HasSynced,
@@ -138,6 +158,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		taskQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskQueue),
 		taskDeleteQueue:       workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskDeleteQueue),
 		recorder:              eventRecorder,
+		nodeResourceManager:   nodeResourceManager,
 	}
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&handler.Dependencies{
@@ -151,6 +172,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		AppImagesLister:  appImageInformer.Lister(),
 		CdrLister:        cdrInformer.Lister(),
 		Recorder:         eventRecorder,
+		NodeResourceManager: *nodeResourceManager,
 	})
 
 	// kuscia task event handler
@@ -243,8 +265,15 @@ func (c *Controller) Run(workers int) error {
 	// Wait for the caches to be synced before starting workers
 	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.namespaceSynced, c.podsSynced, c.servicesSynced, c.configMapSynced,
-		c.kusciaTaskSynced, c.appImageSynced, c.trgSynced) {
+		c.kusciaTaskSynced, c.appImageSynced, c.trgSynced, c.domainSynced, c.nodeSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
+	}
+
+	nlog.Info("Starting NodeResourceManager workers")
+	err := c.nodeResourceManager.Run(workers)
+	if err != nil {
+		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
+		return err
 	}
 
 	nlog.Infof("Starting %v workers to handle object for %v", workers, c.Name())

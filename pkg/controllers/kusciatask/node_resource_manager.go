@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //nolint:dupl
-package domain
+package kusciatask
 
 import (
 	"context"
@@ -37,7 +37,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 )
 
-const managerName = "node_resource_manager"
+const (
+	maxRetries = 15
+	managerName = "node_resource_manager"
+)
 
 const (
 	NodeStateReady   = "Ready"
@@ -616,7 +619,7 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 
 	localNodeStatuses, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
 	if !exists {
-		return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
+		return false, fmt.Errorf("resource-check no node cache to %s", domainName)
 	}
 
 	for _, nodeStatus := range localNodeStatuses {
@@ -634,4 +637,5 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 			return true, nil
 		}
 	}
+	return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
 }

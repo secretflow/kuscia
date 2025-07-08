@@ -74,6 +74,5 @@ func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo common.PartyKitInfo) []
 		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
 		cdrs = append(cdrs, cdrName)
 	}
-
 	return cdrs
 }
