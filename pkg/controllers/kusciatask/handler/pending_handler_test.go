@@ -17,22 +17,24 @@ package handler
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
+	"unsafe"
 
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/yaml"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/controllers/domain"
+	ktresource "github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -41,6 +43,7 @@ import (
 )
 
 func makeTestPendingHandler() *PendingHandler {
+	var nodeResourceManager *ktresource.NodeResourceManager
 	kubeClient := kubefake.NewSimpleClientset()
 	kusciaClient := kusciafake.NewSimpleClientset(makeTestAppImageCase1(), makeTestKusciaTaskCase1())
 
@@ -49,6 +52,41 @@ func makeTestPendingHandler() *PendingHandler {
 	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
 	clusterDomainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	nodeInformer := kubeInformersFactory.Core().V1().Nodes()
+	podInformer := kubeInformersFactory.Core().V1().Pods()
+	podQueue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod")
+	nodeQueue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node")
+	nodeResourceManager = ktresource.NewNodeResourceManager(context.Background(), domainInformer, nodeInformer, podInformer, podQueue, nodeQueue)
+	value := reflect.ValueOf(nodeResourceManager).Elem()
+	field := value.FieldByName("resourceStore")
+
+	mockResourceStore := &ktresource.NodeStatusStore{
+		LocalNodeStatuses: map[string][]ktresource.LocalNodeStatus{
+			"domain-a": {
+				{
+					Name:   "mock-node-a",
+					Status: ktresource.NodeStateReady,
+					Allocatable: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse("8"),
+						v1.ResourceMemory: resource.MustParse("16Gi"),
+					},
+				},
+			},
+			"domain-b": {
+				{
+					Name:   "mock-node-b",
+					Status: ktresource.NodeStateReady,
+					Allocatable: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse("8"),
+						v1.ResourceMemory: resource.MustParse("16Gi"),
+					},
+				},
+			},
+		},
+		Lock: sync.RWMutex{},
+	}
+	reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.ValueOf(mockResourceStore))
 
 	ns1 := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -98,6 +136,7 @@ func makeTestPendingHandler() *PendingHandler {
 		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
 		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
+		NodeResourceManager: *nodeResourceManager,
 	}
 
 	return NewPendingHandler(dep)
@@ -108,31 +147,6 @@ func TestPendingHandler_Handle(t *testing.T) {
 	handler := makeTestPendingHandler()
 	kusciaTask := makeTestKusciaTaskCase1()
 
-	domain.NodeResourceStore = &kusciatask.NodeStatusStore{
-		LocalNodeStatuses: map[string][]kusciatask.LocalNodeStatus{
-			"domain-a": {
-				{
-					Name:   "mock-node-a",
-					Status: kusciatask.NodeStateReady,
-					Allocatable: v1.ResourceList{
-						v1.ResourceCPU:    resource.MustParse("8"),
-						v1.ResourceMemory: resource.MustParse("16Gi"),
-					},
-				},
-			},
-			"domain-b": {
-				{
-					Name:   "mock-node-b",
-					Status: kusciatask.NodeStateReady,
-					Allocatable: v1.ResourceList{
-						v1.ResourceCPU:    resource.MustParse("8"),
-						v1.ResourceMemory: resource.MustParse("16Gi"),
-					},
-				},
-			},
-		},
-		Lock: sync.RWMutex{},
-	}
 	_, err := handler.Handle(kusciaTask)
 	assert.NoError(t, err)
 	assert.Equal(t, kusciaapisv1alpha1.TaskPending, kusciaTask.Status.Phase)

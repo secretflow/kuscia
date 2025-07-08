@@ -19,16 +19,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type ResourceCheckPlugin struct{
-	*kusciatask.NodeResourceManager
+	*resource.NodeResourceManager
 }
 
-func NewResourceCheckPlugin(manager *kusciatask.NodeResourceManager) *ResourceCheckPlugin {
+func NewResourceCheckPlugin(manager *resource.NodeResourceManager) *ResourceCheckPlugin {
 	return &ResourceCheckPlugin{
 		manager,
 	}

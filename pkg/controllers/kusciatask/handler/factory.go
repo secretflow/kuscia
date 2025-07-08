@@ -15,7 +15,7 @@
 package handler
 
 import (
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -27,17 +27,17 @@ import (
 
 // Dependencies defines some parameter dependencies of functions.
 type Dependencies struct {
-	KubeClient       kubernetes.Interface
-	KusciaClient     kusciaclientset.Interface
-	TrgLister        kuscialistersv1alpha1.TaskResourceGroupLister
-	NamespacesLister corelisters.NamespaceLister
-	CdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
-	PodsLister       corelisters.PodLister
-	ServicesLister   corelisters.ServiceLister
-	ConfigMapLister  corelisters.ConfigMapLister
-	AppImagesLister  kuscialistersv1alpha1.AppImageLister
-	Recorder         record.EventRecorder
-	NodeResourceManager kusciatask.NodeResourceManager
+	KubeClient          kubernetes.Interface
+	KusciaClient        kusciaclientset.Interface
+	TrgLister           kuscialistersv1alpha1.TaskResourceGroupLister
+	NamespacesLister    corelisters.NamespaceLister
+	CdrLister           kuscialistersv1alpha1.ClusterDomainRouteLister
+	PodsLister          corelisters.PodLister
+	ServicesLister      corelisters.ServiceLister
+	ConfigMapLister     corelisters.ConfigMapLister
+	AppImagesLister     kuscialistersv1alpha1.AppImageLister
+	Recorder            record.EventRecorder
+	NodeResourceManager resource.NodeResourceManager
 }
 
 // KusciaTaskPhaseHandler is an interface to handle kuscia task.

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //nolint:dupl
-package kusciatask
+package resource
 
 import (
 	"context"

@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -100,7 +101,7 @@ type Controller struct {
 	cdrSynced        cache.InformerSynced
 	trgSynced        cache.InformerSynced
 	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
-	nodeResourceManager   *NodeResourceManager
+	nodeResourceManager   *resource.NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -122,7 +123,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
 
-	nodeResourceManager := NewNodeResourceManager(
+	nodeResourceManager := resource.NewNodeResourceManager(
 		ctx,
 		domainInformer,
 		nodeInformer,
