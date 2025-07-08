@@ -513,6 +513,9 @@ func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
 
 	domainName := node.Labels[common.LabelNodeNamespace]
 	status, reason := determineNodeStatus(node)
+	if _, exists := nrm.resourceStore.LocalNodeStatuses[domainName]; !exists {
+		nrm.resourceStore.LocalNodeStatuses[domainName] = make(map[string]*LocalNodeStatus)
+	}
 	nrm.resourceStore.LocalNodeStatuses[domainName][node.Name] = &LocalNodeStatus{
 		Status:             status,
 		UnreadyReason:      reason,
@@ -524,6 +527,7 @@ func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
 	}
 
 	nlog.Infof("Added node %s to domain %s, status: %s", node.Name, domainName, status)
+	nlog.Infof("Added node core_s is %v", nrm.resourceStore)
 	return nil
 }
 
@@ -565,6 +569,7 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 		nlog.Infof("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodeStatus)
 		return nil
 	}
+	nlog.Infof("Updated node core_s is %v", nrm.resourceStore)
 	nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
 	return nil
 }
@@ -602,6 +607,7 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 		nodeCPUValue := nodeStatus.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
 
+		nlog.Infof("r-c core_s is %v", nrm.resourceStore)
 		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d",
 			nodeName, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
