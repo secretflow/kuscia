@@ -168,11 +168,71 @@ declare -A SECRETFLOW_PATTERNS=(
     ["sf_url"]="docs/secretflow/v"
 )
 
+# 检查版本号是否为有效的IP地址
+is_valid_ip() {
+    local ip="$1"
+    local IFS='.'
+    local -a octets=($ip)
+    
+    # IP地址必须有4个部分
+    if [[ ${#octets[@]} -ne 4 ]]; then
+        return 1
+    fi
+    
+    # 检查每个部分是否为0-255的数字
+    for octet in "${octets[@]}"; do
+        # 检查是否为纯数字
+        if ! [[ "$octet" =~ ^[0-9]+$ ]]; then
+            return 1
+        fi
+        # 检查数值范围
+        if (( octet < 0 || octet > 255 )); then
+            return 1
+        fi
+        # 检查前导零（除了单独的0）
+        if [[ ${#octet} -gt 1 && "$octet" =~ ^0 ]]; then
+            return 1
+        fi
+    done
+    
+    return 0
+}
+
 # 检查是否应该跳过这个版本号（排除误检测）
 should_skip_version() {
     local content="$1"
     local found_version="$2"
     local product_type="$3"  # "kuscia" or "secretflow"
+    
+    # 0. 首先检查是否为IP地址
+    if is_valid_ip "$found_version"; then
+        log_verbose "  Skipping IP address: $found_version"
+        return 0
+    fi
+    
+    # 0.1 检查是否在网络相关上下文中（更通用的IP地址相关检测）
+    if echo "$content" | grep -qiE "(ip|host|address|endpoint|server|client|domain|url|uri|port|socket|network|connection|--[0-9]|<--[0-9]|return.*code|http.*code|error.*code|status.*code)"; then
+        # 如果在网络上下文中，且版本号看起来像IP（即使不是标准4段IP）
+        if [[ "$found_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)*$ ]]; then
+            log_verbose "  Skipping network-context version that looks like IP: $found_version"
+            return 0
+        fi
+    fi
+    
+    # 0.2 检查是否在端口号上下文中
+    if echo "$content" | grep -qE ":[0-9]{1,5}[^0-9]" && [[ "$found_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        log_verbose "  Skipping version in port context: $found_version"
+        return 0
+    fi
+    
+    # 0.3 检查特定的错误消息模式
+    if echo "$content" | grep -qE "(error-message|error.*message|exception|failure|failed|timeout|connection.*refused|http.*code|status.*code)"; then
+        # 在错误消息上下文中，对版本号更加严格
+        if [[ "$found_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && ! echo "$content" | grep -qiE "(version|v[0-9]|release|tag)"; then
+            log_verbose "  Skipping version in error message without version context: $found_version"
+            return 0
+        fi
+    fi
     
     # 1. 跳过 URL 中的版本号
     if echo "$content" | grep -qE "https?://[^[:space:]]*${found_version}"; then
@@ -187,7 +247,7 @@ should_skip_version() {
     fi
     
     # 3. 跳过其他已知产品的版本号
-    if echo "$content" | grep -qiE "(envoy|prometheus|node_exporter|grafana|docker|kubernetes|k8s|etcd|containerd|nginx|apache|mysql|postgresql|redis|mongodb|elasticsearch).*${found_version}"; then
+    if echo "$content" | grep -qiE "(envoy|prometheus|node_exporter|grafana|docker|kubernetes|k8s|etcd|containerd|nginx|apache|mysql|postgresql|redis|mongodb|elasticsearch|python|java|golang|nodejs|react|vue|angular).*${found_version}"; then
         log_verbose "  Skipping other product version: $found_version"
         return 0
     fi
