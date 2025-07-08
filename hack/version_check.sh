@@ -255,7 +255,7 @@ should_skip_version() {
             do_not_skip=true
         fi
 
-        if [[ "$do_not_skip" == "false" ]] then
+        if [[ "$do_not_skip" == "false" ]]; then
             log_verbose "  Skipping other product version: $found_version"
             return 0
         else
