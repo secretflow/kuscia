@@ -513,19 +513,14 @@ func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
 
 	domainName := node.Labels[common.LabelNodeNamespace]
 	status, reason := determineNodeStatus(node)
-
-	if _, exists := nrm.resourceStore.LocalNodeStatuses[domainName]; !exists {
-		nrm.resourceStore.LocalNodeStatuses[domainName] = make(map[string]*LocalNodeStatus)
-	} else {
-		nrm.resourceStore.LocalNodeStatuses[domainName][node.Name] = &LocalNodeStatus{
-			Status:             status,
-			UnreadyReason:      reason,
-			TotalCPURequest:    0,
-			TotalMemRequest:    0,
-			Allocatable:        node.Status.Allocatable,
-			LastHeartbeatTime:  metav1.Now(),
-			LastTransitionTime: metav1.Now(),
-		}
+	nrm.resourceStore.LocalNodeStatuses[domainName][node.Name] = &LocalNodeStatus{
+		Status:             status,
+		UnreadyReason:      reason,
+		TotalCPURequest:    0,
+		TotalMemRequest:    0,
+		Allocatable:        node.Status.Allocatable,
+		LastHeartbeatTime:  metav1.Now(),
+		LastTransitionTime: metav1.Now(),
 	}
 
 	nlog.Infof("Added node %s to domain %s, status: %s", node.Name, domainName, status)
@@ -570,7 +565,6 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 		nlog.Infof("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodeStatus)
 		return nil
 	}
-
 	nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
 	return nil
 }
