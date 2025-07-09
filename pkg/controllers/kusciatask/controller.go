@@ -82,26 +82,26 @@ type Controller struct {
 	kubeInformerFactory   kubeinformers.SharedInformerFactory
 	kusciaInformerFactory kusciainformers.SharedInformerFactory
 
-	namespaceLister  corelisters.NamespaceLister
-	namespaceSynced  cache.InformerSynced
-	nodeLister       corelisters.NodeLister
-	nodeSynced       cache.InformerSynced
-	domainLister     kuscialistersv1alpha1.DomainLister
-	domainSynced     cache.InformerSynced
-	podsLister       corelisters.PodLister
-	podsSynced       cache.InformerSynced
-	servicesSynced   cache.InformerSynced
-	servicesLister   corelisters.ServiceLister
-	configMapSynced  cache.InformerSynced
-	configMapLister  corelisters.ConfigMapLister
-	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
-	kusciaTaskSynced cache.InformerSynced
-	appImageSynced   cache.InformerSynced
-	cdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
-	cdrSynced        cache.InformerSynced
-	trgSynced        cache.InformerSynced
-	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
-	nodeResourceManager   *resource.NodeResourceManager
+	namespaceLister     corelisters.NamespaceLister
+	namespaceSynced     cache.InformerSynced
+	nodeLister          corelisters.NodeLister
+	nodeSynced          cache.InformerSynced
+	domainLister        kuscialistersv1alpha1.DomainLister
+	domainSynced        cache.InformerSynced
+	podsLister          corelisters.PodLister
+	podsSynced          cache.InformerSynced
+	servicesSynced      cache.InformerSynced
+	servicesLister      corelisters.ServiceLister
+	configMapSynced     cache.InformerSynced
+	configMapLister     corelisters.ConfigMapLister
+	kusciaTaskLister    kuscialistersv1alpha1.KusciaTaskLister
+	kusciaTaskSynced    cache.InformerSynced
+	appImageSynced      cache.InformerSynced
+	cdrLister           kuscialistersv1alpha1.ClusterDomainRouteLister
+	cdrSynced           cache.InformerSynced
+	trgSynced           cache.InformerSynced
+	trgLister           kuscialistersv1alpha1.TaskResourceGroupLister
+	nodeResourceManager *resource.NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -163,16 +163,16 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	}
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&handler.Dependencies{
-		KubeClient:       kubeClient,
-		KusciaClient:     kusciaClient,
-		TrgLister:        trgInformer.Lister(),
-		NamespacesLister: namespaceInformer.Lister(),
-		PodsLister:       controller.podsLister,
-		ServicesLister:   serviceInformer.Lister(),
-		ConfigMapLister:  configMapInformer.Lister(),
-		AppImagesLister:  appImageInformer.Lister(),
-		CdrLister:        cdrInformer.Lister(),
-		Recorder:         eventRecorder,
+		KubeClient:          kubeClient,
+		KusciaClient:        kusciaClient,
+		TrgLister:           trgInformer.Lister(),
+		NamespacesLister:    namespaceInformer.Lister(),
+		PodsLister:          controller.podsLister,
+		ServicesLister:      serviceInformer.Lister(),
+		ConfigMapLister:     configMapInformer.Lister(),
+		AppImagesLister:     appImageInformer.Lister(),
+		CdrLister:           cdrInformer.Lister(),
+		Recorder:            eventRecorder,
 		NodeResourceManager: *nodeResourceManager,
 	})
 

@@ -24,7 +24,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-type ResourceCheckPlugin struct{
+type ResourceCheckPlugin struct {
 	nrm *resource.NodeResourceManager
 }
 

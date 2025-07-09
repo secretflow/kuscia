@@ -273,6 +273,7 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 		},
 	})
 }
+
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -334,6 +335,7 @@ func (c *Controller) Run(workers int) error {
 	<-c.ctx.Done()
 	return nil
 }
+
 // Stop is used to stop the controller.
 func (c *Controller) Stop() {
 	if c.cancel != nil {
@@ -349,6 +351,7 @@ func (c *Controller) runWorker() {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
 	}
 }
+
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the domain resource
 // with the current status of the resource.

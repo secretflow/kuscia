@@ -126,15 +126,15 @@ func makeTestPendingHandler() *PendingHandler {
 	clusterDomainRouteInformer.Informer().GetStore().Add(cdrBtoA)
 
 	dep := &Dependencies{
-		KubeClient:       kubeClient,
-		KusciaClient:     kusciaClient,
-		TrgLister:        kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),
-		NamespacesLister: nsInformer.Lister(),
-		CdrLister:        clusterDomainRouteInformer.Lister(),
-		PodsLister:       kubeInformersFactory.Core().V1().Pods().Lister(),
-		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
-		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
-		AppImagesLister:  appImageInformer.Lister(),
+		KubeClient:          kubeClient,
+		KusciaClient:        kusciaClient,
+		TrgLister:           kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),
+		NamespacesLister:    nsInformer.Lister(),
+		CdrLister:           clusterDomainRouteInformer.Lister(),
+		PodsLister:          kubeInformersFactory.Core().V1().Pods().Lister(),
+		ServicesLister:      kubeInformersFactory.Core().V1().Services().Lister(),
+		ConfigMapLister:     kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
+		AppImagesLister:     appImageInformer.Lister(),
 		NodeResourceManager: *nodeResourceManager,
 	}
 

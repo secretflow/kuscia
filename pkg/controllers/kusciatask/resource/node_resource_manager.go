@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	maxRetries = 15
+	maxRetries  = 15
 	managerName = "node_resource_manager"
 )
 
