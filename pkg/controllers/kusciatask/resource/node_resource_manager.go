@@ -130,7 +130,7 @@ func (nrm *NodeResourceManager) addPodEventHandler() {
 				}
 			}
 
-			nlog.Infof("PodInformer EventHandler handle: %s", pod.Name)
+			nlog.Debugf("PodInformer EventHandler handle: %s", pod.Name)
 			namespace := pod.Namespace
 			_, err := nrm.domainInformer.Lister().Get(namespace)
 			if err != nil {
@@ -206,7 +206,7 @@ func (nrm *NodeResourceManager) addNodeEventHandler() {
 				}
 			}
 
-			nlog.Infof("NodeInformer EventHandler handle: %s", node.Name)
+			nlog.Debugf("NodeInformer EventHandler handle: %s", node.Name)
 			if !nrm.matchNodeLabels(node) {
 				return false
 			}
@@ -299,7 +299,7 @@ func (nrm *NodeResourceManager) podHandler(item interface{}) error {
 }
 
 func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
-	nlog.Infof("NodeResourceManager addPodHandler: %+v", pod)
+	nlog.Debugf("NodeResourceManager addPodHandler: %s", pod.Name)
 
 	nrm.resourceStore.Lock.Lock()
 	defer nrm.resourceStore.Lock.Unlock()
@@ -317,7 +317,7 @@ func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
 		nodeStatus.TotalCPURequest += cpu
 		nodeStatus.TotalMemRequest += mem
 
-		nlog.Infof("Added pod %s resources to node %s: CPU=%dm, MEM=%dB",
+		nlog.Debugf("Added pod %s resources to node %s: CPU=%dm, MEM=%dB",
 			pod.Name, nodeName, cpu, mem)
 		return nil
 	}
@@ -327,7 +327,7 @@ func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
 }
 
 func (nrm *NodeResourceManager) deletePodHandler(pod *apicorev1.Pod) error {
-	nlog.Infof("NodeResourceManager deletePodHandler: %+v", pod)
+	nlog.Debugf("NodeResourceManager deletePodHandler: %s", pod.Name)
 
 	domainName := pod.Namespace
 	nodeName := pod.Spec.NodeName
@@ -355,7 +355,7 @@ func (nrm *NodeResourceManager) deletePodHandler(pod *apicorev1.Pod) error {
 			nodeStatus.TotalMemRequest = 0
 		}
 
-		nlog.Infof("Removed pod %s resources from node %s: CPU=%dm, MEM=%dB",
+		nlog.Debugf("Removed pod %s resources from node %s: CPU=%dm, MEM=%dB",
 			pod.Name, nodeName, cpu, mem)
 		return nil
 	}
@@ -365,7 +365,7 @@ func (nrm *NodeResourceManager) deletePodHandler(pod *apicorev1.Pod) error {
 }
 
 func (nrm *NodeResourceManager) updatePodHandler(newPod, oldPod *apicorev1.Pod) error {
-	nlog.Infof("NodeResourceManager updatePodHandler: newPod=%+v, oldPod=%+v", newPod, oldPod)
+	nlog.Debugf("NodeResourceManager updatePodHandler: newPod=%s, oldPod=%s", newPod.Name, oldPod.Name)
 
 	nrm.resourceStore.Lock.Lock()
 	defer nrm.resourceStore.Lock.Unlock()
@@ -400,7 +400,7 @@ func (nrm *NodeResourceManager) updatePodHandler(newPod, oldPod *apicorev1.Pod) 
 				nodeStatus.TotalMemRequest = 0
 			}
 
-			nlog.Infof("Updated pod %s resources on node %s: CPU=%+dm, MEM=%+dB",
+			nlog.Debugf("Updated pod %s resources on node %s: CPU=%+dm, MEM=%+dB",
 				newPod.Name, newNodeName, deltaCPU, deltaMem)
 			return nil
 		}
@@ -418,7 +418,7 @@ func (nrm *NodeResourceManager) updatePodHandler(newPod, oldPod *apicorev1.Pod) 
 			oldNodeStatus.TotalMemRequest = 0
 		}
 
-		nlog.Infof("Removed old pod %s resources from node %s: CPU=%dm, MEM=%dB",
+		nlog.Debugf("Removed old pod %s resources from node %s: CPU=%dm, MEM=%dB",
 			newPod.Name, oldNodeName, oldCPU, oldMem)
 	}
 
@@ -427,7 +427,7 @@ func (nrm *NodeResourceManager) updatePodHandler(newPod, oldPod *apicorev1.Pod) 
 		newNodeStatus.TotalCPURequest += newCPU
 		newNodeStatus.TotalMemRequest += newMem
 
-		nlog.Infof("Added new pod %s resources to node %s: CPU=%dm, MEM=%dB",
+		nlog.Debugf("Added new pod %s resources to node %s: CPU=%dm, MEM=%dB",
 			newPod.Name, newNodeName, newCPU, newMem)
 		return nil
 	}
@@ -509,7 +509,7 @@ func determineNodeStatus(node *apicorev1.Node) (status, reason string) {
 }
 
 func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
-	nlog.Infof("Adding node %s", node.Name)
+	nlog.Debugf("Adding node %s", node.Name)
 
 	nrm.resourceStore.Lock.Lock()
 	defer nrm.resourceStore.Lock.Unlock()
@@ -529,13 +529,12 @@ func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
 		LastTransitionTime: metav1.Now(),
 	}
 
-	nlog.Infof("Added node %s to domain %s, status: %s", node.Name, domainName, status)
-	nlog.Infof("Added node core_s is %v", nrm.resourceStore)
+	nlog.Debugf("Added node %s to domain %s, status: %s", node.Name, domainName, status)
 	return nil
 }
 
 func (nrm *NodeResourceManager) deleteNodeHandler(node *apicorev1.Node) error {
-	nlog.Infof("Deleting node %s", node.Name)
+	nlog.Debugf("Deleting node %s", node.Name)
 
 	domainName := node.Labels[common.LabelNodeNamespace]
 	nrm.resourceStore.Lock.Lock()
@@ -544,7 +543,7 @@ func (nrm *NodeResourceManager) deleteNodeHandler(node *apicorev1.Node) error {
 	if nodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]; exists {
 		if _, nodeExists := nodes[node.Name]; nodeExists {
 			delete(nodes, node.Name)
-			nlog.Infof("Removed node %s from domain %s", node.Name, domainName)
+			nlog.Debugf("Removed node %s from domain %s", node.Name, domainName)
 			return nil
 		}
 	}
@@ -554,7 +553,7 @@ func (nrm *NodeResourceManager) deleteNodeHandler(node *apicorev1.Node) error {
 }
 
 func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.Node) error {
-	nlog.Infof("Updating node %s", newNode.Name)
+	nlog.Debugf("Updating node %s", newNode.Name)
 
 	nrm.resourceStore.Lock.Lock()
 	defer nrm.resourceStore.Lock.Unlock()
@@ -569,10 +568,9 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 		nodeStatus.UnreadyReason = reason
 		nodeStatus.Allocatable = allocatable
 		nodeStatus.LastHeartbeatTime = metav1.Now()
-		nlog.Infof("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodeStatus)
+		nlog.Debugf("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodeStatus)
 		return nil
 	}
-	nlog.Infof("Updated node core_s is %v", nrm.resourceStore)
 	nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
 	return nil
 }
@@ -610,14 +608,13 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 		nodeCPUValue := nodeStatus.Allocatable.Cpu().MilliValue()
 		nodeMEMValue := nodeStatus.Allocatable.Memory().Value()
 
-		nlog.Infof("r-c core_s is %v", nrm.resourceStore)
-		nlog.Infof("Node %s ncv is %d nmv is %d tcr is %d tmr is %d",
+		nlog.Debugf("Node %s ncv is %d nmv is %d tcr is %d tmr is %d",
 			nodeName, nodeCPUValue, nodeMEMValue,
 			nodeStatus.TotalCPURequest, nodeStatus.TotalMemRequest)
 
 		if (nodeCPUValue-nodeStatus.TotalCPURequest) >= cpuReq &&
 			(nodeMEMValue-nodeStatus.TotalMemRequest) >= memReq {
-			nlog.Infof("Domain %s node %s available resource", domainName, nodeName)
+			nlog.Debugf("Domain %s node %s available resource", domainName, nodeName)
 			return true, nil
 		}
 	}
