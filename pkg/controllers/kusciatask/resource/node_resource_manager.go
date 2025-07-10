@@ -24,6 +24,7 @@ import (
 
 	apicorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	informerscorev1 "k8s.io/client-go/informers/core/v1"
@@ -101,6 +102,10 @@ func NewNodeResourceManager(
 		podQueue:       podQueue,
 		nodeQueue:      nodeQueue,
 		resourceStore:  nodeStatusStore,
+	}
+
+	if err := manager.start(); err != nil {
+		nlog.Errorf("Failed to initialize node resource manager: %v", err)
 	}
 
 	manager.addPodEventHandler()
@@ -304,7 +309,16 @@ func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
 	domainName := pod.Namespace
 	domainNodes, exists := nrm.resourceStore.LocalNodeStatuses[domainName]
 	if !exists {
-		nlog.Warnf("Domain %s not found when add pod %s", domainName, pod.Name)
+		key, _ := cache.MetaNamespaceKeyFunc(pod)
+		if nrm.podQueue.NumRequeues(key) < maxRetries {
+			nlog.Warnf("Domain %s not ready for pod %s, reQueuing (attempt %d/%d)",
+				domainName, pod.Name, nrm.podQueue.NumRequeues(key)+1, maxRetries)
+			nrm.podQueue.AddRateLimited(pod)
+			return fmt.Errorf("domain %s not ready", domainName)
+		}
+		nlog.Errorf("Max retries (%d) reached for pod %s in domain %s",
+			maxRetries, pod.Name, domainName)
+		nrm.podQueue.Forget(key)
 		return nil
 	}
 
@@ -454,6 +468,7 @@ func (nrm *NodeResourceManager) nodeHandler(item interface{}) error {
 }
 
 func (nrm *NodeResourceManager) Run(workers int) error {
+	defer nrm.Stop()
 	defer runtime.HandleCrash()
 	defer nrm.podQueue.ShutDown()
 	defer nrm.nodeQueue.ShutDown()
@@ -617,4 +632,48 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 	}
 
 	return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
+}
+
+func (nrm *NodeResourceManager) start() error {
+	domains, err := nrm.domainInformer.Lister().List(labels.Everything())
+	if err != nil {
+		return fmt.Errorf("failed to list domains: %v", err)
+	}
+
+	nrm.resourceStore.Lock.Lock()
+	defer nrm.resourceStore.Lock.Unlock()
+
+	for _, domain := range domains {
+		if _, exists := nrm.resourceStore.LocalNodeStatuses[domain.Name]; !exists {
+			nrm.resourceStore.LocalNodeStatuses[domain.Name] = make(map[string]*LocalNodeStatus)
+		}
+	}
+
+	nodes, err := nrm.nodeInformer.Lister().List(labels.Everything())
+	if err != nil {
+		return fmt.Errorf("failed to list nodes: %v", err)
+	}
+
+	for _, node := range nodes {
+		if domainName := node.Labels[common.LabelNodeNamespace]; domainName != "" {
+			if _, exists := nrm.resourceStore.LocalNodeStatuses[domainName]; exists {
+				status, reason := determineNodeStatus(node)
+				nrm.resourceStore.LocalNodeStatuses[domainName][node.Name] = &LocalNodeStatus{
+					Status:             status,
+					UnreadyReason:      reason,
+					TotalCPURequest:    0,
+					TotalMemRequest:    0,
+					Allocatable:        node.Status.Allocatable,
+					LastHeartbeatTime:  metav1.Now(),
+					LastTransitionTime: metav1.Now(),
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (nrm *NodeResourceManager) Stop() {
+	nrm.podQueue.ShutDown()
+	nrm.nodeQueue.ShutDown()
 }
