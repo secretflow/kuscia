@@ -73,7 +73,6 @@ type LocalNodeStatus struct {
 
 type NodeResourceManager struct {
 	ctx            context.Context
-	cancel         context.CancelFunc
 	domainInformer kusciaextv1alpha1.DomainInformer
 	nodeInformer   informerscorev1.NodeInformer
 	podInformer    informerscorev1.PodInformer
@@ -89,7 +88,6 @@ func NewNodeResourceManager(
 	podInformer informerscorev1.PodInformer,
 	podQueue workqueue.RateLimitingInterface,
 	nodeQueue workqueue.RateLimitingInterface) *NodeResourceManager {
-	ctx, cancel := context.WithCancel(ctx)
 	nodeStatusStore := &NodeStatusStore{
 		LocalNodeStatuses: make(map[string]map[string]*LocalNodeStatus),
 		Lock:              sync.RWMutex{},
@@ -97,7 +95,6 @@ func NewNodeResourceManager(
 
 	manager := &NodeResourceManager{
 		ctx:            ctx,
-		cancel:         cancel,
 		domainInformer: domainInformer,
 		nodeInformer:   nodeInformer,
 		podInformer:    podInformer,
@@ -620,10 +617,4 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 	}
 
 	return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
-}
-
-func (nrm *NodeResourceManager) Stop() {
-	if nrm.cancel != nil {
-		nrm.cancel()
-	}
 }
