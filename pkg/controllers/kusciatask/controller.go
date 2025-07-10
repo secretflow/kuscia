@@ -123,9 +123,10 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
 	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	newCtx, newCancel := context.WithCancel(ctx)
 
 	nodeResourceManager := resource.NewNodeResourceManager(
-		ctx,
+		newCtx,
 		domainInformer,
 		nodeInformer,
 		podInformer,
@@ -164,7 +165,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	}
 
 	pm := plugins.NewPluginManager(*nodeResourceManager, cdrInformer.Lister())
-	controller.ctx, controller.cancel = context.WithCancel(ctx)
+	controller.ctx, controller.cancel = newCtx, newCancel
 	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&handler.Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
