@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	ktresource "github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -128,7 +127,7 @@ func makeTestPendingHandler() *PendingHandler {
 	clusterDomainRouteInformer.Informer().GetStore().Add(cdrBtoA)
 
 	pm := plugins.NewPluginManager(*nodeResourceManager, clusterDomainRouteInformer.Lister())
-	dep := &dependencies.Dependencies{
+	dep := &Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
 		TrgLister:        kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),

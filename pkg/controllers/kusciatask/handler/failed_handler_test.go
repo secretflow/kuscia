@@ -24,7 +24,6 @@ import (
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -45,7 +44,7 @@ func TestFailedHandler_Handle(t *testing.T) {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
 	go kubeInformersFactory.Start(wait.NeverStop)
-	deps := &dependencies.Dependencies{
+	deps := &Dependencies{
 		KubeClient:      kubeClient,
 		KusciaClient:    kusciaClient,
 		PodsLister:      kubeInformersFactory.Core().V1().Pods().Lister(),

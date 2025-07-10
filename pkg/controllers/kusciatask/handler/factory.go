@@ -15,9 +15,30 @@
 package handler
 
 import (
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
+	"k8s.io/client-go/kubernetes"
+	corelisters "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/record"
+
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
+	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 )
+
+// Dependencies defines some parameter dependencies of functions.
+type Dependencies struct {
+	KubeClient       kubernetes.Interface
+	KusciaClient     kusciaclientset.Interface
+	TrgLister        kuscialistersv1alpha1.TaskResourceGroupLister
+	NamespacesLister corelisters.NamespaceLister
+	CdrLister        kuscialistersv1alpha1.ClusterDomainRouteLister
+	PodsLister       corelisters.PodLister
+	ServicesLister   corelisters.ServiceLister
+	ConfigMapLister  corelisters.ConfigMapLister
+	AppImagesLister  kuscialistersv1alpha1.AppImageLister
+	Recorder         record.EventRecorder
+	PluginManager    *plugins.PluginManager
+}
 
 // KusciaTaskPhaseHandler is an interface to handle kuscia task.
 type KusciaTaskPhaseHandler interface {
@@ -25,7 +46,7 @@ type KusciaTaskPhaseHandler interface {
 }
 
 // NewKusciaTaskPhaseHandlerFactory returns a KusciaTaskPhaseHandlerFactory instance.
-func NewKusciaTaskPhaseHandlerFactory(deps *dependencies.Dependencies) *KusciaTaskPhaseHandlerFactory {
+func NewKusciaTaskPhaseHandlerFactory(deps *Dependencies) *KusciaTaskPhaseHandlerFactory {
 	finishedHandler := NewFinishedHandler(deps)
 	runningHandler := NewRunningHandler(deps)
 	pendingHandler := NewPendingHandler(deps)

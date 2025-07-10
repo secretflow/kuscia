@@ -20,7 +20,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -37,7 +36,7 @@ type FailedHandler struct {
 }
 
 // NewFailedHandler returns a FailedHandler instance.
-func NewFailedHandler(deps *dependencies.Dependencies, finishedHandler *FinishedHandler) *FailedHandler {
+func NewFailedHandler(deps *Dependencies, finishedHandler *FinishedHandler) *FailedHandler {
 	return &FailedHandler{
 		FinishedHandler: finishedHandler,
 		kusciaClient:    deps.KusciaClient,

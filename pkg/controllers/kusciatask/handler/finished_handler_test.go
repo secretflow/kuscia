@@ -27,7 +27,6 @@ import (
 	kubefake "k8s.io/client-go/kubernetes/fake"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 )
@@ -80,7 +79,7 @@ func TestFinishedHandler_Handle(t *testing.T) {
 	podInformer.Informer().GetStore().Add(testPod2)
 	configMapInformer.Informer().GetStore().Add(testConfigMap)
 
-	deps := &dependencies.Dependencies{
+	deps := &Dependencies{
 		KubeClient:      kubeClient,
 		KusciaClient:    kusciaClient,
 		PodsLister:      kubeInformersFactory.Core().V1().Pods().Lister(),

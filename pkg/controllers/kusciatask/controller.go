@@ -35,7 +35,6 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/handler"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
@@ -166,7 +165,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	pm := plugins.NewPluginManager(*nodeResourceManager, cdrInformer.Lister())
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
-	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&dependencies.Dependencies{
+	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&handler.Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
 		TrgLister:        trgInformer.Lister(),

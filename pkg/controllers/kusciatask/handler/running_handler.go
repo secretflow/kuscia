@@ -27,7 +27,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -74,7 +73,7 @@ type RunningHandler struct {
 }
 
 // NewRunningHandler returns a RunningHandler instance.
-func NewRunningHandler(deps *dependencies.Dependencies) *RunningHandler {
+func NewRunningHandler(deps *Dependencies) *RunningHandler {
 	return &RunningHandler{
 		kubeClient:      deps.KubeClient,
 		kusciaClient:    deps.KusciaClient,

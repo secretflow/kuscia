@@ -34,7 +34,6 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
 	kuscia_common_struct "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -66,7 +65,7 @@ type PendingHandler struct {
 }
 
 // NewPendingHandler returns a PendingHandler instance.
-func NewPendingHandler(deps *dependencies.Dependencies) *PendingHandler {
+func NewPendingHandler(deps *Dependencies) *PendingHandler {
 	return &PendingHandler{
 		kubeClient:       deps.KubeClient,
 		kusciaClient:     deps.KusciaClient,
