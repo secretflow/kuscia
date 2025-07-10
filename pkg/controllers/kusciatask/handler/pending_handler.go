@@ -77,7 +77,7 @@ func NewPendingHandler(deps *ktcommon.Dependencies) *PendingHandler {
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
 		appImagesLister:  deps.AppImagesLister,
-		pluginManager:    plugins.NewPluginManager(deps),
+		pluginManager:    deps.PluginManager,
 	}
 }
 

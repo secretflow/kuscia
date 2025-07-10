@@ -18,7 +18,8 @@ package plugins
 import (
 	"context"
 
-	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
+	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 )
 
 type ResourceRequest struct {
@@ -35,13 +36,13 @@ type PluginManager struct {
 	plugins []Plugin
 }
 
-func NewPluginManager(deps *ktcommon.Dependencies) *PluginManager {
+func NewPluginManager(nrm resource.NodeResourceManager, cdrLister kuscialistersv1alpha1.ClusterDomainRouteLister) *PluginManager {
 	pluginManager := PluginManager{
 		plugins: make([]Plugin, 0),
 	}
 
-	pluginManager.Register(NewResourceCheckPlugin(&deps.NodeResourceManager))
-	pluginManager.Register(NewCDRCheckPlugin(deps.CdrLister))
+	pluginManager.Register(NewResourceCheckPlugin(&nrm))
+	pluginManager.Register(NewCDRCheckPlugin(cdrLister))
 
 	return &pluginManager
 }

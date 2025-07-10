@@ -38,6 +38,7 @@ import (
 	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/handler"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -162,19 +163,21 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		recorder:              eventRecorder,
 		nodeResourceManager:   nodeResourceManager,
 	}
+
+	pm := plugins.NewPluginManager(*nodeResourceManager, cdrInformer.Lister())
 	controller.ctx, controller.cancel = context.WithCancel(ctx)
 	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&ktcommon.Dependencies{
-		KubeClient:          kubeClient,
-		KusciaClient:        kusciaClient,
-		TrgLister:           trgInformer.Lister(),
-		NamespacesLister:    namespaceInformer.Lister(),
-		PodsLister:          controller.podsLister,
-		ServicesLister:      serviceInformer.Lister(),
-		ConfigMapLister:     configMapInformer.Lister(),
-		AppImagesLister:     appImageInformer.Lister(),
-		CdrLister:           cdrInformer.Lister(),
-		Recorder:            eventRecorder,
-		NodeResourceManager: *nodeResourceManager,
+		KubeClient:       kubeClient,
+		KusciaClient:     kusciaClient,
+		TrgLister:        trgInformer.Lister(),
+		NamespacesLister: namespaceInformer.Lister(),
+		PodsLister:       controller.podsLister,
+		ServicesLister:   serviceInformer.Lister(),
+		ConfigMapLister:  configMapInformer.Lister(),
+		AppImagesLister:  appImageInformer.Lister(),
+		CdrLister:        cdrInformer.Lister(),
+		Recorder:         eventRecorder,
+		PluginManager:    pm,
 	})
 
 	// kuscia task event handler
