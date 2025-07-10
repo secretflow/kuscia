@@ -299,10 +299,6 @@ func (c *Controller) Stop() {
 		c.cancel()
 		c.cancel = nil
 	}
-
-	if c.nodeResourceManager != nil {
-		c.nodeResourceManager.Stop()
-	}
 }
 
 // enqueueKusciaTask takes a KusciaTask resource and converts it into a namespace/name
