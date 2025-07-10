@@ -83,7 +83,7 @@ type NodeResourceManager struct {
 }
 
 func NewNodeResourceManager(
-	ctx context.Context,
+	parentCtx context.Context,
 	domainInformer kusciaextv1alpha1.DomainInformer,
 	nodeInformer informerscorev1.NodeInformer,
 	podInformer informerscorev1.PodInformer,
@@ -95,7 +95,7 @@ func NewNodeResourceManager(
 	}
 
 	manager := &NodeResourceManager{
-		ctx:            ctx,
+		ctx:            parentCtx,
 		domainInformer: domainInformer,
 		nodeInformer:   nodeInformer,
 		podInformer:    podInformer,
@@ -468,7 +468,6 @@ func (nrm *NodeResourceManager) nodeHandler(item interface{}) error {
 }
 
 func (nrm *NodeResourceManager) Run(workers int) error {
-	defer nrm.Stop()
 	defer runtime.HandleCrash()
 	defer nrm.podQueue.ShutDown()
 	defer nrm.nodeQueue.ShutDown()
@@ -671,9 +670,4 @@ func (nrm *NodeResourceManager) start() error {
 		}
 	}
 	return nil
-}
-
-func (nrm *NodeResourceManager) Stop() {
-	nrm.podQueue.ShutDown()
-	nrm.nodeQueue.ShutDown()
 }
