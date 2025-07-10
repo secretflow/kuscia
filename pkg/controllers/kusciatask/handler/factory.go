@@ -15,7 +15,7 @@
 package handler
 
 import (
-	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
@@ -25,7 +25,7 @@ type KusciaTaskPhaseHandler interface {
 }
 
 // NewKusciaTaskPhaseHandlerFactory returns a KusciaTaskPhaseHandlerFactory instance.
-func NewKusciaTaskPhaseHandlerFactory(deps *common.Dependencies) *KusciaTaskPhaseHandlerFactory {
+func NewKusciaTaskPhaseHandlerFactory(deps *dependencies.Dependencies) *KusciaTaskPhaseHandlerFactory {
 	finishedHandler := NewFinishedHandler(deps)
 	runningHandler := NewRunningHandler(deps)
 	pendingHandler := NewPendingHandler(deps)

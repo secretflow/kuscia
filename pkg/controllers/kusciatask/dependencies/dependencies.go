@@ -1,4 +1,4 @@
-package common
+package dependencies
 
 import (
 	"k8s.io/client-go/kubernetes"

@@ -34,7 +34,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	ktresource "github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -126,17 +127,18 @@ func makeTestPendingHandler() *PendingHandler {
 	clusterDomainRouteInformer.Informer().GetStore().Add(cdrAtoB)
 	clusterDomainRouteInformer.Informer().GetStore().Add(cdrBtoA)
 
-	dep := &ktcommon.Dependencies{
-		KubeClient:          kubeClient,
-		KusciaClient:        kusciaClient,
-		TrgLister:           kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),
-		NamespacesLister:    nsInformer.Lister(),
-		CdrLister:           clusterDomainRouteInformer.Lister(),
-		PodsLister:          kubeInformersFactory.Core().V1().Pods().Lister(),
-		ServicesLister:      kubeInformersFactory.Core().V1().Services().Lister(),
-		ConfigMapLister:     kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
-		AppImagesLister:     appImageInformer.Lister(),
-		NodeResourceManager: *nodeResourceManager,
+	pm := plugins.NewPluginManager(*nodeResourceManager, clusterDomainRouteInformer.Lister())
+	dep := &dependencies.Dependencies{
+		KubeClient:       kubeClient,
+		KusciaClient:     kusciaClient,
+		TrgLister:        kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),
+		NamespacesLister: nsInformer.Lister(),
+		CdrLister:        clusterDomainRouteInformer.Lister(),
+		PodsLister:       kubeInformersFactory.Core().V1().Pods().Lister(),
+		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
+		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
+		AppImagesLister:  appImageInformer.Lister(),
+		PluginManager:    pm,
 	}
 
 	return NewPendingHandler(dep)

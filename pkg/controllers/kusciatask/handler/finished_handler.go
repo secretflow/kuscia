@@ -27,7 +27,7 @@ import (
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
-	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/dependencies"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 
@@ -43,7 +43,7 @@ type FinishedHandler struct {
 }
 
 // NewFinishedHandler returns a FinishedHandler instance.
-func NewFinishedHandler(deps *ktcommon.Dependencies) *FinishedHandler {
+func NewFinishedHandler(deps *dependencies.Dependencies) *FinishedHandler {
 	return &FinishedHandler{
 		kubeClient:      deps.KubeClient,
 		kusciaClient:    deps.KusciaClient,
