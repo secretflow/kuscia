@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	ktresource "github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -125,7 +126,7 @@ func makeTestPendingHandler() *PendingHandler {
 	clusterDomainRouteInformer.Informer().GetStore().Add(cdrAtoB)
 	clusterDomainRouteInformer.Informer().GetStore().Add(cdrBtoA)
 
-	dep := &Dependencies{
+	dep := &ktcommon.Dependencies{
 		KubeClient:          kubeClient,
 		KusciaClient:        kusciaClient,
 		TrgLister:           kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups().Lister(),

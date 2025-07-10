@@ -17,6 +17,8 @@ package plugins
 
 import (
 	"context"
+
+	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 )
 
 type ResourceRequest struct {
@@ -33,10 +35,15 @@ type PluginManager struct {
 	plugins []Plugin
 }
 
-func NewPluginManager() *PluginManager {
-	return &PluginManager{
+func NewPluginManager(deps *ktcommon.Dependencies) *PluginManager {
+	pluginManager := PluginManager{
 		plugins: make([]Plugin, 0),
 	}
+
+	pluginManager.Register(NewResourceCheckPlugin(&deps.NodeResourceManager))
+	pluginManager.Register(NewCDRCheckPlugin(deps.CdrLister))
+
+	return &pluginManager
 }
 
 func (pm *PluginManager) Register(p Plugin) {

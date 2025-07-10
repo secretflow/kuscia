@@ -33,6 +33,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
+	ktcommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	kuscia_common_struct "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
@@ -65,11 +66,7 @@ type PendingHandler struct {
 }
 
 // NewPendingHandler returns a PendingHandler instance.
-func NewPendingHandler(deps *Dependencies) *PendingHandler {
-	pm := plugins.NewPluginManager()
-	pm.Register(plugins.NewResourceCheckPlugin(&deps.NodeResourceManager))
-	pm.Register(plugins.NewCDRCheckPlugin(deps.CdrLister))
-
+func NewPendingHandler(deps *ktcommon.Dependencies) *PendingHandler {
 	return &PendingHandler{
 		kubeClient:       deps.KubeClient,
 		kusciaClient:     deps.KusciaClient,
@@ -80,7 +77,7 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
 		appImagesLister:  deps.AppImagesLister,
-		pluginManager:    pm,
+		pluginManager:    plugins.NewPluginManager(deps),
 	}
 }
 
