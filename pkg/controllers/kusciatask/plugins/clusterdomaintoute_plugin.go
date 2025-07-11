@@ -1,4 +1,4 @@
-// Copyright 2023 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type CDRCheckPlugin struct {
@@ -37,6 +38,16 @@ func NewCDRCheckPlugin(cdrLister kuscialistersv1alpha1.ClusterDomainRouteLister)
 	}
 }
 
+func allPartiesSame(parties []kusciaapisv1alpha1.PartyInfo) bool {
+	first := parties[0]
+	for _, p := range parties[1:] {
+		if p.DomainID != first.DomainID {
+			return false
+		}
+	}
+	return true
+}
+
 func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
 	var partyKitInfo common.PartyKitInfo
 	var ok bool
@@ -45,34 +56,41 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 		return false, fmt.Errorf("cdr-check could not convert params %v to PartyKitInfo", params)
 	}
 
-	cdrResourceRequest := p.cdrResourceRequest(partyKitInfo)
-	for _, cdr := range cdrResourceRequest {
+	parties := partyKitInfo.KusciaTask.Spec.Parties
+	if len(parties) == 1 || allPartiesSame(parties) {
+		nlog.Debugf("Skip CDR check for just %d parties or all about same domain: %s", len(parties), parties[0].DomainID)
+		return true, nil
+	}
+
+	cdrResources := p.cdrResourceRequest(partyKitInfo)
+	for _, cdr := range cdrResources {
 		cdrObj, err := p.cdrLister.Get(cdr)
 		if err != nil {
-			return false, fmt.Errorf("cdr-check get cdr %s failed with %v", cdr, err)
+			return false, fmt.Errorf("get cdr %s failed with %v", cdr, err)
 		}
 
 		parts := strings.Split(cdr, "-")
 		for _, condition := range cdrObj.Status.Conditions {
 			if condition.Type == kusciaapisv1alpha1.ClusterDomainRouteReady && condition.Status != v1.ConditionTrue {
-				return false, fmt.Errorf("cdr-check initiator %s to collaborator %s failed with %v", parts[0], parts[1], condition.Reason)
+				return false, fmt.Errorf("cdr-check %s to %s failed with %s", parts[0], parts[1], condition.Reason)
 			}
 		}
 	}
+
 	return true, nil
 }
 
 func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo common.PartyKitInfo) []string {
 	var cdrs []string
-	initiator := partyKitInfo.KusciaTask.Spec.Initiator
+	parties := partyKitInfo.KusciaTask.Spec.Parties
 
-	for _, party := range partyKitInfo.KusciaTask.Spec.Parties {
-		if party.DomainID == initiator {
-			continue
+	for i, source := range parties {
+		for j, dest := range parties {
+			if i == j {
+				continue
+			}
+			cdrs = append(cdrs, fmt.Sprintf("%s-%s", source.DomainID, dest.DomainID))
 		}
-
-		cdrName := fmt.Sprintf("%s-%s", initiator, party.DomainID)
-		cdrs = append(cdrs, cdrName)
 	}
 	return cdrs
 }

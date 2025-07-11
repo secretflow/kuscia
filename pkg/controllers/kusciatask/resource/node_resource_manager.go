@@ -1,4 +1,4 @@
-// Copyright 2023 Ant Group Co., Ltd.
+// Copyright 2025 Ant Group Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -172,14 +172,28 @@ func (nrm *NodeResourceManager) handlerPod(newObj interface{}, oldObj interface{
 	var newPod, oldPod *apicorev1.Pod
 	var ok bool
 
-	newPod, ok = newObj.(*apicorev1.Pod)
-	if oldObj != nil {
-		oldPod, _ = oldObj.(*apicorev1.Pod)
+	if np, ok := newObj.(cache.DeletedFinalStateUnknown); ok {
+		newPod, ok = np.Obj.(*apicorev1.Pod)
+	} else {
+		newPod, ok = newObj.(*apicorev1.Pod)
 	}
 
 	if !ok {
-		nlog.Errorf("Received unexpected object type %v for %s event", newObj, op)
+		nlog.Errorf("Could not convert deleted final state %v to Pod", newObj)
 		return
+	}
+
+	if op == ResourceCheckForUpdatePod {
+		if op, ok := oldObj.(cache.DeletedFinalStateUnknown); ok {
+			oldPod, ok = op.Obj.(*apicorev1.Pod)
+		} else {
+			oldPod, ok = oldObj.(*apicorev1.Pod)
+		}
+
+		if !ok {
+			nlog.Errorf("Could not convert oldObj deleted final state %v to Pod", oldObj)
+			return
+		}
 	}
 
 	queueItem := &queue.PodQueueItem{
@@ -240,14 +254,28 @@ func (nrm *NodeResourceManager) handlerNode(newObj interface{}, oldObj interface
 	var newNode, oldNode *apicorev1.Node
 	var ok bool
 
-	newNode, ok = newObj.(*apicorev1.Node)
-	if oldObj != nil {
-		oldNode, _ = oldObj.(*apicorev1.Node)
+	if nd, ok := newObj.(cache.DeletedFinalStateUnknown); ok {
+		newNode, ok = nd.Obj.(*apicorev1.Node)
+	} else {
+		newNode, ok = newObj.(*apicorev1.Node)
 	}
 
 	if !ok {
-		nlog.Errorf("Received unexpected object type %v for %s event", newObj, op)
+		nlog.Errorf("Could not convert deleted final state %v to Node", newObj)
 		return
+	}
+
+	if op == ResourceCheckForUpdateNode {
+		if od, ok := oldObj.(cache.DeletedFinalStateUnknown); ok {
+			oldNode, ok = od.Obj.(*apicorev1.Node)
+		} else {
+			oldNode, ok = oldObj.(*apicorev1.Node)
+		}
+
+		if !ok {
+			nlog.Errorf("Could not convert oldObj deleted final state %v to Node", oldObj)
+			return
+		}
 	}
 
 	queueItem := &queue.NodeQueueItem{
@@ -314,7 +342,7 @@ func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
 			nlog.Warnf("Domain %s not ready for pod %s, reQueuing (attempt %d/%d)",
 				domainName, pod.Name, nrm.podQueue.NumRequeues(key)+1, maxRetries)
 			nrm.podQueue.AddRateLimited(pod)
-			return fmt.Errorf("domain %s not ready", domainName)
+			return nil
 		}
 		nlog.Errorf("Max retries (%d) reached for pod %s in domain %s",
 			maxRetries, pod.Name, domainName)
