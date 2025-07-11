@@ -45,7 +45,7 @@ const (
 )
 
 const (
-	AgentNotReady    = "agent not ready"
+	AgentNotReady    = "Agent not ready"
 	NodeStateReady   = "Ready"
 	NodeStateUnReady = "UnReady"
 )
@@ -543,11 +543,14 @@ func determineNodeStatus(node *apicorev1.Node) (status, reason string) {
 		if cond.Type == apicorev1.NodeReady {
 			if cond.Status == apicorev1.ConditionFalse {
 				status = NodeStateUnReady
-				reasons = append(reasons, AgentNotReady)
 				for _, pressureCond := range node.Status.Conditions {
 					if pressureCond.Status == apicorev1.ConditionTrue {
 						reasons = append(reasons, pressureCond.Reason)
 					}
+				}
+
+				if len(reasons) == 0 {
+					reasons = append(reasons, AgentNotReady)
 				}
 			} else {
 				reasons = append(reasons, string(cond.Type))

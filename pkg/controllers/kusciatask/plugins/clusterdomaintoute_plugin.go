@@ -52,8 +52,8 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 		uniqueDomains[party.DomainID] = struct{}{}
 	}
 
-	if len(parties) == 1 || len(uniqueDomains) == 1 {
-		nlog.Debugf("Skip CDR check for %d unique domains: %s", len(uniqueDomains), parties[0].DomainID)
+	if len(uniqueDomains) == 1 {
+		nlog.Debugf("Skip CDR check for 1 unique domains: %s", parties[0].DomainID)
 		return true, nil
 	}
 
