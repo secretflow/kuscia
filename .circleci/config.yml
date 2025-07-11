@@ -213,7 +213,8 @@ workflows:
       - docs_publish:
           filters:
             branches:
-              only: main
+              only:
+                - main
             tags:
               only: /^v.*/
 
