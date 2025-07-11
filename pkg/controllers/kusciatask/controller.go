@@ -175,7 +175,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		ServicesLister:   serviceInformer.Lister(),
 		ConfigMapLister:  configMapInformer.Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
-		CdrLister:        cdrInformer.Lister(),
 		Recorder:         eventRecorder,
 		PluginManager:    pm,
 	})

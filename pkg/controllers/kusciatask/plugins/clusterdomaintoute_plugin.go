@@ -38,16 +38,6 @@ func NewCDRCheckPlugin(cdrLister kuscialistersv1alpha1.ClusterDomainRouteLister)
 	}
 }
 
-func allPartiesSame(parties []kusciaapisv1alpha1.PartyInfo) bool {
-	first := parties[0]
-	for _, p := range parties[1:] {
-		if p.DomainID != first.DomainID {
-			return false
-		}
-	}
-	return true
-}
-
 func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, error) {
 	var partyKitInfo common.PartyKitInfo
 	var ok bool
@@ -57,12 +47,17 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 	}
 
 	parties := partyKitInfo.KusciaTask.Spec.Parties
-	if len(parties) == 1 || allPartiesSame(parties) {
-		nlog.Debugf("Skip CDR check for just %d parties or all about same domain: %s", len(parties), parties[0].DomainID)
+	uniqueDomains := make(map[string]struct{})
+	for _, party := range parties {
+		uniqueDomains[party.DomainID] = struct{}{}
+	}
+
+	if len(parties) == 1 || len(uniqueDomains) == 1 {
+		nlog.Debugf("Skip CDR check for %d unique domains: %s", len(uniqueDomains), parties[0].DomainID)
 		return true, nil
 	}
 
-	cdrResources := p.cdrResourceRequest(partyKitInfo)
+	cdrResources := p.cdrResourceRequest(uniqueDomains)
 	for _, cdr := range cdrResources {
 		cdrObj, err := p.cdrLister.Get(cdr)
 		if err != nil {
@@ -80,18 +75,22 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 	return true, nil
 }
 
-func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo common.PartyKitInfo) []string {
-	var cdrs []string
-	parties := partyKitInfo.KusciaTask.Spec.Parties
+func (p *CDRCheckPlugin) cdrResourceRequest(uniqueDomains map[string]struct{}) []string {
+	domains := make([]string, 0, len(uniqueDomains))
+	for domain := range uniqueDomains {
+		domains = append(domains, domain)
+	}
 
-	for i, source := range parties {
-		for j, dest := range parties {
-			if i == j {
+	var cdrs []string
+	for _, src := range domains {
+		for _, dst := range domains {
+			if src == dst {
 				continue
 			}
-			cdrs = append(cdrs, fmt.Sprintf("%s-%s", source.DomainID, dest.DomainID))
+			// generate Bidirectional path
+			cdrs = append(cdrs, fmt.Sprintf("%s-%s", src, dst))
 		}
 	}
-	
+
 	return cdrs
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,6 +45,7 @@ const (
 )
 
 const (
+	AgentNotReady    = "agent not ready"
 	NodeStateReady   = "Ready"
 	NodeStateUnReady = "UnReady"
 )
@@ -367,14 +369,13 @@ func (nrm *NodeResourceManager) addPodHandler(pod *apicorev1.Pod) error {
 		cpu, mem := nrm.calRequestResource(pod)
 		nodeStatus.TotalCPURequest += cpu
 		nodeStatus.TotalMemRequest += mem
-
 		nlog.Debugf("Added pod %s resources to node %s: CPU=%dm, MEM=%dB",
 			pod.Name, nodeName, cpu, mem)
 		return nil
+	} else {
+		nlog.Warnf("node %s not found when add pod %s", nodeName, pod.Name)
+		return nil
 	}
-
-	nlog.Warnf("node %s not found when add pod %s", nodeName, pod.Name)
-	return nil
 }
 
 func (nrm *NodeResourceManager) deletePodHandler(pod *apicorev1.Pod) error {
@@ -535,28 +536,27 @@ func (nrm *NodeResourceManager) runNodeHandleWorker() {
 }
 
 func determineNodeStatus(node *apicorev1.Node) (status, reason string) {
-	status = NodeStateUnReady
-	reason = ""
+	status = NodeStateReady
+	var reasons []string
 
 	for _, cond := range node.Status.Conditions {
 		if cond.Type == apicorev1.NodeReady {
-			if cond.Status == apicorev1.ConditionTrue {
-				status = NodeStateReady
+			if cond.Status == apicorev1.ConditionFalse {
+				status = NodeStateUnReady
+				reasons = append(reasons, AgentNotReady)
 				for _, pressureCond := range node.Status.Conditions {
-					if pressureCond.Type == apicorev1.NodeDiskPressure && pressureCond.Status == apicorev1.ConditionTrue {
-						status = NodeStateUnReady
-						reason = string(apicorev1.NodeDiskPressure)
-						break
+					if pressureCond.Status == apicorev1.ConditionTrue {
+						reasons = append(reasons, pressureCond.Reason)
 					}
 				}
 			} else {
-				status = NodeStateUnReady
-				reason = string(cond.Type)
+				reasons = append(reasons, string(cond.Type))
 			}
 			break
 		}
 	}
-	return status, reason
+
+	return status, strings.Join(reasons, ";")
 }
 
 func (nrm *NodeResourceManager) addNodeHandler(node *apicorev1.Node) error {
@@ -621,9 +621,10 @@ func (nrm *NodeResourceManager) updateNodeHandler(newNode, oldNode *apicorev1.No
 		nodeStatus.LastHeartbeatTime = metav1.Now()
 		nlog.Debugf("Updated node %s in domain %s, new status: %s node %v", newNode.Name, domainName, status, nodeStatus)
 		return nil
+	} else {
+		nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
+		return nil
 	}
-	nlog.Warnf("Node %s not found in domain %s during update", newNode.Name, domainName)
-	return nil
 }
 
 func (nrm *NodeResourceManager) calRequestResource(pod *apicorev1.Pod) (int64, int64) {

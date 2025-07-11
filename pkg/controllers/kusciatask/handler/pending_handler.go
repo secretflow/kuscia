@@ -33,7 +33,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/common"
 	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
-	kuscia_common_struct "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	kusciacommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -45,10 +45,10 @@ import (
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
-type NamedPorts = kuscia_common_struct.NamedPorts
-type PortService = kuscia_common_struct.PortService
-type PodKitInfo = kuscia_common_struct.PodKitInfo
-type PartyKitInfo = kuscia_common_struct.PartyKitInfo
+type NamedPorts = kusciacommon.NamedPorts
+type PortService = kusciacommon.PortService
+type PodKitInfo = kusciacommon.PodKitInfo
+type PartyKitInfo = kusciacommon.PartyKitInfo
 
 // PendingHandler is used to handle kuscia task which phase is pending.
 type PendingHandler struct {
