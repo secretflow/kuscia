@@ -170,29 +170,34 @@ func (nrm *NodeResourceManager) handlePodDelete(obj interface{}) {
 
 func (nrm *NodeResourceManager) handlerPod(newObj interface{}, oldObj interface{}, op string) {
 	var newPod, oldPod *apicorev1.Pod
-	var ok bool
 
 	if np, ok := newObj.(cache.DeletedFinalStateUnknown); ok {
 		newPod, ok = np.Obj.(*apicorev1.Pod)
+		if !ok {
+			nlog.Errorf("Could not convert newObj deleted final state %v to Pod", newObj)
+			return
+		}
 	} else {
 		newPod, ok = newObj.(*apicorev1.Pod)
-	}
-
-	if !ok {
-		nlog.Errorf("Could not convert deleted final state %v to Pod", newObj)
-		return
+		if !ok {
+			nlog.Errorf("Could not convert newObj %v to Pod", newObj)
+			return
+		}
 	}
 
 	if op == ResourceCheckForUpdatePod {
 		if op, ok := oldObj.(cache.DeletedFinalStateUnknown); ok {
 			oldPod, ok = op.Obj.(*apicorev1.Pod)
+			if !ok {
+				nlog.Errorf("Could not convert oldObj deleted final state %v to Pod", oldObj)
+				return
+			}
 		} else {
 			oldPod, ok = oldObj.(*apicorev1.Pod)
-		}
-
-		if !ok {
-			nlog.Errorf("Could not convert oldObj deleted final state %v to Pod", oldObj)
-			return
+			if !ok {
+				nlog.Errorf("Could not convert oldObj %v to Pod", oldObj)
+				return
+			}
 		}
 	}
 
@@ -201,6 +206,7 @@ func (nrm *NodeResourceManager) handlerPod(newObj interface{}, oldObj interface{
 		OldPod: oldPod,
 		Op:     op,
 	}
+
 	queue.EnqueuePodObject(queueItem, nrm.podQueue)
 }
 
@@ -252,29 +258,34 @@ func (nrm *NodeResourceManager) handleNodeDelete(obj interface{}) {
 
 func (nrm *NodeResourceManager) handlerNode(newObj interface{}, oldObj interface{}, op string) {
 	var newNode, oldNode *apicorev1.Node
-	var ok bool
 
 	if nd, ok := newObj.(cache.DeletedFinalStateUnknown); ok {
 		newNode, ok = nd.Obj.(*apicorev1.Node)
+		if !ok {
+			nlog.Errorf("Could not convert newObj deleted final state %v to Node", newObj)
+			return
+		}
 	} else {
 		newNode, ok = newObj.(*apicorev1.Node)
-	}
-
-	if !ok {
-		nlog.Errorf("Could not convert deleted final state %v to Node", newObj)
-		return
+		if !ok {
+			nlog.Errorf("Could not convert newObj %v to Node", newObj)
+			return
+		}
 	}
 
 	if op == ResourceCheckForUpdateNode {
 		if od, ok := oldObj.(cache.DeletedFinalStateUnknown); ok {
 			oldNode, ok = od.Obj.(*apicorev1.Node)
+			if !ok {
+				nlog.Errorf("Could not convert oldObj deleted final state %v to Node", oldObj)
+				return
+			}
 		} else {
 			oldNode, ok = oldObj.(*apicorev1.Node)
-		}
-
-		if !ok {
-			nlog.Errorf("Could not convert oldObj deleted final state %v to Node", oldObj)
-			return
+			if !ok {
+				nlog.Errorf("Could not convert oldObj %v to Node", oldObj)
+				return
+			}
 		}
 	}
 
@@ -283,6 +294,7 @@ func (nrm *NodeResourceManager) handlerNode(newObj interface{}, oldObj interface
 		OldNode: oldNode,
 		Op:      op,
 	}
+
 	queue.EnqueueNodeObject(queueItem, nrm.nodeQueue)
 }
 
