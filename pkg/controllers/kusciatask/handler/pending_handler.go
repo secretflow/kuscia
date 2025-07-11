@@ -18,11 +18,12 @@ package handler
 import (
 	"context"
 	"fmt"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"reflect"
 	"strconv"
 	"strings"
 
-	"google.golang.org/protobuf/encoding/protojson"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +32,9 @@ import (
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
+	_ "github.com/secretflow/kuscia/pkg/controllers/domain"
+	kusciacommon "github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	pkgport "github.com/secretflow/kuscia/pkg/controllers/portflake/port"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
@@ -40,6 +44,11 @@ import (
 	utilsres "github.com/secretflow/kuscia/pkg/utils/resources"
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
+
+type NamedPorts = kusciacommon.NamedPorts
+type PortService = kusciacommon.PortService
+type PodKitInfo = kusciacommon.PodKitInfo
+type PartyKitInfo = kusciacommon.PartyKitInfo
 
 // PendingHandler is used to handle kuscia task which phase is pending.
 type PendingHandler struct {
@@ -51,35 +60,7 @@ type PendingHandler struct {
 	servicesLister   corelisters.ServiceLister
 	configMapLister  corelisters.ConfigMapLister
 	appImagesLister  kuscialistersv1alpha1.AppImageLister
-}
-
-type NamedPorts map[string]kusciaapisv1alpha1.ContainerPort
-type PortService map[string]string
-
-type PodKitInfo struct {
-	index          int
-	podName        string
-	podIdentity    string
-	ports          NamedPorts
-	portService    PortService
-	clusterDef     *proto.ClusterDefine
-	allocatedPorts *proto.AllocatedPorts
-}
-
-type PartyKitInfo struct {
-	kusciaTask            *kusciaapisv1alpha1.KusciaTask
-	domainID              string
-	role                  string
-	image                 string
-	imageID               string
-	deployTemplate        *kusciaapisv1alpha1.DeployTemplate
-	configTemplatesCMName string
-	configTemplates       map[string]string
-	servicedPorts         []string
-	portAccessDomains     map[string]string
-	minReservedPods       int
-	pods                  []*PodKitInfo
-	bandwidthLimit        []kusciaapisv1alpha1.BandwidthLimit
+	pluginManager    *plugins.PluginManager
 }
 
 // NewPendingHandler returns a PendingHandler instance.
@@ -93,6 +74,7 @@ func NewPendingHandler(deps *Dependencies) *PendingHandler {
 		servicesLister:   deps.ServicesLister,
 		configMapLister:  deps.ConfigMapLister,
 		appImagesLister:  deps.AppImagesLister,
+		pluginManager:    deps.PluginManager,
 	}
 }
 
@@ -185,7 +167,7 @@ func (h *PendingHandler) buildPartyKitInfos(kusciaTask *kusciaapisv1alpha1.Kusci
 
 		partyKitInfos[party.DomainID+party.Role] = kit
 
-		isPartner, err := utilsres.IsPartnerDomain(h.namespacesLister, kit.domainID)
+		isPartner, err := utilsres.IsPartnerDomain(h.namespacesLister, kit.DomainID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -221,9 +203,18 @@ func (h *PendingHandler) createTaskResources(kusciaTask *kusciaapisv1alpha1.Kusc
 	podStatuses := make(map[string]*kusciaapisv1alpha1.PodStatus)
 	serviceStatuses := make(map[string]*kusciaapisv1alpha1.ServiceStatus)
 	for _, partyKitInfo := range selfPartyKitInfos {
+		permit, errors := h.pluginManager.Permit(context.Background(), *partyKitInfo)
+		if !permit {
+			var errMsgs []string
+			for _, e := range errors {
+				errMsgs = append(errMsgs, e.Error())
+			}
+			return fmt.Errorf("%s", strings.Join(errMsgs, "; "))
+		}
+
 		ps, ss, err := h.createResourceForParty(partyKitInfo)
 		if err != nil {
-			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.domainID, partyKitInfo.role, err)
+			return fmt.Errorf("failed to create resource for party '%v/%v', %v", partyKitInfo.DomainID, partyKitInfo.Role, err)
 		}
 
 		for key, v := range ps {
@@ -346,9 +337,9 @@ func generateMessageBy(trg *kusciaapisv1alpha1.TaskResourceGroup) string {
 
 func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.KusciaTask, party *kusciaapisv1alpha1.PartyInfo) (*PartyKitInfo, error) {
 	kit := &PartyKitInfo{
-		kusciaTask: kusciaTask,
-		domainID:   party.DomainID,
-		role:       party.Role,
+		KusciaTask: kusciaTask,
+		DomainID:   party.DomainID,
+		Role:       party.Role,
 	}
 
 	asParticipant, err := selfClusterAsParticipant(h.namespacesLister, kusciaTask)
@@ -389,11 +380,11 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 		portService := generatePortServices(podName, servicedPorts)
 
 		pods[index] = &PodKitInfo{
-			index:       index,
-			podName:     podName,
-			podIdentity: podIdentity,
-			ports:       ports,
-			portService: portService,
+			Index:       index,
+			PodName:     podName,
+			PodIdentity: podIdentity,
+			Ports:       ports,
+			PortService: portService,
 		}
 	}
 
@@ -402,18 +393,18 @@ func (h *PendingHandler) buildPartyKitInfo(kusciaTask *kusciaapisv1alpha1.Kuscia
 		minReservedPods = replicas
 	}
 
-	kit.image = fmt.Sprintf("%s:%s", appImage.Spec.Image.Name, appImage.Spec.Image.Tag)
-	kit.imageID = appImage.Spec.Image.ID
-	kit.deployTemplate = deployTemplate
-	kit.configTemplates = appImage.Spec.ConfigTemplates
-	kit.servicedPorts = servicedPorts
-	kit.minReservedPods = minReservedPods
-	kit.pods = pods
-	kit.bandwidthLimit = party.BandwidthLimit
+	kit.Image = fmt.Sprintf("%s:%s", appImage.Spec.Image.Name, appImage.Spec.Image.Tag)
+	kit.ImageID = appImage.Spec.Image.ID
+	kit.DeployTemplate = deployTemplate
+	kit.ConfigTemplates = appImage.Spec.ConfigTemplates
+	kit.ServicedPorts = servicedPorts
+	kit.MinReservedPods = minReservedPods
+	kit.Pods = pods
+	kit.BandwidthLimit = party.BandwidthLimit
 
 	// Todo: Consider how to limit the communication between single-party jobs between multiple parties.
 	if len(kusciaTask.Spec.Parties) > 1 {
-		kit.portAccessDomains = generatePortAccessDomains(kusciaTask.Spec.Parties, deployTemplate.NetworkPolicy, ports)
+		kit.PortAccessDomains = generatePortAccessDomains(kusciaTask.Spec.Parties, deployTemplate.NetworkPolicy, ports)
 	}
 	return kit, nil
 }
@@ -590,10 +581,10 @@ func (h *PendingHandler) allocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask
 
 	needCounts := map[string]int{}
 	for _, partyKit := range selfPartyKitInfos {
-		ns := partyKit.domainID
+		ns := partyKit.DomainID
 		count := needCounts[ns]
-		for _, pod := range partyKit.pods {
-			count += len(pod.ports)
+		for _, pod := range partyKit.Pods {
+			count += len(pod.Ports)
 		}
 		needCounts[ns] = count
 	}
@@ -604,25 +595,25 @@ func (h *PendingHandler) allocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask
 	}
 
 	for _, partyKit := range selfPartyKitInfos {
-		ns := partyKit.domainID
+		ns := partyKit.DomainID
 		ports, ok := retPorts[ns]
 		if !ok {
 			return false, fmt.Errorf("allocated ports not found for domain %s", ns)
 		}
 		index := 0
 		partyPorts := kusciaapisv1alpha1.PartyAllocatedPorts{
-			DomainID:  partyKit.domainID,
-			Role:      partyKit.role,
+			DomainID:  partyKit.DomainID,
+			Role:      partyKit.Role,
 			NamedPort: map[string]int32{},
 		}
 
-		for _, pod := range partyKit.pods {
-			for portName := range pod.ports {
+		for _, pod := range partyKit.Pods {
+			for portName := range pod.Ports {
 				if index >= len(ports) {
 					return false, fmt.Errorf("allocated ports are not enough for domain %s", ns)
 				}
 
-				partyPorts.NamedPort[buildPortKey(pod.podName, portName)] = ports[index]
+				partyPorts.NamedPort[buildPortKey(pod.PodName, portName)] = ports[index]
 				index++
 			}
 		}
@@ -638,18 +629,18 @@ func buildPodAllocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitIn
 	for _, partyKit := range partyKitInfos {
 		var partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts
 		for _, ports := range kusciaTask.Status.AllocatedPorts {
-			if ports.DomainID == partyKit.domainID && ports.Role == partyKit.role {
+			if ports.DomainID == partyKit.DomainID && ports.Role == partyKit.Role {
 				partyPorts = &ports
 				break
 			}
 		}
 		if partyPorts == nil {
-			return fmt.Errorf("allocated ports not found for party %s/%s", partyKit.domainID, partyKit.role)
+			return fmt.Errorf("allocated ports not found for party %s/%s", partyKit.DomainID, partyKit.Role)
 		}
 
-		for _, pod := range partyKit.pods {
+		for _, pod := range partyKit.Pods {
 			if err := fillPodAllocatedPorts(partyPorts, pod); err != nil {
-				return fmt.Errorf("failed to fill allocated ports for party %s/%s, detail->%v", partyKit.domainID, partyKit.role, err)
+				return fmt.Errorf("failed to fill allocated ports for party %s/%s, detail->%v", partyKit.DomainID, partyKit.Role, err)
 			}
 		}
 	}
@@ -657,9 +648,9 @@ func buildPodAllocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask, partyKitIn
 }
 
 func fillPodAllocatedPorts(partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts, pod *PodKitInfo) error {
-	resPorts := make([]*proto.Port, 0, len(pod.ports))
-	for i, port := range pod.ports {
-		portKey := buildPortKey(pod.podName, port.Name)
+	resPorts := make([]*proto.Port, 0, len(pod.Ports))
+	for i, port := range pod.Ports {
+		portKey := buildPortKey(pod.PodName, port.Name)
 		realPort, ok := partyPorts.NamedPort[portKey]
 		if !ok {
 			return fmt.Errorf("not found allocated port for %v", portKey)
@@ -672,10 +663,10 @@ func fillPodAllocatedPorts(partyPorts *kusciaapisv1alpha1.PartyAllocatedPorts, p
 			Protocol: string(port.Protocol),
 		})
 		port.Port = realPort
-		pod.ports[i] = port
+		pod.Ports[i] = port
 	}
 
-	pod.allocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
+	pod.AllocatedPorts = &proto.AllocatedPorts{Ports: resPorts}
 	return nil
 }
 
@@ -686,16 +677,16 @@ func buildPortKey(podName, portName string) string {
 func generateParty(kitInfo *PartyKitInfo) *proto.Party {
 	var partyServices []*proto.Service
 
-	for _, portName := range kitInfo.servicedPorts {
-		endpoints := make([]string, 0, len(kitInfo.pods))
+	for _, portName := range kitInfo.ServicedPorts {
+		endpoints := make([]string, 0, len(kitInfo.Pods))
 
-		for _, pod := range kitInfo.pods {
+		for _, pod := range kitInfo.Pods {
 			endpointAddress := ""
-			if pod.portService[portName] != "" {
-				if pod.ports[portName].Scope == kusciaapisv1alpha1.ScopeDomain {
-					endpointAddress = fmt.Sprintf("%s.%s.svc:%d", pod.portService[portName], kitInfo.domainID, pod.ports[portName].Port)
+			if pod.PortService[portName] != "" {
+				if pod.Ports[portName].Scope == kusciaapisv1alpha1.ScopeDomain {
+					endpointAddress = fmt.Sprintf("%s.%s.svc:%d", pod.PortService[portName], kitInfo.DomainID, pod.Ports[portName].Port)
 				} else {
-					endpointAddress = fmt.Sprintf("%s.%s.svc", pod.portService[portName], kitInfo.domainID)
+					endpointAddress = fmt.Sprintf("%s.%s.svc", pod.PortService[portName], kitInfo.DomainID)
 				}
 			}
 
@@ -711,8 +702,8 @@ func generateParty(kitInfo *PartyKitInfo) *proto.Party {
 	}
 
 	party := &proto.Party{
-		Name:     kitInfo.domainID,
-		Role:     kitInfo.role,
+		Name:     kitInfo.DomainID,
+		Role:     kitInfo.Role,
 		Services: partyServices,
 	}
 
@@ -734,24 +725,24 @@ func fillPartyClusterDefine(kitInfo *PartyKitInfo, parties []*proto.Party) {
 	var selfPartyIndex *int
 
 	for i, party := range parties {
-		if party.Name == kitInfo.domainID && party.Role == kitInfo.role {
+		if party.Name == kitInfo.DomainID && party.Role == kitInfo.Role {
 			selfPartyIndex = &i
 			break
 		}
 	}
 
 	if selfPartyIndex == nil {
-		nlog.Errorf("Not found party '%v/%v', unexpected!", kitInfo.domainID, kitInfo.role)
+		nlog.Errorf("Not found party '%v/%v', unexpected!", kitInfo.DomainID, kitInfo.Role)
 		return
 	}
 
-	for i, podKit := range kitInfo.pods {
+	for i, podKit := range kitInfo.Pods {
 		fillPodClusterDefine(podKit, parties, *selfPartyIndex, i)
 	}
 }
 
 func fillPodClusterDefine(pod *PodKitInfo, parties []*proto.Party, partyIndex int, endpointIndex int) {
-	pod.clusterDef = &proto.ClusterDefine{
+	pod.ClusterDef = &proto.ClusterDefine{
 		Parties:         parties,
 		SelfPartyIdx:    int32(partyIndex),
 		SelfEndpointIdx: int32(endpointIndex),
@@ -762,24 +753,24 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 	podStatuses := map[string]*kusciaapisv1alpha1.PodStatus{}
 	serviceStatuses := map[string]*kusciaapisv1alpha1.ServiceStatus{}
 
-	if len(partyKit.configTemplates) > 0 {
-		nlog.Infof("Generate config map for task %s", partyKit.kusciaTask.Name)
+	if len(partyKit.ConfigTemplates) > 0 {
+		nlog.Infof("Generate config map for task %s", partyKit.KusciaTask.Name)
 		configMap := generateConfigMap(partyKit)
 		if err := h.submitConfigMap(configMap); err != nil {
 			return nil, nil, fmt.Errorf("failed to submit configmap %q, %v", configMap.Name, err)
 		}
 	}
 
-	for _, podKit := range partyKit.pods {
-		nlog.Infof("Generate pod for task %s pod %s", partyKit.kusciaTask.Name, podKit.podName)
+	for _, podKit := range partyKit.Pods {
+		nlog.Infof("Generate pod for task %s pod %s", partyKit.KusciaTask.Name, podKit.PodName)
 		pod, err := h.generatePod(partyKit, podKit)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to generate pod %q spec, %v", podKit.podName, err)
+			return nil, nil, fmt.Errorf("failed to generate pod %q spec, %v", podKit.PodName, err)
 		}
 
 		pod, err = h.submitPod(pod)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to submit pod %q, %v", podKit.podName, err)
+			return nil, nil, fmt.Errorf("failed to submit pod %q, %v", podKit.PodName, err)
 		}
 
 		podStatuses[pod.Namespace+"/"+pod.Name] = &kusciaapisv1alpha1.PodStatus{
@@ -791,10 +782,10 @@ func (h *PendingHandler) createResourceForParty(partyKit *PartyKitInfo) (map[str
 			Reason:    pod.Status.Reason,
 		}
 
-		for portName, serviceName := range podKit.portService {
-			ctrPort, ok := podKit.ports[portName]
+		for portName, serviceName := range podKit.PortService {
+			ctrPort, ok := podKit.Ports[portName]
 			if !ok {
-				return nil, nil, fmt.Errorf("not found container port %q in pod %q", portName, podKit.podName)
+				return nil, nil, fmt.Errorf("not found container port %q in pod %q", portName, podKit.PodName)
 			}
 
 			service, err := generateServices(partyKit, pod, serviceName, ctrPort)
@@ -850,14 +841,14 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 
 	var trgParties, outOfControlledParties []kusciaapisv1alpha1.TaskResourceGroupParty
 	for _, partyKitInfo := range partyKitInfos {
-		isPartner, err := utilsres.IsPartnerDomain(h.namespacesLister, partyKitInfo.domainID)
+		isPartner, err := utilsres.IsPartnerDomain(h.namespacesLister, partyKitInfo.DomainID)
 		if err != nil {
 			return nil, err
 		}
 		if isPartner {
 			outOfControlledParties = append(outOfControlledParties, kusciaapisv1alpha1.TaskResourceGroupParty{
-				Role:            partyKitInfo.role,
-				DomainID:        partyKitInfo.domainID,
+				Role:            partyKitInfo.Role,
+				DomainID:        partyKitInfo.DomainID,
 				MinReservedPods: 1,
 			})
 			continue
@@ -865,15 +856,15 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 
 		var trgPartyPods []kusciaapisv1alpha1.TaskResourceGroupPartyPod
 		if !isPartner {
-			for _, ps := range partyKitInfo.pods {
-				trgPartyPods = append(trgPartyPods, kusciaapisv1alpha1.TaskResourceGroupPartyPod{Name: ps.podName})
+			for _, ps := range partyKitInfo.Pods {
+				trgPartyPods = append(trgPartyPods, kusciaapisv1alpha1.TaskResourceGroupPartyPod{Name: ps.PodName})
 			}
 		}
 
 		trgParties = append(trgParties, kusciaapisv1alpha1.TaskResourceGroupParty{
-			Role:            partyKitInfo.role,
-			DomainID:        partyKitInfo.domainID,
-			MinReservedPods: partyKitInfo.minReservedPods,
+			Role:            partyKitInfo.Role,
+			DomainID:        partyKitInfo.DomainID,
+			MinReservedPods: partyKitInfo.MinReservedPods,
 			Pods:            trgPartyPods,
 		})
 	}
@@ -932,49 +923,49 @@ func (h *PendingHandler) generateTaskResourceGroup(kusciaTask *kusciaapisv1alpha
 func generateConfigMap(partyKit *PartyKitInfo) *v1.ConfigMap {
 	labels := map[string]string{
 		common.LabelController: common.ControllerKusciaTask,
-		common.LabelTaskUID:    string(partyKit.kusciaTask.UID),
+		common.LabelTaskUID:    string(partyKit.KusciaTask.UID),
 	}
 
 	annotations := map[string]string{
-		common.InitiatorAnnotationKey: partyKit.kusciaTask.Spec.Initiator,
-		common.TaskIDAnnotationKey:    partyKit.kusciaTask.Name,
+		common.InitiatorAnnotationKey: partyKit.KusciaTask.Spec.Initiator,
+		common.TaskIDAnnotationKey:    partyKit.KusciaTask.Name,
 	}
 
 	var protocolType string
-	if partyKit.kusciaTask.Labels != nil {
-		protocolType = partyKit.kusciaTask.Labels[common.LabelInterConnProtocolType]
+	if partyKit.KusciaTask.Labels != nil {
+		protocolType = partyKit.KusciaTask.Labels[common.LabelInterConnProtocolType]
 	}
 
 	if protocolType != "" {
 		labels[common.LabelInterConnProtocolType] = protocolType
 	}
 
-	partyKit.configTemplatesCMName = fmt.Sprintf("%s-configtemplate", partyKit.kusciaTask.Name)
+	partyKit.ConfigTemplatesCMName = fmt.Sprintf("%s-configtemplate", partyKit.KusciaTask.Name)
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        partyKit.configTemplatesCMName,
-			Namespace:   partyKit.domainID,
+			Name:        partyKit.ConfigTemplatesCMName,
+			Namespace:   partyKit.DomainID,
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Data: partyKit.configTemplates,
+		Data: partyKit.ConfigTemplates,
 	}
 }
 
 func generateKusciaConfigMap(partyKit *PartyKitInfo, podKit *PodKitInfo) *v1.ConfigMap {
 	labels := map[string]string{
 		common.LabelController: common.ControllerKusciaTask,
-		common.LabelTaskUID:    string(partyKit.kusciaTask.UID),
+		common.LabelTaskUID:    string(partyKit.KusciaTask.UID),
 	}
 
 	annotations := map[string]string{
-		common.InitiatorAnnotationKey: partyKit.kusciaTask.Spec.Initiator,
-		common.TaskIDAnnotationKey:    partyKit.kusciaTask.Name,
+		common.InitiatorAnnotationKey: partyKit.KusciaTask.Spec.Initiator,
+		common.TaskIDAnnotationKey:    partyKit.KusciaTask.Name,
 	}
 
 	var protocolType string
-	if partyKit.kusciaTask.Labels != nil {
-		protocolType = partyKit.kusciaTask.Labels[common.LabelInterConnProtocolType]
+	if partyKit.KusciaTask.Labels != nil {
+		protocolType = partyKit.KusciaTask.Labels[common.LabelInterConnProtocolType]
 	}
 
 	if protocolType != "" {
@@ -982,19 +973,19 @@ func generateKusciaConfigMap(partyKit *PartyKitInfo, podKit *PodKitInfo) *v1.Con
 	}
 
 	protoJSONOptions := protojson.MarshalOptions{EmitUnpopulated: true}
-	clusterDefine, _ := protoJSONOptions.Marshal(podKit.clusterDef)
-	allocatedPorts, _ := protoJSONOptions.Marshal(podKit.allocatedPorts)
+	clusterDefine, _ := protoJSONOptions.Marshal(podKit.ClusterDef)
+	allocatedPorts, _ := protoJSONOptions.Marshal(podKit.AllocatedPorts)
 
 	confMap := make(map[string]string)
-	confMap[common.EnvDomainID] = partyKit.domainID
-	confMap[common.EnvTaskID] = partyKit.kusciaTask.Name
+	confMap[common.EnvDomainID] = partyKit.DomainID
+	confMap[common.EnvTaskID] = partyKit.KusciaTask.Name
 	confMap[common.EnvTaskClusterDefine] = string(clusterDefine)
 	confMap[common.EnvAllocatedPorts] = string(allocatedPorts)
 	confMapBinaryData := make(map[string][]byte)
 	// compress task input config
-	if compressInputConf, err := utilcom.CompressString(partyKit.kusciaTask.Spec.TaskInputConfig); err != nil {
-		nlog.Warnf("Compress taskInputConfig failed, pod: %s, error: %s.", podKit.podName, err.Error())
-		confMap[common.EnvTaskInputConfig] = partyKit.kusciaTask.Spec.TaskInputConfig
+	if compressInputConf, err := utilcom.CompressString(partyKit.KusciaTask.Spec.TaskInputConfig); err != nil {
+		nlog.Warnf("Compress taskInputConfig failed, pod: %s, error: %s.", podKit.PodName, err.Error())
+		confMap[common.EnvTaskInputConfig] = partyKit.KusciaTask.Spec.TaskInputConfig
 	} else {
 		// set compress value to the binary data of configMap
 		confMapBinaryData[common.EnvTaskInputConfig] = compressInputConf
@@ -1002,11 +993,11 @@ func generateKusciaConfigMap(partyKit *PartyKitInfo, podKit *PodKitInfo) *v1.Con
 		annotations[common.ConfigValueCompressFieldsNameAnnotationKey] = utilcom.SliceToAnnotationString([]string{common.EnvTaskInputConfig})
 	}
 
-	confMapName := fmt.Sprintf(common.KusciaGenerateConfigMapFormat, partyKit.kusciaTask.Name) // kuscia-generate-conf
+	confMapName := fmt.Sprintf(common.KusciaGenerateConfigMapFormat, partyKit.KusciaTask.Name) // kuscia-generate-conf
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        confMapName,
-			Namespace:   partyKit.domainID,
+			Namespace:   partyKit.DomainID,
 			Labels:      labels,
 			Annotations: annotations,
 		},
@@ -1034,22 +1025,22 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		common.LabelController:              common.ControllerKusciaTask,
 		common.LabelCommunicationRoleServer: "true",
 		common.LabelCommunicationRoleClient: "true",
-		labelKusciaTaskPodIdentity:          podKit.podIdentity,
+		labelKusciaTaskPodIdentity:          podKit.PodIdentity,
 		kusciaapisv1alpha1.TaskResourceUID:  "",
-		common.LabelTaskUID:                 string(partyKit.kusciaTask.UID),
-		labelKusciaTaskPodRole:              partyKit.role,
+		common.LabelTaskUID:                 string(partyKit.KusciaTask.UID),
+		labelKusciaTaskPodRole:              partyKit.Role,
 	}
 
 	annotations := map[string]string{
-		common.InitiatorAnnotationKey:         partyKit.kusciaTask.Spec.Initiator,
-		common.TaskIDAnnotationKey:            partyKit.kusciaTask.Name,
-		common.TaskResourceGroupAnnotationKey: partyKit.kusciaTask.Name,
+		common.InitiatorAnnotationKey:         partyKit.KusciaTask.Spec.Initiator,
+		common.TaskIDAnnotationKey:            partyKit.KusciaTask.Name,
+		common.TaskResourceGroupAnnotationKey: partyKit.KusciaTask.Name,
 		kusciaapisv1alpha1.TaskResourceKey:    "",
 	}
 
 	var protocolType string
-	if partyKit.kusciaTask.Labels != nil {
-		protocolType = partyKit.kusciaTask.Labels[common.LabelInterConnProtocolType]
+	if partyKit.KusciaTask.Labels != nil {
+		protocolType = partyKit.KusciaTask.Labels[common.LabelInterConnProtocolType]
 	}
 
 	if protocolType != "" {
@@ -1057,25 +1048,25 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 	}
 
 	restartPolicy := v1.RestartPolicyNever
-	if partyKit.deployTemplate.Spec.RestartPolicy != "" {
-		restartPolicy = partyKit.deployTemplate.Spec.RestartPolicy
+	if partyKit.DeployTemplate.Spec.RestartPolicy != "" {
+		restartPolicy = partyKit.DeployTemplate.Spec.RestartPolicy
 	}
 
-	ns, err := h.namespacesLister.Get(partyKit.domainID)
+	ns, err := h.namespacesLister.Get(partyKit.DomainID)
 	if err != nil {
 		return nil, err
 	}
 
 	schedulerName := common.KusciaSchedulerName
 	if ns.Labels != nil && ns.Labels[common.LabelDomainRole] == string(kusciaapisv1alpha1.Partner) {
-		schedulerName = fmt.Sprintf("%v-%v", partyKit.domainID, schedulerName)
+		schedulerName = fmt.Sprintf("%v-%v", partyKit.DomainID, schedulerName)
 	}
 
 	automountServiceAccountToken := false
 	pod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        podKit.podName,
-			Namespace:   partyKit.domainID,
+			Name:        podKit.PodName,
+			Namespace:   partyKit.DomainID,
 			Labels:      labels,
 			Annotations: annotations,
 		},
@@ -1089,7 +1080,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 				},
 			},
 			NodeSelector: map[string]string{
-				common.LabelNodeNamespace: partyKit.domainID,
+				common.LabelNodeNamespace: partyKit.DomainID,
 			},
 			SchedulerName:                schedulerName,
 			AutomountServiceAccountToken: &automountServiceAccountToken,
@@ -1098,12 +1089,12 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
 	}
-	if partyKit.imageID != "" {
-		pod.Annotations[common.ImageIDAnnotationKey] = partyKit.imageID
+	if partyKit.ImageID != "" {
+		pod.Annotations[common.ImageIDAnnotationKey] = partyKit.ImageID
 	}
 
 	needConfigTemplateVolume := false
-	for _, ctr := range partyKit.deployTemplate.Spec.Containers {
+	for _, ctr := range partyKit.DeployTemplate.Spec.Containers {
 		if ctr.ImagePullPolicy == "" {
 			ctr.ImagePullPolicy = v1.PullIfNotPresent
 		}
@@ -1112,19 +1103,19 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			metricPortName := ctr.MetricProbe.Port
 
 			if metricPath != "" && metricPortName != "" {
-				if portInfo, ok := podKit.ports[metricPortName]; ok {
+				if portInfo, ok := podKit.Ports[metricPortName]; ok {
 					pod.Annotations[common.MetricAnnotationKey] = "true"
 					pod.Annotations[common.MetricPathAnnotationKey] = metricPath
 					pod.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
 				} else {
-					return nil, fmt.Errorf("metric port name %s not found for pod %s", metricPortName, podKit.podName)
+					return nil, fmt.Errorf("metric port name %s not found for pod %s", metricPortName, podKit.PodName)
 				}
 			}
 		}
 
 		resCtr := v1.Container{
 			Name:                     ctr.Name,
-			Image:                    partyKit.image,
+			Image:                    partyKit.Image,
 			Command:                  ctr.Command,
 			Args:                     ctr.Args,
 			WorkingDir:               ctr.WorkingDir,
@@ -1141,7 +1132,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		}
 
 		for _, port := range ctr.Ports {
-			namedPort, ok := podKit.ports[port.Name]
+			namedPort, ok := podKit.Ports[port.Name]
 			if !ok {
 				return nil, fmt.Errorf("port %s is not allocated for pod %s", port.Name, pod.Name)
 			}
@@ -1154,12 +1145,12 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			resCtr.Ports = append(resCtr.Ports, resPort)
 		}
 
-		portNumberEnvs := buildPortNumberEnvs(podKit.allocatedPorts) // todo : remove it , now scql use it ,20240829
+		portNumberEnvs := buildPortNumberEnvs(podKit.AllocatedPorts) // todo : remove it , now scql use it ,20240829
 		if len(portNumberEnvs) > 0 {
 			resCtr.Env = append(resCtr.Env, portNumberEnvs...)
 		}
 
-		if len(ctr.ConfigVolumeMounts) > 0 && partyKit.configTemplatesCMName != "" {
+		if len(ctr.ConfigVolumeMounts) > 0 && partyKit.ConfigTemplatesCMName != "" {
 			needConfigTemplateVolume = true
 			for _, vm := range ctr.ConfigVolumeMounts {
 				resCtr.VolumeMounts = append(resCtr.VolumeMounts, v1.VolumeMount{
@@ -1179,7 +1170,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 		confMap := generateKusciaConfigMap(partyKit, podKit)
 		err = h.submitConfigMap(confMap)
 		if err != nil {
-			nlog.Errorf("Submit task configMap failed, taskID: %s, error: %s.", partyKit.kusciaTask.Name, err.Error())
+			nlog.Errorf("Submit task configMap failed, taskID: %s, error: %s.", partyKit.KusciaTask.Name, err.Error())
 			return nil, err
 		}
 		// set the configMap which contain template values to the annotation of pod
@@ -1191,7 +1182,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 			VolumeSource: v1.VolumeSource{
 				ConfigMap: &v1.ConfigMapVolumeSource{
 					LocalObjectReference: v1.LocalObjectReference{
-						Name: partyKit.configTemplatesCMName,
+						Name: partyKit.ConfigTemplatesCMName,
 					},
 				},
 			},
@@ -1267,12 +1258,12 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 	svc.Labels = map[string]string{
 		common.LabelPortName:  port.Name,
 		common.LabelPortScope: string(port.Scope),
-		common.LabelTaskUID:   string(partyKit.kusciaTask.UID),
+		common.LabelTaskUID:   string(partyKit.KusciaTask.UID),
 	}
 
 	var protocolType string
-	if partyKit.kusciaTask.Labels != nil {
-		protocolType = partyKit.kusciaTask.Labels[common.LabelInterConnProtocolType]
+	if partyKit.KusciaTask.Labels != nil {
+		protocolType = partyKit.KusciaTask.Labels[common.LabelInterConnProtocolType]
 	}
 
 	if protocolType != "" {
@@ -1284,13 +1275,13 @@ func generateServices(partyKit *PartyKitInfo, pod *v1.Pod, serviceName string, p
 	}
 
 	svc.Annotations = map[string]string{
-		common.InitiatorAnnotationKey:    partyKit.kusciaTask.Spec.Initiator,
+		common.InitiatorAnnotationKey:    partyKit.KusciaTask.Spec.Initiator,
 		common.ProtocolAnnotationKey:     string(port.Protocol),
-		common.AccessDomainAnnotationKey: partyKit.portAccessDomains[port.Name],
-		common.TaskIDAnnotationKey:       partyKit.kusciaTask.Name,
+		common.AccessDomainAnnotationKey: partyKit.PortAccessDomains[port.Name],
+		common.TaskIDAnnotationKey:       partyKit.KusciaTask.Name,
 	}
 
-	for _, limit := range partyKit.bandwidthLimit {
+	for _, limit := range partyKit.BandwidthLimit {
 		key := fmt.Sprintf("%s%s", common.TaskBandwidthLimitAnnotationPrefix, limit.DestinationID)
 		svc.Annotations[key] = strconv.Itoa(int(limit.LimitKBps))
 	}
