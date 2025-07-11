@@ -92,5 +92,6 @@ func (p *CDRCheckPlugin) cdrResourceRequest(partyKitInfo common.PartyKitInfo) []
 			cdrs = append(cdrs, fmt.Sprintf("%s-%s", source.DomainID, dest.DomainID))
 		}
 	}
+	
 	return cdrs
 }
