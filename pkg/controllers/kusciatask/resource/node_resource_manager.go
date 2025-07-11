@@ -106,10 +106,6 @@ func NewNodeResourceManager(
 		resourceStore:  nodeStatusStore,
 	}
 
-	if err := manager.start(); err != nil {
-		nlog.Errorf("Failed to initialize node resource manager: %v", err)
-	}
-
 	manager.addPodEventHandler()
 	manager.addNodeEventHandler()
 
@@ -513,6 +509,11 @@ func (nrm *NodeResourceManager) Run(workers int) error {
 	defer nrm.podQueue.ShutDown()
 	defer nrm.nodeQueue.ShutDown()
 
+	if err := nrm.syncAllNodes(); err != nil {
+		nlog.Errorf("Failed to initialize node resource manager: %v", err)
+		return err
+	}
+
 	nlog.Info("Starting NodeResourceManager workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(nrm.runPodHandleWorker, time.Second, nrm.ctx.Done())
@@ -677,7 +678,7 @@ func (nrm *NodeResourceManager) ResourceCheck(domainName string, cpuReq, memReq 
 	return false, fmt.Errorf("resource-check no node status available for domain %s", domainName)
 }
 
-func (nrm *NodeResourceManager) start() error {
+func (nrm *NodeResourceManager) syncAllNodes() error {
 	domains, err := nrm.domainInformer.Lister().List(labels.Everything())
 	if err != nil {
 		return fmt.Errorf("failed to list domains: %v", err)
