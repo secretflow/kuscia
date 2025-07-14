@@ -517,6 +517,7 @@ func (nrm *NodeResourceManager) Run(workers int) error {
 
 	if err := nrm.syncAllNodes(); err != nil {
 		nlog.Errorf("Failed to initialize node resource manager: %v", err)
+		return err
 	}
 
 	<-nrm.ctx.Done()
