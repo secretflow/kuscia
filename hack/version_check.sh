@@ -154,8 +154,10 @@ declare -A KUSCIA_PATTERNS=(
 declare -A SECRETFLOW_PATTERNS=(
     # SECRETFLOW_IMAGE 环境变量（包括 export）
     ["sf_image"]="(export[[:space:]]+)?SECRETFLOW_IMAGE=.*:"
-    # kuscia image pull 命令中的 secretflow 镜像 - 新增
+    # kuscia image pull 命令中的 secretflow 镜像
     ["sf_kuscia_pull"]="kuscia[[:space:]]+image[[:space:]]+pull.*[^[:space:]]*secretflow[^[:space:]]*:"
+    # SF_VERSION 环境变量
+    ["sf_version_var"]="SF_VERSION="
     # secretflow 镜像格式（包含路径的）
     ["sf_image_path"]="([a-zA-Z0-9\-\.]+/)*[^[:space:]]*secretflow[^[:space:]]*:"
     # 简单格式 secretflow:version
@@ -497,9 +499,40 @@ check_versions_optimized() {
         done <<< "$sf_kuscia_pull_results"
     fi
 
+    # 3. 检查 SF_VERSION 环境变量
+    local sf_version_var_results
+    if sf_version_var_results=$(grep -rn -E "SF_VERSION=${version_regex}([[:space:]]|$)" "${files[@]}" 2>/dev/null || true); then
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取版本号
+                local found_version
+                found_version=$(echo "$content" | sed -n 's/.*SF_VERSION=\([^[:space:]]*\).*/\1/p')
+                
+                if [[ -n "$found_version" && "$found_version" != "$SECRETFLOW_VERSION" ]]; then
+                    if should_skip_version "$content" "$found_version" "secretflow"; then
+                        continue
+                    fi
+                    log_error "Issue found in $file_line:$line_num"
+                    echo "  Found SecretFlow version '$found_version' (SF_VERSION), expected '$SECRETFLOW_VERSION'"
+                    echo "  Content: $content"
+                    ((total_issues++))
+                    
+                    if [[ ! " ${files_with_issues[*]} " =~ " $file_line " ]]; then
+                        files_with_issues+=("$file_line")
+                    fi
+                fi
+            fi
+        done <<< "$sf_version_var_results"
+    fi
+
     for pattern_name in "${!SECRETFLOW_PATTERNS[@]}"; do
         # 跳过SECRETFLOW_IMAGE模式，因为已经在上面处理了 - 新增条件
-        if [[ "$pattern_name" == "sf_image" || "$pattern_name" == "sf_kuscia_pull" ]]; then
+        if [[ "$pattern_name" == "sf_image" || "$pattern_name" == "sf_kuscia_pull" || "$pattern_name" == "sf_version_var" ]]; then
             continue
         fi
 
@@ -764,10 +797,41 @@ fix_versions_optimized() {
             fi
         done <<< "$sf_kuscia_pull_results"
     fi
+
+    # 3. 修复 SF_VERSION 环境变量 - 新增
+    local sf_version_var_results
+    if sf_version_var_results=$(grep -rn -E "SF_VERSION=${version_regex}([[:space:]]|$)" "${files[@]}" 2>/dev/null || true); then
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local file_line="${line%%:*}"
+                local line_num="${line#*:}"
+                line_num="${line_num%%:*}"
+                local content="${line#*:*:}"
+                
+                # 提取版本号
+                local found_version
+                found_version=$(echo "$content" | sed -n 's/.*SF_VERSION=\([^[:space:]]*\).*/\1/p')
+                
+                if [[ -n "$found_version" && "$found_version" != "$SECRETFLOW_VERSION" ]]; then
+                    if should_skip_version "$content" "$found_version" "secretflow"; then
+                        continue
+                    fi
+                    log_verbose "Fixing SecretFlow version at $file_line:$line_num: $found_version -> $SECRETFLOW_VERSION"
+                    
+                    # 使用 sed 精确替换该行的版本号
+                    sed -i "${line_num}s/${found_version}/${SECRETFLOW_VERSION}/g" "$file_line"
+                    
+                    if [[ ! " ${fixed_files[*]} " =~ " $file_line " ]]; then
+                        fixed_files+=("$file_line")
+                    fi
+                fi
+            fi
+        done <<< "$sf_version_var_results"
+    fi
         
     for pattern_name in "${!SECRETFLOW_PATTERNS[@]}"; do
         # 跳过SECRETFLOW_IMAGE模式，因为已经在上面处理了 - 新增条件
-        if [[ "$pattern_name" == "sf_image" || "$pattern_name" == "sf_kuscia_pull" ]]; then
+        if [[ "$pattern_name" == "sf_image" || "$pattern_name" == "sf_kuscia_pull" || "$pattern_name" == "sf_version_var" ]]; then
             continue
         fi
         
