@@ -130,6 +130,11 @@ func (nrm *NodeResourceManager) addPodEventHandler() {
 				}
 			}
 
+			if pod.Spec.NodeName == "" {
+				nlog.Debugf("Pod %s has not been scheduled yet", pod.Name)
+				return false
+			}
+
 			nlog.Debugf("PodInformer EventHandler handle: %s", pod.Name)
 			namespace := pod.Namespace
 			_, err := nrm.domainInformer.Lister().Get(namespace)
