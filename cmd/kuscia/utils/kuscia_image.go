@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -147,6 +148,11 @@ func (o *OciImage) RemoveImage() error {
 }
 
 func (o *OciImage) LoadImage(tarFile string) error {
+	currentPlatform := runtime.GOOS + "/" + runtime.GOARCH
+	currentPlatform = strings.ToLower(currentPlatform)
+	if err := ValidateArch(tarFile, currentPlatform); err != nil {
+		return fmt.Errorf("error: %s", err.Error())
+	}
 	return o.Store.LoadImage(tarFile)
 }
 
@@ -313,6 +319,11 @@ func (c *ContainerImage) RemoveImage() error {
 }
 
 func (c *ContainerImage) LoadImage(tarFile string) error {
+	currentPlatform := runtime.GOOS + "/" + runtime.GOARCH
+	currentPlatform = strings.ToLower(currentPlatform)
+	if err := ValidateArch(tarFile, currentPlatform); err != nil {
+		return fmt.Errorf("error: %s", err.Error())
+	}
 	return runContainerdCmd(c.cmd.Context(), "ctr", "--address", common.ContainerdSocket(), "--namespace", common.KusciaDefaultNamespaceOfContainerd, "images", "import", "--no-unpack", tarFile)
 }
 
