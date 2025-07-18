@@ -118,7 +118,7 @@ func buildLayerTarGz(content string) (layerBytes []byte, diffID string, err erro
 
 	return gzBuf.Bytes(), diffID, nil
 }
-func buildArchImage(osArch string, tag string) (*archImage, error) {
+func buildArchImage(osArch string) (*archImage, error) {
 	parts := strings.Split(osArch, "/")
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid os/arch: %s", osArch)
@@ -310,7 +310,7 @@ func createMultiArchOCIImageFile(tarFile string, archTags [][]string, emitPlatfo
 		osArch := pair[0]
 		tag := pair[1]
 
-		img, err := buildArchImage(osArch, tag)
+		img, err := buildArchImage(osArch)
 		if err != nil {
 			return fmt.Errorf("buildArchImage failed: %w", err)
 		}
@@ -446,7 +446,7 @@ func createSingleArchOCIImageFile(tarFile string, osArch string, tag string) err
 		return err
 	}
 
-	img, err := buildArchImage(osArch, tag)
+	img, err := buildArchImage(osArch)
 	if err != nil {
 		return fmt.Errorf("buildArchImage failed: %w", err)
 	}

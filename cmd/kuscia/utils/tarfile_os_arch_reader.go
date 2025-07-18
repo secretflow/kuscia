@@ -153,7 +153,10 @@ func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
 		}
 	}
 
-	file.Seek(0, 0)
+	if _, err := file.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("failed to seek file: %v", err)
+	}
+
 	if tr.isGzip {
 		gzReader, err := gzip.NewReader(file)
 		if err != nil {
