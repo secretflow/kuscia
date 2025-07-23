@@ -20,7 +20,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -148,10 +147,8 @@ func (o *OciImage) RemoveImage() error {
 }
 
 func (o *OciImage) LoadImage(tarFile string) error {
-	currentPlatform := runtime.GOOS + "/" + runtime.GOARCH
-	currentPlatform = strings.ToLower(currentPlatform)
-	if err := ValidateArch(tarFile, currentPlatform); err != nil {
-		return fmt.Errorf("load image from tarball met error, expected: 1. single image in file 2. image arch should match current kuscia platform, details: %s", err.Error())
+	if err := validateImageWithCurrentOsArch(tarFile); err != nil {
+		return fmt.Errorf("load oci image from tarball met error, error: %w", err)
 	}
 	return o.Store.LoadImage(tarFile)
 }
@@ -319,10 +316,8 @@ func (c *ContainerImage) RemoveImage() error {
 }
 
 func (c *ContainerImage) LoadImage(tarFile string) error {
-	currentPlatform := runtime.GOOS + "/" + runtime.GOARCH
-	currentPlatform = strings.ToLower(currentPlatform)
-	if err := ValidateArch(tarFile, currentPlatform); err != nil {
-		return fmt.Errorf("load image from tarball met error, expected: 1. single image in file 2. image arch should match current kuscia platform, details: %s", err.Error())
+	if err := validateImageWithCurrentOsArch(tarFile); err != nil {
+		return fmt.Errorf("load container image from tarball met error, error: %w", err)
 	}
 	return runContainerdCmd(c.cmd.Context(), "ctr", "--address", common.ContainerdSocket(), "--namespace", common.KusciaDefaultNamespaceOfContainerd, "images", "import", "--no-unpack", tarFile)
 }

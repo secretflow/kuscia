@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -375,15 +376,22 @@ func ReadOsArchFromImageTarFile(tarFile string) ([]ArchSummary, error) {
 	return result, nil
 }
 
-func ValidateArch(tarFile string, currentPlatform string) error {
+func validateImageWithCurrentOsArch(tarFile string) error {
+	currentPlatform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	currentPlatform = strings.ToLower(currentPlatform)
+	return ValidateArch(tarFile, currentPlatform)
+}
+
+func ValidateArch(tarFile string, expectedOsArch string) error {
 	archSummary, err := ReadOsArchFromImageTarFile(tarFile)
 	if err != nil {
 		nlog.Warnf("Error reading image tar file: %s, error: %v", tarFile, err)
+		return err
 	}
 	if len(archSummary) == 0 {
 		return &TarfileOsArchUnsupportedError{
 			Source:          tarFile,
-			CurrentPlatform: currentPlatform,
+			CurrentPlatform: expectedOsArch,
 			ArchSummary:     archSummary,
 			Cause:           errors.New("no architecture information found in the image tar file"),
 		}
@@ -391,18 +399,14 @@ func ValidateArch(tarFile string, currentPlatform string) error {
 	if len(archSummary) > 1 {
 		return &TarfileOsArchUnsupportedError{
 			Source:          tarFile,
-			CurrentPlatform: currentPlatform,
+			CurrentPlatform: expectedOsArch,
 			ArchSummary:     archSummary,
 			Cause:           errors.New("only one image tag is allowed per load command"),
 		}
 	}
 	isCompatible := false
 	for _, osArch := range archSummary[0].Platforms {
-		normalized := osArch
-		if parts := strings.Split(osArch, "/"); len(parts) > 2 {
-			normalized = parts[0] + "/" + parts[1]
-		}
-		if normalized == currentPlatform {
+		if osArch == expectedOsArch {
 			isCompatible = true
 			break
 		}
@@ -411,7 +415,7 @@ func ValidateArch(tarFile string, currentPlatform string) error {
 	if !isCompatible {
 		return &TarfileOsArchUnsupportedError{
 			Source:          tarFile,
-			CurrentPlatform: currentPlatform,
+			CurrentPlatform: expectedOsArch,
 			ArchSummary:     archSummary,
 			Cause:           errors.New("unsupported platform"),
 		}

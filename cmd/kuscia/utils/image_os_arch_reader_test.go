@@ -807,7 +807,7 @@ func TestValidateArch_SingleArchUnsupported(t *testing.T) {
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
 	unsupportedErr := ValidateArch(tarPath, currentPlatform)
-	t.Logf("unsupportedErr: %v", unsupportedErr)
+	assert.Error(t, unsupportedErr, "expected an error but got none")
 	if _, ok := unsupportedErr.(*TarfileOsArchUnsupportedError); !ok {
 		assert.Fail(t, "validate os/arch from tarfile %s failed, error should be of type *TarfileOsArchUnsupportedError")
 	}
