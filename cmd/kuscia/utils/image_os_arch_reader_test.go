@@ -265,9 +265,9 @@ func createDockerLegacyTarball(outputPath string, images []LegacyImageInput) err
 				"diff_ids": image.DiffIDs,
 			},
 		}
-		configBytes, jsonReadErr := json.Marshal(configContent)
-		if jsonReadErr != nil {
-			return jsonReadErr
+		configBytes, err := json.Marshal(configContent)
+		if err != nil {
+			return err
 		}
 		if err := writeTarFile(tarWriter, configName, configBytes); err != nil {
 			return err
@@ -301,7 +301,10 @@ func createDockerLegacyTarball(outputPath string, images []LegacyImageInput) err
 		return err
 	}
 
-	repoBytes, _ := json.MarshalIndent(repoMap, "", "  ")
+	repoBytes, err := json.MarshalIndent(repoMap, "", "  ")
+	if err != nil {
+		return err
+	}
 	if err := writeTarFile(tarWriter, "repositories", repoBytes); err != nil {
 		return err
 	}
@@ -387,7 +390,10 @@ func createMultiArchOCIImageFile(tarFile string, archTags [][]string, emitPlatfo
 					},
 				})
 			}
-			subBytes, _ := json.Marshal(subIndex)
+			subBytes, err := json.Marshal(subIndex)
+			if err != nil {
+				return err
+			}
 			subDigest := sha256.Sum256(subBytes)
 			subHex := hex.EncodeToString(subDigest[:])
 			subPath := filepath.Join(tempRoot, "blobs", "sha256", subHex)
@@ -406,7 +412,10 @@ func createMultiArchOCIImageFile(tarFile string, archTags [][]string, emitPlatfo
 		}
 	}
 
-	idxBytes, _ := json.MarshalIndent(topIndex, "", "  ")
+	idxBytes, err := json.MarshalIndent(topIndex, "", "  ")
+	if err != nil {
+		return err
+	}
 	if err := os.WriteFile(filepath.Join(tempRoot, "index.json"), idxBytes, 0644); err != nil {
 		return err
 	}
@@ -494,7 +503,11 @@ func createSingleArchOCIImageFile(tarFile string, osArch string, tag string) err
 			},
 		},
 	}
-	idxBytes, _ := json.Marshal(index)
+	idxBytes, err := json.Marshal(index)
+	if err != nil {
+		return err
+	}
+
 	if err := os.WriteFile(filepath.Join(tempRoot, "index.json"), idxBytes, 0644); err != nil {
 		return err
 	}
@@ -759,7 +772,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacyMultiImage(t *testing.T) {
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
 	assert.NoError(t, tempErr)
 	defer os.RemoveAll(tempImageOutputDir)
-	fileName := "legacy-muti-image.tar"
+	fileName := "legacy-multi-image.tar"
 	tarPath := filepath.Join(tempImageOutputDir, fileName)
 	err := createDockerLegacyTarball(tarPath, []LegacyImageInput{firstImage, secondImage})
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))

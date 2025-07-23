@@ -288,7 +288,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
 			var ociManifest OCIManifest
 			err := ar.tarReader.ReadJSONFile(blobPath, &ociManifest)
 			if err != nil {
-				fmt.Printf("Failed to read OCI manifest: %v\n", err)
+				nlog.Warnf("Failed to read OCI manifest: %v", err)
 				continue
 			}
 			configDigestID := strings.TrimPrefix(ociManifest.Config.Digest, sha256Prefix)
@@ -297,7 +297,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
 			var config ImageConfig
 			err = ar.tarReader.ReadJSONFile(configBlobPath, &config)
 			if err != nil {
-				fmt.Printf("Failed to read image config: %v\n", err)
+				nlog.Warnf("Failed to read image config: %v", err)
 				continue
 			}
 			archInfos = append(archInfos, ArchInfo{
@@ -308,7 +308,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
 				Source:       fmt.Sprintf("manifest config (%s)", manifest.MediaType),
 			})
 		default:
-			fmt.Printf("Unsupported media type: %s\n", manifest.MediaType)
+			nlog.Warnf("Unsupported media type: %s", manifest.MediaType)
 		}
 	}
 
