@@ -200,7 +200,7 @@ should_skip_version() {
     
     # Check if it's within a network-related context (more general IP address related detection)
     if echo "$content" | grep -qiE "(ip|host|address|endpoint|server|client|domain|url|uri|port|socket|network|connection|--[0-9]|<--[0-9]|return.*code|http.*code|error.*code|status.*code)"; then
-        # 如果在网络上下文中，且版本号看起来像IP（即使不是标准4段IP）
+        # If in a network context, and the version number looks like an IP (even if it's not a standard 4-segment IP)
         if [[ "$found_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)*$ ]]; then
             log_verbose "  Skipping network-context version that looks like IP: $found_version"
             return 0
@@ -215,7 +215,7 @@ should_skip_version() {
     
     # Check specific error message patterns
     if echo "$content" | grep -qE "(error-message|error.*message|exception|failure|failed|timeout|connection.*refused|http.*code|status.*code)"; then
-        # 在错误消息上下文中，对版本号更加严格
+        # In the context of error messages, be more strict with the version number
         if [[ "$found_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && ! echo "$content" | grep -qiE "(version|v[0-9]|release|tag)"; then
             log_verbose "  Skipping version in error message without version context: $found_version"
             return 0
