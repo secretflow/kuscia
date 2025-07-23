@@ -699,7 +699,7 @@ func TestReadOsArchFromImageTarFile_OCISingleTarGzipImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("copy tar file into %s failed", gzfileName))
 	err = gzWriter.Close()
 	assert.NoError(t, err, fmt.Sprintf("close gzip writer for %s failed", gzfileName))
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, err := ReadOsArchFromImageTarFile(tarGzPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", gzfileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", gzfileName))

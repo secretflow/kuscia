@@ -138,28 +138,31 @@ func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
 	filePath = filepath.ToSlash(filePath)
 	filePath = strings.TrimPrefix(filePath, "./")
 
-	createTarFileReader := func() (*tar.Reader, error) {
+	createTarFileReader := func() (*tar.Reader, io.Closer, error) {
 		if _, err := file.Seek(0, 0); err != nil {
-			return nil, fmt.Errorf("failed to seek file: %v", err)
+			return nil, nil, fmt.Errorf("failed to seek file: %v", err)
 		}
 
 		if tr.isGzip {
 			gzReader, err := gzip.NewReader(file)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create gzip reader: %v", err)
+				return nil, nil, fmt.Errorf("failed to create gzip reader: %v", err)
 			}
-			return tar.NewReader(gzReader), nil
+			return tar.NewReader(gzReader), gzReader, nil
 		}
-		return tar.NewReader(file), nil
+		return tar.NewReader(file), nil, nil
 	}
 
-	tarFileReader, err := createTarFileReader()
+	tarfileReader, closer, err := createTarFileReader()
 	if err != nil {
 		return nil, err
 	}
+	if closer != nil {
+		defer closer.Close()
+	}
 
 	for {
-		header, err := tarFileReader.Next()
+		header, err := tarfileReader.Next()
 		if err == io.EOF {
 			break
 		}
@@ -175,9 +178,13 @@ func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
 				return nil, fmt.Errorf("file %s is not a regular file", entryPath)
 			}
 
-			data, err := io.ReadAll(tarFileReader)
+			data := make([]byte, header.Size)
+			n, err := io.ReadFull(tarfileReader, data)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read file content: %v", err)
+			}
+			if int64(n) != header.Size {
+				return nil, fmt.Errorf("read %d bytes, expected %d", n, header.Size)
 			}
 			return data, nil
 		}
