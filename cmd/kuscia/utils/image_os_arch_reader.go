@@ -206,27 +206,28 @@ func createArchReader(tarFilePath string) *ArchReader {
 }
 
 func (ar *ArchReader) detectArchitecture() ([]ArchInfo, error) {
-	var archInfos []ArchInfo
-
-	ociArch, err := ar.parseOCIIndex()
-	if err == nil && len(ociArch) > 0 {
-		archInfos = append(archInfos, ociArch...)
-	} else if err != nil {
-		if len(archInfos) == 0 {
-			dockerArch, dockerErr := ar.parseDockerManifest()
-			if dockerErr != nil {
-				return nil, fmt.Errorf("failed to parse OCI index: %v; and failed to parse Docker manifest: %v", err, dockerErr)
-			}
-			archInfos = append(archInfos, dockerArch...)
-		}
-	} else if len(archInfos) == 0 {
-		dockerArch, dockerErr := ar.parseDockerManifest()
-		if dockerErr != nil {
-			return nil, dockerErr
-		}
-		archInfos = append(archInfos, dockerArch...)
+	ociArch, ociErr := ar.parseOCIIndex()
+	if ociErr == nil && len(ociArch) > 0 {
+		return ociArch, nil
 	}
-	return archInfos, nil
+
+	dockerArch, dockerErr := ar.parseDockerManifest()
+	if dockerErr != nil {
+		if ociErr != nil {
+			return nil, fmt.Errorf("failed to parse OCI index: %v; and failed to parse Docker manifest: %v", ociErr, dockerErr)
+		}
+		return nil, dockerErr
+	}
+
+	if len(dockerArch) > 0 {
+		return dockerArch, nil
+	}
+
+	if ociErr != nil {
+		return nil, ociErr
+	}
+
+	return nil, nil
 }
 
 func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
@@ -239,16 +240,12 @@ func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
 	}
 
 	for _, manifest := range index.Manifests {
-		var imageRefName, imageName, refName string
+		var refName string
 		if manifest.Annotations != nil {
-			imageRefName = manifest.Annotations["org.opencontainers.image.ref.name"]
-			imageName = manifest.Annotations["io.containerd.image.name"]
-		}
-		if imageRefName != "" {
-			refName = imageRefName
-		}
-		if imageName != "" {
-			refName = imageName
+			refName = manifest.Annotations["org.opencontainers.image.ref.name"]
+			if refName == "" {
+				refName = manifest.Annotations["io.containerd.image.name"]
+			}
 		}
 		if manifest.Platform != nil {
 			archInfos = append(archInfos, ArchInfo{
@@ -273,7 +270,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
 			var nestedIndex OCIIndex
 			err := ar.tarReader.ReadJSONFile(blobPath, &nestedIndex)
 			if err != nil {
-				fmt.Printf("Failed to read nested index: %v\n", err)
+				nlog.Warnf("Failed to read nested index: %v", err)
 				continue
 			}
 			for _, nestedManifest := range nestedIndex.Manifests {
@@ -337,15 +334,17 @@ func (ar *ArchReader) parseDockerManifest() ([]ArchInfo, error) {
 		}
 		var config ImageConfig
 		err = ar.tarReader.ReadJSONFile(manifest.Config, &config)
-		if err == nil {
-			archInfos = append(archInfos, ArchInfo{
-				Architecture: config.Architecture,
-				OS:           config.OS,
-				Variant:      config.Variant,
-				Ref:          refName,
-				Source:       "docker manifest.json config",
-			})
+		if err != nil {
+			nlog.Warnf("Failed to read or parse docker image config '%s' for repo tags %v: %v", manifest.Config, manifest.RepoTags, err)
+			continue
 		}
+		archInfos = append(archInfos, ArchInfo{
+			Architecture: config.Architecture,
+			OS:           config.OS,
+			Variant:      config.Variant,
+			Ref:          refName,
+			Source:       "docker manifest.json config",
+		})
 	}
 
 	return archInfos, nil

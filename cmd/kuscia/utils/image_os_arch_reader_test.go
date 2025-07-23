@@ -293,7 +293,10 @@ func createDockerLegacyTarball(outputPath string, images []LegacyImageInput) err
 		}
 	}
 
-	manifestBytes, _ := json.MarshalIndent(manifest, "", "  ")
+	manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return err
+	}
 	if err := writeTarFile(tarWriter, "manifest.json", manifestBytes); err != nil {
 		return err
 	}
