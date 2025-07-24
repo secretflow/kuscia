@@ -38,26 +38,32 @@ function wait_kuscia_job_until() {
   local job_id=$3
   local times=$((timeout_seconds / TIMEOUT_DURATION_SECONDS))
   local current=0
+  local unexpected_tolerance_times=3
+  local unexpected_count=0
   while [ "${current}" -lt "${times}" ]; do
     local job_phase
     job_phase=$(docker exec -it "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
     case "${job_phase}" in
     Succeeded)
       echo "Succeeded"
-      unset ctr timeout_seconds job_id times  current
+      unset ctr timeout_seconds job_id times current
       return
       ;;
     Failed)
       echo "Failed"
-      unset ctr timeout_seconds job_id times  current
+      unset ctr timeout_seconds job_id times current
       return
       ;;
-    Pending | Running | AwaitingApproval | "<none>" | "" )
-      ;;
+    Pending | Running | AwaitingApproval | "<none>" | "") ;;
     *)
       # unexpected
+      ((unexpected_count++))
+      if [ "${unexpected_count}" -le "${unexpected_tolerance_times}" ]; then
+        echo "Unexpected job phase: ${job_phase}, retrying..."
+        break
+      fi
       echo "unexpected: ${job_phase}"
-      unset ctr timeout_seconds job_id times  current
+      unset ctr timeout_seconds job_id times current unexpected_count unexpected_tolerance_times
       return 100
       ;;
     esac
@@ -65,7 +71,7 @@ function wait_kuscia_job_until() {
     sleep "${TIMEOUT_DURATION_SECONDS}"
   done
   echo "Timeout"
-  unset ctr timeout_seconds job_id times  current
+  unset ctr timeout_seconds job_id times current
 }
 
 # Get kuscia api http code on http for healrhZ
@@ -242,7 +248,7 @@ function start_bfia() {
   local test_suite_run_kuscia_dir=$1
   mkdir -p "${test_suite_run_kuscia_dir}"
 
-  # Run bfia 
+  # Run bfia
   ./kuscia.sh p2p -P bfia -a none
   # Check bfia container Up
   local autonomy_alice_container_state=$(get_container_state "${AUTONOMY_ALICE_CONTAINER}")
@@ -262,7 +268,7 @@ function start_bfia() {
   ${test_suite_run_kuscia_dir}/bfia/prepare_ss_lr_image.sh -k ${AUTONOMY_BOB_CONTAINER}
 
   # Prepare job config
-  cat <<EOF > ${test_suite_run_kuscia_dir}/kuscia-job.yaml
+  cat <<EOF >${test_suite_run_kuscia_dir}/kuscia-job.yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
@@ -285,7 +291,7 @@ EOF
   unset test_suite_run_kuscia_dir autonomy_alice_container_state autonomy_bob_container_state
 }
 
-# Stop bfia 
+# Stop bfia
 function stop_bfia() {
   docker stop "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "${TTP_SERVER}"
   docker rm "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "${TTP_SERVER}"
@@ -307,7 +313,6 @@ function get_ipv4_address() {
   echo "$ipv4"
 }
 
-
 # @return domain route destination token
 # Args:
 #   ctr: container name
@@ -328,7 +333,6 @@ function get_dr_src_token_value() {
   docker exec "${ctr}" kubectl get dr "$dr_name" -o jsonpath='{.status.tokenStatus.revisionToken.token}'
 }
 
-
 # @return cluster domain route destination token
 # Args:
 #   ctr: container name
@@ -338,7 +342,6 @@ function get_cdr_dst_token_value() {
   local cdr_name=$2
   docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.destinationTokens[-1].token}'
 }
-
 
 # @return cluster domain route source token
 # Args:
@@ -350,7 +353,6 @@ function get_cdr_src_token_value() {
   docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.sourceTokens[-1].token}'
 }
 
-
 # @return cluster domain route destination token revision
 # Args:
 #   ctr: container name
@@ -360,7 +362,6 @@ function get_cdr_dst_token_revision() {
   local cdr_name=$2
   docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.destinationTokens[-1].revision}'
 }
-
 
 # @return cluster domain route source token revision
 # Args:
@@ -372,7 +373,6 @@ function get_cdr_src_token_revision() {
   docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.tokenStatus.sourceTokens[-1].revision}'
 }
 
-
 # @return cluster domain route token status
 # Args:
 #   ctr: container name
@@ -382,7 +382,6 @@ function get_cdr_token_status() {
   local cdr_name=$2
   docker exec "${ctr}" kubectl get cdr "$cdr_name" -o jsonpath='{.status.conditions[0].type}'
 }
-
 
 # @return domain route party token ready status
 # Args:
@@ -396,7 +395,6 @@ function get_dr_revision_token_ready() {
   docker exec "${ctr}" kubectl get dr "$dr_name" -n "$domain" -o jsonpath='{.status.tokenStatus.revisionToken.isReady}'
 }
 
-
 # Args:
 #   ctr: container name
 #   cdr_name: cluster domain route name
@@ -407,7 +405,6 @@ function set_cdr_token_rolling_period() {
   local peroid=$3
   docker exec "${ctr}" kubectl patch cdr "$cdr_name" --type json -p="[{\"op\": \"replace\", \"path\": \"/spec/tokenConfig/rollingUpdatePeriod\", \"value\": ${peroid}}]"
 }
-
 
 # @return cluster domain route rolling period(s)
 # Args:
@@ -435,19 +432,18 @@ function get_images() {
   fi
 }
 
-
 # @return get image ID
 # Args:
 #   images_tag: image tag
 #   container_name: container name
 #   runtime: runtime runc or runp
 function get_image_ID() {
-    local images_tag=$1
-    local container_name=$2
-    local runtime=$3
-    if [ -n "${runtime}" ]; then
-      docker exec -i "${container_name}" bash -c "kuscia image --runtime=${runtime} ls 2>&1 | grep ${images_tag} | awk '{print \$3}'"
-    else
-      docker exec -i "${container_name}" bash -c "kuscia image ls 2>&1 | grep ${images_tag} | awk '{print \$3}'"
-    fi
+  local images_tag=$1
+  local container_name=$2
+  local runtime=$3
+  if [ -n "${runtime}" ]; then
+    docker exec -i "${container_name}" bash -c "kuscia image --runtime=${runtime} ls 2>&1 | grep ${images_tag} | awk '{print \$3}'"
+  else
+    docker exec -i "${container_name}" bash -c "kuscia image ls 2>&1 | grep ${images_tag} | awk '{print \$3}'"
+  fi
 }

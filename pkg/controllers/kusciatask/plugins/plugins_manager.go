@@ -17,9 +17,11 @@ package plugins
 
 import (
 	"context"
+	"time"
 
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
+	"k8s.io/client-go/util/retry"
 )
 
 type ResourceRequest struct {
@@ -54,7 +56,22 @@ func (pm *PluginManager) Register(p Plugin) {
 func (pm *PluginManager) Permit(ctx context.Context, params interface{}) (bool, []error) {
 	var errors []error
 	for _, p := range pm.plugins {
-		_, err := p.Permit(ctx, params)
+		operation := func() error {
+			_, err := p.Permit(ctx, params)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		backoff := retry.DefaultBackoff
+		backoff.Steps = 5
+		backoff.Duration = 1 * time.Second
+
+		err := retry.OnError(backoff, func(err error) bool {
+			return true
+		}, operation)
+
 		if err != nil {
 			errors = append(errors, err)
 			continue
