@@ -364,6 +364,9 @@ func ReadOsArchFromImageTarFile(tarFile string) ([]ArchSummary, error) {
 
 	refMap := make(map[string][]string)
 	for _, arch := range archInfos {
+		if arch.Ref == "" {
+			continue
+		}
 		osArch := fmt.Sprintf("%s/%s", arch.OS, arch.Architecture)
 		refMap[arch.Ref] = append(refMap[arch.Ref], osArch)
 	}
