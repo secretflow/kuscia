@@ -19,9 +19,10 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/client-go/util/retry"
+
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
-	"k8s.io/client-go/util/retry"
 )
 
 type ResourceRequest struct {
