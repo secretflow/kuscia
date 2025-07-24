@@ -56,7 +56,6 @@ func TestNewController(t *testing.T) {
 	err := c.Run(1)
 	assert.NoError(t, err)
 }
-
 func TestMatchLabels(t *testing.T) {
 	c := Controller{}
 	testCases := []struct {

@@ -17,11 +17,12 @@ package handler
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
-
-	"github.com/secretflow/kuscia/pkg/common"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -29,8 +30,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubeinformers "k8s.io/client-go/informers"
 	kubefake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/yaml"
 
+	"github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
+	ktresource "github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -39,6 +44,7 @@ import (
 )
 
 func makeTestPendingHandler() *PendingHandler {
+	var nodeResourceManager *ktresource.NodeResourceManager
 	kubeClient := kubefake.NewSimpleClientset()
 	kusciaClient := kusciafake.NewSimpleClientset(makeTestAppImageCase1(), makeTestKusciaTaskCase1())
 
@@ -46,6 +52,41 @@ func makeTestPendingHandler() *PendingHandler {
 	kusciaInformerFactory := kusciainformers.NewSharedInformerFactory(kusciaClient, 0)
 	nsInformer := kubeInformersFactory.Core().V1().Namespaces()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	clusterDomainRouteInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	nodeInformer := kubeInformersFactory.Core().V1().Nodes()
+	podInformer := kubeInformersFactory.Core().V1().Pods()
+	podQueue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod")
+	nodeQueue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node")
+	nodeResourceManager = ktresource.NewNodeResourceManager(context.Background(), domainInformer, nodeInformer, podInformer, podQueue, nodeQueue)
+	value := reflect.ValueOf(nodeResourceManager).Elem()
+	field := value.FieldByName("resourceStore")
+
+	mockResourceStore := &ktresource.NodeStatusStore{
+		LocalNodeStatuses: map[string]map[string]*ktresource.LocalNodeStatus{
+			"domain-a": {
+				"mock-node-a": {
+					Status: ktresource.NodeStateReady,
+					Allocatable: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse("8"),
+						v1.ResourceMemory: resource.MustParse("16Gi"),
+					},
+				},
+			},
+			"domain-b": {
+				"mock-node-b": {
+					Status: ktresource.NodeStateReady,
+					Allocatable: v1.ResourceList{
+						v1.ResourceCPU:    resource.MustParse("8"),
+						v1.ResourceMemory: resource.MustParse("16Gi"),
+					},
+				},
+			},
+		},
+		Lock: sync.RWMutex{},
+	}
+
+	reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.ValueOf(mockResourceStore))
 
 	ns1 := v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
@@ -62,6 +103,30 @@ func makeTestPendingHandler() *PendingHandler {
 	nsInformer.Informer().GetStore().Add(&ns2)
 	appImageInformer.Informer().GetStore().Add(makeTestAppImageCase1())
 
+	cdrAtoB := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-a-domain-b"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	cdrBtoA := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{Name: "domain-b-domain-a"},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{
+			Conditions: []kusciaapisv1alpha1.ClusterDomainRouteCondition{{
+				Type:   kusciaapisv1alpha1.ClusterDomainRouteReady,
+				Status: v1.ConditionTrue,
+			}},
+		},
+	}
+
+	clusterDomainRouteInformer.Informer().GetStore().Add(cdrAtoB)
+	clusterDomainRouteInformer.Informer().GetStore().Add(cdrBtoA)
+
+	pm := plugins.NewPluginManager(*nodeResourceManager, clusterDomainRouteInformer.Lister())
 	dep := &Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
@@ -71,6 +136,7 @@ func makeTestPendingHandler() *PendingHandler {
 		ServicesLister:   kubeInformersFactory.Core().V1().Services().Lister(),
 		ConfigMapLister:  kubeInformersFactory.Core().V1().ConfigMaps().Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
+		PluginManager:    pm,
 	}
 
 	return NewPendingHandler(dep)
@@ -270,20 +336,20 @@ func Test_generatePortAccessDomains(t *testing.T) {
 func Test_generatePod(t *testing.T) {
 	t.Parallel()
 	partyKit := &PartyKitInfo{
-		kusciaTask:            makeTestKusciaTaskCase1(),
-		domainID:              "domain-a",
-		role:                  "server",
-		image:                 "test-image:0.0.1",
-		deployTemplate:        makeTestDeployTemplateCase1(),
-		configTemplatesCMName: "kusciatask-001-configtemplate",
-		configTemplates:       map[string]string{"task-config.config": "task_input_config: {{.TASK_INPUT_CONFIG}}"},
-		servicedPorts:         []string{"cluster", "domain"},
-		portAccessDomains:     map[string]string{},
-		pods: []*PodKitInfo{
+		KusciaTask:            makeTestKusciaTaskCase1(),
+		DomainID:              "domain-a",
+		Role:                  "server",
+		Image:                 "test-image:0.0.1",
+		DeployTemplate:        makeTestDeployTemplateCase1(),
+		ConfigTemplatesCMName: "kusciatask-001-configtemplate",
+		ConfigTemplates:       map[string]string{"task-config.config": "task_input_config: {{.TASK_INPUT_CONFIG}}"},
+		ServicedPorts:         []string{"cluster", "domain"},
+		PortAccessDomains:     map[string]string{},
+		Pods: []*PodKitInfo{
 			{
-				index:   0,
-				podName: "kusciatask-001-server-0",
-				ports: NamedPorts{
+				Index:   0,
+				PodName: "kusciatask-001-server-0",
+				Ports: NamedPorts{
 					"cluster": kusciaapisv1alpha1.ContainerPort{
 						Name:  "cluster",
 						Port:  10000,
@@ -300,13 +366,13 @@ func Test_generatePod(t *testing.T) {
 						Scope: kusciaapisv1alpha1.ScopeLocal,
 					},
 				},
-				clusterDef:     &proto.ClusterDefine{},
-				allocatedPorts: &proto.AllocatedPorts{},
+				ClusterDef:     &proto.ClusterDefine{},
+				AllocatedPorts: &proto.AllocatedPorts{},
 			},
 		},
 	}
 
-	podKit := partyKit.pods[0]
+	podKit := partyKit.Pods[0]
 	h := makeTestPendingHandler()
 	pod, err := h.generatePod(partyKit, podKit)
 	assert.NoError(t, err)
@@ -335,7 +401,7 @@ metadata:
     kuscia.secretflow/pod-role: server
   annotations:
     kuscia.secretflow/config-template-volumes: config-template
-    kuscia.secretflow/initiator: ""
+    kuscia.secretflow/initiator: "domain-a"
     kuscia.secretflow/task-id: kusciatask-001
     kuscia.secretflow/task-resource: ""
     kuscia.secretflow/task-resource-group: kusciatask-001
@@ -424,6 +490,7 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 			Namespace: common.KusciaCrossDomain,
 		},
 		Spec: kusciaapisv1alpha1.KusciaTaskSpec{
+			Initiator:       "domain-a",
 			TaskInputConfig: "task input config",
 			Parties: []kusciaapisv1alpha1.PartyInfo{
 				{
@@ -436,6 +503,12 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 								{
 									Name:    "container-0",
 									Command: []string{"pwd"},
+									Resources: v1.ResourceRequirements{
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("10m"),
+											v1.ResourceMemory: resource.MustParse("64Mi"),
+										},
+									},
 								},
 							},
 						},
@@ -451,6 +524,12 @@ func makeTestKusciaTaskCase1() *kusciaapisv1alpha1.KusciaTask {
 								{
 									Name:    "container-0",
 									Command: []string{"whoami"},
+									Resources: v1.ResourceRequirements{
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    resource.MustParse("10m"),
+											v1.ResourceMemory: resource.MustParse("64Mi"),
+										},
+									},
 								},
 							},
 						},

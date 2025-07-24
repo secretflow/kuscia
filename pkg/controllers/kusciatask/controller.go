@@ -37,6 +37,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/controllers"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/handler"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/metrics"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
@@ -81,19 +83,26 @@ type Controller struct {
 	kubeInformerFactory   kubeinformers.SharedInformerFactory
 	kusciaInformerFactory kusciainformers.SharedInformerFactory
 
-	namespaceLister  corelisters.NamespaceLister
-	namespaceSynced  cache.InformerSynced
-	podsLister       corelisters.PodLister
-	podsSynced       cache.InformerSynced
-	servicesSynced   cache.InformerSynced
-	servicesLister   corelisters.ServiceLister
-	configMapSynced  cache.InformerSynced
-	configMapLister  corelisters.ConfigMapLister
-	kusciaTaskLister kuscialistersv1alpha1.KusciaTaskLister
-	kusciaTaskSynced cache.InformerSynced
-	appImageSynced   cache.InformerSynced
-	trgSynced        cache.InformerSynced
-	trgLister        kuscialistersv1alpha1.TaskResourceGroupLister
+	namespaceLister     corelisters.NamespaceLister
+	namespaceSynced     cache.InformerSynced
+	nodeLister          corelisters.NodeLister
+	nodeSynced          cache.InformerSynced
+	domainLister        kuscialistersv1alpha1.DomainLister
+	domainSynced        cache.InformerSynced
+	podsLister          corelisters.PodLister
+	podsSynced          cache.InformerSynced
+	servicesSynced      cache.InformerSynced
+	servicesLister      corelisters.ServiceLister
+	configMapSynced     cache.InformerSynced
+	configMapLister     corelisters.ConfigMapLister
+	kusciaTaskLister    kuscialistersv1alpha1.KusciaTaskLister
+	kusciaTaskSynced    cache.InformerSynced
+	appImageSynced      cache.InformerSynced
+	cdrLister           kuscialistersv1alpha1.ClusterDomainRouteLister
+	cdrSynced           cache.InformerSynced
+	trgSynced           cache.InformerSynced
+	trgLister           kuscialistersv1alpha1.TaskResourceGroupLister
+	nodeResourceManager *resource.NodeResourceManager
 }
 
 // NewController returns a controller instance.
@@ -110,7 +119,20 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	configMapInformer := kubeInformerFactory.Core().V1().ConfigMaps()
 	kusciaTaskInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaTasks()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
+	cdrInformer := kusciaInformerFactory.Kuscia().V1alpha1().ClusterDomainRoutes()
 	trgInformer := kusciaInformerFactory.Kuscia().V1alpha1().TaskResourceGroups()
+	nodeInformer := kubeInformerFactory.Core().V1().Nodes()
+	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	newCtx, newCancel := context.WithCancel(ctx)
+
+	nodeResourceManager := resource.NewNodeResourceManager(
+		newCtx,
+		domainInformer,
+		nodeInformer,
+		podInformer,
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "pod"),
+		workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "node"),
+	)
 
 	controller := &Controller{
 		kubeClient:            kubeClient,
@@ -121,6 +143,10 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		namespaceSynced:       namespaceInformer.Informer().HasSynced,
 		podsLister:            podInformer.Lister(),
 		podsSynced:            podInformer.Informer().HasSynced,
+		nodeLister:            nodeInformer.Lister(),
+		nodeSynced:            nodeInformer.Informer().HasSynced,
+		domainLister:          domainInformer.Lister(),
+		domainSynced:          domainInformer.Informer().HasSynced,
 		servicesSynced:        serviceInformer.Informer().HasSynced,
 		servicesLister:        serviceInformer.Lister(),
 		configMapSynced:       configMapInformer.Informer().HasSynced,
@@ -128,13 +154,18 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		kusciaTaskLister:      kusciaTaskInformer.Lister(),
 		kusciaTaskSynced:      kusciaTaskInformer.Informer().HasSynced,
 		appImageSynced:        appImageInformer.Informer().HasSynced,
+		cdrLister:             cdrInformer.Lister(),
+		cdrSynced:             cdrInformer.Informer().HasSynced,
 		trgLister:             trgInformer.Lister(),
 		trgSynced:             trgInformer.Informer().HasSynced,
 		taskQueue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskQueue),
 		taskDeleteQueue:       workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), taskDeleteQueue),
 		recorder:              eventRecorder,
+		nodeResourceManager:   nodeResourceManager,
 	}
-	controller.ctx, controller.cancel = context.WithCancel(ctx)
+
+	pm := plugins.NewPluginManager(*nodeResourceManager, cdrInformer.Lister())
+	controller.ctx, controller.cancel = newCtx, newCancel
 	controller.handlerFactory = handler.NewKusciaTaskPhaseHandlerFactory(&handler.Dependencies{
 		KubeClient:       kubeClient,
 		KusciaClient:     kusciaClient,
@@ -145,6 +176,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		ConfigMapLister:  configMapInformer.Lister(),
 		AppImagesLister:  appImageInformer.Lister(),
 		Recorder:         eventRecorder,
+		PluginManager:    pm,
 	})
 
 	// kuscia task event handler
@@ -237,7 +269,7 @@ func (c *Controller) Run(workers int) error {
 	// Wait for the caches to be synced before starting workers
 	nlog.Infof("Waiting for informer cache to sync for %v", c.Name())
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.namespaceSynced, c.podsSynced, c.servicesSynced, c.configMapSynced,
-		c.kusciaTaskSynced, c.appImageSynced, c.trgSynced) {
+		c.kusciaTaskSynced, c.appImageSynced, c.trgSynced, c.domainSynced, c.nodeSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -246,6 +278,13 @@ func (c *Controller) Run(workers int) error {
 	for i := 0; i < workers; i++ {
 		go c.runWorker()
 		go c.runDeletedTaskWorker(c.ctx)
+	}
+
+	nlog.Info("Starting NodeResourceManager workers")
+	err := c.nodeResourceManager.Run(workers)
+	if err != nil {
+		nlog.Errorf("NodeResourceManager workers start failed with %v", err)
+		return err
 	}
 
 	<-c.ctx.Done()

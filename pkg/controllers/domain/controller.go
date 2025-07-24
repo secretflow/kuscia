@@ -141,7 +141,6 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 
 	return controller
 }
-
 // addNamespaceEventHandler is used to add event handler for namespace informer.
 func (c *Controller) addNamespaceEventHandler(nsInformer informerscorev1.NamespaceInformer) {
 	_, _ = nsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
@@ -271,7 +270,6 @@ func (c *Controller) addConfigMapHandler(cmInformer informerscorev1.ConfigMapInf
 		},
 	})
 }
-
 // matchLabels is used to filter concerned resource.
 func (c *Controller) matchLabels(obj apismetav1.Object) bool {
 	if labels := obj.GetLabels(); labels != nil {
@@ -323,18 +321,15 @@ func (c *Controller) Run(workers int) error {
 	if !cache.WaitForCacheSync(c.ctx.Done(), c.cacheSyncs...) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
-
 	nlog.Info("Starting workers")
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, c.ctx.Done())
 	}
-
 	nlog.Info("Starting sync domain status")
 	go wait.Until(c.syncDomainStatuses, 10*time.Second, c.ctx.Done())
 	<-c.ctx.Done()
 	return nil
 }
-
 // Stop is used to stop the controller.
 func (c *Controller) Stop() {
 	if c.cancel != nil {
@@ -350,7 +345,6 @@ func (c *Controller) runWorker() {
 		metrics.WorkerQueueSize.Set(float64(c.workqueue.Len()))
 	}
 }
-
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the domain resource
 // with the current status of the resource.

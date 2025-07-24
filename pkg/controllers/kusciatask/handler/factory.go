@@ -19,6 +19,7 @@ import (
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/record"
 
+	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/plugins"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientset "github.com/secretflow/kuscia/pkg/crd/clientset/versioned"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -35,6 +36,7 @@ type Dependencies struct {
 	ConfigMapLister  corelisters.ConfigMapLister
 	AppImagesLister  kuscialistersv1alpha1.AppImageLister
 	Recorder         record.EventRecorder
+	PluginManager    *plugins.PluginManager
 }
 
 // KusciaTaskPhaseHandler is an interface to handle kuscia task.
