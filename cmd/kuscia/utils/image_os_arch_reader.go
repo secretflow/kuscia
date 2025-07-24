@@ -217,24 +217,20 @@ func (ar *ArchReader) detectArchitecture() ([]ArchInfo, error) {
 	if ociErr == nil && len(ociArch) > 0 {
 		return ociArch, nil
 	}
-
 	dockerArch, dockerErr := ar.parseDockerManifest()
-	if dockerErr != nil {
-		if ociErr != nil {
-			return nil, fmt.Errorf("failed to parse OCI index: %v; and failed to parse Docker manifest: %v", ociErr, dockerErr)
-		}
-		return nil, dockerErr
-	}
-
-	if len(dockerArch) > 0 {
+	if dockerErr == nil && len(dockerArch) > 0 {
 		return dockerArch, nil
 	}
-
-	if ociErr != nil {
+	switch {
+	case ociErr != nil && dockerErr != nil:
+		return nil, fmt.Errorf("failed to parse OCI index: %v; and failed to parse Docker manifest: %v", ociErr, dockerErr)
+	case ociErr != nil:
 		return nil, ociErr
+	case dockerErr != nil:
+		return nil, dockerErr
+	default:
+		return nil, nil
 	}
-
-	return nil, nil
 }
 
 func (ar *ArchReader) parseOCIIndex() ([]ArchInfo, error) {
