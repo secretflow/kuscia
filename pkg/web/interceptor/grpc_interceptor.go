@@ -197,7 +197,7 @@ func UnaryRecoverInterceptor(errorCode pberrorcode.ErrorCode) grpc.UnaryServerIn
 		defer func() {
 			if r := recover(); r != nil {
 				nlog.Errorf("[%s] Recovered from panic: %+v, stack: %s", info.FullMethod, r, debug.Stack())
-				wrappedErr := fmt.Errorf("%s", r)
+				wrappedErr := fmt.Errorf("%+v", r)
 				resp = &v1alpha1.ErrorResponse{
 					Status: &v1alpha1.Status{
 						Code:    int32(errorCode),
@@ -218,7 +218,7 @@ func StreamRecoverInterceptor(errorCode pberrorcode.ErrorCode) grpc.StreamServer
 		defer func() {
 			if r := recover(); r != nil {
 				nlog.Errorf("[%s] Recovered from panic: %+v, stack: %s", info.FullMethod, r, debug.Stack())
-				wrappedErr := fmt.Errorf("%s", r)
+				wrappedErr := fmt.Errorf("%+v", r)
 				resp := &v1alpha1.ErrorResponse{
 					Status: &v1alpha1.Status{
 						Code:    int32(errorCode),
