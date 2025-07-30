@@ -1115,7 +1115,7 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 	ctrNumber = len(deployTemplate.Spec.Containers)
 	rplNumber = int(*(deployTemplate.Replicas))
 
-	var everyCPU, everyMemory k8sresource.Quantity
+	var everyCPU, everyMemory, everyBandwidth k8sresource.Quantity
 	var ptr *k8sresource.Quantity
 	var limitResource = corev1.ResourceList{}
 	var requestResource = corev1.ResourceList{}
@@ -1134,6 +1134,13 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 		everyMemory = k8sresource.MustParse(stringEveryMemory)
 		limitResource[corev1.ResourceMemory] = everyMemory
 	}
+	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[ResourceBandwidth]) {
+		ptrValue := p.Resources.Limits[ResourceBandwidth]
+		ptr = &ptrValue
+		stringEveryBandwidth, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		everyBandwidth = k8sresource.MustParse(stringEveryBandwidth)
+		limitResource[ResourceBandwidth] = everyBandwidth
+	}
 
 	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Requests[corev1.ResourceCPU]) {
 		ptrValue := p.Resources.Requests[corev1.ResourceCPU]
@@ -1148,6 +1155,13 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 		stringEveryMemory, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
 		reqEveryMemory := k8sresource.MustParse(stringEveryMemory)
 		requestResource[corev1.ResourceMemory] = reqEveryMemory
+	}
+	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Requests[ResourceBandwidth]) {
+		ptrValue := p.Resources.Requests[ResourceBandwidth]
+		ptr = &ptrValue
+		stringEveryBandwidth, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
+		reqEveryBandwidth := k8sresource.MustParse(stringEveryBandwidth)
+		requestResource[ResourceBandwidth] = reqEveryBandwidth
 	}
 
 	containers := deployTemplate.Spec.Containers

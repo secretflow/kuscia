@@ -14,9 +14,13 @@
 
 package handler
 
+import corev1 "k8s.io/api/core/v1"
+
 const (
 	// LabelControllerValueKusciaJob is the label value for common.LabelController with KusciaJob
 	LabelControllerValueKusciaJob = "kuscia-job"
 	// KusciaJobKind is KusciaJob CRD Kind
 	KusciaJobKind = "KusciaJob"
+	// ResourceBandwidth represents the network bandwidth resource type for task resource allocation
+	ResourceBandwidth corev1.ResourceName = "kuscia.io/bandwidth"
 )
