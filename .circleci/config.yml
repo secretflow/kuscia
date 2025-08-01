@@ -99,7 +99,7 @@ jobs:
           name: store_coverage_reports
           command: |
             set -ex
-            apt-get update && apt-get install -y pip
+            apt-get update && apt-get install -y python3-pip
             pip install diff-cover
             go install github.com/axw/gocov/gocov@latest
             go install github.com/AlekSi/gocov-xml@latest
