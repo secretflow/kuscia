@@ -358,11 +358,7 @@ func (ar *ArchReader) parseDockerManifest() ([]ImageInfo, []DockerManifest, []Im
 			refName = manifest.RepoTags[0]
 		}
 		var configFile string
-		if strings.HasPrefix(manifest.Config, sha256Prefix) {
-			configFile = manifest.Config
-		} else {
-			configFile = manifest.Config
-		}
+		configFile = manifest.Config
 		b, err := ar.tarReader.ExtractFileToMemory(configFile, true)
 		if err != nil {
 			nlog.Warnf("Failed to extract docker image config '%s' for repo tags %v: %v", configFile, manifest.RepoTags, err)
@@ -562,7 +558,7 @@ func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
 	if len(a.meta.OCIManifests) > 0 {
 		oci := a.meta.OCIManifests[0]
 		for _, l := range oci.Layers {
-			layerData, err := a.meta.tarReader.ExtractFileToMemory(l.Digest, false)
+			layerData, err := a.meta.tarReader.ExtractFileToMemory(fmt.Sprintf("%s/%s", blobPathPrefix, strings.TrimPrefix(l.Digest, sha256Prefix)), false)
 			if err != nil {
 				return nil, err
 			}
@@ -665,10 +661,6 @@ func ImageInFile(tarFile string) ([]ImageSummary, v1.Image, error) {
 			meta.OCIIndex = ociIndex
 			meta.OCIManifests = ociManifests
 			if ociErr == nil && len(ociArchInfos) > 0 {
-				for _, info := range ociArchInfos {
-					osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
-					refMap[info.Ref] = append(refMap[info.Ref], osArch)
-				}
 				for _, info := range ociArchInfos {
 					osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
 					refMap[info.Ref] = append(refMap[info.Ref], osArch)

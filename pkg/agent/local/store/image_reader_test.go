@@ -560,7 +560,6 @@ func createSingleArchOCIImageFileWithOption(tarFile string, osArch string, tag s
 		return err
 	}
 
-	// 生成 docker 兼容 manifest.json
 	if option.GenManifestJson {
 		manifest := []map[string]interface{}{
 			{
