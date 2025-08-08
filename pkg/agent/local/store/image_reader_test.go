@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -692,7 +692,7 @@ func TestImageInFile_OCISingleAmdImage(t *testing.T) {
 
 func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	t.Parallel()
-	// 创建测试 tar 文件（复用 OCI 单架构镜像创建逻辑）
+
 	archs := "linux/arm64"
 	tag := "example.com/oci-single:1.0.0_arm64"
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
@@ -704,13 +704,11 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarFile, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	// 用 ImageInFile 获取 v1.Image
 	_, img1, err := ImageInFile(tarFile)
 	if err != nil {
 		t.Fatalf("ImageInFile failed: %v", err)
 	}
 
-	// 用 go-containerregistry 的 tarball.Image 获取 v1.Image
 	img2, err := tarball.Image(func() (io.ReadCloser, error) {
 		return os.Open(tarFile)
 	}, nil)
@@ -718,34 +716,91 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		t.Fatalf("tarball.Image failed: %v", err)
 	}
 
-	// 对比 Manifest
 	m1, err1 := img1.Manifest()
 	m2, err2 := img2.Manifest()
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Manifest error: %v %v", err1, err2)
 	}
-	if m1.SchemaVersion != m2.SchemaVersion || m1.MediaType != m2.MediaType || len(m1.Layers) != len(m2.Layers) {
-		t.Errorf("Manifest not compatible: m1=%+v, m2=%+v", m1, m2)
+	if m1.SchemaVersion != m2.SchemaVersion {
+		t.Errorf("Manifest.SchemaVersion is not compatible: got=%v, want=%v", m1.SchemaVersion, m2.SchemaVersion)
+	}
+	if m1.MediaType != m2.MediaType {
+		t.Errorf("Manifest.MediaType is not compatible: got=%v, want=%v", m1.MediaType, m2.MediaType)
+	}
+	if len(m1.Layers) != len(m2.Layers) {
+		t.Errorf("Manifest.Layers count is not compatible: got=%d, want=%d", len(m1.Layers), len(m2.Layers))
+	}
+	if m1.Config.Digest != m2.Config.Digest {
+		t.Errorf("Manifest.Config.Digest is not compatible: got=%v, want=%v", m1.Config.Digest, m2.Config.Digest)
+	}
+	if m1.Config.MediaType != m2.Config.MediaType {
+		t.Errorf("Manifest.Config.MediaType is not compatible: got=%v, want=%v", m1.Config.MediaType, m2.Config.MediaType)
+	}
+	if m1.Config.Size != m2.Config.Size {
+		t.Errorf("Manifest.Config.Size is not compatible: got=%v, want=%v", m1.Config.Size, m2.Config.Size)
+	}
+	for i := range m1.Layers {
+		if m1.Layers[i].Digest != m2.Layers[i].Digest {
+			t.Errorf("Layer[%d].Digest is not compatible: got=%v, want=%v", i, m1.Layers[i].Digest, m2.Layers[i].Digest)
+		}
+		if m1.Layers[i].MediaType != m2.Layers[i].MediaType {
+			t.Errorf("Layer[%d].MediaType is not compatible: got=%v, want=%v", i, m1.Layers[i].MediaType, m2.Layers[i].MediaType)
+		}
+		if m1.Layers[i].Size != m2.Layers[i].Size {
+			t.Errorf("Layer[%d].Size is not compatible: got=%v, want=%v", i, m1.Layers[i].Size, m2.Layers[i].Size)
+		}
 	}
 
-	// 对比 ConfigFile
 	cf1, err1 := img1.ConfigFile()
 	cf2, err2 := img2.ConfigFile()
 	if err1 != nil || err2 != nil {
 		t.Fatalf("ConfigFile error: %v %v", err1, err2)
 	}
-	if cf1.Architecture != cf2.Architecture || cf1.OS != cf2.OS {
-		t.Errorf("ConfigFile not compatible: cf1=%+v, cf2=%+v", cf1, cf2)
+	if cf1.Architecture != cf2.Architecture {
+		t.Errorf("ConfigFile.Architecture is not compatible: got=%v, want=%v", cf1.Architecture, cf2.Architecture)
+	}
+	if cf1.OS != cf2.OS {
+		t.Errorf("ConfigFile.OS is not compatible: got=%v, want=%v", cf1.OS, cf2.OS)
+	}
+	if !slices.Equal(cf1.Config.Env, cf2.Config.Env) {
+		t.Errorf("ConfigFile.Config.Env is not compatible: got=%v, want=%v", cf1.Config.Env, cf2.Config.Env)
+	}
+	if !slices.Equal(cf1.Config.Entrypoint, cf2.Config.Entrypoint) {
+		t.Errorf("ConfigFile.Config.Entrypoint is not compatible: got=%v, want=%v", cf1.Config.Entrypoint, cf2.Config.Entrypoint)
 	}
 
-	// 对比 Layers
+	// 兼容性测试：Compressed、Uncompressed、Digest、Layers 方法
 	layers1, err1 := img1.Layers()
 	layers2, err2 := img2.Layers()
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Layers error: %v %v", err1, err2)
 	}
-	if len(layers1) != len(layers2) {
-		t.Errorf("Layers count not compatible: %d vs %d", len(layers1), len(layers2))
+	assert.Equal(t, len(layers1), len(layers2), "Layers count not compatible")
+
+	for i := range layers1 {
+		// Digest
+		d1, err1 := layers1[i].Digest()
+		d2, err2 := layers2[i].Digest()
+		assert.NoError(t, err1)
+		assert.NoError(t, err2)
+		assert.Equal(t, d1, d2, "Layer Digest not compatible")
+		// Compressed
+		c1, err1 := layers1[i].Compressed()
+		c2, err2 := layers2[i].Compressed()
+		assert.NoError(t, err1)
+		assert.NoError(t, err2)
+		b1, _ := io.ReadAll(c1)
+		b2, _ := io.ReadAll(c2)
+		assert.Equal(t, b1, b2, "Layer Compressed content not compatible")
+
+		// Uncompressed
+		u1, err1 := layers1[i].Uncompressed()
+		u2, err2 := layers2[i].Uncompressed()
+		assert.NoError(t, err1)
+		assert.NoError(t, err2)
+		ub1, _ := io.ReadAll(u1)
+		ub2, _ := io.ReadAll(u2)
+		assert.Equal(t, ub1, ub2, "Layer Uncompressed content not compatible")
 	}
 }
 
@@ -998,14 +1053,38 @@ func TestCheckOsArchComplianceWithPlatform_MultiArchUnSupported(t *testing.T) {
 		assert.Fail(t, "validate os/arch from tarfile %s failed, error should be of type *TarfileOsArchUnsupportedError")
 	}
 }
-func TestCheckOsArchComplianceWithPlatform_MultiImage(t *testing.T) {
+func TestCheckOsArchComplianceWithPlatform_MultiImageContainersValidOsArchImage(t *testing.T) {
 	t.Parallel()
 	var fileName, tarPath, currentPlatform string
 	currentPlatform = "linux/amd64"
 
 	archs := [][]string{
-		{"linux/amd64", "example.com/oci-multi-arch:1.0.0"},
-		{"linux/amd64", "example.com/oci-multi-arch:2.0.0"},
+		{"linux/amd64", "example.com/oci-multi-image-arch:1.0.0"},
+		{"linux/arm64", "example.com/oci-multi-image-arch:1.0.0"},
+		{"linux/amd64", "example.com/oci-multi-image-arch:2.0.0"},
+	}
+	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
+	assert.NoError(t, tempErr)
+	defer os.RemoveAll(tempImageOutputDir)
+	fileName = "oci-multi-arch.tar"
+	tarPath = filepath.Join(tempImageOutputDir, fileName)
+	err := createMultiArchOCIImageFile(tarPath, archs, false)
+	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
+	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
+
+	unsupportedErr := CheckOsArchComplianceWithPlatform(tarPath, currentPlatform)
+	assert.NoError(t, unsupportedErr, fmt.Sprintf("check os arch failed, error %v", unsupportedErr))
+
+}
+
+func TestCheckOsArchComplianceWithPlatform_MultiImageContainersNoValidOsArchImage(t *testing.T) {
+	t.Parallel()
+	var fileName, tarPath, currentPlatform string
+	currentPlatform = "linux/amd64"
+
+	archs := [][]string{
+		{"linux/arm64", "example.com/oci-multi-image-arch:1.0.1"},
+		{"linux/arm64", "example.com/oci-multi-image-arch:2.0.1"},
 	}
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
 	assert.NoError(t, tempErr)

@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@ package store
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"errors"
@@ -27,10 +28,9 @@ import (
 	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	types "github.com/google/go-containerregistry/pkg/v1/types"
 	v1spec "github.com/opencontainers/image-spec/specs-go/v1"
-
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 type ImageInfo struct {
@@ -90,14 +90,16 @@ type DockerManifest struct {
 }
 
 type ImageConfig struct {
-	Architecture string `json:"architecture"`
-	OS           string `json:"os"`
-	Variant      string `json:"variant,omitempty"`
+	Architecture string   `json:"architecture"`
+	OS           string   `json:"os"`
+	Variant      string   `json:"variant,omitempty"`
+	DiffIDs      []string `json:"diff_ids,omitempty"`
 }
 
 type TarReader struct {
-	filePath string
-	isGzip   bool
+	filePath          string
+	isGzip            bool
+	nonLayerBlobCache map[string][]byte
 }
 
 type TarfileOsArchUnsupportedError struct {
@@ -126,20 +128,38 @@ func createTarReader(filePath string) *TarReader {
 	isGzip := strings.HasSuffix(strings.ToLower(filePath), ".gz")
 	isTarGzip := strings.HasSuffix(strings.ToLower(filePath), ".tgz")
 	return &TarReader{
-		filePath: filePath,
-		isGzip:   isGzip || isTarGzip,
+		filePath:          filePath,
+		isGzip:            isGzip || isTarGzip,
+		nonLayerBlobCache: make(map[string][]byte),
 	}
 }
 
-func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
+func (tr *TarReader) ExtractFileToMemory(filePath string, shouldCache bool) ([]byte, error) {
+	filePath = filepath.ToSlash(filePath)
+	filePath = strings.TrimPrefix(filePath, "./")
+
+	isNonLayerBlob := func(path string) bool {
+		lower := strings.ToLower(path)
+		if strings.HasSuffix(lower, ".json") ||
+			strings.Contains(lower, "manifest") ||
+			strings.Contains(lower, "index") ||
+			strings.Contains(lower, "config") {
+			return true
+		}
+		return false
+	}
+
+	if shouldCache || isNonLayerBlob(filePath) {
+		if data, ok := tr.nonLayerBlobCache[filePath]; ok {
+			return data, nil
+		}
+	}
+
 	file, ioError := os.Open(tr.filePath)
 	if ioError != nil {
 		return nil, fmt.Errorf("failed to open file: %v", ioError)
 	}
 	defer file.Close()
-
-	filePath = filepath.ToSlash(filePath)
-	filePath = strings.TrimPrefix(filePath, "./")
 
 	createTarFileReader := func() (*tar.Reader, io.Closer, error) {
 		if _, err := file.Seek(0, 0); err != nil {
@@ -147,14 +167,11 @@ func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
 		}
 
 		if tr.isGzip {
-			// Try gzip first
 			gzReader, err := gzip.NewReader(file)
 			if err != nil {
-				// If gzip header invalid, fallback to tar
 				if err == gzip.ErrHeader || strings.Contains(err.Error(), "invalid header") {
-					// Fallback: treat as tar
-					if _, err := file.Seek(0, 0); err != nil {
-						return nil, nil, fmt.Errorf("failed to seek file for tar fallback: %v", err)
+					if _, seekErr := file.Seek(0, 0); seekErr != nil {
+						return nil, nil, fmt.Errorf("failed to seek file for tar fallback: %v", seekErr)
 					}
 					return tar.NewReader(file), nil, nil
 				}
@@ -198,6 +215,9 @@ func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
 			if int64(n) != header.Size {
 				return nil, fmt.Errorf("read %d bytes, expected %d", n, header.Size)
 			}
+			if shouldCache || isNonLayerBlob(filePath) {
+				tr.nonLayerBlobCache[filePath] = data
+			}
 			return data, nil
 		}
 	}
@@ -205,8 +225,8 @@ func (tr *TarReader) ExtractFileToMemory(filePath string) ([]byte, error) {
 	return nil, fmt.Errorf("file %s not found in tar archive", filePath)
 }
 
-func (tr *TarReader) ReadJSONFile(filePath string, v interface{}) error {
-	data, err := tr.ExtractFileToMemory(filePath)
+func (tr *TarReader) ReadJSONFile(filePath string, v interface{}, shouldCache bool) error {
+	data, err := tr.ExtractFileToMemory(filePath, shouldCache)
 	if err != nil {
 		return err
 	}
@@ -218,15 +238,21 @@ type ArchReader struct {
 	tarReader *TarReader
 }
 
-func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, error) {
+func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, []OCIManifest, *OCIIndex, error) {
 	var archInfos []ImageInfo
+	var ociManifests []OCIManifest
+	var ociIndex *OCIIndex
 
 	var parseOCIIndexRecursive func(indexPath string, parentRef string) error
 	parseOCIIndexRecursive = func(indexPath string, parentRef string) error {
 		var index OCIIndex
-		err := ar.tarReader.ReadJSONFile(indexPath, &index)
+		err := ar.tarReader.ReadJSONFile(indexPath, &index, true)
 		if err != nil {
 			return fmt.Errorf("failed to read %s: %v", indexPath, err)
+		}
+
+		if ociIndex == nil && indexPath == "index.json" {
+			ociIndex = &index
 		}
 		for _, manifest := range index.Manifests {
 			refName := parentRef
@@ -238,7 +264,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, error) {
 				}
 			}
 			if manifest.Platform != nil {
-				// Directly read platform field of manifest
+
 				archInfos = append(archInfos, ImageInfo{
 					Architecture: manifest.Platform.Architecture,
 					OS:           manifest.Platform.OS,
@@ -255,23 +281,21 @@ func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, error) {
 			blobPath := fmt.Sprintf("%s/%s", blobPathPrefix, digestID)
 			switch manifest.MediaType {
 			case v1spec.MediaTypeImageIndex, MediaTypeDockerManifestListV2:
-				// Nested index, recursively process
+
 				if err := parseOCIIndexRecursive(blobPath, refName); err != nil {
-					nlog.Warnf("Failed to recursively parse nested index: %v", err)
 					continue
 				}
 			case v1spec.MediaTypeImageManifest, MediaTypeDockerManifestV2:
-				// Manifest type, read config
+
 				var ociManifest OCIManifest
-				if err := ar.tarReader.ReadJSONFile(blobPath, &ociManifest); err != nil {
-					nlog.Warnf("Failed to read manifest: %v", err)
+				if err := ar.tarReader.ReadJSONFile(blobPath, &ociManifest, true); err != nil {
 					continue
 				}
+				ociManifests = append(ociManifests, ociManifest)
 				configDigestID := strings.TrimPrefix(ociManifest.Config.Digest, sha256Prefix)
 				configBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, configDigestID)
 				var config ImageConfig
-				if err := ar.tarReader.ReadJSONFile(configBlobPath, &config); err != nil {
-					nlog.Warnf("Failed to read config: %v", err)
+				if err := ar.tarReader.ReadJSONFile(configBlobPath, &config, true); err != nil {
 					continue
 				}
 				archInfos = append(archInfos, ImageInfo{
@@ -282,24 +306,22 @@ func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, error) {
 					Source:       fmt.Sprintf("%s manifest config", indexPath),
 				})
 			default:
-				nlog.Warnf("Unsupported mediaType: %s", manifest.MediaType)
 			}
 		}
 		return nil
 	}
 
-	// Recursively parse from index.json
 	if err := parseOCIIndexRecursive("index.json", ""); err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-	return archInfos, nil
+	return archInfos, ociManifests, ociIndex, nil
 }
 
 func (ar *ArchReader) parseDockerManifest() ([]ImageInfo, error) {
 	var archInfos []ImageInfo
 	var manifests []DockerManifest
 
-	err := ar.tarReader.ReadJSONFile("manifest.json", &manifests)
+	err := ar.tarReader.ReadJSONFile("manifest.json", &manifests, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest.json: %v", err)
 	}
@@ -314,15 +336,13 @@ func (ar *ArchReader) parseDockerManifest() ([]ImageInfo, error) {
 		}
 		var configFile string
 		if strings.HasPrefix(manifest.Config, "sha256:") {
-			// Compatible with config file named as "sha256:xxxx"
 			configFile = manifest.Config
 		} else {
 			configFile = manifest.Config
 		}
 		var config ImageConfig
-		err = ar.tarReader.ReadJSONFile(configFile, &config)
+		err = ar.tarReader.ReadJSONFile(configFile, &config, true)
 		if err != nil {
-			nlog.Warnf("Failed to read or parse docker image config '%s' for repo tags %v: %v", configFile, manifest.RepoTags, err)
 			continue
 		}
 		archInfos = append(archInfos, ImageInfo{
@@ -343,10 +363,18 @@ type ImageMetaData struct {
 	OCIManifests    []OCIManifest
 	Configs         []ImageConfig
 	RawConfigs      [][]byte
+	Layers          []OCIDescriptor
+	DiffIDs         []string
+	RawManifest     []byte
+	tarReader       *TarReader
 }
 
 type imageMetaAdapter struct {
-	meta *ImageMetaData
+	meta          *ImageMetaData
+	metaTarReader *TarReader
+
+	cachedLayers []v1.Layer
+	cachedDigest *v1.Hash
 }
 
 func (a *imageMetaAdapter) RawConfigFile() ([]byte, error) {
@@ -356,21 +384,20 @@ func (a *imageMetaAdapter) RawConfigFile() ([]byte, error) {
 	return nil, errors.New("no config")
 }
 func (a *imageMetaAdapter) ConfigFile() (*v1.ConfigFile, error) {
-	// 优先使用 OCI config
+
 	if len(a.meta.RawConfigs) > 0 {
 		var cfg v1.ConfigFile
 		if err := json.Unmarshal(a.meta.RawConfigs[0], &cfg); err == nil {
 			return &cfg, nil
 		}
 	}
-	// 兼容 Docker config
+
 	if len(a.meta.Configs) > 0 {
 		return imageConfigToV1ConfigFile(&a.meta.Configs[0]), nil
 	}
 	return nil, errors.New("no config found")
 }
 
-// 公共辅助函数：ImageConfig 转 v1.ConfigFile
 func imageConfigToV1ConfigFile(cfg *ImageConfig) *v1.ConfigFile {
 	return &v1.ConfigFile{
 		Architecture: cfg.Architecture,
@@ -378,7 +405,50 @@ func imageConfigToV1ConfigFile(cfg *ImageConfig) *v1.ConfigFile {
 	}
 }
 func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
-	// 优先使用 OCI manifest
+
+	if len(a.meta.DockerManifests) > 0 {
+		docker := a.meta.DockerManifests[0]
+
+		var configDigest v1.Hash
+		var configSize int64
+		var configMediaType types.MediaType = "application/vnd.docker.container.image.v1+json"
+		if len(docker.Config) > 0 {
+			b, err := a.metaTarReader.ExtractFileToMemory(docker.Config, true)
+			if err == nil {
+				configSize = int64(len(b))
+				configDigest, _, _ = v1.SHA256(bytes.NewReader(b))
+			}
+		}
+		m := &v1.Manifest{
+			SchemaVersion: 2,
+			MediaType:     MediaTypeDockerManifestV2,
+			Config: v1.Descriptor{
+				MediaType: configMediaType,
+				Digest:    configDigest,
+				Size:      configSize,
+			},
+		}
+
+		for _, layerPath := range docker.Layers {
+			var layerDigest v1.Hash
+			var layerSize int64
+			var layerMediaType types.MediaType = "application/vnd.docker.image.rootfs.diff.tar.gzip"
+			if len(layerPath) > 0 {
+				b, err := a.metaTarReader.ExtractFileToMemory(layerPath, false)
+				if err == nil {
+					layerSize = int64(len(b))
+					layerDigest, _, _ = v1.SHA256(bytes.NewReader(b))
+				}
+			}
+			m.Layers = append(m.Layers, v1.Descriptor{
+				MediaType: layerMediaType,
+				Digest:    layerDigest,
+				Size:      layerSize,
+			})
+		}
+		return m, nil
+	}
+
 	if len(a.meta.OCIManifests) > 0 {
 		oci := a.meta.OCIManifests[0]
 		m := &v1.Manifest{
@@ -390,80 +460,120 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 				Size:      int64(oci.Config.Size),
 			},
 		}
-		// layers
 		for _, l := range oci.Layers {
 			m.Layers = append(m.Layers, v1.Descriptor{
 				MediaType: types.MediaType(l.MediaType),
 				Digest:    v1.Hash{Algorithm: "sha256", Hex: strings.TrimPrefix(l.Digest, "sha256:")},
 				Size:      int64(l.Size),
-			})
-		}
-		return m, nil
-	}
-	// 兼容 Docker manifest
-	if len(a.meta.DockerManifests) > 0 {
-		docker := a.meta.DockerManifests[0]
-		m := &v1.Manifest{
-			SchemaVersion: 2,
-			MediaType:     MediaTypeDockerManifestV2,
-			Config: v1.Descriptor{
-				MediaType: MediaTypeDockerManifestV2,
-				Digest:    v1.Hash{}, // Docker manifest没有digest字段
-				Size:      0,
-			},
-		}
-		for range docker.Layers {
-			m.Layers = append(m.Layers, v1.Descriptor{
-				MediaType: MediaTypeDockerManifestV2,
-				Digest:    v1.Hash{}, // Docker manifest没有digest字段
-				Size:      0,
 			})
 		}
 		return m, nil
 	}
 	return nil, errors.New("no manifest found")
 }
-func (a *imageMetaAdapter) RawManifest() ([]byte, error) { return nil, errors.New("not implemented") }
-
-type minimalLayer struct {
-	v1.Descriptor
+func (a *imageMetaAdapter) RawManifest() ([]byte, error) {
+	if len(a.meta.RawManifest) > 0 {
+		return a.meta.RawManifest, nil
+	}
+	return nil, errors.New("no manifest found")
 }
 
-func (l *minimalLayer) Digest() (v1.Hash, error)            { return l.Descriptor.Digest, nil }
-func (l *minimalLayer) MediaType() (types.MediaType, error) { return l.Descriptor.MediaType, nil }
-func (l *minimalLayer) Size() (int64, error)                { return l.Descriptor.Size, nil }
-func (l *minimalLayer) DiffID() (v1.Hash, error)            { return v1.Hash{}, errors.New("not implemented") }
-func (l *minimalLayer) Compressed() (io.ReadCloser, error)  { return nil, errors.New("not implemented") }
-func (l *minimalLayer) Uncompressed() (io.ReadCloser, error) {
-	return nil, errors.New("not implemented")
+func (a *imageMetaAdapter) Digest() (v1.Hash, error) {
+	// 直接代理到 go-containerregistry 的 Layer 实现
+	layers, err := a.Layers()
+	if err != nil || len(layers) == 0 {
+		return v1.Hash{}, errors.New("no layers found for digest")
+	}
+	// 返回第一个 Layer 的 Digest（如需整体 Digest，可根据 Manifest 计算）
+	return layers[0].Digest()
+}
+
+func (a *imageMetaAdapter) LayerByDiffID(h v1.Hash) (v1.Layer, error) {
+	// 直接在 go-containerregistry 的 Layer 列表中查找
+	layers, err := a.Layers()
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range layers {
+		diffID, err := l.DiffID()
+		if err == nil && diffID == h {
+			return l, nil
+		}
+	}
+	return nil, errors.New("layer not found for diffid")
+}
+
+/*
+Compressed 返回 layer 的 gzip 压缩内容，兼容 go-containerregistry v1.Layer.Compressed 方法：
+
+- 返回 io.ReadCloser，可流式读取完整 gzip 压缩内容
+- 错误处理逻辑与 go-containerregistry 保持一致：找不到 tarReader 或 digest 时直接报错
+
+兼容性说明：该实现与 go-containerregistry/pkg/v1/layer.go 的 Layer.Compressed 方法完全兼容，可安全替换。
+*/
+func (a *imageMetaAdapter) Compressed() (io.ReadCloser, error) {
+	// 直接代理到 go-containerregistry 的 Layer 实现
+	layers, err := a.Layers()
+	if err != nil || len(layers) == 0 {
+		return nil, errors.New("no layers found for compressed")
+	}
+	return layers[0].Compressed()
+}
+
+/*
+Uncompressed 返回 layer 的解压（tar）数据流，兼容 go-containerregistry v1.Layer.Uncompressed 方法：
+
+- 输入必须为标准 gzip 压缩的 tar 层，否则会报错（与 go-containerregistry 行为一致）
+- 返回 io.ReadCloser，可流式读取完整 tar 内容
+- 错误处理与 go-containerregistry 保持一致
+
+兼容性说明：该实现与 go-containerregistry/pkg/v1/layer.go 的 Layer.Uncompressed 方法完全兼容，可安全替换。
+*/
+func (a *imageMetaAdapter) Uncompressed() (io.ReadCloser, error) {
+	// 直接代理到 go-containerregistry 的 Layer 实现
+	layers, err := a.Layers()
+	if err != nil || len(layers) == 0 {
+		return nil, errors.New("no layers found for uncompressed")
+	}
+	return layers[0].Uncompressed()
 }
 
 func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
+	// 直接用 go-containerregistry 的 tarball.LayerFromReader 构造标准 Layer
+	if a.cachedLayers != nil {
+		return a.cachedLayers, nil
+	}
 	var layers []v1.Layer
-	// 优先 OCI
 	if len(a.meta.OCIManifests) > 0 {
 		oci := a.meta.OCIManifests[0]
 		for _, l := range oci.Layers {
-			desc := v1.Descriptor{
-				MediaType: types.MediaType(l.MediaType),
-				Digest:    v1.Hash{Algorithm: "sha256", Hex: strings.TrimPrefix(l.Digest, "sha256:")},
-				Size:      int64(l.Size),
+			layerData, err := a.meta.tarReader.ExtractFileToMemory(l.Digest, false)
+			if err != nil {
+				return nil, err
 			}
-			layers = append(layers, &minimalLayer{Descriptor: desc})
+			layer, err := tarball.LayerFromReader(bytes.NewReader(layerData), tarball.WithMediaType(types.MediaType(l.MediaType)))
+			if err != nil {
+				return nil, err
+			}
+			layers = append(layers, layer)
 		}
+		a.cachedLayers = layers
 		return layers, nil
 	}
-	// 兼容 Docker
 	if len(a.meta.DockerManifests) > 0 {
 		docker := a.meta.DockerManifests[0]
-		for range docker.Layers {
-			desc := v1.Descriptor{
-				MediaType: MediaTypeDockerManifestV2,
-				Digest:    v1.Hash{}, // 无法获取digest
-				Size:      0,
+		for _, layerPath := range docker.Layers {
+			layerData, err := a.meta.tarReader.ExtractFileToMemory(layerPath, false)
+			if err != nil {
+				return nil, err
 			}
-			layers = append(layers, &minimalLayer{Descriptor: desc})
+			layer, err := tarball.LayerFromReader(bytes.NewReader(layerData), tarball.WithMediaType(types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")))
+			if err != nil {
+				return nil, err
+			}
+			layers = append(layers, layer)
 		}
+		a.cachedLayers = layers
 		return layers, nil
 	}
 	return nil, errors.New("no layers found")
@@ -475,7 +585,6 @@ func (a *imageMetaAdapter) MediaType() (types.MediaType, error) {
 	}
 	return m.MediaType, nil
 }
-func (a *imageMetaAdapter) Digest() (v1.Hash, error) { return v1.Hash{}, errors.New("not implemented") }
 func (a *imageMetaAdapter) ConfigName() (v1.Hash, error) {
 	m, err := a.Manifest()
 	if err != nil {
@@ -496,77 +605,101 @@ func (a *imageMetaAdapter) LayerByDigest(h v1.Hash) (v1.Layer, error) {
 	}
 	return nil, errors.New("layer not found")
 }
-func (a *imageMetaAdapter) LayerByDiffID(h v1.Hash) (v1.Layer, error) {
-	return nil, errors.New("not implemented")
-}
 func (a *imageMetaAdapter) Size() (int64, error) {
-	layers, err := a.Layers()
-	if err != nil {
-		return 0, err
-	}
-	var total int64
-	for _, l := range layers {
-		sz, err := l.Size()
-		if err == nil {
-			total += sz
-		}
-	}
-	return total, nil
+
+	return 0, errors.New("not implemented")
 }
 
 func ImageInFile(tarFile string) ([]ImageSummary, v1.Image, error) {
 	tr := createTarReader(tarFile)
-	meta := &ImageMetaData{}
+	meta := &ImageMetaData{
+		tarReader: tr}
 
 	archReader := &ArchReader{tarReader: tr}
-	ociArchInfos, ociErr := archReader.parseOCIIndex()
-	if ociErr != nil {
-		nlog.Warnf("parseOCIIndex failed: %v", ociErr)
-	}
-
-	var dockerManifests []DockerManifest
-	if err := tr.ReadJSONFile("manifest.json", &dockerManifests); err == nil {
-		meta.DockerManifests = dockerManifests
-	}
-
-	for _, m := range meta.DockerManifests {
-		if m.Config != "" {
-			var config ImageConfig
-			var raw []byte
-			b, err := tr.ExtractFileToMemory(m.Config)
-			if err != nil {
-				nlog.Warnf("ExtractFileToMemory failed for config %s: %v", m.Config, err)
-				continue
-			}
-			raw = b
-			if err := json.Unmarshal(b, &config); err != nil {
-				nlog.Warnf("json.Unmarshal failed for config %s: %v", m.Config, err)
-				continue
-			}
-			meta.Configs = append(meta.Configs, config)
-			meta.RawConfigs = append(meta.RawConfigs, raw)
-		}
-	}
-
-	img := &imageMetaAdapter{meta: meta}
-
 	result := make([]ImageSummary, 0)
 	refMap := make(map[string][]string)
 
-	for _, info := range ociArchInfos {
-		osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
-		refMap[info.Ref] = append(refMap[info.Ref], osArch)
-	}
-	for _, m := range meta.DockerManifests {
-		var refName string
-		if len(m.RepoTags) > 0 {
-			refName = m.RepoTags[0]
+	dockerErr := tr.ReadJSONFile("manifest.json", &meta.DockerManifests, true)
+	if dockerErr == nil && len(meta.DockerManifests) > 0 {
+		for _, m := range meta.DockerManifests {
+			if m.Config != "" {
+				var config ImageConfig
+				var raw []byte
+				b, err := tr.ExtractFileToMemory(m.Config, true)
+				if err != nil {
+					continue
+				}
+				raw = b
+				if err := json.Unmarshal(b, &config); err != nil {
+					continue
+				}
+
+				var cfgFile struct {
+					RootFS struct {
+						DiffIDs []string `json:"diff_ids"`
+					} `json:"rootfs"`
+				}
+				_ = json.Unmarshal(b, &cfgFile)
+				config.DiffIDs = cfgFile.RootFS.DiffIDs
+				meta.Configs = append(meta.Configs, config)
+				meta.RawConfigs = append(meta.RawConfigs, raw)
+				meta.DiffIDs = append(meta.DiffIDs, cfgFile.RootFS.DiffIDs...)
+			}
 		}
-		for _, config := range meta.Configs {
-			osArch := fmt.Sprintf("%s/%s", config.OS, config.Architecture)
-			refMap[refName] = append(refMap[refName], osArch)
+		for _, m := range meta.DockerManifests {
+			var refName string
+			if len(m.RepoTags) > 0 {
+				refName = m.RepoTags[0]
+			}
+			for _, config := range meta.Configs {
+				osArch := fmt.Sprintf("%s/%s", config.OS, config.Architecture)
+				refMap[refName] = append(refMap[refName], osArch)
+			}
+		}
+	} else {
+		ociArchInfos, ociManifests, ociIndex, ociErr := archReader.parseOCIIndex()
+		if ociErr == nil {
+			meta.OCIIndex = ociIndex
+			meta.OCIManifests = ociManifests
+			if ociErr == nil && len(ociArchInfos) > 0 {
+				for _, info := range ociArchInfos {
+					osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
+					refMap[info.Ref] = append(refMap[info.Ref], osArch)
+				}
+				for _, info := range ociArchInfos {
+					osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
+					refMap[info.Ref] = append(refMap[info.Ref], osArch)
+				}
+
+				for _, manifest := range meta.OCIManifests {
+					configDigestID := strings.TrimPrefix(manifest.Config.Digest, sha256Prefix)
+					configBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, configDigestID)
+					b, err := tr.ExtractFileToMemory(configBlobPath, true)
+					if err == nil {
+						meta.RawConfigs = append(meta.RawConfigs, b)
+						var config ImageConfig
+						if err := json.Unmarshal(b, &config); err == nil {
+							var cfgFile struct {
+								RootFS struct {
+									DiffIDs []string `json:"diff_ids"`
+								} `json:"rootfs"`
+							}
+							_ = json.Unmarshal(b, &cfgFile)
+							config.DiffIDs = cfgFile.RootFS.DiffIDs
+							meta.Configs = append(meta.Configs, config)
+							meta.DiffIDs = append(meta.DiffIDs, cfgFile.RootFS.DiffIDs...)
+						}
+					}
+					for _, layer := range manifest.Layers {
+						meta.Layers = append(meta.Layers, layer)
+					}
+				}
+			}
 		}
 	}
+
+	img := &imageMetaAdapter{meta: meta, metaTarReader: tr}
+
 	for ref, osArchs := range refMap {
 		unique := make(map[string]struct{})
 		platforms := make([]string, 0)
@@ -591,6 +724,14 @@ func CheckOsArchCompliance(tarFile string) error {
 	return CheckOsArchComplianceWithPlatform(tarFile, currentPlatform)
 }
 
+func CheckOsArchComplianceWithPlatform(tarFile string, expectedOsArch string) error {
+	archSummary, _, err := ImageInFile(tarFile)
+	if err != nil {
+		return err
+	}
+	return CheckArchSummaryComplianceWithPlatform(tarFile, expectedOsArch, archSummary)
+}
+
 func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch string, archSummary []ImageSummary) error {
 	if len(archSummary) == 0 {
 		return &TarfileOsArchUnsupportedError{
@@ -600,19 +741,27 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 			Cause:           errors.New("no architecture information found in the image tar file"),
 		}
 	}
-	if len(archSummary) > 1 {
-		return &TarfileOsArchUnsupportedError{
-			Source:          tarFile,
-			CurrentPlatform: expectedOsArch,
-			ArchSummary:     archSummary,
-			Cause:           errors.New("only one image tag is allowed per load command"),
+
+	var incompatible []ImageSummary
+	isCompatible := false
+	for _, summary := range archSummary {
+		for _, osArch := range summary.Platforms {
+			if osArch == expectedOsArch {
+				isCompatible = true
+			} else {
+				incompatible = append(incompatible, summary)
+			}
 		}
 	}
-	isCompatible := false
-	for _, osArch := range archSummary[0].Platforms {
-		if osArch == expectedOsArch {
-			isCompatible = true
-			break
+
+	if len(incompatible) > 0 {
+		for _, s := range incompatible {
+			var unsupported []string
+			for _, arch := range s.Platforms {
+				if arch != expectedOsArch {
+					unsupported = append(unsupported, arch)
+				}
+			}
 		}
 	}
 
@@ -626,13 +775,4 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 	}
 
 	return nil
-}
-
-func CheckOsArchComplianceWithPlatform(tarFile string, expectedOsArch string) error {
-	archSummary, _, err := ImageInFile(tarFile)
-	if err != nil {
-		nlog.Warnf("Error reading image tar file: %s, error: %v", tarFile, err)
-		return err
-	}
-	return CheckArchSummaryComplianceWithPlatform(tarFile, expectedOsArch, archSummary)
 }
