@@ -147,9 +147,6 @@ func (o *OciImage) RemoveImage() error {
 }
 
 func (o *OciImage) LoadImage(tarFile string) error {
-	if err := validateImageWithCurrentOsArch(tarFile); err != nil {
-		return fmt.Errorf("failed to load oci image from tarball: %w", err)
-	}
 	return o.Store.LoadImage(tarFile)
 }
 
@@ -316,7 +313,7 @@ func (c *ContainerImage) RemoveImage() error {
 }
 
 func (c *ContainerImage) LoadImage(tarFile string) error {
-	if err := validateImageWithCurrentOsArch(tarFile); err != nil {
+	if err := store.CheckOsArchCompliance(tarFile); err != nil {
 		return fmt.Errorf("failed to load container image from tarball: %w", err)
 	}
 	return runContainerdCmd(c.cmd.Context(), "ctr", "--address", common.ContainerdSocket(), "--namespace", common.KusciaDefaultNamespaceOfContainerd, "images", "import", "--no-unpack", tarFile)

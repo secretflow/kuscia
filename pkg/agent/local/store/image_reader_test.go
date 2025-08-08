@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package store
 
 import (
 	"archive/tar"
@@ -25,11 +25,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -317,6 +319,10 @@ func createDockerLegacyTarball(outputPath string, images []LegacyImageInput) err
 }
 
 func createMultiArchOCIImageFile(tarFile string, archTags [][]string, emitPlatformForIndexManifest bool) error {
+	return createMultiArchOCIImageFileWithOption(tarFile, archTags, emitPlatformForIndexManifest, ImageFileGenerateOption{})
+}
+
+func createMultiArchOCIImageFileWithOption(tarFile string, archTags [][]string, emitPlatformForIndexManifest bool, option ImageFileGenerateOption) error {
 	tempRoot, err := os.MkdirTemp("", "oci-tmp-")
 	if err != nil {
 		return fmt.Errorf("failed to create temp dir: %w", err)
@@ -424,6 +430,27 @@ func createMultiArchOCIImageFile(tarFile string, archTags [][]string, emitPlatfo
 		return err
 	}
 
+	// 生成 docker 兼容 manifest.json
+	if option.GenManifestJson {
+		var manifest []map[string]interface{}
+		for tag, imgs := range tagToImages {
+			for _, img := range imgs {
+				manifest = append(manifest, map[string]interface{}{
+					"Config":   "blobs/sha256/" + img.cfgHex,
+					"RepoTags": []string{tag},
+					"Layers":   []string{"blobs/sha256/" + img.layerHex},
+				})
+			}
+		}
+		manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(tempRoot, "manifest.json"), manifestBytes, 0644); err != nil {
+			return err
+		}
+	}
+
 	if err := os.MkdirAll(filepath.Dir(tarFile), 0755); err != nil {
 		return err
 	}
@@ -464,7 +491,17 @@ func createMultiArchOCIImageFile(tarFile string, archTags [][]string, emitPlatfo
 	})
 }
 
+type ImageFileGenerateOption struct {
+	GenManifestJson bool   `json:"genManifestJson,omitempty"`
+	OS              string `json:"os,omitempty"`
+	Architecture    string `json:"architecture,omitempty"`
+}
+
 func createSingleArchOCIImageFile(tarFile string, osArch string, tag string) error {
+	return createSingleArchOCIImageFileWithOption(tarFile, osArch, tag, ImageFileGenerateOption{})
+}
+
+func createSingleArchOCIImageFileWithOption(tarFile string, osArch string, tag string, option ImageFileGenerateOption) error {
 	tempRoot, err := os.MkdirTemp("", "oci-tmp-single-")
 	if err != nil {
 		return fmt.Errorf("failed to create temp dir: %w", err)
@@ -475,7 +512,14 @@ func createSingleArchOCIImageFile(tarFile string, osArch string, tag string) err
 		return err
 	}
 
-	img, err := buildArchImage(osArch)
+	// 解析os/arch
+	finalOsArch := osArch
+	if option.OS != "" && option.Architecture != "" {
+		finalOsArch = option.OS + "/" + option.Architecture
+	} else if finalOsArch == "" {
+		finalOsArch = runtime.GOOS + "/" + runtime.GOARCH
+	}
+	img, err := buildArchImage(finalOsArch)
 	if err != nil {
 		return fmt.Errorf("buildArchImage failed: %w", err)
 	}
@@ -516,6 +560,24 @@ func createSingleArchOCIImageFile(tarFile string, osArch string, tag string) err
 		return err
 	}
 
+	// 生成 docker 兼容 manifest.json
+	if option.GenManifestJson {
+		manifest := []map[string]interface{}{
+			{
+				"Config":   "blobs/sha256/" + img.cfgHex,
+				"RepoTags": []string{tag},
+				"Layers":   []string{"blobs/sha256/" + img.layerHex},
+			},
+		}
+		manifestBytes, err := json.MarshalIndent(manifest, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(tempRoot, "manifest.json"), manifestBytes, 0644); err != nil {
+			return err
+		}
+	}
+
 	if err := os.MkdirAll(filepath.Dir(tarFile), 0755); err != nil {
 		return err
 	}
@@ -556,7 +618,7 @@ func createSingleArchOCIImageFile(tarFile string, osArch string, tag string) err
 	})
 }
 
-func TestReadOsArchFromImageTarFile_DockerLegacySingleArmImage(t *testing.T) {
+func TestImageInFile_DockerLegacySingleArmImage(t *testing.T) {
 	t.Parallel()
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
 	assert.NoError(t, tempErr)
@@ -573,7 +635,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacySingleArmImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -581,7 +643,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacySingleArmImage(t *testing.T) {
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/arm64"))
 }
 
-func TestReadOsArchFromImageTarFile_DockerLegacySingleAmdImage(t *testing.T) {
+func TestImageInFile_DockerLegacySingleAmdImage(t *testing.T) {
 	t.Parallel()
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
 	assert.NoError(t, tempErr)
@@ -598,7 +660,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacySingleAmdImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -606,7 +668,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacySingleAmdImage(t *testing.T) {
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/amd64"))
 }
 
-func TestReadOsArchFromImageTarFile_OCISingleAmdImage(t *testing.T) {
+func TestImageInFile_OCISingleAmdImage(t *testing.T) {
 	t.Parallel()
 	archs := "linux/amd64"
 	tag := "example.com/oci-single:1.0.0_amd64"
@@ -620,7 +682,7 @@ func TestReadOsArchFromImageTarFile_OCISingleAmdImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -628,7 +690,66 @@ func TestReadOsArchFromImageTarFile_OCISingleAmdImage(t *testing.T) {
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/amd64"))
 }
 
-func TestReadOsArchFromImageTarFile_OCISingleArmImage(t *testing.T) {
+func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
+	t.Parallel()
+	// 创建测试 tar 文件（复用 OCI 单架构镜像创建逻辑）
+	archs := "linux/arm64"
+	tag := "example.com/oci-single:1.0.0_arm64"
+	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
+	assert.NoError(t, tempErr)
+	defer os.RemoveAll(tempImageOutputDir)
+	fileName := "oci-single-arm64.tar"
+	tarFile := filepath.Join(tempImageOutputDir, fileName)
+	err := createSingleArchOCIImageFileWithOption(tarFile, archs, tag, ImageFileGenerateOption{GenManifestJson: true})
+	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
+	assert.FileExistsf(t, tarFile, fmt.Sprintf("expected tarball %s not found", fileName))
+
+	// 用 ImageInFile 获取 v1.Image
+	_, img1, err := ImageInFile(tarFile)
+	if err != nil {
+		t.Fatalf("ImageInFile failed: %v", err)
+	}
+
+	// 用 go-containerregistry 的 tarball.Image 获取 v1.Image
+	img2, err := tarball.Image(func() (io.ReadCloser, error) {
+		return os.Open(tarFile)
+	}, nil)
+	if err != nil {
+		t.Fatalf("tarball.Image failed: %v", err)
+	}
+
+	// 对比 Manifest
+	m1, err1 := img1.Manifest()
+	m2, err2 := img2.Manifest()
+	if err1 != nil || err2 != nil {
+		t.Fatalf("Manifest error: %v %v", err1, err2)
+	}
+	if m1.SchemaVersion != m2.SchemaVersion || m1.MediaType != m2.MediaType || len(m1.Layers) != len(m2.Layers) {
+		t.Errorf("Manifest not compatible: m1=%+v, m2=%+v", m1, m2)
+	}
+
+	// 对比 ConfigFile
+	cf1, err1 := img1.ConfigFile()
+	cf2, err2 := img2.ConfigFile()
+	if err1 != nil || err2 != nil {
+		t.Fatalf("ConfigFile error: %v %v", err1, err2)
+	}
+	if cf1.Architecture != cf2.Architecture || cf1.OS != cf2.OS {
+		t.Errorf("ConfigFile not compatible: cf1=%+v, cf2=%+v", cf1, cf2)
+	}
+
+	// 对比 Layers
+	layers1, err1 := img1.Layers()
+	layers2, err2 := img2.Layers()
+	if err1 != nil || err2 != nil {
+		t.Fatalf("Layers error: %v %v", err1, err2)
+	}
+	if len(layers1) != len(layers2) {
+		t.Errorf("Layers count not compatible: %d vs %d", len(layers1), len(layers2))
+	}
+}
+
+func TestImageInFile_OCISingleArmImage(t *testing.T) {
 	t.Parallel()
 	archs := "linux/arm64"
 	tag := "example.com/oci-single:1.0.0_arm64"
@@ -641,7 +762,7 @@ func TestReadOsArchFromImageTarFile_OCISingleArmImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -649,7 +770,7 @@ func TestReadOsArchFromImageTarFile_OCISingleArmImage(t *testing.T) {
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/arm64"))
 }
 
-func TestReadOsArchFromImageTarFile_OCISinglePpcImage(t *testing.T) {
+func TestImageInFile_OCISinglePpcImage(t *testing.T) {
 	t.Parallel()
 	archs := "linux/ppc64le"
 	tag := "example.com/oci-single:1.0.0_ppc64le"
@@ -662,7 +783,7 @@ func TestReadOsArchFromImageTarFile_OCISinglePpcImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -670,7 +791,7 @@ func TestReadOsArchFromImageTarFile_OCISinglePpcImage(t *testing.T) {
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/ppc64le"))
 }
 
-func TestReadOsArchFromImageTarFile_OCISingleTarGzipImage(t *testing.T) {
+func TestImageInFile_OCISingleTarGzipImage(t *testing.T) {
 	t.Parallel()
 	archs := "linux/arm64"
 	tag := "example.com/oci-single-tar-gz:1.0.0_arm64"
@@ -699,7 +820,7 @@ func TestReadOsArchFromImageTarFile_OCISingleTarGzipImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("copy tar file into %s failed", gzfileName))
 	err = gzWriter.Close()
 	assert.NoError(t, err, fmt.Sprintf("close gzip writer for %s failed", gzfileName))
-	archSummary, err := ReadOsArchFromImageTarFile(tarGzPath)
+	archSummary, _, err := ImageInFile(tarGzPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", gzfileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", gzfileName))
@@ -707,7 +828,7 @@ func TestReadOsArchFromImageTarFile_OCISingleTarGzipImage(t *testing.T) {
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/arm64"))
 }
 
-func TestReadOsArchFromImageTarFile_OCIMultiArch(t *testing.T) {
+func TestImageInFile_OCIMultiArch(t *testing.T) {
 	t.Parallel()
 	archs := [][]string{
 		{"linux/amd64", "example.com/oci-multi-arch:1.0.0"},
@@ -722,7 +843,7 @@ func TestReadOsArchFromImageTarFile_OCIMultiArch(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -731,7 +852,7 @@ func TestReadOsArchFromImageTarFile_OCIMultiArch(t *testing.T) {
 
 }
 
-func TestReadOsArchFromImageTarFile_OCIMultiImage(t *testing.T) {
+func TestImageInFile_OCIMultiImage(t *testing.T) {
 	t.Parallel()
 	archs := [][]string{
 		{"linux/amd64", "example.com/oci-multi-image:1.0.0"},
@@ -747,7 +868,7 @@ func TestReadOsArchFromImageTarFile_OCIMultiImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -755,7 +876,7 @@ func TestReadOsArchFromImageTarFile_OCIMultiImage(t *testing.T) {
 	assert.NotEmpty(t, archSummary[0].Platforms, "read platform failed")
 }
 
-func TestReadOsArchFromImageTarFile_DockerLegacyMultiImage(t *testing.T) {
+func TestImageInFile_DockerLegacyMultiImage(t *testing.T) {
 	t.Parallel()
 	firstImage := LegacyImageInput{
 		RepoTags:     []string{"example.com/legacy-multi-image:1.0"},
@@ -778,7 +899,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacyMultiImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, err := ReadOsArchFromImageTarFile(tarPath)
+	archSummary, _, err := ImageInFile(tarPath)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -786,7 +907,7 @@ func TestReadOsArchFromImageTarFile_DockerLegacyMultiImage(t *testing.T) {
 	assert.NotEmpty(t, archSummary[0].Platforms, "read platform failed")
 }
 
-func TestValidateArch_SingleArchSupported(t *testing.T) {
+func TestCheckOsArchComplianceWithPlatform_SingleArchSupported(t *testing.T) {
 	t.Parallel()
 	var arch, fileName, tarPath, tag, currentPlatform string
 	currentPlatform = "linux/arm64"
@@ -802,11 +923,11 @@ func TestValidateArch_SingleArchSupported(t *testing.T) {
 	assert.NoError(t, createArmImageErr, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	unsupportedErr := ValidateArch(tarPath, currentPlatform)
+	unsupportedErr := CheckOsArchComplianceWithPlatform(tarPath, currentPlatform)
 	assert.NoError(t, unsupportedErr, fmt.Sprintf("validate os/arch from tarfile %s failed", fileName))
 }
 
-func TestValidateArch_SingleArchUnsupported(t *testing.T) {
+func TestCheckOsArchComplianceWithPlatform_SingleArchUnsupported(t *testing.T) {
 	t.Parallel()
 	var arch, fileName, tarPath, tag, currentPlatform string
 	currentPlatform = "linux/arm64"
@@ -822,14 +943,14 @@ func TestValidateArch_SingleArchUnsupported(t *testing.T) {
 	assert.NoError(t, createAmdImageErr, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	unsupportedErr := ValidateArch(tarPath, currentPlatform)
+	unsupportedErr := CheckOsArchComplianceWithPlatform(tarPath, currentPlatform)
 	assert.Error(t, unsupportedErr, "expected an error but got none")
 	if _, ok := unsupportedErr.(*TarfileOsArchUnsupportedError); !ok {
 		assert.Fail(t, "validate os/arch from tarfile %s failed, error should be of type *TarfileOsArchUnsupportedError")
 	}
 }
 
-func TestValidateArch_MultiArchSupported(t *testing.T) {
+func TestCheckOsArchComplianceWithPlatform_MultiArchSupported(t *testing.T) {
 	t.Parallel()
 	var fileName, tarPath, currentPlatform string
 	currentPlatform = "linux/amd64"
@@ -847,12 +968,12 @@ func TestValidateArch_MultiArchSupported(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	unsupportedErr := ValidateArch(tarPath, currentPlatform)
+	unsupportedErr := CheckOsArchComplianceWithPlatform(tarPath, currentPlatform)
 	assert.NoError(t, unsupportedErr, fmt.Sprintf("validate os/arch from tarfile %s failed", fileName))
 
 }
 
-func TestValidateArch_MultiArchUnSupported(t *testing.T) {
+func TestCheckOsArchComplianceWithPlatform_MultiArchUnSupported(t *testing.T) {
 	t.Parallel()
 	var fileName, tarPath, currentPlatform string
 	currentPlatform = "linux/amd64"
@@ -870,14 +991,14 @@ func TestValidateArch_MultiArchUnSupported(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	unsupportedErr := ValidateArch(tarPath, currentPlatform)
+	unsupportedErr := CheckOsArchComplianceWithPlatform(tarPath, currentPlatform)
 	assert.Error(t, unsupportedErr, "expected an error but got none")
 	t.Logf("unsupportedErr: %v", unsupportedErr)
 	if _, ok := unsupportedErr.(*TarfileOsArchUnsupportedError); !ok {
 		assert.Fail(t, "validate os/arch from tarfile %s failed, error should be of type *TarfileOsArchUnsupportedError")
 	}
 }
-func TestValidateArch_MultiImage(t *testing.T) {
+func TestCheckOsArchComplianceWithPlatform_MultiImage(t *testing.T) {
 	t.Parallel()
 	var fileName, tarPath, currentPlatform string
 	currentPlatform = "linux/amd64"
@@ -895,7 +1016,7 @@ func TestValidateArch_MultiImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	unsupportedErr := ValidateArch(tarPath, currentPlatform)
+	unsupportedErr := CheckOsArchComplianceWithPlatform(tarPath, currentPlatform)
 	assert.Error(t, unsupportedErr, "expected an error but got none")
 	t.Logf("unsupportedErr: %v", unsupportedErr)
 	if _, ok := unsupportedErr.(*TarfileOsArchUnsupportedError); !ok {

@@ -15,12 +15,10 @@
 package store
 
 import (
-	"archive/tar"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"runtime"
@@ -35,7 +33,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
-	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -298,19 +295,24 @@ func (s *ociStore) TagImage(sourceImage, targetImage *kii.ImageName) error {
 
 // interface [Store]
 func (s *ociStore) LoadImage(tarFile string) error {
-	img, err := tarball.Image(func() (io.ReadCloser, error) {
-		return os.Open(tarFile)
-	}, nil)
+	if _, err := os.Stat(tarFile); err != nil {
+		return fmt.Errorf("file not exists: %s", tarFile)
+	}
 
+	imgSummary, img, err := ImageInFile(tarFile)
 	if err != nil {
 		return fmt.Errorf("load image failed with: %s", err.Error())
 	}
-
-	tag, err := s.findTagNameInFile(tarFile)
-	if err != nil {
-		return fmt.Errorf("load image failed with: %s", err.Error())
+	currentPlatform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	currentPlatform = strings.ToLower(currentPlatform)
+	if err = CheckArchSummaryComplianceWithPlatform(tarFile, currentPlatform, imgSummary); err != nil {
+		return err
 	}
 
+	tag := ""
+	if len(imgSummary) > 0 {
+		tag = imgSummary[0].Ref
+	}
 	tag = CheckTagCompliance(tag)
 	nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
 	flat, cacheFile, err := s.flattenImage(img)
@@ -332,41 +334,6 @@ func (s *ociStore) LoadImage(tarFile string) error {
 	return nil
 }
 
-func (s *ociStore) findTagNameInFile(tarFile string) (string, error) {
-	file, err := os.Open(tarFile)
-	if err != nil {
-		return "", err
-	}
-
-	defer file.Close()
-
-	tf := tar.NewReader(file)
-	for {
-		hdr, err := tf.Next()
-		if err != nil {
-			return "", err
-		}
-		if hdr.Name == "manifest.json" {
-			manifest := tarball.Manifest{}
-			_ = json.NewDecoder(tf).Decode(&manifest)
-			if len(manifest) == 0 {
-				return "", errors.New("manifest.json format error")
-			}
-			if len(manifest[0].RepoTags) == 0 {
-				name := strings.TrimSuffix(path.Base(tarFile), path.Ext(tarFile))
-				img, err := kii.NewImageName(name)
-				if err != nil {
-					return "", fmt.Errorf("input tar file(%s) not container image name, try to use file name(%s), but is not a validate image name", tarFile, name)
-				}
-				nlog.Infof("image tar not contain name, so use file name as image tag(%s)", img.Image)
-				return name, nil
-			}
-
-			return manifest[0].RepoTags[0], nil
-		}
-	}
-}
-
 // interface [Store]
 func (s *ociStore) RegisterImage(tag, manifestFile string) error {
 	var manifest kii.Manifest
@@ -385,8 +352,17 @@ func (s *ociStore) RegisterImage(tag, manifestFile string) error {
 		}
 	}
 
+	arch := manifest.Architecture
+	osName := manifest.OS
+	if arch == "" {
+		arch = runtime.GOARCH
+	}
+	if osName == "" {
+		osName = runtime.GOOS
+	}
 	cf := &v1.ConfigFile{
-		Architecture: manifest.Architecture,
+		Architecture: arch,
+		OS:           osName,
 		Created:      v1.Time{Time: time.Now()},
 		Author:       manifest.Author,
 		Config:       config,
