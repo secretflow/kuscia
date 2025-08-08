@@ -60,7 +60,7 @@ function wait_kuscia_job_until() {
       ((unexpected_count++))
       if [ "${unexpected_count}" -le "${unexpected_tolerance_times}" ]; then
         echo "Unexpected job phase: ${job_phase}, retrying..."
-        break
+        continue
       fi
       echo "unexpected: ${job_phase}"
       unset ctr timeout_seconds job_id times current unexpected_count unexpected_tolerance_times

@@ -288,7 +288,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, error) {
 		return nil
 	}
 
-	// 从index.json递归解析
+	// Recursively parse from index.json
 	if err := parseOCIIndexRecursive("index.json", ""); err != nil {
 		return nil, err
 	}
@@ -519,7 +519,10 @@ func ImageInFile(tarFile string) ([]ImageSummary, v1.Image, error) {
 	meta := &ImageMetaData{}
 
 	archReader := &ArchReader{tarReader: tr}
-	ociArchInfos, _ := archReader.parseOCIIndex()
+	ociArchInfos, ociErr := archReader.parseOCIIndex()
+	if ociErr != nil {
+		nlog.Warnf("parseOCIIndex failed: %v", ociErr)
+	}
 
 	var dockerManifests []DockerManifest
 	if err := tr.ReadJSONFile("manifest.json", &dockerManifests); err == nil {
@@ -530,12 +533,18 @@ func ImageInFile(tarFile string) ([]ImageSummary, v1.Image, error) {
 		if m.Config != "" {
 			var config ImageConfig
 			var raw []byte
-			if b, err := tr.ExtractFileToMemory(m.Config); err == nil {
-				raw = b
-				_ = json.Unmarshal(b, &config)
-				meta.Configs = append(meta.Configs, config)
-				meta.RawConfigs = append(meta.RawConfigs, raw)
+			b, err := tr.ExtractFileToMemory(m.Config)
+			if err != nil {
+				nlog.Warnf("ExtractFileToMemory failed for config %s: %v", m.Config, err)
+				continue
 			}
+			raw = b
+			if err := json.Unmarshal(b, &config); err != nil {
+				nlog.Warnf("json.Unmarshal failed for config %s: %v", m.Config, err)
+				continue
+			}
+			meta.Configs = append(meta.Configs, config)
+			meta.RawConfigs = append(meta.RawConfigs, raw)
 		}
 	}
 
