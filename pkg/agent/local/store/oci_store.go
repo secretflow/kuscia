@@ -299,7 +299,7 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		return fmt.Errorf("file not exists: %s", tarFile)
 	}
 
-	imgSummary, images, err := ImageInFile(tarFile)
+	imgSummary, compatibleImages, err := ImageInFile(tarFile)
 	if err != nil {
 		return fmt.Errorf("load image failed with: %s", err.Error())
 	}
@@ -311,7 +311,9 @@ func (s *ociStore) LoadImage(tarFile string) error {
 
 	// Iterate all images and flatten & store each compatible image
 	found := false
-	for i, img := range images {
+	for _, compatibleImage := range compatibleImages {
+		tag := compatibleImage.Info.Ref
+		img := compatibleImage.Image
 		cfg, getConfigFileErr := img.ConfigFile()
 		if getConfigFileErr != nil {
 			continue
@@ -319,10 +321,6 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		osArch := fmt.Sprintf("%s/%s", strings.ToLower(cfg.OS), strings.ToLower(cfg.Architecture))
 		if osArch == currentPlatform {
 			found = true
-			tag := ""
-			if i < len(imgSummary) {
-				tag = imgSummary[i].Ref
-			}
 			tag = CheckTagCompliance(tag)
 			nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
 			flat, cacheFile, err := s.flattenImage(img)

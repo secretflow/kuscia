@@ -103,7 +103,9 @@ type TarReader struct {
 	nonLayerBlobCache map[string][]byte
 }
 
-// TarReader provides methods to extract files from tar archives, supporting gzip and caching for non-layer blobs.
+/*
+TarReader provides methods to extract files from tar archives, supporting gzip and caching for non-layer blobs.
+*/
 
 type TarfileOsArchUnsupportedError struct {
 	Source          string
@@ -252,20 +254,23 @@ type ArchReader struct {
 	tarReader *TarReader
 }
 
-func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, []OCIManifest, *OCIIndex, error) {
+func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, []OCIManifest, *OCIIndex, []ImageConfig, [][]byte, error) {
+	// Enhancement: collect ImageConfig and raw config bytes for OCI images
 	var archInfos []ImageInfo
 	var ociManifests []OCIManifest
 	var ociIndex *OCIIndex
+	var configs []ImageConfig
+	var rawConfigs [][]byte
 
-	err := ar.parseOCIIndexRecursive(indexJSONFile, "", 0, &archInfos, &ociManifests, &ociIndex)
+	err := ar.parseOCIIndexRecursive(indexJSONFile, "", 0, &archInfos, &ociManifests, &ociIndex, &configs, &rawConfigs)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
-	return archInfos, ociManifests, ociIndex, nil
+	return archInfos, ociManifests, ociIndex, configs, rawConfigs, nil
 }
 
-func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string, depth int, archInfos *[]ImageInfo, ociManifests *[]OCIManifest, ociIndex **OCIIndex) error {
-	// 递归解析 OCI index，确保 archInfos 和 ociManifests 顺序一一对应
+func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string, depth int, archInfos *[]ImageInfo, ociManifests *[]OCIManifest, ociIndex **OCIIndex, configs *[]ImageConfig, rawConfigs *[][]byte) error {
+	// Recursively parse OCI index, ensure archInfos, ociManifests, configs, rawConfigs are in corresponding order
 	if depth > maxOCIRecursiveDepth {
 		return fmt.Errorf("parseOCIIndexRecursive: max recursive depth exceeded: %d for indexPath '%s'", depth, indexPath)
 	}
@@ -294,8 +299,8 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 		blobPath := fmt.Sprintf("%s/%s", blobPathPrefix, digestID)
 		switch manifest.MediaType {
 		case v1spec.MediaTypeImageIndex, MediaTypeDockerManifestListV2:
-			// 递归解析嵌套 index
-			if err := ar.parseOCIIndexRecursive(blobPath, refName, depth+1, archInfos, ociManifests, ociIndex); err != nil {
+			// Recursively parse nested index
+			if err := ar.parseOCIIndexRecursive(blobPath, refName, depth+1, archInfos, ociManifests, ociIndex, configs, rawConfigs); err != nil {
 				nlog.Warnf("Failed to recursively parse nested index: %v", err)
 				continue
 			}
@@ -307,9 +312,15 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 			}
 			configDigestID := strings.TrimPrefix(ociManifest.Config.Digest, sha256Prefix)
 			configBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, configDigestID)
+			// Extract raw config bytes
+			b, err := ar.tarReader.ExtractFileToMemory(configBlobPath, true)
+			if err != nil {
+				nlog.Warnf("Failed to extract OCI image config '%s': %v", configBlobPath, err)
+				continue
+			}
 			var config ImageConfig
-			if err := ar.tarReader.ReadJSONFile(configBlobPath, &config, true); err != nil {
-				nlog.Warnf("Failed to read config: %v", err)
+			if err := json.Unmarshal(b, &config); err != nil {
+				nlog.Warnf("Failed to unmarshal OCI image config '%s': %v", configBlobPath, err)
 				continue
 			}
 			*archInfos = append(*archInfos, ImageInfo{
@@ -320,6 +331,8 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 				Source:       fmt.Sprintf("%s manifest config", indexPath),
 			})
 			*ociManifests = append(*ociManifests, ociManifest)
+			*configs = append(*configs, config)
+			*rawConfigs = append(*rawConfigs, b)
 		default:
 			nlog.Warnf("Unsupported mediaType: %s", manifest.MediaType)
 		}
@@ -400,7 +413,94 @@ type imageMetaAdapter struct {
 	metaTarReader *TarReader
 
 	cachedLayers []v1.Layer
-	cachedDigest *v1.Hash
+}
+
+type CompatibleImage struct {
+	Image v1.Image
+	Info  ImageInfo
+}
+
+/*
+Implement v1.Image interface, all methods delegate to the internal Image field.
+This allows direct use as v1.Image, while providing extra information via the Info field.
+*/
+
+func (c CompatibleImage) RawConfigFile() ([]byte, error) {
+	return c.Image.RawConfigFile()
+}
+
+func (c CompatibleImage) ConfigFile() (*v1.ConfigFile, error) {
+	return c.Image.ConfigFile()
+}
+
+func (c CompatibleImage) Manifest() (*v1.Manifest, error) {
+	return c.Image.Manifest()
+}
+
+func (c CompatibleImage) RawManifest() ([]byte, error) {
+	return c.Image.RawManifest()
+}
+
+func (c CompatibleImage) Digest() (v1.Hash, error) {
+	return c.Image.Digest()
+}
+
+func (c CompatibleImage) LayerByDiffID(h v1.Hash) (v1.Layer, error) {
+	return c.Image.LayerByDiffID(h)
+}
+
+/*
+Compressed/Uncompressed methods are compatible with v1.Image default implementation.
+If type assertion fails, automatically fallback to the first layer.
+*/
+func (c CompatibleImage) Compressed() (io.ReadCloser, error) {
+	if img, ok := c.Image.(interface{ Compressed() (io.ReadCloser, error) }); ok {
+		return img.Compressed()
+	}
+	// fallback: compatible with go-containerregistry v1.Image default implementation
+	layers, err := c.Image.Layers()
+	if err != nil {
+		return nil, err
+	}
+	if len(layers) == 0 {
+		return nil, errors.New("no layers found for compressed")
+	}
+	return layers[0].Compressed()
+}
+
+func (c CompatibleImage) Uncompressed() (io.ReadCloser, error) {
+	if img, ok := c.Image.(interface{ Uncompressed() (io.ReadCloser, error) }); ok {
+		return img.Uncompressed()
+	}
+	// fallback: compatible with go-containerregistry v1.Image default implementation
+	layers, err := c.Image.Layers()
+	if err != nil {
+		return nil, err
+	}
+	if len(layers) == 0 {
+		return nil, errors.New("no layers found for uncompressed")
+	}
+	return layers[0].Uncompressed()
+}
+
+func (c CompatibleImage) Layers() ([]v1.Layer, error) {
+	return c.Image.Layers()
+}
+
+func (c CompatibleImage) MediaType() (types.MediaType, error) {
+	return c.Image.MediaType()
+}
+
+func (c CompatibleImage) ConfigName() (v1.Hash, error) {
+	return c.Image.ConfigName()
+}
+
+func (c CompatibleImage) LayerByDigest(h v1.Hash) (v1.Layer, error) {
+	return c.Image.LayerByDigest(h)
+}
+
+func (c CompatibleImage) Size() (int64, error) {
+	return c.Image.Size()
 }
 
 func (a *imageMetaAdapter) RawConfigFile() ([]byte, error) {
@@ -628,16 +728,18 @@ func (a *imageMetaAdapter) Size() (int64, error) {
 	return total, nil
 }
 
-func ImageInFile(tarFile string) ([]ImageSummary, []v1.Image, error) {
-	// 全量收集 docker 和 oci 镜像摘要，[]ImageSummary 不做架构筛选
+func ImageInFile(tarFile string) ([]ImageSummary, []CompatibleImage, error) {
+	// Collect all docker and oci image summaries. The returned CompatibleImage struct wraps v1.Image and attaches extra information.
 	tr := createTarReader(tarFile)
 	meta := &ImageMetaData{tarReader: tr}
 	archReader := &ArchReader{tarReader: tr}
 
 	var allArchInfos []ImageInfo
 	var allImages []v1.Image
+	// Used to store the final returned CompatibleImage slice
+	var compatibleImages []CompatibleImage
 
-	// 收集 docker 镜像信息
+	// Collect docker image information
 	dockerArchInfos, dockerManifests, dockerConfigs, dockerRawConfigs, dockerDiffIDs, dockerErr := archReader.parseDockerManifest()
 	if dockerErr == nil && len(dockerArchInfos) > 0 {
 		for idx, info := range dockerArchInfos {
@@ -653,11 +755,15 @@ func ImageInFile(tarFile string) ([]ImageSummary, []v1.Image, error) {
 		}
 	}
 
-	// 收集 OCI 镜像信息
-	ociArchInfos, ociManifests, ociIndex, ociErr := archReader.parseOCIIndex()
+	// Collect OCI image information
+	// parseOCIIndex now returns 6 values, all must be received
+	ociArchInfos, ociManifests, ociIndex, ociConfigs, ociRawConfigs, ociErr := archReader.parseOCIIndex()
 	if ociErr == nil && len(ociArchInfos) > 0 {
+		// Fill meta's OCI related fields
 		meta.OCIIndex = ociIndex
 		meta.OCIManifests = ociManifests
+		meta.Configs = ociConfigs
+		meta.RawConfigs = ociRawConfigs
 		count := len(ociManifests)
 		for idx := 0; idx < count; idx++ {
 			var info ImageInfo
@@ -665,15 +771,16 @@ func ImageInFile(tarFile string) ([]ImageSummary, []v1.Image, error) {
 				info = ociArchInfos[idx]
 			}
 			allArchInfos = append(allArchInfos, info)
+			// Construct selectedMeta, fill OCIManifests, Configs, RawConfigs
 			selectedMeta := &ImageMetaData{
 				tarReader:    meta.tarReader,
 				OCIManifests: []OCIManifest{ociManifests[idx]},
 			}
-			if idx < len(meta.RawConfigs) {
-				selectedMeta.RawConfigs = [][]byte{meta.RawConfigs[idx]}
+			if idx < len(ociRawConfigs) {
+				selectedMeta.RawConfigs = [][]byte{ociRawConfigs[idx]}
 			}
-			if idx < len(meta.Configs) {
-				selectedMeta.Configs = []ImageConfig{meta.Configs[idx]}
+			if idx < len(ociConfigs) {
+				selectedMeta.Configs = []ImageConfig{ociConfigs[idx]}
 			}
 			allImages = append(allImages, &imageMetaAdapter{meta: selectedMeta, metaTarReader: tr})
 		}
@@ -701,14 +808,16 @@ func ImageInFile(tarFile string) ([]ImageSummary, []v1.Image, error) {
 		allSummaries = append(allSummaries, *v)
 	}
 
-	// Filter image objects compatible with the current platform
+	// Filter image objects by current platform and wrap as CompatibleImage struct
 	currentPlatform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
 	currentPlatform = strings.ToLower(currentPlatform)
-	var compatibleImages []v1.Image
 	for idx, info := range allArchInfos {
 		osArch := fmt.Sprintf("%s/%s", strings.ToLower(info.OS), strings.ToLower(info.Architecture))
 		if osArch == currentPlatform {
-			compatibleImages = append(compatibleImages, allImages[idx])
+			compatibleImages = append(compatibleImages, CompatibleImage{
+				Image: allImages[idx],
+				Info:  info,
+			})
 		}
 	}
 
