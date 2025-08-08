@@ -299,7 +299,7 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		return fmt.Errorf("file not exists: %s", tarFile)
 	}
 
-	imgSummary, img, err := ImageInFile(tarFile)
+	imgSummary, images, err := ImageInFile(tarFile)
 	if err != nil {
 		return fmt.Errorf("load image failed with: %s", err.Error())
 	}
@@ -309,28 +309,43 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		return err
 	}
 
-	tag := ""
-	if len(imgSummary) > 0 {
-		tag = imgSummary[0].Ref
-	}
-	tag = CheckTagCompliance(tag)
-	nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
-	flat, cacheFile, err := s.flattenImage(img)
-	if err != nil {
-		nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
-		return err
-	}
-	//remove cache file
-	defer os.Remove(cacheFile)
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	// Iterate all images and flatten & store each compatible image
+	found := false
+	for i, img := range images {
+		cfg, getConfigFileErr := img.ConfigFile()
+		if getConfigFileErr != nil {
+			continue
+		}
+		osArch := fmt.Sprintf("%s/%s", strings.ToLower(cfg.OS), strings.ToLower(cfg.Architecture))
+		if osArch == currentPlatform {
+			found = true
+			tag := ""
+			if i < len(imgSummary) {
+				tag = imgSummary[i].Ref
+			}
+			tag = CheckTagCompliance(tag)
+			nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
+			flat, cacheFile, err := s.flattenImage(img)
+			if err != nil {
+				nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
+				return err
+			}
+			// Remove cache file
+			defer os.Remove(cacheFile)
+			s.mutex.Lock()
+			defer s.mutex.Unlock()
 
-	// if image already exists, will update it
-	if err = s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, "")); err != nil {
-		return err
-	}
+			// If image already exists, will update it
+			if err = s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, "")); err != nil {
+				return err
+			}
 
-	nlog.Infof("Load image: %s", tag)
+			nlog.Infof("Load image: %s", tag)
+		}
+	}
+	if !found {
+		return fmt.Errorf("no compatible image found for platform: %s", currentPlatform)
+	}
 	return nil
 }
 

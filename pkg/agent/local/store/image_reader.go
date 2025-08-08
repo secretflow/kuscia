@@ -265,7 +265,7 @@ func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, []OCIManifest, *OCIIndex, er
 }
 
 func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string, depth int, archInfos *[]ImageInfo, ociManifests *[]OCIManifest, ociIndex **OCIIndex) error {
-	// Recursively parses OCI index files, collects platform and manifest info, and prevents infinite recursion.
+	// 递归解析 OCI index，确保 archInfos 和 ociManifests 顺序一一对应
 	if depth > maxOCIRecursiveDepth {
 		return fmt.Errorf("parseOCIIndexRecursive: max recursive depth exceeded: %d for indexPath '%s'", depth, indexPath)
 	}
@@ -287,16 +287,6 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 				refName = v
 			}
 		}
-		if manifest.Platform != nil {
-			*archInfos = append(*archInfos, ImageInfo{
-				Architecture: manifest.Platform.Architecture,
-				OS:           manifest.Platform.OS,
-				Variant:      manifest.Platform.Variant,
-				Ref:          refName,
-				Source:       fmt.Sprintf("%s manifest platform", indexPath),
-			})
-			continue
-		}
 		if manifest.Digest == "" || !strings.HasPrefix(manifest.Digest, sha256Prefix) {
 			continue
 		}
@@ -304,7 +294,7 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 		blobPath := fmt.Sprintf("%s/%s", blobPathPrefix, digestID)
 		switch manifest.MediaType {
 		case v1spec.MediaTypeImageIndex, MediaTypeDockerManifestListV2:
-			// Recursively parse nested index
+			// 递归解析嵌套 index
 			if err := ar.parseOCIIndexRecursive(blobPath, refName, depth+1, archInfos, ociManifests, ociIndex); err != nil {
 				nlog.Warnf("Failed to recursively parse nested index: %v", err)
 				continue
@@ -315,7 +305,6 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 				nlog.Warnf("Failed to read manifest: %v", err)
 				continue
 			}
-			*ociManifests = append(*ociManifests, ociManifest)
 			configDigestID := strings.TrimPrefix(ociManifest.Config.Digest, sha256Prefix)
 			configBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, configDigestID)
 			var config ImageConfig
@@ -330,6 +319,7 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 				Ref:          refName,
 				Source:       fmt.Sprintf("%s manifest config", indexPath),
 			})
+			*ociManifests = append(*ociManifests, ociManifest)
 		default:
 			nlog.Warnf("Unsupported mediaType: %s", manifest.MediaType)
 		}
@@ -374,7 +364,9 @@ func (ar *ArchReader) parseDockerManifest() ([]ImageInfo, []DockerManifest, []Im
 				DiffIDs []string `json:"diff_ids"`
 			} `json:"rootfs"`
 		}
-		_ = json.Unmarshal(b, &cfgFile)
+		if err := json.Unmarshal(b, &cfgFile); err != nil {
+			nlog.Warnf("Failed to unmarshal diff_ids from docker image config '%s' for repo tags %v: %v", configFile, manifest.RepoTags, err)
+		}
 		config.DiffIDs = cfgFile.RootFS.DiffIDs
 		configs = append(configs, config)
 		rawConfigs = append(rawConfigs, b)
@@ -636,81 +628,91 @@ func (a *imageMetaAdapter) Size() (int64, error) {
 	return total, nil
 }
 
-func ImageInFile(tarFile string) ([]ImageSummary, v1.Image, error) {
+func ImageInFile(tarFile string) ([]ImageSummary, []v1.Image, error) {
+	// 全量收集 docker 和 oci 镜像摘要，[]ImageSummary 不做架构筛选
 	tr := createTarReader(tarFile)
-	meta := &ImageMetaData{
-		tarReader: tr}
-
+	meta := &ImageMetaData{tarReader: tr}
 	archReader := &ArchReader{tarReader: tr}
-	result := make([]ImageSummary, 0)
-	refMap := make(map[string][]string)
 
+	var allArchInfos []ImageInfo
+	var allImages []v1.Image
+
+	// 收集 docker 镜像信息
 	dockerArchInfos, dockerManifests, dockerConfigs, dockerRawConfigs, dockerDiffIDs, dockerErr := archReader.parseDockerManifest()
 	if dockerErr == nil && len(dockerArchInfos) > 0 {
-		for _, info := range dockerArchInfos {
-			osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
-			refMap[info.Ref] = append(refMap[info.Ref], osArch)
-		}
-		meta.DockerManifests = dockerManifests
-		meta.Configs = dockerConfigs
-		meta.RawConfigs = dockerRawConfigs
-		meta.DiffIDs = dockerDiffIDs
-	} else {
-		ociArchInfos, ociManifests, ociIndex, ociErr := archReader.parseOCIIndex()
-		if ociErr == nil {
-			meta.OCIIndex = ociIndex
-			meta.OCIManifests = ociManifests
-			if ociErr == nil && len(ociArchInfos) > 0 {
-				for _, info := range ociArchInfos {
-					osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
-					refMap[info.Ref] = append(refMap[info.Ref], osArch)
-				}
-
-				for _, manifest := range meta.OCIManifests {
-					configDigestID := strings.TrimPrefix(manifest.Config.Digest, sha256Prefix)
-					configBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, configDigestID)
-					b, err := tr.ExtractFileToMemory(configBlobPath, true)
-					if err == nil {
-						meta.RawConfigs = append(meta.RawConfigs, b)
-						var config ImageConfig
-						if err := json.Unmarshal(b, &config); err == nil {
-							var cfgFile struct {
-								RootFS struct {
-									DiffIDs []string `json:"diff_ids"`
-								} `json:"rootfs"`
-							}
-							_ = json.Unmarshal(b, &cfgFile)
-							config.DiffIDs = cfgFile.RootFS.DiffIDs
-							meta.Configs = append(meta.Configs, config)
-							meta.DiffIDs = append(meta.DiffIDs, cfgFile.RootFS.DiffIDs...)
-						}
-					}
-					for _, layer := range manifest.Layers {
-						meta.Layers = append(meta.Layers, layer)
-					}
-				}
+		for idx, info := range dockerArchInfos {
+			allArchInfos = append(allArchInfos, info)
+			selectedMeta := &ImageMetaData{
+				tarReader:       meta.tarReader,
+				DockerManifests: []DockerManifest{dockerManifests[idx]},
+				RawConfigs:      [][]byte{dockerRawConfigs[idx]},
+				Configs:         []ImageConfig{dockerConfigs[idx]},
+				DiffIDs:         dockerDiffIDs,
 			}
+			allImages = append(allImages, &imageMetaAdapter{meta: selectedMeta, metaTarReader: tr})
 		}
 	}
 
-	img := &imageMetaAdapter{meta: meta, metaTarReader: tr}
-
-	for ref, osArchs := range refMap {
-		unique := make(map[string]struct{})
-		platforms := make([]string, 0)
-		for _, osArch := range osArchs {
-			if _, ok := unique[osArch]; !ok {
-				unique[osArch] = struct{}{}
-				platforms = append(platforms, osArch)
+	// 收集 OCI 镜像信息
+	ociArchInfos, ociManifests, ociIndex, ociErr := archReader.parseOCIIndex()
+	if ociErr == nil && len(ociArchInfos) > 0 {
+		meta.OCIIndex = ociIndex
+		meta.OCIManifests = ociManifests
+		count := len(ociManifests)
+		for idx := 0; idx < count; idx++ {
+			var info ImageInfo
+			if idx < len(ociArchInfos) {
+				info = ociArchInfos[idx]
 			}
+			allArchInfos = append(allArchInfos, info)
+			selectedMeta := &ImageMetaData{
+				tarReader:    meta.tarReader,
+				OCIManifests: []OCIManifest{ociManifests[idx]},
+			}
+			if idx < len(meta.RawConfigs) {
+				selectedMeta.RawConfigs = [][]byte{meta.RawConfigs[idx]}
+			}
+			if idx < len(meta.Configs) {
+				selectedMeta.Configs = []ImageConfig{meta.Configs[idx]}
+			}
+			allImages = append(allImages, &imageMetaAdapter{meta: selectedMeta, metaTarReader: tr})
 		}
-		result = append(result, ImageSummary{
-			Ref:       ref,
-			Platforms: platforms,
-		})
 	}
 
-	return result, img, nil
+	// Assemble all ImageSummary (no architecture filtering)
+	summaryMap := make(map[string]*ImageSummary)
+	for _, info := range allArchInfos {
+		osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
+		if info.Ref == "" {
+			continue
+		}
+		if summaryMap[info.Ref] == nil {
+			summaryMap[info.Ref] = &ImageSummary{
+				Ref:       info.Ref,
+				Platforms: []string{osArch},
+			}
+		} else {
+			// Merge multi-platform images
+			summaryMap[info.Ref].Platforms = append(summaryMap[info.Ref].Platforms, osArch)
+		}
+	}
+	var allSummaries []ImageSummary
+	for _, v := range summaryMap {
+		allSummaries = append(allSummaries, *v)
+	}
+
+	// Filter image objects compatible with the current platform
+	currentPlatform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	currentPlatform = strings.ToLower(currentPlatform)
+	var compatibleImages []v1.Image
+	for idx, info := range allArchInfos {
+		osArch := fmt.Sprintf("%s/%s", strings.ToLower(info.OS), strings.ToLower(info.Architecture))
+		if osArch == currentPlatform {
+			compatibleImages = append(compatibleImages, allImages[idx])
+		}
+	}
+
+	return allSummaries, compatibleImages, nil
 }
 
 func CheckOsArchCompliance(tarFile string) error {
@@ -734,7 +736,7 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 			Source:          tarFile,
 			CurrentPlatform: expectedOsArch,
 			ArchSummary:     archSummary,
-			Cause:           errors.New("no compatiable architecture information found in the image tar file"),
+			Cause:           errors.New("no compatible architecture information found in the image tar file"),
 		}
 	}
 
@@ -749,7 +751,7 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 			}
 		}
 		if len(unsupported) > 0 {
-			nlog.Warnf("some incompatibilities were found. Current platform [%s], image [%s] supports platforms: %v, unsupported platforms : %v", expectedOsArch, summary.Ref, summary.Platforms, unsupported)
+			nlog.Warnf("Some incompatibilities were found. Current platform [%s], image [%s] supports platforms: %v, unsupported platforms : %v", expectedOsArch, summary.Ref, summary.Platforms, unsupported)
 		}
 	}
 

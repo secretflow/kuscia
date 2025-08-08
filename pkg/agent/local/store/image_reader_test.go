@@ -430,7 +430,7 @@ func createMultiArchOCIImageFileWithOption(tarFile string, archTags [][]string, 
 		return err
 	}
 
-	// 生成 docker 兼容 manifest.json
+	// Generate docker-compatible manifest.json
 	if option.GenManifestJson {
 		var manifest []map[string]interface{}
 		for tag, imgs := range tagToImages {
@@ -512,7 +512,6 @@ func createSingleArchOCIImageFileWithOption(tarFile string, osArch string, tag s
 		return err
 	}
 
-	// 解析os/arch
 	finalOsArch := osArch
 	if option.OS != "" && option.Architecture != "" {
 		finalOsArch = option.OS + "/" + option.Architecture
@@ -692,31 +691,35 @@ func TestImageInFile_OCISingleAmdImage(t *testing.T) {
 func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	t.Parallel()
 
-	archs := "linux/arm64"
-	tag := "example.com/oci-single:1.0.0_arm64"
+	archs := "linux/amd64"
+	tag := "example.com/oci-single:1.0.0_amd64"
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
 	assert.NoError(t, tempErr)
 	defer os.RemoveAll(tempImageOutputDir)
-	fileName := "oci-single-arm64.tar"
+	fileName := "oci-single-amd64.tar"
 	tarFile := filepath.Join(tempImageOutputDir, fileName)
 	err := createSingleArchOCIImageFileWithOption(tarFile, archs, tag, ImageFileGenerateOption{GenManifestJson: true})
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarFile, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	_, img1, err := ImageInFile(tarFile)
+	_, images, err := ImageInFile(tarFile)
 	if err != nil {
 		t.Fatalf("ImageInFile failed: %v", err)
 	}
+	if len(images) == 0 {
+		t.Fatalf("ImageInFile returned an empty image list")
+	}
+	image1 := images[0]
 
-	img2, err := tarball.Image(func() (io.ReadCloser, error) {
+	image2, err := tarball.Image(func() (io.ReadCloser, error) {
 		return os.Open(tarFile)
 	}, nil)
 	if err != nil {
 		t.Fatalf("tarball.Image failed: %v", err)
 	}
 
-	m1, err1 := img1.Manifest()
-	m2, err2 := img2.Manifest()
+	m1, err1 := image1.Manifest()
+	m2, err2 := image2.Manifest()
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Manifest error: %v %v", err1, err2)
 	}
@@ -750,8 +753,8 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		}
 	}
 
-	cf1, err1 := img1.ConfigFile()
-	cf2, err2 := img2.ConfigFile()
+	cf1, err1 := image1.ConfigFile()
+	cf2, err2 := image2.ConfigFile()
 	if err1 != nil || err2 != nil {
 		t.Fatalf("ConfigFile error: %v %v", err1, err2)
 	}
@@ -769,12 +772,12 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	}
 
 	// 兼容性测试：Compressed、Uncompressed、Digest、Layers 方法
-	layers1, err1 := img1.Layers()
-	layers2, err2 := img2.Layers()
+	layers1, err1 := image1.Layers()
+	layers2, err2 := image2.Layers()
 	if err1 != nil || err2 != nil {
 		t.Fatalf("Layers error: %v %v", err1, err2)
 	}
-	assert.Equal(t, len(layers1), len(layers2), "Layers count not compatible")
+	assert.Equal(t, len(layers1), len(layers2), "Layers count is not compatible")
 
 	for i := range layers1 {
 		// Digest
@@ -782,7 +785,7 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		d2, err2 := layers2[i].Digest()
 		assert.NoError(t, err1)
 		assert.NoError(t, err2)
-		assert.Equal(t, d1, d2, "Layer Digest not compatible")
+		assert.Equal(t, d1, d2, "Layer Digest is not compatible")
 		// Compressed
 		c1, err1 := layers1[i].Compressed()
 		c2, err2 := layers2[i].Compressed()
@@ -790,7 +793,7 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		assert.NoError(t, err2)
 		b1, _ := io.ReadAll(c1)
 		b2, _ := io.ReadAll(c2)
-		assert.Equal(t, b1, b2, "Layer Compressed content not compatible")
+		assert.Equal(t, b1, b2, "Layer Compressed content is not compatible")
 
 		// Uncompressed
 		u1, err1 := layers1[i].Uncompressed()
@@ -799,7 +802,7 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		assert.NoError(t, err2)
 		ub1, _ := io.ReadAll(u1)
 		ub2, _ := io.ReadAll(u2)
-		assert.Equal(t, ub1, ub2, "Layer Uncompressed content not compatible")
+		assert.Equal(t, ub1, ub2, "Layer Uncompressed content is not compatible")
 	}
 }
 
