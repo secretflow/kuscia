@@ -946,16 +946,20 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 
 	isCompatible := false
 	for _, summary := range archSummary {
-		var unsupported []string
+		var supported bool
+		var otherPlatforms []string
 		for _, osArch := range summary.Platforms {
 			if osArch == expectedOsArch {
 				isCompatible = true
+				supported = true
 			} else {
-				unsupported = append(unsupported, osArch)
+				otherPlatforms = append(otherPlatforms, osArch)
 			}
 		}
-		if len(unsupported) > 0 {
-			nlog.Warnf("Some incompatibilities were found. Current platform [%s], image [%s] supports platforms: %v, unsupported platforms : %v", expectedOsArch, summary.Ref, summary.Platforms, unsupported)
+		if !supported {
+			nlog.Warnf("Image [%s] is not compatible with current platform [%s]. Supported platforms: %v", summary.Ref, expectedOsArch, summary.Platforms)
+		} else if len(otherPlatforms) > 0 {
+			nlog.Infof("Image [%s] is compatible with current platform [%s]. Other supported platforms are: %v", summary.Ref, expectedOsArch, otherPlatforms)
 		}
 	}
 
