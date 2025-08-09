@@ -699,15 +699,15 @@ func TestImageInFile_OCISingleAmdImage(t *testing.T) {
 
 func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	t.Parallel()
-
-	archs := "linux/amd64"
-	tag := "example.com/oci-single:1.0.0_amd64"
+	arch := strings.ToLower(runtime.GOARCH)
+	osArch := fmt.Sprintf("%s/%s", strings.ToLower(runtime.GOOS), arch)
+	tag := fmt.Sprintf("example.com/oci-single:1.0.0_%s", arch)
 	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
 	assert.NoError(t, tempErr)
 	defer os.RemoveAll(tempImageOutputDir)
-	fileName := "oci-single-amd64.tar"
+	fileName := fmt.Sprintf("oci-single-%s.tar", arch)
 	tarFile := filepath.Join(tempImageOutputDir, fileName)
-	err := createSingleArchOCIImageFileWithOption(tarFile, archs, tag, ImageFileGenerateOption{GenManifestJson: true})
+	err := createSingleArchOCIImageFileWithOption(tarFile, osArch, tag, ImageFileGenerateOption{GenManifestJson: true})
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarFile, fmt.Sprintf("expected tarball %s not found", fileName))
 
@@ -796,6 +796,110 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		ub2, _ := io.ReadAll(u2)
 		assert.Equal(t, ub1, ub2, "Layer Uncompressed content is not compatible")
 	}
+}
+
+func TestImageInFile_LargeLayerStream(t *testing.T) {
+	t.Parallel()
+	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
+	assert.NoError(t, tempErr)
+	defer os.RemoveAll(tempImageOutputDir)
+	arch := strings.ToLower(runtime.GOARCH)
+	currentOS := strings.ToLower(runtime.GOOS)
+
+	fileName := fmt.Sprintf("oci-large-layer-%s.tar", arch)
+	tarPath := filepath.Join(tempImageOutputDir, fileName)
+	tag := fmt.Sprintf("%s/%s", "example.com/oci-large-layer-%s:1.0.0", arch)
+
+	largeContent := bytes.Repeat([]byte("A"), 70*1024*1024) // 70MB
+	layerBytes, diffID, err := buildLayerTarGz(string(largeContent))
+	assert.NoError(t, err, "build large layer failed")
+	layerDigest := sha256.Sum256(layerBytes)
+
+	cfg := map[string]interface{}{
+		"architecture": arch,
+		"os":           currentOS,
+		"rootfs": map[string]interface{}{
+			"type":     "layers",
+			"diff_ids": []string{diffID},
+		},
+		"config": map[string]interface{}{},
+	}
+	cfgContent, err := json.Marshal(cfg)
+	assert.NoError(t, err, "marshal config failed")
+	cfgDigest := sha256.Sum256(cfgContent)
+
+	manifest := map[string]interface{}{
+		"schemaVersion": 2,
+		"mediaType":     "application/vnd.oci.image.manifest.v1+json",
+		"config": map[string]interface{}{
+			"mediaType": "application/vnd.oci.image.config.v1+json",
+			"digest":    "sha256:" + hex.EncodeToString(cfgDigest[:]),
+			"size":      len(cfgContent),
+		},
+		"layers": []map[string]interface{}{
+			{
+				"mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+				"digest":    "sha256:" + hex.EncodeToString(layerDigest[:]),
+				"size":      len(layerBytes),
+			},
+		},
+	}
+	manBytes, err := json.Marshal(manifest)
+	assert.NoError(t, err, "marshal manifest failed")
+	manDigest := sha256.Sum256(manBytes)
+
+	var tarBuf bytes.Buffer
+	tw := tar.NewWriter(&tarBuf)
+	assert.NoError(t, writeTarFile(tw, "blobs/sha256/"+hex.EncodeToString(cfgDigest[:]), cfgContent))
+	assert.NoError(t, writeTarFile(tw, "blobs/sha256/"+hex.EncodeToString(layerDigest[:]), layerBytes))
+	assert.NoError(t, writeTarFile(tw, "blobs/sha256/"+hex.EncodeToString(manDigest[:]), manBytes))
+	index := ociManifest{
+		SchemaVersion: 2,
+		Manifests: []ociManifestDescriptor{
+			{
+				MediaType: "application/vnd.oci.image.manifest.v1+json",
+				Digest:    "sha256:" + hex.EncodeToString(manDigest[:]),
+				Size:      len(manBytes),
+				Annotations: map[string]string{
+					"org.opencontainers.image.ref.name": tag,
+					"io.containerd.image.name":          tag,
+				},
+				Platform: &PlatformInfo{
+					Architecture: arch,
+					OS:           currentOS,
+				},
+			},
+		},
+	}
+	idxBytes, err := json.Marshal(index)
+	assert.NoError(t, err, "marshal index failed")
+	assert.NoError(t, writeTarFile(tw, "index.json", idxBytes))
+	assert.NoError(t, writeTarFile(tw, "oci-layout", []byte(`{"imageLayoutVersion":"1.0.0"}`)))
+	assert.NoError(t, tw.Close())
+
+	assert.NoError(t, os.WriteFile(tarPath, tarBuf.Bytes(), 0644), "write tar file failed")
+	assert.FileExistsf(t, tarPath, "expected tarball %s not found", fileName)
+
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, "open tarball failed")
+	defer file.Close()
+	archSummary, images, err := ImageInFile(tarPath, file, file)
+	assert.NoError(t, err, "ImageInFile failed for large layer")
+	assert.True(t, len(archSummary) > 0, "no valid manifest found")
+	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/amd64"), "platform not found")
+	assert.True(t, len(images) > 0, "no image found")
+
+	layers, err := images[0].Layers()
+	assert.NoError(t, err, "get layers failed")
+	assert.True(t, len(layers) == 1, "should have one layer")
+	size, err := layers[0].Size()
+	assert.NoError(t, err, "get layer size failed")
+	assert.Equal(t, int64(len(layerBytes)), size, "layer size should equal to compressed layerBytes size")
+	uncompressed, err := layers[0].Uncompressed()
+	assert.NoError(t, err, "get layer uncompressed failed")
+	uncompressedData, err := io.ReadAll(uncompressed)
+	assert.NoError(t, err, "read layer uncompressed data failed")
+	assert.True(t, len(uncompressedData) > 64*1024*1024, "uncompressed layer size should > 64MB")
 }
 
 func TestImageInFile_OCISingleArmImage(t *testing.T) {
