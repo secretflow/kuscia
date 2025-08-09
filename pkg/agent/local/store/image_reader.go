@@ -344,10 +344,6 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 				}
 				ar.tarReader.nonLayerBlobCache[configBlobPath] = b
 			}
-			if err != nil {
-				nlog.Warnf("Failed to extract OCI image config '%s': %v", configBlobPath, err)
-				continue
-			}
 			var config ImageConfig
 			if err := json.Unmarshal(b, &config); err != nil {
 				nlog.Warnf("Failed to unmarshal OCI image config '%s': %v", configBlobPath, err)
@@ -408,10 +404,6 @@ func (ar *ArchReader) parseDockerManifest() ([]ImageInfo, []DockerManifest, []Im
 				continue
 			}
 			ar.tarReader.nonLayerBlobCache[configFile] = b
-		}
-		if err != nil {
-			nlog.Warnf("Failed to extract docker image config '%s' for repo tags %v: %v", configFile, manifest.RepoTags, err)
-			continue
 		}
 		var config ImageConfig
 		if err := json.Unmarshal(b, &config); err != nil {

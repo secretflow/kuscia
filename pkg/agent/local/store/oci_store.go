@@ -312,40 +312,34 @@ func (s *ociStore) LoadImage(tarFile string) error {
 	// Iterate all images and flatten & store each compatible image
 	found := false
 	for _, compatibleImage := range compatibleImages {
+		found = true
 		tag := compatibleImage.Info.Ref
 		img := compatibleImage.Image
-		cfg, getConfigFileErr := img.ConfigFile()
-		if getConfigFileErr != nil {
-			continue
+		tag = CheckTagCompliance(tag)
+		nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
+		flat, cacheFile, err := s.flattenImage(img)
+		if err != nil {
+			nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
+			return err
 		}
-		osArch := fmt.Sprintf("%s/%s", strings.ToLower(cfg.OS), strings.ToLower(cfg.Architecture))
-		if osArch == currentPlatform {
-			found = true
-			tag = CheckTagCompliance(tag)
-			nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
-			flat, cacheFile, err := s.flattenImage(img)
-			if err != nil {
-				nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
-				return err
-			}
-			err = func() error {
-				s.mutex.Lock()
-				defer s.mutex.Unlock()
-				// If image already exists, will update it
-				return s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, ""))
-			}()
+		err = func() error {
+			s.mutex.Lock()
+			defer s.mutex.Unlock()
+			// If image already exists, will update it
+			return s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, ""))
+		}()
 
-			// Remove cache file
-			if err := os.Remove(cacheFile); err != nil {
-				nlog.Warnf("Failed to remove temporary cache file %s: %v", cacheFile, err)
-			}
-
-			if err != nil {
-				return err
-			}
-
-			nlog.Infof("Load image: %s", tag)
+		// Remove cache file
+		if osErr := os.Remove(cacheFile); osErr != nil {
+			nlog.Warnf("Failed to remove temporary cache file %s: %v", cacheFile, osErr)
 		}
+
+		if err != nil {
+			return err
+		}
+
+		nlog.Infof("Load image: %s", tag)
+
 	}
 	if !found {
 		return fmt.Errorf("no compatible image found for platform: %s", currentPlatform)
