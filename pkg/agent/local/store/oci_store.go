@@ -315,9 +315,7 @@ func (s *ociStore) LoadImage(tarFile string) error {
 	}
 
 	// Iterate all compatible images and process them, improving readability and error reporting
-	found := false
 	for _, compatibleImage := range compatibleImages {
-		found = true
 		tag := compatibleImage.Info.Ref
 		img := compatibleImage.Image
 		tag = CheckTagCompliance(tag)
@@ -325,9 +323,6 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		if err := processCompatibleImage(s, tag, img); err != nil {
 			return fmt.Errorf("Failed to process image(%s): %w", tag, err)
 		}
-	}
-	if !found {
-		return fmt.Errorf("No compatible image found for platform: %s", currentPlatform)
 	}
 	return nil
 }
