@@ -587,7 +587,6 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 			configSize = int64(len(a.meta.RawConfigs[0]))
 		} else if len(docker.Config) > 0 {
 			// Fallback: use file name as digest (not recommended, may be incorrect).
-			// This may cause manifest correctness issues if the filename is not the SHA256 digest.
 			configDigest = v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimSuffix(docker.Config, ".json")}
 			configSize = 0
 		}
@@ -600,18 +599,18 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 				Size:      configSize,
 			},
 		}
-		for _, layerPath := range docker.Layers {
-			// WARNING: Using file name to derive layer digest is incorrect.
-			// The digest should be calculated from the layer file content (SHA256).
-			// This implementation may cause manifest correctness issues.
-			// TODO: For correctness, read layer content and calculate SHA256 digest.
-			layerDigest := v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimSuffix(layerPath, ".tar.gz")}
-			layerSize := int64(0)
-			layerMediaType := types.MediaType(MediaTypeDockerLayerGzip)
+		layers, err := a.Layers()
+		if err != nil {
+			return nil, fmt.Errorf("Manifest: failed to get image layer info: %w", err)
+		}
+		for _, layer := range layers {
+			digest, _ := layer.Digest()
+			size, _ := layer.Size()
+			mediaType, _ := layer.MediaType()
 			m.Layers = append(m.Layers, v1.Descriptor{
-				MediaType: layerMediaType,
-				Digest:    layerDigest,
-				Size:      layerSize,
+				MediaType: mediaType,
+				Digest:    digest,
+				Size:      size,
 			})
 		}
 		return m, nil
@@ -807,12 +806,17 @@ func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]Ima
 	if dockerErr == nil && len(dockerArchInfos) > 0 {
 		for idx, info := range dockerArchInfos {
 			allArchInfos = append(allArchInfos, info)
+			var rawManifest []byte
+			if idx < len(dockerManifests) {
+				rawManifest, _ = json.Marshal(dockerManifests[idx])
+			}
 			selectedMeta := &ImageMetaData{
 				tarReader:       meta.tarReader,
 				DockerManifests: []DockerManifest{dockerManifests[idx]},
 				RawConfigs:      [][]byte{dockerRawConfigs[idx]},
 				Configs:         []ImageConfig{dockerConfigs[idx]},
 				DiffIDs:         dockerDiffIDs,
+				RawManifest:     rawManifest,
 			}
 			allImages = append(allImages, &imageMetaAdapter{meta: selectedMeta, metaTarReader: tr})
 		}
@@ -831,9 +835,23 @@ func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]Ima
 				info = ociArchInfos[idx]
 			}
 			allArchInfos = append(allArchInfos, info)
+			var rawManifest []byte
+			if idx < len(ociManifests) {
+				digest := ociManifests[idx].Config.Digest
+				digestID := strings.TrimPrefix(digest, sha256Prefix)
+				manifestBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, digestID)
+				if meta.OCIIndex != nil && idx < len(meta.OCIIndex.Manifests) {
+					manifestDigestID := strings.TrimPrefix(meta.OCIIndex.Manifests[idx].Digest, sha256Prefix)
+					manifestBlobPath = fmt.Sprintf("%s/%s", blobPathPrefix, manifestDigestID)
+				}
+				if data, ok := tr.nonLayerBlobCache[manifestBlobPath]; ok {
+					rawManifest = data
+				}
+			}
 			selectedMeta := &ImageMetaData{
 				tarReader:    meta.tarReader,
 				OCIManifests: []OCIManifest{ociManifests[idx]},
+				RawManifest:  rawManifest,
 			}
 			if idx < len(ociRawConfigs) {
 				selectedMeta.RawConfigs = [][]byte{ociRawConfigs[idx]}

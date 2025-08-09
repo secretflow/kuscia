@@ -804,6 +804,7 @@ func TestImageInFile_LargeLayerStream(t *testing.T) {
 	defer os.RemoveAll(tempImageOutputDir)
 	arch := strings.ToLower(runtime.GOARCH)
 	currentOS := strings.ToLower(runtime.GOOS)
+	osArch := fmt.Sprintf("%s/%s", currentOS, arch)
 
 	fileName := fmt.Sprintf("oci-large-layer-%s.tar", arch)
 	tarPath := filepath.Join(tempImageOutputDir, fileName)
@@ -885,7 +886,7 @@ func TestImageInFile_LargeLayerStream(t *testing.T) {
 	archSummary, images, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, "ImageInFile failed for large layer")
 	assert.True(t, len(archSummary) > 0, "no valid manifest found")
-	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/amd64"), "platform not found")
+	assert.True(t, slices.Contains(archSummary[0].Platforms, osArch), "platform not found")
 	assert.True(t, len(images) > 0, "no image found")
 
 	layers, err := images[0].Layers()
