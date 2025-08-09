@@ -707,7 +707,6 @@ func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
 	if len(a.meta.OCIManifests) > 0 {
 		oci := a.meta.OCIManifests[0]
 		for _, l := range oci.Layers {
-			err := error(nil)
 			layer, err := tarball.LayerFromOpener(
 				func() (io.ReadCloser, error) {
 					return a.meta.tarReader.ExtractFileAsStream(fmt.Sprintf("%s/%s", blobPathPrefix, strings.TrimPrefix(l.Digest, sha256Prefix)))
