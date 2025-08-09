@@ -277,22 +277,33 @@ type ArchReader struct {
 	tarReader *TarReader
 }
 
-func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, []OCIManifest, *OCIIndex, []ImageConfig, [][]byte, error) {
+/**
+ * parseOCIIndex parses the OCI index and returns image info, manifest content, manifest digests, index object, config content, and raw config content.
+ */
+func (ar *ArchReader) parseOCIIndex() ([]ImageInfo, []OCIManifest, []string, *OCIIndex, []ImageConfig, [][]byte, error) {
 	var archInfos []ImageInfo
 	var ociManifests []OCIManifest
+	var ociManifestDigests []string
 	var ociIndex *OCIIndex
 	var configs []ImageConfig
 	var rawConfigs [][]byte
 
-	err := ar.parseOCIIndexRecursive(indexJSONFile, "", 0, &archInfos, &ociManifests, &ociIndex, &configs, &rawConfigs)
+	err := ar.parseOCIIndexRecursive(indexJSONFile, "", 0, &archInfos, &ociManifests, &ociManifestDigests, &ociIndex, &configs, &rawConfigs)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
-	return archInfos, ociManifests, ociIndex, configs, rawConfigs, nil
+	return archInfos, ociManifests, ociManifestDigests, ociIndex, configs, rawConfigs, nil
 }
 
-func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string, depth int, archInfos *[]ImageInfo, ociManifests *[]OCIManifest, ociIndex **OCIIndex, configs *[]ImageConfig, rawConfigs *[][]byte) error {
-	// Recursively parse OCI index, ensure archInfos, ociManifests, configs, rawConfigs are in corresponding order
+/**
+ * parseOCIIndexRecursive recursively parses the OCI index and collects manifest digests.
+ */
+func (ar *ArchReader) parseOCIIndexRecursive(
+	indexPath string, parentRef string, depth int,
+	archInfos *[]ImageInfo, ociManifests *[]OCIManifest, ociManifestDigests *[]string, ociIndex **OCIIndex,
+	configs *[]ImageConfig, rawConfigs *[][]byte,
+) error {
+	// Recursively parse OCI index, ensure archInfos, ociManifests, ociManifestDigests, configs, rawConfigs are in corresponding order
 	if depth > maxOCIRecursiveDepth {
 		return fmt.Errorf("parseOCIIndexRecursive: max recursive depth exceeded: %d for indexPath '%s'", depth, indexPath)
 	}
@@ -322,14 +333,14 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 		switch manifest.MediaType {
 		case v1spec.MediaTypeImageIndex, MediaTypeDockerManifestListV2:
 			// Recursively parse nested index
-			if err := ar.parseOCIIndexRecursive(blobPath, refName, depth+1, archInfos, ociManifests, ociIndex, configs, rawConfigs); err != nil {
-				nlog.Warnf("Failed to recursively parse nested index: %v", err)
+			if parseErr := ar.parseOCIIndexRecursive(blobPath, refName, depth+1, archInfos, ociManifests, ociManifestDigests, ociIndex, configs, rawConfigs); parseErr != nil {
+				nlog.Warnf("Failed to recursively parse nested index: %v", parseErr)
 				continue
 			}
-		case v1spec.MediaTypeImageManifest, MediaTypeDockerManifestV2:
+		case v1spec.MediaTypeImageManifest:
 			var ociManifest OCIManifest
-			if err := ar.tarReader.ReadJSONFile(blobPath, &ociManifest, true); err != nil {
-				nlog.Warnf("Failed to read manifest: %v", err)
+			if readErr := ar.tarReader.ReadJSONFile(blobPath, &ociManifest, true); err != nil {
+				nlog.Warnf("Failed to read manifest: %v", readErr)
 				continue
 			}
 			configDigestID := strings.TrimPrefix(ociManifest.Config.Digest, sha256Prefix)
@@ -366,6 +377,7 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 				Source:       fmt.Sprintf("%s manifest config", indexPath),
 			})
 			*ociManifests = append(*ociManifests, ociManifest)
+			*ociManifestDigests = append(*ociManifestDigests, manifest.Digest)
 			*configs = append(*configs, config)
 			*rawConfigs = append(*rawConfigs, b)
 		default:
@@ -695,17 +707,20 @@ func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
 	if len(a.meta.OCIManifests) > 0 {
 		oci := a.meta.OCIManifests[0]
 		for _, l := range oci.Layers {
-			stream, err := a.meta.tarReader.ExtractFileAsStream(fmt.Sprintf("%s/%s", blobPathPrefix, strings.TrimPrefix(l.Digest, sha256Prefix)))
+			err := error(nil)
 			if err != nil {
 				return nil, err
 			}
-			layer, err := tarball.LayerFromReader(stream, tarball.WithMediaType(types.MediaType(l.MediaType)))
+			layer, err := tarball.LayerFromOpener(
+				func() (io.ReadCloser, error) {
+					return a.meta.tarReader.ExtractFileAsStream(fmt.Sprintf("%s/%s", blobPathPrefix, strings.TrimPrefix(l.Digest, sha256Prefix)))
+				},
+				tarball.WithMediaType(types.MediaType(l.MediaType)),
+			)
 			if err != nil {
-				stream.Close()
 				return nil, err
 			}
 			layers = append(layers, layer)
-			stream.Close()
 		}
 		a.cachedLayers = layers
 		return layers, nil
@@ -713,25 +728,24 @@ func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
 	if len(a.meta.DockerManifests) > 0 {
 		docker := a.meta.DockerManifests[0]
 		for _, layerPath := range docker.Layers {
-			stream, err := a.meta.tarReader.ExtractFileAsStream(layerPath)
-			if err != nil {
-				return nil, err
-			}
 			var mediaType types.MediaType
 			if strings.HasSuffix(layerPath, ".tar.gz") {
-				mediaType = types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")
+				mediaType = types.MediaType(MediaTypeDockerLayerGzip)
 			} else if strings.HasSuffix(layerPath, ".tar") {
-				mediaType = types.MediaType("application/vnd.docker.image.rootfs.diff.tar")
+				mediaType = types.MediaType(MediaTypeDockerLayerTar)
 			} else {
-				mediaType = types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")
+				mediaType = types.MediaType(MediaTypeDockerLayerGzip)
 			}
-			layer, err := tarball.LayerFromReader(stream, tarball.WithMediaType(mediaType))
+			layer, err := tarball.LayerFromOpener(
+				func() (io.ReadCloser, error) {
+					return a.meta.tarReader.ExtractFileAsStream(layerPath)
+				},
+				tarball.WithMediaType(mediaType),
+			)
 			if err != nil {
-				stream.Close()
 				return nil, err
 			}
 			layers = append(layers, layer)
-			stream.Close()
 		}
 		a.cachedLayers = layers
 		return layers, nil
@@ -822,7 +836,7 @@ func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]Ima
 		}
 	}
 
-	ociArchInfos, ociManifests, ociIndex, ociConfigs, ociRawConfigs, ociErr := archReader.parseOCIIndex()
+	ociArchInfos, ociManifests, ociManifestDigests, ociIndex, ociConfigs, ociRawConfigs, ociErr := archReader.parseOCIIndex()
 	if ociErr == nil && len(ociArchInfos) > 0 {
 		meta.OCIIndex = ociIndex
 		meta.OCIManifests = ociManifests
@@ -836,14 +850,10 @@ func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]Ima
 			}
 			allArchInfos = append(allArchInfos, info)
 			var rawManifest []byte
-			if idx < len(ociManifests) {
-				digest := ociManifests[idx].Config.Digest
+			if idx < len(ociManifestDigests) {
+				digest := ociManifestDigests[idx]
 				digestID := strings.TrimPrefix(digest, sha256Prefix)
 				manifestBlobPath := fmt.Sprintf("%s/%s", blobPathPrefix, digestID)
-				if meta.OCIIndex != nil && idx < len(meta.OCIIndex.Manifests) {
-					manifestDigestID := strings.TrimPrefix(meta.OCIIndex.Manifests[idx].Digest, sha256Prefix)
-					manifestBlobPath = fmt.Sprintf("%s/%s", blobPathPrefix, manifestDigestID)
-				}
 				if data, ok := tr.nonLayerBlobCache[manifestBlobPath]; ok {
 					rawManifest = data
 				}
