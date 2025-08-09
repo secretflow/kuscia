@@ -815,6 +815,10 @@ func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]Ima
 		}
 	}
 
+	if len(allArchInfos) == 0 && dockerErr != nil && ociErr != nil {
+		return nil, nil, fmt.Errorf("failed to parse image tarball: not a valid docker or oci image format. docker error: %v, oci error: %v", dockerErr, ociErr)
+	}
+
 	summaryMap := make(map[string]*ImageSummary)
 	for _, info := range allArchInfos {
 		osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)

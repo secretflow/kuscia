@@ -306,7 +306,7 @@ func (s *ociStore) LoadImage(tarFile string) error {
 	defer file.Close()
 	imgSummary, compatibleImages, err := ImageInFile(tarFile, file, file)
 	if err != nil {
-		return fmt.Errorf("load image failed with: %s", err.Error())
+		return fmt.Errorf("load image failed with: %w", err.Error())
 	}
 	currentPlatform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
 	currentPlatform = strings.ToLower(currentPlatform)
