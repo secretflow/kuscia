@@ -132,19 +132,19 @@ func (e *TarfileOsArchUnsupportedError) Unwrap() error {
 	return e.Cause
 }
 
-func createTarReader(filePath string) *TarReader {
+func createTarReader(filePath string) (*TarReader, error) {
 	isGzip := strings.HasSuffix(strings.ToLower(filePath), ".gz")
 	isTarGzip := strings.HasSuffix(strings.ToLower(filePath), ".tgz")
 	f, err := os.Open(filePath)
 	if err != nil {
-		panic(fmt.Sprintf("createTarReader: failed to open tar file '%s': %v", filePath, err))
+		return nil, fmt.Errorf("createTarReader: failed to open tar file '%s': %w", filePath, err)
 	}
 	return &TarReader{
 		filePath:          filePath,
 		isGzip:            isGzip || isTarGzip,
 		nonLayerBlobCache: make(map[string][]byte),
 		file:              f,
-	}
+	}, nil
 }
 
 /**
@@ -763,7 +763,10 @@ func (a *imageMetaAdapter) Size() (int64, error) {
 }
 
 func ImageInFile(tarFile string) ([]ImageSummary, []CompatibleImage, error) {
-	tr := createTarReader(tarFile)
+	tr, ioErr := createTarReader(tarFile)
+	if ioErr != nil {
+		return nil, nil, fmt.Errorf("Create tar reader failed: %v", ioErr)
+	}
 	meta := &ImageMetaData{tarReader: tr}
 	archReader := &ArchReader{tarReader: tr}
 

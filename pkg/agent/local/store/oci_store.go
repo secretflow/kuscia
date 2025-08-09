@@ -336,7 +336,9 @@ func (s *ociStore) LoadImage(tarFile string) error {
 			}()
 
 			// Remove cache file
-			_ = os.Remove(cacheFile)
+			if err := os.Remove(cacheFile); err != nil {
+				nlog.Warnf("Failed to remove temporary cache file %s: %v", cacheFile, err)
+			}
 
 			if err != nil {
 				return err
