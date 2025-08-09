@@ -821,7 +821,7 @@ func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]Ima
 
 	summaryMap := make(map[string]*ImageSummary)
 	for _, info := range allArchInfos {
-		osArch := fmt.Sprintf("%s/%s", info.OS, info.Architecture)
+		osArch := fmt.Sprintf("%s/%s", strings.ToLower(info.OS), strings.ToLower(info.Architecture))
 		if info.Ref == "" {
 			continue
 		}

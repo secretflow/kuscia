@@ -46,12 +46,12 @@ function wait_kuscia_job_until() {
     case "${job_phase}" in
     Succeeded)
       echo "Succeeded"
-      unset ctr timeout_seconds job_id times current
+      unset ctr timeout_seconds job_id times current unexpected_count unexpected_tolerance_times
       return
       ;;
     Failed)
       echo "Failed"
-      unset ctr timeout_seconds job_id times current
+      unset ctr timeout_seconds job_id times current unexpected_count unexpected_tolerance_times
       return
       ;;
     Pending | Running | AwaitingApproval | "<none>" | "") ;;
@@ -71,7 +71,7 @@ function wait_kuscia_job_until() {
     sleep "${TIMEOUT_DURATION_SECONDS}"
   done
   echo "Timeout"
-  unset ctr timeout_seconds job_id times current
+  unset ctr timeout_seconds job_id times current unexpected_count unexpected_tolerance_times
 }
 
 # Get kuscia api http code on http for healrhZ
