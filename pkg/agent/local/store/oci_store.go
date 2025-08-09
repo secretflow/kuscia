@@ -319,6 +319,13 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		tag := compatibleImage.Info.Ref
 		img := compatibleImage.Image
 		tag = CheckTagCompliance(tag)
+		// If the image does not have a valid tag, use the tarball filename as a fallback
+		if tag == "" || tag == "docker.io/library/" {
+			// Get the tarFile's filename (remove path and extension)
+			baseName := path.Base(tarFile)
+			tag = fmt.Sprintf("%s/%s/%s", defaultRegistry, defaultRepository, strings.TrimSuffix(baseName, path.Ext(baseName)))
+			nlog.Warnf("No valid image tag found, using tarball filename as fallback: %s", tag)
+		}
 		nlog.Infof("[OCI] Start processing image(%s) ...", tag)
 		if err := processCompatibleImage(s, tag, img); err != nil {
 			return fmt.Errorf("Failed to process image(%s): %w", tag, err)
