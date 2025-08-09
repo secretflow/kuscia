@@ -120,6 +120,9 @@ const (
 	blobPathPrefix                = "blobs/sha256"
 	MediaTypeDockerManifestListV2 = "application/vnd.docker.distribution.manifest.list.v2+json"
 	MediaTypeDockerManifestV2     = "application/vnd.docker.distribution.manifest.v2+json"
+	MediaTypeDockerConfigV1       = "application/vnd.docker.container.image.v1+json"
+	MediaTypeDockerLayerGzip      = "application/vnd.docker.image.rootfs.diff.tar.gzip"
+	MediaTypeDockerLayerTar       = "application/vnd.docker.image.rootfs.diff.tar"
 	indexJSONFile                 = "index.json"
 	manifestJSONFile              = "manifest.json"
 	maxOCIRecursiveDepth          = 8 // Prevent stack overflow in recursive index parsing
@@ -568,11 +571,11 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 		docker := a.meta.DockerManifests[0]
 		var configDigest v1.Hash
 		var configSize int64
-		var configMediaType types.MediaType = "application/vnd.docker.container.image.v1+json"
+		var configMediaType types.MediaType = MediaTypeDockerConfigV1
 		// Only use metadata, do not read config content.
 		if len(docker.Config) > 0 {
 			// Use file name as digest (not guaranteed to be consistent, but avoids extraction).
-			configDigest = v1.Hash{Algorithm: "sha256", Hex: strings.TrimSuffix(docker.Config, ".json")}
+			configDigest = v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimSuffix(docker.Config, ".json")}
 			configSize = 0 // Do not read actual size.
 		}
 		m := &v1.Manifest{
@@ -586,9 +589,9 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 		}
 		for _, layerPath := range docker.Layers {
 			// Only use metadata, do not read layer content.
-			layerDigest := v1.Hash{Algorithm: "sha256", Hex: strings.TrimSuffix(layerPath, ".tar.gz")}
+			layerDigest := v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimSuffix(layerPath, ".tar.gz")}
 			layerSize := int64(0)
-			layerMediaType := types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")
+			layerMediaType := types.MediaType(MediaTypeDockerLayerGzip)
 			m.Layers = append(m.Layers, v1.Descriptor{
 				MediaType: layerMediaType,
 				Digest:    layerDigest,
@@ -605,7 +608,7 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 			MediaType:     types.MediaType(oci.MediaType),
 			Config: v1.Descriptor{
 				MediaType: types.MediaType(oci.Config.MediaType),
-				Digest:    v1.Hash{Algorithm: "sha256", Hex: strings.TrimPrefix(oci.Config.Digest, "sha256:")},
+				Digest:    v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimPrefix(oci.Config.Digest, sha256Prefix)},
 				Size:      int64(oci.Config.Size),
 			},
 		}
@@ -613,7 +616,7 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 			// Only use metadata, do not read layer content.
 			m.Layers = append(m.Layers, v1.Descriptor{
 				MediaType: types.MediaType(l.MediaType),
-				Digest:    v1.Hash{Algorithm: "sha256", Hex: strings.TrimPrefix(l.Digest, "sha256:")},
+				Digest:    v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimPrefix(l.Digest, sha256Prefix)},
 				Size:      int64(l.Size),
 			})
 		}
@@ -696,7 +699,15 @@ func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
 			if err != nil {
 				return nil, err
 			}
-			layer, err := tarball.LayerFromReader(stream, tarball.WithMediaType(types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")))
+			var mediaType types.MediaType
+			if strings.HasSuffix(layerPath, ".tar.gz") {
+				mediaType = types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")
+			} else if strings.HasSuffix(layerPath, ".tar") {
+				mediaType = types.MediaType("application/vnd.docker.image.rootfs.diff.tar")
+			} else {
+				mediaType = types.MediaType("application/vnd.docker.image.rootfs.diff.tar.gzip")
+			}
+			layer, err := tarball.LayerFromReader(stream, tarball.WithMediaType(mediaType))
 			if err != nil {
 				stream.Close()
 				return nil, err

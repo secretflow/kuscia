@@ -475,7 +475,8 @@ func (s *ociStore) kusciaImageAnnotation(tag string, _ string) layout.Option {
 	})
 }
 
-// It adds default values for registry and repository if they are missing.
+// CheckTagCompliance ensures that the given image name is in a valid format by
+// adding default values for registry and repository if they are missing.
 func CheckTagCompliance(targetImage string) string {
 	parts := strings.Split(targetImage, "/")
 	image := targetImage

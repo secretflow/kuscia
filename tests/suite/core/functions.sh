@@ -42,7 +42,7 @@ function wait_kuscia_job_until() {
   local unexpected_count=0
   while [ "${current}" -lt "${times}" ]; do
     local job_phase
-    job_phase=$(docker exec -it "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
+    job_phase=$(docker exec "${ctr}" kubectl get kj -n cross-domain "${job_id}" -o custom-columns=PHASE:.status.phase | sed -n '2p' | tr -d '\n' | tr -d '\r')
     case "${job_phase}" in
     Succeeded)
       echo "Succeeded"
