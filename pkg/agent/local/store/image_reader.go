@@ -341,8 +341,10 @@ func (ar *ArchReader) parseOCIIndexRecursive(indexPath string, parentRef string,
 					nlog.Warnf("Failed to extract OCI image config '%s': %v", configBlobPath, streamErr)
 					continue
 				}
-				b, err = io.ReadAll(stream)
-				stream.Close()
+				b, err = func() ([]byte, error) {
+					defer stream.Close()
+					return io.ReadAll(stream)
+				}()
 				if err != nil {
 					nlog.Warnf("Failed to read OCI image config '%s': %v", configBlobPath, err)
 					continue
@@ -402,8 +404,10 @@ func (ar *ArchReader) parseDockerManifest() ([]ImageInfo, []DockerManifest, []Im
 				nlog.Warnf("Failed to extract docker image config '%s' for repo tags %v: %v", configFile, manifest.RepoTags, err)
 				continue
 			}
-			b, err = io.ReadAll(stream)
-			stream.Close()
+			b, err = func() ([]byte, error) {
+				defer stream.Close()
+				return io.ReadAll(stream)
+			}()
 			if err != nil {
 				nlog.Warnf("Failed to read docker image config '%s' for repo tags %v: %v", configFile, manifest.RepoTags, err)
 				continue
