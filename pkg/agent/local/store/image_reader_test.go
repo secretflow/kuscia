@@ -633,7 +633,10 @@ func TestImageInFile_DockerLegacySingleArmImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -658,7 +661,10 @@ func TestImageInFile_DockerLegacySingleAmdImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -680,7 +686,10 @@ func TestImageInFile_OCISingleAmdImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -702,7 +711,10 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarFile, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	_, images, err := ImageInFile(tarFile)
+	file, err := os.Open(tarFile)
+	assert.NoError(t, err, "open tarball failed")
+	defer file.Close()
+	_, images, err := ImageInFile(tarFile, file, file)
 	if err != nil {
 		t.Fatalf("ImageInFile failed: %v", err)
 	}
@@ -799,7 +811,10 @@ func TestImageInFile_OCISingleArmImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -820,7 +835,10 @@ func TestImageInFile_OCISinglePpcImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -857,7 +875,10 @@ func TestImageInFile_OCISingleTarGzipImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("copy tar file into %s failed", gzfileName))
 	err = gzWriter.Close()
 	assert.NoError(t, err, fmt.Sprintf("close gzip writer for %s failed", gzfileName))
-	archSummary, _, err := ImageInFile(tarGzPath)
+	file, err := os.Open(tarGzPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", gzfileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarGzPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", gzfileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", gzfileName))
@@ -880,7 +901,10 @@ func TestImageInFile_OCIMultiArch(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -905,7 +929,10 @@ func TestImageInFile_OCIMultiImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, "open tarball failed")
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
@@ -993,7 +1020,10 @@ func TestImageInFile_LargeLayerStream(t *testing.T) {
 	assert.NoError(t, os.WriteFile(tarPath, tarBuf.Bytes(), 0644), "write tar file failed")
 	assert.FileExistsf(t, tarPath, "expected tarball %s not found", fileName)
 
-	archSummary, images, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, "open tarball failed")
+	defer file.Close()
+	archSummary, images, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, "ImageInFile failed for large layer")
 	assert.True(t, len(archSummary) > 0, "no valid manifest found")
 	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/amd64"), "platform not found")
@@ -1035,7 +1065,10 @@ func TestImageInFile_DockerLegacyMultiImage(t *testing.T) {
 	assert.NoError(t, err, fmt.Sprintf("create tarball %s failed", fileName))
 	assert.FileExistsf(t, tarPath, fmt.Sprintf("expected tarball %s not found", fileName))
 
-	archSummary, _, err := ImageInFile(tarPath)
+	file, err := os.Open(tarPath)
+	assert.NoError(t, err, fmt.Sprintf("open tarball %s failed", fileName))
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarPath, file, file)
 	assert.NoError(t, err, fmt.Sprintf("read os and arch info from tarball %s failed", fileName))
 
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))

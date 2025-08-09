@@ -299,7 +299,12 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		return fmt.Errorf("file not exists: %s", tarFile)
 	}
 
-	imgSummary, compatibleImages, err := ImageInFile(tarFile)
+	file, err := os.Open(tarFile)
+	if err != nil {
+		return fmt.Errorf("open tar file failed: %w", err)
+	}
+	defer file.Close()
+	imgSummary, compatibleImages, err := ImageInFile(tarFile, file, file)
 	if err != nil {
 		return fmt.Errorf("load image failed with: %s", err.Error())
 	}

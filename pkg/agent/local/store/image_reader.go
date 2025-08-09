@@ -97,14 +97,15 @@ type ImageConfig struct {
 }
 
 /**
- * TarReader provides methods to extract files from tar archives, supporting gzip and caching for non-layer blobs.
- * The file handle is persistent for the lifetime of the TarReader.
+ * TarReader provides methods to extract files from tar/gzip streams, with cache for non-layer blobs.
+ * The file handle is passed in from the caller and its lifecycle is managed externally.
  */
 type TarReader struct {
 	filePath          string
 	isGzip            bool
 	nonLayerBlobCache map[string][]byte
-	file              *os.File // Persistent file handle
+	file              io.ReadSeeker // Use io.ReadSeeker for compatibility with various stream types
+	closer            io.Closer     // Optional closer for external resource management
 }
 
 type TarfileOsArchUnsupportedError struct {
@@ -132,27 +133,28 @@ func (e *TarfileOsArchUnsupportedError) Unwrap() error {
 	return e.Cause
 }
 
-func createTarReader(filePath string) (*TarReader, error) {
+/**
+ * createTarReader creates a TarReader from an external stream.
+ * The caller is responsible for opening and closing the file/stream.
+ */
+func createTarReader(filePath string, reader io.ReadSeeker, closer io.Closer) (*TarReader, error) {
 	isGzip := strings.HasSuffix(strings.ToLower(filePath), ".gz")
 	isTarGzip := strings.HasSuffix(strings.ToLower(filePath), ".tgz")
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("createTarReader: failed to open tar file '%s': %w", filePath, err)
-	}
 	return &TarReader{
 		filePath:          filePath,
 		isGzip:            isGzip || isTarGzip,
 		nonLayerBlobCache: make(map[string][]byte),
-		file:              f,
+		file:              reader,
+		closer:            closer,
 	}, nil
 }
 
 /**
- * Close the file handle held by TarReader.
+ * Close the underlying resource if a closer is provided.
  */
 func (tr *TarReader) Close() error {
-	if tr.file != nil {
-		return tr.file.Close()
+	if tr.closer != nil {
+		return tr.closer.Close()
 	}
 	return nil
 }
@@ -754,12 +756,16 @@ func (a *imageMetaAdapter) Size() (int64, error) {
 	return total, nil
 }
 
-func ImageInFile(tarFile string) ([]ImageSummary, []CompatibleImage, error) {
-	tr, ioErr := createTarReader(tarFile)
+/**
+ * ImageInFile parses the image tarball using an external stream.
+ * The caller is responsible for opening and closing the file/stream.
+ */
+func ImageInFile(filePath string, reader io.ReadSeeker, closer io.Closer) ([]ImageSummary, []CompatibleImage, error) {
+	tr, ioErr := createTarReader(filePath, reader, closer)
 	if ioErr != nil {
 		return nil, nil, fmt.Errorf("Create tar reader failed: %v", ioErr)
 	}
-	defer tr.Close()
+	// Do not close tr (and file) here; the caller is responsible for closing the file after all image/layer operations are done.
 	meta := &ImageMetaData{tarReader: tr}
 	archReader := &ArchReader{tarReader: tr}
 
@@ -852,8 +858,17 @@ func CheckOsArchCompliance(tarFile string) error {
 	return CheckOsArchComplianceWithPlatform(tarFile, currentPlatform)
 }
 
+/**
+ * CheckOsArchComplianceWithPlatform opens the tar file and checks platform compatibility.
+ */
 func CheckOsArchComplianceWithPlatform(tarFile string, expectedOsArch string) error {
-	archSummary, _, err := ImageInFile(tarFile)
+	file, err := os.Open(tarFile)
+	if err != nil {
+		nlog.Warnf("Error opening image tar file: %s, error: %v", tarFile, err)
+		return err
+	}
+	defer file.Close()
+	archSummary, _, err := ImageInFile(tarFile, file, file)
 	if err != nil {
 		nlog.Warnf("Error reading image tar file: %s, error: %v", tarFile, err)
 		return err
