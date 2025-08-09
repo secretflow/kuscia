@@ -96,11 +96,15 @@ type ImageConfig struct {
 	DiffIDs      []string `json:"diff_ids,omitempty"`
 }
 
-// TarReader provides methods to extract files from tar archives, supporting gzip and caching for non-layer blobs.
+/**
+ * TarReader provides methods to extract files from tar archives, supporting gzip and caching for non-layer blobs.
+ * The file handle is persistent for the lifetime of the TarReader.
+ */
 type TarReader struct {
 	filePath          string
 	isGzip            bool
 	nonLayerBlobCache map[string][]byte
+	file              *os.File // Persistent file handle
 }
 
 type TarfileOsArchUnsupportedError struct {
@@ -131,33 +135,51 @@ func (e *TarfileOsArchUnsupportedError) Unwrap() error {
 func createTarReader(filePath string) *TarReader {
 	isGzip := strings.HasSuffix(strings.ToLower(filePath), ".gz")
 	isTarGzip := strings.HasSuffix(strings.ToLower(filePath), ".tgz")
+	f, err := os.Open(filePath)
+	if err != nil {
+		panic(fmt.Sprintf("createTarReader: failed to open tar file '%s': %v", filePath, err))
+	}
 	return &TarReader{
 		filePath:          filePath,
 		isGzip:            isGzip || isTarGzip,
 		nonLayerBlobCache: make(map[string][]byte),
+		file:              f,
 	}
 }
 
+/**
+ * Close the file handle held by TarReader.
+ */
+func (tr *TarReader) Close() error {
+	if tr.file != nil {
+		return tr.file.Close()
+	}
+	return nil
+}
+
+/**
+ * streamCloser only closes the gzip/tar reader, does not close the shared file handle.
+ */
 type streamCloser struct {
 	io.Reader
-	file   *os.File
 	closer io.Closer
 }
 
 func (sc *streamCloser) Close() error {
 	if sc.closer != nil {
-		sc.closer.Close()
+		return sc.closer.Close()
 	}
-	return sc.file.Close()
+	return nil
 }
 
 func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error) {
 	filePath = filepath.ToSlash(filePath)
 	filePath = strings.TrimPrefix(filePath, "./")
 
-	file, ioError := os.Open(tr.filePath)
-	if ioError != nil {
-		return nil, fmt.Errorf("ExtractFileAsStream: failed to open tar file '%s': %v", tr.filePath, ioError)
+	// Reuse the file handle held by TarReader
+	file := tr.file
+	if file == nil {
+		return nil, fmt.Errorf("ExtractFileAsStream: tar file not opened")
 	}
 
 	createTarFileReader := func() (*tar.Reader, io.Closer, error) {
@@ -182,7 +204,6 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 
 	tarfileReader, closer, err := createTarFileReader()
 	if err != nil {
-		file.Close()
 		return nil, fmt.Errorf("ExtractFileAsStream: failed to create tar reader '%s': %v", tr.filePath, err)
 	}
 
@@ -195,7 +216,6 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 			if closer != nil {
 				closer.Close()
 			}
-			file.Close()
 			return nil, fmt.Errorf("ExtractFileAsStream: failed to read tar entry '%s': %v", tr.filePath, err)
 		}
 		entryPath := filepath.ToSlash(header.Name)
@@ -205,13 +225,11 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 				if closer != nil {
 					closer.Close()
 				}
-				file.Close()
 				return nil, fmt.Errorf("ExtractFileAsStream: file '%s' is not a regular file", entryPath)
 			}
 			// Limit read length to prevent tar.Reader from reading beyond the file
 			return &streamCloser{
 				Reader: io.LimitReader(tarfileReader, header.Size),
-				file:   file,
 				closer: closer,
 			}, nil
 		}
@@ -219,7 +237,6 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 	if closer != nil {
 		closer.Close()
 	}
-	file.Close()
 	return nil, fmt.Errorf("ExtractFileAsStream: file '%s' not found in tar '%s'", filePath, tr.filePath)
 }
 
