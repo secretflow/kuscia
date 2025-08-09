@@ -328,13 +328,17 @@ func (s *ociStore) LoadImage(tarFile string) error {
 				nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
 				return err
 			}
-			// Remove cache file
-			defer os.Remove(cacheFile)
-			s.mutex.Lock()
-			defer s.mutex.Unlock()
+			err = func() error {
+				s.mutex.Lock()
+				defer s.mutex.Unlock()
+				// If image already exists, will update it
+				return s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, ""))
+			}()
 
-			// If image already exists, will update it
-			if err = s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, "")); err != nil {
+			// Remove cache file
+			_ = os.Remove(cacheFile)
+
+			if err != nil {
 				return err
 			}
 

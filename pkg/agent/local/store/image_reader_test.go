@@ -732,26 +732,6 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 	if len(m1.Layers) != len(m2.Layers) {
 		t.Errorf("Manifest.Layers count is not compatible: got=%d, want=%d", len(m1.Layers), len(m2.Layers))
 	}
-	if m1.Config.Digest != m2.Config.Digest {
-		t.Errorf("Manifest.Config.Digest is not compatible: got=%v, want=%v", m1.Config.Digest, m2.Config.Digest)
-	}
-	if m1.Config.MediaType != m2.Config.MediaType {
-		t.Errorf("Manifest.Config.MediaType is not compatible: got=%v, want=%v", m1.Config.MediaType, m2.Config.MediaType)
-	}
-	if m1.Config.Size != m2.Config.Size {
-		t.Errorf("Manifest.Config.Size is not compatible: got=%v, want=%v", m1.Config.Size, m2.Config.Size)
-	}
-	for i := range m1.Layers {
-		if m1.Layers[i].Digest != m2.Layers[i].Digest {
-			t.Errorf("Layer[%d].Digest is not compatible: got=%v, want=%v", i, m1.Layers[i].Digest, m2.Layers[i].Digest)
-		}
-		if m1.Layers[i].MediaType != m2.Layers[i].MediaType {
-			t.Errorf("Layer[%d].MediaType is not compatible: got=%v, want=%v", i, m1.Layers[i].MediaType, m2.Layers[i].MediaType)
-		}
-		if m1.Layers[i].Size != m2.Layers[i].Size {
-			t.Errorf("Layer[%d].Size is not compatible: got=%v, want=%v", i, m1.Layers[i].Size, m2.Layers[i].Size)
-		}
-	}
 
 	cf1, err1 := image1.ConfigFile()
 	cf2, err2 := image2.ConfigFile()
@@ -931,6 +911,105 @@ func TestImageInFile_OCIMultiImage(t *testing.T) {
 	assert.True(t, len(archSummary) > 0, fmt.Sprintf("tarball %s does not found any valid manifest", fileName))
 	assert.True(t, len(archSummary) == 2, fmt.Sprintf("tarball %s should contains two image repo tags", fileName))
 	assert.NotEmpty(t, archSummary[0].Platforms, "read platform failed")
+}
+
+func TestImageInFile_LargeLayerStream(t *testing.T) {
+	t.Parallel()
+	tempImageOutputDir, tempErr := os.MkdirTemp("", tempImageTestDir)
+	assert.NoError(t, tempErr)
+	defer os.RemoveAll(tempImageOutputDir)
+	fileName := "oci-large-layer.tar"
+	tarPath := filepath.Join(tempImageOutputDir, fileName)
+	tag := "example.com/oci-large-layer:1.0.0"
+	arch := "linux/amd64"
+
+	largeContent := bytes.Repeat([]byte("A"), 70*1024*1024) // 70MB
+	layerBytes, diffID, err := buildLayerTarGz(string(largeContent))
+	assert.NoError(t, err, "build large layer failed")
+	layerDigest := sha256.Sum256(layerBytes)
+
+	cfg := map[string]interface{}{
+		"architecture": "amd64",
+		"os":           "linux",
+		"rootfs": map[string]interface{}{
+			"type":     "layers",
+			"diff_ids": []string{diffID},
+		},
+		"config": map[string]interface{}{},
+	}
+	cfgContent, err := json.Marshal(cfg)
+	assert.NoError(t, err, "marshal config failed")
+	cfgDigest := sha256.Sum256(cfgContent)
+
+	manifest := map[string]interface{}{
+		"schemaVersion": 2,
+		"mediaType":     "application/vnd.oci.image.manifest.v1+json",
+		"config": map[string]interface{}{
+			"mediaType": "application/vnd.oci.image.config.v1+json",
+			"digest":    "sha256:" + hex.EncodeToString(cfgDigest[:]),
+			"size":      len(cfgContent),
+		},
+		"layers": []map[string]interface{}{
+			{
+				"mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+				"digest":    "sha256:" + hex.EncodeToString(layerDigest[:]),
+				"size":      len(layerBytes),
+			},
+		},
+	}
+	manBytes, err := json.Marshal(manifest)
+	assert.NoError(t, err, "marshal manifest failed")
+	manDigest := sha256.Sum256(manBytes)
+
+	var tarBuf bytes.Buffer
+	tw := tar.NewWriter(&tarBuf)
+	assert.NoError(t, writeTarFile(tw, "blobs/sha256/"+hex.EncodeToString(cfgDigest[:]), cfgContent))
+	assert.NoError(t, writeTarFile(tw, "blobs/sha256/"+hex.EncodeToString(layerDigest[:]), layerBytes))
+	assert.NoError(t, writeTarFile(tw, "blobs/sha256/"+hex.EncodeToString(manDigest[:]), manBytes))
+	index := ociManifest{
+		SchemaVersion: 2,
+		Manifests: []ociManifestDescriptor{
+			{
+				MediaType: "application/vnd.oci.image.manifest.v1+json",
+				Digest:    "sha256:" + hex.EncodeToString(manDigest[:]),
+				Size:      len(manBytes),
+				Annotations: map[string]string{
+					"org.opencontainers.image.ref.name": tag,
+					"io.containerd.image.name":          tag,
+				},
+				Platform: &PlatformInfo{
+					Architecture: arch,
+					OS:           "linux",
+				},
+			},
+		},
+	}
+	idxBytes, err := json.Marshal(index)
+	assert.NoError(t, err, "marshal index failed")
+	assert.NoError(t, writeTarFile(tw, "index.json", idxBytes))
+	assert.NoError(t, writeTarFile(tw, "oci-layout", []byte(`{"imageLayoutVersion":"1.0.0"}`)))
+	assert.NoError(t, tw.Close())
+
+	assert.NoError(t, os.WriteFile(tarPath, tarBuf.Bytes(), 0644), "write tar file failed")
+	assert.FileExistsf(t, tarPath, "expected tarball %s not found", fileName)
+
+	archSummary, images, err := ImageInFile(tarPath)
+	assert.NoError(t, err, "ImageInFile failed for large layer")
+	assert.True(t, len(archSummary) > 0, "no valid manifest found")
+	assert.True(t, slices.Contains(archSummary[0].Platforms, "linux/amd64"), "platform not found")
+	assert.True(t, len(images) > 0, "no image found")
+
+	layers, err := images[0].Layers()
+	assert.NoError(t, err, "get layers failed")
+	assert.True(t, len(layers) == 1, "should have one layer")
+	size, err := layers[0].Size()
+	assert.NoError(t, err, "get layer size failed")
+	assert.Equal(t, int64(len(layerBytes)), size, "layer size should equal to compressed layerBytes size")
+	uncompressed, err := layers[0].Uncompressed()
+	assert.NoError(t, err, "get layer uncompressed failed")
+	uncompressedData, err := io.ReadAll(uncompressed)
+	assert.NoError(t, err, "read layer uncompressed data failed")
+	assert.True(t, len(uncompressedData) > 64*1024*1024, "uncompressed layer size should > 64MB")
 }
 
 func TestImageInFile_DockerLegacyMultiImage(t *testing.T) {

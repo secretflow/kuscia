@@ -70,6 +70,9 @@ func (pm *PluginManager) Permit(ctx context.Context, params interface{}) (bool, 
 		backoff.Duration = 1 * time.Second
 
 		err := retry.OnError(backoff, func(err error) bool {
+			if err == context.Canceled || err == context.DeadlineExceeded {
+				return false
+			}
 			return true
 		}, operation)
 
