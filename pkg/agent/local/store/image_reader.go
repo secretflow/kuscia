@@ -17,6 +17,8 @@ package store
 import (
 	"archive/tar"
 	"compress/gzip"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -577,10 +579,17 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 		var configSize int64
 		var configMediaType types.MediaType = MediaTypeDockerConfigV1
 		// Only use metadata, do not read config content.
-		if len(docker.Config) > 0 {
-			// Use file name as digest (not guaranteed to be consistent, but avoids extraction).
+		if len(a.meta.RawConfigs) > 0 {
+			// Calculate SHA256 digest from config file content for correctness.
+			// This ensures the manifest is valid and compatible with Docker image consumers.
+			sum := sha256.Sum256(a.meta.RawConfigs[0])
+			configDigest = v1.Hash{Algorithm: "sha256", Hex: hex.EncodeToString(sum[:])}
+			configSize = int64(len(a.meta.RawConfigs[0]))
+		} else if len(docker.Config) > 0 {
+			// Fallback: use file name as digest (not recommended, may be incorrect).
+			// This may cause manifest correctness issues if the filename is not the SHA256 digest.
 			configDigest = v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimSuffix(docker.Config, ".json")}
-			configSize = 0 // Do not read actual size.
+			configSize = 0
 		}
 		m := &v1.Manifest{
 			SchemaVersion: 2,
@@ -592,7 +601,10 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 			},
 		}
 		for _, layerPath := range docker.Layers {
-			// Only use metadata, do not read layer content.
+			// WARNING: Using file name to derive layer digest is incorrect.
+			// The digest should be calculated from the layer file content (SHA256).
+			// This implementation may cause manifest correctness issues.
+			// TODO: For correctness, read layer content and calculate SHA256 digest.
 			layerDigest := v1.Hash{Algorithm: strings.TrimSuffix(sha256Prefix, ":"), Hex: strings.TrimSuffix(layerPath, ".tar.gz")}
 			layerSize := int64(0)
 			layerMediaType := types.MediaType(MediaTypeDockerLayerGzip)
@@ -636,11 +648,14 @@ func (a *imageMetaAdapter) RawManifest() ([]byte, error) {
 }
 
 func (a *imageMetaAdapter) Digest() (v1.Hash, error) {
-	layers, err := a.Layers()
-	if err != nil || len(layers) == 0 {
-		return v1.Hash{}, errors.New("no layers found for digest")
+	// According to OCI image spec, the image digest should be the SHA256 hash of the image manifest content.
+	// Using a layer digest is incorrect and may cause image identification and caching issues.
+	manifestBytes, err := a.RawManifest()
+	if err != nil || len(manifestBytes) == 0 {
+		return v1.Hash{}, errors.New("no manifest bytes found for digest")
 	}
-	return layers[0].Digest()
+	sum := sha256.Sum256(manifestBytes)
+	return v1.Hash{Algorithm: "sha256", Hex: hex.EncodeToString(sum[:])}, nil
 }
 
 func (a *imageMetaAdapter) LayerByDiffID(h v1.Hash) (v1.Layer, error) {
