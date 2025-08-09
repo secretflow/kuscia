@@ -763,7 +763,6 @@ func TestImageInFile_CompatibilityWithTarballImage(t *testing.T) {
 		t.Errorf("ConfigFile.Config.Entrypoint is not compatible: got=%v, want=%v", cf1.Config.Entrypoint, cf2.Config.Entrypoint)
 	}
 
-	// 兼容性测试：Compressed、Uncompressed、Digest、Layers 方法
 	layers1, err1 := image1.Layers()
 	layers2, err2 := image2.Layers()
 	if err1 != nil || err2 != nil {
