@@ -309,41 +309,46 @@ func (s *ociStore) LoadImage(tarFile string) error {
 		return err
 	}
 
-	// Iterate all images and flatten & store each compatible image
+	// Iterate all compatible images and process them, improving readability and error reporting
 	found := false
 	for _, compatibleImage := range compatibleImages {
 		found = true
 		tag := compatibleImage.Info.Ref
 		img := compatibleImage.Image
 		tag = CheckTagCompliance(tag)
-		nlog.Infof("[OCI] Start to flatten image(%s) ...", tag)
-		flat, cacheFile, err := s.flattenImage(img)
-		if err != nil {
-			nlog.Warnf("Flatten image(%s) failed with error: %s", tag, err.Error())
-			return err
+		nlog.Infof("[OCI] Start processing image(%s) ...", tag)
+		if err := processCompatibleImage(s, tag, img); err != nil {
+			return fmt.Errorf("Failed to process image(%s): %w", tag, err)
 		}
-		err = func() error {
-			s.mutex.Lock()
-			defer s.mutex.Unlock()
-			// If image already exists, will update it
-			return s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, ""))
-		}()
-
-		// Remove cache file
-		if osErr := os.Remove(cacheFile); osErr != nil {
-			nlog.Warnf("Failed to remove temporary cache file %s: %v", cacheFile, osErr)
-		}
-
-		if err != nil {
-			return err
-		}
-
-		nlog.Infof("Load image: %s", tag)
-
 	}
 	if !found {
-		return fmt.Errorf("no compatible image found for platform: %s", currentPlatform)
+		return fmt.Errorf("No compatible image found for platform: %s", currentPlatform)
 	}
+	return nil
+}
+
+// Optimized helper function for readability and error reporting
+func processCompatibleImage(s *ociStore, tag string, img v1.Image) error {
+	flat, cacheFile, err := s.flattenImage(img)
+	// Only when flattenImage creates a temporary file, cacheFile is non-empty; empty string means no cleanup needed
+	if cacheFile != "" {
+		defer func() {
+			if osErr := os.Remove(cacheFile); osErr != nil {
+				nlog.Warnf("Failed to clean up temporary cache file %s: %v", cacheFile, osErr)
+			}
+		}()
+	}
+	if err != nil {
+		nlog.Warnf("flattenImage failed to process image(%s): %s", tag, err.Error())
+		return fmt.Errorf("flattenImage failed: %w", err)
+	}
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if err := s.imagePath.ReplaceImage(flat, match.Name(tag), s.kusciaImageAnnotation(tag, "")); err != nil {
+		nlog.Warnf("ReplaceImage failed to process image(%s): %s", tag, err.Error())
+		return fmt.Errorf("ReplaceImage failed: %w", err)
+	}
+	nlog.Infof("Image loaded: %s", tag)
 	return nil
 }
 
@@ -470,7 +475,6 @@ func (s *ociStore) kusciaImageAnnotation(tag string, _ string) layout.Option {
 	})
 }
 
-// CheckTagCompliance EnsureImageNameFormat ensures that the given image name is in the format <registry>/<repository>:<tag>.
 // It adds default values for registry and repository if they are missing.
 func CheckTagCompliance(targetImage string) string {
 	parts := strings.Split(targetImage, "/")
