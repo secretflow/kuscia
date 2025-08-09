@@ -339,7 +339,7 @@ func (ar *ArchReader) parseOCIIndexRecursive(
 			}
 		case v1spec.MediaTypeImageManifest:
 			var ociManifest OCIManifest
-			if readErr := ar.tarReader.ReadJSONFile(blobPath, &ociManifest, true); err != nil {
+			if readErr := ar.tarReader.ReadJSONFile(blobPath, &ociManifest, true); readErr != nil {
 				nlog.Warnf("Failed to read manifest: %v", readErr)
 				continue
 			}
@@ -708,9 +708,6 @@ func (a *imageMetaAdapter) Layers() ([]v1.Layer, error) {
 		oci := a.meta.OCIManifests[0]
 		for _, l := range oci.Layers {
 			err := error(nil)
-			if err != nil {
-				return nil, err
-			}
 			layer, err := tarball.LayerFromOpener(
 				func() (io.ReadCloser, error) {
 					return a.meta.tarReader.ExtractFileAsStream(fmt.Sprintf("%s/%s", blobPathPrefix, strings.TrimPrefix(l.Digest, sha256Prefix)))
