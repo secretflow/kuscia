@@ -17,6 +17,9 @@ package plugins
 
 import (
 	"context"
+	"time"
+
+	"k8s.io/client-go/util/retry"
 
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/resource"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -54,7 +57,25 @@ func (pm *PluginManager) Register(p Plugin) {
 func (pm *PluginManager) Permit(ctx context.Context, params interface{}) (bool, []error) {
 	var errors []error
 	for _, p := range pm.plugins {
-		_, err := p.Permit(ctx, params)
+		operation := func() error {
+			_, err := p.Permit(ctx, params)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		backoff := retry.DefaultBackoff
+		backoff.Steps = 5
+		backoff.Duration = 1 * time.Second
+
+		err := retry.OnError(backoff, func(err error) bool {
+			if err == context.Canceled || err == context.DeadlineExceeded {
+				return false
+			}
+			return true
+		}, operation)
+
 		if err != nil {
 			errors = append(errors, err)
 			continue
