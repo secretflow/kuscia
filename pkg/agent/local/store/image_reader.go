@@ -767,6 +767,7 @@ func ImageInFile(tarFile string) ([]ImageSummary, []CompatibleImage, error) {
 	if ioErr != nil {
 		return nil, nil, fmt.Errorf("Create tar reader failed: %v", ioErr)
 	}
+	defer tr.Close()
 	meta := &ImageMetaData{tarReader: tr}
 	archReader := &ArchReader{tarReader: tr}
 
