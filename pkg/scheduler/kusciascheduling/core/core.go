@@ -649,3 +649,18 @@ func GetTaskResourceInfos(trMgr *TaskResourceManager) *sync.Map {
 func getTaskResourceInfoName(tr *kusciaapisv1alpha1.TaskResource) string {
 	return tr.Namespace + "/" + tr.Name
 }
+
+func GetTotalResourceRequests(pod *corev1.Pod) corev1.ResourceList {
+	total := corev1.ResourceList{}
+	for _, c := range pod.Spec.Containers {
+		for name, quantity := range c.Resources.Requests {
+			if current, ok := total[name]; ok {
+				current.Add(quantity)
+				total[name] = current
+			} else {
+				total[name] = quantity.DeepCopy()
+			}
+		}
+	}
+	return total
+}

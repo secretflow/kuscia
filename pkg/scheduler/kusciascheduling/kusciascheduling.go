@@ -42,6 +42,7 @@ type KusciaScheduling struct {
 }
 
 var _ framework.PreFilterPlugin = &KusciaScheduling{}
+var _ framework.FilterPlugin = &KusciaScheduling{}
 var _ framework.PostFilterPlugin = &KusciaScheduling{}
 var _ framework.ReservePlugin = &KusciaScheduling{}
 var _ framework.PermitPlugin = &KusciaScheduling{}
@@ -51,7 +52,8 @@ var _ framework.EnqueueExtensions = &KusciaScheduling{}
 
 const (
 	// Name is the name of the plugin used in Registry and configurations.
-	Name = "KusciaScheduling"
+	Name                              = "KusciaScheduling"
+	ResourceBandwidth v1.ResourceName = "kuscia.io/bandwidth"
 )
 
 // New initializes and returns a new KusciaScheduling plugin.
@@ -137,6 +139,24 @@ func (cs *KusciaScheduling) PreFilter(ctx context.Context, state *framework.Cycl
 		return nil, framework.NewStatus(framework.UnschedulableAndUnresolvable, err.Error())
 	}
 	return nil, framework.NewStatus(framework.Success, "")
+}
+
+// Filter checks whether the node has enough available bandwidth for the Pod.
+// If the requested bandwidth exceeds the available, it returns Unschedulable;
+// otherwise, it allows scheduling.
+func (cs *KusciaScheduling) Filter(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodeInfo *framework.NodeInfo) *framework.Status {
+	allocBandwidth := nodeInfo.Allocatable.ScalarResources[ResourceBandwidth]
+	reqBandwidth := nodeInfo.Requested.ScalarResources[ResourceBandwidth]
+	availableBandwidth := allocBandwidth - reqBandwidth
+
+	totalReq := core.GetTotalResourceRequests(pod)
+	requiredBandwidth := totalReq[ResourceBandwidth]
+
+	if requiredBandwidth.Value() > availableBandwidth {
+		return framework.NewStatus(framework.Unschedulable, fmt.Sprintf("Insufficient bandwidth: required=%v, available=%v", requiredBandwidth.String(), availableBandwidth))
+	}
+
+	return framework.NewStatus(framework.Success, "")
 }
 
 // PostFilter is used to reject a group of pods if a pod does not pass PreFilter or Filter.
