@@ -32,6 +32,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	types "github.com/google/go-containerregistry/pkg/v1/types"
 	v1spec "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
@@ -131,7 +132,7 @@ const (
 )
 
 func (e *TarfileOsArchUnsupportedError) Error() string {
-	return fmt.Sprintf("the image in tarfile %s: %+v, is not accepted by the current OS/Arch: %s, cause: %v", e.Source, e.ArchSummary, e.CurrentPlatform, e.Cause)
+	return fmt.Sprintf("image in tarfile %s is not compatible with current platform (%s), cause: %s", e.Source, e.CurrentPlatform, e.Cause)
 }
 
 func (e *TarfileOsArchUnsupportedError) Unwrap() error {
@@ -196,7 +197,7 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 		if tr.isGzip {
 			gzReader, err := gzip.NewReader(file)
 			if err != nil {
-				if err == gzip.ErrHeader || strings.Contains(err.Error(), "invalid header") {
+				if errors.Is(err, gzip.ErrHeader) || strings.Contains(err.Error(), "invalid header") {
 					if _, seekErr := file.Seek(0, 0); seekErr != nil {
 						return nil, nil, fmt.Errorf("ExtractFileAsStream: failed to seek tar file '%s' for tar fallback: %v", tr.filePath, seekErr)
 					}
@@ -221,7 +222,10 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 		}
 		if err != nil {
 			if closer != nil {
-				closer.Close()
+				err := closer.Close()
+				if err != nil {
+					return nil, err
+				}
 			}
 			return nil, fmt.Errorf("ExtractFileAsStream: failed to read tar entry '%s': %v", tr.filePath, err)
 		}
@@ -940,37 +944,39 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 			Source:          tarFile,
 			CurrentPlatform: expectedOsArch,
 			ArchSummary:     archSummary,
-			Cause:           errors.New("no compatible architecture information found in the image tar file"),
+			Cause:           errors.New("no architecture information found in the image tar file"),
 		}
 	}
 
 	isCompatible := false
+	var matchedImages []string
+	var unmatchedImages []string
+
 	for _, summary := range archSummary {
-		var supported bool
 		var otherPlatforms []string
 		for _, osArch := range summary.Platforms {
 			if osArch == expectedOsArch {
 				isCompatible = true
-				supported = true
+				matchedImages = append(matchedImages, summary.Ref+"("+osArch+")")
 			} else {
 				otherPlatforms = append(otherPlatforms, osArch)
+				unmatchedImages = append(unmatchedImages, summary.Ref+"("+osArch+")")
 			}
 		}
-		if !supported {
-			nlog.Warnf("Image [%s] is not compatible with current platform [%s]. Supported platforms: %v", summary.Ref, expectedOsArch, summary.Platforms)
-		} else if len(otherPlatforms) > 0 {
-			nlog.Infof("Image [%s] is compatible with current platform [%s]. Other supported platforms are: %v", summary.Ref, expectedOsArch, otherPlatforms)
-		}
 	}
-
+	if len(matchedImages) > 0 {
+		nlog.Infof("precheck (load supported images): %v", matchedImages)
+	}
+	if len(unmatchedImages) > 0 {
+		nlog.Infof("precheck (skip unsupported images): %v", unmatchedImages)
+	}
 	if !isCompatible {
 		return &TarfileOsArchUnsupportedError{
 			Source:          tarFile,
 			CurrentPlatform: expectedOsArch,
 			ArchSummary:     archSummary,
-			Cause:           errors.New("unsupported platform"),
+			Cause:           errors.New("no compatible architecture information in the image tar file"),
 		}
 	}
-
 	return nil
 }
