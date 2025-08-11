@@ -222,10 +222,7 @@ func (tr *TarReader) ExtractFileAsStream(filePath string) (io.ReadCloser, error)
 		}
 		if err != nil {
 			if closer != nil {
-				err := closer.Close()
-				if err != nil {
-					return nil, err
-				}
+				closer.Close()
 			}
 			return nil, fmt.Errorf("ExtractFileAsStream: failed to read tar entry '%s': %v", tr.filePath, err)
 		}
