@@ -962,12 +962,13 @@ func CheckArchSummaryComplianceWithPlatform(tarFile string, expectedOsArch strin
 		}
 	}
 	if len(matchedImages) > 0 {
-		nlog.Infof("precheck (load supported images): %v", matchedImages)
+		nlog.Debugf("precheck (load supported images): %v", matchedImages)
 	}
 	if len(unmatchedImages) > 0 {
-		nlog.Infof("precheck (skip unsupported images): %v", unmatchedImages)
+		nlog.Debugf("precheck (skip unsupported images): %v", unmatchedImages)
 	}
 	if !isCompatible {
+		nlog.Warnf("image in tarball: %+v", archSummary)
 		return &TarfileOsArchUnsupportedError{
 			Source:          tarFile,
 			CurrentPlatform: expectedOsArch,
