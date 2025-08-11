@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -69,7 +70,7 @@ func TestOCIStore_Regist_CheckImageExist(t *testing.T) {
 	img, _ := kii.NewImageName("docker.io/secretflow/test:v1")
 	m, err := store.GetImageManifest(img, nil)
 	assert.NoError(t, err)
-	assert.Equal(t, "", m.Architecture)
+	assert.Equal(t, runtime.GOARCH, m.Architecture)
 
 	// re-regist
 	manifest, _ := json.Marshal(&kii.Manifest{
