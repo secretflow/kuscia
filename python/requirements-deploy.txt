@@ -1,4 +1,4 @@
-protobuf>=4,<5
+protobuf>=4,<7
 grpcio==1.62.2
 grpcio-tools==1.62.2
 docker==7.1.0
