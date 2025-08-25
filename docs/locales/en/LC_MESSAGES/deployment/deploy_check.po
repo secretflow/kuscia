@@ -166,5 +166,3 @@ msgstr "Network Requirements"
 #: ../../deployment/deploy_check.md:58
 msgid "如果节点之间的入口网络存在网关时，为了确保节点之间通信正常，需要网关符合一些要求，详情请参考[网络要求](./networkrequirements.md)"
 msgstr "If there is a gateway in the ingress network between nodes, it must meet specific requirements to ensure proper communication. For details, please refer to [Network Requirements](./networkrequirements.md)."
-
-

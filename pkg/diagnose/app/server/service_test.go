@@ -15,10 +15,18 @@
 package server
 
 import (
+	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"github.com/stretchr/testify/assert"
 )
 
 var svc *DiagnoseService
@@ -56,6 +64,56 @@ func TestSubmitReport(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	svc = NewService()
+	svc = NewService(nil)
 	m.Run()
+}
+
+type MockUtils struct {
+	mock.Mock
+}
+
+func (m *MockUtils) GetLogAnalysisResult(taskID, logType string, parseTime *time.Time) ([]*diagnose.EnvoyLogInfo, error) {
+	args := m.Called(taskID, logType, parseTime)
+	return args.Get(0).([]*diagnose.EnvoyLogInfo), args.Error(1)
+}
+
+func (m *MockUtils) CSTTimeCovertToUTC(t time.Time) time.Time {
+	args := m.Called(t)
+	return args.Get(0).(time.Time)
+}
+
+func TestGetEnvoyLog_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	req := &diagnose.EnvoyLogRequest{
+		TaskId:     "task_123",
+		CreateTime: "20060102-15",
+		DomainId:   "domain_1",
+	}
+
+	reqBody, _ := proto.Marshal(req)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/diagnose/envoy-log", bytes.NewReader(reqBody))
+	svc = NewService(nil)
+	svc.GetEnvoyLog(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetEnvoyLog_Failure(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	req := &diagnose.EnvoyLogRequest{
+		TaskId:     "task_123",
+		CreateTime: "2022-01-02 15:04:05",
+		DomainId:   "domain_1",
+	}
+
+	reqBody, _ := proto.Marshal(req)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("POST", "/diagnose/envoy-log", bytes.NewReader(reqBody))
+	svc = NewService(nil)
+	svc.GetEnvoyLog(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
 }

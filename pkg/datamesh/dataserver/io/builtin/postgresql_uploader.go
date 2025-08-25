@@ -17,6 +17,7 @@ package builtin
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"strconv"
 	"strings"
@@ -50,19 +51,19 @@ func NewPostgresqlUploader(ctx context.Context, db *sql.DB, data *datamesh.Domai
 	}
 }
 
-func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arrow.Array) []string {
-	res := make([]string, col.Len())
+func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arrow.Array) []driver.Value {
+	res := make([]driver.Value, col.Len())
 	switch typ.(type) {
 	case *arrow.BooleanType:
 		arr := col.(*array.Boolean)
 		for i := 0; i < arr.Len(); i++ {
 			if arr.IsValid(i) {
-				res[i] = "0"
+				res[i] = false
 				if arr.Value(i) {
-					res[i] = "1"
+					res[i] = true
 				}
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.NullBool{}
 			}
 		}
 	case *arrow.Int8Type:
@@ -71,7 +72,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatInt(int64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.Null[int8]{}
 			}
 		}
 	case *arrow.Int16Type:
@@ -80,7 +81,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatInt(int64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.NullInt16{}
 			}
 		}
 	case *arrow.Int32Type:
@@ -89,7 +90,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatInt(int64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.NullInt32{}
 			}
 		}
 	case *arrow.Int64Type:
@@ -98,7 +99,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatInt(int64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.NullInt64{}
 			}
 		}
 	case *arrow.Uint8Type:
@@ -107,7 +108,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatUint(uint64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.Null[uint8]{}
 			}
 		}
 	case *arrow.Uint16Type:
@@ -116,7 +117,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatUint(uint64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.Null[uint16]{}
 			}
 		}
 	case *arrow.Uint32Type:
@@ -125,7 +126,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatUint(uint64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.Null[uint32]{}
 			}
 		}
 	case *arrow.Uint64Type:
@@ -134,7 +135,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatUint(uint64(arr.Value(i)), 10)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.Null[uint64]{}
 			}
 		}
 	case *arrow.Float32Type:
@@ -143,7 +144,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatFloat(float64(arr.Value(i)), 'g', -1, 32)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.Null[float32]{}
 			}
 		}
 	case *arrow.Float64Type:
@@ -152,7 +153,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = strconv.FormatFloat(float64(arr.Value(i)), 'g', -1, 64)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.NullFloat64{}
 			}
 		}
 	case *arrow.StringType:
@@ -161,7 +162,7 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 			if arr.IsValid(i) {
 				res[i] = arr.Value(i)
 			} else {
-				res[i] = u.nullValue
+				res[i] = sql.NullString{}
 			}
 		}
 	default:
@@ -170,34 +171,36 @@ func (u *PostgresqlUploader) transformColToStringArr(typ arrow.DataType, col arr
 	return res
 }
 
-func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataType) string {
-	switch colType {
-	case arrow.PrimitiveTypes.Uint8:
-		return "SMALLINT"
-	case arrow.PrimitiveTypes.Int8:
-		return "SMALLINT"
-	case arrow.PrimitiveTypes.Uint16:
-		return "INTEGER"
-	case arrow.PrimitiveTypes.Int16:
-		return "SMALLINT"
-	case arrow.PrimitiveTypes.Uint32:
-		return "BIGINT"
-	case arrow.PrimitiveTypes.Int32:
-		return "INTEGER"
-	case arrow.PrimitiveTypes.Uint64:
-		return "DECIMAL(20, 0)"
-	case arrow.PrimitiveTypes.Int64:
-		return "BIGINT"
-	case arrow.FixedWidthTypes.Boolean:
-		return "SMALLINT"
-	case arrow.BinaryTypes.String:
-		return "TEXT"
-	case arrow.PrimitiveTypes.Float32:
-		return "REAL"
-	case arrow.PrimitiveTypes.Float64:
-		return "DOUBLE PRECISION"
+func (u *PostgresqlUploader) ArrowDataTypeToPostgresqlType(colType arrow.DataType) (string, error) {
+
+	id := colType.ID()
+	switch id {
+	case arrow.UINT8:
+		return "SMALLINT", nil
+	case arrow.INT8:
+		return "SMALLINT", nil
+	case arrow.UINT16:
+		return "INTEGER", nil
+	case arrow.INT16:
+		return "SMALLINT", nil
+	case arrow.UINT32:
+		return "BIGINT", nil
+	case arrow.INT32:
+		return "INTEGER", nil
+	case arrow.UINT64:
+		return "DECIMAL(20, 0)", nil
+	case arrow.INT64:
+		return "BIGINT", nil
+	case arrow.BOOL:
+		return "BOOLEAN", nil
+	case arrow.STRING, arrow.BINARY, arrow.LARGE_BINARY:
+		return "TEXT", nil
+	case arrow.FLOAT32:
+		return "REAL", nil
+	case arrow.FLOAT64:
+		return "DOUBLE PRECISION", nil
 	default:
-		panic(fmt.Errorf("create Postgresql Table: field has unsupported data type %s", colType))
+		return "", fmt.Errorf("unsupported arrow data type `%s`", colType)
 	}
 }
 
@@ -220,7 +223,11 @@ func (u *PostgresqlUploader) PrepareOutputTable(tableName string, columnNames []
 	ctb := sqlbuilder.NewCreateTableBuilder()
 	ctb.CreateTable(tableName)
 	for idx, field := range fields {
-		ctb.Define(columnNames[idx], u.ArrowDataTypeToPostgresqlType(field.Type))
+		postgresqlType, typeErr := u.ArrowDataTypeToPostgresqlType(field.Type)
+		if typeErr != nil {
+			return fmt.Errorf("arrow to Postgresql: field has unsupported data type `%s`", field.Type)
+		}
+		ctb.Define(columnNames[idx], postgresqlType)
 	}
 	sql := ctb.String()
 	nlog.Infof("Prepare output table sql(%s)", sql)
@@ -293,12 +300,67 @@ func (u *PostgresqlUploader) FlightStreamToDataProxyContentPostgresql(reader *fl
 		}
 	}()
 
-	sql := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...).Values(make([]interface{}, len(backTickHeaders))...).String()
-	for i := 1; i <= len(backTickHeaders); i++ {
-		sql = strings.Replace(sql, "?", fmt.Sprintf("$%d", i), 1)
+	insertSql := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...).String()
+	nlog.Infof("Insert sql without values (%s)", insertSql)
+
+	for reader.Next() {
+		var execErr error
+		func() {
+			record := reader.Record()
+			record.Retain()
+			defer record.Release()
+
+			numCols := record.NumCols()
+			recs := make([][]any, record.NumRows())
+			for i := range recs {
+				recs[i] = make([]any, numCols)
+			}
+
+			for j, col := range record.Columns() {
+				rows := u.transformColToStringArr(reader.Schema().Field(j).Type, col)
+				for i, row := range rows {
+					recs[i][j] = row
+				}
+			}
+
+			execErr = insertSafeBatch(tx, insertSql, recs)
+			if execErr != nil {
+				nlog.Errorf("Insert to Postgresql failed(%s)", execErr)
+				return
+			}
+
+			iCount += int(record.NumRows())
+		}()
+		if execErr != nil {
+			return execErr
+		}
 	}
-	nlog.Info(sql)
-	stmt, err := tx.Prepare(sql)
+	if err := reader.Err(); err != nil {
+		// in this case, stmt.Exec are all success, try to commit, rather than fail
+		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s. Postgresql upload result may have problems", u.data.DomaindataId, err)
+	}
+	nlog.Infof("Domaindata(%s) write total row: %d.", u.data.DomaindataId, iCount)
+	return nil
+}
+
+func insertBatch(tx *sql.Tx, ib *sqlbuilder.InsertBuilder, batch [][]interface{}) error {
+
+	if len(batch) == 0 {
+		nlog.Warnf("Domaindata write total row: 0, insertSql: %s", ib)
+		return nil
+	}
+
+	numRecords, numColumns := len(batch), len(batch[0])
+	args := make([]interface{}, 0, numRecords*numColumns)
+
+	for _, row := range batch {
+		ib.Values(row...)
+		args = append(args, row...)
+	}
+	ib.SetFlavor(sqlbuilder.PostgreSQL)
+	insertSql := ib.String()
+
+	stmt, err := tx.Prepare(insertSql)
 	if err != nil {
 		nlog.Errorf("Prepare insert failed(%s)", err)
 		return err
@@ -311,36 +373,23 @@ func (u *PostgresqlUploader) FlightStreamToDataProxyContentPostgresql(reader *fl
 			nlog.Errorf("Stmt close error")
 		}
 	}()
+	// stmt is used here to process the precompiled SQL, but the current insertion batch is not fixed,
+	// and the pre-compilation still needs to be executed every time
+	_, err = stmt.Exec(args...)
+	return err
+}
 
-	for reader.Next() {
-		record := reader.Record()
-		record.Retain()
-		defer record.Release()
-		// read field data from record
-		recs := make([][]any, record.NumRows())
-		for i := range recs {
-			recs[i] = make([]any, record.NumCols())
+func insertSafeBatch(tx *sql.Tx, insertSql string, batch [][]interface{}) error {
+
+	numRecords, numColumns := len(batch), len(batch[0])
+	maxRows := DEFAULT_MAX_PLACEHOLDER / numColumns
+
+	for i := 0; i < numRecords; i += maxRows {
+		endIndex := min(i+maxRows, numRecords)
+
+		if err := insertBatch(tx, sqlbuilder.NewInsertBuilder().SQL(insertSql), batch[i:endIndex]); err != nil {
+			return err
 		}
-		for j, col := range record.Columns() {
-			rows := u.transformColToStringArr(reader.Schema().Field(j).Type, col)
-			for i, row := range rows {
-				recs[i][j] = row
-			}
-		}
-		// upload to sql
-		for _, row := range recs {
-			result, err := stmt.Exec(row...)
-			if err != nil {
-				nlog.Errorf("Postgresql insert exec failed result(%s),error(%s)", result, err)
-				return err
-			}
-		}
-		iCount += int(record.NumRows())
 	}
-	if err := reader.Err(); err != nil {
-		// in this case, stmt.Exec are all success, try to commit, rather than fail
-		nlog.Warnf("Domaindata(%s) read from arrow flight failed with error: %s. Postgresql upload result may have problems", u.data.DomaindataId, err)
-	}
-	nlog.Infof("Domaindata(%s) write total row: %d.", u.data.DomaindataId, iCount)
 	return nil
 }

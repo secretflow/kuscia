@@ -20,4 +20,3 @@ msgstr ""
 #: ../../tutorial/index.rst:2
 msgid "指南"
 msgstr "Guide"
-

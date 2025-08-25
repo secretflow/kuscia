@@ -81,7 +81,7 @@ func TestContainerStart(t *testing.T) {
 		assert.NoError(t, container.Create())
 		assert.NoError(t, container.Start())
 		time.Sleep(100 * time.Millisecond)
-		assert.NoError(t, container.Stop())
+		assert.NoError(t, container.Stop(time.Second*10))
 		assert.NoError(t, wait.PollImmediate(100*time.Millisecond, 1*time.Second, func() (done bool, err error) {
 			// make sure process had exited
 			return syscall.Kill(container.starter.Command().Process.Pid, 0) == syscall.ESRCH, nil
@@ -90,6 +90,26 @@ func TestContainerStart(t *testing.T) {
 			return container.GetCRIStatus().State == runtime.ContainerState_CONTAINER_EXITED, nil
 		}))
 		assert.NoError(t, container.Release())
+	})
+	t.Run("Container killed by signal pid non-existent", func(t *testing.T) {
+		container := createTestContainer(t)
+		container.Config.Command = []string{"sleep"}
+		container.Config.Args = []string{"60"}
+		assert.NoError(t, container.Create())
+		assert.NoError(t, container.Start())
+		time.Sleep(100 * time.Millisecond)
+		container.status.Pid = 123456
+		assert.NoError(t, container.Stop(time.Nanosecond*10))
+	})
+	t.Run("Container killed by signal no pid", func(t *testing.T) {
+		container := createTestContainer(t)
+		container.Config.Command = []string{"sleep"}
+		container.Config.Args = []string{"60"}
+		assert.NoError(t, container.Create())
+		assert.NoError(t, container.Start())
+		time.Sleep(100 * time.Millisecond)
+		container.status.Pid = 0
+		assert.NoError(t, container.Stop(time.Nanosecond*10))
 	})
 }
 

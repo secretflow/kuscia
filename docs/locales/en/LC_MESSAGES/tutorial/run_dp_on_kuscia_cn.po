@@ -183,4 +183,3 @@ msgstr "Deploy DataProxy in Docker Mode"
 #: ../../tutorial/run_dp_on_kuscia_cn.md:156
 msgid "下面以 Docker RunC 模式为例。"
 msgstr "The following example uses Docker RunC mode."
-

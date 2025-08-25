@@ -84,7 +84,6 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - [如何使用 Kuscia API 运行一个 SecretFlow 作业][how-to-sf-job]
 - [如何使用 Kuscia API 运行一个 SecretFlow Serving][how-to-serving]
 - [如何使用 Kuscia API 部署 DataProxy][how-to-deploy-dp]
-- [如何运行一个 FATE 作业][how-to-fate]
 - [如何在 Kuscia 上运行 SCQL 联合分析任务][how-to-run-scql]
 - [如何在 Kuscia 中使用自定义镜像仓库][how-to-use-custom-image]
 - [如何在 Kuscia 中给自定义应用渲染配置文件][how-to-render-config]
@@ -95,7 +94,6 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [how-to-sf-job]: ./tutorial/run_sf_job_with_api_cn.md
 [how-to-serving]: ./tutorial/run_sf_serving_with_api_cn.md
 [how-to-deploy-dp]: ./tutorial/run_dp_on_kuscia_cn.md
-[how-to-fate]: ./tutorial/run_fate_cn.md
 [how-to-run-scql]: ./tutorial/run_scql_on_kuscia_cn.md
 [how-to-use-custom-image]: ./tutorial/custom_registry.md
 [how-to-render-config]: ./tutorial/config_render.md

@@ -195,6 +195,12 @@ func TestGetMemoryLimit(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestGetMemoryUsage(t *testing.T) {
+	usage, err := GetMemoryUsage("kuscia.test/test")
+	assert.Equal(t, int64(0), usage)
+	assert.NotNil(t, err)
+}
+
 func TestGetCPUQuotaAndPeriod(t *testing.T) {
 	quota, period, err := GetCPUQuotaAndPeriod("kuscia.test/test")
 	assert.Equal(t, int64(0), quota)
@@ -208,6 +214,14 @@ func TestParseCgroup2MemoryLimit(t *testing.T) {
 
 func TestParseCgroup1MemoryLimit(t *testing.T) {
 	parseCgroup1MemoryLimit(DefaultMountPoint)
+}
+
+func TestParseCgroup2MemoryUsage(t *testing.T) {
+	parseCgroup2MemoryUsage(DefaultMountPoint)
+}
+
+func TestParseCgroup1MemoryUsage(t *testing.T) {
+	parseCgroup1MemoryUsage(DefaultMountPoint)
 }
 
 func TestParseCgroup2CPUQuotaAndPeriod(t *testing.T) {

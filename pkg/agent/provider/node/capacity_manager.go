@@ -58,40 +58,56 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 	pa := &CapacityManager{}
 	nlog.Infof("Capacity Manager, runtime: %v, capacityCfg:%v, reservedResCfg: %v, rootDir: %s, localCapacity:%v",
 		runtime, cfg, reservedResCfg, rootDir, localCapacity)
+	// runc or runp runtime
 	if localCapacity {
+		// Prioritizes the use of cgroups, i.e., the cpu and memory limits set at container startup,
+		//if there are no cgroup limits, the memory and memory of the host where the container is located,
+		//i.e., /proc/cpuinfo and /proc/meminfo.
+
+		// get host memory from /proc/meminfo
 		memStat, err := mem.VirtualMemory()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get host memory state, detail-> %v", err)
 		}
-		if cfg.Memory == "" {
-			pa.memTotal = *resource.NewQuantity(int64(memStat.Total), resource.BinarySI)
-		}
-
-		pa.memAvailable = *resource.NewQuantity(int64(memStat.Available), resource.BinarySI)
+		// get memory limit from cgroup
 		memoryLimit, err := cgroup.GetMemoryLimit(cgroup.DefaultMountPoint)
-		if err == nil && memoryLimit > 0 && memoryLimit < int64(memStat.Available) {
+		if err == nil && memoryLimit > 0 && memoryLimit < int64(memStat.Total) {
 			pa.memTotal = *resource.NewQuantity(memoryLimit, resource.BinarySI)
 			pa.memAvailable = pa.memTotal.DeepCopy()
 		}
+		// if cgroup memory limit is not set, use host memory
+		if pa.memTotal.IsZero() {
+			pa.memTotal = *resource.NewQuantity(int64(memStat.Total), resource.BinarySI)
+		}
+		if pa.memAvailable.IsZero() {
+			pa.memAvailable = *resource.NewQuantity(int64(memStat.Total), resource.BinarySI)
+		}
 
-		if cfg.CPU == "" {
-			// One cpu, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers
-			// and 1 hyperthread on bare-metal Intel processors.
-			cpus, err := cpu.Counts(true)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get cpu info, detail-> %v", err)
+		// One cpu, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers
+		// and 1 hyperthread on bare-metal Intel processors.
+
+		// get host cpu from /proc/cpuinfo
+		cpus, err := cpu.Counts(true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get cpu info, detail-> %v", err)
+		}
+		hostCPUTotal := *resource.NewQuantity(int64(cpus), resource.BinarySI)
+		cfg.CPU = strconv.Itoa(cpus)
+		// get cpu limit from cgroup
+		cpuQuota, cpuPeriod, err := cgroup.GetCPUQuotaAndPeriod(cgroup.DefaultMountPoint)
+		if err == nil && cpuQuota > 0 && cpuPeriod > 0 {
+			availableCPU := cpuQuota / cpuPeriod
+			if availableCPU > 0 && availableCPU < hostCPUTotal.Value() {
+				pa.cpuTotal = *resource.NewQuantity(availableCPU, resource.BinarySI)
+				pa.cpuAvailable = pa.cpuTotal.DeepCopy()
 			}
-			cfg.CPU = strconv.Itoa(cpus)
-			pa.cpuTotal = *resource.NewQuantity(int64(cpus), resource.BinarySI)
-			pa.cpuAvailable = pa.cpuTotal.DeepCopy()
-			cpuQuota, cpuPeriod, err := cgroup.GetCPUQuotaAndPeriod(cgroup.DefaultMountPoint)
-			if err == nil && cpuQuota > 0 && cpuPeriod > 0 {
-				availableCPU := cpuQuota / cpuPeriod
-				if availableCPU > 0 && availableCPU < pa.cpuAvailable.Value() {
-					pa.cpuTotal = *resource.NewQuantity(availableCPU, resource.BinarySI)
-					pa.cpuAvailable = pa.cpuTotal.DeepCopy()
-				}
-			}
+		}
+		// if cgroup cpu limit is not set, use host cpu
+		if pa.cpuTotal.IsZero() {
+			pa.cpuTotal = hostCPUTotal
+		}
+		if pa.cpuAvailable.IsZero() {
+			pa.cpuAvailable = hostCPUTotal.DeepCopy()
 		}
 
 		if cfg.Storage == "" {
@@ -102,9 +118,11 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 			pa.storageAvailable = *resource.NewQuantity(int64(storageStat.Free), resource.BinarySI)
 			pa.storageTotal = *resource.NewQuantity(int64(storageStat.Total), resource.BinarySI)
 		}
-	}
-
-	if pa.cpuTotal.IsZero() || pa.cpuAvailable.IsZero() {
+	} else {
+		// runk runtime. kuscia.yaml capacity is mandatory to set
+		if cfg.CPU == "" || cfg.Memory == "" || cfg.Storage == "" {
+			return nil, fmt.Errorf("capacity config is empty")
+		}
 		cpuQuantity, err := resource.ParseQuantity(cfg.CPU)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse cpu %q, detail-> %v", cfg.CPU, err)
@@ -112,9 +130,7 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 
 		pa.cpuTotal = cpuQuantity.DeepCopy()
 		pa.cpuAvailable = cpuQuantity.DeepCopy()
-	}
 
-	if pa.memTotal.IsZero() || pa.memAvailable.IsZero() {
 		memory, err := resource.ParseQuantity(cfg.Memory)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse memory %q, detail-> %v", cfg.Memory, err)
@@ -128,23 +144,20 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 		if pa.memAvailable.IsZero() {
 			pa.memAvailable = memory.DeepCopy()
 		}
-	}
 
-	if pa.memTotal.Cmp(pa.memAvailable) < 0 {
-		// total memory in config is smaller than available memory
-		pa.memAvailable = pa.memTotal.DeepCopy()
+		if pa.memTotal.Cmp(pa.memAvailable) < 0 {
+			// total memory in config is smaller than available memory
+			pa.memAvailable = pa.memTotal.DeepCopy()
+		}
 	}
-
 	if pa.storageTotal.IsZero() || pa.storageAvailable.IsZero() {
 		storageQuantity, err := resource.ParseQuantity(cfg.Storage)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse storage %q, detail-> %v", cfg.Storage, err)
 		}
-
 		pa.storageTotal = storageQuantity.DeepCopy()
 		pa.storageAvailable = storageQuantity.DeepCopy()
 	}
-
 	if cfg.EphemeralStorage != "" {
 		storageQuantity, err := resource.ParseQuantity(cfg.EphemeralStorage)
 		if err != nil {
@@ -153,7 +166,6 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 		pa.ephemeralStorageTotal = &storageQuantity
 		pa.ephemeralStorageAvailable = &storageQuantity
 	}
-
 	podsCap := cfg.Pods
 	if podsCap == "" {
 		podsCap = defaultPodsCapacity
@@ -264,4 +276,12 @@ func (pa *CapacityManager) GetCgroupCPUPeriod() *uint64 {
 
 func (pa *CapacityManager) GetCgroupMemoryLimit() *int64 {
 	return pa.cgroupMemoryLimit
+}
+
+func (pa *CapacityManager) GetCPUAvailable() resource.Quantity {
+	return pa.cpuAvailable
+}
+
+func (pa *CapacityManager) GetMemoryAvailable() resource.Quantity {
+	return pa.memAvailable
 }

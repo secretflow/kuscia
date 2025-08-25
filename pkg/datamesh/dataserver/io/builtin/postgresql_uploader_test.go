@@ -121,7 +121,7 @@ func TestPostgresqlUploader_Write_Commit(t *testing.T) {
 	_, _, mock, uploader, rc, err := initPostgresqlUploader(t, "\"output\"", domaindataSpec)
 	assert.NotNil(t, uploader)
 	assert.NoError(t, err)
-	columnDefines := "\"name\" TEXT, \"id\" BIGINT, \"boolTest\" SMALLINT"
+	columnDefines := "\"name\" TEXT, \"id\" BIGINT, \"boolTest\" BOOLEAN"
 	columnDefines += ", \"int8Test\" SMALLINT, \"int16Test\" SMALLINT"
 	columnDefines += ", \"int32Test\" INTEGER, \"int64Test\" BIGINT"
 	columnDefines += ", \"uint8Test\" SMALLINT, \"uint16Test\" INTEGER"
@@ -136,12 +136,13 @@ func TestPostgresqlUploader_Write_Commit(t *testing.T) {
 
 	mock.ExpectBegin()
 	prepare := mock.ExpectPrepare("INSERT INTO \"output\"")
-	prepare.ExpectExec().WithArgs("alice", "1", "1", "127", "32767", "2147483647",
+	prepare.ExpectExec().WithArgs("alice", "1", true, "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
-		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(1, 1))
-	prepare.ExpectExec().WithArgs("bob", "2", "0", "127", "32767", "2147483647",
+		"1.000001", "1.00000000000001",
+		"bob", "2", false, "127", "32767", "2147483647",
 		"2147483648", "255", "65535", "4294967295", "4294967296", "4294967295",
-		"1.000001", "1.00000000000001").WillReturnResult(sqlmock.NewResult(2, 1))
+		"1.000001", "1.00000000000001",
+	).WillReturnResult(sqlmock.NewResult(2, 2))
 	mock.ExpectCommit()
 
 	colType := []arrow.DataType{arrow.BinaryTypes.String, arrow.PrimitiveTypes.Int64,

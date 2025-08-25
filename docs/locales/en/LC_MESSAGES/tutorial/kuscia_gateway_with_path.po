@@ -87,4 +87,3 @@ msgid ""
 "`endpoint` 的 `prefix` 字段。"
 msgstr ""
 "The following example demonstrates the scenario where Alice institution accesses Bob institution. When the Bob institution's gateway address includes a Path, how to call KusciaAPI to set the `prefix` field of the `endpoint`."
-

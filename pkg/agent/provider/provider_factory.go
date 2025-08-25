@@ -19,6 +19,7 @@ import (
 	"os"
 	"time"
 
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -78,7 +79,9 @@ func NewFactory(agentConfig *config.AgentConfig, kubeClient kubernetes.Interface
 }
 
 type containerRuntimeFactory struct {
-	agentConfig *config.AgentConfig
+	agentConfig  *config.AgentConfig
+	cpuAvailable k8sresource.Quantity
+	memAvailable k8sresource.Quantity
 }
 
 func (f *containerRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
@@ -92,6 +95,9 @@ func (f *containerRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) 
 	if err != nil {
 		return nil, err
 	}
+	// set agent cpu and memory available to pod provider
+	f.cpuAvailable = cm.GetCPUAvailable()
+	f.memAvailable = cm.GetMemoryAvailable()
 
 	initCgroup(cm, f.agentConfig.Provider.Runtime)
 
@@ -193,15 +199,19 @@ func (f *containerRuntimeFactory) BuildPodProvider(nodeName string, eventRecorde
 		Runtime:          f.agentConfig.Provider.Runtime,
 		CRIProviderCfg:   &f.agentConfig.Provider.CRI,
 		RegistryCfg:      &f.agentConfig.Registry,
+		CpuAvailable:     f.cpuAvailable,
+		MemAvailable:     f.memAvailable,
 	}
 
 	return pod.NewCRIProvider(podProviderDep)
 }
 
 type k8sRuntimeFactory struct {
-	agentConfig *config.AgentConfig
-	kubeClient  kubernetes.Interface
-	bkClient    kubernetes.Interface
+	agentConfig  *config.AgentConfig
+	kubeClient   kubernetes.Interface
+	bkClient     kubernetes.Interface
+	cpuAvailable k8sresource.Quantity
+	memAvailable k8sresource.Quantity
 }
 
 func (f *k8sRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
@@ -215,6 +225,10 @@ func (f *k8sRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// set agent cpu and memory available to pod provider
+	f.cpuAvailable = cm.GetCPUAvailable()
+	f.memAvailable = cm.GetMemoryAvailable()
 
 	bkCfg := &f.agentConfig.Provider.K8s
 	nodeDep := &node.K8sNodeDependence{
@@ -234,7 +248,6 @@ func (f *k8sRuntimeFactory) BuildNodeProvider() (kri.NodeProvider, error) {
 
 func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder record.EventRecorder, resourceManager *resource.KubeResourceManager, podsController *framework.PodsController) (kri.PodProvider, error) {
 	bkCfg := &f.agentConfig.Provider.K8s
-
 	podProviderDep := &pod.K8sProviderDependence{
 		NodeName:        nodeName,
 		Namespace:       f.agentConfig.Namespace,
@@ -246,6 +259,8 @@ func (f *k8sRuntimeFactory) BuildPodProvider(nodeName string, eventRecorder reco
 		ResourceManager: resourceManager,
 		K8sProviderCfg:  bkCfg,
 		Recorder:        eventRecorder,
+		CpuAvailable:    f.cpuAvailable,
+		MemAvailable:    f.memAvailable,
 	}
 
 	return pod.NewK8sProvider(podProviderDep)

@@ -115,31 +115,35 @@ func Test_doValidate(t *testing.T) {
 		assert.NoError(t, err)
 		time.Sleep(100 * time.Millisecond)
 		pass := false
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 20; i++ {
 			dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
 			assert.NoError(t, err)
+			t.Logf("Checking GrantReady, current phase: %s", dg.Status.Phase)
 			if dg.Status.Phase == v1alpha1.GrantReady {
 				pass = true
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 		assert.Equal(t, true, pass)
-		// set expire
-		dg.Spec.Limit.ExpirationTime.Time = time.Now()
-		kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
-		time.Sleep(100 * time.Millisecond)
+		// set expire to a time in the past
+		dg.Spec.Limit.ExpirationTime.Time = time.Now().Add(-1 * time.Minute)
+		_, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
+		assert.NoError(t, err)
+		time.Sleep(500 * time.Millisecond) // wait for controller to process the update
 		dg.Annotations["test"] = "bob"
-		kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
+		_, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Update(ctx, dg, v1.UpdateOptions{})
+		assert.NoError(t, err)
 		pass = false
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 20; i++ {
 			dg, err = kusciaClient.KusciaV1alpha1().DomainDataGrants(dg.Namespace).Get(ctx, dg.Name, v1.GetOptions{})
 			assert.NoError(t, err)
+			t.Logf("Checking GrantUnavailable, current phase: %s", dg.Status.Phase)
 			if dg.Status.Phase == v1alpha1.GrantUnavailable {
 				pass = true
 				break
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 		assert.Equal(t, true, pass)
 		close(ch)

@@ -108,4 +108,3 @@ msgstr "Register AppImage"
 #: ../../tutorial/upgrade_engine.md:83
 msgid "镜像导入之后需要在 Autonomy 和 Master 节点上修改 AppImage，Lite 节点无需执行，示例如下："
 msgstr "After importing the image, you need to modify the AppImage on the Autonomy and Master nodes; the Lite nodes do not need to perform this action, as shown in the example below:"
-

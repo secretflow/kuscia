@@ -90,17 +90,16 @@ msgstr "Recommended to modify the image storage path"
 
 #: ../../troubleshoot/deployment/wsl_start_docker.md:33
 msgid ""
-"Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE "
-"作业](../../tutorial/run_fate_cn.md)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 "
+"Docker 镜像默认保存在 C 盘， 如果要部署和运行 FATE "
+"作业，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 "
 "Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。 "
 "![docker_settings.png](../../imgs/docker_settings.png)"
 msgstr ""
-"Docker images are stored on the C drive by default. If you need to [deploy and run FATE "
-"jobs](../../tutorial/run_fate_cn.md), the default location on the C drive may lead to insufficient space. Therefore, it is recommended to change to another disk with sufficient space. Specifically, open "
+"Docker images are stored on the C drive by default. If you need to deploy and run FATE "
+"jobs, the default location on the C drive may lead to insufficient space. Therefore, it is recommended to change to another disk with sufficient space. Specifically, open "
 "Docker Desktop, go to Settings->Resources->Browse, and modify the image storage path. "
 "![docker_settings.png](../../imgs/docker_settings.png)"
 
 #: ../../troubleshoot/deployment/wsl_start_docker.md:33
 msgid "docker_settings.png"
 msgstr "docker_settings.png"
-

@@ -143,3 +143,104 @@ func Test_RuntimeSandboxAndContainers(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(sandboxList))
 }
+func TestGetGracePeriod(t *testing.T) {
+	tests := []struct {
+		name        string
+		annotations map[string]string
+		expected    int64
+	}{
+		{
+			name:        "no annotations",
+			annotations: nil,
+			expected:    minimumGracePeriodInSeconds,
+		},
+		{
+			name: "pod deletion grace period",
+			annotations: map[string]string{
+				podDeletionGracePeriodLabel: "30",
+			},
+			expected: 30,
+		},
+		{
+			name: "pod termination grace period",
+			annotations: map[string]string{
+				podTerminationGracePeriodLabel: "20",
+			},
+			expected: 20,
+		},
+		{
+			name: "both annotations, prefer deletion grace period",
+			annotations: map[string]string{
+				podDeletionGracePeriodLabel:    "30",
+				podTerminationGracePeriodLabel: "20",
+			},
+			expected: 30,
+		},
+		{
+			name: "invalid annotation value",
+			annotations: map[string]string{
+				podDeletionGracePeriodLabel: "invalid",
+			},
+			expected: minimumGracePeriodInSeconds,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual := getGracePeriod(tt.annotations)
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func TestGetInt64PointerFromLabel(t *testing.T) {
+	tests := []struct {
+		name     string
+		labels   map[string]string
+		label    string
+		expected *int64
+		err      bool
+	}{
+		{
+			name:     "label not found",
+			labels:   map[string]string{},
+			label:    "test",
+			expected: nil,
+			err:      false,
+		},
+		{
+			name: "valid int64 value",
+			labels: map[string]string{
+				"test": "123",
+			},
+			label:    "test",
+			expected: int64Ptr(123),
+			err:      false,
+		},
+		{
+			name: "invalid int64 value",
+			labels: map[string]string{
+				"test": "abc",
+			},
+			label:    "test",
+			expected: nil,
+			err:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := getInt64PointerFromLabel(tt.labels, tt.label)
+			if tt.err {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func int64Ptr(i int64) *int64 {
+	return &i
+}

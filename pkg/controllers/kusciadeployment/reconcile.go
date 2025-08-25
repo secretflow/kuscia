@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/secretflow/kuscia/pkg/agent/framework"
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciav1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -203,7 +204,10 @@ func (c *Controller) refreshPartyDeploymentStatuses(kd *kusciav1alpha1.KusciaDep
 						if err != nil {
 							nlog.Warnf("Failed to get pod info for kd %v/%v: %v", domainID, kdName, err)
 						}
-						kd.Status.Reason = fmt.Sprintf("domainID: %s, reason: %s", domainID, reason)
+						kd.Status.Reason = ""
+						if reason != "" {
+							kd.Status.Reason = fmt.Sprintf("domainID: %s, reason: %s", domainID, reason)
+						}
 						kd.Status.Message = message
 						break
 					}
@@ -283,6 +287,11 @@ func (c *Controller) getPodInfoByKd(deploymentName, namespace string) (string, s
 		for _, containerStatus := range pod.Status.ContainerStatuses {
 			if containerStatus.State.Terminated != nil {
 				return containerStatus.State.Terminated.Reason, containerStatus.State.Terminated.Message, nil
+			}
+			if containerStatus.State.Waiting != nil && containerStatus.State.Waiting.Reason != "" {
+				if containerStatus.State.Waiting.Reason != framework.PodInitializing && containerStatus.State.Waiting.Reason != framework.ContainerCreating {
+					return containerStatus.State.Waiting.Reason, containerStatus.State.Waiting.Message, nil
+				}
 			}
 		}
 	}

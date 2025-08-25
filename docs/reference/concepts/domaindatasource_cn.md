@@ -31,7 +31,7 @@ DomainDataSource `metadata` 的子字段详细介绍如下：
 
 DomainDataSource `spec` 的子字段详细介绍如下：
 
-- `accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy 访问数据源，默认值为 false，表示直接连接数据源；当值为 true 时，表示通过 DataProxy 连接数据源。
+- `accessDirectly`：隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。
 - `encryptedInfo`：加密存储访问数据源所需的信息，如数据源为 MySQL 时，此字段会加密保存 MySQL 的链接串。
 - `name`：数据源的名称，可重复，注意区别于 metadata 中的 name 字段。
 - `type`：表示数据源的类型，类型包括：localfs, oss, mysql 。

@@ -177,4 +177,3 @@ msgid ""
 "推荐使用 Nginx release-1.15.3 "
 "及以上版本，详情参考[github/nginx](https://github.com/nginx/nginx)"
 msgstr "It is recommended to use Nginx release-1.15.3 and above versions. For details, please refer to [github/nginx](https://github.com/nginx/nginx). "
-

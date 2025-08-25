@@ -904,6 +904,14 @@ func (c *DomainRouteController) setKeepAliveForDstClusters(dr *kusciaapisv1alpha
 
 func addClusterForDstGateway(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1alpha1.DomainPort,
 	transportSocket *core.TransportSocket) error {
+
+	if dr == nil {
+		return fmt.Errorf("domain route is nil")
+	}
+	if dr.Spec.Endpoint.Host == "" {
+		return fmt.Errorf("endpoint host is empty")
+	}
+
 	var protocolOptions *envoyhttp.HttpProtocolOptions
 	var protocol string
 	if dr.Labels[grpcDegradeLabel] == "True" && dp.Protocol == kusciaapisv1alpha1.DomainRouteProtocolGRPC {

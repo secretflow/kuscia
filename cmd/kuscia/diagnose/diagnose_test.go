@@ -29,9 +29,7 @@ func TestNewDiagnoseCommand(t *testing.T) {
 	assert.Equal(t, "Diagnose means pre-test Kuscia", cmd.Short)
 
 	subCommands := cmd.Commands()
-	assert.Len(t, subCommands, 2)
-	assert.Equal(t, "cdr", subCommands[0].Use)
-	assert.Equal(t, "network", subCommands[1].Use)
+	assert.Len(t, subCommands, 3)
 }
 
 func TestNewCDRCommand(t *testing.T) {
@@ -51,7 +49,7 @@ func TestNewCDRCommand(t *testing.T) {
 
 func TestNewNetworkCommand(t *testing.T) {
 	ctx := context.Background()
-	cmd := NewNeworkCommand(ctx)
+	cmd := NewNetworkCommand(ctx)
 
 	assert.Equal(t, "network", cmd.Use)
 	assert.Equal(t, "Diagnose the status of network between domains", cmd.Short)

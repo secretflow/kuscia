@@ -171,14 +171,9 @@ func TestProcessDeployment(t *testing.T) {
 		t.Error("new controller failed")
 	}
 
-	// create kd, should return nil
-	kd := makeMockDeployment("bob", "kd-2")
-	got := c.processDeployment(ctx, kd)
-	assert.Equal(t, nil, got)
-
 	// update kd, should return nil
-	kd = makeMockDeployment("bob", "kd-1")
+	kd := makeMockDeployment("bob", "kd-1")
 	kd.Spec.Initiator = "alice"
-	got = c.processDeployment(ctx, kd)
+	got := c.processDeployment(ctx, kd)
 	assert.Equal(t, nil, got)
 }

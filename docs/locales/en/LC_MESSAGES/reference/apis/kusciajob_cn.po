@@ -1315,4 +1315,3 @@ msgstr "limit_kbps"
 #: ../../reference/apis/kusciajob_cn.md:121
 msgid "带宽限制，单位为 KiB/s"
 msgstr "Bandwidth limit, in KiB/s"
-

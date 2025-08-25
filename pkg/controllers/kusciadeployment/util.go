@@ -486,7 +486,11 @@ func generatePortAccessDomains(parties []kusciav1alpha1.KusciaDeploymentParty, n
 		}
 
 		for _, port := range ports {
-			if port.Scope == kusciav1alpha1.ScopeCluster {
+			// One problem here is when multiple parties of kd have the same domainID,
+			//that is, when want to deploy multiple deployment services,
+			//but want other nodes to be able to access the cluster type of port service later.
+			//So need to set the value of kuscia.secretflow/access-domain to empty.
+			if port.Scope == kusciav1alpha1.ScopeCluster && len(domainSlice) > 1 {
 				portAccessDomains[port.Name] = strings.Join(domainSlice, ",")
 			}
 		}

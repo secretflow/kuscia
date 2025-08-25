@@ -72,11 +72,11 @@ func TestNewGenericNodeProvider(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.True(t, cp.cpuAvailable.Equal(cp.cpuTotal) || cp.cpuAvailable.Cmp(cp.cpuTotal) < 0)
+			assert.True(t, cp.cpuAvailable.Cmp(cp.cpuTotal) <= 0)
 			assert.True(t, cp.podAvailable.Equal(cp.podTotal))
 			if tt.useCfg {
 				assert.True(t, cp.storageAvailable.Equal(cp.storageTotal))
-				assert.True(t, cp.memAvailable.Equal(cp.memTotal) || cp.memAvailable.Cmp(cp.memTotal) < 0)
+				assert.True(t, cp.memAvailable.Cmp(cp.memTotal) <= 0)
 				cfgCPU, _ := strconv.Atoi(tt.cfg.CPU)
 				cpuAvailable, _ := strconv.Atoi(cp.cpuAvailable.String())
 				assert.True(t, cfgCPU >= cpuAvailable)

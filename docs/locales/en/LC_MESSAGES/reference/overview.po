@@ -518,4 +518,3 @@ msgid ""
 "为构建隐私计算平台提供了基础，但同时希望在重要的地方保留用户的选择权，提供更高的灵活性与扩展性。"
 msgstr ""
 "Kuscia is a Cross-Domain lightweight privacy computing task orchestration framework, addressing common implementation challenges and serving as an operational foundation for privacy computing engines. Rather than being monolithic, Kuscia's default solutions are optional and pluggable. While providing a base for building privacy computing platforms, it preserves user choice in key areas for greater flexibility and extensibility."
-

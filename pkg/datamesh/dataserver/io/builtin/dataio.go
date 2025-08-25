@@ -79,10 +79,19 @@ func DataProxyContentToFlightStreamCSV(data *datamesh.DomainData, r io.Reader, w
 				nlog.Debugf("Domaindata(%s) input writer is csv writer schema(%s)", data.GetDomaindataId(), record.Schema().String())
 			}
 		}
-		record.Retain()
-		defer record.Release()
-		if err := w.Write(record); err != nil {
-			nlog.Warnf("Domaindata(%s) to flight stream failed with error %s", data.DomaindataId, err.Error())
+		err = func() error {
+			record.Retain()
+			defer record.Release()
+
+			if err = w.Write(record); err != nil {
+				nlog.Warnf("Domaindata(%s) to flight stream failed with error %s",
+					data.DomaindataId, err.Error())
+				return err
+			}
+			return nil
+		}()
+
+		if err != nil {
 			return err
 		}
 		iCount = iCount + record.NumRows()
@@ -149,9 +158,14 @@ func FlightStreamToDataProxyContentCSV(data *datamesh.DomainData, w io.Writer, r
 	for reader.Next() {
 		record := reader.Record()
 		record.Retain()
-		defer record.Release()
-		if err := csvWriter.Write(record); err != nil {
-			nlog.Warnf("Domaindata(%s) write content to remote failed with error: %s", data.GetDomaindataId(), err.Error())
+		err = func() error {
+			defer record.Release()
+			return csvWriter.Write(record)
+		}()
+
+		if err != nil {
+			nlog.Warnf("Domaindata(%s) write content to remote failed with error: %s",
+				data.GetDomaindataId(), err.Error())
 			return err
 		}
 		iCount++
@@ -185,24 +199,33 @@ func FlightStreamToDataProxyContentBinary(data *datamesh.DomainData, w io.Writer
 	for reader.Next() {
 		cnt := reader.Record()
 		cnt.Retain()
-		defer cnt.Release()
+		err := func() error {
+			defer cnt.Release()
 
-		for idx, col := range cnt.Columns() {
-			if !arrow.IsBaseBinary(col.DataType().ID()) {
-				nlog.Warnf("Input data column(%d) is not binary, type=%s", idx, col.DataType().String())
-				return status.Errorf(codes.InvalidArgument, "domaindata(%s) input data is not binary. type=%s", data.GetDomaindataId(), col.DataType().String())
-			}
+			for idx, col := range cnt.Columns() {
+				if !arrow.IsBaseBinary(col.DataType().ID()) {
+					nlog.Warnf("Input data column(%d) is not binary, type=%s",
+						idx, col.DataType().String())
+					return status.Errorf(codes.InvalidArgument,
+						"domaindata(%s) input data is not binary. type=%s",
+						data.GetDomaindataId(), col.DataType().String())
+				}
 
-			if b, ok := col.(*array.Binary); ok {
-				for i := 0; i < b.Len(); i++ {
-					data := b.Value(i)
-					if _, err := w.Write(data); err != nil {
-						nlog.Warnf("Write buf length=%d, failed with err: %s", len(data), err.Error())
-						return err
+				if b, ok := col.(*array.Binary); ok {
+					for i := 0; i < b.Len(); i++ {
+						if _, err := w.Write(b.Value(i)); err != nil {
+							nlog.Warnf("Write buf length=%d failed with err: %s",
+								len(b.Value(i)), err.Error())
+							return err
+						}
 					}
 				}
 			}
+			return nil
+		}()
 
+		if err != nil {
+			return err
 		}
 
 	}

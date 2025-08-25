@@ -54,6 +54,10 @@ func GetMemoryLimit(group string) (int64, error) {
 	return 0, fmt.Errorf("cgroup is not implemented in non LinuxOS")
 }
 
+func GetMemoryUsage(group string) (int64, error) {
+	return 0, fmt.Errorf("cgroup is not implemented in non LinuxOS")
+}
+
 func GetCPUQuotaAndPeriod(group string) (quota int64, period int64, err error) {
 	return 0, 0, fmt.Errorf("cgroup is not implemented in non LinuxOS")
 }

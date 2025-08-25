@@ -63,4 +63,3 @@ msgstr ""
 msgid "2、修改后重启 Kubelet 服务"
 msgstr ""
 "2、After the correction, restart Kubelet service."
-

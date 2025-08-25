@@ -7,14 +7,15 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 
 ## 接口总览
 
-| 方法名                                              | 请求类型                        | 响应类型                         | 描述       |
-|--------------------------------------------------|-----------------------------|------------------------------|----------|
-| [CreateDomainData](#create-domain-data)          | CreateDomainDataRequest     | CreateDomainDataResponse     | 创建数据对象   |
-| [UpdateDomainData](#update-domain-data)          | UpdateDomainDataRequest     | UpdateDomainDataResponse     | 更新数据对象   |
-| [DeleteDomainData](#delete-domain-data)          | DeleteDomainDataRequest     | DeleteDomainDataResponse     | 删除数据对象   |
-| [QueryDomainData](#query-domain-data)            | QueryDomainDataRequest      | QueryDomainDataResponse      | 查询数据对象   |
-| [BatchQueryDomainData](#batch-query-domain-data) | BatchQueryDomainDataRequest | BatchQueryDomainDataResponse | 批量查询数据对象 |
-| [ListDomainData](#list-domain-data)              | ListDomainDataRequest       | ListDomainDataResponse       | 列出数据对象   |
+| 方法名                                              | 请求类型                        | 响应类型                         | 描述                                      |
+|--------------------------------------------------|-----------------------------|------------------------------|-----------------------------------------|
+| [CreateDomainData](#create-domain-data)          | CreateDomainDataRequest     | CreateDomainDataResponse     | 创建数据对象                                  |
+| [UpdateDomainData](#update-domain-data)          | UpdateDomainDataRequest     | UpdateDomainDataResponse     | 更新数据对象                                  |
+| [DeleteDomainData](#delete-domain-data)          | DeleteDomainDataRequest     | DeleteDomainDataResponse     | 删除数据对象                                  |
+| [QueryDomainData](#query-domain-data)            | QueryDomainDataRequest      | QueryDomainDataResponse      | 查询数据对象                                  |
+| [BatchQueryDomainData](#batch-query-domain-data) | BatchQueryDomainDataRequest | BatchQueryDomainDataResponse | 批量查询数据对象                                |
+| [ListDomainData](#list-domain-data)              | ListDomainDataRequest       | ListDomainDataResponse       | 列出数据对象                                  |
+| [DeleteDomainDataAndRaw](#delete-data-and-raw)   | DeleteDomainDataRequest     | DeleteDomainDataResponse     | 删除数据对象及其物理数据（删除操作不可逆，请谨慎操作，请确认物理数据不在使用） |
 
 ## 接口详情
 
@@ -507,6 +508,63 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
         "file_format": "UNKNOWN"
       }
     ]
+  }
+}
+```
+
+{#delete-data-and-raw}
+
+### 删除数据对象及其物理数据
+
+#### HTTP 路径
+
+/api/v1/domaindata/deleteDataAndRaw
+
+{#delete-domain-data-request}
+
+#### 请求（DeleteDomainDataRequest）
+
+| 字段            | 类型                                           | 选填 | 描述                                                                                                                            |
+|---------------|----------------------------------------------|----|-------------------------------------------------------------------------------------------------------------------------------|
+| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                       |
+| domaindata_id | string                                       | 必填 | 数据对象 ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| domain_id     | string                                       | 必填 | 节点 ID                                                                                                                         |
+
+{#delete-domain-data-response}
+
+#### 响应（DeleteDomainDataResponse）
+
+| 字段                 | 类型                             | 描述      |
+|--------------------|--------------------------------|---------|
+| status             | [Status](summary_cn.md#status) | 状态信息    |
+
+#### 请求示例
+
+发起请求：
+
+```sh
+# Execute example in container
+export CTR_CERTS_ROOT=/home/kuscia/var/certs
+curl -k -X POST 'https://localhost:8082/api/v1/domaindata/deleteDataAndRaw' \
+ --header "Token: $(cat ${CTR_CERTS_ROOT}/token)" \
+ --header 'Content-Type: application/json' \
+ --cert ${CTR_CERTS_ROOT}/kusciaapi-server.crt \
+ --key ${CTR_CERTS_ROOT}/kusciaapi-server.key \
+ --cacert ${CTR_CERTS_ROOT}/ca.crt \
+ -d '{
+  "domain_id": "alice",
+  "domaindata_id": "psi-output"
+}'
+```
+
+请求响应成功结果：
+
+```json
+{
+  "status": {
+    "code": 0,
+    "message": "success",
+    "details": []
   }
 }
 ```

@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/mem"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/utils/nodeutils"
+	"github.com/secretflow/kuscia/pkg/utils/cgroup"
 	"github.com/secretflow/kuscia/pkg/utils/math"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/runtime"
@@ -140,33 +140,37 @@ func (gnp *GenericNodeProvider) refreshKernelParamsCondition() (bool, string) {
 func (gnp *GenericNodeProvider) refreshNodeConditions(ctx context.Context, st *v1.NodeStatus) bool {
 	// memory condition
 	var memChanged bool
-	if memory, err := mem.VirtualMemoryWithContext(ctx); err != nil {
-		nlog.Warnf("Failed to refresh memory condition: %v", err)
+	// get memory use from cgroup
+	memoryUsage, err := cgroup.GetMemoryUsage(cgroup.DefaultMountPoint)
+	if err != nil {
+		nlog.Warnf("Failed to get cgroup memory use: %v", err)
+	}
+	// get memory total from capacity manager
+	memoryTotal := gnp.capacityManager.memTotal.Value()
+	memoryAvailable := memoryTotal - memoryUsage
+	var memoryPressure float64
+	if memoryTotal > 0 && memoryUsage > 0 {
+		memoryPressure =
+			float64(memoryUsage) / float64(memoryTotal)
+	}
+	if memoryPressure >= MemoryPressureThreshold {
+		st.Conditions, memChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+			Type:   v1.NodeMemoryPressure,
+			Status: v1.ConditionTrue,
+			Reason: "AgentHasMemoryPressure",
+			Message: fmt.Sprintf("Memory is about to run out, total=%v, available=%v",
+				math.ByteCountBinary(memoryTotal),
+				math.ByteCountBinary(memoryAvailable)),
+		})
 	} else {
-		var memoryPressure float64
-		if memory.Total > 0 {
-			memoryPressure =
-				(float64(memory.Total) - float64(memory.Available)) / float64(memory.Total)
-		}
-		if memoryPressure >= MemoryPressureThreshold {
-			st.Conditions, memChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
-				Type:   v1.NodeMemoryPressure,
-				Status: v1.ConditionTrue,
-				Reason: "AgentHasMemoryPressure",
-				Message: fmt.Sprintf("Memory is about to run out, total=%v, available=%v",
-					math.ByteCountBinary(int64(memory.Total)),
-					math.ByteCountBinary(int64(memory.Available))),
-			})
-		} else {
-			st.Conditions, memChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
-				Type:   v1.NodeMemoryPressure,
-				Status: v1.ConditionFalse,
-				Reason: "AgentHasSufficientMemory",
-				Message: fmt.Sprintf("Agent has sufficient memory available, total=%v, available=%v",
-					math.ByteCountBinary(int64(memory.Total)),
-					math.ByteCountBinary(int64(memory.Available))),
-			})
-		}
+		st.Conditions, memChanged = nodeutils.AddOrUpdateNodeCondition(st.Conditions, v1.NodeCondition{
+			Type:   v1.NodeMemoryPressure,
+			Status: v1.ConditionFalse,
+			Reason: "AgentHasSufficientMemory",
+			Message: fmt.Sprintf("Agent has sufficient memory available, total=%v, available=%v",
+				math.ByteCountBinary(memoryTotal),
+				math.ByteCountBinary(memoryAvailable)),
+		})
 	}
 
 	// disk

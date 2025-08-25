@@ -20,6 +20,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	internalapi "k8s.io/cri-api/pkg/apis"
 
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/kri"
 	"github.com/secretflow/kuscia/pkg/agent/resource"
@@ -51,6 +53,8 @@ type K8sProviderSyncPodContext struct {
 	ResourceManager *resource.KubeResourceManager
 	Configmaps      []*v1.ConfigMap
 	Secrets         []*v1.Secret
+	CpuAvailable    k8sresource.Quantity
+	MemAvailable    k8sresource.Quantity
 }
 
 func (c *K8sProviderSyncPodContext) Point() Point {
@@ -78,6 +82,8 @@ type GenerateContainerOptionContext struct {
 	PodIPs       []string
 	ContainerDir string
 	ImageService internalapi.ImageManagerService
+	CpuAvailable k8sresource.Quantity
+	MemAvailable k8sresource.Quantity
 }
 
 func (c *GenerateContainerOptionContext) Point() Point {

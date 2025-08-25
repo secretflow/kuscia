@@ -286,10 +286,9 @@ msgstr "bool"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
-"隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false:"
-" 应用可通过 DataProxy 访问数据源。当前建设设置为 true, 使用 odps 类型时目前必须经过 DataProxy"
+"隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。"
 msgstr ""
-"Flag indicating whether privacy computing applications (e.g., SecretFlow) can directly access the data source (true: direct access without DataProxy; false: access via DataProxy). Currently defaults to true. ODPS type currently requires DataProxy."
+"A flag indicating whether a privacy-preserving computing application (e.g., SecretFlow) can directly access data sources: true means the application can directly access data sources (without going through DataProxy); false means the application must access data sources via DataProxy. The current default is set to false. For data sources of type ODPS, access through DataProxy is currently mandatory."
 
 #: ../../reference/apis/domaindatasource_cn.md:46
 msgid "响应（CreateDomainDataSourceResponse）"
@@ -384,10 +383,9 @@ msgstr "Data source type. Supported values: localfs, oss, mysql"
 
 #: ../../reference/apis/domaindatasource_cn.md
 msgid ""
-"隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false:"
-" 应用可通过 DataProxy 访问数据源（DataProxy暂未支持）。当前建设设置为 true 。"
+"隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。"
 msgstr ""
-"Flag indicating whether privacy computing applications (e.g., SecretFlow) can directly access the data source (true: direct access without DataProxy; false: access via DataProxy, currently unsupported). Currently defaults to true."
+"A flag indicating whether a privacy-preserving computing application (e.g., SecretFlow) can directly access data sources: true means the application can directly access data sources (without going through DataProxy); false means the application must access data sources via DataProxy. The current default is set to false. For data sources of type ODPS, access through DataProxy is currently mandatory."
 
 #: ../../reference/apis/domaindatasource_cn.md:208
 msgid "响应（UpdateDomainDataSourceResponse）"

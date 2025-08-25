@@ -304,4 +304,3 @@ msgid ""
 "`{{.JOB_NAME}}-hetero-lr`，依赖上游 `{{.JOB_NAME}}-intersection` 的输入。"
 msgstr ""
 "The following example uses the LR operator, where its `taskInputConfig` is defined in `/home/kuscia/scripts/templates/fate/task_input_config.hetero_lr.json`. In the KusciaJob yaml, its `alias` is `{{.JOB_NAME}}-hetero-lr`, and the dependency is `{{.JOB_NAME}}-intersection`. In the `taskInputConfig`, the component name is also `{{.JOB_NAME}}-hetero-lr`, and it depends on the input from the upstream `{{.JOB_NAME}}-intersection`."
-

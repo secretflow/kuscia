@@ -23,6 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
+	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
@@ -52,7 +53,7 @@ const (
 	DIAGNOSE_SERVER_PORT = 8095
 )
 
-func NewHTTPServerBean() *HTTPServerBean { // nolint: golint
+func NewHTTPServerBean(client *kubeconfig.KubeClients) *HTTPServerBean { // nolint: golint
 	config := new(DiagnoseAPIConfig)
 	config.HTTPPort = DIAGNOSE_SERVER_PORT
 	return &HTTPServerBean{
@@ -65,7 +66,7 @@ func NewHTTPServerBean() *HTTPServerBean { // nolint: golint
 			Debug:         config.Debug,
 			GinBeanConfig: convertToGinConf(config),
 		},
-		Service: NewService(),
+		Service: NewService(client),
 	}
 }
 
@@ -132,6 +133,16 @@ func (s *HTTPServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 					HTTPMethod:   http.MethodGet,
 					RelativePath: common.DiagnoseHealthyPath,
 					Handlers:     []gin.HandlerFunc{s.Service.Healthy},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: common.DiagnoseGetEnvoyLogByTask,
+					Handlers:     []gin.HandlerFunc{s.Service.GetEnvoyLog},
+				},
+				{
+					HTTPMethod:   http.MethodPost,
+					RelativePath: common.DiagnoseGetTaskInfo,
+					Handlers:     []gin.HandlerFunc{s.Service.GetTask},
 				},
 			},
 		},

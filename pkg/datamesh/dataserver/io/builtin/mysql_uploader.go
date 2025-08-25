@@ -284,7 +284,6 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 		nlog.Errorf("Begin Transaction failed(%s)", err)
 		return err
 	}
-
 	// then check the error, and commit/rollback the transaction
 	defer func() {
 		if err == nil {
@@ -304,44 +303,50 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	}()
 
 	for reader.Next() {
-		record := reader.Record()
-		record.Retain()
-		defer record.Release()
-		// read field data from record
-		recs := make([][]interface{}, record.NumRows())
-		for i := range recs {
-			recs[i] = make([]interface{}, record.NumCols())
-		}
-		for j, col := range record.Columns() {
-			rows := u.transformColToStringArr(reader.Schema().Field(j).Type, col)
-			for i, row := range rows {
-				recs[i][j] = row
+		recordSend := func() error {
+			record := reader.Record()
+			record.Retain()
+			defer record.Release()
+			// read field data from record
+			recs := make([][]interface{}, record.NumRows())
+			for i := range recs {
+				recs[i] = make([]interface{}, record.NumCols())
 			}
-		}
-		ib := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...)
-		placeholderCount := 0
-		// upload to sql
-		for _, row := range recs {
-			if placeholderCount+len(row) >= DEFAULT_MAX_PLACEHOLDER {
+			for j, col := range record.Columns() {
+				rows := u.transformColToStringArr(reader.Schema().Field(j).Type, col)
+				for i, row := range rows {
+					recs[i][j] = row
+				}
+			}
+			ib := sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...)
+			placeholderCount := 0
+			// upload to sql
+			for _, row := range recs {
+				if placeholderCount+len(row) >= DEFAULT_MAX_PLACEHOLDER {
+					err = execOnce(ib, tx)
+					if err != nil {
+						return err
+					}
+					placeholderCount = 0
+					// start a new insert
+					ib = sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...)
+				}
+				ib.Values(row...)
+				placeholderCount += len(row)
+			}
+			if placeholderCount != 0 {
 				err = execOnce(ib, tx)
 				if err != nil {
 					return err
 				}
-				placeholderCount = 0
-				// start a new insert
-				ib = sqlbuilder.InsertInto(tableName).Cols(backTickHeaders...)
 			}
-			ib.Values(row...)
-			placeholderCount += len(row)
+			iCount += int(record.NumRows())
+			nlog.Debugf("send rows=%d", iCount)
+			return nil
 		}
-		if placeholderCount != 0 {
-			err = execOnce(ib, tx)
-			if err != nil {
-				return err
-			}
+		if err = recordSend(); err != nil {
+			return err
 		}
-		iCount += int(record.NumRows())
-		nlog.Debugf("send rows=%d", iCount)
 	}
 	if err := reader.Err(); err != nil {
 		// in this case, stmt.Exec are all success, try to commit, rather than fail
@@ -351,9 +356,18 @@ func (u *MySQLUploader) FlightStreamToDataProxyContentMySQL(reader *flight.Reade
 	return nil
 }
 
-func execOnce(ib *sqlbuilder.InsertBuilder, tx *sql.Tx) error {
+func execOnce(ib *sqlbuilder.InsertBuilder, tx *sql.Tx) (err error) {
 	sql, args := ib.Build()
 	stmt, err := tx.Prepare(sql)
+	defer func() {
+		// return an error to stop upload
+		closeErr := stmt.Close()
+		nlog.Errorf("Stmt close failed with error: %s", closeErr)
+		if err == nil {
+			err = closeErr
+		}
+
+	}()
 	if err != nil {
 		nlog.Errorf("Prepare sql(%s) failed with error: %s", sql, err)
 		return err

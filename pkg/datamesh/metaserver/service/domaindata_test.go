@@ -239,3 +239,57 @@ func TestCheckCols(t *testing.T) {
 	}
 	assert.NotNil(t, CheckColType(cols, "oss"))
 }
+
+func TestConvert2UpdateReq(t *testing.T) {
+	attr := make(map[string]string)
+	attr["rows"] = "100"
+	col := make([]*v1alpha1.DataColumn, 2)
+	col[0] = &v1alpha1.DataColumn{Name: "id", Type: "string"}
+	col[1] = &v1alpha1.DataColumn{Name: "date", Type: "string"}
+
+	createReq := &datamesh.CreateDomainDataRequest{
+		Header:       nil,
+		DomaindataId: "test-id",
+		Name:         "test",
+		Type:         "table",
+		RelativeUri:  "a/b/c.csv",
+		DatasourceId: "ds-1",
+		Attributes:   attr,
+		Partition: &v1alpha1.Partition{
+			Type:   "path",
+			Fields: col[1:],
+		},
+		Columns:    col,
+		Vendor:     "test-vendor",
+		FileFormat: v1alpha1.FileFormat_UNKNOWN,
+	}
+
+	updateReq := convert2UpdateReq(createReq)
+
+	assert.Equal(t, createReq.Header, updateReq.Header)
+	assert.Equal(t, createReq.DomaindataId, updateReq.DomaindataId)
+	assert.Equal(t, createReq.Name, updateReq.Name)
+	assert.Equal(t, createReq.Type, updateReq.Type)
+	assert.Equal(t, createReq.RelativeUri, updateReq.RelativeUri)
+	assert.Equal(t, createReq.DatasourceId, updateReq.DatasourceId)
+	assert.Equal(t, createReq.Attributes, updateReq.Attributes)
+	assert.Equal(t, createReq.Partition, updateReq.Partition)
+	assert.Equal(t, createReq.Columns, updateReq.Columns)
+	assert.Equal(t, createReq.Vendor, updateReq.Vendor)
+	assert.Equal(t, createReq.FileFormat, updateReq.FileFormat)
+}
+
+func TestConvert2CreateResp(t *testing.T) {
+	updateResp := &datamesh.UpdateDomainDataResponse{
+		Status: &v1alpha1.Status{
+			Code:    0,
+			Message: "success",
+		},
+	}
+	domainDataID := "test-id"
+
+	createResp := convert2CreateResp(updateResp, domainDataID)
+
+	assert.Equal(t, updateResp.Status, createResp.Status)
+	assert.Equal(t, domainDataID, createResp.Data.DomaindataId)
+}

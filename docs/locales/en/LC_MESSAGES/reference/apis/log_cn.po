@@ -180,5 +180,3 @@ msgstr "Initiate Request"
 #: ../../reference/apis/log_cn.md:59
 msgid "请求响应成功结果："
 msgstr "Successful Response: "
-
-

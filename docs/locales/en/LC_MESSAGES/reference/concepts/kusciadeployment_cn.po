@@ -52,7 +52,7 @@ msgstr "The following is the state transition diagram of KusciaDeployment (KD)."
 
 #: ../../reference/concepts/kusciadeployment_cn.md:14
 msgid "![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)"
-msgstr "![KusciaDeploymentState](../../imgs/kuscia_deployment_state.png)"
+msgstr "![KusciaDeploymentState](../../imgs/en_images/kuscia_deployment_state.png)"
 
 #: ../../reference/concepts/kusciadeployment_cn.md:14
 msgid "KusciaDeploymentState"
@@ -164,7 +164,7 @@ msgid ""
 "`secretflow-serving-image`，详细定义请参考 [Serving "
 "Appimage](https://www.secretflow.org.cn/zh-"
 "CN/docs/serving/0.2.0b0/topics/deployment/serving_on_kuscia)"
-msgstr 
+msgstr ""
 "`.spec.parties[1].appImageRef`: It represents the AppImage name of the application dependency "
 "for the participant identified as `bob`, which is `secretflow-serving-image`. For detailed"
 "definitions, please refer to the [Serving AppImage](https://www.secretflow.org.cn/zh-"

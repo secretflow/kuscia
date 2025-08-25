@@ -16,11 +16,15 @@ package diagnose
 
 import (
 	"context"
+	"path"
 
 	"github.com/spf13/cobra"
 
+	"github.com/secretflow/kuscia/cmd/kuscia/confloader"
+	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/netstat"
+	dcommon "github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/diagnose/mods"
 	util "github.com/secretflow/kuscia/pkg/diagnose/utils"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -29,6 +33,7 @@ import (
 const (
 	SubCMDClusterDomainRoute = "cdr"
 	SubCMDNetwork            = "network"
+	SubEnvoyLogAnalysis      = "log"
 )
 
 func NewDiagnoseCommand(ctx context.Context) *cobra.Command {
@@ -38,7 +43,8 @@ func NewDiagnoseCommand(ctx context.Context) *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.AddCommand(NewCDRCommand(ctx))
-	cmd.AddCommand(NewNeworkCommand(ctx))
+	cmd.AddCommand(NewNetworkCommand(ctx))
+	cmd.AddCommand(NewEnvoyLogCommand(ctx))
 	return cmd
 }
 
@@ -70,7 +76,7 @@ func NewCDRCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func NewNeworkCommand(ctx context.Context) *cobra.Command {
+func NewNetworkCommand(ctx context.Context) *cobra.Command {
 	param := new(mods.DiagnoseConfig)
 	param.NetworkParam = new(netstat.NetworkParam)
 
@@ -100,7 +106,33 @@ func NewNeworkCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
+func NewEnvoyLogCommand(ctx context.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:          SubEnvoyLogAnalysis,
+		Short:        "Diagnose the task's envoy log messages",
+		SilenceUsage: true,
+		Args:         cobra.ExactArgs(1),
+		Example: `
+# analyse envoy log by taskID
+kuscia diagnose log secretflow-task-20250519105140-single-psi
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return RunEnvoyLogCommand(ctx, args[0])
+		},
+	}
+	return cmd
+}
+
 func RunToolCommand(ctx context.Context, config *mods.DiagnoseConfig) error {
+	dir := common.DefaultKusciaHomePath()
+	kusciaConf, err := confloader.ReadConfig(path.Join(dir, dcommon.KusciaYamlPath))
+	if err != nil {
+		nlog.Fatalf("Load kuscia config failed. %v", err.Error())
+	}
+	if kusciaConf.RunMode == common.RunModeMaster {
+		nlog.Info("Please run kuscia diagnose in lite or autonomy mode")
+		return nil
+	}
 	nlog.Infof("Diagnose Config:\n%v", config)
 	// mod init
 	reporter := util.NewReporter(config.ReportFile)
@@ -123,4 +155,22 @@ func RunToolCommand(ctx context.Context, config *mods.DiagnoseConfig) error {
 		return nil
 	}
 	return mod.Run(ctx)
+}
+
+func RunEnvoyLogCommand(ctx context.Context, taskID string) error {
+	dir := common.DefaultKusciaHomePath()
+	kusciaConf, err := confloader.ReadConfig(path.Join(dir, dcommon.KusciaYamlPath))
+	if err != nil {
+		nlog.Fatalf("Load kuscia config failed. %v", err.Error())
+	}
+	if kusciaConf.RunMode == common.RunModeMaster {
+		nlog.Info("Please run kuscia diagnose log in lite or autonomy mode")
+		return nil
+	}
+	reporter := util.NewReporter("")
+	defer func() {
+		reporter.Render()
+		reporter.Close()
+	}()
+	return mods.NewEnvoyLogTaskAnalysis(reporter, taskID, kusciaConf.DomainID, "", "", kusciaConf.RunMode).TaskAnalysis(ctx)
 }

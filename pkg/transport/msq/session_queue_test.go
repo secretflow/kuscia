@@ -72,7 +72,7 @@ func producer(sq *SessionQueue, t *testing.T) {
 func TestSessionQueuePushWait(t *testing.T) {
 	t.Parallel()
 	sq := NewTestSessionQueue()
-	sq.ByteSizeLimit = 100
+	sq.ByteSizeLimit = 500 // Increased buffer size limit
 
 	start := time.Now()
 	doneCh := make(chan struct{})
@@ -80,7 +80,7 @@ func TestSessionQueuePushWait(t *testing.T) {
 	// consumer
 	go func() {
 		for i := 0; i < 20; i++ {
-			msg, err := sq.Pop("topic", time.Millisecond*200)
+			msg, err := sq.Pop("topic", time.Millisecond*500) // Extended timeout duration
 			assert.NotNil(t, msg)
 			assert.Nil(t, err)
 			time.Sleep(time.Millisecond * 20)

@@ -19,6 +19,8 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -314,6 +316,9 @@ func (c *hostResourcesController) run(workers int) error {
 	nlog.Infof("Finish waiting for cache to sync for %v/%v resource controller", c.host, c.member)
 
 	c.hasSynced = true
+	// init first list and process domaindata domaindatagrant
+	c.initKddQueue()
+	c.initDdgQueue()
 
 	nlog.Infof("Run workers for %v/%v resource controller", c.host, c.member)
 	for i := 0; i < workers; i++ {
@@ -326,6 +331,50 @@ func (c *hostResourcesController) run(workers int) error {
 		go wait.Until(c.runDomainDataGrantWorker, time.Second, c.stopCh)
 	}
 	return nil
+}
+
+func (c *hostResourcesController) initKddQueue() {
+	// list all domaindata granted from c.host, and put them into queue
+	r, err := labels.NewRequirement(common.LabelDomainDataVendor, selection.Equals, []string{common.DomainDataVendorGrant})
+	if err != nil {
+		nlog.Errorf("Create label selector failed: %s, skip try to init kdd update.", err.Error())
+	}
+	if c.memberDomainDataLister == nil {
+		nlog.Errorf("memberDomainDataLister is nil, skip try to init kdd update.")
+		return
+	}
+	kdds, err := c.memberDomainDataLister.DomainDatas(c.member).List(labels.NewSelector().Add(*r))
+	if err != nil {
+		nlog.Errorf("List domaindata failed: %s, skip try to init kdd update.", err.Error())
+	}
+	for _, kdd := range kdds {
+		if kdd.Annotations[common.InitiatorMasterDomainAnnotationKey] != c.host {
+			continue
+		}
+		fakeNewObj := kdd.DeepCopy()
+		fakeNewObj.ResourceVersion = "0"
+		c.handleUpdatedDomainData(kdd, fakeNewObj)
+	}
+}
+
+func (c *hostResourcesController) initDdgQueue() {
+	// list all domaindatagrant granted from c.host, and put them into queue
+	if c.memberDomainDataGrantLister == nil {
+		nlog.Errorf("memberDomainDataGrantLister is nil, skip try to init ddg update.")
+		return
+	}
+	ddgs, err := c.memberDomainDataGrantLister.DomainDataGrants(c.member).List(labels.Everything())
+	if err != nil {
+		nlog.Errorf("List domaindatagrant failed: %s, skip try to init ddg update.", err.Error())
+	}
+	for _, ddg := range ddgs {
+		if ddg.Annotations[common.InitiatorMasterDomainAnnotationKey] != c.host {
+			continue
+		}
+		fakeNewObj := ddg.DeepCopy()
+		fakeNewObj.ResourceVersion = "0"
+		c.handleUpdatedDomainDataGrant(ddg, fakeNewObj)
+	}
 }
 
 // stop is used to stop the host resource controller.

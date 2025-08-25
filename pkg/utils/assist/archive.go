@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
@@ -116,6 +117,12 @@ func Untar(dst string, isGzip bool, adjustLink bool, r io.Reader, skipUnNormalFi
 		tr = tar.NewReader(r)
 	}
 
+	// Ensure dst is a clean absolute path
+	dst, err := filepath.Abs(filepath.Clean(dst))
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path for dst: %v", err)
+	}
+
 	for {
 		header, err := tr.Next()
 
@@ -129,7 +136,20 @@ func Untar(dst string, isGzip bool, adjustLink bool, r io.Reader, skipUnNormalFi
 			continue
 		}
 
-		target := filepath.Join(dst, header.Name)
+		// Clean and validate the file path to prevent directory traversal
+		cleanName := filepath.Clean(header.Name)
+		if strings.Contains(cleanName, "..") {
+			return fmt.Errorf("invalid file path in tar archive: %s contains directory traversal attempt", header.Name)
+		}
+
+		target := filepath.Join(dst, cleanName)
+
+		// Ensure the target path is within the destination directory
+		relPath, err := filepath.Rel(dst, target)
+		if err != nil || strings.HasPrefix(relPath, "..") {
+			return fmt.Errorf("invalid file path in tar archive: %s escapes destination directory", header.Name)
+		}
+
 		if err := writeOneFile(header, tr, dst, target, adjustLink, skipUnNormalFile); err != nil {
 			return err
 		}
