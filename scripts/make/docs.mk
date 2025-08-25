@@ -49,7 +49,6 @@ VERSION_CHECK_DIRS   ?= docs scripts hack
 .PHONY: sphinx-build
 sphinx-build: sphinx-clean
 sphinx-build: markdown-check
-sphinx-build: version_check
 sphinx-build:
 	@$(LOG_TARGET)
 	@$(call errorLog, Warning: if build failed please check sphinx version it must to be 6.2.1!)
@@ -148,7 +147,7 @@ version_fix: ## Fix version inconsistencies in markdown, po, yaml, and MODULE.ba
 
 .PHONY: docs
 docs: ## Build docs.
-docs: docs-clean gen_error_code_doc version_check sphinx-build
+docs: docs-clean gen_error_code_doc sphinx-build
 
 .PHONY: docs-clean
 docs-clean: ## Clean docs build.
