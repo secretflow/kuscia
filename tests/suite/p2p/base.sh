@@ -31,6 +31,7 @@ mkdir -p "${TEST_SUITE_P2P_TEST_RUN_DIR}"
 
 function oneTimeSetUp() {
   start_p2p_mode "${TEST_SUITE_P2P_TEST_RUN_KUSCIA_DIR}"
+  sleep 10
 }
 
 # Note: This will be call twice on master, because of a bug: https://github.com/kward/shunit2/issues/112. And it is open now.
