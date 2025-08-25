@@ -39,7 +39,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 | name            | string                                       | 可选 | 数据源名称（无需唯一）                                                                                                                                                                            |
 | info            | [DataSourceInfo](#data-source-info)          | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。                                                                                                                  |
 | info_key        | string                                       | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。                                                                                                            |
-| access_directly | bool                                         | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false: 应用可通过 DataProxy 访问数据源。当前建设设置为 true, 使用 odps 类型时目前必须经过 DataProxy                                              |
+| access_directly | bool                                         | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。                                              |
 
 {#create-domain-data-source-response}
 
@@ -203,7 +203,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 | name            | string                                       | 可选 | 数据源名称（无需唯一）                                                                                                                   |
 | info            | [DataSourceInfo](#data-source-info)          | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。                                                         |
 | info_key        | string                                       | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。                                                   |
-| access_directly | bool                                         | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false: 应用可通过 DataProxy 访问数据源（DataProxy暂未支持）。当前建设设置为 true 。 |
+| access_directly | bool                                         | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。 |
 
 #### 响应（UpdateDomainDataSourceResponse）
 
@@ -715,4 +715,4 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 | status          | string                              | 据源的状态，暂未支持校验数据源的状态，现为空字符串                                                                                                                 |
 | info            | [DataSourceInfo](#data-source-info) | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。                                                                     |
 | info_key        | string                              | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。                                                               |
-| access_directly | bool                                | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy）， false: 应用可通过 DataProxy 访问数据源。当前建设设置为 true, 使用 odps 类型时目前必须经过 DataProxy |
+| access_directly | bool                                | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。 |

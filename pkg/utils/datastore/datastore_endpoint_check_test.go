@@ -22,20 +22,30 @@ import (
 )
 
 var (
-	user      string
-	pass      string
-	prot      string
-	addr      string
-	dbname    string
-	dsn       string
-	netAddr   string
-	available bool
+	user                string
+	pass                string
+	prot                string
+	addr                string
+	dbname              string
+	dsn                 string
+	netAddr             string
+	availableMySQL      bool
+	pgHost              string
+	pgPort              string
+	pgUser              string
+	pgPassword          string
+	pgDatabase          string
+	pgNetAddr           string
+	pgSslmode           string
+	availablePostgreSQL bool
 )
 
 // See https://github.com/go-sql-driver/mysql/wiki/Testing
 // The password used here is 'password'
 // for example: docker run -d --name mysql-svc -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=test --memory=512m -p 3306:3306 --network=kuscia-exchange mysql:8.0
 // go-sql-driver/mysql support MySQL (5.6+)
+// postgres (9.6+)
+// for example: docker run -d --name postgres-svc -e POSTGRES_PASSWORD=password -e POSTGRES_DB=test --memory=512m -p 5432:5432 --network=kuscia-exchange postgres:17.4
 func init() {
 	// get environment variables
 	env := func(key, defaultValue string) string {
@@ -53,14 +63,28 @@ func init() {
 	dsn = fmt.Sprintf("%s:%s@%s/%s?timeout=30s", user, pass, netAddr, dbname)
 	c, err := net.Dial(prot, addr)
 	if err == nil {
-		available = true
+		availableMySQL = true
 		c.Close()
+	}
+
+	pgHost = env("PGHOST", "localhost")
+	pgPort = env("PGPORT", "5432")
+	pgUser = env("PGUSER", "postgres")
+	pgPassword = env("PGPASSWORD", "password")
+	pgDatabase = env("PGDATABASE", "postgres")
+	pgSslmode = env("PGSSLMODE", "disable")
+
+	pgNetAddr = fmt.Sprintf("%s(%s:%s)", "tcp", pgHost, pgPort)
+	pc, err := net.Dial("tcp", fmt.Sprintf("%s:%s", pgHost, pgPort))
+	if err == nil {
+		availablePostgreSQL = true
+		pc.Close()
 	}
 }
 
-func TestCheckDatastoreEndpoint(t *testing.T) {
+func TestCheckDatastoreEndpoint_MySQL(t *testing.T) {
 
-	if !available {
+	if !availableMySQL {
 		t.Skipf("MySQL server not running on %s", netAddr)
 	}
 
@@ -115,6 +139,76 @@ func TestCheckDatastoreEndpoint(t *testing.T) {
 		{
 			name:    "mysql datastoreEndpoint 8",
 			args:    args{datastoreEndpoint: "mysql://qwesad@3dwq3e41:eqwe"},
+			wantErr: true,
+		},
+		{
+			name:    "postgres datastoreEndpoint 1",
+			args:    args{datastoreEndpoint: "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"},
+			wantErr: false,
+		},
+		{
+			name:    "postgres datastoreEndpoint 2",
+			args:    args{datastoreEndpoint: "postgresql://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable"},
+			wantErr: false,
+		},
+		{
+			name:    "unsupported datastoreEndpoint",
+			args:    args{datastoreEndpoint: "sqlite://test.db"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckDatastoreEndpoint(tt.args.datastoreEndpoint); (err != nil) != tt.wantErr {
+				t.Errorf("CheckDatastoreEndpoint() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCheckDatastoreEndpoint_PostgreSQL(t *testing.T) {
+
+	if !availablePostgreSQL {
+		t.Skipf("PostgreSQL server not running on %s", pgNetAddr)
+	}
+
+	type args struct {
+		datastoreEndpoint string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "empty datastoreEndpoint will use sqlite",
+			args:    args{datastoreEndpoint: ""},
+			wantErr: false,
+		},
+		{
+			name:    "postgres datastoreEndpoint 1",
+			args:    args{datastoreEndpoint: "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"},
+			wantErr: false,
+		},
+		{
+			name: "postgres datastoreEndpoint 2",
+			args: args{datastoreEndpoint: "postgresql://postgres:password@localhost:5432/postgres"},
+			// because of the `sslmode`, it will be error
+			wantErr: true,
+		},
+		{
+			name:    "postgres datastoreEndpoint 3",
+			args:    args{datastoreEndpoint: "postgres://qwesad@3dwq3e41:eqwe"},
+			wantErr: true,
+		},
+		{
+			name:    "postgres datastoreEndpoint 4",
+			args:    args{datastoreEndpoint: "postgresql://postgres:password@localhost:15432/postgres?sslmode=disable"},
+			wantErr: true,
+		},
+		{
+			name:    "postgres datastoreEndpoint 5",
+			args:    args{datastoreEndpoint: "postgresql://postgres:password@localhost1:5432/postgres?sslmode=disable"},
 			wantErr: true,
 		},
 		{

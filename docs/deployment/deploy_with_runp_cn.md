@@ -6,6 +6,8 @@
 
 关于 RunP 以及更多运行时的介绍请参考 [容器运行模式](../reference/architecture_cn.md#agent)。
 
+**⚠️ 资源限制说明**：Kuscia RunP 模式暂不支持 job 资源限制。
+
 ## 部署流程
 
 物理机和 K8s 两种部署环境的配置不同，接下来我们将分别介绍在这两种环境中 RunP 模式的部署流程。

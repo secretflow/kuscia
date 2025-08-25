@@ -451,4 +451,3 @@ msgstr "404 Page Not Found"
 #: ../../tutorial/run_sf_serving_with_api_cn.md:467
 msgid "接口 path 错误。请检查请求的 path 是否和文档中的一致。必要时可以提 issue 询问。"
 msgstr "Interface path error. Please check if the requested path is consistent with the documentation. If necessary, you can raise an issue to ask."
-

@@ -47,4 +47,3 @@ msgstr ""
 #: ../../reference/api_whitelist_config_cn.md:13
 msgid "下面两个个配置的效果是一样的："
 msgstr "The following two configurations have the same effect:"
-

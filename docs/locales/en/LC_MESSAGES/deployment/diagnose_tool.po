@@ -141,3 +141,70 @@ msgstr "Other Notes"
 msgid "kuscia diagnose network 参数说明："
 msgstr "Explanation of the Kuscia diagnose network parameters:"
 
+#: ../../deployment/diagnose_tool.md:149
+msgid "能够根据用户输入的 kuscia taskId，通过查询和解析对应的日志文件，获取任务运行期间节点间的网络访问是否有异常状况，帮助更好的排错。"
+msgstr "Based on the kuscia taskId input by the user, it can query and parse the corresponding log file to get whether there is any abnormal condition of network access between nodes during the running of the task, which can help better troubleshooting."
+
+#: ../../deployment/diagnose_tool.md:153
+msgid "可用于执行任务失败之后，通过解析日志文件，定位具体节点间交互的异常情况。"
+msgstr "It can be used to locate anomalies in specific inter-node interactions by parsing log files after the execution of a task has failed."
+
+#: ../../deployment/diagnose_tool.md:157
+msgid "已经执行完成（成功或者失败）。"
+msgstr "Execution has been completed (success or failure)."
+
+#: ../../deployment/diagnose_tool.md:161
+msgid "使用示例"
+msgstr "Usage Example"
+
+#: ../../deployment/diagnose_tool.md:161
+msgid "假设用户任务 taskId 为 secretflow-task-20250617142539-single-psi，则需要执行日志解析流程，可以在任意一个参与方的master节点中容器内执行："
+msgstr "Assuming that the user task taskId is secretflow-task-20250617142539-single-psi, the log parsing process needs to be performed, which can be executed within a container in the master node of any of the participants:"
+
+#: ../../deployment/diagnose_tool.md:167
+msgid "即会开始执行任务日志解析流程，正常执行的结果如下："
+msgstr "The task log parsing process will begin, and the results of normal execution are as follows:"
+
+#: ../../deployment/diagnose_tool.md:174
+msgid "如果任务在执行的过程中，存在网络异常，一个可能的报告如下："
+msgstr "If there is a network anomaly while the task is executing, a possible report is as follows:"
+
+#: ../../deployment/diagnose_tool.md:212
+msgid "DOMAIN(bob) TASK(secretflow-task-20250617142539-single-psi) NETWORK bob ---> alice  表示 bob 节点的任务 secretflow-task-20250617142539-single-psi 的网络访问情况，从 bob 到 alice 的网络访问情况。"
+msgstr "DOMAIN(bob) TASK(secretflow-task-20250617142539-single-psi) NETWORK bob ---> alice Indicates the bob node's task secretflow-task-20250617142539-single-psi's network access from bob to alice."
+
+#: ../../deployment/diagnose_tool.md:213
+msgid "IP：请求的目标 IP 地址。"
+msgstr "IP: The destination IP address of the request."
+
+#: ../../deployment/diagnose_tool.md:214
+msgid "TIMESTAMP：请求的时间戳。"
+msgstr "TIMESTAMP: The timestamp of the request."
+
+#: ../../deployment/diagnose_tool.md:215
+msgid "SERVICENAME：请求的服务名称。"
+msgstr "SERVICENAME: The name of the requested service."
+
+#: ../../deployment/diagnose_tool.md:216
+msgid "INTERFACEADDR：请求的接口地址。"
+msgstr "INTERFACEADDR: The address of the requested interface."
+
+#: ../../deployment/diagnose_tool.md:217
+msgid "HTTPMETHOD：请求的 HTTP 方法。"
+msgstr "HTTPMETHOD: HTTP method of the request."
+
+#: ../../deployment/diagnose_tool.md:218
+msgid "TRACEID：请求的跟踪 ID。"
+msgstr "TRACEID: The tracking ID of the request."
+
+#: ../../deployment/diagnose_tool.md:219
+msgid "STATUSCODE：请求的状态码。"
+msgstr "STATUSCODE: The status code of the request."
+
+#: ../../deployment/diagnose_tool.md:220
+msgid "CONTENTLENGTH：请求的内容长度。"
+msgstr "CONTENTLENGTH: The length of the requested content."
+
+#: ../../deployment/diagnose_tool.md:221
+msgid "REQUESTTIME：请求耗时。"
+msgstr "REQUESTTIME: request elapsed time."

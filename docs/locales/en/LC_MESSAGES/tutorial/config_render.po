@@ -474,4 +474,3 @@ msgstr "In the filter and selection syntax, ensure that `<key>`, `<value>` do no
 #: ../../tutorial/config_render.md:135
 msgid "如果输出的类型非原子类型（比如：结构体/Map/Array等），默认会使用Json来进行序列化，所以请确保输出内容符合目标配置文件格式"
 msgstr "If the output type is not an atomic type (e.g., struct/Map/Array), it will be serialized using JSON by default, so please ensure that the output content conforms to the target configuration file format."
-

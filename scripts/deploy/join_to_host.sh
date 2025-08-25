@@ -56,6 +56,12 @@ function join_to_host() {
     port=443
   fi
 
+  if [[ "${host}" == "" ]]; then
+    printf "Check and confirm that the address '%s' is correct. Example: https://127.0.0.1:8080 \n" "${host_endpoint}" >&2
+    usage
+    exit 1
+  fi
+
   local domain_route_template
   if [[ ${transit_domain} == "" ]]; then
     domain_route_template=$(sed "s/{{.SELF_DOMAIN}}/${self_domain_id}/g;

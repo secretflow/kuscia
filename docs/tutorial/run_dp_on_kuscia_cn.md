@@ -56,6 +56,10 @@
        - endpoint: "dataproxy-grpc:8023"
          dataSourceTypes:
            - "odps"
+       # Note: Currently only a single odps data source configuration is supported. If two odps configurations are defined here, the latter one will override the previous one.
+       # - endpoint: "example-dataproxy-grpc:8024"
+       #   dataSourceTypes:
+       #    - "odps"
 
    # Restart the node
    kubectl delete pod kuscia-autonomy-alice-xxxx -n autonomy-alice
@@ -168,6 +172,11 @@
        - endpoint: "dataproxy-grpc:8023"
          dataSourceTypes:
            - "odps"
+       # Note: Currently only a single odps data source configuration is supported. If two odps configurations are defined here, the latter one will override the previous one.
+       # - endpoint: "example-dataproxy-grpc:8024"
+       #   dataSourceTypes:
+       #    - "odps"
+
 
    # Restart the node
    docker restart root-kuscia-autonomy-alice

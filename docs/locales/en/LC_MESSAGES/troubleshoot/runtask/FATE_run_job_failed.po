@@ -76,4 +76,3 @@ msgstr "Check the job failure reason"
 #: ../../troubleshoot/runtask/FATE_run_job_failed.md:112
 msgid "请参考[作业运行失败](./run_job_failed.md)"
 msgstr "Please refer to [Job Execution Failure](./run_job_failed.md)"
-

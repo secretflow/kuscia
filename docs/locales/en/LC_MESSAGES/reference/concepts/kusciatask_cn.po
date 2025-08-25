@@ -373,4 +373,3 @@ msgstr "`completionTime`: Timestamp when the KusciaTask completed execution."
 #: ../../reference/concepts/kusciatask_cn.md:285
 msgid "`lastReconcileTime`: 表示 KusciaTask 上次更新的时间戳。"
 msgstr "`lastReconcileTime`: Timestamp of the last reconciliation for the KusciaTask."
-

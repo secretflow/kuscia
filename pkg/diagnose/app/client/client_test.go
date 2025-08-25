@@ -17,20 +17,26 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/secretflow/kuscia/pkg/diagnose/app/server"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"github.com/stretchr/testify/assert"
 )
 
 var s *server.HTTPServerBean
 var cli *Client
 
 func TestMain(m *testing.M) {
-	s = server.NewHTTPServerBean()
+	s = server.NewHTTPServerBean(nil)
 	go s.Run(context.Background())
 	cli = NewDiagnoseClient("localhost:8095")
 	m.Run()
@@ -94,4 +100,94 @@ func TestMockChunk(t *testing.T) {
 		assert.Equal(t, chunkSize, recvSize)
 		size += recvSize
 	}
+}
+
+func mockHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/diagnose/v1/network/envoy/log/task" {
+		response := &diagnose.EnvoyLogInfoResponse{
+			Status:   &v1alpha1.Status{Code: http.StatusOK},
+			DomainId: "domain-b",
+			EnvoyInfoList: []*diagnose.EnvoyLogInfo{
+				{
+					Type: common.InternalTypeLog,
+					EnvoyLogList: []*diagnose.EnvoyLog{
+						&diagnose.EnvoyLog{
+							Ip:            "127.0.0.1",
+							Timestamp:     "2023-01-01T00:00:00Z",
+							NodeName:      "alice",
+							ServiceName:   "secretflow-task-20250530143614-single-psi-0-spu.bob.svc",
+							InterfaceAddr: "0.0.0.0:8080",
+							HttpMethod:    "GET",
+							TraceId:       "12345",
+							StatusCode:    "500",
+							ContentLength: "1024",
+							RequestTime:   "0.1s",
+						},
+						&diagnose.EnvoyLog{
+							Ip:            "127.0.0.1",
+							Timestamp:     "2023-01-01T00:00:00Z",
+							NodeName:      "alice",
+							ServiceName:   "secretflow-task-20250530143614-single-psi-0-spu.bob.svc",
+							InterfaceAddr: "0.0.0.0:8080",
+							HttpMethod:    "GET",
+							TraceId:       "12345",
+							StatusCode:    "502",
+							ContentLength: "1024",
+							RequestTime:   "0.1s",
+						},
+					},
+				},
+				{
+					Type: common.ExternalTypeLog,
+					EnvoyLogList: []*diagnose.EnvoyLog{
+						&diagnose.EnvoyLog{
+							Ip:            "127.0.0.1",
+							Timestamp:     "2023-01-01T00:00:00Z",
+							NodeName:      "alice",
+							ServiceName:   "secretflow-task-20250530143614-single-psi-0-spu.bob.svc",
+							InterfaceAddr: "0.0.0.0:8080",
+							HttpMethod:    "GET",
+							TraceId:       "12345",
+							StatusCode:    "501",
+							ContentLength: "1024",
+							RequestTime:   "0.1s",
+						},
+						&diagnose.EnvoyLog{
+							Ip:            "127.0.0.1",
+							Timestamp:     "2023-01-01T00:00:00Z",
+							NodeName:      "alice",
+							ServiceName:   "secretflow-task-20250530143614-single-psi-0-spu.bob.svc",
+							InterfaceAddr: "0.0.0.0:8080",
+							HttpMethod:    "GET",
+							TraceId:       "12345",
+							StatusCode:    "503",
+							ContentLength: "1024",
+							RequestTime:   "0.1s",
+						},
+					},
+				},
+			},
+		}
+		data, err := proto.Marshal(response)
+		if err != nil {
+			http.Error(w, "Failed to marshal protobuf response", http.StatusInternalServerError)
+			return
+		}
+
+		// set HTTPHeader application/x-protobuf
+		w.Header().Set("Content-Type", "application/x-protobuf")
+		w.WriteHeader(http.StatusOK)
+
+		w.Write(data)
+	}
+}
+
+func TestEnvoyLog(t *testing.T) {
+	// mock handler
+	httpServer := httptest.NewServer(http.HandlerFunc(mockHandler))
+	defer httpServer.Close()
+	cli = NewDiagnoseClient(httpServer.URL)
+	response, err := cli.EnvoyLog(context.Background(), &diagnose.EnvoyLogRequest{TaskId: "secretflow-task-20250530143614-single", CreateTime: time.Time{}.Format(common.LogTimeFormat)})
+	assert.NoError(t, err)
+	assert.Equal(t, int32(200), response.Status.Code)
 }

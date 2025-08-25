@@ -40,6 +40,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubernetes/pkg/kubelet/events"
 
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	pkgcontainer "github.com/secretflow/kuscia/pkg/agent/container"
 	"github.com/secretflow/kuscia/pkg/agent/framework"
@@ -79,6 +81,8 @@ type K8sProviderDependence struct {
 	ResourceManager *resource.KubeResourceManager
 	K8sProviderCfg  *config.K8sProviderCfg
 	Recorder        record.EventRecorder
+	CpuAvailable    k8sresource.Quantity
+	MemAvailable    k8sresource.Quantity
 }
 
 type K8sProvider struct {
@@ -112,6 +116,8 @@ type K8sProvider struct {
 	logManager    *K8sLogManager
 	// the pods that failed to apply to backend k8s
 	podsApplyFailed sync.Map
+	cpuAvailable    k8sresource.Quantity
+	memAvailable    k8sresource.Quantity
 }
 
 func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
@@ -130,6 +136,8 @@ func NewK8sProvider(dep *K8sProviderDependence) (*K8sProvider, error) {
 		runtimeClassName: dep.K8sProviderCfg.RuntimeClassName,
 		recorder:         dep.Recorder,
 		podsApplyFailed:  sync.Map{}, // pod.Name -> v1.podStatus
+		cpuAvailable:     dep.CpuAvailable,
+		memAvailable:     dep.MemAvailable,
 	}
 
 	if kp.podDNSPolicy == "" {
@@ -327,6 +335,8 @@ func (kp *K8sProvider) SyncPod(ctx context.Context, pod *v1.Pod, podStatus *pkgc
 		ResourceManager: kp.resourceManager,
 		Configmaps:      []*v1.ConfigMap{},
 		Secrets:         []*v1.Secret{},
+		CpuAvailable:    kp.cpuAvailable,
+		MemAvailable:    kp.memAvailable,
 	}
 	if err := hook.Execute(hookCtx); err != nil {
 		return fmt.Errorf("failed to execute hook for pod %v", format.Pod(pod))
@@ -518,9 +528,12 @@ func (kp *K8sProvider) applyPod(ctx context.Context, pod *v1.Pod) (*v1.Pod, erro
 func (kp *K8sProvider) KillPod(ctx context.Context, pod *v1.Pod, runningPod pkgcontainer.Pod, gracePeriodOverride *int64) error {
 	kp.podsApplyFailed.Delete(pod.Name)
 	// backend pod has more volumes than kuscia pod (volumes added from hook)
-	newPod, err := kp.podLister.Get(pod.Name)
-	if err != nil && k8serrors.IsNotFound(err) {
-		return nil
+	newPod, err := kp.bkClient.CoreV1().Pods(kp.bkNamespace).Get(ctx, pod.Name, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
 	if err := kp.deleteBackendPod(ctx, kp.bkNamespace, pod.Name, gracePeriodOverride); err != nil {
 		return fmt.Errorf("failed to kill pod %q, detail-> %v", format.Pod(pod), err)

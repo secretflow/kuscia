@@ -31,7 +31,7 @@ type diagnoseModule struct {
 }
 
 func NewDiagnose(d *ModuleRuntimeConfigs) (Module, error) {
-	diagnoseServer := server.NewHTTPServerBean()
+	diagnoseServer := server.NewHTTPServerBean(d.Clients)
 
 	return &diagnoseModule{
 		moduleRuntimeBase: moduleRuntimeBase{

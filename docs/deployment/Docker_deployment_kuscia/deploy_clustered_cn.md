@@ -32,9 +32,9 @@
 
 #### 初始化 swarm
 
+选择一台主机作为 Docker 管理节点进行初始化，IP 应指定该主机的 IP 地址，Docker 集群将在此地址监听。管理端口默认为 2377，也可按需配置（格式：<IP|接口>[:端口]），详见 [Docker 官方文档](https://docs.docker.com/reference/cli/docker/swarm/)。
+
 ```shell
-# Select one of the hosts to initialize as a Docker manager node. The IP should be the host's IP address, which Docker cluster management will listen on. For specific details, refer to the official Docker documentation.
-# The management port uses the default port (2377), but it can be configured according to the Docker official documentation (format: <ip|interface>[:port])
 docker swarm init --advertise-addr 127.0.0.2
 ```
 
@@ -111,11 +111,9 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 
 #### 修改配置文件创建使用的 DB
 
-验证使用的示例，仅供参考：
+启动一个 MySQL 8.0+ 版本的容器，设置密码为 password，并创建数据库 kine，仅供测试参考。
 
 ```shell
-# Start the MySQL service without mounting a disk, for testing purposes only.
-# Start a MySQL 8.0 container using "password" as the password and create a database named "kine".
 docker run -d --name alice-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=kine mysql:8
 ```
 

@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -32,6 +34,13 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/meta"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
+)
+
+const (
+	podDeletionGracePeriodLabel    = "io.kubernetes.pod.deletionGracePeriod"
+	podTerminationGracePeriodLabel = "io.kubernetes.pod.terminationGracePeriod"
+	// A minimal shutdown window for avoiding unnecessary SIGKILL
+	minimumGracePeriodInSeconds = 2
 )
 
 type RuntimeDependence struct {
@@ -132,7 +141,7 @@ func (r *Runtime) StopContainer(ctx context.Context, containerID string, timeout
 		return fmt.Errorf("failed to find container %q, detail-> %v", containerID, err)
 	}
 
-	if err := container.Stop(); err != nil {
+	if err := container.Stop(time.Duration(timeout) * time.Second); err != nil {
 		return fmt.Errorf("failed to stop container %q, detail-> %v", containerID, err)
 	}
 
@@ -250,20 +259,29 @@ func (r *Runtime) RunPodSandbox(ctx context.Context, config *runtimeapi.PodSandb
 	return podSandbox.ID, nil
 }
 
+// StopPodSandbox stops a pod sandbox and all its containers with graceful termination
 func (r *Runtime) StopPodSandbox(ctx context.Context, podSandboxID string) error {
 	nlog.Infof("Stop pod sandbox %q", podSandboxID)
 
+	// Iterate through all containers and stop those belonging to this sandbox
 	containers := r.containerStore.List()
 	for _, container := range containers {
+		// Skip containers not belonging to this sandbox
 		if container.SandboxID != podSandboxID {
 			continue
 		}
-
-		if err := r.StopContainer(ctx, container.ID, 0); err != nil {
+		gracePeriod := int64(minimumGracePeriodInSeconds)
+		if container.GetCRIStatus() != nil {
+			// Get configured grace period for graceful shutdown
+			gracePeriod = getGracePeriod(container.GetCRIStatus().Annotations)
+		}
+		// Stop container with the calculated grace period
+		if err := r.StopContainer(ctx, container.ID, gracePeriod); err != nil {
 			return err
 		}
 	}
 
+	// Stop the sandbox itself
 	podSandbox, ok := r.sandboxStore.Get(podSandboxID)
 	if !ok {
 		nlog.Warnf("Pod sandbox %q has been deleted", podSandboxID)
@@ -272,6 +290,47 @@ func (r *Runtime) StopPodSandbox(ctx context.Context, podSandboxID string) error
 	podSandbox.Stop()
 
 	return nil
+}
+
+// getGracePeriod calculates the termination grace period for a container
+// Priority order:
+//  1. podDeletionGracePeriod annotation if exists
+//  2. podTerminationGracePeriod annotation if exists
+//  3. Default minimumGracePeriodInSeconds
+func getGracePeriod(annotations map[string]string) int64 {
+	gracePeriod := int64(minimumGracePeriodInSeconds)
+	if annotations != nil {
+		// First try pod deletion grace period annotation
+		podDeletionGracePeriod, err := getInt64PointerFromLabel(annotations, podDeletionGracePeriodLabel)
+		if err == nil && podDeletionGracePeriod != nil {
+			gracePeriod = *podDeletionGracePeriod
+			return gracePeriod
+		}
+		// Fallback to pod termination grace period annotation
+		podTerminationGracePeriod, err := getInt64PointerFromLabel(annotations, podTerminationGracePeriodLabel)
+		if err == nil && podTerminationGracePeriod != nil {
+			gracePeriod = *podTerminationGracePeriod
+		}
+	}
+	return gracePeriod
+}
+
+// getInt64PointerFromLabel parses int64 value from a label string
+// Returns:
+//   - nil, nil if label doesn't exist
+//   - parsed value if exists and valid
+//   - error if parsing fails
+func getInt64PointerFromLabel(labels map[string]string, label string) (*int64, error) {
+	if strValue, found := labels[label]; found {
+		// Convert string value to int64
+		int64Value, err := strconv.ParseInt(strValue, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return &int64Value, nil
+	}
+	// Label not found case
+	return nil, nil
 }
 
 func (r *Runtime) RemovePodSandbox(ctx context.Context, podSandboxID string) error {
@@ -382,6 +441,7 @@ func (r *Runtime) filterCRISandboxes(sandboxes []*runtimeapi.PodSandbox, filter 
 
 	return filtered
 }
+
 func (r *Runtime) ImageStatus(ctx context.Context, image *runtimeapi.ImageSpec, verbose bool) (*runtimeapi.ImageStatusResponse, error) {
 	nlog.Infof("Get image %q status", image.Image)
 	imageName, err := kii.NewImageName(image.Image)

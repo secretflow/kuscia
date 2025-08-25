@@ -76,7 +76,7 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 	assert.NoError(t, os.WriteFile(resolveConfig, []byte("nameserver 127.0.0.1"), 0644))
 
 	cfg := &config.K8sProviderCfg{
-		Namespace: "bk-namespace",
+		Namespace: "default",
 		DNS: config.DNSCfg{
 			ResolverConfig: resolveConfig,
 		},
@@ -86,23 +86,24 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 	kp := createTestK8sProvider(t, cfg, rm)
 	kp.namespace = "default"
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	kp.nodeName = "node1"
 	pod1 := createTestPod("001", "default", "pod1", "test-secret")
-	assert.NoError(t, kp.SyncPod(context.Background(), pod1, nil, nil))
+	assert.NoError(t, kp.SyncPod(ctx, pod1, nil, nil))
 
 	kp.nodeName = "node2"
 	pod2 := createTestPod("002", "default", "pod2", "test-secret")
-	assert.NoError(t, kp.SyncPod(context.Background(), pod2, nil, nil))
+	assert.NoError(t, kp.SyncPod(ctx, pod2, nil, nil))
 
 	kp.nodeName = "node3"
 	pod3 := createTestPod("003", "default", "pod3", "test-secret")
-	assert.NoError(t, kp.SyncPod(context.Background(), pod3, nil, nil))
+	assert.NoError(t, kp.SyncPod(ctx, pod3, nil, nil))
 
 	kp.nodeName = "node4"
 	pod4 := createTestPod("004", "default", "pod4", "test-secret")
-	assert.NoError(t, kp.SyncPod(context.Background(), pod4, nil, nil))
+	assert.NoError(t, kp.SyncPod(ctx, pod4, nil, nil))
 
-	ctx, cancel := context.WithCancel(context.Background())
 	kp.kubeInformerFactory.Start(ctx.Done())
 
 	if !cache.WaitForCacheSync(ctx.Done(), kp.podsSynced, kp.configMapSynced, kp.secretSynced) {
@@ -110,10 +111,8 @@ func TestK8sProvider_cleanupZombieResources(t *testing.T) {
 	}
 
 	// kill pod will try to remove sub resource immediately
-	assert.NoError(t, kp.KillPod(context.Background(), pod4, pkgcontainer.Pod{}, nil))
-	if !cache.WaitForCacheSync(ctx.Done(), kp.podsSynced, kp.configMapSynced, kp.secretSynced) {
-		t.Fatal("timeout waiting for caches to sync")
-	}
+	gracePeriod := int64(0)
+	assert.NoError(t, kp.KillPod(ctx, pod4, pkgcontainer.Pod{}, &gracePeriod))
 
 	assertCachedBackendResource(t, kp, "pod1", true, true)
 	assertCachedBackendResource(t, kp, "pod2", true, true)
@@ -169,13 +168,13 @@ func createTestPod(uid types.UID, namespace, name, secretName string) *v1.Pod {
 }
 
 func assertCachedBackendResource(t *testing.T, kp *K8sProvider, podName string, podExist, subResExist bool) {
-	_, err := kp.podLister.Get(podName)
+	_, err := kp.bkClient.CoreV1().Pods(kp.bkNamespace).Get(context.Background(), podName, metav1.GetOptions{})
 	assert.Equal(t, podExist, err == nil)
 
-	_, err = kp.configMapLister.Get(fmt.Sprintf("%s-resolv-config", podName))
+	_, err = kp.bkClient.CoreV1().ConfigMaps(kp.bkNamespace).Get(context.Background(), fmt.Sprintf("%s-resolv-config", podName), metav1.GetOptions{})
 	assert.Equal(t, subResExist, err == nil)
 
-	secret, err := kp.secretLister.Get(fmt.Sprintf("%s-test-secret", podName))
+	secret, err := kp.bkClient.CoreV1().Secrets(kp.bkNamespace).Get(context.Background(), fmt.Sprintf("%s-test-secret", podName), metav1.GetOptions{})
 	assert.Equal(t, subResExist, err == nil)
 	t.Logf("%#v", secret)
 }

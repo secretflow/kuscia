@@ -90,20 +90,5 @@ func (o *operatorService) registerDefaultDatasource() bool {
 
 	nlog.Infof("Datasource %s has been created successful.", common.DefaultDataSourceID)
 
-	_, err = o.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(o.conf.KubeNamespace).Get(context.
-		Background(), common.DefaultDataProxyDataSourceID, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			if err = o.datasourceSvc.CreateDefaultDataProxyDomainDataSource(context.Background()); err != nil {
-				nlog.Errorf("Create default datasource %s failed, error: %v.", common.DefaultDataProxyDataSourceID, err)
-				return false
-			}
-		} else {
-			nlog.Errorf("Get default datasource %s failed, error: %v.", common.DefaultDataProxyDataSourceID, err)
-			return false
-		}
-	}
-	nlog.Infof("Datasource %s has been created successful.", common.DefaultDataProxyDataSourceID)
-
 	return true
 }

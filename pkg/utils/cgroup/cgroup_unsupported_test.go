@@ -65,3 +65,8 @@ func TestGetMemoryLimit(t *testing.T) {
 	_, got := GetMemoryLimit("test")
 	assert.NotNil(t, got)
 }
+
+func TestGetMemoryUsage(t *testing.T) {
+	_, got := GetMemoryUsage("test")
+	assert.NotNil(t, got)
+}

@@ -54,4 +54,3 @@ msgid ""
 "如果 `status: \"True\"` 代表宿主机内核参数符合 Kuscia 的推荐内核参数配置，不再需要调整。"
 msgstr ""
 "If `status: \"True\"`, it means the host machine's kernel parameters meet Kuscia's recommended kernel parameter configuration and no further adjustment is needed."
-

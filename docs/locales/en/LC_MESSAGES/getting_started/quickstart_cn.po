@@ -204,4 +204,3 @@ msgstr "Next"
 #: ../../getting_started/quickstart_cn.md:200
 msgid "请继续阅读 [KusciaJob][part-2] 章节，来了解示例作业背后的细节。"
 msgstr "Please continue reading the [KusciaJob][part-2] section to understand the details behind the example job."
-

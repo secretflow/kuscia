@@ -15,13 +15,20 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/proto"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	kusciacommon "github.com/secretflow/kuscia/pkg/common"
+	"github.com/secretflow/kuscia/pkg/diagnose/common"
+	"github.com/secretflow/kuscia/pkg/diagnose/utils"
+	"github.com/secretflow/kuscia/pkg/utils/kubeconfig"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
@@ -31,10 +38,13 @@ type DiagnoseService struct {
 	PeerDone      bool
 	RecReportDone bool
 	Report        []*diagnose.MetricItem
+	Client        *kubeconfig.KubeClients
 }
 
-func NewService() *DiagnoseService {
-	return &DiagnoseService{}
+func NewService(client *kubeconfig.KubeClients) *DiagnoseService {
+	return &DiagnoseService{
+		Client: client,
+	}
 }
 
 func (s *DiagnoseService) Mock(c *gin.Context) {
@@ -109,6 +119,65 @@ func (s *DiagnoseService) SubmitReport(ctx *gin.Context) {
 	req := new(diagnose.SubmitReportRequest)
 	_ = parseProto(ctx, req)
 	render(ctx, s.submitReport(req))
+}
+
+func (s *DiagnoseService) GetEnvoyLog(ctx *gin.Context) {
+	nlog.Infof("Enter get envoy log")
+	req := new(diagnose.EnvoyLogRequest)
+	_ = parseProto(ctx, req)
+	render(ctx, s.getEnvoyLogInfo(req))
+}
+
+func (s *DiagnoseService) GetTask(ctx *gin.Context) {
+	nlog.Infof("Enter get task info")
+	req := new(diagnose.TaskInfoRequest)
+	_ = parseProto(ctx, req)
+	render(ctx, s.getTaskInfo(req))
+}
+
+func (s *DiagnoseService) getEnvoyLogInfo(req *diagnose.EnvoyLogRequest) *diagnose.EnvoyLogInfoResponse {
+	parseTime, err := time.Parse(common.LogTimeFormat, req.CreateTime)
+	if err != nil {
+		return &diagnose.EnvoyLogInfoResponse{Status: &v1alpha1.Status{
+			Code:    int32(http.StatusInternalServerError),
+			Message: fmt.Sprintf("parse time failed, %v", err),
+		}}
+	}
+	// It will convert the incoming CST time to UTC time, so it needs to be subtracted by 8 hours
+	parseTime = utils.CSTTimeCovertToUTC(parseTime)
+	envoyInfoList, err := utils.GetLogAnalysisResult(req.TaskId, "", &parseTime)
+	if err != nil {
+		return &diagnose.EnvoyLogInfoResponse{Status: &v1alpha1.Status{
+			Code:    int32(http.StatusInternalServerError),
+			Message: fmt.Sprintf("parse time failed, %v", err),
+		}}
+	}
+	return &diagnose.EnvoyLogInfoResponse{Status: &v1alpha1.Status{Code: http.StatusOK}, EnvoyInfoList: envoyInfoList, DomainId: req.DomainId}
+}
+
+func (s *DiagnoseService) getTaskInfo(req *diagnose.TaskInfoRequest) *diagnose.TaskInfoResponse {
+	task, err := s.Client.KusciaClient.KusciaV1alpha1().KusciaTasks(kusciacommon.KusciaCrossDomain).Get(context.Background(), req.GetTaskId(), metav1.GetOptions{})
+	if err != nil {
+		return &diagnose.TaskInfoResponse{Status: &v1alpha1.Status{
+			Code:    int32(http.StatusInternalServerError),
+			Message: fmt.Sprintf("get task info failed, %v", err),
+		}}
+	}
+	var parties []*diagnose.Party
+	for _, parity := range task.Spec.Parties {
+		parties = append(parties, &diagnose.Party{
+			DomainId: parity.DomainID,
+			Role:     parity.Role,
+		})
+	}
+	createTime := task.CreationTimestamp.Time.Format(common.LogTimeFormat)
+	return &diagnose.TaskInfoResponse{
+		Status:     &v1alpha1.Status{Code: http.StatusOK},
+		TaskId:     task.Name,
+		Parties:    parties,
+		CreateTime: createTime,
+	}
+
 }
 
 func parseProto(c *gin.Context, req proto.Message) error {

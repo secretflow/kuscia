@@ -142,4 +142,3 @@ msgstr "Image Pull Failed"
 msgid "当发现镜像拉取失败时，请确认 配置文件中仓库地址，以及账密相关配置是否正确， 以及参考上文，确保 AppImage 的镜像地址配置正确."
 msgstr ""
 "When an image pull fails, please confirm that the registry address in the configuration file and the account/password-related configurations are correct, and refer to the above content to ensure that the image address configuration in `AppImage` is correct."
-
