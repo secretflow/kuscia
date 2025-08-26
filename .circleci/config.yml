@@ -106,7 +106,7 @@ jobs:
             go tool cover -func=./test-results/coverage.out > ./test-results/coverage.txt
             go tool cover -html=./test-results/coverage.out -o ./test-results/coverage.html
             gocov convert ./test-results/coverage.out | gocov-xml > ./test-results/coverage.xml
-            diff-cover ./test-results/coverage.xml --compare-branch=origin/main --format html:./test-results/coverage_diff.html --fail-under=50
+            diff-cover ./test-results/coverage.xml --compare-branch=origin/main --format html:./test-results/coverage_diff.html --fail-under=70
       - store_artifacts:
           path: ./test-results/coverage.html
           destination: coverage-report
