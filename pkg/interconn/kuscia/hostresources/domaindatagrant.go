@@ -103,8 +103,8 @@ func (c *hostResourcesController) syncDomainDataGrantHandler(ctx context.Context
 	if err != nil {
 		// DomainDataGrant is deleted under host cluster
 		if k8serrors.IsNotFound(err) {
-			nlog.Infof("Can't get host %v domainDataGrant %v, maybe it's deleted, skip processing it", c.host, key)
-			return nil
+			nlog.Infof("Host %v domainDataGrant %v not found, delete member domainDataGrant", c.host, key)
+			return c.deleteDomainDataGrant(ctx, namespace, name)
 		}
 		return err
 	}

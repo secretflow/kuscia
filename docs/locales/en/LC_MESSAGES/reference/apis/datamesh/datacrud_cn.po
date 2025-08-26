@@ -154,4 +154,3 @@ msgstr ""
 #: ../../reference/apis/datamesh/datacrud_cn.md:65
 msgid "写入数据时将采用覆盖写（普通表将覆盖整个表，分区表将覆盖分区）。"
 msgstr "When writing data, overwrite mode is used (regular tables will be completely overwritten, and partitioned tables will overwrite partitions)."
-

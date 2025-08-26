@@ -20,4 +20,3 @@ msgstr ""
 #: ../../getting_started/index.rst:2
 msgid "入门教程"
 msgstr "Getting Started Tutorial"
-

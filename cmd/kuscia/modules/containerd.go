@@ -15,6 +15,7 @@
 package modules
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -147,11 +148,17 @@ func checkContainerdReadyZ(ctx context.Context, root, sock string) error {
 	if _, err := os.Stat(sock); err != nil {
 		return err
 	}
-	containerdSock := filepath.Join(root, "/containerd/run/containerd.sock")
+	// validate Service Connection
+	if _, err := remote.NewRemoteRuntimeService(fmt.Sprintf("unix://%s", sock), time.Second*5, nil); err != nil {
+		readContainerdLog(buildContainerdLogPath(root), 10)
+		return err
+	}
+
+	// import pause image
 	pause := filepath.Join(root, "/pause/pause.tar")
 
 	args := []string{
-		fmt.Sprintf("-a=%s", containerdSock),
+		fmt.Sprintf("-a=%s", sock),
 		"-n=k8s.io",
 		"images",
 		"import",
@@ -159,14 +166,10 @@ func checkContainerdReadyZ(ctx context.Context, root, sock string) error {
 	}
 
 	cmd := exec.CommandContext(ctx, filepath.Join(root, "bin/ctr"), args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to run command %q, detail-> %v", cmd, err)
-	}
-
-	// validate Service Connection
-	if _, err := remote.NewRemoteRuntimeService(fmt.Sprintf("unix://%s", sock), time.Second*5, nil); err != nil {
-		readContainerdLog(buildContainerdLogPath(root), 10)
-		return err
+		return fmt.Errorf("import pause.tar error,cmd: %q, cmd.run detail-> %v,error detail-> %v", cmd, err, string(stderr.Bytes()))
 	}
 	return nil
 }

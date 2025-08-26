@@ -163,6 +163,10 @@ msgstr "ListDomainDataResponse"
 msgid "列出数据对象"
 msgstr "List DomainData"
 
+#: ../../reference/apis/domaindata_cn.md:18
+msgid "删除数据对象及其物理数据（删除操作不可逆，请谨慎操作，请确认物理数据不在使用）"
+msgstr "Delete data objects and their physical data (deletion operations are irreversible, so please proceed with caution and confirm that the physical data is no longer in use)"
+
 #: ../../reference/apis/domaindata_cn.md:19
 msgid "接口详情"
 msgstr "API Details"
@@ -394,6 +398,9 @@ msgstr "Response (UpdateDomainDataResponse)"
 msgid "/api/v1/domaindata/delete"
 msgstr "/api/v1/domaindata/delete"
 
+msgid "删除数据对象及其物理数据"
+msgstr "Delete data objects and their physical data"
+
 #: ../../reference/apis/domaindata_cn.md:190
 msgid "请求（DeleteDomainDataRequest）"
 msgstr "Request (DeleteDomainDataRequest)"
@@ -469,6 +476,12 @@ msgstr "Query Request"
 #: ../../reference/apis/domaindata_cn.md:439
 msgid "响应（ListDomainDataResponse）"
 msgstr "Response (ListDomainDataResponse)"
+
+msgid "请求（DeleteDomainDataRequest）"
+msgstr "Request（DeleteDomainDataRequest）"
+
+msgid "响应（DeleteDomainDataResponse）"
+msgstr "Response（DeleteDomainDataResponse）"
 
 #: ../../reference/apis/domaindata_cn.md:514
 msgid "公共"

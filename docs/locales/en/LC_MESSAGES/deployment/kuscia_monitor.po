@@ -568,4 +568,3 @@ msgstr "envoy_cluster_upstream_rq_timeout"
 #: ../../deployment/kuscia_monitor.md
 msgid "上游（envoy作为服务器端）等待响应超时的总请求次数"
 msgstr "Total number of upstream requests that timed out waiting for a response (envoy as server)"
-

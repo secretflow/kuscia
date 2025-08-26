@@ -161,6 +161,18 @@ func (c *Client) Mock(ctx context.Context, request *diagnose.MockRequest) (respo
 	return
 }
 
+func (c *Client) EnvoyLog(ctx context.Context, request *diagnose.EnvoyLogRequest) (response *diagnose.EnvoyLogInfoResponse, err error) {
+	response = &diagnose.EnvoyLogInfoResponse{}
+	err = c.invokeProtoWithRetry(ctx, request, response, http.MethodPost, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseGetEnvoyLogByTask), 1)
+	return
+}
+
+func (c *Client) Task(ctx context.Context, request *diagnose.TaskInfoRequest) (response *diagnose.TaskInfoResponse, err error) {
+	response = &diagnose.TaskInfoResponse{}
+	err = c.invokeProtoWithRetry(ctx, request, response, http.MethodPost, fmt.Sprintf("/%v/%v", dcommon.DiagnoseNetworkGroup, dcommon.DiagnoseGetTaskInfo), 1)
+	return
+}
+
 func (c *Client) MockChunk(req proto.Message, url string) (*http.Response, error) {
 	jsonData, err := proto.Marshal(req)
 	if err != nil {

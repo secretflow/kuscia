@@ -118,7 +118,11 @@ func Start(ctx context.Context, configFile string) error {
 	mm.Regist("reporter", modules.NewReporter, autonomy, master)
 	mm.Regist("diagnose", modules.NewDiagnose, autonomy, lite, master)
 
-	mm.SetDependencies("agent", "envoy", "k3s", "kusciaapi")
+	if conf.EnableContainerd {
+		mm.SetDependencies("agent", "envoy", "k3s", "kusciaapi", "containerd")
+	} else {
+		mm.SetDependencies("agent", "envoy", "k3s", "kusciaapi")
+	}
 	mm.SetDependencies("envoy", "k3s")
 	mm.SetDependencies("controllers", "k3s")
 	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")
@@ -132,6 +136,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("transport", "envoy")
 	mm.SetDependencies("k3s", "coredns")
 	mm.SetDependencies("reporter", "k3s", "kusciaapi")
+	mm.SetDependencies("diagnose", "k3s")
 
 	mm.AddReadyHook(func(ctx context.Context, mdls map[string]modules.Module) error {
 		nlog.Info("Start... coredns controllers")

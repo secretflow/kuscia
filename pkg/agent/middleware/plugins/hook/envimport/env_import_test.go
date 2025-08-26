@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -91,7 +92,16 @@ envList:
   selectors:
   - key: secretflow-anolis8
     value: image`,
-			envs: nil,
+			envs: []pkgcontainer.EnvVar{
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
+			},
 		},
 		{
 			data: `
@@ -107,6 +117,14 @@ envList:
 				{
 					Name:  "image",
 					Value: "secretflow",
+				},
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
 				},
 			},
 		},
@@ -126,6 +144,14 @@ envList:
 					Name:  "test",
 					Value: "test",
 				},
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
 			},
 		},
 		{
@@ -139,7 +165,16 @@ envList:
   - key: name
     type: pod
     value: bob`,
-			envs: nil,
+			envs: []pkgcontainer.EnvVar{
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
+			},
 		},
 		{
 			data: `
@@ -164,6 +199,14 @@ envList:
 					Name:  "image",
 					Value: "secretflow",
 				},
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
 			},
 		},
 		{
@@ -180,7 +223,16 @@ envList:
     value: alice
   - key: maintainer
     value: secretflow-contact@service.alipay.com`,
-			envs: nil,
+			envs: []pkgcontainer.EnvVar{
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
+			},
 		},
 		{
 			data: `
@@ -199,6 +251,14 @@ envList:
 				{
 					Name:  "image",
 					Value: "secretflow",
+				},
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
 				},
 			},
 		},
@@ -251,6 +311,14 @@ envList:
 					Name:  "test",
 					Value: "test",
 				},
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
 			},
 		},
 		{
@@ -263,7 +331,16 @@ envList:
   - key: name
     type: pod
     value: bob`,
-			envs: nil,
+			envs: []corev1.EnvVar{
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
+				},
+			},
 		},
 		{
 			data: `
@@ -281,6 +358,14 @@ envList:
 				{
 					Name:  "image",
 					Value: "secretflow",
+				},
+				{
+					Name:  "CONTAINER_CPU_LIMIT",
+					Value: "0.00",
+				},
+				{
+					Name:  "CONTAINER_MEM_LIMIT",
+					Value: "0Mi",
 				},
 			},
 		},
@@ -325,6 +410,82 @@ envList:
 			_, err = ci.ExecHook(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.envs, ctx.BkPod.Spec.Containers[0].Env)
+		})
+	}
+}
+
+func TestGetContainerResources(t *testing.T) {
+	agentCpu := k8sresource.MustParse("4")
+	agentMem := k8sresource.MustParse("8Gi")
+
+	tests := []struct {
+		name           string
+		container      *corev1.Container
+		expectedCPU    string
+		expectedMemory string
+	}{
+		{
+			name: "with both cpu and memory limits",
+			container: &corev1.Container{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    k8sresource.MustParse("2"),
+						corev1.ResourceMemory: k8sresource.MustParse("4Gi"),
+					},
+				},
+			},
+			expectedCPU:    "2",
+			expectedMemory: "4096Mi",
+		},
+		{
+			name: "with only cpu limit",
+			container: &corev1.Container{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU: k8sresource.MustParse("1.5"),
+					},
+				},
+			},
+			expectedCPU:    "2",
+			expectedMemory: "6553Mi", // 8Gi * 0.8 / (1024*1024)
+		},
+		{
+			name: "with only memory limit",
+			container: &corev1.Container{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: k8sresource.MustParse("2Gi"),
+					},
+				},
+			},
+			expectedCPU:    "3.20",
+			expectedMemory: "2048Mi",
+		},
+		{
+			name:           "with no limits",
+			container:      &corev1.Container{},
+			expectedCPU:    "3.20",
+			expectedMemory: "6553Mi",
+		},
+		{
+			name: "with zero cpu limit",
+			container: &corev1.Container{
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU: k8sresource.MustParse("0"),
+					},
+				},
+			},
+			expectedCPU:    "0",
+			expectedMemory: "6553Mi",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cpu, mem := getContainerResources(tt.container, agentCpu, agentMem)
+			assert.Equal(t, tt.expectedCPU, cpu)
+			assert.Equal(t, tt.expectedMemory, mem)
 		})
 	}
 }

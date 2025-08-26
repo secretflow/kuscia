@@ -32,8 +32,3 @@ DOMAIN_DATASOURCE_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;" \
   < "${ROOT}/scripts/templates/domaindata_alice_table.yaml")
 
 echo "${DOMAIN_DATASOURCE_TEMPLATE}" | kubectl apply -f -
-
-DOMAIN_DATASOURCE_TEMPLATE=$(sed "s/{{.DOMAIN_ID}}/${DOMAIN_ID}/g;" \
-  < "${ROOT}/scripts/templates/domaindata_alice_dp_table.yaml")
-
-echo "${DOMAIN_DATASOURCE_TEMPLATE}" | kubectl apply -f -

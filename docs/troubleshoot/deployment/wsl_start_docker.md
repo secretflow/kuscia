@@ -30,5 +30,5 @@
 
 3. 建议修改镜像保存路径
 
-   Docker 镜像默认保存在 C 盘， 如果要[部署和运行 FATE 作业](../../tutorial/run_fate_cn.md)，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
+   Docker 镜像默认保存在 C 盘， 如果要部署和运行 FATE 作业，可能导致 C 盘空间不足，因此建议改为其他空间足够的磁盘。具体做法是，打开 Docker Desktop，找到 Settings->Resources->Browse，修改镜像保存路径。
    ![docker_settings.png](../../imgs/docker_settings.png)

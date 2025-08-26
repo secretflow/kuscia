@@ -139,7 +139,7 @@ func TestFlightServer_GetFlightInfo_Query_DOGET(t *testing.T) {
 			RelativeURI: testFileName,
 			Name:        "test-data",
 			Type:        "RAW",
-			DataSource:  common.DefaultDataProxyDataSourceID,
+			DataSource:  common.DefaultDataSourceID,
 			Author:      datameshTestNamespace,
 		},
 	}, v1.CreateOptions{})

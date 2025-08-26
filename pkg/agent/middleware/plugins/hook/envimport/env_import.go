@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
@@ -28,6 +29,12 @@ import (
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugin"
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
+)
+
+const (
+	ContainerCPULimit = "CONTAINER_CPU_LIMIT"
+	ContainerMemLimit = "CONTAINER_MEM_LIMIT"
+	PercentOnLine     = 0.8
 )
 
 type Selector struct {
@@ -174,6 +181,18 @@ func (ci *envImport) handleGenerateOptionContext(ctx *hook.GenerateContainerOpti
 			ctx.Opts.Envs = append(ctx.Opts.Envs, env.Envs...)
 		}
 	}
+	// Add container resource environment variables
+	cpuLimit, memLimit := getContainerResources(ctx.Container, ctx.CpuAvailable, ctx.MemAvailable)
+	var resourceEnvs []container.EnvVar
+	if cpuLimit != "" {
+		resourceEnvs = append(resourceEnvs, container.EnvVar{Name: ContainerCPULimit, Value: cpuLimit})
+	}
+	if memLimit != "" {
+		resourceEnvs = append(resourceEnvs, container.EnvVar{Name: ContainerMemLimit, Value: memLimit})
+	}
+	if len(resourceEnvs) > 0 {
+		ctx.Opts.Envs = append(ctx.Opts.Envs, resourceEnvs...)
+	}
 
 	return nil
 }
@@ -197,6 +216,55 @@ func (ci *envImport) handleSyncPodContext(ctx *hook.K8sProviderSyncPodContext) e
 			}
 		}
 	}
+	// add container resource environment variables
+	for i := range pod.Spec.Containers {
+		ctr := &pod.Spec.Containers[i]
+		var newEnvs []corev1.EnvVar
+		// Add container resource environment variables
+		cpuLimit, memLimit := getContainerResources(ctr, ctx.CpuAvailable, ctx.MemAvailable)
+		if cpuLimit != "" {
+			newEnvs = append(newEnvs, corev1.EnvVar{
+				Name:  ContainerCPULimit,
+				Value: cpuLimit,
+			})
+		}
+		if memLimit != "" {
+			newEnvs = append(newEnvs, corev1.EnvVar{
+				Name:  ContainerMemLimit,
+				Value: memLimit,
+			})
+		}
+
+		if len(newEnvs) > 0 {
+			ctr.Env = append(ctr.Env, newEnvs...)
+		}
+	}
 
 	return nil
+}
+
+// Get container resource limit or cgroup default values
+func getContainerResources(container *corev1.Container, cpuAvailable, memAvailable k8sresource.Quantity) (cpuLimit, memLimit string) {
+	// First try to get resource limit from container spec
+	if container.Resources.Limits != nil {
+		if cpu, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
+			cpuLimit = fmt.Sprintf("%d", cpu.Value())
+		}
+		if mem, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
+			memLimit = fmt.Sprintf("%d%s", mem.Value()/(1024*1024), "Mi")
+		}
+	}
+
+	// When resource limits are not set in container, get from ctx and apply threshold (0.8)
+	if cpuLimit == "" {
+		cpuAvail := float64(cpuAvailable.Value()) * PercentOnLine
+		cpuLimit = fmt.Sprintf("%.2f", cpuAvail)
+	}
+
+	if memLimit == "" {
+		memAvail := float64(memAvailable.Value()) * PercentOnLine
+		memLimit = fmt.Sprintf("%d%s", int64(memAvail)/(1024*1024), "Mi")
+	}
+
+	return cpuLimit, memLimit
 }

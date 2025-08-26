@@ -290,7 +290,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 
 func deleteLocalFsFile(path, relativeUri string) error {
 	// Validate the base path to ensure it is within the allowed directory
-	if !strings.HasPrefix(path, common.DefaultDomainDataSourceLocalFSPath) {
+	if !strings.Contains(path, common.DefaultDomainDataSourceLocalFSPath) {
 		return fmt.Errorf("invalid base path: %s, must be within %s", path, common.DefaultDomainDataSourceLocalFSPath)
 	}
 
@@ -370,7 +370,7 @@ func deleteMysqlTable(user, passwd, endpoint, database, relativeURI string) erro
 	defer db.Close()
 
 	// Drop the table
-	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", relativeURI)
+	query := fmt.Sprintf("DROP TABLE IF EXISTS `%s`", relativeURI)
 	_, err = db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to drop table %s: %v", relativeURI, err)
@@ -382,18 +382,32 @@ func deleteMysqlTable(user, passwd, endpoint, database, relativeURI string) erro
 
 func deletePostgresqlTable(user, passwd, endpoint, database, relativeURI string) error {
 	nlog.Debugf("Open Postgresql Session database(%s), user(%s)", database, user)
+	params := ""
+	// Replace 127.0.0.1:5432?sslmode=disable&xxx=xxx with ? Split the host, port, and link string parameters
+	if strings.Contains(endpoint, "?") {
+		params = endpoint[strings.Index(endpoint, "?")+1:]
+		endpoint = endpoint[:strings.Index(endpoint, "?")]
+	}
 
 	host, port, err := net.SplitHostPort(endpoint)
 	if err != nil {
 		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
 			host = endpoint
 			port = builtin.PostgresqlPort
+			err = nil
 		} else {
 			nlog.Errorf("Endpoint \"%s\" can't be resolved with net.SplitHostPort()", endpoint)
 			return err
 		}
 	}
-	dsn := fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", user, passwd, host, database, port)
+
+	dsn := ""
+	if params != "" {
+		params = strings.ReplaceAll(params, "&", " ")
+		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s %s", user, passwd, host, database, port, params)
+	} else {
+		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", user, passwd, host, database, port)
+	}
 
 	// Open a connection to the database
 	db, err := sql.Open("postgres", dsn)
@@ -403,7 +417,7 @@ func deletePostgresqlTable(user, passwd, endpoint, database, relativeURI string)
 	defer db.Close()
 
 	// Drop the table
-	query := fmt.Sprintf("DROP TABLE IF EXISTS %s", relativeURI)
+	query := fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", relativeURI)
 	_, err = db.Exec(query)
 	if err != nil {
 		return fmt.Errorf("failed to drop table %s: %v", relativeURI, err)

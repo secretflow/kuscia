@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -73,6 +73,8 @@ type Controller struct {
 	serviceSynced    cache.InformerSynced
 	configMapLister  corelisters.ConfigMapLister
 	configMapSynced  cache.InformerSynced
+	podLister        corelisters.PodLister
+	podSynced        cache.InformerSynced
 
 	kdLister       kuscialistersv1alpha1.KusciaDeploymentLister
 	kdSynced       cache.InformerSynced
@@ -94,6 +96,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 	kdInformer := kusciaInformerFactory.Kuscia().V1alpha1().KusciaDeployments()
 	appImageInformer := kusciaInformerFactory.Kuscia().V1alpha1().AppImages()
 	domainInformer := kusciaInformerFactory.Kuscia().V1alpha1().Domains()
+	podInformer := kubeInformerFactory.Core().V1().Pods()
 
 	controller := &Controller{
 		config:                config,
@@ -109,6 +112,8 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		serviceSynced:         serviceInformer.Informer().HasSynced,
 		configMapLister:       configMapInformer.Lister(),
 		configMapSynced:       configMapInformer.Informer().HasSynced,
+		podLister:             podInformer.Lister(),
+		podSynced:             podInformer.Informer().HasSynced,
 		kdLister:              kdInformer.Lister(),
 		kdSynced:              kdInformer.Informer().HasSynced,
 		appImageLister:        appImageInformer.Lister(),
@@ -146,6 +151,11 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 		UpdateFunc: controller.handleUpdatedConfigmap,
 		DeleteFunc: controller.handleDeletedConfigmap,
 	})
+
+	_, _ = podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: controller.handleUpdatedPod,
+	})
+
 	return controller
 }
 
@@ -450,6 +460,34 @@ func (c *Controller) handleDeletedConfigmap(obj interface{}) {
 	kdKey, err := c.getKusciaDeploymentOwnerKey(cm)
 	if err != nil {
 		nlog.Warnf("Failed to get configmap %v owner, %v, skip this event", cm.Name, err)
+		return
+	}
+
+	if kdKey != "" {
+		c.kdQueue.Add(kdKey)
+	}
+}
+
+func (c *Controller) handleUpdatedPod(oldObj, newObj interface{}) {
+	oldPod, ok := oldObj.(*v1.Pod)
+	if !ok {
+		nlog.Warnf("Object %#v is not a pod", oldObj)
+		return
+	}
+
+	newPod, ok := newObj.(*v1.Pod)
+	if !ok {
+		nlog.Warnf("Object %#v is not a pod", newObj)
+		return
+	}
+
+	if oldPod.ResourceVersion == newPod.ResourceVersion {
+		return
+	}
+
+	kdKey, err := c.getKusciaDeploymentOwnerKey(newPod)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		nlog.Warnf("Failed to get pod %v owner, %v, skip this event", newPod.Name, err)
 		return
 	}
 

@@ -63,4 +63,3 @@ msgstr "Enable privileged configuration and start the cluster in centralized net
 #: ../../tutorial/security_plan_cn.md:35
 msgid "执行作业："
 msgstr "Execute the Job:"
-

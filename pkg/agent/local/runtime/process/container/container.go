@@ -404,24 +404,65 @@ func (c *Container) canStart() error {
 	return nil
 }
 
-func (c *Container) Stop() error {
+func (c *Container) Stop(timeout time.Duration) error {
 	c.Lock()
 	defer c.Unlock()
 
+	// Skip if container is not in running state
 	if c.status.State() != runtime.ContainerState_CONTAINER_RUNNING {
 		nlog.Infof("Container %q is in %s state, skip stopping", c.ID, criContainerStateToString(c.status.State()))
 		return nil
 	}
 
+	// Only proceed if we have a valid process ID
 	if c.status.Pid > 0 {
 		nlog.Infof("Killing container %v, pgid=%v", c.ID, c.status.Pid)
 
-		if err := syscall.Kill(-c.status.Pid, syscall.SIGKILL); err != nil {
+		// Step 1: Send SIGTERM to the entire process group for graceful shutdown
+		if err := syscall.Kill(-c.status.Pid, syscall.SIGTERM); err != nil {
+			// Ignore "no such process" error as the process may have already exited
 			if !errors.Is(err, syscall.ESRCH) {
-				return fmt.Errorf("failed to kill process group %v: %v", c.status.Pid, err)
+				return fmt.Errorf("failed to send SIGTERM to process group %d: %v", c.status.Pid, err)
 			}
 		}
+
+		// Channel to receive the wait result
+		done := make(chan error, 1)
+		go func() {
+			// Wait for the process group to exit
+			var waitStatus syscall.WaitStatus
+			_, err := syscall.Wait4(-c.status.Pid, &waitStatus, 0, nil)
+			done <- err
+		}()
+
+		// Wait for either process exit or timeout
+		select {
+		case err := <-done:
+			// Process exited
+			if err != nil {
+				if errors.Is(err, syscall.ECHILD) {
+					// No child processes (already exited)
+					nlog.Debugf("Container %v already exited", c.ID)
+				} else {
+					// Other wait errors
+					nlog.Warnf("Container %v stop error: %v", c.ID, err)
+					return fmt.Errorf("wait container %v exit: %w", c.ID, err)
+				}
+			} else {
+				// Graceful exit successful
+				nlog.Infof("Container %v stopped gracefully", c.ID)
+			}
+		case <-time.After(timeout):
+			// Graceful shutdown timeout, use SIGKILL
+			nlog.Warnf("Container %v graceful stop timeout (%.1fs)", c.ID, timeout.Seconds())
+			if err := syscall.Kill(-c.status.Pid, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
+				return fmt.Errorf("force kill container %v: %w", c.ID, err)
+			}
+			nlog.Infof("Container %v force stopped", c.ID)
+		}
+		return nil
 	} else {
+		// No process ID, just update finish time
 		c.status.FinishedAt = time.Now().UnixNano()
 	}
 

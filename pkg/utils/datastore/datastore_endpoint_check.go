@@ -51,7 +51,7 @@ func (postgresqlValidator PostgresqlDatastoreEndpointValidator) PingDatastoreEnd
 	if err != nil {
 		return fmt.Errorf(errorFormat, err.Error())
 	}
-	return pingDatastoreEndpointByDriverName(c, "postgresql")
+	return pingDatastoreEndpointByDriverName(c, "postgres")
 }
 
 func CheckDatastoreEndpoint(datastoreEndpoint string) error {
@@ -63,7 +63,7 @@ func CheckDatastoreEndpoint(datastoreEndpoint string) error {
 
 	parts := strings.SplitN(datastoreEndpoint, "://", 2)
 	if len(parts) < 2 {
-		return fmt.Errorf("Configured 'datastoreEndpoint' is invalid, expected format: mysql://username:password@tcp(hostname:3306)/database-name")
+		return fmt.Errorf("configured 'datastoreEndpoint' is invalid, expected format: mysql://username:password@tcp(hostname:3306)/database-name")
 	}
 
 	driveName := parts[0]
@@ -74,8 +74,9 @@ func CheckDatastoreEndpoint(datastoreEndpoint string) error {
 	switch driveName {
 	case "mysql":
 		datastoreEndpointValidator = MySQLDatastoreEndpointValidator{}
-	case "postgresql":
+	case "postgres", "postgresql":
 		datastoreEndpointValidator = PostgresqlDatastoreEndpointValidator{}
+		datastoreDSN = datastoreEndpoint
 	default:
 		errMsg := fmt.Sprintf("Kuscia 'datastoreEndpoint' config: Driver Name is '%s' Not supported", driveName)
 		return fmt.Errorf("%s", errMsg)
@@ -87,7 +88,7 @@ func pingDatastoreEndpointByDriverName(datastoreEndpoint, driveName string) erro
 
 	db, err := sql.Open(driveName, datastoreEndpoint)
 	if err != nil {
-		return fmt.Errorf("Open datastore endpoint error: %s", err.Error())
+		return fmt.Errorf("open datastore endpoint error: %s", err.Error())
 	}
 
 	defer db.Close()
@@ -99,7 +100,7 @@ func pingDatastoreEndpointByDriverName(datastoreEndpoint, driveName string) erro
 	// db ping
 	err = db.PingContext(ctx)
 	if err != nil {
-		return fmt.Errorf("Ping datastore endpoint error: %s", err.Error())
+		return fmt.Errorf("ping datastore endpoint error: %s", err.Error())
 	}
 	nlog.Infof("Datastore endpoint is effective.")
 	return nil

@@ -19,6 +19,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	_ "github.com/lib/pq"
@@ -46,7 +47,15 @@ func NewBuiltinPostgresqlIOChannel() DataMeshDataIOInterface {
 func (o *BuiltinPostgresqlIO) newPostgresqlSession(config *datamesh.DatabaseDataSourceInfo) (*sql.DB, error) {
 	nlog.Debugf("Open Postgresql Session database(%s), user(%s)", config.GetDatabase(), config.GetUser())
 
-	host, port, err := net.SplitHostPort(config.GetEndpoint())
+	endpoint := config.GetEndpoint()
+	params := ""
+	// Replace 127.0.0.1:5432?sslmode=disable&xxx=xxx with ? Split the host, port, and link string parameters
+	if strings.Contains(endpoint, "?") {
+		params = endpoint[strings.Index(endpoint, "?")+1:]
+		endpoint = endpoint[:strings.Index(endpoint, "?")]
+	}
+
+	host, port, err := net.SplitHostPort(endpoint)
 	if err != nil {
 		if addrErr, ok := err.(*net.AddrError); ok && addrErr.Err == "missing port in address" {
 			host = config.GetEndpoint()
@@ -58,7 +67,14 @@ func (o *BuiltinPostgresqlIO) newPostgresqlSession(config *datamesh.DatabaseData
 		}
 	}
 
-	dsn := fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port)
+	dsn := ""
+	if params != "" {
+		params = strings.ReplaceAll(params, "&", " ")
+		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s %s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port, params)
+	} else {
+		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port)
+	}
+
 	db, err := sql.Open(o.driverName, dsn)
 	if err != nil {
 		nlog.Errorf("Postgresql client open error(%s)", err)
@@ -66,7 +82,7 @@ func (o *BuiltinPostgresqlIO) newPostgresqlSession(config *datamesh.DatabaseData
 	}
 	err = db.Ping()
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		nlog.Errorf("Postgresql client ping error(%s)", err)
 		return nil, err
 	}

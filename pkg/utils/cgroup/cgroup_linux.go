@@ -18,6 +18,8 @@
 package cgroup
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -237,6 +239,89 @@ func parseCgroup1MemoryLimit(group string) (int64, error) {
 	}
 
 	return limit, nil
+}
+
+func GetMemoryUsage(group string) (int64, error) {
+	mode := cgroups.Mode()
+	switch mode {
+	case cgroups.Unified, cgroups.Hybrid:
+		return parseCgroup2MemoryUsage(group)
+	case cgroups.Legacy:
+		return parseCgroup1MemoryUsage(group)
+	default:
+		return 0, fmt.Errorf("unsupported cgroup version: %v", mode)
+	}
+}
+
+// parseMemoryStat parses memory.stat file content into a map
+func parseMemoryStat(content []byte) map[string]int64 {
+	stats := make(map[string]int64)
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+	for scanner.Scan() {
+		line := scanner.Text()
+		fields := strings.Fields(line)
+		if len(fields) == 2 {
+			value, err := strconv.ParseInt(fields[1], 10, 64)
+			if err == nil {
+				stats[fields[0]] = value
+			}
+		}
+	}
+	return stats
+}
+
+func parseCgroup2MemoryUsage(group string) (usage int64, err error) {
+	// Get current memory usage
+	currentContent, err := os.ReadFile(filepath.Join(group, "memory.current"))
+	if err != nil {
+		return 0, err
+	}
+
+	usage, err = strconv.ParseInt(strings.TrimSpace(string(currentContent)), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid memory usage content: %s", currentContent)
+	}
+
+	// Read and parse memory.stat file
+	statContent, err := os.ReadFile(filepath.Join(group, "memory.stat"))
+	if err != nil {
+		return 0, err
+	}
+
+	stats := parseMemoryStat(statContent)
+	// Subtract inactive_file from usage
+	if inactiveFile, ok := stats["inactive_file"]; ok && inactiveFile < usage {
+		usage -= inactiveFile
+	}
+
+	return usage, nil
+}
+
+func parseCgroup1MemoryUsage(group string) (usage int64, err error) {
+	// Get current memory usage
+	content, err := os.ReadFile(filepath.Join(group, "memory/memory.usage_in_bytes"))
+	if err != nil {
+		return 0, err
+	}
+
+	usage, err = strconv.ParseInt(strings.TrimSpace(string(content)), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid memory usage content: %s", content)
+	}
+
+	// Read and parse memory.stat file
+	statContent, err := os.ReadFile(filepath.Join(group, "memory/memory.stat"))
+	if err != nil {
+		return 0, err
+	}
+
+	stats := parseMemoryStat(statContent)
+	// Subtract total_inactive_file from usage
+	if totalInactiveFile, ok := stats["total_inactive_file"]; ok && totalInactiveFile < usage {
+		usage -= totalInactiveFile
+	}
+
+	return usage, nil
 }
 
 func GetCPUQuotaAndPeriod(group string) (quota int64, period int64, err error) {

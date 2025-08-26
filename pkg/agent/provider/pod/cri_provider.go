@@ -25,6 +25,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	k8sresource "k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -104,6 +105,8 @@ type CRIProviderDependence struct {
 	Runtime        string
 	CRIProviderCfg *config.CRIProviderCfg
 	RegistryCfg    *config.RegistryCfg
+	CpuAvailable   k8sresource.Quantity
+	MemAvailable   k8sresource.Quantity
 }
 
 // CRIProvider implements the kubelet interface and stores pods in memory.
@@ -149,8 +152,10 @@ type CRIProvider struct {
 
 	podSyncHandler framework.SyncHandler
 
-	chStopping chan struct{}
-	chStopped  chan struct{}
+	chStopping   chan struct{}
+	chStopped    chan struct{}
+	cpuAvailable k8sresource.Quantity
+	memAvailable k8sresource.Quantity
 }
 
 // NewCRIProvider creates a new CRIProvider, which implements the PodNotifier interface
@@ -169,6 +174,8 @@ func NewCRIProvider(dep *CRIProviderDependence) (kri.PodProvider, error) {
 		podStateProvider: dep.PodStateProvider,
 		podSyncHandler:   dep.PodSyncHandler,
 		statusManager:    dep.StatusManager,
+		cpuAvailable:     dep.CpuAvailable,
+		memAvailable:     dep.MemAvailable,
 
 		chStopping: make(chan struct{}),
 		chStopped:  make(chan struct{}),
@@ -532,6 +539,8 @@ func (cp *CRIProvider) GenerateRunContainerOptions(pod *v1.Pod, container *v1.Co
 		PodIPs:       podIPs,
 		ContainerDir: cp.getPodContainerDir(pod.UID, container.Name),
 		ImageService: cp.ImageManagerService,
+		CpuAvailable: cp.cpuAvailable,
+		MemAvailable: cp.memAvailable,
 	}); err != nil {
 		return nil, nil, err
 	}

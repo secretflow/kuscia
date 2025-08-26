@@ -97,6 +97,10 @@ msgstr "[Docker Docs](https://docs.docker.com/reference/cli/docker/swarm/)"
 msgid "初始化 swarm"
 msgstr "Initialize Swarm"
 
+#: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:35
+msgid "选择一台主机作为 Docker 管理节点进行初始化，IP 应指定该主机的 IP 地址，Docker 集群将在此地址监听。管理端口默认为 2377，也可按需配置（格式：<IP|接口>[:端口]），详见 [Docker 官方文档](https://docs.docker.com/reference/cli/docker/swarm/)。"
+msgstr "Initialize a host as the Docker manager node. Specify the host's IP address where the Docker cluster will listen. The management port defaults to 2377, but can be configured as needed (format: <IP|interface>[:port]). See [Docker official documentation](https://docs.docker.com/reference/cli/docker/swarm/) for details."
+
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:41
 msgid ""
 "执行完上述命令可得到以下描述信息，以及 Token，需要记录该 Token 字符串，在 worker 节点宿主机执行可加入该 docker "
@@ -176,8 +180,8 @@ msgid "修改配置文件创建使用的 DB"
 msgstr "Modify Configuration File for Database Setup"
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:115
-msgid "验证使用的示例，仅供参考："
-msgstr "Validation example for reference:"
+msgid "启动一个 MySQL 8.0+ 版本的容器，设置密码为 password，并创建数据库 kine，仅供测试参考。"
+msgstr "Start a container of MySQL version 8.0+, set the password as "password", and create the database kine for test reference only."
 
 #: ../../deployment/Docker_deployment_kuscia/deploy_clustered_cn.md:123
 msgid "初始化 Kuscia 配置文件"

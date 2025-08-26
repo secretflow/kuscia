@@ -102,8 +102,9 @@ func (c *hostResourcesController) syncDomainDataHandler(ctx context.Context, key
 	if err != nil {
 		// DomainData is deleted under host cluster
 		if k8serrors.IsNotFound(err) {
-			nlog.Infof("Can't get host %v domainData %v, maybe it's deleted, skip processing it", c.host, key)
-			return nil
+			nlog.Infof("Host %v domainData %v not found, delete member domainData", c.host, key)
+			// Delete member domainData
+			return c.deleteDomainData(ctx, namespace, name)
 		}
 		return err
 	}

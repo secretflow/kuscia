@@ -28,6 +28,7 @@ mkdir -p "${TEST_SUITE_BFIA_TEST_RUN_DIR}"
 
 function oneTimeSetUp() {
   start_bfia "${TEST_SUITE_BFIA_TEST_RUN_DIR}"
+  sleep 10
 }
 
 function oneTimeTearDown() {

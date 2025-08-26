@@ -24,6 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -434,7 +436,7 @@ func TestDeleteDomainDataAndRawWithOSS(t *testing.T) {
 }
 
 func TestDeleteDomainDataAndRawWithMysql(t *testing.T) {
-	// Step 1: 初始化配置和服务
+	// Step 1: Initialize configuration and service
 	conf := makeDomainDataServiceConfig(t)
 	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 
@@ -444,7 +446,7 @@ func TestDeleteDomainDataAndRawWithMysql(t *testing.T) {
 		Password: "password",
 		Database: uuid.NewString(),
 	}
-	// Step 2: 使用 sqlmock 模拟 MySQL 数据库
+	// Step 2: Use sqlmock to simulate MySQL database
 	db, mock, err := sqlmock.NewWithDSN(dbInfoToDsn(dbInfo))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -456,15 +458,15 @@ func TestDeleteDomainDataAndRawWithMysql(t *testing.T) {
 		return nil, fmt.Errorf("unexpected driverName: %s", driverName)
 	})
 	defer patches.Reset()
-	// Step 3: 初始化 MySQL 数据源
+	// Step 3: Initialize MySQL data source
 	mockCreateDomainDataSourceMySQL(t, conf, dbInfo)
 
-	// Step 4: 模拟 MySQL 表和数据
+	// Step 4: Simulate MySQL table and data
 	tableName := "test_table"
-	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName))).
+	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS `%s`", tableName))).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Step 5: 创建域数据
+	// Step 5: Create domain data
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
@@ -480,7 +482,7 @@ func TestDeleteDomainDataAndRawWithMysql(t *testing.T) {
 	assert.NotNil(t, res)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
 
-	// Step 6: 调用 DeleteDomainDataAndRaw 删除域数据和 MySQL 表
+	// Step 6: Call DeleteDomainDataAndRaw to delete domain data and MySQL table
 	res1 := domainDataService.DeleteDomainDataAndRaw(context.Background(), &kusciaapi.DeleteDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
@@ -489,12 +491,12 @@ func TestDeleteDomainDataAndRawWithMysql(t *testing.T) {
 	assert.NotNil(t, res1)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
 
-	// Step 7: 验证 MySQL 表是否被删除
+	// Step 7: Verify MySQL table was deleted
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestDeleteDomainDataAndRawWithPostgres(t *testing.T) {
-	// Step 1: 初始化配置和服务
+	// Step 1: Initialize configuration and service
 	conf := makeDomainDataServiceConfig(t)
 	domainDataService := NewDomainDataService(conf, makeConfigService(t))
 
@@ -504,7 +506,7 @@ func TestDeleteDomainDataAndRawWithPostgres(t *testing.T) {
 		Password: "password",
 		Database: uuid.NewString(),
 	}
-	// Step 2: 使用 sqlmock 模拟 Postgresql 数据库
+	// Step 2: Use sqlmock to simulate PostgreSQL database
 	db, mock, err := sqlmock.NewWithDSN(dbInfoToDsn(dbInfo))
 	assert.NoError(t, err)
 	defer db.Close()
@@ -516,15 +518,15 @@ func TestDeleteDomainDataAndRawWithPostgres(t *testing.T) {
 		return nil, fmt.Errorf("unexpected driverName: %s", driverName)
 	})
 	defer patches.Reset()
-	// Step 3: 初始化 PostgreSQL 数据源
+	// Step 3: Initialize PostgreSQL data source
 	mockCreateDomainDataSourcePostgresql(t, conf, dbInfo)
 
-	// Step 4: 模拟 PostgreSQL 表和数据
+	// Step 4: Simulate PostgreSQL table and data
 	tableName := "test_table"
-	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName))).
+	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", tableName))).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Step 5: 创建域数据
+	// Step 5: Create domain data
 	res := domainDataService.CreateDomainData(context.Background(), &kusciaapi.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",
@@ -540,7 +542,7 @@ func TestDeleteDomainDataAndRawWithPostgres(t *testing.T) {
 	assert.NotNil(t, res)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res.Status.Code)
 
-	// Step 6: 调用 DeleteDomainDataAndRaw 删除域数据和 PostgreSQL 表
+	// Step 6: Call DeleteDomainDataAndRaw to delete domain data and PostgreSQL table
 	res1 := domainDataService.DeleteDomainDataAndRaw(context.Background(), &kusciaapi.DeleteDomainDataRequest{
 		Header:       nil,
 		DomaindataId: res.Data.DomaindataId,
@@ -549,9 +551,10 @@ func TestDeleteDomainDataAndRawWithPostgres(t *testing.T) {
 	assert.NotNil(t, res1)
 	assert.Equal(t, kusciaAPISuccessStatusCode, res1.Status.Code)
 
-	// Step 7: 验证 PostgreSQL 表是否被删除
+	// Step 7: Verify PostgreSQL table was deleted
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
 func TestBatchQueryDomainData(t *testing.T) {
 	conf := makeDomainDataServiceConfig(t)
 	domainDataService := NewDomainDataService(conf, makeConfigService(t))
@@ -659,4 +662,201 @@ func TestListDomainData(t *testing.T) {
 	},
 	)
 	assert.NotNil(t, res2)
+}
+
+func TestDeletePostgresqlTableSuccessWithStandardConnection(t *testing.T) {
+	// Test scenario: Successfully delete PostgreSQL table with standard connection
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	patches := gomonkey.ApplyFunc(sql.Open, func(driverName, dataSourceName string) (*sql.DB, error) {
+		if driverName == "postgres" {
+			return db, nil
+		}
+		return nil, fmt.Errorf("unexpected driverName: %s", driverName)
+	})
+	defer patches.Reset()
+
+	tableName := "test_table"
+	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", tableName))).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = deletePostgresqlTable("user", "password", "127.0.0.1:5432", "testdb", tableName)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDeletePostgresqlTableSuccessWithConnectionParams(t *testing.T) {
+	// Test scenario: Successfully delete PostgreSQL table with connection parameters
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	patches := gomonkey.ApplyFunc(sql.Open, func(driverName, dataSourceName string) (*sql.DB, error) {
+		if driverName == "postgres" {
+			// Verify DSN correctly handles parameters
+			assert.Contains(t, dataSourceName, "sslmode=disable")
+			assert.Contains(t, dataSourceName, "connect_timeout=10")
+			return db, nil
+		}
+		return nil, fmt.Errorf("unexpected driverName: %s", driverName)
+	})
+	defer patches.Reset()
+
+	tableName := "test_table_with_params"
+	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", tableName))).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = deletePostgresqlTable("user", "password", "127.0.0.2:5432?sslmode=disable&connect_timeout=10", "testdb", tableName)
+	assert.NoError(t, err)
+}
+
+func TestDeletePostgresqlTableSuccessWithoutPortInEndpoint(t *testing.T) {
+	// Test scenario: Successfully delete PostgreSQL table when endpoint doesn't contain port
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	patches := gomonkey.ApplyFunc(sql.Open, func(driverName, dataSourceName string) (*sql.DB, error) {
+		if driverName == "postgres" {
+			// Verify DSN uses default port 5432
+			assert.Contains(t, dataSourceName, "port=5432")
+			return db, nil
+		}
+		return nil, fmt.Errorf("unexpected driverName: %s", driverName)
+	})
+	defer patches.Reset()
+
+	tableName := "test_table_no_port"
+	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("DROP TABLE IF EXISTS \"%s\"", tableName))).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = deletePostgresqlTable("user", "password", "127.0.0.3", "testdb", tableName)
+	assert.NoError(t, err)
+}
+
+func TestDeletePostgresqlTableErrorWhenDatabaseConnectionFails(t *testing.T) {
+	// Test scenario: Database connection failure should return error
+	patches := gomonkey.ApplyFunc(sql.Open, func(driverName, dataSourceName string) (*sql.DB, error) {
+		if driverName == "postgres" {
+			return nil, fmt.Errorf("connection refused")
+		}
+		return nil, fmt.Errorf("unexpected driverName: %s", driverName)
+	})
+	defer patches.Reset()
+
+	err := deletePostgresqlTable("user", "password", "127.0.0.4:5432", "testdb", "test_table")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to connect to database")
+}
+
+func TestDeleteLocalFsFile(t *testing.T) {
+	// Setup test directory structure
+	basePath := "var/storage/data"
+	testSubDir := "testdata"
+
+	// Convert to absolute path for file operations
+	absBasePath, err := filepath.Abs(basePath)
+	assert.NoError(t, err)
+	absTestDir := filepath.Join(absBasePath, testSubDir)
+
+	// Ensure test directory exists
+	err = os.MkdirAll(absTestDir, 0755)
+	assert.NoError(t, err)
+	defer os.RemoveAll(absBasePath)
+
+	t.Run("success when file exists", func(t *testing.T) {
+		tempFile, err := os.CreateTemp(absTestDir, "testfile")
+		assert.NoError(t, err)
+		tempFileName := tempFile.Name()
+		tempFile.Close()
+
+		// Get relative path from basePath
+		relPath, err := filepath.Rel(absBasePath, tempFileName)
+		assert.NoError(t, err)
+
+		err = deleteLocalFsFile(basePath, relPath)
+		assert.NoError(t, err)
+
+		// Verify file deleted
+		_, err = os.Stat(tempFileName)
+		assert.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("success when deleting subdirectory file", func(t *testing.T) {
+		subDir := filepath.Join(absTestDir, "subdir")
+		err := os.MkdirAll(subDir, 0755)
+		assert.NoError(t, err)
+
+		tempFile, err := os.CreateTemp(subDir, "testfile")
+		assert.NoError(t, err)
+		tempFileName := tempFile.Name()
+		tempFile.Close()
+
+		relPath, err := filepath.Rel(absBasePath, tempFileName)
+		assert.NoError(t, err)
+
+		err = deleteLocalFsFile(basePath, relPath)
+		assert.NoError(t, err)
+
+		_, err = os.Stat(tempFileName)
+		assert.True(t, os.IsNotExist(err))
+	})
+
+	t.Run("success when file not exists", func(t *testing.T) {
+		err := deleteLocalFsFile(basePath, "nonexistent_file")
+		assert.NoError(t, err)
+	})
+
+	t.Run("error when base path is invalid", func(t *testing.T) {
+		invalidBasePath := "/invalid/path"
+		err := deleteLocalFsFile(invalidBasePath, "test")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid base path")
+	})
+
+	t.Run("error when relative path escapes base", func(t *testing.T) {
+		tempFile, err := os.CreateTemp(absTestDir, "testfile")
+		assert.NoError(t, err)
+		tempFileName := tempFile.Name()
+		tempFile.Close()
+
+		// Create malicious relative path
+		relPath := filepath.Join("../", filepath.Base(tempFileName))
+
+		err = deleteLocalFsFile(basePath, relPath)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid relative URI")
+	})
+
+	t.Run("error when stat fails", func(t *testing.T) {
+		patches := gomonkey.ApplyFunc(os.Stat, func(name string) (os.FileInfo, error) {
+			return nil, fmt.Errorf("mock stat error")
+		})
+		defer patches.Reset()
+
+		err := deleteLocalFsFile(basePath, "testfile")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to check file")
+	})
+
+	t.Run("error when remove fails", func(t *testing.T) {
+		tempFile, err := os.CreateTemp(absTestDir, "testfile")
+		assert.NoError(t, err)
+		tempFileName := tempFile.Name()
+		tempFile.Close()
+
+		relPath, err := filepath.Rel(absBasePath, tempFileName)
+		assert.NoError(t, err)
+
+		patches := gomonkey.ApplyFunc(os.Remove, func(name string) error {
+			return fmt.Errorf("mock remove error")
+		})
+		defer patches.Reset()
+
+		err = deleteLocalFsFile(basePath, relPath)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to delete file")
+	})
 }

@@ -143,4 +143,3 @@ msgstr "Port for collecting node metrics. Refer to [Kuscia Monitoring](./kuscia_
 #: ../../deployment/kuscia_ports_cn.md
 msgid "-x"
 msgstr "-x"
-

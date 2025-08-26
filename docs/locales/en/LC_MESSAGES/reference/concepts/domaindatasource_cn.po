@@ -75,10 +75,9 @@ msgstr "The subfields of DomainDataSource `spec` are detailed below:"
 
 #: ../../reference/concepts/domaindatasource_cn.md:34
 msgid ""
-"`accessDirectly`：表示隐私计算应用（如 SecretFlow ）应直连访问数据源还是通过 DataProxy 访问数据源，默认值为 false，表示直接连接数据源；当值为 true 时，表示通过 DataProxy 连接数据源。"
+"`accessDirectly`：隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。"
 msgstr ""
-"`accessDirectly`: Indicates whether privacy computing applications (e.g., SecretFlow) should access the data source directly or through DataProxy. The default value is false, meaning direct connection to the data source. When set to true, the data source is accessed via DataProxy."
-
+"`accessDirectly`: A flag indicating whether a privacy-preserving computing application (e.g., SecretFlow) can directly access data sources: true means the application can directly access data sources (without going through DataProxy); false means the application must access data sources via DataProxy. The current default is set to false. For data sources of type ODPS, access through DataProxy is currently mandatory."
 #: ../../reference/concepts/domaindatasource_cn.md:35
 msgid "`encryptedInfo`：加密存储访问数据源所需的信息，如数据源为 MySQL 时，此字段会加密保存 MySQL 的链接串。"
 msgstr ""
@@ -165,4 +164,3 @@ msgstr "Execute the following command to clean up DomainDataSource."
 #: ../../reference/concepts/domaindatasource_cn.md:67
 msgid "检查 Alice 下的 DomainDataSource 是否已被清理。"
 msgstr "Verify the cleanup of DomainDataSource under alice."
-

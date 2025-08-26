@@ -251,8 +251,7 @@ func TestPostgresqlIOChannel_Write_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	prepare := mock.ExpectPrepare("INSERT INTO \"output\"")
-	prepare.ExpectExec().WithArgs("alice", "1").WillReturnResult(sqlmock.NewResult(1, 1))
-	prepare.ExpectExec().WithArgs("bob", "2").WillReturnResult(sqlmock.NewResult(2, 1))
+	prepare.ExpectExec().WithArgs("alice", "1", "bob", "2").WillReturnResult(sqlmock.NewResult(2, 2))
 	mock.ExpectCommit()
 
 	assert.NoError(t, channel.Write(ctx, rc, reader))
