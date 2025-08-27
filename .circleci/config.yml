@@ -95,6 +95,24 @@ jobs:
     steps:
       - checkout
       - test
+      - run:
+          name: store_coverage_reports
+          command: |
+            set -ex
+            apt-get update && apt-get install -y python3-pip
+            pip3 install diff-cover
+            go install github.com/axw/gocov/gocov@latest
+            go install github.com/AlekSi/gocov-xml@latest
+            go tool cover -func=./test-results/coverage.out > ./test-results/coverage.txt
+            go tool cover -html=./test-results/coverage.out -o ./test-results/coverage.html
+            gocov convert ./test-results/coverage.out | gocov-xml > ./test-results/coverage.xml
+            diff-cover ./test-results/coverage.xml --compare-branch=origin/main --format html:./test-results/coverage_diff.html --fail-under=70
+      - store_artifacts:
+          path: ./test-results/coverage.html
+          destination: coverage-report
+      - store_artifacts:
+          path: ./test-results/coverage_diff.html
+          destination: coverage-report-diff
   linux_build_kuscia:
     parameters:
       executor:
