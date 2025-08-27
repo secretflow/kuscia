@@ -14,7 +14,14 @@
 
 name: Alipay Cloud Devops Codescan
 on:
-  pull_request_target:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+    branches:
+      - main
+      - release/*
 jobs:
   stc:
     runs-on: ubuntu-latest
