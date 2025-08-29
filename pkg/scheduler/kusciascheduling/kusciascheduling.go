@@ -42,6 +42,7 @@ type KusciaScheduling struct {
 }
 
 var _ framework.PreFilterPlugin = &KusciaScheduling{}
+var _ framework.FilterPlugin = &KusciaScheduling{}
 var _ framework.PostFilterPlugin = &KusciaScheduling{}
 var _ framework.ReservePlugin = &KusciaScheduling{}
 var _ framework.PermitPlugin = &KusciaScheduling{}
@@ -51,7 +52,9 @@ var _ framework.EnqueueExtensions = &KusciaScheduling{}
 
 const (
 	// Name is the name of the plugin used in Registry and configurations.
-	Name = "KusciaScheduling"
+	Name                              = "KusciaScheduling"
+	preFilterStateKey                 = "preFilter" + Name
+	ResourceBandwidth v1.ResourceName = "kuscia.io/bandwidth"
 )
 
 // New initializes and returns a new KusciaScheduling plugin.
@@ -116,6 +119,19 @@ func parseArgs(obj runtime.Object) (*kusciaapisv1alpha1.SchedulerPluginArgs, err
 	return &trgArgs, nil
 }
 
+func getPreFilterState(cycleState *framework.CycleState) (*core.PreFilterState, error) {
+	c, err := cycleState.Read(preFilterStateKey)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %q from cycleState: %w", preFilterStateKey, err)
+	}
+
+	s, ok := c.(*core.PreFilterState)
+	if !ok {
+		return nil, fmt.Errorf("%+v  convert to KusciaScheduling.preFilterState error", c)
+	}
+	return s, nil
+}
+
 func (cs *KusciaScheduling) EventsToRegister() []framework.ClusterEventWithHint {
 	// To register a custom event, follow the naming convention at:
 	// https://git.k8s.io/kubernetes/pkg/scheduler/eventhandlers.go#L403-L410
@@ -130,13 +146,37 @@ func (cs *KusciaScheduling) Name() string {
 }
 
 // PreFilter performs the following validations.
-// 1. Whether the TaskResourceGroup that the Pod belongs to is on the deny list.
-// 2. Whether the total number of pods in a TaskResourceGroup is less than its `minReservedMember`.
+//  1. Whether the TaskResourceGroup that the Pod belongs to is on the deny list.
+//  2. Whether the total number of pods in a TaskResourceGroup is less than its `minReservedMember`.
+//  3. Compute the resource requests of the incoming Pod and persist them into CycleState
+//     so that subsequent scheduling phases (Filter, Score, etc.) can reuse without recomputation.
 func (cs *KusciaScheduling) PreFilter(ctx context.Context, state *framework.CycleState, pod *v1.Pod) (*framework.PreFilterResult, *framework.Status) {
 	if err := cs.trMgr.PreFilter(ctx, pod); err != nil {
 		return nil, framework.NewStatus(framework.UnschedulableAndUnresolvable, err.Error())
 	}
+	state.Write(preFilterStateKey, core.ComputePodResourceRequest(pod))
 	return nil, framework.NewStatus(framework.Success, "")
+}
+
+// Filter checks whether the node has enough available bandwidth for the Pod.
+// If the requested bandwidth exceeds the available, it returns Unschedulable;
+// otherwise, it allows scheduling.
+func (cs *KusciaScheduling) Filter(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodeInfo *framework.NodeInfo) *framework.Status {
+	allocBandwidth := nodeInfo.Allocatable.ScalarResources[ResourceBandwidth]
+	reqBandwidth := nodeInfo.Requested.ScalarResources[ResourceBandwidth]
+	availableBandwidth := allocBandwidth - reqBandwidth
+
+	totalReq, err := getPreFilterState(state)
+	if err != nil {
+		return framework.AsStatus(err)
+	}
+
+	requiredBandwidth := totalReq.ScalarResources[ResourceBandwidth]
+	if requiredBandwidth > availableBandwidth {
+		return framework.NewStatus(framework.Unschedulable, fmt.Sprintf("Insufficient bandwidth: required=%v, available=%v", requiredBandwidth, availableBandwidth))
+	}
+
+	return framework.NewStatus(framework.Success, "")
 }
 
 // PostFilter is used to reject a group of pods if a pod does not pass PreFilter or Filter.

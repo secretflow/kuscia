@@ -18,6 +18,7 @@ package kusciascheduling
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -487,6 +488,101 @@ func TestPreFilter(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFilter(t *testing.T) {
+	cs := &KusciaScheduling{}
+	state := framework.NewCycleState()
+
+	setPreFilterState := func(bandwidth int64) {
+		state.Write(preFilterStateKey, &core.PreFilterState{
+			Resource: framework.Resource{
+				ScalarResources: map[corev1.ResourceName]int64{
+					ResourceBandwidth: bandwidth,
+				},
+			},
+		})
+	}
+
+	tests := []struct {
+		name              string
+		nodeAllocatable   int64
+		nodeRequested     int64
+		podRequired       int64
+		expectSuccess     bool
+		expectMsgContains string
+	}{
+		{
+			name:            "pod requires less bandwidth than available",
+			nodeAllocatable: 1000,
+			nodeRequested:   200,
+			podRequired:     300,
+			expectSuccess:   true,
+		},
+		{
+			name:              "pod requires more bandwidth than available",
+			nodeAllocatable:   500,
+			nodeRequested:     400,
+			podRequired:       200,
+			expectSuccess:     false,
+			expectMsgContains: "Insufficient bandwidth",
+		},
+		{
+			name:            "pod requires zero bandwidth",
+			nodeAllocatable: 1000,
+			nodeRequested:   500,
+			podRequired:     0,
+			expectSuccess:   true,
+		},
+		{
+			name:              "node with zero available bandwidth",
+			nodeAllocatable:   0,
+			nodeRequested:     0,
+			podRequired:       1,
+			expectSuccess:     false,
+			expectMsgContains: "Insufficient bandwidth",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setPreFilterState(tt.podRequired)
+			nodeInfo := &framework.NodeInfo{
+				Allocatable: &framework.Resource{
+					ScalarResources: map[corev1.ResourceName]int64{
+						ResourceBandwidth: tt.nodeAllocatable,
+					},
+				},
+				Requested: &framework.Resource{
+					ScalarResources: map[corev1.ResourceName]int64{
+						ResourceBandwidth: tt.nodeRequested,
+					},
+				},
+			}
+			nodeInfo.Allocatable.ScalarResources = map[corev1.ResourceName]int64{
+				ResourceBandwidth: tt.nodeAllocatable,
+			}
+			nodeInfo.Requested.ScalarResources = map[corev1.ResourceName]int64{
+				ResourceBandwidth: tt.nodeRequested,
+			}
+			status := cs.Filter(context.Background(), state, &corev1.Pod{}, nodeInfo)
+			if tt.expectSuccess && status.Code() != framework.Success {
+				t.Errorf("expected success, got %v", status.Message())
+			}
+			if !tt.expectSuccess {
+				if status.Code() != framework.Unschedulable {
+					t.Errorf("expected unschedulable, got %v", status.Code())
+				}
+				if tt.expectMsgContains != "" && !contains(status.Message(), tt.expectMsgContains) {
+					t.Errorf("expected message to contain %q, got %q", tt.expectMsgContains, status.Message())
+				}
+			}
+		})
+	}
+}
+
+func contains(s, substr string) bool {
+	return strings.Contains(s, substr)
 }
 
 func TestUnreserve(t *testing.T) {

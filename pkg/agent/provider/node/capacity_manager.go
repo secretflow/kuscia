@@ -16,7 +16,10 @@ package node
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -31,6 +34,7 @@ import (
 
 const (
 	defaultPodsCapacity = "500"
+	defaultBandwidth    = "0"
 )
 
 type CapacityManager struct {
@@ -42,6 +46,9 @@ type CapacityManager struct {
 
 	storageTotal     resource.Quantity
 	storageAvailable resource.Quantity
+
+	bandwidthTotal     resource.Quantity
+	bandwidthAvailable resource.Quantity
 
 	ephemeralStorageTotal     *resource.Quantity
 	ephemeralStorageAvailable *resource.Quantity
@@ -150,6 +157,7 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 			pa.memAvailable = pa.memTotal.DeepCopy()
 		}
 	}
+
 	if pa.storageTotal.IsZero() || pa.storageAvailable.IsZero() {
 		storageQuantity, err := resource.ParseQuantity(cfg.Storage)
 		if err != nil {
@@ -158,6 +166,27 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 		pa.storageTotal = storageQuantity.DeepCopy()
 		pa.storageAvailable = storageQuantity.DeepCopy()
 	}
+
+	if pa.bandwidthTotal.IsZero() || pa.bandwidthAvailable.IsZero() {
+		if cfg.Bandwidth == "" {
+			bandwidthStr, err := getMaxNICBandwidth()
+			if err != nil {
+				nlog.Warnf("Failed to automatically retrieve NIC bandwidth, using default value: %v", err)
+				cfg.Bandwidth = defaultBandwidth
+			} else {
+				cfg.Bandwidth = bandwidthStr
+			}
+		}
+
+		bandwidth, err := resource.ParseQuantity(cfg.Bandwidth)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse bandwidth %q, detail-> %v", cfg.Bandwidth, err)
+		}
+
+		pa.bandwidthTotal = bandwidth.DeepCopy()
+		pa.bandwidthAvailable = bandwidth.DeepCopy()
+	}
+
 	if cfg.EphemeralStorage != "" {
 		storageQuantity, err := resource.ParseQuantity(cfg.EphemeralStorage)
 		if err != nil {
@@ -242,10 +271,11 @@ func (pa *CapacityManager) buildCgroupResource(runtime string, reservedResCfg *c
 // Capacity returns a resource list containing the capacity limits.
 func (pa *CapacityManager) Capacity() v1.ResourceList {
 	rl := v1.ResourceList{
-		v1.ResourceCPU:     pa.cpuTotal,
-		v1.ResourceMemory:  pa.memTotal,
-		v1.ResourceStorage: pa.storageTotal,
-		"pods":             pa.podTotal,
+		v1.ResourceCPU:        pa.cpuTotal,
+		v1.ResourceMemory:     pa.memTotal,
+		v1.ResourceStorage:    pa.storageTotal,
+		"kuscia.io/bandwidth": pa.bandwidthTotal,
+		"pods":                pa.podTotal,
 	}
 	if pa.ephemeralStorageTotal != nil {
 		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageTotal
@@ -255,10 +285,11 @@ func (pa *CapacityManager) Capacity() v1.ResourceList {
 
 func (pa *CapacityManager) Allocatable() v1.ResourceList {
 	rl := v1.ResourceList{
-		v1.ResourceCPU:     pa.cpuAvailable,
-		v1.ResourceMemory:  pa.memAvailable,
-		v1.ResourceStorage: pa.storageAvailable,
-		"pods":             pa.podAvailable,
+		v1.ResourceCPU:        pa.cpuAvailable,
+		v1.ResourceMemory:     pa.memAvailable,
+		v1.ResourceStorage:    pa.storageAvailable,
+		"kuscia.io/bandwidth": pa.bandwidthAvailable,
+		"pods":                pa.podAvailable,
 	}
 	if pa.ephemeralStorageAvailable != nil {
 		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageAvailable
@@ -284,4 +315,35 @@ func (pa *CapacityManager) GetCPUAvailable() resource.Quantity {
 
 func (pa *CapacityManager) GetMemoryAvailable() resource.Quantity {
 	return pa.memAvailable
+}
+
+func getMaxNICBandwidth() (string, error) {
+	netPath := "/sys/class/net/"
+	entries, err := os.ReadDir(netPath)
+	if err != nil {
+		return "", err
+	}
+	maxSpeed := 0
+	for _, entry := range entries {
+		if entry.Name() == "lo" {
+			continue
+		}
+		speedFile := filepath.Join(netPath, entry.Name(), "speed")
+		data, err := os.ReadFile(speedFile)
+		if err != nil {
+			continue
+		}
+		speedStr := strings.TrimSpace(string(data))
+		speed, err := strconv.Atoi(speedStr)
+		if err != nil || speed <= 0 {
+			continue
+		}
+		if speed > maxSpeed {
+			maxSpeed = speed
+		}
+	}
+	if maxSpeed == 0 {
+		return "", fmt.Errorf("no valid NIC speed found")
+	}
+	return fmt.Sprintf("%dM", maxSpeed), nil
 }

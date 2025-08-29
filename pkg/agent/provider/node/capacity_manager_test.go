@@ -17,6 +17,7 @@ package node
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -165,4 +166,61 @@ func TestGetCgroupMemoryLimit(t *testing.T) {
 
 	got := pa.GetCgroupMemoryLimit()
 	assert.Equal(t, limit, *got)
+}
+
+func TestBandwidthConfig(t *testing.T) {
+	// 1.Bandwidth specified in configuration.
+	cfg1 := &config.CapacityCfg{
+		CPU:       "1",
+		Memory:    "1G",
+		Bandwidth: "10G",
+		Storage:   "10",
+	}
+
+	// 2.No bandwidth specified, falling back to default.
+	cfg2 := &config.CapacityCfg{
+		CPU:     "1",
+		Memory:  "1G",
+		Storage: "10",
+	}
+
+	// 3.Invalid bandwidth configuration value.
+	cfg3 := &config.CapacityCfg{
+		CPU:       "1",
+		Memory:    "1G",
+		Bandwidth: "invalid",
+		Storage:   "10",
+	}
+
+	cm1, err := NewCapacityManager("runc", cfg1, nil, t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("cfg1 NewCapacityManager failed: %v", err)
+	}
+	bandwidthQuantity1 := cm1.Capacity()["kuscia.io/bandwidth"]
+	expectedBandwidth1, _ := resource.ParseQuantity("10G")
+	if bandwidthQuantity1.Cmp(expectedBandwidth1) != 0 {
+		t.Errorf("cfg1: expected bandwidth %v, got %v", expectedBandwidth1.String(), bandwidthQuantity1.String())
+	}
+
+	cm2, err := NewCapacityManager("runc", cfg2, nil, t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("cfg2 NewCapacityManager failed: %v", err)
+	}
+	bandwidthQuantity2 := cm2.Capacity()["kuscia.io/bandwidth"]
+	nicBw, err := getMaxNICBandwidth()
+	if err != nil {
+		nicBw = defaultBandwidth
+	}
+	expectedBandwidth2, _ := resource.ParseQuantity(nicBw)
+	if bandwidthQuantity2.Cmp(expectedBandwidth2) != 0 {
+		t.Errorf("cfg2: expected bandwidth %v, got %v",
+			expectedBandwidth2.String(), bandwidthQuantity2.String())
+	}
+
+	_, err = NewCapacityManager("runc", cfg3, nil, t.TempDir(), true)
+	if err == nil {
+		t.Error("cfg3: expected error for invalid bandwidth, got nil")
+	} else if !strings.Contains(err.Error(), "failed to parse bandwidth") {
+		t.Errorf("cfg3: expected error message containing 'failed to parse bandwidth', got %v", err)
+	}
 }
