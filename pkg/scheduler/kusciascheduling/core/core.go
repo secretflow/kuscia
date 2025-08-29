@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubeinformer "k8s.io/client-go/informers/core/v1"
 	kubelisterv1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/kubernetes/pkg/api/v1/resource"
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 
 	"github.com/secretflow/kuscia/pkg/common"
@@ -107,6 +108,16 @@ type patchTaskResourceInfo struct {
 	mu      sync.Mutex
 	podName string
 	err     error
+}
+
+// PreFilterState computed at PreFilter and used at Filter.
+type PreFilterState struct {
+	framework.Resource
+}
+
+// Clone the Prefilter state.
+func (s *PreFilterState) Clone() framework.StateData {
+	return s
 }
 
 // NewTaskResourceManager creates a new operation object.
@@ -648,4 +659,11 @@ func GetTaskResourceInfos(trMgr *TaskResourceManager) *sync.Map {
 
 func getTaskResourceInfoName(tr *kusciaapisv1alpha1.TaskResource) string {
 	return tr.Namespace + "/" + tr.Name
+}
+
+func ComputePodResourceRequest(pod *corev1.Pod) *PreFilterState {
+	reqs := resource.PodRequests(pod, resource.PodResourcesOptions{})
+	result := &PreFilterState{}
+	result.SetMaxResource(reqs)
+	return result
 }

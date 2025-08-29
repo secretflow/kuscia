@@ -80,14 +80,16 @@ type AgentLogCfg struct {
 type CapacityCfg struct {
 	CPU              string `yaml:"cpu"`
 	Memory           string `yaml:"memory"`
+	Bandwidth        string `yaml:"bandwidth"`
 	Pods             string `yaml:"pods"`
 	Storage          string `yaml:"storage"`
 	EphemeralStorage string `yaml:"ephemeralStorage"`
 }
 
 type ReservedResourcesCfg struct {
-	CPU    string `yaml:"cpu"`
-	Memory string `yaml:"memory"`
+	CPU       string `yaml:"cpu"`
+	Memory    string `yaml:"memory"`
+	Bandwidth string `yaml:"bandwidth"`
 }
 
 type KubeConnCfg struct {

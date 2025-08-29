@@ -44,7 +44,8 @@ import (
 )
 
 const (
-	updateRetries = 3
+	updateRetries                         = 3
+	ResourceBandwidth corev1.ResourceName = "kuscia.io/bandwidth"
 )
 
 // JobScheduler will compute current kuscia job and do scheduling until the kuscia job finished.
@@ -1103,7 +1104,6 @@ func (h *RunningHandler) buildPartiesFromTaskInputConfig(template kusciaapisv1al
 
 // buildPartyTemplate will fill the resources config of parties
 func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImageName string) v1alpha1.PartyTemplate {
-	var ctrNumber, rplNumber int // container number and replica number
 	var deployTemplate v1alpha1.DeployTemplate
 	ptrDT, err := h.findMatchedDeployTemplate(p, appImageName)
 	if err != nil {
@@ -1112,43 +1112,18 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 	}
 
 	deployTemplate = *ptrDT
-	ctrNumber = len(deployTemplate.Spec.Containers)
-	rplNumber = int(*(deployTemplate.Replicas))
+	totalInstances := len(deployTemplate.Spec.Containers) * int(*(deployTemplate.Replicas))
 
-	var everyCPU, everyMemory k8sresource.Quantity
-	var ptr *k8sresource.Quantity
 	var limitResource = corev1.ResourceList{}
 	var requestResource = corev1.ResourceList{}
 
-	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceCPU]) {
-		ptrValue := p.Resources.Limits[corev1.ResourceCPU]
-		ptr = &ptrValue
-		stringEveryCPU, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
-		everyCPU = k8sresource.MustParse(stringEveryCPU)
-		limitResource[corev1.ResourceCPU] = everyCPU
-	}
-	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Limits[corev1.ResourceMemory]) {
-		ptrValue := p.Resources.Limits[corev1.ResourceMemory]
-		ptr = &ptrValue
-		stringEveryMemory, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
-		everyMemory = k8sresource.MustParse(stringEveryMemory)
-		limitResource[corev1.ResourceMemory] = everyMemory
-	}
+	h.setResource(limitResource, p.Resources.Limits, corev1.ResourceCPU, totalInstances)
+	h.setResource(limitResource, p.Resources.Limits, corev1.ResourceMemory, totalInstances)
+	h.setResource(limitResource, p.Resources.Limits, ResourceBandwidth, totalInstances)
 
-	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Requests[corev1.ResourceCPU]) {
-		ptrValue := p.Resources.Requests[corev1.ResourceCPU]
-		ptr = &ptrValue
-		stringEveryCPU, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
-		reqEveryCPU := k8sresource.MustParse(stringEveryCPU)
-		requestResource[corev1.ResourceCPU] = reqEveryCPU
-	}
-	if !utilsres.IsEmpty(p.Resources) && !utilsres.IsEmpty(p.Resources.Requests[corev1.ResourceMemory]) {
-		ptrValue := p.Resources.Requests[corev1.ResourceMemory]
-		ptr = &ptrValue
-		stringEveryMemory, _ := utilsres.SplitRSC(ptr.String(), ctrNumber*rplNumber)
-		reqEveryMemory := k8sresource.MustParse(stringEveryMemory)
-		requestResource[corev1.ResourceMemory] = reqEveryMemory
-	}
+	h.setResource(requestResource, p.Resources.Requests, corev1.ResourceCPU, totalInstances)
+	h.setResource(requestResource, p.Resources.Requests, corev1.ResourceMemory, totalInstances)
+	h.setResource(requestResource, p.Resources.Requests, ResourceBandwidth, totalInstances)
 
 	containers := deployTemplate.Spec.Containers
 	for ctrIdx := range containers {
@@ -1168,6 +1143,15 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 		resources = v1alpha1.PartyTemplate{}
 	}
 	return resources
+}
+
+func (h *RunningHandler) setResource(resourceMap, sourceList corev1.ResourceList, resourceName corev1.ResourceName, totalInstances int) {
+	if !utilsres.IsEmpty(sourceList) && !utilsres.IsEmpty(sourceList[resourceName]) {
+		ptrValue := sourceList[resourceName]
+		stringEveryResource, _ := utilsres.SplitRSC(ptrValue.String(), totalInstances)
+		everyResource := k8sresource.MustParse(stringEveryResource)
+		resourceMap[resourceName] = everyResource
+	}
 }
 
 // findMatchedDeployTemplate will get the best matched deployTemplate
