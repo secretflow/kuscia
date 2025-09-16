@@ -54,6 +54,7 @@ capacity:
   memory: # 8Gi
   pods: # 500
   storage: # 100Gi
+  bandwidth: # 1000   Custom resource bandwidth, with the unit Mbps. 1000 represents 1000 Mbps.
 
 # Agent image configs
 image:

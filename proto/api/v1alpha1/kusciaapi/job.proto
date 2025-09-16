@@ -46,10 +46,10 @@ service JobService {
 message CreateJobRequest {
   RequestHeader header = 1;
   string job_id = 2;
-  string initiator = 3; // 发起方
-  int32 max_parallelism = 4; // 并发度
-  repeated Task tasks = 5; // 任务参数
-  map<string, string> custom_fields = 6; // 自定义参数
+  string initiator = 3; // Initiator
+  int32 max_parallelism = 4; // Concurrency
+  repeated Task tasks = 5; // Task Parameters
+  map<string, string> custom_fields = 6; // Custom Parameters
 }
 
 message CreateJobResponse {
@@ -96,6 +96,7 @@ message Party {
 message JobResource {
   string cpu = 1; // hard ceiling of CPU/virtual cores that the containers of certain party can use
   string memory = 2; // limited RAMs that the containers of certain party can use
+  string bandwidth = 3; // Requested bandwidth for the containers of certain party. The unit is Mbps, and values must be provided without including the unit.
 }
 
 message BandwidthLimit {

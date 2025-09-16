@@ -18,6 +18,8 @@ package common
 import (
 	"path"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // labels
@@ -76,10 +78,11 @@ const (
 )
 
 const (
-	PluginNameCertIssuance  = "cert-issuance"
-	PluginNameConfigRender  = "config-render"
-	PluginNameImageSecurity = "image-security"
-	PluginNameEnvImport     = "env-import"
+	PluginNameCertIssuance    = "cert-issuance"
+	PluginNameConfigRender    = "config-render"
+	PluginNameImageSecurity   = "image-security"
+	PluginNameEnvImport       = "env-import"
+	PluginNameBandwidthFilter = "bandwidth-filter"
 )
 
 const (
@@ -181,6 +184,10 @@ const (
 
 const (
 	KusciaTaintTolerationKey = "kuscia.secretflow/agent"
+)
+
+const (
+	ResourceBandwidth corev1.ResourceName = "kuscia.io/bandwidth"
 )
 
 const (

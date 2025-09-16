@@ -41,8 +41,9 @@ const (
 	defaultK8sClientMaxQPS = 250
 	defaultPodsCapacity    = "500"
 
-	DefaultReservedCPU    = "0.5"
-	DefaultReservedMemory = "500Mi"
+	DefaultReservedCPU       = "0.5"
+	DefaultReservedMemory    = "500Mi"
+	DefaultReservedBandwidth = "10" // Mbps
 
 	defaultCRIRemoteEndpoint = "unix:///home/kuscia/containerd/run/containerd.sock"
 	defaultResolvConfig      = "/etc/resolv.conf"
@@ -80,14 +81,16 @@ type AgentLogCfg struct {
 type CapacityCfg struct {
 	CPU              string `yaml:"cpu"`
 	Memory           string `yaml:"memory"`
+	Bandwidth        string `yaml:"bandwidth"`
 	Pods             string `yaml:"pods"`
 	Storage          string `yaml:"storage"`
 	EphemeralStorage string `yaml:"ephemeralStorage"`
 }
 
 type ReservedResourcesCfg struct {
-	CPU    string `yaml:"cpu"`
-	Memory string `yaml:"memory"`
+	CPU       string `yaml:"cpu"`
+	Memory    string `yaml:"memory"`
+	Bandwidth string `yaml:"bandwidth"`
 }
 
 type KubeConnCfg struct {
@@ -290,8 +293,9 @@ func DefaultStaticAgentConfig() *AgentConfig {
 			Pods: defaultPodsCapacity,
 		},
 		ReservedResources: ReservedResourcesCfg{
-			CPU:    DefaultReservedCPU,
-			Memory: DefaultReservedMemory,
+			CPU:       DefaultReservedCPU,
+			Memory:    DefaultReservedMemory,
+			Bandwidth: DefaultReservedBandwidth,
 		},
 		AllowPrivileged: false,
 		Log: AgentLogCfg{

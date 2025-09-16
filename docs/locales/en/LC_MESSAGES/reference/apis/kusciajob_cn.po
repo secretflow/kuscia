@@ -845,6 +845,14 @@ msgstr "memory"
 msgid "参与方可用内存资源上限"
 msgstr "Maximum available memory resources for the party"
 
+#: ../../reference/apis/kusciajob_cn.md:121
+msgid "kuscia.io/bandwidth"
+msgstr "kuscia.io/bandwidth"
+
+#: ../../reference/apis/kusciajob_cn.md:121
+msgid "参与方可用网络带宽下限"
+msgstr "Minimum available network bandwidth for the party"
+
 #: ../../reference/apis/kusciajob_cn.md:723
 msgid "PartyStatus"
 msgstr "PartyStatus"

@@ -120,6 +120,16 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 						}
 					}
 				}
+				if party.Resources.Bandwidth != "" {
+					if q, err := k8sresource.ParseQuantity(party.Resources.Bandwidth); err == nil {
+						limitResource[common.ResourceBandwidth] = q
+					} else {
+						return &kusciaapi.CreateJobResponse{
+							Status: utils2.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, fmt.Sprintf("parse input bandwidth resource failed: %v", err.Error())),
+						}
+					}
+				}
+
 				resource = &corev1.ResourceRequirements{
 					Limits: limitResource,
 					// use limit as requests
