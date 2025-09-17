@@ -17,6 +17,7 @@ package node
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -104,27 +105,36 @@ func TestBuildCgroupResource(t *testing.T) {
 	}
 
 	tests := []struct {
-		runtime               string
-		reservedResCfg        *config.ReservedResourcesCfg
-		wantCPUAvailable      int64
-		wantMemAvailable      int64
-		wantCgroupCPUQuota    int64
-		wantCgroupCPUPeriod   int64
-		wantCgroupMemoryLimit int64
+		runtime                string
+		reservedResCfg         *config.ReservedResourcesCfg
+		wantCPUAvailable       int64
+		wantMemAvailable       int64
+		wantCgroupCPUQuota     int64
+		wantCgroupCPUPeriod    int64
+		wantCgroupMemoryLimit  int64
+		wantBandwidthAvailable int64
 	}{
-		{config.ContainerRuntime, nil, 4, 838860800, 0, 0, 0},
-		{"", &config.ReservedResourcesCfg{CPU: "500m", Memory: "500Mi"}, 4, 838860800, 0, 0, 0},
-		{config.K8sRuntime, &config.ReservedResourcesCfg{CPU: "500m", Memory: "500Mi"}, 4, 838860800, 0, 0, 0},
-		{config.ContainerRuntime, &config.ReservedResourcesCfg{CPU: "500m", Memory: "500Mi"}, 4, 314572800, 350000, 100000, 314572800},
-		{config.ProcessRuntime, &config.ReservedResourcesCfg{CPU: "600m", Memory: "500Mi"}, 4, 314572800, 340000, 100000, 314572800},
+		{config.ContainerRuntime, nil, 4, 838860800, 0, 0, 0, 1000000000},
+		{"", &config.ReservedResourcesCfg{CPU: "500m", Memory: "500Mi", Bandwidth: "100M"},
+			4, 838860800, 0, 0, 0, 1000000000},
+		{config.K8sRuntime, &config.ReservedResourcesCfg{CPU: "500m", Memory: "500Mi", Bandwidth: "100M"},
+			4, 838860800, 0, 0, 0, 1000000000},
+		{config.ContainerRuntime, &config.ReservedResourcesCfg{CPU: "500m", Memory: "500Mi", Bandwidth: "100M"},
+			4, 314572800, 350000, 100000, 314572800, 900000000},
+		{config.ProcessRuntime, &config.ReservedResourcesCfg{CPU: "600m", Memory: "500Mi", Bandwidth: "200M"},
+			4, 314572800, 340000, 100000, 314572800, 800000000},
 	}
 
 	for _, tt := range tests {
+		bandwidth := resource.MustParse("1000M")
+
 		pa := &CapacityManager{
-			cpuTotal:     *resource.NewQuantity(4, resource.BinarySI),
-			cpuAvailable: *resource.NewQuantity(4, resource.BinarySI),
-			memTotal:     *resource.NewQuantity(1073741824, resource.BinarySI), // 1024Mi
-			memAvailable: *resource.NewQuantity(838860800, resource.BinarySI),  // 800Mi
+			cpuTotal:           *resource.NewQuantity(4, resource.BinarySI),
+			cpuAvailable:       *resource.NewQuantity(4, resource.BinarySI),
+			memTotal:           *resource.NewQuantity(1073741824, resource.BinarySI), // 1024Mi
+			memAvailable:       *resource.NewQuantity(838860800, resource.BinarySI),  // 800Mi
+			bandwidthTotal:     bandwidth,
+			bandwidthAvailable: bandwidth.DeepCopy(),
 		}
 
 		err := pa.buildCgroupResource(tt.runtime, tt.reservedResCfg)
@@ -134,6 +144,7 @@ func TestBuildCgroupResource(t *testing.T) {
 		assert.Equal(t, tt.wantCgroupCPUQuota, pointerToInt64(pa.cgroupCPUQuota))
 		assert.Equal(t, tt.wantCgroupCPUPeriod, pointerToUint64(pa.cgroupCPUPeriod))
 		assert.Equal(t, tt.wantCgroupMemoryLimit, pointerToInt64(pa.cgroupMemoryLimit))
+		assert.Equal(t, tt.wantBandwidthAvailable, pa.bandwidthAvailable.Value())
 	}
 }
 
@@ -165,4 +176,61 @@ func TestGetCgroupMemoryLimit(t *testing.T) {
 
 	got := pa.GetCgroupMemoryLimit()
 	assert.Equal(t, limit, *got)
+}
+
+func TestBandwidthConfig(t *testing.T) {
+	// 1.Bandwidth specified in configuration.
+	cfg1 := &config.CapacityCfg{
+		CPU:       "1",
+		Memory:    "1G",
+		Bandwidth: "10G",
+		Storage:   "10",
+	}
+
+	// 2.No bandwidth specified, falling back to default.
+	cfg2 := &config.CapacityCfg{
+		CPU:     "1",
+		Memory:  "1G",
+		Storage: "10",
+	}
+
+	// 3.Invalid bandwidth configuration value.
+	cfg3 := &config.CapacityCfg{
+		CPU:       "1",
+		Memory:    "1G",
+		Bandwidth: "invalid",
+		Storage:   "10",
+	}
+
+	cm1, err := NewCapacityManager("runc", cfg1, nil, t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("cfg1 NewCapacityManager failed: %v", err)
+	}
+	bandwidthQuantity1 := cm1.Capacity()["kuscia.io/bandwidth"]
+	expectedBandwidth1, _ := resource.ParseQuantity("10G")
+	if bandwidthQuantity1.Cmp(expectedBandwidth1) != 0 {
+		t.Errorf("cfg1: expected bandwidth %v, got %v", expectedBandwidth1.String(), bandwidthQuantity1.String())
+	}
+
+	cm2, err := NewCapacityManager("runc", cfg2, nil, t.TempDir(), true)
+	if err != nil {
+		t.Fatalf("cfg2 NewCapacityManager failed: %v", err)
+	}
+	bandwidthQuantity2 := cm2.Capacity()["kuscia.io/bandwidth"]
+	nicBw, err := getBandwidth()
+	if err != nil {
+		nicBw = defaultBandwidth
+	}
+	expectedBandwidth2, _ := resource.ParseQuantity(nicBw)
+	if bandwidthQuantity2.Cmp(expectedBandwidth2) != 0 {
+		t.Errorf("cfg2: expected bandwidth %v, got %v",
+			expectedBandwidth2.String(), bandwidthQuantity2.String())
+	}
+
+	_, err = NewCapacityManager("runc", cfg3, nil, t.TempDir(), true)
+	if err == nil {
+		t.Error("cfg3: expected error for invalid bandwidth, got nil")
+	} else if !strings.Contains(err.Error(), "failed to parse bandwidth") {
+		t.Errorf("cfg3: expected error message containing 'failed to parse bandwidth', got %v", err)
+	}
 }

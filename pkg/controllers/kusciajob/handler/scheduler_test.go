@@ -999,6 +999,67 @@ func TestRunningHandler_buildPartyTemplate(t *testing.T) {
 	}
 }
 
+func rl(name corev1.ResourceName, qty string) corev1.ResourceList {
+	return corev1.ResourceList{name: k8sresource.MustParse(qty)}
+}
+
+func TestSetResource_SplitsAndSets(t *testing.T) {
+	h := &RunningHandler{}
+
+	source := rl(common.ResourceBandwidth, "200")
+	dest := corev1.ResourceList{}
+
+	h.setResource(dest, source, common.ResourceBandwidth, 2)
+
+	got, ok := dest[common.ResourceBandwidth]
+	if !ok {
+		t.Fatalf("expect key %q set in resourceMap", common.ResourceBandwidth)
+	}
+	if got.String() != "100" { // 200 / 2
+		t.Fatalf("got %q, want %q", got.String(), "100")
+	}
+}
+
+func TestSetResource_NoKey_NoChange(t *testing.T) {
+	h := &RunningHandler{}
+
+	source := rl(corev1.ResourceCPU, "500m")
+	dest := corev1.ResourceList{}
+
+	h.setResource(dest, source, common.ResourceBandwidth, 2)
+
+	if _, ok := dest[common.ResourceBandwidth]; ok {
+		t.Fatalf("resourceMap should not contain %q", common.ResourceBandwidth)
+	}
+}
+
+func TestSetResource_EmptySource_NoChange(t *testing.T) {
+	h := &RunningHandler{}
+	source := corev1.ResourceList{}
+	dest := corev1.ResourceList{}
+
+	h.setResource(dest, source, common.ResourceBandwidth, 2)
+
+	if len(dest) != 0 {
+		t.Fatalf("resourceMap should remain empty, got %v", dest)
+	}
+}
+
+func TestSetResource_ZeroInstances_Panics(t *testing.T) {
+	h := &RunningHandler{}
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic when totalInstances=0 (SplitRSC error ignored leads to MustParse(\"\") panic)")
+		}
+	}()
+
+	source := rl(common.ResourceBandwidth, "200")
+	dest := corev1.ResourceList{}
+
+	h.setResource(dest, source, common.ResourceBandwidth, 0)
+}
+
 func makeMockAppImage(name string) *kusciaapisv1alpha1.AppImage {
 	replicas := int32(1)
 	return &kusciaapisv1alpha1.AppImage{

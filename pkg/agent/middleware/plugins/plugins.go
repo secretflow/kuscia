@@ -15,6 +15,7 @@
 package plugins
 
 import (
+	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/bandwidthfilter"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/certissuance"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/configrender"
 	"github.com/secretflow/kuscia/pkg/agent/middleware/plugins/hook/envimport"
@@ -26,4 +27,5 @@ func init() {
 	certissuance.Register()
 	envimport.Register()
 	imagesecurity.Register()
+	bandwidthfilter.Register()
 }

@@ -16,7 +16,9 @@ package node
 
 import (
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -31,6 +33,8 @@ import (
 
 const (
 	defaultPodsCapacity = "500"
+	Eth0SpeedFile       = "/sys/class/net/eth0/speed"
+	defaultBandwidth    = "1000"
 )
 
 type CapacityManager struct {
@@ -42,6 +46,9 @@ type CapacityManager struct {
 
 	storageTotal     resource.Quantity
 	storageAvailable resource.Quantity
+
+	bandwidthTotal     resource.Quantity
+	bandwidthAvailable resource.Quantity
 
 	ephemeralStorageTotal     *resource.Quantity
 	ephemeralStorageAvailable *resource.Quantity
@@ -150,6 +157,7 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 			pa.memAvailable = pa.memTotal.DeepCopy()
 		}
 	}
+
 	if pa.storageTotal.IsZero() || pa.storageAvailable.IsZero() {
 		storageQuantity, err := resource.ParseQuantity(cfg.Storage)
 		if err != nil {
@@ -158,6 +166,27 @@ func NewCapacityManager(runtime string, cfg *config.CapacityCfg, reservedResCfg 
 		pa.storageTotal = storageQuantity.DeepCopy()
 		pa.storageAvailable = storageQuantity.DeepCopy()
 	}
+
+	if pa.bandwidthTotal.IsZero() || pa.bandwidthAvailable.IsZero() {
+		if cfg.Bandwidth == "" {
+			bandwidthStr, err := getBandwidth()
+			if err != nil {
+				nlog.Warnf("Failed to automatically retrieve NIC bandwidth, using default value: %v", defaultBandwidth)
+				cfg.Bandwidth = defaultBandwidth
+			} else {
+				cfg.Bandwidth = bandwidthStr
+			}
+		}
+
+		bandwidth, err := resource.ParseQuantity(cfg.Bandwidth)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse bandwidth %q, detail-> %v", cfg.Bandwidth, err)
+		}
+
+		pa.bandwidthTotal = bandwidth.DeepCopy()
+		pa.bandwidthAvailable = bandwidth.DeepCopy()
+	}
+
 	if cfg.EphemeralStorage != "" {
 		storageQuantity, err := resource.ParseQuantity(cfg.EphemeralStorage)
 		if err != nil {
@@ -236,16 +265,36 @@ func (pa *CapacityManager) buildCgroupResource(runtime string, reservedResCfg *c
 	pa.memAvailable.Set(availableMemory)
 
 	nlog.Infof("Total memory: %v, available memory: %v", pa.memTotal.Value(), pa.memAvailable.Value())
+
+	reservedBandwidth, err := resource.ParseQuantity(reservedResCfg.Bandwidth)
+	if err != nil {
+		return fmt.Errorf("failed to parse reserved bandwidth %q, detail-> %v", reservedResCfg.Bandwidth, err)
+	}
+
+	if reservedBandwidth.Value() <= 0 {
+		reservedBandwidth, _ = resource.ParseQuantity(config.DefaultReservedBandwidth)
+	}
+
+	if pa.bandwidthAvailable.Cmp(reservedBandwidth) < 0 {
+		return fmt.Errorf("available bandwidth %v is less than reserved bandwidth %v", pa.bandwidthAvailable.String(), reservedBandwidth.String())
+	}
+
+	availableBandwidth := pa.bandwidthAvailable.Value() - reservedBandwidth.Value()
+	pa.bandwidthAvailable.Set(availableBandwidth)
+
+	nlog.Infof("Total bandwidth: %v, available bandwidth: %v", pa.bandwidthTotal.String(), pa.bandwidthAvailable.String())
+
 	return nil
 }
 
 // Capacity returns a resource list containing the capacity limits.
 func (pa *CapacityManager) Capacity() v1.ResourceList {
 	rl := v1.ResourceList{
-		v1.ResourceCPU:     pa.cpuTotal,
-		v1.ResourceMemory:  pa.memTotal,
-		v1.ResourceStorage: pa.storageTotal,
-		"pods":             pa.podTotal,
+		v1.ResourceCPU:        pa.cpuTotal,
+		v1.ResourceMemory:     pa.memTotal,
+		v1.ResourceStorage:    pa.storageTotal,
+		"kuscia.io/bandwidth": pa.bandwidthTotal,
+		"pods":                pa.podTotal,
 	}
 	if pa.ephemeralStorageTotal != nil {
 		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageTotal
@@ -255,10 +304,11 @@ func (pa *CapacityManager) Capacity() v1.ResourceList {
 
 func (pa *CapacityManager) Allocatable() v1.ResourceList {
 	rl := v1.ResourceList{
-		v1.ResourceCPU:     pa.cpuAvailable,
-		v1.ResourceMemory:  pa.memAvailable,
-		v1.ResourceStorage: pa.storageAvailable,
-		"pods":             pa.podAvailable,
+		v1.ResourceCPU:        pa.cpuAvailable,
+		v1.ResourceMemory:     pa.memAvailable,
+		v1.ResourceStorage:    pa.storageAvailable,
+		"kuscia.io/bandwidth": pa.bandwidthAvailable,
+		"pods":                pa.podAvailable,
 	}
 	if pa.ephemeralStorageAvailable != nil {
 		rl[v1.ResourceEphemeralStorage] = *pa.ephemeralStorageAvailable
@@ -284,4 +334,22 @@ func (pa *CapacityManager) GetCPUAvailable() resource.Quantity {
 
 func (pa *CapacityManager) GetMemoryAvailable() resource.Quantity {
 	return pa.memAvailable
+}
+
+func getBandwidth() (string, error) {
+	// /sys/class/net/eth0/speed. This file is provided by the Linux kernel,
+	// its content represents the current network interface speed, with the unit being Mbps.
+	// If speed = 10, it means the bandwidth is 10 Mbps.
+	data, err := os.ReadFile(Eth0SpeedFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read %s: %w", Eth0SpeedFile, err)
+	}
+
+	speedStr := strings.TrimSpace(string(data))
+	speed, err := strconv.Atoi(speedStr)
+	if err != nil || speed <= 0 {
+		return "", fmt.Errorf("invalid speed value: %q", speedStr)
+	}
+
+	return fmt.Sprintf("%d", speed), nil
 }

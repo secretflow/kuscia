@@ -199,6 +199,9 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	if lite.ReservedResources.Memory != "" {
 		kusciaConfig.Agent.ReservedResources.Memory = lite.ReservedResources.Memory
 	}
+	if lite.ReservedResources.Bandwidth != "" {
+		kusciaConfig.Agent.ReservedResources.Bandwidth = lite.ReservedResources.Bandwidth
+	}
 
 	for _, p := range lite.Agent.Plugins {
 		for j, pp := range kusciaConfig.Agent.Plugins {
@@ -277,6 +280,9 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	}
 	if autonomy.ReservedResources.Memory != "" {
 		kusciaConfig.Agent.ReservedResources.Memory = autonomy.ReservedResources.Memory
+	}
+	if autonomy.ReservedResources.Bandwidth != "" {
+		kusciaConfig.Agent.ReservedResources.Bandwidth = autonomy.ReservedResources.Bandwidth
 	}
 
 	for _, p := range autonomy.Agent.Plugins {

@@ -902,10 +902,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### JobResource
 
-| 字段  | 类型   | 选填 | 描述 |
-|--------|------------|------|------|
-| cpu  | string | 可选 | 参与方可用 CPU 资源上限 |
-| memory | string | 可选 | 参与方可用内存资源上限  |
+| 字段                  | 类型   | 选填 | 描述              |
+|---------------------|--------|------|-----------------|
+| cpu                 | string | 可选 | 参与方可用 CPU 资源上限  |
+| memory              | string | 可选 | 参与方可用内存资源上限     |
+| kuscia.io/bandwidth | string | 可选 | 参与方可用网络带宽下限     |
 
 {#party-status}
 

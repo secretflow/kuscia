@@ -596,12 +596,17 @@ msgstr ""
 "`tasks[].parties[].role`: Role of the task participant, defined by the engine. Common examples include Host and Guest. Kuscia combines this with the role field in [appImage](./appimage_cn.md#appimage-ref) to select the appropriate deployment template for launching the engine."
 
 #: ../../reference/concepts/kusciajob_cn.md:396
-msgid ""
-"`tasks[].parties[].resources`：表示任务参与方的资源信息，详见 [K8s "
-"资源要求和限制](https://kubernetes.io/docs/concepts/configuration/manage-"
-"resources-containers/)。"
-msgstr ""
-"`tasks[].parties[].resources`: Resource information for the task participant. See [K8s Resource Requirements and Limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for details."
+msgid "`tasks[].parties[].resources`：表示任务参与方的资源信息，详见 [K8s 资源要求和限制](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)。 除了 K8s 原生的 `cpu`、`memory` 等资源字段外，Kuscia 还扩展了带宽资源字段，用于调度时感知节点带宽能力："
+msgstr "`tasks[].parties[].resources`: Specifies resource information for each party in a task. See [K8s resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/). In addition to native K8s fields such as `cpu` and `memory`, Kuscia extends bandwidth resource fields to enable the scheduler to be aware of node bandwidth capacity:"
+
+msgid "`kuscia.io/bandwidth`：表示任务对网络带宽的请求与限制。该字段与 cpu、memory 一样参与调度决策。填写时只需数值，不需要写单位；单位默认为 Mbps。"
+msgstr "`kuscia.io/bandwidth`: Specifies the task’s request and limit for network bandwidth. This field participates in scheduling decisions in the same way as cpu and memory. Only a numeric value should be provided, without units; the unit is implicitly Mbps."
+
+msgid "`requests.kuscia.io/bandwidth`：表示任务运行所需的最小带宽需求。例如 `10`，则调度器只会把任务分配到具备 ≥ 10 Mbps 可用带宽容量的节点上。"
+msgstr "`requests.kuscia.io/bandwidth`: Specifies the minimum bandwidth required for task execution. For example, with `10`, the scheduler will only assign tasks to nodes with ≥ 10 Mbps of available bandwidth capacity."
+
+msgid "`limits.kuscia.io/bandwidth`：对于自定义资源，limits应与requests保持一致。"
+msgstr "`limits.kuscia.io/bandwidth`: For custom resources, limits should be set equal to requests."
 
 #: ../../reference/concepts/kusciajob_cn.md:397
 msgid "`tasks[].parties[].bandwidthLimits`：任务参与方的带宽限制信息。"
