@@ -37,7 +37,7 @@ require (
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/opencontainers/image-spec v1.1.0-rc5
-	github.com/opencontainers/runtime-spec v1.1.1-0.20230823135140-4fec88fd00a4
+	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/opencontainers/selinux v1.11.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
