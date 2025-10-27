@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/agiledragon/gomonkey v2.0.2+incompatible
-	github.com/agiledragon/gomonkey/v2 v2.11.0
+	github.com/agiledragon/gomonkey/v2 v2.13.0
 	github.com/apache/arrow/go/v13 v13.0.0
 	github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 	github.com/aws/aws-sdk-go v1.50.10
