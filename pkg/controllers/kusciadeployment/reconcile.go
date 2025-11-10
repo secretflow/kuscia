@@ -644,8 +644,14 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		affinity = partyKitInfo.deployTemplate.Spec.Affinity.DeepCopy()
 		buildAffinity(affinity, partyKitInfo.dkInfo.deploymentName)
 	} else {
-		// If affinity is not set in AppImage, add the default PodAntiAffinity
-		affinity = buildDefaultPodAntiAffinity(partyKitInfo.dkInfo.deploymentName)
+		affinityMode := ""
+		if partyKitInfo.kd.Annotations != nil {
+			affinityMode = partyKitInfo.kd.Annotations[common.AffinityModeAnnotationKey]
+		}
+
+		if affinityMode != "none" {
+			affinity = buildDefaultPodAntiAffinity(partyKitInfo.dkInfo.deploymentName)
+		}
 	}
 
 	automountServiceAccountToken := false
@@ -870,10 +876,15 @@ func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKi
 					deploymentCopy.Spec.Template.Spec.Affinity = affinity
 				}
 			} else {
-				// If affinity is not set in AppImage and original deployment Affinity is nil, add the default PodAntiAffinity
 				if deploymentCopy.Spec.Template.Spec.Affinity == nil {
-					needUpdate = true
-					deploymentCopy.Spec.Template.Spec.Affinity = buildDefaultPodAntiAffinity(deploymentCopy.Name)
+					affinityMode := ""
+					if partyKitInfo.kd.Annotations != nil {
+						affinityMode = partyKitInfo.kd.Annotations[common.AffinityModeAnnotationKey]
+					}
+					if affinityMode != "none" {
+						needUpdate = true
+						deploymentCopy.Spec.Template.Spec.Affinity = buildDefaultPodAntiAffinity(deploymentCopy.Name)
+					}
 				}
 			}
 
