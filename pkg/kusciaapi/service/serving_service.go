@@ -1105,21 +1105,10 @@ func (s *servingService) buildAffinityForMode(mode, servingID string) *corev1.Af
 // buildPodAffinity builds a PodAffinity using PreferredDuringSchedulingIgnoredDuringExecution.
 // Uses default weight value of 100
 func (s *servingService) buildPodAffinity(servingID string) *corev1.Affinity {
-	labelSelector := &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			common.LabelKusciaDeploymentName: servingID,
-		},
-	}
 	return &corev1.Affinity{
 		PodAffinity: &corev1.PodAffinity{
 			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: labelSelector,
-						TopologyKey:   "kubernetes.io/hostname",
-					},
-				},
+				s.buildWeightedPodAffinityTerm(servingID),
 			},
 		},
 	}
@@ -1128,22 +1117,25 @@ func (s *servingService) buildPodAffinity(servingID string) *corev1.Affinity {
 // buildPodAntiAffinity builds a PodAntiAffinity using PreferredDuringSchedulingIgnoredDuringExecution.
 // Uses default weight value of 100
 func (s *servingService) buildPodAntiAffinity(servingID string) *corev1.Affinity {
-	labelSelector := &metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			common.LabelKusciaDeploymentName: servingID,
-		},
-	}
 	return &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
 			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				{
-					Weight: 100,
-					PodAffinityTerm: corev1.PodAffinityTerm{
-						LabelSelector: labelSelector,
-						TopologyKey:   "kubernetes.io/hostname",
-					},
+				s.buildWeightedPodAffinityTerm(servingID),
+			},
+		},
+	}
+}
+
+func (s *servingService) buildWeightedPodAffinityTerm(servingID string) corev1.WeightedPodAffinityTerm {
+	return corev1.WeightedPodAffinityTerm{
+		Weight: 100,
+		PodAffinityTerm: corev1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					common.LabelKusciaDeploymentName: servingID,
 				},
 			},
+			TopologyKey: "kubernetes.io/hostname",
 		},
 	}
 }

@@ -644,11 +644,7 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		affinity = partyKitInfo.deployTemplate.Spec.Affinity.DeepCopy()
 		buildAffinity(affinity, partyKitInfo.dkInfo.deploymentName)
 	} else {
-		affinityMode := ""
-		if partyKitInfo.kd.Annotations != nil {
-			affinityMode = partyKitInfo.kd.Annotations[common.AffinityModeAnnotationKey]
-		}
-
+		affinityMode := partyKitInfo.kd.Annotations[common.AffinityModeAnnotationKey]
 		if affinityMode != "none" {
 			affinity = buildDefaultPodAntiAffinity(partyKitInfo.dkInfo.deploymentName)
 		}
@@ -877,10 +873,7 @@ func (c *Controller) updateDeployment(ctx context.Context, partyKitInfo *PartyKi
 				}
 			} else {
 				if deploymentCopy.Spec.Template.Spec.Affinity == nil {
-					affinityMode := ""
-					if partyKitInfo.kd.Annotations != nil {
-						affinityMode = partyKitInfo.kd.Annotations[common.AffinityModeAnnotationKey]
-					}
+					affinityMode := partyKitInfo.kd.Annotations[common.AffinityModeAnnotationKey]
 					if affinityMode != "none" {
 						needUpdate = true
 						deploymentCopy.Spec.Template.Spec.Affinity = buildDefaultPodAntiAffinity(deploymentCopy.Name)
