@@ -231,7 +231,7 @@ func parseDataSourceURI(sourceType string, info *datamesh.DataSourceInfo) (uri s
 		}
 		uri = info.Odps.Endpoint + "/" + info.Odps.Project
 	default:
-		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,postgresql]", sourceType)
+		err = fmt.Errorf("datasource type:%q not support, only support [localfs,oss,mysql,odps,postgresql,hive]", sourceType)
 		nlog.Error(err)
 		return
 	}
