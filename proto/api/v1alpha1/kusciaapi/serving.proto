@@ -39,6 +39,9 @@ message CreateServingRequest {
   string serving_input_config = 3;
   string initiator = 4;
   repeated ServingParty parties = 5;
+  // Affinity mode for pod scheduling. Can be "none", "affinity", or "anti-affinity".
+  // Default is "anti-affinity" if not specified or empty.
+  string affinity_mode = 6;
 }
 
 message CreateServingResponse {

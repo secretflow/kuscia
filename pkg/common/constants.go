@@ -75,6 +75,7 @@ const (
 	LabelOwnerReferences = "kuscia.secretflow/owner-references"
 
 	LabelDomainRoutePartner = "kuscia.secertflow/domainroute-partner"
+	AffinityModeAnnotationKey = "kuscia.secretflow/affinity-mode"
 )
 
 const (
