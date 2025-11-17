@@ -1094,28 +1094,28 @@ func TestBuildKusciaDeploymentWithAffinityMode(t *testing.T) {
 	s := servingService{kusciaClient: kusciaClient}
 
 	tests := []struct {
-		name         string
-		affinityMode string
+		name           string
+		affinityMode   string
 		expectAffinity bool
 	}{
 		{
-			name:          "affinity_mode is none, should not set affinity in party template",
-			affinityMode:  "none",
+			name:           "affinity_mode is none, should not set affinity in party template",
+			affinityMode:   "none",
 			expectAffinity: false,
 		},
 		{
-			name:          "affinity_mode is affinity, should set PodAffinity",
-			affinityMode:  "affinity",
+			name:           "affinity_mode is affinity, should set PodAffinity",
+			affinityMode:   "affinity",
 			expectAffinity: true,
 		},
 		{
-			name:          "affinity_mode is anti-affinity, should set PodAntiAffinity",
-			affinityMode:  "anti-affinity",
+			name:           "affinity_mode is anti-affinity, should set PodAntiAffinity",
+			affinityMode:   "anti-affinity",
 			expectAffinity: true,
 		},
 		{
-			name:          "affinity_mode is empty, should default to anti-affinity",
-			affinityMode:  "",
+			name:           "affinity_mode is empty, should default to anti-affinity",
+			affinityMode:   "",
 			expectAffinity: true,
 		},
 	}

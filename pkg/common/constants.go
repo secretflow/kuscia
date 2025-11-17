@@ -74,7 +74,7 @@ const (
 	LabelPodUID          = "kuscia.secretflow/pod-uid"
 	LabelOwnerReferences = "kuscia.secretflow/owner-references"
 
-	LabelDomainRoutePartner = "kuscia.secertflow/domainroute-partner"
+	LabelDomainRoutePartner   = "kuscia.secertflow/domainroute-partner"
 	AffinityModeAnnotationKey = "kuscia.secretflow/affinity-mode"
 )
 
@@ -83,7 +83,6 @@ const (
 	AffinityModeAffinity     = "affinity"
 	AffinityModeAntiAffinity = "anti-affinity"
 )
-
 
 const (
 	PluginNameCertIssuance    = "cert-issuance"
