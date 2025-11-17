@@ -32,6 +32,7 @@
 | serving_input_config | string                                       | 可选 | 应用配置。[Secretflow Serving 预测应用配置参考](https://www.secretflow.org.cn/zh-CN/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-description) |
 | initiator            | string                                       | 必填 | 发起方节点 DomainID                                                                                                                                          |
 | parties              | [ServingParty](#serving-party)[]             | 必填 | 参与方信息                                                                                                                                                   |
+| affinity_mode        | string                                       | 可选 | Pod 调度亲和性模式。可选值："none"（无亲和性）、"affinity"（亲和性）、"anti-affinity"（反亲和性）。默认值为 "anti-affinity"（如果未指定或为空）                                                                      |
 
 #### 响应（CreateServingResponse）
 
@@ -56,6 +57,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
   "serving_id": "serving-1",
   "serving_input_config": "{\"partyConfigs\":{\"alice\":{\"serverConfig\":{\"featureMapping\":{\"v24\":\"x24\",\"v22\":\"x22\",\"v21\":\"x21\",\"v25\":\"x25\",\"v23\":\"x23\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/alice\",\"sourcePath\":\"examples/alice/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}},\"bob\":{\"serverConfig\":{\"featureMapping\":{\"v6\":\"x6\",\"v7\":\"x7\",\"v8\":\"x8\",\"v9\":\"x9\",\"v10\":\"x10\"}},\"modelConfig\":{\"modelId\":\"glm-test-1\",\"basePath\":\"/tmp/bob\",\"sourcePath\":\"examples/bob/glm-test.tar.gz\",\"sourceType\":\"ST_FILE\"},\"featureSourceConfig\":{\"mockOpts\":{}},\"channel_desc\":{\"protocol\":\"http\"}}}}",
   "initiator": "alice",
+  "affinity_mode": "anti-affinity",
   "parties": [
     {
       "domain_id": "alice",

@@ -79,6 +79,13 @@ const (
 )
 
 const (
+	AffinityModeNone         = "none"
+	AffinityModeAffinity     = "affinity"
+	AffinityModeAntiAffinity = "anti-affinity"
+)
+
+
+const (
 	PluginNameCertIssuance    = "cert-issuance"
 	PluginNameConfigRender    = "config-render"
 	PluginNameImageSecurity   = "image-security"

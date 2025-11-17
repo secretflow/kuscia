@@ -48,12 +48,6 @@ const (
 )
 
 const (
-	affinityModeNone         = "none"
-	affinityModeAffinity     = "affinity"
-	affinityModeAntiAffinity = "anti-affinity"
-)
-
-const (
 	servingAuthErrMsg = "domain's kuscia api could only handle the serving that the domain as a participant in the serving"
 )
 
@@ -1090,11 +1084,11 @@ func (s *servingService) getAffinityMode(mode string) string {
 // All affinities use PreferredDuringSchedulingIgnoredDuringExecution (soft preference).
 func (s *servingService) buildAffinityForMode(mode, servingID string) *corev1.Affinity {
 	switch mode {
-	case affinityModeNone:
+	case common.AffinityModeNone:
 		return nil
-	case affinityModeAffinity:
+	case common.AffinityModeAffinity:
 		return s.buildPodAffinity(servingID)
-	case affinityModeAntiAffinity:
+	case common.AffinityModeAntiAffinity:
 		return s.buildPodAntiAffinity(servingID)
 	default:
 		// Default to anti-affinity for unknown modes
