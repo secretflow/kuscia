@@ -218,6 +218,14 @@ msgstr "[ServingParty](#serving-party)[]"
 msgid "参与方信息"
 msgstr "Party Information"
 
+#: ../../reference/apis/serving_cn.md
+msgid "affinity_mode"
+msgstr "affinity_mode"
+
+#: ../../reference/apis/serving_cn.md
+msgid "Pod 调度亲和性模式。可选值：\"none\"（无亲和性）、\"affinity\"（亲和性）、\"anti-affinity\"（反亲和性）。默认值为 \"anti-affinity\"（如果未指定或为空）"
+msgstr "Pod scheduling affinity mode. Available values: \"none\" (no affinity), \"affinity\" (affinity), and \"anti-affinity\" (anti-affinity). Defaults to \"anti-affinity\" if unspecified or empty."
+
 #: ../../reference/apis/serving_cn.md:36
 msgid "响应（CreateServingResponse）"
 msgstr "Response (CreateServingResponse)"
