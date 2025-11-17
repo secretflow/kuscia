@@ -1074,7 +1074,7 @@ func getServingState(phase v1alpha1.KusciaDeploymentPhase) string {
 // If the mode is empty or nil, it defaults to "anti-affinity".
 func (s *servingService) getAffinityMode(mode string) string {
 	if mode == "" {
-		return affinityModeAntiAffinity
+		return common.AffinityModeAntiAffinity
 	}
 	return mode
 }
