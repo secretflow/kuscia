@@ -2,6 +2,6 @@ sphinx~=8.0
 linkify-it-py~=2.0
 myst-parser~=4.0
 sphinx-intl~=2.3
-sphinxcontrib-mermaid~=1.0
+sphinxcontrib-mermaid~=1.1
 secretflow-doctools~=0.8.5
 sphinx-autobuild
