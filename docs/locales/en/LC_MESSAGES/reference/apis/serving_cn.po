@@ -218,6 +218,18 @@ msgstr "[ServingParty](#serving-party)[]"
 msgid "参与方信息"
 msgstr "Party Information"
 
+#: ../../reference/apis/serving_cn.md
+msgid "affinity_mode"
+msgstr "affinity_mode"
+
+#: ../../reference/apis/serving_cn.md
+msgid "亲和性模式"
+msgstr "affinity mode"
+
+#: ../../reference/apis/serving_cn.md
+msgid "Pod 调度亲和性模式。可选值：\"none\"(无亲和性)、\"affinity\"(亲和性)、\"anti-affinity\"(反亲和性)。默认值为 \"anti-affinity\"(如果未指定或为空)"
+msgstr "Pod scheduling affinity mode. Optional values: \"none\" (no affinity), \"affinity\" (affinity), \"anti-affinity\" (anti-affinity). The default value is \"anti-affinity\" (if not specified or empty)"
+
 #: ../../reference/apis/serving_cn.md:36
 msgid "响应（CreateServingResponse）"
 msgstr "Response (CreateServingResponse)"
@@ -292,16 +304,20 @@ msgid "data.initiator"
 msgstr "data.initiator"
 
 #: ../../reference/apis/serving_cn.md
-msgid "data.affinity_mode"
-msgstr "data.affinity_mode"
-
-#: ../../reference/apis/serving_cn.md
 msgid "发起方节点 ID"
 msgstr "Initiator Node ID"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.parties"
 msgstr "data.parties"
+
+#: ../../reference/apis/serving_cn.md
+msgid "data.affinity_mode"
+msgstr "data.affinity_mode"
+
+#: ../../reference/apis/serving_cn.md
+msgid "亲和性模式"
+msgstr "affinity mode"
 
 #: ../../reference/apis/serving_cn.md
 msgid "data.status"
