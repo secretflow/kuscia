@@ -226,6 +226,14 @@ func (s *servingService) buildKusciaDeployment(ctx context.Context, request *kus
 		if len(containers) > 0 {
 			kdParties[i].Template.Spec.Containers = containers
 		}
+
+		// Get affinity mode with default value handling
+		affinityMode := s.getAffinityMode(request.AffinityMode)
+		// Set affinity based on affinity mode
+		affinity := s.buildAffinityForMode(affinityMode, request.ServingId)
+		if affinity != nil {
+			kdParties[i].Template.Spec.Affinity = affinity
+		}
 	}
 
 	kd := &v1alpha1.KusciaDeployment{
@@ -234,6 +242,9 @@ func (s *servingService) buildKusciaDeployment(ctx context.Context, request *kus
 			Name:      request.ServingId,
 			Labels: map[string]string{
 				common.LabelKusciaDeploymentAppType: string(common.ServingApp),
+			},
+			Annotations: map[string]string{
+				common.AffinityModeAnnotationKey: request.AffinityMode,
 			},
 		},
 		Spec: v1alpha1.KusciaDeploymentSpec{
@@ -1056,5 +1067,69 @@ func getServingState(phase v1alpha1.KusciaDeploymentPhase) string {
 		return kusciaapi.ServingState_Failed.String()
 	default:
 		return kusciaapi.ServingState_Unknown.String()
+	}
+}
+
+// getAffinityMode returns the affinity mode with default value handling.
+// If the mode is empty or nil, it defaults to "anti-affinity".
+func (s *servingService) getAffinityMode(mode string) string {
+	if mode == "" {
+		return common.AffinityModeAntiAffinity
+	}
+	return mode
+}
+
+// buildAffinityForMode builds affinity based on the specified mode.
+// Returns nil for "none" mode, PodAffinity for "affinity" mode, and PodAntiAffinity for "anti-affinity" mode.
+// All affinities use PreferredDuringSchedulingIgnoredDuringExecution (soft preference).
+func (s *servingService) buildAffinityForMode(mode, servingID string) *corev1.Affinity {
+	switch mode {
+	case common.AffinityModeNone:
+		return nil
+	case common.AffinityModeAffinity:
+		return s.buildPodAffinity(servingID)
+	case common.AffinityModeAntiAffinity:
+		return s.buildPodAntiAffinity(servingID)
+	default:
+		// Default to anti-affinity for unknown modes
+		return s.buildPodAntiAffinity(servingID)
+	}
+}
+
+// buildPodAffinity builds a PodAffinity using PreferredDuringSchedulingIgnoredDuringExecution.
+// Uses default weight value of 100
+func (s *servingService) buildPodAffinity(servingID string) *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAffinity: &corev1.PodAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				s.buildWeightedPodAffinityTerm(servingID),
+			},
+		},
+	}
+}
+
+// buildPodAntiAffinity builds a PodAntiAffinity using PreferredDuringSchedulingIgnoredDuringExecution.
+// Uses default weight value of 100
+func (s *servingService) buildPodAntiAffinity(servingID string) *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				s.buildWeightedPodAffinityTerm(servingID),
+			},
+		},
+	}
+}
+
+func (s *servingService) buildWeightedPodAffinityTerm(servingID string) corev1.WeightedPodAffinityTerm {
+	return corev1.WeightedPodAffinityTerm{
+		Weight: 100,
+		PodAffinityTerm: corev1.PodAffinityTerm{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					common.LabelKusciaDeploymentName: servingID,
+				},
+			},
+			TopologyKey: "kubernetes.io/hostname",
+		},
 	}
 }

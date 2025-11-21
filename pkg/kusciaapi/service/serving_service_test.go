@@ -944,3 +944,210 @@ func TestUpdateKusciaDeploymentParty(t *testing.T) {
 		})
 	}
 }
+
+func TestGetAffinityMode(t *testing.T) {
+	s := servingService{}
+	tests := []struct {
+		name     string
+		mode     string
+		expected string
+	}{
+		{
+			name:     "empty mode should default to anti-affinity",
+			mode:     "",
+			expected: "anti-affinity",
+		},
+		{
+			name:     "none mode",
+			mode:     "none",
+			expected: "none",
+		},
+		{
+			name:     "affinity mode",
+			mode:     "affinity",
+			expected: "affinity",
+		},
+		{
+			name:     "anti-affinity mode",
+			mode:     "anti-affinity",
+			expected: "anti-affinity",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := s.getAffinityMode(tt.mode)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
+func TestBuildAffinityForMode(t *testing.T) {
+	s := servingService{}
+	servingID := "test-serving"
+
+	tests := []struct {
+		name     string
+		mode     string
+		expected *corev1.Affinity
+	}{
+		{
+			name:     "none mode should return nil",
+			mode:     "none",
+			expected: nil,
+		},
+		{
+			name: "affinity mode should return PodAffinity",
+			mode: "affinity",
+			expected: &corev1.Affinity{
+				PodAffinity: &corev1.PodAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+						{
+							Weight: 100,
+							PodAffinityTerm: corev1.PodAffinityTerm{
+								LabelSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"kuscia.secretflow/kd-name": servingID,
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "anti-affinity mode should return PodAntiAffinity",
+			mode: "anti-affinity",
+			expected: &corev1.Affinity{
+				PodAntiAffinity: &corev1.PodAntiAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+						{
+							Weight: 100,
+							PodAffinityTerm: corev1.PodAffinityTerm{
+								LabelSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"kuscia.secretflow/kd-name": servingID,
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "unknown mode should default to anti-affinity",
+			mode: "unknown",
+			expected: &corev1.Affinity{
+				PodAntiAffinity: &corev1.PodAntiAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+						{
+							Weight: 100,
+							PodAffinityTerm: corev1.PodAffinityTerm{
+								LabelSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"kuscia.secretflow/kd-name": servingID,
+									},
+								},
+								TopologyKey: "kubernetes.io/hostname",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := s.buildAffinityForMode(tt.mode, servingID)
+			if tt.expected == nil {
+				assert.Nil(t, got)
+			} else {
+				assert.NotNil(t, got)
+				if tt.mode == "affinity" {
+					assert.NotNil(t, got.PodAffinity)
+					assert.Nil(t, got.PodAntiAffinity)
+					assert.Equal(t, tt.expected.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight, got.PodAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight)
+				} else {
+					assert.NotNil(t, got.PodAntiAffinity)
+					assert.Nil(t, got.PodAffinity)
+					assert.Equal(t, tt.expected.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight, got.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight)
+				}
+			}
+		})
+	}
+}
+
+func TestBuildKusciaDeploymentWithAffinityMode(t *testing.T) {
+	replicas := int32(2)
+	parties := []*kusciaapi.ServingParty{{
+		DomainId: "alice",
+		AppImage: "mockImageName",
+		Replicas: &replicas,
+	}}
+
+	kusciaClient := kusciafake.NewSimpleClientset(makeMockAppImage("mockImageName"))
+	s := servingService{kusciaClient: kusciaClient}
+
+	tests := []struct {
+		name           string
+		affinityMode   string
+		expectAffinity bool
+	}{
+		{
+			name:           "affinity_mode is none, should not set affinity in party template",
+			affinityMode:   "none",
+			expectAffinity: false,
+		},
+		{
+			name:           "affinity_mode is affinity, should set PodAffinity",
+			affinityMode:   "affinity",
+			expectAffinity: true,
+		},
+		{
+			name:           "affinity_mode is anti-affinity, should set PodAntiAffinity",
+			affinityMode:   "anti-affinity",
+			expectAffinity: true,
+		},
+		{
+			name:           "affinity_mode is empty, should default to anti-affinity",
+			affinityMode:   "",
+			expectAffinity: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := &kusciaapi.CreateServingRequest{
+				ServingId:    "test-serving",
+				Initiator:    "alice",
+				AffinityMode: tt.affinityMode,
+				Parties:      parties,
+			}
+
+			kd, err := s.buildKusciaDeployment(context.Background(), req)
+			assert.NoError(t, err)
+			assert.NotNil(t, kd)
+
+			if tt.expectAffinity {
+				assert.NotNil(t, kd.Spec.Parties[0].Template.Spec.Affinity)
+				if tt.affinityMode == "affinity" || tt.affinityMode == "" {
+					// Empty mode defaults to anti-affinity
+					if tt.affinityMode == "affinity" {
+						assert.NotNil(t, kd.Spec.Parties[0].Template.Spec.Affinity.PodAffinity)
+						assert.Nil(t, kd.Spec.Parties[0].Template.Spec.Affinity.PodAntiAffinity)
+					} else {
+						assert.NotNil(t, kd.Spec.Parties[0].Template.Spec.Affinity.PodAntiAffinity)
+					}
+				}
+			} else {
+				// When affinity_mode is "none", affinity should be nil
+				assert.Nil(t, kd.Spec.Parties[0].Template.Spec.Affinity)
+			}
+		})
+	}
+}
