@@ -47,7 +47,7 @@ type KusciaSort struct {
 
 var _ framework.QueueSortPlugin = &KusciaSort{}
 
-func New(obj runtime.Object, handle framework.Handle) (framework.Plugin, error) {
+func New(ctx context.Context, obj runtime.Object, handle framework.Handle) (framework.Plugin, error) {
 	kubeConfig := *handle.KubeConfig()
 	kusciaClient := kusciaclientset.NewForConfigOrDie(&kubeConfig)
 	kusciaInformerFactory := kusciainformer.NewSharedInformerFactory(kusciaClient, 0)
@@ -59,7 +59,6 @@ func New(obj runtime.Object, handle framework.Handle) (framework.Plugin, error) 
 		podLister: podInformer.Lister(),
 	}
 
-	ctx := context.Background()
 	kusciaInformerFactory.Start(ctx.Done())
 	if !cache.WaitForCacheSync(ctx.Done(), trInformer.Informer().HasSynced) {
 		return nil, fmt.Errorf("failed to wait for cache sync for task resource")

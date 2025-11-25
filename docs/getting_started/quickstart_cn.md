@@ -51,14 +51,14 @@ systemctl start docker
 
 ### 前置操作
 
-配置 Kuscia 镜像，以下示例选择使用 1.0.0b0 版本镜像（更多镜像版本请参考 [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)）：
+配置 Kuscia 镜像，以下示例选择使用 1.1.0b0 版本镜像（更多镜像版本请参考 [Kuscia tags](https://hub.docker.com/r/secretflow/kuscia/tags)）：
 
 ```bash
 # Docker Hub Image
-export KUSCIA_IMAGE=secretflow/kuscia:1.0.0b0
+export KUSCIA_IMAGE=secretflow/kuscia:1.1.0b0
 
 # Alibaba Cloud Image (Recommended for domestic users)
-export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.0.0b0
+export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:1.1.0b0
 ```
 
 获取 Kuscia 安装脚本，安装脚本会下载到当前目录：

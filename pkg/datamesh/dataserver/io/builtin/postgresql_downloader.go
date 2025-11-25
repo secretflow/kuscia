@@ -100,7 +100,7 @@ func (d *PostgresqlDownloader) checkSQLSupport(columnMap map[string]*v1alpha1.Da
 		if strings.IndexByte(k, '"') != -1 {
 			return errors.Errorf("invalid column name(%s). For safety reason, backtick is not allowed", k)
 		}
-		if strings.Contains(v.Type, "date") || strings.Contains(v.Type, "binary") {
+		if strings.Contains(v.Type, "binary") {
 			return errors.Errorf("type(%s) is not supported now, please consider change another type", v.Type)
 		}
 	}
@@ -175,11 +175,44 @@ func (d *PostgresqlDownloader) initFieldConverter(bldr array.Builder) func(strin
 				d.err = err
 			}
 		}
+	case *arrow.Date32Type:
+		return func(str string) {
+			if err := ParseStr2Date32(bldr, str); err != nil && d.err == nil {
+				d.err = err
+			}
+		}
+	case *arrow.Date64Type:
+		return func(str string) {
+			if err := ParseStr2Date64(bldr, str); err != nil && d.err == nil {
+				d.err = err
+			}
+		}
+	case *arrow.Time32Type:
+		return func(str string) {
+			if err := ParseStr2Time32(bldr, str); err != nil && d.err == nil {
+				d.err = err
+			}
+		}
+	case *arrow.Time64Type:
+		return func(str string) {
+			if err := ParseStr2Time64(bldr, str); err != nil && d.err == nil {
+				d.err = err
+			}
+		}
+	case *arrow.TimestampType:
+		return func(str string) {
+			if err := ParseStr2Timestamp(bldr, str); err != nil && d.err == nil {
+				d.err = err
+			}
+		}
 	case *arrow.StringType:
 		return func(str string) {
 			bldr.(*array.StringBuilder).Append(str)
 		}
-
+	case *arrow.LargeStringType:
+		return func(str string) {
+			bldr.(*array.LargeStringBuilder).Append(str)
+		}
 	default:
 		panic(fmt.Errorf("postgresql to arrow conversion: unhandled field type %T", bldr.Type()))
 	}

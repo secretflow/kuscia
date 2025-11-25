@@ -21,8 +21,12 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	apiserveroptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/apiserver/pkg/util/compatibility"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/leaderelection"
+	basecompatibility "k8s.io/component-base/compatibility"
 	componentbaseconfig "k8s.io/component-base/config"
 	"k8s.io/component-base/configz"
 	"k8s.io/component-base/logs"
@@ -47,6 +51,13 @@ type schedulerModule struct {
 }
 
 func NewScheduler(i *ModuleRuntimeConfigs) (Module, error) {
+	componentGlobalsRegistry := compatibility.DefaultComponentGlobalsRegistry
+	// make sure DefaultKubeComponent is registered in the DefaultComponentGlobalsRegistry.
+	if componentGlobalsRegistry.EffectiveVersionFor(basecompatibility.DefaultKubeComponent) == nil {
+		featureGate := utilfeature.DefaultMutableFeatureGate
+		effectiveVersion := compatibility.DefaultBuildEffectiveVersion()
+		utilruntime.Must(componentGlobalsRegistry.Register(basecompatibility.DefaultKubeComponent, effectiveVersion, featureGate))
+	}
 	o := &options.Options{
 		SecureServing:  apiserveroptions.NewSecureServingOptions().WithLoopback(),
 		Authentication: apiserveroptions.NewDelegatingAuthenticationOptions(),
@@ -63,8 +74,9 @@ func NewScheduler(i *ModuleRuntimeConfigs) (Module, error) {
 			ResourceName:      "kube-scheduler",
 			ResourceNamespace: "kube-system",
 		},
-		Metrics: metrics.NewOptions(),
-		Logs:    logs.NewOptions(),
+		Metrics:                  metrics.NewOptions(),
+		Logs:                     logs.NewOptions(),
+		ComponentGlobalsRegistry: componentGlobalsRegistry,
 	}
 
 	o.Authentication.TolerateInClusterLookupFailure = true

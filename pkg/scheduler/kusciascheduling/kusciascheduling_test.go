@@ -32,6 +32,7 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/queuesort"
 	frameworkruntime "k8s.io/kubernetes/pkg/scheduler/framework/runtime"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
+	stframework "k8s.io/kubernetes/pkg/scheduler/testing/framework"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
@@ -101,19 +102,42 @@ func TestParseArgs(t *testing.T) {
 func TestEventsToRegister(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected bool
+		expected int
 	}{
 		{
-			name:     "result is not empty",
-			expected: true,
+			name:     "result should contain Add and Update events",
+			expected: 1,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cs := &KusciaScheduling{}
-			if got := cs.EventsToRegister(); len(got) > 0 != tt.expected {
-				t.Errorf("expected %v, got %v", tt.expected, got)
+			got, err := cs.EventsToRegister(context.Background())
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+			}
+			if len(got) != tt.expected {
+				t.Errorf("expected %v events, got %v", tt.expected, len(got))
+			}
+
+			// Verify that we have both Add and Update events in the combined event
+			foundAdd := false
+			foundUpdate := false
+			for _, event := range got {
+				if event.Event.ActionType&framework.Add != 0 {
+					foundAdd = true
+				}
+				if event.Event.ActionType&framework.Update != 0 {
+					foundUpdate = true
+				}
+			}
+
+			if !foundAdd {
+				t.Error("expected to find Add event in combined event")
+			}
+			if !foundUpdate {
+				t.Error("expected to find Update event in combined event")
 			}
 		})
 	}
@@ -164,15 +188,16 @@ func TestPermit(t *testing.T) {
 		map[string]string{kusciaapisv1alpha1.TaskResourceKey: "tr2"}, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
-	registeredPlugins := []st.RegisterPluginFunc{
-		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
-		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
+	registeredPlugins := []stframework.RegisterPluginFunc{
+		stframework.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
+		stframework.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-	f, err := st.NewFramework(ctx, registeredPlugins, "",
+	f, err := stframework.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
 		frameworkruntime.WithSnapshotSharedLister(snapshot),
+		frameworkruntime.WithWaitingPods(frameworkruntime.NewWaitingPodsMap()),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -243,16 +268,16 @@ func TestPostBind(t *testing.T) {
 	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, nil, 10, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
-	registeredPlugins := []st.RegisterPluginFunc{
-		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
-		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
+	registeredPlugins := []stframework.RegisterPluginFunc{
+		stframework.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
+		stframework.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-
-	f, err := st.NewFramework(ctx, registeredPlugins, "",
+	f, err := stframework.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
 		frameworkruntime.WithSnapshotSharedLister(snapshot),
+		frameworkruntime.WithWaitingPods(frameworkruntime.NewWaitingPodsMap()),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -302,7 +327,6 @@ func TestPostBind(t *testing.T) {
 }
 
 func TestPostFilter(t *testing.T) {
-	nodeStatusMap := framework.NodeToStatusMap{"node1": framework.NewStatus(framework.Success, "")}
 	ctx := context.Background()
 	cs := kusciaclientsetfake.NewSimpleClientset()
 	trInformerFactory := kusciainformers.NewSharedInformerFactory(cs, 0)
@@ -322,15 +346,16 @@ func TestPostFilter(t *testing.T) {
 	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{"test": "a"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
-	registeredPlugins := []st.RegisterPluginFunc{
-		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
-		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
+	registeredPlugins := []stframework.RegisterPluginFunc{
+		stframework.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
+		stframework.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-	f, err := st.NewFramework(ctx, registeredPlugins, "",
+	f, err := stframework.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
 		frameworkruntime.WithSnapshotSharedLister(snapshot),
+		frameworkruntime.WithWaitingPods(frameworkruntime.NewWaitingPodsMap()),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -391,7 +416,7 @@ func TestPostFilter(t *testing.T) {
 			for _, pod := range tt.pods {
 				centralizedScheduling.Reserve(context.Background(), cycleState, pod, pod.Spec.NodeName)
 			}
-			_, code := centralizedScheduling.PostFilter(context.Background(), cycleState, tt.pods[0], nodeStatusMap)
+			_, code := centralizedScheduling.PostFilter(context.Background(), cycleState, tt.pods[0], nil)
 			if code.Message() == "" != tt.expectedEmptyMsg {
 				t.Errorf("expectedEmptyMsg %v, got %v", tt.expectedEmptyMsg, code.Message() == "")
 			}
@@ -426,15 +451,16 @@ func TestPreFilter(t *testing.T) {
 	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{"test": "a"}, nil, 60, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
-	registeredPlugins := []st.RegisterPluginFunc{
-		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
-		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
+	registeredPlugins := []stframework.RegisterPluginFunc{
+		stframework.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
+		stframework.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-	f, err := st.NewFramework(ctx, registeredPlugins, "",
+	f, err := stframework.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
 		frameworkruntime.WithSnapshotSharedLister(snapshot),
+		frameworkruntime.WithWaitingPods(frameworkruntime.NewWaitingPodsMap()),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -509,16 +535,17 @@ func TestUnreserve(t *testing.T) {
 	existingPods, allNodes := util.MakeNodesAndPods(map[string]string{kusciaapisv1alpha1.TaskResourceUID: "111"}, nil, 10, 30)
 	snapshot := util.NewFakeSharedLister(existingPods, allNodes)
 	// Compose a framework handle.
-	registeredPlugins := []st.RegisterPluginFunc{
-		st.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
-		st.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
+	// Compose a framework handle.
+	registeredPlugins := []stframework.RegisterPluginFunc{
+		stframework.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
+		stframework.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
 	}
-
-	f, err := st.NewFramework(ctx, registeredPlugins, "",
+	f, err := stframework.NewFramework(ctx, registeredPlugins, "",
 		frameworkruntime.WithClientSet(fakeClient),
 		frameworkruntime.WithEventRecorder(&events.FakeRecorder{}),
 		frameworkruntime.WithInformerFactory(informerFactory),
 		frameworkruntime.WithSnapshotSharedLister(snapshot),
+		frameworkruntime.WithWaitingPods(frameworkruntime.NewWaitingPodsMap()),
 	)
 	if err != nil {
 		t.Fatal(err)

@@ -50,6 +50,7 @@ type LiteKusciaConfig struct {
 	ReservedResources config.ReservedResourcesCfg `yaml:"reservedResources"`
 	Image             ImageConfig                 `yaml:"image"`
 	AdvancedConfig    `yaml:",inline"`
+	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"`
 }
 
 type MasterKusciaConfig struct {
@@ -57,6 +58,7 @@ type MasterKusciaConfig struct {
 	DatastoreEndpoint string `yaml:"datastoreEndpoint"`
 	ClusterToken      string `yaml:"clusterToken,omitempty"`
 	AdvancedConfig    `yaml:",inline"`
+	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"`
 }
 
 type AutonomyKusciaConfig struct {
@@ -68,6 +70,7 @@ type AutonomyKusciaConfig struct {
 	Image             ImageConfig                 `yaml:"image"`
 	DatastoreEndpoint string                      `yaml:"datastoreEndpoint"`
 	AdvancedConfig    `yaml:",inline"`
+	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"`
 }
 
 type RunkConfig struct {
@@ -129,6 +132,7 @@ type AdvancedConfig struct {
 	DebugPort             int                         `yaml:"debugPort,omitempty"`
 	EnableWorkloadApprove bool                        `yaml:"enableWorkloadApprove,omitempty"`
 	Logrotate             LogrotateConfig             `yaml:"logrotate,omitempty"`
+	KusciaAPISans         []string                    `yaml:"kusciaAPISans,omitempty"`
 }
 
 func LoadCommonConfig(configFile string) (*CommonConfig, error) {
@@ -166,6 +170,9 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.DomainKeyData = lite.DomainKeyData
 	if lite.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = lite.KusciaAPI
+	}
+	if lite.KusciaAPISans != nil {
+		kusciaConfig.KusciaAPI.SANs = lite.KusciaAPISans
 	}
 	kusciaConfig.Protocol = lite.Protocol
 	kusciaConfig.ConfManager = lite.ConfManager
@@ -218,6 +225,7 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 	kusciaConfig.DebugPort = lite.DebugPort
 	kusciaConfig.Image = lite.Image
 	kusciaConfig.Image.HTTPProxy = lite.Image.HTTPProxy
+	kusciaConfig.GarbageCollection = lite.GarbageCollection
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &lite.AdvancedConfig.Logrotate)
 	kusciaConfig.Agent.StdoutGCDuration = time.Duration(kusciaConfig.Logrotate.MaxAgeDays) * 24 * time.Hour
@@ -232,6 +240,9 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 	if master.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = master.KusciaAPI
 	}
+	if master.KusciaAPISans != nil {
+		kusciaConfig.KusciaAPI.SANs = master.KusciaAPISans
+	}
 	kusciaConfig.Protocol = master.Protocol
 	if master.DomainRoute.ExternalTLS != nil {
 		kusciaConfig.DomainRoute.ExternalTLS = master.DomainRoute.ExternalTLS
@@ -241,6 +252,7 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 	kusciaConfig.Debug = master.Debug
 	kusciaConfig.DebugPort = master.DebugPort
 	kusciaConfig.EnableWorkloadApprove = master.AdvancedConfig.EnableWorkloadApprove
+	kusciaConfig.GarbageCollection = master.GarbageCollection
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &master.AdvancedConfig.Logrotate)
 }
@@ -297,6 +309,9 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	if autonomy.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = autonomy.KusciaAPI
 	}
+	if autonomy.KusciaAPISans != nil {
+		kusciaConfig.KusciaAPI.SANs = autonomy.KusciaAPISans
+	}
 	kusciaConfig.Protocol = autonomy.Protocol
 	kusciaConfig.ConfManager = autonomy.ConfManager
 	kusciaConfig.DataMesh = autonomy.DataMesh
@@ -309,6 +324,7 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.EnableWorkloadApprove = autonomy.AdvancedConfig.EnableWorkloadApprove
 	kusciaConfig.Image = autonomy.Image
 	kusciaConfig.Image.HTTPProxy = autonomy.Image.HTTPProxy
+	kusciaConfig.GarbageCollection = autonomy.GarbageCollection
 
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &autonomy.AdvancedConfig.Logrotate)
 	kusciaConfig.Agent.StdoutGCDuration = time.Duration(kusciaConfig.Logrotate.MaxAgeDays) * 24 * time.Hour

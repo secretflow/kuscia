@@ -33,8 +33,10 @@ import (
 	"k8s.io/kubernetes/pkg/controller"
 
 	bandwidth_limitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/bandwidth_limit/v3"
+
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/controller/interconn"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
 	"github.com/secretflow/kuscia/pkg/utils/queue"
 )
@@ -513,4 +515,215 @@ func TestBandwidthLimit(t *testing.T) {
 	f, err = xds.GetHTTPFilterConfig(xds.BandwidthLimitName, xds.InternalListener)
 	assert.Error(t, err)
 	assert.Nil(t, f)
+}
+
+func TestGenerateVirtualHost(t *testing.T) {
+	c, err := newEndpointController()
+	assert.NoError(t, err)
+	// Test case: nil service parameter generates default VirtualHost
+	t.Run("nil service", func(t *testing.T) {
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, nil)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		assert.Equal(t, []string{"test-service.default.svc", "test-service"}, virtualHost.Domains)
+		assert.Len(t, virtualHost.Routes, 1)
+		assert.Equal(t, "/", virtualHost.Routes[0].Match.GetPrefix())
+		assert.Equal(t, "service-test-service", virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.ClusterSpecifier.(*routev3.RouteAction_Cluster).Cluster)
+		assert.Len(t, virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy, 0)
+		assert.Nil(t, virtualHost.Routes[0].Match.Headers)
+	})
+	// Test case: Service SessionAffinity ClientIP hash policy configuration
+	t.Run("session affinity ClientIP", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityClientIP,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		assert.Len(t, hashPolicies, 2)
+		assert.True(t, hashPolicies[0].GetConnectionProperties().SourceIp)
+		assert.Equal(t, "Kuscia-Source", hashPolicies[1].GetHeader().HeaderName)
+	})
+	// Test case: Service uses default header-based hash policy
+	t.Run("default header-based hash policy", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		assert.Len(t, hashPolicies, 1)
+		assert.Equal(t, interconn.GetHashHeaderOfService("test-service"), hashPolicies[0].GetHeader().HeaderName)
+	})
+	// Test case: Service enables cookie sticky session with custom cookie name and TTL
+	t.Run("cookie sticky session with custom cookie name and TTL", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kuscia.secretflow/sticky-session-cookie": "my-custom-cookie",
+					"kuscia.secretflow/sticky-session-ttl":    "7200",
+				},
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		assert.Len(t, hashPolicies, 2) // Cookie policy + default header policy
+		cookiePolicy := hashPolicies[0]
+		assert.Equal(t, "my-custom-cookie", cookiePolicy.GetCookie().Name)
+		assert.Equal(t, int64(7200), cookiePolicy.GetCookie().Ttl.Seconds)
+	})
+	// Test case: Service enables cookie sticky session with default TTL
+	t.Run("cookie sticky session with default TTL", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kuscia.secretflow/sticky-session-cookie": "session-cookie",
+				},
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		cookiePolicy := hashPolicies[0]
+		assert.Equal(t, "session-cookie", cookiePolicy.GetCookie().Name)
+		assert.Equal(t, int64(3600), cookiePolicy.GetCookie().Ttl.Seconds)
+	})
+	// Test case: Service cookie sticky session with invalid TTL uses default
+	t.Run("cookie sticky session with invalid TTL uses default", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kuscia.secretflow/sticky-session-cookie": "test-cookie",
+					"kuscia.secretflow/sticky-session-ttl":    "invalid-ttl",
+				},
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		cookiePolicy := hashPolicies[0]
+		assert.Equal(t, int64(3600), cookiePolicy.GetCookie().Ttl.Seconds)
+	})
+	// Test case: Service cookie sticky session with negative TTL uses default
+	t.Run("cookie sticky session with negative TTL uses default", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kuscia.secretflow/sticky-session-cookie": "test-cookie",
+					"kuscia.secretflow/sticky-session-ttl":    "-100",
+				},
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityNone,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		cookiePolicy := hashPolicies[0]
+		assert.Equal(t, int64(3600), cookiePolicy.GetCookie().Ttl.Seconds)
+	})
+	// Test case: provide accessDomains configuration, verify Header matcher configuration
+	t.Run("access domains provided", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "alice,bob", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		assert.Len(t, virtualHost.Routes[0].Match.Headers, 1)
+		header := virtualHost.Routes[0].Match.Headers[0]
+		assert.Equal(t, "Kuscia-Source", header.Name)
+		assert.Equal(t, "(alice|bob)", header.GetStringMatch().GetSafeRegex().GetRegex())
+	})
+	// Test case: external access configuration, verify Header matcher uses Kuscia-Origin-Source
+	t.Run("external access domains", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "alice,bob", true, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		header := virtualHost.Routes[0].Match.Headers[0]
+		assert.Equal(t, "Kuscia-Origin-Source", header.Name)
+		assert.Equal(t, "(alice|bob)", header.GetStringMatch().GetSafeRegex().GetRegex())
+	})
+	// Test case: ClientIP + Cookie sticky session combined configuration
+	t.Run("client IP and cookie sticky session combined", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+				Annotations: map[string]string{
+					"kuscia.secretflow/sticky-session-cookie": "combined-cookie",
+				},
+			},
+			Spec: v1.ServiceSpec{
+				SessionAffinity: v1.ServiceAffinityClientIP,
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		hashPolicies := virtualHost.Routes[0].Action.(*routev3.Route_Route).Route.HashPolicy
+		assert.Len(t, hashPolicies, 3) // Cookie policy + connection properties + header policy
+		assert.Equal(t, "combined-cookie", hashPolicies[0].GetCookie().Name)
+		assert.True(t, hashPolicies[1].GetConnectionProperties().SourceIp)
+		assert.Equal(t, "Kuscia-Source", hashPolicies[2].GetHeader().HeaderName)
+	})
+	// Test case: empty accessDomains does not provide Header matcher
+	t.Run("empty access domains", func(t *testing.T) {
+		service := &v1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-service",
+				Namespace: "default",
+			},
+		}
+		virtualHost, err := c.generateVirtualHost("default", "test-service", "", false, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, virtualHost)
+		assert.Nil(t, virtualHost.Routes[0].Match.Headers)
+	})
 }

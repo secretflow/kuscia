@@ -45,6 +45,10 @@ func (h *domainDataHandler) DeleteDomainData(ctx context.Context, request *kusci
 	return h.domainDataService.DeleteDomainData(ctx, request), nil
 }
 
+func (h *domainDataHandler) DeleteDomainDataAndRaw(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) (*kusciaapi.DeleteDomainDataResponse, error) {
+	return h.domainDataService.DeleteDomainDataAndRaw(ctx, request), nil
+}
+
 func (h *domainDataHandler) QueryDomainData(ctx context.Context, request *kusciaapi.QueryDomainDataRequest) (*kusciaapi.QueryDomainDataResponse, error) {
 	return h.domainDataService.QueryDomainData(ctx, request), nil
 }

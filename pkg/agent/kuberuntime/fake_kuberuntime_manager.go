@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/flowcontrol"
@@ -65,7 +66,7 @@ func (f *fakePodStateProvider) ShouldPodContentBeRemoved(uid types.UID) bool {
 
 func newFakeKubeRuntimeManager(runtimeService internalapi.RuntimeService, imageService internalapi.ImageManagerService, osInterface pkgcontainer.OSInterface, runtimeHelper pkgcontainer.RuntimeHelper) (*kubeGenericRuntimeManager, error) {
 	recorder := &record.FakeRecorder{}
-	logManager, err := logs.NewContainerLogManager(runtimeService, osInterface, "1", 2)
+	logManager, err := logs.NewContainerLogManager(runtimeService, osInterface, "1", 2, 1, metav1.Duration{Duration: 10 * time.Second})
 	if err != nil {
 		return nil, err
 	}

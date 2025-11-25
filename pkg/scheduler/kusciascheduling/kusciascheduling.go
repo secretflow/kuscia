@@ -55,7 +55,7 @@ const (
 )
 
 // New initializes and returns a new KusciaScheduling plugin.
-func New(obj runtime.Object, handle framework.Handle) (framework.Plugin, error) {
+func New(ctx context.Context, obj runtime.Object, handle framework.Handle) (framework.Plugin, error) {
 	args, err := parseArgs(obj)
 	if err != nil {
 		nlog.Warnf("Can't parse task resource args, %v", err)
@@ -85,7 +85,6 @@ func New(obj runtime.Object, handle framework.Handle) (framework.Plugin, error) 
 		resourceReservedSeconds: &timeout,
 	}
 
-	ctx := context.Background()
 	kusciaInformerFactory.Start(ctx.Done())
 	if !cache.WaitForCacheSync(ctx.Done(), trInformer.Informer().HasSynced) {
 		return nil, fmt.Errorf("failed to wait for cache sync for %v scheduler plugin", Name)
@@ -116,12 +115,13 @@ func parseArgs(obj runtime.Object) (*kusciaapisv1alpha1.SchedulerPluginArgs, err
 	return &trgArgs, nil
 }
 
-func (cs *KusciaScheduling) EventsToRegister() []framework.ClusterEventWithHint {
+// EventsToRegister returns the events that this plugin would like to register.
+func (cs *KusciaScheduling) EventsToRegister(ctx context.Context) ([]framework.ClusterEventWithHint, error) {
 	// To register a custom event, follow the naming convention at:
 	// https://git.k8s.io/kubernetes/pkg/scheduler/eventhandlers.go#L403-L410
 	return []framework.ClusterEventWithHint{
-		{Event: framework.ClusterEvent{Resource: framework.Pod, ActionType: framework.Add}},
-	}
+		{Event: framework.ClusterEvent{Resource: framework.Pod, ActionType: framework.Add | framework.Update}},
+	}, nil
 }
 
 // Name returns name of the plugin. It is used in logs, etc.

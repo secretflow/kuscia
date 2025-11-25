@@ -49,7 +49,7 @@ type DomainDataServiceClient interface {
 	CreateDomainData(ctx context.Context, in *CreateDomainDataRequest, opts ...grpc.CallOption) (*CreateDomainDataResponse, error)
 	UpdateDomainData(ctx context.Context, in *UpdateDomainDataRequest, opts ...grpc.CallOption) (*UpdateDomainDataResponse, error)
 	DeleteDomainData(ctx context.Context, in *DeleteDomainDataRequest, opts ...grpc.CallOption) (*DeleteDomainDataResponse, error)
-	DeleteDomainDataAndRaw(ctx context.Context, in *DeleteDomainDataRequest, opts ...grpc.CallOption) (*DeleteDomainDataRequest, error)
+	DeleteDomainDataAndRaw(ctx context.Context, in *DeleteDomainDataRequest, opts ...grpc.CallOption) (*DeleteDomainDataResponse, error)
 	QueryDomainData(ctx context.Context, in *QueryDomainDataRequest, opts ...grpc.CallOption) (*QueryDomainDataResponse, error)
 	BatchQueryDomainData(ctx context.Context, in *BatchQueryDomainDataRequest, opts ...grpc.CallOption) (*BatchQueryDomainDataResponse, error)
 	ListDomainData(ctx context.Context, in *ListDomainDataRequest, opts ...grpc.CallOption) (*ListDomainDataResponse, error)
@@ -90,8 +90,8 @@ func (c *domainDataServiceClient) DeleteDomainData(ctx context.Context, in *Dele
 	return out, nil
 }
 
-func (c *domainDataServiceClient) DeleteDomainDataAndRaw(ctx context.Context, in *DeleteDomainDataRequest, opts ...grpc.CallOption) (*DeleteDomainDataRequest, error) {
-	out := new(DeleteDomainDataRequest)
+func (c *domainDataServiceClient) DeleteDomainDataAndRaw(ctx context.Context, in *DeleteDomainDataRequest, opts ...grpc.CallOption) (*DeleteDomainDataResponse, error) {
+	out := new(DeleteDomainDataResponse)
 	err := c.cc.Invoke(ctx, DomainDataService_DeleteDomainDataAndRaw_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ type DomainDataServiceServer interface {
 	CreateDomainData(context.Context, *CreateDomainDataRequest) (*CreateDomainDataResponse, error)
 	UpdateDomainData(context.Context, *UpdateDomainDataRequest) (*UpdateDomainDataResponse, error)
 	DeleteDomainData(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataResponse, error)
-	DeleteDomainDataAndRaw(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataRequest, error)
+	DeleteDomainDataAndRaw(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataResponse, error)
 	QueryDomainData(context.Context, *QueryDomainDataRequest) (*QueryDomainDataResponse, error)
 	BatchQueryDomainData(context.Context, *BatchQueryDomainDataRequest) (*BatchQueryDomainDataResponse, error)
 	ListDomainData(context.Context, *ListDomainDataRequest) (*ListDomainDataResponse, error)
@@ -153,7 +153,7 @@ func (UnimplementedDomainDataServiceServer) UpdateDomainData(context.Context, *U
 func (UnimplementedDomainDataServiceServer) DeleteDomainData(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDomainData not implemented")
 }
-func (UnimplementedDomainDataServiceServer) DeleteDomainDataAndRaw(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataRequest, error) {
+func (UnimplementedDomainDataServiceServer) DeleteDomainDataAndRaw(context.Context, *DeleteDomainDataRequest) (*DeleteDomainDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDomainDataAndRaw not implemented")
 }
 func (UnimplementedDomainDataServiceServer) QueryDomainData(context.Context, *QueryDomainDataRequest) (*QueryDomainDataResponse, error) {

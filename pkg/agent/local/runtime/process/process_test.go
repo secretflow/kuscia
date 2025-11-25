@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
-	"k8s.io/kubernetes/pkg/kubelet/types"
+	"k8s.io/kubelet/pkg/types"
 
 	ctr "github.com/secretflow/kuscia/pkg/agent/local/runtime/process/container"
 	"github.com/secretflow/kuscia/pkg/agent/local/runtime/process/sandbox"
@@ -106,8 +106,8 @@ func Test_RuntimeSandboxAndContainers(t *testing.T) {
 			Image: "docker.io/secretflow/secretflow:0.1",
 		},
 		LogPath: "0.log",
-		Command: []string{"sleep"},
-		Args:    []string{"10"},
+		Command: []string{"/bin/sh"},
+		Args:    []string{"-c", "sleep 10"},
 	}, nil)
 	assert.NoError(t, err)
 
@@ -124,7 +124,7 @@ func Test_RuntimeSandboxAndContainers(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, runtimeapi.ContainerState_CONTAINER_RUNNING, containerStatus.Status.State)
 
-	assert.NoError(t, runtime.StopContainer(ctx, containerID, 0))
+	assert.NoError(t, runtime.StopContainer(ctx, containerID, 1)) // Use 1 second timeout for graceful shutdown
 
 	// make sure process killed
 	time.Sleep(100 * time.Millisecond)

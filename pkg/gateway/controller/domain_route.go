@@ -509,6 +509,16 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 			if err := c.updateEncryptRule(dr, token); err != nil {
 				return err
 			}
+		} else {
+			// Delete existing encryption rules when BodyEncryption is removed
+			rule := &kusciacrypt.CryptRule{
+				Source:      dr.Spec.Source,
+				Destination: dr.Spec.Destination,
+			}
+			if err := xds.UpdateEncryptRules(rule, c.gateway.Namespace, false); err != nil {
+				nlog.Warnf("Failed to delete encrypt rule for DomainRoute %s: %v", dr.Name, err)
+			}
+			nlog.Infof("Delete encrypt rule for DomainRoute %s", dr.Name)
 		}
 
 		// next step with two cases
@@ -549,6 +559,16 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 
 		if dr.Spec.BodyEncryption != nil {
 			return c.updateDecryptFilter(dr, tokens)
+		} else {
+			// Delete existing decryption rules when BodyEncryption is removed
+			rule := &kusciacrypt.CryptRule{
+				Source:      dr.Spec.Source,
+				Destination: dr.Spec.Destination,
+			}
+			if err := xds.UpdateDecryptRules(rule, c.gateway.Namespace, false); err != nil {
+				nlog.Warnf("Failed to delete decrypt rule for DomainRoute %s: %v", dr.Name, err)
+			}
+			nlog.Infof("Delete encrypt rule for DomainRoute %s", dr.Name)
 		}
 	}
 	return nil

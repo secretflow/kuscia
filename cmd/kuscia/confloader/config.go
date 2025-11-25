@@ -17,6 +17,7 @@ package confloader
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/secretflow/kuscia/pkg/agent/config"
 	"github.com/secretflow/kuscia/pkg/common"
@@ -67,8 +68,31 @@ type KusciaConfig struct {
 	CoreDNSBackUpConf     string                    `yaml:"-"`
 	RunMode               common.RunModeType        `yaml:"-"`
 	EnableWorkloadApprove bool                      `yaml:"enableWorkloadApprove,omitempty"`
+
+	// Garbage Collection configuration
+	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"`
 }
 
+// GarbageCollectionConfig defines configuration for garbage collection controllers
+type GarbageCollectionConfig struct {
+	// KusciaDomainDataGC configuration for kuscia domain data garbage collection
+	KusciaDomainDataGC KusciaDomainDataGCConfig `yaml:"kusciaDomainDataGC,omitempty"`
+	// KusciaJobGC configuration for kuscia job garbage collection
+	KusciaJobGC KusciaJobGCConfig `yaml:"kusciaJobGC,omitempty"`
+}
+
+type KusciaDomainDataGCConfig struct {
+	// Enable controls whether kuscia domain data garbage collection is enabled
+	Enable *bool `yaml:"enable,omitempty"`
+	// DurationHours specifies how many hours to retain domain data before garbage collection. Default is 720 hours (30 days).
+	DurationHours int `yaml:"durationHours,omitempty"`
+}
+
+// KusciaJobGCConfig defines configuration specific to kuscia job garbage collection
+type KusciaJobGCConfig struct {
+	// DurationHours specifies how many hours to retain completed kuscia jobs before garbage collection. Default is 720 hours (30 days).
+	DurationHours int `yaml:"durationHours,omitempty"`
+}
 type CMConfig struct {
 	Params map[string]any `yaml:"params,omitempty"`
 	Driver string         `yaml:"driver,omitempty"`
@@ -147,7 +171,10 @@ func ReadConfig(configFile string) (KusciaConfig, error) {
 	if err != nil {
 		return conf, err
 	}
-	currentRunMode := commonConfig.Mode
+
+	//If the user configured RunMode{Autonomy,Lite,Master, LITE}
+	// in uppercase in kuscia.yml, convert it to lowercase
+	currentRunMode := strings.ToLower(commonConfig.Mode)
 
 	switch currentRunMode {
 	case common.RunModeMaster:

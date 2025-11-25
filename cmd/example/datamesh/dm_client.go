@@ -308,7 +308,7 @@ func (m *MockFlightClient) getData(domainDataID string, useRawData bool) error {
 	}
 	desc, err := utils.DescForCommand(cmd)
 	if err != nil {
-		nlog.Warnf(err.Error())
+		nlog.Warnf("Description error: %v", err)
 		return err
 	}
 
@@ -360,7 +360,7 @@ func (m *MockFlightClient) putData(domainDataID string) error {
 	}
 	desc, err := utils.DescForCommand(cmd)
 	if err != nil {
-		nlog.Warnf(err.Error())
+		nlog.Warnf("Description error: %v", err)
 		return err
 	}
 

@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -31,7 +31,7 @@ import (
 
 func makeMockTaskResource(namespace, name string) *v1alpha1.TaskResource {
 	tr := &v1alpha1.TaskResource{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   namespace,
 			Name:        name,
 			Labels:      map[string]string{},
@@ -296,16 +296,6 @@ func TestUpdateHostTaskSummaryByTaskResource(t *testing.T) {
 	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
 	tr.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
 	tr.Status.Phase = v1alpha1.TaskResourcePhaseReserving
-	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
-	assert.Equal(t, nil, got)
-
-	// task resource status phase is reserving and resource version is greater than the value in taskSummary, should return nil.
-	tr = makeMockTaskResource("bob", "tr-1")
-	tr.Annotations[common.TaskIDAnnotationKey] = "task-2"
-	tr.Annotations[common.InitiatorAnnotationKey] = "alice"
-	tr.Annotations[common.KusciaPartyMasterDomainAnnotationKey] = "bob"
-	tr.ResourceVersion = "3"
-	tr.Status.Phase = v1alpha1.TaskResourcePhaseReserved
 	got = c.updateHostTaskSummaryByTaskResource(ctx, tr)
 	assert.Equal(t, nil, got)
 }

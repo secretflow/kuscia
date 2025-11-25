@@ -74,7 +74,8 @@ func (c *hostResourcesController) syncTaskSummaryHandler(ctx context.Context, ke
 		return nil
 	}
 
-	hTs, err := c.hostTaskSummaryLister.KusciaTaskSummaries(namespace).Get(name)
+	//hTs, err := c.hostTaskSummaryLister.KusciaTaskSummaries(namespace).Get(name)
+	hTs, err := c.hostKusciaClient.KusciaV1alpha1().KusciaTaskSummaries(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		// TaskSummary is deleted under host cluster
 		if k8serrors.IsNotFound(err) {

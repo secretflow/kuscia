@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
@@ -174,6 +175,96 @@ func (u *MySQLUploader) transformColToStringArr(typ arrow.DataType, col arrow.Ar
 				res[i] = u.nullValue
 			}
 		}
+	case *arrow.LargeStringType:
+		arr := col.(*array.LargeString)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				res[i] = arr.Value(i)
+			} else {
+				res[i] = u.nullValue
+			}
+		}
+	case *arrow.Date32Type:
+		arr := col.(*array.Date32)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				// Convert days since epoch to date string in YYYY-MM-DD format
+				days := int64(arr.Value(i))
+				t := time.Unix(days*24*3600, 0).UTC()
+				res[i] = t.Format("2006-01-02")
+			} else {
+				res[i] = u.nullValue
+			}
+		}
+	case *arrow.Date64Type:
+		arr := col.(*array.Date64)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				// Convert milliseconds since epoch to datetime string
+				ms := int64(arr.Value(i))
+				t := time.Unix(ms/1000, (ms%1000)*int64(time.Millisecond)).UTC()
+				res[i] = t.Format("2006-01-02 15:04:05")
+			} else {
+				res[i] = u.nullValue
+			}
+		}
+	case *arrow.Time32Type:
+		arr := col.(*array.Time32)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				// Time32 stores time as seconds or milliseconds since midnight
+				t := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+				switch arr.DataType().(*arrow.Time32Type).Unit {
+				case arrow.Second:
+					t = t.Add(time.Duration(arr.Value(i)) * time.Second)
+				case arrow.Millisecond:
+					t = t.Add(time.Duration(arr.Value(i)) * time.Millisecond)
+				}
+				res[i] = t.Format("15:04:05")
+			} else {
+				res[i] = u.nullValue
+			}
+		}
+	case *arrow.Time64Type:
+		arr := col.(*array.Time64)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				// Time64 stores time as microseconds or nanoseconds since midnight
+				t := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+				switch arr.DataType().(*arrow.Time64Type).Unit {
+				case arrow.Microsecond:
+					t = t.Add(time.Duration(arr.Value(i)) * time.Microsecond)
+				case arrow.Nanosecond:
+					t = t.Add(time.Duration(arr.Value(i)) * time.Nanosecond)
+				}
+				res[i] = t.Format("15:04:05.000000")
+			} else {
+				res[i] = u.nullValue
+			}
+		}
+	case *arrow.TimestampType:
+		arr := col.(*array.Timestamp)
+		for i := 0; i < arr.Len(); i++ {
+			if arr.IsValid(i) {
+				// Convert timestamp based on unit
+				ts := arr.Value(i)
+				unit := arr.DataType().(*arrow.TimestampType).Unit
+				var t time.Time
+				switch unit {
+				case arrow.Second:
+					t = time.Unix(int64(ts), 0).UTC()
+				case arrow.Millisecond:
+					t = time.Unix(0, int64(ts)*int64(time.Millisecond)).UTC()
+				case arrow.Microsecond:
+					t = time.Unix(0, int64(ts)*int64(time.Microsecond)).UTC()
+				case arrow.Nanosecond:
+					t = time.Unix(0, int64(ts)).UTC()
+				}
+				res[i] = t.Format("2006-01-02 15:04:05")
+			} else {
+				res[i] = u.nullValue
+			}
+		}
 	default:
 		panic(fmt.Errorf("arrow to MySQL: field has unsupported data type %s", typ.String()))
 	}
@@ -200,12 +291,30 @@ func (u *MySQLUploader) ArrowDataTypeToMySQLType(colType arrow.DataType) string 
 		return "BIGINT SIGNED"
 	case arrow.FixedWidthTypes.Boolean:
 		return "TINYINT(1)"
-	case arrow.BinaryTypes.String:
+	case arrow.BinaryTypes.String, arrow.BinaryTypes.LargeString:
 		return "TEXT"
 	case arrow.PrimitiveTypes.Float32:
 		return "FLOAT"
 	case arrow.PrimitiveTypes.Float64:
 		return "DOUBLE"
+	case arrow.PrimitiveTypes.Date32:
+		return "DATE"
+	case arrow.PrimitiveTypes.Date64:
+		return "DATETIME"
+	case arrow.FixedWidthTypes.Time32s:
+		return "TIME"
+	case arrow.FixedWidthTypes.Time64us:
+		return "TIME(6)"
+	case arrow.FixedWidthTypes.Timestamp_s:
+		return "TIMESTAMP"
+	case arrow.FixedWidthTypes.Duration_s:
+		return "BIGINT"
+	case arrow.FixedWidthTypes.Duration_ms:
+		return "BIGINT"
+	case arrow.FixedWidthTypes.Duration_us:
+		return "BIGINT"
+	case arrow.FixedWidthTypes.Duration_ns:
+		return "BIGINT"
 	default:
 		panic(fmt.Errorf("create MySQL Table: field has unsupported data type %s", colType))
 	}

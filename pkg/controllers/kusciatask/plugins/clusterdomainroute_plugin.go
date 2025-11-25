@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -61,7 +62,12 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 	for _, cdr := range cdrResources {
 		cdrObj, err := p.cdrLister.Get(cdr)
 		if err != nil {
-			return false, fmt.Errorf("get cdr %s failed with %v", cdr, err)
+			if k8serrors.IsNotFound(err) {
+				nlog.Debugf("cdr %s not found", cdr)
+				continue
+			} else {
+				return false, fmt.Errorf("get cdr %s failed with %v", cdr, err)
+			}
 		}
 
 		parts := strings.Split(cdr, "-")

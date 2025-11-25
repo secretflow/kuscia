@@ -32,7 +32,7 @@ endef
 
 PROOT_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
 ENVOY_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.2b0
-DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.6.1b0
+DEPS_IMAGE ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.7.0b0
 
 ##@ Image
 
@@ -45,9 +45,10 @@ proot:
 
 
 .PHONY: deps-image
-deps-image: 
 deps-image:
-	docker build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile .
+	DOCKER_BUILDKIT=1
+	@$(call start_docker_buildx)
+	docker buildx build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --platform linux/${ARCH} --load
 
 
 .PHONY: image

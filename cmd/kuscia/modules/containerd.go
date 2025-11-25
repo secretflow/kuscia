@@ -26,7 +26,7 @@ import (
 
 	"github.com/shirou/gopsutil/v3/disk"
 	"golang.org/x/sys/unix"
-	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
+	remote "k8s.io/cri-client/pkg"
 
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"
 	pkgcom "github.com/secretflow/kuscia/pkg/common"
@@ -149,7 +149,7 @@ func checkContainerdReadyZ(ctx context.Context, root, sock string) error {
 		return err
 	}
 	// validate Service Connection
-	if _, err := remote.NewRemoteRuntimeService(fmt.Sprintf("unix://%s", sock), time.Second*5, nil); err != nil {
+	if _, err := remote.NewRemoteRuntimeService(fmt.Sprintf("unix://%s", sock), time.Second*5, nil, nil); err != nil {
 		readContainerdLog(buildContainerdLogPath(root), 10)
 		return err
 	}

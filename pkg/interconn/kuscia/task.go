@@ -327,22 +327,17 @@ func (c *Controller) processTaskAsPartner(ctx context.Context, task *v1alpha1.Ku
 		return fmt.Errorf("host %v resource accessor has not synced, retry", initiator)
 	}
 
-	hTaskSummary, err := hra.HostTaskSummaryLister().KusciaTaskSummaries(masterDomainID).Get(task.Name)
+	hTaskSummary, err := hra.HostKusciaClient().KusciaV1alpha1().KusciaTaskSummaries(masterDomainID).Get(ctx, task.Name, metav1.GetOptions{})
 	if err != nil {
+		nlog.Errorf("Failed to get taskSummary %v from host %v cluster, %v", task.Name, initiator, err)
 		if k8serrors.IsNotFound(err) {
-			hTaskSummary, err = hra.HostKusciaClient().KusciaV1alpha1().KusciaTaskSummaries(masterDomainID).Get(ctx, task.Name, metav1.GetOptions{})
-		}
-		if err != nil {
-			nlog.Errorf("Failed to get taskSummary %v from host %v cluster, %v", task.Name, initiator, err)
+			nlog.Infof("Host taskSummary %s/%s is not found, delete task %v", masterDomainID, task.Name, ikcommon.GetObjectNamespaceName(task))
+			err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).Delete(ctx, task.Name, metav1.DeleteOptions{})
 			if k8serrors.IsNotFound(err) {
-				nlog.Infof("Host taskSummary %s/%s is not found, delete task %v", masterDomainID, task.Name, ikcommon.GetObjectNamespaceName(task))
-				err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).Delete(ctx, task.Name, metav1.DeleteOptions{})
-				if k8serrors.IsNotFound(err) {
-					return nil
-				}
+				return nil
 			}
-			return err
 		}
+		return err
 	}
 
 	if hTaskSummary.Status.CompletionTime != nil {

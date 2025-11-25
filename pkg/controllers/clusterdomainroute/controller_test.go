@@ -108,7 +108,38 @@ func Test_controller_add_label(t *testing.T) {
 	logger, _ := zlogwriter.New(nil)
 	nlog.Setup(nlog.SetWriter(logger))
 	chStop := make(chan struct{})
-	kusciaClient := kusciafake.NewSimpleClientset()
+
+	alice := "aliceaddlabel"
+	bob := "bobaddlabel"
+	charlie := "charlieaddlabel"
+
+	certstr := createCrtString(t)
+	aliceDomain := &kusciaapisv1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: alice,
+		},
+		Spec: kusciaapisv1alpha1.DomainSpec{
+			Cert: certstr,
+		},
+	}
+	bobDomain := &kusciaapisv1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: bob,
+		},
+		Spec: kusciaapisv1alpha1.DomainSpec{
+			Cert: certstr,
+		},
+	}
+	charlieDomain := &kusciaapisv1alpha1.Domain{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: charlie,
+		},
+		Spec: kusciaapisv1alpha1.DomainSpec{
+			Cert: certstr,
+		},
+	}
+
+	kusciaClient := kusciafake.NewSimpleClientset(aliceDomain, bobDomain, charlieDomain)
 	kubeClient := kubefake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
@@ -120,39 +151,11 @@ func Test_controller_add_label(t *testing.T) {
 		KusciaClient:  kusciaClient,
 		EventRecorder: eventRecorder,
 	})
-	alice := "aliceaddlabel"
-	bob := "bobaddlabel"
-	charlie := "charlieaddlabel"
+
 	go func() {
 		time.Sleep(300 * time.Millisecond)
 		var err error
-		certstr := createCrtString(t)
-		aliceDomain := &kusciaapisv1alpha1.Domain{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: alice,
-			},
-			Spec: kusciaapisv1alpha1.DomainSpec{
-				Cert: certstr,
-			},
-		}
-		bobDomain := &kusciaapisv1alpha1.Domain{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: bob,
-			},
-			Spec: kusciaapisv1alpha1.DomainSpec{
-				Cert: certstr,
-			},
-		}
-		charlieDomain := &kusciaapisv1alpha1.Domain{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: charlie,
-			},
-			Spec: kusciaapisv1alpha1.DomainSpec{
-				Cert: certstr,
-			},
-		}
-		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, aliceDomain, metav1.CreateOptions{})
-		assert.NoError(t, err)
+
 		_, err = kusciaClient.KusciaV1alpha1().Gateways(alice).Create(ctx, &kusciaapisv1alpha1.Gateway{
 			Status: kusciaapisv1alpha1.GatewayStatus{
 				NetworkStatus: []kusciaapisv1alpha1.GatewayEndpointStatus{
@@ -168,10 +171,7 @@ func Test_controller_add_label(t *testing.T) {
 			},
 		}, metav1.CreateOptions{})
 		assert.NoError(t, err)
-		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, bobDomain, metav1.CreateOptions{})
-		assert.NoError(t, err)
-		_, err = kusciaClient.KusciaV1alpha1().Domains().Create(ctx, charlieDomain, metav1.CreateOptions{})
-		assert.NoError(t, err)
+
 		testdr := &kusciaapisv1alpha1.ClusterDomainRoute{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: alice + "-" + bob,
@@ -233,12 +233,31 @@ func Test_controller_add_label(t *testing.T) {
 	ic.Run(4)
 	ic.Stop()
 	time.Sleep(100 * time.Millisecond)
-	dr, err := kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+bob, metav1.GetOptions{})
+
+	var dr *kusciaapisv1alpha1.DomainRoute
+	var err error
+	for i := 0; i < 10; i++ {
+		dr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+bob, metav1.GetOptions{})
+		if err == nil {
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 	assert.NoError(t, err)
+	assert.NotNil(t, dr)
 	assert.Equal(t, alice, dr.Labels[common.KusciaSourceKey])
 	assert.Equal(t, bob, dr.Labels[common.KusciaDestinationKey])
-	dr2, err := kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+charlie, metav1.GetOptions{})
+
+	var dr2 *kusciaapisv1alpha1.DomainRoute
+	for i := 0; i < 10; i++ {
+		dr2, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+charlie, metav1.GetOptions{})
+		if err == nil {
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
 	assert.NoError(t, err)
+	assert.NotNil(t, dr2)
 	assert.Equal(t, alice, dr2.Labels[common.KusciaSourceKey])
 	assert.Equal(t, charlie, dr2.Labels[common.KusciaDestinationKey])
 }

@@ -208,6 +208,7 @@ func NewModuleRuntimeConfigs(_ context.Context, kusciaConf confloader.KusciaConf
 
 		dependencies.Clients = clients
 	}
+	dependencies.GarbageCollection = kusciaConf.GarbageCollection
 	return dependencies
 }
 

@@ -54,8 +54,8 @@ func (f *fakeImageManagerService) RemoveImage(ctx context.Context, image *runtim
 	return nil
 }
 
-func (f *fakeImageManagerService) ImageFsInfo(ctx context.Context) ([]*runtimeapi.FilesystemUsage, error) {
-	return nil, nil
+func (f *fakeImageManagerService) ImageFsInfo(ctx context.Context) (*runtimeapi.ImageFsInfoResponse, error) {
+	return &runtimeapi.ImageFsInfoResponse{}, nil
 }
 
 func TestEnvImport_ExecHookWithGenerateOptionContext(t *testing.T) {

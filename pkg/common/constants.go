@@ -304,3 +304,12 @@ const (
 const (
 	CreateKDOrKJError = "create error"
 )
+
+// session id
+const (
+	// session id annotations
+	AnnotationStickySessionCookie      = "kuscia.secretflow/sticky-session-cookie"
+	AnnotationStickySessionTTL         = "kuscia.secretflow/sticky-session-ttl"
+	AnnotationStickySessionCookieValue = "KUSCIA_SESSION"
+	AnnotationStickySessionTTLValue    = 86400
+)

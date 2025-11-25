@@ -17,7 +17,9 @@ package builtin
 import (
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
 )
 
@@ -134,5 +136,114 @@ func ParseFloat64(field array.Builder, str string) error {
 		return err
 	}
 	field.(*array.Float64Builder).Append(v)
+	return nil
+}
+
+func ParseStr2Date32(bldr array.Builder, str string) error {
+	if str == "" || str == "NULL" {
+		bldr.(*array.Date32Builder).AppendNull()
+		return nil
+	}
+
+	t, err := time.Parse("2006-01-02", str)
+	if err != nil {
+		return err
+	}
+	bldr.(*array.Date32Builder).Append(arrow.Date32(t.Unix() / (24 * 3600)))
+	return nil
+}
+func ParseStr2Date64(bldr array.Builder, str string) error {
+	if str == "" || str == "NULL" {
+		bldr.(*array.Date64Builder).AppendNull()
+		return nil
+	}
+
+	formats := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05.999",
+		"2006-01-02",
+	}
+
+	var t time.Time
+	var err error
+	for _, format := range formats {
+		t, err = time.Parse(format, str)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	bldr.(*array.Date64Builder).Append(arrow.Date64(t.UnixMilli()))
+	return nil
+}
+func ParseStr2Time32(bldr array.Builder, str string) error {
+	if str == "" || str == "NULL" {
+		bldr.(*array.Time32Builder).AppendNull()
+		return nil
+	}
+
+	t, err := time.Parse("15:04:05", str)
+	if err != nil {
+		return err
+	}
+	seconds := int32(t.Hour()*3600 + t.Minute()*60 + t.Second())
+	bldr.(*array.Time32Builder).Append(arrow.Time32(seconds))
+	return nil
+}
+func ParseStr2Time64(bldr array.Builder, str string) error {
+	if str == "" || str == "NULL" {
+		bldr.(*array.Time64Builder).AppendNull()
+		return nil
+	}
+
+	t, err := time.Parse("15:04:05.999999", str)
+	if err != nil {
+		t, err = time.Parse("15:04:05", str)
+		if err != nil {
+			return err
+		}
+	}
+
+	microseconds := int64(t.Hour()*3600+t.Minute()*60+t.Second())*1_000_000 + int64(t.Nanosecond()/1000)
+	bldr.(*array.Time64Builder).Append(arrow.Time64(microseconds))
+	return nil
+}
+
+func ParseStr2Timestamp(bldr array.Builder, str string) error {
+	if str == "" || str == "NULL" {
+		bldr.(*array.TimestampBuilder).AppendNull()
+		return nil
+	}
+
+	formats := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05.999",
+		"2006-01-02 15:04:05.999999",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02",
+	}
+
+	var t time.Time
+	var err error
+	for _, format := range formats {
+		t, err = time.Parse(format, str)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		// Try the digital format
+		if ts, parseErr := strconv.ParseInt(str, 10, 64); parseErr == nil {
+			bldr.(*array.TimestampBuilder).Append(arrow.Timestamp(ts))
+			return nil
+		}
+		return err
+	}
+
+	bldr.(*array.TimestampBuilder).Append(arrow.Timestamp(t.Unix()))
 	return nil
 }

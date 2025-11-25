@@ -146,13 +146,16 @@ func (s *Server) onStartedLeading(ctx context.Context) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	config := ControllerConfig{
-		RunMode:               s.options.RunMode,
-		Namespace:             s.options.Namespace,
-		RootDir:               s.options.RootDir,
-		KubeClient:            s.kubeClient,
-		KusciaClient:          s.kusciaClient,
-		EventRecorder:         s.eventRecorder,
-		EnableWorkloadApprove: s.options.EnableWorkloadApprove,
+		RunMode:                     s.options.RunMode,
+		Namespace:                   s.options.Namespace,
+		RootDir:                     s.options.RootDir,
+		KubeClient:                  s.kubeClient,
+		KusciaClient:                s.kusciaClient,
+		EventRecorder:               s.eventRecorder,
+		EnableWorkloadApprove:       s.options.EnableWorkloadApprove,
+		KddGarbageCollectionEnabled: s.options.KddGarbageCollectionEnabled,
+		DomainDataGCDurationHours:   s.options.DomainDataGCDurationHours,
+		KusciaJobGCDurationHours:    s.options.KusciaJobGCDurationHours,
 	}
 	for _, cc := range s.controllerConstructions {
 		controller := cc.NewControler(ctx, config)

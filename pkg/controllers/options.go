@@ -42,6 +42,12 @@ type Options struct {
 	ControllerName string
 
 	EnableWorkloadApprove bool
+	// KddGarbageCollectionEnabled controls whether kuscia domain data garbage collection is enabled
+	KddGarbageCollectionEnabled bool
+	// DomainDataGCDurationHours specifies retention hours for domain data
+	DomainDataGCDurationHours int
+	// KusciaJobGCDurationHours specifies retention hours for completed kuscia jobs
+	KusciaJobGCDurationHours int
 }
 
 // NewOptions creates a new options with a default config.
